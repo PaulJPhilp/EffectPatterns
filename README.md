@@ -40,7 +40,7 @@ The absolute fundamentals of Effect. Start here to understand the core philosoph
 | [Process Streaming Data with Stream](./content/process-streaming-data-with-stream.mdx) | 🟡 **Intermediate** | Use Stream<A, E, R> to represent and process data that arrives over time, such as file reads, WebSocket messages, or paginated API results. |
 | [Understand Layers for Dependency Injection](./content/understand-layers-for-dependency-injection.mdx) | 🟡 **Intermediate** | A Layer is a blueprint that describes how to build a service, detailing its own requirements and any potential errors during its construction. |
 | [Use Chunk for High-Performance Collections](./content/use-chunk-for-high-performance-collections.mdx) | 🟡 **Intermediate** | Use Chunk&lt;A&gt; as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines. |
-| [Understand Fibers as Lightweight Threads](./content/understand-fibers-as-lightweight-threads.mdx) | 🔴 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
+| [Understand Fibers as Lightweight Threads](./content/understand-fibers-as-lightweight-threads.mdx) | 🟠 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
 
 ---
 
@@ -53,9 +53,9 @@ Getting started and running code, from simple scripts to long-running applicatio
 | [Execute Asynchronous Effects with Effect.runPromise](./content/execute-with-runpromise.mdx) | 🟢 **Beginner** | Use Effect.runPromise at the 'end of the world' to execute an asynchronous Effect and get its result as a JavaScript Promise. |
 | [Execute Synchronous Effects with Effect.runSync](./content/execute-with-runsync.mdx) | 🟢 **Beginner** | Use Effect.runSync at the 'end of the world' to execute a purely synchronous Effect and get its value directly. |
 | [Set Up a New Effect Project](./content/setup-new-project.mdx) | 🟢 **Beginner** | Initialize a new Node.js project with the necessary TypeScript configuration and Effect dependencies to start building. |
-| [Create a Managed Runtime for Scoped Resources](./content/create-managed-runtime-for-scoped-resources.mdx) | 🔴 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
-| [Create a Reusable Runtime from Layers](./content/create-reusable-runtime-from-layers.mdx) | 🔴 **Advanced** | Compile your application's layers into a reusable Runtime object to efficiently execute multiple effects that share the same context. |
-| [Execute Long-Running Apps with Effect.runFork](./content/execute-long-running-apps-with-runfork.mdx) | 🔴 **Advanced** | Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown. |
+| [Create a Managed Runtime for Scoped Resources](./content/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
+| [Create a Reusable Runtime from Layers](./content/create-reusable-runtime-from-layers.mdx) | 🟠 **Advanced** | Compile your application's layers into a reusable Runtime object to efficiently execute multiple effects that share the same context. |
+| [Execute Long-Running Apps with Effect.runFork](./content/execute-long-running-apps-with-runfork.mdx) | 🟠 **Advanced** | Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown. |
 
 ---
 
@@ -91,7 +91,7 @@ Strategies for building resilient applications by treating failures as first-cla
 | [Handle Flaky Operations with Retries and Timeouts](./content/handle-flaky-operations-with-retry-timeout.mdx) | 🟡 **Intermediate** | Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing operations, such as network requests. |
 | [Leverage Effect's Built-in Structured Logging](./content/leverage-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions (Effect.log, Effect.logInfo, etc.) for structured, configurable, and context-aware logging. |
 | [Model Optional Values Safely with Option](./content/model-optional-values-with-option.mdx) | 🟡 **Intermediate** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
-| [Handle Unexpected Errors by Inspecting the Cause](./content/handle-unexpected-errors-with-cause.mdx) | 🔴 **Advanced** | Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die). |
+| [Handle Unexpected Errors by Inspecting the Cause](./content/handle-unexpected-errors-with-cause.mdx) | 🟠 **Advanced** | Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die). |
 
 ---
 
@@ -113,12 +113,12 @@ Building and interacting with APIs, managing dependencies, and handling resource
 | [Trace Operations Across Services with Spans](./content/trace-operations-with-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
 | [Transform Data During Validation with Schema](./content/transform-data-with-schema.mdx) | 🟡 **Intermediate** | Use Schema.transform to safely convert data from one type to another during the parsing phase, such as from a string to a Date. |
 | [Understand Layers for Dependency Injection](./content/understand-layers-for-dependency-injection.mdx) | 🟡 **Intermediate** | A Layer is a blueprint that describes how to build a service, detailing its own requirements and any potential errors during its construction. |
-| [Add Caching by Wrapping a Layer](./content/add-caching-by-wrapping-a-layer.mdx) | 🔴 **Advanced** | Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service. |
-| [Build a Basic HTTP Server](./content/build-a-basic-http-server.mdx) | 🔴 **Advanced** | Combine Layer, Runtime, and Effect to create a simple, robust HTTP server using Node.js's built-in http module. |
-| [Create a Managed Runtime for Scoped Resources](./content/create-managed-runtime-for-scoped-resources.mdx) | 🔴 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
-| [Create a Reusable Runtime from Layers](./content/create-reusable-runtime-from-layers.mdx) | 🔴 **Advanced** | Compile your application's layers into a reusable Runtime object to efficiently execute multiple effects that share the same context. |
-| [Decouple Fibers with Queues and PubSub](./content/decouple-fibers-with-queue-pubsub.mdx) | 🔴 **Advanced** | Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers. |
-| [Implement Graceful Shutdown for Your Application](./content/implement-graceful-shutdown.mdx) | 🔴 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
+| [Add Caching by Wrapping a Layer](./content/add-caching-by-wrapping-a-layer.mdx) | 🟠 **Advanced** | Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service. |
+| [Build a Basic HTTP Server](./content/build-a-basic-http-server.mdx) | 🟠 **Advanced** | Combine Layer, Runtime, and Effect to create a simple, robust HTTP server using Node.js's built-in http module. |
+| [Create a Managed Runtime for Scoped Resources](./content/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
+| [Create a Reusable Runtime from Layers](./content/create-reusable-runtime-from-layers.mdx) | 🟠 **Advanced** | Compile your application's layers into a reusable Runtime object to efficiently execute multiple effects that share the same context. |
+| [Decouple Fibers with Queues and PubSub](./content/decouple-fibers-with-queue-pubsub.mdx) | 🟠 **Advanced** | Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers. |
+| [Implement Graceful Shutdown for Your Application](./content/implement-graceful-shutdown.mdx) | 🟠 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
 
 ---
 
@@ -154,12 +154,12 @@ How to test Effect code effectively, reliably, and deterministically.
 | [Process a Collection in Parallel with Effect.forEach](./content/process-collection-in-parallel-with-foreach.mdx) | 🟡 **Intermediate** | Use Effect.forEach with the `concurrency` option to process a collection of items in parallel with a fixed limit, preventing resource exhaustion. |
 | [Race Concurrent Effects for the Fastest Result](./content/race-concurrent-effects.mdx) | 🟡 **Intermediate** | Use Effect.race to run multiple effects concurrently and proceed with the result of the one that succeeds first, automatically interrupting the others. |
 | [Run Independent Effects in Parallel with Effect.all](./content/run-effects-in-parallel-with-all.mdx) | 🟡 **Intermediate** | Use Effect.all to run multiple independent effects concurrently and collect all their results into a single tuple. |
-| [Add Caching by Wrapping a Layer](./content/add-caching-by-wrapping-a-layer.mdx) | 🔴 **Advanced** | Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service. |
-| [Decouple Fibers with Queues and PubSub](./content/decouple-fibers-with-queue-pubsub.mdx) | 🔴 **Advanced** | Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers. |
-| [Execute Long-Running Apps with Effect.runFork](./content/execute-long-running-apps-with-runfork.mdx) | 🔴 **Advanced** | Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown. |
-| [Implement Graceful Shutdown for Your Application](./content/implement-graceful-shutdown.mdx) | 🔴 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
-| [Run Background Tasks with Effect.fork](./content/run-background-tasks-with-fork.mdx) | 🔴 **Advanced** | Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting. |
-| [Understand Fibers as Lightweight Threads](./content/understand-fibers-as-lightweight-threads.mdx) | 🔴 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
+| [Add Caching by Wrapping a Layer](./content/add-caching-by-wrapping-a-layer.mdx) | 🟠 **Advanced** | Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service. |
+| [Decouple Fibers with Queues and PubSub](./content/decouple-fibers-with-queue-pubsub.mdx) | 🟠 **Advanced** | Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers. |
+| [Execute Long-Running Apps with Effect.runFork](./content/execute-long-running-apps-with-runfork.mdx) | 🟠 **Advanced** | Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown. |
+| [Implement Graceful Shutdown for Your Application](./content/implement-graceful-shutdown.mdx) | 🟠 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
+| [Run Background Tasks with Effect.fork](./content/run-background-tasks-with-fork.mdx) | 🟠 **Advanced** | Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting. |
+| [Understand Fibers as Lightweight Threads](./content/understand-fibers-as-lightweight-threads.mdx) | 🟠 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
 
 ---
 
