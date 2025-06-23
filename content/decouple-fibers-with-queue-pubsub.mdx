@@ -1,0 +1,146 @@
+---
+title: "Decouple Fibers with Queues and PubSub"
+id: "decouple-fibers-with-queue-pubsub"
+skillLevel: "advanced"
+useCase:
+  - "Concurrency"
+  - "API Development"
+summary: "Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers."
+tags:
+  - "queue"
+  - "pubsub"
+  - "concurrency"
+  - "decoupling"
+  - "architecture"
+  - "messaging"
+  - "event-driven"
+rule:
+  description: "Use Queue for point-to-point work distribution and PubSub for broadcast messaging between fibers."
+related:
+  - "run-background-tasks-with-fork"
+  - "manage-shared-state-with-ref"
+author: "effect_website"
+---
+
+## Guideline
+
+To enable communication between independent, concurrent fibers, use one of Effect's specialized data structures:
+-   **``Queue<A>``**: For distributing work items. Each item put on the queue is taken and processed by only **one** consumer.
+-   **``PubSub<A>``**: For broadcasting events. Each message published is delivered to **every** subscriber.
+
+---
+
+## Rationale
+
+Directly calling functions between different logical parts of a concurrent application creates tight coupling, making the system brittle and hard to scale. `Queue` and `PubSub` solve this by acting as asynchronous, fiber-safe message brokers.
+
+This decouples the **producer** of a message from its **consumer(s)**. The producer doesn't need to know who is listening, or how many listeners there are. This allows you to build resilient, scalable systems where you can add or remove workers/listeners without changing the producer's code.
+
+Furthermore, bounded `Queue`s and `PubSub`s provide automatic **back-pressure**. If consumers can't keep up, the producer will automatically pause before adding new items, preventing your system from becoming overloaded.
+
+---
+
+## Good Example 1: `Queue` for a Work Pool
+
+A producer fiber adds jobs to a `Queue`, and a worker fiber takes jobs off the queue to process them.
+
+```typescript
+import { Effect, Queue } from "effect";
+
+const program = Effect.gen(function* () {
+  // Create a bounded queue that can hold a maximum of 10 items.
+  const queue = yield* Queue.bounded<string>(10);
+
+  // Producer Fiber: Add a job to the queue every second.
+  const producer = Effect.gen(function* () {
+    let i = 0;
+    while (true) {
+      yield* Queue.offer(queue, `job-${i++}`);
+      yield* Effect.sleep("1 second");
+    }
+  }).pipe(Effect.fork);
+
+  // Worker Fiber: Take a job from the queue and process it.
+  const worker = Effect.gen(function* () {
+    while (true) {
+      const job = yield* Queue.take(queue);
+      yield* Effect.log(`Processing ${job}...`);
+      yield* Effect.sleep("2 seconds"); // Simulate work
+    }
+  }).pipe(Effect.fork);
+
+  // Let them run for a while...
+  yield* Effect.sleep("10 seconds");
+});
+```
+
+## Good Example 2: `PubSub` for Event Broadcasting
+
+A publisher sends an event, and multiple subscribers react to it independently.
+
+```typescript
+import { Effect, PubSub } from "effect";
+
+const program = Effect.gen(function* () {
+  const pubsub = yield* PubSub.bounded<string>(10);
+
+  // Subscriber 1: The "Audit" service
+  const auditSub = PubSub.subscribe(pubsub).pipe(
+    Effect.flatMap((subscription) =>
+      Effect.gen(function* () {
+        while (true) {
+          const event = yield* Queue.take(subscription);
+          yield* Effect.log(`AUDIT: Received event: ${event}`);
+        }
+      }),
+    ),
+    Effect.fork,
+  );
+
+  // Subscriber 2: The "Notifier" service
+  const notifierSub = PubSub.subscribe(pubsub).pipe(
+    Effect.flatMap((subscription) =>
+      Effect.gen(function* () {
+        while (true) {
+          const event = yield* Queue.take(subscription);
+          yield* Effect.log(`NOTIFIER: Sending notification for: ${event}`);
+        }
+      }),
+    ),
+    Effect.fork,
+  );
+
+  // Give subscribers time to start
+  yield* Effect.sleep("1 second");
+
+  // Publisher: Publish an event that both subscribers will receive.
+  yield* PubSub.publish(pubsub, "user_logged_in");
+});
+```
+
+---
+
+## Anti-Pattern
+
+Simulating a queue with a simple `Ref<A[]>`. This approach is inefficient due to polling and is not safe from race conditions without manual, complex locking mechanisms. It also lacks critical features like back-pressure.
+
+```typescript
+import { Effect, Ref } from "effect";
+
+// ❌ WRONG: This is inefficient and prone to race conditions.
+const program = Effect.gen(function* () {
+  const queueRef = yield* Ref.make<string[]>([]);
+
+  // Producer adds to the array
+  const producer = Ref.update(queueRef, (q) => [...q, "new_item"]);
+
+  // Consumer has to constantly poll the array to see if it's empty.
+  const consumer = Ref.get(queueRef).pipe(
+    Effect.flatMap((q) =>
+      q.length > 0
+        ? Ref.set(queueRef, q.slice(1)).pipe(Effect.as(q[0]))
+        : Effect.sleep("1 second").pipe(Effect.flatMap(() => consumer)), // Inefficient polling
+    ),
+  );
+});
+```

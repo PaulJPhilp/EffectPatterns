@@ -1,0 +1,107 @@
+---
+title: "Understand Layers for Dependency Injection"
+id: "understand-layers-for-dependency-injection"
+skillLevel: "intermediate"
+useCase:
+  - "API Development"
+  - "Core Concepts"
+summary: "A Layer is a blueprint that describes how to build a service, detailing its own requirements and any potential errors during its construction."
+tags:
+  - "layer"
+  - "dependency-injection"
+  - "architecture"
+  - "service"
+  - "di"
+rule:
+  description: "Understand that a Layer is a blueprint describing how to construct a service and its dependencies."
+related:
+  - "compose-layers-using-pipe"
+  - "define-service-with-effect-service"
+  - "model-dependencies-as-services"
+author: "effect_website"
+---
+
+## Guideline
+
+Think of a `Layer<R, E, A>` as a recipe for building a service. It's a declarative blueprint that specifies:
+-   **`A` (Output)**: The service it provides (e.g., `HttpClient`).
+-   **`R` (Requirements)**: The other services it needs to be built (e.g., `ConfigService`).
+-   **`E` (Error)**: The errors that could occur during its construction (e.g., `ConfigError`).
+
+---
+
+## Rationale
+
+In Effect, you don't create service instances directly. Instead, you define `Layer`s that describe *how* to create them. This separation of declaration from implementation is the core of Effect's powerful dependency injection (DI) system.
+
+This approach has several key benefits:
+-   **Composability:** You can combine small, focused layers into a complete application layer (`Layer.merge`, `Layer.provide`).
+-   **Declarative Dependencies:** A layer's type signature explicitly documents its own dependencies, making your application's architecture clear and self-documenting.
+-   **Testability:** For testing, you can easily swap a "live" layer (e.g., one that connects to a real database) with a "test" layer (one that provides mock data) without changing any of your business logic.
+
+---
+
+## Good Example
+
+Here, we define a `Notifier` service that requires a `Logger` to be built. The `NotifierLive` layer's type signature, `Layer<Logger, never, Notifier>`, clearly documents this dependency.
+
+```typescript
+import { Effect, Layer } from "effect";
+
+// Define the services
+class Logger extends Effect.Tag("Logger")<Logger, { log: (msg: string) => Effect.Effect<void> }> {}
+class Notifier extends Effect.Tag("Notifier")<Notifier, { notify: (msg: string) => Effect.Effect<void> }> {}
+
+// Define a live implementation for the Logger
+const LoggerLive = Layer.succeed(Logger, {
+  log: (msg) => Effect.sync(() => console.log(`LOG: ${msg}`)),
+});
+
+// Define a live implementation for the Notifier.
+// It REQUIRES a Logger to be constructed.
+const NotifierLive = Layer.effect(
+  Notifier,
+  Effect.gen(function* () {
+    const logger = yield* Logger; // Get the dependency from the context
+    return {
+      notify: (msg) => logger.log(`Notifying: ${msg}`),
+    };
+  }),
+);
+
+// The type of NotifierLive is Layer<Logger, never, Notifier>
+// This tells us it provides a Notifier, but needs a Logger.
+
+// To create a runnable program, we must satisfy all requirements.
+const AppLayer = Layer.provide(NotifierLive, LoggerLive);
+
+const program = Notifier.pipe(Effect.flatMap((n) => n.notify("Hello, World!")));
+
+// We provide the fully composed AppLayer to the program.
+Effect.runSync(Effect.provide(program, AppLayer));
+```
+
+---
+
+## Anti-Pattern
+
+Manually creating and passing service instances around. This is the "poor man's DI" and leads to tightly coupled code that is difficult to test and maintain.
+
+```typescript
+// ❌ WRONG: Manual instantiation and prop-drilling.
+class LoggerImpl {
+  log(msg: string) { console.log(msg); }
+}
+
+class NotifierImpl {
+  constructor(private logger: LoggerImpl) {}
+  notify(msg: string) { this.logger.log(msg); }
+}
+
+// Dependencies must be created and passed in manually.
+const logger = new LoggerImpl();
+const notifier = new NotifierImpl(logger);
+
+// This is not easily testable without creating real instances.
+notifier.notify("Hello");
+```

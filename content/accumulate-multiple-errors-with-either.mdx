@@ -1,0 +1,97 @@
+---
+title: "Accumulate Multiple Errors with Either"
+id: "accumulate-multiple-errors-with-either"
+skillLevel: "intermediate"
+useCase:
+  - "Error Management"
+  - "Domain Modeling"
+summary: "Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one."
+tags:
+  - "either"
+  - "validation"
+  - "error-accumulation"
+  - "schema"
+  - "data"
+rule:
+  description: "Use Either to accumulate multiple validation errors instead of failing on the first one."
+related:
+  - "define-contracts-with-schema"
+  - "distinguish-not-found-from-errors"
+author: "effect_website"
+---
+
+## Guideline
+
+When you need to perform multiple validation checks and collect all failures, use the ``Either<E, A>`` data type. ``Either`` represents a value that can be one of two possibilities: a ``Left<E>`` (typically for failure) or a ``Right<A>`` (typically for success).
+
+---
+
+## Rationale
+
+The `Effect` error channel is designed to short-circuit. The moment an `Effect` fails, the entire computation stops and the error is propagated. This is perfect for handling unrecoverable errors like a lost database connection.
+
+However, for tasks like validating a user's input, this is poor user experience. You want to show the user all of their mistakes at once.
+
+`Either` is the solution. Since it's a pure data structure, you can run multiple checks that each return an `Either`, and then combine the results to accumulate all the `Left` (error) values. The `Effect/Schema` module uses this pattern internally to provide powerful error accumulation.
+
+---
+
+## Good Example
+
+Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
+
+```typescript
+import { Effect, Schema } from "effect";
+
+const UserSchema = Schema.Struct({
+  name: Schema.String.pipe(Schema.minLength(3)),
+  email: Schema.String.pipe(Schema.pattern(/@/)),
+});
+
+const invalidInput = {
+  name: "Al", // Too short
+  email: "bob-no-at-sign.com", // Invalid pattern
+};
+
+// Use { allErrors: true } to enable error accumulation
+const decoded = Schema.decode(UserSchema)(invalidInput, { allErrors: true });
+
+const program = Effect.match(decoded, {
+  onFailure: (error) => {
+    // The error contains a tree of all validation failures
+    console.log("Validation failed with multiple errors:");
+    error.errors.forEach((e, i) => console.log(`${i + 1}. ${e.message}`));
+  },
+  onSuccess: (user) => console.log("User is valid:", user),
+});
+
+Effect.runSync(program);
+/*
+Output:
+Validation failed with multiple errors:
+1. name must be a string at least 3 character(s) long
+2. email must be a string matching the pattern /@/
+*/
+```
+
+---
+
+## Anti-Pattern
+
+Using `Effect`'s error channel for validation that requires multiple error messages. The code below will only ever report the first error it finds, because `Effect.fail` short-circuits the entire `Effect.gen` block.
+
+```typescript
+import { Effect } from "effect";
+
+const validateWithEffect = (input: { name: string; email: string }) =>
+  Effect.gen(function* () {
+    if (input.name.length < 3) {
+      // The program will fail here and never check the email.
+      return yield* Effect.fail("Name is too short.");
+    }
+    if (!input.email.includes("@")) {
+      return yield* Effect.fail("Email is invalid.");
+    }
+    return yield* Effect.succeed(input);
+  });
+```

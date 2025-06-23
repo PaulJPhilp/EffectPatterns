@@ -6,14 +6,18 @@
 	"scripts": {
 		"dev": "echo 'Development server not yet implemented'",
 		"build": "echo 'Build script not yet implemented'",
-		"start": "echo 'Start script not yet implemented'"
+		"start": "echo 'Start script not yet implemented'",
+		"readme": "tsx scripts/generate_readme.ts",
+		"rules": "tsx scripts/generate_rules.ts"
 	},
 	"dependencies": {
-		"effect": "^3.4.4"
+		"effect": "^3.16.8"
 	},
 	"devDependencies": {
-		"typescript": "^5.5.2",
-		"tsx": "^4.15.7"
+		"@types/node": "^24.0.3",
+		"gray-matter": "^4.0.3",
+		"tsx": "^4.20.3",
+		"typescript": "^5.8.3"
 	},
 	"keywords": [
 		"effect",

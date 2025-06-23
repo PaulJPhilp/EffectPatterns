@@ -1,0 +1,152 @@
+[
+  {
+    "id": "access-config-in-context",
+    "title": "Access Configuration from the Context",
+    "description": "Access configuration from the Effect context."
+  },
+  {
+    "id": "avoid-long-andthen-chains",
+    "title": "Avoid Long Chains of .andThen; Use Generators Instead",
+    "description": "Prefer generators over long chains of .andThen."
+  },
+  {
+    "id": "control-flow-with-combinators",
+    "title": "Control Flow with Conditional Combinators",
+    "description": "Use conditional combinators for control flow."
+  },
+  {
+    "id": "create-managed-runtime-for-scoped-resources",
+    "title": "Create a Managed Runtime for Scoped Resources",
+    "description": "Create a managed runtime for scoped resources."
+  },
+  {
+    "id": "create-reusable-runtime-from-layers",
+    "title": "Create a Reusable Runtime from Layers",
+    "description": "Create a reusable runtime from layers."
+  },
+  {
+    "id": "create-pre-resolved-effect",
+    "title": "Create Pre-resolved Effects with succeed and fail",
+    "description": "Create pre-resolved effects with succeed and fail."
+  },
+  {
+    "id": "define-config-schema",
+    "title": "Define a Type-Safe Configuration Schema",
+    "description": "Define a type-safe configuration schema."
+  },
+  {
+    "id": "define-contracts-with-schema",
+    "title": "Define Contracts Upfront with Schema",
+    "description": "Define contracts upfront with schema."
+  },
+  {
+    "id": "define-tagged-errors",
+    "title": "Define Type-Safe Errors with Data.TaggedError",
+    "description": "Define type-safe errors with Data.TaggedError."
+  },
+  {
+    "id": "distinguish-not-found-from-errors",
+    "title": "Distinguish 'Not Found' from Errors",
+    "description": "Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures."
+  },
+  {
+    "id": "execute-with-runpromise",
+    "title": "Execute Asynchronous Effects with Effect.runPromise",
+    "description": "Execute asynchronous effects with Effect.runPromise."
+  },
+  {
+    "id": "execute-with-runsync",
+    "title": "Execute Synchronous Effects with Effect.runSync",
+    "description": "Execute synchronous effects with Effect.runSync."
+  },
+  {
+    "id": "handle-errors-with-catch",
+    "title": "Handle Errors with catchTag, catchTags, and catchAll",
+    "description": "Handle errors with catchTag, catchTags, and catchAll."
+  },
+  {
+    "id": "handle-unexpected-errors-with-cause",
+    "title": "Handle Unexpected Errors by Inspecting the Cause",
+    "description": "Handle unexpected errors by inspecting the cause."
+  },
+  {
+    "id": "leverage-structured-logging",
+    "title": "Leverage Effect's Built-in Structured Logging",
+    "description": "Leverage Effect's built-in structured logging."
+  },
+  {
+    "id": "model-dependencies-as-services",
+    "title": "Model Dependencies as Services",
+    "description": "Model dependencies as services."
+  },
+  {
+    "id": "model-optional-values-with-option",
+    "title": "Model Optional Values Safely with Option",
+    "description": "Use Option<A> to explicitly model values that may be absent, avoiding null or undefined."
+  },
+  {
+    "id": "model-validated-domain-types-with-brand",
+    "title": "Model Validated Domain Types with Brand",
+    "description": "Model validated domain types with Brand."
+  },
+  {
+    "id": "parse-with-schema-decode",
+    "title": "Parse and Validate Data with Schema.decode",
+    "description": "Parse and validate data with Schema.decode."
+  },
+  {
+    "id": "provide-config-layer",
+    "title": "Provide Configuration to Your App via a Layer",
+    "description": "Provide configuration to your app via a Layer."
+  },
+  {
+    "id": "setup-new-project",
+    "title": "Set Up a New Effect Project",
+    "description": "Set up a new Effect project."
+  },
+  {
+    "id": "transform-effect-values",
+    "title": "Transform Effect Values with map and flatMap",
+    "description": "Transform Effect values with map and flatMap."
+  },
+  {
+    "id": "effects-are-lazy",
+    "title": "Understand that Effects are Lazy Blueprints",
+    "description": "Understand that effects are lazy blueprints."
+  },
+  {
+    "id": "use-pipe-for-composition",
+    "title": "Use .pipe for Composition",
+    "description": "Use .pipe for composition."
+  },
+  {
+    "id": "use-gen-for-business-logic",
+    "title": "Use Effect.gen for Business Logic",
+    "description": "Use Effect.gen for business logic."
+  },
+  {
+    "id": "use-default-layer-for-tests",
+    "title": "Use the Auto-Generated .Default Layer in Tests",
+    "description": "Use the auto-generated .Default layer in tests."
+  },
+  {
+    "id": "wrap-asynchronous-computations",
+    "title": "Wrap Asynchronous Computations with tryPromise",
+    "description": "Wrap asynchronous computations with tryPromise."
+  },
+  {
+    "id": "wrap-synchronous-computations",
+    "title": "Wrap Synchronous Computations with sync and try",
+    "description": "Wrap synchronous computations with sync and try."
+  },
+  {
+    "id": "write-sequential-code-with-gen",
+    "title": "Write Sequential Code with Effect.gen",
+    "description": "Write sequential code with Effect.gen."
+  },
+  {
+    "id": "write-tests-that-adapt-to-application-code",
+    "title": "Write Tests That Adapt to Application Code",
+    "description": "Write tests that adapt to application code."
+  }
+]

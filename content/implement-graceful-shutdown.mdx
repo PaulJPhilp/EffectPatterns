@@ -1,0 +1,106 @@
+---
+title: "Implement Graceful Shutdown for Your Application"
+id: "implement-graceful-shutdown"
+skillLevel: "advanced"
+useCase:
+  - "API Development"
+  - "Concurrency"
+summary: "Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released."
+tags:
+  - "graceful-shutdown"
+  - "resource-management"
+  - "server"
+  - "fiber"
+  - "runFork"
+  - "interrupt"
+  - "finalizer"
+rule:
+  description: "Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications."
+related:
+  - "execute-long-running-apps-with-runfork"
+  - "create-managed-runtime-for-scoped-resources"
+  - "build-a-basic-http-server"
+author: "effect_website"
+---
+
+## Guideline
+
+To enable graceful shutdown for a long-running application:
+1.  Define services with cleanup logic in `scoped` `Layer`s using `Effect.addFinalizer` or `Effect.acquireRelease`.
+2.  Launch your main application `Effect` using `Effect.runFork` to get a `Fiber` handle to the running process.
+3.  Set up listeners for process signals like `SIGINT` (Ctrl+C) and `SIGTERM`.
+4.  In the signal handler, call `Fiber.interrupt` on your application's fiber.
+
+---
+
+## Rationale
+
+When a server process is terminated, you need to ensure that it cleans up properly. This includes closing database connections, finishing in-flight requests, and releasing file handles. Failing to do so can lead to resource leaks or data corruption.
+
+Effect's structured concurrency makes this robust and easy. When a fiber is interrupted, Effect guarantees that it will run all finalizers registered within that fiber's scope, in the reverse order they were acquired.
+
+By launching your app with `runFork`, you get a `Fiber` that represents the entire application. Triggering `Fiber.interrupt` on this top-level fiber initiates a clean, orderly shutdown sequence for all its resources.
+
+---
+
+## Good Example
+
+This example creates a server with a "scoped" database connection. It uses `runFork` to start the server and sets up a `SIGINT` handler to interrupt the server fiber, which in turn guarantees the database finalizer is called.
+
+```typescript
+import { Effect, Layer, Fiber } from "effect";
+import * as http from "http";
+
+// 1. A service with a finalizer for cleanup
+class Database extends Effect.Tag("Database")<Database, { query: () => Effect.Effect<string> }> {}
+const DatabaseLive = Layer.scoped(
+  Database,
+  Effect.acquireRelease(
+    Effect.log("Acquiring DB connection").pipe(Effect.as({ query: () => Effect.succeed("data") })),
+    () => Effect.log("DB connection closed."),
+  ),
+);
+
+// 2. The main server logic
+const server = Effect.gen(function* () {
+  const db = yield* Database;
+  const server = http.createServer((_req, res) => {
+    Effect.runFork(
+      db.query().pipe(
+        Effect.map((data) => res.end(data)),
+      ),
+    );
+  });
+  // Add a finalizer to the server itself
+  yield* Effect.addFinalizer(() => Effect.sync(() => server.close()));
+  server.listen(3000);
+  yield* Effect.log("Server started on port 3000. Press Ctrl+C to exit.");
+  // This will keep the effect running forever until interrupted
+  yield* Effect.never;
+});
+
+// 3. Provide the layer and launch with runFork
+const app = Effect.provide(server, DatabaseLive);
+const appFiber = Effect.runFork(app);
+
+// 4. Listen for Ctrl+C and interrupt the fiber
+process.on("SIGINT", () => {
+  console.log("\nReceived SIGINT. Shutting down gracefully...");
+  Effect.runFork(Fiber.interrupt(appFiber));
+});
+```
+
+---
+
+## Anti-Pattern
+
+Letting the Node.js process exit without proper cleanup. If you run a long-running effect with `Effect.runPromise` or don't handle OS signals, pressing Ctrl+C will terminate the process abruptly, and none of your `Effect` finalizers will have a chance to run.
+
+```typescript
+import { Effect } from "effect";
+import { app } from "./somewhere"; // From previous example
+
+// ❌ WRONG: This will run the server, but Ctrl+C will kill it instantly.
+// The database connection finalizer will NOT be called.
+Effect.runPromise(app);
+```
