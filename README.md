@@ -4,6 +4,8 @@ A community-driven knowledge base of practical, goal-oriented patterns for build
 
 This repository is designed to be a living document that helps developers move from core concepts to advanced architectural strategies by focusing on the "why" behind the code.
 
+**Looking for machine-readable rules for AI IDEs and coding agents? See the [AI Coding Rules](#ai-coding-rules) section below.**
+
 
 ## Table of Contents
 
@@ -168,6 +170,15 @@ How to test Effect code effectively, reliably, and deterministically.
 | [Add Custom Metrics to Your Application](./content/add-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
 | [Trace Operations Across Services with Spans](./content/trace-operations-with-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
 
+
+## AI Coding Rules
+
+This project provides a machine-readable set of coding rules for AI-powered IDEs and coding agents.
+
+You can find the latest rules files in the [rules directory](./rules/). These files are designed for integration with tools like Cursor, GitHub Copilot, and other AI coding assistants.
+
+- **rules.md**: Human-readable rules summary
+- **rules.json**: Structured rules for programmatic consumption
 
 ---
 

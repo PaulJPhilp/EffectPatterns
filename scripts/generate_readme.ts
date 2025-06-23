@@ -113,7 +113,7 @@ function generateUseCaseSection(
 	const skillLevelMap = {
 		beginner: "🟢 **Beginner**",
 		intermediate: "🟡 **Intermediate**",
-		advanced: "🔴 **Advanced**",
+		advanced: "🟠 **Advanced**",
 	};
 
 	const description =
@@ -148,6 +148,8 @@ function generateReadmeContent(
 A community-driven knowledge base of practical, goal-oriented patterns for building robust applications with Effect-TS.
 
 This repository is designed to be a living document that helps developers move from core concepts to advanced architectural strategies by focusing on the "why" behind the code.
+
+**Looking for machine-readable rules for AI IDEs and coding agents? See the [AI Coding Rules](#ai-coding-rules) section below.**
 `;
 
 	const useCaseOrder = getDynamicUseCaseOrder(groupedPatterns);
@@ -159,6 +161,8 @@ This repository is designed to be a living document that helps developers move f
 	const sections = useCaseOrder.map((useCase) =>
 		generateUseCaseSection(useCase, groupedPatterns[useCase] || []),
 	).join("\n---\n\n");
+
+	const aiRulesSection = `## AI Coding Rules\n\nThis project provides a machine-readable set of coding rules for AI-powered IDEs and coding agents.\n\nYou can find the latest rules files in the [rules directory](./rules/). These files are designed for integration with tools like Cursor, GitHub Copilot, and other AI coding assistants.\n\n- **rules.md**: Human-readable rules summary\n- **rules.json**: Structured rules for programmatic consumption`;
 
 	const footer = `---
 
@@ -206,7 +210,7 @@ This is a community-driven project, and we welcome contributions! Whether it's a
 Please read our **[CONTRIBUTING.md](./CONTRIBUTING.md)** file for guidelines on how to get started.
 `;
 
-	return [header, toc, "---", sections, footer].join("\n\n");
+	return [header, toc, "---", sections, aiRulesSection, footer].join("\n\n");
 }
 
 // --- MAIN EXECUTION ---
