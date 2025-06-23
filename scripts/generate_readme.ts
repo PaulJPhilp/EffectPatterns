@@ -18,7 +18,16 @@ const USE_CASE_CONFIG = {
 	"Testing": "How to test Effect code effectively, reliably, and deterministically.",
 };
 
-const USE_CASE_ORDER = Object.keys(USE_CASE_CONFIG);
+// Dynamically build the use case list from patterns
+function getDynamicUseCaseOrder(groupedPatterns: Record<string, PatternFrontmatter[]>): string[] {
+  // Start with known use cases (in order)
+  const known = Object.keys(USE_CASE_CONFIG);
+  // Find any unknown use cases
+  const all = Object.keys(groupedPatterns);
+  const unknown = all.filter((uc) => !known.includes(uc)).sort();
+  return [...known, ...unknown];
+}
+
 
 // --- TYPE DEFINITIONS ---
 
@@ -81,9 +90,14 @@ function groupPatternsByUseCase(
 		}
 	}
 
-	// Sort patterns within each group for consistent ordering
+	// Sort patterns within each group: first by skill level, then by title
+	const skillOrder = { beginner: 0, intermediate: 1, advanced: 2 };
 	for (const useCase in grouped) {
-		grouped[useCase].sort((a, b) => a.title.localeCompare(b.title));
+		grouped[useCase].sort((a, b) => {
+			const skillDiff = skillOrder[a.skillLevel] - skillOrder[b.skillLevel];
+			if (skillDiff !== 0) return skillDiff;
+			return a.title.localeCompare(b.title);
+		});
 	}
 
 	return grouped;
@@ -136,11 +150,13 @@ A community-driven knowledge base of practical, goal-oriented patterns for build
 This repository is designed to be a living document that helps developers move from core concepts to advanced architectural strategies by focusing on the "why" behind the code.
 `;
 
-	const toc = `## Table of Contents\n\n${USE_CASE_ORDER.map(
+	const useCaseOrder = getDynamicUseCaseOrder(groupedPatterns);
+
+	const toc = `## Table of Contents\n\n${useCaseOrder.map(
 		(useCase) => `- [${useCase}](#${useCase.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-")})`,
 	).join("\n")}`;
 
-	const sections = USE_CASE_ORDER.map((useCase) =>
+	const sections = useCaseOrder.map((useCase) =>
 		generateUseCaseSection(useCase, groupedPatterns[useCase] || []),
 	).join("\n---\n\n");
 
