@@ -5,9 +5,29 @@
     "description": "Access configuration from the Effect context."
   },
   {
+    "id": "accumulate-multiple-errors-with-either",
+    "title": "Accumulate Multiple Errors with Either",
+    "description": "Use Either to accumulate multiple validation errors instead of failing on the first one."
+  },
+  {
+    "id": "add-caching-by-wrapping-a-layer",
+    "title": "Add Caching by Wrapping a Layer",
+    "description": "Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation."
+  },
+  {
+    "id": "add-custom-metrics",
+    "title": "Add Custom Metrics to Your Application",
+    "description": "Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring."
+  },
+  {
     "id": "avoid-long-andthen-chains",
     "title": "Avoid Long Chains of .andThen; Use Generators Instead",
     "description": "Prefer generators over long chains of .andThen."
+  },
+  {
+    "id": "build-a-basic-http-server",
+    "title": "Build a Basic HTTP Server",
+    "description": "Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server."
   },
   {
     "id": "control-flow-with-combinators",
@@ -28,6 +48,11 @@
     "id": "create-pre-resolved-effect",
     "title": "Create Pre-resolved Effects with succeed and fail",
     "description": "Create pre-resolved effects with succeed and fail."
+  },
+  {
+    "id": "decouple-fibers-with-queue-pubsub",
+    "title": "Decouple Fibers with Queues and PubSub",
+    "description": "Use Queue for point-to-point work distribution and PubSub for broadcast messaging between fibers."
   },
   {
     "id": "define-config-schema",
@@ -55,6 +80,11 @@
     "description": "Execute asynchronous effects with Effect.runPromise."
   },
   {
+    "id": "execute-long-running-apps-with-runfork",
+    "title": "Execute Long-Running Apps with Effect.runFork",
+    "description": "Use Effect.runFork to launch a long-running application as a manageable, detached fiber."
+  },
+  {
     "id": "execute-with-runsync",
     "title": "Execute Synchronous Effects with Effect.runSync",
     "description": "Execute synchronous effects with Effect.runSync."
@@ -65,14 +95,29 @@
     "description": "Handle errors with catchTag, catchTags, and catchAll."
   },
   {
+    "id": "handle-flaky-operations-with-retry-timeout",
+    "title": "Handle Flaky Operations with Retries and Timeouts",
+    "description": "Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects."
+  },
+  {
     "id": "handle-unexpected-errors-with-cause",
     "title": "Handle Unexpected Errors by Inspecting the Cause",
     "description": "Handle unexpected errors by inspecting the cause."
   },
   {
+    "id": "implement-graceful-shutdown",
+    "title": "Implement Graceful Shutdown for Your Application",
+    "description": "Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications."
+  },
+  {
     "id": "leverage-structured-logging",
     "title": "Leverage Effect's Built-in Structured Logging",
     "description": "Leverage Effect's built-in structured logging."
+  },
+  {
+    "id": "manage-shared-state-with-ref",
+    "title": "Manage Shared State Safely with Ref",
+    "description": "Use Ref to manage shared, mutable state concurrently, ensuring atomicity."
   },
   {
     "id": "model-dependencies-as-services",
@@ -90,9 +135,24 @@
     "description": "Model validated domain types with Brand."
   },
   {
+    "id": "organize-layers-into-composable-modules",
+    "title": "Organize Layers into Composable Modules",
+    "description": "Organize services into modular Layers that are composed hierarchically to manage complexity in large applications."
+  },
+  {
     "id": "parse-with-schema-decode",
     "title": "Parse and Validate Data with Schema.decode",
     "description": "Parse and validate data with Schema.decode."
+  },
+  {
+    "id": "process-collection-in-parallel-with-foreach",
+    "title": "Process a Collection in Parallel with Effect.forEach",
+    "description": "Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit."
+  },
+  {
+    "id": "process-streaming-data-with-stream",
+    "title": "Process Streaming Data with Stream",
+    "description": "Use Stream to model and process data that arrives over time in a composable, efficient way."
   },
   {
     "id": "provide-config-layer",
@@ -100,9 +160,39 @@
     "description": "Provide configuration to your app via a Layer."
   },
   {
+    "id": "race-concurrent-effects",
+    "title": "Race Concurrent Effects for the Fastest Result",
+    "description": "Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers."
+  },
+  {
+    "id": "run-background-tasks-with-fork",
+    "title": "Run Background Tasks with Effect.fork",
+    "description": "Use Effect.fork to start a non-blocking background process and manage its lifecycle via its Fiber."
+  },
+  {
+    "id": "run-effects-in-parallel-with-all",
+    "title": "Run Independent Effects in Parallel with Effect.all",
+    "description": "Use Effect.all to execute a collection of independent effects concurrently."
+  },
+  {
     "id": "setup-new-project",
     "title": "Set Up a New Effect Project",
     "description": "Set up a new Effect project."
+  },
+  {
+    "id": "solve-promise-problems-with-effect",
+    "title": "Solve Promise Problems with Effect",
+    "description": "Recognize that Effect solves the core limitations of Promises: untyped errors, no dependency injection, and no cancellation."
+  },
+  {
+    "id": "trace-operations-with-spans",
+    "title": "Trace Operations Across Services with Spans",
+    "description": "Use Effect.withSpan to create custom tracing spans for important operations."
+  },
+  {
+    "id": "transform-data-with-schema",
+    "title": "Transform Data During Validation with Schema",
+    "description": "Use Schema.transform to safely convert data types during the validation and parsing process."
   },
   {
     "id": "transform-effect-values",
@@ -110,14 +200,34 @@
     "description": "Transform Effect values with map and flatMap."
   },
   {
+    "id": "understand-fibers-as-lightweight-threads",
+    "title": "Understand Fibers as Lightweight Threads",
+    "description": "Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency."
+  },
+  {
+    "id": "understand-layers-for-dependency-injection",
+    "title": "Understand Layers for Dependency Injection",
+    "description": "Understand that a Layer is a blueprint describing how to construct a service and its dependencies."
+  },
+  {
     "id": "effects-are-lazy",
     "title": "Understand that Effects are Lazy Blueprints",
     "description": "Understand that effects are lazy blueprints."
   },
   {
+    "id": "understand-effect-channels",
+    "title": "Understand the Three Effect Channels (A, E, R)",
+    "description": "Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R)."
+  },
+  {
     "id": "use-pipe-for-composition",
     "title": "Use .pipe for Composition",
     "description": "Use .pipe for composition."
+  },
+  {
+    "id": "use-chunk-for-high-performance-collections",
+    "title": "Use Chunk for High-Performance Collections",
+    "description": "Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance."
   },
   {
     "id": "use-gen-for-business-logic",
