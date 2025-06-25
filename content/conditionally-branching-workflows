@@ -1,0 +1,103 @@
+---
+title: "Conditionally Branching Workflows"
+id: "conditionally-branching-workflows"
+skillLevel: "intermediate"
+useCase:
+  - "Core Concepts"
+  - "Error Management"
+summary: "Use predicate-based operators like Effect.filter and Effect.if to make decisions and control the flow of your application based on runtime values."
+tags:
+  - "predicate"
+  - "filter"
+  - "if"
+  - "validation"
+  - "control-flow"
+  - "conditional"
+rule:
+  description: "Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching."
+related:
+  - "control-flow-with-combinators"
+  - "model-validated-domain-types-with-brand"
+author: "effect_website"
+---
+
+## Guideline
+
+To make decisions based on a successful value within an `Effect` pipeline, use predicate-based operators:
+-   **To Validate and Fail:** Use `Effect.filter(predicate)` to stop the workflow if a condition is not met.
+-   **To Choose a Path:** Use `Effect.if(condition, { onTrue, onFalse })` or `Effect.gen` to execute different effects based on a condition.
+
+---
+
+## Rationale
+
+This pattern allows you to embed decision-making logic directly into your composition pipelines, making your code more declarative and readable. It solves two key problems:
+
+1.  **Separation of Concerns:** It cleanly separates the logic of producing a value from the logic of validating or making decisions about that value.
+2.  **Reusable Business Logic:** A predicate function (e.g., `const isAdmin = (user: User) => ...`) becomes a named, reusable, and testable piece of business logic, far superior to scattering inline `if` statements throughout your code.
+
+Using these operators turns conditional logic into a composable part of your `Effect`, rather than an imperative statement that breaks the flow.
+
+---
+
+## Good Example: Validating a User
+
+Here, we use `Effect.filter` with named predicates to validate a user before proceeding. The intent is crystal clear, and the business rules (`isActive`, `isAdmin`) are reusable.
+
+```typescript
+import { Effect } from "effect";
+
+interface User {
+  id: number;
+  status: "active" | "inactive";
+  roles: string[];
+}
+
+const findUser = (id: number): Effect.Effect<User, "DbError"> =>
+  Effect.succeed({ id, status: "active", roles: ["admin"] });
+
+// Reusable, testable predicates that document business rules.
+const isActive = (user: User) => user.status === "active";
+const isAdmin = (user: User) => user.roles.includes("admin");
+
+const program = (id: number) =>
+  findUser(id).pipe(
+    // If this predicate is false, the effect fails.
+    Effect.filter(isActive, () => "UserIsInactive" as const),
+    // If this one is false, the effect fails.
+    Effect.filter(isAdmin, () => "UserIsNotAdmin" as const),
+    // This part only runs if both filters pass.
+    Effect.map((user) => `Welcome, admin user #${user.id}!`),
+  );
+
+// We can then handle the specific failures in a type-safe way.
+const handled = program(123).pipe(
+  Effect.catchTag("UserIsNotAdmin", () =>
+    Effect.succeed("Access denied: requires admin role."),
+  ),
+);
+```
+
+---
+
+## Anti-Pattern
+
+Using `Effect.flatMap` or `Effect.gen` with manual, inline `if` statements for simple validation. This is more verbose, less declarative, and mixes the validation logic directly with the workflow logic.
+
+```typescript
+import { Effect } from "effect";
+import { findUser } from "./somewhere";
+
+// ❌ This is more verbose and less readable for simple validation.
+const program = (id: number) =>
+  findUser(id).pipe(
+    Effect.flatMap((user) => {
+      // The business rule is hidden inside an if statement.
+      if (user.status === "active" && user.roles.includes("admin")) {
+        return Effect.succeed(user);
+      }
+      // You have to manually create and handle the failure case.
+      return Effect.fail("ValidationFailed" as const);
+    }),
+  );
+```

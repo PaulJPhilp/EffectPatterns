@@ -45,6 +45,11 @@
     "description": "Create a reusable runtime from layers."
   },
   {
+    "id": "create-a-testable-http-client-service",
+    "title": "Create a Testable HTTP Client Service",
+    "description": "Define an HttpClient service with distinct Live and Test layers to enable testable API interactions."
+  },
+  {
     "id": "create-pre-resolved-effect",
     "title": "Create Pre-resolved Effects with succeed and fail",
     "description": "Create pre-resolved effects with succeed and fail."
@@ -113,6 +118,11 @@
     "id": "leverage-structured-logging",
     "title": "Leverage Effect's Built-in Structured Logging",
     "description": "Leverage Effect's built-in structured logging."
+  },
+  {
+    "id": "manage-resource-lifecycles-with-scope",
+    "title": "Manage Resource Lifecycles with Scope",
+    "description": "Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees."
   },
   {
     "id": "manage-shared-state-with-ref",

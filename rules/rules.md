@@ -607,6 +607,123 @@ For a long-running application, avoid providing layers and running an effect
 in a single operation. This forces Effect to rebuild the dependency graph on
 every execution.
 
+--- (Pattern Start: create-a-testable-http-client-service) ---
+
+## Create a Testable HTTP Client Service
+
+**Rule:** Define an HttpClient service with distinct Live and Test layers to enable testable API interactions.
+
+### Full Pattern Content:
+
+## Guideline
+
+To interact with external APIs, define an `HttpClient` service. Create two separate `Layer` implementations for this service:
+1.  **`HttpClientLive`**: The production implementation that uses a real HTTP client (like `fetch`) to make network requests.
+2.  **`HttpClientTest`**: A test implementation that returns mock data, allowing you to test your business logic without making actual network calls.
+
+---
+
+## Rationale
+
+Directly using `fetch` in your business logic makes it nearly impossible to test. Your tests would become slow, flaky (dependent on network conditions), and could have unintended side effects.
+
+By abstracting the HTTP client into a service, you decouple your application's logic from the specific implementation of how HTTP requests are made. Your business logic depends only on the abstract `HttpClient` interface. In production, you provide the `Live` layer. In tests, you provide the `Test` layer. This makes your tests fast, deterministic, and reliable.
+
+---
+
+## Good Example
+
+### 1. Define the Service
+
+```typescript
+// src/services/HttpClient.ts
+import { Effect, Data } from "effect";
+
+// Define potential errors
+export class HttpError extends Data.TaggedError("HttpError")<{
+  readonly error: unknown;
+}> {}
+
+// Define the service interface
+export class HttpClient extends Effect.Tag("HttpClient")<
+  HttpClient,
+  {
+    readonly get: (
+      url: string,
+    ) => Effect.Effect<unknown, HttpError>;
+  }
+>() {}
+```
+
+### 2. Create the Live Implementation
+
+```typescript
+// src/services/HttpClientLive.ts
+import { Effect, Layer } from "effect";
+import { HttpClient, HttpError } from "./HttpClient";
+
+export const HttpClientLive = Layer.succeed(
+  HttpClient,
+  HttpClient.of({
+    get: (url) =>
+      Effect.tryPromise({
+        try: () => fetch(url).then((res) => res.json()),
+        catch: (error) => new HttpError({ error }),
+      }),
+  }),
+);
+```
+
+### 3. Create the Test Implementation
+
+```typescript
+// src/services/HttpClientTest.ts
+import { Effect, Layer } from "effect";
+import { HttpClient } from "./HttpClient";
+
+export const HttpClientTest = Layer.succeed(
+  HttpClient,
+  HttpClient.of({
+    get: (url) => Effect.succeed({ mock: "data", url }),
+  }),
+);
+```
+
+### 4. Usage in Business Logic
+
+Your business logic is now clean and only depends on the abstract `HttpClient`.
+
+```typescript
+// src/features/User/UserService.ts
+import { Effect } from "effect";
+import { HttpClient } from "../../services/HttpClient";
+
+export const getUserFromApi = (id: number) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient;
+    const data = yield* client.get(`https://api.example.com/users/${id}`);
+    // ... logic to parse and return user
+    return data;
+  });
+```
+
+---
+
+## Anti-Pattern
+
+Calling `fetch` directly from within your business logic functions. This creates a hard dependency on the global `fetch` API, making the function difficult to test and reuse.
+
+```typescript
+import { Effect } from "effect";
+
+// ❌ WRONG: This function is not easily testable.
+export const getUserDirectly = (id: number) =>
+  Effect.tryPromise({
+    try: () => fetch(`https://api.example.com/users/${id}`).then((res) => res.json()),
+    catch: () => "ApiError" as const,
+  });
+```
+
 --- (Pattern Start: create-pre-resolved-effect) ---
 
 ## Create Pre-resolved Effects with succeed and fail
@@ -1455,6 +1572,92 @@ and context-aware.
 
 Calling `console.log` directly within an Effect composition. This is an
 unmanaged side-effect that bypasses all the benefits of Effect's logging system.
+
+--- (Pattern Start: manage-resource-lifecycles-with-scope) ---
+
+## Manage Resource Lifecycles with Scope
+
+**Rule:** Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
+
+### Full Pattern Content:
+
+## Guideline
+
+A `Scope` is a context that collects finalizers (cleanup effects). When you need fine-grained control over resource lifecycles, you can work with `Scope` directly. The most common pattern is to create a resource within a scope using `Effect.acquireRelease` and then use it via `Effect.scoped`.
+
+---
+
+## Rationale
+
+`Scope` is the fundamental building block for all resource management in Effect. While higher-level APIs like `Layer.scoped` and `Stream` are often sufficient, understanding `Scope` is key to advanced use cases.
+
+A `Scope` guarantees that any finalizers added to it will be executed when the scope is closed, regardless of whether the associated computation succeeds, fails, or is interrupted. This provides a rock-solid guarantee against resource leaks.
+
+This is especially critical in concurrent applications. When a parent fiber is interrupted, it closes its scope, which in turn automatically interrupts all its child fibers and runs all their finalizers in a structured, predictable order.
+
+---
+
+## Good Example
+
+This example shows how to acquire a resource (like a file handle), use it, and have `Scope` guarantee its release.
+
+```typescript
+import { Effect, Scope } from "effect";
+
+// Simulate acquiring and releasing a resource
+const acquireFile = Effect.log("File opened").pipe(
+  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) }),
+);
+const releaseFile = Effect.log("File closed.");
+
+// Create a "scoped" effect. This effect, when used, will acquire the
+// resource and register its release action with the current scope.
+const scopedFile = Effect.acquireRelease(acquireFile, () => releaseFile);
+
+// The main program that uses the scoped resource
+const program = Effect.gen(function* () {
+  // Effect.scoped "uses" the resource. It runs the acquire effect,
+  // provides the resource to the inner effect, and ensures the
+  // release effect is run when this block completes.
+  const file = yield* Effect.scoped(scopedFile);
+
+  yield* file.write("hello");
+  yield* file.write("world");
+
+  // The file will be automatically closed here.
+});
+
+Effect.runPromise(program);
+/*
+Output:
+File opened
+Wrote: hello
+Wrote: world
+File closed
+*/
+```
+
+---
+
+## Anti-Pattern
+
+Manual resource management without the guarantees of `Scope`. This is brittle because if an error occurs after the resource is acquired but before it's released, the release logic is never executed.
+
+```typescript
+import { Effect } from "effect";
+import { acquireFile, releaseFile } from "./somewhere"; // From previous example
+
+// ❌ WRONG: This will leak the resource if an error happens.
+const program = Effect.gen(function* () {
+  const file = yield* acquireFile;
+
+  // If this operation fails...
+  yield* Effect.fail("Something went wrong!");
+
+  // ...this line will never be reached, and the file will never be closed.
+  yield* releaseFile;
+});
+```
 
 --- (Pattern Start: manage-shared-state-with-ref) ---
 
