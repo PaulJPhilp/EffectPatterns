@@ -19,7 +19,6 @@ This repository is designed to be a living document that helps developers move f
 - [Concurrency](#concurrency)
 - [Observability](#observability)
 - [Resource Management](#resource-management)
-- [Resource Managment](#resource-managment)
 
 ---
 
@@ -184,16 +183,9 @@ How to test Effect code effectively, reliably, and deterministically.
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
+| [Create a Managed Runtime for Scoped Resources](./content/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
 | [Implement Graceful Shutdown for Your Application](./content/implement-graceful-shutdown.mdx) | 🟠 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
 | [Manage Resource Lifecycles with Scope](./content/manage-resource-lifecycles-with-scope.mdx) | 🟠 **Advanced** | Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed. |
-
----
-
-## Resource Managment
-
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Create a Managed Runtime for Scoped Resources](./content/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
 
 
 ## AI Coding Rules
