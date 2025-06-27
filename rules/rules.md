@@ -3186,7 +3186,7 @@ Nesting function calls manually. This is hard to read and reorder.
 
 ## Guideline
 
-For collections that will be heavily transformed with immutable operations (e.g., `map`, `filter`, `append`), use ``Chunk<A>``. ``Chunk`` is Effect's implementation of a persistent and chunked vector that provides better performance than native arrays for these use cases.
+For collections that will be heavily transformed with immutable operations (e.g., `map`, `filter`, `append`), use `Chunk<A>`. `Chunk` is Effect's implementation of a persistent and chunked vector that provides better performance than native arrays for these use cases.
 
 ---
 
@@ -3195,8 +3195,6 @@ For collections that will be heavily transformed with immutable operations (e.g.
 JavaScript's `Array` is a mutable data structure. Every time you perform an "immutable" operation like `[...arr, newItem]` or `arr.map(...)`, you are creating a brand new array and copying all the elements from the old one. For small arrays, this is fine. For large arrays or in hot code paths, this constant allocation and copying can become a performance bottleneck.
 
 `Chunk` is designed to solve this. It's an immutable data structure that uses structural sharing internally. When you append an item to a `Chunk`, it doesn't re-copy the entire collection. Instead, it creates a new `Chunk` that reuses most of the internal structure of the original, only allocating memory for the new data. This makes immutable appends and updates significantly faster.
-
-`Stream` uses `Chunk` internally for this very reason. You should use `Chunk` when you are building data processing pipelines or need to work with collections in a highly performant, immutable way.
 
 ---
 
@@ -3229,26 +3227,32 @@ console.log(finalArray); // [0, 1, 2]
 
 ## Anti-Pattern
 
-Using standard JavaScript arrays for heavy, immutable data processing pipelines, especially within a `Stream`. This can lead to unnecessary memory allocation and garbage collection pressure.
+Eagerly converting a large or potentially infinite iterable to a `Chunk` before streaming. This completely negates the memory-safety benefits of using a `Stream`.
 
 ```typescript
-import { Effect, Stream } from "effect";
+import { Effect, Stream, Chunk } from "effect";
 
-const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+// A generator that could produce a very large (or infinite) number of items.
+function* largeDataSource() {
+  let i = 0;
+  while (i < 1_000_000) {
+    yield i++;
+  }
+}
 
-// ❌ This works, but can be less performant.
-// Inside this stream, each `map` and `filter` creates new intermediate arrays.
-const program = Stream.fromIterable(numbers).pipe(
+// ❌ DANGEROUS: `Chunk.fromIterable` will try to pull all 1,000,000 items
+// from the generator and load them into memory at once before the stream
+// even starts. This can lead to high memory usage or a crash.
+const programWithChunk = Stream.fromChunk(Chunk.fromIterable(largeDataSource())).pipe(
   Stream.map((n) => n * 2),
-  Stream.filter((n) => n > 10),
-  Stream.runCollect, // This will collect the results into a Chunk anyway
+  Stream.runDrain,
 );
 
-// ✅ Better: If you start with a Chunk, the operations can be more efficient.
-const programWithChunk = Stream.fromChunk(Chunk.fromIterable(numbers)).pipe(
+// ✅ CORRECT: `Stream.fromIterable` pulls items from the data source lazily,
+// one at a time (or in small batches), maintaining constant memory usage.
+const programWithIterable = Stream.fromIterable(largeDataSource()).pipe(
   Stream.map((n) => n * 2),
-  Stream.filter((n) => n > 10),
-  Stream.runCollect,
+  Stream.runDrain,
 );
 ```
 

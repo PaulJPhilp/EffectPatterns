@@ -42,7 +42,7 @@ The absolute fundamentals of Effect. Start here to understand the core philosoph
 | [Manage Shared State Safely with Ref](./content/manage-shared-state-with-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
 | [Process Streaming Data with Stream](./content/process-streaming-data-with-stream.mdx) | 🟡 **Intermediate** | Use Stream<A, E, R> to represent and process data that arrives over time, such as file reads, WebSocket messages, or paginated API results. |
 | [Understand Layers for Dependency Injection](./content/understand-layers-for-dependency-injection.mdx) | 🟡 **Intermediate** | A Layer is a blueprint that describes how to build a service, detailing its own requirements and any potential errors during its construction. |
-| [Use Chunk for High-Performance Collections](./content/use-chunk-for-high-performance-collections.mdx) | 🟡 **Intermediate** | Use Chunk&lt;A&gt; as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines. |
+| [Use Chunk for High-Performance Collections](./content/use-chunk-for-high-performance-collections.mdx) | 🟡 **Intermediate** | Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines. |
 | [Understand Fibers as Lightweight Threads](./content/understand-fibers-as-lightweight-threads.mdx) | 🟠 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
 
 ---
