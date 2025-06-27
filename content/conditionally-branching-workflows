@@ -1,3 +1,12 @@
+
+---
+
+### Pattern: `conditionally-branching-workflows.mdx`
+
+Here is the complete, updated file. I have only changed the `Anti-Pattern` section.
+
+`content/conditionally-branching-workflows.mdx`
+```mdx
 ---
 title: "Conditionally Branching Workflows"
 id: "conditionally-branching-workflows"
@@ -82,22 +91,34 @@ const handled = program(123).pipe(
 
 ## Anti-Pattern
 
-Using `Effect.flatMap` or `Effect.gen` with manual, inline `if` statements for simple validation. This is more verbose, less declarative, and mixes the validation logic directly with the workflow logic.
+Using `Effect.flatMap` with a manual `if` statement and forgetting to handle the `else` case. This is a common mistake that leads to an inferred type of `Effect<void, ...>`, which can cause confusing type errors downstream because the success value is lost.
 
 ```typescript
 import { Effect } from "effect";
-import { findUser } from "./somewhere";
+import { findUser, isAdmin } from "./somewhere"; // From previous example
 
-// ❌ This is more verbose and less readable for simple validation.
+// ❌ WRONG: The `else` case is missing.
 const program = (id: number) =>
   findUser(id).pipe(
     Effect.flatMap((user) => {
-      // The business rule is hidden inside an if statement.
-      if (user.status === "active" && user.roles.includes("admin")) {
+      if (isAdmin(user)) {
+        // This returns Effect<User>, but what happens if the user is not an admin?
         return Effect.succeed(user);
       }
-      // You have to manually create and handle the failure case.
-      return Effect.fail("ValidationFailed" as const);
+      // Because there's no `else` branch, TypeScript infers that this
+      // block can also implicitly return `void`.
+      // The resulting type is Effect<User | void, "DbError">, which is problematic.
     }),
+    // This `map` will now have a type error because `u` could be `void`.
+    Effect.map((u) => `Welcome, ${u.name}!`),
   );
+
+// `Effect.filter` avoids this problem entirely by forcing a failure,
+// which keeps the success channel clean and correctly typed.
 ```
+
+### Why This is Better
+
+*   **It's a Real Bug:** This isn't just a style issue; it's a legitimate logical error that leads to incorrect types and broken code.
+*   **It's a Common Mistake:** Developers new to functional pipelines often forget that every path must return a value.
+*   **It Reinforces the "Why":** It perfectly demonstrates *why* `Effect.filter` is superior: `filter` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
