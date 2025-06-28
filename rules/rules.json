@@ -45,9 +45,19 @@
     "description": "Use Data.struct or implement the Equal interface for value-based comparison of objects and classes."
   },
   {
+    "id": "conditionally-branching-workflows",
+    "title": "Conditionally Branching Workflows",
+    "description": "Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching."
+  },
+  {
     "id": "control-flow-with-combinators",
     "title": "Control Flow with Conditional Combinators",
     "description": "Use conditional combinators for control flow."
+  },
+  {
+    "id": "control-repetition-with-schedule",
+    "title": "Control Repetition with Schedule",
+    "description": "Use Schedule to create composable policies for controlling the repetition and retrying of effects."
   },
   {
     "id": "create-managed-runtime-for-scoped-resources",
@@ -150,6 +160,11 @@
     "description": "Use Effect.mapError to transform errors and create clean architectural boundaries between layers."
   },
   {
+    "id": "mocking-dependencies-in-tests",
+    "title": "Mocking Dependencies in Tests",
+    "description": "Provide mock service implementations via a test-specific Layer to isolate the unit under test."
+  },
+  {
     "id": "model-dependencies-as-services",
     "title": "Model Dependencies as Services",
     "description": "Model dependencies as services."
@@ -175,6 +190,11 @@
     "description": "Parse and validate data with Schema.decode."
   },
   {
+    "id": "poll-for-status-until-task-completes",
+    "title": "Poll for Status Until a Task Completes",
+    "description": "Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes."
+  },
+  {
     "id": "process-collection-in-parallel-with-foreach",
     "title": "Process a Collection in Parallel with Effect.forEach",
     "description": "Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit."
@@ -198,6 +218,11 @@
     "id": "representing-time-spans-with-duration",
     "title": "Representing Time Spans with Duration",
     "description": "Use the Duration data type to represent time intervals instead of raw numbers."
+  },
+  {
+    "id": "retry-based-on-specific-errors",
+    "title": "Retry Operations Based on Specific Errors",
+    "description": "Use predicate-based retry policies to retry an operation only for specific, recoverable errors."
   },
   {
     "id": "run-background-tasks-with-fork",

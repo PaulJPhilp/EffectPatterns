@@ -713,6 +713,109 @@ if (selectedUsers.includes({ id: 1, name: "Paul" })) {
 }
 ```
 
+--- (Pattern Start: conditionally-branching-workflows) ---
+
+## Conditionally Branching Workflows
+
+**Rule:** Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
+
+### Full Pattern Content:
+
+### Pattern: `conditionally-branching-workflows.mdx`
+
+## Guideline
+
+To make decisions based on a successful value within an `Effect` pipeline, use predicate-based operators:
+-   **To Validate and Fail:** Use `Effect.filter(predicate)` to stop the workflow if a condition is not met.
+-   **To Choose a Path:** Use `Effect.if(condition, { onTrue, onFalse })` or `Effect.gen` to execute different effects based on a condition.
+
+---
+
+## Rationale
+
+This pattern allows you to embed decision-making logic directly into your composition pipelines, making your code more declarative and readable. It solves two key problems:
+
+1.  **Separation of Concerns:** It cleanly separates the logic of producing a value from the logic of validating or making decisions about that value.
+2.  **Reusable Business Logic:** A predicate function (e.g., `const isAdmin = (user: User) => ...`) becomes a named, reusable, and testable piece of business logic, far superior to scattering inline `if` statements throughout your code.
+
+Using these operators turns conditional logic into a composable part of your `Effect`, rather than an imperative statement that breaks the flow.
+
+---
+
+## Good Example: Validating a User
+
+Here, we use `Effect.filter` with named predicates to validate a user before proceeding. The intent is crystal clear, and the business rules (`isActive`, `isAdmin`) are reusable.
+
+```typescript
+import { Effect } from "effect";
+
+interface User {
+  id: number;
+  status: "active" | "inactive";
+  roles: string[];
+}
+
+const findUser = (id: number): Effect.Effect<User, "DbError"> =>
+  Effect.succeed({ id, status: "active", roles: ["admin"] });
+
+// Reusable, testable predicates that document business rules.
+const isActive = (user: User) => user.status === "active";
+const isAdmin = (user: User) => user.roles.includes("admin");
+
+const program = (id: number) =>
+  findUser(id).pipe(
+    // If this predicate is false, the effect fails.
+    Effect.filter(isActive, () => "UserIsInactive" as const),
+    // If this one is false, the effect fails.
+    Effect.filter(isAdmin, () => "UserIsNotAdmin" as const),
+    // This part only runs if both filters pass.
+    Effect.map((user) => `Welcome, admin user #${user.id}!`),
+  );
+
+// We can then handle the specific failures in a type-safe way.
+const handled = program(123).pipe(
+  Effect.catchTag("UserIsNotAdmin", () =>
+    Effect.succeed("Access denied: requires admin role."),
+  ),
+);
+```
+
+---
+
+## Anti-Pattern
+
+Using `Effect.flatMap` with a manual `if` statement and forgetting to handle the `else` case. This is a common mistake that leads to an inferred type of `Effect<void, ...>`, which can cause confusing type errors downstream because the success value is lost.
+
+```typescript
+import { Effect } from "effect";
+import { findUser, isAdmin } from "./somewhere"; // From previous example
+
+// ❌ WRONG: The `else` case is missing.
+const program = (id: number) =>
+  findUser(id).pipe(
+    Effect.flatMap((user) => {
+      if (isAdmin(user)) {
+        // This returns Effect<User>, but what happens if the user is not an admin?
+        return Effect.succeed(user);
+      }
+      // Because there's no `else` branch, TypeScript infers that this
+      // block can also implicitly return `void`.
+      // The resulting type is Effect<User | void, "DbError">, which is problematic.
+    }),
+    // This `map` will now have a type error because `u` could be `void`.
+    Effect.map((u) => `Welcome, ${u.name}!`),
+  );
+
+// `Effect.filter` avoids this problem entirely by forcing a failure,
+// which keeps the success channel clean and correctly typed.
+```
+
+### Why This is Better
+
+*   **It's a Real Bug:** This isn't just a style issue; it's a legitimate logical error that leads to incorrect types and broken code.
+*   **It's a Common Mistake:** Developers new to functional pipelines often forget that every path must return a value.
+*   **It Reinforces the "Why":** It perfectly demonstrates *why* `Effect.filter` is superior: `filter` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
+
 --- (Pattern Start: control-flow-with-combinators) ---
 
 ## Control Flow with Conditional Combinators
@@ -753,6 +856,97 @@ the Effect world or breaking the flow of composition.
 
 Using `Effect.gen` for a single, simple conditional check can be more verbose
 than necessary. For simple branching, `Effect.if` is often more concise.
+
+--- (Pattern Start: control-repetition-with-schedule) ---
+
+## Control Repetition with Schedule
+
+**Rule:** Use Schedule to create composable policies for controlling the repetition and retrying of effects.
+
+### Full Pattern Content:
+
+## Guideline
+
+A `Schedule<In, Out>` is a highly-composable blueprint that defines a recurring schedule. It takes an input of type `In` (e.g., the error from a failed effect) and produces an output of type `Out` (e.g., the decision to continue). Use `Schedule` with operators like `Effect.repeat` and `Effect.retry` to control complex repeating logic.
+
+---
+
+## Rationale
+
+While you could write manual loops or recursive functions, `Schedule` provides a much more powerful, declarative, and composable way to manage repetition. The key benefits are:
+
+-   **Declarative:** You separate the *what* (the effect to run) from the *how* and *when* (the schedule it runs on).
+-   **Composable:** You can build complex schedules from simple, primitive ones. For example, you can create a schedule that runs "up to 5 times, with an exponential backoff, plus some random jitter" by composing `Schedule.recurs`, `Schedule.exponential`, and `Schedule.jittered`.
+-   **Stateful:** A `Schedule` keeps track of its own state (like the number of repetitions), making it easy to create policies that depend on the execution history.
+
+---
+
+## Good Example
+
+This example demonstrates composition by creating a common, robust retry policy: exponential backoff with jitter, limited to 5 attempts.
+
+```typescript
+import { Effect, Schedule, Duration } from "effect";
+
+// A simple effect that can fail
+const flakyEffect = Effect.try({
+  try: () => {
+    if (Math.random() > 0.2) {
+      console.log("Operation failed, retrying...");
+      throw new Error("Transient error");
+    }
+    return "Operation succeeded!";
+  },
+  catch: () => "ApiError" as const,
+});
+
+// --- Building a Composable Schedule ---
+
+// 1. Start with a base exponential backoff (100ms, 200ms, 400ms...)
+const exponentialBackoff = Schedule.exponential(Duration.millis(100));
+
+// 2. Add random jitter to avoid thundering herd problems
+const withJitter = exponentialBackoff.pipe(Schedule.jittered);
+
+// 3. Limit the schedule to a maximum of 5 repetitions
+const limitedWithJitter = withJitter.pipe(Schedule.andThen(Schedule.recurs(5)));
+
+// --- Using the Schedule ---
+const program = flakyEffect.pipe(Effect.retry(limitedWithJitter));
+
+Effect.runPromise(program).then(console.log);
+```
+
+---
+
+## Anti-Pattern
+
+Writing manual, imperative retry logic. This is verbose, stateful, hard to reason about, and not easily composable.
+
+```typescript
+import { Effect } from "effect";
+import { flakyEffect } from "./somewhere";
+
+// ❌ WRONG: Manual, stateful, and complex retry logic.
+function manualRetry(
+  effect: typeof flakyEffect,
+  retriesLeft: number,
+  delay: number,
+): Effect.Effect<string, "ApiError"> {
+  return effect.pipe(
+    Effect.catchTag("ApiError", () => {
+      if (retriesLeft > 0) {
+        return Effect.sleep(delay).pipe(
+          Effect.flatMap(() => manualRetry(effect, retriesLeft - 1, delay * 2)),
+        );
+      }
+      return Effect.fail("ApiError" as const);
+    }),
+  );
+}
+
+const program = manualRetry(flakyEffect, 5, 100);
+```
 
 --- (Pattern Start: create-managed-runtime-for-scoped-resources) ---
 
@@ -2067,6 +2261,117 @@ const findUserUnsafely = (): Effect.Effect<
 // all of that calling code might have to change too.
 ```
 
+--- (Pattern Start: mocking-dependencies-in-tests) ---
+
+## Mocking Dependencies in Tests
+
+**Rule:** Provide mock service implementations via a test-specific Layer to isolate the unit under test.
+
+### Full Pattern Content:
+
+## Guideline
+
+To test a piece of code in isolation, identify its service dependencies and provide mock implementations for them using a test-specific `Layer`. The most common way to create a mock layer is with `Layer.succeed(ServiceTag, mockImplementation)`.
+
+---
+
+## Rationale
+
+The primary goal of a unit test is to verify the logic of a single unit of code, independent of its external dependencies. Effect's dependency injection system is designed to make this easy and type-safe.
+
+By providing a mock `Layer` in your test, you replace a real dependency (like an `HttpClient` that makes network calls) with a fake one that returns predictable data. This provides several key benefits:
+-   **Determinism:** Your tests always produce the same result, free from the flakiness of network or database connections.
+-   **Speed:** Tests run instantly without waiting for slow I/O operations.
+-   **Type Safety:** The TypeScript compiler ensures your mock implementation perfectly matches the real service's interface, preventing your tests from becoming outdated.
+-   **Explicitness:** The test setup clearly documents all the dependencies required for the code to run.
+
+---
+
+## Good Example
+
+We want to test a `Notifier` service that uses an `EmailClient` to send emails. In our test, we provide a mock `EmailClient` that doesn't actually send emails but just returns a success value.
+
+```typescript
+import { Effect, Layer } from "effect";
+import { describe, it, expect } from "vitest";
+
+// --- The Services ---
+class EmailClient extends Effect.Tag("EmailClient")<
+  EmailClient,
+  { readonly send: (address: string, body: string) => Effect.Effect<void, "SendError"> }
+>() {}
+
+class Notifier extends Effect.Tag("Notifier")<
+  Notifier,
+  { readonly notifyUser: (userId: number, message: string) => Effect.Effect<void, "SendError"> }
+>() {}
+
+// The "Live" Notifier implementation, which depends on EmailClient
+const NotifierLive = Layer.effect(
+  Notifier,
+  Effect.gen(function* () {
+    const emailClient = yield* EmailClient;
+    return Notifier.of({
+      notifyUser: (userId, message) =>
+        emailClient.send(`user-${userId}@example.com`, message),
+    });
+  }),
+);
+
+// --- The Test ---
+describe("Notifier", () => {
+  it("should call the email client with the correct address", () =>
+    Effect.gen(function* () {
+      // 1. Get the service we want to test
+      const notifier = yield* Notifier;
+      // 2. Run its logic
+      yield* notifier.notifyUser(123, "Your invoice is ready.");
+    }).pipe(
+      // 3. Provide a mock implementation for its dependency
+      Effect.provide(
+        Layer.succeed(
+          EmailClient,
+          EmailClient.of({
+            send: (address, body) =>
+              Effect.sync(() => {
+                // 4. Make assertions on the mock's behavior
+                expect(address).toBe("user-123@example.com");
+                expect(body).toBe("Your invoice is ready.");
+              }),
+          }),
+        ),
+      ),
+      // 5. Provide the layer for the service under test
+      Effect.provide(NotifierLive),
+      // 6. Run the test
+      Effect.runPromise,
+    ));
+});
+```
+
+---
+
+## Anti-Pattern
+
+Testing your business logic using the "live" implementation of its dependencies. This creates an integration test, not a unit test. It will be slow, unreliable, and may have real-world side effects (like actually sending an email).
+
+```typescript
+import { Effect } from "effect";
+import { NotifierLive } from "./somewhere";
+import { EmailClientLive } from "./somewhere"; // The REAL email client
+
+// ❌ WRONG: This test will try to send a real email.
+it("sends a real email", () =>
+  Effect.gen(function* () {
+    const notifier = yield* Notifier;
+    yield* notifier.notifyUser(123, "This is a test email!");
+  }).pipe(
+    Effect.provide(NotifierLive),
+    Effect.provide(EmailClientLive), // Using the live layer makes this an integration test
+    Effect.runPromise,
+  ));
+```
+
 --- (Pattern Start: model-dependencies-as-services) ---
 
 ## Model Dependencies as Services
@@ -2392,6 +2697,93 @@ making error handling composable and type-safe.
 
 Using `Schema.parse(schema)(input)`, as it throws an exception. This forces
 you to use `try/catch` blocks, which breaks the composability of Effect.
+
+--- (Pattern Start: poll-for-status-until-task-completes) ---
+
+## Poll for Status Until a Task Completes
+
+**Rule:** Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes.
+
+### Full Pattern Content:
+
+## Guideline
+
+To run a periodic task (a "poller") that should only run for the duration of another main task, combine them using `Effect.race`. The main task will "win" the race upon completion, which automatically interrupts and cleans up the repeating polling effect.
+
+---
+
+## Rationale
+
+This pattern elegantly solves the problem of coordinating a long-running job with a status-checking mechanism. Instead of manually managing fibers with `fork` and `interrupt`, you can declare this relationship with `Effect.race`.
+
+The key is that the polling effect is set up to repeat on a schedule that runs indefinitely (or for a very long time). Because it never completes on its own, it can never "win" the race. The main task is the only one that can complete successfully. When it does, it wins the race, and Effect's structured concurrency guarantees that the losing effect (the poller) is safely interrupted.
+
+This creates a self-contained, declarative, and leak-free unit of work.
+
+---
+
+## Good Example
+
+This program simulates a long-running data processing job. While it's running, a separate effect polls for its status every 2 seconds. When the main job finishes after 10 seconds, the polling automatically stops.
+
+```typescript
+import { Effect, Schedule, Duration } from "effect";
+
+// The main task that takes a long time to complete
+const longRunningJob = Effect.log("Data processing complete!").pipe(
+  Effect.delay(Duration.seconds(10)),
+);
+
+// The polling task that checks the status
+const pollStatus = Effect.log("Polling for job status: In Progress...");
+
+// A schedule that repeats the polling task every 2 seconds, forever
+const pollingSchedule = Schedule.fixed(Duration.seconds(2));
+
+// The complete polling effect that will run indefinitely until interrupted
+const repeatingPoller = pollStatus.pipe(Effect.repeat(pollingSchedule));
+
+// Race the main job against the poller.
+// The longRunningJob will win after 10 seconds, interrupting the poller.
+const program = Effect.race(longRunningJob, repeatingPoller);
+
+Effect.runPromise(program);
+/*
+Output:
+Polling for job status: In Progress...
+Polling for job status: In Progress...
+Polling for job status: In Progress...
+Polling for job status: In Progress...
+Polling for job status: In Progress...
+Data processing complete!
+*/
+```
+
+---
+
+## Anti-Pattern
+
+Manually managing the lifecycle of the polling fiber. This is more verbose, imperative, and error-prone. You have to remember to interrupt the polling fiber in all possible exit paths (success, failure, etc.), which `Effect.race` does for you automatically.
+
+```typescript
+import { Effect, Fiber } from "effect";
+import { longRunningJob, repeatingPoller } from "./somewhere";
+
+// ❌ WRONG: Manual fiber management is complex.
+const program = Effect.gen(function* () {
+  // Manually fork the poller into the background
+  const pollerFiber = yield* Effect.fork(repeatingPoller);
+
+  try {
+    // Run the main job
+    const result = yield* longRunningJob;
+    return result;
+  } finally {
+    // You MUST remember to interrupt the poller when you're done.
+    yield* Fiber.interrupt(pollerFiber);
+  }
+});
+```
 
 --- (Pattern Start: process-collection-in-parallel-with-foreach) ---
 
@@ -2733,6 +3125,88 @@ const program = Effect.log("Waiting...").pipe(Effect.delay(2000));
 // This is especially dangerous when different parts of an application
 // use different conventions (e.g., one service uses seconds, another uses milliseconds).
 // Using Duration eliminates this entire class of bugs.
+```
+
+--- (Pattern Start: retry-based-on-specific-errors) ---
+
+## Retry Operations Based on Specific Errors
+
+**Rule:** Use predicate-based retry policies to retry an operation only for specific, recoverable errors.
+
+### Full Pattern Content:
+
+## Guideline
+
+To selectively retry an operation, use `Effect.retry` with a `Schedule` that includes a predicate. The most common way is to use `Schedule.whileInput((error) => ...)`, which will continue retrying only as long as the predicate returns `true` for the error that occurred.
+
+---
+
+## Rationale
+
+Not all errors are created equal. Retrying on a permanent error like "permission denied" or "not found" is pointless and can hide underlying issues. You only want to retry on *transient*, recoverable errors, such as network timeouts or "server busy" responses.
+
+By adding a predicate to your retry schedule, you gain fine-grained control over the retry logic. This allows you to build much more intelligent and efficient error handling systems that react appropriately to different failure modes. This is a common requirement for building robust clients for external APIs.
+
+---
+
+## Good Example
+
+This example simulates an API client that can fail with different, specific error types. The retry policy is configured to *only* retry on `ServerBusyError` and give up immediately on `NotFoundError`.
+
+```typescript
+import { Effect, Data, Schedule, Duration } from "effect";
+
+// Define specific, tagged errors for our API client
+class ServerBusyError extends Data.TaggedError("ServerBusyError") {}
+class NotFoundError extends Data.TaggedError("NotFoundError") {}
+
+// A flaky API call that can fail in different ways
+const flakyApiCall = Effect.try({
+  try: () => {
+    const random = Math.random();
+    if (random < 0.5) {
+      console.log("API call failed: Server is busy. Retrying...");
+      throw new ServerBusyError();
+    }
+    if (random < 0.8) {
+      console.log("API call failed: Resource not found. Not retrying.");
+      throw new NotFoundError();
+    }
+    return { data: "success" };
+  },
+  catch: (e) => e as ServerBusyError | NotFoundError,
+});
+
+// A predicate that returns true only for the error we want to retry
+const isRetryableError = (e: ServerBusyError | NotFoundError) =>
+  e._tag === "ServerBusyError";
+
+// A policy that retries 3 times, but only if the error is retryable
+const selectiveRetryPolicy = Schedule.recurs(3).pipe(
+  Schedule.whileInput(isRetryableError),
+  Schedule.addDelay(() => "100 millis"),
+);
+
+const program = flakyApiCall.pipe(Effect.retry(selectiveRetryPolicy));
+
+Effect.runPromise(program);
+```
+
+---
+
+## Anti-Pattern
+
+Using a generic `Effect.retry` that retries on all errors. This can lead to wasted resources and obscure permanent issues.
+
+```typescript
+import { Effect, Schedule } from "effect";
+import { flakyApiCall } from "./somewhere"; // From previous example
+
+// ❌ WRONG: This policy will retry even if the API returns a 404 Not Found.
+// This wastes time and network requests on an error that will never succeed.
+const blindRetryPolicy = Schedule.recurs(3);
+
+const program = flakyApiCall.pipe(Effect.retry(blindRetryPolicy));
 ```
 
 --- (Pattern Start: run-background-tasks-with-fork) ---

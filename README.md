@@ -40,7 +40,9 @@ The absolute fundamentals of Effect. Start here to understand the core philosoph
 | [Wrap Asynchronous Computations with tryPromise](./content/wrap-asynchronous-computations.mdx) | 🟢 **Beginner** | Use Effect.tryPromise to safely convert a function that returns a Promise into an Effect, capturing rejections in the error channel. |
 | [Wrap Synchronous Computations with sync and try](./content/wrap-synchronous-computations.mdx) | 🟢 **Beginner** | Use Effect.sync for non-throwing synchronous code and Effect.try for synchronous code that might throw an exception. |
 | [Write Sequential Code with Effect.gen](./content/write-sequential-code-with-gen.mdx) | 🟢 **Beginner** | Use Effect.gen with yield* to write sequential, asynchronous code in a style that looks and feels like familiar async/await. |
+| [Conditionally Branching Workflows](./content/conditionally-branching-workflows.mdx) | 🟡 **Intermediate** | Use predicate-based operators like Effect.filter and Effect.if to make decisions and control the flow of your application based on runtime values. |
 | [Control Flow with Conditional Combinators](./content/control-flow-with-combinators.mdx) | 🟡 **Intermediate** | Use combinators like Effect.if, Effect.when, and Effect.cond to handle conditional logic in a declarative, composable way. |
+| [Control Repetition with Schedule](./content/control-repetition-with-schedule.mdx) | 🟡 **Intermediate** | Use Schedule to create composable, stateful policies that define precisely how an effect should be repeated or retried. |
 | [Manage Shared State Safely with Ref](./content/manage-shared-state-with-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
 | [Process Streaming Data with Stream](./content/process-streaming-data-with-stream.mdx) | 🟡 **Intermediate** | Use Stream<A, E, R> to represent and process data that arrives over time, such as file reads, WebSocket messages, or paginated API results. |
 | [Understand Layers for Dependency Injection](./content/understand-layers-for-dependency-injection.mdx) | 🟡 **Intermediate** | A Layer is a blueprint that describes how to build a service, detailing its own requirements and any potential errors during its construction. |
@@ -90,6 +92,8 @@ Strategies for building resilient applications by treating failures as first-cla
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Accumulate Multiple Errors with Either](./content/accumulate-multiple-errors-with-either.mdx) | 🟡 **Intermediate** | Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one. |
+| [Conditionally Branching Workflows](./content/conditionally-branching-workflows.mdx) | 🟡 **Intermediate** | Use predicate-based operators like Effect.filter and Effect.if to make decisions and control the flow of your application based on runtime values. |
+| [Control Repetition with Schedule](./content/control-repetition-with-schedule.mdx) | 🟡 **Intermediate** | Use Schedule to create composable, stateful policies that define precisely how an effect should be repeated or retried. |
 | [Define Type-Safe Errors with Data.TaggedError](./content/define-tagged-errors.mdx) | 🟡 **Intermediate** | Create custom, type-safe error classes by extending Data.TaggedError to make error handling robust, predictable, and self-documenting. |
 | [Distinguish 'Not Found' from Errors](./content/distinguish-not-found-from-errors.mdx) | 🟡 **Intermediate** | Use Effect<Option<A>> to clearly distinguish between a recoverable 'not found' case (None) and a true failure (Fail). |
 | [Handle Errors with catchTag, catchTags, and catchAll](./content/handle-errors-with-catch.mdx) | 🟡 **Intermediate** | Use catchTag for type-safe recovery from specific tagged errors, and catchAll to recover from any possible failure. |
@@ -97,6 +101,7 @@ Strategies for building resilient applications by treating failures as first-cla
 | [Leverage Effect's Built-in Structured Logging](./content/leverage-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions (Effect.log, Effect.logInfo, etc.) for structured, configurable, and context-aware logging. |
 | [Mapping Errors to Fit Your Domain](./content/mapping-errors-to-fit-your-domain.mdx) | 🟡 **Intermediate** | Use Effect.mapError to transform specific, low-level errors into more general domain errors, creating clean architectural boundaries. |
 | [Model Optional Values Safely with Option](./content/model-optional-values-with-option.mdx) | 🟡 **Intermediate** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
+| [Retry Operations Based on Specific Errors](./content/retry-based-on-specific-errors.mdx) | 🟡 **Intermediate** | Use Effect.retry and predicate functions to selectively retry an operation only when specific, recoverable errors occur. |
 | [Handle Unexpected Errors by Inspecting the Cause](./content/handle-unexpected-errors-with-cause.mdx) | 🟠 **Advanced** | Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die). |
 
 ---
@@ -117,6 +122,7 @@ Building and interacting with APIs, managing dependencies, and handling resource
 | [Model Dependencies as Services](./content/model-dependencies-as-services.mdx) | 🟡 **Intermediate** | Abstract external dependencies and capabilities into swappable, testable services using Effect's dependency injection system. |
 | [Parse and Validate Data with Schema.decode](./content/parse-with-schema-decode.mdx) | 🟡 **Intermediate** | Use Schema.decode(schema) to create an Effect that parses and validates unknown data, which integrates seamlessly with Effect's error handling. |
 | [Process Streaming Data with Stream](./content/process-streaming-data-with-stream.mdx) | 🟡 **Intermediate** | Use Stream<A, E, R> to represent and process data that arrives over time, such as file reads, WebSocket messages, or paginated API results. |
+| [Retry Operations Based on Specific Errors](./content/retry-based-on-specific-errors.mdx) | 🟡 **Intermediate** | Use Effect.retry and predicate functions to selectively retry an operation only when specific, recoverable errors occur. |
 | [Run Independent Effects in Parallel with Effect.all](./content/run-effects-in-parallel-with-all.mdx) | 🟡 **Intermediate** | Use Effect.all to run multiple independent effects concurrently and collect all their results into a single tuple. |
 | [Trace Operations Across Services with Spans](./content/trace-operations-with-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
 | [Transform Data During Validation with Schema](./content/transform-data-with-schema.mdx) | 🟡 **Intermediate** | Use Schema.transform to safely convert data from one type to another during the parsing phase, such as from a string to a Date. |
@@ -128,6 +134,7 @@ Building and interacting with APIs, managing dependencies, and handling resource
 | [Decouple Fibers with Queues and PubSub](./content/decouple-fibers-with-queue-pubsub.mdx) | 🟠 **Advanced** | Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers. |
 | [Implement Graceful Shutdown for Your Application](./content/implement-graceful-shutdown.mdx) | 🟠 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
 | [Organize Layers into Composable Modules](./content/organize-layers-into-composable-modules.mdx) | 🟠 **Advanced** | Structure a large application by grouping related services into 'module' layers, which are then composed together with a shared base layer. |
+| [Poll for Status Until a Task Completes](./content/poll-for-status-until-task-completes.mdx) | 🟠 **Advanced** | Use Effect.race to run a repeating polling effect alongside a main task, automatically stopping the polling when the main task finishes. |
 
 ---
 
@@ -151,6 +158,7 @@ How to test Effect code effectively, reliably, and deterministically.
 | :--- | :--- | :--- |
 | [Accessing the Current Time with Clock](./content/accessing-current-time-with-clock.mdx) | 🟡 **Intermediate** | Use the Clock service to access the current time in a testable, deterministic way, avoiding direct calls to Date.now(). |
 | [Create a Testable HTTP Client Service](./content/create-a-testable-http-client-service.mdx) | 🟡 **Intermediate** | Define an HttpClient service with separate 'Live' and 'Test' layers to enable robust, testable interactions with external APIs. |
+| [Mocking Dependencies in Tests](./content/mocking-dependencies-in-tests.mdx) | 🟡 **Intermediate** | Use a test-specific Layer to provide mock implementations of services your code depends on, enabling isolated and deterministic unit tests. |
 | [Model Dependencies as Services](./content/model-dependencies-as-services.mdx) | 🟡 **Intermediate** | Abstract external dependencies and capabilities into swappable, testable services using Effect's dependency injection system. |
 | [Use the Auto-Generated .Default Layer in Tests](./content/use-default-layer-for-tests.mdx) | 🟡 **Intermediate** | When testing, always use the MyService.Default layer that is automatically generated by the Effect.Service class for dependency injection. |
 | [Write Tests That Adapt to Application Code](./content/write-tests-that-adapt-to-application-code.mdx) | 🟡 **Intermediate** | A cardinal rule of testing: Tests must adapt to the application's interface, not the other way around. Never modify application code solely to make a test pass. |
@@ -162,6 +170,7 @@ How to test Effect code effectively, reliably, and deterministically.
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
+| [Control Repetition with Schedule](./content/control-repetition-with-schedule.mdx) | 🟡 **Intermediate** | Use Schedule to create composable, stateful policies that define precisely how an effect should be repeated or retried. |
 | [Manage Shared State Safely with Ref](./content/manage-shared-state-with-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
 | [Process a Collection in Parallel with Effect.forEach](./content/process-collection-in-parallel-with-foreach.mdx) | 🟡 **Intermediate** | Use Effect.forEach with the `concurrency` option to process a collection of items in parallel with a fixed limit, preventing resource exhaustion. |
 | [Race Concurrent Effects for the Fastest Result](./content/race-concurrent-effects.mdx) | 🟡 **Intermediate** | Use Effect.race to run multiple effects concurrently and proceed with the result of the one that succeeds first, automatically interrupting the others. |
@@ -171,6 +180,7 @@ How to test Effect code effectively, reliably, and deterministically.
 | [Execute Long-Running Apps with Effect.runFork](./content/execute-long-running-apps-with-runfork.mdx) | 🟠 **Advanced** | Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown. |
 | [Implement Graceful Shutdown for Your Application](./content/implement-graceful-shutdown.mdx) | 🟠 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
 | [Manage Resource Lifecycles with Scope](./content/manage-resource-lifecycles-with-scope.mdx) | 🟠 **Advanced** | Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed. |
+| [Poll for Status Until a Task Completes](./content/poll-for-status-until-task-completes.mdx) | 🟠 **Advanced** | Use Effect.race to run a repeating polling effect alongside a main task, automatically stopping the polling when the main task finishes. |
 | [Run Background Tasks with Effect.fork](./content/run-background-tasks-with-fork.mdx) | 🟠 **Advanced** | Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting. |
 | [Understand Fibers as Lightweight Threads](./content/understand-fibers-as-lightweight-threads.mdx) | 🟠 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
 
