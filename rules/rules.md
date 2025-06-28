@@ -43,6 +43,91 @@ By yielding the config object, you make your dependency explicit and leverage Ef
 
 Passing configuration values down through multiple function arguments ("prop-drilling"). This is cumbersome and obscures which components truly need which values.
 
+--- (Pattern Start: accessing-current-time-with-clock) ---
+
+## Accessing the Current Time with Clock
+
+**Rule:** Use the Clock service to get the current time, enabling deterministic testing with TestClock.
+
+### Full Pattern Content:
+
+## Guideline
+
+Whenever you need to get the current time within an `Effect`, do not call `Date.now()` directly. Instead, depend on the `Clock` service and use one of its methods, such as `Clock.currentTimeMillis`.
+
+---
+
+## Rationale
+
+Directly calling `Date.now()` makes your code impure and tightly coupled to the system clock. This makes testing difficult and unreliable, as the output of your function will change every time it's run.
+
+The `Clock` service is Effect's solution to this problem. It's an abstraction for "the current time."
+-   In **production**, the default `Live` `Clock` implementation uses the real system time.
+-   In **tests**, you can provide the `TestClock` layer. This gives you a virtual clock that you can manually control, allowing you to set the time to a specific value or advance it by a specific duration.
+
+This makes any time-dependent logic pure, deterministic, and easy to test with perfect precision.
+
+---
+
+## Good Example
+
+This example shows a function that checks if a token is expired. Its logic depends on `Clock`, making it fully testable.
+
+```typescript
+import { Effect, Clock, Layer } from "effect";
+import { TestClock } from "effect/TestClock";
+import { describe, it, expect } from "vitest";
+
+interface Token {
+  readonly value: string;
+  readonly expiresAt: number; // UTC milliseconds
+}
+
+// This function is pure and testable because it depends on Clock
+const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock> =>
+  Clock.currentTimeMillis.pipe(
+    Effect.map((now) => now > token.expiresAt),
+  );
+
+// --- Testing the function ---
+describe("isTokenExpired", () => {
+  const token = { value: "abc", expiresAt: 1000 };
+
+  it("should return false when the clock is before the expiry time", () =>
+    Effect.gen(function* () {
+      yield* TestClock.setTime(500); // Set virtual time
+      const isExpired = yield* isTokenExpired(token);
+      expect(isExpired).toBe(false);
+    }).pipe(Effect.provide(TestClock.layer), Effect.runPromise));
+
+  it("should return true when the clock is after the expiry time", () =>
+    Effect.gen(function* () {
+      yield* TestClock.setTime(1500); // Set virtual time
+      const isExpired = yield* isTokenExpired(token);
+      expect(isExpired).toBe(true);
+    }).pipe(Effect.provide(TestClock.layer), Effect.runPromise));
+});
+```
+
+---
+
+## Anti-Pattern
+
+Directly calling `Date.now()` inside your business logic. This creates an impure function that cannot be tested reliably without manipulating the system clock, which is a bad practice.
+
+```typescript
+import { Effect } from "effect";
+
+interface Token { readonly expiresAt: number; }
+
+// ❌ WRONG: This function's behavior changes every millisecond.
+const isTokenExpiredUnsafely = (token: Token): Effect.Effect<boolean> =>
+  Effect.sync(() => Date.now() > token.expiresAt);
+
+// Testing this function would require complex mocking of global APIs
+// or would be non-deterministic.
+```
+
 --- (Pattern Start: accumulate-multiple-errors-with-either) ---
 
 ## Accumulate Multiple Errors with Either
@@ -362,6 +447,90 @@ step1().pipe(Effect.flatMap((a) => step2(a))); // Or .andThen
 Chaining many `.flatMap` or `.andThen` calls leads to deeply nested,
 hard-to-read code.
 
+--- (Pattern Start: beyond-the-date-type) ---
+
+## Beyond the Date Type - Real World Dates, Times, and Timezones
+
+**Rule:** Use the Clock service for testable time-based logic and immutable primitives for timestamps.
+
+### Full Pattern Content:
+
+## Guideline
+
+To handle specific points in time robustly in Effect, follow these principles:
+1.  **Access "now" via the `Clock` service** (`Clock.currentTimeMillis`) instead of `Date.now()`.
+2.  **Store and pass timestamps** as immutable primitives: `number` for UTC milliseconds or `string` for ISO 8601 format.
+3.  **Perform calculations locally:** When you need to perform date-specific calculations (e.g., "get the day of the week"), create a `new Date(timestamp)` instance inside a pure computation, use it, and then discard it. Never hold onto mutable `Date` objects in your application state.
+
+---
+
+## Rationale
+
+JavaScript's native `Date` object is a common source of bugs. It is mutable, its behavior can be inconsistent across different JavaScript environments (especially with timezones), and its reliance on the system clock makes time-dependent logic difficult to test.
+
+Effect's approach solves these problems:
+-   The **`Clock` service** abstracts away the concept of "now." In production, the `Live` clock uses the system time. In tests, you can provide a `TestClock` that gives you complete, deterministic control over the passage of time.
+-   Using **primitive `number` or `string`** for timestamps ensures immutability and makes your data easy to serialize, store, and transfer.
+
+This makes your time-based logic pure, predictable, and easy to test.
+
+---
+
+## Good Example
+
+This example shows a function that creates a timestamped event. It depends on the `Clock` service, making it fully testable.
+
+```typescript
+import { Effect, Clock, Layer } from "effect";
+import { TestClock } from "effect/TestClock";
+import { describe, it, expect } from "vitest";
+
+interface Event {
+  readonly message: string;
+  readonly timestamp: number; // Store as a primitive number (UTC millis)
+}
+
+// This function is pure and testable because it depends on Clock
+const createEvent = (message: string): Effect.Effect<Event, never, Clock> =>
+  Effect.gen(function* () {
+    const timestamp = yield* Clock.currentTimeMillis;
+    return { message, timestamp };
+  });
+
+// --- Testing the function ---
+describe("createEvent", () => {
+  it("should use the time from the TestClock", () =>
+    Effect.gen(function* () {
+      // Manually set the virtual time
+      yield* TestClock.setTime(1672531200000); // Jan 1, 2023 UTC
+      const event = yield* createEvent("User logged in");
+
+      // The timestamp is predictable and testable
+      expect(event.timestamp).toBe(1672531200000);
+    }).pipe(Effect.provide(TestClock.layer), Effect.runPromise));
+});
+```
+
+---
+
+## Anti-Pattern
+
+Directly using `Date.now()` or `new Date()` inside your effects. This introduces impurity and makes your logic dependent on the actual system clock, rendering it non-deterministic and difficult to test.
+
+```typescript
+import { Effect } from "effect";
+
+// ❌ WRONG: This function is impure and not reliably testable.
+const createEventUnsafely = (message: string): Effect.Effect<any> =>
+  Effect.sync(() => ({
+    message,
+    timestamp: Date.now(), // Direct call to a system API
+  }));
+
+// How would you test that this function assigns the correct timestamp
+// without manipulating the system clock or using complex mocks?
+```
+
 --- (Pattern Start: build-a-basic-http-server) ---
 
 ## Build a Basic HTTP Server
@@ -463,6 +632,85 @@ const server = http.createServer((_req, res) => {
   );
   Effect.runPromise(requestEffect).then((msg) => res.end(msg));
 });
+```
+
+--- (Pattern Start: comparing-data-by-value-with-structural-equality) ---
+
+## Comparing Data by Value with Structural Equality
+
+**Rule:** Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
+
+### Full Pattern Content:
+
+## Guideline
+
+To compare objects or classes by their contents rather than by their memory reference, use one of two methods:
+1.  **For plain data objects:** Define them with `Data.struct`.
+2.  **For classes:** Extend `Data.Class` or implement the `Equal.Equal` interface.
+
+Then, compare instances using the `Equal.equals(a, b)` function.
+
+---
+
+## Rationale
+
+In JavaScript, comparing two non-primitive values with `===` checks for *referential equality*. It only returns `true` if they are the exact same instance in memory. This means two objects with identical contents are not considered equal, which is a common source of bugs.
+
+```typescript
+{ a: 1 } === { a: 1 } // false!
+```
+
+Effect solves this with **structural equality**. All of Effect's built-in data structures (`Option`, `Either`, `Chunk`, etc.) can be compared by their structure and values. By using helpers like `Data.struct`, you can easily give your own data structures this same powerful and predictable behavior.
+
+---
+
+## Good Example
+
+We define two points using `Data.struct`. Even though `p1` and `p2` are different instances in memory, `Equal.equals` correctly reports them as equal because their contents match.
+
+```typescript
+import { Data, Equal } from "effect";
+
+// Define a Point data type with structural equality
+const Point = Data.struct({
+  x: Data.number,
+  y: Data.number,
+});
+
+const p1 = Point({ x: 1, y: 2 });
+const p2 = Point({ x: 1, y: 2 });
+const p3 = Point({ x: 3, y: 4 });
+
+// Standard reference equality fails
+console.log(p1 === p2); // false
+
+// Structural equality works as expected
+console.log(Equal.equals(p1, p2)); // true
+console.log(Equal.equals(p1, p3)); // false
+```
+
+---
+
+## Anti-Pattern
+
+Relying on `===` for object or array comparison. This will lead to bugs when you expect two objects with the same values to be treated as equal, especially when working with data in collections, `Ref`s, or `Effect`'s success values.
+
+```typescript
+// ❌ WRONG: This will not behave as expected.
+const user1 = { id: 1, name: "Paul" };
+const user2 = { id: 1, name: "Paul" };
+
+if (user1 === user2) {
+  // This code block will never be reached.
+  console.log("Users are the same.");
+}
+
+// Another common pitfall
+const selectedUsers = [user1];
+// This check will fail, even though a user with id 1 is in the array.
+if (selectedUsers.includes({ id: 1, name: "Paul" })) {
+  // ...
+}
 ```
 
 --- (Pattern Start: control-flow-with-combinators) ---
@@ -1740,6 +1988,85 @@ const programWithRaceCondition = Effect.gen(function* () {
 Effect.runPromise(programWithRaceCondition).then(console.log);
 ```
 
+--- (Pattern Start: mapping-errors-to-fit-your-domain) ---
+
+## Mapping Errors to Fit Your Domain
+
+**Rule:** Use Effect.mapError to transform errors and create clean architectural boundaries between layers.
+
+### Full Pattern Content:
+
+## Guideline
+
+When an inner service can fail with specific errors, use `Effect.mapError` in the outer service to catch those specific errors and transform them into a more general error suitable for its own domain.
+
+---
+
+## Rationale
+
+This pattern is essential for creating clean architectural boundaries and preventing "leaky abstractions." An outer layer of your application (e.g., a `UserService`) should not expose the internal failure details of the layers it depends on (e.g., a `Database` that can fail with `ConnectionError` or `QueryError`).
+
+By using `Effect.mapError`, the outer layer can define its own, more abstract error type (like `RepositoryError`) and map all the specific, low-level errors into it. This decouples the layers. If you later swap your database implementation, you only need to update the mapping logic within the repository layer; none of the code that *uses* the repository needs to change.
+
+---
+
+## Good Example
+
+A `UserRepository` uses a `Database` service. The `Database` can fail with specific errors, but the `UserRepository` maps them to a single, generic `RepositoryError` before they are exposed to the rest of the application.
+
+```typescript
+import { Effect, Data } from "effect";
+
+// Low-level, specific errors from the database layer
+class ConnectionError extends Data.TaggedError("ConnectionError") {}
+class QueryError extends Data.TaggedError("QueryError") {}
+
+// A generic error for the repository layer
+class RepositoryError extends Data.TaggedError("RepositoryError")<{
+  readonly cause: unknown;
+}> {}
+
+// The inner service
+const dbQuery = (): Effect.Effect<
+  { name: string },
+  ConnectionError | QueryError
+> => Effect.fail(new ConnectionError());
+
+// The outer service uses `mapError` to create a clean boundary.
+// Its public signature only exposes `RepositoryError`.
+const findUser = (): Effect.Effect<{ name: string }, RepositoryError> =>
+  dbQuery().pipe(
+    Effect.mapError(
+      (error) => new RepositoryError({ cause: error }),
+    ),
+  );
+```
+
+---
+
+## Anti-Pattern
+
+Allowing low-level, implementation-specific errors to "leak" out of a service's public API. This creates tight coupling between layers.
+
+```typescript
+import { Effect } from "effect";
+import { ConnectionError, QueryError } from "./somewhere"; // From previous example
+
+// ❌ WRONG: This function's error channel is "leaky".
+// It exposes the internal implementation details of the database.
+const findUserUnsafely = (): Effect.Effect<
+  { name: string },
+  ConnectionError | QueryError // <-- Leaky abstraction
+> => {
+  // ... logic that calls the database
+  return Effect.fail(new ConnectionError());
+};
+
+// Now, any code that calls `findUserUnsafely` has to know about and handle
+// both `ConnectionError` and `QueryError`. If we change the database,
+// all of that calling code might have to change too.
+```
+
 --- (Pattern Start: model-dependencies-as-services) ---
 
 ## Model Dependencies as Services
@@ -2347,6 +2674,67 @@ const incompleteData = Effect.race(fetchProfile, fetchPermissions);
 const completeData = Effect.all([fetchProfile, fetchPermissions]);
 ```
 
+--- (Pattern Start: representing-time-spans-with-duration) ---
+
+## Representing Time Spans with Duration
+
+**Rule:** Use the Duration data type to represent time intervals instead of raw numbers.
+
+### Full Pattern Content:
+
+## Guideline
+
+When you need to represent a span of time (e.g., for a delay, timeout, or schedule), use the `Duration` data type. Create durations with expressive constructors like `Duration.seconds(5)`, `Duration.minutes(10)`, or `Duration.millis(500)`.
+
+---
+
+## Rationale
+
+Using raw numbers to represent time is a common source of bugs and confusion. When you see `setTimeout(fn, 5000)`, it's not immediately clear if the unit is seconds or milliseconds without prior knowledge of the API.
+
+`Duration` solves this by making the unit explicit in the code. It provides a type-safe, immutable, and human-readable way to work with time intervals. This eliminates ambiguity and makes your code easier to read and maintain. Durations are used throughout Effect's time-based operators, such as `Effect.sleep`, `Effect.timeout`, and `Schedule`.
+
+---
+
+## Good Example
+
+This example shows how to create and use `Duration` to make time-based operations clear and unambiguous.
+
+```typescript
+import { Effect, Duration } from "effect";
+
+// Create durations with clear, explicit units
+const fiveSeconds = Duration.seconds(5);
+const oneHundredMillis = Duration.millis(100);
+
+// Use them in Effect operators
+const program = Effect.log("Starting...").pipe(
+  Effect.delay(oneHundredMillis),
+  Effect.flatMap(() => Effect.log("Running after 100ms")),
+  Effect.timeout(fiveSeconds), // This whole operation must complete within 5 seconds
+);
+
+// Durations can also be compared
+const isLonger = Duration.greaterThan(fiveSeconds, oneHundredMillis); // true
+```
+
+---
+
+## Anti-Pattern
+
+Using raw numbers for time-based operations. This is ambiguous and error-prone.
+
+```typescript
+import { Effect } from "effect";
+
+// ❌ WRONG: What does '2000' mean? Milliseconds? Seconds?
+const program = Effect.log("Waiting...").pipe(Effect.delay(2000));
+
+// This is especially dangerous when different parts of an application
+// use different conventions (e.g., one service uses seconds, another uses milliseconds).
+// Using Duration eliminates this entire class of bugs.
+```
+
 --- (Pattern Start: run-background-tasks-with-fork) ---
 
 ## Run Background Tasks with Effect.fork
@@ -2619,6 +3007,132 @@ async function findUserUnsafely(id: number): Promise<any> {
   }
 }
 ```
+
+--- (Pattern Start: supercharge-your-editor-with-the-effect-lsp) ---
+
+## Supercharge Your Editor with the Effect LSP
+
+**Rule:** Install and use the Effect LSP extension for enhanced type information and error checking in your editor.
+
+### Full Pattern Content:
+
+## Guideline
+
+To significantly improve your development experience with Effect, install the official **Effect Language Server (LSP)** extension for your code editor (e.g., the "Effect" extension in VS Code).
+
+---
+
+## Rationale
+
+Effect's type system is incredibly powerful, but TypeScript's default language server doesn't always display the rich information contained within the `A`, `E`, and `R` channels in the most intuitive way.
+
+The Effect LSP is a specialized tool that understands the semantics of Effect. It hooks into your editor to provide a superior experience:
+-   **Rich Inline Types:** It displays the full `Effect<A, E, R>` signature directly in your code as you work, so you always know exactly what an effect produces, how it can fail, and what it requires.
+-   **Clear Error Messages:** It provides more specific and helpful error messages tailored to Effect's APIs.
+-   **Enhanced Autocompletion:** It can offer more context-aware suggestions.
+
+This tool essentially makes the compiler's knowledge visible at a glance, reducing the mental overhead of tracking complex types and allowing you to catch errors before you even save the file.
+
+---
+
+## Good Example
+
+Imagine you have the following code. Without the LSP, hovering over `program` might show a complex, hard-to-read inferred type.
+
+```typescript
+import { Effect } from "effect";
+
+const program = Effect.succeed(42).pipe(
+  Effect.map((n) => n.toString()),
+  Effect.flatMap((s) => Effect.log(s)),
+  Effect.provide(Logger.live), // Assuming a Logger service
+);
+```
+
+With the Effect LSP installed, your editor would display a clear, readable overlay right above the `program` variable, looking something like this:
+
+```
+// (LSP Inlay Hint)
+// program: Effect<void, never, never>
+```
+
+This immediately tells you that the final program returns nothing (`void`), has no expected failures (`never`), and has no remaining requirements (`never`), so it's ready to be run.
+
+---
+
+## Anti-Pattern
+
+Going without the LSP. While your code will still compile and work perfectly fine, you are essentially "flying blind." You miss out on the rich, real-time feedback that the LSP provides, forcing you to rely more heavily on manual type checking, `tsc` runs, and deciphering complex inferred types from your editor's default tooltips. This leads to a slower, less efficient development cycle.
+
+--- (Pattern Start: teach-your-ai-agents-effect-with-the-mcp-server) ---
+
+## Teach your AI Agents Effect with the MCP Server
+
+**Rule:** Use the MCP server to provide live application context to AI coding agents, enabling more accurate assistance.
+
+### Full Pattern Content:
+
+## Guideline
+
+To enable AI coding agents (like Cursor or custom bots) to provide highly accurate, context-aware assistance for your Effect application, run the **Effect MCP (Meta-Circular-Protocol) server**. This tool exposes your application's entire dependency graph and service structure in a machine-readable format.
+
+---
+
+## Rationale
+
+AI coding agents are powerful, but they often lack the deep, structural understanding of a complex Effect application. They might not know which services are available in the context, what a specific `Layer` provides, or how your feature modules are composed.
+
+The MCP server solves this problem. It's a specialized server that runs alongside your application during development. It inspects your `AppLayer` and creates a real-time, queryable model of your entire application architecture.
+
+An AI agent can then connect to this MCP server to ask specific questions before generating code, such as:
+-   "What services are available in the current context?"
+-   "What is the full API of the `UserService`?"
+-   "What errors can `UserRepository.findById` fail with?"
+
+By providing this live, ground-truth context, you transform your AI from a generic coding assistant into a specialized expert on *your* specific codebase, resulting in far more accurate and useful code generation and refactoring.
+
+---
+
+## Good Example
+
+The "Good Example" is the workflow this pattern enables.
+
+1.  **You run the MCP server** in your terminal, pointing it at your main `AppLayer`.
+    ```bash
+    npx @effect/mcp-server --layer src/layers.ts:AppLayer
+    ```
+
+2.  **You configure your AI agent** (e.g., Cursor) to use the MCP server's endpoint (`http://localhost:3333`).
+
+3.  **You ask the AI a question** that requires deep context about your app:
+    > "Refactor this code to use the `UserService` to fetch a user by ID and log the result with the `Logger`."
+
+4.  **The AI, in the background, queries the MCP server:**
+    -   It discovers that `UserService` and `Logger` are available in the `AppLayer`.
+    -   It retrieves the exact method signature for `UserService.getUser` and `Logger.log`.
+
+5.  **The AI generates correct, context-aware code** because it's not guessing; it's using the live architectural information provided by the MCP server.
+
+```typescript
+// The AI generates this correct code:
+import { Effect } from "effect";
+import { UserService } from "./features/User/UserService";
+import { Logger } from "./core/Logger";
+
+const program = Effect.gen(function* () {
+  const userService = yield* UserService;
+  const logger = yield* Logger;
+
+  const user = yield* userService.getUser("123");
+  yield* logger.log(`Found user: ${user.name}`);
+});
+```
+
+---
+
+## Anti-Pattern
+
+Working with an AI agent without providing it with specific context. The agent will be forced to guess based on open files or generic knowledge. This often leads to it hallucinating method names, getting dependency injection wrong, or failing to handle specific error types, requiring you to manually correct its output and defeating the purpose of using an AI assistant.
 
 --- (Pattern Start: trace-operations-with-spans) ---
 

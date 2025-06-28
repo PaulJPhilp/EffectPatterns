@@ -1,0 +1,59 @@
+# .github/workflows/generate-docs.yml
+
+# 1. The name of the workflow, which will appear in the GitHub Actions UI.
+name: Generate Docs & Rules
+
+# 2. The trigger: This workflow runs on every `push` to the `main` branch.
+on:
+  push:
+    branches:
+      - main
+
+# 3. The list of jobs to run. We only have one job.
+jobs:
+  generate:
+    # 4. The name of the job.
+    name: Generate README and Rules
+    # 5. The virtual machine to run on. 'ubuntu-latest' is standard and cost-effective.
+    runs-on: ubuntu-latest
+
+    # 6. The sequence of steps the job will perform.
+    steps:
+      # Step 6a: Checks out your repository's code onto the virtual machine.
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 6b: Sets up the pnpm package manager.
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      # Step 6c: Sets up the Node.js environment.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm" # Caches dependencies for faster runs
+
+      # Step 6d: Installs the project dependencies from your pnpm-lock.yaml file.
+      - name: Install Dependencies
+        run: pnpm install
+
+      # Step 6e: Runs your README generation script.
+      - name: Generate README
+        run: pnpm readme
+
+      # Step 6f: Runs your rules generation script.
+      - name: Generate Rules
+        run: pnpm rules
+
+      # Step 6g: This is the magic step. It checks if any files have changed.
+      # If they have, it automatically commits and pushes them back to your repo.
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          # The message for the automatic commit.
+          commit_message: "docs: auto-generate README and rules"
+          # Only commit changes to these specific files.
+          file_pattern: "README.md rules/*"

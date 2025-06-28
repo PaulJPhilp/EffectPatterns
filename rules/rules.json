@@ -5,6 +5,11 @@
     "description": "Access configuration from the Effect context."
   },
   {
+    "id": "accessing-current-time-with-clock",
+    "title": "Accessing the Current Time with Clock",
+    "description": "Use the Clock service to get the current time, enabling deterministic testing with TestClock."
+  },
+  {
     "id": "accumulate-multiple-errors-with-either",
     "title": "Accumulate Multiple Errors with Either",
     "description": "Use Either to accumulate multiple validation errors instead of failing on the first one."
@@ -25,9 +30,19 @@
     "description": "Prefer generators over long chains of .andThen."
   },
   {
+    "id": "beyond-the-date-type",
+    "title": "Beyond the Date Type - Real World Dates, Times, and Timezones",
+    "description": "Use the Clock service for testable time-based logic and immutable primitives for timestamps."
+  },
+  {
     "id": "build-a-basic-http-server",
     "title": "Build a Basic HTTP Server",
     "description": "Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server."
+  },
+  {
+    "id": "comparing-data-by-value-with-structural-equality",
+    "title": "Comparing Data by Value with Structural Equality",
+    "description": "Use Data.struct or implement the Equal interface for value-based comparison of objects and classes."
   },
   {
     "id": "control-flow-with-combinators",
@@ -130,6 +145,11 @@
     "description": "Use Ref to manage shared, mutable state concurrently, ensuring atomicity."
   },
   {
+    "id": "mapping-errors-to-fit-your-domain",
+    "title": "Mapping Errors to Fit Your Domain",
+    "description": "Use Effect.mapError to transform errors and create clean architectural boundaries between layers."
+  },
+  {
     "id": "model-dependencies-as-services",
     "title": "Model Dependencies as Services",
     "description": "Model dependencies as services."
@@ -175,6 +195,11 @@
     "description": "Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers."
   },
   {
+    "id": "representing-time-spans-with-duration",
+    "title": "Representing Time Spans with Duration",
+    "description": "Use the Duration data type to represent time intervals instead of raw numbers."
+  },
+  {
     "id": "run-background-tasks-with-fork",
     "title": "Run Background Tasks with Effect.fork",
     "description": "Use Effect.fork to start a non-blocking background process and manage its lifecycle via its Fiber."
@@ -193,6 +218,16 @@
     "id": "solve-promise-problems-with-effect",
     "title": "Solve Promise Problems with Effect",
     "description": "Recognize that Effect solves the core limitations of Promises: untyped errors, no dependency injection, and no cancellation."
+  },
+  {
+    "id": "supercharge-your-editor-with-the-effect-lsp",
+    "title": "Supercharge Your Editor with the Effect LSP",
+    "description": "Install and use the Effect LSP extension for enhanced type information and error checking in your editor."
+  },
+  {
+    "id": "teach-your-ai-agents-effect-with-the-mcp-server",
+    "title": "Teach your AI Agents Effect with the MCP Server",
+    "description": "Use the MCP server to provide live application context to AI coding agents, enabling more accurate assistance."
   },
   {
     "id": "trace-operations-with-spans",
