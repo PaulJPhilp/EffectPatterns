@@ -2847,7 +2847,7 @@ import { userIds, fetchUserById } from "./somewhere"; // From previous example
 const program = Effect.all(userIds.map(fetchUserById));
 ```
 
---- (Pattern Start: stream) ---
+--- (Pattern Start: process-a-collection-of-data-asynchronously) ---
 
 ## Process collections of data asynchronously
 

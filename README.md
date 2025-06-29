@@ -172,7 +172,7 @@ How to test Effect code effectively, reliably, and deterministically.
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Process collections of data asynchronously](./content/stream.mdx) | 🟡 **Intermediate** | Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream. |
+| [Process collections of data asynchronously](./content/process-a-collection-of-data-asynchronously.mdx) | 🟡 **Intermediate** | Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream. |
 
 ---
 
@@ -180,7 +180,7 @@ How to test Effect code effectively, reliably, and deterministically.
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Process collections of data asynchronously](./content/stream.mdx) | 🟡 **Intermediate** | Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream. |
+| [Process collections of data asynchronously](./content/process-a-collection-of-data-asynchronously.mdx) | 🟡 **Intermediate** | Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream. |
 
 ---
 

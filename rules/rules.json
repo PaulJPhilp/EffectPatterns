@@ -200,7 +200,7 @@
     "description": "Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit."
   },
   {
-    "id": "stream",
+    "id": "process-a-collection-of-data-asynchronously",
     "title": "Process collections of data asynchronously",
     "description": "Leverage Stream to process collections effectfully with built-in concurrency control and resource safety."
   },
