@@ -1,0 +1,133 @@
+---
+title: "Validate Request Body"
+id: "validate-request-body"
+skillLevel: "intermediate"
+useCase:
+  - "Building APIs"
+  - "Data Validation"
+  - "API Security"
+summary: "Safely parse and validate an incoming JSON request body against a predefined Schema."
+tags:
+  - "http"
+  - "server"
+  - "schema"
+  - "validation"
+  - "api"
+  - "post"
+  - "body"
+rule:
+  description: "Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies."
+author: "PaulJPhilp"
+related:
+  - "handle-get-request"
+  - "send-json-response"
+  - "schema"
+  - "handle-api-errors"
+---
+
+## Guideline
+
+To process an incoming request body, use `Http.request.schemaBodyJson(YourSchema)` to parse the JSON and validate its structure in a single, type-safe step.
+
+---
+
+## Rationale
+
+Accepting user-provided data is one of the most critical and sensitive parts of an API. You must never trust incoming data. The `Http` module's integration with `Schema` provides a robust, declarative solution for this.
+
+Using `Http.request.schemaBodyJson` offers several major advantages:
+
+1.  **Automatic Validation and Error Handling**: If the incoming body does not match the schema, the server automatically rejects the request with a `400 Bad Request` status and a detailed JSON response explaining the validation errors. You don't have to write any of this boilerplate logic.
+2.  **Type Safety**: If the validation succeeds, the value produced by the `Effect` is fully typed according to your `Schema`. This eliminates `any` types and brings static analysis benefits to your request handlers.
+3.  **Declarative and Clean**: The validation rules are defined once in the `Schema` and then simply applied. This separates the validation logic from your business logic, keeping handlers clean and focused on their core task.
+4.  **Security**: It acts as a security gateway, ensuring that malformed or unexpected data structures never reach your application's core logic.
+
+---
+
+## Good Example
+
+This example defines a `POST` route to create a user. It uses a `CreateUser` schema to validate the request body. If validation passes, it returns a success message with the typed data. If it fails, the platform automatically sends a descriptive 400 error.
+
+```typescript
+import { Effect, Schema } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// Define the expected structure of the request body using Schema.
+const CreateUser = Schema.Struct({
+  name: Schema.String,
+  email: Schema.String.pipe(Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
+});
+
+// Define a POST route.
+const createUserRoute = Http.router.post(
+  '/users',
+  // Use schemaBodyJson to parse and validate.
+  // The result is an Effect<CreateUser, ...>
+  Http.request.schemaBodyJson(CreateUser).pipe(
+    Effect.map((user) =>
+      // If we get here, validation succeeded and `user` is fully typed.
+      Http.response.text(`Successfully created user: ${user.name}`)
+    )
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(createUserRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+
+/*
+To run this:
+- POST http://localhost:3000/users with body {"name": "Paul", "email": "paul@effect.com"}
+  -> 200 OK "Successfully created user: Paul"
+
+- POST http://localhost:3000/users with body {"name": "Paul"}
+  -> 400 Bad Request with a JSON body explaining the 'email' field is missing.
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to manually parse the JSON and then write imperative validation checks. This approach is verbose, error-prone, and not type-safe.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+const createUserRoute = Http.router.post(
+  '/users',
+  Http.request.json.pipe(
+    // Http.request.json returns Effect<unknown, ...>
+    Effect.flatMap((body) => {
+      // Manually check the type and properties of the body.
+      if (
+        typeof body === 'object' &&
+        body !== null &&
+        'name' in body &&
+        typeof body.name === 'string' &&
+        'email' in body &&
+        typeof body.email === 'string'
+      ) {
+        // The type is still not safely inferred here without casting.
+        return Http.response.text(`Successfully created user: ${body.name}`);
+      } else {
+        // Manually create and return a generic error response.
+        return Http.response.text('Invalid request body', { status: 400 });
+      }
+    })
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(createUserRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This manual code is significantly worse. It's hard to read, easy to get wrong, and loses all static type information from the parsed body. Crucially, it forces you to reinvent the wheel for error reporting, which will likely be less detailed and consistent than the automatic responses provided by the platform.

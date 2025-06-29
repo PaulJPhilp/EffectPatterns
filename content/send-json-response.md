@@ -1,0 +1,112 @@
+---
+title: "Send a JSON Response"
+id: "send-json-response"
+skillLevel: "beginner"
+useCase:
+  - "Building APIs"
+  - "Returning Data"
+summary: "Create and send a structured JSON response with the correct headers and status code."
+tags:
+  - "http"
+  - "server"
+  - "response"
+  - "json"
+  - "api"
+rule:
+  description: "Use Http.response.json to automatically serialize data structures into a JSON response."
+author: "PaulJPhilp"
+related:
+  - "handle-get-request"
+  - "validate-request-body"
+---
+
+## Guideline
+
+To return a JavaScript object or value as a JSON response, use the `Http.response.json(data)` constructor.
+
+---
+
+## Rationale
+
+APIs predominantly communicate using JSON. The `Http` module provides a dedicated `Http.response.json` helper to make this as simple and robust as possible. Manually constructing a JSON response involves serializing the data and setting the correct HTTP headers, which is tedious and error-prone.
+
+Using `Http.response.json` is superior because:
+
+1.  **Automatic Serialization**: It safely handles the `JSON.stringify` operation for you, including handling potential circular references or other serialization errors.
+2.  **Correct Headers**: It automatically sets the `Content-Type: application/json; charset=utf-8` header. This is critical for clients to correctly interpret the response body. Forgetting this header is a common source of bugs in manually constructed APIs.
+3.  **Simplicity and Readability**: Your intent is made clear with a single, declarative function call. The code is cleaner and focuses on the data being sent, not the mechanics of HTTP.
+4.  **Composability**: It creates a standard `Http.response` object that works seamlessly with all other parts of the Effect `Http` module.
+
+---
+
+## Good Example
+
+This example defines a route that fetches a user object and returns it as a JSON response. The `Http.response.json` function handles all the necessary serialization and header configuration.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// A route that returns a user object.
+const getUserRoute = Http.router.get(
+  '/users/1',
+  Effect.succeed({ id: 1, name: 'Paul', team: 'Effect' }).pipe(
+    // Use Http.response.json to create the response.
+    Effect.map(Http.response.json)
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+
+/*
+To run this:
+- GET http://localhost:3000/users/1
+- Response Body: {"id":1,"name":"Paul","team":"Effect"}
+- Response Headers will include: Content-Type: application/json; charset=utf-8
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to manually serialize the data to a string and set the headers yourself. This is verbose and introduces opportunities for error.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+const getUserRoute = Http.router.get(
+  '/users/1',
+  Effect.succeed({ id: 1, name: 'Paul', team: 'Effect' }).pipe(
+    Effect.flatMap((user) => {
+      // Manually serialize the object to a JSON string.
+      const jsonString = JSON.stringify(user);
+      // Create a text response with the string.
+      const response = Http.response.text(jsonString);
+      // Manually set the Content-Type header.
+      return Effect.succeed(
+        Http.response.setHeader(
+          response,
+          'Content-Type',
+          'application/json; charset=utf-8'
+        )
+      );
+    })
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This manual approach is unnecessarily complex. It forces you to remember to perform both the serialization and the header configuration. If you forget the `setHeader` call, many clients will fail to parse the response correctly. The `Http.response.json` helper eliminates this entire class of potential bugs.

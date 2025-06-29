@@ -1,0 +1,97 @@
+Excellent. Let's begin with the first pattern for Module 2.
+
+Here is the complete file for `http-server-listen.md`, written according to your specified format. This pattern establishes the fundamental starting point for any web application built with Effect.
+
+```markdown
+---
+title: "Create a Basic HTTP Server"
+id: "launch-http-server"
+skillLevel: "beginner"
+useCase:
+  - "Building Web Servers"
+  - "Creating APIs"
+summary: "Launch a simple, effect-native HTTP server to respond to incoming requests."
+tags:
+  - "http"
+  - "server"
+  - "platform"
+  - "node"
+rule:
+  description: "Use Http.server.serve with a platform-specific layer to run an HTTP application."
+author: "PaulJPhilp"
+related:
+  - "http-router-get"
+  - "http-response-json"
+---
+
+## Guideline
+
+To create and run a web server, define your application as an `Http.App` and execute it using `Http.server.serve`, providing a platform-specific layer like `NodeHttpServer.layer`.
+
+---
+
+## Rationale
+
+In Effect, an HTTP server is not just a side effect; it's a managed, effectful process. The `@effect/platform` package provides a platform-agnostic API for defining HTTP applications, while packages like `@effect/platform-node` provide the concrete implementation.
+
+The core function `Http.server.serve(app)` takes your application logic and returns an `Effect` that, when run, starts the server. This `Effect` is designed to run indefinitely, only terminating if the server crashes or is gracefully shut down.
+
+This approach provides several key benefits:
+
+1.  **Lifecycle Management**: The server's lifecycle is managed by the Effect runtime. This means structured concurrency applies, ensuring graceful shutdowns and proper resource handling automatically.
+2.  **Integration**: The server is a first-class citizen in the Effect ecosystem. It can seamlessly access dependencies provided by `Layer`, use `Config` for configuration, and integrate with `Logger`.
+3.  **Platform Agnosticism**: By coding to the `Http.App` interface, your application logic remains portable across different JavaScript runtimes (Node.js, Bun, Deno) by simply swapping out the platform layer.
+
+---
+
+## Good Example
+
+This example creates a minimal server that responds to all requests with "Hello, World!". The application logic is a simple `Effect` that returns an `Http.response`. We use `NodeRuntime.runMain` to execute the server effect, which is the standard way to launch a long-running application.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// An Http.App is an Effect that takes a request and returns a response.
+// For this basic server, we ignore the request and always return the same response.
+const app = Http.response.text('Hello, World!');
+
+// Http.server.serve takes our app and returns an Effect that will run the server.
+// We provide the NodeHttpServer.layer to specify the port and the server implementation.
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+// NodeRuntime.runMain is used to execute a long-running application.
+// It ensures the program runs forever and handles graceful shutdown.
+NodeRuntime.runMain(program);
+
+/*
+To run this:
+1. Save as index.ts
+2. Run `npx tsx index.ts`
+3. Open http://localhost:3000 in your browser.
+*/
+```
+
+## Anti-Pattern
+
+The common anti-pattern is to use the raw Node.js `http` module directly, outside of the Effect runtime. This approach creates a disconnect between your application logic and the server's lifecycle.
+
+```typescript
+import * as http from 'http';
+
+// Manually create a server using the Node.js built-in module.
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Hello, World!');
+});
+
+// Manually start the server and log the port.
+const port = 3000;
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}/`);
+});
+```
+
+This imperative approach is discouraged when building an Effect application because it forfeits all the benefits of the ecosystem. It runs outside of Effect's structured concurrency, cannot be managed by its resource-safe `Scope`, does not integrate with `Layer` for dependency injection, and requires manual error handling, making it less robust and much harder to compose with other effectful logic.
