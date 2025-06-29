@@ -948,6 +948,86 @@ function manualRetry(
 const program = manualRetry(flakyEffect, 5, 100);
 ```
 
+--- (Pattern Start: launch-http-server) ---
+
+## Create a Basic HTTP Server
+
+**Rule:** Use Http.server.serve with a platform-specific layer to run an HTTP application.
+
+### Full Pattern Content:
+
+## Guideline
+
+To create and run a web server, define your application as an `Http.App` and execute it using `Http.server.serve`, providing a platform-specific layer like `NodeHttpServer.layer`.
+
+---
+
+## Rationale
+
+In Effect, an HTTP server is not just a side effect; it's a managed, effectful process. The `@effect/platform` package provides a platform-agnostic API for defining HTTP applications, while packages like `@effect/platform-node` provide the concrete implementation.
+
+The core function `Http.server.serve(app)` takes your application logic and returns an `Effect` that, when run, starts the server. This `Effect` is designed to run indefinitely, only terminating if the server crashes or is gracefully shut down.
+
+This approach provides several key benefits:
+
+1.  **Lifecycle Management**: The server's lifecycle is managed by the Effect runtime. This means structured concurrency applies, ensuring graceful shutdowns and proper resource handling automatically.
+2.  **Integration**: The server is a first-class citizen in the Effect ecosystem. It can seamlessly access dependencies provided by `Layer`, use `Config` for configuration, and integrate with `Logger`.
+3.  **Platform Agnosticism**: By coding to the `Http.App` interface, your application logic remains portable across different JavaScript runtimes (Node.js, Bun, Deno) by simply swapping out the platform layer.
+
+---
+
+## Good Example
+
+This example creates a minimal server that responds to all requests with "Hello, World!". The application logic is a simple `Effect` that returns an `Http.response`. We use `NodeRuntime.runMain` to execute the server effect, which is the standard way to launch a long-running application.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// An Http.App is an Effect that takes a request and returns a response.
+// For this basic server, we ignore the request and always return the same response.
+const app = Http.response.text('Hello, World!');
+
+// Http.server.serve takes our app and returns an Effect that will run the server.
+// We provide the NodeHttpServer.layer to specify the port and the server implementation.
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+// NodeRuntime.runMain is used to execute a long-running application.
+// It ensures the program runs forever and handles graceful shutdown.
+NodeRuntime.runMain(program);
+
+/*
+To run this:
+1. Save as index.ts
+2. Run `npx tsx index.ts`
+3. Open http://localhost:3000 in your browser.
+*/
+```
+
+## Anti-Pattern
+
+The common anti-pattern is to use the raw Node.js `http` module directly, outside of the Effect runtime. This approach creates a disconnect between your application logic and the server's lifecycle.
+
+```typescript
+import * as http from 'http';
+
+// Manually create a server using the Node.js built-in module.
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Hello, World!');
+});
+
+// Manually start the server and log the port.
+const port = 3000;
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}/`);
+});
+```
+
+This imperative approach is discouraged when building an Effect application because it forfeits all the benefits of the ecosystem. It runs outside of Effect's structured concurrency, cannot be managed by its resource-safe `Scope`, does not integrate with `Layer` for dependency injection, and requires manual error handling, making it less robust and much harder to compose with other effectful logic.
+
 --- (Pattern Start: create-managed-runtime-for-scoped-resources) ---
 
 ## Create a Managed Runtime for Scoped Resources
@@ -1701,6 +1781,318 @@ contains async code, use `runPromise` instead.
 Do not use `runSync` on an Effect that contains asynchronous operations like
 `Effect.delay` or `Effect.promise`. This will result in a runtime error.
 
+--- (Pattern Start: extract-path-parameters) ---
+
+## Extract Path Parameters
+
+**Rule:** Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler.
+
+### Full Pattern Content:
+
+## Guideline
+
+To capture dynamic parts of a URL, define your route path with a colon-prefixed placeholder (e.g., `/users/:userId`) and access the parsed parameters within your handler `Effect`.
+
+---
+
+## Rationale
+
+APIs often need to operate on specific resources identified by a unique key in the URL, such as `/products/123` or `/orders/abc`. The `Http.router` provides a clean, declarative way to handle these dynamic paths without resorting to manual string parsing.
+
+By defining parameters directly in the path string, you gain several benefits:
+
+1.  **Declarative**: The route's structure is immediately obvious from its definition. The code clearly states, "this route expects a dynamic segment here."
+2.  **Safe and Robust**: The router handles the logic of extracting the parameter. This is less error-prone and more robust than manually splitting or using regular expressions on the URL string.
+3.  **Clean Handler Logic**: The business logic inside your handler is separated from the concern of URL parsing. The handler simply receives the parameters it needs to do its job.
+4.  **Composability**: This pattern composes perfectly with the rest of the `Http` module, allowing you to build complex and well-structured APIs.
+
+---
+
+## Good Example
+
+This example defines a route that captures a `userId`. The handler for this route accesses the parsed parameters and uses the `userId` to construct a personalized greeting. The router automatically makes the parameters available to the handler.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// Define a route with a dynamic parameter `:userId`.
+const userRoute = Http.router.get(
+  '/users/:userId',
+  // The handler is an Effect that can access the request.
+  Http.request.ServerRequest.pipe(
+    Effect.flatMap((req) =>
+      // The router automatically parses params and makes them available on the request.
+      Http.response.text(`Hello, user ${req.params.userId}!`)
+    )
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(userRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+
+/*
+To run this:
+- GET http://localhost:3000/users/123 -> "Hello, user 123!"
+- GET http://localhost:3000/users/abc -> "Hello, user abc!"
+- GET http://localhost:3000/users/ -> 404 Not Found
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to manually parse the URL string inside the handler. This approach is brittle, imperative, and mixes concerns.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// This route matches any sub-path of /users/, forcing manual parsing.
+const app = Http.router.get(
+  '/users/*', // Using a wildcard
+  Http.request.ServerRequest.pipe(
+    Effect.flatMap((req) => {
+      // Manually split the URL to find the ID.
+      const parts = req.url.split('/'); // e.g., ['', 'users', '123']
+      if (parts.length === 3 && parts[2]) {
+        const userId = parts[2];
+        return Http.response.text(`Hello, user ${userId}!`);
+      }
+      // Manual handling for missing ID.
+      return Http.response.empty({ status: 404 });
+    })
+  )
+);
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This manual method is highly discouraged. It's fragile—a change in the base path or an extra slash could break the logic (`parts[2]`). It's also not declarative; the intent is hidden inside imperative code. The router's built-in parameter handling is safer, clearer, and the correct approach.
+
+--- (Pattern Start: handle-get-request) ---
+
+## Handle a GET Request
+
+**Rule:** Use Http.router.get to associate a URL path with a specific response Effect.
+
+### Full Pattern Content:
+
+## Guideline
+
+To handle specific URL paths, create individual routes using `Http.router` functions (like `Http.router.get`) and combine them into a single `Http.App`.
+
+---
+
+## Rationale
+
+A real application needs to respond differently to different URLs. The `Http.router` provides a declarative, type-safe, and composable way to manage this routing logic. Instead of a single handler with complex conditional logic, you define many small, focused handlers and assign them to specific paths and HTTP methods.
+
+This approach has several advantages:
+
+1.  **Declarative and Readable**: Your code clearly expresses the mapping between a URL path and its behavior, making the application's structure easy to understand.
+2.  **Composability**: Routers are just values that can be created, combined, and passed around. This makes it easy to organize routes into logical groups (e.g., a `userRoutes` router and a `productRoutes` router) and merge them.
+3.  **Type Safety**: The router ensures that the handler for a route is only ever called for a matching request, simplifying the logic within the handler itself.
+4.  **Integration**: Each route handler is an `Effect`, meaning it has full access to dependency injection, structured concurrency, and integrated error handling, just like any other part of an Effect application.
+
+---
+
+## Good Example
+
+This example defines two separate GET routes, one for the root path (`/`) and one for `/hello`. We create an empty router and add each route to it. The resulting `app` is then served. The router automatically handles sending a `404 Not Found` response for any path that doesn't match.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// Define a handler for the root path
+const rootRoute = Http.router.get(
+  '/',
+  Effect.succeed(Http.response.text('Welcome to the home page!'))
+);
+
+// Define a handler for the /hello path
+const helloRoute = Http.router.get(
+  '/hello',
+  Effect.succeed(Http.response.text('Hello, Effect!'))
+);
+
+// Create an application by combining multiple routes.
+// Start with an empty router and add each route.
+const app = Http.router.empty.pipe(
+  Http.router.addRoute(rootRoute),
+  Http.router.addRoute(helloRoute)
+);
+
+// Serve the router application
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+
+/*
+To run this:
+- GET http://localhost:3000/ -> "Welcome to the home page!"
+- GET http://localhost:3000/hello -> "Hello, Effect!"
+- GET http://localhost:3000/other -> 404 Not Found
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to create a single, monolithic handler that uses conditional logic to inspect the request URL. This imperative approach is difficult to maintain and scale.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// A single app that manually checks the URL
+const app = Http.request.ServerRequest.pipe(
+  Effect.flatMap((req) => {
+    if (req.url === '/') {
+      return Effect.succeed(Http.response.text('Welcome to the home page!'));
+    } else if (req.url === '/hello') {
+      return Effect.succeed(Http.response.text('Hello, Effect!'));
+    } else {
+      return Effect.succeed(Http.response.empty({ status: 404 }));
+    }
+  })
+);
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This manual routing logic is verbose, error-prone (a typo in a string breaks the route), and mixes the "what" (the response) with the "where" (the routing). It doesn't scale to handle different HTTP methods, path parameters, or middleware gracefully. The `Http.router` is designed to solve all of these problems elegantly.
+
+--- (Pattern Start: handle-api-errors) ---
+
+## Handle API Errors
+
+**Rule:** Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses.
+
+### Full Pattern Content:
+
+## Guideline
+
+Define specific error types for your application logic and use `Http.server.serveOptions` with a custom `unhandledErrorResponse` function to map those errors to appropriate HTTP status codes and responses.
+
+---
+
+## Rationale
+
+By default, any unhandled failure in an Effect route handler results in a generic `500 Internal Server Error`. This is a safe default, but it's not helpful for API clients who need to know *why* their request failed. Was it a client-side error (like a non-existent resource, `404`) or a true server-side problem (`500`)?
+
+Centralizing error handling at the server level provides a clean separation of concerns:
+
+1.  **Domain-Focused Logic**: Your business logic can fail with specific, descriptive errors (e.g., `UserNotFoundError`) without needing any knowledge of HTTP status codes.
+2.  **Centralized Mapping**: You define the mapping from application errors to HTTP responses in a single location. This makes your API's error handling consistent and easy to maintain. If you need to change how an error is reported, you only change it in one place.
+3.  **Type Safety**: Using `Data.TaggedClass` for your errors allows you to use `Match` to exhaustively handle all known error cases, preventing you from forgetting to map a specific error type.
+4.  **Clear Client Communication**: It produces a predictable and useful API, allowing clients to programmatically react to different failure scenarios.
+
+---
+
+## Good Example
+
+This example defines two custom error types, `UserNotFoundError` and `InvalidIdError`. The route logic can fail with either. The `unhandledErrorResponse` function inspects the error and returns a `404` or `400` response accordingly, with a generic `500` for any other unexpected errors.
+
+```typescript
+import { Effect, Data, Match } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// Define specific, typed errors for our domain
+class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{ id: string }> {}
+class InvalidIdError extends Data.TaggedError('InvalidIdError')<{ id:string }> {}
+
+// A mock database function that can fail with our specific errors
+const getUser = (id: string) => {
+  if (!id.startsWith('user_')) {
+    return Effect.fail(new InvalidIdError({ id }));
+  }
+  if (id === 'user_123') {
+    return Effect.succeed({ id, name: 'Paul' });
+  }
+  return Effect.fail(new UserNotFoundError({ id }));
+};
+
+const userRoute = Http.router.get(
+  '/users/:userId',
+  Effect.flatMap(Http.request.ServerRequest, (req) => getUser(req.params.userId)).pipe(
+    Effect.map(Http.response.json)
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(userRoute));
+
+// Centralized error handling logic
+const program = Http.server.serve(app).pipe(
+  Http.server.serveOptions({
+    unhandledErrorResponse: (error) =>
+      Match.value(error).pipe(
+        Match.tag('UserNotFoundError', (e) =>
+          Http.response.text(`User ${e.id} not found`, { status: 404 })
+        ),
+        Match.tag('InvalidIdError', (e) =>
+          Http.response.text(`ID ${e.id} is not a valid format`, { status: 400 })
+        ),
+        Match.orElse(() => Http.response.empty({ status: 500 }))
+      ),
+  }),
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+## Anti-Pattern
+
+The anti-pattern is to handle HTTP-specific error logic inside each route handler using functions like `Effect.catchTag`.
+
+```typescript
+import { Effect, Data } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{ id: string }> {}
+// ... same getUser function and error classes
+
+const userRoute = Http.router.get(
+  '/users/:userId',
+  Effect.flatMap(Http.request.ServerRequest, (req) => getUser(req.params.userId)).pipe(
+    Effect.map(Http.response.json),
+    // Manually catching errors inside the route logic
+    Effect.catchTag('UserNotFoundError', (e) =>
+      Http.response.text(`User ${e.id} not found`, { status: 404 })
+    ),
+    Effect.catchTag('InvalidIdError', (e) =>
+      Http.response.text(`ID ${e.id} is not a valid format`, { status: 400 })
+    )
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(userRoute));
+
+// No centralized error handling
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This approach is problematic because it pollutes the business logic of the route handler with details about HTTP status codes. It's also highly repetitive; if ten different routes could produce a `UserNotFoundError`, you would need to copy this `catchTag` logic into all ten of them, making the API difficult to maintain.
+
 --- (Pattern Start: handle-errors-with-catch) ---
 
 ## Handle Errors with catchTag, catchTags, and catchAll
@@ -2014,6 +2406,109 @@ and context-aware.
 
 Calling `console.log` directly within an Effect composition. This is an
 unmanaged side-effect that bypasses all the benefits of Effect's logging system.
+
+--- (Pattern Start: make-http-client-request) ---
+
+## Make an Outgoing HTTP Client Request
+
+**Rule:** Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem.
+
+### Full Pattern Content:
+
+## Guideline
+
+To call an external API from within your server, use the `Http.client` module. This creates an `Effect` that represents the outgoing request, keeping it fully integrated with the Effect runtime.
+
+---
+
+## Rationale
+
+An API server often needs to communicate with other services. While you could use the native `fetch` API, this breaks out of the Effect ecosystem and forfeits its most powerful features. Using the built-in `Http.client` is superior for several critical reasons:
+
+1.  **Full Integration**: An `Http.client` request is a first-class `Effect`. This means it seamlessly composes with all other effects. You can add timeouts, retry logic (`Schedule`), or race it with other operations using the standard Effect operators you already know.
+2.  **Structured Concurrency**: This is a key benefit. If the original incoming request to your server is cancelled or times out, Effect will automatically interrupt the outgoing `Http.client` request. A raw `fetch` call would continue running in the background, wasting resources.
+3.  **Typed Errors**: The client provides a rich set of typed errors (e.g., `Http.error.RequestError`, `Http.error.ResponseError`). This allows you to write precise error handling logic to distinguish between a network failure and a non-2xx response from the external API.
+4.  **Testability**: The `Http.client` can be provided via a `Layer`, making it trivial to mock in tests. You can test your route's logic without making actual network calls, leading to faster and more reliable tests.
+
+---
+
+## Good Example
+
+This example creates a proxy endpoint. A request to `/proxy/posts/1` on our server will trigger an outgoing request to the JSONPlaceholder API. The response is then parsed and relayed back to the original client.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+const proxyRoute = Http.router.get(
+  '/proxy/posts/:id',
+  Effect.flatMap(Http.request.ServerRequest, (req) =>
+    // 1. Create a GET request to the external API.
+    Http.client.request.get(`https://jsonplaceholder.typicode.com/posts/${req.params.id}`).pipe(
+      // 2. Execute it with the default client and ensure a 2xx response.
+      Http.client.request.filterStatusOk,
+      // 3. Parse the response body as JSON.
+      Effect.flatMap(Http.client.response.json),
+      // 4. Map the successful result to our server's JSON response.
+      Effect.map(Http.response.json),
+      // 5. If any step fails (network, status, parsing), return a 502 error.
+      Effect.catchAll(() =>
+        Http.response.text('Error communicating with external service', {
+          status: 502, // Bad Gateway
+        })
+      )
+    )
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(proxyRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+## Anti-Pattern
+
+The anti-pattern is to use `fetch` inside a route handler, wrapped in `Effect.tryPromise`. This approach requires manual error handling and loses the benefits of the Effect ecosystem.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+const proxyRoute = Http.router.get(
+  '/proxy/posts/:id',
+  Effect.flatMap(Http.request.ServerRequest, (req) =>
+    // Manually wrap fetch in an Effect
+    Effect.tryPromise({
+      try: () => fetch(`https://jsonplaceholder.typicode.com/posts/${req.params.id}`),
+      catch: () => 'FetchError', // Untyped error
+    }).pipe(
+      Effect.flatMap((res) =>
+        // Manually check status and parse JSON, each with its own error case
+        res.ok
+          ? Effect.tryPromise({ try: () => res.json(), catch: () => 'JsonError' })
+          : Effect.fail('BadStatusError')
+      ),
+      Effect.map(Http.response.json),
+      // A generic catch-all because we can't easily distinguish error types
+      Effect.catchAll(() => Http.response.text('An unknown error occurred', { status: 500 }))
+    )
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(proxyRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This manual approach is significantly more complex and less safe. It forces you to reinvent status and parsing logic, uses untyped string-based errors, and most importantly, the `fetch` call will not be automatically interrupted if the parent request is cancelled.
 
 --- (Pattern Start: manage-resource-lifecycles-with-scope) ---
 
@@ -3070,6 +3565,126 @@ This approach makes configuration available contextually, supporting better test
 
 Manually reading environment variables deep inside business logic. This tightly couples that logic to the external environment, making it difficult to test and reuse.
 
+--- (Pattern Start: provide-dependencies-to-routes) ---
+
+## Provide Dependencies to Routes
+
+**Rule:** Define dependencies with Effect.Service and provide them to your HTTP server using a Layer.
+
+### Full Pattern Content:
+
+## Guideline
+
+Define your application's services using `class MyService extends Effect.Service("MyService")`, provide a live implementation via a `Layer`, and use `Effect.provide` to make the service available to your entire HTTP application.
+
+---
+
+## Rationale
+
+As applications grow, route handlers need to perform complex tasks like accessing a database, calling other APIs, or logging. Hard-coding this logic or manually passing dependencies leads to tightly coupled, untestable code.
+
+Effect's dependency injection system (`Service` and `Layer`) solves this by decoupling a service's interface from its implementation. This is the cornerstone of building scalable, maintainable applications in Effect.
+
+1.  **Modern and Simple**: `Effect.Service` is the modern, idiomatic way to define services. It combines the service's definition and its access tag into a single, clean class structure, reducing boilerplate.
+2.  **Testability**: By depending on a service interface, you can easily provide a mock implementation in your tests (e.g., `Database.Test`) instead of the real one (`Database.Live`), allowing for fast, isolated unit tests of your route logic.
+3.  **Decoupling**: Route handlers don't know or care *how* the database connection is created or managed. They simply ask for the `Database` service from the context, and the runtime provides the configured implementation.
+4.  **Composability**: `Layer`s are composable. You can build complex dependency graphs (e.g., a `Database` layer that itself requires a `Config` layer) that Effect will automatically construct and wire up for you.
+
+---
+
+## Good Example
+
+This example defines a `Database` service. The route handler for `/users/:userId` requires this service to fetch a user. We then provide a "live" implementation of the `Database` to the entire server using a `Layer`.
+
+```typescript
+import { Effect, Data, Layer } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// 1. Define the service interface using Effect.Service
+class Database extends Effect.Service('Database')<{
+  readonly getUser: (
+    id: string
+  ) => Effect.Effect<{ name: string }, UserNotFoundError>;
+}>() {}
+
+class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{ id: string }> {}
+
+// 2. Create a "live" Layer that provides the real implementation
+const DatabaseLive = Layer.succeed(
+  Database,
+  Database.of({
+    getUser: (id: string) =>
+      id === '123'
+        ? Effect.succeed({ name: 'Paul' })
+        : Effect.fail(new UserNotFoundError({ id })),
+  })
+);
+
+// 3. The route handler now requires the Database service
+const getUserRoute = Http.router.get(
+  '/users/:userId',
+  Effect.flatMap(Http.request.ServerRequest, (req) =>
+    // Access the service and call its methods
+    Effect.flatMap(Database, (db) => db.getUser(req.params.userId))
+  ).pipe(Effect.map(Http.response.json))
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
+
+// 4. Provide the Layer to the entire application
+const program = Http.server.serve(app).pipe(
+  Effect.provide(DatabaseLive),
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+## Anti-Pattern
+
+The anti-pattern is to manually instantiate and pass dependencies through function arguments. This creates tight coupling and makes testing difficult.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// Manual implementation of a database client
+class LiveDatabase {
+  getUser(id: string) {
+    if (id === '123') {
+      return Effect.succeed({ name: 'Paul' });
+    }
+    return Effect.fail('User not found'); // Untyped error
+  }
+}
+
+// The dependency must be passed explicitly to the route definition
+const createGetUserRoute = (db: LiveDatabase) =>
+  Http.router.get(
+    '/users/:userId',
+    Effect.flatMap(Http.request.ServerRequest, (req) =>
+      db.getUser(req.params.userId)
+    ).pipe(
+      Effect.map(Http.response.json),
+      Effect.catchAll(() => Http.response.empty({ status: 404 }))
+    )
+  );
+
+// Manually instantiate the dependency
+const db = new LiveDatabase();
+const getUserRoute = createGetUserRoute(db);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This approach is flawed because the route handler is now aware of the concrete `LiveDatabase` class. Swapping it for a mock in a test would be cumbersome. Furthermore, if a service deep within the call stack needs a dependency, it must be "drilled" down through every intermediate function, which is a significant maintenance burden.
+
 --- (Pattern Start: race-concurrent-effects) ---
 
 ## Race Concurrent Effects for the Fastest Result
@@ -3442,6 +4057,105 @@ const program = Effect.gen(function* () {
 // which is a full second slower than the parallel version.
 Effect.runPromise(program).then(console.log);
 ```
+
+--- (Pattern Start: send-json-response) ---
+
+## Send a JSON Response
+
+**Rule:** Use Http.response.json to automatically serialize data structures into a JSON response.
+
+### Full Pattern Content:
+
+## Guideline
+
+To return a JavaScript object or value as a JSON response, use the `Http.response.json(data)` constructor.
+
+---
+
+## Rationale
+
+APIs predominantly communicate using JSON. The `Http` module provides a dedicated `Http.response.json` helper to make this as simple and robust as possible. Manually constructing a JSON response involves serializing the data and setting the correct HTTP headers, which is tedious and error-prone.
+
+Using `Http.response.json` is superior because:
+
+1.  **Automatic Serialization**: It safely handles the `JSON.stringify` operation for you, including handling potential circular references or other serialization errors.
+2.  **Correct Headers**: It automatically sets the `Content-Type: application/json; charset=utf-8` header. This is critical for clients to correctly interpret the response body. Forgetting this header is a common source of bugs in manually constructed APIs.
+3.  **Simplicity and Readability**: Your intent is made clear with a single, declarative function call. The code is cleaner and focuses on the data being sent, not the mechanics of HTTP.
+4.  **Composability**: It creates a standard `Http.response` object that works seamlessly with all other parts of the Effect `Http` module.
+
+---
+
+## Good Example
+
+This example defines a route that fetches a user object and returns it as a JSON response. The `Http.response.json` function handles all the necessary serialization and header configuration.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// A route that returns a user object.
+const getUserRoute = Http.router.get(
+  '/users/1',
+  Effect.succeed({ id: 1, name: 'Paul', team: 'Effect' }).pipe(
+    // Use Http.response.json to create the response.
+    Effect.map(Http.response.json)
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+
+/*
+To run this:
+- GET http://localhost:3000/users/1
+- Response Body: {"id":1,"name":"Paul","team":"Effect"}
+- Response Headers will include: Content-Type: application/json; charset=utf-8
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to manually serialize the data to a string and set the headers yourself. This is verbose and introduces opportunities for error.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+const getUserRoute = Http.router.get(
+  '/users/1',
+  Effect.succeed({ id: 1, name: 'Paul', team: 'Effect' }).pipe(
+    Effect.flatMap((user) => {
+      // Manually serialize the object to a JSON string.
+      const jsonString = JSON.stringify(user);
+      // Create a text response with the string.
+      const response = Http.response.text(jsonString);
+      // Manually set the Content-Type header.
+      return Effect.succeed(
+        Http.response.setHeader(
+          response,
+          'Content-Type',
+          'application/json; charset=utf-8'
+        )
+      );
+    })
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This manual approach is unnecessarily complex. It forces you to remember to perform both the serialization and the header configuration. If you forget the `setHeader` call, many clients will fail to parse the response correctly. The `Http.response.json` helper eliminates this entire class of potential bugs.
 
 --- (Pattern Start: setup-new-project) ---
 
@@ -4414,6 +5128,121 @@ This approach ensures your tests are idiomatic, maintainable, and take full adva
 ## Anti-Pattern
 
 Do not create manual layers for your service in tests (`Layer.succeed(...)`) or try to provide the service class directly. This bypasses the intended dependency injection mechanism.
+
+--- (Pattern Start: validate-request-body) ---
+
+## Validate Request Body
+
+**Rule:** Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies.
+
+### Full Pattern Content:
+
+## Guideline
+
+To process an incoming request body, use `Http.request.schemaBodyJson(YourSchema)` to parse the JSON and validate its structure in a single, type-safe step.
+
+---
+
+## Rationale
+
+Accepting user-provided data is one of the most critical and sensitive parts of an API. You must never trust incoming data. The `Http` module's integration with `Schema` provides a robust, declarative solution for this.
+
+Using `Http.request.schemaBodyJson` offers several major advantages:
+
+1.  **Automatic Validation and Error Handling**: If the incoming body does not match the schema, the server automatically rejects the request with a `400 Bad Request` status and a detailed JSON response explaining the validation errors. You don't have to write any of this boilerplate logic.
+2.  **Type Safety**: If the validation succeeds, the value produced by the `Effect` is fully typed according to your `Schema`. This eliminates `any` types and brings static analysis benefits to your request handlers.
+3.  **Declarative and Clean**: The validation rules are defined once in the `Schema` and then simply applied. This separates the validation logic from your business logic, keeping handlers clean and focused on their core task.
+4.  **Security**: It acts as a security gateway, ensuring that malformed or unexpected data structures never reach your application's core logic.
+
+---
+
+## Good Example
+
+This example defines a `POST` route to create a user. It uses a `CreateUser` schema to validate the request body. If validation passes, it returns a success message with the typed data. If it fails, the platform automatically sends a descriptive 400 error.
+
+```typescript
+import { Effect, Schema } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// Define the expected structure of the request body using Schema.
+const CreateUser = Schema.Struct({
+  name: Schema.String,
+  email: Schema.String.pipe(Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
+});
+
+// Define a POST route.
+const createUserRoute = Http.router.post(
+  '/users',
+  // Use schemaBodyJson to parse and validate.
+  // The result is an Effect<CreateUser, ...>
+  Http.request.schemaBodyJson(CreateUser).pipe(
+    Effect.map((user) =>
+      // If we get here, validation succeeded and `user` is fully typed.
+      Http.response.text(`Successfully created user: ${user.name}`)
+    )
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(createUserRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+
+/*
+To run this:
+- POST http://localhost:3000/users with body {"name": "Paul", "email": "paul@effect.com"}
+  -> 200 OK "Successfully created user: Paul"
+
+- POST http://localhost:3000/users with body {"name": "Paul"}
+  -> 400 Bad Request with a JSON body explaining the 'email' field is missing.
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to manually parse the JSON and then write imperative validation checks. This approach is verbose, error-prone, and not type-safe.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+const createUserRoute = Http.router.post(
+  '/users',
+  Http.request.json.pipe(
+    // Http.request.json returns Effect<unknown, ...>
+    Effect.flatMap((body) => {
+      // Manually check the type and properties of the body.
+      if (
+        typeof body === 'object' &&
+        body !== null &&
+        'name' in body &&
+        typeof body.name === 'string' &&
+        'email' in body &&
+        typeof body.email === 'string'
+      ) {
+        // The type is still not safely inferred here without casting.
+        return Http.response.text(`Successfully created user: ${body.name}`);
+      } else {
+        // Manually create and return a generic error response.
+        return Http.response.text('Invalid request body', { status: 400 });
+      }
+    })
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(createUserRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This manual code is significantly worse. It's hard to read, easy to get wrong, and loses all static type information from the parsed body. Crucially, it forces you to reinvent the wheel for error reporting, which will likely be less detailed and consistent than the automatic responses provided by the platform.
 
 --- (Pattern Start: wrap-asynchronous-computations) ---
 

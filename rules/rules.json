@@ -60,6 +60,11 @@
     "description": "Use Schedule to create composable policies for controlling the repetition and retrying of effects."
   },
   {
+    "id": "launch-http-server",
+    "title": "Create a Basic HTTP Server",
+    "description": "Use Http.server.serve with a platform-specific layer to run an HTTP application."
+  },
+  {
     "id": "create-managed-runtime-for-scoped-resources",
     "title": "Create a Managed Runtime for Scoped Resources",
     "description": "Create a managed runtime for scoped resources."
@@ -120,6 +125,21 @@
     "description": "Execute synchronous effects with Effect.runSync."
   },
   {
+    "id": "extract-path-parameters",
+    "title": "Extract Path Parameters",
+    "description": "Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler."
+  },
+  {
+    "id": "handle-get-request",
+    "title": "Handle a GET Request",
+    "description": "Use Http.router.get to associate a URL path with a specific response Effect."
+  },
+  {
+    "id": "handle-api-errors",
+    "title": "Handle API Errors",
+    "description": "Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses."
+  },
+  {
     "id": "handle-errors-with-catch",
     "title": "Handle Errors with catchTag, catchTags, and catchAll",
     "description": "Handle errors with catchTag, catchTags, and catchAll."
@@ -143,6 +163,11 @@
     "id": "leverage-structured-logging",
     "title": "Leverage Effect's Built-in Structured Logging",
     "description": "Leverage Effect's built-in structured logging."
+  },
+  {
+    "id": "make-http-client-request",
+    "title": "Make an Outgoing HTTP Client Request",
+    "description": "Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem."
   },
   {
     "id": "manage-resource-lifecycles-with-scope",
@@ -215,6 +240,11 @@
     "description": "Provide configuration to your app via a Layer."
   },
   {
+    "id": "provide-dependencies-to-routes",
+    "title": "Provide Dependencies to Routes",
+    "description": "Define dependencies with Effect.Service and provide them to your HTTP server using a Layer."
+  },
+  {
     "id": "race-concurrent-effects",
     "title": "Race Concurrent Effects for the Fastest Result",
     "description": "Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers."
@@ -238,6 +268,11 @@
     "id": "run-effects-in-parallel-with-all",
     "title": "Run Independent Effects in Parallel with Effect.all",
     "description": "Use Effect.all to execute a collection of independent effects concurrently."
+  },
+  {
+    "id": "send-json-response",
+    "title": "Send a JSON Response",
+    "description": "Use Http.response.json to automatically serialize data structures into a JSON response."
   },
   {
     "id": "setup-new-project",
@@ -313,6 +348,11 @@
     "id": "use-default-layer-for-tests",
     "title": "Use the Auto-Generated .Default Layer in Tests",
     "description": "Use the auto-generated .Default layer in tests."
+  },
+  {
+    "id": "validate-request-body",
+    "title": "Validate Request Body",
+    "description": "Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies."
   },
   {
     "id": "wrap-asynchronous-computations",

@@ -16,13 +16,26 @@ This repository is designed to be a living document that helps developers move f
 - [API Development](#api-development)
 - [Application Configuration](#application-configuration)
 - [Testing](#testing)
+- [API Reliability](#api-reliability)
+- [API Security](#api-security)
+- [Application Architecture](#application-architecture)
 - [Asynchronous Data Processing](#asynchronous-data-processing)
+- [Building APIs](#building-apis)
 - [Building Resilient Data Pipelines](#building-resilient-data-pipelines)
+- [Building Web Servers](#building-web-servers)
+- [Calling External APIs](#calling-external-apis)
 - [Concurrency](#concurrency)
+- [Creating APIs](#creating-apis)
+- [Data Validation](#data-validation)
+- [Dependency Injection](#dependency-injection)
+- [Dynamic Routing](#dynamic-routing)
+- [Error Handling](#error-handling)
+- [Microservice Communication](#microservice-communication)
 - [Modeling Data](#modeling-data)
 - [Modeling Time](#modeling-time)
 - [Observability](#observability)
 - [Resource Management](#resource-management)
+- [Returning Data](#returning-data)
 - [Tooling and Debugging](#tooling-and-debugging)
 
 ---
@@ -168,6 +181,30 @@ How to test Effect code effectively, reliably, and deterministically.
 
 ---
 
+## API Reliability
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Handle API Errors](./content/handle-api-errors.mdx) | 🟡 **Intermediate** | Translate application-specific errors from the Effect failure channel into meaningful HTTP error responses. |
+
+---
+
+## API Security
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Validate Request Body](./content/validate-request-body.mdx) | 🟡 **Intermediate** | Safely parse and validate an incoming JSON request body against a predefined Schema. |
+
+---
+
+## Application Architecture
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Provide Dependencies to Routes](./content/provide-dependencies-to-routes.mdx) | 🟡 **Intermediate** | Inject services like database connections into HTTP route handlers using Layer and Effect.Service. |
+
+---
+
 ## Asynchronous Data Processing
 
 | Pattern | Skill Level | Summary |
@@ -176,11 +213,40 @@ How to test Effect code effectively, reliably, and deterministically.
 
 ---
 
+## Building APIs
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Extract Path Parameters](./content/extract-path-parameters.mdx) | 🟢 **Beginner** | Capture and use dynamic segments from a request URL, such as a resource ID. |
+| [Send a JSON Response](./content/send-json-response.mdx) | 🟢 **Beginner** | Create and send a structured JSON response with the correct headers and status code. |
+| [Handle API Errors](./content/handle-api-errors.mdx) | 🟡 **Intermediate** | Translate application-specific errors from the Effect failure channel into meaningful HTTP error responses. |
+| [Provide Dependencies to Routes](./content/provide-dependencies-to-routes.mdx) | 🟡 **Intermediate** | Inject services like database connections into HTTP route handlers using Layer and Effect.Service. |
+| [Validate Request Body](./content/validate-request-body.mdx) | 🟡 **Intermediate** | Safely parse and validate an incoming JSON request body against a predefined Schema. |
+
+---
+
 ## Building Resilient Data Pipelines
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Process collections of data asynchronously](./content/process-a-collection-of-data-asynchronously.mdx) | 🟡 **Intermediate** | Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream. |
+
+---
+
+## Building Web Servers
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Create a Basic HTTP Server](./content/launch-http-server.mdx) | 🟢 **Beginner** | Launch a simple, effect-native HTTP server to respond to incoming requests. |
+| [Handle a GET Request](./content/handle-get-request.mdx) | 🟢 **Beginner** | Define a route that responds to a specific HTTP GET request path. |
+
+---
+
+## Calling External APIs
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Make an Outgoing HTTP Client Request](./content/make-http-client-request.mdx) | 🟡 **Intermediate** | Use the built-in Effect HTTP client to make safe and composable requests to external services from within your API. |
 
 ---
 
@@ -201,6 +267,55 @@ How to test Effect code effectively, reliably, and deterministically.
 | [Poll for Status Until a Task Completes](./content/poll-for-status-until-task-completes.mdx) | 🟠 **Advanced** | Use Effect.race to run a repeating polling effect alongside a main task, automatically stopping the polling when the main task finishes. |
 | [Run Background Tasks with Effect.fork](./content/run-background-tasks-with-fork.mdx) | 🟠 **Advanced** | Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting. |
 | [Understand Fibers as Lightweight Threads](./content/understand-fibers-as-lightweight-threads.mdx) | 🟠 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
+
+---
+
+## Creating APIs
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Create a Basic HTTP Server](./content/launch-http-server.mdx) | 🟢 **Beginner** | Launch a simple, effect-native HTTP server to respond to incoming requests. |
+| [Handle a GET Request](./content/handle-get-request.mdx) | 🟢 **Beginner** | Define a route that responds to a specific HTTP GET request path. |
+
+---
+
+## Data Validation
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Validate Request Body](./content/validate-request-body.mdx) | 🟡 **Intermediate** | Safely parse and validate an incoming JSON request body against a predefined Schema. |
+
+---
+
+## Dependency Injection
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Provide Dependencies to Routes](./content/provide-dependencies-to-routes.mdx) | 🟡 **Intermediate** | Inject services like database connections into HTTP route handlers using Layer and Effect.Service. |
+
+---
+
+## Dynamic Routing
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Extract Path Parameters](./content/extract-path-parameters.mdx) | 🟢 **Beginner** | Capture and use dynamic segments from a request URL, such as a resource ID. |
+
+---
+
+## Error Handling
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Handle API Errors](./content/handle-api-errors.mdx) | 🟡 **Intermediate** | Translate application-specific errors from the Effect failure channel into meaningful HTTP error responses. |
+
+---
+
+## Microservice Communication
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Make an Outgoing HTTP Client Request](./content/make-http-client-request.mdx) | 🟡 **Intermediate** | Use the built-in Effect HTTP client to make safe and composable requests to external services from within your API. |
 
 ---
 
@@ -238,6 +353,14 @@ How to test Effect code effectively, reliably, and deterministically.
 | [Create a Managed Runtime for Scoped Resources](./content/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
 | [Implement Graceful Shutdown for Your Application](./content/implement-graceful-shutdown.mdx) | 🟠 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
 | [Manage Resource Lifecycles with Scope](./content/manage-resource-lifecycles-with-scope.mdx) | 🟠 **Advanced** | Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed. |
+
+---
+
+## Returning Data
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Send a JSON Response](./content/send-json-response.mdx) | 🟢 **Beginner** | Create and send a structured JSON response with the correct headers and status code. |
 
 ---
 
