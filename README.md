@@ -180,7 +180,16 @@ Processing and transforming data in a lazy, composable, and resource-safe manner
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
+| [Collect All Results into a List](./content/stream-collect-results.mdx) | 🟢 **Beginner** | Run a pipeline and gather all of its results into an in-memory array. |
+| [Create a Stream from a List](./content/stream-from-iterable.mdx) | 🟢 **Beginner** | Turn a simple in-memory array or list into a foundational data pipeline using Stream. |
+| [Run a Pipeline for its Side Effects](./content/stream-run-for-effects.mdx) | 🟢 **Beginner** | Execute a pipeline for its effects without collecting the results, saving memory. |
+| [Automatically Retry Failed Operations](./content/stream-retry-on-failure.mdx) | 🟡 **Intermediate** | Build a self-healing pipeline that can automatically retry failed processing steps using a configurable backoff strategy. |
+| [Process a Large File with Constant Memory](./content/stream-from-file.mdx) | 🟡 **Intermediate** | Create a data pipeline from a file on disk, processing it line-by-line without loading the entire file into memory. |
 | [Process collections of data asynchronously](./content/process-a-collection-of-data-asynchronously.mdx) | 🟡 **Intermediate** | Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream. |
+| [Process Items Concurrently](./content/stream-process-concurrently.mdx) | 🟡 **Intermediate** | Perform an asynchronous action for each item in a stream with controlled parallelism to dramatically improve performance. |
+| [Process Items in Batches](./content/stream-process-in-batches.mdx) | 🟡 **Intermediate** | Group items into chunks for efficient bulk operations, like database inserts or batch API calls. |
+| [Turn a Paginated API into a Single Stream](./content/stream-from-paginated-api.mdx) | 🟡 **Intermediate** | Convert a paginated API into a continuous, easy-to-use stream, abstracting away the complexity of fetching page by page. |
+| [Manage Resources Safely in a Pipeline](./content/stream-manage-resources.mdx) | 🟠 **Advanced** | Ensure resources like file handles or connections are safely acquired at the start of a pipeline and always released at the end, even on failure. |
 
 ---
 

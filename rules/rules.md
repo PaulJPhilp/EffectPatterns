@@ -397,6 +397,109 @@ Effect.runPromise(createUser);
 Not adding any metrics to your application. Without metrics, you are flying blind. You have no high-level overview of your application's health, performance, or business KPIs. You can't build dashboards, you can't set up alerts for abnormal behavior (e.g., "error rate is too high"), and you are forced to rely on digging through logs to 
 understand the state of your system.
 
+--- (Pattern Start: stream-retry-on-failure) ---
+
+## Automatically Retry Failed Operations
+
+**Rule:** Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
+
+### Full Pattern Content:
+
+## Guideline
+
+To make a data pipeline resilient to transient failures, apply the `.retry(Schedule)` operator to the `Stream`.
+
+---
+
+## Rationale
+
+Real-world systems are unreliable. Network connections drop, APIs return temporary `503` errors, and databases can experience deadlocks. A naive pipeline will fail completely on the first sign of trouble. A resilient pipeline, however, can absorb these transient errors and heal itself.
+
+The `retry` operator, combined with the `Schedule` module, provides a powerful and declarative way to build this resilience:
+
+1.  **Declarative Resilience**: Instead of writing complex `try/catch` loops with manual delay logic, you declaratively state *how* the pipeline should retry. For example, "retry 3 times, with an exponential backoff starting at 100ms."
+2.  **Separation of Concerns**: Your core pipeline logic remains focused on the "happy path." The retry strategy is a separate, composable concern that you apply to the entire stream.
+3.  **Rich Scheduling Policies**: `Schedule` is incredibly powerful. You can create schedules based on a fixed number of retries, exponential backoff, jitter (to avoid thundering herd problems), or even combinations of these.
+4.  **Prevents Cascading Failures**: By handling temporary issues at the source, you prevent a small, transient glitch from causing a complete failure of your entire application.
+
+---
+
+## Good Example
+
+This example simulates an API that fails the first two times it's called. The stream processes a list of IDs, and the `retry` operator ensures that the failing operation for `id: 2` is automatically retried until it succeeds.
+
+```typescript
+import { Effect, Stream, Schedule } from 'effect';
+
+let attempts = 0;
+// A mock function that simulates a flaky API call
+const processItem = (id: number): Effect.Effect<string, Error> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`Attempting to process item ${id}...`);
+    if (id === 2 && attempts < 2) {
+      attempts++;
+      yield* Effect.log(`Item ${id} failed, attempt ${attempts}.`);
+      return yield* Effect.fail(new Error('API is temporarily down'));
+    }
+    return `Successfully processed item ${id}`;
+  });
+
+const ids = [1, 2, 3];
+
+// Define a retry policy: 3 attempts with a fixed 100ms delay
+const retryPolicy = Schedule.recurs(3).pipe(Schedule.addDelay('100 millis'));
+
+const program = Stream.fromIterable(ids).pipe(
+  // Apply the processing function to each item
+  Stream.mapEffect(processItem, { concurrency: 1 }),
+  // Apply the retry policy to the entire stream
+  Stream.retry(retryPolicy),
+  Stream.runDrain
+);
+
+Effect.runPromise(program);
+/*
+Output:
+... level=INFO msg="Attempting to process item 1..."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Item 2 failed, attempt 1."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Item 2 failed, attempt 2."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Attempting to process item 3..."
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to either have no retry logic at all, or to write manual, imperative retry loops inside your processing function.
+
+```typescript
+import { Effect, Stream } from 'effect';
+// ... same mock processItem function ...
+
+const ids = [1, 2, 3];
+
+const program = Stream.fromIterable(ids).pipe(
+  // No retry logic. The entire stream will fail when item 2 fails.
+  Stream.mapEffect(processItem, { concurrency: 1 }),
+  Stream.runDrain
+);
+
+Effect.runPromise(program).catch((error) => {
+  console.error('Pipeline failed:', error);
+});
+/*
+Output:
+... level=INFO msg="Attempting to process item 1..."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Item 2 failed, attempt 1."
+Pipeline failed: Error: API is temporarily down
+*/
+```
+
+This "fail-fast" approach is brittle. A single, temporary network blip would cause the entire pipeline to terminate, even if subsequent items could have been processed successfully. While manual retry logic inside `processItem` is possible, it pollutes the core logic with concerns about timing and attempt counting, and is far less composable and reusable than a `Schedule`.
+
 --- (Pattern Start: avoid-long-andthen-chains) ---
 
 ## Avoid Long Chains of .andThen; Use Generators Instead
@@ -633,6 +736,90 @@ const server = http.createServer((_req, res) => {
   Effect.runPromise(requestEffect).then((msg) => res.end(msg));
 });
 ```
+
+--- (Pattern Start: stream-collect-results) ---
+
+## Collect All Results into a List
+
+**Rule:** Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.
+
+### Full Pattern Content:
+
+## Guideline
+
+To execute a stream and collect all of its emitted values into a single, in-memory list, use the `Stream.runCollect` sink.
+
+---
+
+## Rationale
+
+A "sink" is a terminal operator that consumes a stream and produces a final `Effect`. `Stream.runCollect` is the most fundamental sink. It provides the bridge from the lazy, pull-based world of `Stream` back to the familiar world of a single `Effect` that resolves with a standard data structure.
+
+Using `Stream.runCollect` is essential when:
+
+1.  **You Need the Final Result**: The goal of your pipeline is to produce a complete list of transformed items that you need to use in a subsequent step (e.g., to return as a single JSON array from an API).
+2.  **Simplicity is Key**: It's the most straightforward way to "run" a stream and see its output. It declaratively states your intent: "execute this entire pipeline and give me all the results."
+3.  **The Dataset is Bounded**: It's designed for streams where the total number of items is known to be finite and small enough to fit comfortably in memory.
+
+The result of `Stream.runCollect` is an `Effect` that, when executed, yields a `Chunk` containing all the items emitted by the stream.
+
+---
+
+## Good Example
+
+This example creates a stream of numbers, filters for only the even ones, transforms them into strings, and then uses `runCollect` to gather the final results into a `Chunk`.
+
+```typescript
+import { Effect, Stream, Chunk } from 'effect';
+
+const program = Stream.range(1, 10).pipe(
+  // Find all the even numbers
+  Stream.filter((n) => n % 2 === 0),
+  // Transform them into strings
+  Stream.map((n) => `Even number: ${n}`),
+  // Run the stream and collect the results
+  Stream.runCollect
+);
+
+Effect.runPromise(program).then((results) => {
+  console.log('Collected results:', Chunk.toArray(results));
+});
+/*
+Output:
+Collected results: [
+  'Even number: 2',
+  'Even number: 4',
+  'Even number: 6',
+  'Even number: 8',
+  'Even number: 10'
+]
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is using `Stream.runCollect` on a stream that produces an unbounded or extremely large number of items. This will inevitably lead to an out-of-memory error.
+
+```typescript
+import { Effect, Stream } from 'effect';
+
+// An infinite stream of numbers
+const infiniteStream = Stream.range(1, Infinity);
+
+const program = infiniteStream.pipe(
+  // This will run forever, attempting to buffer an infinite number of items.
+  Stream.runCollect
+);
+
+// This program will never finish and will eventually crash the process
+// by consuming all available memory.
+// Effect.runPromise(program);
+console.log(
+  'This code is commented out because it would cause an out-of-memory crash.'
+);
+```
+
+This is a critical mistake because `runCollect` must hold every single item emitted by the stream in memory simultaneously. For pipelines that process huge files, infinite data sources, or are designed to run forever, `runCollect` is the wrong tool. In those cases, you should use a sink like `Stream.runDrain`, which processes items without collecting them.
 
 --- (Pattern Start: comparing-data-by-value-with-structural-equality) ---
 
@@ -1128,6 +1315,76 @@ dependency graph for every effect execution.
 For a long-running application, avoid providing layers and running an effect
 in a single operation. This forces Effect to rebuild the dependency graph on
 every execution.
+
+--- (Pattern Start: stream-from-iterable) ---
+
+## Create a Stream from a List
+
+**Rule:** Use Stream.fromIterable to begin a pipeline from an in-memory collection.
+
+### Full Pattern Content:
+
+## Guideline
+
+To start a data pipeline from an existing in-memory collection like an array, use `Stream.fromIterable`.
+
+---
+
+## Rationale
+
+Every data pipeline needs a source. The simplest and most common source is a pre-existing list of items in memory. `Stream.fromIterable` is the bridge from standard JavaScript data structures to the powerful, composable world of Effect's `Stream`.
+
+This pattern is fundamental for several reasons:
+
+1.  **Entry Point**: It's the "Hello, World!" of data pipelines, providing the easiest way to start experimenting with stream transformations.
+2.  **Testing**: In tests, you frequently need to simulate a data source (like a database query or API call). Creating a stream from a mock array of data is the standard way to do this, allowing you to test your pipeline's logic in isolation.
+3.  **Composability**: It transforms a static, eager data structure (an array) into a lazy, pull-based stream. This allows you to pipe it into the rest of the Effect ecosystem, enabling asynchronous operations, concurrency, and resource management in subsequent steps.
+
+---
+
+## Good Example
+
+This example takes a simple array of numbers, creates a stream from it, performs a transformation on each number, and then runs the stream to collect the results.
+
+```typescript
+import { Effect, Stream, Chunk } from 'effect';
+
+const numbers = [1, 2, 3, 4, 5];
+
+// Create a stream from the array of numbers.
+const program = Stream.fromIterable(numbers).pipe(
+  // Perform a simple, synchronous transformation on each item.
+  Stream.map((n) => `Item: ${n}`),
+  // Run the stream and collect all the transformed items into a Chunk.
+  Stream.runCollect
+);
+
+Effect.runPromise(program).then((processedItems) => {
+  console.log(Chunk.toArray(processedItems));
+});
+/*
+Output:
+[ 'Item: 1', 'Item: 2', 'Item: 3', 'Item: 4', 'Item: 5' ]
+*/
+```
+
+## Anti-Pattern
+
+The common alternative is to use standard array methods like `.map()` or a `for...of` loop. While perfectly fine for simple, synchronous tasks, this approach is an anti-pattern when building a *pipeline*.
+
+```typescript
+const numbers = [1, 2, 3, 4, 5];
+
+// Using Array.prototype.map
+const processedItems = numbers.map((n) => `Item: ${n}`);
+
+console.log(processedItems);
+```
+
+This is an anti-pattern in the context of building a larger pipeline because:
+
+1.  **It's Not Composable with Effects**: The result is just a new array. If the next step in your pipeline was an asynchronous database call for each item, you couldn't simply `.pipe()` the result into it. You would have to leave the synchronous world of `.map()` and start a new `Effect.forEach`, breaking the unified pipeline structure.
+2.  **It's Eager**: The `.map()` operation processes the entire array at once. `Stream` is lazy; it only processes items as they are requested by downstream consumers, which is far more efficient for large collections or complex transformations.
 
 --- (Pattern Start: create-a-testable-http-client-service) ---
 
@@ -2596,6 +2853,137 @@ const program = Effect.gen(function* () {
 });
 ```
 
+--- (Pattern Start: stream-manage-resources) ---
+
+## Manage Resources Safely in a Pipeline
+
+**Rule:** Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline.
+
+### Full Pattern Content:
+
+## Guideline
+
+To safely manage a resource that has an open/close lifecycle (like a file handle or database connection) for the duration of a stream, use the `Stream.acquireRelease` constructor.
+
+---
+
+## Rationale
+
+What happens if a pipeline processing a file fails halfway through? In a naive implementation, the file handle might be left open, leading to a resource leak. Over time, these leaks can exhaust system resources and crash your application.
+
+`Stream.acquireRelease` is Effect's robust solution to this problem. It's built on `Scope`, Effect's fundamental resource-management tool.
+
+1.  **Guaranteed Cleanup**: You provide an `acquire` effect to open the resource and a `release` effect to close it. Effect guarantees that the `release` effect will be called when the stream terminates, for *any* reason: successful completion, a processing failure, or even external interruption.
+2.  **Declarative and Co-located**: The logic for a resource's entire lifecycle—acquisition, usage (the stream itself), and release—is defined in one place. This makes the code easier to understand and reason about compared to manual `try/finally` blocks.
+3.  **Prevents Resource Leaks**: It is the idiomatic way to build truly resilient pipelines that do not leak resources, which is essential for long-running, production-grade applications.
+4.  **Composability**: The resulting stream is just a normal `Stream`, which can be composed with any other stream operators.
+
+---
+
+## Good Example
+
+This example creates and writes to a temporary file. `Stream.acquireRelease` is used to acquire a readable stream from that file. The pipeline then processes the file but is designed to fail partway through. The logs demonstrate that the `release` effect (which deletes the file) is still executed, preventing any resource leaks.
+
+```typescript
+import { Effect, Stream } from 'effect';
+import { NodeFileSystem } from '@effect/platform-node';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+
+// The resource we want to manage: a file handle
+const acquire = Effect.gen(function* () {
+  const fs = yield* NodeFileSystem;
+  const filePath = path.join(__dirname, 'temp-resource.txt');
+  yield* fs.writeFileString(filePath, 'data 1\ndata 2\nFAIL\ndata 4');
+  yield* Effect.log('Resource ACQUIRED: Opened file for reading.');
+  return fs.createReadStream(filePath);
+});
+
+// The release function for our resource
+const release = (stream: fs.ReadStream) =>
+  Effect.gen(function* () {
+    const fs = yield* NodeFileSystem;
+    const filePath = path.join(__dirname, 'temp-resource.txt');
+    yield* fs.remove(filePath);
+    yield* Effect.log('Resource RELEASED: Closed and deleted file.');
+  });
+
+// The stream that uses the acquired resource
+const stream = Stream.acquireRelease(acquire, release).pipe(
+  Stream.flatMap((readable) => Stream.fromReadable(() => readable)),
+  Stream.decodeText('utf-8'),
+  Stream.splitLines,
+  Stream.tap((line) => Effect.log(`Processing: ${line}`)),
+  // Introduce a failure to demonstrate release is still called
+  Stream.mapEffect((line) =>
+    line === 'FAIL' ? Effect.fail('Boom!') : Effect.succeed(line)
+  )
+);
+
+// We expect this program to fail, but the release logic should still execute.
+const program = Stream.runDrain(stream);
+
+Effect.runPromiseExit(program).then((exit) => {
+  if (exit._tag === 'Failure') {
+    console.log('\nPipeline failed as expected, but resources were cleaned up.');
+  }
+});
+/*
+Output:
+... level=INFO msg="Resource ACQUIRED: Opened file for reading."
+... level=INFO msg="Processing: data 1"
+... level=INFO msg="Processing: data 2"
+... level=INFO msg="Processing: FAIL"
+... level=INFO msg="Resource RELEASED: Closed and deleted file."
+
+Pipeline failed as expected, but resources were cleaned up.
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to manage resources manually outside the stream's context. This is brittle and almost always leads to resource leaks when errors occur.
+
+```typescript
+import { Effect, Stream } from 'effect';
+import { NodeFileSystem } from '@effect/platform-node';
+import * as path from 'node:path';
+
+const program = Effect.gen(function* () {
+  const fs = yield* NodeFileSystem;
+  const filePath = path.join(__dirname, 'temp-resource-bad.txt');
+
+  // 1. Resource acquired manually before the stream
+  yield* fs.writeFileString(filePath, 'data 1\ndata 2');
+  const readable = fs.createReadStream(filePath);
+  yield* Effect.log('Resource acquired manually.');
+
+  const stream = Stream.fromReadable(() => readable).pipe(
+    Stream.decodeText('utf-8'),
+    Stream.splitLines,
+    // This stream will fail, causing the run to reject.
+    Stream.map(() => {
+      throw new Error('Something went wrong!');
+    })
+  );
+
+  // 2. Stream is executed
+  yield* Stream.runDrain(stream);
+
+  // 3. This release logic is NEVER reached if the stream fails.
+  yield* fs.remove(filePath);
+  yield* Effect.log('Resource released manually. (This will not be logged)');
+});
+
+Effect.runPromiseExit(program).then((exit) => {
+  if (exit._tag === 'Failure') {
+    console.log('\nPipeline failed. The temp file was NOT deleted.');
+  }
+});
+```
+
+In this anti-pattern, the `fs.remove` call is unreachable because the `Stream.runDrain` effect fails, causing the `gen` block to terminate immediately. The temporary file is leaked onto the disk. `Stream.acquireRelease` solves this problem entirely.
+
 --- (Pattern Start: manage-shared-state-with-ref) ---
 
 ## Manage Shared State Safely with Ref
@@ -3342,6 +3730,111 @@ import { userIds, fetchUserById } from "./somewhere"; // From previous example
 const program = Effect.all(userIds.map(fetchUserById));
 ```
 
+--- (Pattern Start: stream-from-file) ---
+
+## Process a Large File with Constant Memory
+
+**Rule:** Use Stream.fromReadable with a Node.js Readable stream to process files efficiently.
+
+### Full Pattern Content:
+
+## Guideline
+
+To process a large file without consuming excessive memory, create a Node.js `Readable` stream from the file and convert it into an Effect `Stream` using `Stream.fromReadable`.
+
+---
+
+## Rationale
+
+The most significant advantage of a streaming architecture is its ability to handle datasets far larger than available RAM. When you need to process a multi-gigabyte log file or CSV, loading it all into memory is not an option—it will crash your application.
+
+The `Stream.fromReadable` constructor provides a bridge from Node.js's built-in file streaming capabilities to the Effect ecosystem. This approach is superior because:
+
+1.  **Constant Memory Usage**: The file is read in small, manageable chunks. Your application's memory usage remains low and constant, regardless of whether the file is 1 megabyte or 100 gigabytes.
+2.  **Composability**: Once the file is represented as an Effect `Stream`, you can apply the full suite of powerful operators to it: `mapEffect` for concurrent processing, `filter` for selectively choosing lines, `grouped` for batching, and `retry` for resilience.
+3.  **Resource Safety**: Effect's `Stream` is built on `Scope`, which guarantees that the underlying file handle will be closed automatically when the stream finishes, fails, or is interrupted. This prevents resource leaks, a common problem in manual file handling.
+
+---
+
+## Good Example
+
+This example demonstrates reading a text file, splitting it into individual lines, and processing each line. The combination of `Stream.fromReadable`, `Stream.decodeText`, and `Stream.splitLines` is a powerful and common pattern for handling text-based files.
+
+```typescript
+import { Effect, Stream } from 'effect';
+import { NodeFileSystem } from '@effect/platform-node';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+// This program reads a file named 'large-file.txt' line by line.
+// First, let's ensure the file exists for the example.
+const program = Effect.gen(function* () {
+  const fs = yield* NodeFileSystem;
+  const filePath = path.join(__dirname, 'large-file.txt');
+
+  // Create a dummy file for the example
+  yield* fs.writeFileString(filePath, 'line 1\nline 2\nline 3');
+
+  // Create a Node.js readable stream and convert it to an Effect Stream
+  const stream = Stream.fromReadable(() => fs.createReadStream(filePath)).pipe(
+    // Decode the raw buffer chunks into text
+    Stream.decodeText('utf-8'),
+    // Split the text stream into a stream of individual lines
+    Stream.splitLines,
+    // Process each line
+    Stream.tap((line) => Effect.log(`Processing: ${line}`))
+  );
+
+  // Run the stream for its side effects and ignore the output
+  yield* Stream.runDrain(stream);
+
+  // Clean up the dummy file
+  yield* fs.remove(filePath);
+});
+
+Effect.runPromise(program);
+/*
+Output:
+... level=INFO msg="Processing: line 1"
+... level=INFO msg="Processing: line 2"
+... level=INFO msg="Processing: line 3"
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to use synchronous, memory-intensive functions like `fs.readFileSync`. This approach is simple for tiny files but fails catastrophically for large ones.
+
+```typescript
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+const filePath = path.join(__dirname, 'large-file.txt');
+// Create a dummy file for the example
+fs.writeFileSync(filePath, 'line 1\nline 2\nline 3');
+
+try {
+  // Anti-pattern: This loads the ENTIRE file into memory as a single buffer.
+  const fileContent = fs.readFileSync(filePath, 'utf-8');
+  const lines = fileContent.split('\n');
+
+  for (const line of lines) {
+    console.log(`Processing: ${line}`);
+  }
+} catch (err) {
+  console.error('Failed to read file:', err);
+} finally {
+  // Clean up the dummy file
+  fs.unlinkSync(filePath);
+}
+```
+
+This is a dangerous anti-pattern because:
+
+1.  **It's a Memory Bomb**: If `large-file.txt` were 2GB and your server had 1GB of RAM, this code would immediately crash the process.
+2.  **It Blocks the Event Loop**: `readFileSync` is a synchronous, blocking operation. While it's reading the file from disk, your entire application is frozen and cannot respond to any other requests.
+3.  **It's Not Composable**: You get a giant string that must be processed eagerly. You lose all the benefits of lazy processing, concurrency control, and integrated error handling that `Stream` provides.
+
 --- (Pattern Start: process-a-collection-of-data-asynchronously) ---
 
 ## Process collections of data asynchronously
@@ -3420,6 +3913,204 @@ Promise.all(promises).then((users) => {
 ```
 
 This anti-pattern is problematic because it immediately executes all promises in parallel with no concurrency limit, it does not benefit from Effect's structured concurrency for safe interruption, and it breaks out of the Effect context, losing composability with features like logging, retries, and dependency management.
+
+--- (Pattern Start: stream-process-concurrently) ---
+
+## Process Items Concurrently
+
+**Rule:** Use Stream.mapEffect with the `concurrency` option to process stream items in parallel.
+
+### Full Pattern Content:
+
+## Guideline
+
+To process items in a stream concurrently, use `Stream.mapEffect` and provide a value greater than 1 to its `concurrency` option.
+
+---
+
+## Rationale
+
+For many data pipelines, the most time-consuming step is performing an I/O-bound operation for each item, such as calling an API or querying a database. Processing these items one by one (sequentially) is safe but slow, as the entire pipeline waits for each operation to complete before starting the next.
+
+`Stream.mapEffect`'s `concurrency` option is the solution. It provides a simple, declarative way to introduce controlled parallelism into your pipeline.
+
+1.  **Performance Boost**: It allows the stream to work on multiple items at once, drastically reducing the total execution time for I/O-bound tasks.
+2.  **Controlled Parallelism**: Unlike `Promise.all` which runs everything at once, you specify the *exact* number of concurrent operations. This is crucial for stability, as it prevents your application from overwhelming downstream services or exhausting its own resources (like file handles or network sockets).
+3.  **Automatic Backpressure**: The stream will not pull new items from the source faster than the concurrent slots can process them. This backpressure is handled automatically, preventing memory issues.
+4.  **Structured Concurrency**: It's fully integrated with Effect's runtime. If any concurrent operation fails, all other in-flight operations for that stream are immediately and reliably interrupted, preventing wasted work and ensuring clean shutdowns.
+
+---
+
+## Good Example
+
+This example processes four items, each taking one second. By setting `concurrency: 2`, the total runtime is approximately two seconds instead of four, because items are processed in parallel pairs.
+
+```typescript
+import { Effect, Stream } from 'effect';
+
+// A mock function that simulates a slow I/O operation
+const processItem = (id: number): Effect.Effect<string, Error> =>
+  Effect.log(`Starting item ${id}...`).pipe(
+    Effect.delay('1 second'),
+    Effect.map(() => `Finished item ${id}`),
+    Effect.tap(Effect.log)
+  );
+
+const ids = [1, 2, 3, 4];
+
+const program = Stream.fromIterable(ids).pipe(
+  // Process up to 2 items concurrently
+  Stream.mapEffect(processItem, { concurrency: 2 }),
+  Stream.runDrain
+);
+
+// Measure the total time taken
+const timedProgram = Effect.timed(program);
+
+Effect.runPromise(timedProgram).then(([duration, _]) => {
+  console.log(`\nTotal time: ${Math.round(duration.millis / 1000)} seconds`);
+});
+/*
+Output:
+... level=INFO msg="Starting item 1..."
+... level=INFO msg="Starting item 2..."
+... level=INFO msg="Finished item 1"
+... level=INFO msg="Starting item 3..."
+... level=INFO msg="Finished item 2"
+... level=INFO msg="Starting item 4..."
+... level=INFO msg="Finished item 3"
+... level=INFO msg="Finished item 4"
+
+Total time: 2 seconds
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to process I/O-bound tasks sequentially. This is the default behavior of `Stream.mapEffect` if you don't specify a concurrency level, and it leads to poor performance.
+
+```typescript
+import { Effect, Stream } from 'effect';
+// ... same processItem function ...
+
+const ids = [1, 2, 3, 4];
+
+// Processing sequentially (default concurrency is 1)
+const program = Stream.fromIterable(ids).pipe(
+  Stream.mapEffect(processItem), // No concurrency option
+  Stream.runDrain
+);
+
+const timedProgram = Effect.timed(program);
+
+Effect.runPromise(timedProgram).then(([duration, _]) => {
+  console.log(`\nTotal time: ${Math.round(duration.millis / 1000)} seconds`);
+});
+/*
+Output:
+... level=INFO msg="Starting item 1..."
+... level=INFO msg="Finished item 1"
+... level=INFO msg="Starting item 2..."
+... level=INFO msg="Finished item 2"
+... etc.
+
+Total time: 4 seconds
+*/
+```
+
+While sequential processing is sometimes necessary to preserve order or avoid race conditions, it is a performance anti-pattern for independent, I/O-bound tasks. The concurrent approach is almost always preferable in such cases.
+
+--- (Pattern Start: stream-process-in-batches) ---
+
+## Process Items in Batches
+
+**Rule:** Use Stream.grouped(n) to transform a stream of items into a stream of batched chunks.
+
+### Full Pattern Content:
+
+## Guideline
+
+To process items in fixed-size batches for performance, use the `Stream.grouped(batchSize)` operator to transform a stream of individual items into a stream of `Chunk`s.
+
+---
+
+## Rationale
+
+When interacting with external systems like databases or APIs, making one request per item is often incredibly inefficient. The network latency and overhead of each individual call can dominate the total processing time. Most high-performance systems offer bulk or batch endpoints to mitigate this.
+
+`Stream.grouped(n)` provides a simple, declarative way to prepare your data for these bulk operations:
+
+1.  **Performance Optimization**: It dramatically reduces the number of network roundtrips. A single API call with 100 items is far faster than 100 individual API calls.
+2.  **Declarative Batching**: It abstracts away the tedious and error-prone manual logic of counting items, managing temporary buffers, and deciding when to send a batch.
+3.  **Seamless Composition**: It transforms a `Stream<A>` into a `Stream<Chunk<A>>`. This new stream of chunks can be piped directly into `Stream.mapEffect`, allowing you to process each batch concurrently.
+4.  **Handles Leftovers**: The operator automatically handles the final, smaller batch if the total number of items is not perfectly divisible by the batch size.
+
+---
+
+## Good Example
+
+This example processes 10 users. By using `Stream.grouped(5)`, it transforms the stream of 10 individual users into a stream of two chunks (each a batch of 5). The `saveUsersInBulk` function is then called only twice, once for each batch.
+
+```typescript
+import { Effect, Stream, Chunk } from 'effect';
+
+// A mock function that simulates a bulk database insert
+const saveUsersInBulk = (
+  userBatch: Chunk.Chunk<{ id: number }>
+): Effect.Effect<void, Error> =>
+  Effect.log(
+    `Saving batch of ${userBatch.length} users: ${Chunk.toArray(userBatch)
+      .map((u) => u.id)
+      .join(', ')}`
+  );
+
+const userIds = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
+
+const program = Stream.fromIterable(userIds).pipe(
+  // Group the stream of users into batches of 5
+  Stream.grouped(5),
+  // Process each batch with our bulk save function
+  Stream.mapEffect(saveUsersInBulk, { concurrency: 1 }),
+  Stream.runDrain
+);
+
+Effect.runPromise(program);
+/*
+Output:
+... level=INFO msg="Saving batch of 5 users: 1, 2, 3, 4, 5"
+... level=INFO msg="Saving batch of 5 users: 6, 7, 8, 9, 10"
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to process items one by one when a more efficient bulk operation is available. This is a common performance bottleneck.
+
+```typescript
+import { Effect, Stream } from 'effect';
+
+// A mock function that saves one user at a time
+const saveUser = (user: { id: number }): Effect.Effect<void, Error> =>
+  Effect.log(`Saving single user: ${user.id}`);
+
+const userIds = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
+
+const program = Stream.fromIterable(userIds).pipe(
+  // Process each user individually, leading to 10 separate "saves"
+  Stream.mapEffect(saveUser, { concurrency: 1 }),
+  Stream.runDrain
+);
+
+Effect.runPromise(program);
+/*
+Output:
+... level=INFO msg="Saving single user: 1"
+... level=INFO msg="Saving single user: 2"
+... (and so on for all 10 users)
+*/
+```
+
+This individual processing approach is an anti-pattern because it creates unnecessary overhead. If each `saveUser` call took 50ms of network latency, the total time would be over 500ms. The batched approach might only take 100ms (2 batches * 50ms), resulting in a 5x performance improvement.
 
 --- (Pattern Start: process-streaming-data-with-stream) ---
 
@@ -3902,6 +4593,90 @@ const blindRetryPolicy = Schedule.recurs(3);
 
 const program = flakyApiCall.pipe(Effect.retry(blindRetryPolicy));
 ```
+
+--- (Pattern Start: stream-run-for-effects) ---
+
+## Run a Pipeline for its Side Effects
+
+**Rule:** Use Stream.runDrain to execute a stream for its side effects when you don't need the final values.
+
+### Full Pattern Content:
+
+## Guideline
+
+To run a stream purely for its side effects without accumulating the results in memory, use the `Stream.runDrain` sink.
+
+---
+
+## Rationale
+
+Not all pipelines are designed to produce a final list of values. Often, the goal is to perform an action for each item—write it to a database, send it to a message queue, or log it to a file. In these "fire and forget" scenarios, collecting the results is not just unnecessary; it's a performance anti-pattern.
+
+`Stream.runDrain` is the perfect tool for this job:
+
+1.  **Memory Efficiency**: This is its primary advantage. `runDrain` processes each item and then immediately discards it, resulting in constant, minimal memory usage. This makes it the only safe choice for processing extremely large or infinite streams.
+2.  **Clarity of Intent**: Using `runDrain` clearly communicates that you are interested in the successful execution of the stream's effects, not in its output values. The final `Effect` it produces resolves to `void`, reinforcing that no value is returned.
+3.  **Performance**: By avoiding the overhead of allocating and managing a growing list in memory, `runDrain` can be faster for pipelines with a very large number of small items.
+
+---
+
+## Good Example
+
+This example creates a stream of tasks. For each task, it performs a side effect (logging it as "complete"). `Stream.runDrain` executes the pipeline, ensuring all logs are written, but without collecting the `void` results of each logging operation.
+
+```typescript
+import { Effect, Stream } from 'effect';
+
+const tasks = ['task 1', 'task 2', 'task 3'];
+
+// A function that performs a side effect for a task
+const completeTask = (task: string): Effect.Effect<void, never> =>
+  Effect.log(`Completing ${task}`);
+
+const program = Stream.fromIterable(tasks).pipe(
+  // For each task, run the side-effectful operation
+  Stream.mapEffect(completeTask, { concurrency: 1 }),
+  // Run the stream for its effects, discarding the `void` results
+  Stream.runDrain
+);
+
+Effect.runPromise(program).then(() => {
+  console.log('\nAll tasks have been processed.');
+});
+/*
+Output:
+... level=INFO msg="Completing task 1"
+... level=INFO msg="Completing task 2"
+... level=INFO msg="Completing task 3"
+
+All tasks have been processed.
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is using `Stream.runCollect` when you only care about the side effects. This needlessly consumes memory and can lead to crashes.
+
+```typescript
+import { Effect, Stream } from 'effect';
+// ... same tasks and completeTask function ...
+
+const program = Stream.fromIterable(tasks).pipe(
+  Stream.mapEffect(completeTask, { concurrency: 1 }),
+  // Anti-pattern: Collecting results that we are just going to ignore
+  Stream.runCollect
+);
+
+Effect.runPromise(program).then((results) => {
+  // The `results` variable here is a Chunk of `[void, void, void]`.
+  // It served no purpose but consumed memory.
+  console.log(
+    `\nAll tasks processed. Unnecessarily collected ${results.length} empty results.`
+  );
+});
+```
+
+While this works for a small array of three items, it's a dangerous habit. If the `tasks` array contained millions of items, this code would create a `Chunk` with millions of `void` values, consuming a significant amount of memory for no reason and potentially crashing the application. `Stream.runDrain` avoids this problem entirely.
 
 --- (Pattern Start: run-background-tasks-with-fork) ---
 
@@ -4622,6 +5397,124 @@ simple value transformations.
 
 Using `map` when you should be using `flatMap`. This results in a nested
 `Effect<Effect<...>>`, which is usually not what you want.
+
+--- (Pattern Start: stream-from-paginated-api) ---
+
+## Turn a Paginated API into a Single Stream
+
+**Rule:** Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.
+
+### Full Pattern Content:
+
+## Guideline
+
+To handle a data source that is split across multiple pages, use `Stream.paginateEffect` to abstract the pagination logic into a single, continuous `Stream`.
+
+---
+
+## Rationale
+
+Calling paginated APIs is a classic programming challenge. It often involves writing complex, stateful, and imperative code with manual loops to fetch one page, check if there's a next page, fetch that page, and so on, all while accumulating the results. This logic is tedious to write and easy to get wrong.
+
+`Stream.paginateEffect` elegantly solves this by declaratively modeling the pagination process:
+
+1.  **Declarative and Stateless**: You provide a function that knows how to fetch a single page, and the `Stream` handles the looping, state management (the current page token/number), and termination logic for you. Your business logic remains clean and stateless.
+2.  **Lazy and Efficient**: The stream fetches pages on demand as they are consumed. If a downstream consumer only needs the first 20 items, the stream will only make enough API calls to satisfy that need, rather than wastefully fetching all pages upfront.
+3.  **Fully Composable**: The result is a standard `Stream`. This means you can pipe the continuous flow of items directly into other powerful operators like `mapEffect` for concurrent processing or `grouped` for batching, without ever thinking about page boundaries again.
+
+---
+
+## Good Example
+
+This example simulates fetching users from a paginated API. The `fetchUsersPage` function gets one page of data and returns the next page number. `Stream.paginateEffect` uses this function to create a single stream of all users across all pages.
+
+```typescript
+import { Effect, Stream, Chunk, Option } from 'effect';
+
+// --- Mock Paginated API ---
+interface User {
+  id: number;
+  name: string;
+}
+
+const allUsers: User[] = Array.from({ length: 25 }, (_, i) => ({
+  id: i + 1,
+  name: `User ${i + 1}`,
+}));
+
+// This function simulates fetching a page of users from an API.
+const fetchUsersPage = (
+  page: number
+): Effect.Effect<[Chunk.Chunk<User>, Option.Option<number>], Error> => {
+  const pageSize = 10;
+  const offset = (page - 1) * pageSize;
+  const users = Chunk.fromIterable(allUsers.slice(offset, offset + pageSize));
+
+  const nextPage =
+    Chunk.isNonEmpty(users) && allUsers.length > offset + pageSize
+      ? Option.some(page + 1)
+      : Option.none();
+
+  return Effect.succeed([users, nextPage]).pipe(
+    Effect.tap(() => Effect.log(`Fetched page ${page}`))
+  );
+};
+
+// --- The Pattern ---
+// Use paginateEffect, providing an initial state (page 1) and the fetch function.
+const userStream = Stream.paginateEffect(1, fetchUsersPage);
+
+const program = userStream.pipe(
+  Stream.runCollect,
+  Effect.map((users) => users.length)
+);
+
+Effect.runPromise(program).then((totalUsers) => {
+  console.log(`Total users fetched from all pages: ${totalUsers}`);
+});
+/*
+Output:
+... level=INFO msg="Fetched page 1"
+... level=INFO msg="Fetched page 2"
+... level=INFO msg="Fetched page 3"
+Total users fetched from all pages: 25
+*/
+```
+
+## Anti-Pattern
+
+The anti-pattern is to write manual, imperative logic to handle the pagination loop. This code is stateful, harder to read, and not composable.
+
+```typescript
+import { Effect, Chunk, Option } from 'effect';
+// ... same mock API setup ...
+
+const fetchAllUsersManually = (): Effect.Effect<Chunk.Chunk<User>, Error> =>
+  Effect.gen(function* () {
+    // Manual state management for results and current page
+    let allFetchedUsers: User[] = [];
+    let currentPage: Option.Option<number> = Option.some(1);
+
+    // Manual loop to fetch pages
+    while (Option.isSome(currentPage)) {
+      const [users, nextPage] = yield* fetchUsersPage(currentPage.value);
+      allFetchedUsers = allFetchedUsers.concat(Chunk.toArray(users));
+      currentPage = nextPage;
+    }
+
+    return Chunk.fromIterable(allFetchedUsers);
+  });
+
+const program = fetchAllUsersManually().pipe(
+  Effect.map((users) => users.length)
+);
+
+Effect.runPromise(program).then((totalUsers) => {
+  console.log(`Total users fetched from all pages: ${totalUsers}`);
+});
+```
+
+This manual approach is inferior because it forces you to manage state explicitly (`allFetchedUsers`, `currentPage`). The logic is contained within a single, monolithic effect that is not lazy and cannot be easily composed with other stream operators without first collecting all results. `Stream.paginateEffect` abstracts away this entire block of boilerplate code.
 
 --- (Pattern Start: understand-fibers-as-lightweight-threads) ---
 

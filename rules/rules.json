@@ -25,6 +25,11 @@
     "description": "Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring."
   },
   {
+    "id": "stream-retry-on-failure",
+    "title": "Automatically Retry Failed Operations",
+    "description": "Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures."
+  },
+  {
     "id": "avoid-long-andthen-chains",
     "title": "Avoid Long Chains of .andThen; Use Generators Instead",
     "description": "Prefer generators over long chains of .andThen."
@@ -38,6 +43,11 @@
     "id": "build-a-basic-http-server",
     "title": "Build a Basic HTTP Server",
     "description": "Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server."
+  },
+  {
+    "id": "stream-collect-results",
+    "title": "Collect All Results into a List",
+    "description": "Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk."
   },
   {
     "id": "comparing-data-by-value-with-structural-equality",
@@ -73,6 +83,11 @@
     "id": "create-reusable-runtime-from-layers",
     "title": "Create a Reusable Runtime from Layers",
     "description": "Create a reusable runtime from layers."
+  },
+  {
+    "id": "stream-from-iterable",
+    "title": "Create a Stream from a List",
+    "description": "Use Stream.fromIterable to begin a pipeline from an in-memory collection."
   },
   {
     "id": "create-a-testable-http-client-service",
@@ -175,6 +190,11 @@
     "description": "Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees."
   },
   {
+    "id": "stream-manage-resources",
+    "title": "Manage Resources Safely in a Pipeline",
+    "description": "Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline."
+  },
+  {
     "id": "manage-shared-state-with-ref",
     "title": "Manage Shared State Safely with Ref",
     "description": "Use Ref to manage shared, mutable state concurrently, ensuring atomicity."
@@ -225,9 +245,24 @@
     "description": "Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit."
   },
   {
+    "id": "stream-from-file",
+    "title": "Process a Large File with Constant Memory",
+    "description": "Use Stream.fromReadable with a Node.js Readable stream to process files efficiently."
+  },
+  {
     "id": "process-a-collection-of-data-asynchronously",
     "title": "Process collections of data asynchronously",
     "description": "Leverage Stream to process collections effectfully with built-in concurrency control and resource safety."
+  },
+  {
+    "id": "stream-process-concurrently",
+    "title": "Process Items Concurrently",
+    "description": "Use Stream.mapEffect with the `concurrency` option to process stream items in parallel."
+  },
+  {
+    "id": "stream-process-in-batches",
+    "title": "Process Items in Batches",
+    "description": "Use Stream.grouped(n) to transform a stream of items into a stream of batched chunks."
   },
   {
     "id": "process-streaming-data-with-stream",
@@ -258,6 +293,11 @@
     "id": "retry-based-on-specific-errors",
     "title": "Retry Operations Based on Specific Errors",
     "description": "Use predicate-based retry policies to retry an operation only for specific, recoverable errors."
+  },
+  {
+    "id": "stream-run-for-effects",
+    "title": "Run a Pipeline for its Side Effects",
+    "description": "Use Stream.runDrain to execute a stream for its side effects when you don't need the final values."
   },
   {
     "id": "run-background-tasks-with-fork",
@@ -308,6 +348,11 @@
     "id": "transform-effect-values",
     "title": "Transform Effect Values with map and flatMap",
     "description": "Transform Effect values with map and flatMap."
+  },
+  {
+    "id": "stream-from-paginated-api",
+    "title": "Turn a Paginated API into a Single Stream",
+    "description": "Use Stream.paginateEffect to model a paginated data source as a single, continuous stream."
   },
   {
     "id": "understand-fibers-as-lightweight-threads",
