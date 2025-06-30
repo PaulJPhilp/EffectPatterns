@@ -11,14 +11,15 @@ const README_PATH = path.join(process.cwd(), "README.md");
 const USE_CASE_CONFIG = {
 	"Core Concepts": "The absolute fundamentals of Effect. Start here to understand the core philosophy.",
 	"Project Setup & Execution": "Getting started and running code, from simple scripts to long-running applications.",
+	"Application Configuration": "Managing configuration from different sources in a type-safe and testable way.",
 	"Error Management": "Strategies for building resilient applications by treating failures as first-class citizens.",
 	"Domain Modeling": "Building a type-safe, expressive model of your business logic.",
 	"Modeling Time": "Representing and manipulating time in your applications.",
 	"Modeling Data": "Working with data structures and transformations in a type-safe way.",
-	"Making HTTP Requests": "Interacting with APIs.",
+	"Making HTTP Requests": "Acting as a client to call external APIs and services",
 	"Building APIs": "Creating APIs with Effect, including routing, request handling, and response generation.",
+	"Building Data Pipelines": "Processing and transforming data in a lazy, composable, and resource-safe manner.",
 	"Concurrency": "Building efficient, non-blocking applications that can handle multiple tasks simultaneously.",
-	"Application Configuration": "Managing configuration from different sources in a type-safe and testable way.",
 	"Testing": "How to test Effect code effectively, reliably, and deterministically.",
 };
 
