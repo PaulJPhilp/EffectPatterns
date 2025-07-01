@@ -1,6 +1,0 @@
-{
-  "sideEffects": [],
-  "main": "../dist/cjs/MutableHashMap.js",
-  "module": "../dist/esm/MutableHashMap.js",
-  "types": "../dist/dts/MutableHashMap.d.ts"
-}

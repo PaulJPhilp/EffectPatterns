@@ -1,6 +1,0 @@
-{
-  "sideEffects": [],
-  "main": "../dist/cjs/TQueue.js",
-  "module": "../dist/esm/TQueue.js",
-  "types": "../dist/dts/TQueue.d.ts"
-}

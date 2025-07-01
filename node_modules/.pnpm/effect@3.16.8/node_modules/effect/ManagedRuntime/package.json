@@ -1,6 +1,0 @@
-{
-  "sideEffects": [],
-  "main": "../dist/cjs/ManagedRuntime.js",
-  "module": "../dist/esm/ManagedRuntime.js",
-  "types": "../dist/dts/ManagedRuntime.d.ts"
-}
