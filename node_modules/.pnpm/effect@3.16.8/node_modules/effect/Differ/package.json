@@ -1,6 +1,0 @@
-{
-  "sideEffects": [],
-  "main": "../dist/cjs/Differ.js",
-  "module": "../dist/esm/Differ.js",
-  "types": "../dist/dts/Differ.d.ts"
-}

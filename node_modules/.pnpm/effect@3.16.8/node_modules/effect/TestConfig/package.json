@@ -1,6 +1,0 @@
-{
-  "sideEffects": [],
-  "main": "../dist/cjs/TestConfig.js",
-  "module": "../dist/esm/TestConfig.js",
-  "types": "../dist/dts/TestConfig.d.ts"
-}

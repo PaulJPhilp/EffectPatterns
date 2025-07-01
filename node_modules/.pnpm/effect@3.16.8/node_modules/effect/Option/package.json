@@ -1,6 +1,0 @@
-{
-  "sideEffects": [],
-  "main": "../dist/cjs/Option.js",
-  "module": "../dist/esm/Option.js",
-  "types": "../dist/dts/Option.d.ts"
-}

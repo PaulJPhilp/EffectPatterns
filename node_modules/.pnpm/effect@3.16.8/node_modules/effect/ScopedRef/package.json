@@ -1,6 +1,0 @@
-{
-  "sideEffects": [],
-  "main": "../dist/cjs/ScopedRef.js",
-  "module": "../dist/esm/ScopedRef.js",
-  "types": "../dist/dts/ScopedRef.d.ts"
-}
