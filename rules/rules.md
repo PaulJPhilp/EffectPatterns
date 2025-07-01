@@ -1886,7 +1886,7 @@ class NotFoundError extends Data.TaggedError("NotFoundError") {}
 
 While this works, it can be less expressive. It treats a "not found" result—which might be a normal part of your application's flow—the same as a catastrophic DatabaseError. 
 
-Using ``Effect<Option<A>>`` often leads to clearer and more precise business logic.
+Using ```Effect<Option<A>>``` often leads to clearer and more precise business logic.
 
 --- (Pattern Start: execute-with-runpromise) ---
 
