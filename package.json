@@ -11,7 +11,8 @@
 		"rules": "bun scripts/generate_rules.ts"
 	},
 	"dependencies": {
-		"effect": "^3.16.8"
+		"effect": "^3.16.8",
+		"process": "^0.11.10"
 	},
 	"devDependencies": {
 		"@types/node": "^24.0.3",

@@ -11,6 +11,9 @@ importers:
       effect:
         specifier: ^3.16.8
         version: 3.16.8
+      process:
+        specifier: ^0.11.10
+        version: 0.11.10
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
@@ -231,6 +234,10 @@ packages:
     resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
     engines: {node: '>=0.10.0'}
 
+  process@0.11.10:
+    resolution: {integrity: sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A==}
+    engines: {node: '>= 0.6.0'}
+
   pure-rand@6.1.0:
     resolution: {integrity: sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==}
 
@@ -413,6 +420,8 @@ snapshots:
       esprima: 4.0.1
 
   kind-of@6.0.3: {}
+
+  process@0.11.10: {}
 
   pure-rand@6.1.0: {}
 

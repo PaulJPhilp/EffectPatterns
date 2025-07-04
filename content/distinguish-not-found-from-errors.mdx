@@ -43,7 +43,7 @@ By using `Option` inside the success channel of an `Effect`, you keep the error 
 
 This function to find a user can fail if the database is down, or it can succeed but find no user. The return type ``Effect.Effect<Option.Option<User>, DatabaseError>`` makes this contract perfectly clear.
 
-```typescript
+````typescript
 import { Effect, Option, Data } from "effect";
 
 interface User {
@@ -79,12 +79,13 @@ const program = (id: number) =>
         }),
     }),
   );
+````
 
 ## Anti-Pattern
 
 A common alternative is to create a specific NotFoundError and put it in the error channel alongside other errors.
 
-```typescript
+````typescript
 class NotFoundError extends Data.TaggedError("NotFoundError") {}
 	
 	// ❌ This signature conflates two different kinds of failure.
@@ -94,8 +95,8 @@ class NotFoundError extends Data.TaggedError("NotFoundError") {}
 	  // ...
 	  return Effect.fail(new NotFoundError());
 	};
-```
+````
 
 While this works, it can be less expressive. It treats a "not found" result—which might be a normal part of your application's flow—the same as a catastrophic DatabaseError. 
 
-Using ```Effect<Option<A>>``` often leads to clearer and more precise business logic.
+Using ````Effect<Option<A>>```` often leads to clearer and more precise business logic.

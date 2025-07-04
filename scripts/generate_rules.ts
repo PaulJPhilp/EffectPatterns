@@ -1,6 +1,6 @@
 import * as fs from "fs/promises";
-import * as path from "path";
 import matter from "gray-matter";
+import * as path from "path";
 
 // --- CONFIGURATION ---
 
@@ -60,12 +60,11 @@ function generateCursorRules(patterns: PatternWithRule[]): string {
   markdown += `This document lists key architectural and style rules for our Effect-TS codebase. Use these as guidelines when generating or refactoring code.\n\n`;
 
   for (const pattern of patterns) {
-    markdown += `--- (Pattern Start: ${pattern.id}) ---\n\n`;
-    markdown += `## ${pattern.title}\n\n`;
-    markdown += `**Rule:** ${pattern.rule.description}\n\n`;
-    markdown += `### Full Pattern Content:\n\n`;
-    // Embed the full content of the .mdx file
-    markdown += `${pattern.content}\n\n`;
+    //markdown += `--- (Pattern Start: ${pattern.id}) ---\n\n`;
+    markdown += `## ${pattern.title}\n`;
+    markdown += `**Rule:** ${pattern.rule.description}\n`;
+    markdown += `### Full Pattern Content:\n`;
+    markdown += `${pattern.content}\n`;
   }
 
   return markdown;

@@ -2,14 +2,9 @@
 
 This document lists key architectural and style rules for our Effect-TS codebase. Use these as guidelines when generating or refactoring code.
 
---- (Pattern Start: access-config-in-context) ---
-
 ## Access Configuration from the Context
-
 **Rule:** Access configuration from the Effect context.
-
 ### Full Pattern Content:
-
 # Access Configuration from the Context
 
 ## Guideline
@@ -42,15 +37,9 @@ By yielding the config object, you make your dependency explicit and leverage Ef
 ## Anti-Pattern
 
 Passing configuration values down through multiple function arguments ("prop-drilling"). This is cumbersome and obscures which components truly need which values.
-
---- (Pattern Start: accessing-current-time-with-clock) ---
-
 ## Accessing the Current Time with Clock
-
 **Rule:** Use the Clock service to get the current time, enabling deterministic testing with TestClock.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 Whenever you need to get the current time within an `Effect`, do not call `Date.now()` directly. Instead, depend on the `Clock` service and use one of its methods, such as `Clock.currentTimeMillis`.
@@ -127,15 +116,9 @@ const isTokenExpiredUnsafely = (token: Token): Effect.Effect<boolean> =>
 // Testing this function would require complex mocking of global APIs
 // or would be non-deterministic.
 ```
-
---- (Pattern Start: accumulate-multiple-errors-with-either) ---
-
 ## Accumulate Multiple Errors with Either
-
 **Rule:** Use Either to accumulate multiple validation errors instead of failing on the first one.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 When you need to perform multiple validation checks and collect all failures, use the ``Either<E, A>`` data type. ``Either`` represents a value that can be one of two possibilities: a ``Left<E>`` (typically for failure) or a ``Right<A>`` (typically for success).
@@ -156,7 +139,7 @@ However, for tasks like validating a user's input, this is poor user experience.
 
 Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
 
-```typescript
+````typescript
 import { Effect, Schema } from "effect";
 
 const UserSchema = Schema.Struct({
@@ -188,7 +171,7 @@ Validation failed with multiple errors:
 1. name must be a string at least 3 character(s) long
 2. email must be a string matching the pattern /@/
 */
-```
+````
 
 ---
 
@@ -196,7 +179,7 @@ Validation failed with multiple errors:
 
 Using `Effect`'s error channel for validation that requires multiple error messages. The code below will only ever report the first error it finds, because `Effect.fail` short-circuits the entire `Effect.gen` block.
 
-```typescript
+````typescript
 import { Effect } from "effect";
 
 const validateWithEffect = (input: { name: string; email: string }) =>
@@ -210,16 +193,10 @@ const validateWithEffect = (input: { name: string; email: string }) =>
     }
     return yield* Effect.succeed(input);
   });
-```
-
---- (Pattern Start: add-caching-by-wrapping-a-layer) ---
-
+````
 ## Add Caching by Wrapping a Layer
-
 **Rule:** Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To add cross-cutting concerns like caching to a service, create a "wrapper" `Layer`. This is a layer that takes the original service's `Layer` as input (as a dependency) and returns a new `Layer`. The new layer provides the same service interface but wraps the original methods with additional logic (e.g., checking a cache before calling the original method).
@@ -322,15 +299,9 @@ const WeatherServiceWithInlineCache = Layer.effect(
   }),
 );
 ```
-
---- (Pattern Start: add-custom-metrics) ---
-
 ## Add Custom Metrics to Your Application
-
 **Rule:** Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To monitor the health and performance of your application, instrument your code with `Metric`s. The three main types are:
@@ -396,15 +367,9 @@ Effect.runPromise(createUser);
 
 Not adding any metrics to your application. Without metrics, you are flying blind. You have no high-level overview of your application's health, performance, or business KPIs. You can't build dashboards, you can't set up alerts for abnormal behavior (e.g., "error rate is too high"), and you are forced to rely on digging through logs to 
 understand the state of your system.
-
---- (Pattern Start: stream-retry-on-failure) ---
-
 ## Automatically Retry Failed Operations
-
 **Rule:** Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To make a data pipeline resilient to transient failures, apply the `.retry(Schedule)` operator to the `Stream`.
@@ -428,7 +393,7 @@ The `retry` operator, combined with the `Schedule` module, provides a powerful a
 
 This example simulates an API that fails the first two times it's called. The stream processes a list of IDs, and the `retry` operator ensures that the failing operation for `id: 2` is automatically retried until it succeeds.
 
-```typescript
+````typescript
 import { Effect, Stream, Schedule } from 'effect';
 
 let attempts = 0;
@@ -468,13 +433,13 @@ Output:
 ... level=INFO msg="Attempting to process item 2..."
 ... level=INFO msg="Attempting to process item 3..."
 */
-```
+````
 
 ## Anti-Pattern
 
 The anti-pattern is to either have no retry logic at all, or to write manual, imperative retry loops inside your processing function.
 
-```typescript
+````typescript
 import { Effect, Stream } from 'effect';
 // ... same mock processItem function ...
 
@@ -496,18 +461,12 @@ Output:
 ... level=INFO msg="Item 2 failed, attempt 1."
 Pipeline failed: Error: API is temporarily down
 */
-```
+````
 
 This "fail-fast" approach is brittle. A single, temporary network blip would cause the entire pipeline to terminate, even if subsequent items could have been processed successfully. While manual retry logic inside `processItem` is possible, it pollutes the core logic with concerns about timing and attempt counting, and is far less composable and reusable than a `Schedule`.
-
---- (Pattern Start: avoid-long-andthen-chains) ---
-
 ## Avoid Long Chains of .andThen; Use Generators Instead
-
 **Rule:** Prefer generators over long chains of .andThen.
-
 ### Full Pattern Content:
-
 # Avoid Long Chains of .andThen; Use Generators Instead
 
 ## Guideline
@@ -549,15 +508,9 @@ step1().pipe(Effect.flatMap((a) => step2(a))); // Or .andThen
 
 Chaining many `.flatMap` or `.andThen` calls leads to deeply nested,
 hard-to-read code.
-
---- (Pattern Start: beyond-the-date-type) ---
-
 ## Beyond the Date Type - Real World Dates, Times, and Timezones
-
 **Rule:** Use the Clock service for testable time-based logic and immutable primitives for timestamps.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To handle specific points in time robustly in Effect, follow these principles:
@@ -633,15 +586,9 @@ const createEventUnsafely = (message: string): Effect.Effect<any> =>
 // How would you test that this function assigns the correct timestamp
 // without manipulating the system clock or using complex mocks?
 ```
-
---- (Pattern Start: build-a-basic-http-server) ---
-
 ## Build a Basic HTTP Server
-
 **Rule:** Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To build an HTTP server, create a main `AppLayer` that provides all your application's services. Compile this layer into a managed `Runtime` at startup. Use this runtime to execute an `Effect` for each incoming HTTP request, ensuring all logic is handled within the Effect system.
@@ -736,15 +683,9 @@ const server = http.createServer((_req, res) => {
   Effect.runPromise(requestEffect).then((msg) => res.end(msg));
 });
 ```
-
---- (Pattern Start: stream-collect-results) ---
-
 ## Collect All Results into a List
-
 **Rule:** Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To execute a stream and collect all of its emitted values into a single, in-memory list, use the `Stream.runCollect` sink.
@@ -820,15 +761,9 @@ console.log(
 ```
 
 This is a critical mistake because `runCollect` must hold every single item emitted by the stream in memory simultaneously. For pipelines that process huge files, infinite data sources, or are designed to run forever, `runCollect` is the wrong tool. In those cases, you should use a sink like `Stream.runDrain`, which processes items without collecting them.
-
---- (Pattern Start: comparing-data-by-value-with-structural-equality) ---
-
 ## Comparing Data by Value with Structural Equality
-
 **Rule:** Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To compare objects or classes by their contents rather than by their memory reference, use one of two methods:
@@ -899,15 +834,9 @@ if (selectedUsers.includes({ id: 1, name: "Paul" })) {
   // ...
 }
 ```
-
---- (Pattern Start: conditionally-branching-workflows) ---
-
 ## Conditionally Branching Workflows
-
 **Rule:** Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
-
 ### Full Pattern Content:
-
 ### Pattern: `conditionally-branching-workflows.mdx`
 
 ## Guideline
@@ -1002,15 +931,9 @@ const program = (id: number) =>
 *   **It's a Real Bug:** This isn't just a style issue; it's a legitimate logical error that leads to incorrect types and broken code.
 *   **It's a Common Mistake:** Developers new to functional pipelines often forget that every path must return a value.
 *   **It Reinforces the "Why":** It perfectly demonstrates *why* `Effect.filter` is superior: `filter` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
-
---- (Pattern Start: control-flow-with-combinators) ---
-
 ## Control Flow with Conditional Combinators
-
 **Rule:** Use conditional combinators for control flow.
-
 ### Full Pattern Content:
-
 # Control Flow with Conditional Combinators
 
 ## Guideline
@@ -1043,15 +966,9 @@ the Effect world or breaking the flow of composition.
 
 Using `Effect.gen` for a single, simple conditional check can be more verbose
 than necessary. For simple branching, `Effect.if` is often more concise.
-
---- (Pattern Start: control-repetition-with-schedule) ---
-
 ## Control Repetition with Schedule
-
 **Rule:** Use Schedule to create composable policies for controlling the repetition and retrying of effects.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 A `Schedule<In, Out>` is a highly-composable blueprint that defines a recurring schedule. It takes an input of type `In` (e.g., the error from a failed effect) and produces an output of type `Out` (e.g., the decision to continue). Use `Schedule` with operators like `Effect.repeat` and `Effect.retry` to control complex repeating logic.
@@ -1134,15 +1051,9 @@ function manualRetry(
 
 const program = manualRetry(flakyEffect, 5, 100);
 ```
-
---- (Pattern Start: launch-http-server) ---
-
 ## Create a Basic HTTP Server
-
 **Rule:** Use Http.server.serve with a platform-specific layer to run an HTTP application.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To create and run a web server, define your application as an `Http.App` and execute it using `Http.server.serve`, providing a platform-specific layer like `NodeHttpServer.layer`.
@@ -1214,15 +1125,9 @@ server.listen(port, () => {
 ```
 
 This imperative approach is discouraged when building an Effect application because it forfeits all the benefits of the ecosystem. It runs outside of Effect's structured concurrency, cannot be managed by its resource-safe `Scope`, does not integrate with `Layer` for dependency injection, and requires manual error handling, making it less robust and much harder to compose with other effectful logic.
-
---- (Pattern Start: create-managed-runtime-for-scoped-resources) ---
-
 ## Create a Managed Runtime for Scoped Resources
-
 **Rule:** Create a managed runtime for scoped resources.
-
 ### Full Pattern Content:
-
 # Create a Managed Runtime for Scoped Resources
 
 ## Guideline
@@ -1268,15 +1173,9 @@ in the event of errors or interruptions.
 Do not use `Layer.toRuntime` with layers that contain scoped resources. This
 will acquire the resource, but the runtime has no mechanism to release it,
 leading to resource leaks.
-
---- (Pattern Start: create-reusable-runtime-from-layers) ---
-
 ## Create a Reusable Runtime from Layers
-
 **Rule:** Create a reusable runtime from layers.
-
 ### Full Pattern Content:
-
 # Create a Reusable Runtime from Layers
 
 ## Guideline
@@ -1315,15 +1214,9 @@ dependency graph for every effect execution.
 For a long-running application, avoid providing layers and running an effect
 in a single operation. This forces Effect to rebuild the dependency graph on
 every execution.
-
---- (Pattern Start: stream-from-iterable) ---
-
 ## Create a Stream from a List
-
 **Rule:** Use Stream.fromIterable to begin a pipeline from an in-memory collection.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To start a data pipeline from an existing in-memory collection like an array, use `Stream.fromIterable`.
@@ -1385,15 +1278,9 @@ This is an anti-pattern in the context of building a larger pipeline because:
 
 1.  **It's Not Composable with Effects**: The result is just a new array. If the next step in your pipeline was an asynchronous database call for each item, you couldn't simply `.pipe()` the result into it. You would have to leave the synchronous world of `.map()` and start a new `Effect.forEach`, breaking the unified pipeline structure.
 2.  **It's Eager**: The `.map()` operation processes the entire array at once. `Stream` is lazy; it only processes items as they are requested by downstream consumers, which is far more efficient for large collections or complex transformations.
-
---- (Pattern Start: create-a-testable-http-client-service) ---
-
 ## Create a Testable HTTP Client Service
-
 **Rule:** Define an HttpClient service with distinct Live and Test layers to enable testable API interactions.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To interact with external APIs, define an `HttpClient` service. Create two separate `Layer` implementations for this service:
@@ -1502,15 +1389,9 @@ export const getUserDirectly = (id: number) =>
     catch: () => "ApiError" as const,
   });
 ```
-
---- (Pattern Start: create-pre-resolved-effect) ---
-
 ## Create Pre-resolved Effects with succeed and fail
-
 **Rule:** Create pre-resolved effects with succeed and fail.
-
 ### Full Pattern Content:
-
 # Create Pre-resolved Effects with succeed and fail
 
 ## Guideline
@@ -1542,15 +1423,9 @@ immediate, known errors.
 
 Do not wrap a static value in `Effect.sync`. While it works, `Effect.succeed`
 is more descriptive and direct for values that are already available.
-
---- (Pattern Start: decouple-fibers-with-queue-pubsub) ---
-
 ## Decouple Fibers with Queues and PubSub
-
 **Rule:** Use Queue for point-to-point work distribution and PubSub for broadcast messaging between fibers.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To enable communication between independent, concurrent fibers, use one of Effect's specialized data structures:
@@ -1673,15 +1548,9 @@ const program = Effect.gen(function* () {
   );
 });
 ```
-
---- (Pattern Start: define-config-schema) ---
-
 ## Define a Type-Safe Configuration Schema
-
 **Rule:** Define a type-safe configuration schema.
-
 ### Full Pattern Content:
-
 # Define a Type-Safe Configuration Schema
 
 ## Guideline
@@ -1711,15 +1580,9 @@ This schema ensures that both `host` and `port` are present and properly typed, 
 ## Anti-Pattern
 
 Directly accessing `process.env`. This is not type-safe, scatters configuration access throughout your codebase, and can lead to parsing errors or `undefined` values.
-
---- (Pattern Start: define-contracts-with-schema) ---
-
 ## Define Contracts Upfront with Schema
-
 **Rule:** Define contracts upfront with schema.
-
 ### Full Pattern Content:
-
 # Define Contracts Upfront with Schema
 
 ## Guideline
@@ -1757,15 +1620,9 @@ and runtime validation.
 
 Defining logic with implicit `any` types first and adding validation later as
 an afterthought. This leads to brittle code that lacks a clear contract.
-
---- (Pattern Start: define-tagged-errors) ---
-
 ## Define Type-Safe Errors with Data.TaggedError
-
 **Rule:** Define type-safe errors with Data.TaggedError.
-
 ### Full Pattern Content:
-
 # Define Type-Safe Errors with Data.TaggedError
 
 ## Guideline
@@ -1800,15 +1657,9 @@ Tagged errors allow you to handle errors in a type-safe, self-documenting way.
 Using generic `Error` objects or strings in the error channel. This loses all
 type information, forcing consumers to use `catchAll` and perform unsafe
 checks.
-
---- (Pattern Start: distinguish-not-found-from-errors) ---
-
 ## Distinguish 'Not Found' from Errors
-
 **Rule:** Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 When a computation can fail (e.g., a network error) or succeed but find nothing, model its return type as ``Effect<Option<A>>``. This separates the "hard failure" channel from the "soft failure" (or empty) channel.
@@ -1831,7 +1682,7 @@ By using `Option` inside the success channel of an `Effect`, you keep the error 
 
 This function to find a user can fail if the database is down, or it can succeed but find no user. The return type ``Effect.Effect<Option.Option<User>, DatabaseError>`` makes this contract perfectly clear.
 
-```typescript
+````typescript
 import { Effect, Option, Data } from "effect";
 
 interface User {
@@ -1867,12 +1718,13 @@ const program = (id: number) =>
         }),
     }),
   );
+````
 
 ## Anti-Pattern
 
 A common alternative is to create a specific NotFoundError and put it in the error channel alongside other errors.
 
-```typescript
+````typescript
 class NotFoundError extends Data.TaggedError("NotFoundError") {}
 	
 	// ❌ This signature conflates two different kinds of failure.
@@ -1882,20 +1734,14 @@ class NotFoundError extends Data.TaggedError("NotFoundError") {}
 	  // ...
 	  return Effect.fail(new NotFoundError());
 	};
-```
+````
 
 While this works, it can be less expressive. It treats a "not found" result—which might be a normal part of your application's flow—the same as a catastrophic DatabaseError. 
 
-Using ```Effect<Option<A>>``` often leads to clearer and more precise business logic.
-
---- (Pattern Start: execute-with-runpromise) ---
-
+Using ````Effect<Option<A>>```` often leads to clearer and more precise business logic.
 ## Execute Asynchronous Effects with Effect.runPromise
-
 **Rule:** Execute asynchronous effects with Effect.runPromise.
-
 ### Full Pattern Content:
-
 # Execute Asynchronous Effects with Effect.runPromise
 
 ## Guideline
@@ -1932,15 +1778,9 @@ easy to integrate with existing JavaScript async workflows.
 
 Never call `runPromise` inside another `Effect` composition. Effects are
 meant to be composed together *before* being run once at the end.
-
---- (Pattern Start: execute-long-running-apps-with-runfork) ---
-
 ## Execute Long-Running Apps with Effect.runFork
-
 **Rule:** Use Effect.runFork to launch a long-running application as a manageable, detached fiber.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To launch a long-running application (like a server or daemon) as a non-blocking, top-level process, use `Effect.runFork`. It immediately returns a `Fiber` representing your running application, which you can use to manage its lifecycle.
@@ -1996,15 +1836,9 @@ const someEffect = Effect.succeed(42);
 // ❌ WRONG: This is just a complicated way to write `Effect.runPromise(someEffect)`
 const resultPromise = Effect.runFork(someEffect).pipe(Fiber.join, Effect.runPromise);
 ```
-
---- (Pattern Start: execute-with-runsync) ---
-
 ## Execute Synchronous Effects with Effect.runSync
-
 **Rule:** Execute synchronous effects with Effect.runSync.
-
 ### Full Pattern Content:
-
 # Execute Synchronous Effects with Effect.runSync
 
 ## Guideline
@@ -2037,15 +1871,9 @@ contains async code, use `runPromise` instead.
 
 Do not use `runSync` on an Effect that contains asynchronous operations like
 `Effect.delay` or `Effect.promise`. This will result in a runtime error.
-
---- (Pattern Start: extract-path-parameters) ---
-
 ## Extract Path Parameters
-
 **Rule:** Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To capture dynamic parts of a URL, define your route path with a colon-prefixed placeholder (e.g., `/users/:userId`) and access the parsed parameters within your handler `Effect`.
@@ -2134,15 +1962,9 @@ NodeRuntime.runMain(program);
 ```
 
 This manual method is highly discouraged. It's fragile—a change in the base path or an extra slash could break the logic (`parts[2]`). It's also not declarative; the intent is hidden inside imperative code. The router's built-in parameter handling is safer, clearer, and the correct approach.
-
---- (Pattern Start: handle-get-request) ---
-
 ## Handle a GET Request
-
 **Rule:** Use Http.router.get to associate a URL path with a specific response Effect.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To handle specific URL paths, create individual routes using `Http.router` functions (like `Http.router.get`) and combine them into a single `Http.App`.
@@ -2233,15 +2055,9 @@ NodeRuntime.runMain(program);
 ```
 
 This manual routing logic is verbose, error-prone (a typo in a string breaks the route), and mixes the "what" (the response) with the "where" (the routing). It doesn't scale to handle different HTTP methods, path parameters, or middleware gracefully. The `Http.router` is designed to solve all of these problems elegantly.
-
---- (Pattern Start: handle-api-errors) ---
-
 ## Handle API Errors
-
 **Rule:** Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 Define specific error types for your application logic and use `Http.server.serveOptions` with a custom `unhandledErrorResponse` function to map those errors to appropriate HTTP status codes and responses.
@@ -2349,15 +2165,9 @@ NodeRuntime.runMain(program);
 ```
 
 This approach is problematic because it pollutes the business logic of the route handler with details about HTTP status codes. It's also highly repetitive; if ten different routes could produce a `UserNotFoundError`, you would need to copy this `catchTag` logic into all ten of them, making the API difficult to maintain.
-
---- (Pattern Start: handle-errors-with-catch) ---
-
 ## Handle Errors with catchTag, catchTags, and catchAll
-
 **Rule:** Handle errors with catchTag, catchTags, and catchAll.
-
 ### Full Pattern Content:
-
 # Handle Errors with catchTag, catchTags, and catchAll
 
 ## Guideline
@@ -2393,15 +2203,9 @@ Use `catchTag` to handle specific error types in a type-safe, composable way.
 
 Using `try/catch` blocks inside your Effect compositions. It breaks the
 declarative flow and bypasses Effect's powerful, type-safe error channels.
-
---- (Pattern Start: handle-flaky-operations-with-retry-timeout) ---
-
 ## Handle Flaky Operations with Retries and Timeouts
-
 **Rule:** Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To build robust applications that can withstand unreliable external systems, apply two key operators to your effects:
@@ -2482,15 +2286,9 @@ async function manualRetryAndTimeout() {
   }
 }
 ```
-
---- (Pattern Start: handle-unexpected-errors-with-cause) ---
-
 ## Handle Unexpected Errors by Inspecting the Cause
-
 **Rule:** Handle unexpected errors by inspecting the cause.
-
 ### Full Pattern Content:
-
 # Handle Unexpected Errors by Inspecting the Cause
 
 ## Guideline
@@ -2530,15 +2328,9 @@ failures, logging or escalating as appropriate.
 
 Using a simple `Effect.catchAll` can dangerously conflate expected errors and
 unexpected defects, masking critical bugs as recoverable errors.
-
---- (Pattern Start: implement-graceful-shutdown) ---
-
 ## Implement Graceful Shutdown for Your Application
-
 **Rule:** Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To enable graceful shutdown for a long-running application:
@@ -2620,15 +2412,9 @@ import { app } from "./somewhere"; // From previous example
 // The database connection finalizer will NOT be called.
 Effect.runPromise(app);
 ```
-
---- (Pattern Start: leverage-structured-logging) ---
-
 ## Leverage Effect's Built-in Structured Logging
-
 **Rule:** Leverage Effect's built-in structured logging.
-
 ### Full Pattern Content:
-
 # Leverage Effect's Built-in Structured Logging
 
 ## Guideline
@@ -2663,15 +2449,9 @@ and context-aware.
 
 Calling `console.log` directly within an Effect composition. This is an
 unmanaged side-effect that bypasses all the benefits of Effect's logging system.
-
---- (Pattern Start: make-http-client-request) ---
-
 ## Make an Outgoing HTTP Client Request
-
 **Rule:** Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To call an external API from within your server, use the `Http.client` module. This creates an `Effect` that represents the outgoing request, keeping it fully integrated with the Effect runtime.
@@ -2766,15 +2546,9 @@ NodeRuntime.runMain(program);
 ```
 
 This manual approach is significantly more complex and less safe. It forces you to reinvent status and parsing logic, uses untyped string-based errors, and most importantly, the `fetch` call will not be automatically interrupted if the parent request is cancelled.
-
---- (Pattern Start: manage-resource-lifecycles-with-scope) ---
-
 ## Manage Resource Lifecycles with Scope
-
 **Rule:** Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 A `Scope` is a context that collects finalizers (cleanup effects). When you need fine-grained control over resource lifecycles, you can work with `Scope` directly. The most common pattern is to create a resource within a scope using `Effect.acquireRelease` and then use it via `Effect.scoped`.
@@ -2852,15 +2626,9 @@ const program = Effect.gen(function* () {
   yield* releaseFile;
 });
 ```
-
---- (Pattern Start: stream-manage-resources) ---
-
 ## Manage Resources Safely in a Pipeline
-
 **Rule:** Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To safely manage a resource that has an open/close lifecycle (like a file handle or database connection) for the duration of a stream, use the `Stream.acquireRelease` constructor.
@@ -2983,15 +2751,9 @@ Effect.runPromiseExit(program).then((exit) => {
 ```
 
 In this anti-pattern, the `fs.remove` call is unreachable because the `Stream.runDrain` effect fails, causing the `gen` block to terminate immediately. The temporary file is leaked onto the disk. `Stream.acquireRelease` solves this problem entirely.
-
---- (Pattern Start: manage-shared-state-with-ref) ---
-
 ## Manage Shared State Safely with Ref
-
 **Rule:** Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 When you need to share mutable state between different concurrent fibers, create a `Ref<A>`. Use `Ref.get` to read the value and `Ref.update` or `Ref.set` to modify it. All operations on a `Ref` are atomic.
@@ -3064,15 +2826,9 @@ const programWithRaceCondition = Effect.gen(function* () {
 // The result is unpredictable and will likely be less than 1000.
 Effect.runPromise(programWithRaceCondition).then(console.log);
 ```
-
---- (Pattern Start: mapping-errors-to-fit-your-domain) ---
-
 ## Mapping Errors to Fit Your Domain
-
 **Rule:** Use Effect.mapError to transform errors and create clean architectural boundaries between layers.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 When an inner service can fail with specific errors, use `Effect.mapError` in the outer service to catch those specific errors and transform them into a more general error suitable for its own domain.
@@ -3143,15 +2899,9 @@ const findUserUnsafely = (): Effect.Effect<
 // both `ConnectionError` and `QueryError`. If we change the database,
 // all of that calling code might have to change too.
 ```
-
---- (Pattern Start: mocking-dependencies-in-tests) ---
-
 ## Mocking Dependencies in Tests
-
 **Rule:** Provide mock service implementations via a test-specific Layer to isolate the unit under test.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To test a piece of code in isolation, identify its service dependencies and provide mock implementations for them using a test-specific `Layer`. The most common way to create a mock layer is with `Layer.succeed(ServiceTag, mockImplementation)`.
@@ -3254,15 +3004,9 @@ it("sends a real email", () =>
     Effect.runPromise,
   ));
 ```
-
---- (Pattern Start: model-dependencies-as-services) ---
-
 ## Model Dependencies as Services
-
 **Rule:** Model dependencies as services.
-
 ### Full Pattern Content:
-
 # Model Dependencies as Services
 
 ## Guideline
@@ -3293,15 +3037,9 @@ By modeling dependencies as services, you can easily substitute mocked or determ
 ## Anti-Pattern
 
 Directly calling external APIs like `fetch` or using impure functions like `Math.random()` within your business logic. This tightly couples your logic to a specific implementation and makes it difficult to test.
-
---- (Pattern Start: model-optional-values-with-option) ---
-
 ## Model Optional Values Safely with Option
-
 **Rule:** Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 Represent values that may be absent with `Option<A>`. Use `Option.some(value)` to represent a present value and `Option.none()` for an absent one. This creates a container that forces you to handle both possibilities.
@@ -3373,15 +3111,9 @@ const users: User[] = [{ id: 1, name: "Paul" }];
 	// because the caller forgot to check if the user exists.
 	console.log(`User's name is ${user.name}`)
   ```
-
---- (Pattern Start: model-validated-domain-types-with-brand) ---
-
 ## Model Validated Domain Types with Brand
-
 **Rule:** Model validated domain types with Brand.
-
 ### Full Pattern Content:
-
 # Model Validated Domain Types with Brand
 
 ## Guideline
@@ -3419,15 +3151,9 @@ repetitive checks.
 "Primitive obsession"—using raw primitives (`string`, `number`) and performing
 validation inside every function that uses them. This is repetitive and
 error-prone.
-
---- (Pattern Start: organize-layers-into-composable-modules) ---
-
 ## Organize Layers into Composable Modules
-
 **Rule:** Organize services into modular Layers that are composed hierarchically to manage complexity in large applications.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 For large applications, avoid a single, flat list of services. Instead, structure your application by creating hierarchical layers:
@@ -3535,15 +3261,9 @@ const AppLayer = Layer.mergeAll(
   // ...and 50 other services
 );
 ```
-
---- (Pattern Start: parse-with-schema-decode) ---
-
 ## Parse and Validate Data with Schema.decode
-
 **Rule:** Parse and validate data with Schema.decode.
-
 ### Full Pattern Content:
-
 # Parse and Validate Data with Schema.decode
 
 ## Guideline
@@ -3580,15 +3300,9 @@ making error handling composable and type-safe.
 
 Using `Schema.parse(schema)(input)`, as it throws an exception. This forces
 you to use `try/catch` blocks, which breaks the composability of Effect.
-
---- (Pattern Start: poll-for-status-until-task-completes) ---
-
 ## Poll for Status Until a Task Completes
-
 **Rule:** Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To run a periodic task (a "poller") that should only run for the duration of another main task, combine them using `Effect.race`. The main task will "win" the race upon completion, which automatically interrupts and cleans up the repeating polling effect.
@@ -3667,15 +3381,9 @@ const program = Effect.gen(function* () {
   }
 });
 ```
-
---- (Pattern Start: process-collection-in-parallel-with-foreach) ---
-
 ## Process a Collection in Parallel with Effect.forEach
-
 **Rule:** Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To process an iterable (like an array) of items concurrently, use `Effect.forEach`. To avoid overwhelming systems, always specify the `{ concurrency: number }` option to limit how many effects run at the same time.
@@ -3729,15 +3437,9 @@ import { userIds, fetchUserById } from "./somewhere"; // From previous example
 // If userIds had 10,000 items, this could crash your application or get you blocked by an API.
 const program = Effect.all(userIds.map(fetchUserById));
 ```
-
---- (Pattern Start: stream-from-file) ---
-
 ## Process a Large File with Constant Memory
-
 **Rule:** Use Stream.fromReadable with a Node.js Readable stream to process files efficiently.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To process a large file without consuming excessive memory, create a Node.js `Readable` stream from the file and convert it into an Effect `Stream` using `Stream.fromReadable`.
@@ -3834,15 +3536,9 @@ This is a dangerous anti-pattern because:
 1.  **It's a Memory Bomb**: If `large-file.txt` were 2GB and your server had 1GB of RAM, this code would immediately crash the process.
 2.  **It Blocks the Event Loop**: `readFileSync` is a synchronous, blocking operation. While it's reading the file from disk, your entire application is frozen and cannot respond to any other requests.
 3.  **It's Not Composable**: You get a giant string that must be processed eagerly. You lose all the benefits of lazy processing, concurrency control, and integrated error handling that `Stream` provides.
-
---- (Pattern Start: process-a-collection-of-data-asynchronously) ---
-
 ## Process collections of data asynchronously
-
 **Rule:** Leverage Stream to process collections effectfully with built-in concurrency control and resource safety.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 For processing collections that involve asynchronous or effectful operations, use `Stream` to ensure resource safety, control concurrency, and maintain composability.
@@ -3913,15 +3609,9 @@ Promise.all(promises).then((users) => {
 ```
 
 This anti-pattern is problematic because it immediately executes all promises in parallel with no concurrency limit, it does not benefit from Effect's structured concurrency for safe interruption, and it breaks out of the Effect context, losing composability with features like logging, retries, and dependency management.
-
---- (Pattern Start: stream-process-concurrently) ---
-
 ## Process Items Concurrently
-
 **Rule:** Use Stream.mapEffect with the `concurrency` option to process stream items in parallel.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To process items in a stream concurrently, use `Stream.mapEffect` and provide a value greater than 1 to its `concurrency` option.
@@ -4019,15 +3709,9 @@ Total time: 4 seconds
 ```
 
 While sequential processing is sometimes necessary to preserve order or avoid race conditions, it is a performance anti-pattern for independent, I/O-bound tasks. The concurrent approach is almost always preferable in such cases.
-
---- (Pattern Start: stream-process-in-batches) ---
-
 ## Process Items in Batches
-
 **Rule:** Use Stream.grouped(n) to transform a stream of items into a stream of batched chunks.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To process items in fixed-size batches for performance, use the `Stream.grouped(batchSize)` operator to transform a stream of individual items into a stream of `Chunk`s.
@@ -4111,15 +3795,9 @@ Output:
 ```
 
 This individual processing approach is an anti-pattern because it creates unnecessary overhead. If each `saveUser` call took 50ms of network latency, the total time would be over 500ms. The batched approach might only take 100ms (2 batches * 50ms), resulting in a 5x performance improvement.
-
---- (Pattern Start: process-streaming-data-with-stream) ---
-
 ## Process Streaming Data with Stream
-
 **Rule:** Use Stream to model and process data that arrives over time in a composable, efficient way.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 When dealing with a sequence of data that arrives asynchronously, model it as a `Stream`. A `Stream<A, E, R>` is like an asynchronous, effectful `Array`. It represents a sequence of values of type `A` that may fail with an error `E` and requires services `R`.
@@ -4216,15 +3894,9 @@ const fetchAllUsers = (
 // This holds all users in memory at once.
 const program = fetchAllUsers(0, []);
 ```
-
---- (Pattern Start: provide-config-layer) ---
-
 ## Provide Configuration to Your App via a Layer
-
 **Rule:** Provide configuration to your app via a Layer.
-
 ### Full Pattern Content:
-
 # Provide Configuration to Your App via a Layer
 
 ## Guideline
@@ -4237,7 +3909,7 @@ Integrating configuration as a `Layer` plugs it directly into Effect's dependenc
 
 ## Good Example
 
-```typescript
+````typescript
 import { Config, Effect, Layer } from "effect";
 
 const ServerConfig = Config.all({ port: Config.number("PORT") });
@@ -4247,7 +3919,7 @@ const program = Effect.log("Application starting...");
 const configLayer = Config.layer(ServerConfig);
 
 const runnable = Effect.provide(program, configLayer);
-```
+````
 
 **Explanation:**  
 This approach makes configuration available contextually, supporting better testing and modularity.
@@ -4255,15 +3927,9 @@ This approach makes configuration available contextually, supporting better test
 ## Anti-Pattern
 
 Manually reading environment variables deep inside business logic. This tightly couples that logic to the external environment, making it difficult to test and reuse.
-
---- (Pattern Start: provide-dependencies-to-routes) ---
-
 ## Provide Dependencies to Routes
-
 **Rule:** Define dependencies with Effect.Service and provide them to your HTTP server using a Layer.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 Define your application's services using `class MyService extends Effect.Service("MyService")`, provide a live implementation via a `Layer`, and use `Effect.provide` to make the service available to your entire HTTP application.
@@ -4375,15 +4041,9 @@ NodeRuntime.runMain(program);
 ```
 
 This approach is flawed because the route handler is now aware of the concrete `LiveDatabase` class. Swapping it for a mock in a test would be cumbersome. Furthermore, if a service deep within the call stack needs a dependency, it must be "drilled" down through every intermediate function, which is a significant maintenance burden.
-
---- (Pattern Start: race-concurrent-effects) ---
-
 ## Race Concurrent Effects for the Fastest Result
-
 **Rule:** Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 When you have multiple effects that can produce the same type of result, and you only care about the one that finishes first, use `Effect.race(effectA, effectB)`.
@@ -4450,15 +4110,9 @@ const incompleteData = Effect.race(fetchProfile, fetchPermissions);
 // ✅ CORRECT: Use Effect.all when you need all the results.
 const completeData = Effect.all([fetchProfile, fetchPermissions]);
 ```
-
---- (Pattern Start: representing-time-spans-with-duration) ---
-
 ## Representing Time Spans with Duration
-
 **Rule:** Use the Duration data type to represent time intervals instead of raw numbers.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 When you need to represent a span of time (e.g., for a delay, timeout, or schedule), use the `Duration` data type. Create durations with expressive constructors like `Duration.seconds(5)`, `Duration.minutes(10)`, or `Duration.millis(500)`.
@@ -4511,15 +4165,9 @@ const program = Effect.log("Waiting...").pipe(Effect.delay(2000));
 // use different conventions (e.g., one service uses seconds, another uses milliseconds).
 // Using Duration eliminates this entire class of bugs.
 ```
-
---- (Pattern Start: retry-based-on-specific-errors) ---
-
 ## Retry Operations Based on Specific Errors
-
 **Rule:** Use predicate-based retry policies to retry an operation only for specific, recoverable errors.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To selectively retry an operation, use `Effect.retry` with a `Schedule` that includes a predicate. The most common way is to use `Schedule.whileInput((error) => ...)`, which will continue retrying only as long as the predicate returns `true` for the error that occurred.
@@ -4593,15 +4241,9 @@ const blindRetryPolicy = Schedule.recurs(3);
 
 const program = flakyApiCall.pipe(Effect.retry(blindRetryPolicy));
 ```
-
---- (Pattern Start: stream-run-for-effects) ---
-
 ## Run a Pipeline for its Side Effects
-
 **Rule:** Use Stream.runDrain to execute a stream for its side effects when you don't need the final values.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To run a stream purely for its side effects without accumulating the results in memory, use the `Stream.runDrain` sink.
@@ -4677,15 +4319,9 @@ Effect.runPromise(program).then((results) => {
 ```
 
 While this works for a small array of three items, it's a dangerous habit. If the `tasks` array contained millions of items, this code would create a `Chunk` with millions of `void` values, consuming a significant amount of memory for no reason and potentially crashing the application. `Stream.runDrain` avoids this problem entirely.
-
---- (Pattern Start: run-background-tasks-with-fork) ---
-
 ## Run Background Tasks with Effect.fork
-
 **Rule:** Use Effect.fork to start a non-blocking background process and manage its lifecycle via its Fiber.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To start an `Effect` in the background without blocking the current execution flow, use `Effect.fork`. This immediately returns a `Fiber`, which is a handle to the running computation that you can use to manage its lifecycle (e.g., interrupt it or wait for its result).
@@ -4761,15 +4397,9 @@ const simplerProgram = Effect.gen(function* () {
   return result;
 });
 ```
-
---- (Pattern Start: run-effects-in-parallel-with-all) ---
-
 ## Run Independent Effects in Parallel with Effect.all
-
 **Rule:** Use Effect.all to execute a collection of independent effects concurrently.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 When you have multiple `Effect`s that do not depend on each other's results, run them concurrently using `Effect.all`. This will execute all effects at the same time and return a new `Effect` that succeeds with a tuple containing all the results.
@@ -4832,15 +4462,9 @@ const program = Effect.gen(function* () {
 // which is a full second slower than the parallel version.
 Effect.runPromise(program).then(console.log);
 ```
-
---- (Pattern Start: send-json-response) ---
-
 ## Send a JSON Response
-
 **Rule:** Use Http.response.json to automatically serialize data structures into a JSON response.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To return a JavaScript object or value as a JSON response, use the `Http.response.json(data)` constructor.
@@ -4931,15 +4555,9 @@ NodeRuntime.runMain(program);
 ```
 
 This manual approach is unnecessarily complex. It forces you to remember to perform both the serialization and the header configuration. If you forget the `setHeader` call, many clients will fail to parse the response correctly. The `Http.response.json` helper eliminates this entire class of potential bugs.
-
---- (Pattern Start: setup-new-project) ---
-
 ## Set Up a New Effect Project
-
 **Rule:** Set up a new Effect project.
-
 ### Full Pattern Content:
-
 # Set Up a New Effect Project
 
 ## Guideline
@@ -4978,15 +4596,9 @@ type-checking for maximum safety and correctness.
 Avoid disabling `strict` mode in your `tsconfig.json`. Running with
 `"strict": false` will cause you to lose many of the type-safety guarantees
 that make Effect so powerful.
-
---- (Pattern Start: solve-promise-problems-with-effect) ---
-
 ## Solve Promise Problems with Effect
-
 **Rule:** Recognize that Effect solves the core limitations of Promises: untyped errors, no dependency injection, and no cancellation.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 Recognize that `Effect` is not just a "better Promise," but a fundamentally different construct designed to solve the core limitations of native `Promise`s in TypeScript:
@@ -5049,15 +4661,9 @@ async function findUserUnsafely(id: number): Promise<any> {
   }
 }
 ```
-
---- (Pattern Start: supercharge-your-editor-with-the-effect-lsp) ---
-
 ## Supercharge Your Editor with the Effect LSP
-
 **Rule:** Install and use the Effect LSP extension for enhanced type information and error checking in your editor.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To significantly improve your development experience with Effect, install the official **Effect Language Server (LSP)** extension for your code editor (e.g., the "Effect" extension in VS Code).
@@ -5105,15 +4711,9 @@ This immediately tells you that the final program returns nothing (`void`), has 
 ## Anti-Pattern
 
 Going without the LSP. While your code will still compile and work perfectly fine, you are essentially "flying blind." You miss out on the rich, real-time feedback that the LSP provides, forcing you to rely more heavily on manual type checking, `tsc` runs, and deciphering complex inferred types from your editor's default tooltips. This leads to a slower, less efficient development cycle.
-
---- (Pattern Start: teach-your-ai-agents-effect-with-the-mcp-server) ---
-
 ## Teach your AI Agents Effect with the MCP Server
-
 **Rule:** Use the MCP server to provide live application context to AI coding agents, enabling more accurate assistance.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To enable AI coding agents (like Cursor or custom bots) to provide highly accurate, context-aware assistance for your Effect application, run the **Effect MCP (Meta-Circular-Protocol) server**. This tool exposes your application's entire dependency graph and service structure in a machine-readable format.
@@ -5175,15 +4775,9 @@ const program = Effect.gen(function* () {
 ## Anti-Pattern
 
 Working with an AI agent without providing it with specific context. The agent will be forced to guess based on open files or generic knowledge. This often leads to it hallucinating method names, getting dependency injection wrong, or failing to handle specific error types, requiring you to manually correct its output and defeating the purpose of using an AI assistant.
-
---- (Pattern Start: trace-operations-with-spans) ---
-
 ## Trace Operations Across Services with Spans
-
 **Rule:** Use Effect.withSpan to create custom tracing spans for important operations.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To gain visibility into the performance and flow of your application, wrap logical units of work with `Effect.withSpan("span-name")`. You can add contextual information to these spans using the `attributes` option.
@@ -5247,15 +4841,9 @@ Effect.runPromise(createUser({}));
 Not adding custom spans to your business logic. 
 Without them, your traces will only show high-level information from your framework (e.g., "HTTP POST /users"). 
 You will have no visibility into the performance of the individual steps *inside* your request handler, making it very difficult to pinpoint bottlenecks. Your application's logic remains a "black box" in your traces.
-
---- (Pattern Start: transform-data-with-schema) ---
-
 ## Transform Data During Validation with Schema
-
 **Rule:** Use Schema.transform to safely convert data types during the validation and parsing process.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To convert data from one type to another as part of the validation process, use `Schema.transform`. This allows you to define a schema that parses an input type (e.g., `string`) and outputs a different, richer domain type (e.g., `Date`).
@@ -5351,15 +4939,9 @@ const program = Schema.decode(RawApiEventSchema)(rawInput).pipe(
   })),
 );
 ```
-
---- (Pattern Start: transform-effect-values) ---
-
 ## Transform Effect Values with map and flatMap
-
 **Rule:** Transform Effect values with map and flatMap.
-
 ### Full Pattern Content:
-
 # Transform Effect Values with map and flatMap
 
 ## Guideline
@@ -5397,15 +4979,9 @@ simple value transformations.
 
 Using `map` when you should be using `flatMap`. This results in a nested
 `Effect<Effect<...>>`, which is usually not what you want.
-
---- (Pattern Start: stream-from-paginated-api) ---
-
 ## Turn a Paginated API into a Single Stream
-
 **Rule:** Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To handle a data source that is split across multiple pages, use `Stream.paginateEffect` to abstract the pagination logic into a single, continuous `Stream`.
@@ -5515,15 +5091,9 @@ Effect.runPromise(program).then((totalUsers) => {
 ```
 
 This manual approach is inferior because it forces you to manage state explicitly (`allFetchedUsers`, `currentPage`). The logic is contained within a single, monolithic effect that is not lazy and cannot be easily composed with other stream operators without first collecting all results. `Stream.paginateEffect` abstracts away this entire block of boilerplate code.
-
---- (Pattern Start: understand-fibers-as-lightweight-threads) ---
-
 ## Understand Fibers as Lightweight Threads
-
 **Rule:** Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 Think of a `Fiber` as a "virtual thread" or a "green thread." It is the fundamental unit of concurrency in Effect. Every `Effect` you run is executed on a `Fiber`. Unlike OS threads, which are heavy and limited, you can create hundreds of thousands or even millions of fibers without issue.
@@ -5581,15 +5151,9 @@ The anti-pattern is thinking that a `Fiber` is the same as an OS thread. This ca
 
 -   **Don't assume parallelism on CPU-bound tasks:** In a standard Node.js environment, all fibers run on a single OS thread. If you run 10 CPU-intensive tasks on 10 fibers, they will not run in parallel on 10 different CPU cores. They will share time on the single main thread. Fibers provide massive concurrency for I/O-bound tasks (like network requests), not CPU-bound parallelism.
 -   **Don't worry about blocking:** A `Fiber` that is "sleeping" or waiting for I/O (like `Effect.sleep` or a `fetch` request) does not block the underlying OS thread. The Effect runtime simply puts it aside and uses the thread to run other ready fibers.
-
---- (Pattern Start: understand-layers-for-dependency-injection) ---
-
 ## Understand Layers for Dependency Injection
-
 **Rule:** Understand that a Layer is a blueprint describing how to construct a service and its dependencies.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 Think of a `Layer<R, E, A>` as a recipe for building a service. It's a declarative blueprint that specifies:
@@ -5674,15 +5238,9 @@ const notifier = new NotifierImpl(logger);
 // This is not easily testable without creating real instances.
 notifier.notify("Hello");
 ```
-
---- (Pattern Start: effects-are-lazy) ---
-
 ## Understand that Effects are Lazy Blueprints
-
 **Rule:** Understand that effects are lazy blueprints.
-
 ### Full Pattern Content:
-
 # Understand that Effects are Lazy Blueprints
 
 ## Guideline
@@ -5723,15 +5281,9 @@ Defining an `Effect` does not execute any code inside it. Only when you call
 Assuming an `Effect` behaves like a `Promise`. A `Promise` executes its work
 immediately upon creation. Never expect a side effect to occur just from
 defining an `Effect`.
-
---- (Pattern Start: understand-effect-channels) ---
-
 ## Understand the Three Effect Channels (A, E, R)
-
 **Rule:** Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
-
 ### Full Pattern Content:
-
 ## Guideline
 
 Every `Effect` has three generic type parameters: ``Effect<A, E, R>`` which represent its three "channels":
@@ -5808,15 +5360,9 @@ function getUserUnsafely(id: number, db: any): Effect.Effect<any> {
   }
 }
 ```
-
---- (Pattern Start: use-pipe-for-composition) ---
-
 ## Use .pipe for Composition
-
 **Rule:** Use .pipe for composition.
-
 ### Full Pattern Content:
-
 # Use .pipe for Composition
 
 ## Guideline
@@ -5849,15 +5395,9 @@ improving readability and maintainability.
 
 Nesting function calls manually. This is hard to read and reorder.
 `Effect.tap(Effect.map(Effect.map(Effect.succeed(5), n => n * 2), n => ...))`
-
---- (Pattern Start: use-chunk-for-high-performance-collections) ---
-
 ## Use Chunk for High-Performance Collections
-
 **Rule:** Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 For collections that will be heavily transformed with immutable operations (e.g., `map`, `filter`, `append`), use `Chunk<A>`. `Chunk` is Effect's implementation of a persistent and chunked vector that provides better performance than native arrays for these use cases.
@@ -5929,15 +5469,9 @@ const programWithIterable = Stream.fromIterable(largeDataSource()).pipe(
   Stream.runDrain,
 );
 ```
-
---- (Pattern Start: use-gen-for-business-logic) ---
-
 ## Use Effect.gen for Business Logic
-
 **Rule:** Use Effect.gen for business logic.
-
 ### Full Pattern Content:
-
 # Use Effect.gen for Business Logic
 
 ## Guideline
@@ -5976,15 +5510,9 @@ improving maintainability.
 
 Using long chains of `.andThen` or `.flatMap` for multi-step business logic.
 This is harder to read and pass state between steps.
-
---- (Pattern Start: use-default-layer-for-tests) ---
-
 ## Use the Auto-Generated .Default Layer in Tests
-
 **Rule:** Use the auto-generated .Default layer in tests.
-
 ### Full Pattern Content:
-
 # Use the Auto-Generated .Default Layer in Tests
 
 ## Guideline
@@ -6021,15 +5549,9 @@ This approach ensures your tests are idiomatic, maintainable, and take full adva
 ## Anti-Pattern
 
 Do not create manual layers for your service in tests (`Layer.succeed(...)`) or try to provide the service class directly. This bypasses the intended dependency injection mechanism.
-
---- (Pattern Start: validate-request-body) ---
-
 ## Validate Request Body
-
 **Rule:** Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies.
-
 ### Full Pattern Content:
-
 ## Guideline
 
 To process an incoming request body, use `Http.request.schemaBodyJson(YourSchema)` to parse the JSON and validate its structure in a single, type-safe step.
@@ -6136,15 +5658,9 @@ NodeRuntime.runMain(program);
 ```
 
 This manual code is significantly worse. It's hard to read, easy to get wrong, and loses all static type information from the parsed body. Crucially, it forces you to reinvent the wheel for error reporting, which will likely be less detailed and consistent than the automatic responses provided by the platform.
-
---- (Pattern Start: wrap-asynchronous-computations) ---
-
 ## Wrap Asynchronous Computations with tryPromise
-
 **Rule:** Wrap asynchronous computations with tryPromise.
-
 ### Full Pattern Content:
-
 # Wrap Asynchronous Computations with tryPromise
 
 ## Guideline
@@ -6179,15 +5695,9 @@ rejections, moving errors into the Effect's error channel.
 Manually handling `.then()` and `.catch()` inside an `Effect.sync`. This is
 verbose, error-prone, and defeats the purpose of using Effect's built-in
 Promise integration.
-
---- (Pattern Start: wrap-synchronous-computations) ---
-
 ## Wrap Synchronous Computations with sync and try
-
 **Rule:** Wrap synchronous computations with sync and try.
-
 ### Full Pattern Content:
-
 # Wrap Synchronous Computations with sync and try
 
 ## Guideline
@@ -6224,15 +5734,9 @@ handle exceptions from potentially unsafe code.
 
 Never use `Effect.sync` for an operation that could throw, like `JSON.parse`.
 This can lead to unhandled exceptions that crash your application.
-
---- (Pattern Start: write-sequential-code-with-gen) ---
-
 ## Write Sequential Code with Effect.gen
-
 **Rule:** Write sequential code with Effect.gen.
-
 ### Full Pattern Content:
-
 # Write Sequential Code with Effect.gen
 
 ## Guideline
@@ -6268,15 +5772,9 @@ maintain, even when chaining many asynchronous steps.
 
 Deeply nesting `flatMap` calls. This is much harder to read and maintain than
 the equivalent `Effect.gen` block.
-
---- (Pattern Start: write-tests-that-adapt-to-application-code) ---
-
 ## Write Tests That Adapt to Application Code
-
 **Rule:** Write tests that adapt to application code.
-
 ### Full Pattern Content:
-
 # Write Tests That Adapt to Application Code
 
 ## Guideline
@@ -6310,4 +5808,3 @@ Tests should reflect the real interface and behavior of your code, not force cha
 ## Anti-Pattern
 
 Any action where the test dictates a change to the application code. Do not modify a service file to add a method just because a test needs it. If a test fails, fix the test.
-

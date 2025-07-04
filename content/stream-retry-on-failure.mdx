@@ -42,7 +42,7 @@ The `retry` operator, combined with the `Schedule` module, provides a powerful a
 
 This example simulates an API that fails the first two times it's called. The stream processes a list of IDs, and the `retry` operator ensures that the failing operation for `id: 2` is automatically retried until it succeeds.
 
-```typescript
+````typescript
 import { Effect, Stream, Schedule } from 'effect';
 
 let attempts = 0;
@@ -82,13 +82,13 @@ Output:
 ... level=INFO msg="Attempting to process item 2..."
 ... level=INFO msg="Attempting to process item 3..."
 */
-```
+````
 
 ## Anti-Pattern
 
 The anti-pattern is to either have no retry logic at all, or to write manual, imperative retry loops inside your processing function.
 
-```typescript
+````typescript
 import { Effect, Stream } from 'effect';
 // ... same mock processItem function ...
 
@@ -110,6 +110,6 @@ Output:
 ... level=INFO msg="Item 2 failed, attempt 1."
 Pipeline failed: Error: API is temporarily down
 */
-```
+````
 
 This "fail-fast" approach is brittle. A single, temporary network blip would cause the entire pipeline to terminate, even if subsequent items could have been processed successfully. While manual retry logic inside `processItem` is possible, it pollutes the core logic with concerns about timing and attempt counting, and is far less composable and reusable than a `Schedule`.

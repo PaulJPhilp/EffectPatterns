@@ -40,7 +40,7 @@ However, for tasks like validating a user's input, this is poor user experience.
 
 Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
 
-```typescript
+````typescript
 import { Effect, Schema } from "effect";
 
 const UserSchema = Schema.Struct({
@@ -72,7 +72,7 @@ Validation failed with multiple errors:
 1. name must be a string at least 3 character(s) long
 2. email must be a string matching the pattern /@/
 */
-```
+````
 
 ---
 
@@ -80,7 +80,7 @@ Validation failed with multiple errors:
 
 Using `Effect`'s error channel for validation that requires multiple error messages. The code below will only ever report the first error it finds, because `Effect.fail` short-circuits the entire `Effect.gen` block.
 
-```typescript
+````typescript
 import { Effect } from "effect";
 
 const validateWithEffect = (input: { name: string; email: string }) =>
@@ -94,4 +94,4 @@ const validateWithEffect = (input: { name: string; email: string }) =>
     }
     return yield* Effect.succeed(input);
   });
-```
+````
