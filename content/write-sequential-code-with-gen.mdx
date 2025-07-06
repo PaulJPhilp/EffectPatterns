@@ -27,16 +27,7 @@ readable sequence of operations, avoiding the nested "callback hell" of
 
 ## Good Example
 
-```typescript
-import { Effect } from "effect";
-
-const getPostsWithGen = Effect.gen(function* () {
-  const response = yield* Effect.tryPromise(() => fetch("..."));
-  const user = yield* Effect.tryPromise(() => response.json() as Promise<any>);
-  // ... more steps
-  return user;
-});
-```
+<Example path="./src/write-sequential-code-with-gen.ts" />
 
 **Explanation:**  
 `Effect.gen` allows you to write top-to-bottom code that is easy to read and

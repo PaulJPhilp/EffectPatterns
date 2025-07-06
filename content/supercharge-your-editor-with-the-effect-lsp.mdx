@@ -41,15 +41,7 @@ This tool essentially makes the compiler's knowledge visible at a glance, reduci
 
 Imagine you have the following code. Without the LSP, hovering over `program` might show a complex, hard-to-read inferred type.
 
-```typescript
-import { Effect } from "effect";
-
-const program = Effect.succeed(42).pipe(
-  Effect.map((n) => n.toString()),
-  Effect.flatMap((s) => Effect.log(s)),
-  Effect.provide(Logger.live), // Assuming a Logger service
-);
-```
+<Example path="./src/supercharge-your-editor-with-the-effect-lsp.ts" />
 
 With the Effect LSP installed, your editor would display a clear, readable overlay right above the `program` variable, looking something like this:
 

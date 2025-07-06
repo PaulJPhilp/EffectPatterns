@@ -27,20 +27,7 @@ thrown exception). They should be handled differently.
 
 ## Good Example
 
-```typescript
-import { Cause, Effect } from "effect";
-
-const programThatDies = Effect.sync(() => { throw new Error("bug!") });
-
-const handled = programThatDies.pipe(
-  Effect.catchAllCause((cause) => {
-    if (Cause.isDie(cause)) {
-      return Effect.logFatal("Caught a defect!", cause);
-    }
-    return Effect.failCause(cause);
-  }),
-);
-```
+<Example path="./src/handle-unexpected-errors-with-cause.ts" />
 
 **Explanation:**  
 By inspecting the `Cause`, you can distinguish between expected and unexpected

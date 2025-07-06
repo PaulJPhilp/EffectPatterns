@@ -44,61 +44,7 @@ What happens if a pipeline processing a file fails halfway through? In a naive i
 
 This example creates and writes to a temporary file. `Stream.acquireRelease` is used to acquire a readable stream from that file. The pipeline then processes the file but is designed to fail partway through. The logs demonstrate that the `release` effect (which deletes the file) is still executed, preventing any resource leaks.
 
-```typescript
-import { Effect, Stream } from 'effect';
-import { NodeFileSystem } from '@effect/platform-node';
-import * as path from 'node:path';
-import * as fs from 'node:fs';
-
-// The resource we want to manage: a file handle
-const acquire = Effect.gen(function* () {
-  const fs = yield* NodeFileSystem;
-  const filePath = path.join(__dirname, 'temp-resource.txt');
-  yield* fs.writeFileString(filePath, 'data 1\ndata 2\nFAIL\ndata 4');
-  yield* Effect.log('Resource ACQUIRED: Opened file for reading.');
-  return fs.createReadStream(filePath);
-});
-
-// The release function for our resource
-const release = (stream: fs.ReadStream) =>
-  Effect.gen(function* () {
-    const fs = yield* NodeFileSystem;
-    const filePath = path.join(__dirname, 'temp-resource.txt');
-    yield* fs.remove(filePath);
-    yield* Effect.log('Resource RELEASED: Closed and deleted file.');
-  });
-
-// The stream that uses the acquired resource
-const stream = Stream.acquireRelease(acquire, release).pipe(
-  Stream.flatMap((readable) => Stream.fromReadable(() => readable)),
-  Stream.decodeText('utf-8'),
-  Stream.splitLines,
-  Stream.tap((line) => Effect.log(`Processing: ${line}`)),
-  // Introduce a failure to demonstrate release is still called
-  Stream.mapEffect((line) =>
-    line === 'FAIL' ? Effect.fail('Boom!') : Effect.succeed(line)
-  )
-);
-
-// We expect this program to fail, but the release logic should still execute.
-const program = Stream.runDrain(stream);
-
-Effect.runPromiseExit(program).then((exit) => {
-  if (exit._tag === 'Failure') {
-    console.log('\nPipeline failed as expected, but resources were cleaned up.');
-  }
-});
-/*
-Output:
-... level=INFO msg="Resource ACQUIRED: Opened file for reading."
-... level=INFO msg="Processing: data 1"
-... level=INFO msg="Processing: data 2"
-... level=INFO msg="Processing: FAIL"
-... level=INFO msg="Resource RELEASED: Closed and deleted file."
-
-Pipeline failed as expected, but resources were cleaned up.
-*/
-```
+<Example path="./src/stream-manage-resources.ts" />
 
 ## Anti-Pattern
 

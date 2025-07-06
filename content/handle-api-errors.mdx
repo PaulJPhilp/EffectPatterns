@@ -41,53 +41,7 @@ Centralizing error handling at the server level provides a clean separation of c
 
 This example defines two custom error types, `UserNotFoundError` and `InvalidIdError`. The route logic can fail with either. The `unhandledErrorResponse` function inspects the error and returns a `404` or `400` response accordingly, with a generic `500` for any other unexpected errors.
 
-```typescript
-import { Effect, Data, Match } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
-
-// Define specific, typed errors for our domain
-class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{ id: string }> {}
-class InvalidIdError extends Data.TaggedError('InvalidIdError')<{ id:string }> {}
-
-// A mock database function that can fail with our specific errors
-const getUser = (id: string) => {
-  if (!id.startsWith('user_')) {
-    return Effect.fail(new InvalidIdError({ id }));
-  }
-  if (id === 'user_123') {
-    return Effect.succeed({ id, name: 'Paul' });
-  }
-  return Effect.fail(new UserNotFoundError({ id }));
-};
-
-const userRoute = Http.router.get(
-  '/users/:userId',
-  Effect.flatMap(Http.request.ServerRequest, (req) => getUser(req.params.userId)).pipe(
-    Effect.map(Http.response.json)
-  )
-);
-
-const app = Http.router.empty.pipe(Http.router.addRoute(userRoute));
-
-// Centralized error handling logic
-const program = Http.server.serve(app).pipe(
-  Http.server.serveOptions({
-    unhandledErrorResponse: (error) =>
-      Match.value(error).pipe(
-        Match.tag('UserNotFoundError', (e) =>
-          Http.response.text(`User ${e.id} not found`, { status: 404 })
-        ),
-        Match.tag('InvalidIdError', (e) =>
-          Http.response.text(`ID ${e.id} is not a valid format`, { status: 400 })
-        ),
-        Match.orElse(() => Http.response.empty({ status: 500 }))
-      ),
-  }),
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
-
-NodeRuntime.runMain(program);
-```
+<Example path="./src/handle-api-errors.ts" />
 
 ## Anti-Pattern
 

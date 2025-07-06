@@ -8,17 +8,25 @@
 		"build": "echo 'Build script not yet implemented'",
 		"start": "echo 'Start script not yet implemented'",
 		"readme": "bun scripts/generate_readme.ts",
-		"rules": "bun scripts/generate_rules.ts"
+		"rules": "bun scripts/generate_rules.ts",
+		"lint:examples": "eslint \"content/src/**/*.ts\"",
+		"typecheck:examples": "tsc --noEmit"
 	},
 	"dependencies": {
-		"effect": "^3.16.8",
+		"effect": "^3.16.12",
+		"@effect/platform": "^0.87.7",
+		"@effect/platform-node": "^0.88.11",
 		"process": "^0.11.10"
 	},
 	"devDependencies": {
 		"@types/node": "^24.0.3",
+		"@typescript-eslint/eslint-plugin": "^8.35.1",
+		"@typescript-eslint/parser": "^8.35.1",
+		"eslint": "^9.30.1",
 		"gray-matter": "^4.0.3",
 		"tsx": "^4.20.3",
-		"typescript": "^5.8.3"
+		"typescript": "^5.8.3",
+		"vitest": "^3.2.4"
 	},
 	"keywords": [
 		"effect",

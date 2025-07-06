@@ -40,39 +40,7 @@ However, for tasks like validating a user's input, this is poor user experience.
 
 Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
 
-````typescript
-import { Effect, Schema } from "effect";
-
-const UserSchema = Schema.Struct({
-  name: Schema.String.pipe(Schema.minLength(3)),
-  email: Schema.String.pipe(Schema.pattern(/@/)),
-});
-
-const invalidInput = {
-  name: "Al", // Too short
-  email: "bob-no-at-sign.com", // Invalid pattern
-};
-
-// Use { allErrors: true } to enable error accumulation
-const decoded = Schema.decode(UserSchema)(invalidInput, { allErrors: true });
-
-const program = Effect.match(decoded, {
-  onFailure: (error) => {
-    // The error contains a tree of all validation failures
-    console.log("Validation failed with multiple errors:");
-    error.errors.forEach((e, i) => console.log(`${i + 1}. ${e.message}`));
-  },
-  onSuccess: (user) => console.log("User is valid:", user),
-});
-
-Effect.runSync(program);
-/*
-Output:
-Validation failed with multiple errors:
-1. name must be a string at least 3 character(s) long
-2. email must be a string matching the pattern /@/
-*/
-````
+`<Example path="./src/accumulate-multiple-errors-with-either.ts" />`
 
 ---
 

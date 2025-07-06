@@ -43,49 +43,7 @@ Effect's dependency injection system (`Service` and `Layer`) solves this by deco
 
 This example defines a `Database` service. The route handler for `/users/:userId` requires this service to fetch a user. We then provide a "live" implementation of the `Database` to the entire server using a `Layer`.
 
-```typescript
-import { Effect, Data, Layer } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
-
-// 1. Define the service interface using Effect.Service
-class Database extends Effect.Service('Database')<{
-  readonly getUser: (
-    id: string
-  ) => Effect.Effect<{ name: string }, UserNotFoundError>;
-}>() {}
-
-class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{ id: string }> {}
-
-// 2. Create a "live" Layer that provides the real implementation
-const DatabaseLive = Layer.succeed(
-  Database,
-  Database.of({
-    getUser: (id: string) =>
-      id === '123'
-        ? Effect.succeed({ name: 'Paul' })
-        : Effect.fail(new UserNotFoundError({ id })),
-  })
-);
-
-// 3. The route handler now requires the Database service
-const getUserRoute = Http.router.get(
-  '/users/:userId',
-  Effect.flatMap(Http.request.ServerRequest, (req) =>
-    // Access the service and call its methods
-    Effect.flatMap(Database, (db) => db.getUser(req.params.userId))
-  ).pipe(Effect.map(Http.response.json))
-);
-
-const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
-
-// 4. Provide the Layer to the entire application
-const program = Http.server.serve(app).pipe(
-  Effect.provide(DatabaseLive),
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
-
-NodeRuntime.runMain(program);
-```
+<Example path="./src/provide-dependencies-to-routes.ts" />
 
 ## Anti-Pattern
 

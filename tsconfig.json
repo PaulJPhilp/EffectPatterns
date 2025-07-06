@@ -8,6 +8,10 @@
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
 		"emitDecoratorMetadata": true,
-		"experimentalDecorators": true
-	}
+		"experimentalDecorators": true,
+		"lib": ["ES2022", "DOM"],
+		"types": ["node"],
+		"downlevelIteration": true
+	},
+	"include": ["scripts/**/*.ts", "content/src/**/*.ts"]
 }

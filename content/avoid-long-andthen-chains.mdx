@@ -25,17 +25,7 @@ debug than deeply nested functional chains.
 
 ## Good Example
 
-```typescript
-import { Effect } from "effect";
-declare const step1: () => Effect.Effect<any>;
-declare const step2: (a: any) => Effect.Effect<any>;
-
-Effect.gen(function* () {
-  const a = yield* step1();
-  const b = yield* step2(a);
-  return b;
-});
-```
+<Example path="./src/avoid-long-andthen-chains.ts" />
 
 **Explanation:**  
 Generators keep sequential logic readable and easy to maintain.

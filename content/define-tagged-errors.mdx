@@ -26,16 +26,7 @@ type-safe.
 
 ## Good Example
 
-```typescript
-import { Data, Effect } from "effect";
-
-class DatabaseError extends Data.TaggedError("DatabaseError")<{
-  readonly cause: unknown;
-}> {}
-
-const findUser = (id: number): Effect.Effect<any, DatabaseError> =>
-  Effect.fail(new DatabaseError({ cause: "Connection timed out" }));
-```
+<Example path="./src/define-tagged-errors.ts" />
 
 **Explanation:**  
 Tagged errors allow you to handle errors in a type-safe, self-documenting way.

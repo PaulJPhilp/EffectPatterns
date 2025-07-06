@@ -25,15 +25,7 @@ you to see the flow of data transformations in a clear, linear fashion.
 
 ## Good Example
 
-```typescript
-import { Effect } from "effect";
-
-const program = Effect.succeed(5).pipe(
-  Effect.map((n) => n * 2),
-  Effect.map((n) => `The result is ${n}`),
-  Effect.tap(Effect.log),
-);
-```
+<Example path="./src/use-pipe-for-composition.ts" />
 
 **Explanation:**  
 Using `.pipe()` allows you to compose operations in a top-to-bottom style,

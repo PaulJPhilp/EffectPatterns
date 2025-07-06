@@ -39,39 +39,7 @@ An API server often needs to communicate with other services. While you could us
 
 This example creates a proxy endpoint. A request to `/proxy/posts/1` on our server will trigger an outgoing request to the JSONPlaceholder API. The response is then parsed and relayed back to the original client.
 
-```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
-
-const proxyRoute = Http.router.get(
-  '/proxy/posts/:id',
-  Effect.flatMap(Http.request.ServerRequest, (req) =>
-    // 1. Create a GET request to the external API.
-    Http.client.request.get(`https://jsonplaceholder.typicode.com/posts/${req.params.id}`).pipe(
-      // 2. Execute it with the default client and ensure a 2xx response.
-      Http.client.request.filterStatusOk,
-      // 3. Parse the response body as JSON.
-      Effect.flatMap(Http.client.response.json),
-      // 4. Map the successful result to our server's JSON response.
-      Effect.map(Http.response.json),
-      // 5. If any step fails (network, status, parsing), return a 502 error.
-      Effect.catchAll(() =>
-        Http.response.text('Error communicating with external service', {
-          status: 502, // Bad Gateway
-        })
-      )
-    )
-  )
-);
-
-const app = Http.router.empty.pipe(Http.router.addRoute(proxyRoute));
-
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
-
-NodeRuntime.runMain(program);
-```
+<Example path="./src/make-http-client-request.ts" />
 
 ## Anti-Pattern
 

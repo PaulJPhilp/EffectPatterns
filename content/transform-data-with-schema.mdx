@@ -41,32 +41,7 @@ For transformations that can fail (like creating a branded type), you can use `S
 
 This schema parses a string but produces a `Date` object, making the final data structure much more useful.
 
-```typescript
-import { Schema, Effect } from "effect";
-
-// This schema takes a string as input and outputs a Date object.
-const DateFromString = Schema.string.pipe(
-  Schema.transform(
-    Schema.Date,
-    (s) => new Date(s), // decode
-    (d) => d.toISOString(), // encode
-  ),
-);
-
-const ApiEventSchema = Schema.Struct({
-  name: Schema.String,
-  timestamp: DateFromString,
-});
-
-const rawInput = { name: "User Login", timestamp: "2025-06-22T20:08:42.000Z" };
-
-const program = Schema.decode(ApiEventSchema)(rawInput);
-
-Effect.runPromise(program).then((event) => {
-  // `event.timestamp` is a Date object, not a string!
-  console.log(event.timestamp.getFullYear()); // 2025
-});
-```
+<Example path="./src/transform-data-with-schema.ts" />
 
 ## Good Example 2: Creating a Branded Type
 

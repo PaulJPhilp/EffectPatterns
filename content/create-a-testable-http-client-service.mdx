@@ -42,44 +42,11 @@ By abstracting the HTTP client into a service, you decouple your application's l
 
 ### 1. Define the Service
 
-```typescript
-// src/services/HttpClient.ts
-import { Effect, Data } from "effect";
-
-// Define potential errors
-export class HttpError extends Data.TaggedError("HttpError")<{
-  readonly error: unknown;
-}> {}
-
-// Define the service interface
-export class HttpClient extends Effect.Tag("HttpClient")<
-  HttpClient,
-  {
-    readonly get: (
-      url: string,
-    ) => Effect.Effect<unknown, HttpError>;
-  }
->() {}
-```
+<Example path="./src/create-a-testable-http-client-service.ts" />
 
 ### 2. Create the Live Implementation
 
-```typescript
-// src/services/HttpClientLive.ts
-import { Effect, Layer } from "effect";
-import { HttpClient, HttpError } from "./HttpClient";
-
-export const HttpClientLive = Layer.succeed(
-  HttpClient,
-  HttpClient.of({
-    get: (url) =>
-      Effect.tryPromise({
-        try: () => fetch(url).then((res) => res.json()),
-        catch: (error) => new HttpError({ error }),
-      }),
-  }),
-);
-```
+<Example path="./src/create-a-testable-http-client-service.ts" />
 
 ### 3. Create the Test Implementation
 

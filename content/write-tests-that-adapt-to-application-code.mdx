@@ -23,20 +23,7 @@ Treating application code as immutable during testing prevents the introduction 
 
 ## Good Example
 
-```typescript
-// 1. Read the actual service interface first.
-export interface DatabaseServiceApi {
-  getUserById: (id: number) => Effect.Effect<User, NotFoundError>;
-}
-
-// 2. Write a test that correctly invokes that interface.
-it("should return a user", () =>
-  Effect.gen(function* () {
-    const db = yield* DatabaseService;
-    const result = yield* Effect.either(db.getUserById(123));
-    // ... assertions
-  }).pipe(Effect.provide(DatabaseService.Default), Effect.runPromise));
-```
+<Example path="./src/write-tests-that-adapt-to-application-code.ts" />
 
 **Explanation:**  
 Tests should reflect the real interface and behavior of your code, not force changes to it.

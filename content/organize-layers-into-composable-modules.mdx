@@ -43,53 +43,11 @@ This example shows a `BaseLayer` with a `Logger`, a `UserModule` that uses the `
 
 ### 1. The Base Infrastructure Layer
 
-```typescript
-// src/core/Logger.ts
-import { Console, Effect } from "effect";
-
-export class Logger extends Effect.Tag("App/Logger")<Logger, {
-  readonly log: (message: string) => Effect.Effect<void>;
-}>() {}
-
-export const LoggerLive = Logger.toLayer(
-  Effect.sync(() => Logger.of({ log: (msg) => Console.log(`[INFO] ${msg}`) })),
-);
-
-// src/core/index.ts
-import { Layer } from "effect";
-import { LoggerLive } from "./Logger";
-
-// The BaseLayer merges all core, cross-cutting services.
-export const BaseLayer = Layer.mergeAll(LoggerLive);
-```
+<Example path="./src/organize-layers-into-composable-modules.ts" />
 
 ### 2. The Feature Module Layer
 
-```typescript
-// src/features/User/UserRepository.ts
-import { Effect, Layer } from "effect";
-import { Logger } from "../../core/Logger";
-
-export class UserRepository extends Effect.Tag("App/User/UserRepository")<UserRepository, any>() {}
-
-export const UserRepositoryLive = UserRepository.toLayer(
-  Effect.gen(function* () {
-    const logger = yield* Logger; // <-- Dependency on a base service
-    return UserRepository.of({
-      findById: (id: number) => logger.log(`Finding user ${id}`),
-    });
-  }),
-);
-
-// src/features/User/index.ts
-import { Layer } from "effect";
-import { UserRepositoryLive } from "./UserRepository";
-// ... other user services would be merged here
-
-// The UserModule provides all services for the User domain.
-// It exposes its own dependencies (like Logger) in its requirements.
-export const UserModuleLive = Layer.mergeAll(UserRepositoryLive);
-```
+<Example path="./src/organize-layers-into-composable-modules.ts" />
 
 ### 3. The Final Application Composition
 

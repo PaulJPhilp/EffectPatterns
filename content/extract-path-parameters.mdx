@@ -41,37 +41,7 @@ By defining parameters directly in the path string, you gain several benefits:
 
 This example defines a route that captures a `userId`. The handler for this route accesses the parsed parameters and uses the `userId` to construct a personalized greeting. The router automatically makes the parameters available to the handler.
 
-```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
-
-// Define a route with a dynamic parameter `:userId`.
-const userRoute = Http.router.get(
-  '/users/:userId',
-  // The handler is an Effect that can access the request.
-  Http.request.ServerRequest.pipe(
-    Effect.flatMap((req) =>
-      // The router automatically parses params and makes them available on the request.
-      Http.response.text(`Hello, user ${req.params.userId}!`)
-    )
-  )
-);
-
-const app = Http.router.empty.pipe(Http.router.addRoute(userRoute));
-
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
-
-NodeRuntime.runMain(program);
-
-/*
-To run this:
-- GET http://localhost:3000/users/123 -> "Hello, user 123!"
-- GET http://localhost:3000/users/abc -> "Hello, user abc!"
-- GET http://localhost:3000/users/ -> 404 Not Found
-*/
-```
+<Example path="./src/extract-path-parameters.ts" />
 
 ## Anti-Pattern
 

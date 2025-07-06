@@ -60,20 +60,7 @@ The "Good Example" is the workflow this pattern enables.
 
 5.  **The AI generates correct, context-aware code** because it's not guessing; it's using the live architectural information provided by the MCP server.
 
-```typescript
-// The AI generates this correct code:
-import { Effect } from "effect";
-import { UserService } from "./features/User/UserService";
-import { Logger } from "./core/Logger";
-
-const program = Effect.gen(function* () {
-  const userService = yield* UserService;
-  const logger = yield* Logger;
-
-  const user = yield* userService.getUser("123");
-  yield* logger.log(`Found user: ${user.name}`);
-});
-```
+<Example path="./src/teach-your-ai-agents-effect-with-the-mcp-server.ts" />
 
 ---
 

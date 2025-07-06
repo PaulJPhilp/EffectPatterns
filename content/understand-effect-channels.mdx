@@ -49,32 +49,7 @@ This turns the TypeScript compiler into a powerful assistant that ensures you've
 
 This function signature is a self-documenting contract. It clearly states that to get a `User`, you must provide a `Database` service, and the operation might fail with a `UserNotFoundError`.
 
-```typescript
-import { Effect, Data, Layer } from "effect";
-
-// Define the types for our channels
-interface User { readonly name: string; } // The 'A' type
-class UserNotFoundError extends Data.TaggedError("UserNotFoundError") {} // The 'E' type
-class Database extends Effect.Tag("Database")<Database, { findUser: (id: number) => Effect.Effect<User, UserNotFoundError> }> {} // The 'R' type
-
-// This function's signature clearly shows all three channels
-const getUser = (id: number): Effect.Effect<User, UserNotFoundError, Database> =>
-  Database.pipe(Effect.flatMap((db) => db.findUser(id)));
-
-// To make the effect runnable, we provide a Layer for the Database.
-// This satisfies the `R` requirement, changing it from `Database` to `never`.
-const DatabaseLive = Layer.succeed(Database, {
-  findUser: (id) =>
-    id === 1
-      ? Effect.succeed({ name: "Paul" })
-      : Effect.fail(new UserNotFoundError()),
-});
-
-// The type of this program is now Effect<User, UserNotFoundError, never>
-const runnableProgram = getUser(1).pipe(Effect.provide(DatabaseLive));
-
-Effect.runPromise(runnableProgram).then(console.log); // { name: 'Paul' }
-```
+<Example path="./src/understand-effect-channels.ts" />
 
 ---
 

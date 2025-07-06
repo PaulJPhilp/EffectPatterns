@@ -27,18 +27,7 @@ long-running applications.
 
 ## Good Example
 
-```typescript
-import { Effect, Layer, Runtime } from "effect";
-
-class GreeterService extends Effect.Tag("Greeter")<GreeterService, any> {}
-const GreeterLive = Layer.succeed(GreeterService, {});
-
-const runtime = Layer.toRuntime(GreeterLive);
-const run = Runtime.runPromise(runtime);
-
-// In a server, you would reuse `run` for every request.
-run(Effect.log("Hello"));
-```
+<Example path="./src/create-reusable-runtime-from-layers.ts" />
 
 **Explanation:**  
 By compiling your layers into a Runtime once, you avoid rebuilding the

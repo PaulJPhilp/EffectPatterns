@@ -45,46 +45,7 @@ Using `Http.request.schemaBodyJson` offers several major advantages:
 
 This example defines a `POST` route to create a user. It uses a `CreateUser` schema to validate the request body. If validation passes, it returns a success message with the typed data. If it fails, the platform automatically sends a descriptive 400 error.
 
-```typescript
-import { Effect, Schema } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
-
-// Define the expected structure of the request body using Schema.
-const CreateUser = Schema.Struct({
-  name: Schema.String,
-  email: Schema.String.pipe(Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
-});
-
-// Define a POST route.
-const createUserRoute = Http.router.post(
-  '/users',
-  // Use schemaBodyJson to parse and validate.
-  // The result is an Effect<CreateUser, ...>
-  Http.request.schemaBodyJson(CreateUser).pipe(
-    Effect.map((user) =>
-      // If we get here, validation succeeded and `user` is fully typed.
-      Http.response.text(`Successfully created user: ${user.name}`)
-    )
-  )
-);
-
-const app = Http.router.empty.pipe(Http.router.addRoute(createUserRoute));
-
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
-
-NodeRuntime.runMain(program);
-
-/*
-To run this:
-- POST http://localhost:3000/users with body {"name": "Paul", "email": "paul@effect.com"}
-  -> 200 OK "Successfully created user: Paul"
-
-- POST http://localhost:3000/users with body {"name": "Paul"}
-  -> 400 Bad Request with a JSON body explaining the 'email' field is missing.
-*/
-```
+<Example path="./src/validate-request-body.ts" />
 
 ## Anti-Pattern
 

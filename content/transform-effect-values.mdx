@@ -26,19 +26,7 @@ returns an `Effect`.
 
 ## Good Example
 
-```typescript
-import { Effect } from "effect";
-
-const getUser = (id: number): Effect.Effect<{ id: number; name: string }> =>
-  Effect.succeed({ id, name: "Paul" });
-
-const getPosts = (userId: number): Effect.Effect<{ title: string }[]> =>
-  Effect.succeed([{ title: "My First Post" }]);
-
-const userPosts = getUser(123).pipe(
-  Effect.flatMap((user) => getPosts(user.id)),
-);
-```
+<Example path="./src/transform-effect-values.ts" />
 
 **Explanation:**  
 Use `flatMap` to chain effects that depend on each other, and `map` for

@@ -23,23 +23,7 @@ The `.Default` layer is the canonical way to provide a service in a test environ
 
 ## Good Example
 
-```typescript
-import { Effect } from "effect";
-import { describe, expect, it } from "vitest";
-import { MyService } from "../MyService";
-
-describe("MyService", () => {
-  it("should perform its operation", () =>
-    Effect.gen(function* () {
-      const service = yield* MyService;
-      const result = yield* service.doSomething();
-      expect(result).toBe("done");
-    }).pipe(
-      Effect.provide(MyService.Default), // ✅ Correct
-      Effect.runPromise,
-    ));
-});
-```
+<Example path="./src/use-default-layer-for-tests.ts" />
 
 **Explanation:**  
 This approach ensures your tests are idiomatic, maintainable, and take full advantage of Effect's dependency injection system.

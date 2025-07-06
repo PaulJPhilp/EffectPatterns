@@ -25,14 +25,7 @@ values within functions that must return an `Effect`.
 
 ## Good Example
 
-```typescript
-import { Effect, Data } from "effect";
-
-const successEffect = Effect.succeed(42);
-
-class MyError extends Data.TaggedError("MyError") {}
-const failureEffect = Effect.fail(new MyError());
-```
+<Example path="./src/create-pre-resolved-effect.ts" />
 
 **Explanation:**  
 Use `Effect.succeed` for values you already have, and `Effect.fail` for

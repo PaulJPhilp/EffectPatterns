@@ -26,19 +26,7 @@ compile-time static types and runtime validation.
 
 ## Good Example
 
-```typescript
-import { Schema, Effect } from "effect";
-
-const User = Schema.Struct({
-  id: Schema.Number,
-  name: Schema.String,
-});
-type User = Schema.Schema.Type<typeof User>;
-
-const DatabaseServiceSchema = Schema.Struct({
-  getUser: Schema.Function(Schema.Number, Effect.Effect(User)),
-});
-```
+<Example path="./src/define-contracts-with-schema.ts" />
 
 **Explanation:**  
 Defining schemas upfront clarifies your contracts and ensures both type safety

@@ -44,41 +44,7 @@ This approach has several key benefits:
 
 Here, we define a `Notifier` service that requires a `Logger` to be built. The `NotifierLive` layer's type signature, `Layer<Logger, never, Notifier>`, clearly documents this dependency.
 
-```typescript
-import { Effect, Layer } from "effect";
-
-// Define the services
-class Logger extends Effect.Tag("Logger")<Logger, { log: (msg: string) => Effect.Effect<void> }> {}
-class Notifier extends Effect.Tag("Notifier")<Notifier, { notify: (msg: string) => Effect.Effect<void> }> {}
-
-// Define a live implementation for the Logger
-const LoggerLive = Layer.succeed(Logger, {
-  log: (msg) => Effect.sync(() => console.log(`LOG: ${msg}`)),
-});
-
-// Define a live implementation for the Notifier.
-// It REQUIRES a Logger to be constructed.
-const NotifierLive = Layer.effect(
-  Notifier,
-  Effect.gen(function* () {
-    const logger = yield* Logger; // Get the dependency from the context
-    return {
-      notify: (msg) => logger.log(`Notifying: ${msg}`),
-    };
-  }),
-);
-
-// The type of NotifierLive is Layer<Logger, never, Notifier>
-// This tells us it provides a Notifier, but needs a Logger.
-
-// To create a runnable program, we must satisfy all requirements.
-const AppLayer = Layer.provide(NotifierLive, LoggerLive);
-
-const program = Notifier.pipe(Effect.flatMap((n) => n.notify("Hello, World!")));
-
-// We provide the fully composed AppLayer to the program.
-Effect.runSync(Effect.provide(program, AppLayer));
-```
+<Example path="./src/understand-layers-for-dependency-injection.ts" />
 
 ---
 

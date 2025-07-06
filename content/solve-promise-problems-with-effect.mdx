@@ -45,20 +45,7 @@ Understanding that Effect was built specifically to solve these problems is key 
 
 This code is type-safe, testable, and cancellable. The signature `Effect.Effect<User, DbError, HttpClient>` tells us everything we need to know.
 
-```typescript
-import { Effect, Data } from "effect";
-
-class DbError extends Data.TaggedError("DbError") {}
-class HttpClient extends Effect.Tag("HttpClient")<HttpClient, any> {}
-interface User { name: string; }
-
-const findUser = (id: number): Effect.Effect<User, DbError, HttpClient> =>
-  Effect.gen(function* () {
-    const client = yield* HttpClient;
-    // ... logic using the client
-    return { name: "Paul" };
-  });
-```
+<Example path="./src/solve-promise-problems-with-effect.ts" />
 
 ---
 

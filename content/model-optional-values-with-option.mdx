@@ -38,36 +38,7 @@ The `Option` type solves this by making the possibility of an absent value expli
 
 A function that looks for a user in a database is a classic use case. It might find a user, or it might not. Returning an `Option<User>` makes this contract explicit and safe.
 
-```typescript
-import { Option } from "effect";
-
-interface User {
-  id: number;
-  name: string;
-}
-
-const users: User[] = [
-  { id: 1, name: "Paul" },
-  { id: 2, name: "Alex" },
-];
-
-// This function safely returns an Option, not a User or null.
-const findUserById = (id: number): Option.Option<User> => {
-  const user = users.find((u) => u.id === id);
-  return Option.fromNullable(user); // A useful helper for existing APIs
-};
-
-// The caller MUST handle both cases.
-const greeting = (id: number): string =>
-  findUserById(id).pipe(
-    Option.match({
-      onNone: () => "User not found.",
-      onSome: (user) => `Welcome, ${user.name}!`,
-    }),
-  );
-
-console.log(greeting(1)); // "Welcome, Paul!"
-console.log(greeting(3)); // "User not found."
+<Example path="./src/model-optional-values-with-option.ts" />
 
 ## Anti-Pattern
 
@@ -90,4 +61,4 @@ const users: User[] = [{ id: 1, name: "Paul" }];
 	// This will throw "TypeError: Cannot read properties of undefined (reading 'name')"
 	// because the caller forgot to check if the user exists.
 	console.log(`User's name is ${user.name}`)
-  ```
+```

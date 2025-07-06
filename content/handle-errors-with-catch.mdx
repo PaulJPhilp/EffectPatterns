@@ -27,17 +27,7 @@ scenarios with different logic in a type-safe way.
 
 ## Good Example
 
-```typescript
-import { Data, Effect } from "effect";
-
-class FooError extends Data.TaggedError("FooError") {}
-
-const program: Effect.Effect<string, FooError> = Effect.fail(new FooError());
-
-const handled = program.pipe(
-  Effect.catchTag("FooError", (error) => Effect.succeed("Caught a Foo!")),
-);
-```
+<Example path="./src/handle-errors-with-catch.ts" />
 
 **Explanation:**  
 Use `catchTag` to handle specific error types in a type-safe, composable way.

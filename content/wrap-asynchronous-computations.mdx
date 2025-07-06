@@ -24,17 +24,7 @@ you to leverage the massive `async/await` ecosystem safely.
 
 ## Good Example
 
-```typescript
-import { Effect } from "effect";
-
-class HttpError extends Effect.Tag("HttpError") {}
-
-const getUrl = (url: string) =>
-  Effect.tryPromise({
-    try: () => fetch(url),
-    catch: (error) => new HttpError(),
-  });
-```
+<Example path="./src/wrap-asynchronous-computations.ts" />
 
 **Explanation:**  
 `Effect.tryPromise` wraps a `Promise`-returning function and safely handles

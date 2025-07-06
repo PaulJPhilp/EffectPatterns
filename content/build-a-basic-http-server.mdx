@@ -43,58 +43,7 @@ This architecture ensures that your request handling logic is fully testable, be
 
 This example creates a simple server with a `Greeter` service. The server starts, creates a runtime containing the `Greeter`, and then uses that runtime to handle requests.
 
-```typescript
-import * as http from "http";
-import { Effect, Layer, Runtime } from "effect";
-
-// 1. Define a service and its layer
-class Greeter extends Effect.Tag("Greeter")<
-  Greeter,
-  { readonly greet: () => Effect.Effect<string> }
->() {}
-
-const GreeterLive = Layer.succeed(
-  Greeter,
-  Greeter.of({ greet: () => Effect.succeed("Hello, World!") }),
-);
-
-// 2. Define the main application layer
-const AppLayer = GreeterLive;
-
-// 3. The main program: create the runtime and start the server
-const program = Effect.gen(function* () {
-  // Create the runtime once
-  const runtime = yield* Layer.toRuntime(AppLayer);
-  const runPromise = Runtime.runPromise(runtime);
-
-  const server = http.createServer((_req, res) => {
-    // For each request, create and run an Effect
-    const requestEffect = Greeter.pipe(
-      Effect.flatMap((greeter) => greeter.greet()),
-      Effect.map((message) => {
-        res.writeHead(200, { "Content-Type": "text/plain" });
-        res.end(message);
-      }),
-      Effect.catchAllCause((cause) =>
-        Effect.sync(() => {
-          console.error(cause);
-          res.writeHead(500);
-          res.end("Internal Server Error");
-        }),
-      ),
-    );
-
-    // Execute the request effect with our runtime
-    runPromise(requestEffect);
-  });
-
-  yield* Effect.log("Server starting on http://localhost:3000");
-  server.listen(3000);
-});
-
-// Run the main program to start the server
-Effect.runPromise(program);
-```
+<Example path="./src/build-a-basic-http-server.ts" />
 
 ---
 

@@ -41,28 +41,7 @@ The primary benefits of using `Stream` are:
 
 This example processes a list of IDs by fetching user data for each one. `Stream.mapEffect` is used to apply an effectful function (`getUserById`) to each element, with concurrency limited to 2 simultaneous requests.
 
-```typescript
-import { Effect, Stream, Chunk } from 'effect';
-
-// A mock function that simulates fetching a user from a database
-const getUserById = (id: number): Effect.Effect<{ id: number; name: string }, Error> =>
-  Effect.succeed({ id, name: `User ${id}` }).pipe(
-    Effect.delay('100 millis'),
-    Effect.tap(() => Effect.log(`Fetched user ${id}`))
-  );
-
-// The stream-based program
-const program = Stream.fromIterable([1, 2, 3, 4, 5]).pipe(
-  // Process each item with an Effect, limiting concurrency to 2
-  Stream.mapEffect(getUserById, { concurrency: 2 }),
-  // Run the stream and collect all results into a Chunk
-  Stream.runCollect
-);
-
-Effect.runPromise(program).then((users) => {
-  console.log('All users fetched:', Chunk.toArray(users));
-});
-```
+<Example path="./src/process-a-collection-of-data-asynchronously.ts" />
 
 ## Anti-Pattern
 

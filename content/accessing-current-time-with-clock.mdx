@@ -42,41 +42,7 @@ This makes any time-dependent logic pure, deterministic, and easy to test with p
 
 This example shows a function that checks if a token is expired. Its logic depends on `Clock`, making it fully testable.
 
-```typescript
-import { Effect, Clock, Layer } from "effect";
-import { TestClock } from "effect/TestClock";
-import { describe, it, expect } from "vitest";
-
-interface Token {
-  readonly value: string;
-  readonly expiresAt: number; // UTC milliseconds
-}
-
-// This function is pure and testable because it depends on Clock
-const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock> =>
-  Clock.currentTimeMillis.pipe(
-    Effect.map((now) => now > token.expiresAt),
-  );
-
-// --- Testing the function ---
-describe("isTokenExpired", () => {
-  const token = { value: "abc", expiresAt: 1000 };
-
-  it("should return false when the clock is before the expiry time", () =>
-    Effect.gen(function* () {
-      yield* TestClock.setTime(500); // Set virtual time
-      const isExpired = yield* isTokenExpired(token);
-      expect(isExpired).toBe(false);
-    }).pipe(Effect.provide(TestClock.layer), Effect.runPromise));
-
-  it("should return true when the clock is after the expiry time", () =>
-    Effect.gen(function* () {
-      yield* TestClock.setTime(1500); // Set virtual time
-      const isExpired = yield* isTokenExpired(token);
-      expect(isExpired).toBe(true);
-    }).pipe(Effect.provide(TestClock.layer), Effect.runPromise));
-});
-```
+<Example path="./src/accessing-current-time-with-clock.ts" />
 
 ---
 

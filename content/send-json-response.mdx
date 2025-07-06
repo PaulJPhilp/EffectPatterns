@@ -41,34 +41,7 @@ Using `Http.response.json` is superior because:
 
 This example defines a route that fetches a user object and returns it as a JSON response. The `Http.response.json` function handles all the necessary serialization and header configuration.
 
-```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
-
-// A route that returns a user object.
-const getUserRoute = Http.router.get(
-  '/users/1',
-  Effect.succeed({ id: 1, name: 'Paul', team: 'Effect' }).pipe(
-    // Use Http.response.json to create the response.
-    Effect.map(Http.response.json)
-  )
-);
-
-const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
-
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
-
-NodeRuntime.runMain(program);
-
-/*
-To run this:
-- GET http://localhost:3000/users/1
-- Response Body: {"id":1,"name":"Paul","team":"Effect"}
-- Response Headers will include: Content-Type: application/json; charset=utf-8
-*/
-```
+<Example path="./src/send-json-response.ts" />
 
 ## Anti-Pattern
 

@@ -41,43 +41,7 @@ This approach has several advantages:
 
 This example defines two separate GET routes, one for the root path (`/`) and one for `/hello`. We create an empty router and add each route to it. The resulting `app` is then served. The router automatically handles sending a `404 Not Found` response for any path that doesn't match.
 
-```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
-
-// Define a handler for the root path
-const rootRoute = Http.router.get(
-  '/',
-  Effect.succeed(Http.response.text('Welcome to the home page!'))
-);
-
-// Define a handler for the /hello path
-const helloRoute = Http.router.get(
-  '/hello',
-  Effect.succeed(Http.response.text('Hello, Effect!'))
-);
-
-// Create an application by combining multiple routes.
-// Start with an empty router and add each route.
-const app = Http.router.empty.pipe(
-  Http.router.addRoute(rootRoute),
-  Http.router.addRoute(helloRoute)
-);
-
-// Serve the router application
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
-
-NodeRuntime.runMain(program);
-
-/*
-To run this:
-- GET http://localhost:3000/ -> "Welcome to the home page!"
-- GET http://localhost:3000/hello -> "Hello, Effect!"
-- GET http://localhost:3000/other -> 404 Not Found
-*/
-```
+<Example path="./src/handle-get-request.ts" />
 
 ## Anti-Pattern
 

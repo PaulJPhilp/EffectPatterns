@@ -27,17 +27,7 @@ the Effect's error channel.
 
 ## Good Example
 
-```typescript
-import { Effect } from "effect";
-
-const randomNumber = Effect.sync(() => Math.random());
-
-const parseJson = (input: string) =>
-  Effect.try({
-    try: () => JSON.parse(input),
-    catch: (error) => new Error(`JSON parsing failed: ${error}`),
-  });
-```
+<Example path="./src/wrap-synchronous-computations.ts" />
 
 **Explanation:**  
 Use `Effect.sync` for safe synchronous code, and `Effect.try` to safely

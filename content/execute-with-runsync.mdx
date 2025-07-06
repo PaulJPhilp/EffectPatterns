@@ -27,13 +27,7 @@ asynchronous operations. If the Effect contains any async operations,
 
 ## Good Example
 
-```typescript
-import { Effect } from "effect";
-
-const program = Effect.succeed(10).pipe(Effect.map((n) => n * 2));
-
-const result = Effect.runSync(program); // result is 20
-```
+<Example path="./src/execute-with-runsync.ts" />
 
 **Explanation:**  
 Use `runSync` only for Effects that are fully synchronous. If the Effect

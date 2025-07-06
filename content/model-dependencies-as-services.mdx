@@ -23,17 +23,7 @@ This pattern is the key to testability. It allows you to provide a `Live` implem
 
 ## Good Example
 
-```typescript
-import { Effect, Layer } from "effect";
-
-class Random extends Effect.Tag("Random")<Random, { readonly next: Effect.Effect<number> }> {}
-
-// For production
-const RandomLive = Layer.succeed(Random, { next: Effect.sync(() => Math.random()) });
-
-// For testing
-const RandomTest = Layer.succeed(Random, { next: Effect.succeed(0.5) });
-```
+<Example path="./src/model-dependencies-as-services.ts" />
 
 **Explanation:**  
 By modeling dependencies as services, you can easily substitute mocked or deterministic implementations for testing, leading to more reliable and predictable tests.

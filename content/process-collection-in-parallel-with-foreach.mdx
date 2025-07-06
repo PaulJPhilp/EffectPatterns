@@ -37,26 +37,7 @@ Running `Effect.all` on a large array of tasks is dangerous. If you have 1,000 i
 
 Imagine you have a list of 100 user IDs and you need to fetch the data for each one. `Effect.forEach` with a concurrency of 10 will process them in controlled parallel batches.
 
-```typescript
-import { Effect } from "effect";
-
-const userIds = Array.from({ length: 100 }, (_, i) => i + 1);
-
-// A function that simulates fetching a single user's data
-const fetchUserById = (id: number): Effect.Effect<{ id: number; name: string }> =>
-  Effect.succeed({ id, name: `User ${id}` }).pipe(
-    Effect.delay(Math.random() * 100), // Simulate variable network latency
-  );
-
-// Process the entire array, but only run 10 fetches at a time.
-const program = Effect.forEach(userIds, fetchUserById, {
-  concurrency: 10,
-});
-
-// The result will be an array of all 100 user objects.
-// The total time will be much less than running them sequentially.
-Effect.runPromise(program);
-```
+<Example path="./src/process-collection-in-parallel-with-foreach.ts" />
 
 ---
 

@@ -23,16 +23,7 @@ This creates a single, type-safe source of truth for your configuration, elimina
 
 ## Good Example
 
-```typescript
-import { Config } from "effect";
-
-const ServerConfig = Config.nested("SERVER")(
-  Config.all({
-    host: Config.string("HOST"),
-    port: Config.number("PORT"),
-  }),
-);
-```
+<Example path="./src/define-config-schema.ts" />
 
 **Explanation:**  
 This schema ensures that both `host` and `port` are present and properly typed, and that their source is clearly defined.
