@@ -4,6 +4,7 @@
 	"private": true,
 	"description": "A community-driven knowledge base for Effect-TS patterns.",
 	"scripts": {
+		"all-ts": "bash scripts/run-all-ts.sh",
 		"dev": "echo 'Development server not yet implemented'",
 		"build": "echo 'Build script not yet implemented'",
 		"start": "echo 'Start script not yet implemented'",

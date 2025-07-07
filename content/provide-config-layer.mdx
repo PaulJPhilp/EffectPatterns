@@ -23,7 +23,27 @@ Integrating configuration as a `Layer` plugs it directly into Effect's dependenc
 
 ## Good Example
 
-`<Example path="./src/provide-config-layer.ts" />`
+````typescript
+import { Effect, Layer } from "effect";
+
+class ServerConfig extends Effect.Service<ServerConfig>()(
+  "ServerConfig",
+  {
+    sync: () => ({
+      port: process.env.PORT ? parseInt(process.env.PORT) : 8080
+    })
+  }
+) {}
+
+const program = Effect.gen(function* () {
+  const config = yield* ServerConfig;
+  yield* Effect.log(`Starting application on port ${config.port}...`);
+});
+
+Effect.runPromise(
+  Effect.provide(program, ServerConfig.Default)
+).catch(console.error);
+````
 
 **Explanation:**  
 This approach makes configuration available contextually, supporting better testing and modularity.

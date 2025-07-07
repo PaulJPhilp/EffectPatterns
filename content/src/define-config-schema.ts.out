@@ -1,0 +1,1 @@
+timestamp=2025-07-07T18:21:11.161Z level=INFO fiber=#0 message="Server config loaded: {\"host\":\"localhost\",\"port\":3000}"

@@ -6,26 +6,57 @@ interface User {
   roles: string[];
 }
 
+type UserError = "DbError" | "UserIsInactive" | "UserIsNotAdmin";
+
 const findUser = (id: number): Effect.Effect<User, "DbError"> =>
   Effect.succeed({ id, status: "active", roles: ["admin"] });
 
 // Reusable, testable predicates that document business rules.
-const isActive = (user: User) => user.status === "active";
-const isAdmin = (user: User) => user.roles.includes("admin");
+const isActive = (user: User): Effect.Effect<boolean> =>
+  Effect.succeed(user.status === "active");
 
-const program = (id: number) =>
-  findUser(id).pipe(
-    // If this predicate is false, the effect fails.
-    Effect.filter(isActive, () => "UserIsInactive" as const),
-    // If this one is false, the effect fails.
-    Effect.filter(isAdmin, () => "UserIsNotAdmin" as const),
-    // This part only runs if both filters pass.
-    Effect.map((user) => `Welcome, admin user #${user.id}!`),
-  );
+const isAdmin = (user: User): Effect.Effect<boolean> =>
+  Effect.succeed(user.roles.includes("admin"));
+
+const program = (id: number): Effect.Effect<string, UserError> =>
+  Effect.gen(function* () {
+    // Find the user
+    const user = yield* findUser(id);
+
+    // Check if user is active
+    const active = yield* isActive(user);
+    if (!active) {
+      return yield* Effect.fail("UserIsInactive" as const);
+    }
+
+    // Check if user is admin
+    const admin = yield* isAdmin(user);
+    if (!admin) {
+      return yield* Effect.fail("UserIsNotAdmin" as const);
+    }
+
+    // Success case
+    return `Welcome, admin user #${user.id}!`;
+  });
 
 // We can then handle the specific failures in a type-safe way.
 const handled = program(123).pipe(
-  Effect.catchTag("UserIsNotAdmin", () =>
-    Effect.succeed("Access denied: requires admin role."),
-  ),
+  Effect.match({
+    onFailure: (error) => {
+      switch (error) {
+        case "UserIsNotAdmin":
+          return "Access denied: requires admin role.";
+        case "UserIsInactive":
+          return "Access denied: user is not active.";
+        case "DbError":
+          return "Error: could not find user.";
+        default:
+          return `Unknown error: ${error}`;
+      }
+    },
+    onSuccess: (result) => result
+  })
 );
+
+// Run the program
+Effect.runPromise(handled).then(console.log);

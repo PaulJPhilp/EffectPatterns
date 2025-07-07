@@ -1,29 +1,39 @@
-import { Effect, Schedule, Duration } from "effect";
+import { Effect, Schedule, Duration } from "effect"
 
 // A simple effect that can fail
 const flakyEffect = Effect.try({
   try: () => {
     if (Math.random() > 0.2) {
-      console.log("Operation failed, retrying...");
-      throw new Error("Transient error");
+      throw new Error("Transient error")
     }
-    return "Operation succeeded!";
+    return "Operation succeeded!"
   },
-  catch: () => "ApiError" as const,
-});
+  catch: (error: unknown) => {
+    Effect.logInfo("Operation failed, retrying...")
+    return error
+  }
+})
 
 // --- Building a Composable Schedule ---
 
 // 1. Start with a base exponential backoff (100ms, 200ms, 400ms...)
-const exponentialBackoff = Schedule.exponential(Duration.millis(100));
+const exponentialBackoff = Schedule.exponential("100 millis")
 
 // 2. Add random jitter to avoid thundering herd problems
-const withJitter = exponentialBackoff.pipe(Schedule.jittered);
+const withJitter = Schedule.jittered(exponentialBackoff)
 
 // 3. Limit the schedule to a maximum of 5 repetitions
-const limitedWithJitter = withJitter.pipe(Schedule.andThen(Schedule.recurs(5)));
+const limitedWithJitter = Schedule.compose(
+  withJitter,
+  Schedule.recurs(5)
+)
 
 // --- Using the Schedule ---
-const program = flakyEffect.pipe(Effect.retry(limitedWithJitter));
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("Starting operation...")
+  const result = yield* Effect.retry(flakyEffect, limitedWithJitter)
+  yield* Effect.logInfo(`Final result: ${result}`)
+})
 
-Effect.runPromise(program).then(console.log);
+// Run the program
+Effect.runPromise(program)

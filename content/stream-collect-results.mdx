@@ -44,7 +44,32 @@ The result of `Stream.runCollect` is an `Effect` that, when executed, yields a `
 
 This example creates a stream of numbers, filters for only the even ones, transforms them into strings, and then uses `runCollect` to gather the final results into a `Chunk`.
 
-<Example path="./src/stream-collect-results.ts" />
+```typescript
+import { Effect, Stream, Chunk } from 'effect';
+
+const program = Stream.range(1, 10).pipe(
+  // Find all the even numbers
+  Stream.filter((n) => n % 2 === 0),
+  // Transform them into strings
+  Stream.map((n) => `Even number: ${n}`),
+  // Run the stream and collect the results
+  Stream.runCollect
+);
+
+Effect.runPromise(program).then((results) => {
+  console.log('Collected results:', Chunk.toArray(results));
+});
+/*
+Output:
+Collected results: [
+  'Even number: 2',
+  'Even number: 4',
+  'Even number: 6',
+  'Even number: 8',
+  'Even number: 10'
+]
+*/
+```
 
 ## Anti-Pattern
 

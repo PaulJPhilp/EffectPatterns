@@ -1,0 +1,6 @@
+timestamp=2025-07-07T18:21:00.165Z level=INFO fiber=#0 message="
+Trying with admin user..."
+timestamp=2025-07-07T18:21:00.166Z level=INFO fiber=#0 message="Admin result: Admin action completed."
+timestamp=2025-07-07T18:21:00.166Z level=INFO fiber=#0 message="
+Trying with non-admin user..."
+timestamp=2025-07-07T18:21:00.167Z level=INFO fiber=#0 message="User result: Permission denied."

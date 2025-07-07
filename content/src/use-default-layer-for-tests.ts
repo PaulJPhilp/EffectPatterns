@@ -1,15 +1,30 @@
 import { Effect } from "effect";
-import { describe, expect, it } from "vitest";
-import { MyService } from "./MyService";
 
-describe("MyService", () => {
-  it("should perform its operation", () =>
-    Effect.gen(function* () {
-      const service = yield* MyService;
-      const result = yield* service.doSomething();
-      expect(result).toBe("done");
-    }).pipe(
-      Effect.provide(MyService.Default), // ✅ Correct
-      Effect.runPromise
-    ));
+// Define MyService using Effect.Service pattern
+class MyService extends Effect.Service<MyService>()(
+  "MyService",
+  {
+    sync: () => ({
+      doSomething: () => 
+        Effect.succeed("done").pipe(
+          Effect.tap(() => Effect.log("MyService did something!"))
+        )
+    })
+  }
+) {}
+
+// Create a program that uses MyService
+const program = Effect.gen(function* () {
+  yield* Effect.log("Getting MyService...");
+  const service = yield* MyService;
+  
+  yield* Effect.log("Calling doSomething()...");
+  const result = yield* service.doSomething();
+  
+  yield* Effect.log(`Result: ${result}`);
 });
+
+// Run the program with default service implementation
+Effect.runPromise(
+  Effect.provide(program, MyService.Default)
+);

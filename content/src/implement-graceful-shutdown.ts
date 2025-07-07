@@ -1,40 +1,66 @@
-import { Effect, Layer, Fiber } from "effect";
+import { Effect, Layer, Fiber, Context, Scope } from "effect";
 import * as http from "http";
 
 // 1. A service with a finalizer for cleanup
-class Database extends Effect.Tag("Database")<Database, { query: () => Effect.Effect<string> }> {}
-const DatabaseLive = Layer.scoped(
-  Database,
-  Effect.acquireRelease(
-    Effect.log("Acquiring DB connection").pipe(Effect.as({ query: () => Effect.succeed("data") })),
-    () => Effect.log("DB connection closed."),
-  ),
-);
+class Database extends Effect.Service<Database>()("Database", {
+  effect: Effect.gen(function* () {
+    yield* Effect.log("Acquiring DB connection");
+    return {
+      query: () => Effect.succeed("data"),
+    };
+  }),
+}) {}
 
 // 2. The main server logic
 const server = Effect.gen(function* () {
   const db = yield* Database;
-  const server = http.createServer((_req, res) => {
-    Effect.runFork(
-      db.query().pipe(
-        Effect.map((data) => res.end(data)),
-      ),
-    );
+
+  // Create server with proper error handling
+  const httpServer = yield* Effect.sync(() => {
+    const server = http.createServer((_req, res) => {
+      Effect.runFork(
+        Effect.provide(
+          db.query().pipe(Effect.map((data) => res.end(data))),
+          Database.Default
+        )
+      );
+    });
+    return server;
   });
-  // Add a finalizer to the server itself
-  yield* Effect.addFinalizer(() => Effect.sync(() => server.close()));
-  server.listen(3000);
-  yield* Effect.log("Server started on port 3000. Press Ctrl+C to exit.");
-  // This will keep the effect running forever until interrupted
-  yield* Effect.never;
+
+  // Add a finalizer to close the server
+  yield* Effect.addFinalizer(() =>
+    Effect.sync(() => {
+      httpServer.close();
+      console.log("Server closed");
+    })
+  );
+
+  // Start server with error handling
+  yield* Effect.async<void, Error>((resume) => {
+    httpServer.listen(3456, (err) => {
+      if (err) {
+        resume(
+          Effect.fail(new Error(`Failed to start server: ${err.message}`))
+        );
+      } else {
+        resume(Effect.succeed(void 0));
+      }
+    });
+  });
+
+  yield* Effect.log("Server started on port 3456. Press Ctrl+C to exit.");
+
+  // For testing purposes, we'll run for a short time instead of forever
+  yield* Effect.sleep("2 seconds");
+  yield* Effect.log("Shutting down gracefully...");
 });
 
 // 3. Provide the layer and launch with runFork
-const app = Effect.provide(server, DatabaseLive);
-const appFiber = Effect.runFork(app);
+const app = Effect.provide(server.pipe(Effect.scoped), Database.Default);
 
-// 4. Listen for Ctrl+C and interrupt the fiber
-process.on("SIGINT", () => {
-  console.log("\nReceived SIGINT. Shutting down gracefully...");
-  Effect.runFork(Fiber.interrupt(appFiber));
+// 4. Run the app and handle shutdown
+Effect.runPromise(app).catch((error) => {
+  console.error("Application error:", error);
+  process.exit(1);
 });

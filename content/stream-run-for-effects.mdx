@@ -43,7 +43,34 @@ Not all pipelines are designed to produce a final list of values. Often, the goa
 
 This example creates a stream of tasks. For each task, it performs a side effect (logging it as "complete"). `Stream.runDrain` executes the pipeline, ensuring all logs are written, but without collecting the `void` results of each logging operation.
 
-<Example path="./src/stream-run-for-effects.ts" />
+```typescript
+import { Effect, Stream } from 'effect';
+
+const tasks = ['task 1', 'task 2', 'task 3'];
+
+// A function that performs a side effect for a task
+const completeTask = (task: string): Effect.Effect<void, never> =>
+  Effect.log(`Completing ${task}`);
+
+const program = Stream.fromIterable(tasks).pipe(
+  // For each task, run the side-effectful operation
+  Stream.mapEffect(completeTask, { concurrency: 1 }),
+  // Run the stream for its effects, discarding the `void` results
+  Stream.runDrain
+);
+
+Effect.runPromise(program).then(() => {
+  console.log('\nAll tasks have been processed.');
+});
+/*
+Output:
+... level=INFO msg="Completing task 1"
+... level=INFO msg="Completing task 2"
+... level=INFO msg="Completing task 3"
+
+All tasks have been processed.
+*/
+```
 
 ## Anti-Pattern
 

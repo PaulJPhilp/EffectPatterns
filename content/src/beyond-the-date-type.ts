@@ -1,6 +1,5 @@
-import { Effect, Clock, Layer } from "effect";
-import { TestClock } from "effect/TestClock";
-import { describe, it, expect } from "vitest";
+import { Effect, Clock } from "effect";
+import type * as Types from "effect/Clock";
 
 interface Event {
   readonly message: string;
@@ -8,21 +7,20 @@ interface Event {
 }
 
 // This function is pure and testable because it depends on Clock
-const createEvent = (message: string): Effect.Effect<Event, never, Clock> =>
+const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> =>
   Effect.gen(function* () {
     const timestamp = yield* Clock.currentTimeMillis;
     return { message, timestamp };
   });
 
-// --- Testing the function ---
-describe("createEvent", () => {
-  it("should use the time from the TestClock", () =>
-    Effect.gen(function* () {
-      // Manually set the virtual time
-      yield* TestClock.setTime(1672531200000); // Jan 1, 2023 UTC
-      const event = yield* createEvent("User logged in");
+// Create and log some events
+const program = Effect.gen(function* () {
+  const loginEvent = yield* createEvent("User logged in");
+  console.log("Login event:", loginEvent);
 
-      // The timestamp is predictable and testable
-      expect(event.timestamp).toBe(1672531200000);
-    }).pipe(Effect.provide(TestClock.layer), Effect.runPromise));
+  const logoutEvent = yield* createEvent("User logged out");
+  console.log("Logout event:", logoutEvent);
 });
+
+// Run the program
+Effect.runPromise(program.pipe(Effect.provideService(Clock.Clock, Clock.make()))).catch(console.error);

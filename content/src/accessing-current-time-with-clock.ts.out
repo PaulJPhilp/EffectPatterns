@@ -1,0 +1,8 @@
+timestamp=2025-07-07T18:20:41.488Z level=INFO fiber=#0 message="Checking with current time..."
+timestamp=2025-07-07T18:20:41.488Z level=INFO fiber=#0 message="Token expired? false (current time: 2025-07-07T18:20:41.488Z)"
+timestamp=2025-07-07T18:20:41.488Z level=INFO fiber=#0 message="
+Checking with past time (1 minute ago)..."
+timestamp=2025-07-07T18:20:41.489Z level=INFO fiber=#0 message="Token expired? false (current time: 2025-07-07T18:20:41.489Z)"
+timestamp=2025-07-07T18:20:41.489Z level=INFO fiber=#0 message="
+Checking with future time (1 hour ahead)..."
+timestamp=2025-07-07T18:20:41.489Z level=INFO fiber=#0 message="Token expired? false (current time: 2025-07-07T18:20:41.489Z)"

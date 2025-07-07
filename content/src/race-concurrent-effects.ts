@@ -1,24 +1,62 @@
 import { Effect, Option } from "effect";
 
-// Simulate a fast cache lookup that might find nothing (None)
-const checkCache = Effect.succeed(Option.none()).pipe(
-  Effect.delay("10 millis"),
+type User = { id: number; name: string };
+
+// Simulate a slower cache lookup that might find nothing (None)
+const checkCache: Effect.Effect<Option.Option<User>> = Effect.succeed(
+  Option.none()
+).pipe(
+  Effect.delay("200 millis") // Made slower so database wins
 );
 
-// Simulate a slower database query that will always find the data
-const queryDatabase = Effect.succeed(Option.some({ id: 1, name: "Paul" })).pipe(
-  Effect.delay("100 millis"),
+// Simulate a faster database query that will always find the data
+const queryDatabase: Effect.Effect<Option.Option<User>> = Effect.succeed(
+  Option.some({ id: 1, name: "Paul" })
+).pipe(
+  Effect.delay("50 millis") // Made faster so it wins the race
 );
 
-// Race them. If the cache had returned Some(user), it would have won,
-// and the database query would have been instantly interrupted.
+// Race them. The database should win and return the user data.
 const program = Effect.race(checkCache, queryDatabase).pipe(
   // The result of the race is an Option, so we can handle it.
-  Effect.flatMap(Option.match({
-    onNone: () => Effect.fail("User not found anywhere."),
-    onSome: (user) => Effect.succeed(user),
-  })),
+  Effect.flatMap((result: Option.Option<User>) =>
+    Option.match(result, {
+      onNone: () => Effect.fail("User not found anywhere."),
+      onSome: (user) => Effect.succeed(user),
+    })
+  )
 );
 
 // In this case, the database wins the race.
-Effect.runPromise(program).then(console.log); // { id: 1, name: 'Paul' }
+Effect.runPromise(program)
+  .then((user) => {
+    console.log("User found:", user);
+  })
+  .catch((error) => {
+    console.log("Error:", error);
+  });
+
+// Also demonstrate with logging
+const programWithLogging = Effect.gen(function* () {
+  yield* Effect.logInfo("Starting race between cache and database...");
+
+  try {
+    const user = yield* program;
+    yield* Effect.logInfo(
+      `Success: Found user ${user.name} with ID ${user.id}`
+    );
+    return user;
+  } catch (error) {
+    yield* Effect.logInfo("This won't be reached due to Effect error handling");
+    return null;
+  }
+}).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logInfo(`Handled error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithLogging);

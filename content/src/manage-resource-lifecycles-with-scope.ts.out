@@ -1,0 +1,4 @@
+timestamp=2025-07-07T18:21:36.895Z level=INFO fiber=#0 message="File opened"
+timestamp=2025-07-07T18:21:36.897Z level=INFO fiber=#0 message="File closed."
+timestamp=2025-07-07T18:21:36.897Z level=INFO fiber=#0 message="Wrote: hello"
+timestamp=2025-07-07T18:21:36.897Z level=INFO fiber=#0 message="Wrote: world"

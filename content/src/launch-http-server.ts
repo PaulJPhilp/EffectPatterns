@@ -1,23 +1,74 @@
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect, Duration } from "effect";
+import * as http from "http";
 
-// An Http.App is an Effect that takes a request and returns a response.
-// For this basic server, we ignore the request and always return the same response.
-const app = Http.response.text('Hello, World!');
+// Create HTTP server service
+class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
+  sync: () => ({
+    start: () =>
+      Effect.gen(function* () {
+        const server = http.createServer(
+          (req: http.IncomingMessage, res: http.ServerResponse) => {
+            res.writeHead(200, { "Content-Type": "text/plain" });
+            res.end("Hello, World!");
+          }
+        );
 
-// Http.server.serve takes our app and returns an Effect that will run the server.
-// We provide the NodeHttpServer.layer to specify the port and the server implementation.
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+        // Add cleanup finalizer
+        yield* Effect.addFinalizer(() =>
+          Effect.gen(function* () {
+            yield* Effect.sync(() => server.close());
+            yield* Effect.logInfo("Server shut down");
+          })
+        );
+
+        // Start server with timeout
+        yield* Effect.async<void, Error>((resume) => {
+          server.on("error", (error) => resume(Effect.fail(error)));
+          server.listen(3456, "localhost", () => {
+            resume(Effect.succeed(void 0));
+          });
+        }).pipe(
+          Effect.timeout(Duration.seconds(5)),
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              yield* Effect.logError(`Failed to start server: ${error}`);
+              return yield* Effect.fail(error);
+            })
+          )
+        );
+
+        yield* Effect.logInfo("Server running at http://localhost:3456/");
+
+        // Run for a short duration to demonstrate the server is working
+        yield* Effect.sleep(Duration.seconds(3));
+        yield* Effect.logInfo("Server demonstration complete");
+      }),
+  }),
+}) {}
+
+// Create program with proper error handling
+const program = Effect.gen(function* () {
+  const server = yield* HttpServer;
+
+  yield* Effect.logInfo("Starting HTTP server...");
+
+  yield* server.start();
+}).pipe(
+  Effect.scoped // Ensure server is cleaned up properly
 );
 
-// NodeRuntime.runMain is used to execute a long-running application.
-// It ensures the program runs forever and handles graceful shutdown.
-NodeRuntime.runMain(program);
+// Run the server
+Effect.runPromise(Effect.provide(program, HttpServer.Default)).catch(
+  (error) => {
+    console.error("Program failed:", error);
+    process.exit(1);
+  }
+);
 
 /*
-To run this:
-1. Save as index.ts
-2. Run `npx tsx index.ts`
-3. Open http://localhost:3000 in your browser.
+To test:
+1. Server will timeout after 5 seconds if it can't start
+2. Server runs on port 3456 to avoid conflicts
+3. Proper cleanup on shutdown
+4. Demonstrates server lifecycle: start -> run -> shutdown
 */

@@ -260,21 +260,12 @@ How to test Effect code effectively, reliably, and deterministically.
 
 ## AI Coding Rules
 
-This project provides several machine-readable sets of coding rules, tailored for different needs and optimized for AI-powered IDEs and coding agents like Cursor or GitHub Copilot.
+This project provides a machine-readable set of coding rules for AI-powered IDEs and coding agents.
 
-You can find the latest rule files in the [`rules`](./rules/) directory. These are automatically generated from the content in this repository.
+You can find the latest rules files in the [rules directory](./rules/). These files are designed for integration with tools like Cursor, GitHub Copilot, and other AI coding assistants.
 
-### Available Formats
-
--   **Comprehensive Rules (`rules.md`)**: A human-readable markdown file containing all patterns, guidelines, and rationale.
--   **Compact Rules (`rules-compact.md`)**: A condensed version containing only the core rule for each pattern, designed for minimal token usage.
--   **Structured JSON (`rules.json`)**: A machine-readable JSON file containing all rule information for programmatic use.
--   **By Skill Level**: Detailed rules, including examples, split into separate files for each skill level.
-    -   [`beginner.md`](./rules/beginner.md)
-    -   [`intermediate.md`](./rules/intermediate.md)
-    -   [`advanced.md`](./rules/advanced.md)
--   **By Use Case**: Detailed rules, including examples, grouped by practical application areas.
-    -   [View all use cases](./rules/by-use-case/)
+- **rules.md**: Human-readable rules summary
+- **rules.json**: Structured rules for programmatic consumption
 
 ---
 

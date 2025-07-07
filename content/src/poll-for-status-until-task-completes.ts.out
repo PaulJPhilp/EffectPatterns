@@ -1,0 +1,6 @@
+timestamp=2025-07-07T18:21:38.180Z level=INFO fiber=#2 message="Polling for job status: In Progress..."
+timestamp=2025-07-07T18:21:40.183Z level=INFO fiber=#2 message="Polling for job status: In Progress..."
+timestamp=2025-07-07T18:21:42.182Z level=INFO fiber=#2 message="Polling for job status: In Progress..."
+timestamp=2025-07-07T18:21:44.181Z level=INFO fiber=#2 message="Polling for job status: In Progress..."
+timestamp=2025-07-07T18:21:46.181Z level=INFO fiber=#2 message="Polling for job status: In Progress..."
+timestamp=2025-07-07T18:21:48.181Z level=INFO fiber=#1 message="Data processing complete!"

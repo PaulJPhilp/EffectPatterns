@@ -27,7 +27,17 @@ if it fails, the Promise rejects.
 
 ## Good Example
 
-<Example path="./src/execute-with-runpromise.ts" />
+```typescript
+import { Effect } from "effect";
+
+const program = Effect.succeed("Hello, World!").pipe(
+  Effect.delay("1 second"),
+);
+
+const promise = Effect.runPromise(program);
+
+promise.then(console.log); // Logs "Hello, World!" after 1 second.
+```
 
 **Explanation:**  
 `Effect.runPromise` executes your effect and returns a Promise, making it

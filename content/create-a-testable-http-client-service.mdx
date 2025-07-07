@@ -42,7 +42,54 @@ By abstracting the HTTP client into a service, you decouple your application's l
 
 ### 1. Define the Service
 
-<Example path="./src/create-a-testable-http-client-service.ts" />
+```typescript
+import { Effect, Data, Layer } from "effect"
+
+interface HttpErrorType {
+  readonly _tag: "HttpError"
+  readonly error: unknown
+}
+
+const HttpError = Data.tagged<HttpErrorType>("HttpError")
+
+interface HttpClientType {
+  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>
+}
+
+class HttpClient extends Effect.Service<HttpClientType>()(
+  "HttpClient",
+  {
+    sync: () => ({
+      get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
+        Effect.tryPromise({
+          try: () => fetch(url).then((res) => res.json()),
+          catch: (error) => HttpError({ error })
+        })
+    })
+  }
+) {}
+
+// Test implementation
+const TestLayer = Layer.succeed(
+  HttpClient,
+  HttpClient.of({
+    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T)
+  })
+)
+
+// Example usage
+const program = Effect.gen(function* () {
+  const client = yield* HttpClient
+  yield* Effect.logInfo("Fetching data...")
+  const data = yield* client.get<{ title: string }>("https://api.example.com/data")
+  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`)
+})
+
+// Run with test implementation
+Effect.runPromise(
+  Effect.provide(program, TestLayer)
+)
+```
 
 ### 2. Create the Live Implementation
 

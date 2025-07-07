@@ -1,0 +1,8 @@
+timestamp=2025-07-07T18:21:53.534Z level=INFO fiber=#0 message="Forking the ticking clock into the background."
+timestamp=2025-07-07T18:21:53.536Z level=INFO fiber=#0 message="Main process is now doing other work for 5 seconds..."
+timestamp=2025-07-07T18:21:54.539Z level=INFO fiber=#1 message=tick
+timestamp=2025-07-07T18:21:55.541Z level=INFO fiber=#1 message=tick
+timestamp=2025-07-07T18:21:56.543Z level=INFO fiber=#1 message=tick
+timestamp=2025-07-07T18:21:57.544Z level=INFO fiber=#1 message=tick
+timestamp=2025-07-07T18:21:58.538Z level=INFO fiber=#0 message="Main process is done. Interrupting the clock fiber."
+timestamp=2025-07-07T18:21:58.541Z level=INFO fiber=#0 message="Program finished."

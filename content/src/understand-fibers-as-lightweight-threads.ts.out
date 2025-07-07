@@ -1,0 +1,3 @@
+timestamp=2025-07-07T18:22:09.323Z level=INFO fiber=#0 message="Forking 100000 fibers..."
+timestamp=2025-07-07T18:22:09.893Z level=INFO fiber=#0 message="All fibers have been forked. Now waiting for them to complete..."
+timestamp=2025-07-07T18:22:13.185Z level=INFO fiber=#0 message="All 100000 fibers have completed."

@@ -1,9 +1,19 @@
-import { Config, Effect, Layer } from "effect";
+import { Effect, Layer } from "effect";
 
-const ServerConfig = Config.all({ port: Config.number("PORT") });
+class ServerConfig extends Effect.Service<ServerConfig>()(
+  "ServerConfig",
+  {
+    sync: () => ({
+      port: process.env.PORT ? parseInt(process.env.PORT) : 8080
+    })
+  }
+) {}
 
-const program = Effect.log("Application starting...");
+const program = Effect.gen(function* () {
+  const config = yield* ServerConfig;
+  yield* Effect.log(`Starting application on port ${config.port}...`);
+});
 
-const configLayer = Config.layer(ServerConfig);
-
-const runnable = Effect.provide(program, configLayer);
+Effect.runPromise(
+  Effect.provide(program, ServerConfig.Default)
+).catch(console.error);

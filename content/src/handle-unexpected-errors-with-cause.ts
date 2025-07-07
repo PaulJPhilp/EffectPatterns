@@ -1,6 +1,20 @@
-import { Cause, Effect, Data } from "effect";
+import { Cause, Effect, Data, Schedule, Duration } from "effect";
 
-// Define our expected error types
+// Define domain types
+interface DatabaseConfig {
+  readonly url: string;
+}
+
+interface DatabaseConnection {
+  readonly success: true;
+}
+
+interface UserData {
+  readonly id: string;
+  readonly name: string;
+}
+
+// Define error types
 class DatabaseError extends Data.TaggedError("DatabaseError")<{
   readonly operation: string;
   readonly details: string;
@@ -11,124 +25,241 @@ class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly message: string;
 }> {}
 
-// Simulate database operations that might fail in unexpected ways
-const connectToDatabase = (config: { url: string }): Effect.Effect<{ success: true }, DatabaseError> => {
-  if (!config.url) {
-    return Effect.fail(new DatabaseError({
-      operation: "connect",
-      details: "Missing URL"
-    }));
+// Define database service
+class DatabaseService extends Effect.Service<DatabaseService>()(
+  "DatabaseService",
+  {
+    sync: () => ({
+      // Connect to database with proper error handling
+      connect: (config: DatabaseConfig): Effect.Effect<DatabaseConnection, DatabaseError> =>
+        Effect.gen(function* (_) {
+          yield* Effect.logInfo(`Connecting to database: ${config.url}`);
+          
+          if (!config.url) {
+            const error = new DatabaseError({
+              operation: "connect",
+              details: "Missing URL"
+            });
+            yield* Effect.logError(`Database error: ${JSON.stringify(error)}`);
+            return yield* Effect.fail(error);
+          }
+          
+          // Simulate unexpected errors
+          if (config.url === "invalid") {
+            yield* Effect.logError("Invalid connection string");
+            return yield* Effect.sync(() => {
+              throw new Error("Failed to parse connection string");
+            });
+          }
+          
+          if (config.url === "timeout") {
+            yield* Effect.logError("Connection timeout");
+            return yield* Effect.sync(() => {
+              throw new Error("Connection timed out");
+            });
+          }
+          
+          yield* Effect.logInfo("Database connection successful");
+          return { success: true };
+        })
+    })
   }
+) {}
 
-  // Simulate unexpected errors (not our DatabaseError type)
-  if (config.url === "invalid") {
-    return Effect.sync(() => {
-      throw new Error("Failed to parse connection string");
-    });
+// Define user service
+class UserService extends Effect.Service<UserService>()(
+  "UserService",
+  {
+    sync: () => ({
+      // Parse user data with validation
+      parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
+        Effect.gen(function* (_) {
+          yield* Effect.logInfo(`Parsing user data: ${JSON.stringify(input)}`);
+          
+          try {
+            if (typeof input !== "object" || !input) {
+              const error = new ValidationError({
+                field: "input",
+                message: "Invalid input type"
+              });
+              yield* Effect.logWarning(`Validation error: ${JSON.stringify(error)}`);
+              throw error;
+            }
+            
+            const data = input as Record<string, unknown>;
+            
+            if (typeof data.id !== "string" || typeof data.name !== "string") {
+              const error = new ValidationError({
+                field: "input",
+                message: "Missing required fields"
+              });
+              yield* Effect.logWarning(`Validation error: ${JSON.stringify(error)}`);
+              throw error;
+            }
+            
+            const user = { id: data.id, name: data.name };
+            yield* Effect.logInfo(`Successfully parsed user: ${JSON.stringify(user)}`);
+            return user;
+          } catch (e) {
+            if (e instanceof ValidationError) {
+              return yield* Effect.fail(e);
+            }
+            yield* Effect.logError(`Unexpected error: ${e instanceof Error ? e.message : String(e)}`);
+            throw e;
+          }
+        })
+    })
   }
+) {}
 
-  if (config.url === "timeout") {
-    return Effect.sync(() => {
-      throw new Error("Connection timed out");
-    });
-  }
+// Define test service
+class TestService extends Effect.Service<TestService>()(
+  "TestService",
+  {
+    sync: () => {
+      // Create instance methods
+      const printCause = (prefix: string, cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
+        Effect.gen(function* (_) {
+          yield* Effect.logInfo(`\n=== ${prefix} ===`);
+          
+          if (Cause.isDie(cause)) {
+            const defect = Cause.failureOption(cause);
+            if (defect._tag === "Some") {
+              const error = defect.value as Error;
+              yield* Effect.logError("Defect (unexpected error)");
+              yield* Effect.logError(`Message: ${error.message}`);
+              yield* Effect.logError(`Stack: ${error.stack?.split('\n')[1]?.trim() ?? 'N/A'}`);
+            }
+          } else if (Cause.isFailure(cause)) {
+            const error = Cause.failureOption(cause);
+            yield* Effect.logWarning("Expected failure");
+            yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
+          }
 
-  return Effect.succeed({ success: true });
-};
-
-// Function that might throw unexpected errors
-const parseUserData = (input: unknown): Effect.Effect<{ id: string; name: string }, ValidationError> =>
-  Effect.try({
-    try: () => {
-      if (typeof input !== "object" || !input) {
-        throw new ValidationError({
-          field: "input",
-          message: "Invalid input type"
+          return Effect.succeed(void 0);
         });
-      }
 
-      const data = input as Record<string, unknown>;
-      
-      if (typeof data.id !== "string" || typeof data.name !== "string") {
-        throw new ValidationError({
-          field: "input",
-          message: "Missing required fields"
+      const runScenario = <E, A extends { [key: string]: any }>(
+        name: string,
+        program: Effect.Effect<A, E>
+      ): Effect.Effect<void, never, never> =>
+        Effect.gen(function* (_) {
+          yield* Effect.logInfo(`\n=== Testing: ${name} ===`);
+          
+          type TestError = { readonly _tag: "error"; readonly cause: Cause.Cause<E> };
+          
+          const result = yield* Effect.catchAllCause(
+            program,
+            (cause) => Effect.succeed({ _tag: "error" as const, cause } as TestError)
+          );
+          
+          if ("cause" in result) {
+            yield* printCause("Error details", result.cause);
+          } else {
+            yield* Effect.logInfo(`Success: ${JSON.stringify(result)}`);
+          }
+
+          return Effect.succeed(void 0);
         });
-      }
 
-      return { id: data.id, name: data.name };
-    },
-    catch: (e) => {
-      if (e instanceof ValidationError) {
-        return e;
-      }
-      throw e;
+      // Return bound methods
+      return {
+        printCause,
+        runScenario
+      };
     }
-  });
+  }
+) {}
 
-// Helper to print cause details
-const printCauseDetails = (prefix: string, cause: Cause.Cause<unknown>): Effect.Effect<void> =>
-  Effect.sync(() => {
-    console.log(`\n${prefix}:`);
-    if (Cause.isDie(cause)) {
-      const defect = Cause.failureOption(cause);
-      if (defect._tag === "Some") {
-        const error = defect.value as Error;
-        console.log(" - Type: Defect (unexpected error)");
-        console.log(` - Message: ${error.message}`);
-        console.log(` - Stack: ${error.stack?.split('\n')[1]?.trim() ?? 'N/A'}`);
-      }
-    } else if (Cause.isFailure(cause)) {
-      const error = Cause.failureOption(cause);
-      console.log(" - Type: Expected failure");
-      console.log(` - Error: ${JSON.stringify(error)}`);
-    }
-  });
+// Create program with proper error handling
+const program = Effect.gen(function* (_) {
+  const db = yield* DatabaseService;
+  const users = yield* UserService;
+  const test = yield* TestService;
+  
+  yield* Effect.logInfo("=== Starting Error Handling Tests ===");
+  
+  // Test expected database errors
+  yield* test.runScenario(
+    "Expected database error",
+    Effect.gen(function* (_) {
+      const result = yield* Effect.retry(
+        db.connect({ url: "" }),
+        Schedule.exponential(100)
+      ).pipe(
+        Effect.timeout(Duration.seconds(5)),
+        Effect.catchAll(() => Effect.fail("Connection timeout"))
+      );
+      return result;
+    })
+  );
+  
+  // Test unexpected connection errors
+  yield* test.runScenario(
+    "Unexpected connection error",
+    Effect.gen(function* (_) {
+      const result = yield* Effect.retry(
+        db.connect({ url: "invalid" }),
+        Schedule.recurs(3)
+      ).pipe(
+        Effect.catchAllCause(cause =>
+          Effect.gen(function* (_) {
+            yield* Effect.logError("Failed after 3 retries");
+            yield* Effect.logError(Cause.pretty(cause));
+            return yield* Effect.fail("Max retries exceeded");
+          })
+        )
+      );
+      return result;
+    })
+  );
+  
+  // Test user validation with recovery
+  yield* test.runScenario(
+    "Valid user data",
+    Effect.gen(function* (_) {
+      const result = yield* users.parseUser({ id: "1", name: "John" }).pipe(
+        Effect.orElse(() => 
+          Effect.succeed({ id: "default", name: "Default User" })
+        )
+      );
+      return result;
+    })
+  );
+  
+  // Test concurrent error handling with timeout
+  yield* test.runScenario(
+    "Concurrent operations",
+    Effect.gen(function* (_) {
+      const results = yield* Effect.all([
+        db.connect({ url: "" }).pipe(
+          Effect.timeout(Duration.seconds(1)),
+          Effect.catchAll(() => Effect.succeed({ success: true }))
+        ),
+        users.parseUser({ id: "invalid" }).pipe(
+          Effect.timeout(Duration.seconds(1)),
+          Effect.catchAll(() => Effect.succeed({ id: "timeout", name: "Timeout" }))
+        )
+      ], { concurrency: 2 });
+      return results;
+    })
+  );
+  
+  yield* Effect.logInfo("\n=== Error Handling Tests Complete ===");
 
-// Define result type for better type safety
-type TestError = { readonly _tag: "error"; readonly cause: Cause.Cause<unknown> };
-type TestResult<A> = A | TestError;
+  return Effect.succeed(void 0);
+});
 
-// Test different scenarios
-const testScenario = <E, A extends { [key: string]: any }>(
-  name: string,
-  program: Effect.Effect<A, E>
-): Effect.Effect<void> =>
-  Effect.gen(function* (_) {
-    console.log(`\n=== Testing: ${name} ===`);
-    
-    const result = yield* Effect.catchAllCause(
-      program,
-      (cause): Effect.Effect<TestResult<A>> => Effect.succeed({ _tag: "error" as const, cause })
-    );
-
-    if ("cause" in result) {
-      yield* printCauseDetails("Error details", result.cause);
-    } else {
-      console.log("Success:", result);
-    }
-  });
-
-type TestCase = 
-  | { name: string; program: Effect.Effect<{ success: true }, DatabaseError> }
-  | { name: string; program: Effect.Effect<{ id: string; name: string }, ValidationError> };
-
-// Run test scenarios
-const dbTests = [
-  { name: "Expected database error", program: connectToDatabase({ url: "" }) },
-  { name: "Unexpected connection error", program: connectToDatabase({ url: "invalid" }) },
-  { name: "Timeout error", program: connectToDatabase({ url: "timeout" }) }
-] as const;
-
-const userTests = [
-  { name: "Valid user data", program: parseUserData({ id: "1", name: "John" }) },
-  { name: "Invalid input type", program: parseUserData(null) }
-] as const;
-
-const runTests = Effect.all([
-  Effect.forEach(dbTests, ({ name, program }) => testScenario(name, program)),
-  Effect.forEach(userTests, ({ name, program }) => testScenario(name, program))
-]);
-
-// Run all tests
-Effect.runPromise(runTests).catch(console.error);
+// Run the program with all services
+Effect.runPromise(
+  Effect.provide(
+    Effect.provide(
+      Effect.provide(
+        program,
+        TestService.Default
+      ),
+      DatabaseService.Default
+    ),
+    UserService.Default
+  )
+);

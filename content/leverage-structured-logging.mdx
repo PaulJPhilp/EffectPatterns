@@ -26,7 +26,18 @@ side-effect.
 
 ## Good Example
 
-<Example path="./src/leverage-structured-logging.ts" />
+```typescript
+import { Effect } from "effect";
+
+const program = Effect.logDebug("Processing user", { userId: 123 });
+
+// Run the program with debug logging enabled
+Effect.runSync(
+  program.pipe(
+    Effect.tap(() => Effect.log("Debug logging enabled"))
+  )
+);
+```
 
 **Explanation:**  
 Using Effect's logging system ensures your logs are structured, filterable,

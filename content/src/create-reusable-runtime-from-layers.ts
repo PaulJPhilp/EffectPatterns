@@ -1,10 +1,19 @@
 import { Effect, Layer, Runtime } from "effect";
 
-class GreeterService extends Effect.Tag("Greeter")<GreeterService, any> {}
-const GreeterLive = Layer.succeed(GreeterService, {});
+class GreeterService extends Effect.Service<GreeterService>()(
+  "Greeter",
+  {
+    sync: () => ({
+      greet: (name: string) => Effect.sync(() => `Hello ${name}`)
+    })
+  }
+) {}
 
-const runtime = Layer.toRuntime(GreeterLive);
-const run = Runtime.runPromise(runtime);
+const runtime = Effect.runSync(
+  Layer.toRuntime(GreeterService.Default).pipe(
+    Effect.scoped
+  )
+);
 
 // In a server, you would reuse `run` for every request.
-run(Effect.log("Hello"));
+Runtime.runPromise(runtime)(Effect.log("Hello"));

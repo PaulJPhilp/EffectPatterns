@@ -1,10 +1,14 @@
-import { Effect, Layer, Ref, Duration } from "effect";
+import { Effect, Layer, Ref } from "effect";
 
-// 1. The original service definition
-class WeatherService extends Effect.Tag("WeatherService")<
-  WeatherService,
-  { readonly getForecast: (city: string) => Effect.Effect<string, "ApiError"> }
->() {}
+// 1. Define the service interface
+class WeatherService extends Effect.Service<WeatherService>()(
+  "WeatherService",
+  {
+    sync: () => ({
+      getForecast: (city: string) => Effect.succeed(`Sunny in ${city}`),
+    }),
+  }
+) {}
 
 // 2. The "Live" implementation that is slow
 const WeatherServiceLive = Layer.succeed(
@@ -13,9 +17,9 @@ const WeatherServiceLive = Layer.succeed(
     getForecast: (city) =>
       Effect.succeed(`Sunny in ${city}`).pipe(
         Effect.delay("2 seconds"),
-        Effect.tap(() => Effect.log(`Fetched live forecast for ${city}`)),
+        Effect.tap(() => Effect.log(`Fetched live forecast for ${city}`))
       ),
-  }),
+  })
 );
 
 // 3. The Caching Wrapper Layer
@@ -31,15 +35,19 @@ const WeatherServiceCached = Layer.effect(
         Ref.get(cache).pipe(
           Effect.flatMap((map) =>
             map.has(city)
-              ? Effect.log(`Cache HIT for ${city}`).pipe(Effect.as(map.get(city)!))
+              ? Effect.log(`Cache HIT for ${city}`).pipe(
+                  Effect.as(map.get(city)!)
+                )
               : Effect.log(`Cache MISS for ${city}`).pipe(
                   Effect.flatMap(() => underlyingService.getForecast(city)),
-                  Effect.tap((forecast) => Ref.update(cache, (map) => map.set(city, forecast))),
-                ),
-          ),
+                  Effect.tap((forecast) =>
+                    Ref.update(cache, (map) => map.set(city, forecast))
+                  )
+                )
+          )
         ),
     });
-  }),
+  })
 );
 
 // 4. Compose the final layer. The wrapper is provided with the live implementation.

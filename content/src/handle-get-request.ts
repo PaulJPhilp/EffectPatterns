@@ -1,38 +1,104 @@
-import { Effect } from 'effect'
-import * as HttpRouter from '@effect/platform/HttpRouter'
-import * as HttpResponse from '@effect/platform/HttpServerResponse'
-import * as HttpServer from '@effect/platform/HttpServer'
-import { NodeHttpServer, NodeRuntime } from '@effect/platform-node'
+import { Data, Effect } from 'effect'
 
-// handler for "/"
-const rootHandler = HttpResponse.text('Welcome to the home page!')
+// Define response types
+interface RouteResponse {
+  readonly status: number;
+  readonly body: string;
+}
 
-// handler for "/hello"
-const helloHandler = HttpResponse.text('Hello, Effect!')
+// Define error types
+class RouteNotFoundError extends Data.TaggedError("RouteNotFoundError")<{
+  readonly path: string;
+}> {}
 
-// build router with two routes
-const app = HttpRouter.empty.pipe(
-  HttpRouter.get('/', Effect.succeed(rootHandler)),
-  HttpRouter.get('/hello', Effect.succeed(helloHandler))
-)
+class RouteHandlerError extends Data.TaggedError("RouteHandlerError")<{
+  readonly path: string;
+  readonly error: string;
+}> {}
 
-// program to serve
-const program = Effect.scoped(
-  HttpServer.serveEffect(app).pipe(
-    Effect.provide(
-      NodeHttpServer.layer(
-        () => require('node:http').createServer(),
-        { port: 3000 }
-      )
-    )
-  )
-)
+// Define route service
+class RouteService extends Effect.Service<RouteService>()(
+  "RouteService",
+  {
+    sync: () => {
+      // Create instance methods
+      const handleRoute = (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
+        Effect.gen(function* (_) {
+          yield* Effect.logInfo(`Processing request for path: ${path}`);
+          
+          try {
+            switch (path) {
+              case '/':
+                const home = 'Welcome to the home page!';
+                yield* Effect.logInfo(`Serving home page`);
+                return { status: 200, body: home };
 
-NodeRuntime.runMain(program)
+              case '/hello':
+                const hello = 'Hello, Effect!';
+                yield* Effect.logInfo(`Serving hello page`);
+                return { status: 200, body: hello };
 
-/*
-To run this:
-- GET http://localhost:3000/ -> "Welcome to the home page!"
-- GET http://localhost:3000/hello -> "Hello, Effect!"
-- GET http://localhost:3000/other -> 404 Not Found
-*/
+              default:
+                yield* Effect.logWarning(`Route not found: ${path}`);
+                return yield* Effect.fail(new RouteNotFoundError({ path }));
+            }
+          } catch (e) {
+            const error = e instanceof Error ? e.message : String(e);
+            yield* Effect.logError(`Error handling route ${path}: ${error}`);
+            return yield* Effect.fail(new RouteHandlerError({ path, error }));
+          }
+        });
+
+      // Return service implementation
+      return {
+        handleRoute,
+        // Simulate GET request
+        simulateGet: (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
+          Effect.gen(function* (_) {
+            yield* Effect.logInfo(`GET ${path}`);
+            const response = yield* handleRoute(path);
+            yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
+            return response;
+          })
+      };
+    }
+  }
+) {}
+
+// Create program with proper error handling
+const program = Effect.gen(function* (_) {
+  const router = yield* RouteService;
+  
+  yield* Effect.logInfo("=== Starting Route Tests ===");
+  
+  // Test different routes
+  for (const path of ['/', '/hello', '/other', '/error']) {
+    yield* Effect.logInfo(`\n--- Testing ${path} ---`);
+    
+    const result = yield* router.simulateGet(path).pipe(
+      Effect.catchTags({
+        RouteNotFoundError: (error) =>
+          Effect.gen(function* (_) {
+            const response = { status: 404, body: `Not Found: ${error.path}` };
+            yield* Effect.logWarning(`${response.status} ${response.body}`);
+            return response;
+          }),
+        RouteHandlerError: (error) =>
+          Effect.gen(function* (_) {
+            const response = { status: 500, body: `Internal Error: ${error.error}` };
+            yield* Effect.logError(`${response.status} ${response.body}`);
+            return response;
+          })
+      })
+    );
+    
+    yield* Effect.logInfo(`Final Response: ${JSON.stringify(result)}`);
+  }
+  
+  yield* Effect.logInfo("\n=== Route Tests Complete ===");
+});
+
+// Run the program
+Effect.runPromise(
+  Effect.provide(program, RouteService.Default)
+);

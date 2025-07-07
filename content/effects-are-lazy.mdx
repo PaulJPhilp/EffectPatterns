@@ -27,7 +27,20 @@ an `Effect` is just a description of work, like a recipe waiting for a chef.
 
 ## Good Example
 
-<Example path="./src/effects-are-lazy.ts" />
+```typescript
+import { Effect } from "effect";
+
+console.log("1. Defining the Effect blueprint...");
+
+const program = Effect.sync(() => {
+  console.log("3. The blueprint is now being executed!");
+  return 42;
+});
+
+console.log("2. The blueprint has been defined. No work has been done yet.");
+
+Effect.runSync(program);
+```
 
 **Explanation:**  
 Defining an `Effect` does not execute any code inside it. Only when you call

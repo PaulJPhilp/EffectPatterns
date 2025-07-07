@@ -1,0 +1,26 @@
+timestamp=2025-07-07T18:21:48.788Z level=INFO fiber=#0 message="Starting parallel processing..."
+timestamp=2025-07-07T18:21:48.817Z level=INFO fiber=#6 message="Fetched user 5"
+timestamp=2025-07-07T18:21:48.824Z level=INFO fiber=#2 message="Fetched user 1"
+timestamp=2025-07-07T18:21:48.838Z level=INFO fiber=#6 message="Fetched user 6"
+timestamp=2025-07-07T18:21:48.842Z level=INFO fiber=#5 message="Fetched user 4"
+timestamp=2025-07-07T18:21:48.853Z level=INFO fiber=#2 message="Fetched user 7"
+timestamp=2025-07-07T18:21:48.853Z level=INFO fiber=#3 message="Fetched user 2"
+timestamp=2025-07-07T18:21:48.873Z level=INFO fiber=#4 message="Fetched user 3"
+timestamp=2025-07-07T18:21:48.891Z level=INFO fiber=#6 message="Fetched user 8"
+timestamp=2025-07-07T18:21:48.921Z level=INFO fiber=#2 message="Fetched user 10"
+timestamp=2025-07-07T18:21:48.933Z level=INFO fiber=#5 message="Fetched user 9"
+timestamp=2025-07-07T18:21:48.934Z level=INFO fiber=#0 message="Processed 10 users in 145ms"
+timestamp=2025-07-07T18:21:48.935Z level=INFO fiber=#0 message="First few users: [
+  {
+    \"id\": 1,
+    \"name\": \"User 1\"
+  },
+  {
+    \"id\": 2,
+    \"name\": \"User 2\"
+  },
+  {
+    \"id\": 3,
+    \"name\": \"User 3\"
+  }
+]"

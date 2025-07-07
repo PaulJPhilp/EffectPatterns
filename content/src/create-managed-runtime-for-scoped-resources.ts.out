@@ -1,0 +1,2 @@
+timestamp=2025-07-07T18:21:00.648Z level=INFO fiber=#0 message="Acquiring pool"
+timestamp=2025-07-07T18:21:00.649Z level=INFO fiber=#0 message="Using DB"

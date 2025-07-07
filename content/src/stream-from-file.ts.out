@@ -1,0 +1,3 @@
+timestamp=2025-07-07T18:22:05.158Z level=INFO fiber=#1 message="Processing: line 1"
+timestamp=2025-07-07T18:22:05.159Z level=INFO fiber=#1 message="Processing: line 2"
+timestamp=2025-07-07T18:22:05.159Z level=INFO fiber=#1 message="Processing: line 3"

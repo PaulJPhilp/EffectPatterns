@@ -1,55 +1,66 @@
 import { Effect, Layer } from "effect";
-import { describe, it, expect } from "vitest";
 
 // --- The Services ---
-class EmailClient extends Effect.Tag("EmailClient")<
-  EmailClient,
-  { readonly send: (address: string, body: string) => Effect.Effect<void, "SendError"> }
->() {}
+interface EmailClientService {
+  send: (address: string, body: string) => Effect.Effect<void>
+}
 
-class Notifier extends Effect.Tag("Notifier")<
-  Notifier,
-  { readonly notifyUser: (userId: number, message: string) => Effect.Effect<void, "SendError"> }
->() {}
+class EmailClient extends Effect.Service<EmailClientService>()(
+  "EmailClient",
+  {
+    sync: () => ({
+      send: (address: string, body: string) => 
+        Effect.sync(() => Effect.log(`Sending email to ${address}: ${body}`))
+    })
+  }
+) {}
 
-// The "Live" Notifier implementation, which depends on EmailClient
-const NotifierLive = Layer.effect(
-  Notifier,
-  Effect.gen(function* () {
-    const emailClient = yield* EmailClient;
-    return Notifier.of({
-      notifyUser: (userId, message) =>
-        emailClient.send(`user-${userId}@example.com`, message),
-    });
-  }),
-);
+interface NotifierService {
+  notifyUser: (userId: number, message: string) => Effect.Effect<void>
+}
 
-// --- The Test ---
-describe("Notifier", () => {
-  it("should call the email client with the correct address", () =>
-    Effect.gen(function* () {
-      // 1. Get the service we want to test
-      const notifier = yield* Notifier;
-      // 2. Run its logic
-      yield* notifier.notifyUser(123, "Your invoice is ready.");
-    }).pipe(
-      // 3. Provide a mock implementation for its dependency
-      Effect.provide(
-        Layer.succeed(
-          EmailClient,
-          EmailClient.of({
-            send: (address, body) =>
-              Effect.sync(() => {
-                // 4. Make assertions on the mock's behavior
-                expect(address).toBe("user-123@example.com");
-                expect(body).toBe("Your invoice is ready.");
-              }),
-          }),
-        ),
-      ),
-      // 5. Provide the layer for the service under test
-      Effect.provide(NotifierLive),
-      // 6. Run the test
-      Effect.runPromise,
-    ));
+class Notifier extends Effect.Service<NotifierService>()(
+  "Notifier",
+  {
+    effect: Effect.gen(function* () {
+      const emailClient = yield* EmailClient;
+      return {
+        notifyUser: (userId: number, message: string) =>
+          emailClient.send(`user-${userId}@example.com`, message)
+      };
+    }),
+    dependencies: [EmailClient.Default]
+  }
+) {}
+
+// Create a program that uses the Notifier service
+const program = Effect.gen(function* () {
+  yield* Effect.log("Using default EmailClient implementation...");
+  const notifier = yield* Notifier;
+  yield* notifier.notifyUser(123, "Your invoice is ready.");
+
+  // Create mock EmailClient that logs differently
+  yield* Effect.log("\nUsing mock EmailClient implementation...");
+  const mockEmailClient = Layer.succeed(
+    EmailClient,
+    {
+      send: (address: string, body: string) =>
+        Effect.sync(() => 
+          Effect.log(`MOCK: Would send to ${address} with body: ${body}`)
+        )
+    } as EmailClientService
+  );
+
+  // Run the same notification with mock client
+  yield* Effect.gen(function* () {
+    const notifier = yield* Notifier;
+    yield* notifier.notifyUser(123, "Your invoice is ready.");
+  }).pipe(
+    Effect.provide(mockEmailClient)
+  );
 });
+
+// Run the program
+Effect.runPromise(
+  Effect.provide(program, Notifier.Default)
+);

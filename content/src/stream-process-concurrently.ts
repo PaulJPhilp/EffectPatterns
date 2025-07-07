@@ -20,8 +20,9 @@ const program = Stream.fromIterable(ids).pipe(
 const timedProgram = Effect.timed(program);
 
 Effect.runPromise(timedProgram).then(([duration, _]) => {
-  console.log(`\nTotal time: ${Math.round(duration.millis / 1000)} seconds`);
-});
+  const durationMs = Number(duration);
+  console.log(`\nTotal time: ${Math.round(durationMs / 1000)} seconds`);
+}).catch(console.error);
 /*
 Output:
 ... level=INFO msg="Starting item 1..."
