@@ -1,8 +1,8 @@
-timestamp=2025-07-07T18:21:48.437Z level=INFO fiber=#5 message="Fetched user 1"
-timestamp=2025-07-07T18:21:48.443Z level=INFO fiber=#8 message="Fetched user 2"
-timestamp=2025-07-07T18:21:48.544Z level=INFO fiber=#11 message="Fetched user 3"
-timestamp=2025-07-07T18:21:48.546Z level=INFO fiber=#14 message="Fetched user 4"
-timestamp=2025-07-07T18:21:48.646Z level=INFO fiber=#17 message="Fetched user 5"
+timestamp=2025-07-08T02:32:46.792Z level=INFO fiber=#5 message="Fetched user 1"
+timestamp=2025-07-08T02:32:46.795Z level=INFO fiber=#8 message="Fetched user 2"
+timestamp=2025-07-08T02:32:46.896Z level=INFO fiber=#11 message="Fetched user 3"
+timestamp=2025-07-08T02:32:46.897Z level=INFO fiber=#14 message="Fetched user 4"
+timestamp=2025-07-08T02:32:46.997Z level=INFO fiber=#17 message="Fetched user 5"
 All users fetched: [
   {
     id: 1,

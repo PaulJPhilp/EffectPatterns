@@ -17,7 +17,7 @@ export class UserService extends Effect.Service<UserService>()(
   {
     sync: () => ({
       getUser: (id: string) =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`Fetching user with id: ${id}`)
           // Simulate fetching user from database
           const user: User = {
@@ -32,7 +32,7 @@ export class UserService extends Effect.Service<UserService>()(
 ) {}
 
 // Example usage
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const userService = yield* UserService
   yield* Effect.logInfo("=== Fetching users ===")
   

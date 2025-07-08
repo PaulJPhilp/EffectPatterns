@@ -23,7 +23,7 @@ class RouteService extends Effect.Service<RouteService>()(
     sync: () => {
       // Create instance methods
       const handleRoute = (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`Processing request for path: ${path}`);
           
           try {
@@ -54,7 +54,7 @@ class RouteService extends Effect.Service<RouteService>()(
         handleRoute,
         // Simulate GET request
         simulateGet: (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logInfo(`GET ${path}`);
             const response = yield* handleRoute(path);
             yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
@@ -66,7 +66,7 @@ class RouteService extends Effect.Service<RouteService>()(
 ) {}
 
 // Create program with proper error handling
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const router = yield* RouteService;
   
   yield* Effect.logInfo("=== Starting Route Tests ===");
@@ -78,13 +78,13 @@ const program = Effect.gen(function* (_) {
     const result = yield* router.simulateGet(path).pipe(
       Effect.catchTags({
         RouteNotFoundError: (error) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             const response = { status: 404, body: `Not Found: ${error.path}` };
             yield* Effect.logWarning(`${response.status} ${response.body}`);
             return response;
           }),
         RouteHandlerError: (error) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             const response = { status: 500, body: `Internal Error: ${error.error}` };
             yield* Effect.logError(`${response.status} ${response.body}`);
             return response;

@@ -1,7 +1,7 @@
 === Wrapping Synchronous Computations Demo ===
 
 1. Basic sync computation (random number):
-Random numbers: 0.2469, 0.0598
+Random numbers: 0.9848, 0.4078
 
 2. Successful JSON parsing:
 Parsed JSON: {
@@ -26,6 +26,6 @@ Processing string: "Hello Effect"
 Processed result: "TCEFFE OLLEH"
 
 6. Combining multiple sync operations:
-Combined operations result: 84
+Combined operations result: 77
 
 ✅ Synchronous computations demonstration completed!

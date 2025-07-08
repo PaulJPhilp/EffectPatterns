@@ -48,7 +48,7 @@ import { NodeFileSystem } from '@effect/platform-node';
 import * as path from 'node:path';
 
 const processFile = (filePath: string, content: string): Effect.Effect<void, Error, FileSystem.FileSystem> =>
-  Effect.gen(function* (_) {
+  Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     try {
       yield* fs.writeFileString(filePath, content);
@@ -63,7 +63,7 @@ const processFile = (filePath: string, content: string): Effect.Effect<void, Err
     }
   });
 
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const filePath = path.join(__dirname, 'large-file.txt');
   
   yield* processFile(

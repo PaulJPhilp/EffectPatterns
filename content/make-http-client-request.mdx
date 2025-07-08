@@ -77,7 +77,7 @@ const serverLayer = HttpServer.serve(app);
 
 const mainLayer = Layer.merge(Database.Default, server);
 
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   yield* Console.log("Server started on http://localhost:3457");
   const layer = Layer.provide(serverLayer, mainLayer);
 

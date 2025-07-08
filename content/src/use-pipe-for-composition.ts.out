@@ -1,7 +1,7 @@
 === Using Pipe for Composition Demo ===
 
 1. Basic pipe composition:
-timestamp=2025-07-07T18:22:13.881Z level=INFO fiber=#0 message="The result is 10"
+timestamp=2025-07-08T02:33:14.534Z level=INFO fiber=#0 message="The result is 10"
 
 2. Complex pipe composition:
 Intermediate result: 30

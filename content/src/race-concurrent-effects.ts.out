@@ -1,6 +1,6 @@
-timestamp=2025-07-07T18:21:52.802Z level=INFO fiber=#3 message="Starting race between cache and database..."
+timestamp=2025-07-08T02:32:53.223Z level=INFO fiber=#3 message="Starting race between cache and database..."
 User found: {
   id: 1,
   name: "Paul",
 }
-timestamp=2025-07-07T18:21:52.857Z level=INFO fiber=#3 message="Success: Found user Paul with ID 1"
+timestamp=2025-07-08T02:32:53.285Z level=INFO fiber=#3 message="Success: Found user Paul with ID 1"

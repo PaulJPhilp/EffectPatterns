@@ -1,4 +1,4 @@
-timestamp=2025-07-07T18:22:13.624Z level=INFO fiber=#0 message="Getting MyService..."
-timestamp=2025-07-07T18:22:13.625Z level=INFO fiber=#0 message="Calling doSomething()..."
-timestamp=2025-07-07T18:22:13.625Z level=INFO fiber=#0 message="MyService did something!"
-timestamp=2025-07-07T18:22:13.625Z level=INFO fiber=#0 message="Result: done"
+timestamp=2025-07-08T02:33:14.284Z level=INFO fiber=#0 message="Getting MyService..."
+timestamp=2025-07-08T02:33:14.285Z level=INFO fiber=#0 message="Calling doSomething()..."
+timestamp=2025-07-08T02:33:14.285Z level=INFO fiber=#0 message="MyService did something!"
+timestamp=2025-07-08T02:33:14.285Z level=INFO fiber=#0 message="Result: done"

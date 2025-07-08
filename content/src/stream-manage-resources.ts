@@ -39,7 +39,7 @@ const processLine = (line: string): Effect.Effect<void, ProcessError> =>
     : Effect.sync(() => console.log(`Processed: ${line}`));
 
 // Create and process the file with proper resource management
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   console.log("=== Stream Resource Management Demo ===");
   console.log(
     "This demonstrates proper resource cleanup even when errors occur"

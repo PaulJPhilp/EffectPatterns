@@ -1,2 +1,2 @@
-timestamp=2025-07-07T18:20:44.738Z level=INFO fiber=#1 message="Starting HTTP server on port 3001..."
-timestamp=2025-07-07T18:20:59.756Z level=INFO fiber=#1 message="Server stopped after 15 seconds"
+timestamp=2025-07-08T02:31:55.465Z level=INFO fiber=#1 message="Server starting on http://localhost:3001"
+timestamp=2025-07-08T02:31:57.478Z level=INFO fiber=#1 message="Server shutdown complete"

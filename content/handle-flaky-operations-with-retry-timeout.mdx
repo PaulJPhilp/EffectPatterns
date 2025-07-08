@@ -70,7 +70,7 @@ class ApiService extends Effect.Service<ApiService>()(
     sync: () => ({
       // Flaky API call that might fail or be slow
       fetchData: (): Effect.Effect<ApiResponse, ApiError | TimeoutError> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           const attempt = Math.floor(Math.random() * 5) + 1;
           yield* Effect.logInfo(`Attempt ${attempt}: Making API call...`);
           
@@ -104,7 +104,7 @@ const retryPolicy = Schedule.exponential(Duration.millis(100)).pipe(
 );
 
 // Create program with proper error handling
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const api = yield* ApiService;
   
   yield* Effect.logInfo("=== Starting API calls with retry and timeout ===");
@@ -121,12 +121,12 @@ const program = Effect.gen(function* (_) {
       Effect.retry(retryPolicy),
       Effect.catchTags({
         ApiError: (error) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logError(`All retries failed: ${error.message} (Last attempt: ${error.attempt})`);
             return { data: "fallback data due to API error" } as ApiResponse;
           }),
         TimeoutError: (error) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logError(`All retries timed out after ${error.duration} (Last attempt: ${error.attempt})`);
             return { data: "fallback data due to timeout" } as ApiResponse;
           })

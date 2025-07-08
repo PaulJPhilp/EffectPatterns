@@ -10,16 +10,16 @@ interface User {
 class NetworkError extends Data.TaggedError("NetworkError")<{
   readonly url: string;
   readonly code: number;
-}> {}
+}> { }
 
 class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly field: string;
   readonly message: string;
-}> {}
+}> { }
 
 class NotFoundError extends Data.TaggedError("NotFoundError")<{
   readonly id: string;
-}> {}
+}> { }
 
 // Define UserService
 class UserService extends Effect.Service<UserService>()("UserService", {
@@ -28,7 +28,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
     fetchUser: (
       id: string
     ): Effect.Effect<User, NetworkError | NotFoundError> =>
-      Effect.gen(function* (_) {
+      Effect.gen(function* () {
         yield* Effect.logInfo(`Fetching user with id: ${id}`);
 
         if (id === "invalid") {
@@ -49,7 +49,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
 
     // Validate user data
     validateUser: (user: User): Effect.Effect<string, ValidationError> =>
-      Effect.gen(function* (_) {
+      Effect.gen(function* () {
         yield* Effect.logInfo(`Validating user: ${JSON.stringify(user)}`);
 
         if (user.name.length < 3) {
@@ -66,13 +66,13 @@ class UserService extends Effect.Service<UserService>()("UserService", {
         return message;
       }),
   }),
-}) {}
+}) { }
 
 // Compose operations with error handling using catchTags
 const processUser = (
   userId: string
 ): Effect.Effect<string, never, UserService> =>
-  Effect.gen(function* (_) {
+  Effect.gen(function* () {
     const userService = yield* UserService;
 
     yield* Effect.logInfo(`=== Processing user ID: ${userId} ===`);
@@ -82,19 +82,19 @@ const processUser = (
       // Handle different error types with specific recovery logic
       Effect.catchTags({
         NetworkError: (e) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             const message = `Network error: ${e.code} for ${e.url}`;
             yield* Effect.logError(message);
             return message;
           }),
         NotFoundError: (e) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             const message = `User ${e.id} not found`;
             yield* Effect.logWarning(message);
             return message;
           }),
         ValidationError: (e) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             const message = `Invalid ${e.field}: ${e.message}`;
             yield* Effect.logWarning(message);
             return message;
@@ -107,7 +107,7 @@ const processUser = (
   });
 
 // Test with different scenarios
-const runTests = Effect.gen(function* (_) {
+const runTests = Effect.gen(function* () {
   yield* Effect.logInfo("=== Starting User Processing Tests ===");
 
   const testCases = ["valid", "invalid", "missing"];

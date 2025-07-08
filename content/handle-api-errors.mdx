@@ -74,7 +74,7 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
     sync: () => ({
       // Handle API errors with proper logging
       handleApiError: <E>(error: E): Effect.Effect<ApiResponse, never, never> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logError(`API Error: ${JSON.stringify(error)}`);
 
           if (error instanceof UserNotFoundError) {
@@ -92,7 +92,7 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
 
       // Handle unexpected errors
       handleUnexpectedError: (cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logError('Unexpected error occurred');
           
           if (Cause.isDie(cause)) {
@@ -123,7 +123,7 @@ export class UserRepository extends Effect.Service<UserRepository>()(
       return {
         // Get user by ID with proper error handling
         getUser: (id: string): Effect.Effect<User, UserNotFoundError | InvalidIdError> =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logInfo(`Attempting to get user with id: ${id}`);
             
             // Validate ID format
@@ -147,7 +147,7 @@ export class UserRepository extends Effect.Service<UserRepository>()(
 
         // Check if user has required role
         checkRole: (user: User, requiredRole: 'admin' | 'user'): Effect.Effect<void, UnauthorizedError> =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logInfo(`Checking if user ${user.id} has role: ${requiredRole}`);
             
             if (user.role !== requiredRole && user.role !== 'admin') {
@@ -173,7 +173,7 @@ interface ApiResponse {
 }
 
 // Create routes with proper error handling
-const createRoutes = () => Effect.gen(function* (_) {
+const createRoutes = () => Effect.gen(function* () {
   const repo = yield* UserRepository;
   const errorHandler = yield* ErrorHandlerService;
   

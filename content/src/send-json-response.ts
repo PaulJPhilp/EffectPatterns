@@ -20,7 +20,7 @@ class JsonServer extends Effect.Service<JsonServer>()("JsonServer", {
 }) {}
 
 // Create and run the server
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const jsonServer = yield* JsonServer;
 
   // Create and start HTTP server
@@ -68,7 +68,7 @@ const program = Effect.gen(function* (_) {
   yield* Effect.logInfo("Server shutdown complete");
 }).pipe(
   Effect.catchAll((error) =>
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       yield* Effect.logError(`Server error: ${error.message}`);
       return error;
     })

@@ -11,7 +11,19 @@
 		"experimentalDecorators": true,
 		"lib": ["ES2022", "DOM"],
 		"types": ["node"],
-		"downlevelIteration": true
+		"downlevelIteration": true,
+		"plugins": [
+			{
+				"name": "@effect/language-service",
+				"diagnostics": true, // controls Effect diagnostics (default: true)
+				"diagnosticSeverity": { // allows to change per-rule default severity of the diagnostic in the whole project
+					"floatingEffect": "warning" // example for a rule, allowed values are off,error,warning,message,suggestion
+				},
+				"quickinfo": true, // controls quickinfo over Effect (default: true)
+				"completions": true, // controls Effect completions (default: true)
+				"allowedDuplicatedPackages": [] // list of package names that has effect in peer dependencies and are allowed to be duplicated (default: [])
+			}
+		],
 	},
 	"include": ["scripts/**/*.ts", "content/src/**/*.ts"]
 }

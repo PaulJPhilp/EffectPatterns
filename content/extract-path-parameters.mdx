@@ -67,7 +67,7 @@ class PathService extends Effect.Service<PathService>()(
   {
     sync: () => ({
       extractUserId: (path: string) =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`Attempting to extract user ID from path: ${path}`)
           
           const match = path.match(/\/users\/([^/]+)/);
@@ -82,7 +82,7 @@ class PathService extends Effect.Service<PathService>()(
         }),
 
       greetUser: (userId: string) =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           const greeting = `Hello, user ${userId}!`
           yield* Effect.logInfo(greeting)
           return greeting
@@ -93,7 +93,7 @@ class PathService extends Effect.Service<PathService>()(
 
 // Compose the functions with proper error handling
 const processPath = (path: string): Effect.Effect<string, InvalidPathErrorSchema, PathService> =>
-  Effect.gen(function* (_) {
+  Effect.gen(function* () {
     const pathService = yield* PathService
     yield* Effect.logInfo(`Processing path: ${path}`)
     const userId = yield* pathService.extractUserId(path)
@@ -101,7 +101,7 @@ const processPath = (path: string): Effect.Effect<string, InvalidPathErrorSchema
   })
 
 // Run examples with proper error handling
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   // Test valid paths
   yield* Effect.logInfo("=== Testing valid paths ===")
   const result1 = yield* processPath('/users/123')

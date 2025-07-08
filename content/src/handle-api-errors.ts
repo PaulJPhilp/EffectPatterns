@@ -1,4 +1,4 @@
-import { Effect, Data, Cause } from 'effect';
+import { Cause, Data, Effect } from 'effect';
 
 // Define our domain types
 export interface User {
@@ -11,17 +11,17 @@ export interface User {
 // Define specific, typed errors for our domain
 export class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{
   readonly id: string;
-}> {}
+}> { }
 
 export class InvalidIdError extends Data.TaggedError('InvalidIdError')<{
   readonly id: string;
   readonly reason: string;
-}> {}
+}> { }
 
 export class UnauthorizedError extends Data.TaggedError('UnauthorizedError')<{
   readonly action: string;
   readonly role: string;
-}> {}
+}> { }
 
 // Define error handler service
 export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
@@ -30,7 +30,7 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
     sync: () => ({
       // Handle API errors with proper logging
       handleApiError: <E>(error: E): Effect.Effect<ApiResponse, never, never> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logError(`API Error: ${JSON.stringify(error)}`);
 
           if (error instanceof UserNotFoundError) {
@@ -48,9 +48,9 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
 
       // Handle unexpected errors
       handleUnexpectedError: (cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logError('Unexpected error occurred');
-          
+
           if (Cause.isDie(cause)) {
             const defect = Cause.failureOption(cause);
             if (defect._tag === 'Some') {
@@ -64,7 +64,7 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
         })
     })
   }
-) {}
+) { }
 
 // Define UserRepository service
 export class UserRepository extends Effect.Service<UserRepository>()(
@@ -79,9 +79,9 @@ export class UserRepository extends Effect.Service<UserRepository>()(
       return {
         // Get user by ID with proper error handling
         getUser: (id: string): Effect.Effect<User, UserNotFoundError | InvalidIdError> =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logInfo(`Attempting to get user with id: ${id}`);
-            
+
             // Validate ID format
             if (!id.match(/^user_\d+$/)) {
               yield* Effect.logWarning(`Invalid user ID format: ${id}`);
@@ -103,9 +103,9 @@ export class UserRepository extends Effect.Service<UserRepository>()(
 
         // Check if user has required role
         checkRole: (user: User, requiredRole: 'admin' | 'user'): Effect.Effect<void, UnauthorizedError> =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logInfo(`Checking if user ${user.id} has role: ${requiredRole}`);
-            
+
             if (user.role !== requiredRole && user.role !== 'admin') {
               yield* Effect.logWarning(`User ${user.id} with role ${user.role} cannot access ${requiredRole} resources`);
               return yield* Effect.fail(new UnauthorizedError({
@@ -120,7 +120,7 @@ export class UserRepository extends Effect.Service<UserRepository>()(
       };
     }
   }
-) {}
+) { }
 
 interface ApiResponse {
   readonly error?: string;
@@ -129,16 +129,16 @@ interface ApiResponse {
 }
 
 // Create routes with proper error handling
-const createRoutes = () => Effect.gen(function* (_) {
+const createRoutes = () => Effect.gen(function* () {
   const repo = yield* UserRepository;
   const errorHandler = yield* ErrorHandlerService;
-  
+
   yield* Effect.logInfo('=== Processing API request ===');
-  
+
   // Test different scenarios
   for (const userId of ['user_123', 'user_456', 'invalid_id', 'user_789']) {
     yield* Effect.logInfo(`\n--- Testing user ID: ${userId} ---`);
-    
+
     const response = yield* repo.getUser(userId).pipe(
       Effect.map(user => ({
         data: {
@@ -148,26 +148,26 @@ const createRoutes = () => Effect.gen(function* (_) {
       })),
       Effect.catchAll(error => errorHandler.handleApiError(error))
     );
-    
+
     yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
   }
-  
+
   // Test role checking
   const adminUser = yield* repo.getUser('user_123');
   const regularUser = yield* repo.getUser('user_456');
-  
+
   yield* Effect.logInfo('\n=== Testing role checks ===');
-  
+
   yield* repo.checkRole(adminUser, 'admin').pipe(
     Effect.tap(() => Effect.logInfo('Admin access successful')),
     Effect.catchAll(error => errorHandler.handleApiError(error))
   );
-  
+
   yield* repo.checkRole(regularUser, 'admin').pipe(
     Effect.tap(() => Effect.logInfo('User admin access successful')),
     Effect.catchAll(error => errorHandler.handleApiError(error))
   );
-  
+
   return { message: 'Tests completed successfully' };
 });
 

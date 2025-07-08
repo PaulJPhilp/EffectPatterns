@@ -32,7 +32,7 @@ class DatabaseService extends Effect.Service<DatabaseService>()(
     sync: () => ({
       // Connect to database with proper error handling
       connect: (config: DatabaseConfig): Effect.Effect<DatabaseConnection, DatabaseError> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`Connecting to database: ${config.url}`);
           
           if (!config.url) {
@@ -73,7 +73,7 @@ class UserService extends Effect.Service<UserService>()(
     sync: () => ({
       // Parse user data with validation
       parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`Parsing user data: ${JSON.stringify(input)}`);
           
           try {
@@ -119,7 +119,7 @@ class TestService extends Effect.Service<TestService>()(
     sync: () => {
       // Create instance methods
       const printCause = (prefix: string, cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`\n=== ${prefix} ===`);
           
           if (Cause.isDie(cause)) {
@@ -143,7 +143,7 @@ class TestService extends Effect.Service<TestService>()(
         name: string,
         program: Effect.Effect<A, E>
       ): Effect.Effect<void, never, never> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`\n=== Testing: ${name} ===`);
           
           type TestError = { readonly _tag: "error"; readonly cause: Cause.Cause<E> };
@@ -172,7 +172,7 @@ class TestService extends Effect.Service<TestService>()(
 ) {}
 
 // Create program with proper error handling
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const db = yield* DatabaseService;
   const users = yield* UserService;
   const test = yield* TestService;
@@ -182,7 +182,7 @@ const program = Effect.gen(function* (_) {
   // Test expected database errors
   yield* test.runScenario(
     "Expected database error",
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       const result = yield* Effect.retry(
         db.connect({ url: "" }),
         Schedule.exponential(100)
@@ -197,13 +197,13 @@ const program = Effect.gen(function* (_) {
   // Test unexpected connection errors
   yield* test.runScenario(
     "Unexpected connection error",
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       const result = yield* Effect.retry(
         db.connect({ url: "invalid" }),
         Schedule.recurs(3)
       ).pipe(
         Effect.catchAllCause(cause =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logError("Failed after 3 retries");
             yield* Effect.logError(Cause.pretty(cause));
             return yield* Effect.fail("Max retries exceeded");
@@ -217,7 +217,7 @@ const program = Effect.gen(function* (_) {
   // Test user validation with recovery
   yield* test.runScenario(
     "Valid user data",
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       const result = yield* users.parseUser({ id: "1", name: "John" }).pipe(
         Effect.orElse(() => 
           Effect.succeed({ id: "default", name: "Default User" })
@@ -230,7 +230,7 @@ const program = Effect.gen(function* (_) {
   // Test concurrent error handling with timeout
   yield* test.runScenario(
     "Concurrent operations",
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       const results = yield* Effect.all([
         db.connect({ url: "" }).pipe(
           Effect.timeout(Duration.seconds(1)),

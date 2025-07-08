@@ -1,6 +1,6 @@
-import { Effect, Duration } from "effect";
-import { createServer, IncomingMessage, ServerResponse } from "http";
+import { Duration, Effect } from "effect";
 import * as S from "effect/Schema";
+import { createServer, IncomingMessage, ServerResponse } from "http";
 
 // Define user schema
 const UserSchema = S.Struct({
@@ -19,7 +19,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
   sync: () => ({
     validateUser: (data: unknown) => S.decodeUnknown(UserSchema)(data),
   }),
-}) {}
+}) { }
 
 // Define HTTP server service interface
 interface HttpServerInterface {
@@ -38,7 +38,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
 
     return {
       handleRequest: (request: IncomingMessage, response: ServerResponse) =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           // Only handle POST /users
           if (request.method !== "POST" || request.url !== "/users") {
             response.writeHead(404, { "Content-Type": "application/json" });
@@ -86,7 +86,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
 
       start: function (this: HttpServer) {
         const self = this;
-        return Effect.gen(function* (_) {
+        return Effect.gen(function* () {
           // Create HTTP server
           const server = createServer((req, res) =>
             Effect.runFork(self.handleRequest(req, res))
@@ -94,7 +94,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
 
           // Add cleanup finalizer
           yield* Effect.addFinalizer(() =>
-            Effect.gen(function* (_) {
+            Effect.gen(function* () {
               yield* Effect.sync(() => server.close());
               yield* Effect.logInfo("Server shut down");
             })
@@ -120,17 +120,17 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
   }),
   // Specify dependencies
   dependencies: [UserService.Default],
-}) {}
+}) { }
 
 // Create program with proper error handling
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const server = yield* HttpServer;
 
   yield* Effect.logInfo("Starting HTTP server...");
 
   yield* server.start().pipe(
     Effect.catchAll((error) =>
-      Effect.gen(function* (_) {
+      Effect.gen(function* () {
         yield* Effect.logError(`Server error: ${error}`);
         return yield* Effect.fail(error);
       })

@@ -759,14 +759,14 @@ const ServerLive = NodeHttpServer.layer(() => createServer(), { port: 3001 })
 
 // Define your HTTP app (here responding "Hello World" to every request)
 const HttpLive = HttpServer.serve(
-  Effect.gen(function* (_) {
+  Effect.gen(function* () {
     yield* Effect.logInfo("Received HTTP request")
     return yield* HttpServerResponse.text("Hello World")
   })
 ).pipe(Layer.provide(ServerLive))
 
 // Run the server with timeout
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   yield* Effect.logInfo("Starting HTTP server on port 3001...")
   const serverEffect = Layer.launch(HttpLive)
   yield* Effect.timeout(
@@ -1614,7 +1614,54 @@ Effect.runPromise(
 
 ### 2. Create the Live Implementation
 
-<Example path="./src/create-a-testable-http-client-service.ts" />
+```typescript
+import { Effect, Data, Layer } from "effect"
+
+interface HttpErrorType {
+  readonly _tag: "HttpError"
+  readonly error: unknown
+}
+
+const HttpError = Data.tagged<HttpErrorType>("HttpError")
+
+interface HttpClientType {
+  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>
+}
+
+class HttpClient extends Effect.Service<HttpClientType>()(
+  "HttpClient",
+  {
+    sync: () => ({
+      get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
+        Effect.tryPromise({
+          try: () => fetch(url).then((res) => res.json()),
+          catch: (error) => HttpError({ error })
+        })
+    })
+  }
+) {}
+
+// Test implementation
+const TestLayer = Layer.succeed(
+  HttpClient,
+  HttpClient.of({
+    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T)
+  })
+)
+
+// Example usage
+const program = Effect.gen(function* () {
+  const client = yield* HttpClient
+  yield* Effect.logInfo("Fetching data...")
+  const data = yield* client.get<{ title: string }>("https://api.example.com/data")
+  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`)
+})
+
+// Run with test implementation
+Effect.runPromise(
+  Effect.provide(program, TestLayer)
+)
+```
 
 ### 3. Create the Test Implementation
 
@@ -2454,7 +2501,7 @@ class PathService extends Effect.Service<PathService>()(
   {
     sync: () => ({
       extractUserId: (path: string) =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`Attempting to extract user ID from path: ${path}`)
           
           const match = path.match(/\/users\/([^/]+)/);
@@ -2469,7 +2516,7 @@ class PathService extends Effect.Service<PathService>()(
         }),
 
       greetUser: (userId: string) =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           const greeting = `Hello, user ${userId}!`
           yield* Effect.logInfo(greeting)
           return greeting
@@ -2480,7 +2527,7 @@ class PathService extends Effect.Service<PathService>()(
 
 // Compose the functions with proper error handling
 const processPath = (path: string): Effect.Effect<string, InvalidPathErrorSchema, PathService> =>
-  Effect.gen(function* (_) {
+  Effect.gen(function* () {
     const pathService = yield* PathService
     yield* Effect.logInfo(`Processing path: ${path}`)
     const userId = yield* pathService.extractUserId(path)
@@ -2488,7 +2535,7 @@ const processPath = (path: string): Effect.Effect<string, InvalidPathErrorSchema
   })
 
 // Run examples with proper error handling
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   // Test valid paths
   yield* Effect.logInfo("=== Testing valid paths ===")
   const result1 = yield* processPath('/users/123')
@@ -2597,7 +2644,7 @@ class RouteService extends Effect.Service<RouteService>()(
     sync: () => {
       // Create instance methods
       const handleRoute = (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`Processing request for path: ${path}`);
           
           try {
@@ -2628,7 +2675,7 @@ class RouteService extends Effect.Service<RouteService>()(
         handleRoute,
         // Simulate GET request
         simulateGet: (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logInfo(`GET ${path}`);
             const response = yield* handleRoute(path);
             yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
@@ -2640,7 +2687,7 @@ class RouteService extends Effect.Service<RouteService>()(
 ) {}
 
 // Create program with proper error handling
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const router = yield* RouteService;
   
   yield* Effect.logInfo("=== Starting Route Tests ===");
@@ -2652,13 +2699,13 @@ const program = Effect.gen(function* (_) {
     const result = yield* router.simulateGet(path).pipe(
       Effect.catchTags({
         RouteNotFoundError: (error) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             const response = { status: 404, body: `Not Found: ${error.path}` };
             yield* Effect.logWarning(`${response.status} ${response.body}`);
             return response;
           }),
         RouteHandlerError: (error) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             const response = { status: 500, body: `Internal Error: ${error.error}` };
             yield* Effect.logError(`${response.status} ${response.body}`);
             return response;
@@ -2766,7 +2813,7 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
     sync: () => ({
       // Handle API errors with proper logging
       handleApiError: <E>(error: E): Effect.Effect<ApiResponse, never, never> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logError(`API Error: ${JSON.stringify(error)}`);
 
           if (error instanceof UserNotFoundError) {
@@ -2784,7 +2831,7 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
 
       // Handle unexpected errors
       handleUnexpectedError: (cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logError('Unexpected error occurred');
           
           if (Cause.isDie(cause)) {
@@ -2815,7 +2862,7 @@ export class UserRepository extends Effect.Service<UserRepository>()(
       return {
         // Get user by ID with proper error handling
         getUser: (id: string): Effect.Effect<User, UserNotFoundError | InvalidIdError> =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logInfo(`Attempting to get user with id: ${id}`);
             
             // Validate ID format
@@ -2839,7 +2886,7 @@ export class UserRepository extends Effect.Service<UserRepository>()(
 
         // Check if user has required role
         checkRole: (user: User, requiredRole: 'admin' | 'user'): Effect.Effect<void, UnauthorizedError> =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logInfo(`Checking if user ${user.id} has role: ${requiredRole}`);
             
             if (user.role !== requiredRole && user.role !== 'admin') {
@@ -2865,7 +2912,7 @@ interface ApiResponse {
 }
 
 // Create routes with proper error handling
-const createRoutes = () => Effect.gen(function* (_) {
+const createRoutes = () => Effect.gen(function* () {
   const repo = yield* UserRepository;
   const errorHandler = yield* ErrorHandlerService;
   
@@ -3005,7 +3052,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
     fetchUser: (
       id: string
     ): Effect.Effect<User, NetworkError | NotFoundError> =>
-      Effect.gen(function* (_) {
+      Effect.gen(function* () {
         yield* Effect.logInfo(`Fetching user with id: ${id}`);
 
         if (id === "invalid") {
@@ -3026,7 +3073,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
 
     // Validate user data
     validateUser: (user: User): Effect.Effect<string, ValidationError> =>
-      Effect.gen(function* (_) {
+      Effect.gen(function* () {
         yield* Effect.logInfo(`Validating user: ${JSON.stringify(user)}`);
 
         if (user.name.length < 3) {
@@ -3049,7 +3096,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
 const processUser = (
   userId: string
 ): Effect.Effect<string, never, UserService> =>
-  Effect.gen(function* (_) {
+  Effect.gen(function* () {
     const userService = yield* UserService;
 
     yield* Effect.logInfo(`=== Processing user ID: ${userId} ===`);
@@ -3059,19 +3106,19 @@ const processUser = (
       // Handle different error types with specific recovery logic
       Effect.catchTags({
         NetworkError: (e) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             const message = `Network error: ${e.code} for ${e.url}`;
             yield* Effect.logError(message);
             return message;
           }),
         NotFoundError: (e) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             const message = `User ${e.id} not found`;
             yield* Effect.logWarning(message);
             return message;
           }),
         ValidationError: (e) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             const message = `Invalid ${e.field}: ${e.message}`;
             yield* Effect.logWarning(message);
             return message;
@@ -3084,7 +3131,7 @@ const processUser = (
   });
 
 // Test with different scenarios
-const runTests = Effect.gen(function* (_) {
+const runTests = Effect.gen(function* () {
   yield* Effect.logInfo("=== Starting User Processing Tests ===");
 
   const testCases = ["valid", "invalid", "missing"];
@@ -3159,7 +3206,7 @@ class ApiService extends Effect.Service<ApiService>()(
     sync: () => ({
       // Flaky API call that might fail or be slow
       fetchData: (): Effect.Effect<ApiResponse, ApiError | TimeoutError> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           const attempt = Math.floor(Math.random() * 5) + 1;
           yield* Effect.logInfo(`Attempt ${attempt}: Making API call...`);
           
@@ -3193,7 +3240,7 @@ const retryPolicy = Schedule.exponential(Duration.millis(100)).pipe(
 );
 
 // Create program with proper error handling
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const api = yield* ApiService;
   
   yield* Effect.logInfo("=== Starting API calls with retry and timeout ===");
@@ -3210,12 +3257,12 @@ const program = Effect.gen(function* (_) {
       Effect.retry(retryPolicy),
       Effect.catchTags({
         ApiError: (error) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logError(`All retries failed: ${error.message} (Last attempt: ${error.attempt})`);
             return { data: "fallback data due to API error" } as ApiResponse;
           }),
         TimeoutError: (error) =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logError(`All retries timed out after ${error.duration} (Last attempt: ${error.attempt})`);
             return { data: "fallback data due to timeout" } as ApiResponse;
           })
@@ -3313,7 +3360,7 @@ class DatabaseService extends Effect.Service<DatabaseService>()(
     sync: () => ({
       // Connect to database with proper error handling
       connect: (config: DatabaseConfig): Effect.Effect<DatabaseConnection, DatabaseError> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`Connecting to database: ${config.url}`);
           
           if (!config.url) {
@@ -3354,7 +3401,7 @@ class UserService extends Effect.Service<UserService>()(
     sync: () => ({
       // Parse user data with validation
       parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`Parsing user data: ${JSON.stringify(input)}`);
           
           try {
@@ -3400,7 +3447,7 @@ class TestService extends Effect.Service<TestService>()(
     sync: () => {
       // Create instance methods
       const printCause = (prefix: string, cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`\n=== ${prefix} ===`);
           
           if (Cause.isDie(cause)) {
@@ -3424,7 +3471,7 @@ class TestService extends Effect.Service<TestService>()(
         name: string,
         program: Effect.Effect<A, E>
       ): Effect.Effect<void, never, never> =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           yield* Effect.logInfo(`\n=== Testing: ${name} ===`);
           
           type TestError = { readonly _tag: "error"; readonly cause: Cause.Cause<E> };
@@ -3453,7 +3500,7 @@ class TestService extends Effect.Service<TestService>()(
 ) {}
 
 // Create program with proper error handling
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const db = yield* DatabaseService;
   const users = yield* UserService;
   const test = yield* TestService;
@@ -3463,7 +3510,7 @@ const program = Effect.gen(function* (_) {
   // Test expected database errors
   yield* test.runScenario(
     "Expected database error",
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       const result = yield* Effect.retry(
         db.connect({ url: "" }),
         Schedule.exponential(100)
@@ -3478,13 +3525,13 @@ const program = Effect.gen(function* (_) {
   // Test unexpected connection errors
   yield* test.runScenario(
     "Unexpected connection error",
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       const result = yield* Effect.retry(
         db.connect({ url: "invalid" }),
         Schedule.recurs(3)
       ).pipe(
         Effect.catchAllCause(cause =>
-          Effect.gen(function* (_) {
+          Effect.gen(function* () {
             yield* Effect.logError("Failed after 3 retries");
             yield* Effect.logError(Cause.pretty(cause));
             return yield* Effect.fail("Max retries exceeded");
@@ -3498,7 +3545,7 @@ const program = Effect.gen(function* (_) {
   // Test user validation with recovery
   yield* test.runScenario(
     "Valid user data",
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       const result = yield* users.parseUser({ id: "1", name: "John" }).pipe(
         Effect.orElse(() => 
           Effect.succeed({ id: "default", name: "Default User" })
@@ -3511,7 +3558,7 @@ const program = Effect.gen(function* (_) {
   // Test concurrent error handling with timeout
   yield* test.runScenario(
     "Concurrent operations",
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       const results = yield* Effect.all([
         db.connect({ url: "" }).pipe(
           Effect.timeout(Duration.seconds(1)),
@@ -3766,7 +3813,7 @@ const serverLayer = HttpServer.serve(app);
 
 const mainLayer = Layer.merge(Database.Default, server);
 
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   yield* Console.log("Server started on http://localhost:3457");
   const layer = Layer.provide(serverLayer, mainLayer);
 
@@ -3976,7 +4023,7 @@ const processLine = (line: string): Effect.Effect<void, ProcessError> =>
     : Effect.sync(() => console.log(`Processed: ${line}`));
 
 // Create and process the file with proper resource management
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   console.log("=== Stream Resource Management Demo ===");
   console.log(
     "This demonstrates proper resource cleanup even when errors occur"
@@ -4593,7 +4640,54 @@ Effect.runPromise(
 
 ### 2. The Feature Module Layer
 
-<Example path="./src/organize-layers-into-composable-modules.ts" />
+```typescript
+// src/core/Logger.ts
+import { Effect } from "effect";
+
+export class Logger extends Effect.Service<Logger>()(
+  "App/Core/Logger",
+  {
+    sync: () => ({
+      log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`))
+    })
+  }
+) {}
+
+// src/features/User/UserRepository.ts
+export class UserRepository extends Effect.Service<UserRepository>()(
+  "App/User/UserRepository",
+  {
+    // Define implementation that uses Logger
+    effect: Effect.gen(function* () {
+      const logger = yield* Logger;
+      return {
+        findById: (id: number) =>
+          Effect.gen(function* () {
+            yield* logger.log(`Finding user ${id}`);
+            return { id, name: `User ${id}` };
+          })
+      };
+    }),
+    // Declare Logger dependency
+    dependencies: [Logger.Default]
+  }
+) {}
+
+// Example usage
+const program = Effect.gen(function* () {
+  const repo = yield* UserRepository;
+  const user = yield* repo.findById(1);
+  return user;
+});
+
+// Run with default implementations
+Effect.runPromise(
+  Effect.provide(
+    program,
+    UserRepository.Default
+  )
+).then(console.log);
+```
 
 ### 3. The Final Application Composition
 
@@ -4886,7 +4980,7 @@ import { NodeFileSystem } from '@effect/platform-node';
 import * as path from 'node:path';
 
 const processFile = (filePath: string, content: string): Effect.Effect<void, Error, FileSystem.FileSystem> =>
-  Effect.gen(function* (_) {
+  Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     try {
       yield* fs.writeFileString(filePath, content);
@@ -4901,7 +4995,7 @@ const processFile = (filePath: string, content: string): Effect.Effect<void, Err
     }
   });
 
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const filePath = path.join(__dirname, 'large-file.txt');
   
   yield* processFile(
@@ -6129,7 +6223,7 @@ class JsonServer extends Effect.Service<JsonServer>()("JsonServer", {
 }) {}
 
 // Create and run the server
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const jsonServer = yield* JsonServer;
 
   // Create and start HTTP server
@@ -6177,7 +6271,7 @@ const program = Effect.gen(function* (_) {
   yield* Effect.logInfo("Server shutdown complete");
 }).pipe(
   Effect.catchAll((error) =>
-    Effect.gen(function* (_) {
+    Effect.gen(function* () {
       yield* Effect.logError(`Server error: ${error.message}`);
       return error;
     })
@@ -7697,7 +7791,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
 
     return {
       handleRequest: (request: IncomingMessage, response: ServerResponse) =>
-        Effect.gen(function* (_) {
+        Effect.gen(function* () {
           // Only handle POST /users
           if (request.method !== "POST" || request.url !== "/users") {
             response.writeHead(404, { "Content-Type": "application/json" });
@@ -7745,7 +7839,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
 
       start: function (this: HttpServer) {
         const self = this;
-        return Effect.gen(function* (_) {
+        return Effect.gen(function* () {
           // Create HTTP server
           const server = createServer((req, res) =>
             Effect.runFork(self.handleRequest(req, res))
@@ -7753,7 +7847,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
 
           // Add cleanup finalizer
           yield* Effect.addFinalizer(() =>
-            Effect.gen(function* (_) {
+            Effect.gen(function* () {
               yield* Effect.sync(() => server.close());
               yield* Effect.logInfo("Server shut down");
             })
@@ -7782,14 +7876,14 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
 }) {}
 
 // Create program with proper error handling
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function* () {
   const server = yield* HttpServer;
 
   yield* Effect.logInfo("Starting HTTP server...");
 
   yield* server.start().pipe(
     Effect.catchAll((error) =>
-      Effect.gen(function* (_) {
+      Effect.gen(function* () {
         yield* Effect.logError(`Server error: ${error}`);
         return yield* Effect.fail(error);
       })
