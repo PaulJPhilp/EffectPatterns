@@ -53,13 +53,20 @@ const main = async () => {
         const placeholder = `<Example path="./src/${tsFileName}" />`;
         const newMdxContent = mdxContent.replace(fullCodeBlock, placeholder);
 
-        // Write the extracted code to a .ts file
-        await fs.writeFile(tsFilePath, tsCode);
-        console.log(`✅ Extracted example to ${tsFilePath}`);
+        // Check if TypeScript file already exists
+        try {
+          await fs.access(tsFilePath);
+          console.log(`⏭️  Skipping ${tsFilePath} - file already exists`);
+        } catch {
+          // File doesn't exist, proceed with extraction
+          // Write the extracted code to a .ts file
+          await fs.writeFile(tsFilePath, tsCode);
+          console.log(`✅ Extracted example to ${tsFilePath}`);
 
-        // Update the .mdx file
-        await fs.writeFile(mdxFilePath, newMdxContent);
-        console.log(`📝 Replaced code block in ${mdxFilePath}`);
+          // Update the .mdx file
+          await fs.writeFile(mdxFilePath, newMdxContent);
+          console.log(`📝 Replaced code block in ${mdxFilePath}`);
+        }
       } else {
         console.warn(
           `⚠️ No typescript code block found in 'Good Example' of ${mdxFile}`

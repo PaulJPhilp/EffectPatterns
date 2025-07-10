@@ -1,0 +1,31 @@
+---
+
+### Roadmap 3: Managing Resources with Scope and Layer
+
+**Introduction:**
+
+In software, a **resource** is any component that has a defined lifecycle—it must be explicitly **acquired** before use and **released** after use. Properly managing this lifecycle is critical to prevent common and severe bugs like memory leaks, file corruption, and exhausted connection pools.
+
+Common examples of resources include:
+*   Database connection pools
+*   Individual database transactions
+*   File handles
+*   Network sockets and HTTP clients
+*   Locks and mutexes
+
+**In native TypeScript**, resource management typically relies on `try...finally` blocks, often combined with `async/await`. This approach, however, becomes brittle in complex applications. It's difficult to compose the lifecycles of multiple resources, and more importantly, it cannot gracefully handle interruptions—if an asynchronous `Promise` is cancelled, there is no standard mechanism to ensure its `finally` block is executed immediately.
+
+This roadmap explores Effect's first-class solution for resource management. By using `Scope` and `Layer`, Effect makes resource safety declarative, composable, and automatic, guaranteeing that resources are always released correctly, even in the face of errors or interruptions.
+
+**Goal:** To master the patterns for safely acquiring, using, and releasing resources. This roadmap focuses on creating robust, leak-proof services (like database connection pools or HTTP clients) by integrating resource lifecycles directly into the dependency injection system.
+
+**Core Patterns & Concepts:**
+
+1.  **Pattern: The `acquireRelease` Bracket**
+    *   **Concept:** ...
+2.  **Pattern: The Scoped Service Layer**
+    *   **Concept:** ...
+3.  **Pattern: Understanding `Scope`**
+    *   **Concept:** ...
+4.  **Pattern: Composing Scoped Layers**
+    *   **Concept:** ...

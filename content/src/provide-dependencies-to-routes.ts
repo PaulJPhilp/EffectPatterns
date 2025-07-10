@@ -1,7 +1,3 @@
-// OLD
-// import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
-
-// NEW
 import * as HttpRouter from "@effect/platform/HttpRouter";
 import * as HttpResponse from "@effect/platform/HttpServerResponse";
 import * as HttpServer from "@effect/platform/HttpServer";
@@ -35,21 +31,22 @@ const app = HttpRouter.empty.pipe(
   HttpRouter.get("/users/:userId", userHandler)
 );
 
+// Create the server effect with all dependencies
+const serverEffect = HttpServer.serveEffect(app).pipe(
+  Effect.provide(Database.Default),
+  Effect.provide(
+    NodeHttpServer.layer(
+      () => require("node:http").createServer(),
+      { port: 3458 }
+    )
+  )
+);
+
+// Create program that manages server lifecycle
 const program = Effect.gen(function* () {
   yield* Effect.logInfo("Starting server on port 3458...");
 
-  const serverFiber = yield* Effect.scoped(
-    HttpServer.serveEffect(app).pipe(
-      Effect.provide(Database.Default),
-      // Node adapter that actually listens on port 3458
-      Effect.provide(
-        NodeHttpServer.layer(
-          () => require("node:http").createServer(), // factory
-          { port: 3458 } // options - changed port to avoid conflicts
-        )
-      )
-    )
-  ).pipe(Effect.fork);
+  const serverFiber = yield* Effect.scoped(serverEffect).pipe(Effect.fork);
 
   yield* Effect.logInfo("Server started successfully on http://localhost:3458");
   yield* Effect.logInfo("Try: curl http://localhost:3458/users/123");
@@ -63,4 +60,5 @@ const program = Effect.gen(function* () {
   yield* Effect.logInfo("Server shutdown complete");
 });
 
+// Run the program
 NodeRuntime.runMain(program);

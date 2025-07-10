@@ -55,6 +55,11 @@
     "description": "Use Data.struct or implement the Equal interface for value-based comparison of objects and classes."
   },
   {
+    "id": "compose-scoped-layers",
+    "title": "Compose Resource Lifecycles with `Layer.merge`",
+    "description": "Compose multiple scoped layers using `Layer.merge` or by providing one layer to another."
+  },
+  {
     "id": "conditionally-branching-workflows",
     "title": "Conditionally Branching Workflows",
     "description": "Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching."
@@ -83,6 +88,11 @@
     "id": "create-reusable-runtime-from-layers",
     "title": "Create a Reusable Runtime from Layers",
     "description": "Create a reusable runtime from layers."
+  },
+  {
+    "id": "scoped-service-layer",
+    "title": "Create a Service Layer from a Managed Resource",
+    "description": "Provide a managed resource to the application context using `Layer.scoped`."
   },
   {
     "id": "stream-from-iterable",
@@ -200,6 +210,11 @@
     "description": "Use Ref to manage shared, mutable state concurrently, ensuring atomicity."
   },
   {
+    "id": "manual-scope-management",
+    "title": "Manually Manage Lifecycles with `Scope`",
+    "description": "Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup."
+  },
+  {
     "id": "mapping-errors-to-fit-your-domain",
     "title": "Mapping Errors to Fit Your Domain",
     "description": "Use Effect.mapError to transform errors and create clean architectural boundaries between layers."
@@ -308,6 +323,11 @@
     "id": "run-effects-in-parallel-with-all",
     "title": "Run Independent Effects in Parallel with Effect.all",
     "description": "Use Effect.all to execute a collection of independent effects concurrently."
+  },
+  {
+    "id": "acquire-release-bracket",
+    "title": "Safely Bracket Resource Usage with `acquireRelease`",
+    "description": "Bracket the use of a resource between an `acquire` and a `release` effect."
   },
   {
     "id": "send-json-response",

@@ -37,7 +37,9 @@ const program = Effect.gen(function* () {
     Effect.gen(function* () {
       if (error instanceof RepositoryError) {
         yield* Effect.logInfo(`Repository error occurred: ${error._tag}`);
-        yield* Effect.logInfo(`Original cause: ${error.cause._tag}`);
+        if (error.cause instanceof ConnectionError || error.cause instanceof QueryError) {
+          yield* Effect.logInfo(`Original cause: ${error.cause._tag}`);
+        }
       } else {
         yield* Effect.logInfo(`Unexpected error: ${error}`);
       }

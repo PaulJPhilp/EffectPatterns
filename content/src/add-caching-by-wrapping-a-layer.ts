@@ -14,6 +14,7 @@ class WeatherService extends Effect.Service<WeatherService>()(
 const WeatherServiceLive = Layer.succeed(
   WeatherService,
   WeatherService.of({
+    _tag: "WeatherService",
     getForecast: (city) =>
       Effect.succeed(`Sunny in ${city}`).pipe(
         Effect.delay("2 seconds"),
@@ -31,6 +32,7 @@ const WeatherServiceCached = Layer.effect(
     const cache = yield* Ref.make(new Map<string, string>());
 
     return WeatherService.of({
+      _tag: "WeatherService",
       getForecast: (city) =>
         Ref.get(cache).pipe(
           Effect.flatMap((map) =>

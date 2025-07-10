@@ -21,6 +21,13 @@ This repository is designed to be a living document that helps developers move f
 - [Building Data Pipelines](#building-data-pipelines)
 - [Concurrency](#concurrency)
 - [Testing](#testing)
+- [Advanced Dependency Injection](#advanced-dependency-injection)
+- [Application Architecture](#application-architecture)
+- [Custom Layers](#custom-layers)
+- [Database Connections](#database-connections)
+- [Dependency Injection](#dependency-injection)
+- [File Handling](#file-handling)
+- [Network Requests](#network-requests)
 - [Observability](#observability)
 - [Resource Management](#resource-management)
 - [Tooling and Debugging](#tooling-and-debugging)
@@ -231,6 +238,64 @@ How to test Effect code effectively, reliably, and deterministically.
 
 ---
 
+## Advanced Dependency Injection
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Manually Manage Lifecycles with `Scope`](./content/manual-scope-management.mdx) | 🟠 **Advanced** | Use `Scope` directly to manage complex resource lifecycles or when building custom layers. |
+
+---
+
+## Application Architecture
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Compose Resource Lifecycles with `Layer.merge`](./content/compose-scoped-layers.mdx) | 🟡 **Intermediate** | Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order. |
+| [Create a Service Layer from a Managed Resource](./content/scoped-service-layer.mdx) | 🟡 **Intermediate** | Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service. |
+
+---
+
+## Custom Layers
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Manually Manage Lifecycles with `Scope`](./content/manual-scope-management.mdx) | 🟠 **Advanced** | Use `Scope` directly to manage complex resource lifecycles or when building custom layers. |
+
+---
+
+## Database Connections
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Safely Bracket Resource Usage with `acquireRelease`](./content/acquire-release-bracket.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
+
+---
+
+## Dependency Injection
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Compose Resource Lifecycles with `Layer.merge`](./content/compose-scoped-layers.mdx) | 🟡 **Intermediate** | Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order. |
+| [Create a Service Layer from a Managed Resource](./content/scoped-service-layer.mdx) | 🟡 **Intermediate** | Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service. |
+
+---
+
+## File Handling
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Safely Bracket Resource Usage with `acquireRelease`](./content/acquire-release-bracket.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
+
+---
+
+## Network Requests
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Safely Bracket Resource Usage with `acquireRelease`](./content/acquire-release-bracket.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
+
+---
+
 ## Observability
 
 | Pattern | Skill Level | Summary |
@@ -244,9 +309,13 @@ How to test Effect code effectively, reliably, and deterministically.
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
+| [Safely Bracket Resource Usage with `acquireRelease`](./content/acquire-release-bracket.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
+| [Compose Resource Lifecycles with `Layer.merge`](./content/compose-scoped-layers.mdx) | 🟡 **Intermediate** | Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order. |
+| [Create a Service Layer from a Managed Resource](./content/scoped-service-layer.mdx) | 🟡 **Intermediate** | Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service. |
 | [Create a Managed Runtime for Scoped Resources](./content/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
 | [Implement Graceful Shutdown for Your Application](./content/implement-graceful-shutdown.mdx) | 🟠 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
 | [Manage Resource Lifecycles with Scope](./content/manage-resource-lifecycles-with-scope.mdx) | 🟠 **Advanced** | Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed. |
+| [Manually Manage Lifecycles with `Scope`](./content/manual-scope-management.mdx) | 🟠 **Advanced** | Use `Scope` directly to manage complex resource lifecycles or when building custom layers. |
 
 ---
 

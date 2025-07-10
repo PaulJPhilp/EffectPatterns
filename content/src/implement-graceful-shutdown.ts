@@ -38,14 +38,12 @@ const server = Effect.gen(function* () {
 
   // Start server with error handling
   yield* Effect.async<void, Error>((resume) => {
-    httpServer.listen(3456, (err) => {
-      if (err) {
-        resume(
-          Effect.fail(new Error(`Failed to start server: ${err.message}`))
-        );
-      } else {
-        resume(Effect.succeed(void 0));
-      }
+    httpServer.once('error', (err: Error) => {
+      resume(Effect.fail(new Error(`Failed to start server: ${err.message}`)));
+    });
+
+    httpServer.listen(3456, () => {
+      resume(Effect.succeed(void 0));
     });
   });
 

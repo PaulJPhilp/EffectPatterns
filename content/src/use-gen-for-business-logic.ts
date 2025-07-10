@@ -3,7 +3,7 @@ import { Effect } from "effect";
 // Concrete implementations for demonstration
 const validateUser = (
   data: any
-): Effect.Effect<{ email: string; password: string }> =>
+): Effect.Effect<{ email: string; password: string }, Error, never> =>
   Effect.gen(function* () {
     yield* Effect.logInfo(`Validating user data: ${JSON.stringify(data)}`);
 
@@ -21,7 +21,7 @@ const validateUser = (
     return { email: data.email, password: data.password };
   });
 
-const hashPassword = (pw: string): Effect.Effect<string> =>
+const hashPassword = (pw: string): Effect.Effect<string, never, never> =>
   Effect.gen(function* () {
     yield* Effect.logInfo("Hashing password...");
     // Simulate password hashing
@@ -33,7 +33,7 @@ const hashPassword = (pw: string): Effect.Effect<string> =>
 const dbCreateUser = (data: {
   email: string;
   password: string;
-}): Effect.Effect<{ id: number; email: string }> =>
+}): Effect.Effect<{ id: number; email: string }, never, never> =>
   Effect.gen(function* () {
     yield* Effect.logInfo(`Creating user in database: ${data.email}`);
     // Simulate database operation
@@ -42,7 +42,7 @@ const dbCreateUser = (data: {
     return user;
   });
 
-const createUser = (userData: any) =>
+const createUser = (userData: any): Effect.Effect<{ id: number; email: string }, Error, never> =>
   Effect.gen(function* () {
     const validated = yield* validateUser(userData);
     const hashed = yield* hashPassword(validated.password);

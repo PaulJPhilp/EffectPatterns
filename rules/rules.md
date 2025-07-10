@@ -969,6 +969,112 @@ if (selectedUsers.includes({ id: 1, name: "Paul" })) {
   // ...
 }
 ```
+## Compose Resource Lifecycles with `Layer.merge`
+**Rule:** Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.
+### Full Pattern Content:
+# Compose Resource Lifecycles with `Layer.merge`
+
+## Guideline
+
+Combine multiple resource-managing `Layer`s into a single application layer using functions like `Layer.merge`. The Effect runtime will automatically build a dependency graph, acquire resources in the correct order, and release them in the reverse order.
+
+## Rationale
+
+This pattern is the ultimate payoff for defining services with `Layer`. It allows for true modularity. Each service can be defined in its own file, declaring its own resource requirements in its `Live` layer, completely unaware of other services.
+
+When you assemble the final application layer, Effect analyzes the dependencies:
+1.  **Acquisition Order:** It ensures resources are acquired in the correct order. For example, a `Logger` layer might be initialized before a `Database` layer that uses it for logging.
+2.  **Release Order:** It guarantees that resources are released in the **exact reverse order** of their acquisition. This is critical for preventing shutdown errors, such as a `UserRepository` trying to log a final message after the `Logger` has already been shut down.
+
+This automates one of the most complex and error-prone parts of application architecture.
+
+## Good Example
+
+```typescript
+import { Effect, Layer, Console } from "effect";
+
+// --- Service 1: Database ---
+class Database extends Effect.Service("Database")<{
+  query: (sql: string) => Effect.Effect<string>;
+}>() {
+  static readonly Live = Layer.scoped(
+    Database,
+    Effect.acquireRelease(
+      Effect.succeed({ query: (sql) => Effect.succeed(`db says: ${sql}`) }).pipe(
+        Effect.tap(() => Console.log("Database pool opened")),
+      ),
+      () => Console.log("Database pool closed"),
+    ),
+  );
+}
+
+// --- Service 2: API Client ---
+class ApiClient extends Effect.Service("ApiClient")<{
+  fetch: (path: string) => Effect.Effect<string>;
+}>() {
+  static readonly Live = Layer.scoped(
+    ApiClient,
+    Effect.acquireRelease(
+      Effect.succeed({ fetch: (p) => Effect.succeed(`api says: ${p}`) }).pipe(
+        Effect.tap(() => Console.log("API client session started")),
+      ),
+      () => Console.log("API client session ended"),
+    ),
+  );
+}
+
+// --- Application Layer ---
+// We merge the two independent layers into one.
+const AppLayer = Layer.merge(Database.Live, ApiClient.Live);
+
+// This program uses both services, unaware of their implementation details.
+const program = Effect.gen(function* () {
+  const db = yield* Database;
+  const api = yield* ApiClient;
+
+  const dbResult = yield* db.query("SELECT *");
+  const apiResult = yield* api.fetch("/users");
+
+  yield* Console.log(dbResult);
+  yield* Console.log(apiResult);
+});
+
+// Provide the combined layer to the program.
+Effect.runPromise(Effect.provide(program, AppLayer));
+
+/*
+Expected Output (note the LIFO release order):
+Database pool opened
+API client session started
+db says: SELECT *
+api says: /users
+API client session ended
+Database pool closed
+*/
+```
+
+**Explanation:**
+We define two completely independent services, `Database` and `ApiClient`, each with its own resource lifecycle. By combining them with `Layer.merge`, we create a single `AppLayer`. When `program` runs, Effect acquires the resources for both layers. When `program` finishes, Effect closes the application's scope, releasing the resources in the reverse order they were acquired (`ApiClient` then `Database`), ensuring a clean and predictable shutdown.
+
+## Anti-Pattern
+
+A manual, imperative startup and shutdown script. This approach is brittle and error-prone. The developer is responsible for maintaining the correct order of initialization and, more importantly, the reverse order for shutdown. This becomes unmanageable as an application grows.
+
+```typescript
+// ANTI-PATTERN: Manual, brittle, and error-prone
+async function main() {
+  const db = await initDb(); // acquire 1
+  const client = await initApiClient(); // acquire 2
+
+  try {
+    await doWork(db, client); // use
+  } finally {
+    // This order is easy to get wrong!
+    await client.close(); // release 2
+    await db.close(); // release 1
+  }
+}
+```
 ## Conditionally Branching Workflows
 **Rule:** Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
 ### Full Pattern Content:
@@ -1476,6 +1582,77 @@ dependency graph for every effect execution.
 For a long-running application, avoid providing layers and running an effect
 in a single operation. This forces Effect to rebuild the dependency graph on
 every execution.
+## Create a Service Layer from a Managed Resource
+**Rule:** Provide a managed resource to the application context using `Layer.scoped`.
+### Full Pattern Content:
+# Create a Service Layer from a Managed Resource
+
+## Guideline
+
+Define a service using `class MyService extends Effect.Service(...)`. On this class, create a static `Live` property using `Layer.scoped`. This layer should be constructed with the service class itself and a scoped `Effect` (typically from `Effect.acquireRelease`) that builds and releases the underlying resource.
+
+## Rationale
+
+This pattern is the key to building robust, testable, and leak-proof applications in Effect. It elevates a managed resource into a first-class service that can be used anywhere in your application. The `Effect.Service` helper simplifies defining the service's interface and context key. This approach decouples your business logic from the concrete implementation, as the logic only depends on the abstract service. The `Layer` declaratively handles the resource's entire lifecycle, ensuring it is acquired lazily, shared safely, and released automatically.
+
+## Good Example
+
+```typescript
+import { Effect, Layer, Console } from "effect";
+
+interface DbOps {
+  query: (sql: string) => Effect.Effect<string[], never, never>;
+}
+
+// 1. Define the service using Effect.Service
+class Database extends Effect.Service<DbOps>()(
+  "Database",
+  {
+    effect: Effect.gen(function* () {
+      const id = Math.floor(Math.random() * 1000);
+      yield* Console.log(`[Pool ${id}] Acquired`);
+      return {
+        query: (sql: string): Effect.Effect<string[], never, never> =>
+          Effect.sync(() => [`Result for '${sql}' from pool ${id}`])
+      };
+    })
+  }
+) {}
+
+// This program depends on the abstract Database service
+const program = Effect.gen(function* () {
+  const db = yield* Database;
+  const users = yield* db.query("SELECT * FROM users");
+  yield* Console.log(`Query successful: ${users[0]}`);
+});
+
+// Provide the live implementation to run the program
+Effect.runPromise(Effect.provide(program, Database.Default));
+
+/*
+Output:
+[Pool 458] Acquired
+Query successful: Result for 'SELECT * FROM users' from pool 458
+[Pool 458] Released
+*/
+```
+
+**Explanation:**
+The `Effect.Service` helper creates the `Database` class, which acts as both the service definition and its context key (Tag). The `Database.Live` layer connects this service to a concrete, lifecycle-managed implementation. When `program` asks for the `Database` service, the Effect runtime uses the `Live` layer to run the `acquire` effect once, caches the resulting `DbPool`, and injects it. The `release` effect is automatically run when the program completes.
+
+## Anti-Pattern
+
+Creating and exporting a global singleton instance of a resource. This tightly couples your application to a specific implementation, makes testing difficult, and offers no guarantees about graceful shutdown.
+
+```typescript
+// ANTI-PATTERN: Global singleton
+export const dbPool = makeDbPoolSync(); // Eagerly created, hard to test/mock
+
+function someBusinessLogic() {
+  // This function has a hidden dependency on the global dbPool
+  return dbPool.query("SELECT * FROM products");
+}
+```
 ## Create a Stream from a List
 **Rule:** Use Stream.fromIterable to begin a pipeline from an in-memory collection.
 ### Full Pattern Content:
@@ -4184,6 +4361,97 @@ const programWithRaceCondition = Effect.gen(function* () {
 // The result is unpredictable and will likely be less than 1000.
 Effect.runPromise(programWithRaceCondition).then(console.log);
 ```
+## Manually Manage Lifecycles with `Scope`
+**Rule:** Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup.
+### Full Pattern Content:
+# Manually Manage Lifecycles with `Scope`
+
+## Guideline
+
+For complex scenarios where a resource's lifecycle doesn't fit a simple `acquireRelease` pattern, use `Effect.scope` to create a boundary for finalizers. Inside this boundary, you can access the `Scope` service and manually register cleanup actions using `Scope.addFinalizer`.
+
+## Rationale
+
+While `Effect.acquireRelease` and `Layer.scoped` are sufficient for most use cases, sometimes you need more control. This pattern is essential when:
+1.  A single logical operation acquires multiple resources that need independent cleanup.
+2.  You are building a custom, complex `Layer` that orchestrates several dependent resources.
+3.  You need to understand the fundamental mechanism that powers all of Effect's resource management.
+
+By interacting with `Scope` directly, you gain precise, imperative-style control over resource cleanup within Effect's declarative, functional framework. Finalizers added to a scope are guaranteed to run in Last-In-First-Out (LIFO) order when the scope is closed.
+
+## Good Example
+
+```typescript
+import { Effect, Console } from "effect";
+
+// Mocking a complex file operation
+const openFile = (path: string) =>
+  Effect.succeed({ path, handle: Math.random() }).pipe(
+    Effect.tap((f) => Console.log(`Opened ${f.path}`)),
+  );
+const createTempFile = (path: string) =>
+  Effect.succeed({ path: `${path}.tmp`, handle: Math.random() }).pipe(
+    Effect.tap((f) => Console.log(`Created temp file ${f.path}`)),
+  );
+const closeFile = (file: { path: string }) =>
+  Effect.sync(() => Console.log(`Closed ${file.path}`));
+const deleteFile = (file: { path: string }) =>
+  Effect.sync(() => Console.log(`Deleted ${file.path}`));
+
+// This program acquires two resources (a file and a temp file)
+// and ensures both are cleaned up correctly using acquireRelease.
+const program = Effect.gen(function* () {
+  const file = yield* Effect.acquireRelease(
+    openFile("data.csv"),
+    (f) => closeFile(f)
+  );
+
+  const tempFile = yield* Effect.acquireRelease(
+    createTempFile("data.csv"),
+    (f) => deleteFile(f)
+  );
+
+  yield* Console.log("...writing data from temp file to main file...");
+});
+
+// Run the program with a scope
+Effect.runPromise(Effect.scoped(program));
+
+/*
+Output (note the LIFO cleanup order):
+Opened data.csv
+Created temp file data.csv.tmp
+...writing data from temp file to main file...
+Deleted data.csv.tmp
+Closed data.csv
+*/
+```
+
+**Explanation:**
+`Effect.scope` creates a new `Scope` and provides it to the `program`. Inside `program`, we access this `Scope` and use `addFinalizer` to register cleanup actions immediately after acquiring each resource. When `Effect.scope` finishes executing `program`, it closes the scope, which in turn executes all registered finalizers in the reverse order of their addition.
+
+## Anti-Pattern
+
+Attempting to manage multiple, interdependent resource cleanups using nested `try...finally` blocks. This leads to a "pyramid of doom," is difficult to read, and remains unsafe in the face of interruptions.
+
+```typescript
+// ANTI-PATTERN: Nested, unsafe, and hard to read
+async function complexOperation() {
+  const file = await openFilePromise(); // acquire 1
+  try {
+    const tempFile = await createTempFilePromise(); // acquire 2
+    try {
+      await doWorkPromise(file, tempFile); // use
+    } finally {
+      // This block may not run on interruption!
+      await deleteFilePromise(tempFile); // release 2
+    }
+  } finally {
+    // This block may also not run on interruption!
+    await closeFilePromise(file); // release 1
+  }
+}
+```
 ## Mapping Errors to Fit Your Domain
 **Rule:** Use Effect.mapError to transform errors and create clean architectural boundaries between layers.
 ### Full Pattern Content:
@@ -6173,6 +6441,71 @@ const program = Effect.gen(function* () {
 // Total execution time will be ~2.5 seconds (1s + 1.5s),
 // which is a full second slower than the parallel version.
 Effect.runPromise(program).then(console.log);
+```
+## Safely Bracket Resource Usage with `acquireRelease`
+**Rule:** Bracket the use of a resource between an `acquire` and a `release` effect.
+### Full Pattern Content:
+# Safely Bracket Resource Usage with `acquireRelease`
+
+## Guideline
+
+Wrap the acquisition, usage, and release of a resource within an `Effect.acquireRelease` call. This ensures the resource's cleanup logic is executed, regardless of whether the usage logic succeeds, fails, or is interrupted.
+
+## Rationale
+
+This pattern is the foundation of resource safety in Effect. It provides a composable and interruption-safe alternative to a standard `try...finally` block. The `release` effect is guaranteed to execute, preventing resource leaks which are common in complex asynchronous applications, especially those involving concurrency where tasks can be cancelled.
+
+## Good Example
+
+```typescript
+import { Effect, Console } from "effect";
+
+// A mock resource that needs to be managed
+const getDbConnection = Effect.sync(() => ({ id: Math.random() })).pipe(
+  Effect.tap(() => Console.log("Connection Acquired")),
+);
+
+const closeDbConnection = (conn: { id: number }): Effect.Effect<void, never, never> =>
+  Effect.sync(() => console.log(`Connection ${conn.id} Released`));
+
+// The program that uses the resource
+const program = Effect.acquireRelease(
+  getDbConnection, // 1. acquire
+  (connection) => closeDbConnection(connection) // 2. cleanup
+).pipe(
+  Effect.tap((connection) =>
+    Console.log(`Using connection ${connection.id} to run query...`)
+  )
+);
+
+Effect.runPromise(Effect.scoped(program));
+
+/*
+Output:
+Connection Acquired
+Using connection 0.12345... to run query...
+Connection 0.12345... Released
+*/
+```
+
+**Explanation:**
+By using `Effect.acquireRelease`, the `closeDbConnection` logic is guaranteed to run after the main logic completes. This creates a self-contained, leak-proof unit of work that can be safely composed into larger programs.
+
+## Anti-Pattern
+
+Using a standard `try...finally` block with `async/await`. While it handles success and failure cases, it is **not interruption-safe**. If the fiber executing the `Promise` is interrupted by Effect's structured concurrency, the `finally` block is not guaranteed to run, leading to resource leaks.
+
+```typescript
+// ANTI-PATTERN: Not interruption-safe
+async function getUser() {
+  const connection = await getDbConnectionPromise(); // acquire
+  try {
+    return await useConnectionPromise(connection); // use
+  } finally {
+    // This block may not run if the fiber is interrupted!
+    await closeConnectionPromise(connection); // release
+  }
+}
 ```
 ## Send a JSON Response
 **Rule:** Use Http.response.json to automatically serialize data structures into a JSON response.

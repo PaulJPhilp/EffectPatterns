@@ -61,8 +61,10 @@ class TestDatabaseService extends Effect.Service<TestDatabaseService>()(
 const getUserWithFallback = (id: number) =>
   Effect.gen(function* () {
     const db = yield* DatabaseService;
-
-    const user = yield* db.getUserById(id).pipe(
+    return yield* Effect.gen(function* () {
+      const user = yield* db.getUserById(id);
+      return user;
+    }).pipe(
       Effect.catchAll((error) =>
         Effect.gen(function* () {
           if (error instanceof NotFoundError) {
@@ -73,8 +75,6 @@ const getUserWithFallback = (id: number) =>
         })
       )
     );
-
-    return user;
   });
 
 // Create a program that demonstrates the service
@@ -87,32 +87,32 @@ const program = Effect.gen(function* () {
 
   // Example 1: Successful user lookup
   yield* Effect.logInfo("\n1. Looking up existing user 123...");
-  const user = yield* db.getUserById(123).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        yield* Effect.logError(`Failed to get user: ${error.message}`);
-        return { id: -1, name: "Error" };
-      })
-    )
-  );
+  const user = yield* Effect.gen(function* () {
+    try {
+      return yield* db.getUserById(123);
+    } catch (error) {
+      yield* Effect.logError(`Failed to get user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return { id: -1, name: "Error" };
+    }
+  });
   yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
 
   // Example 2: Handle non-existent user with proper error handling
   yield* Effect.logInfo("\n2. Looking up non-existent user 404...");
-  const notFoundUser = yield* db.getUserById(404).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        if (error instanceof NotFoundError) {
-          yield* Effect.logInfo(
-            `✅ Properly handled NotFoundError: ${error.message}`
-          );
-          return { id: 404, name: "Not Found" };
-        }
-        yield* Effect.logError(`Unexpected error: ${error.message}`);
-        return { id: -1, name: "Error" };
-      })
-    )
-  );
+  const notFoundUser = yield* Effect.gen(function* () {
+    try {
+      return yield* db.getUserById(404);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        yield* Effect.logInfo(
+          `✅ Properly handled NotFoundError: ${error.message}`
+        );
+        return { id: 404, name: "Not Found" };
+      }
+      yield* Effect.logError(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return { id: -1, name: "Error" };
+    }
+  });
   yield* Effect.logInfo(`Result: ${JSON.stringify(notFoundUser)}`);
 
   // Example 3: Business logic with fallback
@@ -129,27 +129,27 @@ const program = Effect.gen(function* () {
       const testDb = yield* TestDatabaseService;
 
       // Test existing user
-      const testUser1 = yield* testDb.getUserById(1).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Effect.logError(`Test failed: ${error.message}`);
-            return { id: -1, name: "Test Error" };
-          })
-        )
-      );
+      const testUser1 = yield* Effect.gen(function* () {
+        try {
+          return yield* testDb.getUserById(1);
+        } catch (error) {
+          yield* Effect.logError(`Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          return { id: -1, name: "Test Error" };
+        }
+      });
       yield* Effect.logInfo(`Test user 1: ${JSON.stringify(testUser1)}`);
 
       // Test non-existing user
-      const testUser404 = yield* testDb.getUserById(404).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Effect.logInfo(
-              `✅ Test service properly threw NotFoundError: ${error.message}`
-            );
-            return { id: 404, name: "Test Not Found" };
-          })
-        )
-      );
+      const testUser404 = yield* Effect.gen(function* () {
+        try {
+          return yield* testDb.getUserById(404);
+        } catch (error) {
+          yield* Effect.logInfo(
+            `✅ Test service properly threw NotFoundError: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
+          return { id: 404, name: "Test Not Found" };
+        }
+      });
       yield* Effect.logInfo(`Test result: ${JSON.stringify(testUser404)}`);
     }),
     TestDatabaseService.Default
@@ -164,4 +164,6 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with the default database service
-Effect.runPromise(Effect.provide(program, DatabaseService.Default));
+Effect.runPromise(
+  Effect.provide(program, DatabaseService.Default) as Effect.Effect<void, never, never>
+);
