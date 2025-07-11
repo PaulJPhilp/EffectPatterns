@@ -8,6 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@effect/platform':
+        specifier: ^0.87.7
+        version: 0.87.7(effect@3.16.12)
+      '@effect/platform-node':
+        specifier: ^0.88.11
+        version: 0.88.11(@effect/cluster@0.41.11(@effect/platform@0.87.7(effect@3.16.12))(@effect/rpc@0.64.8(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(@effect/sql@0.40.8(@effect/experimental@0.51.8(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(@effect/workflow@0.4.8(@effect/platform@0.87.7(effect@3.16.12))(@effect/rpc@0.64.8(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(effect@3.16.12))(effect@3.16.12))(@effect/platform@0.87.7(effect@3.16.12))(@effect/rpc@0.64.8(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(@effect/sql@0.40.8(@effect/experimental@0.51.8(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(effect@3.16.12)
+      commander:
+        specifier: ^14.0.0
+        version: 14.0.0
       effect:
         specifier: ^3.16.12
         version: 3.16.12
@@ -15,12 +24,6 @@ importers:
         specifier: ^0.11.10
         version: 0.11.10
     devDependencies:
-      '@effect/platform':
-        specifier: ^0.87.7
-        version: 0.87.7(effect@3.16.12)
-      '@effect/platform-node':
-        specifier: ^0.88.11
-        version: 0.88.11(@effect/cluster@0.41.11(@effect/platform@0.87.7(effect@3.16.12))(@effect/rpc@0.64.8(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(@effect/sql@0.40.8(@effect/experimental@0.51.8(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(@effect/workflow@0.4.8(@effect/platform@0.87.7(effect@3.16.12))(@effect/rpc@0.64.8(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(effect@3.16.12))(effect@3.16.12))(@effect/platform@0.87.7(effect@3.16.12))(@effect/rpc@0.64.8(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(@effect/sql@0.40.8(@effect/experimental@0.51.8(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(@effect/platform@0.87.7(effect@3.16.12))(effect@3.16.12))(effect@3.16.12)
       '@types/node':
         specifier: ^24.0.3
         version: 24.0.3
@@ -728,6 +731,10 @@ packages:
 
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
+
+  commander@14.0.0:
+    resolution: {integrity: sha512-2uM9rYjPvyq39NwLRqaiLtWHyDC1FvryJDa2ATTVims5YAS4PupsEQsDvP14FqhFr0P49CYDugi59xaxJlTXRA==}
+    engines: {node: '>=20'}
 
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
@@ -1911,6 +1918,8 @@ snapshots:
       color-name: 1.1.4
 
   color-name@1.1.4: {}
+
+  commander@14.0.0: {}
 
   concat-map@0.0.1: {}
 

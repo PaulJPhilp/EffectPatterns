@@ -1,0 +1,93 @@
+---
+title: "Transform Data During Validation with Schema"
+id: "transform-data-with-schema"
+skillLevel: "intermediate"
+useCase:
+  - "Domain Modeling"
+summary: "Use Schema.transform to safely convert data from one type to another during the parsing phase, such as from a string to a Date."
+tags:
+  - "schema"
+  - "transform"
+  - "validation"
+  - "parsing"
+  - "data-modeling"
+  - "coercion"
+rule:
+  description: "Use Schema.transform to safely convert data types during the validation and parsing process."
+related:
+  - "define-contracts-with-schema"
+  - "parse-with-schema-decode"
+  - "model-validated-domain-types-with-brand"
+author: "effect_website"
+---
+
+## Guideline
+
+To convert data from one type to another as part of the validation process, use `Schema.transform`. This allows you to define a schema that parses an input type (e.g., `string`) and outputs a different, richer domain type (e.g., `Date`).
+
+---
+
+## Rationale
+
+Often, the data you receive from external sources (like an API) isn't in the ideal format for your application's domain model. For example, dates are sent as ISO strings, but you want to work with `Date` objects.
+
+`Schema.transform` integrates this conversion directly into the parsing step. It takes two functions: one to `decode` the input type into the domain type, and one to `encode` it back. This makes your schema the single source of truth for both the shape and the type transformation of your data.
+
+For transformations that can fail (like creating a branded type), you can use `Schema.transformOrFail`, which allows the decoding step to return an `Either`.
+
+---
+
+## Good Example 1: Parsing a Date String
+
+This schema parses a string but produces a `Date` object, making the final data structure much more useful.
+
+<Example path="./src/transform-data-with-schema.ts" />
+
+## Good Example 2: Creating a Branded Type
+
+`transformOrFail` is perfect for creating branded types, as the validation can fail.
+
+```typescript
+import { Schema, Effect, Brand, Either } from "effect";
+
+type Email = string & Brand.Brand<"Email">;
+const Email = Schema.string.pipe(
+  Schema.transformOrFail(
+    Schema.brand<Email>("Email"),
+    (s, _, ast) =>
+      s.includes("@")
+        ? Either.right(s as Email)
+        : Either.left(Schema.ParseError.create(ast, "Invalid email format")),
+    (email) => Either.right(email),
+  ),
+);
+
+const result = Schema.decode(Email)("paul@example.com"); // Succeeds
+const errorResult = Schema.decode(Email)("invalid-email"); // Fails
+```
+
+---
+
+## Anti-Pattern
+
+Performing validation and transformation in two separate steps. This is more verbose, requires creating intermediate types, and separates the validation logic from the transformation logic.
+
+```typescript
+import { Schema, Effect } from "effect";
+
+// ❌ WRONG: Requires an intermediate "Raw" type.
+const RawApiEventSchema = Schema.Struct({
+  name: Schema.String,
+  timestamp: Schema.String,
+});
+
+const rawInput = { name: "User Login", timestamp: "2025-06-22T20:08:42.000Z" };
+
+// The logic is now split into two distinct, less cohesive steps.
+const program = Schema.decode(RawApiEventSchema)(rawInput).pipe(
+  Effect.map((rawEvent) => ({
+    ...rawEvent,
+    timestamp: new Date(rawEvent.timestamp), // Manual transformation after parsing.
+  })),
+);
+```

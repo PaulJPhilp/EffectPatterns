@@ -1,0 +1,66 @@
+---
+title: "Distinguish 'Not Found' from Errors"
+id: "distinguish-not-found-from-errors"
+skillLevel: "intermediate"
+useCase:
+  - "Error Management"
+  - "Domain Modeling"
+summary: "Use Effect<Option<A>> to clearly distinguish between a recoverable 'not found' case (None) and a true failure (Fail)."
+tags:
+  - "option"
+  - "error-management"
+  - "not-found"
+  - "effect"
+  - "composition"
+  - "data"
+rule:
+  description: "Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures."
+related:
+  - "model-optional-values-with-option"
+  - "define-tagged-errors"
+author: "effect_website"
+---
+
+## Guideline
+
+When a computation can fail (e.g., a network error) or succeed but find nothing, model its return type as ``Effect<Option<A>>``. This separates the "hard failure" channel from the "soft failure" (or empty) channel.
+
+---
+
+## Rationale
+
+This pattern provides a precise way to handle three distinct outcomes of an operation:
+
+1.  **Success with a value:** `Effect.succeed(Option.some(value))`
+2.  **Success with no value:** `Effect.succeed(Option.none())` (e.g., user not found)
+3.  **Failure:** `Effect.fail(new DatabaseError())` (e.g., database connection lost)
+
+By using `Option` inside the success channel of an `Effect`, you keep the error channel clean for true, unexpected, or unrecoverable errors. The "not found" case is often an expected and recoverable part of your business logic, and `Option.none()` models this perfectly.
+
+---
+
+## Good Example
+
+This function to find a user can fail if the database is down, or it can succeed but find no user. The return type ``Effect.Effect<Option.Option<User>, DatabaseError>`` makes this contract perfectly clear.
+
+`<Example path="./src/distinguish-not-found-from-errors.ts" />`
+
+## Anti-Pattern
+
+A common alternative is to create a specific NotFoundError and put it in the error channel alongside other errors.
+
+````typescript
+class NotFoundError extends Data.TaggedError("NotFoundError") {}
+	
+	// ❌ This signature conflates two different kinds of failure.
+	const findUserUnsafely = (
+	  id: number,
+	): Effect.Effect<User, DatabaseError | NotFoundError> => {
+	  // ...
+	  return Effect.fail(new NotFoundError());
+	};
+````
+
+While this works, it can be less expressive. It treats a "not found" result—which might be a normal part of your application's flow—the same as a catastrophic DatabaseError. 
+
+Using ````Effect<Option<A>>```` often leads to clearer and more precise business logic.

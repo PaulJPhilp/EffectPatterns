@@ -1,0 +1,40 @@
+---
+title: "Understand that Effects are Lazy Blueprints"
+id: "effects-are-lazy"
+skillLevel: "beginner"
+useCase: ["Core Concepts"]
+summary: "An Effect is a lazy, immutable blueprint describing a computation, which does nothing until it is explicitly executed by a runtime."
+tags: ["laziness", "immutability", "blueprint", "execution", "runtime", "core-concept"]
+rule:
+  description: "Understand that effects are lazy blueprints."
+related: ["execute-with-runpromise", "execute-with-runsync", "setup-new-project"]
+author: "Paul Philp"
+---
+
+# Understand that Effects are Lazy Blueprints
+
+## Guideline
+
+An `Effect` is not a value or a `Promise`. It is a lazy, immutable blueprint
+that describes a computation. It does nothing on its own until it is passed to
+a runtime executor (e.g., `Effect.runPromise` or `Effect.runSync`).
+
+## Rationale
+
+This laziness is a superpower because it makes your code composable,
+predictable, and testable. Unlike a `Promise` which executes immediately,
+an `Effect` is just a description of work, like a recipe waiting for a chef.
+
+## Good Example
+
+<Example path="./src/effects-are-lazy.ts" />
+
+**Explanation:**  
+Defining an `Effect` does not execute any code inside it. Only when you call
+`Effect.runSync(program)` does the computation actually happen.
+
+## Anti-Pattern
+
+Assuming an `Effect` behaves like a `Promise`. A `Promise` executes its work
+immediately upon creation. Never expect a side effect to occur just from
+defining an `Effect`.

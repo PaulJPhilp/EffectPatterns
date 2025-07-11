@@ -1,0 +1,38 @@
+---
+title: "Define Contracts Upfront with Schema"
+id: "define-contracts-with-schema"
+skillLevel: "intermediate"
+useCase: ["Domain Modeling"]
+summary: "Use Schema to define the types for your data models and function signatures before writing the implementation, creating clear, type-safe contracts."
+tags: ["schema", "design", "architecture", "type-safety", "contract-first", "data-modeling"]
+rule:
+  description: "Define contracts upfront with schema."
+related: ["parse-with-schema-decode", "define-config-schema"]
+author: "Sandro Maglione"
+---
+
+# Define Contracts Upfront with Schema
+
+## Guideline
+
+Before writing implementation logic, define the shape of your data models and
+function signatures using `Effect/Schema`.
+
+## Rationale
+
+This "schema-first" approach separates the "what" (the data shape) from the
+"how" (the implementation). It provides a single source of truth for both
+compile-time static types and runtime validation.
+
+## Good Example
+
+<Example path="./src/define-contracts-with-schema.ts" />
+
+**Explanation:**  
+Defining schemas upfront clarifies your contracts and ensures both type safety
+and runtime validation.
+
+## Anti-Pattern
+
+Defining logic with implicit `any` types first and adding validation later as
+an afterthought. This leads to brittle code that lacks a clear contract.

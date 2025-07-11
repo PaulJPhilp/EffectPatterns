@@ -14,9 +14,10 @@
 		"typecheck:examples": "tsc --noEmit"
 	},
 	"dependencies": {
-		"effect": "^3.16.12",
 		"@effect/platform": "^0.87.7",
 		"@effect/platform-node": "^0.88.11",
+		"commander": "^14.0.0",
+		"effect": "^3.16.12",
 		"process": "^0.11.10"
 	},
 	"devDependencies": {

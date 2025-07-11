@@ -1,0 +1,38 @@
+---
+title: "Use Effect.gen for Business Logic"
+id: "use-gen-for-business-logic"
+skillLevel: "intermediate"
+useCase: ["Domain Modeling"]
+summary: "Encapsulate sequential business logic, control flow, and dependency access within Effect.gen for improved readability and maintainability."
+tags: ["generators", "business-logic", "control-flow", "readability"]
+rule:
+  description: "Use Effect.gen for business logic."
+related: ["use-pipe-for-composition", "avoid-long-andthen-chains"]
+author: "Dillon Mulroy"
+---
+
+# Use Effect.gen for Business Logic
+
+## Guideline
+
+Use `Effect.gen` to write your core business logic, especially when it involves
+multiple sequential steps or conditional branching.
+
+## Rationale
+
+Generators provide a syntax that closely resembles standard synchronous code
+(`async/await`), making complex workflows significantly easier to read, write,
+and debug.
+
+## Good Example
+
+<Example path="./src/use-gen-for-business-logic.ts" />
+
+**Explanation:**  
+`Effect.gen` allows you to express business logic in a clear, sequential style,
+improving maintainability.
+
+## Anti-Pattern
+
+Using long chains of `.andThen` or `.flatMap` for multi-step business logic.
+This is harder to read and pass state between steps.

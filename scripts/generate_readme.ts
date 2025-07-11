@@ -4,7 +4,7 @@ import matter from "gray-matter";
 
 // --- CONFIGURATION ---
 
-const CONTENT_DIR = path.join(process.cwd(), "content");
+const CONTENT_DIR = path.join(process.cwd(), "content/published");
 const README_PATH = path.join(process.cwd(), "README.md");
 
 // Define the order and descriptions for our use cases
@@ -134,7 +134,7 @@ function generateUseCaseSection(
 	markdown += `| :--- | :--- | :--- |\n`;
 
 	for (const pattern of patterns) {
-		const link = `[${pattern.title}](./content/${pattern.id}.mdx)`;
+		const link = `[${pattern.title}](./content/published/${pattern.id}.mdx)`;
 		const skill = skillLevelMap[pattern.skillLevel];
 		markdown += `| ${link} | ${skill} | ${pattern.summary} |\n`;
 	}
