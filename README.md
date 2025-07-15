@@ -267,7 +267,7 @@ How to test Effect code effectively, reliably, and deterministically.
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Safely Bracket Resource Usage with `acquireRelease`](./content/published/acquire-release-bracket.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
+| [Safely Bracket Resource Usage with `acquireRelease`](./content/published/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
 
 ---
 
@@ -284,7 +284,7 @@ How to test Effect code effectively, reliably, and deterministically.
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Safely Bracket Resource Usage with `acquireRelease`](./content/published/acquire-release-bracket.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
+| [Safely Bracket Resource Usage with `acquireRelease`](./content/published/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
 
 ---
 
@@ -292,7 +292,7 @@ How to test Effect code effectively, reliably, and deterministically.
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Safely Bracket Resource Usage with `acquireRelease`](./content/published/acquire-release-bracket.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
+| [Safely Bracket Resource Usage with `acquireRelease`](./content/published/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
 
 ---
 
@@ -309,7 +309,7 @@ How to test Effect code effectively, reliably, and deterministically.
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Safely Bracket Resource Usage with `acquireRelease`](./content/published/acquire-release-bracket.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
+| [Safely Bracket Resource Usage with `acquireRelease`](./content/published/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
 | [Compose Resource Lifecycles with `Layer.merge`](./content/published/compose-scoped-layers.mdx) | 🟡 **Intermediate** | Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order. |
 | [Create a Service Layer from a Managed Resource](./content/published/scoped-service-layer.mdx) | 🟡 **Intermediate** | Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service. |
 | [Create a Managed Runtime for Scoped Resources](./content/published/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |

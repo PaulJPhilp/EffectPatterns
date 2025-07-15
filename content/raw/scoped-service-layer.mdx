@@ -15,7 +15,7 @@ author: "PaulJPhilp"
 
 ## Guideline
 
-Define a service using `class MyService extends Effect.Service(...)`. On this class, create a static `Live` property using `Layer.scoped`. This layer should be constructed with the service class itself and a scoped `Effect` (typically from `Effect.acquireRelease`) that builds and releases the underlying resource.
+Define a service using `class MyService extends Effect.Service(...)`.   Implement the service using the `scoped` property of the service class. This property should be a scoped `Effect` (typically from `Effect.acquireRelease`) that builds and releases the underlying resource.
 
 ## Rationale
 

@@ -8,7 +8,7 @@ interface DbOps {
 class Database extends Effect.Service<DbOps>()(
   "Database",
   {
-    effect: Effect.gen(function* () {
+    scoped: Effect.gen(function* () {
       const id = Math.floor(Math.random() * 1000);
       yield* Console.log(`[Pool ${id}] Acquired`);
       return {
