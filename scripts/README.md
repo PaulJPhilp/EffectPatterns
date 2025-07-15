@@ -1,136 +1,137 @@
-# Effect Patterns Publishing Pipeline
+# Effect Patterns Scripts
 
-This directory contains the scripts that power the Effect Patterns publishing pipeline. These scripts help maintain consistency between TypeScript source files and their corresponding MDX documentation.
+This directory contains the scripts that power the Effect Patterns documentation system. The scripts are organized into two main directories:
 
-## Pipeline Overview
+## `/publish`
 
-The publishing pipeline consists of a 3-stage workflow:
+Contains the main publishing pipeline scripts that run in sequence:
 
-1. **New Patterns** (`content/new/`): Empty subdirectories for new patterns that haven't been published yet
-2. **Raw Patterns** (`content/raw/`): MDX files with TypeScript code replaced by `<Example />` components
-3. **Published Patterns** (`content/published/`): Final MDX files with embedded TypeScript code blocks
+1. **test.ts**: Run and validate all TypeScript examples
+2. **publish.ts**: Convert raw MDX to published MDX
+3. **validate.ts**: Validate published MDX files
+4. **generate.ts**: Generate README.md
+5. **rules.ts**: Generate AI coding rules
+6. **pipeline.ts**: Orchestrates all steps in sequence
 
-## Available Scripts
+## `/ingest`
 
-### 1. `process_patterns.ts`
+Contains scripts for processing new patterns before they enter the main pipeline:
 
-Processes MDX files by extracting TypeScript code blocks and replacing them with Example components.
+1. **process.ts**: Validates and moves new patterns from `/content/new` into the main content directories
 
-```bash
-npx tsx process_patterns.ts --indir <input_directory> --outdir <output_directory> [--srcdir <source_directory>] [--count <number>]
+## Directory Structure
+
+```
+scripts/
+├── publish/
+│   ├── test.ts
+│   ├── publish.ts
+│   ├── validate.ts
+│   ├── generate.ts
+│   ├── rules.ts
+│   └── pipeline.ts
+├── ingest/
+│   └── process.ts
+└── README.md
 ```
 
-**Arguments:**
-- `--indir`: Input directory containing MDX files (required)
-- `--outdir`: Output directory for processed MDX files (required)
-- `--srcdir`: Directory to write extracted TypeScript code (optional)
-- `--count`: Number of files to process (optional)
+## Pipeline Scripts
 
-**Example:**
+### `pipeline.ts`
+
+Orchestrates the entire publishing pipeline, running each step in sequence and stopping if any step fails.
+
 ```bash
-npx tsx process_patterns.ts --indir content/published --outdir content/raw --srcdir content/src
+bun run pipeline
 ```
 
-### 2. `publish-patterns.ts`
+### `test.ts`
 
-Processes MDX files by replacing Example components with TypeScript code from source files.
+Runs and validates all TypeScript examples in `/content/src`.
 
 ```bash
-npx tsx publish-patterns.ts --indir <input_directory> --outdir <output_directory> --srcdir <source_directory> [--count <number>]
+bun run test
 ```
 
-**Arguments:**
-- `--indir`: Input directory containing MDX files with Example components (required)
-- `--outdir`: Output directory for processed MDX files (required)
-- `--srcdir`: Directory containing TypeScript source files (required)
-- `--count`: Number of files to process (optional)
+### `publish.ts`
 
-**Example:**
+Converts raw MDX files to published format by replacing Example components with TypeScript code.
+
 ```bash
-npx tsx publish-patterns.ts --indir content/raw --outdir content/published --srcdir content/src
+bun run publish
 ```
 
-### 3. `pattern-validator.ts`
+### `validate.ts`
 
-Validates that TypeScript code blocks in MDX files match their corresponding source files.
+Validates that all published MDX files match their TypeScript source files.
 
 ```bash
-npx tsx pattern-validator.ts --indir <input_directory> --srcdir <source_directory> [--count <number>]
+bun run validate
 ```
 
-**Arguments:**
-- `--indir`: Input directory containing MDX files (required)
-- `--srcdir`: Directory containing TypeScript source files (required)
-- `--count`: Number of files to process (optional)
+### `generate.ts`
 
-**Example:**
+Generates the main README.md with links to all patterns.
+
 ```bash
-npx tsx pattern-validator.ts --indir content/published --srcdir content/src
+bun run generate
 ```
 
-### 4. `generate_readme.ts`
+### `rules.ts`
 
-Generates the main README.md file with links to all patterns, organized by category.
+Generates AI coding rules from all patterns.
 
 ```bash
-npx tsx generate_readme.ts
+bun run rules
 ```
 
-**Note:** This script looks for MDX files in the `content/published` directory.
+## Ingest Scripts
 
-### 5. `validate_and_generate.ts`
+### `process.ts`
 
-Combines validation and README generation in one step.
+Processes new patterns from `/content/new` into the main content directories.
 
 ```bash
-npx tsx validate_and_generate.ts
+bun run ingest
 ```
 
 This script:
-1. Validates all TypeScript code blocks against source files
-2. Generates the README.md with links to all patterns
-3. Ensures complete consistency between code, documentation, and README
+1. Validates MDX frontmatter and required sections
+2. Moves TypeScript files to `/content/src`
+3. Moves MDX files to `/content/raw`
 
 ## Typical Workflow
 
-1. **Create new patterns** in `content/new/`
-2. **Process patterns** to extract TypeScript code:
+1. **Create new pattern**
    ```bash
-   npx tsx process_patterns.ts --indir content/published --outdir content/raw --srcdir content/src
-   ```
-3. **Make changes** to TypeScript source files in `content/src/`
-4. **Publish patterns** to restore TypeScript code blocks:
-   ```bash
-   npx tsx publish-patterns.ts --indir content/raw --outdir content/published --srcdir content/src
-   ```
-5. **Validate patterns** to ensure consistency:
-   ```bash
-   npx tsx pattern-validator.ts --indir content/published --srcdir content/src
-   ```
-6. **Generate README** with links to all patterns:
-   ```bash
-   npx tsx generate_readme.ts
+   # Create files in content/new
+   touch content/new/my-pattern.mdx
+   touch content/new/src/my-pattern.ts
    ```
 
-Or use the combined validation and generation script:
-```bash
-npx tsx validate_and_generate.ts
-```
+2. **Process new pattern**
+   ```bash
+   bun run ingest
+   ```
 
-## Future Automation
-
-Future enhancements to this pipeline could include:
-
-1. GitHub Actions workflow to automatically validate patterns on pull requests
-2. Automated tests for the pipeline scripts
-3. Integration with a CI/CD system for automated deployment
-4. Pre-commit hooks to ensure consistency before committing changes
+3. **Run publishing pipeline**
+   ```bash
+   bun run pipeline
+   ```
+   
+This will:
+- Run all TypeScript examples
+- Convert raw MDX to published format
+- Validate all files
+- Generate README.md
+- Generate AI coding rules
 
 ## Dependencies
 
-- TypeScript
+- Bun (for running TypeScript)
 - Node.js
-- commander (for CLI argument parsing)
 - gray-matter (for parsing MDX frontmatter)
 - fs/promises (for file system operations)
 - path (for path manipulation)
+- child_process (for running commands)
+- util (for promisification)

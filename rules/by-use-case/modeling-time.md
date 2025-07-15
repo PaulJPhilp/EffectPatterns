@@ -1,3 +1,5 @@
+# Modeling Time Rules
+
 ## Accessing the Current Time with Clock
 **Rule:** Use the Clock service to get the current time, enabling deterministic testing with TestClock.
 
@@ -5,9 +7,7 @@
 This example shows a function that checks if a token is expired. Its logic depends on `Clock`, making it fully testable.
 
 ```typescript
-import { Effect, Clock, Layer } from "effect";
-import { TestClock } from "effect/TestClock";
-import { describe, it, expect } from "vitest";
+import { Effect, Clock, Duration } from "effect";
 
 interface Token {
   readonly value: string;
@@ -15,29 +15,89 @@ interface Token {
 }
 
 // This function is pure and testable because it depends on Clock
-const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock> =>
+const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock.Clock> =>
   Clock.currentTimeMillis.pipe(
     Effect.map((now) => now > token.expiresAt),
+    Effect.tap((expired) => Effect.log(`Token expired? ${expired} (current time: ${new Date().toISOString()})`))
   );
 
-// --- Testing the function ---
-describe("isTokenExpired", () => {
-  const token = { value: "abc", expiresAt: 1000 };
-
-  it("should return false when the clock is before the expiry time", () =>
-    Effect.gen(function* () {
-      yield* TestClock.setTime(500); // Set virtual time
-      const isExpired = yield* isTokenExpired(token);
-      expect(isExpired).toBe(false);
-    }).pipe(Effect.provide(TestClock.layer), Effect.runPromise));
-
-  it("should return true when the clock is after the expiry time", () =>
-    Effect.gen(function* () {
-      yield* TestClock.setTime(1500); // Set virtual time
-      const isExpired = yield* isTokenExpired(token);
-      expect(isExpired).toBe(true);
-    }).pipe(Effect.provide(TestClock.layer), Effect.runPromise));
+// Create a test clock service that advances time
+const makeTestClock = (timeMs: number): Clock.Clock => ({
+  currentTimeMillis: Effect.succeed(timeMs),
+  currentTimeNanos: Effect.succeed(BigInt(timeMs * 1_000_000)),
+  sleep: (duration: Duration.Duration) => Effect.succeed(void 0),
+  unsafeCurrentTimeMillis: () => timeMs,
+  unsafeCurrentTimeNanos: () => BigInt(timeMs * 1_000_000),
+  [Clock.ClockTypeId]: Clock.ClockTypeId,
 });
+
+// Create a token that expires in 1 second
+const token = { value: "abc", expiresAt: Date.now() + 1000 };
+
+// Check token expiry with different clocks
+const program = Effect.gen(function* () {
+  // Check with current time
+  yield* Effect.log("Checking with current time...");
+  yield* isTokenExpired(token);
+
+  // Check with past time
+  yield* Effect.log("\nChecking with past time (1 minute ago)...");
+  const pastClock = makeTestClock(Date.now() - 60_000);
+  yield* isTokenExpired(token).pipe(
+    Effect.provideService(Clock.Clock, pastClock)
+  );
+
+  // Check with future time
+  yield* Effect.log("\nChecking with future time (1 hour ahead)...");
+  const futureClock = makeTestClock(Date.now() + 3600_000);
+  yield* isTokenExpired(token).pipe(
+    Effect.provideService(Clock.Clock, futureClock)
+  );
+});
+
+// Run the program with default clock
+Effect.runPromise(
+  program.pipe(
+    Effect.provideService(Clock.Clock, makeTestClock(Date.now()))
+  )
+);
+```
+
+---
+
+## Beyond the Date Type - Real World Dates, Times, and Timezones
+**Rule:** Use the Clock service for testable time-based logic and immutable primitives for timestamps.
+
+### Example
+This example shows a function that creates a timestamped event. It depends on the `Clock` service, making it fully testable.
+
+```typescript
+import { Effect, Clock } from "effect";
+import type * as Types from "effect/Clock";
+
+interface Event {
+  readonly message: string;
+  readonly timestamp: number; // Store as a primitive number (UTC millis)
+}
+
+// This function is pure and testable because it depends on Clock
+const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> =>
+  Effect.gen(function* () {
+    const timestamp = yield* Clock.currentTimeMillis;
+    return { message, timestamp };
+  });
+
+// Create and log some events
+const program = Effect.gen(function* () {
+  const loginEvent = yield* createEvent("User logged in");
+  console.log("Login event:", loginEvent);
+
+  const logoutEvent = yield* createEvent("User logged out");
+  console.log("Logout event:", logoutEvent);
+});
+
+// Run the program
+Effect.runPromise(program.pipe(Effect.provideService(Clock.Clock, Clock.make()))).catch(console.error);
 ```
 
 ---
@@ -59,50 +119,44 @@ const oneHundredMillis = Duration.millis(100);
 const program = Effect.log("Starting...").pipe(
   Effect.delay(oneHundredMillis),
   Effect.flatMap(() => Effect.log("Running after 100ms")),
-  Effect.timeout(fiveSeconds), // This whole operation must complete within 5 seconds
+  Effect.timeout(fiveSeconds) // This whole operation must complete within 5 seconds
 );
 
 // Durations can also be compared
 const isLonger = Duration.greaterThan(fiveSeconds, oneHundredMillis); // true
-```
 
----
+// Demonstrate the duration functionality
+const demonstration = Effect.gen(function* () {
+  yield* Effect.logInfo("=== Duration Demonstration ===");
 
-## Beyond the Date Type - Real World Dates, Times, and Timezones
-**Rule:** Use the Clock service for testable time-based logic and immutable primitives for timestamps.
+  // Show duration values
+  yield* Effect.logInfo(`Five seconds: ${Duration.toMillis(fiveSeconds)}ms`);
+  yield* Effect.logInfo(
+    `One hundred millis: ${Duration.toMillis(oneHundredMillis)}ms`
+  );
 
-### Example
-This example shows a function that creates a timestamped event. It depends on the `Clock` service, making it fully testable.
+  // Show comparison
+  yield* Effect.logInfo(`Is 5 seconds longer than 100ms? ${isLonger}`);
 
-```typescript
-import { Effect, Clock, Layer } from "effect";
-import { TestClock } from "effect/TestClock";
-import { describe, it, expect } from "vitest";
+  // Run the timed program
+  yield* Effect.logInfo("Running timed program...");
+  yield* program;
 
-interface Event {
-  readonly message: string;
-  readonly timestamp: number; // Store as a primitive number (UTC millis)
-}
+  // Show more duration operations
+  const combined = Duration.sum(fiveSeconds, oneHundredMillis);
+  yield* Effect.logInfo(`Combined duration: ${Duration.toMillis(combined)}ms`);
 
-// This function is pure and testable because it depends on Clock
-const createEvent = (message: string): Effect.Effect<Event, never, Clock> =>
-  Effect.gen(function* () {
-    const timestamp = yield* Clock.currentTimeMillis;
-    return { message, timestamp };
-  });
+  // Show different duration units
+  const oneMinute = Duration.minutes(1);
+  yield* Effect.logInfo(`One minute: ${Duration.toMillis(oneMinute)}ms`);
 
-// --- Testing the function ---
-describe("createEvent", () => {
-  it("should use the time from the TestClock", () =>
-    Effect.gen(function* () {
-      // Manually set the virtual time
-      yield* TestClock.setTime(1672531200000); // Jan 1, 2023 UTC
-      const event = yield* createEvent("User logged in");
-
-      // The timestamp is predictable and testable
-      expect(event.timestamp).toBe(1672531200000);
-    }).pipe(Effect.provide(TestClock.layer), Effect.runPromise));
+  const isMinuteLonger = Duration.greaterThan(oneMinute, fiveSeconds);
+  yield* Effect.logInfo(`Is 1 minute longer than 5 seconds? ${isMinuteLonger}`);
 });
+
+Effect.runPromise(demonstration);
+
 ```
 
 ---
+

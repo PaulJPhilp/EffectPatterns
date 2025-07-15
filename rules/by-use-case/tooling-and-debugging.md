@@ -1,3 +1,5 @@
+# Tooling and Debugging Rules
+
 ## Supercharge Your Editor with the Effect LSP
 **Rule:** Install and use the Effect LSP extension for enhanced type information and error checking in your editor.
 
@@ -7,11 +9,24 @@ Imagine you have the following code. Without the LSP, hovering over `program` mi
 ```typescript
 import { Effect } from "effect";
 
+// Define Logger service using Effect.Service pattern
+class Logger extends Effect.Service<Logger>()(
+  "Logger",
+  {
+    sync: () => ({
+      log: (msg: string) => Effect.sync(() => console.log(`LOG: ${msg}`))
+    })
+  }
+) {}
+
 const program = Effect.succeed(42).pipe(
   Effect.map((n) => n.toString()),
   Effect.flatMap((s) => Effect.log(s)),
-  Effect.provide(Logger.live), // Assuming a Logger service
+  Effect.provide(Logger.Default)
 );
+
+// Run the program
+Effect.runPromise(program);
 ```
 
 With the Effect LSP installed, your editor would display a clear, readable overlay right above the `program` variable, looking something like this:
@@ -51,15 +66,13 @@ The "Good Example" is the workflow this pattern enables.
 // The AI generates this correct code:
 import { Effect } from "effect";
 import { UserService } from "./features/User/UserService";
-import { Logger } from "./core/Logger";
-
 const program = Effect.gen(function* () {
   const userService = yield* UserService;
-  const logger = yield* Logger;
 
   const user = yield* userService.getUser("123");
-  yield* logger.log(`Found user: ${user.name}`);
+  yield* Effect.log(`Found user: ${user.name}`);
 });
 ```
 
 ---
+

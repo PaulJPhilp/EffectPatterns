@@ -1,3 +1,121 @@
+# Building Data Pipelines Rules
+
+## Automatically Retry Failed Operations
+**Rule:** Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
+
+### Example
+This example simulates an API that fails the first two times it's called. The stream processes a list of IDs, and the `retry` operator ensures that the failing operation for `id: 2` is automatically retried until it succeeds.
+
+````typescript
+import { Effect, Stream, Schedule } from "effect";
+
+// A mock function that simulates a flaky API call
+const processItem = (id: number): Effect.Effect<string, Error> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`Attempting to process item ${id}...`);
+
+    // Item 2 fails on first attempt but succeeds on retry
+    if (id === 2) {
+      const random = Math.random();
+      if (random < 0.5) {
+        // 50% chance of failure for demonstration
+        yield* Effect.log(`Item ${id} failed, will retry...`);
+        return yield* Effect.fail(new Error("API is temporarily down"));
+      }
+    }
+
+    yield* Effect.log(`✅ Successfully processed item ${id}`);
+    return `Processed item ${id}`;
+  });
+
+const ids = [1, 2, 3];
+
+// Define a retry policy: 3 attempts with a fixed 100ms delay
+const retryPolicy = Schedule.recurs(3).pipe(
+  Schedule.addDelay(() => "100 millis")
+);
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Stream Retry on Failure Demo ===");
+  yield* Effect.log(
+    "Processing items with retry policy (3 attempts, 100ms delay)"
+  );
+
+  // Process each item individually with retry
+  const results = yield* Effect.forEach(
+    ids,
+    (id) =>
+      processItem(id).pipe(
+        Effect.retry(retryPolicy),
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            yield* Effect.log(
+              `❌ Item ${id} failed after all retries: ${error.message}`
+            );
+            return `Failed: item ${id}`;
+          })
+        )
+      ),
+    { concurrency: 1 }
+  );
+
+  yield* Effect.log("=== Results ===");
+  results.forEach((result, index) => {
+    console.log(`Item ${ids[index]}: ${result}`);
+  });
+
+  yield* Effect.log("✅ Stream processing completed");
+});
+
+Effect.runPromise(program).catch((error) => {
+  console.error("Unexpected error:", error);
+});
+/*
+Output:
+... level=INFO msg="Attempting to process item 1..."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Item 2 failed, attempt 1."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Item 2 failed, attempt 2."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Attempting to process item 3..."
+*/
+
+````
+
+## Collect All Results into a List
+**Rule:** Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.
+
+### Example
+This example creates a stream of numbers, filters for only the even ones, transforms them into strings, and then uses `runCollect` to gather the final results into a `Chunk`.
+
+```typescript
+import { Effect, Stream, Chunk } from 'effect';
+
+const program = Stream.range(1, 10).pipe(
+  // Find all the even numbers
+  Stream.filter((n) => n % 2 === 0),
+  // Transform them into strings
+  Stream.map((n) => `Even number: ${n}`),
+  // Run the stream and collect the results
+  Stream.runCollect
+);
+
+Effect.runPromise(program).then((results) => {
+  console.log('Collected results:', Chunk.toArray(results));
+});
+/*
+Output:
+Collected results: [
+  'Even number: 2',
+  'Even number: 4',
+  'Even number: 6',
+  'Even number: 8',
+  'Even number: 10'
+]
+*/
+```
+
 ## Create a Stream from a List
 **Rule:** Use Stream.fromIterable to begin a pipeline from an in-memory collection.
 
@@ -26,63 +144,189 @@ Output:
 */
 ```
 
-## Turn a Paginated API into a Single Stream
-**Rule:** Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.
+## Manage Resources Safely in a Pipeline
+**Rule:** Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline.
 
 ### Example
-This example simulates fetching users from a paginated API. The `fetchUsersPage` function gets one page of data and returns the next page number. `Stream.paginateEffect` uses this function to create a single stream of all users across all pages.
+This example creates and writes to a temporary file. `Stream.acquireRelease` is used to acquire a readable stream from that file. The pipeline then processes the file but is designed to fail partway through. The logs demonstrate that the `release` effect (which deletes the file) is still executed, preventing any resource leaks.
 
 ```typescript
-import { Effect, Stream, Chunk, Option } from 'effect';
+import { Effect, Layer } from "effect";
+import { FileSystem } from "@effect/platform/FileSystem";
+import { NodeFileSystem } from "@effect/platform-node";
+import * as path from "node:path";
 
-// --- Mock Paginated API ---
-interface User {
-  id: number;
-  name: string;
+interface ProcessError {
+  readonly _tag: "ProcessError";
+  readonly message: string;
 }
 
-const allUsers: User[] = Array.from({ length: 25 }, (_, i) => ({
-  id: i + 1,
-  name: `User ${i + 1}`,
-}));
+const ProcessError = (message: string): ProcessError => ({
+  _tag: "ProcessError",
+  message,
+});
 
-// This function simulates fetching a page of users from an API.
-const fetchUsersPage = (
-  page: number
-): Effect.Effect<[Chunk.Chunk<User>, Option.Option<number>], Error> => {
-  const pageSize = 10;
-  const offset = (page - 1) * pageSize;
-  const users = Chunk.fromIterable(allUsers.slice(offset, offset + pageSize));
+interface FileServiceType {
+  readonly createTempFile: () => Effect.Effect<{ filePath: string }, never>;
+  readonly cleanup: (filePath: string) => Effect.Effect<void, never>;
+  readonly readFile: (filePath: string) => Effect.Effect<string, never>;
+}
 
-  const nextPage =
-    Chunk.isNonEmpty(users) && allUsers.length > offset + pageSize
-      ? Option.some(page + 1)
-      : Option.none();
+export class FileService extends Effect.Service<FileService>()("FileService", {
+  sync: () => {
+    const filePath = path.join(__dirname, "temp-resource.txt");
+    return {
+      createTempFile: () => Effect.succeed({ filePath }),
+      cleanup: (filePath: string) =>
+        Effect.sync(() => console.log("✅ Resource cleaned up successfully")),
+      readFile: (filePath: string) =>
+        Effect.succeed("data 1\ndata 2\nFAIL\ndata 4"),
+    };
+  },
+}) {}
 
-  return Effect.succeed([users, nextPage]).pipe(
-    Effect.tap(() => Effect.log(`Fetched page ${page}`))
+// Process a single line
+const processLine = (line: string): Effect.Effect<void, ProcessError> =>
+  line === "FAIL"
+    ? Effect.fail(ProcessError("Failed to process line"))
+    : Effect.sync(() => console.log(`Processed: ${line}`));
+
+// Create and process the file with proper resource management
+const program = Effect.gen(function* () {
+  console.log("=== Stream Resource Management Demo ===");
+  console.log(
+    "This demonstrates proper resource cleanup even when errors occur"
   );
-};
 
-// --- The Pattern ---
-// Use paginateEffect, providing an initial state (page 1) and the fetch function.
-const userStream = Stream.paginateEffect(1, fetchUsersPage);
+  const fileService = yield* FileService;
+  const { filePath } = yield* fileService.createTempFile();
 
-const program = userStream.pipe(
-  Stream.runCollect,
-  Effect.map((users) => users.length)
+  // Use scoped to ensure cleanup happens even on failure
+  yield* Effect.scoped(
+    Effect.gen(function* () {
+      yield* Effect.addFinalizer(() => fileService.cleanup(filePath));
+
+      const content = yield* fileService.readFile(filePath);
+      const lines = content.split("\n");
+
+      // Process each line, continuing even if some fail
+      for (const line of lines) {
+        yield* processLine(line).pipe(
+          Effect.catchAll((error) =>
+            Effect.sync(() =>
+              console.log(`⚠️  Skipped line due to error: ${error.message}`)
+            )
+          )
+        );
+      }
+
+      console.log("✅ Processing completed with proper resource management");
+    })
+  );
+});
+
+// Run the program with FileService layer
+Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
+  (error) => {
+    console.error("Unexpected error:", error);
+  }
 );
 
-Effect.runPromise(program).then((totalUsers) => {
-  console.log(`Total users fetched from all pages: ${totalUsers}`);
+```
+
+## Process a Large File with Constant Memory
+**Rule:** Use Stream.fromReadable with a Node.js Readable stream to process files efficiently.
+
+### Example
+This example demonstrates reading a text file, splitting it into individual lines, and processing each line. The combination of `Stream.fromReadable`, `Stream.decodeText`, and `Stream.splitLines` is a powerful and common pattern for handling text-based files.
+
+```typescript
+import { FileSystem } from '@effect/platform';
+import { NodeFileSystem } from '@effect/platform-node';
+import type { PlatformError } from '@effect/platform/Error';
+import { Effect, Stream } from 'effect';
+import * as path from 'node:path';
+
+const processFile = (
+  filePath: string,
+  content: string
+): Effect.Effect<void, PlatformError, FileSystem.FileSystem> =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+
+    // Write content to file
+    yield* fs.writeFileString(filePath, content);
+
+    // Create a stream from file content
+    const fileStream = Stream.fromEffect(fs.readFileString(filePath))
+      .pipe(
+        // Split content into lines
+        Stream.map((content: string) => content.split('\n')),
+        Stream.flatMap(Stream.fromIterable),
+        // Process each line
+        Stream.tap((line) => Effect.log(`Processing: ${line}`))
+      );
+
+    // Run the stream to completion
+    yield* Stream.runDrain(fileStream);
+
+    // Clean up file
+    yield* fs.remove(filePath);
+  });
+
+const program = Effect.gen(function* () {
+  const filePath = path.join(__dirname, 'large-file.txt');
+
+  yield* processFile(
+    filePath,
+    'line 1\nline 2\nline 3'
+  ).pipe(
+    Effect.catchAll((error: PlatformError) =>
+      Effect.logError(`Error processing file: ${error.message}`)
+    )
+  );
 });
+
+Effect.runPromise(
+  program.pipe(
+    Effect.provide(NodeFileSystem.layer)
+  )
+).catch(console.error);
 /*
 Output:
-... level=INFO msg="Fetched page 1"
-... level=INFO msg="Fetched page 2"
-... level=INFO msg="Fetched page 3"
-Total users fetched from all pages: 25
+... level=INFO msg="Processing: line 1"
+... level=INFO msg="Processing: line 2"
+... level=INFO msg="Processing: line 3"
 */
+```
+
+## Process collections of data asynchronously
+**Rule:** Leverage Stream to process collections effectfully with built-in concurrency control and resource safety.
+
+### Example
+This example processes a list of IDs by fetching user data for each one. `Stream.mapEffect` is used to apply an effectful function (`getUserById`) to each element, with concurrency limited to 2 simultaneous requests.
+
+```typescript
+import { Effect, Stream, Chunk } from 'effect';
+
+// A mock function that simulates fetching a user from a database
+const getUserById = (id: number): Effect.Effect<{ id: number; name: string }, Error> =>
+  Effect.succeed({ id, name: `User ${id}` }).pipe(
+    Effect.delay('100 millis'),
+    Effect.tap(() => Effect.log(`Fetched user ${id}`))
+  );
+
+// The stream-based program
+const program = Stream.fromIterable([1, 2, 3, 4, 5]).pipe(
+  // Process each item with an Effect, limiting concurrency to 2
+  Stream.mapEffect(getUserById, { concurrency: 2 }),
+  // Run the stream and collect all results into a Chunk
+  Stream.runCollect
+);
+
+Effect.runPromise(program).then((users) => {
+  console.log('All users fetched:', Chunk.toArray(users));
+});
 ```
 
 ## Process Items Concurrently
@@ -114,8 +358,9 @@ const program = Stream.fromIterable(ids).pipe(
 const timedProgram = Effect.timed(program);
 
 Effect.runPromise(timedProgram).then(([duration, _]) => {
-  console.log(`\nTotal time: ${Math.round(duration.millis / 1000)} seconds`);
-});
+  const durationMs = Number(duration);
+  console.log(`\nTotal time: ${Math.round(durationMs / 1000)} seconds`);
+}).catch(console.error);
 /*
 Output:
 ... level=INFO msg="Starting item 1..."
@@ -168,68 +413,6 @@ Output:
 */
 ```
 
-## Manage Resources Safely in a Pipeline
-**Rule:** Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline.
-
-### Example
-This example creates and writes to a temporary file. `Stream.acquireRelease` is used to acquire a readable stream from that file. The pipeline then processes the file but is designed to fail partway through. The logs demonstrate that the `release` effect (which deletes the file) is still executed, preventing any resource leaks.
-
-```typescript
-import { Effect, Stream } from 'effect';
-import { NodeFileSystem } from '@effect/platform-node';
-import * as path from 'node:path';
-import * as fs from 'node:fs';
-
-// The resource we want to manage: a file handle
-const acquire = Effect.gen(function* () {
-  const fs = yield* NodeFileSystem;
-  const filePath = path.join(__dirname, 'temp-resource.txt');
-  yield* fs.writeFileString(filePath, 'data 1\ndata 2\nFAIL\ndata 4');
-  yield* Effect.log('Resource ACQUIRED: Opened file for reading.');
-  return fs.createReadStream(filePath);
-});
-
-// The release function for our resource
-const release = (stream: fs.ReadStream) =>
-  Effect.gen(function* () {
-    const fs = yield* NodeFileSystem;
-    const filePath = path.join(__dirname, 'temp-resource.txt');
-    yield* fs.remove(filePath);
-    yield* Effect.log('Resource RELEASED: Closed and deleted file.');
-  });
-
-// The stream that uses the acquired resource
-const stream = Stream.acquireRelease(acquire, release).pipe(
-  Stream.flatMap((readable) => Stream.fromReadable(() => readable)),
-  Stream.decodeText('utf-8'),
-  Stream.splitLines,
-  Stream.tap((line) => Effect.log(`Processing: ${line}`)),
-  // Introduce a failure to demonstrate release is still called
-  Stream.mapEffect((line) =>
-    line === 'FAIL' ? Effect.fail('Boom!') : Effect.succeed(line)
-  )
-);
-
-// We expect this program to fail, but the release logic should still execute.
-const program = Stream.runDrain(stream);
-
-Effect.runPromiseExit(program).then((exit) => {
-  if (exit._tag === 'Failure') {
-    console.log('\nPipeline failed as expected, but resources were cleaned up.');
-  }
-});
-/*
-Output:
-... level=INFO msg="Resource ACQUIRED: Opened file for reading."
-... level=INFO msg="Processing: data 1"
-... level=INFO msg="Processing: data 2"
-... level=INFO msg="Processing: FAIL"
-... level=INFO msg="Resource RELEASED: Closed and deleted file."
-
-Pipeline failed as expected, but resources were cleaned up.
-*/
-```
-
 ## Run a Pipeline for its Side Effects
 **Rule:** Use Stream.runDrain to execute a stream for its side effects when you don't need the final values.
 
@@ -265,159 +448,84 @@ All tasks have been processed.
 */
 ```
 
-## Process collections of data asynchronously
-**Rule:** Leverage Stream to process collections effectfully with built-in concurrency control and resource safety.
+## Turn a Paginated API into a Single Stream
+**Rule:** Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.
 
 ### Example
-This example processes a list of IDs by fetching user data for each one. `Stream.mapEffect` is used to apply an effectful function (`getUserById`) to each element, with concurrency limited to 2 simultaneous requests.
+This example simulates fetching users from a paginated API. The `fetchUsersPage` function gets one page of data and returns the next page number. `Stream.paginateEffect` uses this function to create a single stream of all users across all pages.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk, Option } from 'effect';
 
-// A mock function that simulates fetching a user from a database
-const getUserById = (id: number): Effect.Effect<{ id: number; name: string }, Error> =>
-  Effect.succeed({ id, name: `User ${id}` }).pipe(
-    Effect.delay('100 millis'),
-    Effect.tap(() => Effect.log(`Fetched user ${id}`))
-  );
+// --- Mock Paginated API ---
+interface User {
+  id: number;
+  name: string;
+}
 
-// The stream-based program
-const program = Stream.fromIterable([1, 2, 3, 4, 5]).pipe(
-  // Process each item with an Effect, limiting concurrency to 2
-  Stream.mapEffect(getUserById, { concurrency: 2 }),
-  // Run the stream and collect all results into a Chunk
-  Stream.runCollect
-);
+// Define FetchError as a class with a literal type tag
+class FetchError {
+  readonly _tag = 'FetchError' as const;
+  constructor(readonly message: string) {}
+}
 
-Effect.runPromise(program).then((users) => {
-  console.log('All users fetched:', Chunk.toArray(users));
-});
-```
+// Helper to create FetchError instances
+const fetchError = (message: string): FetchError => new FetchError(message);
 
-## Process a Large File with Constant Memory
-**Rule:** Use Stream.fromReadable with a Node.js Readable stream to process files efficiently.
+const allUsers: User[] = Array.from({ length: 25 }, (_, i) => ({
+  id: i + 1,
+  name: `User ${i + 1}`,
+}));
 
-### Example
-This example demonstrates reading a text file, splitting it into individual lines, and processing each line. The combination of `Stream.fromReadable`, `Stream.decodeText`, and `Stream.splitLines` is a powerful and common pattern for handling text-based files.
-
-```typescript
-import { Effect, Stream } from 'effect';
-import { NodeFileSystem } from '@effect/platform-node';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-
-// This program reads a file named 'large-file.txt' line by line.
-// First, let's ensure the file exists for the example.
-const program = Effect.gen(function* () {
-  const fs = yield* NodeFileSystem;
-  const filePath = path.join(__dirname, 'large-file.txt');
-
-  // Create a dummy file for the example
-  yield* fs.writeFileString(filePath, 'line 1\nline 2\nline 3');
-
-  // Create a Node.js readable stream and convert it to an Effect Stream
-  const stream = Stream.fromReadable(() => fs.createReadStream(filePath)).pipe(
-    // Decode the raw buffer chunks into text
-    Stream.decodeText('utf-8'),
-    // Split the text stream into a stream of individual lines
-    Stream.splitLines,
-    // Process each line
-    Stream.tap((line) => Effect.log(`Processing: ${line}`))
-  );
-
-  // Run the stream for its side effects and ignore the output
-  yield* Stream.runDrain(stream);
-
-  // Clean up the dummy file
-  yield* fs.remove(filePath);
-});
-
-Effect.runPromise(program);
-/*
-Output:
-... level=INFO msg="Processing: line 1"
-... level=INFO msg="Processing: line 2"
-... level=INFO msg="Processing: line 3"
-*/
-```
-
-## Collect All Results into a List
-**Rule:** Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.
-
-### Example
-This example creates a stream of numbers, filters for only the even ones, transforms them into strings, and then uses `runCollect` to gather the final results into a `Chunk`.
-
-```typescript
-import { Effect, Stream, Chunk } from 'effect';
-
-const program = Stream.range(1, 10).pipe(
-  // Find all the even numbers
-  Stream.filter((n) => n % 2 === 0),
-  // Transform them into strings
-  Stream.map((n) => `Even number: ${n}`),
-  // Run the stream and collect the results
-  Stream.runCollect
-);
-
-Effect.runPromise(program).then((results) => {
-  console.log('Collected results:', Chunk.toArray(results));
-});
-/*
-Output:
-Collected results: [
-  'Even number: 2',
-  'Even number: 4',
-  'Even number: 6',
-  'Even number: 8',
-  'Even number: 10'
-]
-*/
-```
-
-## Automatically Retry Failed Operations
-**Rule:** Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
-
-### Example
-This example simulates an API that fails the first two times it's called. The stream processes a list of IDs, and the `retry` operator ensures that the failing operation for `id: 2` is automatically retried until it succeeds.
-
-````typescript
-import { Effect, Stream, Schedule } from 'effect';
-
-let attempts = 0;
-// A mock function that simulates a flaky API call
-const processItem = (id: number): Effect.Effect<string, Error> =>
+// This function simulates fetching a page of users from an API.
+const fetchUsersPage = (
+  page: number
+): Effect.Effect<[Chunk.Chunk<User>, Option.Option<number>], FetchError> =>
   Effect.gen(function* () {
-    yield* Effect.log(`Attempting to process item ${id}...`);
-    if (id === 2 && attempts < 2) {
-      attempts++;
-      yield* Effect.log(`Item ${id} failed, attempt ${attempts}.`);
-      return yield* Effect.fail(new Error('API is temporarily down'));
+    const pageSize = 10;
+    const offset = (page - 1) * pageSize;
+
+    // Simulate potential API errors
+    if (page < 1) {
+      return yield* Effect.fail(fetchError('Invalid page number'));
     }
-    return `Successfully processed item ${id}`;
+
+    const users = Chunk.fromIterable(allUsers.slice(offset, offset + pageSize));
+
+    const nextPage =
+      Chunk.isNonEmpty(users) && allUsers.length > offset + pageSize
+        ? Option.some(page + 1)
+        : Option.none();
+
+    yield* Effect.log(`Fetched page ${page}`);
+    return [users, nextPage];
   });
 
-const ids = [1, 2, 3];
+// --- The Pattern ---
+// Use paginateEffect, providing an initial state (page 1) and the fetch function.
+const userStream = Stream.paginateEffect(1, fetchUsersPage);
 
-// Define a retry policy: 3 attempts with a fixed 100ms delay
-const retryPolicy = Schedule.recurs(3).pipe(Schedule.addDelay('100 millis'));
-
-const program = Stream.fromIterable(ids).pipe(
-  // Apply the processing function to each item
-  Stream.mapEffect(processItem, { concurrency: 1 }),
-  // Apply the retry policy to the entire stream
-  Stream.retry(retryPolicy),
-  Stream.runDrain
+const program = userStream.pipe(
+  Stream.runCollect,
+  Effect.map((users) => users.length),
+  Effect.tap((totalUsers) => 
+    Effect.log(`Total users fetched: ${totalUsers}`)
+  ),
+  Effect.catchTag('FetchError', (error) => 
+    Effect.succeed(`Error fetching users: ${error.message}`)
+  )
 );
 
-Effect.runPromise(program);
+// Run the program
+Effect.runPromise(program).then(console.log);
+
 /*
 Output:
-... level=INFO msg="Attempting to process item 1..."
-... level=INFO msg="Attempting to process item 2..."
-... level=INFO msg="Item 2 failed, attempt 1."
-... level=INFO msg="Attempting to process item 2..."
-... level=INFO msg="Item 2 failed, attempt 2."
-... level=INFO msg="Attempting to process item 2..."
-... level=INFO msg="Attempting to process item 3..."
+... level=INFO msg="Fetched page 1"
+... level=INFO msg="Fetched page 2"
+... level=INFO msg="Fetched page 3"
+... level=INFO msg="Total users fetched: 25"
+25
 */
-````
+```
+

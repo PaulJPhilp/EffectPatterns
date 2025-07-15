@@ -1,18 +1,73 @@
-## Execute Synchronous Effects with Effect.runSync
-**Rule:** Execute synchronous effects with Effect.runSync.
+# Project Setup & Execution Rules
+
+## Create a Managed Runtime for Scoped Resources
+**Rule:** Create a managed runtime for scoped resources.
 
 ### Example
 ```typescript
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 
-const program = Effect.succeed(10).pipe(Effect.map((n) => n * 2));
+class DatabasePool extends Effect.Service<DatabasePool>()(
+  "DbPool",
+  {
+    effect: Effect.gen(function* () {
+      yield* Effect.log("Acquiring pool");
+      return {
+        query: () => Effect.succeed("result")
+      };
+    })
+  }
+) {}
 
-const result = Effect.runSync(program); // result is 20
+// Create a program that uses the DatabasePool service
+const program = Effect.gen(function* () {
+  const db = yield* DatabasePool;
+  yield* Effect.log("Using DB");
+  yield* db.query();
+});
+
+// Run the program with the service implementation
+Effect.runPromise(
+  program.pipe(
+    Effect.provide(DatabasePool.Default),
+    Effect.scoped
+  )
+);
 ```
 
 **Explanation:**  
-Use `runSync` only for Effects that are fully synchronous. If the Effect
-contains async code, use `runPromise` instead.
+`Layer.launch` ensures that resources are acquired and released safely, even
+in the event of errors or interruptions.
+
+## Create a Reusable Runtime from Layers
+**Rule:** Create a reusable runtime from layers.
+
+### Example
+```typescript
+import { Effect, Layer, Runtime } from "effect";
+
+class GreeterService extends Effect.Service<GreeterService>()(
+  "Greeter",
+  {
+    sync: () => ({
+      greet: (name: string) => Effect.sync(() => `Hello ${name}`)
+    })
+  }
+) {}
+
+const runtime = Effect.runSync(
+  Layer.toRuntime(GreeterService.Default).pipe(
+    Effect.scoped
+  )
+);
+
+// In a server, you would reuse `run` for every request.
+Runtime.runPromise(runtime)(Effect.log("Hello"));
+```
+
+**Explanation:**  
+By compiling your layers into a Runtime once, you avoid rebuilding the
+dependency graph for every effect execution.
 
 ## Execute Asynchronous Effects with Effect.runPromise
 **Rule:** Execute asynchronous effects with Effect.runPromise.
@@ -65,26 +120,69 @@ setTimeout(() => {
 
 ---
 
-## Create a Reusable Runtime from Layers
-**Rule:** Create a reusable runtime from layers.
+## Execute Synchronous Effects with Effect.runSync
+**Rule:** Execute synchronous effects with Effect.runSync.
 
 ### Example
 ```typescript
-import { Effect, Layer, Runtime } from "effect";
+import { Effect } from "effect"
 
-class GreeterService extends Effect.Tag("Greeter")<GreeterService, any> {}
-const GreeterLive = Layer.succeed(GreeterService, {});
+// Simple synchronous program
+const program1 = Effect.sync(() => {
+  const n = 10
+  const result = n * 2
+  console.log(`Simple program result: ${result}`)
+  return result
+})
 
-const runtime = Layer.toRuntime(GreeterLive);
-const run = Runtime.runPromise(runtime);
+// Run simple program
+Effect.runSync(program1)
 
-// In a server, you would reuse `run` for every request.
-run(Effect.log("Hello"));
+// Program with logging
+const program2 = Effect.gen(function* () {
+  yield* Effect.logInfo("Starting calculation...")
+  const n = yield* Effect.sync(() => 10)
+  yield* Effect.logInfo(`Got number: ${n}`)
+  const result = yield* Effect.sync(() => n * 2)
+  yield* Effect.logInfo(`Result: ${result}`)
+  return result
+})
+
+// Run with logging
+Effect.runSync(program2)
+
+// Program with error handling
+const program3 = Effect.gen(function* () {
+  yield* Effect.logInfo("Starting division...")
+  const n = yield* Effect.sync(() => 10)
+  const divisor = yield* Effect.sync(() => 0)
+  
+  yield* Effect.logInfo(`Attempting to divide ${n} by ${divisor}...`)
+  return yield* Effect.try({
+    try: () => {
+      if (divisor === 0) throw new Error("Cannot divide by zero")
+      return n / divisor
+    },
+    catch: (error) => {
+      if (error instanceof Error) {
+        return error
+      }
+      return new Error("Unknown error occurred")
+    }
+  })
+}).pipe(
+  Effect.catchAll((error) =>
+    Effect.logInfo(`Error occurred: ${error.message}`)
+  )
+)
+
+// Run with error handling
+Effect.runSync(program3)
 ```
 
 **Explanation:**  
-By compiling your layers into a Runtime once, you avoid rebuilding the
-dependency graph for every effect execution.
+Use `runSync` only for Effects that are fully synchronous. If the Effect
+contains async code, use `runPromise` instead.
 
 ## Set Up a New Effect Project
 **Rule:** Set up a new Effect project.
@@ -108,30 +206,3 @@ Effect.runSync(program);
 This setup ensures you have TypeScript and Effect ready to go, with strict
 type-checking for maximum safety and correctness.
 
-## Create a Managed Runtime for Scoped Resources
-**Rule:** Create a managed runtime for scoped resources.
-
-### Example
-```typescript
-import { Effect, Layer } from "effect";
-
-class DatabasePool extends Effect.Tag("DbPool")<DatabasePool, any> {}
-
-const DatabaseLive = Layer.scoped(
-  DatabasePool,
-  Effect.acquireRelease(
-    Effect.log("Acquiring pool"),
-    () => Effect.log("Releasing pool"),
-  ),
-);
-
-const launchedApp = Layer.launch(
-  Effect.provide(Effect.log("Using DB"), DatabaseLive)
-);
-
-Effect.runPromise(launchedApp);
-```
-
-**Explanation:**  
-`Layer.launch` ensures that resources are acquired and released safely, even
-in the event of errors or interruptions.

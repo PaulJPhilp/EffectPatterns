@@ -1,6 +1,6 @@
-# Effect Coding Rules for AI (Cursor)
+# Effect Coding Rules for AI (Compact)
 
-This document lists key architectural and style rules for our Effect-TS codebase. Use these as guidelines when generating or refactoring code.
+This document lists key architectural and style rules for our Effect-TS codebase.
 
 ## Access Configuration from the Context
 **Rule:** Access configuration from the Effect context.
@@ -35,6 +35,9 @@ This document lists key architectural and style rules for our Effect-TS codebase
 ## Comparing Data by Value with Structural Equality
 **Rule:** Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
 
+## Compose Resource Lifecycles with `Layer.merge`
+**Rule:** Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.
+
 ## Conditionally Branching Workflows
 **Rule:** Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
 
@@ -52,6 +55,9 @@ This document lists key architectural and style rules for our Effect-TS codebase
 
 ## Create a Reusable Runtime from Layers
 **Rule:** Create a reusable runtime from layers.
+
+## Create a Service Layer from a Managed Resource
+**Rule:** Provide a managed resource to the application context using `Layer.scoped`.
 
 ## Create a Stream from a List
 **Rule:** Use Stream.fromIterable to begin a pipeline from an in-memory collection.
@@ -122,6 +128,9 @@ This document lists key architectural and style rules for our Effect-TS codebase
 ## Manage Shared State Safely with Ref
 **Rule:** Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
 
+## Manually Manage Lifecycles with `Scope`
+**Rule:** Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup.
+
 ## Mapping Errors to Fit Your Domain
 **Rule:** Use Effect.mapError to transform errors and create clean architectural boundaries between layers.
 
@@ -188,6 +197,9 @@ This document lists key architectural and style rules for our Effect-TS codebase
 ## Run Independent Effects in Parallel with Effect.all
 **Rule:** Use Effect.all to execute a collection of independent effects concurrently.
 
+## Safely Bracket Resource Usage with `acquireRelease`
+**Rule:** Bracket the use of a resource between an `acquire` and a `release` effect.
+
 ## Send a JSON Response
 **Rule:** Use Http.response.json to automatically serialize data structures into a JSON response.
 
@@ -253,3 +265,4 @@ This document lists key architectural and style rules for our Effect-TS codebase
 
 ## Write Tests That Adapt to Application Code
 **Rule:** Write tests that adapt to application code.
+

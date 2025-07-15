@@ -1,19 +1,33 @@
+# Application Configuration Rules
+
 ## Access Configuration from the Context
 **Rule:** Access configuration from the Effect context.
 
 ### Example
 ```typescript
-import { Config, Effect } from "effect";
+import { Config, Effect, Layer } from "effect";
 
-const ServerConfig = Config.all({
-  host: Config.string("HOST"),
-  port: Config.number("PORT"),
-});
+// Define config service
+class AppConfig extends Effect.Service<AppConfig>()(
+  "AppConfig",
+  {
+    sync: () => ({
+      host: "localhost",
+      port: 3000
+    })
+  }
+) {}
 
+// Create program that uses config
 const program = Effect.gen(function* () {
-  const config = yield* ServerConfig;
+  const config = yield* AppConfig;
   yield* Effect.log(`Starting server on http://${config.host}:${config.port}`);
 });
+
+// Run the program with default config
+Effect.runPromise(
+  Effect.provide(program, AppConfig.Default)
+);
 ```
 
 **Explanation:**  
@@ -24,14 +38,36 @@ By yielding the config object, you make your dependency explicit and leverage Ef
 
 ### Example
 ```typescript
-import { Config } from "effect";
+import { Config, Effect, ConfigProvider, Layer } from "effect"
 
 const ServerConfig = Config.nested("SERVER")(
   Config.all({
     host: Config.string("HOST"),
     port: Config.number("PORT"),
-  }),
-);
+  })
+)
+
+// Example program that uses the config
+const program = Effect.gen(function* () {
+  const config = yield* ServerConfig
+  yield* Effect.logInfo(`Server config loaded: ${JSON.stringify(config)}`)
+})
+
+// Create a config provider with test values
+const TestConfig = ConfigProvider.fromMap(
+  new Map([
+    ["SERVER.HOST", "localhost"],
+    ["SERVER.PORT", "3000"]
+  ])
+)
+
+// Run with test config
+Effect.runPromise(
+  Effect.provide(
+    program,
+    Layer.setConfigProvider(TestConfig)
+  )
+)
 ```
 
 **Explanation:**  
@@ -42,16 +78,27 @@ This schema ensures that both `host` and `port` are present and properly typed, 
 
 ### Example
 ````typescript
-import { Config, Effect, Layer } from "effect";
+import { Effect, Layer } from "effect";
 
-const ServerConfig = Config.all({ port: Config.number("PORT") });
+class ServerConfig extends Effect.Service<ServerConfig>()(
+  "ServerConfig",
+  {
+    sync: () => ({
+      port: process.env.PORT ? parseInt(process.env.PORT) : 8080
+    })
+  }
+) {}
 
-const program = Effect.log("Application starting...");
+const program = Effect.gen(function* () {
+  const config = yield* ServerConfig;
+  yield* Effect.log(`Starting application on port ${config.port}...`);
+});
 
-const configLayer = Config.layer(ServerConfig);
-
-const runnable = Effect.provide(program, configLayer);
+Effect.runPromise(
+  Effect.provide(program, ServerConfig.Default)
+).catch(console.error);
 ````
 
 **Explanation:**  
 This approach makes configuration available contextually, supporting better testing and modularity.
+

@@ -1,6 +1,6 @@
 ---
 title: "A Clear and Descriptive Title"
-id: "a-unique-kebab-case-id"
+id: "a-unique-kebab-case-id" # Must match the filename
 skillLevel: "beginner" # beginner | intermediate | advanced
 useCase:
   - "A High-Level Goal (e.g., Domain Modeling)"
@@ -12,7 +12,16 @@ rule:
   description: "A short, imperative statement capturing the core rule of this pattern."
 author: "your-github-username"
 related:
-  - "related-pattern-id-one"
+  - "related-pattern-id-one" # Optional, other pattern IDs
+---
+
+# Instructions
+
+1. Save this template as `/content/new/{pattern-id}.mdx`
+2. Create TypeScript example in `/content/new/src/{pattern-id}.ts`
+3. Run `npm run ingest` to process your pattern
+4. Run `npm run pipeline` to publish
+
 ---
 
 ## Guideline
@@ -31,10 +40,20 @@ Explain why this pattern is important. What benefits does it provide?
 
 Provide a clear, well-commented code example that demonstrates the pattern.
 
-```typescript
-// Your code here
-```
+<Example path="./src/a-unique-kebab-case-id.ts" />
+
 ## Anti-Pattern
+
+Show what NOT to do and explain why it's problematic.
+
 ```typescript
 // Your anti-pattern code here
 ```
+
+## Explanation
+
+Provide a detailed explanation of:
+1. How the pattern works
+2. When to use it
+3. Key implementation details
+4. Any important considerations

@@ -2,441 +2,821 @@
   {
     "id": "access-config-in-context",
     "title": "Access Configuration from the Context",
-    "description": "Access configuration from the Effect context."
+    "description": "Access configuration from the Effect context.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Application Configuration"
+    ]
   },
   {
     "id": "accessing-current-time-with-clock",
     "title": "Accessing the Current Time with Clock",
-    "description": "Use the Clock service to get the current time, enabling deterministic testing with TestClock."
+    "description": "Use the Clock service to get the current time, enabling deterministic testing with TestClock.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Modeling Time",
+      "Testing"
+    ]
   },
   {
     "id": "accumulate-multiple-errors-with-either",
     "title": "Accumulate Multiple Errors with Either",
-    "description": "Use Either to accumulate multiple validation errors instead of failing on the first one."
+    "description": "Use Either to accumulate multiple validation errors instead of failing on the first one.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Error Management",
+      "Domain Modeling"
+    ]
   },
   {
     "id": "add-caching-by-wrapping-a-layer",
     "title": "Add Caching by Wrapping a Layer",
-    "description": "Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation."
+    "description": "Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Making HTTP Requests",
+      "Concurrency"
+    ]
   },
   {
     "id": "add-custom-metrics",
     "title": "Add Custom Metrics to Your Application",
-    "description": "Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring."
+    "description": "Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Observability",
+      "Making HTTP Requests"
+    ]
   },
   {
     "id": "stream-retry-on-failure",
     "title": "Automatically Retry Failed Operations",
-    "description": "Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures."
+    "description": "Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Building Data Pipelines"
+    ]
   },
   {
     "id": "avoid-long-andthen-chains",
     "title": "Avoid Long Chains of .andThen; Use Generators Instead",
-    "description": "Prefer generators over long chains of .andThen."
+    "description": "Prefer generators over long chains of .andThen.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Domain Modeling"
+    ]
   },
   {
     "id": "beyond-the-date-type",
     "title": "Beyond the Date Type - Real World Dates, Times, and Timezones",
-    "description": "Use the Clock service for testable time-based logic and immutable primitives for timestamps."
+    "description": "Use the Clock service for testable time-based logic and immutable primitives for timestamps.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Modeling Time"
+    ]
   },
   {
     "id": "build-a-basic-http-server",
     "title": "Build a Basic HTTP Server",
-    "description": "Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server."
+    "description": "Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Making HTTP Requests"
+    ]
   },
   {
     "id": "stream-collect-results",
     "title": "Collect All Results into a List",
-    "description": "Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk."
+    "description": "Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Building Data Pipelines"
+    ]
   },
   {
     "id": "comparing-data-by-value-with-structural-equality",
     "title": "Comparing Data by Value with Structural Equality",
-    "description": "Use Data.struct or implement the Equal interface for value-based comparison of objects and classes."
+    "description": "Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Modeling Data"
+    ]
   },
   {
     "id": "compose-scoped-layers",
     "title": "Compose Resource Lifecycles with `Layer.merge`",
-    "description": "Compose multiple scoped layers using `Layer.merge` or by providing one layer to another."
+    "description": "Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Application Architecture",
+      "Resource Management",
+      "Dependency Injection"
+    ]
   },
   {
     "id": "conditionally-branching-workflows",
     "title": "Conditionally Branching Workflows",
-    "description": "Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching."
+    "description": "Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Core Concepts",
+      "Error Management"
+    ]
   },
   {
     "id": "control-flow-with-combinators",
     "title": "Control Flow with Conditional Combinators",
-    "description": "Use conditional combinators for control flow."
+    "description": "Use conditional combinators for control flow.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "control-repetition-with-schedule",
     "title": "Control Repetition with Schedule",
-    "description": "Use Schedule to create composable policies for controlling the repetition and retrying of effects."
+    "description": "Use Schedule to create composable policies for controlling the repetition and retrying of effects.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Core Concepts",
+      "Error Management",
+      "Concurrency"
+    ]
   },
   {
     "id": "launch-http-server",
     "title": "Create a Basic HTTP Server",
-    "description": "Use Http.server.serve with a platform-specific layer to run an HTTP application."
+    "description": "Use Http.server.serve with a platform-specific layer to run an HTTP application.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Building APIs"
+    ]
   },
   {
     "id": "create-managed-runtime-for-scoped-resources",
     "title": "Create a Managed Runtime for Scoped Resources",
-    "description": "Create a managed runtime for scoped resources."
+    "description": "Create a managed runtime for scoped resources.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Project Setup & Execution",
+      "Making HTTP Requests",
+      "Resource Management"
+    ]
   },
   {
     "id": "create-reusable-runtime-from-layers",
     "title": "Create a Reusable Runtime from Layers",
-    "description": "Create a reusable runtime from layers."
+    "description": "Create a reusable runtime from layers.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Project Setup & Execution"
+    ]
   },
   {
     "id": "scoped-service-layer",
     "title": "Create a Service Layer from a Managed Resource",
-    "description": "Provide a managed resource to the application context using `Layer.scoped`."
+    "description": "Provide a managed resource to the application context using `Layer.scoped`.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Resource Management",
+      "Dependency Injection",
+      "Application Architecture"
+    ]
   },
   {
     "id": "stream-from-iterable",
     "title": "Create a Stream from a List",
-    "description": "Use Stream.fromIterable to begin a pipeline from an in-memory collection."
+    "description": "Use Stream.fromIterable to begin a pipeline from an in-memory collection.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Building Data Pipelines"
+    ]
   },
   {
     "id": "create-a-testable-http-client-service",
     "title": "Create a Testable HTTP Client Service",
-    "description": "Define an HttpClient service with distinct Live and Test layers to enable testable API interactions."
+    "description": "Define an HttpClient service with distinct Live and Test layers to enable testable API interactions.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Making HTTP Requests",
+      "Testing"
+    ]
   },
   {
     "id": "create-pre-resolved-effect",
     "title": "Create Pre-resolved Effects with succeed and fail",
-    "description": "Create pre-resolved effects with succeed and fail."
+    "description": "Create pre-resolved effects with succeed and fail.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "decouple-fibers-with-queue-pubsub",
     "title": "Decouple Fibers with Queues and PubSub",
-    "description": "Use Queue for point-to-point work distribution and PubSub for broadcast messaging between fibers."
+    "description": "Use Queue for point-to-point work distribution and PubSub for broadcast messaging between fibers.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Concurrency"
+    ]
   },
   {
     "id": "define-config-schema",
     "title": "Define a Type-Safe Configuration Schema",
-    "description": "Define a type-safe configuration schema."
+    "description": "Define a type-safe configuration schema.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Application Configuration"
+    ]
   },
   {
     "id": "define-contracts-with-schema",
     "title": "Define Contracts Upfront with Schema",
-    "description": "Define contracts upfront with schema."
+    "description": "Define contracts upfront with schema.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Domain Modeling"
+    ]
   },
   {
     "id": "define-tagged-errors",
     "title": "Define Type-Safe Errors with Data.TaggedError",
-    "description": "Define type-safe errors with Data.TaggedError."
+    "description": "Define type-safe errors with Data.TaggedError.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Error Management",
+      "Domain Modeling"
+    ]
   },
   {
     "id": "distinguish-not-found-from-errors",
     "title": "Distinguish 'Not Found' from Errors",
-    "description": "Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures."
+    "description": "Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Error Management",
+      "Domain Modeling"
+    ]
   },
   {
     "id": "execute-with-runpromise",
     "title": "Execute Asynchronous Effects with Effect.runPromise",
-    "description": "Execute asynchronous effects with Effect.runPromise."
+    "description": "Execute asynchronous effects with Effect.runPromise.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Project Setup & Execution"
+    ]
   },
   {
     "id": "execute-long-running-apps-with-runfork",
     "title": "Execute Long-Running Apps with Effect.runFork",
-    "description": "Use Effect.runFork to launch a long-running application as a manageable, detached fiber."
+    "description": "Use Effect.runFork to launch a long-running application as a manageable, detached fiber.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Project Setup & Execution",
+      "Concurrency"
+    ]
   },
   {
     "id": "execute-with-runsync",
     "title": "Execute Synchronous Effects with Effect.runSync",
-    "description": "Execute synchronous effects with Effect.runSync."
+    "description": "Execute synchronous effects with Effect.runSync.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Project Setup & Execution"
+    ]
   },
   {
     "id": "extract-path-parameters",
     "title": "Extract Path Parameters",
-    "description": "Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler."
+    "description": "Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Building APIs"
+    ]
   },
   {
     "id": "handle-get-request",
     "title": "Handle a GET Request",
-    "description": "Use Http.router.get to associate a URL path with a specific response Effect."
+    "description": "Use Http.router.get to associate a URL path with a specific response Effect.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Building APIs"
+    ]
   },
   {
     "id": "handle-api-errors",
     "title": "Handle API Errors",
-    "description": "Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses."
+    "description": "Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Building APIs"
+    ]
   },
   {
     "id": "handle-errors-with-catch",
     "title": "Handle Errors with catchTag, catchTags, and catchAll",
-    "description": "Handle errors with catchTag, catchTags, and catchAll."
+    "description": "Handle errors with catchTag, catchTags, and catchAll.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Error Management"
+    ]
   },
   {
     "id": "handle-flaky-operations-with-retry-timeout",
     "title": "Handle Flaky Operations with Retries and Timeouts",
-    "description": "Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects."
+    "description": "Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Error Management"
+    ]
   },
   {
     "id": "handle-unexpected-errors-with-cause",
     "title": "Handle Unexpected Errors by Inspecting the Cause",
-    "description": "Handle unexpected errors by inspecting the cause."
+    "description": "Handle unexpected errors by inspecting the cause.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Error Management"
+    ]
   },
   {
     "id": "implement-graceful-shutdown",
     "title": "Implement Graceful Shutdown for Your Application",
-    "description": "Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications."
+    "description": "Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Concurrency",
+      "Resource Management"
+    ]
   },
   {
     "id": "leverage-structured-logging",
     "title": "Leverage Effect's Built-in Structured Logging",
-    "description": "Leverage Effect's built-in structured logging."
+    "description": "Leverage Effect's built-in structured logging.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Error Management"
+    ]
   },
   {
     "id": "make-http-client-request",
     "title": "Make an Outgoing HTTP Client Request",
-    "description": "Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem."
+    "description": "Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Building APIs"
+    ]
   },
   {
     "id": "manage-resource-lifecycles-with-scope",
     "title": "Manage Resource Lifecycles with Scope",
-    "description": "Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees."
+    "description": "Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Resource Management",
+      "Concurrency"
+    ]
   },
   {
     "id": "stream-manage-resources",
     "title": "Manage Resources Safely in a Pipeline",
-    "description": "Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline."
+    "description": "Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Building Data Pipelines"
+    ]
   },
   {
     "id": "manage-shared-state-with-ref",
     "title": "Manage Shared State Safely with Ref",
-    "description": "Use Ref to manage shared, mutable state concurrently, ensuring atomicity."
+    "description": "Use Ref to manage shared, mutable state concurrently, ensuring atomicity.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Core Concepts",
+      "Concurrency"
+    ]
   },
   {
     "id": "manual-scope-management",
     "title": "Manually Manage Lifecycles with `Scope`",
-    "description": "Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup."
+    "description": "Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Resource Management",
+      "Advanced Dependency Injection",
+      "Custom Layers"
+    ]
   },
   {
     "id": "mapping-errors-to-fit-your-domain",
     "title": "Mapping Errors to Fit Your Domain",
-    "description": "Use Effect.mapError to transform errors and create clean architectural boundaries between layers."
+    "description": "Use Effect.mapError to transform errors and create clean architectural boundaries between layers.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Error Management"
+    ]
   },
   {
     "id": "mocking-dependencies-in-tests",
     "title": "Mocking Dependencies in Tests",
-    "description": "Provide mock service implementations via a test-specific Layer to isolate the unit under test."
+    "description": "Provide mock service implementations via a test-specific Layer to isolate the unit under test.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Testing"
+    ]
   },
   {
     "id": "model-dependencies-as-services",
     "title": "Model Dependencies as Services",
-    "description": "Model dependencies as services."
+    "description": "Model dependencies as services.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Making HTTP Requests",
+      "Testing"
+    ]
   },
   {
     "id": "model-optional-values-with-option",
     "title": "Model Optional Values Safely with Option",
-    "description": "Use Option<A> to explicitly model values that may be absent, avoiding null or undefined."
+    "description": "Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Domain Modeling",
+      "Error Management"
+    ]
   },
   {
     "id": "model-validated-domain-types-with-brand",
     "title": "Model Validated Domain Types with Brand",
-    "description": "Model validated domain types with Brand."
+    "description": "Model validated domain types with Brand.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Domain Modeling"
+    ]
   },
   {
     "id": "organize-layers-into-composable-modules",
     "title": "Organize Layers into Composable Modules",
-    "description": "Organize services into modular Layers that are composed hierarchically to manage complexity in large applications."
+    "description": "Organize services into modular Layers that are composed hierarchically to manage complexity in large applications.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Testing"
+    ]
   },
   {
     "id": "parse-with-schema-decode",
     "title": "Parse and Validate Data with Schema.decode",
-    "description": "Parse and validate data with Schema.decode."
+    "description": "Parse and validate data with Schema.decode.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Domain Modeling"
+    ]
   },
   {
     "id": "poll-for-status-until-task-completes",
     "title": "Poll for Status Until a Task Completes",
-    "description": "Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes."
+    "description": "Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Concurrency"
+    ]
   },
   {
     "id": "process-collection-in-parallel-with-foreach",
     "title": "Process a Collection in Parallel with Effect.forEach",
-    "description": "Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit."
+    "description": "Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Concurrency"
+    ]
   },
   {
     "id": "stream-from-file",
     "title": "Process a Large File with Constant Memory",
-    "description": "Use Stream.fromReadable with a Node.js Readable stream to process files efficiently."
+    "description": "Use Stream.fromReadable with a Node.js Readable stream to process files efficiently.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Building Data Pipelines"
+    ]
   },
   {
     "id": "process-a-collection-of-data-asynchronously",
     "title": "Process collections of data asynchronously",
-    "description": "Leverage Stream to process collections effectfully with built-in concurrency control and resource safety."
+    "description": "Leverage Stream to process collections effectfully with built-in concurrency control and resource safety.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Building Data Pipelines"
+    ]
   },
   {
     "id": "stream-process-concurrently",
     "title": "Process Items Concurrently",
-    "description": "Use Stream.mapEffect with the `concurrency` option to process stream items in parallel."
+    "description": "Use Stream.mapEffect with the `concurrency` option to process stream items in parallel.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Building Data Pipelines"
+    ]
   },
   {
     "id": "stream-process-in-batches",
     "title": "Process Items in Batches",
-    "description": "Use Stream.grouped(n) to transform a stream of items into a stream of batched chunks."
+    "description": "Use Stream.grouped(n) to transform a stream of items into a stream of batched chunks.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Building Data Pipelines"
+    ]
   },
   {
     "id": "process-streaming-data-with-stream",
     "title": "Process Streaming Data with Stream",
-    "description": "Use Stream to model and process data that arrives over time in a composable, efficient way."
+    "description": "Use Stream to model and process data that arrives over time in a composable, efficient way.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "provide-config-layer",
     "title": "Provide Configuration to Your App via a Layer",
-    "description": "Provide configuration to your app via a Layer."
+    "description": "Provide configuration to your app via a Layer.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Application Configuration"
+    ]
   },
   {
     "id": "provide-dependencies-to-routes",
     "title": "Provide Dependencies to Routes",
-    "description": "Define dependencies with Effect.Service and provide them to your HTTP server using a Layer."
+    "description": "Define dependencies with Effect.Service and provide them to your HTTP server using a Layer.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Building APIs"
+    ]
   },
   {
     "id": "race-concurrent-effects",
     "title": "Race Concurrent Effects for the Fastest Result",
-    "description": "Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers."
+    "description": "Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Concurrency"
+    ]
   },
   {
     "id": "representing-time-spans-with-duration",
     "title": "Representing Time Spans with Duration",
-    "description": "Use the Duration data type to represent time intervals instead of raw numbers."
+    "description": "Use the Duration data type to represent time intervals instead of raw numbers.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Modeling Time"
+    ]
   },
   {
     "id": "retry-based-on-specific-errors",
     "title": "Retry Operations Based on Specific Errors",
-    "description": "Use predicate-based retry policies to retry an operation only for specific, recoverable errors."
+    "description": "Use predicate-based retry policies to retry an operation only for specific, recoverable errors.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Error Management"
+    ]
   },
   {
     "id": "stream-run-for-effects",
     "title": "Run a Pipeline for its Side Effects",
-    "description": "Use Stream.runDrain to execute a stream for its side effects when you don't need the final values."
+    "description": "Use Stream.runDrain to execute a stream for its side effects when you don't need the final values.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Building Data Pipelines"
+    ]
   },
   {
     "id": "run-background-tasks-with-fork",
     "title": "Run Background Tasks with Effect.fork",
-    "description": "Use Effect.fork to start a non-blocking background process and manage its lifecycle via its Fiber."
+    "description": "Use Effect.fork to start a non-blocking background process and manage its lifecycle via its Fiber.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Concurrency"
+    ]
   },
   {
     "id": "run-effects-in-parallel-with-all",
     "title": "Run Independent Effects in Parallel with Effect.all",
-    "description": "Use Effect.all to execute a collection of independent effects concurrently."
+    "description": "Use Effect.all to execute a collection of independent effects concurrently.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Concurrency"
+    ]
   },
   {
-    "id": "acquire-release-bracket",
+    "id": "safely-bracket-resource-usage",
     "title": "Safely Bracket Resource Usage with `acquireRelease`",
-    "description": "Bracket the use of a resource between an `acquire` and a `release` effect."
+    "description": "Bracket the use of a resource between an `acquire` and a `release` effect.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Resource Management",
+      "File Handling",
+      "Database Connections",
+      "Network Requests"
+    ]
   },
   {
     "id": "send-json-response",
     "title": "Send a JSON Response",
-    "description": "Use Http.response.json to automatically serialize data structures into a JSON response."
+    "description": "Use Http.response.json to automatically serialize data structures into a JSON response.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Building APIs"
+    ]
   },
   {
     "id": "setup-new-project",
     "title": "Set Up a New Effect Project",
-    "description": "Set up a new Effect project."
+    "description": "Set up a new Effect project.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Project Setup & Execution"
+    ]
   },
   {
     "id": "solve-promise-problems-with-effect",
     "title": "Solve Promise Problems with Effect",
-    "description": "Recognize that Effect solves the core limitations of Promises: untyped errors, no dependency injection, and no cancellation."
+    "description": "Recognize that Effect solves the core limitations of Promises: untyped errors, no dependency injection, and no cancellation.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "supercharge-your-editor-with-the-effect-lsp",
     "title": "Supercharge Your Editor with the Effect LSP",
-    "description": "Install and use the Effect LSP extension for enhanced type information and error checking in your editor."
+    "description": "Install and use the Effect LSP extension for enhanced type information and error checking in your editor.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Tooling and Debugging"
+    ]
   },
   {
     "id": "teach-your-ai-agents-effect-with-the-mcp-server",
     "title": "Teach your AI Agents Effect with the MCP Server",
-    "description": "Use the MCP server to provide live application context to AI coding agents, enabling more accurate assistance."
+    "description": "Use the MCP server to provide live application context to AI coding agents, enabling more accurate assistance.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Tooling and Debugging"
+    ]
   },
   {
     "id": "trace-operations-with-spans",
     "title": "Trace Operations Across Services with Spans",
-    "description": "Use Effect.withSpan to create custom tracing spans for important operations."
+    "description": "Use Effect.withSpan to create custom tracing spans for important operations.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Observability"
+    ]
   },
   {
     "id": "transform-data-with-schema",
     "title": "Transform Data During Validation with Schema",
-    "description": "Use Schema.transform to safely convert data types during the validation and parsing process."
+    "description": "Use Schema.transform to safely convert data types during the validation and parsing process.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Domain Modeling"
+    ]
   },
   {
     "id": "transform-effect-values",
     "title": "Transform Effect Values with map and flatMap",
-    "description": "Transform Effect values with map and flatMap."
+    "description": "Transform Effect values with map and flatMap.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "stream-from-paginated-api",
     "title": "Turn a Paginated API into a Single Stream",
-    "description": "Use Stream.paginateEffect to model a paginated data source as a single, continuous stream."
+    "description": "Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Building Data Pipelines"
+    ]
   },
   {
     "id": "understand-fibers-as-lightweight-threads",
     "title": "Understand Fibers as Lightweight Threads",
-    "description": "Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency."
+    "description": "Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.",
+    "skillLevel": "advanced",
+    "useCases": [
+      "Concurrency",
+      "Core Concepts"
+    ]
   },
   {
     "id": "understand-layers-for-dependency-injection",
     "title": "Understand Layers for Dependency Injection",
-    "description": "Understand that a Layer is a blueprint describing how to construct a service and its dependencies."
+    "description": "Understand that a Layer is a blueprint describing how to construct a service and its dependencies.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "effects-are-lazy",
     "title": "Understand that Effects are Lazy Blueprints",
-    "description": "Understand that effects are lazy blueprints."
+    "description": "Understand that effects are lazy blueprints.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "understand-effect-channels",
     "title": "Understand the Three Effect Channels (A, E, R)",
-    "description": "Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R)."
+    "description": "Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "use-pipe-for-composition",
     "title": "Use .pipe for Composition",
-    "description": "Use .pipe for composition."
+    "description": "Use .pipe for composition.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "use-chunk-for-high-performance-collections",
     "title": "Use Chunk for High-Performance Collections",
-    "description": "Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance."
+    "description": "Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "use-gen-for-business-logic",
     "title": "Use Effect.gen for Business Logic",
-    "description": "Use Effect.gen for business logic."
+    "description": "Use Effect.gen for business logic.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Domain Modeling"
+    ]
   },
   {
     "id": "use-default-layer-for-tests",
     "title": "Use the Auto-Generated .Default Layer in Tests",
-    "description": "Use the auto-generated .Default layer in tests."
+    "description": "Use the auto-generated .Default layer in tests.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Testing"
+    ]
   },
   {
     "id": "validate-request-body",
     "title": "Validate Request Body",
-    "description": "Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies."
+    "description": "Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Building APIs"
+    ]
   },
   {
     "id": "wrap-asynchronous-computations",
     "title": "Wrap Asynchronous Computations with tryPromise",
-    "description": "Wrap asynchronous computations with tryPromise."
+    "description": "Wrap asynchronous computations with tryPromise.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "wrap-synchronous-computations",
     "title": "Wrap Synchronous Computations with sync and try",
-    "description": "Wrap synchronous computations with sync and try."
+    "description": "Wrap synchronous computations with sync and try.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "write-sequential-code-with-gen",
     "title": "Write Sequential Code with Effect.gen",
-    "description": "Write sequential code with Effect.gen."
+    "description": "Write sequential code with Effect.gen.",
+    "skillLevel": "beginner",
+    "useCases": [
+      "Core Concepts"
+    ]
   },
   {
     "id": "write-tests-that-adapt-to-application-code",
     "title": "Write Tests That Adapt to Application Code",
-    "description": "Write tests that adapt to application code."
+    "description": "Write tests that adapt to application code.",
+    "skillLevel": "intermediate",
+    "useCases": [
+      "Testing"
+    ]
   }
 ]
