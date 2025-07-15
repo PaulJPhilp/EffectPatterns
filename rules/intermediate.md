@@ -612,36 +612,52 @@ Effect.runPromise(program)
 
 ### Example
 ```typescript
-import { Effect, Layer, Console } from "effect";
+import { Effect, Console } from "effect";
 
-interface DbOps {
-  query: (sql: string) => Effect.Effect<string[], never, never>;
+// 1. Define the service interface
+interface DatabaseService {
+  readonly query: (sql: string) => Effect.Effect<string[], never, never>
 }
 
-// 1. Define the service using Effect.Service
-class Database extends Effect.Service<DbOps>()(
+// 2. Define the service implementation with scoped resource management
+class Database extends Effect.Service<DatabaseService>()(
   "Database",
   {
+    // The scoped property manages the resource lifecycle
     scoped: Effect.gen(function* () {
       const id = Math.floor(Math.random() * 1000);
+      
+      // Acquire the connection
       yield* Console.log(`[Pool ${id}] Acquired`);
+      
+      // Setup cleanup to run when scope closes
+      yield* Effect.addFinalizer(() => 
+        Console.log(`[Pool ${id}] Released`)
+      );
+      
+      // Return the service implementation
       return {
-        query: (sql: string): Effect.Effect<string[], never, never> =>
-          Effect.sync(() => [`Result for '${sql}' from pool ${id}`])
+        query: (sql: string) => Effect.sync(() => 
+          [`Result for '${sql}' from pool ${id}`]
+        )
       };
     })
   }
 ) {}
 
-// This program depends on the abstract Database service
+// 3. Use the service in your program
 const program = Effect.gen(function* () {
   const db = yield* Database;
   const users = yield* db.query("SELECT * FROM users");
   yield* Console.log(`Query successful: ${users[0]}`);
 });
 
-// Provide the live implementation to run the program
-Effect.runPromise(Effect.provide(program, Database.Default));
+// 4. Run the program with scoped resource management
+Effect.runPromise(
+  Effect.scoped(program).pipe(
+    Effect.provide(Database.Default)
+  )
+);
 
 /*
 Output:

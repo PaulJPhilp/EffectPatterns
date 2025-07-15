@@ -15,7 +15,7 @@ author: "PaulJPhilp"
 
 ## Guideline
 
-Define a service using `class MyService extends Effect.Service(...)`.   Implement the service using the `scoped` property of the service class. This property should be a scoped `Effect` (typically from `Effect.acquireRelease`) that builds and releases the underlying resource.
+Define a service using `class MyService extends Effect.Service(...)` and provide a `scoped` property in the implementation object. This property should be an `Effect` (typically from `Effect.acquireRelease`) that builds and releases the underlying resource.
 
 ## Rationale
 
