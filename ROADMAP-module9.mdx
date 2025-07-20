@@ -1,0 +1,50 @@
+# Module 9: Observability
+
+Observability is essential for understanding, debugging, and maintaining your applications in production.  
+Effect provides first-class support for structured logging, custom metrics, distributed tracing, and function-level instrumentation, making it easy to gain insight into your system’s behavior and performance.
+
+This module will teach you how to use Effect’s observability tools to log important events, track business and performance metrics, trace operations across services, and instrument function calls.
+
+---
+
+## Observability Quick Reference
+
+| Tool / Pattern         | Purpose / Mental Model                                 | Pattern Link                                 |
+|------------------------|-------------------------------------------------------|----------------------------------------------|
+| `Effect.log`, `Effect.logInfo`, `Effect.logError` | Structured, context-aware logging         | [Leverage Effect's Built-in Structured Logging](./patterns/observability-structured-logging) |
+| `Metric`               | Track business and performance metrics                 | [Add Custom Metrics to Your Application](./patterns/observability-custom-metrics) |
+| `withSpan`             | Distributed tracing and operation spans                | [Trace Operations Across Services with Spans](./patterns/observability-tracing-spans) |
+| `Effect.fn`            | Instrument and observe function calls                  | [Instrument and Observe Function Calls with Effect.fn](./patterns/observability-effect-fn) |
+| `OpenTelemetry`        | Export traces for distributed observability            | [Integrate Effect Tracing with OpenTelemetry](./patterns/observability-opentelemetry) |
+
+---
+
+## Learning Path
+
+1.  #### [Leverage Effect's Built-in Structured Logging](./patterns/observability-structured-logging)
+    **Goal**: Use Effect’s logging functions for structured, configurable, and context-aware logging.
+
+2.  #### [Add Custom Metrics to Your Application](./patterns/observability-custom-metrics)
+    **Goal**: Instrument your code with counters, gauges, and histograms to track key business and performance indicators.
+
+3.  #### [Trace Operations Across Services with Spans](./patterns/observability-tracing-spans)
+    **Goal**: Use `withSpan` to create custom tracing spans, providing detailed visibility into the performance and flow of your application’s operations.
+
+4.  #### [Instrument and Observe Function Calls with Effect.fn](./patterns/observability-effect-fn)
+    **Goal**: Wrap and instrument function calls with effectful logic for logging, metrics, or tracing.
+
+5.  #### [Integrate Effect Tracing with OpenTelemetry](./patterns/observability-opentelemetry)
+    **Goal**: Connect Effect’s tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization.
+
+---
+
+**By the end of this module, you’ll be able to:**
+- Add structured, context-aware logging to your Effect code.
+- Track custom metrics for business and performance monitoring.
+- Trace operations across services for deep observability and debugging.
+- Instrument and observe function calls for fine-grained monitoring.
+- Integrate with OpenTelemetry for distributed tracing across your stack.
+
+---
+
+Ready to get started? Begin with [Leverage Effect's Built-in Structured Logging](./patterns/observability-structured-logging).

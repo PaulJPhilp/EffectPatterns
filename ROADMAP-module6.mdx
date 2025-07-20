@@ -1,0 +1,54 @@
+# Module 6: Creating with Constructors
+
+Constructors are the entry point to the Effect ecosystem. They let you create `Effect`, `Stream`, `Option`, and `Either` values from plain values, errors, promises, callbacks, and more.  
+Mastering constructors is the first step to writing robust, type-safe, and composable functional code.
+
+This module will teach you the most important constructors, how they work, and when to use each one. You’ll learn to lift values and errors into the Effect world, wrap synchronous and asynchronous computations, and create streams and options from real-world data.
+
+---
+
+## Constructor Quick Reference
+
+| Constructor         | Purpose / Mental Model                                 | Pattern Link                                 |
+|---------------------|-------------------------------------------------------|----------------------------------------------|
+| `succeed`, `some`, `right` | Lift a value into the structure                 | [Lifting Values with succeed, some, and right](./patterns/constructor-succeed-some-right) |
+| `fail`, `none`, `left`     | Lift an error or absence into the structure     | [Lifting Errors and Absence with fail, none, and left](./patterns/constructor-fail-none-left) |
+| `try`, `tryPromise`        | Wrap sync/async computations that may throw     | [Wrapping Synchronous and Asynchronous Computations](./patterns/constructor-try-trypromise) |
+| `sync`, `async`            | Create from callback-based or sync code         | [Creating from Synchronous and Callback Code](./patterns/constructor-sync-async) |
+| `fromIterable`, `fromArray`| Create from collections                        | [Creating from Collections](./patterns/constructor-from-iterable) |
+| `fromNullable`, `fromOption`, `fromEither` | Convert from nullable, Option, or Either | [Converting from Nullable, Option, or Either](./patterns/constructor-from-nullable-option-either) |
+
+---
+
+## Learning Path
+
+Follow these patterns in order to build a comprehensive understanding of constructors, from the basics to more advanced scenarios.
+
+1.  #### [Lifting Values with succeed, some, and right](./patterns/constructor-succeed-some-right)
+    **Goal**: Learn how to create an `Effect`, `Option`, or `Either` from a plain value.
+
+2.  #### [Lifting Errors and Absence with fail, none, and left](./patterns/constructor-fail-none-left)
+    **Goal**: Learn how to represent errors, failures, or absence in a type-safe way.
+
+3.  #### [Wrapping Synchronous and Asynchronous Computations](./patterns/constructor-try-trypromise)
+    **Goal**: Safely wrap code that may throw or reject, capturing errors in the Effect world.
+
+4.  #### [Creating from Synchronous and Callback Code](./patterns/constructor-sync-async)
+    **Goal**: Lift synchronous or callback-based code into an `Effect` or `Stream`.
+
+5.  #### [Creating from Collections](./patterns/constructor-from-iterable)
+    **Goal**: Create streams or effects from arrays, iterables, or other collections.
+
+6.  #### [Converting from Nullable, Option, or Either](./patterns/constructor-from-nullable-option-either)
+    **Goal**: Convert nullable values, `Option`, or `Either` into Effects or Streams.
+
+---
+
+**By the end of this module, you’ll be able to:**
+- Lift any value, error, or computation into the Effect world.
+- Safely wrap synchronous, asynchronous, and callback-based code.
+- Create robust, type-safe programs from any data source.
+
+---
+
+Ready to get started? Begin with [Lifting Values with succeed, some, and right](./patterns/constructor-succeed-some-right).

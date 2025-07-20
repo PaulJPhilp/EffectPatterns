@@ -1,0 +1,62 @@
+# Module 5: Composing with Combinators
+
+Combinators are the heart of functional programming with Effect—they let you build complex, robust workflows by composing simple building blocks. The same combinators (`map`, `flatMap`, `filter`, etc.) work across many types: `Effect`, `Stream`, `Option`, and `Either`.  
+Mastering these will make your code more expressive, maintainable, and safe.
+
+This module will teach you the most important combinators, how they work, and how to use them to compose computations, handle errors, branch conditionally, and work with collections and streams. You’ll see that the same mental model applies everywhere.
+
+---
+
+## Combinator Quick Reference
+
+| Combinator      | Purpose / Mental Model                                 | Pattern Link                                 |
+|-----------------|-------------------------------------------------------|----------------------------------------------|
+| `map`           | Transform the value inside a structure                 | [Transforming Values with map](./patterns/combinator-map) |
+| `flatMap`       | Chain computations that may themselves be effectful    | [Chaining Computations with flatMap](./patterns/combinator-flatmap) |
+| `filter`        | Keep/discard values based on a predicate               | [Filtering Results with filter](./patterns/combinator-filter) |
+| `if`, `when`, `cond` | Declarative conditional branching                 | [Conditional Branching with if, when, and cond](./patterns/combinator-conditional) |
+| `catchAll`, `orElse`, `match` | Handle errors, provide fallbacks         | [Handling Errors with catchAll, orElse, and match](./patterns/combinator-error-handling) |
+| `forEach`, `all` | Apply effectful functions to collections, batch/parallel | [Mapping and Chaining over Collections with forEach and all](./patterns/combinator-foreach-all) |
+| `zip`           | Pair results of two computations                       | [Combining Values with zip](./patterns/combinator-zip) |
+| `andThen`, `tap`, `flatten` | Sequence, run side effects, flatten nesting | [Sequencing with andThen, tap, and flatten](./patterns/combinator-sequencing) |
+
+---
+
+## Learning Path
+
+Follow these patterns in order to build a comprehensive understanding of combinators, from the basics to more advanced composition.
+
+1.  #### [Transforming Values with map](./patterns/combinator-map)
+    **Goal**: Learn how to transform the result of an `Effect`, `Stream`, `Option`, or `Either` using `map`.
+
+2.  #### [Chaining Computations with flatMap](./patterns/combinator-flatmap)
+    **Goal**: Chain together computations where each step may itself be effectful, optional, or error-prone.
+
+3.  #### [Filtering Results with filter](./patterns/combinator-filter)
+    **Goal**: Learn how to keep or discard results based on a predicate, and how filtering works for different types.
+
+4.  #### [Conditional Branching with if, when, and cond](./patterns/combinator-conditional)
+    **Goal**: Express conditional logic and branching workflows using combinators instead of imperative `if` statements.
+
+5.  #### [Handling Errors with catchAll, orElse, and match](./patterns/combinator-error-handling)
+    **Goal**: Recover from errors, provide fallbacks, or transform errors using combinators.
+
+6.  #### [Mapping and Chaining over Collections with forEach and all](./patterns/combinator-foreach-all)
+    **Goal**: Apply an effectful function to every item in a collection, and combine the results.
+
+7.  #### [Combining Values with zip](./patterns/combinator-zip)
+    **Goal**: Combine two computations, pairing their results together.
+
+8.  #### [Sequencing with andThen, tap, and flatten](./patterns/combinator-sequencing)
+    **Goal**: Sequence computations, run side effects, and flatten nested structures.
+
+---
+
+**By the end of this module, you’ll be able to:**
+- Recognize and use the most important combinators in Effect, Stream, Option, and Either.
+- Write expressive, declarative, and robust code by composing small building blocks.
+- Understand the universal mental model behind functional combinators.
+
+---
+
+Ready to dive in? Start with [Transforming Values with map](./patterns/combinator-map).

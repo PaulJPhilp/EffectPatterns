@@ -1,0 +1,53 @@
+---
+title: "Modeling Effect Results with Exit"
+id: "data-exit"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Effect Results", "Error Handling", "Concurrency"]
+summary: "Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way."
+tags: ["Exit", "effect", "result", "error-handling", "concurrency", "data-type"]
+rule:
+  description: "Use Exit to capture the outcome of an Effect, including success, failure, and defects, for robust error handling and coordination."
+related: ["data-cause", "data-either"]
+author: "PaulJPhilp"
+---
+
+# Modeling Effect Results with `Exit`
+
+## Guideline
+
+Use the `Exit<E, A>` data type to represent the result of running an `Effect`, capturing both success and failure (including defects) in a type-safe way.  
+`Exit` is especially useful for coordinating concurrent workflows and robust error handling.
+
+## Rationale
+
+When running or supervising effects, you often need to know not just if they succeeded or failed, but *how* they failed (e.g., error vs. defect).  
+`Exit` provides a complete, type-safe summary of an effect's outcome.
+
+## Good Example
+
+```typescript
+import { Effect, Exit } from "effect";
+
+// Run an Effect and capture its Exit value
+const program = Effect.succeed(42);
+
+const runAndCapture = Effect.runPromiseExit(program); // Promise<Exit<never, number>>
+
+// Pattern match on Exit
+runAndCapture.then((exit) => {
+  if (Exit.isSuccess(exit)) {
+    console.log("Success:", exit.value);
+  } else if (Exit.isFailure(exit)) {
+    console.error("Failure:", exit.cause);
+  }
+});
+```
+
+**Explanation:**  
+- `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
+- Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
+- Pattern matching on `Exit` lets you handle all possible outcomes.
+
+## Anti-Pattern
+
+Ignoring the outcome of an effect, or only handling success/failure without distinguishing between error types or defects, which can lead to missed errors and less robust code.

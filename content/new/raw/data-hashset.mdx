@@ -1,0 +1,55 @@
+---
+title: "Work with Immutable Sets using HashSet"
+id: "data-hashset"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Collections", "Set Operations"]
+summary: "Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations."
+tags: ["HashSet", "set", "collection", "immutable", "data-type", "effect"]
+rule:
+  description: "Use HashSet to represent sets of unique values with efficient, immutable operations for membership, union, intersection, and difference."
+related: ["data-chunk", "data-array"]
+author: "PaulJPhilp"
+---
+
+# Work with Immutable Sets using `HashSet`
+
+## Guideline
+
+Use the `HashSet<A>` data type to represent sets of unique values with efficient, immutable operations.  
+`HashSet` is ideal for membership checks, set algebra, and modeling collections where uniqueness matters.
+
+## Rationale
+
+`HashSet` provides high-performance, immutable set operations that are safe for concurrent and functional programming.  
+It avoids the pitfalls of mutable JavaScript `Set` and is optimized for use in Effect workflows.
+
+## Good Example
+
+```typescript
+import { HashSet } from "effect";
+
+// Create a HashSet from an array
+const setA = HashSet.fromIterable([1, 2, 3]);
+const setB = HashSet.fromIterable([3, 4, 5]);
+
+// Membership check
+const hasTwo = HashSet.has(setA, 2); // true
+
+// Union, intersection, difference
+const union = HashSet.union(setA, setB);         // HashSet {1, 2, 3, 4, 5}
+const intersection = HashSet.intersection(setA, setB); // HashSet {3}
+const difference = HashSet.difference(setA, setB);     // HashSet {1, 2}
+
+// Add and remove elements
+const withSix = HashSet.add(setA, 6);    // HashSet {1, 2, 3, 6}
+const withoutOne = HashSet.remove(setA, 1); // HashSet {2, 3}
+```
+
+**Explanation:**  
+- `HashSet` is immutable and supports efficient set operations.
+- Use it for membership checks, set algebra, and modeling unique collections.
+- Safe for concurrent and functional workflows.
+
+## Anti-Pattern
+
+Using mutable JavaScript `Set` for shared or concurrent data, or for set operations in functional code, which can lead to bugs and unpredictable behavior.
