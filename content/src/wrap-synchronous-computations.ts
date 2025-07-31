@@ -19,49 +19,47 @@ const divide = (a: number, b: number) =>
   });
 
 const processString = (str: string) =>
-  Effect.sync(() => {
-    console.log(`Processing string: "${str}"`);
+  Effect.gen(function* () {
+    yield* Effect.log(`Processing string: "${str}"`);
     return str.toUpperCase().split("").reverse().join("");
   });
 
 // Demonstrate wrapping synchronous computations
 const program = Effect.gen(function* () {
-  console.log("=== Wrapping Synchronous Computations Demo ===");
+  yield* Effect.log("=== Wrapping Synchronous Computations Demo ===");
 
   // Example 1: Basic sync computation
-  console.log("\n1. Basic sync computation (random number):");
+  yield* Effect.log("\n1. Basic sync computation (random number):");
   const random1 = yield* randomNumber;
   const random2 = yield* randomNumber;
-  console.log(`Random numbers: ${random1.toFixed(4)}, ${random2.toFixed(4)}`);
+  yield* Effect.log(`Random numbers: ${random1.toFixed(4)}, ${random2.toFixed(4)}`);
 
   // Example 2: Successful JSON parsing
-  console.log("\n2. Successful JSON parsing:");
+  yield* Effect.log("\n2. Successful JSON parsing:");
   const validJson = '{"name": "Paul", "age": 30}';
   const parsed = yield* parseJson(validJson).pipe(
     Effect.catchAll((error) =>
       Effect.gen(function* () {
-        console.log(`Parsing failed: ${error.message}`);
-        return { error: "Failed to parse" };
+        yield* Effect.log(`Parsing failed: ${error.message}`);
       })
     )
   );
-  console.log("Parsed JSON:", parsed);
+  yield* Effect.log("Parsed JSON:" + JSON.stringify(parsed));
 
   // Example 3: Failed JSON parsing with error handling
-  console.log("\n3. Failed JSON parsing with error handling:");
+  yield* Effect.log("\n3. Failed JSON parsing with error handling:");
   const invalidJson = '{"name": "Paul", "age":}';
   const parsedWithError = yield* parseJson(invalidJson).pipe(
     Effect.catchAll((error) =>
       Effect.gen(function* () {
-        console.log(`Parsing failed: ${error.message}`);
-        return { error: "Invalid JSON", input: invalidJson };
+        yield* Effect.log(`Parsing failed: ${error.message}`);
       })
     )
   );
-  console.log("Error result:", parsedWithError);
+  yield* Effect.log("Error result:" + JSON.stringify(parsedWithError));
 
   // Example 4: Division with error handling
-  console.log("\n4. Division with error handling:");
+  yield* Effect.log("\n4. Division with error handling:");
   const division1 = yield* divide(10, 2).pipe(
     Effect.catchAll((error) =>
       Effect.gen(function* () {
@@ -70,7 +68,7 @@ const program = Effect.gen(function* () {
       })
     )
   );
-  console.log(`10 / 2 = ${division1}`);
+  yield* Effect.log(`10 / 2 = ${division1}`);
 
   const division2 = yield* divide(10, 0).pipe(
     Effect.catchAll((error) =>
@@ -80,24 +78,24 @@ const program = Effect.gen(function* () {
       })
     )
   );
-  console.log(`10 / 0 = ${division2} (error handled)`);
+  yield* Effect.log(`10 / 0 = ${division2} (error handled)`);
 
   // Example 5: String processing
-  console.log("\n5. String processing:");
+  yield* Effect.log("\n5. String processing:");
   const processed = yield* processString("Hello Effect");
-  console.log(`Processed result: "${processed}"`);
+  yield* Effect.log(`Processed result: "${processed}"`);
 
   // Example 6: Combining multiple sync operations
-  console.log("\n6. Combining multiple sync operations:");
+  yield* Effect.log("\n6. Combining multiple sync operations:");
   const combined = yield* Effect.gen(function* () {
     const num = yield* randomNumber;
     const multiplied = yield* Effect.sync(() => num * 100);
     const rounded = yield* Effect.sync(() => Math.round(multiplied));
     return rounded;
   });
-  console.log(`Combined operations result: ${combined}`);
+  yield* Effect.log(`Combined operations result: ${combined}`);
 
-  console.log("\n✅ Synchronous computations demonstration completed!");
+  yield* Effect.log("\n✅ Synchronous computations demonstration completed!");
 });
 
 Effect.runPromise(program);

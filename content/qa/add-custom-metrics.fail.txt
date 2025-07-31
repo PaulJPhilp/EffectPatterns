@@ -1,0 +1,21 @@
+**Validation Result:** FAIL
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   FAIL: The pattern violates the global rule "Leverage Effect's built-in structured logging." The code uses a direct `.then()` callback with `console.log` on line 30 instead of using Effect's structured logging system with `Effect.log`. Additionally, it violates the principle of staying within the Effect ecosystem by using Promise-based `.then()` instead of Effect combinators.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/add-custom-metrics.ts`) correctly demonstrates the pattern described in the documentation (`published/add-custom-metrics.mdx`). The code properly shows how to use `Metric.counter`, `Metric.timer`, `Metric.trackDuration`, and `Metric.increment` to instrument code for monitoring.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PARTIAL: While the code correctly uses `Metric.counter`, `Metric.timer`, `Metric.trackDuration`, `Metric.increment`, `Effect.succeed`, `Effect.delay`, `Effect.gen`, and `Effect.runPromise`, it breaks the functional paradigm by using `.then()` callback and `console.log` instead of staying within the Effect ecosystem.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations. The metrics are properly defined with descriptive names and the example demonstrates proper usage patterns.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Metric.counter`, `Metric.timer`, `Metric.trackDuration`, `Metric.increment`, `Effect.succeed`, `Effect.delay`, `Effect.gen`, and `Effect.runPromise` are all preferred current APIs.
+
+**Overall Recommendation:**
+Requires revisions to replace the `.then()` callback and `console.log` with Effect's structured logging and combinators to maintain consistency with Effect's functional programming principles and global coding rules. The metrics instrumentation pattern is correct but needs to follow Effect's paradigm.

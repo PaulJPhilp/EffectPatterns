@@ -1,28 +1,15 @@
 /**
  * process.ts
- * 
- * Part of the Effect Patterns documentation pipeline. This script processes new pattern files
- * from /content/new into the main pattern collection. It:
- * 
- * 1. Validates new pattern files for:
- *    - Required frontmatter fields (id, title, skillLevel, useCase, summary)
- *    - Required sections (Good Example, Anti-Pattern, Explanation/Rationale)
- *    - Valid TypeScript code in Example components
- * 
- * 2. Moves TypeScript source files:
- *    - From: /content/new/src/*.ts
- *    - To: /content/src/{pattern-id}.ts
- * 
- * 3. Moves MDX files:
- *    - From: /content/new/*.mdx
- *    - To: /content/raw/{pattern-id}.mdx
- * 
- * 4. Updates any related files (README.md, etc.)
- * 
+ *
+ * Ingest script for Effect Patterns. Processes all MDX files in content/new/raw:
+ * - Validates frontmatter and required sections
+ * - Extracts TypeScript from Good Example section into content/new/src/{id}.ts
+ * - Replaces Good Example code block with <Example path="./src/{id}.ts" /> and writes to content/new/processed/{id}.mdx
+ * - Exits with error if content/new/src or content/new/processed are not empty at start
+ * - Does not move, delete, or rename any files
+ *
  * Usage:
- * ```bash
- * npm run ingest
- * ```
+ *   npm run ingest
  */
 
 import * as fs from "fs/promises";
@@ -32,9 +19,9 @@ import matter from "gray-matter";
 // --- CONFIGURATION ---
 const PROJECT_ROOT = process.cwd();
 const NEW_DIR = path.join(PROJECT_ROOT, "content/new");
+const NEW_RAW_DIR = path.join(NEW_DIR, "raw");
 const NEW_SRC_DIR = path.join(NEW_DIR, "src");
-const RAW_DIR = path.join(PROJECT_ROOT, "content/raw");
-const SRC_DIR = path.join(PROJECT_ROOT, "content/src");
+const NEW_PROCESSED_DIR = path.join(NEW_DIR, "processed");
 
 // --- VALIDATION ---
 interface FrontMatter {
@@ -76,7 +63,7 @@ async function validateSections(filePath: string): Promise<void> {
 
   // Check for required sections
   const requiredSections = ["Good Example", "Anti-Pattern"];
-  const hasExplanation = sections.some(section => 
+  const hasExplanation = sections.some(section =>
     section.startsWith("Explanation") || section.startsWith("Rationale")
   );
 
@@ -95,48 +82,39 @@ async function validateSections(filePath: string): Promise<void> {
   }
 }
 
-// --- FILE OPERATIONS ---
-async function moveSourceFile(id: string): Promise<void> {
-  const sourceFile = path.join(NEW_SRC_DIR, `${id}.ts`);
-  const targetFile = path.join(SRC_DIR, `${id}.ts`);
-
-  try {
-    await fs.access(sourceFile);
-  } catch {
-    throw new Error(
-      `Source file not found: ${sourceFile}`
-    );
-  }
-
-  await fs.copyFile(sourceFile, targetFile);
-  await fs.unlink(sourceFile);
+// --- EXTRACTION ---
+function extractGoodExampleTS(mdxContent: string): string | null {
+  const goodExampleMatch = mdxContent.match(/## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/);
+  return goodExampleMatch ? goodExampleMatch[1] : null;
 }
 
-async function moveMdxFile(id: string): Promise<void> {
-  const sourceFile = path.join(NEW_DIR, `${id}.mdx`);
-  const targetFile = path.join(RAW_DIR, `${id}.mdx`);
-
-  try {
-    await fs.access(sourceFile);
-  } catch {
-    throw new Error(
-      `MDX file not found: ${sourceFile}`
-    );
-  }
-
-  await fs.copyFile(sourceFile, targetFile);
-  await fs.unlink(sourceFile);
+function replaceGoodExampleWithExampleTag(mdxContent: string, id: string): string {
+  return mdxContent.replace(
+    /## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/,
+    `## Good Example\n\n<Example path=\"./src/${id}.ts\" />`
+  );
 }
 
 // --- MAIN EXECUTION ---
 async function main() {
   try {
     // Ensure directories exist
-    await fs.mkdir(NEW_DIR, { recursive: true });
+    await fs.mkdir(NEW_RAW_DIR, { recursive: true });
     await fs.mkdir(NEW_SRC_DIR, { recursive: true });
+    await fs.mkdir(NEW_PROCESSED_DIR, { recursive: true });
+
+    // Check that src and processed are empty
+    const srcFiles = await fs.readdir(NEW_SRC_DIR);
+    if (srcFiles.length > 0) {
+      throw new Error(`Directory not empty: ${NEW_SRC_DIR}`);
+    }
+    const processedFiles = await fs.readdir(NEW_PROCESSED_DIR);
+    if (processedFiles.length > 0) {
+      throw new Error(`Directory not empty: ${NEW_PROCESSED_DIR}`);
+    }
 
     // Get list of new MDX files
-    const files = await fs.readdir(NEW_DIR);
+    const files = await fs.readdir(NEW_RAW_DIR);
     const mdxFiles = files.filter(file => file.endsWith(".mdx"));
 
     if (mdxFiles.length === 0) {
@@ -148,16 +126,28 @@ async function main() {
 
     // Process each pattern
     for (const file of mdxFiles) {
-      const filePath = path.join(NEW_DIR, file);
+      const filePath = path.join(NEW_RAW_DIR, file);
       console.log(`\nProcessing ${file}...`);
 
       // Validate frontmatter and sections
       const frontmatter = await validateFrontMatter(filePath);
       await validateSections(filePath);
 
-      // Move files
-      await moveSourceFile(frontmatter.id);
-      await moveMdxFile(frontmatter.id);
+      // Extract Good Example TypeScript
+      const rawContent = await fs.readFile(filePath, "utf-8");
+      const { content: mdxContent } = matter(rawContent);
+      const tsCode = extractGoodExampleTS(mdxContent);
+      if (!tsCode) {
+        throw new Error(`No TypeScript code block found in Good Example section of ${file}`);
+      }
+      // Write TypeScript file
+      const tsTarget = path.join(NEW_SRC_DIR, `${frontmatter.id}.ts`);
+      await fs.writeFile(tsTarget, tsCode);
+
+      // Replace Good Example code block with Example tag
+      const processedMdx = replaceGoodExampleWithExampleTag(rawContent, frontmatter.id);
+      const mdxTarget = path.join(NEW_PROCESSED_DIR, `${frontmatter.id}.mdx`);
+      await fs.writeFile(mdxTarget, processedMdx);
 
       console.log(`✅ Successfully processed ${frontmatter.title}`);
     }

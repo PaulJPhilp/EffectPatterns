@@ -136,7 +136,8 @@ class TestService extends Effect.Service<TestService>()(
             yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
           }
 
-          return Effect.succeed(void 0);
+          // Don't return an Effect inside Effect.gen, just return the value directly
+          return void 0;
         });
 
       const runScenario = <E, A extends { [key: string]: any }>(
@@ -159,7 +160,8 @@ class TestService extends Effect.Service<TestService>()(
             yield* Effect.logInfo(`Success: ${JSON.stringify(result)}`);
           }
 
-          return Effect.succeed(void 0);
+          // Don't return an Effect inside Effect.gen, just return the value directly
+          return void 0;
         });
 
       // Return bound methods
@@ -247,7 +249,8 @@ const program = Effect.gen(function* () {
   
   yield* Effect.logInfo("\n=== Error Handling Tests Complete ===");
 
-  return Effect.succeed(void 0);
+  // Don't return an Effect inside Effect.gen, just return the value directly
+  return void 0;
 });
 
 // Run the program with all services

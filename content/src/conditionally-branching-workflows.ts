@@ -59,4 +59,10 @@ const handled = program(123).pipe(
 );
 
 // Run the program
-Effect.runPromise(handled).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* handled;
+  yield* Effect.log(result);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);

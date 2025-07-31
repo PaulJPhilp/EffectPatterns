@@ -1,4 +1,4 @@
-import { Chunk } from "effect";
+import { Chunk, Effect } from "effect";
 
 // Create a Chunk from an array
 let numbers = Chunk.fromIterable([1, 2, 3, 4, 5]);
@@ -15,4 +15,4 @@ const firstThree = Chunk.take(numbers, 3);
 // Convert back to an array when you need to interface with other libraries
 const finalArray = Chunk.toReadonlyArray(firstThree);
 
-console.log(finalArray); // [0, 1, 2]
+Effect.runSync(Effect.log(finalArray)); // [0, 1, 2]

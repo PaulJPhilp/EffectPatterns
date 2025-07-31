@@ -6,7 +6,7 @@ const server = Effect.log("Server received a request.").pipe(
   Effect.forever,
 );
 
-console.log("Starting server...");
+Effect.runSync(Effect.log("Starting server..."));
 
 // Launch the server as a detached, top-level fiber
 const appFiber = Effect.runFork(server);
@@ -14,7 +14,10 @@ const appFiber = Effect.runFork(server);
 // In a real app, you would listen for OS signals.
 // Here, we simulate a shutdown signal after 5 seconds.
 setTimeout(() => {
-  console.log("Shutdown signal received. Interrupting server fiber...");
-  // This ensures all cleanup logic within the server effect would run.
-  Effect.runPromise(Fiber.interrupt(appFiber));
+  const shutdownProgram = Effect.gen(function* () {
+    yield* Effect.log("Shutdown signal received. Interrupting server fiber...");
+    // This ensures all cleanup logic within the server effect would run.
+    yield* Fiber.interrupt(appFiber);
+  });
+  Effect.runPromise(shutdownProgram);
 }, 5000);

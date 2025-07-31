@@ -51,15 +51,15 @@ const program = Effect.gen(function* () {
   );
 
   yield* Effect.log("=== Results ===");
-  results.forEach((result, index) => {
-    console.log(`Item ${ids[index]}: ${result}`);
-  });
+  for (let index = 0; index < results.length; index++) {
+  yield* Effect.log(`Item ${ids[index]}: ${results[index]}`);
+}
 
   yield* Effect.log("✅ Stream processing completed");
 });
 
 Effect.runPromise(program).catch((error) => {
-  console.error("Unexpected error:", error);
+  Effect.runSync(Effect.logError("Unexpected error: " + error));
 });
 /*
 Output:

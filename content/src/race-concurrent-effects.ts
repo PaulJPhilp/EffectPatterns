@@ -28,13 +28,25 @@ const program = Effect.race(checkCache, queryDatabase).pipe(
 );
 
 // In this case, the database wins the race.
-Effect.runPromise(program)
-  .then((user) => {
-    console.log("User found:", user);
-  })
-  .catch((error) => {
-    console.log("Error:", error);
-  });
+const programWithResults = Effect.gen(function* () {
+  try {
+    const user = yield* program;
+    yield* Effect.log(`User found: ${JSON.stringify(user)}`);
+    return user;
+  } catch (error) {
+    yield* Effect.logError(`Error: ${error}`);
+    throw error;
+  }
+}).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Handled error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithResults);
 
 // Also demonstrate with logging
 const programWithLogging = Effect.gen(function* () {

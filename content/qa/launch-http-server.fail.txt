@@ -1,0 +1,21 @@
+**Validation Result:** FAIL
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   FAIL: The pattern violates the global rule "Leverage Effect's built-in structured logging." The code uses direct `console.error` on line 63 instead of using Effect's structured logging system with `Effect.logError`. This breaks consistency with Effect's logging paradigm and makes the logging less structured and harder to manage.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/launch-http-server.ts`) correctly demonstrates the pattern described in the documentation (`published/launch-http-server.mdx`). The code properly shows how to use `Effect.Service` for HTTP server creation, `Effect.addFinalizer` for cleanup, `Effect.scoped` for resource management, and proper server lifecycle management.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PARTIAL: While the code correctly uses `Effect.Service`, `Effect.gen`, `Effect.addFinalizer`, `Effect.sync`, `Effect.logInfo`, `Effect.logError`, `Effect.async`, `Effect.succeed`, `Effect.fail`, `Effect.timeout`, `Effect.catchAll`, `Effect.sleep`, `Effect.scoped`, `Effect.provide`, and `Effect.runPromise`, it breaks the functional paradigm by using direct `console.error` instead of staying within the Effect ecosystem for all logging operations.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper service definitions, and strong typing throughout. The HTTP server patterns are well-implemented with proper resource management, finalizer usage, and timeout handling.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.Service`, `Effect.gen`, `Effect.addFinalizer`, `Effect.sync`, `Effect.logInfo`, `Effect.logError`, `Effect.async`, `Effect.succeed`, `Effect.fail`, `Effect.timeout`, `Effect.catchAll`, `Effect.sleep`, `Effect.scoped`, `Effect.provide`, and `Effect.runPromise` are all preferred current APIs for HTTP server patterns.
+
+**Overall Recommendation:**
+Requires revisions to replace the direct `console.error` statement with Effect's structured logging (`Effect.logError`) to maintain consistency with Effect's functional programming principles and global coding rules. The core pattern implementation is correct but needs to follow Effect's logging paradigm.

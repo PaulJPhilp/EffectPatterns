@@ -1,0 +1,21 @@
+**Validation Result:** FAIL
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   FAIL: The pattern violates the global rule "Leverage Effect's built-in structured logging." The code uses direct `console.log` statements on lines 9 and 17 instead of using Effect's structured logging system with `Effect.log` or `Effect.logInfo`. This breaks consistency with Effect's logging paradigm and makes the logging less structured and harder to manage.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/execute-long-running-apps-with-runfork.ts`) correctly demonstrates the pattern described in the documentation (`published/execute-long-running-apps-with-runfork.mdx`). The code properly shows how to use `Effect.runFork` for long-running applications, `Effect.forever` for continuous execution, and `Fiber.interrupt` for graceful shutdown.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PARTIAL: While the code correctly uses `Effect.log`, `Effect.delay`, `Effect.forever`, `Effect.runFork`, `Fiber.interrupt`, and `Effect.runPromise`, it breaks the functional paradigm by using direct `console.log` instead of staying within the Effect ecosystem for all logging operations.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper fiber management, and clear separation of concerns. The long-running application pattern is well-implemented with proper lifecycle management.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.log`, `Effect.delay`, `Effect.forever`, `Effect.runFork`, `Fiber.interrupt`, and `Effect.runPromise` are all preferred current APIs for long-running application patterns.
+
+**Overall Recommendation:**
+Requires revisions to replace the direct `console.log` statements with Effect's structured logging (`Effect.log` or `Effect.logInfo`) to maintain consistency with Effect's functional programming principles and global coding rules. The core pattern implementation is correct but needs to follow Effect's logging paradigm.

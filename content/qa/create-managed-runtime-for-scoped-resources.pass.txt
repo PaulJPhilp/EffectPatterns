@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Create a managed runtime for scoped resources." The code correctly demonstrates using `Effect.Service` pattern, `Effect.log` for structured logging, `Effect.scoped` for resource management, and proper layer-based dependency injection.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/create-managed-runtime-for-scoped-resources.ts`) perfectly illustrates the pattern described in the documentation (`published/create-managed-runtime-for-scoped-resources.mdx`). The code demonstrates the exact guideline: defining a service with Effect.Service, using Effect.scoped for resource lifecycle management, and proper dependency provision.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Effect.Service`, `Effect.gen`, `Effect.log`, `Effect.succeed`, `Effect.provide`, `Effect.scoped`, and `Effect.runPromise` correctly. The code follows proper structured logging and demonstrates Effect's scoped resource management effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper class definitions, and strong typing throughout. The service implementation is well-structured with proper resource management patterns.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.Service`, `Effect.gen`, `Effect.log`, `Effect.succeed`, `Effect.provide`, `Effect.scoped`, and `Effect.runPromise` are all preferred current APIs for scoped resource management patterns.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates managed runtime creation for scoped resources with proper lifecycle management, structured logging, and current Effect-TS best practices.

@@ -32,12 +32,23 @@ const program = Effect.gen(function* () {
   } as ParsedEvent;
 });
 
-Effect.runPromise(program).then(
-  (event) => {
-    console.log('Event year:', event.timestamp.getFullYear());
-    console.log('Full event:', event);
-  },
-  (error) => {
-    console.error('Failed to parse event:', error);
+const programWithLogging = Effect.gen(function* () {
+  try {
+    const event = yield* program;
+    yield* Effect.log(`Event year: ${event.timestamp.getFullYear()}`);
+    yield* Effect.log(`Full event: ${JSON.stringify(event, null, 2)}`);
+    return event;
+  } catch (error) {
+    yield* Effect.logError(`Failed to parse event: ${error}`);
+    throw error;
   }
+}).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
 );
+
+Effect.runPromise(programWithLogging);

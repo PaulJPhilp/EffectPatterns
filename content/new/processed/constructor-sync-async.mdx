@@ -1,0 +1,37 @@
+---
+title: "Creating from Synchronous and Callback Code"
+id: "constructor-sync-async"
+skillLevel: "beginner"
+useCase: ["Constructors", "Interop", "Async", "Callback"]
+summary: "Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code."
+tags: ["sync", "async", "constructor", "effect", "interop", "callback", "legacy"]
+rule:
+  description: "Use sync and async to create Effects from synchronous or callback-based computations, making them composable and type-safe."
+related: ["constructor-try-trypromise", "constructor-succeed-some-right"]
+author: "PaulJPhilp"
+---
+
+# Creating from Synchronous and Callback Code
+
+## Guideline
+
+Use the `sync` and `async` constructors to lift synchronous or callback-based computations into the Effect world.  
+This enables safe, composable interop with legacy or third-party code that doesn't use Promises or Effects.
+
+## Rationale
+
+Many APIs are synchronous or use callbacks instead of Promises.  
+By lifting them into Effects, you gain access to all of Effect's combinators, error handling, and resource safety.
+
+## Good Example
+
+<Example path="./src/constructor-sync-async.ts" />
+
+**Explanation:**  
+- `Effect.sync` is for synchronous computations that are guaranteed not to throw.
+- `Effect.async` is for integrating callback-based APIs, converting them into Effects.
+- When using `Effect.async`, specify both the error and value types (e.g., `Effect.async<string, string>`), and ensure the error passed to `Effect.fail` matches the expected error type.
+
+## Anti-Pattern
+
+Directly calling synchronous or callback-based APIs inside Effects without lifting them, which can break composability and error handling.

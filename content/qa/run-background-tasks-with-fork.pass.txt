@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the global rule "Leverage Effect's built-in structured logging." The code correctly uses `Effect.log` for all logging operations throughout the program, avoiding direct `console.log` usage and maintaining consistency with Effect's logging paradigm.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/run-background-tasks-with-fork.ts`) perfectly illustrates the pattern described in the documentation (`published/run-background-tasks-with-fork.mdx`). The code demonstrates the exact guideline: using `Effect.fork` to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting, with proper fiber lifecycle management.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Effect.log`, `Effect.delay`, `Effect.forever`, `Effect.gen`, `Effect.fork`, `Effect.sleep`, `Fiber.interrupt`, and `Effect.runPromise` correctly. The code follows proper concurrency patterns and demonstrates Effect's fiber system effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper function composition, and strong typing throughout. The background task patterns are well-implemented with clear demonstration of concurrent fiber coordination and lifecycle management capabilities.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.log`, `Effect.delay`, `Effect.forever`, `Effect.gen`, `Effect.fork`, `Effect.sleep`, `Fiber.interrupt`, and `Effect.runPromise` are all preferred current APIs for background task patterns.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates Effect's fiber system with proper usage of background tasks, concurrent execution, and current Effect-TS best practices.

@@ -1,0 +1,406 @@
+Running TypeScript example files...
+Looking in /Users/paul/Projects/Effect-Patterns/content/new/src
+Found 44 TypeScript files
+🏃 Running content/new/src/brand-model-domain-type.ts...
+--- Output for content/new/src/brand-model-domain-type.ts ---
+timestamp=2025-07-22T18:59:49.039Z level=INFO fiber=#0 message="Demonstrating branded type Email:"
+timestamp=2025-07-22T18:59:49.040Z level=INFO fiber=#0 message="Welcome email sent to: user@example.com"
+
+✅ content/new/src/brand-model-domain-type.ts executed successfully
+🏃 Running content/new/src/brand-validate-parse.ts...
+❌ Error running content/new/src/brand-validate-parse.ts:
+Command failed: bun run /Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts
+ 7 |   Schema.pattern(/^[^@]+@[^@]+\.[^@]+$/),
+ 8 |   Schema.brand("Email")
+ 9 | );
+10 | 
+11 | function parseEmail(input: string) {
+12 |   return Effect.gen(function* () {
+                     ^
+(FiberFailure) RangeError: Maximum call stack size exceeded.
+ effect/Runtime/FiberFailure: Symbol(effect/Runtime/FiberFailure),
+ effect/Runtime/FiberFailure/Cause: {
+  _tag: "Die",
+  defect:  7 |   Schema.pattern(/^[^@]+@[^@]+\.[^@]+$/),
+ 8 |   Schema.brand("Email")
+ 9 | );
+10 | 
+11 | function parseEmail(input: string) {
+12 |   return Effect.gen(function* () {
+                     ^
+RangeError: Maximum call stack size exceeded.
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:12:17)
+,
+  [Symbol(effect/Cause)]: [Object ...],
+  [Symbol(effect/Hash)]: [Function],
+  [Symbol(effect/Equal)]: [Function],
+  pipe: [Function: pipe],
+  toJSON: [Function: toJSON],
+  toString: [Function: toString],
+  [Symbol(nodejs.util.inspect.custom)]: [Function],
+},
+
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:12:17)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+      at parseEmail (/Users/paul/Projects/Effect-Patterns/content/new/src/brand-validate-parse.ts:16:21)
+
+Bun v1.2.20-canary.16+83760fc44 (macOS arm64)
+
+🏃 Running content/new/src/combinator-conditional.ts...
+--- Output for content/new/src/combinator-conditional.ts ---
+timestamp=2025-07-22T18:59:49.290Z level=INFO fiber=#0 message="Effect.if result: yes"
+timestamp=2025-07-22T18:59:49.291Z level=INFO fiber=#0 message="Option result: yes"
+timestamp=2025-07-22T18:59:49.291Z level=INFO fiber=#0 message="Either result: yes"
+timestamp=2025-07-22T18:59:49.297Z level=INFO fiber=#0 message="Stream result: []"
+
+✅ content/new/src/combinator-conditional.ts executed successfully
+🏃 Running content/new/src/combinator-error-handling.ts...
+--- Output for content/new/src/combinator-error-handling.ts ---
+timestamp=2025-07-22T18:59:49.409Z level=INFO fiber=#0 message="Effect.catchAll result: Recovered from: fail!"
+timestamp=2025-07-22T18:59:49.410Z level=INFO fiber=#0 message="Option.orElse result: default"
+timestamp=2025-07-22T18:59:49.410Z level=INFO fiber=#0 message="Either.orElse result: fallback"
+timestamp=2025-07-22T18:59:49.410Z level=INFO fiber=#0 message="Effect.match result: Error: fail!"
+
+✅ content/new/src/combinator-error-handling.ts executed successfully
+🏃 Running content/new/src/combinator-filter.ts...
+--- Output for content/new/src/combinator-filter.ts ---
+timestamp=2025-07-22T18:59:49.525Z level=INFO fiber=#0 message="Effect.filter result: 4"
+timestamp=2025-07-22T18:59:49.526Z level=INFO fiber=#0 message="Option.filter result: 4"
+timestamp=2025-07-22T18:59:49.526Z level=INFO fiber=#0 message="Either.filter result: 4"
+timestamp=2025-07-22T18:59:49.532Z level=INFO fiber=#0 message="Stream.filter result: [2, 4]"
+
+✅ content/new/src/combinator-filter.ts executed successfully
+🏃 Running content/new/src/combinator-flatmap.ts...
+--- Output for content/new/src/combinator-flatmap.ts ---
+timestamp=2025-07-22T18:59:49.646Z level=INFO fiber=#0 message="Effect.flatMap result: 20"
+timestamp=2025-07-22T18:59:49.647Z level=INFO fiber=#0 message="Option.flatMap result: 20"
+timestamp=2025-07-22T18:59:49.647Z level=INFO fiber=#0 message="Either.flatMap result: 20"
+timestamp=2025-07-22T18:59:49.654Z level=INFO fiber=#0 message="Stream.flatMap result: [1, 10, 2, 20]"
+
+✅ content/new/src/combinator-flatmap.ts executed successfully
+🏃 Running content/new/src/combinator-foreach-all.ts...
+--- Output for content/new/src/combinator-foreach-all.ts ---
+timestamp=2025-07-22T18:59:49.777Z level=INFO fiber=#0 message="Effect.forEach result: [2, 4, 6]"
+timestamp=2025-07-22T18:59:49.778Z level=INFO fiber=#0 message="Effect.all result: [1, 2]"
+timestamp=2025-07-22T18:59:49.778Z level=INFO fiber=#0 message="Option collection result: [1, 3]"
+timestamp=2025-07-22T18:59:49.778Z level=INFO fiber=#0 message="Either collection result: [1, 3]"
+timestamp=2025-07-22T18:59:49.785Z level=INFO fiber=#0 message="Stream.flatMap result: [1, 2, 3, 4]"
+
+✅ content/new/src/combinator-foreach-all.ts executed successfully
+🏃 Running content/new/src/combinator-map.ts...
+--- Output for content/new/src/combinator-map.ts ---
+timestamp=2025-07-22T18:59:49.908Z level=INFO fiber=#0 message="Effect.map result: 20"
+timestamp=2025-07-22T18:59:49.909Z level=INFO fiber=#0 message="Option.map result: 20"
+timestamp=2025-07-22T18:59:49.909Z level=INFO fiber=#0 message="Either.map result: 20"
+timestamp=2025-07-22T18:59:49.915Z level=INFO fiber=#0 message="Stream.map result: [10, 20, 30]"
+
+✅ content/new/src/combinator-map.ts executed successfully
+🏃 Running content/new/src/combinator-sequencing.ts...
+--- Output for content/new/src/combinator-sequencing.ts ---
+timestamp=2025-07-22T18:59:50.029Z level=INFO fiber=#0 message=Starting...
+timestamp=2025-07-22T18:59:50.030Z level=INFO fiber=#0 message="logThenCompute (andThen) result: 42"
+timestamp=2025-07-22T18:59:50.030Z level=INFO fiber=#0 message="Result is 42"
+timestamp=2025-07-22T18:59:50.030Z level=INFO fiber=#0 message="computeAndLog (tap) result: 42"
+timestamp=2025-07-22T18:59:50.030Z level=INFO fiber=#0 message="Option.flatten result: 1"
+timestamp=2025-07-22T18:59:50.030Z level=INFO fiber=#0 message="Effect.flatten result: 1"
+timestamp=2025-07-22T18:59:50.031Z level=ERROR fiber=#0 message="Error: fail!"
+timestamp=2025-07-22T18:59:50.034Z level=INFO fiber=#1 message="Saw: 1"
+timestamp=2025-07-22T18:59:50.035Z level=INFO fiber=#1 message="Saw: 2"
+timestamp=2025-07-22T18:59:50.035Z level=INFO fiber=#1 message="Saw: 3"
+timestamp=2025-07-22T18:59:50.038Z level=INFO fiber=#0 message="Stream.tap result: [1, 2, 3]"
+
+✅ content/new/src/combinator-sequencing.ts executed successfully
+🏃 Running content/new/src/combinator-zip.ts...
+--- Output for content/new/src/combinator-zip.ts ---
+timestamp=2025-07-22T18:59:50.151Z level=INFO fiber=#0 message="Effect.zip result: [1, hello]"
+timestamp=2025-07-22T18:59:50.152Z level=INFO fiber=#0 message="Option.zip result: [1, hello]"
+timestamp=2025-07-22T18:59:50.152Z level=INFO fiber=#0 message="Either.zip result: [1, hello]"
+timestamp=2025-07-22T18:59:50.162Z level=INFO fiber=#0 message="Stream.zip result: [[1, a], [2, b], [3, c]]"
+
+✅ content/new/src/combinator-zip.ts executed successfully
+🏃 Running content/new/src/constructor-fail-none-left.ts...
+--- Output for content/new/src/constructor-fail-none-left.ts ---
+timestamp=2025-07-22T18:59:50.272Z level=INFO fiber=#0 message="Effect.fail result: Error: Something went wrong"
+timestamp=2025-07-22T18:59:50.273Z level=INFO fiber=#0 message="Option.none result: None"
+timestamp=2025-07-22T18:59:50.273Z level=INFO fiber=#0 message="Either.left result: Left: Invalid input"
+
+✅ content/new/src/constructor-fail-none-left.ts executed successfully
+🏃 Running content/new/src/constructor-from-iterable.ts...
+--- Output for content/new/src/constructor-from-iterable.ts ---
+timestamp=2025-07-22T18:59:50.395Z level=INFO fiber=#0 message="Stream.fromIterable(numbers): [1, 2, 3, 4]"
+timestamp=2025-07-22T18:59:50.396Z level=INFO fiber=#0 message="Stream.fromIterable(gen()): [a, b]"
+timestamp=2025-07-22T18:59:50.396Z level=INFO fiber=#0 message="Effect.all result: [1, 2]"
+
+✅ content/new/src/constructor-from-iterable.ts executed successfully
+🏃 Running content/new/src/constructor-from-nullable-option-either.ts...
+--- Output for content/new/src/constructor-from-nullable-option-either.ts ---
+timestamp=2025-07-22T18:59:50.508Z level=INFO fiber=#0 message="Effect.fromNullable result: Error: Value was null"
+timestamp=2025-07-22T18:59:50.508Z level=INFO fiber=#0 message="Effect.fromOption result: 42"
+timestamp=2025-07-22T18:59:50.509Z level=INFO fiber=#0 message="Effect.fromEither result: success"
+
+✅ content/new/src/constructor-from-nullable-option-either.ts executed successfully
+🏃 Running content/new/src/constructor-succeed-some-right.ts...
+--- Output for content/new/src/constructor-succeed-some-right.ts ---
+timestamp=2025-07-22T18:59:50.621Z level=INFO fiber=#0 message="Effect.succeed result: 42"
+timestamp=2025-07-22T18:59:50.622Z level=INFO fiber=#0 message="Option.some result: hello"
+timestamp=2025-07-22T18:59:50.622Z level=INFO fiber=#0 message="Either.right result: {\"id\":1}"
+
+✅ content/new/src/constructor-succeed-some-right.ts executed successfully
+🏃 Running content/new/src/constructor-sync-async.ts...
+--- Output for content/new/src/constructor-sync-async.ts ---
+timestamp=2025-07-22T18:59:50.786Z level=INFO fiber=#0 message="Effect.sync result: 0.5878429633709421"
+timestamp=2025-07-22T18:59:50.798Z level=INFO fiber=#0 message="Effect.async result: file contents"
+
+✅ content/new/src/constructor-sync-async.ts executed successfully
+🏃 Running content/new/src/constructor-try-trypromise.ts...
+--- Output for content/new/src/constructor-try-trypromise.ts ---
+timestamp=2025-07-22T18:59:50.910Z level=INFO fiber=#0 message="Effect.try result: Error: Parse error: SyntaxError: JSON Parse error: Expected '}'"
+timestamp=2025-07-22T18:59:50.926Z level=INFO fiber=#0 message="Effect.tryPromise result: Error: Network error: Error: Unable to connect. Is the computer able to access the url?"
+
+✅ content/new/src/constructor-try-trypromise.ts executed successfully
+🏃 Running content/new/src/data-array.ts...
+--- Output for content/new/src/data-array.ts ---
+timestamp=2025-07-22T18:59:51.049Z level=INFO fiber=#0 message="arr1: [1, 2, 3]"
+timestamp=2025-07-22T18:59:51.049Z level=INFO fiber=#0 message="arr2: [1, 2, 3]"
+timestamp=2025-07-22T18:59:51.050Z level=INFO fiber=#0 message="Equal.equals(arr1, arr2): true"
+timestamp=2025-07-22T18:59:51.050Z level=INFO fiber=#0 message="HashSet.has(set, arr2): true"
+timestamp=2025-07-22T18:59:51.050Z level=INFO fiber=#0 message="arr1.map(n => n * 2): [2, 4, 6]"
+
+✅ content/new/src/data-array.ts executed successfully
+🏃 Running content/new/src/data-bigdecimal.ts...
+--- Output for content/new/src/data-bigdecimal.ts ---
+timestamp=2025-07-22T18:59:51.178Z level=INFO fiber=#0 message="a: BigDecimal(0.1)"
+timestamp=2025-07-22T18:59:51.179Z level=INFO fiber=#0 message="b: BigDecimal(0.2)"
+timestamp=2025-07-22T18:59:51.179Z level=INFO fiber=#0 message="sum: BigDecimal(0.3)"
+timestamp=2025-07-22T18:59:51.179Z level=INFO fiber=#0 message="product: BigDecimal(0.02)"
+timestamp=2025-07-22T18:59:51.179Z level=INFO fiber=#0 message="sum equals 0.3: true"
+timestamp=2025-07-22T18:59:51.179Z level=INFO fiber=#0 message="sum as string: BigDecimal(0.3)"
+timestamp=2025-07-22T18:59:51.179Z level=INFO fiber=#0 message="sum as number: 0.3"
+
+✅ content/new/src/data-bigdecimal.ts executed successfully
+🏃 Running content/new/src/data-bigint.ts...
+--- Output for content/new/src/data-bigint.ts ---
+timestamp=2025-07-22T18:59:51.291Z level=INFO fiber=#0 message="a: 9007199254740991"
+timestamp=2025-07-22T18:59:51.292Z level=INFO fiber=#0 message="b: 123456789012345678901234567890"
+timestamp=2025-07-22T18:59:51.292Z level=INFO fiber=#0 message="sum: 123456789012354686100489308881"
+timestamp=2025-07-22T18:59:51.292Z level=INFO fiber=#0 message="product: 1111999897984715765336370576532525057755378990"
+
+✅ content/new/src/data-bigint.ts executed successfully
+🏃 Running content/new/src/data-case.ts...
+--- Output for content/new/src/data-case.ts ---
+timestamp=2025-07-22T18:59:51.405Z level=INFO fiber=#0 message="Hello, Alice!"
+timestamp=2025-07-22T18:59:51.406Z level=INFO fiber=#0 message="Hello, Bob!"
+timestamp=2025-07-22T18:59:51.406Z level=INFO fiber=#0 message="Are they equal? false"
+
+✅ content/new/src/data-case.ts executed successfully
+🏃 Running content/new/src/data-cause.ts...
+--- Error Output for content/new/src/data-cause.ts ---
+Expected error: Error: Unexpected failure!
+    at try (/Users/paul/Projects/Effect-Patterns/content/new/src/data-cause.ts:6:15)
+
+✅ content/new/src/data-cause.ts executed successfully
+🏃 Running content/new/src/data-chunk.ts...
+--- Output for content/new/src/data-chunk.ts ---
+timestamp=2025-07-22T18:59:51.630Z level=INFO fiber=#0 message="numbers: [1, 2, 3, 4]"
+timestamp=2025-07-22T18:59:51.630Z level=INFO fiber=#0 message="doubled: [2, 4, 6, 8]"
+timestamp=2025-07-22T18:59:51.631Z level=INFO fiber=#0 message="evens: [2, 4]"
+timestamp=2025-07-22T18:59:51.631Z level=INFO fiber=#0 message="allNumbers: [1, 2, 3, 4, 5, 6]"
+
+✅ content/new/src/data-chunk.ts executed successfully
+🏃 Running content/new/src/data-class.ts...
+--- Output for content/new/src/data-class.ts ---
+timestamp=2025-07-22T18:59:51.743Z level=INFO fiber=#0 message="User: {\"id\":1,\"name\":\"Alice\"}"
+timestamp=2025-07-22T18:59:51.743Z level=INFO fiber=#0 message="Equal.equals(User, {id:1,name:'Alice'}): true"
+timestamp=2025-07-22T18:59:51.743Z level=INFO fiber=#0 message="Hash.hash(User): -652630587"
+timestamp=2025-07-22T18:59:51.744Z level=INFO fiber=#0 message="HashSet.has(set, {id:1,name:'Alice'}): true"
+timestamp=2025-07-22T18:59:51.744Z level=INFO fiber=#0 message="Sorted users by id: [Alice, Bob]"
+
+✅ content/new/src/data-class.ts executed successfully
+🏃 Running content/new/src/data-datetime.ts...
+--- Output for content/new/src/data-datetime.ts ---
+timestamp=2025-07-22T18:59:51.865Z level=INFO fiber=#0 message="now: 7/22/2025"
+timestamp=2025-07-22T18:59:51.866Z level=INFO fiber=#0 message="parsed: 7/19/2024"
+timestamp=2025-07-22T18:59:51.866Z level=INFO fiber=#0 message="inOneHour: 7/22/2025"
+timestamp=2025-07-22T18:59:51.866Z level=INFO fiber=#0 message="oneHourAgo: 7/22/2025"
+timestamp=2025-07-22T18:59:51.866Z level=INFO fiber=#0 message="isBefore: true"
+
+✅ content/new/src/data-datetime.ts executed successfully
+🏃 Running content/new/src/data-duration.ts...
+--- Output for content/new/src/data-duration.ts ---
+timestamp=2025-07-22T18:59:51.977Z level=INFO fiber=#0 message="oneSecond: 1000 ms"
+timestamp=2025-07-22T18:59:51.978Z level=INFO fiber=#0 message="fiveMinutes: 300000 ms"
+timestamp=2025-07-22T18:59:51.978Z level=INFO fiber=#0 message="twoHours: 7200000 ms"
+timestamp=2025-07-22T18:59:51.978Z level=INFO fiber=#0 message="total (oneSecond + fiveMinutes): 301000 ms"
+timestamp=2025-07-22T18:59:51.978Z level=INFO fiber=#0 message="is twoHours > fiveMinutes: true"
+timestamp=2025-07-22T18:59:51.978Z level=INFO fiber=#0 message="fiveMinutes in ms: 300000"
+
+✅ content/new/src/data-duration.ts executed successfully
+🏃 Running content/new/src/data-either.ts...
+--- Output for content/new/src/data-either.ts ---
+timestamp=2025-07-22T18:59:52.093Z level=INFO fiber=#0 message="Either.right(42) match: Value: 42"
+timestamp=2025-07-22T18:59:52.094Z level=INFO fiber=#0 message="Either.left('Something went wrong') match: Error: Something went wrong"
+timestamp=2025-07-22T18:59:52.094Z level=INFO fiber=#0 message="Accumulated Right values: [1]"
+timestamp=2025-07-22T18:59:52.094Z level=INFO fiber=#0 message="Accumulated Left errors: [fail1, fail2]"
+
+✅ content/new/src/data-either.ts executed successfully
+🏃 Running content/new/src/data-exit.ts...
+--- Output for content/new/src/data-exit.ts ---
+timestamp=2025-07-22T18:59:52.206Z level=INFO fiber=#0 message="Success: 42"
+timestamp=2025-07-22T18:59:52.207Z level=INFO fiber=#0 message="Success: 42"
+
+✅ content/new/src/data-exit.ts executed successfully
+🏃 Running content/new/src/data-hashset.ts...
+--- Output for content/new/src/data-hashset.ts ---
+timestamp=2025-07-22T18:59:52.317Z level=INFO fiber=#0 message="setA: [1, 2, 3]"
+timestamp=2025-07-22T18:59:52.318Z level=INFO fiber=#0 message="setB: [3, 4, 5]"
+timestamp=2025-07-22T18:59:52.318Z level=INFO fiber=#0 message="setA has 2: true"
+timestamp=2025-07-22T18:59:52.318Z level=INFO fiber=#0 message="union: [1, 2, 3, 4, 5]"
+timestamp=2025-07-22T18:59:52.318Z level=INFO fiber=#0 message="intersection: [3]"
+timestamp=2025-07-22T18:59:52.318Z level=INFO fiber=#0 message="difference (setA - setB): [1, 2]"
+timestamp=2025-07-22T18:59:52.318Z level=INFO fiber=#0 message="withSix: [1, 2, 3, 6]"
+timestamp=2025-07-22T18:59:52.318Z level=INFO fiber=#0 message="withoutOne: [2, 3]"
+
+✅ content/new/src/data-hashset.ts executed successfully
+🏃 Running content/new/src/data-option.ts...
+--- Output for content/new/src/data-option.ts ---
+timestamp=2025-07-22T18:59:52.433Z level=INFO fiber=#0 message="Option.some(42) match: Value: 42"
+timestamp=2025-07-22T18:59:52.434Z level=INFO fiber=#0 message="Option.none() match: No value"
+timestamp=2025-07-22T18:59:52.434Z level=INFO fiber=#0 message="Option.fromNullable result: No value"
+timestamp=2025-07-22T18:59:52.434Z level=INFO fiber=#0 message="findUser(1): User: Alice"
+timestamp=2025-07-22T18:59:52.434Z level=INFO fiber=#0 message="findUser(2): User not found"
+
+✅ content/new/src/data-option.ts executed successfully
+🏃 Running content/new/src/data-redacted.ts...
+--- Output for content/new/src/data-redacted.ts ---
+timestamp=2025-07-22T18:59:52.546Z level=INFO fiber=#0 message="Password: <redacted>"
+timestamp=2025-07-22T18:59:52.547Z level=INFO fiber=#0 message="Password as string: <redacted>"
+timestamp=2025-07-22T18:59:52.547Z level=INFO fiber=#0 message="Authentication result: Authenticated"
+
+✅ content/new/src/data-redacted.ts executed successfully
+🏃 Running content/new/src/data-ref.ts...
+--- Output for content/new/src/data-ref.ts ---
+timestamp=2025-07-22T18:59:52.657Z level=INFO fiber=#0 message="Counter value: 1"
+
+✅ content/new/src/data-ref.ts executed successfully
+🏃 Running content/new/src/data-struct.ts...
+--- Output for content/new/src/data-struct.ts ---
+timestamp=2025-07-22T18:59:52.771Z level=INFO fiber=#0 message="user1: {\"id\":1,\"name\":\"Alice\"}"
+timestamp=2025-07-22T18:59:52.772Z level=INFO fiber=#0 message="user2: {\"id\":1,\"name\":\"Alice\"}"
+timestamp=2025-07-22T18:59:52.772Z level=INFO fiber=#0 message="Equal.equals(user1, user2): true"
+timestamp=2025-07-22T18:59:52.772Z level=INFO fiber=#0 message="HashSet.has(set, user2): true"
+
+✅ content/new/src/data-struct.ts executed successfully
+🏃 Running content/new/src/data-tagged.ts...
+--- Output for content/new/src/data-tagged.ts ---
+timestamp=2025-07-22T18:59:52.886Z level=INFO fiber=#0 message="state1: Loading..."
+timestamp=2025-07-22T18:59:52.887Z level=INFO fiber=#0 message="state2: Data: Hello"
+timestamp=2025-07-22T18:59:52.887Z level=INFO fiber=#0 message="state3: Error: Oops"
+
+✅ content/new/src/data-tagged.ts executed successfully
+🏃 Running content/new/src/data-tuple.ts...
+--- Output for content/new/src/data-tuple.ts ---
+timestamp=2025-07-22T18:59:52.996Z level=INFO fiber=#0 message="t1: [1, Alice]"
+timestamp=2025-07-22T18:59:52.996Z level=INFO fiber=#0 message="t2: [1, Alice]"
+timestamp=2025-07-22T18:59:52.996Z level=INFO fiber=#0 message="Equal.equals(t1, t2): true"
+timestamp=2025-07-22T18:59:52.996Z level=INFO fiber=#0 message="HashSet.has(set, t2): true"
+timestamp=2025-07-22T18:59:52.997Z level=INFO fiber=#0 message="Pattern matched tuple: id=1, name=Alice"
+
+✅ content/new/src/data-tuple.ts executed successfully
+🏃 Running content/new/src/observability-custom-metrics.ts...
+--- Output for content/new/src/observability-custom-metrics.ts ---
+timestamp=2025-07-22T18:59:53.109Z level=INFO fiber=#0 message="Job processed"
+timestamp=2025-07-22T18:59:53.110Z level=INFO fiber=#0 message="User signed in"
+timestamp=2025-07-22T18:59:53.110Z level=INFO fiber=#0 message="User signed out"
+timestamp=2025-07-22T18:59:53.110Z level=INFO fiber=#0 message="Recorded request duration: 0.7s"
+
+✅ content/new/src/observability-custom-metrics.ts executed successfully
+🏃 Running content/new/src/observability-effect-fn.ts...
+--- Output for content/new/src/observability-effect-fn.ts ---
+timestamp=2025-07-22T18:59:53.221Z level=INFO fiber=#0 message="Calling add with 2 and 3"
+timestamp=2025-07-22T18:59:53.222Z level=INFO fiber=#0 message="Result: 5"
+timestamp=2025-07-22T18:59:53.222Z level=INFO fiber=#0 message="Sum is 5"
+
+✅ content/new/src/observability-effect-fn.ts executed successfully
+🏃 Running content/new/src/observability-opentelemetry.ts...
+--- Output for content/new/src/observability-opentelemetry.ts ---
+timestamp=2025-07-22T18:59:53.342Z level=INFO fiber=#0 message="Fetched user: {\"id\":1,\"name\":\"Alice\"}"
+
+✅ content/new/src/observability-opentelemetry.ts executed successfully
+🏃 Running content/new/src/observability-structured-logging.ts...
+--- Output for content/new/src/observability-structured-logging.ts ---
+timestamp=2025-07-22T18:59:53.454Z level=INFO fiber=#0 message="Starting the application"
+timestamp=2025-07-22T18:59:53.455Z level=INFO fiber=#0 message="User signed in"
+timestamp=2025-07-22T18:59:53.455Z level=ERROR fiber=#0 message="Failed to connect to database"
+timestamp=2025-07-22T18:59:53.455Z level=INFO fiber=#0 message="Processing user: 42"
+timestamp=2025-07-22T18:59:53.455Z level=INFO fiber=#0 message="Beginning workflow"
+timestamp=2025-07-22T18:59:53.455Z level=INFO fiber=#0 message="Workflow step completed"
+timestamp=2025-07-22T18:59:53.455Z level=ERROR fiber=#0 message="Something went wrong"
+
+✅ content/new/src/observability-structured-logging.ts executed successfully
+🏃 Running content/new/src/observability-tracing-spans.ts...
+--- Output for content/new/src/observability-tracing-spans.ts ---
+timestamp=2025-07-22T18:59:53.566Z level=INFO fiber=#0 message="Starting workflow"
+timestamp=2025-07-22T18:59:53.568Z level=INFO fiber=#0 message="Fetched user: Alice"
+
+✅ content/new/src/observability-tracing-spans.ts executed successfully
+🏃 Running content/new/src/pattern-catchtag.ts...
+--- Output for content/new/src/pattern-catchtag.ts ---
+timestamp=2025-07-22T18:59:53.682Z level=INFO fiber=#0 message="catchTag result: Recovered from validation error: Invalid input"
+timestamp=2025-07-22T18:59:53.683Z level=INFO fiber=#0 message="catchTags result: Handled not found!"
+
+✅ content/new/src/pattern-catchtag.ts executed successfully
+🏃 Running content/new/src/pattern-match.ts...
+--- Output for content/new/src/pattern-match.ts ---
+timestamp=2025-07-22T18:59:53.792Z level=INFO fiber=#0 message="Effect.match result: Error: Oops!"
+timestamp=2025-07-22T18:59:53.793Z level=INFO fiber=#0 message="Option.match result: Value: 42"
+timestamp=2025-07-22T18:59:53.793Z level=INFO fiber=#0 message="Either.match result: Error: fail"
+
+✅ content/new/src/pattern-match.ts executed successfully
+🏃 Running content/new/src/pattern-matcheffect.ts...
+--- Output for content/new/src/pattern-matcheffect.ts ---
+timestamp=2025-07-22T18:59:53.904Z level=ERROR fiber=#0 message="Error: Oops!"
+
+✅ content/new/src/pattern-matcheffect.ts executed successfully
+🏃 Running content/new/src/pattern-matchtag.ts...
+--- Output for content/new/src/pattern-matchtag.ts ---
+timestamp=2025-07-22T18:59:54.014Z level=INFO fiber=#0 message="matchTag result: Validation failed: Invalid input"
+
+✅ content/new/src/pattern-matchtag.ts executed successfully
+🏃 Running content/new/src/pattern-option-either-checks.ts...
+--- Output for content/new/src/pattern-option-either-checks.ts ---
+timestamp=2025-07-22T18:59:54.128Z level=INFO fiber=#0 message="We have a value: 42"
+timestamp=2025-07-22T18:59:54.129Z level=INFO fiber=#0 message="Failure: error"
+timestamp=2025-07-22T18:59:54.129Z level=INFO fiber=#0 message="Present values: [1, 3]"
+
+✅ content/new/src/pattern-option-either-checks.ts executed successfully
+
+❌ 1 files failed to run

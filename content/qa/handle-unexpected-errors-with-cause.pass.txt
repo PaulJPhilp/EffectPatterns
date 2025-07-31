@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Handle unexpected errors by inspecting the cause." The code correctly demonstrates using `Effect.catchAllCause`, `Cause.isDie`, `Cause.isFailure`, `Cause.failureOption`, `Cause.pretty`, and comprehensive structured logging with `Effect.logInfo`, `Effect.logWarning`, and `Effect.logError` throughout the program.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/handle-unexpected-errors-with-cause.ts`) perfectly illustrates the pattern described in the documentation (`published/handle-unexpected-errors-with-cause.mdx`). The code demonstrates proper cause inspection, distinguishing between expected failures (Fail) and unexpected defects (Die), and comprehensive error handling with retry policies and timeouts.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Cause.isDie`, `Cause.isFailure`, `Cause.failureOption`, `Cause.pretty`, `Data.TaggedError`, `Effect.Service`, `Effect.gen`, `Effect.logInfo`, `Effect.logWarning`, `Effect.logError`, `Effect.fail`, `Effect.succeed`, `Effect.sync`, `Effect.catchAllCause`, `Effect.retry`, `Effect.timeout`, `Effect.catchAll`, `Effect.orElse`, `Effect.all`, `Schedule.exponential`, `Schedule.recurs`, `Duration.seconds`, `Effect.provide`, and `Effect.runPromise` correctly. The code follows proper structured logging and demonstrates Effect's advanced error handling patterns effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper interface definitions, strong typing throughout with explicit error union types, and proper error handling patterns. The service-based architecture is well-implemented with clear separation of concerns and comprehensive cause inspection logic.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Cause.isDie`, `Cause.isFailure`, `Cause.failureOption`, `Cause.pretty`, `Data.TaggedError`, `Effect.Service`, `Effect.gen`, `Effect.logInfo`, `Effect.logWarning`, `Effect.logError`, `Effect.fail`, `Effect.succeed`, `Effect.sync`, `Effect.catchAllCause`, `Effect.retry`, `Effect.timeout`, `Effect.catchAll`, `Effect.orElse`, `Effect.all`, `Schedule.exponential`, `Schedule.recurs`, `Duration.seconds`, `Effect.provide`, and `Effect.runPromise` are all preferred current APIs for cause-based error handling patterns.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates handling unexpected errors with proper cause inspection, distinguishing between expected and unexpected failures, comprehensive error recovery strategies, structured logging, and current Effect-TS best practices.

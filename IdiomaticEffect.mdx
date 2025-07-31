@@ -1,0 +1,60 @@
+## What is "Idiomatic Effect-TS"?
+
+**Idiomatic Effect-TS** refers to the preferred, natural, and most effective way to write applications using the Effect library in TypeScript. It means leveraging Effect's core principles, powerful combinators, and integrated ecosystem to build robust, composable, and type-safe applications, rather than forcing patterns from other paradigms (like traditional imperative programming or Promises).
+
+The goal of writing idiomatic Effect-TS is to create code that is:
+
+*   **Referentially Transparent:** Effects are pure blueprints describing computations, not immediately executed side effects.
+*   **Composability-First:** Small, focused Effects are easily combined into complex workflows.
+*   **Type-Safe & Predictable:** Errors and requirements are explicit in the type signature `Effect<E, A, R> \)`, leading to fewer runtime surprises.
+*   **Resource-Safe:** Resources are always acquired and released correctly, even in the presence of errors or interruptions.
+*   **Concurrency-Aware:** Effect's primitives handle concurrency safely and efficiently.
+*   **Testable:** Dependencies are managed through the Effect context, making services easy to mock and test in isolation.
+*   **Declarative:** Focusing on "what" to achieve rather than "how" to achieve it.
+
+### Key Characteristics of Idiomatic Effect-TS Code:
+
+1.  **Pipe-First Composition:**
+    *   **Idiomatic:** Chaining operations using the `.pipe()` method for readability and type inference.
+        ```typescript
+        Effect.succeed(10).pipe(
+          Effect.map((n) => n * 2),
+          Effect.flatMap((n) => Effect.succeed(n + 5))
+        );
+        ```
+    *   **Non-Idiomatic:** Deeply nested function calls, which can reduce readability and make type inference harder.
+        ```typescript
+        Effect.flatMap(Effect.map(Effect.succeed(10), (n) => n * 2), (n) => Effect.succeed(n + 5));
+        ```
+
+2.  **`Effect.gen` for Sequential Logic:**
+    *   **Idiomatic:** Using `Effect.gen` with `yield*` to write sequential, dependent operations that look synchronous but are truly effectful and asynchronous.
+        ```typescript
+        const program = Effect.gen(function* () {
+          const user = yield* getUserService.getUserById(1);
+          const posts = yield* postService.getPostsByUser(user.id);
+          return { user, posts };
+        });
+        ```
+    *   **Non-Idiomatic:** Long chains of `Effect.flatMap` without `Effect.gen`, which can become hard to read.
+
+3.  **Explicit Error Handling as Data:**
+    *   **Idiomatic:** Modeling errors as tagged unions (`Data.TaggedError`) and handling them with `Effect.catchTag`, `Effect.catchTags`, `Effect.orElse`, or `Effect.match`.
+        ```typescript
+        Effect.fail(new UserNotFoundError()).pipe(
+          Effect.catchTag("UserNotFoundError", () => Effect.succeed("Default User"))
+        );
+        ```
+    *   **Non-Idiomatic:** Using traditional `try/catch` blocks within Effect code, or throwing raw JavaScript `Error` objects without converting them to tagged errors.
+
+4.  **Dependency Injection via `Layer` and `Effect.Service`:**
+    *   **Idiomatic:** Defining services as `Effect.Service` classes and providing their implementations via `Layer`. Accessing services in Effects using `yield* MyService`.
+    *   **Non-Idiomatic:** Relying on global singletons, mutable dependencies, or passing dependencies via constructor arguments without using Effect's `Layer` system.
+
+5.  **Leveraging Effect Data Types:**
+    *   **Idiomatic:** Using `Option` instead of `null`/`undefined`, `Either` for explicit success/failure, `Chunk` for efficient immutable collections, `Ref` for safe concurrent state, and `Redacted` for sensitive data.
+    *   **Non-Idiomatic:** Extensive use of `null`/`undefined` checks, mutable arrays, or unprotected shared variables.
+
+6.  **Declarative Control Flow:**
+    *   **Idiomatic:** Using combinators like `Effect.if`, `Effect.when`, `Effect.filter` for conditional logic.
+    *   **Non-Idiomatic:** Using imperative `if/else` statements that return different Effect instances, or mutating state to control flow within an Effect.

@@ -1,4 +1,4 @@
-import { Option } from "effect";
+import { Effect, Option } from "effect";
 
 interface User {
   id: number;
@@ -25,5 +25,9 @@ const greeting = (id: number): string =>
     }),
   );
 
-console.log(greeting(1)); // "Welcome, Paul!"
-console.log(greeting(3)); // "User not found."
+const program = Effect.gen(function* () {
+  yield* Effect.log(greeting(1)); // "Welcome, Paul!"
+  yield* Effect.log(greeting(3)); // "User not found."
+});
+
+Effect.runPromise(program);

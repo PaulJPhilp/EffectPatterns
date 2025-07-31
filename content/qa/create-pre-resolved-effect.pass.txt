@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Create pre-resolved effects with succeed and fail." The code correctly demonstrates using `Effect.succeed` for immediate success values, `Effect.fail` for immediate failures, and `Effect.logInfo` for structured logging throughout the program.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/create-pre-resolved-effect.ts`) perfectly illustrates the pattern described in the documentation (`published/create-pre-resolved-effect.mdx`). The code demonstrates the exact guideline: using `Effect.succeed` for known values, `Effect.fail` for immediate errors, and proper error handling with `Effect.catchTag`.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Effect.succeed`, `Effect.fail`, `Data.TaggedError`, `Effect.gen`, `Effect.logInfo`, `Effect.catchTag`, and `Effect.runPromise` correctly. The code follows proper structured logging and demonstrates Effect's pre-resolved effect creation effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper class definitions extending `Data.TaggedError`, and strong typing throughout. The effect creation patterns are well-implemented with proper error handling.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.succeed`, `Effect.fail`, `Data.TaggedError`, `Effect.gen`, `Effect.logInfo`, `Effect.catchTag`, and `Effect.runPromise` are all preferred current APIs for pre-resolved effect creation patterns.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates pre-resolved effect creation with proper error handling, structured logging, and current Effect-TS best practices.

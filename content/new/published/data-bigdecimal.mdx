@@ -1,0 +1,66 @@
+---
+title: "Work with Arbitrary-Precision Numbers using BigDecimal"
+id: "data-bigdecimal"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Numeric Precision", "Financial", "Scientific"]
+summary: "Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations."
+tags: ["BigDecimal", "numeric", "precision", "decimal", "data-type", "effect"]
+rule:
+  description: "Use BigDecimal to represent and compute with decimal numbers that require arbitrary precision, such as in finance or scientific domains."
+related: ["data-chunk", "data-struct"]
+author: "PaulJPhilp"
+---
+
+# Work with Arbitrary-Precision Numbers using `BigDecimal`
+
+## Guideline
+
+Use the `BigDecimal` data type for decimal numbers that require arbitrary precision, such as financial or scientific calculations.  
+This avoids rounding errors and loss of precision that can occur with JavaScript's native `number` type.
+
+## Rationale
+
+JavaScript's `number` type is a floating-point double, which can introduce subtle bugs in calculations that require exact decimal representation.  
+`BigDecimal` provides precise, immutable arithmetic for critical domains.
+
+## Good Example
+
+```typescript
+import { BigDecimal, Effect, Option } from "effect";
+
+const aOpt = BigDecimal.fromString("0.1");
+const bOpt = BigDecimal.fromString("0.2");
+
+const program = Effect.gen(function* () {
+  if (aOpt._tag === "Some" && bOpt._tag === "Some") {
+    const a = aOpt.value;
+    const b = bOpt.value;
+    const sum = BigDecimal.sum(a, b);
+    const product = BigDecimal.multiply(a, b);
+    const isEqual = BigDecimal.equals(sum, BigDecimal.make("0.3"));
+    const asString = BigDecimal.toString(sum);
+    const asNumber = BigDecimal.unsafeToNumber(sum);
+    yield* Effect.log(`a: ${a.toString()}`);
+    yield* Effect.log(`b: ${b.toString()}`);
+    yield* Effect.log(`sum: ${sum.toString()}`);
+    yield* Effect.log(`product: ${product.toString()}`);
+    yield* Effect.log(`sum equals 0.3: ${isEqual}`);
+    yield* Effect.log(`sum as string: ${asString}`);
+    yield* Effect.log(`sum as number: ${asNumber}`);
+  } else {
+    yield* Effect.log("Failed to parse one or both BigDecimal values.");
+  }
+});
+
+Effect.runPromise(program);
+
+```
+
+**Explanation:**  
+- `BigDecimal` is immutable and supports precise decimal arithmetic.
+- Use it for domains where rounding errors are unacceptable (e.g., finance, billing, scientific data).
+- Avoids the pitfalls of floating-point math in JavaScript.
+
+## Anti-Pattern
+
+Using JavaScript's native `number` type for financial or scientific calculations, which can lead to rounding errors and loss of precision.

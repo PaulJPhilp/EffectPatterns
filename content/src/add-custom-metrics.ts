@@ -27,4 +27,10 @@ const createUser = Effect.gen(function* () {
 });
 
 // Run the Effect
-Effect.runPromise(createUser).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* createUser;
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);

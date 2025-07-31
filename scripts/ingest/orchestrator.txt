@@ -1,0 +1,119 @@
+
+
+**Prompt for AI Coding Agent: Implement `populate-expectations.ts`**
+
+**Role:** You are an expert TypeScript developer specializing in the Effect-TS ecosystem. Your task is to implement a Node.js script named `populate-expectations.ts` that automates the process of generating `expectedOutput` and `expectedError` fields within MDX pattern files. This involves executing their corresponding TypeScript code examples and then querying a (simulated) LLM for validation.
+
+---
+
+**Crucial Constraints and Guidelines for Implementation:**
+
+1.  **Effect-TS Version:** All code within `populate-expectations.ts` **MUST** be written for **Effect version 3.16.16**. Ensure all imports, API usage, and patterns conform to this specific version.
+
+2.  **Strict Adherence to "Idiomatic Effect-TS":**
+    Your implementation of `populate-expectations.ts` **MUST** strictly follow the definition of "Idiomatic Effect-TS" as provided:
+
+    *   **Referentially Transparent:** Effects are pure blueprints; avoid direct side effects.
+    *   **Composability-First:** Use Effect's combinators to compose small, focused Effects.
+    *   **Type-Safe & Predictable:** Leverage TypeScript and Effect's type system (e.g., `Effect<E, A, R>`). Explicitly type `Error` channels where possible.
+    *   **Resource-Safe:** Manage resources correctly, leveraging Effect's resource management primitives (e.g., `ChildProcess` `Layer`, `FileSystem` `Layer`).
+    *   **Concurrency-Aware:** Use Effect's concurrency primitives (`Effect.forEach` with appropriate concurrency options).
+    *   **Testable:** Design with dependencies injected via `Layer` and `Effect.Service`.
+    *   **Declarative:** Focus on "what" to achieve, minimizing imperative constructs.
+
+    Specifically, ensure adherence to these **Key Characteristics of Idiomatic Effect-TS Code**:
+
+    *   **Pipe-First Composition:** Chain operations using the `.pipe()` method.
+    *   **`Effect.gen` for Sequential Logic:** Use `Effect.gen` with `yield*` for sequential, dependent operations and for accessing services.
+    *   **Explicit Error Handling as Data:** Model errors as `Data.TaggedError` (if custom errors are defined) or use `Effect.mapError`, `Effect.catchAll`, `Effect.catchTag`, etc. Do not use raw `try/catch` or rethrow JavaScript errors outside Effect's error channel.
+    *   **Dependency Injection via `Layer` and `Effect.Service`:** Define services using `Effect.Service` and provide their implementations via `Layer`. Access them via `yield*`.
+    *   **Leveraging Effect Data Types:** Utilize `Option`, `Either`, `Chunk`, `Ref`, `Data.struct`, `Data.TaggedClass` (`Data.case`) appropriately for data modeling.
+    *   **Declarative Control Flow:** Use Effect combinators for conditionals (e.g., `Effect.if`).
+
+---
+
+**Project Structure & File Paths:**
+
+*   **Root Directory for Paths:** `process.cwd()`
+*   **Source TypeScript examples:** `content/new/src/[base_filename].ts`
+*   **Processed MDX pattern files:** `content/new/processed/[base_filename].mdx`
+
+**Required Dependencies (for `populate-expectations.ts`):**
+
+*   **Effect-TS:** Core Effect library (`effect`) and platform-node modules (`@effect/platform-node/FileSystem`, `@effect/platform-node/Path`, `@effect/platform-node/ChildProcess`).
+*   **`yaml` library:** For parsing and stringifying YAML frontmatter. Must be imported as `import { parse as parseYaml, stringify as stringifyYaml } from "yaml";`.
+
+---
+
+**Detailed Functionality Requirements for `populate-expectations.ts`:**
+
+The script must implement the following using idiomatic Effect-TS patterns:
+
+1.  **Configuration Service (`AppConfig`):**
+    *   Define an `Effect.Config.TaggedClass` named `AppConfig`.
+    *   Properties: `srcDir` (string) and `processedDir` (string).
+    *   Set default values using `Config.string("ENV_VAR_NAME").withDefault(Path.join(process.cwd(), "..."))`.
+    *   Provide `AppConfigLive` as a `Layer.succeed`.
+
+2.  **LLM Service Definition (`LLMService`):**
+    *   Define an `Effect.Context.Tag` named `LLMService`.
+    *   It should expose a single method: `generateExpectations`.
+    *   `generateExpectations` must accept an `ExpectationPrompt` (a `Data.TaggedClass`) and return an `Effect<GeneratedExpectations, Error, never>`. (The `Error` type should represent potential LLM-related communication failures).
+    *   Define `ExpectationPrompt` as `Data.TaggedClass` with: `patternMdxContent: string`, `tsCodeContent: string`, `actualStdout: string`, `actualStderr: string`, `actualErrorDetail: string`, `executionStatus: "success" | "failure"`.
+    *   Define `GeneratedExpectations` as `Data.TaggedClass` with: `expectedOutput?: string`, `expectedError?: string`, `reasoning: string`, `discrepancyFlag: boolean`, `discrepancyReason?: string`.
+
+3.  **LLM Service Live Implementation (`LLMLive` - SIMULATED):**
+    *   Provide `LLMLive` as a `Layer.succeed`.
+    *   The `generateExpectations` method in `LLMLive` will **simulate** LLM behavior:
+        *   Log a debug message.
+        *   If `prompt.executionStatus` is "success", set `expectedOutput` to `prompt.actualStdout` (if non-empty).
+        *   If `prompt.executionStatus` is "failure", set `expectedError` to `prompt.actualErrorDetail` (or `prompt.actualStderr` if `actualErrorDetail` is empty, if non-empty).
+        *   `reasoning` should be a simple string like "Simulated LLM response based on observed execution."
+        *   `discrepancyFlag` should always be `false` (and `discrepancyReason` `undefined`) for this simulation, as it represents the *real* LLM's assessment.
+        *   Include an `Effect.delay("100ms")` to simulate latency.
+
+4.  **Utility Functions:**
+    *   **`Frontmatter` Interface:** Define a `readonly` interface for MDX frontmatter, including `expectedOutput?: string`, `expectedError?: string`, and `needsReview?: boolean`.
+    *   **`readMdxAndFrontmatter(filePath: Path.Path)`:**
+        *   An `Effect` function.
+        *   Reads MDX file content.
+        *   Parses YAML frontmatter using `parseYaml`.
+        *   Returns an `Effect` yielding a `Data.struct` containing `content: string`, `frontmatter: Frontmatter`, and `mdxBody: string`.
+        *   Handle missing or malformed frontmatter by mapping parsing errors into the Effect's error channel.
+    *   **`updateMdxContent(originalContent: string, updatedFrontmatter: Frontmatter)`:**
+        *   A pure function.
+        *   Serializes `updatedFrontmatter` to YAML using `stringifyYaml`.
+        *   Reconstructs the MDX content, preserving leading newlines and trimming extraneous whitespace.
+
+5.  **Core File Processing Logic (`processPatternFile`):**
+    *   An `Effect.gen` function taking `mdxFilePath: Path.Path`.
+    *   **Must `yield*` all required services** (`AppConfig`, `FileSystem.FileSystem`, `Path.Path`, `ChildProcess.ChildProcess`, `LLMService`).
+    *   **Steps:**
+        *   Log processing start.
+        *   Read MDX content and its frontmatter.
+        *   Read the corresponding TypeScript code content. If the TS file is missing, `Effect.catchAll` it, log a warning, and yield an empty string for `tsCodeContent`.
+        *   **Execute the TypeScript file:** Use `ChildProcess.ChildProcess.exec`. Map its success/failure into a `Data.struct` tagged union (e.g., `{ type: "success", stdout, stderr }` or `{ type: "failure", error, stdout, stderr }`).
+        *   Determine `executionStatus` based on the execution result.
+        *   Construct an `ExpectationPrompt` instance using `Data.struct`.
+        *   Call `llm.generateExpectations(llmPrompt)`.
+        *   Update the MDX `frontmatter` with the LLM's `expectedOutput`, `expectedError`.
+        *   If `generatedExpectations.discrepancyFlag` is true, set `frontmatter.needsReview = true` and log an error/warning. Otherwise, ensure `needsReview` is deleted.
+        *   Reconstruct the full MDX content using `updateMdxContent`.
+        *   Write the updated MDX content back to the file using `FileSystem.FileSystem.writeFileString`.
+        *   Implement `Effect.catchAll` for `processPatternFile` to log any errors specific to processing a single file, allowing the main program to continue.
+
+6.  **Main Program (`mainProgram`):**
+    *   An `Effect.gen` function.
+    *   Log script start.
+    *   Read all `.mdx` files from `processedDir`.
+    *   Use `Effect.forEach` to process each `mdxFilePath` in parallel.
+        *   Set `concurrency` (e.g., `"unbounded"`) and `discard: true` (since `processPatternFile` handles file writes as side effects).
+    *   Log script completion.
+
+7.  **Running the Program (`Effect.runPromise`):**
+    *   The `mainProgram` must be wrapped with `.pipe(Effect.provide(...))` to provide *all necessary `Layer`s* (explicitly listed, including the platform-node ones and the configured `Console`).
+    *   Execute the entire Effect program using `Effect.runPromise`, ensuring global error handling and process exit on fatal errors.
+
+---
+
+**Output:** Provide the complete TypeScript code for `populate-expectations.ts` that strictly adheres to these instructions.  The code must be written for Effect version 3.16.16.  The code is stored in the `scripts/ingest/populate-expectations.ts` file.

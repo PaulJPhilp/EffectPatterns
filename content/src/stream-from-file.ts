@@ -47,9 +47,9 @@ const program = Effect.gen(function* () {
 Effect.runPromise(
   program.pipe(
     Effect.provide(NodeFileSystem.layer)
-  )
-).catch(console.error);
-/*
+  ))
+
+  /*
 Output:
 ... level=INFO msg="Processing: line 1"
 ... level=INFO msg="Processing: line 2"

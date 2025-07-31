@@ -2,11 +2,11 @@ import { Effect, Console } from "effect";
 
 // A mock resource that needs to be managed
 const getDbConnection = Effect.sync(() => ({ id: Math.random() })).pipe(
-  Effect.tap(() => Console.log("Connection Acquired")),
+  Effect.tap(() => Effect.log("Connection Acquired")),
 );
 
 const closeDbConnection = (conn: { id: number }): Effect.Effect<void, never, never> =>
-  Effect.sync(() => console.log(`Connection ${conn.id} Released`));
+  Effect.log(`Connection ${conn.id} Released`);
 
 // The program that uses the resource
 const program = Effect.acquireRelease(
@@ -14,7 +14,7 @@ const program = Effect.acquireRelease(
   (connection) => closeDbConnection(connection) // 2. cleanup
 ).pipe(
   Effect.tap((connection) =>
-    Console.log(`Using connection ${connection.id} to run query...`)
+    Effect.log(`Using connection ${connection.id} to run query...`)
   )
 );
 

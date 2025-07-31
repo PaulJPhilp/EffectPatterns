@@ -19,6 +19,10 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program
-Effect.runPromise(program).then(
-  result => Effect.runSync(Effect.log(`Final result: ${result}`))
-);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Final result: ${result}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);

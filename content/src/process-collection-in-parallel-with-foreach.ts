@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Clock, Effect } from "effect";
 
 // Mock function to simulate fetching a user by ID
 const fetchUserById = (id: number) =>
@@ -14,11 +14,11 @@ const userIds = Array.from({ length: 10 }, (_, i) => i + 1);
 const program = Effect.gen(function* () {
   yield* Effect.logInfo("Starting parallel processing...");
 
-  const startTime = Date.now();
+  const startTime = yield* Clock.currentTimeMillis;
   const users = yield* Effect.forEach(userIds, fetchUserById, {
     concurrency: 5, // Limit to 5 concurrent operations
   });
-  const endTime = Date.now();
+  const endTime = yield* Clock.currentTimeMillis;
 
   yield* Effect.logInfo(
     `Processed ${users.length} users in ${endTime - startTime}ms`

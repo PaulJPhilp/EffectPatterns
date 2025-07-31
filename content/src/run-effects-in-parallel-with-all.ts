@@ -15,4 +15,10 @@ const program = Effect.all([fetchUser, fetchPosts]);
 
 // The resulting effect will succeed with a tuple: [{id, name}, [{title}]]
 // Total execution time will be ~1.5 seconds (the duration of the longest task).
-Effect.runPromise(program).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const results = yield* program;
+  yield* Effect.log(`Results: ${JSON.stringify(results)}`);
+  return results;
+});
+
+Effect.runPromise(programWithLogging);

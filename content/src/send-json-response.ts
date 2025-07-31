@@ -1,4 +1,4 @@
-import { Effect, Duration } from "effect";
+import { Effect, Context, Duration, Layer } from "effect";
 import { NodeContext, NodeHttpServer } from "@effect/platform-node";
 import { createServer } from "node:http";
 
@@ -25,21 +25,21 @@ const program = Effect.gen(function* () {
 
   // Create and start HTTP server
   const server = createServer((req, res) => {
-    Effect.runPromise(jsonServer.handleRequest()).then(
-      (response) => {
+    const requestHandler = Effect.gen(function* () {
+      try {
+        const response = yield* jsonServer.handleRequest();
         res.writeHead(response.status, response.headers);
         res.end(response.body);
         // Log the response for demonstration
-        Effect.runPromise(
-          Effect.logInfo(`Sent JSON response: ${response.body}`)
-        );
-      },
-      (error) => {
+        yield* Effect.logInfo(`Sent JSON response: ${response.body}`);
+      } catch (error: any) {
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Internal Server Error" }));
-        Effect.runPromise(Effect.logError(`Request error: ${error.message}`));
+        yield* Effect.logError(`Request error: ${error.message}`);
       }
-    );
+    });
+    
+    Effect.runPromise(requestHandler);
   });
 
   // Start server with error handling
@@ -73,9 +73,16 @@ const program = Effect.gen(function* () {
       return error;
     })
   ),
-  Effect.provide(JsonServer.Default),
-  Effect.provide(NodeContext.layer)
+  // Merge layers and provide them in a single call to ensure proper lifecycle management
+  Effect.provide(Layer.merge(
+    JsonServer.Default,
+    NodeContext.layer
+  ))
 );
 
 // Run the program
-Effect.runPromise(program);
+// Use Effect.runFork for server applications that shouldn't resolve the promise
+Effect.runPromise(program.pipe(
+  // Ensure the Effect has no remaining context requirements for runPromise
+  Effect.map(() => undefined)
+));

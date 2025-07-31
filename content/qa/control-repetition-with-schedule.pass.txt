@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Use Schedule to create composable policies for controlling the repetition and retrying of effects." The code correctly demonstrates using `Schedule.exponential`, `Schedule.jittered`, `Schedule.compose`, `Schedule.recurs`, and `Effect.retry` for declarative repetition control.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/control-repetition-with-schedule.ts`) perfectly illustrates the pattern described in the documentation (`published/control-repetition-with-schedule.mdx`). The code demonstrates the exact guideline: building composable schedules from primitive ones, using `Effect.retry` with the composed schedule, and maintaining structured logging throughout.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Effect.try`, `Effect.logInfo`, `Schedule.exponential`, `Schedule.jittered`, `Schedule.compose`, `Schedule.recurs`, `Effect.retry`, `Effect.gen`, and `Effect.runPromise` correctly. The code follows proper structured logging and demonstrates Effect's schedule composition effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations and proper function definitions. The schedule composition is well-implemented and demonstrates clear declarative patterns with proper error handling.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.try`, `Effect.logInfo`, `Schedule.exponential`, `Schedule.jittered`, `Schedule.compose`, `Schedule.recurs`, `Effect.retry`, `Effect.gen`, and `Effect.runPromise` are all preferred current APIs for schedule-based repetition control.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates schedule composition with proper declarative repetition control, structured logging, and current Effect-TS best practices.

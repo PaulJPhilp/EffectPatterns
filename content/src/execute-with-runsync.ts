@@ -1,10 +1,10 @@
 import { Effect } from "effect"
 
 // Simple synchronous program
-const program1 = Effect.sync(() => {
+const program1 = Effect.gen(function* () {
   const n = 10
   const result = n * 2
-  console.log(`Simple program result: ${result}`)
+  yield* Effect.log(`Simple program result: ${result}`)
   return result
 })
 

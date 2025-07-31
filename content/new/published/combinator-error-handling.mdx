@@ -1,0 +1,74 @@
+---
+title: "Handling Errors with catchAll, orElse, and match"
+id: "combinator-error-handling"
+skillLevel: "intermediate"
+useCase: ["Combinators", "Error Handling", "Composition"]
+summary: "Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option."
+tags: ["error-handling", "catchAll", "orElse", "match", "combinator", "effect", "either", "option"]
+rule:
+  description: "Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way."
+related: ["combinator-map", "combinator-flatmap", "combinator-conditional"]
+author: "PaulJPhilp"
+---
+
+# Handling Errors with `catchAll`, `orElse`, and `match`
+
+## Guideline
+
+Use combinators like `catchAll`, `orElse`, and `match` to handle errors declaratively.  
+These allow you to recover from failures, provide fallback values, or transform errors, all while preserving composability and type safety.
+
+## Rationale
+
+Error handling is a first-class concern in functional programming.  
+By using combinators, you keep error recovery logic close to where errors may occur, and avoid scattering try/catch or null checks throughout your code.
+
+## Good Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+const effect = Effect.fail("fail!").pipe(
+  Effect.catchAll((err) => Effect.succeed(`Recovered from: ${err}`))
+);
+
+const option = Option.none().pipe(Option.orElse(() => Option.some("default")));
+
+const either = Either.left("error").pipe(
+  Either.orElse(() => Either.right("fallback"))
+);
+
+const matchEffect = Effect.fail("fail!").pipe(
+  Effect.match({
+    onFailure: (err) => `Error: ${err}`,
+    onSuccess: (value) => `Success: ${value}`,
+  })
+);
+
+const program = Effect.gen(function* () {
+  const effectResult = yield* effect;
+  yield* Effect.log(`Effect.catchAll result: ${effectResult}`);
+  yield* Effect.log(
+    `Option.orElse result: ${Option.isSome(option) ? option.value : "None"}`
+  );
+  yield* Effect.log(
+    `Either.orElse result: ${
+      Either.isRight(either) ? either.right : either.left
+    }`
+  );
+  const matchResult = yield* matchEffect;
+  yield* Effect.log(`Effect.match result: ${matchResult}`);
+});
+
+Effect.runPromise(program);
+
+```
+
+**Explanation:**  
+These combinators let you handle errors, provide defaults, or transform error values in a way that is composable and type-safe.  
+You can recover from errors, provide alternative computations, or pattern match on success/failure.
+
+## Anti-Pattern
+
+Using try/catch, null checks, or imperative error handling outside the combinator world.  
+This breaks composability, loses type safety, and makes error propagation unpredictable.

@@ -1,0 +1,59 @@
+---
+title: "Lifting Values with succeed, some, and right"
+id: "constructor-succeed-some-right"
+skillLevel: "beginner"
+useCase: ["Constructors", "Lifting", "Composition"]
+summary: "Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe."
+tags: ["succeed", "some", "right", "constructor", "effect", "option", "either", "lifting"]
+rule:
+  description: "Use succeed, some, and right to create Effect, Option, or Either from plain values."
+related: ["constructor-fail-none-left", "constructor-try-trypromise"]
+author: "PaulJPhilp"
+---
+
+# Lifting Values with `succeed`, `some`, and `right`
+
+## Guideline
+
+Use the `succeed`, `some`, and `right` constructors to lift plain values into the Effect, Option, or Either world.  
+This is the foundation for building composable, type-safe programs.
+
+## Rationale
+
+Lifting values into these structures allows you to compose them with other effects, options, or eithers, and to take advantage of all the combinators and error handling that Effect provides.
+
+## Good Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+const effect = Effect.succeed(42);
+const option = Option.some("hello");
+const either = Either.right({ id: 1 });
+
+const program = Effect.gen(function* () {
+  const effectResult = yield* effect;
+  yield* Effect.log(`Effect.succeed result: ${effectResult}`);
+  yield* Effect.log(
+    `Option.some result: ${Option.isSome(option) ? option.value : "None"}`
+  );
+  yield* Effect.log(
+    `Either.right result: ${
+      Either.isRight(either) ? JSON.stringify(either.right) : either.left
+    }`
+  );
+});
+
+Effect.runPromise(program);
+
+```
+
+**Explanation:**  
+- `Effect.succeed(value)` creates an effect that always succeeds with `value`.
+- `Option.some(value)` creates an option that is always present.
+- `Either.right(value)` creates an either that always represents success.
+
+## Anti-Pattern
+
+Passing plain values around outside the Effect, Option, or Either world, or using `null`/`undefined` to represent absence or success.  
+This leads to less composable, less type-safe code and makes error handling harder.

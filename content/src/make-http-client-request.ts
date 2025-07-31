@@ -36,7 +36,7 @@ const serverLayer = HttpServer.serve(app);
 const mainLayer = Layer.merge(Database.Default, server);
 
 const program = Effect.gen(function* () {
-  yield* Console.log("Server started on http://localhost:3457");
+  yield* Effect.log("Server started on http://localhost:3457");
   const layer = Layer.provide(serverLayer, mainLayer);
 
   // Launch server and run for a short duration to demonstrate
@@ -46,12 +46,12 @@ const program = Effect.gen(function* () {
   yield* Effect.sleep(Duration.seconds(1));
 
   // Simulate some server activity
-  yield* Console.log("Server is running and ready to handle requests");
+  yield* Effect.log("Server is running and ready to handle requests");
   yield* Effect.sleep(Duration.seconds(2));
 
   // Shutdown gracefully
   yield* Fiber.interrupt(serverFiber);
-  yield* Console.log("Server shutdown complete");
+  yield* Effect.log("Server shutdown complete");
 });
 
 NodeRuntime.runMain(

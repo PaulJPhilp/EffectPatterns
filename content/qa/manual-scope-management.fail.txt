@@ -1,0 +1,21 @@
+**Validation Result:** FAIL
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   FAIL: The pattern violates the global rule "Leverage Effect's built-in structured logging." The code uses direct `Console.log` on lines 6, 10, 13, 14, and 30 instead of using Effect's structured logging system with `Effect.log` or `Effect.logInfo`. This breaks consistency with Effect's logging paradigm and makes the logging less structured and harder to manage.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/manual-scope-management.ts`) correctly demonstrates the pattern described in the documentation (`published/manual-scope-management.mdx`). The code properly shows how to use `Effect.acquireRelease` for resource management and `Effect.scoped` for scope boundaries, with proper LIFO cleanup order.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PARTIAL: While the code correctly uses `Effect.succeed`, `Effect.tap`, `Effect.sync`, `Effect.gen`, `Effect.acquireRelease`, `Effect.scoped`, and `Effect.runPromise`, it breaks the functional paradigm by using direct `Console.log` instead of staying within the Effect ecosystem for logging operations. The resource management patterns are implemented correctly.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper function definitions, and strong typing throughout. The resource management patterns are well-implemented with clear demonstration of acquire-release semantics and automatic cleanup capabilities.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.succeed`, `Effect.tap`, `Effect.sync`, `Effect.gen`, `Effect.acquireRelease`, `Effect.scoped`, and `Effect.runPromise` are all preferred current APIs for resource management patterns.
+
+**Overall Recommendation:**
+Requires revisions to replace all direct `Console.log` statements with Effect's structured logging (`Effect.log` or `Effect.logInfo`) to maintain consistency with Effect's functional programming principles and global coding rules. The core scope management pattern implementation is correct but needs to follow Effect's logging paradigm.

@@ -1,4 +1,4 @@
-import { Effect, Data, Schedule, Duration } from "effect";
+import { Data, Effect, Schedule } from "effect";
 
 // Define specific, tagged errors for our API client
 class ServerBusyError extends Data.TaggedError("ServerBusyError") {}

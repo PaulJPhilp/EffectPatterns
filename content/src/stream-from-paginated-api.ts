@@ -60,7 +60,13 @@ const program = userStream.pipe(
 );
 
 // Run the program
-Effect.runPromise(program).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Program result: ${result}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 
 /*
 Output:

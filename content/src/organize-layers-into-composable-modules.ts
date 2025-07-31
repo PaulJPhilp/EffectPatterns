@@ -5,7 +5,7 @@ export class Logger extends Effect.Service<Logger>()(
   "App/Core/Logger",
   {
     sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`))
+      log: (msg: string) => Effect.log(`[LOG] ${msg}`)
     })
   }
 ) {}
@@ -43,4 +43,12 @@ Effect.runPromise(
     program,
     UserRepository.Default
   )
-).then(console.log);
+);
+
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Program result: ${JSON.stringify(result)}`);
+  return result;
+});
+
+Effect.runPromise(Effect.provide(programWithLogging, UserRepository.Default));

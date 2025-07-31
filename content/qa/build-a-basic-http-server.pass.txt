@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server." The code correctly demonstrates creating a server layer, composing it with an HTTP application, and using proper Effect lifecycle management with fibers.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/build-a-basic-http-server.ts`) perfectly illustrates the pattern described in the documentation (`published/build-a-basic-http-server.mdx`). The code demonstrates the exact guideline: creating an AppLayer, using Layer.launch for server lifecycle, proper fiber management, and structured logging throughout the server lifecycle.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `HttpServer.serve`, `NodeHttpServer.layer`, `Layer.provide`, `Layer.launch`, `Effect.gen`, `Effect.logInfo`, `Effect.fork`, `Effect.sleep`, `Fiber.interrupt`, and `Effect.runPromise` correctly. The code follows proper layered architecture, structured concurrency, and lifecycle management patterns.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Strong typing is maintained throughout with proper imports and type usage. Clean naming conventions, appropriate use of `const` declarations, and proper handling of Effect types. The type assertion is used appropriately for the final execution.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `HttpServer.serve`, `Layer.provide`, `Layer.launch`, `Effect.gen`, `Effect.logInfo`, `Effect.fork`, `Effect.sleep`, `Fiber.interrupt`, and `Effect.runPromise` are all preferred current APIs.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates HTTP server construction with proper layer composition, structured concurrency, lifecycle management, and current Effect-TS best practices.

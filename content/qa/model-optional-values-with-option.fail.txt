@@ -1,0 +1,21 @@
+**Validation Result:** FAIL
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   FAIL: The pattern violates the global rule "Leverage Effect's built-in structured logging." The code uses direct `console.log` calls on lines 28 and 29 instead of using Effect's structured logging system with `Effect.log`.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/model-optional-values-with-option.ts`) correctly demonstrates the pattern described in the documentation (`published/model-optional-values-with-option.mdx`). The code properly shows how to use `Option<A>` to represent values that may be absent, using `Option.fromNullable`, `Option.match`, and proper type-safe handling of both `Some` and `None` cases.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PARTIAL: While the code correctly uses `Option.fromNullable` and `Option.match`, it violates Effect's principle of pure functional programming by using side-effectful `console.log` calls instead of Effect's structured logging system. This makes the code less testable and breaks the functional paradigm.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Strong typing is maintained throughout with proper interface definitions. Clean naming conventions, appropriate use of `const` declarations, and proper handling of optional values with explicit type annotations.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Option.fromNullable` and `Option.match` are both preferred current APIs for handling optional values.
+
+**Overall Recommendation:**
+Requires revisions to replace all direct `console.log` calls with `Effect.log` to maintain consistency with Effect's structured logging principles and global coding rules. The Option pattern implementation is correct but needs to follow Effect's functional programming paradigm.

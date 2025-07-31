@@ -44,4 +44,13 @@ const program = Stream.runForEach(userStream, (user: User) =>
   Effect.log(`Processing user: ${user.name}`),
 );
 
-Effect.runPromise(program).catch(console.error);
+const programWithErrorHandling = program.pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Stream processing error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithErrorHandling);

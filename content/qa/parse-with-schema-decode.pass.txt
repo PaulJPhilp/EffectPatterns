@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the global rule "Leverage Effect's built-in structured logging." The code correctly uses `Effect.logInfo` for all logging operations throughout the program, avoiding direct `console.log` usage and maintaining consistency with Effect's logging paradigm.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/parse-with-schema-decode.ts`) perfectly illustrates the pattern described in the documentation (`published/parse-with-schema-decode.mdx`). The code demonstrates the exact guideline: using `Schema.decodeUnknown` to create an Effect that parses and validates unknown data, with proper error handling using `Effect.catchTag`.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Schema.Struct`, `Schema.String`, `Schema.decodeUnknown`, `Effect.gen`, `Effect.succeed`, `Effect.catchTag`, `Effect.logInfo`, and `Effect.runPromise` correctly. The code follows proper schema validation patterns and demonstrates Effect's error handling system effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of interface definitions, proper function signatures, and strong typing throughout. The schema validation patterns are well-implemented with clear demonstration of type-safe parsing and error handling capabilities.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Schema.Struct`, `Schema.String`, `Schema.decodeUnknown`, `Effect.gen`, `Effect.succeed`, `Effect.catchTag`, `Effect.logInfo`, and `Effect.runPromise` are all preferred current APIs for schema validation patterns.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates Effect's schema validation system with proper usage of parsing, error handling, and current Effect-TS best practices.

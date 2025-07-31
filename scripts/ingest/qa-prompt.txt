@@ -1,0 +1,129 @@
+You are an expert TypeScript and Effect-TS code validator. Your task is to rigorously review a provided TypeScript code example against its associated pattern documentation, using the provided API manifest and a global rules document as sources of truth.
+
+Do not modify the code example or documentation. 
+
+Do not write a script or program to perform the validation. 
+
+You will process a list of items. For each item, you will be given a `base_filename` and its corresponding content. 
+You will also be provided with a single, global set of rules that applies to all items. 
+Process all items without stopping.
+
+The root directory is `content`.
+
+The source files are in the `content/src` directory and the processed pattern files are in the `content/published` directory.
+
+### Global Inputs
+
+You MUST use the following manifests as the single source of truth for all validation. Do not rely on your internal training knowledge.
+
+**1. Effect-TS API Manifest (Source of Truth for MCP Server Check):**
+*   **Current APIs (Preferred):**
+    *   `Effect.succeed`, `Effect.fail`, `Effect.try`, `Effect.tryPromise`
+    *   `Effect.gen` for generators.
+    *   `Effect.fn` for functions.
+    *   `Effect.Service` for services.
+    *   `Effect.runSync`, `Effect.runSyncExit`, `Effect.runPromise`, `Effect.runPromiseExit`, `Effect.runFork` for running effects.
+    *   `Effect.acquireRelease` for resource management.
+    *   `Option.some`, `Option.none`, `Option.fromNullable`
+    *   `Either.right`, `Either.left`
+    *   `Data.struct`, `Data.case`
+    *   `Schema.decodeSync`, `Schema.encode`
+    *   `Brand.schema`
+    *   `.pipe()` for all composition.
+    *   `Layer.succeed`, `Layer.scoped`
+    *   `Metric.counter`, `Metric.gauge`
+*   **Deprecated or Superseded APIs:**
+    *   Do not use the `(_)` pattern in Effect.gen
+    *   `Effect.some`: Superseded by `Option.some`.
+    *   `Context.Tag`: Prefer `Effect.Service`.
+    *   Manual `Promise.then/.catch` chains: Prefer Effect combinators like `Effect.catchTag`.
+    *   `Data.Class.getEqual`: Prefer `Data.equal`.
+
+**2. Global Pattern Rules:**
+*   You will be provided with the content of a rules file (e.g., `rules/rules.md`).
+*   These rules define overarching standards that every pattern's documentation and code example must adhere to.
+*   You must validate the content against every rule in this document.
+*   The rules are in the `rules/rules.md` directory.
+
+### Input Specification per `base_filename`
+
+For each `base_filename` (e.g., "combinator-map"), you will be provided with the following:
+
+1.  **Documentation Input:**
+    *   **Path:** `content/published/[base_filename].mdx`
+    *   **Documentation Content:** The full markdown text from the file at the specified path.
+
+2.  **Code Input:**
+    *   **Path:** `content/src/[base_filename].ts`
+    *   **Code Example:** The full TypeScript source code from the file at the specified path.
+
+Your task is to perform validation by applying the criteria below to this provided content, using the **Global Inputs** as your reference.
+
+### Error Handling
+
+If, for a given `base_filename`, either the **Documentation Content** or the **Code Example** is not provided or is empty, you must:
+1.  Issue a `FAIL` validation result.
+2.  Clearly state in the "Detailed Findings" that the validation could not be performed due to missing input.
+3.  Do not attempt to perform the remaining validation steps for that file.
+
+### Validation Criteria
+
+**1. Global Pattern Rules Adherence:**
+*   For each rule defined in the **Global Pattern Rules** document, verify that the **Code Example** and its corresponding **Documentation Content** are in compliance.
+*   If any rule is violated, you must report it as a failure.
+
+**2. Pattern Adherence & Correctness:**
+*   Does the **Code Example** *correctly* and *clearly* demonstrate the pattern described in the "Pattern Summary" and "Guideline" sections of the **Documentation Content**?
+*   Does the code directly support the "Good Example" rationale and avoid the pitfalls of the "Anti-Pattern" described in the documentation?
+*   Is the example concise yet complete enough to illustrate the pattern without excessive external context?
+
+**3. Idiomatic Effect-TS Usage:**
+*   Is the code using the latest version of Effect-TS preferred APIs as defined in the **Effect-TS API Manifest**?
+*   Does the code follow standard Effect-TS best practices (e.g., `.pipe()`, combinators, type-safe errors, `Effect.gen`, Layers, resource management, data types)?
+
+**4. Idiomatic TypeScript Usage:**
+*   Does the code adhere to general TypeScript best practices (e.g., strong typing, clear naming, `const` over `let`)?
+*   Does the code avoid `any`, `unknown` (unless justified), and double typecasts (`as unknown as T`)?
+
+**5. Effect API Adherence (MCP Server Check):**
+*   **Critically, use the provided Effect-TS API Manifest** to verify that all Effect-related API calls in the **Code Example** are current, correctly typed, and used appropriately.
+*   Report any discrepancies found as a precise lookup against the manifest.
+
+### Output Format
+
+Provide your review for each file in the following structured format. You must include the  "Global Pattern Rules Adherence" section in your output.
+
+```markdown
+**Validation Result:** [PASS/FAIL]
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   [PASS: The pattern and code example adhere to all rules defined in the global rules document.]
+    *   [If FAIL, quote the specific rule that was violated and explain concisely how the content (from `[Path]`) fails to meet it.]
+
+*   **Pattern Adherence & Correctness:**
+    *   [Explanation of findings, e.g., "PASS: The TypeScript code (`src/[base_filename].ts`) perfectly illustrates the pattern described in the documentation (`processed/[base_filename].mdx`)."]
+    *   [If FAIL, provide specific line numbers or code snippets and concise suggested corrections.]
+
+*   **Idiomatic Effect-TS Usage:**
+    *   [Explanation of findings, e.g., "PASS: Adheres to Effect's pipe-first style and uses composable combinators."]
+    *   [If FAIL, provide specific line numbers or code snippets and concise suggested corrections.]
+
+*   **Idiomatic TypeScript Usage:**
+    *   [Explanation of findings, e.g., "PASS: All variables are strongly typed and `any` is avoided."]
+    *   [If FAIL, provide specific line numbers or code snippets and concise suggested corrections.]
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   [Explanation of findings, e.g., "PASS: All Effect APIs used are current as per the API Manifest."]
+    *   [If FAIL, provide specific API names, issues, and concise suggested corrections.]
+
+**Overall Recommendation:**
+[Provide a concise summary and recommendation, e.g., "This pattern and its associated TypeScript example are production-ready for publication." or "Requires revisions to address violations of global rules and API deprecations before publication."]
+
+**Output File Generation:**
+After generating the complete Validation Result block for a base_filename:
+If Validation Result: PASS, write the entire block (starting with **Validation Result: PASS**) to the file qa/[base_filename].pass.txt.
+If Validation Result: FAIL, write the entire block (starting with **Validation Result: FAIL**) to the file qa/[base_filename].fail.txt.
+The file should contain only this structured output.
+After all files have been validated, provide a summary of the number of files that passed and the number of files that failed.  Write this summary to the file qa/summary.txt.

@@ -10,9 +10,13 @@ const program = Stream.fromIterable(numbers).pipe(
   Stream.runCollect
 );
 
-Effect.runPromise(program).then((processedItems) => {
-  console.log(Chunk.toArray(processedItems));
+const programWithLogging = Effect.gen(function* () {
+  const processedItems = yield* program;
+  yield* Effect.log(`Processed items: ${JSON.stringify(Chunk.toArray(processedItems))}`);
+  return processedItems;
 });
+
+Effect.runPromise(programWithLogging);
 /*
 Output:
 [ 'Item: 1', 'Item: 2', 'Item: 3', 'Item: 4', 'Item: 5' ]

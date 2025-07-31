@@ -5,7 +5,7 @@ class Logger extends Effect.Service<Logger>()(
   "Logger",
   {
     sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`LOG: ${msg}`))
+      log: (msg: string) => Effect.log(`LOG: ${msg}`)
     })
   }
 ) {}

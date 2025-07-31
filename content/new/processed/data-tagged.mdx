@@ -1,0 +1,62 @@
+---
+title: "Modeling Tagged Unions with Data.tagged"
+id: "data-tagged"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Tagged Unions", "ADTs", "Domain Modeling"]
+summary: "Use Data.tagged to create tagged unions (algebraic data types) for robust, type-safe domain modeling and exhaustive pattern matching."
+tags: ["Data.tagged", "tagged-union", "ADT", "domain-modeling", "pattern-matching", "data-type", "effect"]
+rule:
+  description: "Use Data.tagged to define tagged unions (ADTs) for modeling domain-specific states and enabling exhaustive pattern matching."
+related: ["data-case", "data-struct", "pattern-matchtag"]
+author: "PaulJPhilp"
+---
+
+# Modeling Tagged Unions with `Data.tagged`
+
+## Guideline
+
+Use `Data.tagged` to create tagged constructors for each state in a tagged union (algebraic data type, or ADT).  
+This enables robust, type-safe domain modeling and exhaustive pattern matching in your application logic.
+
+## Rationale
+
+Tagged unions ensure that all possible states are represented and handled, preventing illegal states and enabling safe, exhaustive pattern matching.  
+`Data.tagged` provides a concise, type-safe way to define and use ADTs in your application.
+
+## Good Example
+
+```typescript
+import { Data } from "effect"
+
+interface Loading {
+  readonly _tag: "Loading"
+}
+interface Success {
+  readonly _tag: "Success"
+  readonly data: string
+}
+interface Failure {
+  readonly _tag: "Failure"
+  readonly error: string
+}
+
+const Loading = Data.tagged<Loading>("Loading")
+const Success = Data.tagged<Success>("Success")
+const Failure = Data.tagged<Failure>("Failure")
+
+type State = Loading | Success | Failure
+
+const state1: State = Loading({})
+const state2: State = Success({ data: "Hello" })
+const state3: State = Failure({ error: "Oops" })
+```
+
+**Explanation:**  
+- Define an interface for each case with a `_tag` property.
+- `Data.tagged<CaseType>("Tag")` creates a constructor for each case.
+- The `_tag` property enables exhaustive pattern matching in switch/case or if/else logic.
+- Use for domain modeling, state machines, and error types.
+
+## Anti-Pattern
+
+Using plain objects, enums, or unions of interfaces without a `_tag` property, which can lead to illegal states, missed cases, and less type-safe pattern matching. 

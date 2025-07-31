@@ -1,0 +1,21 @@
+**Validation Result:** FAIL
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   FAIL: The pattern violates the specific rule "Use the Clock service to get the current time, enabling deterministic testing with TestClock." While the pattern documentation correctly describes using Clock service, the code example contains direct calls to `Date.now()` on lines 26, 36, 43, and 52, which contradicts the pattern's own guideline.
+
+*   **Pattern Adherence & Correctness:**
+    *   FAIL: The TypeScript code (`src/accessing-current-time-with-clock.ts`) contradicts the pattern described in the documentation (`published/accessing-current-time-with-clock.mdx`). The documentation explicitly states "do not call `Date.now()` directly" yet the code example uses `Date.now()` in multiple places (lines 26, 36, 43, 52). This creates an inconsistent example that demonstrates both the correct approach (using Clock service) and the anti-pattern (direct Date.now() calls) within the same code.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PARTIAL: While the code correctly uses `Effect.gen`, `Clock.currentTimeMillis`, `Effect.map`, `Effect.tap`, `Effect.log`, `Effect.provideService`, and `Effect.runPromise`, the direct usage of `Date.now()` violates Effect's principle of pure, testable code. The Clock service implementation is correct, but the token creation and test clock initialization should use Clock service methods instead of direct system calls.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Strong typing is maintained throughout, proper interface definitions, no usage of `any` or unsafe casts. Clean naming conventions and appropriate use of `const` declarations.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Clock.currentTimeMillis`, `Effect.succeed`, `Effect.map`, `Effect.tap`, `Effect.log`, `Effect.provideService`, and `Effect.runPromise` are all preferred current APIs.
+
+**Overall Recommendation:**
+Requires revisions to address the contradiction between the pattern's guideline and its implementation. The code should be updated to eliminate all direct `Date.now()` calls and instead demonstrate how to properly use Clock service throughout the entire example, including token creation and test setup.

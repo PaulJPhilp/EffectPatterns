@@ -13,9 +13,12 @@ const program = Stream.fromIterable(tasks).pipe(
   Stream.runDrain
 );
 
-Effect.runPromise(program).then(() => {
-  console.log('\nAll tasks have been processed.');
+const programWithLogging = Effect.gen(function* () {
+  yield* program;
+  yield* Effect.log('\nAll tasks have been processed.');
 });
+
+Effect.runPromise(programWithLogging);
 /*
 Output:
 ... level=INFO msg="Completing task 1"

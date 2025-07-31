@@ -9,9 +9,13 @@ const program = Stream.range(1, 10).pipe(
   Stream.runCollect
 );
 
-Effect.runPromise(program).then((results) => {
-  console.log('Collected results:', Chunk.toArray(results));
+const programWithLogging = Effect.gen(function* () {
+  const results = yield* program;
+  yield* Effect.log(`Collected results: ${JSON.stringify(Chunk.toArray(results))}`);
+  return results;
 });
+
+Effect.runPromise(programWithLogging);
 /*
 Output:
 Collected results: [

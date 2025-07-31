@@ -25,7 +25,7 @@ export class FileService extends Effect.Service<FileService>()("FileService", {
     return {
       createTempFile: () => Effect.succeed({ filePath }),
       cleanup: (filePath: string) =>
-        Effect.sync(() => console.log("✅ Resource cleaned up successfully")),
+        Effect.log("✅ Resource cleaned up successfully"),
       readFile: (filePath: string) =>
         Effect.succeed("data 1\ndata 2\nFAIL\ndata 4"),
     };
@@ -36,12 +36,12 @@ export class FileService extends Effect.Service<FileService>()("FileService", {
 const processLine = (line: string): Effect.Effect<void, ProcessError> =>
   line === "FAIL"
     ? Effect.fail(ProcessError("Failed to process line"))
-    : Effect.sync(() => console.log(`Processed: ${line}`));
+    : Effect.log(`Processed: ${line}`);
 
 // Create and process the file with proper resource management
 const program = Effect.gen(function* () {
-  console.log("=== Stream Resource Management Demo ===");
-  console.log(
+  yield* Effect.log("=== Stream Resource Management Demo ===");
+  yield* Effect.log(
     "This demonstrates proper resource cleanup even when errors occur"
   );
 
@@ -60,14 +60,12 @@ const program = Effect.gen(function* () {
       for (const line of lines) {
         yield* processLine(line).pipe(
           Effect.catchAll((error) =>
-            Effect.sync(() =>
-              console.log(`⚠️  Skipped line due to error: ${error.message}`)
-            )
+            Effect.log(`⚠️  Skipped line due to error: ${error.message}`)
           )
         );
       }
 
-      console.log("✅ Processing completed with proper resource management");
+      yield* Effect.log("✅ Processing completed with proper resource management");
     })
   );
 });
@@ -75,6 +73,6 @@ const program = Effect.gen(function* () {
 // Run the program with FileService layer
 Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
   (error) => {
-    console.error("Unexpected error:", error);
+    Effect.runSync(Effect.logError("Unexpected error: " + error));
   }
 );

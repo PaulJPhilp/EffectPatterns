@@ -15,7 +15,8 @@ const program = Effect.gen(function* () {
   // Failure effect
   yield* Effect.logInfo("\nRunning failure effect...")
   yield* Effect.gen(function* () {
-    yield* Effect.fail(new MyError())
+    // Use return yield* for effects that never succeed
+    return yield* Effect.fail(new MyError())
   }).pipe(
     Effect.catchTag("MyError", (error) =>
       Effect.logInfo(`Error occurred: ${error._tag}`)

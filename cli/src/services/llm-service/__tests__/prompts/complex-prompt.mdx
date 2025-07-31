@@ -1,0 +1,68 @@
+---
+provider: openai
+model: gpt-4o-mini
+parameters:
+  temperature: 0.5
+  max_tokens: 500
+  system: You are a helpful assistant for testing purposes
+---
+
+# Complex Test Prompt
+
+This prompt tests multiple aspects of the LLM service:
+
+## Requirements
+
+1. **Structured Response**: Please provide your response in a structured JSON format
+2. **Multiple Sections**: Include at least 3 distinct sections
+3. **Code Example**: Include a TypeScript code snippet
+4. **Analysis**: Provide analysis of the testing process
+
+## Response Format
+
+```json
+{
+  "status": "success",
+  "sections": [
+    {
+      "title": "Service Status",
+      "content": "Brief status update"
+    },
+    {
+      "title": "Code Example",
+      "content": "TypeScript code snippet"
+    },
+    {
+      "title": "Analysis",
+      "content": "Analysis of the testing process"
+    }
+  ],
+  "metadata": {
+    "timestamp": "current-time",
+    "model": "gpt-4o-mini",
+    "provider": "openai"
+  }
+}
+```
+
+## TypeScript Code Example
+
+Please include a simple TypeScript function that demonstrates async processing:
+
+```typescript
+async function processTestData(data: string): Promise<string> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(`Processed: ${data}`);
+    }, 100);
+  });
+}
+```
+
+## Testing Analysis
+
+Please provide insights on:
+1. Service reliability
+2. Response quality
+3. Performance characteristics
+4. Any observations about the testing process

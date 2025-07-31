@@ -57,13 +57,19 @@ const program = Effect.gen(function* () {
   Effect.scoped // Ensure server is cleaned up properly
 );
 
-// Run the server
-Effect.runPromise(Effect.provide(program, HttpServer.Default)).catch(
-  (error) => {
-    console.error("Program failed:", error);
-    process.exit(1);
-  }
+// Run the server with proper error handling
+const programWithErrorHandling = Effect.provide(program, HttpServer.Default).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program failed: ${error}`);
+      return yield* Effect.fail(error);
+    })
+  )
 );
+
+Effect.runPromise(programWithErrorHandling).catch(() => {
+  process.exit(1);
+});
 
 /*
 To test:

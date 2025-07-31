@@ -15,6 +15,10 @@ const program = Stream.fromIterable([1, 2, 3, 4, 5]).pipe(
   Stream.runCollect
 );
 
-Effect.runPromise(program).then((users) => {
-  console.log('All users fetched:', Chunk.toArray(users));
+const programWithLogging = Effect.gen(function* () {
+  const users = yield* program;
+  yield* Effect.log(`All users fetched: ${JSON.stringify(Chunk.toArray(users))}`);
+  return users;
 });
+
+Effect.runPromise(programWithLogging);

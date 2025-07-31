@@ -14,12 +14,10 @@ class Database extends Effect.Service<DatabaseService>()(
       const id = Math.floor(Math.random() * 1000);
       
       // Acquire the connection
-      yield* Console.log(`[Pool ${id}] Acquired`);
+      yield* Effect.log(`[Pool ${id}] Acquired`);
       
       // Setup cleanup to run when scope closes
-      yield* Effect.addFinalizer(() => 
-        Console.log(`[Pool ${id}] Released`)
-      );
+      yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
       
       // Return the service implementation
       return {
@@ -35,7 +33,7 @@ class Database extends Effect.Service<DatabaseService>()(
 const program = Effect.gen(function* () {
   const db = yield* Database;
   const users = yield* db.query("SELECT * FROM users");
-  yield* Console.log(`Query successful: ${users[0]}`);
+  yield* Effect.log(`Query successful: ${users[0]}`);
 });
 
 // 4. Run the program with scoped resource management

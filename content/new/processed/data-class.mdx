@@ -1,0 +1,39 @@
+---
+title: "Structural Equality and Hashing with Data.struct"
+id: "data-class"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Structural Equality", "Hashing", "Collections"]
+summary: "Use Data.struct to create data types with built-in structural equality and hashing, enabling seamless use in collections and comparisons."
+tags: ["Data.struct", "structural-equality", "hashing", "data-type", "effect", "collections"]
+rule:
+  description: "Use Data.struct to create data types with automatic structural equality and hashing for use in collections and comparisons."
+related: ["data-struct", "data-tuple", "data-array"]
+author: "PaulJPhilp"
+---
+
+# Structural Equality and Hashing with `Data.struct`
+
+## Guideline
+
+Use `Data.struct` to create data types with built-in structural equality and hashing.  
+This enables your data types to work seamlessly with Effect's collections, comparisons, and algorithms without manual equality or hash implementations.
+
+## Rationale
+
+Structural equality and hashing are essential for using your data types in sets, maps, and for deduplication.  
+`Data.struct` automatically provides these capabilities, making your types immediately compatible with Effect's collection types like `HashSet` and `HashMap`.
+
+## Good Example
+
+<Example path="./src/data-class.ts" />
+
+**Explanation:**  
+- `Data.struct` creates data types with automatic structural equality and hashing.
+- `Equal.equals` can compare `Data.struct` instances by their structure, not reference.
+- `Hash.hash` generates consistent hash values for use in collections like `HashSet`.
+- These capabilities make your data types immediately compatible with Effect's collections and algorithms.
+- Structural equality works recursively, comparing all nested properties for deep equality.
+
+## Anti-Pattern
+
+Relying on reference equality or manual comparison functions for data types, or using plain objects that don't provide structural equality, which can lead to bugs and inconsistent behavior in collections.

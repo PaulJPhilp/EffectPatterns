@@ -1,0 +1,21 @@
+**Validation Result:** FAIL
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   FAIL: The pattern violates the global rule "Leverage Effect's built-in structured logging." The code uses a direct `.then()` callback with `console.log` on line 9 instead of using Effect's structured logging system with `Effect.log`. Additionally, it violates the principle of staying within the Effect ecosystem by using Promise-based `.then()` instead of Effect combinators.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/execute-with-runpromise.ts`) correctly demonstrates the pattern described in the documentation (`published/execute-with-runpromise.mdx`). The code properly shows how to use `Effect.runPromise` at the "end of the world" to execute an asynchronous Effect and bridge to the Promise world.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PARTIAL: While the code correctly uses `Effect.succeed`, `Effect.delay`, and `Effect.runPromise`, it breaks the functional paradigm by using `.then()` callback and `console.log` instead of staying within the Effect ecosystem. The code should demonstrate proper Effect composition and logging patterns.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations. The example is simple and focused on demonstrating the core concept of Promise execution.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.succeed`, `Effect.delay`, and `Effect.runPromise` are all preferred current APIs.
+
+**Overall Recommendation:**
+Requires revisions to replace the `.then()` callback and `console.log` with Effect's structured logging and combinators to maintain consistency with Effect's functional programming principles and global coding rules. The core execution pattern is correct but needs to follow Effect's paradigm.

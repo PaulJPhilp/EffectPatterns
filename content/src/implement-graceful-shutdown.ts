@@ -30,9 +30,9 @@ const server = Effect.gen(function* () {
 
   // Add a finalizer to close the server
   yield* Effect.addFinalizer(() =>
-    Effect.sync(() => {
+    Effect.gen(function* () {
       httpServer.close();
-      console.log("Server closed");
+      yield* Effect.log("Server closed");
     })
   );
 
@@ -59,6 +59,6 @@ const app = Effect.provide(server.pipe(Effect.scoped), Database.Default);
 
 // 4. Run the app and handle shutdown
 Effect.runPromise(app).catch((error) => {
-  console.error("Application error:", error);
+  Effect.runSync(Effect.logError("Application error: " + error));
   process.exit(1);
 });

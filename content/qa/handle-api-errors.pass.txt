@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses." The code correctly demonstrates using `Data.TaggedError` for typed errors, proper error handling with centralized error mapping, and comprehensive structured logging with `Effect.logInfo`, `Effect.logError`, and `Effect.logWarning` throughout the program.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/handle-api-errors.ts`) correctly illustrates the pattern described in the documentation (`published/handle-api-errors.mdx`). The code demonstrates proper API error handling with typed error classes, centralized error mapping service, and clear separation between domain errors and HTTP responses.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Data.TaggedError`, `Effect.Service`, `Effect.gen`, `Effect.logInfo`, `Effect.logError`, `Effect.logWarning`, `Effect.fail`, `Effect.succeed`, `Effect.map`, `Effect.catchAll`, `Effect.tap`, `Effect.provide`, and `Effect.runPromise` correctly. The code follows proper structured logging and demonstrates Effect's error handling patterns effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper interface definitions, strong typing throughout with explicit error union types, and proper error handling patterns. The service-based architecture is well-implemented with clear separation of concerns between repository, error handling, and business logic.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Data.TaggedError`, `Effect.Service`, `Effect.gen`, `Effect.logInfo`, `Effect.logError`, `Effect.logWarning`, `Effect.fail`, `Effect.succeed`, `Effect.map`, `Effect.catchAll`, `Effect.tap`, `Effect.provide`, and `Effect.runPromise` are all preferred current APIs for API error handling patterns.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates API error handling with proper typed error classes, centralized error mapping, comprehensive structured logging, and current Effect-TS best practices.

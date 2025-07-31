@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Effect AI CLI wrapper script
+# This script provides a convenient way to run the CLI from anywhere
+
+# Get the absolute path to the CLI directory
+CLI_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Check if bun is available
+if ! command -v bun &> /dev/null; then
+    echo "Error: bun is not installed. Please install bun first." >&2
+    echo "Visit: https://bun.sh" >&2
+    exit 1
+fi
+
+# Change to the CLI directory and run
+cd "$CLI_ROOT" && exec bun tsx src/main.ts "$@"

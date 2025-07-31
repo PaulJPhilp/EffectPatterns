@@ -14,6 +14,13 @@ const program = Effect.gen(function* () {
   yield* Effect.log(`Starting application on port ${config.port}...`);
 });
 
-Effect.runPromise(
-  Effect.provide(program, ServerConfig.Default)
-).catch(console.error);
+const programWithErrorHandling = Effect.provide(program, ServerConfig.Default).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithErrorHandling);

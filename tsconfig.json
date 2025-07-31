@@ -1,29 +1,41 @@
 {
-	"compilerOptions": {
-		"target": "ESNext",
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"strict": true,
-		"esModuleInterop": true,
-		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true,
-		"emitDecoratorMetadata": true,
-		"experimentalDecorators": true,
-		"lib": ["ESNext", "DOM"],
-		"types": ["node"],
-		"downlevelIteration": true,
-		"plugins": [
-			{
-				"name": "@effect/language-service",
-				"diagnostics": true, // controls Effect diagnostics (default: true)
-				"diagnosticSeverity": { // allows to change per-rule default severity of the diagnostic in the whole project
-					"floatingEffect": "warning" // example for a rule, allowed values are off,error,warning,message,suggestion
-				},
-				"quickinfo": true, // controls quickinfo over Effect (default: true)
-				"completions": true, // controls Effect completions (default: true)
-				"allowedDuplicatedPackages": [] // list of package names that has effect in peer dependencies and are allowed to be duplicated (default: [])
-			}
-		],
-	},
-	"include": ["scripts/**/*.ts", "content/src/**/*.ts"]
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "lib": ["ES2020"],
+    "types": ["node"],
+    "downlevelIteration": true,
+    "moduleDetection": "force",
+    "allowSyntheticDefaultImports": true,
+    "resolvePackageJsonExports": true,
+    "resolvePackageJsonImports": true,
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "transform": "@effect/language-service/transform",
+        "diagnosticSeverity": {
+          "floatingEffect": "error",
+          "unnecessaryGen": "warning",
+          "tryCatchInGen": "warning"
+        }
+      }
+    ]
+  },
+  "include": [
+    "scripts/**/*.ts",
+    "content/src/**/*.ts",
+    "content/new/src/**/*.ts",
+    "content/new/processed/**/*.ts",
+    "content/new/raw/**/*.ts",
+    "minimal.ts",
+    "cli/src/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "build"]
 }

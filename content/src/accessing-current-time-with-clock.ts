@@ -9,7 +9,13 @@ interface Token {
 const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock.Clock> =>
   Clock.currentTimeMillis.pipe(
     Effect.map((now) => now > token.expiresAt),
-    Effect.tap((expired) => Effect.log(`Token expired? ${expired} (current time: ${new Date().toISOString()})`))
+    Effect.tap((expired) => 
+      Clock.currentTimeMillis.pipe(
+        Effect.flatMap((currentTime) => 
+          Effect.log(`Token expired? ${expired} (current time: ${new Date(currentTime).toISOString()})`)
+        )
+      )
+    )
   );
 
 // Create a test clock service that advances time

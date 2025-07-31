@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to all rules defined in the global rules document. The code uses Effect.Service pattern appropriately, uses proper Effect.gen syntax with function*, uses yield* for Effect operations, and follows the pipe-first style where applicable.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/brand-model-domain-type.ts`) perfectly illustrates the pattern described in the documentation (`processed/brand-model-domain-type.mdx`). The code demonstrates creating a branded Email type using `Brand.nominal<Email>()`, shows how to use it in a function parameter, and demonstrates the type safety benefits. The example is concise yet complete.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's best practices. Uses `Effect.gen` with proper generator function syntax, uses `yield*` for Effect operations, and uses `Effect.runPromise` for execution. The code follows the recommended patterns for Effect-TS.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: All variables are strongly typed, uses `const` appropriately, and follows TypeScript best practices. The branded type definition using intersection types (`string & Brand.Brand<"Email">`) is the correct approach.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. Uses `Brand.nominal`, `Effect.log`, `Effect.gen`, and `Effect.runPromise` - all of which are in the current/preferred APIs list.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code correctly demonstrates branded types with Effect integration and follows all established patterns and best practices.

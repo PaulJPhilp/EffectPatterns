@@ -1,0 +1,60 @@
+---
+title: "Working with Immutable Arrays using Data.array"
+id: "data-array"
+skillLevel: "beginner"
+useCase: ["Data Types", "Arrays", "Structural Equality", "Collections"]
+summary: "Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations."
+tags: ["Data.array", "array", "structural-equality", "immutable", "data-type", "effect"]
+rule:
+  description: "Use Data.array to define arrays whose equality is based on their contents, enabling safe, predictable comparisons and functional operations."
+related: ["data-chunk", "data-struct", "data-tuple"]
+author: "PaulJPhilp"
+---
+
+# Working with Immutable Arrays using `Data.array`
+
+## Guideline
+
+Use `Data.array` to create immutable, type-safe arrays that support value-based equality and safe functional operations.  
+This is useful for modeling ordered collections where immutability and structural equality are important.
+
+## Rationale
+
+JavaScript arrays are mutable and compared by reference, which can lead to bugs in value-based logic and concurrent code.  
+`Data.array` provides immutable arrays with structural equality, making them ideal for functional programming and safe domain modeling.
+
+## Good Example
+
+```typescript
+import { Data, Equal, Effect, HashSet } from "effect";
+
+const arr1 = Data.array([1, 2, 3]);
+const arr2 = Data.array([1, 2, 3]);
+
+const areEqual = Equal.equals(arr1, arr2); // true
+
+const set = HashSet.make(arr1);
+const hasArr2 = HashSet.has(set, arr2); // true
+
+const doubled = arr1.map((n) => n * 2); // Data.array([2, 4, 6])
+
+const program = Effect.gen(function* () {
+  yield* Effect.log(`arr1: [${arr1.join(", ")}]`);
+  yield* Effect.log(`arr2: [${arr2.join(", ")}]`);
+  yield* Effect.log(`Equal.equals(arr1, arr2): ${areEqual}`);
+  yield* Effect.log(`HashSet.has(set, arr2): ${hasArr2}`);
+  yield* Effect.log(`arr1.map(n => n * 2): [${doubled.join(", ")}]`);
+});
+
+Effect.runPromise(program);
+
+```
+
+**Explanation:**  
+- `Data.array` creates immutable arrays with value-based equality.
+- Useful for modeling ordered collections in a safe, functional way.
+- Supports all standard array operations, but with immutability and structural equality.
+
+## Anti-Pattern
+
+Using plain JavaScript arrays for value-based logic, as keys in sets/maps, or in concurrent code, which can lead to bugs due to mutability and reference-based comparison.

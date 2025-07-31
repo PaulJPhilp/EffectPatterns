@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Define type-safe errors with Data.TaggedError." The code correctly demonstrates creating custom error classes that extend `Data.TaggedError` with unique `_tag` properties for type discrimination.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/define-tagged-errors.ts`) perfectly illustrates the pattern described in the documentation (`published/define-tagged-errors.mdx`). The code demonstrates the exact guideline: defining custom error classes with `Data.TaggedError`, using them in Effect computations, and handling them with type-safe `Effect.catchTag` and `Effect.catchAll` combinators.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Data.TaggedError`, `Effect.gen`, `Effect.fail`, `Effect.logInfo`, `Effect.catchTag`, `Effect.catchAll`, and `Effect.runPromise` correctly. The code follows proper error handling patterns and leverages Effect's structured logging system.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Strong typing is maintained throughout with proper error class definitions and generic type constraints. Clean naming conventions, appropriate use of `const` declarations, and proper readonly properties in error definitions. The error handling demonstrates proper type safety.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Data.TaggedError`, `Effect.gen`, `Effect.fail`, `Effect.logInfo`, `Effect.catchTag`, `Effect.catchAll`, and `Effect.runPromise` are all preferred current APIs.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates tagged error handling with proper type safety, structured logging, and current Effect-TS best practices.

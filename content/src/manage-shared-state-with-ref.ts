@@ -18,4 +18,10 @@ const program = Effect.gen(function* () {
 });
 
 // The result will always be 1000
-Effect.runPromise(program).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Final counter value: ${result}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);

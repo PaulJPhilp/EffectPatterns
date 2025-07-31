@@ -1,0 +1,21 @@
+**Validation Result:** FAIL
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   FAIL: The pattern violates the global rule "Leverage Effect's built-in structured logging." The code uses direct `console.log` on line 35 and `console.error` on line 62 instead of using Effect's structured logging system with `Effect.log` or `Effect.logError`. This breaks consistency with Effect's logging paradigm and makes the logging less structured and harder to manage.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/implement-graceful-shutdown.ts`) correctly demonstrates the pattern described in the documentation (`published/implement-graceful-shutdown.mdx`). The code properly shows how to use `Effect.Service`, `Effect.addFinalizer`, `Effect.scoped`, and proper resource cleanup for graceful shutdown scenarios.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PARTIAL: While the code correctly uses `Effect.Service`, `Effect.gen`, `Effect.log`, `Effect.succeed`, `Effect.sync`, `Effect.addFinalizer`, `Effect.async`, `Effect.fail`, `Effect.sleep`, `Effect.scoped`, `Effect.provide`, and `Effect.runPromise`, it breaks the functional paradigm by using direct `console.log` and `console.error` instead of staying within the Effect ecosystem for all logging operations.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper service definitions, and strong typing throughout. The graceful shutdown patterns are well-implemented with proper resource management and finalizer usage.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.Service`, `Effect.gen`, `Effect.log`, `Effect.succeed`, `Effect.sync`, `Effect.addFinalizer`, `Effect.async`, `Effect.fail`, `Effect.sleep`, `Effect.scoped`, `Effect.provide`, and `Effect.runPromise` are all preferred current APIs for graceful shutdown patterns.
+
+**Overall Recommendation:**
+Requires revisions to replace the direct `console.log` and `console.error` statements with Effect's structured logging (`Effect.log` or `Effect.logError`) to maintain consistency with Effect's functional programming principles and global coding rules. The core pattern implementation is correct but needs to follow Effect's logging paradigm.

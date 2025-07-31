@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Define contracts upfront with schema." The code correctly demonstrates using `Schema.Struct`, `Schema.Number`, `Schema.String`, `Schema.decode`, `Data.TaggedError`, `Effect.Service`, and `Effect.logInfo` for structured logging throughout the program.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/define-contracts-with-schema.ts`) perfectly illustrates the pattern described in the documentation (`published/define-contracts-with-schema.mdx`). The code demonstrates the exact guideline: defining data contracts with Schema first, creating type-safe models, and proper schema-based validation and error handling.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Schema.Struct`, `Schema.Number`, `Schema.String`, `Schema.decode`, `Data.TaggedError`, `Effect.Service`, `Effect.gen`, `Effect.logInfo`, `Effect.succeed`, `Effect.fail`, `Effect.catchAll`, `Effect.provide`, and `Effect.runPromise` correctly. The code follows proper structured logging and demonstrates Effect's schema-first development effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper type definitions derived from schema, strong typing throughout, and proper error handling patterns. The schema-first approach is well-implemented with clear separation of contracts and implementation.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Schema.Struct`, `Schema.Number`, `Schema.String`, `Schema.decode`, `Data.TaggedError`, `Effect.Service`, `Effect.gen`, `Effect.logInfo`, `Effect.succeed`, `Effect.fail`, `Effect.catchAll`, `Effect.provide`, and `Effect.runPromise` are all preferred current APIs for schema-based contract definition patterns.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates schema-first contract definition with proper type safety, validation, structured logging, and current Effect-TS best practices.

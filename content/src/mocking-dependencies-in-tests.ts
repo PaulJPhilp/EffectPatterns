@@ -45,9 +45,8 @@ const program = Effect.gen(function* () {
     EmailClient,
     {
       send: (address: string, body: string) =>
-        Effect.sync(() => 
-          Effect.log(`MOCK: Would send to ${address} with body: ${body}`)
-        )
+        // Directly return the Effect.log without nesting it in Effect.sync
+        Effect.log(`MOCK: Would send to ${address} with body: ${body}`)
     } as EmailClientService
   );
 

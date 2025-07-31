@@ -29,9 +29,10 @@ const getUser = (id: number): Effect.Effect<User, UserNotFoundError, Database> =
 const program = getUser(1);
 
 // Run the program with the default implementation
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Database.Default
-  )
-).then(console.log); // { name: 'Paul' }
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* Effect.provide(program, Database.Default);
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`); // { name: 'Paul' }
+  return result;
+});
+
+Effect.runPromise(programWithLogging);

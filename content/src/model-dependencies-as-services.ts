@@ -19,9 +19,10 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementation
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Random.Default
-  )
-).then(value => console.log('Random value:', value));
+const programWithLogging = Effect.gen(function* () {
+  const value = yield* Effect.provide(program, Random.Default);
+  yield* Effect.log(`Random value: ${value}`);
+  return value;
+});
+
+Effect.runPromise(programWithLogging);

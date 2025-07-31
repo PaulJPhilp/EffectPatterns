@@ -1,4 +1,4 @@
-import { Effect, Schema, Data } from "effect";
+import { Effect, Schema, Data, Either } from "effect";
 
 // Define validation error type
 class ValidationError extends Data.TaggedError("ValidationError")<{
@@ -53,24 +53,26 @@ const validateUser = (input: User) =>
 
 // Process multiple users and accumulate all errors
 const program = Effect.gen(function* () {
-  console.log("Validating users...\n");
+  yield* Effect.log("Validating users...\n");
   
   for (const input of invalidInputs) {
     const result = yield* Effect.either(validateUser(input));
     
-    console.log(`Validating user: ${input.name} <${input.email}>`);
+    yield* Effect.log(`Validating user: ${input.name} <${input.email}>`);
     
-    yield* Effect.match(result, {
-      onFailure: (error) => Effect.sync(() => {
-        console.log("❌ Validation failed:");
-        console.log(error.message);
-        console.log(); // Empty line for readability
+    // Handle success and failure cases separately for clarity
+    // Using Either.match which is the idiomatic way to handle Either values
+    yield* Either.match(result, {
+      onLeft: (error) => Effect.gen(function* () {
+        yield* Effect.log("❌ Validation failed:");
+        yield* Effect.log(error.message);
+        yield* Effect.log(""); // Empty line for readability
       }),
-      onSuccess: (user) => Effect.sync(() => {
-        console.log("✅ User is valid:", user);
-        console.log(); // Empty line for readability
+      onRight: (user) => Effect.gen(function* () {
+        yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
+        yield* Effect.log(""); // Empty line for readability
       })
-    });
+    })
   }
 });
 

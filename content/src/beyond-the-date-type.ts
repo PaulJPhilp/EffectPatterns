@@ -16,11 +16,21 @@ const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> 
 // Create and log some events
 const program = Effect.gen(function* () {
   const loginEvent = yield* createEvent("User logged in");
-  console.log("Login event:", loginEvent);
+  yield* Effect.log("Login event:", loginEvent);
 
   const logoutEvent = yield* createEvent("User logged out");
-  console.log("Logout event:", logoutEvent);
+  yield* Effect.log("Logout event:", logoutEvent);
 });
 
 // Run the program
-Effect.runPromise(program.pipe(Effect.provideService(Clock.Clock, Clock.make()))).catch(console.error);
+const programWithErrorHandling = program.pipe(
+  Effect.provideService(Clock.Clock, Clock.make()),
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithErrorHandling);

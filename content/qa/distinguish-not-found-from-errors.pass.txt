@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures." The code correctly demonstrates using `Effect<Option<User>>`, `Option.fromNullable`, `Option.match`, `Data.TaggedError`, and `Effect.logInfo` for structured logging throughout the program.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/distinguish-not-found-from-errors.ts`) perfectly illustrates the pattern described in the documentation (`published/distinguish-not-found-from-errors.mdx`). The code demonstrates the exact guideline: using Effect<Option<A>> to separate hard failures from soft failures, proper Option handling, and clear distinction between error types.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Effect.gen`, `Effect.try`, `Option.fromNullable`, `Option.match`, `Effect.logInfo`, `Effect.flatMap`, `Effect.catchAll`, `Data.TaggedError`, and `Effect.runPromise` correctly. The code follows proper structured logging and demonstrates Effect's Option-based error handling effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations, proper interface definitions, strong typing throughout with explicit Effect<Option<User>, DatabaseError> return types, and proper error handling patterns. The Option-based approach is well-implemented with clear separation of concerns.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.gen`, `Effect.try`, `Option.fromNullable`, `Option.match`, `Effect.logInfo`, `Effect.flatMap`, `Effect.catchAll`, `Data.TaggedError`, and `Effect.runPromise` are all preferred current APIs for Option-based error distinction patterns.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates distinguishing not-found cases from errors using Effect<Option<A>>, proper error handling, structured logging, and current Effect-TS best practices.

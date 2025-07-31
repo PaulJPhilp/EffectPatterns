@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Leverage Effect's built-in structured logging." The code correctly demonstrates using `Effect.logDebug`, `Effect.log`, and `Effect.tap` for structured logging throughout the program, avoiding direct `console.log` usage.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/leverage-structured-logging.ts`) perfectly illustrates the pattern described in the documentation (`published/leverage-structured-logging.mdx`). The code demonstrates the exact guideline: using Effect's built-in logging functions instead of console.log, with proper structured logging and context-aware logging capabilities.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Effect.logDebug`, `Effect.log`, `Effect.tap`, `Effect.runSync`, and proper Effect composition with `.pipe()` correctly. The code follows proper structured logging patterns and demonstrates Effect's logging system effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of `const` declarations and proper Effect composition. The logging patterns are well-implemented with clear demonstration of structured logging capabilities including context objects.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.logDebug`, `Effect.log`, `Effect.tap`, `Effect.runSync`, and Effect composition patterns are all preferred current APIs for structured logging patterns.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates Effect's structured logging system with proper usage of logging functions, context-aware logging, and current Effect-TS best practices.

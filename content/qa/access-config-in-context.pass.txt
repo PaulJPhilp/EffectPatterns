@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the specific rule "Access configuration from the Effect context." The documentation correctly demonstrates using `yield*` on a Config object within an `Effect.gen` block to access type-safe configuration values from the context.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/access-config-in-context.ts`) perfectly illustrates the pattern described in the documentation (`published/access-config-in-context.mdx`). The code demonstrates the exact guideline: using `yield*` on the AppConfig service within an `Effect.gen` block to access configuration values. The example shows clean, type-safe, and decoupled business logic that declaratively states its dependency on configuration.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Effect.Service` pattern (preferred over Context.Tag), `Effect.gen` for generators, `Effect.log` for logging, `Effect.provide` for dependency injection, and `Effect.runPromise` for execution. The code follows the pipe-first style implicitly and uses composable Effect combinators correctly.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: All variables are strongly typed through Effect's type system. The service definition uses proper TypeScript class syntax with generic constraints. No usage of `any`, `unknown`, or unsafe type casts. Clean naming conventions and proper use of `const` declarations.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Effect.Service` is the preferred service definition pattern, `Effect.gen` is the current generator approach, `Effect.log` is the structured logging API, `Effect.provide` is the correct dependency injection method, and `Effect.runPromise` is the appropriate async execution function.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code perfectly demonstrates the configuration access pattern with clean, type-safe, and testable implementation using current Effect-TS best practices.

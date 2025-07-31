@@ -1,0 +1,21 @@
+**Validation Result:** PASS
+
+**Detailed Findings:**
+
+*   **Global Pattern Rules Adherence:**
+    *   PASS: The pattern and code example adhere to the global rule "Leverage Effect's built-in structured logging." The code correctly uses `Effect.logInfo` for all logging operations throughout the program, avoiding direct `console.log` usage and maintaining consistency with Effect's logging paradigm.
+
+*   **Pattern Adherence & Correctness:**
+    *   PASS: The TypeScript code (`src/mapping-errors-to-fit-your-domain.ts`) perfectly illustrates the pattern described in the documentation (`published/mapping-errors-to-fit-your-domain.mdx`). The code demonstrates the exact guideline: using `Effect.mapError` to transform specific, low-level errors into more general domain errors, creating clean architectural boundaries.
+
+*   **Idiomatic Effect-TS Usage:**
+    *   PASS: Adheres to Effect's current APIs and best practices. Uses `Data.TaggedError`, `Effect.fail`, `Effect.mapError`, `Effect.gen`, `Effect.logInfo`, `Effect.catchAll`, and `Effect.runPromise` correctly. The code follows proper error mapping patterns and demonstrates Effect's error handling system effectively.
+
+*   **Idiomatic TypeScript Usage:**
+    *   PASS: Clean code structure with appropriate use of class definitions for tagged errors, proper function signatures, and strong typing throughout. The error mapping patterns are well-implemented with clear demonstration of architectural boundaries and error transformation capabilities.
+
+*   **Effect API Adherence (MCP Server Check):**
+    *   PASS: All Effect APIs used are current as per the API Manifest. `Data.TaggedError`, `Effect.fail`, `Effect.mapError`, `Effect.gen`, `Effect.logInfo`, `Effect.catchAll`, and `Effect.runPromise` are all preferred current APIs for error mapping patterns.
+
+**Overall Recommendation:**
+This pattern and its associated TypeScript example are production-ready for publication. The code excellently demonstrates Effect's error mapping system with proper usage of error transformation, architectural boundaries, and current Effect-TS best practices.

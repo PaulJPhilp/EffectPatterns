@@ -42,8 +42,8 @@ const program = Effect.gen(function* () {
   const dbResult = yield* db.query("SELECT *");
   const apiResult = yield* api.fetch("/users");
 
-  yield* Console.log(dbResult);
-  yield* Console.log(apiResult);
+  yield* Effect.log(dbResult);
+  yield* Effect.log(apiResult);
 });
 
 // Provide the combined layer to the program.
