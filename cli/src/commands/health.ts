@@ -1,7 +1,6 @@
 import { Command, Options } from "@effect/cli";
 import { Config, Console, Effect, Option as EffectOption, Layer } from "effect";
 import { CONFIG_KEYS } from "../config/constants.js";
-import { ConfigService } from "../services/config-service/service.js";
 import { LLMService } from "../services/llm-service/service.js";
 import { AnthropicClient } from "@effect/ai-anthropic";
 import { GoogleAiClient } from "@effect/ai-google";
@@ -100,8 +99,9 @@ export const health = Command.make(
 // Helper functions for OpenAI health check
 const checkOpenAIHealth = () =>
   Effect.gen(function* () {
-    const config = yield* ConfigService;
-    const apiKeyOption = yield* config.get(CONFIG_KEYS.OPENAI_API_KEY);
+    const apiKeyOption = yield* Config.string(CONFIG_KEYS.OPENAI_API_KEY).pipe(
+      Effect.option
+    );
 
     const result = {
       provider: "openai",
@@ -116,47 +116,45 @@ const checkOpenAIHealth = () =>
 
     if (EffectOption.isNone(apiKeyOption)) {
       result.error = "No API key configured";
-      result.status = "❌";
-      yield* Console.log("OpenAI: ❌ No API key configured");
+      result.status = "❌ No API key configured";
       return result;
     }
 
     result.apiKey = true;
     result.configured = true;
 
-    const apiKey = apiKeyOption.value;
-    yield* Console.log("OpenAI: ✅ API key configured");
+    try {
+      // Use LLMService to check OpenAI connectivity
+      const llmService = yield* LLMService;
+      
+      // Simple test - attempt a small generation
+      const response = yield* llmService.generateText("Hello", "openai", "gpt-3.5-turbo");
 
-    // Basic connectivity check
-    const health = yield* Effect.tryPromise({
-      try: async () => {
-        const response = await fetch("https://api.openai.com/v1/models", {
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          }
-        });
+      result.connection = true;
+      result.status = "✅";
+      result.details = "Successfully connected to OpenAI";
+    } catch (error) {
+      result.error = error instanceof Error ? error.message : "Connection failed";
+      result.status = "❌";
+    }
 
-        if (response.ok) {
-          return { ...result, status: "✅ Connected" };
-        } else {
-          const errorText = await response.text();
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-      },
-      catch: (error) => {
-        result.error = error instanceof Error ? error.message : "Connection failed";
-        return { ...result, status: "❌ Connection failed" };
-      }
-    });
-
-    yield* Console.log(`OpenAI: ${health.status}`);
-    return health;
+    return result;
   });
 
 // Helper functions for Anthropic health check
 const checkAnthropicHealth = () =>
   Effect.gen(function* () {
+    const apiKeyOption = yield* Config.string(CONFIG_KEYS.ANTHROPIC_API_KEY).pipe(
+      Effect.option
+    );
+
+    if (EffectOption.isNone(apiKeyOption)) {
+      return {
+        status: "❌ No API key configured",
+        details: "No API key configured"
+      };
+    }
+
     const llmService = yield* LLMService;
     const effect = llmService.generateText("Hello!", "anthropic", "claude-3-haiku");
 

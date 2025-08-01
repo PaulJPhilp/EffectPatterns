@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Effect, Layer, Option } from "effect";
 import { MetricsService } from "../service.js";
 import * as Fs from "@effect/platform/FileSystem";
@@ -31,6 +31,14 @@ const countTokens = (text: string): number => {
 };
 
 describe("MetricsService", () => {
+  beforeEach(async () => {
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const metrics = yield* MetricsService;
+        yield* metrics.clearMetrics();
+      }).pipe(Effect.provide(Layer.merge(MetricsService.Default, NodeContext.layer)))
+    );
+  });
   it("should track command lifecycle", async () => {
     const optionResult = await Effect.runPromise(
       Effect.gen(function* () {
@@ -46,6 +54,7 @@ describe("MetricsService", () => {
     // Safely unwrap the Option
     const result = Option.getOrNull(optionResult);
     expect(result).not.toBeNull();
+    console.log("Metrics result:", result);
     expect(result?.command).toBe("test-command");
     expect(result?.success).toBe(true);
     expect(result?.duration).toBeGreaterThanOrEqual(0);

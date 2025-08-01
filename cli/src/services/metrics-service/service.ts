@@ -137,7 +137,8 @@ export class MetricsService extends Effect.Service<MetricsService>()(
           const fs = yield* Fs.FileSystem;
           const metricsFile = outputPath || (yield* getMetricsFilePath);
 
-          const dir = yield* Effect.sync(() => require("path").dirname(metricsFile));
+          const path = yield* Path.Path;
+          const dir = path.dirname(metricsFile);
           const dirExists = yield* fs.exists(dir);
           if (!dirExists) {
             yield* fs.makeDirectory(dir, { recursive: true });
@@ -294,7 +295,10 @@ export class MetricsService extends Effect.Service<MetricsService>()(
             if (history.runs.length > 0) {
               const lastRun = history.runs[history.runs.length - 1];
               const now = yield* DateTime.now;
-              const duration = DateTime.toEpochMillis(now) - DateTime.toEpochMillis(lastRun.startTime);
+              const startTimeMillis = typeof lastRun.startTime === "string"
+                ? new Date(lastRun.startTime).getTime()
+                : DateTime.toEpochMillis(lastRun.startTime);
+              const duration = DateTime.toEpochMillis(now) - startTimeMillis;
               const updatedRun = new MetricsData({
                 ...lastRun,
                 endTime: now,

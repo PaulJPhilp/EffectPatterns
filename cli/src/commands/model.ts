@@ -1,11 +1,5 @@
 import { Command, Args, Options } from "@effect/cli";
-import { Console, Effect, Layer, Option as EffectOption, Redacted } from "effect";
-import { NodeHttpClient } from "@effect/platform-node";
-import { NodeContext } from "@effect/platform-node";
-import { OpenAiClient } from "@effect/ai-openai";
-import { AnthropicClient } from "@effect/ai-anthropic";
-import { GoogleAiClient } from "@effect/ai-google";
-import { ConfigService } from "../services/config-service/service.js";
+import { Console, Effect, Layer, Option as EffectOption, Redacted, Config } from "effect";
 
 // Model list command
 const modelList = Command.make(
@@ -68,20 +62,16 @@ const modelInfo = Command.make(
     })
 );
 
-// Helper functions for OpenAI
 const listOpenAIModels = () =>
   Effect.gen(function* () {
-    const config = yield* ConfigService;
-    const apiKeyOption = yield* config.get("OPENAI_API_KEY");
+    const apiKeyOption = yield* Effect.either(Config.redacted("OPENAI_API_KEY"));
     
-    if (EffectOption.isNone(apiKeyOption)) {
+    if (apiKeyOption._tag === "Left") {
       yield* Console.log("OpenAI: No API key configured");
       return;
     }
     
-    const apiKey = Redacted.make(apiKeyOption.value);
-    
-
+    const apiKey = apiKeyOption.right;
     
     // TODO: Implement actual model listing
     yield* Console.log("OpenAI models: gpt-4, gpt-4o, gpt-4o-mini, gpt-3.5-turbo");
@@ -96,19 +86,14 @@ const getOpenAIModelInfo = (model: string) =>
 // Helper functions for Anthropic
 const listAnthropicModels = () =>
   Effect.gen(function* () {
-    const config = yield* ConfigService;
-    const apiKeyOption = yield* config.get("ANTHROPIC_API_KEY");
+    const apiKeyOption = yield* Effect.either(Config.redacted("ANTHROPIC_API_KEY"));
     
-    if (EffectOption.isNone(apiKeyOption)) {
+    if (apiKeyOption._tag === "Left") {
       yield* Console.log("Anthropic: No API key configured");
       return;
     }
     
-    const apiKey = Redacted.make(apiKeyOption.value);
-    
-
-    
-    // TODO: Implement actual model listing
+    const apiKey = apiKeyOption.right;
     yield* Console.log("Anthropic models: claude-3-5-sonnet, claude-3-opus, claude-3-haiku");
   });
 
@@ -121,15 +106,14 @@ const getAnthropicModelInfo = (model: string) =>
 // Helper functions for Google
 const listGoogleModels = () =>
   Effect.gen(function* () {
-    const config = yield* ConfigService;
-    const apiKeyOption = yield* config.get("GOOGLE_API_KEY");
+    const apiKeyOption = yield* Effect.either(Config.redacted("GOOGLE_AI_API_KEY"));
     
-    if (EffectOption.isNone(apiKeyOption)) {
+    if (apiKeyOption._tag === "Left") {
       yield* Console.log("Google: No API key configured");
       return;
     }
     
-    const apiKey = Redacted.make(apiKeyOption.value);
+    const apiKey = apiKeyOption.right;
     
     // TODO: Implement actual model listing
     yield* Console.log("Google models: gemini-pro, gemini-pro-vision");

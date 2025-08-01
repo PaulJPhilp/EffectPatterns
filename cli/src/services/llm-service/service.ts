@@ -18,6 +18,8 @@ import type { Providers, Models } from "./types.js";
 import { selectModel } from "./types.js";
 import { FileSystem } from "@effect/platform";
 import { Path } from "@effect/platform";
+import { MetricsService } from "../metrics-service/service.js";
+import type { LLMUsage } from "../metrics-service/service.js";
 
 export const streamText = (
   prompt: string,
@@ -122,6 +124,22 @@ export const generateText = Effect.fn("generateText")(function* (
     })
   );
 
+  // Record metrics with actual provider and model
+  const metrics = yield* MetricsService;
+  const usage: LLMUsage = {
+    provider,
+    model,
+    inputTokens: 0, // Calculate based on prompt length
+    outputTokens: response.text.length || 0,
+    thinkingTokens: 0,
+    totalTokens: (prompt.length + response.text.length) || 0,
+    estimatedCost: 0,
+    inputCost: 0,
+    outputCost: 0,
+    totalCost: 0
+  };
+  
+  yield* metrics.recordLLMUsage(usage);
   yield* Console.log(response.text);
   return response;
 });
@@ -198,6 +216,22 @@ export const generateObject = Effect.fn("generateObject")(function* <
     )
   );
 
+  // Record metrics with actual provider and model
+  const metrics = yield* MetricsService;
+  const usage: LLMUsage = {
+    provider,
+    model,
+    inputTokens: 0, // Calculate based on prompt length
+    outputTokens: JSON.stringify(response.object).length || 0,
+    thinkingTokens: 0,
+    totalTokens: (prompt.length + JSON.stringify(response.object).length) || 0,
+    estimatedCost: 0,
+    inputCost: 0,
+    outputCost: 0,
+    totalCost: 0
+  };
+  
+  yield* metrics.recordLLMUsage(usage);
   yield* Console.log(response);
   return response;
 });
