@@ -18,15 +18,18 @@ import type { Providers, Models } from "./types.js";
 import { selectModel } from "./types.js";
 import { FileSystem } from "@effect/platform";
 import { Path } from "@effect/platform";
+import { NodeContext } from "@effect/platform-node";
 import { MetricsService } from "../metrics-service/service.js";
 import type { LLMUsage } from "../metrics-service/service.js";
+import { ConfigService } from "../config-service/service.js";
+import { TemplateService } from "../prompt-template/service.js";
 
 export const streamText = (
   prompt: string,
   provider: Providers,
   model: Models,
   parameters?: Record<string, unknown>
-): Stream.Stream<string, Error | AiError.AiError, AiLanguageModel.AiLanguageModel> => {
+): Stream.Stream<string, Error | AiError.AiError, AiLanguageModel.AiLanguageModel | ConfigService | TemplateService> => {
   return Stream.unwrap(
     Effect.gen(function* () {
       yield* Console.info(`[LLM] Setting up streaming via ${provider} (${model})`);
@@ -39,9 +42,14 @@ export const streamText = (
       // Access the AiLanguageModel service through dependency injection
       // The AI client layers should be provided at the command level
       const languageModel = yield* AiLanguageModel.AiLanguageModel;
+      const config = yield* ConfigService;
+      const templateService = yield* TemplateService;
+      
+      // Prepend system prompt if configured
+      const finalPrompt = yield* prependSystemPrompt(prompt, config, templateService);
 
       const stream = languageModel.streamText({
-        prompt,
+        prompt: finalPrompt,
       }).pipe(
         Stream.map((response) => response.text),
         Stream.tapError((error) => logError(error)),
@@ -99,6 +107,11 @@ export const generateText = Effect.fn("generateText")(function* (
     `[LLM] Sending prompt via ${provider} (${model}) (${prompt.length} chars)`
   );
 
+  // Prepend system prompt if configured
+  const config = yield* ConfigService;
+  const templateService = yield* TemplateService;
+  const finalPrompt = yield* prependSystemPrompt(prompt, config, templateService);
+
   // Create the appropriate model layer and AI client layer
   const llmModelLayer = selectModel(provider, model);
   const aiClientLayer = Layer.mergeAll(
@@ -116,7 +129,7 @@ export const generateText = Effect.fn("generateText")(function* (
   const combinedLayer = Layer.mergeAll(llmModelLayer, aiClientLayer);
   
   const response = yield* Effect.provide(
-    AiLanguageModel.generateText({ prompt }),
+    AiLanguageModel.generateText({ prompt: finalPrompt }),
     combinedLayer
   ).pipe(
     Effect.catchAll((error) => {
@@ -258,6 +271,25 @@ export const processPromptFromText = Effect.fn("processPromptFromText")(
     return response;
   }
 );
+
+// Helper function to prepend system prompt to user prompt if configured
+const prependSystemPrompt = (userPrompt: string, config: ConfigService, templateService: TemplateService): Effect.Effect<string, Error, never> =>
+  Effect.gen(function* () {
+    // Get system prompt file path from config
+    const systemPromptFile = yield* config.getSystemPromptFile();
+    
+    // If no system prompt is set, return the user prompt as is
+    if (systemPromptFile._tag === "None") {
+      return userPrompt;
+    }
+    
+    // Load and render the system prompt template
+    const systemPromptTemplate = yield* templateService.loadTemplate(systemPromptFile.value);
+    const systemPrompt = yield* templateService.renderTemplate(systemPromptTemplate, {});
+    
+    // Prepend system prompt to user prompt
+    return `${systemPrompt}\n\n${userPrompt}`;
+  });
 
 export class LLMService extends Effect.Service<LLMService>()("LLMService", {
   effect: Effect.gen(function* () {

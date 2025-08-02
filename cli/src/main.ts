@@ -13,6 +13,7 @@ import { effectPatternsProcessPrompt } from "./commands/process-prompt.js";
 import { testCommand } from "./commands/test.js";
 import { traceCommand } from "./commands/trace.js";
 import { applyPromptToDir } from "./commands/apply-prompt-to-dir.js";
+import { systemPromptCommand } from "./commands/system-prompt.js";
 
 import { ProductionRuntime } from "./runtime/production-runtime.js";
 
@@ -36,7 +37,7 @@ const otelServiceName = Options.text("otel-service-name").pipe(
 
 // Create a root command that doesn't execute anything by default
 const command = Command.make("effect-patterns", {}, () => Effect.void).pipe(
-  Command.withSubcommands([effectPatternsList, modelCommand, dryRun, configCommand, health, effectPatternsProcessPrompt, authCommand, traceCommand, testCommand, applyPromptToDir])
+  Command.withSubcommands([effectPatternsList, modelCommand, dryRun, configCommand, health, effectPatternsProcessPrompt, authCommand, traceCommand, testCommand, applyPromptToDir, systemPromptCommand])
 );
 
 const cli = Command.run(command, {

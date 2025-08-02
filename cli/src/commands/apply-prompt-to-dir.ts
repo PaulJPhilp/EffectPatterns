@@ -1,18 +1,12 @@
 import { Args, Command, Options } from "@effect/cli";
-import { FileSystem } from "@effect/platform";
+import { FileSystem } from "@effect/platform/FileSystem";
 import { Path } from "@effect/platform/Path";
-import { Chunk, Config, Console, Effect, Layer, Stream } from "effect";
-
-import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic";
-import { GoogleAiClient, GoogleAiLanguageModel } from "@effect/ai-google";
-import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai";
+import { Chunk, Effect, Stream } from "effect";
 import { streamText } from "../services/llm-service/service.js";
-import type { Models, Providers } from "../services/llm-service/types.js";
-import { MetricsService } from "../services/metrics-service/service.js";
-import { OtelService } from "../services/otel-service/service.js";
+import { TemplateService } from "../services/prompt-template/service.js";
 
 // effect-patterns apply-prompt-to-dir -input <input-dir> -output <output-dir> [file-pattern] <prompt-file>
-const inputFile = Args.file({ name: "prompt-file", exists: "yes" });
+const promptFileArg = Args.file({ name: "prompt-file", exists: "yes" });
 const inputDirOption = Options.text("input").pipe(
   Options.withDescription("Input directory containing files to process")
 );
@@ -22,198 +16,88 @@ const outputDirOption = Options.text("output").pipe(
 const filePatternArg = Args.text({ name: "file-pattern" }).pipe(
   Args.withDefault("*")
 );
-
-// Create the specific AI client layer and model layer for the selected provider
-// This provides the AiLanguageModel service that streamText expects
-const getLayersForProvider = (provider: Providers, model: Models) => {
-  switch (provider) {
-    case "google":
-      return Layer.provide(
-        GoogleAiLanguageModel.layer({ model }),
-        GoogleAiClient.layerConfig({ apiKey: Config.redacted("GOOGLE_AI_API_KEY") })
-      );
-    case "openai":
-      return Layer.provide(
-        OpenAiLanguageModel.layer({ model }),
-        OpenAiClient.layerConfig({ apiKey: Config.redacted("OPENAI_API_KEY") })
-      );
-    case "anthropic":
-      return Layer.provide(
-        AnthropicLanguageModel.layer({ model }),
-        AnthropicClient.layerConfig({ apiKey: Config.redacted("ANTHROPIC_API_KEY") })
-      );
-  }
-};
+const parametersOption = Options.keyValueMap("parameter").pipe(
+  Options.withDescription("Template parameters as key=value pairs"),
+  Options.withAlias("p")
+);
 
 export const applyPromptToDir = Command.make(
   "apply-prompt-to-dir",
   {
-    promptFile: inputFile,
-    inputDir: inputDirOption,
-    outputDir: outputDirOption,
-    filePattern: filePatternArg
+    input: inputDirOption,
+    output: outputDirOption,
+    filePattern: filePatternArg,
+    promptFile: promptFileArg,
+    parameters: parametersOption,
   },
-  ({ promptFile, inputDir, outputDir, filePattern }) =>
+  ({ input, output, filePattern, promptFile, parameters }) =>
     Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
+      const fs = yield* FileSystem;
       const path = yield* Path;
-      const otel = yield* OtelService;
-      const metrics = yield* MetricsService;
+      const templateService = yield* TemplateService;
 
-      yield* Console.log(`📁 Applying prompt to directory: ${inputDir}`);
-      yield* Console.log(`📄 Prompt file: ${promptFile}`);
-      yield* Console.log(`📤 Output directory: ${outputDir}`);
-      yield* Console.log(`🔍 File pattern: ${filePattern}`);
+      // Load and process prompt template
+      const ext = path.extname(promptFile);
+      
+      const promptContent = yield* (ext === ".mdx"
+        ? Effect.flatMap(templateService.loadTemplate(promptFile), (template) => 
+            templateService.renderTemplate(template, parameters ? Object.fromEntries(parameters) : {}))
+        : fs.readFileString(promptFile));
 
-      // Record command start
-      yield* metrics.startCommand("apply-prompt-to-dir");
+      yield* Effect.log(`📁 Applying prompt to directory: ${input}`);
+      yield* Effect.log(`📄 Prompt file: ${promptFile}`);
+      yield* Effect.log(`📊 File pattern: ${filePattern}`);
+      yield* Effect.log(`📄 Parameters: ${parameters ? "provided" : "none"}`);
 
-      // Create a span for tracing
-      const span = yield* otel.startSpan("apply_prompt_to_dir");
+      // Get files to process
+      const files = yield* fs.readDirectory(input);
+      const matchingFiles = yield* Effect.succeed(files.filter(file => 
+        new RegExp(filePattern).test(file)));
 
-      // Read the prompt file to get provider and model info
-      const promptContent = yield* fs.readFileString(promptFile);
+      const fileCount = matchingFiles.length;
+      
+      yield* (fileCount === 0 ? 
+        Effect.log("⚠️ No files found matching the pattern") : 
+        Effect.log(`📊 Found ${fileCount} files to process`));
 
-      // Parse provider and model from MDX frontmatter
-      let provider: Providers = "google";
-      let model: Models = "gemini-2.5-flash";
+      yield* Effect.if(fileCount > 0, {
+        onTrue: () => Effect.gen(function* () {
+          // Process each file
+          const processedFiles = yield* Effect.forEach(
+            matchingFiles,
+            (file) => Effect.gen(function* () {
+              const inputPath: string = path.join(input, file);
+              const outputPath: string = path.join(output, file);
 
-      const frontmatterMatch = promptContent.match(/^---\s*\n([\s\S]*?)\n---/);
-      if (frontmatterMatch) {
-        const frontmatter = frontmatterMatch[1];
-        const providerMatch = frontmatter.match(/provider:\s*(\w+)/);
-        const modelMatch = frontmatter.match(/model:\s*([\w-]+)/);
+              yield* Effect.log(`🔄 Processing: ${file}`);
 
-        if (providerMatch) {
-          provider = providerMatch[1] as Providers;
-        }
-        if (modelMatch) {
-          model = modelMatch[1] as Models;
-        }
-      }
+              // Read file content
+              const content = yield* fs.readFileString(inputPath);
 
-      yield* Console.log(`Using provider: ${provider}, model: ${model}`);
+              // Create prompt with file content
+              const fullPrompt = `${promptContent}\n\nFile: ${file}\n\nContent:\n${content}`;
 
-      // Ensure input directory exists
-      const inputDirExists = yield* fs.exists(inputDir);
-      if (!inputDirExists) {
-        yield* Console.error(`❌ Input directory does not exist: ${inputDir}`);
-        yield* otel.endSpan(span);
-        yield* metrics.endCommand();
-        yield* metrics.reportMetrics("console");
-        return yield* Effect.fail(new Error(`Input directory does not exist: ${inputDir}`));
-      }
+              // Get AI response using streamText
+              const response = yield* streamText(fullPrompt, "openai", "gpt-4o-mini").pipe(
+                Stream.runCollect,
+                Effect.map(chunk => Chunk.join(chunk, ""))
+              );
 
-      // Ensure output directory exists
-      yield* fs.makeDirectory(outputDir, { recursive: true });
+              // Ensure output directory exists
+              yield* fs.makeDirectory(output, { recursive: true });
 
-      // Read input directory with robust error handling
-      const entries = yield* fs.readDirectory(inputDir).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            const isEnoent =
-              typeof error === "object" &&
-              error !== null &&
-              "code" in error &&
-              (error as any).code === "ENOENT";
-            const isNotFound =
-              typeof error === "object" &&
-              error !== null &&
-              "name" in error &&
-              (error as any).name === "NotFound";
-            const isNoSuchDir =
-              typeof error?.message === "string" &&
-              error.message.includes("no such file or directory");
+              // Write response to output file
+              yield* fs.writeFileString(outputPath, response);
 
-            if (isEnoent || isNotFound || isNoSuchDir) {
-              yield* Console.error(`❌ Input directory does not exist or cannot be read: ${inputDir}`);
-              yield* otel.endSpan(span);
-              yield* metrics.endCommand();
-              yield* metrics.reportMetrics("console");
-              return yield* Effect.fail(error);
-            }
-            return yield* Effect.fail(error);
-          })
-        )
-      );
-
-      // Filter files based on pattern
-      const files = entries.filter(entry => {
-        if (filePattern === "*") return true;
-        return entry.includes(filePattern) || entry.match(new RegExp(filePattern));
-      });
-
-      yield* Console.log(`Found ${files.length} files to process`);
-
-      let processedCount = 0;
-      for (const file of files) {
-        const inputFilePath = path.join(inputDir, file);
-        const fileStats = yield* fs.stat(inputFilePath);
-
-        // Skip directories
-        if (fileStats.type === "Directory") {
-          yield* Console.log(`Skipping directory: ${file}`);
-          continue;
-        }
-
-        yield* Console.log(`Processing file: ${file}`);
-
-        // Read the input file content
-        const fileContent = yield* fs.readFileString(inputFilePath);
-
-        // Create a combined prompt
-        const combinedPrompt = `${promptContent}\n\nInput file content:\n${fileContent}`;
-
-        // Process the prompt with the selected provider and model
-        const result = yield* Effect.provide(
-          streamText(combinedPrompt, provider, model).pipe(
-            Stream.runCollect,
-            Effect.map((chunks) => Chunk.toReadonlyArray(chunks).join(""))
-          ),
-          getLayersForProvider(provider, model)
-        );
-
-        // Extract text from AI response
-        const textContent = (result as any).parts?.[0]?.text ||
-          (result as any).text ||
-          String(result) ||
-          "No text generated";
-
-        // Create output file path using basename
-        const baseName = file.split('.').slice(0, -1).join('.');
-        const outputFile = baseName ? `${baseName}.md` : `${file}.md`;
-        const outputFilePath = path.join(outputDir, outputFile);
-
-        yield* Console.log(`Saving response to: ${outputFilePath}`);
-
-        // Ensure output directory exists
-        const outputDirPath = path.dirname(outputFilePath);
-        yield* fs.makeDirectory(outputDirPath, { recursive: true });
-
-        // Write the result to the output file
-        yield* fs.writeFileString(outputFilePath, textContent).pipe(
-          Effect.tap(() => Console.log(`✅ Response saved to: ${outputFilePath}`)),
-          Effect.catchAll((error) =>
-            Effect.gen(function* () {
-              yield* otel.recordException(span, error as Error);
-              yield* Console.error(`❌ Failed to save file ${outputFilePath}: ${error}`);
-              return yield* Effect.fail(error);
+              yield* Effect.log(`✅ Processed: ${file}`);
+              return file;
             })
-          )
-        );
+          ).pipe(Effect.map(results => results.length));
 
-        yield* otel.addEvent(span, "file_processed", { file, outputFile });
-        yield* otel.recordCounter("files_processed", 1);
-        processedCount++;
-      }
-
-      yield* Console.log(`✅ Completed processing ${processedCount} files`);
-
-      yield* otel.endSpan(span);
-      yield* metrics.endCommand();
-      yield* metrics.reportMetrics("console");
-
-      return { processedFiles: processedCount };
+          yield* Effect.log(`🎉 Completed processing ${processedFiles} files`);
+          return yield* Effect.succeed({ processedFiles });
+        }),
+        onFalse: () => Effect.succeed({ processedFiles: 0 })
+      });
     })
 );
-

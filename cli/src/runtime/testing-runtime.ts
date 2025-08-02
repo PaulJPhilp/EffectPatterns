@@ -20,7 +20,8 @@ import { ConfigService } from "../services/config-service/service.js";
 import { LLMService } from "../services/llm-service/service.js";
 import { MetricsService } from "../services/metrics-service/service.js";
 import { OtelService } from "../services/otel-service/service.js";
-import { RunService } from "../services/run-service/service.js";
+import { RunManagement } from "../services/run-management/service.js";
+import { TemplateService } from "../services/prompt-template/service.js";
 
 /**
  * Test configuration provider with fixed values for consistent testing.
@@ -88,8 +89,9 @@ const TestAppServiceLayer = Layer.mergeAll(
   AuthService.Default,
   MetricsService.Default,
   OtelService.Default,
-  RunService.Default,
-  LLMService.Default
+  RunManagement.Default,
+  LLMService.Default,
+  TemplateService.Default
 );
 
 /**

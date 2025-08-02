@@ -51,37 +51,56 @@ export class ConfigService extends Effect.Service<ConfigService>()(
                   })
                 )
               )
-            : Effect.succeed({} as AppConfig)
+            : Effect.succeed({})
         )
       );
 
       const writeConfigFile = (config: AppConfig) =>
-        Effect.sync(() => {
-          try {
-            return JSON.stringify(config, null, 2);
-          } catch (cause) {
-            throw new ConfigError({ message: "Failed to stringify config", cause });
-          }
-        }).pipe(
-          Effect.flatMap((content: string) => fs.writeFileString(configFile, content)),
+        fs.writeFile(configFile, Buffer.from(JSON.stringify(config, null, 2), "utf-8")).pipe(
           Effect.mapError((cause) => new ConfigError({ message: "Failed to write config file", cause }))
         );
+
+      const get = (key: string) =>
+        readConfigFile.pipe(
+          Effect.map((config) => Option.fromNullable(config[key]))
+        );
+
+      const set = (key: string, value: string) =>
+        readConfigFile.pipe(
+          Effect.flatMap((config) =>
+            writeConfigFile({ ...config, [key]: value })
+          )
+        );
+
+      const list = () => readConfigFile;
+
+      const remove = (key: string) =>
+        readConfigFile.pipe(
+          Effect.flatMap((config) => {
+            const { [key]: _, ...rest } = config;
+            return writeConfigFile(rest);
+          })
+        );
+
+      // System prompt methods
+      const getSystemPromptFile = () => get("systemPromptFile");
+      
+      const setSystemPromptFile = (filePath: string) => set("systemPromptFile", filePath);
+      
+      const clearSystemPromptFile = () => remove("systemPromptFile");
 
       yield* ensureConfigExists;
 
       return {
-        get: (key: string) =>
-          readConfigFile.pipe(
-            Effect.map((config) => Option.fromNullable(config[key]))
-          ),
-        set: (key: string, value: string) =>
-          readConfigFile.pipe(
-            Effect.flatMap((config: AppConfig) => writeConfigFile({ ...config, [key]: value }))
-          ),
-        list: () => readConfigFile,
-        configFile: Effect.succeed(configFile),
-      };
+        get,
+        set,
+        list,
+        remove,
+        getSystemPromptFile,
+        setSystemPromptFile,
+        clearSystemPromptFile
+      } as const;
     }),
-    dependencies: []
+    dependencies: [NodeContext.layer]
   }
 ) {}

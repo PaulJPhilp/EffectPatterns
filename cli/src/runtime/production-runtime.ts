@@ -29,6 +29,7 @@ import { ConfigProvider } from "effect";
 import * as AnthropicClient from "@effect/ai-anthropic/AnthropicClient";
 import * as GoogleAiClient from "@effect/ai-google/GoogleAiClient";
 import * as OpenAiClient from "@effect/ai-openai/OpenAiClient";
+import { TemplateService } from "../services/prompt-template/service.js";
 
 /**
  * Production configuration provider using environment variables.
@@ -90,7 +91,8 @@ const AppLayer = Layer.mergeAll(
   MetricsService.Default,
   OtelService.Default,
   RunService.Default,
-  LLMService.Default
+  LLMService.Default,
+  TemplateService.Default
 );
 
 /**
