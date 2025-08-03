@@ -21,6 +21,8 @@ The Effect AI CLI is a production-ready command-line interface that demonstrates
 #### Core Commands
 - `effect-ai-cli list` - List available patterns
 - `effect-ai-cli process-prompt` - Process prompts with AI
+  - `--output-format` - Output format: text (default) or json
+  - `--schema-prompt` - Path to prompt file that defines structured output format (required when output-format is json)
 - `effect-ai-cli health` - Check system health
 - `effect-ai-cli config` - Manage configuration
 - `effect-ai-cli auth` - Manage authentication

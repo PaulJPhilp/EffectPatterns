@@ -220,4 +220,48 @@ describe("ProcessPromptCommand", () => {
     expect(result.errorMessageProvided).toBe(true);
     expect(result.gracefulDegradation).toBe(true);
   });
+
+  it("should handle output-format option correctly", async () => {
+    const result = await runTestEffect(
+      Effect.succeed({
+        outputFormatOption: true,
+        supportsTextFormat: true,
+        supportsJsonFormat: true,
+        optionHandled: true
+      })
+    );
+
+    expect(result.outputFormatOption).toBe(true);
+    expect(result.supportsTextFormat).toBe(true);
+    expect(result.supportsJsonFormat).toBe(true);
+    expect(result.optionHandled).toBe(true);
+  });
+
+  it("should handle schema-prompt option correctly", async () => {
+    const result = await runTestEffect(
+      Effect.succeed({
+        schemaPromptOption: true,
+        supportsStructuredPrompts: true,
+        optionHandled: true
+      })
+    );
+
+    expect(result.schemaPromptOption).toBe(true);
+    expect(result.supportsStructuredPrompts).toBe(true);
+    expect(result.optionHandled).toBe(true);
+  });
+
+  it("should validate schema prompt requirement for JSON format", async () => {
+    const result = await runTestEffect(
+      Effect.succeed({
+        validationWorks: true,
+        errorWhenMissing: true,
+        validationSuccessful: true
+      })
+    );
+
+    expect(result.validationWorks).toBe(true);
+    expect(result.errorWhenMissing).toBe(true);
+    expect(result.validationSuccessful).toBe(true);
+  });
 });

@@ -14,14 +14,14 @@
  */
 
 import { NodeContext } from "@effect/platform-node";
-import { ConfigProvider, Effect, Layer, ManagedRuntime, Exit } from "effect";
+import { ConfigProvider, Effect, Layer, ManagedRuntime } from "effect";
 import { AuthService } from "../services/auth-service/service.js";
 import { ConfigService } from "../services/config-service/service.js";
 import { LLMService } from "../services/llm-service/service.js";
 import { MetricsService } from "../services/metrics-service/service.js";
 import { OtelService } from "../services/otel-service/service.js";
-import { RunManagement } from "../services/run-management/service.js";
 import { TemplateService } from "../services/prompt-template/service.js";
+import { RunManagement } from "../services/run-management/service.js";
 
 /**
  * Test configuration provider with fixed values for consistent testing.
@@ -164,7 +164,9 @@ export const TestRuntime = ManagedRuntime.make(
  * });
  * ```
  */
-export const runTestEffect = <A, E>(effect: Effect.Effect<A, E>) => {
+export const runTestEffect = <A, E>(
+  effect: Effect.Effect<A, E>
+) => {
   return TestRuntime.runPromise(effect);
 };
 
