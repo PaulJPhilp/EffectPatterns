@@ -70,3 +70,8 @@ export class RateLimitError extends Data.TaggedError("RateLimitError")<{
   provider: Providers;
   reason: string;
 }> { }
+
+export class QuotaExceededError extends Data.TaggedError("QuotaExceededError")<{
+  provider: Providers;
+  reason: string;
+}> { }

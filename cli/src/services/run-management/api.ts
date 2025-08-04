@@ -1,36 +1,42 @@
 import { Effect } from "effect";
-import { RunManagement } from "./service.js";
-import type { RunInfo } from "./types.js";
-import type { RunManagementError } from "./service.js";
+import { RunManagement, RunManagementError, type RunInfo } from "./service.js";
 
 // High-level API for run management
 export class RunManagementApi {
-  static createRun(namePrefix?: string): Effect.Effect<RunInfo, RunManagementError> {
+  static createRun(namePrefix?: string): Effect.Effect<RunInfo, RunManagementError, RunManagement> {
     return Effect.gen(function* () {
       const service = yield* RunManagement;
       return yield* service.createRun(namePrefix);
-    });
+    }).pipe(
+      Effect.mapError((cause) => new RunManagementError({ reason: "Failed to create run", cause }))
+    );
   }
 
-  static getRunDirectory(runName: string): Effect.Effect<string, RunManagementError> {
+  static getRunDirectory(runName: string): Effect.Effect<string, RunManagementError, RunManagement> {
     return Effect.gen(function* () {
       const service = yield* RunManagement;
       return yield* service.getRunDirectory(runName);
-    });
+    }).pipe(
+      Effect.mapError((cause) => new RunManagementError({ reason: "Failed to get run directory", cause }))
+    );
   }
 
-  static listRuns(): Effect.Effect<ReadonlyArray<RunInfo>, RunManagementError> {
+  static listRuns(): Effect.Effect<ReadonlyArray<RunInfo>, RunManagementError, RunManagement> {
     return Effect.gen(function* () {
       const service = yield* RunManagement;
       return yield* service.listRuns();
-    });
+    }).pipe(
+      Effect.mapError((cause) => new RunManagementError({ reason: "Failed to list runs", cause }))
+    );
   }
 
-  static getRunInfo(runName: string): Effect.Effect<RunInfo, RunManagementError> {
+  static getRunInfo(runName: string): Effect.Effect<RunInfo, RunManagementError, RunManagement> {
     return Effect.gen(function* () {
       const service = yield* RunManagement;
       return yield* service.getRunInfo(runName);
-    });
+    }).pipe(
+      Effect.mapError((error) => new RunManagementError({ reason: "Failed to get run info", cause: error }))
+    );
   }
 
   static getStandardRunDirectory(): Effect.Effect<string> {

@@ -1,56 +1,39 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { Effect, Layer } from "effect";
-import * as Fs from "@effect/platform/FileSystem";
-import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
-import { Chunk } from "effect";
-
-// Mock filesystem for testing
-const mockFsLayer = Layer.succeed(Fs.FileSystem, {
-  readFileString: (path: string) => Effect.succeed(`Mock content from ${path}`),
-  writeFileString: (path: string, content: string) => Effect.succeed(void 0),
-  exists: (path: string) => Effect.succeed(true),
-  remove: (path: string) => Effect.succeed(void 0),
-});
+import { describe, it, expect } from "vitest";
+import { Effect, Chunk } from "effect";
+import { FileSystem } from "@effect/platform/FileSystem";
+import { NodeContext } from "@effect/platform-node";
 
 describe("Stage 6: Output File Redirection", () => {
-  it("should handle file writing successfully", () => {
-    const testContent = "This is test AI response content";
-    const testPath = "/tmp/test-output.txt";
-    
-    const writeEffect = Effect.gen(function* () {
-      const fs = yield* Fs.FileSystem;
-      yield* fs.writeFileString(testPath, testContent);
-      return `Successfully wrote to ${testPath}`;
-    });
+  const testLayer = NodeContext.layer;
 
-    return Effect.runPromise(writeEffect.pipe(
-      Effect.provide(mockFsLayer)
-    )).then(result => {
-      expect(result).toBe(`Successfully wrote to ${testPath}`);
-    });
+  it("should handle file writing successfully", async () => {
+    const testContent = "This is test AI response content";
+    
+        const writeEffect = Effect.scoped(
+      Effect.gen(function*() {
+        const fs = yield* FileSystem;
+        const tempFile = yield* fs.makeTempFile();
+        yield* fs.writeFileString(tempFile, testContent);
+        return yield* fs.readFileString(tempFile);
+      })
+    );
+
+    const result = await Effect.runPromise(writeEffect.pipe(Effect.provide(testLayer)));
+    expect(result).toBe(testContent);
   });
 
-  it("should handle file writing errors gracefully", () => {
-    const errorFsLayer = Layer.succeed(Fs.FileSystem, {
-      readFileString: (path: string) => Effect.succeed(`Mock content`),
-      writeFileString: (path: string, content: string) => 
-        Effect.fail(new Error(`Permission denied: ${path}`)),
-      exists: (path: string) => Effect.succeed(true),
-      remove: (path: string) => Effect.succeed(void 0),
+  it("should handle file writing errors gracefully", async () => {
+    const writeEffect = Effect.gen(function*() {
+      const fs = yield* FileSystem;
+      yield* fs.writeFileString("/test.txt", "content");
     });
 
-    const writeEffect = Effect.gen(function* () {
-      const fs = yield* Fs.FileSystem;
-      yield* fs.writeFileString("/restricted/path.txt", "content");
-      return "success";
-    });
+        const result = await Effect.runPromise(Effect.cause(writeEffect).pipe(
+      Effect.provide(testLayer),
+      Effect.map(cause => cause._tag)
+    ));
 
-    return Effect.runPromise(writeEffect.pipe(
-      Effect.provide(errorFsLayer),
-      Effect.catchAll(error => Effect.succeed(error.message))
-    )).then(result => {
-      expect(result).toContain("Permission denied");
-    });
+        expect(result).toBe("Fail");
   });
 
   it("should handle optional output parameter correctly", () => {

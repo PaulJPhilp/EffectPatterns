@@ -1,0 +1,24 @@
+{
+  "patternId": "constructor-try-trypromise",
+  "fileName": "constructor-try-trypromise.mdx",
+  "metadata": {
+    "id": "",
+    "title": "",
+    "skillLevel": "",
+    "useCase": ["Unknown"],
+    "tags": ["Unknown"],
+    "description": "No description"
+  },
+  "validation": {
+    "passed": false,
+    "errors": ["QA processing failed"],
+    "warnings": [],
+    "suggestions": []
+  },
+  "metrics": {
+    "tokens": 0,
+    "cost": 0,
+    "duration": 490
+  },
+  "timestamp": "2025-08-03T18:59:36Z"
+}

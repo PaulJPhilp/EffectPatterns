@@ -2,7 +2,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 import { Command, Options } from "@effect/cli";
-import { Effect, Layer, Console } from "effect";
+import { Effect, Console } from "effect";
 import { authCommand } from "./commands/auth.js";
 import { configCommand } from "./commands/config.js";
 import { dryRun } from "./commands/dry-run.js";

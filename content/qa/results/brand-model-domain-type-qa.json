@@ -1,0 +1,24 @@
+{
+  "patternId": "brand-model-domain-type",
+  "fileName": "brand-model-domain-type.mdx",
+  "metadata": {
+    "id": "",
+    "title": "",
+    "skillLevel": "",
+    "useCase": ["Unknown"],
+    "tags": ["Unknown"],
+    "description": "No description"
+  },
+  "validation": {
+    "passed": false,
+    "errors": ["QA processing failed"],
+    "warnings": [],
+    "suggestions": []
+  },
+  "metrics": {
+    "tokens": 0,
+    "cost": 0,
+    "duration": 675
+  },
+  "timestamp": "2025-08-03T18:59:29Z"
+}

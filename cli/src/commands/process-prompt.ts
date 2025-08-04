@@ -9,10 +9,7 @@ import { processPromptFromMdx, streamText } from "../services/llm-service/servic
 import { parseMdxFile } from "../services/llm-service/utils.js";
 import type { Providers, Models } from "../services/llm-service/types.js";
 import { selectModel } from "../services/llm-service/types.js";
-import { GoogleAiClient, GoogleAiLanguageModel } from "@effect/ai-google";
-import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai";
-import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic";
-import { Config } from "effect";
+
 
 // effect-patterns process-prompt <file> [--provider <provider>] [--model <model>] [--output <path>] [--output-format <format>]
 const promptFile = Args.file({ name: "file", exists: "yes" });
@@ -28,14 +25,7 @@ const outputOption = Options.text("output").pipe(
   Options.optional,
   Options.withDescription("Save AI response to file instead of console")
 );
-const outputFormatOption = Options.choice("output-format", ["text", "json"]).pipe(
-  Options.withDefault("text"),
-  Options.withDescription("Output format: text or json")
-);
-const schemaPromptOption = Options.text("schema-prompt").pipe(
-  Options.optional,
-  Options.withDescription("Path to prompt file that defines structured output format (required when output-format is json)")
-);
+
 
 export const effectPatternsProcessPrompt = Command.make(
   "process-prompt",
@@ -44,54 +34,32 @@ export const effectPatternsProcessPrompt = Command.make(
     provider: providerOption,
     model: modelOption,
     output: outputOption,
-    outputFormat: outputFormatOption,
-    schemaPrompt: schemaPromptOption,
+
   },
-  ({ file, provider, model, output, outputFormat, schemaPrompt }) => {
-    // Create the specific AI client layer and model layer for the selected provider
-    // This provides the AiLanguageModel service that streamText expects
-    const getLayersForProvider = (provider: Providers, model: Models) => {
-      switch (provider) {
-        case "google":
-          return Layer.provide(
-            GoogleAiLanguageModel.layer({ model }),
-            GoogleAiClient.layerConfig({ apiKey: Config.redacted("GOOGLE_AI_API_KEY") })
-          );
-        case "openai":
-          return Layer.provide(
-            OpenAiLanguageModel.layer({ model }),
-            OpenAiClient.layerConfig({ apiKey: Config.redacted("OPENAI_API_KEY") })
-          );
-        case "anthropic":
-          return Layer.provide(
-            AnthropicLanguageModel.layer({ model }),
-            AnthropicClient.layerConfig({ apiKey: Config.redacted("ANTHROPIC_API_KEY") })
-          );
-      }
-    };
-    
-    // Get the AI layers but don't provide them yet to avoid eager construction
-    const aiLayers = getLayersForProvider(provider as Providers, model as Models);
+  ({ file, provider, model, output }) => {
+    const outputFormat = process.env.OUTPUT_FORMAT || "text";
+    const schemaPrompt = process.env.SCHEMA_PROMPT;
+
 
     // Provide the AI layers along with the main effect to ensure HttpClient is available
     return Effect.gen(function* () {
       const metrics = yield* MetricsService;
       const otel = yield* OtelService;
-      
+
       yield* metrics.startCommand("process-prompt");
-      
+
       // Create OTel span for process-prompt operation
       const span = yield* otel.startSpan("process-prompt-operation", {
         attributes: { file, provider, model }
       });
-      
+
       yield* otel.addEvent(span, "starting_process_prompt", { file });
       yield* Console.log(`Processing prompt from file: ${file}`);
       yield* Console.log(`Using provider: ${provider}, model: ${model}`);
 
       try {
         // Validate output format options
-        if (outputFormat === "json" && (!schemaPrompt || schemaPrompt._tag === "None")) {
+        if (outputFormat === "json" && !schemaPrompt) {
           return yield* Effect.fail(new Error("Schema prompt file is required when output format is json"));
         }
 
@@ -99,21 +67,21 @@ export const effectPatternsProcessPrompt = Command.make(
         const fileExtension = file.toLowerCase().split('.').pop();
         let result;
 
-        if (outputFormat === "json" && schemaPrompt && schemaPrompt._tag === "Some") {
+        if (outputFormat === "json" && schemaPrompt) {
           // For JSON output format, we need to process the schema prompt first
-          yield* Console.log(`Processing with structured output format using schema prompt: ${schemaPrompt.value}`);
+          yield* Console.log(`Processing with structured output format using schema prompt: ${schemaPrompt}`);
           const fs = yield* FileSystem.FileSystem;
-          const schemaPromptContent = yield* fs.readFileString(schemaPrompt.value);
-          
+          const schemaPromptContent = yield* fs.readFileString(schemaPrompt);
+
           // Parse the schema prompt to extract schema definition from frontmatter
           const parsedSchemaPrompt = yield* parseMdxFile(schemaPromptContent);
-          
+
           // Process the main prompt
           if (fileExtension === 'mdx') {
             yield* Console.log(`Processing MDX file: ${file}`);
             const mainPromptContent = yield* fs.readFileString(file);
             const parsedMainPrompt = yield* parseMdxFile(mainPromptContent);
-            
+
             // Combine prompts for structured output
             const combinedPrompt = `${parsedMainPrompt.body}\n\n${parsedSchemaPrompt.body}`;
             result = yield* streamText(combinedPrompt, provider as Providers, model as Models).pipe(
@@ -123,7 +91,7 @@ export const effectPatternsProcessPrompt = Command.make(
           } else {
             yield* Console.log(`Processing text file: ${file}`);
             const prompt = yield* fs.readFileString(file);
-            
+
             // Combine prompts for structured output
             const combinedPrompt = `${prompt}\n\n${parsedSchemaPrompt.body}`;
             result = yield* streamText(combinedPrompt, provider as Providers, model as Models).pipe(
@@ -190,7 +158,7 @@ export const effectPatternsProcessPrompt = Command.make(
         yield* otel.endSpan(span);
         yield* metrics.endCommand();
         yield* metrics.reportMetrics("console");
-        
+
         return { text: textContent, outputPath: output };
       } catch (error) {
         yield* otel.recordException(span, error as Error);
@@ -200,10 +168,5 @@ export const effectPatternsProcessPrompt = Command.make(
         yield* Console.error(`❌ Error processing prompt: ${error}`);
         return yield* Effect.fail(error);
       }
-    }).pipe(
-      // Provide the AI layers for this specific command
-      // The HttpClient service will be available from the main runtime context
-      Effect.provide(aiLayers)
-    );
-  }
-);
+    });
+  })

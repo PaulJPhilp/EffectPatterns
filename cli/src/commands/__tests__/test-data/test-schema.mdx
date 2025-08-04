@@ -1,0 +1,20 @@
+---
+title: "Test Schema"
+---
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "response": {
+      "type": "string",
+      "description": "The test response"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "failure"]
+    }
+  },
+  "required": ["response", "status"]
+}
+```

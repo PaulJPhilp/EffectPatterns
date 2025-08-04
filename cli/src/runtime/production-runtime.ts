@@ -17,19 +17,18 @@
  * - Network requests via HttpClient
  */
 
-import { Effect, Layer, ManagedRuntime, Config } from "effect";
-import { NodeContext, NodeHttpClient, NodeFileSystem, NodePath, NodeTerminal } from "@effect/platform-node";
-import { ConfigService } from "../services/config-service/service.js";
-import { OtelService } from "../services/otel-service/service.js";
-import { MetricsService } from "../services/metrics-service/service.js";
-import { LLMService } from "../services/llm-service/service.js";
+import { AnthropicClient } from "@effect/ai-anthropic";
+import { GoogleAiClient } from "@effect/ai-google";
+import { OpenAiClient } from "@effect/ai-openai";
+import { NodeContext, NodeFileSystem, NodeHttpClient, NodePath, NodeTerminal } from "@effect/platform-node";
+import { ConfigProvider, Config, Effect, Layer, ManagedRuntime } from "effect";
 import { AuthService } from "../services/auth-service/service.js";
-import { RunService } from "../services/run-service/service.js";
-import { ConfigProvider } from "effect";
-import * as AnthropicClient from "@effect/ai-anthropic/AnthropicClient";
-import * as GoogleAiClient from "@effect/ai-google/GoogleAiClient";
-import * as OpenAiClient from "@effect/ai-openai/OpenAiClient";
+import { ConfigService } from "../services/config-service/service.js";
+import { LLMService } from "../services/llm-service/service.js";
+import { MetricsService } from "../services/metrics-service/service.js";
+import { OtelService } from "../services/otel-service/service.js";
 import { TemplateService } from "../services/prompt-template/service.js";
+import { RunService } from "../services/run-service/service.js";
 
 /**
  * Production configuration provider using environment variables.
@@ -85,6 +84,26 @@ const ProductionPlatformLayer = Layer.mergeAll(
  * dependency injection and service provision.
  */
 // Merge all application-level services into a single layer.
+const AiClientLayers = Layer.mergeAll(
+  Layer.scoped(
+    GoogleAiClient.GoogleAiClient,
+    Effect.flatMap(Config.redacted("GOOGLE_AI_API_KEY"), (apiKey) =>
+      GoogleAiClient.make({ apiKey })
+    )
+  ),
+  Layer.scoped(
+    OpenAiClient.OpenAiClient,
+    Effect.flatMap(Config.redacted("OPENAI_API_KEY"), (apiKey) =>
+      OpenAiClient.make({ apiKey })
+    )
+  ),
+  Layer.scoped(
+    AnthropicClient.AnthropicClient,
+    Effect.flatMap(Config.redacted("ANTHROPIC_API_KEY"), (apiKey) =>
+      AnthropicClient.make({ apiKey })
+    )
+  )
+);
 const AppLayer = Layer.mergeAll(
   ConfigService.Default,
   AuthService.Default,
@@ -92,7 +111,8 @@ const AppLayer = Layer.mergeAll(
   OtelService.Default,
   RunService.Default,
   LLMService.Default,
-  TemplateService.Default
+  TemplateService.Default,
+  AiClientLayers
 );
 
 /**
@@ -133,27 +153,7 @@ const LiveEnv = Layer.merge(
  * });
  * ```
  */
-// AI client layers
-const AiClientLayers = Layer.mergeAll(
-  Layer.scoped(
-    AnthropicClient.AnthropicClient,
-    Effect.flatMap(Config.redacted("ANTHROPIC_API_KEY"), (apiKey) =>
-      AnthropicClient.make({ apiKey })
-    )
-  ),
-  Layer.scoped(
-    GoogleAiClient.GoogleAiClient,
-    Effect.flatMap(Config.redacted("GOOGLE_AI_API_KEY"), (apiKey) =>
-      GoogleAiClient.make({ apiKey })
-    )
-  ),
-  Layer.scoped(
-    OpenAiClient.OpenAiClient,
-    Effect.flatMap(Config.redacted("OPENAI_API_KEY"), (apiKey) =>
-      OpenAiClient.make({ apiKey })
-    )
-  )
-);
+
 
 /**
  * Combined application and AI client layer.

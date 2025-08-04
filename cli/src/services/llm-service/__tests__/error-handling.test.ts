@@ -1,31 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { Effect } from "effect";
-import { AiError } from "@effect/ai";
-import { streamText, generateText } from "../service.js";
-import { Providers, Models } from "../types.js";
+import { RateLimitError, QuotaExceededError } from "../errors.js";
 
-describe("Stage 5: Robust AI Error Handling", () => {
-  it("should handle RateLimitError with proper message", () => {
-    const rateLimitError = new AiError.AiError({
-      _tag: "RateLimitError",
-      description: "Rate limit exceeded",
-      module: "test",
-      method: "test"
-    });
-
-    // Test that error handling produces user-friendly messages
-    expect(rateLimitError.description).toContain("Rate limit");
+describe("LLM Service Errors", () => {
+  it("should create a RateLimitError with the correct tag", () => {
+    const error = new RateLimitError({ provider: "google", reason: "test" });
+    expect(error._tag).toBe("RateLimitError");
   });
 
-  it("should handle QuotaExceededError with proper message", () => {
-    const quotaError = new AiError.AiError({
-      _tag: "QuotaExceededError", 
-      description: "API quota exceeded",
-      module: "test",
-      method: "test"
-    });
-
-    expect(quotaError.description).toContain("quota exceeded");
+  it("should create a QuotaExceededError with the correct tag", () => {
+    const error = new QuotaExceededError({ provider: "google", reason: "test" });
+    expect(error._tag).toBe("QuotaExceededError");
   });
 
   it("should parse generic AI error descriptions correctly", () => {

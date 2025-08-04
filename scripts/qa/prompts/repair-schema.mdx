@@ -1,0 +1,85 @@
+---
+title: QA Repair Schema
+description: Schema for generating repair instructions for failed patterns
+outputFormat: json
+---
+
+# QA Repair Schema
+
+This prompt defines the JSON schema for generating repair instructions for failed Effect patterns. The response must be a valid JSON object with the following structure:
+
+## Required JSON Structure
+
+```json
+{
+  "repairedContent": "string",
+  "changes": ["string"],
+  "explanation": "string"
+}
+```
+
+## Repair Guidelines
+
+### Content Structure
+- **repairedContent**: Complete repaired MDX content including frontmatter
+- **changes**: Array of specific changes made (be specific and actionable)
+- **explanation**: Brief explanation of the repair approach
+
+### Repair Focus Areas
+
+1. **Technical Fixes**
+   - Correct import statements
+   - Fix TypeScript syntax errors
+   - Update deprecated patterns
+   - Ensure code examples compile
+
+2. **Documentation Improvements**
+   - Clarify explanations
+   - Add missing context
+   - Improve examples
+   - Fix typos and grammar
+
+3. **Pattern Alignment**
+   - Update to modern Effect patterns
+   - Ensure best practices are followed
+   - Add missing concepts
+   - Remove anti-patterns
+
+### Change Descriptions
+
+Each change should be specific:
+- "Updated Effect.Service.Class to Effect.Service pattern"
+- "Fixed import: @effect/platform/HttpClient → @effect/platform"
+- "Added missing .Default usage explanation"
+- "Corrected TypeScript type annotations"
+
+### Example Response
+
+```json
+{
+  "repairedContent": "---\nid: effect-service-pattern\ntitle: Effect Service Pattern\nskillLevel: intermediate\n---\n\n# Effect Service Pattern\n\n...repaired content...",
+  "changes": [
+    "Updated deprecated Effect.Service.Class to modern Effect.Service",
+    "Fixed import statements to use @effect/platform",
+    "Added explanation of .Default usage",
+    "Corrected TypeScript type annotations"
+  ],
+  "explanation": "Updated to use modern Effect patterns and fixed technical issues"
+}
+```
+
+## Repair Process
+
+1. **Analyze Issues**: Review the specific errors and warnings
+2. **Generate Fixes**: Create targeted repairs for each issue
+3. **Maintain Structure**: Preserve frontmatter and overall structure
+4. **Verify Quality**: Ensure repaired content passes QA validation
+5. **Document Changes**: Provide clear change descriptions
+
+## Validation
+
+After repairs, the content should:
+- Pass all QA validation checks
+- Follow Effect best practices
+- Be technically accurate
+- Maintain clarity and completeness

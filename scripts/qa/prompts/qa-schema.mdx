@@ -1,0 +1,92 @@
+---
+title: QA Validation Schema
+description: Schema for validating Effect pattern quality
+outputFormat: json
+---
+
+# QA Validation Schema
+
+This prompt defines the JSON schema for validating Effect patterns. The response must be a valid JSON object with the following structure:
+
+## Required JSON Structure
+
+```json
+{
+  "passed": boolean,
+  "errors": ["string"],
+  "warnings": ["string"],
+  "suggestions": ["string"],
+  "tokens": number,
+  "cost": number
+}
+```
+
+## Validation Criteria
+
+### 1. Technical Correctness
+- Code examples compile and run
+- Imports are correct and complete
+- Exports are properly defined
+- TypeScript types are accurate
+- Effect patterns are implemented correctly
+
+### 2. Documentation Quality
+- Clear explanations of concepts
+- Complete coverage of the pattern
+- Accurate descriptions
+- Consistent terminology
+- Appropriate examples
+
+### 3. Pattern Adherence
+- Follows Effect best practices
+- Uses modern Effect patterns
+- Avoids anti-patterns
+- Proper service layer usage
+- Correct dependency injection
+
+### 4. Examples
+- Code is runnable
+- Demonstrates the pattern effectively
+- Has clear "before" and "after" comparisons
+- Shows practical use cases
+- Includes expected outputs
+
+### 5. Metadata
+- ID is unique and descriptive
+- Title is clear and accurate
+- Skill level is appropriate
+- Tags are relevant
+- Use cases are practical
+
+## Response Format
+
+When analyzing a pattern, provide specific feedback:
+
+- **errors**: Critical issues that must be fixed
+- **warnings**: Minor issues that should be addressed
+- **suggestions**: Improvements that would enhance quality
+
+## Example Response
+
+```json
+{
+  "passed": false,
+  "errors": [
+    "Code example uses deprecated Effect.Service.Class pattern",
+    "Missing explanation of .Default usage",
+    "Import statement is incorrect: uses @effect/platform/HttpClient instead of @effect/platform"
+  ],
+  "warnings": [
+    "Example could be more concise",
+    "Missing TypeScript type annotations"
+  ],
+  "suggestions": [
+    "Add comparison with non-Effect approach",
+    "Include performance considerations"
+  ],
+  "tokens": 1250,
+  "cost": 0.0025
+}
+```
+
+Remember to be thorough but constructive in your feedback. Focus on helping improve the pattern quality while maintaining accuracy.

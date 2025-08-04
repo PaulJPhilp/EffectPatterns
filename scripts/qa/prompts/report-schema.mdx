@@ -1,0 +1,189 @@
+---
+title: "QA Report Generation Schema"
+description: "Schema for generating comprehensive QA reports from validation results"
+outputFormat: "json"
+---
+
+# QA Report Generation Instructions
+
+You are tasked with generating a comprehensive QA report for Effect pattern validation results. This report should provide detailed analysis and actionable insights.
+
+## Report Structure
+
+Generate a JSON report with the following structure:
+
+```json
+{
+  "summary": {
+    "totalPatterns": number,
+    "passed": number,
+    "failed": number,
+    "passRate": number,
+    "totalTokens": number,
+    "totalCost": number,
+    "averageDuration": number,
+    "generatedAt": "ISO-8601-timestamp"
+  },
+  "analysis": {
+    "failureCategories": {
+      "typescript": {
+        "count": number,
+        "patterns": ["pattern-id-1", "pattern-id-2"],
+        "description": "TypeScript compilation errors"
+      },
+      "imports": {
+        "count": number,
+        "patterns": ["pattern-id-3"],
+        "description": "Import/export issues"
+      },
+      "deprecated": {
+        "count": number,
+        "patterns": ["pattern-id-4"],
+        "description": "Deprecated API usage"
+      },
+      "documentation": {
+        "count": number,
+        "patterns": ["pattern-id-5"],
+        "description": "Documentation clarity issues"
+      },
+      "examples": {
+        "count": number,
+        "patterns": ["pattern-id-6"],
+        "description": "Example code problems"
+      },
+      "metadata": {
+        "count": number,
+        "patterns": ["pattern-id-7"],
+        "description": "Frontmatter/metadata issues"
+      }
+    },
+    "skillLevelBreakdown": {
+      "beginner": { "passed": 5, "failed": 2 },
+      "intermediate": { "passed": 8, "failed": 1 },
+      "advanced": { "passed": 3, "failed": 3 }
+    },
+    "tagAnalysis": {
+      "core-patterns": { "passed": 10, "failed": 1 },
+      "error-handling": { "passed": 6, "failed": 2 }
+    }
+  },
+  "failedPatterns": [
+    {
+      "patternId": "pattern-id",
+      "title": "Pattern Title",
+      "skillLevel": "beginner|intermediate|advanced",
+      "tags": ["tag1", "tag2"],
+      "errors": ["specific error messages"],
+      "warnings": ["warning messages"],
+      "suggestions": ["improvement suggestions"],
+      "priority": "high|medium|low",
+      "estimatedFixTime": "minutes"
+    }
+  ],
+  "metrics": {
+    "tokenUsage": {
+      "min": 100,
+      "max": 5000,
+      "average": 1500
+    },
+    "costAnalysis": {
+      "min": 0.001,
+      "max": 0.05,
+      "average": 0.015,
+      "total": 0.45
+    },
+    "durationStats": {
+      "min": 2000,
+      "max": 15000,
+      "average": 7500
+    }
+  },
+  "recommendations": [
+    "Immediate action items",
+    "Batch repair suggestions",
+    "Quality improvement strategies"
+  ]
+}
+```
+
+## Analysis Guidelines
+
+### Failure Categorization
+Categorize each failure into one of these categories:
+
+1. **typescript**: TypeScript compilation errors, type mismatches
+2. **imports**: Import/export issues, missing dependencies
+3. **deprecated**: Usage of deprecated APIs or patterns
+4. **documentation**: Clarity issues, missing explanations
+5. **examples**: Code example problems, incorrect usage
+6. **metadata**: Frontmatter issues, missing required fields
+
+### Priority Assessment
+Assign priority levels based on:
+- **high**: Critical errors that prevent usage
+- **medium**: Important issues that affect quality
+- **low**: Minor improvements or suggestions
+
+### Fix Estimation
+Provide estimated fix time in minutes based on:
+- Simple documentation fixes: 5-15 minutes
+- TypeScript errors: 15-30 minutes
+- Complex refactoring: 30-60 minutes
+
+## Report Generation
+
+When generating the report:
+
+1. **Aggregate all validation results** from the QA process
+2. **Analyze failure patterns** to identify common issues
+3. **Calculate statistics** for pass/fail rates and metrics
+4. **Provide actionable recommendations** for repair prioritization
+5. **Include skill level and tag breakdowns** for targeted improvements
+
+## Example Report Output
+
+```json
+{
+  "summary": {
+    "totalPatterns": 25,
+    "passed": 18,
+    "failed": 7,
+    "passRate": 72,
+    "totalTokens": 37500,
+    "totalCost": 0.45,
+    "averageDuration": 7500,
+    "generatedAt": "2024-08-02T22:35:39.000Z"
+  },
+  "analysis": {
+    "failureCategories": {
+      "typescript": {
+        "count": 3,
+        "patterns": ["error-handling-basic", "retry-pattern"],
+        "description": "TypeScript compilation errors"
+      },
+      "deprecated": {
+        "count": 2,
+        "patterns": ["old-stream-pattern"],
+        "description": "Deprecated API usage"
+      },
+      "documentation": {
+        "count": 2,
+        "patterns": ["complex-pipeline"],
+        "description": "Documentation clarity issues"
+      }
+    },
+    "skillLevelBreakdown": {
+      "beginner": {"passed": 8, "failed": 2},
+      "intermediate": {"passed": 6, "failed": 3},
+      "advanced": {"passed": 4, "failed": 2}
+    }
+  },
+  "recommendations": [
+    "Focus on TypeScript error fixes for beginner patterns",
+    "Update deprecated API usage in intermediate patterns",
+    "Improve documentation clarity for complex patterns"
+  ]
+}
+```
+
+Focus on providing clear, actionable insights that will guide the repair process and improve overall pattern quality.

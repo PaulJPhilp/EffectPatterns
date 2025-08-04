@@ -1,0 +1,7 @@
+{
+  "test": {
+    "api_key": "test-key",
+    "model": "gpt-4",
+    "timeout": 30000
+  }
+}
