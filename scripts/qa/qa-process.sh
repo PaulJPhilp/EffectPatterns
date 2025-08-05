@@ -21,9 +21,9 @@ PATTERNS_DIR="$PROJECT_ROOT/content/new/processed"
 RESULTS_DIR="$QA_DIR/results"
 PROMPTS_DIR="$SCRIPT_DIR/prompts"
 
-# Ensure bun is available
-if ! command -v bun &> /dev/null; then
-  echo "Error: bun is not installed or not in PATH"
+# Ensure node is available
+if ! command -v node &> /dev/null; then
+  echo "Error: node is not installed or not in PATH"
   exit 1
 fi
 
@@ -67,7 +67,7 @@ run_qa_validation() {
   
   # Run the CLI command to process the prompt with correct arguments
   local result
-            if result=$(OUTPUT_FORMAT="json" SCHEMA_PROMPT="$PROMPTS_DIR/qa-schema.mdx" bun run cli/src/main.ts process-prompt "$pattern_path" 2>&1); then
+            if result=$(OUTPUT_FORMAT="json" SCHEMA_PROMPT="$PROMPTS_DIR/qa-schema.mdx" node --loader ts-node/esm cli/src/main.ts process-prompt "$pattern_path" 2>&1); then
     echo "$result"
   else
     echo "Error running CLI command: $result" >&2

@@ -8,14 +8,14 @@ import { configCommand } from "./commands/config.js";
 import { dryRun } from "./commands/dry-run.js";
 import { health } from "./commands/health.js";
 import { effectPatternsList } from "./commands/list.js";
-import { modelCommand } from "./commands/model.js";
 import { effectPatternsProcessPrompt } from "./commands/process-prompt.js";
 import { testCommand } from "./commands/test.js";
 import { traceCommand } from "./commands/trace.js";
 import { applyPromptToDir } from "./commands/apply-prompt-to-dir.js";
 import { systemPromptCommand } from "./commands/system-prompt.js";
+import { echoCommand } from "./commands/echo.js";
 
-import { ProductionRuntime } from "./runtime/production-runtime.js";
+import { runWithAppropriateRuntime } from "./runtime/runtime-selector.js";
 
 // effect-patterns [--version] [-h | --help] [-c <name>=<value>] [--run [name_prefix]] [--otel] [--otel-endpoint <url>]
 const configs = Options.keyValueMap("c").pipe(Options.optional);
@@ -36,8 +36,16 @@ const otelServiceName = Options.text("otel-service-name").pipe(
 );
 
 // Create a root command that doesn't execute anything by default
-const command = Command.make("effect-patterns", {}, () => Effect.void).pipe(
-  Command.withSubcommands([effectPatternsList, modelCommand, dryRun, configCommand, health, effectPatternsProcessPrompt, authCommand, traceCommand, testCommand, applyPromptToDir, systemPromptCommand])
+const command = Command.make("effect-patterns", {
+  configs,
+  version,
+  help,
+  run,
+  otel,
+  otelEndpoint,
+  otelServiceName
+}, () => Effect.void).pipe(
+  Command.withSubcommands([effectPatternsList, dryRun, configCommand, health, effectPatternsProcessPrompt, authCommand, traceCommand, testCommand, applyPromptToDir, systemPromptCommand, echoCommand])
 );
 
 const cli = Command.run(command, {
@@ -93,5 +101,5 @@ const main = Effect.gen(function* () {
   )
 );
 
-// Run the CLI with the managed runtime
-ProductionRuntime.runPromise(main as Effect.Effect<never, unknown, never>);
+// Run the CLI with the appropriate runtime based on command
+runWithAppropriateRuntime(main as Effect.Effect<never, unknown, never>);

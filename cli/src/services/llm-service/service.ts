@@ -8,92 +8,83 @@ import {
   Stream,
 } from "effect";
 
-import { AiLanguageModel, AiError } from "@effect/ai";
-import { GoogleAiClient, GoogleAiLanguageModel } from "@effect/ai-google";
-import { OpenAiClient, OpenAiLanguageModel } from "@effect/ai-openai";
-import { AnthropicClient, AnthropicLanguageModel } from "@effect/ai-anthropic";
-import { logError, UnsupportedProviderError } from "./errors.js";
-import { processMdxFile, isValidProvider } from "./utils.js";
-import type { Providers, Models } from "./types.js";
-import { selectModel } from "./types.js";
-import { FileSystem } from "@effect/platform";
-import { Path } from "@effect/platform";
-import { NodeContext } from "@effect/platform-node";
-import { MetricsService } from "../metrics-service/service.js";
-import type { LLMUsage } from "../metrics-service/service.js";
+import { AiLanguageModel } from "@effect/ai";
+import { AnthropicClient } from "@effect/ai-anthropic";
+import { GoogleAiClient } from "@effect/ai-google";
+import { OpenAiClient } from "@effect/ai-openai";
+import { HttpClient } from "@effect/platform";
+
 import { ConfigService } from "../config-service/service.js";
+import type { LLMUsage } from "../metrics-service/service.js";
+import { MetricsService } from "../metrics-service/service.js";
 import { TemplateService } from "../prompt-template/service.js";
+import { logError, UnsupportedProviderError } from "./errors.js";
+import type { Models, Providers } from "./types.js";
+import { selectModel } from "./types.js";
+import { isValidProvider, processMdxFile } from "./utils.js";
 
 export const streamText = (
   prompt: string,
   provider: Providers,
   model: Models,
   parameters?: Record<string, unknown>
-): Stream.Stream<string, Error | AiError.AiError, AiLanguageModel.AiLanguageModel | ConfigService | TemplateService> => {
-  return Stream.unwrap(
+): Stream.Stream<string, Error, ConfigService | TemplateService | AnthropicClient.AnthropicClient | GoogleAiClient.GoogleAiClient | OpenAiClient.OpenAiClient | HttpClient.HttpClient> => {
+  // Validate provider first
+  if (!isValidProvider(provider)) {
+    return Stream.fromEffect(Effect.fail(new UnsupportedProviderError({ provider })));
+  }
+
+  return Stream.unwrapScoped(
     Effect.gen(function* () {
       yield* Console.info(`[LLM] Setting up streaming via ${provider} (${model})`);
 
-      // Validate provider
-      if (!isValidProvider(provider)) {
-        return yield* Effect.fail(new UnsupportedProviderError({ provider }));
-      }
-
-      // Access the AiLanguageModel service through dependency injection
-      // The AI client layers should be provided at the command level
-      const languageModel = yield* AiLanguageModel.AiLanguageModel;
       const config = yield* ConfigService;
       const templateService = yield* TemplateService;
-      
+
       // Prepend system prompt if configured
       const finalPrompt = yield* prependSystemPrompt(prompt, config, templateService);
 
-      const stream = languageModel.streamText({
-        prompt: finalPrompt,
-      }).pipe(
-        Stream.map((response) => response.text),
-        Stream.tapError((error) => logError(error)),
-        Stream.catchTags({
-          RateLimitError: (error) =>
-            Stream.fromEffect(
-              Console.error(`[AI] Rate limit exceeded: ${error.description}`).pipe(
-                Effect.flatMap(() => Effect.fail(new Error(`Rate limit exceeded. Please try again later.`)))
-              )
-            ),
-          InvalidInputError: (error) =>
-            Stream.fromEffect(
-              Console.error(`[AI] Invalid input: ${error.description}`).pipe(
-                Effect.flatMap(() => Effect.fail(new Error(`Invalid input: ${error.description}`)))
-              )
-            ),
-          QuotaExceededError: (error) =>
-            Stream.fromEffect(
-              Console.error(`[AI] Quota exceeded: ${error.description}`).pipe(
-                Effect.flatMap(() => Effect.fail(new Error(`API quota exceeded. Please check your usage.`)))
-              )
-            ),
-          AiError: (error) =>
-            Stream.fromEffect(
-              Effect.gen(function* () {
-                yield* Console.error(`[AI] AI error: ${error.description}`);
-                const description = error.description?.toLowerCase() || "";
-                if (description.includes("rate limit") || description.includes("too many requests")) {
-                  return yield* Effect.fail(new Error(`Rate limit exceeded. Please try again later.`));
-                }
-                if (description.includes("quota") || description.includes("exceeded")) {
-                  return yield* Effect.fail(new Error(`API quota exceeded. Please check your usage.`));
-                }
-                if (description.includes("invalid") || description.includes("bad request")) {
-                  return yield* Effect.fail(new Error(`Invalid request: ${error.description}`));
-                }
-                return yield* Effect.fail(new Error(`AI service error: ${error.description}`));
-              })
-            ),
-        })
-      );
+      // Select the appropriate model layer and AI client layer
+      const modelLayer = selectModel(provider, model);
+      const aiClientLayer = createAiClientLayer(provider);
+      const combinedLayer = Layer.mergeAll(modelLayer, aiClientLayer);
 
-      return stream;
+      // Create the streaming effect using unified AiLanguageModel interface
+      const streamEffect = AiLanguageModel.streamText({
+        prompt: finalPrompt,
+        ...parameters
+      });
+
+      return Stream.provideLayer(streamEffect, combinedLayer);
     })
+  ).pipe(
+    Stream.map((response) => {
+      // Extract text from AiResponse
+      if (typeof response === 'string') {
+        return response;
+      }
+      return response.text || JSON.stringify(response);
+    }),
+    Stream.catchAll((error) =>
+      Stream.fromEffect(
+        Effect.gen(function* () {
+          yield* Console.error(`[AI] AI error: ${error}`);
+          if (typeof error === 'object' && error !== null && 'description' in error) {
+            const description = (error as any).description?.toLowerCase() || "";
+            if (description.includes("rate limit") || description.includes("too many requests")) {
+              return yield* Effect.fail(new Error(`Rate limit exceeded. Please try again later.`));
+            }
+            if (description.includes("quota") || description.includes("exceeded")) {
+              return yield* Effect.fail(new Error(`API quota exceeded. Please check your usage.`));
+            }
+            if (description.includes("invalid") || description.includes("bad request")) {
+              return yield* Effect.fail(new Error(`Invalid request: ${error.description}`));
+            }
+          }
+          return yield* Effect.fail(new Error(`AI service error: ${error}`));
+        })
+      )
+    )
   );
 };
 
@@ -114,20 +105,10 @@ export const generateText = Effect.fn("generateText")(function* (
 
   // Create the appropriate model layer and AI client layer
   const llmModelLayer = selectModel(provider, model);
-  const aiClientLayer = Layer.mergeAll(
-    AnthropicClient.layerConfig({
-      apiKey: Config.redacted("ANTHROPIC_API_KEY")
-    }),
-    GoogleAiClient.layerConfig({
-      apiKey: Config.redacted("GOOGLE_AI_API_KEY")
-    }),
-    OpenAiClient.layerConfig({
-      apiKey: Config.redacted("OPENAI_API_KEY")
-    })
-  );
-  
+  const aiClientLayer = createAiClientLayer(provider);
+
   const combinedLayer = Layer.mergeAll(llmModelLayer, aiClientLayer);
-  
+
   const response = yield* Effect.provide(
     AiLanguageModel.generateText({ prompt: finalPrompt }),
     combinedLayer
@@ -151,7 +132,7 @@ export const generateText = Effect.fn("generateText")(function* (
     outputCost: 0,
     totalCost: 0
   };
-  
+
   yield* metrics.recordLLMUsage(usage);
   yield* Console.log(response.text);
   return response;
@@ -243,7 +224,7 @@ export const generateObject = Effect.fn("generateObject")(function* <
     outputCost: 0,
     totalCost: 0
   };
-  
+
   yield* metrics.recordLLMUsage(usage);
   yield* Console.log(response);
   return response;
@@ -277,19 +258,39 @@ const prependSystemPrompt = (userPrompt: string, config: ConfigService, template
   Effect.gen(function* () {
     // Get system prompt file path from config
     const systemPromptFile = yield* config.getSystemPromptFile();
-    
+
     // If no system prompt is set, return the user prompt as is
     if (systemPromptFile._tag === "None") {
       return userPrompt;
     }
-    
+
     // Load and render the system prompt template
     const systemPromptTemplate = yield* templateService.loadTemplate(systemPromptFile.value);
     const systemPrompt = yield* templateService.renderTemplate(systemPromptTemplate, {});
-    
+
     // Prepend system prompt to user prompt
     return `${systemPrompt}\n\n${userPrompt}`;
   });
+
+// Helper function to create AI client layer based on provider
+const createAiClientLayer = (provider: Providers) => {
+  switch (provider) {
+    case 'google':
+      return GoogleAiClient.layerConfig({
+        apiKey: Config.redacted("GOOGLE_AI_API_KEY")
+      });
+    case 'openai':
+      return OpenAiClient.layerConfig({
+        apiKey: Config.redacted("OPENAI_API_KEY")
+      });
+    case 'anthropic':
+      return AnthropicClient.layerConfig({
+        apiKey: Config.redacted("ANTHROPIC_API_KEY")
+      });
+    default:
+      throw new Error(`Unsupported provider: ${provider}`);
+  }
+};
 
 export class LLMService extends Effect.Service<LLMService>()("LLMService", {
   effect: Effect.gen(function* () {

@@ -16,18 +16,18 @@
  * - File system operations
  * - Network requests via HttpClient
  */
-import { Effect, Layer, ManagedRuntime } from "effect";
+import { AnthropicClient } from "@effect/ai-anthropic";
+import { GoogleAiClient } from "@effect/ai-google";
+import { OpenAiClient } from "@effect/ai-openai";
 import { NodeContext } from "@effect/platform-node";
-import { ConfigService } from "../services/config-service/service.js";
-import { OtelService } from "../services/otel-service/service.js";
-import { MetricsService } from "../services/metrics-service/service.js";
-import { LLMService } from "../services/llm-service/service.js";
+import { Effect, Layer, ManagedRuntime } from "effect";
 import { AuthService } from "../services/auth-service/service.js";
-import { RunService } from "../services/run-service/service.js";
-import * as AnthropicClient from "@effect/ai-anthropic/AnthropicClient";
-import * as GoogleAiClient from "@effect/ai-google/GoogleAiClient";
-import * as OpenAiClient from "@effect/ai-openai/OpenAiClient";
+import { ConfigService } from "../services/config-service/service.js";
+import { LLMService } from "../services/llm-service/service.js";
+import { MetricsService } from "../services/metrics-service/service.js";
+import { OtelService } from "../services/otel-service/service.js";
 import { TemplateService } from "../services/prompt-template/service.js";
+import { RunService } from "../services/run-service/service.js";
 /**
  * Complete production layer providing all services and platform capabilities.
  *
