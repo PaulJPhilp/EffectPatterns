@@ -123,10 +123,14 @@ const flakyEffect = Effect.try({
     return "Operation succeeded!"
   },
   catch: (error: unknown) => {
-    Effect.logInfo("Operation failed, retrying...")
+    // we can omit this entirely
     return error
   }
-})
+}).pipe(
+  Effect.tapError(
+    () => Effect.logInfo("Operation failed, retrying...")
+  )
+)
 
 // --- Building a Composable Schedule ---
 
