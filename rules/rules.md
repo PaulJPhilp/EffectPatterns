@@ -6502,7 +6502,7 @@ const fetchPosts = Effect.succeed([{ title: "Effect is great" }]).pipe(
 );
 
 // Run both effects concurrently
-const program = Effect.all([fetchUser, fetchPosts]);
+const program = Effect.all([fetchUser, fetchPosts], { concurrency: "unbounded" });
 
 // The resulting effect will succeed with a tuple: [{id, name}, [{title}]]
 // Total execution time will be ~1.5 seconds (the duration of the longest task).
