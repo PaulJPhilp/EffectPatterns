@@ -1,15 +1,9 @@
 import { Effect, Data, Option } from "effect";
 import { FileSystem, Path } from "@effect/platform";
 import { NodeContext } from "@effect/platform-node";
-import * as OS from "node:os";
-
-export class ConfigError extends Data.TaggedError("ConfigError")<{
-  readonly message: string;
-  readonly cause?: unknown;
-}> {}
-
-export type AppConfig = Record<string, string>
-
+import * as os from "node:os";
+import { ConfigError } from "./errors.js";
+import { AppConfig } from "./types.js";
 
 
 export class ConfigService extends Effect.Service<ConfigService>()(
@@ -19,7 +13,7 @@ export class ConfigService extends Effect.Service<ConfigService>()(
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
 
-      const configDir = path.join(OS.homedir(), ".config", "ai-cli");
+      const configDir = path.join(os.homedir(), ".config", "ai-cli");
       const configFile = path.join(configDir, "config.json");
 
       const ensureConfigExists = Effect.gen(function* () {

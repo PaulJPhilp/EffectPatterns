@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { Effect, Layer } from "effect";
-import { RunManagementApi } from "../api.js";
 import { RunManagement } from "../service.js";
 import { FileSystem, Path } from "@effect/platform";
 import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
@@ -9,33 +8,27 @@ const testLayer = Layer.provide(RunManagement.Default, NodeFileSystem.layer);
 
 describe("RunManagement Integration", () => {
   it("should complete full run lifecycle", () => Effect.gen(function* () {
+    const runMgmt = yield* RunManagement;
+    
     // Create a new run
-    const run = yield* RunManagementApi.createRun("test-run").pipe(
-      Effect.provide(testLayer)
-    );
+    const run = yield* runMgmt.createRun("test-run");
 
     // Verify run was created
     expect(run.name).toMatch(/^test-run-\d{4}$/);
     expect(run.number).toBeGreaterThan(0);
 
     // Test listing runs
-    const runs = yield* RunManagementApi.listRuns().pipe(
-      Effect.provide(testLayer)
-    );
+    const runs = yield* runMgmt.listRuns();
     expect(runs.length).toBeGreaterThan(0);
     expect(runs[0].name).toBe(run.name);
 
     // Test getting run info
-    const retrievedRun = yield* RunManagementApi.getRunInfo(run.name).pipe(
-      Effect.provide(testLayer)
-    );
+    const retrievedRun = yield* runMgmt.getRunInfo(run.name);
     expect(retrievedRun.name).toBe(run.name);
     expect(retrievedRun.directory).toBe(run.directory);
 
     // Test getting run directory
-    const runDir = yield* RunManagementApi.getRunDirectory(run.name).pipe(
-      Effect.provide(testLayer)
-    );
+    const runDir = yield* runMgmt.getRunDirectory(run.name);
     expect(runDir).toBe(run.directory);
 
     // Test directory structure
@@ -65,14 +58,14 @@ describe("RunManagement Integration", () => {
   }));
 
   it("should handle concurrent run creation", () => Effect.gen(function* () {
-    const testLayer = Layer.provide(RunManagement.Default, NodeFileSystem.layer);
+    const runMgmt = yield* RunManagement;
 
     // Create multiple runs concurrently
     const runs = yield* Effect.all([
-      RunManagementApi.createRun("concurrent-1"),
-      RunManagementApi.createRun("concurrent-2"),
-      RunManagementApi.createRun("concurrent-3")
-    ]).pipe(Effect.provide(testLayer));
+      runMgmt.createRun("concurrent-1"),
+      runMgmt.createRun("concurrent-2"),
+      runMgmt.createRun("concurrent-3")
+    ]);
 
     // Verify sequential numbering despite concurrent creation
     const numbers = runs.map(r => r.number).sort((a, b) => a - b);

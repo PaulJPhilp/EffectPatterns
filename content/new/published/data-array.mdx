@@ -1,14 +1,46 @@
 ---
-title: "Working with Immutable Arrays using Data.array"
-id: "data-array"
-skillLevel: "beginner"
-useCase: ["Data Types", "Arrays", "Structural Equality", "Collections"]
-summary: "Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations."
-tags: ["Data.array", "array", "structural-equality", "immutable", "data-type", "effect"]
+title: Working with Immutable Arrays using Data.array
+id: data-array
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Data Types
+  - Arrays
+  - Structural Equality
+  - Collections
+summary: Use Data.array to create immutable, type-safe arrays that support
+  value-based equality and safe functional operations.
+tags:
+  - Data.array
+  - array
+  - structural-equality
+  - immutable
+  - data-type
+  - effect
 rule:
-  description: "Use Data.array to define arrays whose equality is based on their contents, enabling safe, predictable comparisons and functional operations."
-related: ["data-chunk", "data-struct", "data-tuple"]
-author: "PaulJPhilp"
+  description: Use Data.array to define arrays whose equality is based on their
+    contents, enabling safe, predictable comparisons and functional operations.
+related:
+  - data-chunk
+  - data-struct
+  - data-tuple
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.645Z level=INFO fiber=#0 message="arr1: [1, 2,
+  3]"
+
+  timestamp=2025-08-07T18:29:29.646Z level=INFO fiber=#0 message="arr2: [1, 2,
+  3]"
+
+  timestamp=2025-08-07T18:29:29.646Z level=INFO fiber=#0
+  message="Equal.equals(arr1, arr2): true"
+
+  timestamp=2025-08-07T18:29:29.647Z level=INFO fiber=#0
+  message="HashSet.has(set, arr2): true"
+
+  timestamp=2025-08-07T18:29:29.647Z level=INFO fiber=#0 message="arr1.map(n =>
+  n * 2): [2, 4, 6]"
 ---
 
 # Working with Immutable Arrays using `Data.array`
@@ -46,7 +78,9 @@ const program = Effect.gen(function* () {
   yield* Effect.log(`arr1.map(n => n * 2): [${doubled.join(", ")}]`);
 });
 
-Effect.runPromise(program);
+Effect.runPromise(
+  program.pipe(Effect.catchAll(() => Effect.succeed(undefined)))
+);
 
 ```
 
@@ -54,6 +88,7 @@ Effect.runPromise(program);
 - `Data.array` creates immutable arrays with value-based equality.
 - Useful for modeling ordered collections in a safe, functional way.
 - Supports all standard array operations, but with immutability and structural equality.
+- If you encounter generator/yield type errors in TypeScript, add an explicit type annotation to the generator function (e.g., `Effect.Effect<never, void, never>`) for clarity and compatibility.
 
 ## Anti-Pattern
 

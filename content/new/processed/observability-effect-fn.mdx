@@ -1,20 +1,39 @@
 ---
-title: "Instrument and Observe Function Calls with Effect.fn"
-id: "observability-effect-fn"
-skillLevel: "intermediate"
-useCase: ["Observability", "Instrumentation", "Function Calls", "Debugging"]
-summary: "Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries."
-tags: ["Effect.fn", "observability", "instrumentation", "function", "logging", "metrics", "tracing"]
+title: Instrument and Observe Function Calls with Effect.fn
+id: observability-effect-fn
+skillLevel: intermediate
+useCase:
+  - Observability
+  - Instrumentation
+  - Function Calls
+  - Debugging
+summary: Use Effect.fn to wrap, instrument, and observe function calls, enabling
+  composable logging, metrics, and tracing at function boundaries.
+tags:
+  - Effect.fn
+  - observability
+  - instrumentation
+  - function
+  - logging
+  - metrics
+  - tracing
 rule:
-  description: "Use Effect.fn to wrap functions with effectful instrumentation, such as logging, metrics, or tracing, in a composable and type-safe way."
-related: [
-  "observability-structured-logging",
-  "observability-custom-metrics",
-  "observability-tracing-spans"
-]
-author: "PaulJPhilp"
-provider: "google"
-model: "gemini-2.5-flash"
+  description: Use Effect.fn to wrap functions with effectful instrumentation,
+    such as logging, metrics, or tracing, in a composable and type-safe way.
+related:
+  - observability-structured-logging
+  - observability-custom-metrics
+  - observability-tracing-spans
+author: PaulJPhilp
+provider: google
+model: gemini-2.5-flash
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.570Z level=INFO fiber=#0 message="Calling add
+  with 2 and 3"
+
+  timestamp=2025-08-07T18:29:29.574Z level=INFO fiber=#0 message="Result: 5"
+
+  timestamp=2025-08-07T18:29:29.575Z level=INFO fiber=#0 message="Sum is 5"
 ---
 
 # Instrument and Observe Function Calls with `Effect.fn`

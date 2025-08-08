@@ -1,13 +1,20 @@
 import { Command, Options } from "@effect/cli";
 import { Console, Effect, Option } from "effect";
+import { ConfigService } from "../services/config-service/service.js";
 import { LLMService } from "../services/llm-service/service.js";
+import {
+  ModelService,
+  make as ModelServiceImpl,
+} from "../services/model-service/service.js";
+import type { Model as CatalogModel } from "../services/model-service/types.js";
 
 export const health = Command.make(
   "health",
   {
-    provider: Options.choice("provider", ["openai", "anthropic", "google"]).pipe(
-      Options.optional,
-      Options.withDescription("Check specific provider health")
+    provider: Options.optional(
+      Options.choice("provider", ["openai", "anthropic", "google"]).pipe(
+        Options.withDescription("Check specific provider health")
+      )
     ),
     detailed: Options.boolean("detailed").pipe(
       Options.optional,
@@ -27,21 +34,34 @@ export const health = Command.make(
     ),
     quiet: Options.boolean("quiet").pipe(
       Options.optional,
-      Options.withDescription("Suppress normal output (errors still go to stderr)")
-    )
+      Options.withDescription(
+        "Suppress normal output (errors still go to stderr)"
+      )
+    ),
   },
   ({ provider, detailed, json, output, force, quiet }) =>
     Effect.gen(function* () {
+      const config = yield* ConfigService;
+      const providerFromConfig = yield* config.get("defaultProvider");
       const providerValue = Option.match(provider, {
         onSome: (p) => p,
-        onNone: () => null
+        onNone: () =>
+          Option.getOrElse(
+            providerFromConfig as Option.Option<
+              "openai" | "anthropic" | "google"
+            >,
+            () => null
+          ),
       });
 
       const detailedMode = Option.getOrElse(detailed, () => false);
       const jsonMode = Option.getOrElse(json, () => false);
       const quietMode = Option.getOrElse(quiet, () => false);
 
-      const healthResults: Record<string, any> = {};
+      const healthResults: Record<
+        string,
+        { status: string; details?: string }
+      > = {};
 
       if (!providerValue || providerValue === "openai") {
         healthResults.openai = yield* checkOpenAIHealth();
@@ -53,7 +73,10 @@ export const health = Command.make(
         healthResults.google = yield* checkGoogleHealth();
       }
 
-      const outputData = { timestamp: new Date().toISOString(), ...healthResults };
+      const outputData = {
+        timestamp: new Date().toISOString(),
+        ...healthResults,
+      };
 
       if (jsonMode) {
         const jsonOutput = JSON.stringify(outputData, null, 2);
@@ -78,26 +101,34 @@ export const health = Command.make(
 const checkOpenAIHealth = () =>
   Effect.gen(function* () {
     const llmService = yield* LLMService;
-    
+    const modelService = yield* Effect.provideService(
+      ModelService,
+      ModelServiceImpl
+    )(ModelService);
+    const models = yield* modelService.getModels("OpenAI").pipe(
+      Effect.map((ms: CatalogModel[]) => ms.map((m) => m.name)),
+      Effect.catchAll(() => Effect.succeed<string[]>([]))
+    );
+
     return yield* Effect.match(
       llmService.generateText("Hello", "openai", "gpt-3.5-turbo"),
       {
         onFailure: (error) => ({
           provider: "openai",
           connection: false,
-          models: [] as string[],
+          models,
           error: error instanceof Error ? error.message : String(error),
           status: "❌",
-          details: error instanceof Error ? error.message : String(error)
+          details: error instanceof Error ? error.message : String(error),
         }),
         onSuccess: () => ({
           provider: "openai",
           connection: true,
-          models: [] as string[],
+          models,
           error: null,
           status: "✅",
-          details: "Successfully connected to OpenAI"
-        })
+          details: "Successfully connected to OpenAI",
+        }),
       }
     );
   });
@@ -106,6 +137,14 @@ const checkOpenAIHealth = () =>
 const checkAnthropicHealth = () =>
   Effect.gen(function* () {
     const llmService = yield* LLMService;
+    const modelService = yield* Effect.provideService(
+      ModelService,
+      ModelServiceImpl
+    )(ModelService);
+    const models = yield* modelService.getModels("Anthropic").pipe(
+      Effect.map((ms: CatalogModel[]) => ms.map((m) => m.name)),
+      Effect.catchAll(() => Effect.succeed<string[]>([]))
+    );
 
     return yield* Effect.match(
       llmService.generateText("Hello!", "anthropic", "claude-3-haiku"),
@@ -113,19 +152,19 @@ const checkAnthropicHealth = () =>
         onFailure: (error) => ({
           provider: "anthropic",
           connection: false,
-          models: [] as string[],
+          models,
           error: error instanceof Error ? error.message : String(error),
           status: "❌",
-          details: error instanceof Error ? error.message : String(error)
+          details: error instanceof Error ? error.message : String(error),
         }),
         onSuccess: () => ({
           provider: "anthropic",
           connection: true,
-          models: [] as string[],
+          models,
           error: null,
           status: "✅",
-          details: "Successfully connected to Anthropic"
-        })
+          details: "Successfully connected to Anthropic",
+        }),
       }
     );
   });
@@ -134,6 +173,14 @@ const checkAnthropicHealth = () =>
 const checkGoogleHealth = () =>
   Effect.gen(function* () {
     const llmService = yield* LLMService;
+    const modelService = yield* Effect.provideService(
+      ModelService,
+      ModelServiceImpl
+    )(ModelService);
+    const models = yield* modelService.getModels("Google").pipe(
+      Effect.map((ms: CatalogModel[]) => ms.map((m) => m.name)),
+      Effect.catchAll(() => Effect.succeed<string[]>([]))
+    );
 
     return yield* Effect.match(
       llmService.generateText("Hello", "google", "gemini-2.5-flash"),
@@ -141,19 +188,19 @@ const checkGoogleHealth = () =>
         onFailure: (error) => ({
           provider: "google",
           connection: false,
-          models: [] as string[],
+          models,
           error: error instanceof Error ? error.message : String(error),
           status: "❌",
-          details: error instanceof Error ? error.message : String(error)
+          details: error instanceof Error ? error.message : String(error),
         }),
         onSuccess: () => ({
           provider: "google",
           connection: true,
-          models: [] as string[],
+          models,
           error: null,
           status: "✅",
-          details: "Successfully connected to Google AI"
-        })
+          details: "Successfully connected to Google AI",
+        }),
       }
     );
   });

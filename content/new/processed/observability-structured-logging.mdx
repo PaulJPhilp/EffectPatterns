@@ -1,16 +1,49 @@
 ---
-title: "Leverage Effect's Built-in Structured Logging"
-id: "observability-structured-logging"
-skillLevel: "intermediate"
-useCase: ["Observability", "Logging", "Debugging"]
-summary: "Use Effect's built-in logging functions for structured, configurable, and context-aware logging."
-tags: ["logging", "observability", "debugging", "effect", "structured-logging"]
+title: Leverage Effect's Built-in Structured Logging
+id: observability-structured-logging
+skillLevel: intermediate
+useCase:
+  - Observability
+  - Logging
+  - Debugging
+summary: Use Effect's built-in logging functions for structured, configurable,
+  and context-aware logging.
+tags:
+  - logging
+  - observability
+  - debugging
+  - effect
+  - structured-logging
 rule:
-  description: "Use Effect.log, Effect.logInfo, and Effect.logError to add structured, context-aware logging to your Effect code."
-related: ["observability-custom-metrics", "observability-tracing-spans"]
-author: "PaulJPhilp"
-provider: "google"
-model: "gemini-2.5-flash"
+  description: Use Effect.log, Effect.logInfo, and Effect.logError to add
+    structured, context-aware logging to your Effect code.
+related:
+  - observability-custom-metrics
+  - observability-tracing-spans
+author: PaulJPhilp
+provider: google
+model: gemini-2.5-flash
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.433Z level=INFO fiber=#0 message="Starting the
+  application"
+
+  timestamp=2025-08-07T18:29:29.434Z level=INFO fiber=#0 message="User signed
+  in"
+
+  timestamp=2025-08-07T18:29:29.434Z level=ERROR fiber=#0 message="Failed to
+  connect to database"
+
+  timestamp=2025-08-07T18:29:29.434Z level=INFO fiber=#0 message="Processing
+  user: 42"
+
+  timestamp=2025-08-07T18:29:29.434Z level=INFO fiber=#0 message="Beginning
+  workflow"
+
+  timestamp=2025-08-07T18:29:29.434Z level=INFO fiber=#0 message="Workflow step
+  completed"
+
+  timestamp=2025-08-07T18:29:29.434Z level=ERROR fiber=#0 message="Something
+  went wrong"
 ---
 
 # Leverage Effect's Built-in Structured Logging

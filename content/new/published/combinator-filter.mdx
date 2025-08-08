@@ -1,26 +1,56 @@
 ---
-title: "Filtering Results with filter"
-id: "combinator-filter"
-skillLevel: "beginner"
-useCase: ["Combinators", "Composition", "Conditional Logic"]
-summary: "Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either."
-tags: ["filter", "combinator", "predicate", "effect", "stream", "option", "either"]
+title: Filtering Results with filter
+id: combinator-filter
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Combinators
+  - Composition
+  - Conditional Logic
+summary: Use filter to keep or discard results based on a predicate, across
+  Effect, Stream, Option, and Either.
+tags:
+  - filter
+  - combinator
+  - predicate
+  - effect
+  - stream
+  - option
+  - either
 rule:
-  description: "Use filter to declaratively express conditional logic, keeping only values that satisfy a predicate."
-related: ["combinator-map", "combinator-flatmap", "combinator-conditional"]
-author: "PaulJPhilp"
+  description: Use filter to declaratively express conditional logic, keeping only
+    values that satisfy a predicate.
+related:
+  - combinator-map
+  - combinator-flatmap
+  - combinator-conditional
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.607Z level=INFO fiber=#0 message="Effect.filter
+  result: 4"
+
+  timestamp=2025-08-07T18:29:29.608Z level=INFO fiber=#0 message="Option.filter
+  result: 4"
+
+  timestamp=2025-08-07T18:29:29.608Z level=INFO fiber=#0 message="Either.filter
+  result: 4"
+
+  timestamp=2025-08-07T18:29:29.685Z level=INFO fiber=#0 message="Stream.filter
+  result: [2, 4]"
 ---
 
 # Filtering Results with `filter`
 
 ## Guideline
 
-Use the `filter` combinator to keep only those values that satisfy a predicate.  
-This works for `Effect`, `Stream`, `Option`, and `Either`, allowing you to express conditional logic declaratively and safely.
+Use the `filterOrFail` combinator to keep only those values that satisfy a predicate in an Effect, providing a custom error if the predicate fails.  
+This works for `Effect`, `Stream`, and `Option`, allowing you to express conditional logic declaratively and safely.  
+For `Either`, use a conditional expression to construct a left or right value based on your predicate.
 
 ## Rationale
 
-`filter` lets you express "only continue if..." logic without resorting to manual checks or imperative branching.  
+`filterOrFail` lets you express "only continue if..." logic without resorting to manual checks or imperative branching.  
 It keeps your code composable and type-safe, and ensures that failures or empty results are handled consistently.
 
 ## Good Example
@@ -29,21 +59,23 @@ It keeps your code composable and type-safe, and ensures that failures or empty 
 import { Effect, Stream, Option, Either } from "effect";
 
 const effect = Effect.succeed(4).pipe(
-  Effect.flatMap((n) =>
-    n % 2 === 0 ? Effect.succeed(n) : Effect.fail("Filtered out (fail)")
+  Effect.filterOrFail(
+    (n) => n % 2 === 0,
+    () => "Filtered out (fail)"
   )
 );
 
 const option = Option.some(4).pipe(Option.filter((n) => n % 2 === 0));
 
-const either = Either.right(4).pipe(
-  Either.flatMap((n) =>
-    n % 2 === 0 ? Either.right(n) : Either.left("filtered out")
-  )
-);
+const either = (() => {
+  const e = Either.right(4);
+  return Either.isRight(e) && e.right % 2 === 0
+    ? e
+    : Either.left("filtered out");
+})();
 
 const stream = Stream.fromIterable([1, 2, 3, 4]).pipe(
-  Stream.filter((n) => n % 2 === 0)
+  Stream.filter((n: number) => n % 2 === 0)
 );
 
 const program = Effect.gen(function* () {
@@ -75,9 +107,12 @@ Effect.runPromise(program);
 ```
 
 **Explanation:**  
-`filter` applies a predicate to the value(s) inside the structure. If the predicate fails, the result is a failure (`Effect.fail`, `Either.left`), `Option.none`, or an empty stream.
+- `filterOrFail` applies a predicate to the value inside an Effect. If the predicate fails, the result is a failure (`Effect.fail`).
+- `Option.filter` returns `Option.none` if the predicate fails.
+- `Stream.filter` removes elements that do not satisfy the predicate.
+- For `Either`, construct a `Right` if the predicate passes, or a `Left` if it fails.
 
 ## Anti-Pattern
 
-Using `map` with a conditional that returns `Option` or `Either`, then manually flattening, instead of using `filter`.  
+Using `map` with a conditional that returns `Option` or `Either`, then manually flattening, instead of using `filterOrFail`, `Option.filter`, or a conditional for `Either`.  
 This leads to unnecessary complexity and less readable code.

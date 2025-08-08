@@ -1,14 +1,47 @@
 ---
-title: "Representing Time Spans with Duration"
-id: "data-duration"
-skillLevel: "intermediate"
-useCase: ["Data Types", "Time", "Duration", "Domain Modeling"]
-summary: "Use Duration to represent time intervals in a type-safe, human-readable, and composable way."
-tags: ["Duration", "time", "interval", "data-type", "effect"]
+title: Representing Time Spans with Duration
+id: data-duration
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Data Types
+  - Time
+  - Duration
+  - Domain Modeling
+summary: Use Duration to represent time intervals in a type-safe,
+  human-readable, and composable way.
+tags:
+  - Duration
+  - time
+  - interval
+  - data-type
+  - effect
 rule:
-  description: "Use Duration to model and manipulate time spans, enabling safe and expressive time-based logic."
-related: ["data-datetime", "data-cause"]
-author: "PaulJPhilp"
+  description: Use Duration to model and manipulate time spans, enabling safe and
+    expressive time-based logic.
+related:
+  - data-datetime
+  - data-cause
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.249Z level=INFO fiber=#0 message="oneSecond:
+  1000 ms"
+
+  timestamp=2025-08-07T18:29:29.306Z level=INFO fiber=#0 message="fiveMinutes:
+  300000 ms"
+
+  timestamp=2025-08-07T18:29:29.306Z level=INFO fiber=#0 message="twoHours:
+  7200000 ms"
+
+  timestamp=2025-08-07T18:29:29.352Z level=INFO fiber=#0 message="total
+  (oneSecond + fiveMinutes): 301000 ms"
+
+  timestamp=2025-08-07T18:29:29.353Z level=INFO fiber=#0 message="is twoHours >
+  fiveMinutes: true"
+
+  timestamp=2025-08-07T18:29:29.353Z level=INFO fiber=#0 message="fiveMinutes in
+  ms: 300000"
 ---
 
 # Representing Time Spans with `Duration`

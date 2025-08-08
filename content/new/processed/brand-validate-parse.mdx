@@ -1,18 +1,36 @@
 ---
-title: "Validating and Parsing Branded Types"
-id: "brand-validate-parse"
-skillLevel: "intermediate"
-provider: "google"
-model: "gemini-2.5-flash"
-provider: "google"
-model: "gemini-2.5-flash"
-useCase: ["Branded Types", "Domain Modeling", "Validation", "Parsing"]
-summary: "Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed."
-tags: ["Brand", "Schema", "validation", "parsing", "domain", "type-safety", "effect"]
+title: Validating and Parsing Branded Types
+id: brand-validate-parse
+skillLevel: intermediate
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Branded Types
+  - Domain Modeling
+  - Validation
+  - Parsing
+summary: Use Schema and Brand together to validate and parse branded types at
+  runtime, ensuring only valid values are constructed.
+tags:
+  - Brand
+  - Schema
+  - validation
+  - parsing
+  - domain
+  - type-safety
+  - effect
 rule:
-  description: "Combine Schema and Brand to validate and parse branded types, guaranteeing only valid domain values are created at runtime."
-related: ["brand-model-domain-type"]
-author: "PaulJPhilp"
+  description: Combine Schema and Brand to validate and parse branded types,
+    guaranteeing only valid domain values are created at runtime.
+related:
+  - brand-model-domain-type
+author: PaulJPhilp
+expectedOutput: |-
+  timestamp=2025-08-07T18:29:29.684Z level=INFO fiber=#0 message="Parsing a valid email..."
+  timestamp=2025-08-07T18:29:29.685Z level=INFO fiber=#0 message="Successfully parsed: user@example.com"
+  timestamp=2025-08-07T18:29:29.686Z level=INFO fiber=#0 message="
+  Parsing an invalid email..."
+  timestamp=2025-08-07T18:29:29.689Z level=INFO fiber=#0 message="Result of parsing invalid email: {\"_id\":\"Either\",\"_tag\":\"Left\",\"left\":{\"_id\":\"ParseError\",\"message\":\"a string matching the pattern ^[^@]+@[^@]+\\.[^@]+$ & Brand<\"Email\">\n└─ Predicate refinement failure\n   └─ Expected a string matching the pattern ^[^@]+@[^@]+\\.[^@]+$, actual \"not-an-email\"\"}}"
 ---
 
 # Validating and Parsing Branded Types

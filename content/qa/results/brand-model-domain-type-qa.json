@@ -1,24 +1,26 @@
 {
-  "patternId": "brand-model-domain-type",
-  "fileName": "brand-model-domain-type.mdx",
-  "metadata": {
-    "id": "",
-    "title": "",
-    "skillLevel": "",
-    "useCase": ["Unknown"],
-    "tags": ["Unknown"],
-    "description": "No description"
-  },
-  "validation": {
-    "passed": false,
-    "errors": ["QA processing failed"],
-    "warnings": [],
-    "suggestions": []
-  },
+  "passed": true,
+  "errors": [],
+  "warnings": [],
+  "suggestions": [
+    "Consider adding a brief example or mention of `Either.map` or `pipe` for handling the result of `Brand.refined` for a more idiomatic Effect-style error handling, although the current `_tag` check is perfectly valid.",
+    "The explanation of `Brand.Branded<T, Name>` could briefly mention that `Name` acts as a 'phantom type' parameter that makes the types distinct at compile time, providing a deeper understanding."
+  ],
+  "tokens": 105,
+  "cost": 0.000105,
   "metrics": {
-    "tokens": 0,
-    "cost": 0,
-    "duration": 675
+    "command": "process-prompt",
+    "startTime": "2025-08-05T21:38:12.154Z",
+    "success": true,
+    "environment": {
+      "nodeVersion": "v20.11.1",
+      "platform": "darwin",
+      "cwd": "/Users/paul/Projects/Effect-Patterns"
+    }
   },
-  "timestamp": "2025-08-03T18:59:29Z"
+  "command": "process-prompt",
+  "file": "/Users/paul/Projects/Effect-Patterns/content/new/processed/brand-model-domain-type.mdx",
+  "provider": "google",
+  "model": "gemini-2.5-flash",
+  "timestamp": "2025-08-05T21:38:29.234Z"
 }

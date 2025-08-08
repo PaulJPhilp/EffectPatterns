@@ -1,14 +1,30 @@
 ---
-title: "Handle Unexpected Errors by Inspecting the Cause"
-id: "data-cause"
-skillLevel: "advanced"
-useCase: ["Data Types", "Error Handling", "Debugging", "Effect Results"]
-summary: "Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces."
-tags: ["Cause", "error-handling", "debugging", "effect", "failure", "data-type"]
+title: Handle Unexpected Errors by Inspecting the Cause
+id: data-cause
+skillLevel: intermediate
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Data Types
+  - Error Handling
+  - Debugging
+  - Effect Results
+summary: Use Cause<E> to get rich, structured information about errors and
+  failures, including defects, interruptions, and error traces.
+tags:
+  - Cause
+  - error-handling
+  - debugging
+  - effect
+  - failure
+  - data-type
 rule:
-  description: "Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions."
-related: ["data-exit", "data-either"]
-author: "PaulJPhilp"
+  description: Use Cause to inspect, analyze, and handle all possible failure
+    modes of an Effect, including expected errors, defects, and interruptions.
+related:
+  - data-exit
+  - data-either
+author: PaulJPhilp
 ---
 
 # Handle Unexpected Errors by Inspecting the `Cause`
@@ -33,7 +49,7 @@ const program = Effect.try({
   try: () => {
     throw new Error("Unexpected failure!");
   },
-  catch: (err) => err
+  catch: (err) => err,
 });
 
 // Catch all causes and inspect them
@@ -51,12 +67,16 @@ const handled = program.pipe(
     })
   )
 );
+
+Effect.runPromise(handled);
+
 ```
 
 **Explanation:**  
 - `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
 - Use `Cause.pretty` for human-readable error traces.
 - Enables advanced error handling and debugging.
+- Be sure to run the handled effect (e.g., with `Effect.runPromise(handled)`) to observe the error handling in action.
 
 ## Anti-Pattern
 

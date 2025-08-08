@@ -1,16 +1,38 @@
 ---
-title: "Creating Case Constructors with Data.case"
-id: "data-case"
-skillLevel: "intermediate"
-provider: "google"
-model: "gemini-2.5-flash"
-useCase: ["Data Types", "Case Constructors", "Domain Modeling", "Structural Equality"]
-summary: "Use Data.case to create case constructors for data types with built-in structural equality and hashing, enabling type-safe domain modeling."
-tags: ["Data.case", "case-constructor", "structural-equality", "domain-modeling", "data-type", "effect"]
+title: Creating Case Constructors with Data.case
+id: data-case
+skillLevel: intermediate
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Data Types
+  - Case Constructors
+  - Domain Modeling
+  - Structural Equality
+summary: Use Data.case to create case constructors for data types with built-in
+  structural equality and hashing, enabling type-safe domain modeling.
+tags:
+  - Data.case
+  - case-constructor
+  - structural-equality
+  - domain-modeling
+  - data-type
+  - effect
 rule:
-  description: "Use Data.case to create case constructors for data types, providing automatic structural equality and hashing for domain objects."
-related: ["data-tagged", "data-struct", "pattern-matchtag"]
-author: "PaulJPhilp"
+  description: Use Data.case to create case constructors for data types, providing
+    automatic structural equality and hashing for domain objects.
+related:
+  - data-tagged
+  - data-struct
+  - pattern-matchtag
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.671Z level=INFO fiber=#0 message="Hello, Alice!"
+
+  timestamp=2025-08-07T18:29:29.673Z level=INFO fiber=#0 message="Hello, Bob!"
+
+  timestamp=2025-08-07T18:29:29.674Z level=INFO fiber=#0 message="Are they
+  equal? false"
 ---
 
 # Creating Case Constructors with `Data.case`

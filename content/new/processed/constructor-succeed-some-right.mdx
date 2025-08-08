@@ -1,16 +1,40 @@
 ---
-title: "Lifting Values with succeed, some, and right"
-id: "constructor-succeed-some-right"
-skillLevel: "beginner"
-provider: "google"
-model: "gemini-2.5-flash"
-useCase: ["Constructors", "Lifting", "Composition"]
-summary: "Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe."
-tags: ["succeed", "some", "right", "constructor", "effect", "option", "either", "lifting"]
+title: Lifting Values with succeed, some, and right
+id: constructor-succeed-some-right
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Constructors
+  - Lifting
+  - Composition
+summary: Use succeed, some, and right to lift plain values into Effect, Option,
+  or Either, making them composable and type-safe.
+tags:
+  - succeed
+  - some
+  - right
+  - constructor
+  - effect
+  - option
+  - either
+  - lifting
 rule:
-  description: "Use succeed, some, and right to create Effect, Option, or Either from plain values."
-related: ["constructor-fail-none-left", "constructor-try-trypromise"]
-author: "PaulJPhilp"
+  description: Use succeed, some, and right to create Effect, Option, or Either
+    from plain values.
+related:
+  - constructor-fail-none-left
+  - constructor-try-trypromise
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.453Z level=INFO fiber=#0 message="Effect.succeed
+  result: 42"
+
+  timestamp=2025-08-07T18:29:29.454Z level=INFO fiber=#0 message="Option.some
+  result: hello"
+
+  timestamp=2025-08-07T18:29:29.454Z level=INFO fiber=#0 message="Either.right
+  result: {\"id\":1}"
 ---
 
 # Lifting Values with `succeed`, `some`, and `right`

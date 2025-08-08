@@ -2,7 +2,7 @@ import { Effect, Layer, Config, Console, Data, Context } from "effect";
 import { FileSystem, Path, Command } from "@effect/platform";
 import { NodeContext, NodeRuntime } from "@effect/platform-node";
 import * as ReadonlyArray from "effect/Array"; // Explicit import for array operations
-import { parse as parseYaml, stringify as stringifyYaml } from "yaml"; // 'yaml' library is required
+import { MdxService } from "../../cli/src/services/mdx-service/service.js";
 
 // --- Configuration Service (Idiomatic Effect.Service pattern) ---
 // Define the AppConfig interface
@@ -132,74 +132,14 @@ interface Frontmatter {
   readonly [key: string]: unknown; // Allows for any other properties in frontmatter
 }
 
-// Function to read MDX content and parse its YAML frontmatter (Idiomatic Effect)
-const readMdxAndFrontmatter = (filePath: string) =>
-  FileSystem.FileSystem.pipe(
-    Effect.flatMap((fs) => fs.readFileString(filePath)),
-    Effect.flatMap((content) =>
-      // Use Effect.sync to wrap the synchronous YAML parsing, mapping any sync error
-      Effect.sync(() => {
-        const parts = content.split("---", 3); // Frontmatter is between first two '---'
-        if (parts.length < 3) {
-          throw new Error(
-            "Missing or malformed frontmatter block (expected '---' delimiters)."
-          );
-        }
-        const frontmatterStr = parts[1];
-        const mdxBody = parts[2]; // Keep original leading newlines/spaces for now, trim later during update
-
-        const frontmatter = parseYaml(frontmatterStr) as Frontmatter;
-        return Data.struct({ content, frontmatter, mdxBody });
-      }).pipe(
-        // Map any synchronous parsing errors into Effect's error channel
-        Effect.mapError(
-          (e) =>
-            new Error(
-              `Failed to parse frontmatter in ${filePath.toString()}: ${String(e)}`
-            )
-        )
-      )
-    )
-  );
-
-// Function to reconstruct MDX content with updated frontmatter (Pure function)
-function updateMdxContent(
-  originalFullMdxContent: string,
-  updatedFrontmatter: Frontmatter
-): string {
-  const parts = originalFullMdxContent.split("---", 3);
-  const newFrontmatterStr = stringifyYaml(updatedFrontmatter).trim(); // trimEnd() is also good
-
-  // Determine the original MDX body content, including any newlines between '---' and content
-  let originalBodyContent = originalFullMdxContent;
-  if (parts.length >= 3) {
-    // Find the end of the second '---' and take everything after it
-    const secondDelimiterEndIndex =
-      originalFullMdxContent.indexOf(
-        "---",
-        originalFullMdxContent.indexOf("---") + 3
-      ) + 3;
-    originalBodyContent = originalFullMdxContent.substring(
-      secondDelimiterEndIndex
-    );
-  } else {
-    // No frontmatter found, so the whole content is the body
-    originalBodyContent = originalFullMdxContent;
-  }
-
-  // Ensure there's at least two newlines between frontmatter and body for consistency
-  return `---\n${newFrontmatterStr}\n---\n\n${originalBodyContent.trimStart()}`;
-}
-
 // --- Core Logic for Processing a Single Pattern File (Idiomatic Effect.gen) ---
 const processPatternFile = (mdxFilePath: string) =>
   Effect.gen(function* () {
     const config = yield* AppConfig; // Access AppConfig service
     const fs = yield* FileSystem.FileSystem;
-    const path_ = yield* Path.Path; // Renamed to path_ to avoid conflict with 'path' variable
-    const llm = yield* LLMService;
-    // Access the Path service from Effect context
     const path = yield* Path.Path;
+    const llm = yield* LLMService; // Access LLM service
+    const mdxService = yield* MdxService; // Access MDX service
 
     const baseName = path.basename(mdxFilePath.toString(), ".mdx");
     const tsFilePath = path.join(config.srcDir, `${baseName}.ts`);
@@ -207,7 +147,7 @@ const processPatternFile = (mdxFilePath: string) =>
     yield* Console.log(`Processing pattern: ${baseName}`);
 
     // 1. Read MDX content and frontmatter
-    const { content: mdxContent, frontmatter } = yield* readMdxAndFrontmatter(
+    const { content: mdxContent, frontmatter } = yield* mdxService.readMdxAndFrontmatter(
       mdxFilePath
     );
 
@@ -317,7 +257,7 @@ const processPatternFile = (mdxFilePath: string) =>
     }
 
     // 7. Write updated MDX content back to file
-    const updatedContent = updateMdxContent(mdxContent, updatedFrontmatter);
+    const updatedContent = mdxService.updateMdxContent(mdxContent, updatedFrontmatter);
     yield* fs.writeFileString(mdxFilePath.toString(), updatedContent);
 
     yield* Console.log(`Finished processing ${baseName}.mdx`);
@@ -370,7 +310,8 @@ const mainProgram = Effect.gen(function* () {
 const allLayers = Layer.mergeAll(
   AppConfig.Default, // AppConfig default implementation
   LLMLive, // The simulated LLM service
-  NodeContext.layer // Provides all Node.js platform implementations
+  NodeContext.layer, // Provides all Node.js platform implementations
+  Layer.provide(MdxService.Default, NodeContext.layer) // MDX service with its dependencies
   // Console is automatically provided as a default service in Effect 3.16.16
 );
 

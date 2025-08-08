@@ -1,14 +1,44 @@
 ---
-title: "Work with Dates and Times using DateTime"
-id: "data-datetime"
-skillLevel: "intermediate"
-useCase: ["Data Types", "Time", "Date", "Domain Modeling"]
-summary: "Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations."
-tags: ["DateTime", "date", "time", "timezone", "data-type", "effect"]
+title: Work with Dates and Times using DateTime
+id: data-datetime
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Data Types
+  - Time
+  - Date
+  - Domain Modeling
+summary: Use DateTime for immutable, time-zone-aware date and time values,
+  enabling safe and precise time calculations.
+tags:
+  - DateTime
+  - date
+  - time
+  - timezone
+  - data-type
+  - effect
 rule:
-  description: "Use DateTime to represent and manipulate dates and times in a type-safe, immutable, and time-zone-aware way."
-related: ["data-duration", "data-struct"]
-author: "PaulJPhilp"
+  description: Use DateTime to represent and manipulate dates and times in a
+    type-safe, immutable, and time-zone-aware way.
+related:
+  - data-duration
+  - data-struct
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.711Z level=INFO fiber=#0 message="now: 8/7/2025"
+
+  timestamp=2025-08-07T18:29:29.712Z level=INFO fiber=#0 message="parsed:
+  7/19/2024"
+
+  timestamp=2025-08-07T18:29:29.713Z level=INFO fiber=#0 message="inOneHour:
+  8/7/2025"
+
+  timestamp=2025-08-07T18:29:29.713Z level=INFO fiber=#0 message="oneHourAgo:
+  8/7/2025"
+
+  timestamp=2025-08-07T18:29:29.713Z level=INFO fiber=#0 message="isBefore:
+  true"
 ---
 
 # Work with Dates and Times using `DateTime`
@@ -29,20 +59,23 @@ JavaScript's native `Date` is mutable, not time-zone-aware, and can be error-pro
 import { DateTime, Duration, Effect } from "effect";
 
 const program = Effect.gen(function* () {
+    
   const now = yield* DateTime.now;
   const parsed = DateTime.unsafeMake(Date.parse("2024-07-19T12:34:56Z"));
   const inOneHour = now.pipe(DateTime.add({ hours: 1 }));
   const oneHourAgo = now.pipe(DateTime.subtract({ hours: 1 }));
   const iso = DateTime.format()(now);
   const isBefore = oneHourAgo.epochMillis < now.epochMillis;
-  yield* Effect.log(`now: ${DateTime.format()(now)}`);
+  yield* Effect.log(`now: ${DateTime.format()(now)}`);  
   yield* Effect.log(`parsed: ${DateTime.format()(parsed)}`);
   yield* Effect.log(`inOneHour: ${DateTime.format()(inOneHour)}`);
   yield* Effect.log(`oneHourAgo: ${DateTime.format()(oneHourAgo)}`);
   yield* Effect.log(`isBefore: ${isBefore}`);
 });
 
-Effect.runPromise(program);
+Effect.runPromise(
+  program.pipe(Effect.catchAll(() => Effect.succeed(undefined)))
+);
 
 ```
 
@@ -50,6 +83,7 @@ Effect.runPromise(program);
 - `DateTime` is immutable and time-zone-aware.
 - Supports parsing, formatting, arithmetic, and comparison.
 - Use for all date/time logic to avoid bugs with native `Date`.
+- If you encounter generator/yield type errors in TypeScript, add an explicit type annotation to the generator function (e.g., `Effect.Effect<never, void, never>`) for clarity and compatibility.
 
 ## Anti-Pattern
 

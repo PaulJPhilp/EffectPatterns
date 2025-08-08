@@ -1,14 +1,45 @@
 ---
-title: "Working with Tuples using Data.tuple"
-id: "data-tuple"
-skillLevel: "beginner"
-useCase: ["Data Types", "Tuples", "Structural Equality", "Domain Modeling"]
-summary: "Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching."
-tags: ["Data.tuple", "tuple", "structural-equality", "immutable", "data-type", "effect"]
+title: Working with Tuples using Data.tuple
+id: data-tuple
+skillLevel: beginner
+useCase:
+  - Data Types
+  - Tuples
+  - Structural Equality
+  - Domain Modeling
+summary: Use Data.tuple to create immutable, type-safe tuples that support
+  value-based equality and pattern matching.
+tags:
+  - Data.tuple
+  - tuple
+  - structural-equality
+  - immutable
+  - data-type
+  - effect
 rule:
-  description: "Use Data.tuple to define tuples whose equality is based on their contents, enabling safe and predictable comparisons and pattern matching."
-related: ["data-struct", "data-array"]
-author: "PaulJPhilp"
+  description: Use Data.tuple to define tuples whose equality is based on their
+    contents, enabling safe and predictable comparisons and pattern matching.
+related:
+  - data-struct
+  - data-array
+author: PaulJPhilp
+provider: google
+model: gemini-2.5-flash
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.622Z level=INFO fiber=#0 message="t1: [1,
+  Alice]"
+
+  timestamp=2025-08-07T18:29:29.623Z level=INFO fiber=#0 message="t2: [1,
+  Alice]"
+
+  timestamp=2025-08-07T18:29:29.623Z level=INFO fiber=#0
+  message="Equal.equals(t1, t2): true"
+
+  timestamp=2025-08-07T18:29:29.623Z level=INFO fiber=#0
+  message="HashSet.has(set, t2): true"
+
+  timestamp=2025-08-07T18:29:29.624Z level=INFO fiber=#0 message="Pattern
+  matched tuple: id=1, name=Alice"
 ---
 
 # Working with Tuples using `Data.tuple`

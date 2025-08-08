@@ -1,14 +1,32 @@
 ---
-title: "Trace Operations Across Services with Spans"
-id: "observability-tracing-spans"
-skillLevel: "intermediate"
-useCase: ["Observability", "Tracing", "Performance", "Debugging"]
-summary: "Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations."
-tags: ["tracing", "spans", "observability", "performance", "debugging", "effect"]
+title: Trace Operations Across Services with Spans
+id: observability-tracing-spans
+skillLevel: intermediate
+useCase:
+  - Observability
+  - Tracing
+  - Performance
+  - Debugging
+summary: Use Effect.withSpan to create custom tracing spans, providing detailed
+  visibility into the performance and flow of your application's operations.
+tags:
+  - tracing
+  - spans
+  - observability
+  - performance
+  - debugging
+  - effect
 rule:
-  description: "Use Effect.withSpan to create and annotate tracing spans for operations, enabling distributed tracing and performance analysis."
-related: ["observability-structured-logging", "observability-custom-metrics"]
-author: "PaulJPhilp"
+  description: Use Effect.withSpan to create and annotate tracing spans for
+    operations, enabling distributed tracing and performance analysis.
+related:
+  - observability-structured-logging
+  - observability-custom-metrics
+author: PaulJPhilp
+provider: google
+model: gemini-2.5-flash
+expectedOutput: timestamp=2025-08-07T18:29:29.609Z level=INFO fiber=#0
+  message="Starting workflow"
 ---
 
 # Trace Operations Across Services with Spans
@@ -29,7 +47,6 @@ They allow you to pinpoint bottlenecks, visualize dependencies, and correlate lo
 import { Effect } from "effect";
 
 const fetchUser = Effect.sync(() => {
-  // ...fetch user from database
   return { id: 1, name: "Alice" };
 }).pipe(Effect.withSpan("db.fetchUser"));
 
@@ -47,7 +64,8 @@ const program = Effect.gen(function* () {
     Effect.withSpan("workflow.start")
   );
   const user = yield* fetchUser;
-  yield* Effect.log(`Fetched user: ${user.name}`).pipe(
+  const data = yield* fetchData;
+  yield* Effect.log(`Fetched user: ${user.name}, data: ${JSON.stringify(data)}`).pipe(
     Effect.withSpan("workflow.end")
   );
 });

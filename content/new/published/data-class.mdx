@@ -1,27 +1,59 @@
 ---
-title: "Type Classes for Equality, Ordering, and Hashing with Data.Class"
-id: "data-class"
-skillLevel: "intermediate"
-useCase: ["Data Types", "Type Classes", "Equality", "Ordering", "Hashing"]
-summary: "Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions."
-tags: ["Data.Class", "type-class", "equality", "ordering", "hashing", "data-type", "effect"]
+title: Structural Equality and Hashing with Data.struct
+id: data-class
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Data Types
+  - Structural Equality
+  - Hashing
+  - Collections
+summary: Use Data.struct to create data types with built-in structural equality
+  and hashing, enabling seamless use in collections and comparisons.
+tags:
+  - Data.struct
+  - structural-equality
+  - hashing
+  - data-type
+  - effect
+  - collections
 rule:
-  description: "Use Data.Class to define and derive type classes for your data types, supporting composable equality, ordering, and hashing."
-related: ["data-struct", "data-tuple", "data-array"]
-author: "PaulJPhilp"
+  description: Use Data.struct to create data types with automatic structural
+    equality and hashing for use in collections and comparisons.
+related:
+  - data-struct
+  - data-tuple
+  - data-array
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.704Z level=INFO fiber=#0 message="User:
+  {\"id\":1,\"name\":\"Alice\"}"
+
+  timestamp=2025-08-07T18:29:29.705Z level=INFO fiber=#0
+  message="Equal.equals(User, {id:1,name:'Alice'}): true"
+
+  timestamp=2025-08-07T18:29:29.706Z level=INFO fiber=#0
+  message="Hash.hash(User): -652630587"
+
+  timestamp=2025-08-07T18:29:29.706Z level=INFO fiber=#0
+  message="HashSet.has(set, {id:1,name:'Alice'}): true"
+
+  timestamp=2025-08-07T18:29:29.706Z level=INFO fiber=#0 message="Sorted users
+  by id: [Alice, Bob]"
 ---
 
-# Type Classes for Equality, Ordering, and Hashing with `Data.Class`
+# Structural Equality and Hashing with `Data.struct`
 
 ## Guideline
 
-Use `Data.Class` to derive or implement type classes for equality, ordering, and hashing for your custom data types.  
-This enables composable, type-safe abstractions and allows your types to work seamlessly with Effect’s collections and algorithms.
+Use `Data.struct` to create data types with built-in structural equality and hashing.  
+This enables your data types to work seamlessly with Effect's collections, comparisons, and algorithms without manual equality or hash implementations.
 
 ## Rationale
 
-Type classes like `Equal`, `Order`, and `Hash` provide a principled way to define how your types are compared, ordered, and hashed.  
-This is essential for using your types in sets, maps, and for sorting or deduplication.
+Structural equality and hashing are essential for using your data types in sets, maps, and for deduplication.  
+`Data.struct` automatically provides these capabilities, making your types immediately compatible with Effect's collection types like `HashSet` and `HashMap`.
 
 ## Good Example
 
@@ -49,16 +81,19 @@ const program = Effect.gen(function* () {
   );
 });
 
-Effect.runPromise(program);
+Effect.runPromise(
+  program.pipe(Effect.catchAll(() => Effect.succeed(undefined)))
+);
 
 ```
 
 **Explanation:**  
-- `Data.Class.getEqual` derives an equality type class for your data type.
-- `Data.Class.getOrder` derives an ordering type class, useful for sorting.
-- `Data.Class.getHash` derives a hash function for use in sets and maps.
-- These type classes make your types fully compatible with Effect’s collections and algorithms.
+- `Data.struct` creates data types with automatic structural equality and hashing.
+- `Equal.equals` can compare `Data.struct` instances by their structure, not reference.
+- `Hash.hash` generates consistent hash values for use in collections like `HashSet`.
+- These capabilities make your data types immediately compatible with Effect's collections and algorithms.
+- Structural equality works recursively, comparing all nested properties for deep equality.
 
 ## Anti-Pattern
 
-Relying on reference equality, ad-hoc comparison functions, or not providing type class instances for your custom types, which can lead to bugs and inconsistent behavior in collections.
+Relying on reference equality or manual comparison functions for data types, or using plain objects that don't provide structural equality, which can lead to bugs and inconsistent behavior in collections.

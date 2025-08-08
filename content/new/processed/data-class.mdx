@@ -1,16 +1,46 @@
 ---
-title: "Structural Equality and Hashing with Data.struct"
-id: "data-class"
-skillLevel: "beginner"
-provider: "google"
-model: "gemini-2.5-flash"
-useCase: ["Data Types", "Structural Equality", "Hashing", "Collections"]
-summary: "Use Data.struct to create data types with built-in structural equality and hashing, enabling seamless use in collections and comparisons."
-tags: ["Data.struct", "structural-equality", "hashing", "data-type", "effect", "collections"]
+title: Structural Equality and Hashing with Data.struct
+id: data-class
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Data Types
+  - Structural Equality
+  - Hashing
+  - Collections
+summary: Use Data.struct to create data types with built-in structural equality
+  and hashing, enabling seamless use in collections and comparisons.
+tags:
+  - Data.struct
+  - structural-equality
+  - hashing
+  - data-type
+  - effect
+  - collections
 rule:
-  description: "Use Data.struct to create data types with automatic structural equality and hashing for use in collections and comparisons."
-related: ["data-struct", "data-tuple", "data-array"]
-author: "PaulJPhilp"
+  description: Use Data.struct to create data types with automatic structural
+    equality and hashing for use in collections and comparisons.
+related:
+  - data-struct
+  - data-tuple
+  - data-array
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.704Z level=INFO fiber=#0 message="User:
+  {\"id\":1,\"name\":\"Alice\"}"
+
+  timestamp=2025-08-07T18:29:29.705Z level=INFO fiber=#0
+  message="Equal.equals(User, {id:1,name:'Alice'}): true"
+
+  timestamp=2025-08-07T18:29:29.706Z level=INFO fiber=#0
+  message="Hash.hash(User): -652630587"
+
+  timestamp=2025-08-07T18:29:29.706Z level=INFO fiber=#0
+  message="HashSet.has(set, {id:1,name:'Alice'}): true"
+
+  timestamp=2025-08-07T18:29:29.706Z level=INFO fiber=#0 message="Sorted users
+  by id: [Alice, Bob]"
 ---
 
 # Structural Equality and Hashing with `Data.struct`

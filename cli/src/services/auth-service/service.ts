@@ -1,31 +1,13 @@
 import { Effect, Data, Option } from "effect";
 import { FileSystem, Path } from "@effect/platform";
 import * as OS from "node:os";
-
-import { Console } from "effect";
-
-export class AuthError extends Data.TaggedError("AuthError")<{
-  readonly message: string;
-  readonly cause?: unknown;
-}> {}
-
-export interface AuthConfig {
-  readonly provider: string;
-  readonly apiKey: string;
-  readonly createdAt: string;
-  readonly lastUsed?: string;
-}
-
-export interface ProviderConfig {
-  readonly name: string;
-  readonly apiKey: string;
-  readonly baseUrl?: string;
-  readonly model?: string;
-}
+import { AuthError } from "./errors.js";
+import { AuthConfig } from "./types.js";
 
 export class AuthService extends Effect.Service<AuthService>()(
   "AuthService",
   {
+    accessors: true,
     effect: Effect.gen(function* () {
       const maskApiKey = (key: string): string => {
         if (key.length <= 8) return "***";

@@ -1,16 +1,43 @@
 ---
-title: "Combining Values with zip"
-id: "combinator-zip"
-skillLevel: "beginner"
-provider: "google"
-model: "gemini-2.5-flash"
-useCase: ["Combinators", "Composition", "Pairing"]
-summary: "Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either."
-tags: ["zip", "combinator", "pair", "effect", "stream", "option", "either"]
+title: Combining Values with zip
+id: combinator-zip
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Combinators
+  - Composition
+  - Pairing
+summary: Use zip to combine two computations, pairing their results together in
+  Effect, Stream, Option, or Either.
+tags:
+  - zip
+  - combinator
+  - pair
+  - effect
+  - stream
+  - option
+  - either
 rule:
-  description: "Use zip to run two computations and combine their results into a tuple, preserving error and context handling."
-related: ["combinator-map", "combinator-flatmap", "combinator-all-race"]
-author: "PaulJPhilp"
+  description: Use zip to run two computations and combine their results into a
+    tuple, preserving error and context handling.
+related:
+  - combinator-map
+  - combinator-flatmap
+  - combinator-all-race
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.434Z level=INFO fiber=#0 message="Effect.zip
+  result: [1, hello]"
+
+  timestamp=2025-08-07T18:29:29.435Z level=INFO fiber=#0 message="Option.zip
+  result: [1, hello]"
+
+  timestamp=2025-08-07T18:29:29.435Z level=INFO fiber=#0 message="Either.zip
+  result: [1, hello]"
+
+  timestamp=2025-08-07T18:29:29.464Z level=INFO fiber=#0 message="Stream.zip
+  result: [[1, a], [2, b], [3, c]]"
 ---
 
 # Combining Values with `zip`

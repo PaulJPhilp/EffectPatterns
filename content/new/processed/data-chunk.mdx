@@ -1,16 +1,40 @@
 ---
-title: "Use Chunk for High-Performance Collections"
-id: "data-chunk"
-skillLevel: "beginner"
-provider: "google"
-model: "gemini-2.5-flash"
-useCase: ["Data Types", "Collections", "Performance"]
-summary: "Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines."
-tags: ["Chunk", "collection", "performance", "immutable", "data-type", "effect"]
+title: Use Chunk for High-Performance Collections
+id: data-chunk
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Data Types
+  - Collections
+  - Performance
+summary: Use Chunk<A> as a high-performance, immutable alternative to
+  JavaScript's Array, especially for data processing pipelines.
+tags:
+  - Chunk
+  - collection
+  - performance
+  - immutable
+  - data-type
+  - effect
 rule:
-  description: "Use Chunk to model immutable, high-performance collections for efficient data processing and transformation."
-related: ["data-array", "data-hashset"]
-author: "PaulJPhilp"
+  description: Use Chunk to model immutable, high-performance collections for
+    efficient data processing and transformation.
+related:
+  - data-array
+  - data-hashset
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.434Z level=INFO fiber=#0 message="numbers: [1,
+  2, 3, 4]"
+
+  timestamp=2025-08-07T18:29:29.436Z level=INFO fiber=#0 message="doubled: [2,
+  4, 6, 8]"
+
+  timestamp=2025-08-07T18:29:29.436Z level=INFO fiber=#0 message="evens: [2, 4]"
+
+  timestamp=2025-08-07T18:29:29.436Z level=INFO fiber=#0 message="allNumbers:
+  [1, 2, 3, 4, 5, 6]"
 ---
 
 # Use `Chunk` for High-Performance Collections

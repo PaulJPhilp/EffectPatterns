@@ -1,14 +1,33 @@
 ---
-title: "Modeling Validated Domain Types with Brand"
-id: "brand-model-domain-type"
-skillLevel: "intermediate"
-useCase: ["Branded Types", "Domain Modeling", "Type Safety"]
-summary: "Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse."
-tags: ["Brand", "domain", "type-safety", "validation", "effect"]
+title: Modeling Validated Domain Types with Brand
+id: brand-model-domain-type
+skillLevel: intermediate
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Branded Types
+  - Domain Modeling
+  - Type Safety
+summary: Use Brand to create domain-specific types from primitives, making
+  illegal states unrepresentable and preventing accidental misuse.
+tags:
+  - Brand
+  - domain
+  - type-safety
+  - validation
+  - effect
 rule:
-  description: "Use Brand to define types like Email, UserId, or PositiveInt, ensuring only valid values can be constructed and used."
-related: ["brand-validate-parse"]
-author: "PaulJPhilp"
+  description: Use Brand to define types like Email, UserId, or PositiveInt,
+    ensuring only valid values can be constructed and used.
+related:
+  - brand-validate-parse
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.341Z level=INFO fiber=#0 message="Demonstrating
+  branded type Email:"
+
+  timestamp=2025-08-07T18:29:29.341Z level=INFO fiber=#0 message="Welcome email
+  sent to: user@example.com"
 ---
 
 # Modeling Validated Domain Types with `Brand`
@@ -28,13 +47,14 @@ They help you catch bugs at compile time and make your code more self-documentin
 ```typescript
 import { Brand, Effect } from "effect";
 
-interface Email extends Brand.Branded<string, "Email"> {}
+type Email = string & Brand.Brand<"Email">;
+const Email = Brand.nominal<Email>();
 
 function sendWelcome(email: Email) {
   return Effect.log(`Welcome email sent to: ${email}`);
 }
 
-const email = "user@example.com" as Email;
+const email = Email("user@example.com");
 
 const program = Effect.gen(function* () {
   yield* Effect.log("Demonstrating branded type Email:");

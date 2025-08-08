@@ -1,16 +1,51 @@
 ---
-title: "Work with Arbitrary-Precision Numbers using BigDecimal"
-id: "data-bigdecimal"
-skillLevel: "beginner"
-provider: "google"
-model: "gemini-2.5-flash"
-useCase: ["Data Types", "Numeric Precision", "Financial", "Scientific"]
-summary: "Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations."
-tags: ["BigDecimal", "numeric", "precision", "decimal", "data-type", "effect"]
+title: Work with Arbitrary-Precision Numbers using BigDecimal
+id: data-bigdecimal
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Data Types
+  - Numeric Precision
+  - Financial
+  - Scientific
+summary: Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding
+  rounding errors and loss of precision in financial or scientific calculations.
+tags:
+  - BigDecimal
+  - numeric
+  - precision
+  - decimal
+  - data-type
+  - effect
 rule:
-  description: "Use BigDecimal to represent and compute with decimal numbers that require arbitrary precision, such as in finance or scientific domains."
-related: ["data-chunk", "data-struct"]
-author: "PaulJPhilp"
+  description: Use BigDecimal to represent and compute with decimal numbers that
+    require arbitrary precision, such as in finance or scientific domains.
+related:
+  - data-chunk
+  - data-struct
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.288Z level=INFO fiber=#0 message="a:
+  BigDecimal(0.1)"
+
+  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="b:
+  BigDecimal(0.2)"
+
+  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="sum:
+  BigDecimal(0.3)"
+
+  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="product:
+  BigDecimal(0.02)"
+
+  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="sum equals
+  0.3: true"
+
+  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="sum as string:
+  BigDecimal(0.3)"
+
+  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="sum as number:
+  0.3"
 ---
 
 # Work with Arbitrary-Precision Numbers using `BigDecimal`

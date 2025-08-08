@@ -1,92 +1,10 @@
 import { Effect, DateTime, Console, Option, Data, Layer } from "effect";
 import * as Fs from "@effect/platform/FileSystem";
 import * as Path from "@effect/platform/Path";
+import { LLMUsage, MetricsData, MetricsSummary, MetricsHistory } from "./types.js";
+import { MetricsError } from "./errors.js";
+import { MetricsServiceApi } from "./api.js";
 
-
-// Enhanced metrics data structures
-export class LLMUsage extends Data.Class<{
-  provider: string;
-  model: string;
-  inputTokens: number;
-  outputTokens: number;
-  thinkingTokens: number;
-  totalTokens: number;
-  estimatedCost: number;
-  inputCost: number;
-  outputCost: number;
-  totalCost: number;
-}> {}
-
-export class MetricsData extends Data.Class<{
-  command: string;
-  startTime: DateTime.DateTime;
-  endTime?: DateTime.DateTime;
-  duration?: number;
-  llmUsage?: LLMUsage;
-  error?: {
-    type: string;
-    message: string;
-    stack?: string;
-  };
-  success: boolean;
-  runId?: string;
-  promptLength?: number;
-  responseLength?: number;
-  inputTokens?: number;
-  outputTokens?: number;
-  modelParameters?: {
-    temperature?: number;
-    maxTokens?: number;
-    topP?: number;
-  };
-  environment: {
-    nodeVersion: string;
-    platform: string;
-    cwd: string;
-  };
-}> {}
-
-export class MetricsSummary extends Data.Class<{
-  totalCommands: number;
-  successfulCommands: number;
-  failedCommands: number;
-  totalTokens: number;
-  totalCost: number;
-  averageDuration: number;
-  providerStats: Record<string, { commands: number; tokens: number; cost: number }>;
-  modelStats: Record<string, { commands: number; tokens: number; cost: number }>;
-}> {}
-
-export class MetricsHistory extends Data.Class<{
-  runs: MetricsData[];
-  summary: MetricsSummary;
-}> {}
-
-// Error class
-export class MetricsError extends Data.Error<{
-  readonly message: string;
-  readonly cause?: unknown;
-}> {}
-
-// Service interface
-export interface MetricsService {
-  startCommand: (command: string, runId?: string) => Effect.Effect<void>;
-  endCommand: () => Effect.Effect<void>;
-  recordLLMUsage: (usage: LLMUsage) => Effect.Effect<void>;
-  recordError: (error: Error) => Effect.Effect<void>;
-  recordPrompt: (prompt: string) => Effect.Effect<void>;
-  recordResponse: (response: string) => Effect.Effect<void>;
-  recordModelParameters: (parameters: {
-    temperature?: number;
-    maxTokens?: number;
-    topP?: number;
-  }) => Effect.Effect<void>;
-  reportMetrics: (format: "console" | "json" | "jsonl", outputFile?: string) => Effect.Effect<void>;
-  getMetrics: () => Effect.Effect<Option.Option<MetricsData>>;
-  getMetricsHistory: () => Effect.Effect<MetricsHistory>;
-  saveMetrics: (outputPath?: string) => Effect.Effect<void>;
-  clearMetrics: () => Effect.Effect<void>;
-}
 
 // Service implementation using Effect.Service pattern
 export class MetricsService extends Effect.Service<MetricsService>()(
@@ -286,7 +204,10 @@ export class MetricsService extends Effect.Service<MetricsService>()(
               summary: calculateSummary([...history.runs, currentMetrics])
             });
             yield* writeMetricsFile(updatedHistory);
-            yield* Console.info(`[METRICS] Started command: ${command}`);
+            // Only log metrics when not in JSON format
+            if ((process.env.OUTPUT_FORMAT || "text") !== "json") {
+              yield* Console.info(`[METRICS] Started command: ${command}`);
+            }
           }),
 
         endCommand: () =>
@@ -340,38 +261,19 @@ export class MetricsService extends Effect.Service<MetricsService>()(
               const lastRun = history.runs[history.runs.length - 1];
               const updatedRun = new MetricsData({
                 ...lastRun,
-                success: false,
                 error: {
                   type: error.constructor.name,
                   message: error.message,
-                  stack: error.stack
-                }
+                  stack: error.stack,
+                },
+                success: false,
+                endTime: DateTime.unsafeNow(),
               });
               const updatedRuns = [...history.runs];
               updatedRuns[updatedRuns.length - 1] = updatedRun;
               const updatedHistory = new MetricsHistory({
                 runs: updatedRuns,
-                summary: calculateSummary(updatedRuns)
-              });
-              yield* writeMetricsFile(updatedHistory);
-            }
-          }),
-
-        recordPrompt: (prompt: string) =>
-          Effect.gen(function* () {
-            const history = yield* readMetricsFile;
-            if (history.runs.length > 0) {
-              const lastRun = history.runs[history.runs.length - 1];
-              const updatedRun = new MetricsData({
-                ...lastRun,
-                promptLength: prompt.length,
-                inputTokens: countTokens(prompt)
-              });
-              const updatedRuns = [...history.runs];
-              updatedRuns[updatedRuns.length - 1] = updatedRun;
-              const updatedHistory = new MetricsHistory({
-                runs: updatedRuns,
-                summary: calculateSummary(updatedRuns)
+                summary: calculateSummary(updatedRuns),
               });
               yield* writeMetricsFile(updatedHistory);
             }
@@ -408,15 +310,67 @@ export class MetricsService extends Effect.Service<MetricsService>()(
               const lastRun = history.runs[history.runs.length - 1];
               const updatedRun = new MetricsData({
                 ...lastRun,
-                modelParameters: parameters
+                modelParameters: parameters,
               });
               const updatedRuns = [...history.runs];
               updatedRuns[updatedRuns.length - 1] = updatedRun;
               const updatedHistory = new MetricsHistory({
                 runs: updatedRuns,
-                summary: calculateSummary(updatedRuns)
+                summary: calculateSummary(updatedRuns),
               });
               yield* writeMetricsFile(updatedHistory);
+            }
+          }),
+
+        extractLLMUsage: (response, provider, model) =>
+          Effect.gen(function* () {
+            // Extract usage data from response metadata
+            const usageData = response?.usage || {};
+            
+            const inputTokens = usageData.promptTokens || usageData.inputTokens || 0;
+            const outputTokens = usageData.completionTokens || usageData.outputTokens || 0;
+            const thinkingTokens = usageData.reasoningTokens || usageData.thinkingTokens || 0;
+            const totalTokens = usageData.totalTokens || (inputTokens + outputTokens + thinkingTokens);
+            
+            // Calculate costs
+            const estimatedCost = estimateCost(provider, model, totalTokens);
+            const inputCost = estimateCost(provider, model, inputTokens) * 0.5;
+            const outputCost = estimateCost(provider, model, outputTokens) * 0.8;
+            const totalCost = inputCost + outputCost;
+            
+            return new LLMUsage({
+              provider,
+              model,
+              inputTokens,
+              outputTokens,
+              thinkingTokens,
+              totalTokens,
+              estimatedCost,
+              inputCost,
+              outputCost,
+              totalCost
+            });
+          }),
+
+        saveCommandMetrics: (outputPath, format = "json") =>
+          Effect.gen(function* () {
+            const history = yield* readMetricsFile;
+            if (history.runs.length > 0) {
+              const lastRun = history.runs[history.runs.length - 1];
+              const fs = yield* Fs.FileSystem;
+              const path = yield* Path.Path;
+              
+              const output = {
+                ...lastRun,
+                timestamp: new Date().toISOString()
+              };
+              
+              const jsonOutput = JSON.stringify(output, null, 2);
+              
+              const finalOutputPath = outputPath || 
+                path.join(process.cwd(), `metrics-${Date.now()}.json`);
+              
+              yield* fs.writeFileString(finalOutputPath, jsonOutput);
             }
           }),
 

@@ -1,16 +1,53 @@
 ---
-title: "Work with Immutable Sets using HashSet"
-id: "data-hashset"
-skillLevel: "beginner"
-provider: "google"
-model: "gemini-2.5-flashmediate"
-useCase: ["Data Types", "Collections", "Set Operations"]
-summary: "Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations."
-tags: ["HashSet", "set", "collection", "immutable", "data-type", "effect"]
+title: Work with Immutable Sets using HashSet
+id: data-hashset
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flashmediate
+useCase:
+  - Data Types
+  - Collections
+  - Set Operations
+summary: Use HashSet<A> to model immutable, high-performance sets for efficient
+  membership checks and set operations.
+tags:
+  - HashSet
+  - set
+  - collection
+  - immutable
+  - data-type
+  - effect
 rule:
-  description: "Use HashSet to represent sets of unique values with efficient, immutable operations for membership, union, intersection, and difference."
-related: ["data-chunk", "data-array"]
-author: "PaulJPhilp"
+  description: Use HashSet to represent sets of unique values with efficient,
+    immutable operations for membership, union, intersection, and difference.
+related:
+  - data-chunk
+  - data-array
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.223Z level=INFO fiber=#0 message="setA: [1, 2,
+  3]"
+
+  timestamp=2025-08-07T18:29:29.300Z level=INFO fiber=#0 message="setB: [3, 4,
+  5]"
+
+  timestamp=2025-08-07T18:29:29.359Z level=INFO fiber=#0 message="setA has 2:
+  true"
+
+  timestamp=2025-08-07T18:29:29.360Z level=INFO fiber=#0 message="union: [1, 2,
+  3, 4, 5]"
+
+  timestamp=2025-08-07T18:29:29.360Z level=INFO fiber=#0 message="intersection:
+  [3]"
+
+  timestamp=2025-08-07T18:29:29.360Z level=INFO fiber=#0 message="difference
+  (setA - setB): [1, 2]"
+
+  timestamp=2025-08-07T18:29:29.360Z level=INFO fiber=#0 message="withSix: [1,
+  2, 3, 6]"
+
+  timestamp=2025-08-07T18:29:29.360Z level=INFO fiber=#0 message="withoutOne:
+  [2, 3]"
 ---
 
 # Work with Immutable Sets using `HashSet`

@@ -43,3 +43,16 @@ export const StandardFiles = {
   prompt: "prompt.mdx",
   runInfo: "run-info.json"
 } as const;
+
+// Run state interface
+export interface RunState {
+  readonly lastRunNumber: number;
+}
+
+// Run information
+export interface RunInfo {
+  readonly name: string;
+  readonly directory: string;
+  readonly timestamp: Date;
+  readonly number: number;
+}

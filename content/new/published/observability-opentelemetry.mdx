@@ -1,14 +1,31 @@
 ---
-title: "Integrate Effect Tracing with OpenTelemetry"
-id: "observability-opentelemetry"
-skillLevel: "advanced"
-useCase: ["Observability", "Tracing", "OpenTelemetry", "Distributed Systems"]
-summary: "Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization."
-tags: ["tracing", "opentelemetry", "observability", "effect", "distributed-tracing"]
+title: Integrate Effect Tracing with OpenTelemetry
+id: observability-opentelemetry
+skillLevel: advanced
+useCase:
+  - Observability
+  - Tracing
+  - OpenTelemetry
+  - Distributed Systems
+summary: Connect Effect's tracing spans to OpenTelemetry for end-to-end
+  distributed tracing and visualization.
+tags:
+  - tracing
+  - opentelemetry
+  - observability
+  - effect
+  - distributed-tracing
 rule:
-  description: "Integrate Effect.withSpan with OpenTelemetry to export traces and visualize request flows across services."
-related: ["observability-tracing-spans", "observability-structured-logging"]
-author: "PaulJPhilp"
+  description: Integrate Effect.withSpan with OpenTelemetry to export traces and
+    visualize request flows across services.
+related:
+  - observability-tracing-spans
+  - observability-structured-logging
+author: PaulJPhilp
+provider: google
+model: gemini-2.5-flash
+expectedOutput: 'timestamp=2025-08-07T18:29:29.678Z level=INFO fiber=#0
+  message="Fetched user: {\"id\":1,\"name\":\"Alice\"}"'
 ---
 
 # Integrate Effect Tracing with OpenTelemetry
@@ -29,22 +46,21 @@ import { Effect } from "effect";
 // Pseudocode: Replace with actual OpenTelemetry integration for your stack
 import { trace, SpanStatusCode } from "@opentelemetry/api";
 
-function withOtelSpan<T>(
+function withOtelSpan<A, E = never, R = never>(
   name: string,
-  effect: Effect.Effect<unknown, T, unknown>
-) {
+  effect: Effect.Effect<A, E, R>
+): Effect.Effect<A, E, R> {
   return Effect.gen(function* () {
     const otelSpan = trace.getTracer("default").startSpan(name);
-    try {
-      const result = yield* effect;
-      otelSpan.setStatus({ code: SpanStatusCode.OK });
-      return result;
-    } catch (err) {
-      otelSpan.setStatus({ code: SpanStatusCode.ERROR, message: String(err) });
-      throw err;
-    } finally {
-      otelSpan.end();
-    }
+    return yield* effect.pipe(
+      Effect.tap(() => Effect.sync(() => otelSpan.setStatus({ code: SpanStatusCode.OK }))),
+      Effect.catchAll((err) =>
+        Effect.sync(() => {
+          otelSpan.setStatus({ code: SpanStatusCode.ERROR, message: String(err) });
+        }).pipe(Effect.zipRight(Effect.fail(err)))
+      ),
+      Effect.ensuring(Effect.sync(() => otelSpan.end()))
+    );
   });
 }
 
@@ -65,6 +81,7 @@ Effect.runPromise(program);
 
 **Explanation:**  
 - Start an OpenTelemetry span when entering an Effectful operation.
+- The effect you pass to a span wrapper should have an environment of `never` (i.e., `Effect.Effect<never, A, never>`), meaning it is fully provided and does not require additional dependencies.
 - Set status and attributes as needed.
 - End the span when the operation completes or fails.
 - This enables full distributed tracing and visualization in your observability platform.

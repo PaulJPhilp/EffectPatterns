@@ -9,7 +9,7 @@
 # - Uses CLI process-prompt command for LLM processing
 #
 # Usage:
-#   ./qa-process.sh
+#   ./qa-process.sh [--debug]
 
 set -e  # Exit on any error
 
@@ -30,11 +30,20 @@ fi
 # --- VALIDATION ---
 ensure_directories() {
   mkdir -p "$RESULTS_DIR"
+  # Clear results folder at start of each run
+  rm -f "$RESULTS_DIR"/*.json
 }
 
 # --- PATTERN DISCOVERY ---
 get_pattern_files() {
-  find "$PATTERNS_DIR" -name "*.mdx" -type f | sort
+  local files=$(find "$PATTERNS_DIR" -name "*.mdx" -type f | sort)
+  
+  # In debug mode, only return first 5 files
+  if [[ "$DEBUG_MODE" == "true" ]]; then
+    echo "$files" | head -5
+  else
+    echo "$files"
+  fi
 }
 
 # --- METADATA EXTRACTION ---
@@ -62,15 +71,40 @@ run_qa_validation() {
   
   IFS='|' read -r id title skill_level <<< "$metadata"
   local file_name=$(basename "$pattern_path")
+  local output_file="$RESULTS_DIR/${file_name%.mdx}-qa.json"
   
   echo "Running QA validation via CLI for: $file_name"
   
   # Run the CLI command to process the prompt with correct arguments
-  local result
-            if result=$(OUTPUT_FORMAT="json" SCHEMA_PROMPT="$PROMPTS_DIR/qa-schema.mdx" node --loader ts-node/esm cli/src/main.ts process-prompt "$pattern_path" 2>&1); then
-    echo "$result"
+  # CLI writes JSON output directly to the file
+  local output_file="$RESULTS_DIR/${file_name%.mdx}-qa.json"
+  if cd "$PROJECT_ROOT" && OUTPUT_FORMAT="json" SCHEMA_PROMPT="$PROMPTS_DIR/qa-schema.mdx" node --loader ts-node/esm cli/src/main.ts process-prompt --output "$output_file" "$pattern_path"; then
+    # Read the generated JSON file
+    if [ -f "$output_file" ]; then
+      cat "$output_file"
+    else
+      echo "Error: Output file not created: $output_file" >&2
+      cat << EOF
+{
+  "patternId": "$id",
+  "fileName": "$file_name",
+  "validation": {
+    "passed": false,
+    "errors": ["Output file not created"],
+    "warnings": [],
+    "suggestions": []
+  },
+  "metrics": {
+    "tokens": 0,
+    "cost": 0,
+    "duration": 0
+  }
+}
+EOF
+      return 1
+    fi
   else
-    echo "Error running CLI command: $result" >&2
+    echo "Error running CLI command for: $file_name" >&2
     # Return a basic failure JSON structure
     cat << EOF
 {
@@ -78,7 +112,7 @@ run_qa_validation() {
   "fileName": "$file_name",
   "validation": {
     "passed": false,
-    "errors": ["CLI execution failed: $result"],
+    "errors": ["CLI execution failed"],
     "warnings": [],
     "suggestions": []
   },
@@ -104,24 +138,25 @@ save_result() {
 
 # --- MAIN PROCESSING ---
 main() {
-  echo "Starting QA process..."
+  echo "Starting Effect Patterns QA Process..."
   
   ensure_directories
   
-  # Get pattern files - replacing mapfile with a more portable solution
-  local pattern_files_list=$(get_pattern_files)
-  local count=$(echo "$pattern_files_list" | wc -l | tr -d ' ')
+  local pattern_files_list
+  pattern_files_list=$(get_pattern_files)
+  local total_files=$(echo "$pattern_files_list" | wc -l | tr -d ' ')
   
-  echo "Found $count patterns to validate"
-  
-  if [ "$count" -eq 0 ]; then
-    echo "No patterns found to process"
-    exit 0
+  if [[ "$DEBUG_MODE" == "true" ]]; then
+    echo "DEBUG MODE: Processing only first 5 files (out of $total_files total)"
   fi
   
-  local processed=0
+  echo "Found $total_files pattern files to process"
+  
+  local count=0
+  local passed=0
   local failed=0
   
+  # Process each pattern file
   while IFS= read -r pattern_file; do
     if [ -n "$pattern_file" ]; then
       local file_name=$(basename "$pattern_file")
@@ -132,34 +167,48 @@ main() {
       local metadata
       metadata=$(extract_metadata "$pattern_file")
       
-      # Run QA validation
-      local result_json
-      result_json=$(run_qa_validation "$pattern_file" "$metadata")
-      
-      # Save result
-      save_result "$result_json" "${file_name%.mdx}"
-      
+      # Run QA validation - CLI writes JSON directly to file
+      run_qa_validation "$pattern_file" "$metadata"
+  
+      # Read result from file
+      local result_file="$RESULTS_DIR/${file_name%.mdx}-qa.json"
+      local result_json=""
+      if [ -f "$result_file" ]; then
+        result_json=$(cat "$result_file")
+      else
+        result_json='{"patternId":"'${file_name%.mdx}'","fileName":"'$file_name'","validation":{"passed":false,"errors":["Output file not created"],"warnings":[],"suggestions":[]},"metrics":{"tokens":0,"cost":0,"duration":0}}'
+      fi
+  
       # Check if passed
-      local passed=$(echo "$result_json" | grep '"passed"' | grep -o 'true\|false')
+      local passed=$(echo "$result_json" | jq -r '.passed // false')
       
       if [ "$passed" = "true" ]; then
         echo "  $file_name"
+        passed=$((passed + 1))
       else
         echo "  $file_name"
         failed=$((failed + 1))
       fi
       
-      processed=$((processed + 1))
+      count=$((count + 1))
     fi
   done <<< "$pattern_files_list"
   
   echo ""
   echo "QA Process Complete:"
-  echo "  Processed: $processed"
-  echo "  Passed: $((processed - failed))"
+  echo "  Processed: $count"
+  echo "  Passed: $passed"
   echo "  Failed: $failed"
   echo "  Results saved to: $RESULTS_DIR"
 }
+
+# --- DEBUG MODE HANDLING ---
+# Check for debug flag
+DEBUG_MODE="false"
+if [[ "$1" == "--debug" ]]; then
+  DEBUG_MODE="true"
+  echo "Debug mode enabled - processing only first 5 files"
+fi
 
 # --- ERROR HANDLING ---
 trap 'echo "QA process failed"; exit 1' ERR

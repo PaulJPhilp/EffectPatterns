@@ -1,24 +1,35 @@
 {
-  "patternId": "combinator-conditional",
-  "fileName": "combinator-conditional.mdx",
-  "metadata": {
-    "id": "",
-    "title": "",
-    "skillLevel": "",
-    "useCase": ["Unknown"],
-    "tags": ["Unknown"],
-    "description": "No description"
-  },
-  "validation": {
-    "passed": false,
-    "errors": ["QA processing failed"],
-    "warnings": [],
-    "suggestions": []
-  },
+  "passed": false,
+  "errors": [
+    "The code example specified by `<Example path=\"./src/combinator-conditional.ts\" />` is missing. Without the actual code, full validation of technical correctness, compilation, runtime behavior, and adherence to specific implementation details (e.g., correct imports, TypeScript types, runnable examples) cannot be performed.",
+    "The explanation explicitly lists `Effect.when` and `Effect.cond` in the title and general guideline but focuses primarily on `Effect.if` in the 'Good Example' explanation. To fully cover the scope implied by the title, a brief explanation or example of `Effect.when` and `Effect.cond` should be included for completeness within the 'Good Example' description or the actual code."
+  ],
+  "warnings": [
+    "While the distinction between good practice and anti-pattern is clear, explicit code examples illustrating the 'anti-pattern' alongside the 'good example' would enhance clarity and impact, providing a direct 'before' and 'after' comparison rather than just a textual description of the anti-pattern.",
+    "The 'Good Example' explanation could benefit from a very brief, high-level description of when to prefer `Effect.if` vs. `Effect.when` vs. `Effect.cond` (e.g., `if` for true/false branches, `when` for executing an effect only if true, `cond` for multiple cases)."
+  ],
+  "suggestions": [
+    "Provide a complete, runnable TypeScript code example for `src/combinator-conditional.ts` that effectively demonstrates the use of `Effect.if`, `Effect.when`, and `Effect.cond` for effectful computations, and `if/else` or ternary for `Option`/`Either` construction.",
+    "Include expected outputs for the provided code example(s) to clearly show the results of the conditional logic.",
+    "To make the anti-pattern even more explicit, consider adding a concise code snippet (e.g., an imperative `if` statement directly within an `Effect.gen` block) to illustrate the problematic usage.",
+    "Incorporate a simple, relatable use case scenario (e.g., 'process payment based on user role', 'log message based on verbosity level') into the code example to demonstrate practical application."
+  ],
+  "tokens": 480,
+  "cost": 0.00096,
   "metrics": {
-    "tokens": 0,
-    "cost": 0,
-    "duration": 445
+    "command": "process-prompt",
+    "startTime": "2025-08-05T21:46:15.075Z",
+    "success": true,
+    "environment": {
+      "nodeVersion": "v20.11.1",
+      "platform": "darwin",
+      "cwd": "/Users/paul/Projects/Effect-Patterns"
+    },
+    "llmUsage": null
   },
-  "timestamp": "2025-08-03T18:59:30Z"
+  "command": "process-prompt",
+  "file": "content/new/processed/combinator-conditional.mdx",
+  "provider": "google",
+  "model": "gemini-2.5-flash",
+  "timestamp": "2025-08-05T21:46:30.213Z"
 }

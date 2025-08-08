@@ -1,13 +1,7 @@
 import { Effect, Layer, Console } from "effect";
 import { FileSystem } from "@effect/platform";
 import { Path } from "@effect/platform";
-
-export interface RunInfo {
-  readonly runName: string;
-  readonly runDirectory: string;
-  readonly timestamp: string;
-  readonly sequentialNumber: number;
-}
+import { RunInfo } from "./types.js";
 
 export class RunService extends Effect.Service<RunService>()("RunService", {
   accessors: true,
@@ -99,7 +93,5 @@ export class RunService extends Effect.Service<RunService>()("RunService", {
         Effect.succeed(currentRun),
     };
   }),
-
+  dependencies: []
 }) {}
-
-export const RunServiceDefault = RunService;

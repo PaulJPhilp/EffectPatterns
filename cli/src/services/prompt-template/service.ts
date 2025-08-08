@@ -1,7 +1,7 @@
 import { FileSystem, Path } from "@effect/platform";
 import { Effect } from "effect";
 import { Liquid } from "liquidjs";
-import { parse as parseYaml } from "yaml";
+import { MdxService } from "../mdx-service/service.js";
 
 export interface PromptTemplate {
   readonly content: string;
@@ -18,193 +18,186 @@ export interface ParameterDefinition {
 
 const liquid = new Liquid();
 
-export class TemplateService extends Effect.Service<TemplateService>()("TemplateService", {
-  effect: Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const path = yield* Path.Path;
+// Type guard to validate parameter definitions
+function isValidParameterDefinition(
+  definition: unknown
+): definition is ParameterDefinition {
+  return (
+    definition !== null &&
+    typeof definition === "object" &&
+    "type" in definition &&
+    typeof (definition as Record<string, unknown>).type === "string" &&
+    ["string", "number", "boolean", "array", "object"].includes(
+      (definition as Record<string, unknown>).type as string
+    )
+  );
+}
 
-    const loadTemplate = (filePath: string): Effect.Effect<PromptTemplate, Error> =>
-      Effect.gen(function* () {
-        // Check file extension first
-        if (!filePath.endsWith('.mdx')) {
-          return yield* Effect.fail(
-            new Error("Only .mdx files are supported")
-          );
-        }
-        
-        const content = yield* fs.readFileString(filePath);
-        
-        // Parse frontmatter from MDX content
-        const frontmatterMatch = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
-        
-        if (!frontmatterMatch) {
-          return yield* Effect.fail(
-            new Error("No frontmatter found in .mdx file")
-          );
-        }
+export class TemplateService extends Effect.Service<TemplateService>()(
+  "TemplateService",
+  {
+    effect: Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const mdxService = yield* MdxService;
 
-        const [, frontmatterContent, templateContent] = frontmatterMatch;
-        
-        // Parse YAML frontmatter
-        let metadata: Record<string, unknown>;
-        try {
-          metadata = parseYaml(frontmatterContent) as Record<string, unknown>;
-        } catch (error) {
-          return yield* Effect.fail(
-            new Error(`Invalid YAML frontmatter: ${error}`)
-          );
-        }
+      const loadTemplate = (
+        filePath: string
+      ): Effect.Effect<PromptTemplate, Error> =>
+        Effect.gen(function* () {
+          // Check file extension first
+          if (!filePath.endsWith(".mdx")) {
+            return yield* Effect.fail(
+              new Error("Only .mdx files are supported")
+            );
+          }
 
-        // Extract parameters from frontmatter
-        const parameters: Record<string, ParameterDefinition> = {};
-        const paramsObj = (metadata.parameters || {}) as Record<string, unknown>;
-        
-        for (const [key, value] of Object.entries(paramsObj)) {
-          if (typeof value === "object" && value !== null && "type" in value) {
-            const paramValue = value as Record<string, unknown>;
-            const type = paramValue.type;
-            
-            if (typeof type === "string" && ["string", "number", "boolean", "array", "object"].includes(type)) {
-              parameters[key] = {
-                type: type as "string" | "number" | "boolean" | "array" | "object",
-                description: typeof paramValue.description === "string" ? paramValue.description : undefined,
-                required: typeof paramValue.required === "boolean" ? paramValue.required : undefined,
-                default: paramValue.default
-              };
-            } else {
+          const content = yield* fs.readFileString(filePath);
+
+          // Parse MDX file using MDX service
+          const parsed = yield* mdxService.parseMdxFile(content);
+
+          // Extract parameters using MDX service
+          const parameters = mdxService.extractParameters(parsed.attributes);
+
+          return {
+            content: parsed.body.trim(),
+            parameters,
+            metadata: parsed.attributes,
+          };
+        });
+
+      const validateParameterType = (
+        value: unknown,
+        expectedType: string
+      ): Effect.Effect<void, Error> => {
+        switch (expectedType) {
+          case "string":
+            return typeof value === "string"
+              ? Effect.void
+              : Effect.fail(
+                  new Error(`Expected string but got ${typeof value}`)
+                );
+          case "number":
+            return typeof value === "number"
+              ? Effect.void
+              : Effect.fail(
+                  new Error(`Expected number but got ${typeof value}`)
+                );
+          case "boolean":
+            return typeof value === "boolean"
+              ? Effect.void
+              : Effect.fail(
+                  new Error(`Expected boolean but got ${typeof value}`)
+                );
+          case "array":
+            return Array.isArray(value)
+              ? Effect.void
+              : Effect.fail(
+                  new Error(`Expected array but got ${typeof value}`)
+                );
+          case "object":
+            return typeof value === "object" &&
+              value !== null &&
+              !Array.isArray(value)
+              ? Effect.void
+              : Effect.fail(new Error(`Expected object, got ${typeof value}`));
+          default:
+            return Effect.void;
+        }
+      };
+
+      const validateParameters = (
+        template: PromptTemplate,
+        parameters: Record<string, unknown>
+      ): Effect.Effect<void, Error> =>
+        Effect.gen(function* () {
+          const templateParams = template.parameters;
+          const providedParams = new Set(Object.keys(parameters));
+          const requiredParams = Object.entries(templateParams)
+            .filter(([, def]) => def.required !== false)
+            .map(([name]) => name);
+
+          // Check for missing required parameters
+          const missingParams = requiredParams.filter(
+            (param) => !providedParams.has(param)
+          );
+
+          if (missingParams.length > 0) {
+            return yield* Effect.fail(
+              new Error(
+                `Missing required parameters: ${missingParams.join(", ")}`
+              )
+            );
+          }
+
+          // Check for unknown parameters
+          const unknownParams = Array.from(providedParams).filter(
+            (param) => !(param in templateParams)
+          );
+
+          if (unknownParams.length > 0) {
+            return yield* Effect.fail(
+              new Error(`Unknown parameters: ${unknownParams.join(", ")}`)
+            );
+          }
+
+          // Validate parameter types
+          for (const [name, value] of Object.entries(parameters)) {
+            const definition = templateParams[name];
+            if (!isValidParameterDefinition(definition)) {
               continue;
             }
-          } else {
-            continue;
+
+            yield* validateParameterType(value, definition.type);
           }
-        }
+        });
 
-        return {
-          content: templateContent.trim(),
-          parameters,
-          metadata
-        };
-      });
+      const renderTemplate = (
+        template: PromptTemplate,
+        parameters: Record<string, unknown>
+      ): Effect.Effect<string, Error> =>
+        Effect.gen(function* () {
+          // Validate parameters first
+          yield* validateParameters(template, parameters);
 
-    const validateParameterType = (
-      value: unknown,
-      expectedType: string
-    ): Effect.Effect<void, Error> => {
-      switch (expectedType) {
-        case "string":
-          return typeof value === "string"
-            ? Effect.void
-            : Effect.fail(new Error(`Expected string but got ${typeof value}`));
-        case "number":
-          return typeof value === "number"
-            ? Effect.void
-            : Effect.fail(new Error(`Expected number but got ${typeof value}`));
-        case "boolean":
-          return typeof value === "boolean"
-            ? Effect.void
-            : Effect.fail(new Error(`Expected boolean but got ${typeof value}`));
-        case "array":
-          return Array.isArray(value)
-            ? Effect.void
-            : Effect.fail(new Error(`Expected array but got ${typeof value}`));
-        case "object":
-          return typeof value === "object" && value !== null && !Array.isArray(value)
-            ? Effect.void
-            : Effect.fail(new Error(`Expected object, got ${typeof value}`));
-        default:
-          return Effect.void;
-      }
-    };
-
-    const validateParameters = (
-      template: PromptTemplate,
-      parameters: Record<string, unknown>
-    ): Effect.Effect<void, Error> =>
-      Effect.gen(function* () {
-        const templateParams = template.parameters;
-        const providedParams = new Set(Object.keys(parameters));
-        const requiredParams = Object.entries(templateParams)
-          .filter(([, def]) => def.required !== false)
-          .map(([name]) => name);
-
-        // Check for missing required parameters
-        const missingParams = requiredParams.filter(
-          (param) => !providedParams.has(param)
-        );
-
-        if (missingParams.length > 0) {
-          return yield* Effect.fail(
-            new Error(
-              `Missing required parameters: ${missingParams.join(", ")}`
-            )
-          );
-        }
-
-        // Check for unknown parameters
-        const unknownParams = Array.from(providedParams).filter(
-          (param) => !(param in templateParams)
-        );
-
-        if (unknownParams.length > 0) {
-          return yield* Effect.fail(
-            new Error(
-              `Unknown parameters: ${unknownParams.join(", ")}`
-            )
-          );
-        }
-
-        // Validate parameter types
-        for (const [name, value] of Object.entries(parameters)) {
-          const definition = templateParams[name];
-          // Ensure definition is a valid ParameterDefinition with a type property
-          if (!definition || typeof definition !== 'object' || !('type' in definition) || !definition.type) continue;
-
-          yield* validateParameterType(value, definition.type);
-        }
-      });
-
-    const renderTemplate = (
-      template: PromptTemplate,
-      parameters: Record<string, unknown>
-    ): Effect.Effect<string, Error> =>
-      Effect.gen(function* () {
-        // Validate parameters first
-        yield* validateParameters(template, parameters);
-
-        // Merge parameters with default values
-        const mergedParams: Record<string, unknown> = {};
-        // Add default values
-        for (const [name, definition] of Object.entries(template.parameters)) {
-          if ('default' in definition && definition.default !== undefined) {
-            mergedParams[name] = definition.default;
+          // Merge parameters with default values
+          const mergedParams: Record<string, unknown> = {};
+          // Add default values
+          for (const [name, definition] of Object.entries(
+            template.parameters
+          )) {
+            if ("default" in definition && definition.default !== undefined) {
+              mergedParams[name] = definition.default;
+            }
           }
-        }
-        // Override with provided values
-        for (const [name, value] of Object.entries(parameters)) {
-          mergedParams[name] = value;
-        }
+          // Override with provided values
+          for (const [name, value] of Object.entries(parameters)) {
+            mergedParams[name] = value;
+          }
 
-        // Render template with Liquid
-        try {
-          const rendered = yield* Effect.promise(() =>
-            liquid.parseAndRender(template.content, mergedParams)
-          );
-          return rendered;
-        } catch (error) {
-          return yield* Effect.fail(
-            new Error(`Template rendering failed: ${error}`)
-          );
-        }
-      });
+          // Render template with Liquid
+          try {
+            const rendered = yield* Effect.promise(() =>
+              liquid.parseAndRender(template.content, mergedParams)
+            );
+            return rendered;
+          } catch (error) {
+            return yield* Effect.fail(
+              new Error(`Template rendering failed: ${error}`)
+            );
+          }
+        });
 
-    return {
-      loadTemplate,
-      renderTemplate,
-      validateParameters
-    } as const;
-  }),
-  dependencies: []
-}) {}
+      return {
+        loadTemplate,
+        renderTemplate,
+        validateParameters,
+      } as const;
+    }),
+    dependencies: [MdxService.Default],
+  }
+) {}
 
 // Helper function to load and render a template in one step
 export const renderPromptTemplate = (
@@ -214,6 +207,9 @@ export const renderPromptTemplate = (
   Effect.gen(function* () {
     const templateService = yield* TemplateService;
     const template = yield* templateService.loadTemplate(templatePath);
-    const rendered = yield* templateService.renderTemplate(template, parameters);
+    const rendered = yield* templateService.renderTemplate(
+      template,
+      parameters
+    );
     return rendered;
   });

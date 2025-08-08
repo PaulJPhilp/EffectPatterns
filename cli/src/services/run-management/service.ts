@@ -1,37 +1,8 @@
-import { Effect, Data } from "effect";
+import { Effect } from "effect";
 import { FileSystem, Path } from "@effect/platform";
+import { RunManagementError } from "./errors.js";
+import { RunState, RunInfo } from "./types.js";
 
-// Error types for run management
-export class RunManagementError extends Data.TaggedError("RunManagementError")<{
-  readonly reason: string;
-  readonly cause?: unknown;
-}> {}
-
-export class InvalidRunNameError extends Data.TaggedError("InvalidRunNameError")<{
-  readonly name: string;
-  readonly reason: string;
-}> {}
-
-// Run state interface
-export interface RunState {
-  readonly lastRunNumber: number;
-}
-
-// Run information
-export interface RunInfo {
-  readonly name: string;
-  readonly directory: string;
-  readonly timestamp: Date;
-  readonly number: number;
-}
-
-// Service interface
-export interface RunManagementApi {
-  readonly createRun: (namePrefix?: string) => Effect.Effect<RunInfo, RunManagementError>;
-  readonly getRunDirectory: (runName: string) => Effect.Effect<string, RunManagementError>;
-  readonly listRuns: () => Effect.Effect<ReadonlyArray<RunInfo>, RunManagementError>;
-  readonly getRunInfo: (runName: string) => Effect.Effect<RunInfo, RunManagementError>;
-}
 
 // Service definition using Effect.Service pattern
 export class RunManagement extends Effect.Service<RunManagement>()("RunManagement", {

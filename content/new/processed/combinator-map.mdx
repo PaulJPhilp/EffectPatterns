@@ -1,16 +1,41 @@
 ---
-title: "Transforming Values with map"
-id: "combinator-map"
-skillLevel: "beginner"
-provider: "google"
-model: "gemini-2.5-flash"
-useCase: ["Combinators", "Composition"]
-summary: "Use map to transform the result of an Effect, Stream, Option, or Either in a declarative, type-safe way."
-tags: ["map", "combinator", "functor", "effect", "stream", "option", "either"]
+title: Transforming Values with map
+id: combinator-map
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Combinators
+  - Composition
+summary: Use map to transform the result of an Effect, Stream, Option, or Either
+  in a declarative, type-safe way.
+tags:
+  - map
+  - combinator
+  - functor
+  - effect
+  - stream
+  - option
+  - either
 rule:
-  description: "Use map to apply a pure function to the value inside an Effect, Stream, Option, or Either."
-related: ["combinator-flatmap", "combinator-filter"]
-author: "PaulJPhilp"
+  description: Use map to apply a pure function to the value inside an Effect,
+    Stream, Option, or Either.
+related:
+  - combinator-flatmap
+  - combinator-filter
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.562Z level=INFO fiber=#0 message="Effect.map
+  result: 20"
+
+  timestamp=2025-08-07T18:29:29.565Z level=INFO fiber=#0 message="Option.map
+  result: 20"
+
+  timestamp=2025-08-07T18:29:29.565Z level=INFO fiber=#0 message="Either.map
+  result: 20"
+
+  timestamp=2025-08-07T18:29:29.633Z level=INFO fiber=#0 message="Stream.map
+  result: [10, 20, 30]"
 ---
 
 # Transforming Values with `map`

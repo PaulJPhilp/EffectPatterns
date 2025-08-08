@@ -1,14 +1,41 @@
 ---
-title: "Creating from Collections"
-id: "constructor-from-iterable"
-skillLevel: "beginner"
-useCase: ["Constructors", "Collections", "Streams", "Batch Processing"]
-summary: "Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations."
-tags: ["fromIterable", "fromArray", "constructor", "stream", "effect", "collection", "batch"]
+title: Creating from Collections
+id: constructor-from-iterable
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Constructors
+  - Collections
+  - Streams
+  - Batch Processing
+summary: Use fromIterable and fromArray to create Streams or Effects from
+  arrays, iterables, or other collections, enabling batch and streaming
+  operations.
+tags:
+  - fromIterable
+  - fromArray
+  - constructor
+  - stream
+  - effect
+  - collection
+  - batch
 rule:
-  description: "Use fromIterable and fromArray to lift collections into Streams or Effects for batch or streaming processing."
-related: ["constructor-succeed-some-right", "constructor-from-nullable-option-either"]
-author: "PaulJPhilp"
+  description: Use fromIterable and fromArray to lift collections into Streams or
+    Effects for batch or streaming processing.
+related:
+  - constructor-succeed-some-right
+  - constructor-from-nullable-option-either
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.365Z level=INFO fiber=#0
+  message="Stream.fromIterable(numbers): [1, 2, 3, 4]"
+
+  timestamp=2025-08-07T18:29:29.372Z level=INFO fiber=#0
+  message="Stream.fromIterable(gen()): [a, b]"
+
+  timestamp=2025-08-07T18:29:29.373Z level=INFO fiber=#0 message="Effect.all
+  result: [1, 2]"
 ---
 
 # Creating from Collections
@@ -59,7 +86,9 @@ const program = Effect.gen(function* () {
   yield* Effect.log(`Effect.all result: [${batch.join(", ")}]`);
 });
 
-Effect.runPromise(program);
+Effect.runPromise(
+  program.pipe(Effect.catchAll(() => Effect.succeed(undefined)))
+);
 
 ```
 

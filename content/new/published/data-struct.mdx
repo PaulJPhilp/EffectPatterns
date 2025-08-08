@@ -1,14 +1,40 @@
 ---
-title: "Comparing Data by Value with Data.struct"
-id: "data-struct"
-skillLevel: "beginner"
-useCase: ["Data Types", "Structural Equality", "Domain Modeling"]
-summary: "Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference."
-tags: ["Data.struct", "structural-equality", "immutable", "data-type", "effect"]
+title: Comparing Data by Value with Data.struct
+id: data-struct
+skillLevel: beginner
+useCase:
+  - Data Types
+  - Structural Equality
+  - Domain Modeling
+summary: Use Data.struct to create immutable, structurally-typed objects that
+  can be compared by value, not by reference.
+tags:
+  - Data.struct
+  - structural-equality
+  - immutable
+  - data-type
+  - effect
 rule:
-  description: "Use Data.struct to define objects whose equality is based on their contents, enabling safe and predictable comparisons."
-related: ["data-tuple", "data-equal"]
-author: "PaulJPhilp"
+  description: Use Data.struct to define objects whose equality is based on their
+    contents, enabling safe and predictable comparisons.
+related:
+  - data-tuple
+  - data-equal
+author: PaulJPhilp
+provider: google
+model: gemini-2.5-flash
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.619Z level=INFO fiber=#0 message="user1:
+  {\"id\":1,\"name\":\"Alice\"}"
+
+  timestamp=2025-08-07T18:29:29.621Z level=INFO fiber=#0 message="user2:
+  {\"id\":1,\"name\":\"Alice\"}"
+
+  timestamp=2025-08-07T18:29:29.624Z level=INFO fiber=#0
+  message="Equal.equals(user1, user2): true"
+
+  timestamp=2025-08-07T18:29:29.624Z level=INFO fiber=#0
+  message="HashSet.has(set, user2): true"
 ---
 
 # Comparing Data by Value with `Data.struct`

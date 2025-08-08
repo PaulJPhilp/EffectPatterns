@@ -12,9 +12,11 @@
  *   npm run ingest
  */
 
-import * as fs from "fs/promises";
+import { NodeContext } from "@effect/platform-node";
+import { FileSystem } from "@effect/platform";
+import { Effect, Layer } from "effect";
+import { MdxService } from "../../cli/src/services/mdx-service/service.js";
 import * as path from "path";
-import matter from "gray-matter";
 
 // --- CONFIGURATION ---
 const PROJECT_ROOT = process.cwd();
@@ -32,55 +34,90 @@ interface FrontMatter {
   summary: string;
 }
 
-async function validateFrontMatter(filePath: string): Promise<FrontMatter> {
-  const content = await fs.readFile(filePath, "utf-8");
-  const { data } = matter(content);
+const validateFrontMatter = (filePath: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const mdxService = yield* MdxService;
+    
+    const content = yield* fs.readFileString(filePath);
+    const parsed = yield* mdxService.readMdxAndFrontmatter(filePath);
 
-  // Required fields
-  const requiredFields = ["id", "title", "skillLevel", "useCase", "summary"];
-  const missingFields = requiredFields.filter(field => !data[field]);
+    // Validate required fields
+    if (!parsed.frontmatter.id) {
+      return yield* Effect.fail(new Error(`Missing required field 'id' in ${filePath}`));
+    }
+    if (!parsed.frontmatter.title) {
+      return yield* Effect.fail(new Error(`Missing required field 'title' in ${filePath}`));
+    }
+    if (!parsed.frontmatter.skillLevel) {
+      return yield* Effect.fail(new Error(`Missing required field 'skillLevel' in ${filePath}`));
+    }
+    if (!parsed.frontmatter.useCase) {
+      return yield* Effect.fail(new Error(`Missing required field 'useCase' in ${filePath}`));
+    }
+    if (!parsed.frontmatter.summary) {
+      return yield* Effect.fail(new Error(`Missing required field 'summary' in ${filePath}`));
+    }
 
-  if (missingFields.length > 0) {
-    throw new Error(
-      `Missing required frontmatter fields in ${filePath}: ${missingFields.join(", ")}`
-    );
-  }
-
-  // Validate useCase is an array
-  if (!Array.isArray(data.useCase)) {
-    throw new Error(
-      `useCase must be an array in ${filePath}`
-    );
-  }
-
-  return data as FrontMatter;
-}
-
-async function validateSections(filePath: string): Promise<void> {
-  const content = await fs.readFile(filePath, "utf-8");
-  const { content: mdxContent } = matter(content);
-  const sections = mdxContent.split("\n## ");
-
-  // Check for required sections
-  const requiredSections = ["Good Example", "Anti-Pattern"];
-  const hasExplanation = sections.some(section =>
-    section.startsWith("Explanation") || section.startsWith("Rationale")
-  );
-
-  if (!hasExplanation) {
-    throw new Error(
-      `Missing required section in ${filePath}: Explanation or Rationale`
-    );
-  }
-
-  for (const section of requiredSections) {
-    if (!sections.some(s => s.startsWith(section))) {
-      throw new Error(
-        `Missing required section in ${filePath}: ${section}`
+    // Validate skillLevel
+    const validSkillLevels = ["Beginner", "Intermediate", "Advanced"];
+    const skillLevel = parsed.frontmatter.skillLevel as string;
+    if (!validSkillLevels.includes(skillLevel)) {
+      return yield* Effect.fail(
+        new Error(
+          `Invalid skillLevel '${skillLevel}' in ${filePath}. Must be one of: ${validSkillLevels.join(", ")}`
+        )
       );
     }
-  }
-}
+
+    // Validate useCase is an array
+    if (!Array.isArray(parsed.frontmatter.useCase)) {
+      return yield* Effect.fail(
+        new Error(
+          `useCase must be an array in ${filePath}`
+        )
+      );
+    }
+
+    // Cast to FrontMatter type
+    return parsed.frontmatter as unknown as FrontMatter;
+  });
+
+const validateSections = (filePath: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const mdxService = yield* MdxService;
+    
+    const content = yield* fs.readFileString(filePath);
+    const parsed = yield* mdxService.readMdxAndFrontmatter(filePath);
+    const sections = parsed.content.split("\n## ");
+
+    // Check for required sections
+    const requiredSections = ["Good Example", "Anti-Pattern"];
+    const hasExplanation = sections.some(section =>
+      section.startsWith("Explanation") || section.startsWith("Rationale")
+    );
+
+    if (!hasExplanation) {
+      return yield* Effect.fail(
+        new Error(
+          `Missing required section in ${filePath}: Explanation or Rationale`
+        )
+      );
+    }
+
+    for (const section of requiredSections) {
+      if (!sections.some(s => s.startsWith(section))) {
+        return yield* Effect.fail(
+          new Error(
+            `Missing required section in ${filePath}: ${section}`
+          )
+        );
+      }
+    }
+    
+    return yield* Effect.void;
+  });
 
 // --- EXTRACTION ---
 function extractGoodExampleTS(mdxContent: string): string | null {
@@ -96,30 +133,33 @@ function replaceGoodExampleWithExampleTag(mdxContent: string, id: string): strin
 }
 
 // --- MAIN EXECUTION ---
-async function main() {
-  try {
+const main = () =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const mdxService = yield* MdxService;
+    
     // Ensure directories exist
-    await fs.mkdir(NEW_RAW_DIR, { recursive: true });
-    await fs.mkdir(NEW_SRC_DIR, { recursive: true });
-    await fs.mkdir(NEW_PROCESSED_DIR, { recursive: true });
+    yield* fs.makeDirectory(NEW_RAW_DIR, { recursive: true });
+    yield* fs.makeDirectory(NEW_SRC_DIR, { recursive: true });
+    yield* fs.makeDirectory(NEW_PROCESSED_DIR, { recursive: true });
 
     // Check that src and processed are empty
-    const srcFiles = await fs.readdir(NEW_SRC_DIR);
+    const srcFiles = yield* fs.readDirectory(NEW_SRC_DIR);
     if (srcFiles.length > 0) {
-      throw new Error(`Directory not empty: ${NEW_SRC_DIR}`);
+      return yield* Effect.fail(new Error(`Directory not empty: ${NEW_SRC_DIR}`));
     }
-    const processedFiles = await fs.readdir(NEW_PROCESSED_DIR);
+    const processedFiles = yield* fs.readDirectory(NEW_PROCESSED_DIR);
     if (processedFiles.length > 0) {
-      throw new Error(`Directory not empty: ${NEW_PROCESSED_DIR}`);
+      return yield* Effect.fail(new Error(`Directory not empty: ${NEW_PROCESSED_DIR}`));
     }
 
     // Get list of new MDX files
-    const files = await fs.readdir(NEW_RAW_DIR);
+    const files = yield* fs.readDirectory(NEW_RAW_DIR);
     const mdxFiles = files.filter(file => file.endsWith(".mdx"));
 
     if (mdxFiles.length === 0) {
       console.log("No new patterns to process");
-      return;
+      return yield* Effect.void;
     }
 
     console.log(`Found ${mdxFiles.length} new pattern(s) to process`);
@@ -130,33 +170,44 @@ async function main() {
       console.log(`\nProcessing ${file}...`);
 
       // Validate frontmatter and sections
-      const frontmatter = await validateFrontMatter(filePath);
-      await validateSections(filePath);
+      const frontmatter = yield* validateFrontMatter(filePath);
+      yield* validateSections(filePath);
 
       // Extract Good Example TypeScript
-      const rawContent = await fs.readFile(filePath, "utf-8");
-      const { content: mdxContent } = matter(rawContent);
-      const tsCode = extractGoodExampleTS(mdxContent);
+      const rawContent = yield* fs.readFileString(filePath);
+      const parsed = yield* mdxService.readMdxAndFrontmatter(filePath);
+      const tsCode = extractGoodExampleTS(parsed.content);
       if (!tsCode) {
-        throw new Error(`No TypeScript code block found in Good Example section of ${file}`);
+        return yield* Effect.fail(new Error(`No TypeScript code block found in Good Example section of ${file}`));
       }
       // Write TypeScript file
       const tsTarget = path.join(NEW_SRC_DIR, `${frontmatter.id}.ts`);
-      await fs.writeFile(tsTarget, tsCode);
+      yield* fs.writeFileString(tsTarget, tsCode);
 
       // Replace Good Example code block with Example tag
       const processedMdx = replaceGoodExampleWithExampleTag(rawContent, frontmatter.id);
       const mdxTarget = path.join(NEW_PROCESSED_DIR, `${frontmatter.id}.mdx`);
-      await fs.writeFile(mdxTarget, processedMdx);
+      yield* fs.writeFileString(mdxTarget, processedMdx);
 
       console.log(`✅ Successfully processed ${frontmatter.title}`);
     }
 
     console.log("\n✨ All patterns processed successfully!");
-  } catch (error) {
+  });
+
+// Run if called directly
+if (require.main === module) {
+  const program = main();
+  
+  // Define layers
+  const allLayers = Layer.mergeAll(
+    NodeContext.layer, // Provides all Node.js platform implementations
+    Layer.provide(MdxService.Default, NodeContext.layer) // MDX service with its dependencies
+  );
+  
+  // Run the program
+  Effect.runPromise(Effect.provide(program, allLayers)).catch((error) => {
     console.error("❌ Error processing patterns:", error);
     process.exit(1);
-  }
+  });
 }
-
-main();

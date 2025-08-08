@@ -24,9 +24,11 @@
  * ```
  */
 
-import * as fs from "fs/promises";
 import * as path from "path";
-import matter from "gray-matter";
+import { Effect, Layer } from "effect";
+import { NodeContext } from "@effect/platform-node";
+import { FileSystem } from "@effect/platform";
+import { MdxService } from "../../cli/src/services/mdx-service/service.js";
 
 // --- CONFIGURATION ---
 const PUBLISHED_DIR = path.join(process.cwd(), "content/published");
@@ -48,52 +50,55 @@ interface Rule {
 const sanitizeName = (name: string) => 
   name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-async function extractRules(): Promise<Rule[]> {
-  const files = await fs.readdir(PUBLISHED_DIR);
-  const mdxFiles = files.filter(file => file.endsWith(".mdx"));
-  const rules: Rule[] = [];
+const extractRules = () =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const mdxService = yield* MdxService;
+    const files = yield* fs.readDirectory(PUBLISHED_DIR);
+    const mdxFiles = files.filter(file => file.endsWith(".mdx"));
+    const rules: Rule[] = [];
 
-  for (const file of mdxFiles) {
-    const filePath = path.join(PUBLISHED_DIR, file);
-    const fileContent = await fs.readFile(filePath, "utf-8");
-    const { data, content } = matter(fileContent);
+    for (const file of mdxFiles) {
+      const filePath = path.join(PUBLISHED_DIR, file);
+      const parsed = yield* mdxService.readMdxAndFrontmatter(filePath);
+      const { frontmatter: data, mdxBody: content } = parsed;
 
-    if (data.rule?.description) {
-      // Extract example from Good Example section
-      const contentLines = content.split('\n');
-      let inExampleSection = false;
-      const exampleLines: string[] = [];
+      if ((data as any).rule?.description) {
+        // Extract example from Good Example section
+        const contentLines = content.split('\n');
+        let inExampleSection = false;
+        const exampleLines: string[] = [];
 
-      for (const line of contentLines) {
-        if (line.startsWith('## Good Example')) {
-          inExampleSection = true;
-          continue;
-        }
-        if (inExampleSection) {
-          if (line.startsWith('## ')) {
-            break;
+        for (const line of contentLines) {
+          if (line.startsWith('## Good Example')) {
+            inExampleSection = true;
+            continue;
           }
-          exampleLines.push(line);
+          if (inExampleSection) {
+            if (line.startsWith('## ')) {
+              break;
+            }
+            exampleLines.push(line);
+          }
         }
+
+        rules.push({
+          id: (data as any).id,
+          title: (data as any).title,
+          description: (data as any).rule.description,
+          skillLevel: (data as any).skillLevel,
+          useCases: (data as any).useCase,
+          example: exampleLines.length > 0 ? exampleLines.join('\n').trim() : undefined,
+          content: content.trim()
+        });
       }
-
-      rules.push({
-        id: data.id,
-        title: data.title,
-        description: data.rule.description,
-        skillLevel: data.skillLevel,
-        useCases: data.useCase,
-        example: exampleLines.length > 0 ? exampleLines.join('\n').trim() : undefined,
-        content: content.trim()
-      });
     }
-  }
 
-  return rules.sort((a, b) => a.title.localeCompare(b.title));
-}
+    return rules.sort((a, b) => a.title.localeCompare(b.title));
+  });
 
 // --- GENERATION FUNCTIONS ---
-function generateFullRules(rules: Rule[]): string {
+export function generateFullRules(rules: Rule[]): string {
   let markdown = `# Effect Coding Rules for AI\n\n`;
   markdown += `This document lists key architectural and style rules for our Effect-TS codebase. Use these as guidelines when generating or refactoring code.\n\n`;
 
@@ -107,7 +112,7 @@ function generateFullRules(rules: Rule[]): string {
   return markdown;
 }
 
-function generateCompactRules(rules: Rule[]): string {
+export function generateCompactRules(rules: Rule[]): string {
   let markdown = `# Effect Coding Rules for AI (Compact)\n\n`;
   markdown += `This document lists key architectural and style rules for our Effect-TS codebase.\n\n`;
 
@@ -119,7 +124,7 @@ function generateCompactRules(rules: Rule[]): string {
   return markdown;
 }
 
-function generateJsonRules(rules: Rule[]): string {
+export function generateJsonRules(rules: Rule[]): string {
   return JSON.stringify(rules.map(r => ({
     id: r.id,
     title: r.title,
@@ -190,43 +195,59 @@ function generateUseCaseRules(rules: Rule[]): Map<string, string> {
 }
 
 // --- MAIN EXECUTION ---
-async function main() {
-  console.log("Starting rule generation...");
+const main = () =>
+  Effect.gen(function* () {
+    console.log("Starting rule generation...");
+    const fs = yield* FileSystem.FileSystem;
 
-  // Create output directories
-  await fs.mkdir(RULES_DIR, { recursive: true });
-  await fs.mkdir(USE_CASE_DIR, { recursive: true });
+    // Create output directories
+    yield* fs.makeDirectory(RULES_DIR, { recursive: true });
+    yield* fs.makeDirectory(USE_CASE_DIR, { recursive: true });
 
-  // Extract rules from MDX files
-  const rules = await extractRules();
+    // Extract rules from MDX files
+    const rules = yield* extractRules();
 
-  if (rules.length === 0) {
-    console.warn("No patterns with rules found. Output will be empty.");
-    return;
-  }
+    if (rules.length === 0) {
+      console.warn("No patterns with rules found. Output will be empty.");
+      return;
+    }
 
-  // Generate and write all rule files
-  await Promise.all([
-    // Main rules files
-    fs.writeFile(path.join(RULES_DIR, "rules.md"), generateFullRules(rules)),
-    fs.writeFile(path.join(RULES_DIR, "rules-compact.md"), generateCompactRules(rules)),
-    fs.writeFile(path.join(RULES_DIR, "rules.json"), generateJsonRules(rules)),
+    // Generate and write all rule files
+    const writeOperations = [
+      // Main rules files
+      fs.writeFileString(path.join(RULES_DIR, "rules.md"), generateFullRules(rules)),
+      fs.writeFileString(path.join(RULES_DIR, "rules-compact.md"), generateCompactRules(rules)),
+      fs.writeFileString(path.join(RULES_DIR, "rules.json"), generateJsonRules(rules)),
+    ];
 
     // Skill level rules
-    ...Array.from(generateSkillLevelRules(rules).entries()).map(([level, content]) =>
-      fs.writeFile(path.join(RULES_DIR, `${level}.md`), content)
-    ),
+    for (const [level, content] of generateSkillLevelRules(rules).entries()) {
+      writeOperations.push(fs.writeFileString(path.join(RULES_DIR, `${level}.md`), content));
+    }
 
     // Use case rules
-    ...Array.from(generateUseCaseRules(rules).entries()).map(([useCase, content]) =>
-      fs.writeFile(path.join(USE_CASE_DIR, `${useCase}.md`), content)
-    )
-  ]);
+    for (const [useCase, content] of generateUseCaseRules(rules).entries()) {
+      writeOperations.push(fs.writeFileString(path.join(USE_CASE_DIR, `${useCase}.md`), content));
+    }
 
-  console.log(`✅ ${rules.length} rules successfully generated in ${RULES_DIR}`);
+    yield* Effect.all(writeOperations);
+
+    console.log(`✅ ${rules.length} rules successfully generated in ${RULES_DIR}`);
+  });
+
+// Run if called directly
+if (require.main === module) {
+  const program = main();
+  
+  // Define layers
+  const allLayers = Layer.mergeAll(
+    NodeContext.layer, // Provides all Node.js platform implementations
+    Layer.provide(MdxService.Default, NodeContext.layer) // MDX service with its dependencies
+  );
+  
+  // Run the program
+  Effect.runPromise(Effect.provide(program, allLayers)).catch((error) => {
+    console.error("❌ Failed to generate rules:", error);
+    process.exit(1);
+  });
 }
-
-main().catch(error => {
-  console.error("❌ Failed to generate rules:", error);
-  process.exit(1);
-});

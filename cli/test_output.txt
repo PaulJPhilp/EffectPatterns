@@ -1,0 +1,725 @@
+bun test v1.2.20-canary.165 (3652008b)
+
+src/__tests__/final-working.test.ts:
+(pass) ApplyPromptToDirCommand - Working Tests > should access FileSystem and Path services correctly [22.51ms]
+(pass) ApplyPromptToDirCommand - Working Tests > should handle directory operations [2.93ms]
+
+src/__tests__/trace.test.ts:
+(pass) TraceCommand > CLI parsing > should parse command argument correctly
+(pass) TraceCommand > CLI parsing > should parse --provider option correctly
+(pass) TraceCommand > CLI parsing > should parse --model option correctly
+(pass) TraceCommand > CLI parsing > should parse --verbose option correctly [0.02ms]
+(pass) TraceCommand > should create trace command
+(pass) TraceCommand > should handle command option correctly [0.04ms]
+(pass) TraceCommand > should handle provider option correctly [0.01ms]
+(pass) TraceCommand > should handle model option correctly
+(pass) TraceCommand > should handle verbose option correctly
+(pass) TraceCommand > should execute trace command successfully [0.08ms]
+
+src/__tests__/correct-service-access-fix.test.ts:
+(pass) ApplyPromptToDirCommand - Fixed Service Access > should access FileSystem and Path services correctly [3.90ms]
+(pass) ApplyPromptToDirCommand - Fixed Service Access > should handle empty directories [2.57ms]
+
+src/__tests__/final-fixed-tests.test.ts:
+(pass) ApplyPromptToDir - Final Fixed Tests > should process files with platform services [3.71ms]
+(pass) ApplyPromptToDir - Final Fixed Tests > should handle empty directories [2.56ms]
+
+src/__tests__/type-safe-apply-prompt.test.ts:
+(pass) ApplyPromptToDirCommand - Type Safe Tests > should process files with platform services [2.49ms]
+(pass) ApplyPromptToDirCommand - Type Safe Tests > should handle empty directories [2.26ms]
+
+src/__tests__/auth.test.ts:
+(pass) auth command > should create auth command
+(pass) auth command > should have proper command structure [0.19ms]
+(pass) auth command > should handle auth subcommands correctly [0.10ms]
+(pass) auth command > should support provider argument [0.06ms]
+
+src/__tests__/apply-prompt-to-dir.test.ts:
+(pass) ApplyPromptToDirCommand > Command Structure > should have the command defined
+(pass) ApplyPromptToDirCommand > File Processing Functionality > should process markdown files correctly [2.59ms]
+(pass) ApplyPromptToDirCommand > File Processing Functionality > should handle empty directories gracefully [3.02ms]
+(pass) ApplyPromptToDirCommand > File Processing Functionality > should filter files by pattern [2.34ms]
+(pass) ApplyPromptToDirCommand > Error Handling > should handle missing input directory [2.19ms]
+
+src/__tests__/model.test.ts:
+(pass) ModelCommand > CLI parsing > should parse --provider option correctly
+(pass) ModelCommand > CLI parsing > should parse --all option correctly
+(pass) ModelCommand > CLI parsing > should parse --json option correctly
+(pass) ModelCommand > should create model command
+(pass) ModelCommand > should handle provider option correctly [0.06ms]
+(pass) ModelCommand > should handle all option correctly [0.01ms]
+(pass) ModelCommand > should handle json option correctly
+(pass) ModelCommand > should execute model command successfully [0.06ms]
+
+src/__tests__/index.test.ts:
+(pass) ConfigCommand > should create config command [0.01ms]
+(pass) ConfigCommand > should have proper command structure [0.11ms]
+(pass) ConfigCommand > should handle provider option correctly [0.05ms]
+(pass) ConfigCommand > should handle key option correctly [0.03ms]
+(pass) ConfigCommand > should handle delete option correctly [0.04ms]
+(pass) ConfigCommand > should handle clear option correctly [0.03ms]
+(pass) ConfigCommand > should execute config command successfully [0.06ms]
+(pass) ConfigCommand > should handle configuration display correctly [0.06ms]
+(pass) ConfigCommand > should handle configuration updates correctly [0.04ms]
+(pass) ConfigCommand > should handle configuration deletion correctly [0.04ms]
+(pass) ConfigCommand > should handle configuration clearing correctly [0.05ms]
+(pass) ConfigCommand > should handle error scenarios gracefully [0.04ms]
+(pass) DryRunCommand > CLI parsing > should parse --prompt option correctly
+(pass) DryRunCommand > CLI parsing > should parse --file option correctly
+(pass) DryRunCommand > CLI parsing > should parse --model option correctly
+(pass) DryRunCommand > CLI parsing > should parse --provider option correctly
+(pass) DryRunCommand > CLI parsing > should parse --tokens option correctly
+(pass) DryRunCommand > CLI parsing > should parse --cost option correctly
+(pass) DryRunCommand > should create dry-run command
+(pass) DryRunCommand > should handle prompt option correctly
+(pass) DryRunCommand > should handle file option correctly [0.02ms]
+(pass) DryRunCommand > should handle model option correctly [0.01ms]
+(pass) DryRunCommand > should handle provider option correctly
+(pass) DryRunCommand > should handle tokens option correctly [0.02ms]
+(pass) DryRunCommand > should handle cost option correctly [0.02ms]
+(pass) DryRunCommand > should execute dry-run command successfully [0.03ms]
+(pass) HealthCommand > should create health command
+(pass) HealthCommand > should have basic command structure [0.05ms]
+(pass) HealthCommand > should handle provider option correctly [0.03ms]
+(pass) HealthCommand > should handle all option correctly [0.03ms]
+(pass) HealthCommand > should handle json option correctly [0.04ms]
+(pass) HealthCommand > should execute health command successfully [0.03ms]
+(pass) HealthCommand > should check Anthropic health correctly [0.02ms]
+(pass) HealthCommand > should check Google health correctly [0.04ms]
+(pass) HealthCommand > should check OpenAI health correctly [0.04ms]
+(pass) ListCommand > CLI parsing > should parse --provider option correctly
+(pass) ListCommand > CLI parsing > should parse --all option correctly
+(pass) ListCommand > CLI parsing > should parse --json option correctly
+(pass) ListCommand > should create list command
+(pass) ListCommand > should handle provider option correctly
+(pass) ListCommand > should handle all option correctly [0.01ms]
+(pass) ListCommand > should handle json option correctly
+(pass) ListCommand > should execute list command successfully [0.03ms]
+(pass) ProcessPromptCommand > should create process-prompt command
+(pass) ProcessPromptCommand > should have proper command structure [0.03ms]
+(pass) ProcessPromptCommand > should handle prompt option correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle file option correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle model option correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle provider option correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle output option correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle force option correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle quiet option correctly [0.03ms]
+(pass) ProcessPromptCommand > should execute process-prompt command successfully [0.02ms]
+(pass) ProcessPromptCommand > should handle prompt processing correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle file processing correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle model selection correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle provider selection correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle output generation correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle error scenarios gracefully [0.03ms]
+(pass) ProcessPromptCommand > should handle output-format option correctly [0.03ms]
+(pass) ProcessPromptCommand > should handle schema-prompt option correctly [0.02ms]
+(pass) ProcessPromptCommand > should validate schema prompt requirement for JSON format [0.03ms]
+(pass) CLI Test Suite > should have all command modules available
+(pass) CLI Test Suite > should run all command tests successfully [0.02ms]
+
+src/__tests__/correct-service-access.test.ts:
+(pass) ApplyPromptToDirCommand > Functionality > should process files with actual file operations [2.24ms]
+(pass) ApplyPromptToDirCommand > Functionality > should handle empty directories gracefully [3.26ms]
+(pass) ApplyPromptToDirCommand > Functionality > should handle file pattern filtering correctly [2.16ms]
+
+src/__tests__/working-platform-services.test.ts:
+(pass) Platform Services - Working Tests > should access FileSystem and Path services via runtime [2.11ms]
+(pass) Platform Services - Working Tests > should handle directory operations with platform services [1.96ms]
+
+src/__tests__/working-apply-prompt.test.ts:
+(pass) ApplyPromptToDir - Working Tests > should process files with actual file operations [1.80ms]
+(pass) ApplyPromptToDir - Working Tests > should handle empty directories gracefully [1.50ms]
+
+src/__tests__/process-prompt.test.ts:
+
+src/__tests__/dry-run.test.ts:
+
+src/__tests__/config.test.ts:
+
+src/__tests__/list.test.ts:
+
+src/__tests__/health.test.ts:
+
+src/__tests__/final-fixed-apply-prompt.test.ts:
+(pass) ApplyPromptToDirCommand - Final Fixed Tests > should process files correctly with platform services [1.94ms]
+(pass) ApplyPromptToDirCommand - Final Fixed Tests > should handle empty directories [1.85ms]
+
+src/commands/apply-prompt-to-dir.test.ts:
+(pass) apply-prompt-to-dir command > should process .mdx template with parameters
+(pass) apply-prompt-to-dir command > should handle parameter validation errors [0.32ms]
+(pass) apply-prompt-to-dir command > should handle non-mdx files as raw content [0.01ms]
+
+src/commands/system-prompt.test.ts:
+(pass) system-prompt command > should set system prompt file path in config [3.40ms]
+(pass) system-prompt command > should clear system prompt file path from config [3.06ms]
+
+dist/__tests__/process-prompt.test.js:
+
+# Unhandled error between tests
+-------------------------------
+1 | (function (entry, fetcher)
+              ^
+SyntaxError: Export named 'effectPatternsProcessPrompt' not found in module '/Users/paul/Projects/Effect-Patterns/cli/dist/commands/process-prompt.js'.
+      at loadAndEvaluateModule (1:11)
+-------------------------------
+
+
+dist/__tests__/working-platform-services.test.js:
+(pass) Platform Services - Working Tests > should access FileSystem and Path services via runtime [7.28ms]
+(pass) Platform Services - Working Tests > should handle directory operations with platform services [1.14ms]
+
+dist/__tests__/working-apply-prompt.test.js:
+(pass) ApplyPromptToDir - Working Tests > should process files with actual file operations [3.22ms]
+(pass) ApplyPromptToDir - Working Tests > should handle empty directories gracefully [1.73ms]
+
+dist/__tests__/list.test.js:
+(pass) ListCommand > CLI parsing > should parse --provider option correctly
+(pass) ListCommand > CLI parsing > should parse --all option correctly
+(pass) ListCommand > CLI parsing > should parse --json option correctly
+(pass) ListCommand > should create list command
+(pass) ListCommand > should handle provider option correctly
+(pass) ListCommand > should handle all option correctly
+(pass) ListCommand > should handle json option correctly
+(pass) ListCommand > should execute list command successfully [0.19ms]
+
+dist/__tests__/health.test.js:
+(pass) HealthCommand > should create health command
+(pass) HealthCommand > should have basic command structure [0.04ms]
+(pass) HealthCommand > should handle provider option correctly [0.03ms]
+(pass) HealthCommand > should handle all option correctly
+(pass) HealthCommand > should handle json option correctly [0.04ms]
+(pass) HealthCommand > should execute health command successfully [0.01ms]
+(pass) HealthCommand > should check Anthropic health correctly [0.02ms]
+(pass) HealthCommand > should check Google health correctly [0.02ms]
+(pass) HealthCommand > should check OpenAI health correctly [0.01ms]
+
+dist/__tests__/final-fixed-apply-prompt.test.js:
+(pass) ApplyPromptToDirCommand - Final Fixed Tests > should process files correctly with platform services [2.23ms]
+(pass) ApplyPromptToDirCommand - Final Fixed Tests > should handle empty directories [1.33ms]
+
+dist/__tests__/dry-run.test.js:
+(pass) DryRunCommand > CLI parsing > should parse --prompt option correctly
+(pass) DryRunCommand > CLI parsing > should parse --file option correctly
+(pass) DryRunCommand > CLI parsing > should parse --model option correctly
+(pass) DryRunCommand > CLI parsing > should parse --provider option correctly
+(pass) DryRunCommand > CLI parsing > should parse --tokens option correctly
+(pass) DryRunCommand > CLI parsing > should parse --cost option correctly
+(pass) DryRunCommand > should create dry-run command
+(pass) DryRunCommand > should handle prompt option correctly
+(pass) DryRunCommand > should handle file option correctly
+(pass) DryRunCommand > should handle model option correctly
+(pass) DryRunCommand > should handle provider option correctly
+(pass) DryRunCommand > should handle tokens option correctly
+(pass) DryRunCommand > should handle cost option correctly
+(pass) DryRunCommand > should execute dry-run command successfully [0.05ms]
+
+dist/__tests__/config.test.js:
+(pass) ConfigCommand > should create config command
+(pass) ConfigCommand > should have proper command structure [0.03ms]
+(pass) ConfigCommand > should handle provider option correctly [0.02ms]
+(pass) ConfigCommand > should handle key option correctly
+(pass) ConfigCommand > should handle delete option correctly [0.01ms]
+(pass) ConfigCommand > should handle clear option correctly [0.01ms]
+(pass) ConfigCommand > should execute config command successfully [0.02ms]
+(pass) ConfigCommand > should handle configuration display correctly
+(pass) ConfigCommand > should handle configuration updates correctly [0.01ms]
+(pass) ConfigCommand > should handle configuration deletion correctly [0.01ms]
+(pass) ConfigCommand > should handle configuration clearing correctly [0.01ms]
+(pass) ConfigCommand > should handle error scenarios gracefully [0.01ms]
+
+dist/__tests__/final-fixed-tests.test.js:
+(pass) ApplyPromptToDir - Final Fixed Tests > should process files with platform services [1.66ms]
+(pass) ApplyPromptToDir - Final Fixed Tests > should handle empty directories [1.11ms]
+
+dist/__tests__/correct-service-access-fix.test.js:
+(pass) ApplyPromptToDirCommand - Fixed Service Access > should access FileSystem and Path services correctly [2.19ms]
+(pass) ApplyPromptToDirCommand - Fixed Service Access > should handle empty directories [2.74ms]
+
+dist/__tests__/model.test.js:
+(pass) ModelCommand > CLI parsing > should parse --provider option correctly
+(pass) ModelCommand > CLI parsing > should parse --all option correctly
+(pass) ModelCommand > CLI parsing > should parse --json option correctly
+(pass) ModelCommand > should create model command
+(pass) ModelCommand > should handle provider option correctly
+(pass) ModelCommand > should handle all option correctly
+(pass) ModelCommand > should handle json option correctly
+(pass) ModelCommand > should execute model command successfully [0.02ms]
+
+dist/__tests__/apply-prompt-to-dir.test.js:
+(pass) ApplyPromptToDirCommand > Command Structure > should have the command defined
+(pass) ApplyPromptToDirCommand > File Processing Functionality > should process markdown files correctly [2.18ms]
+(pass) ApplyPromptToDirCommand > File Processing Functionality > should handle empty directories gracefully [1.31ms]
+(pass) ApplyPromptToDirCommand > File Processing Functionality > should filter files by pattern [1.31ms]
+(pass) ApplyPromptToDirCommand > Error Handling > should handle missing input directory [1.20ms]
+
+dist/__tests__/auth.test.js:
+(pass) AuthCommand > should create auth command
+(pass) AuthCommand > should have proper command structure [0.07ms]
+(pass) AuthCommand > should handle provider option correctly [0.12ms]
+(pass) AuthCommand > should handle key option correctly [0.04ms]
+(pass) AuthCommand > should handle delete option correctly [0.12ms]
+(pass) AuthCommand > should handle clear option correctly [0.05ms]
+(pass) AuthCommand > should execute auth command successfully [0.08ms]
+(pass) AuthCommand > should handle provider authentication correctly [0.08ms]
+(pass) AuthCommand > should handle configuration updates correctly [0.03ms]
+(pass) AuthCommand > should handle error scenarios gracefully [0.05ms]
+
+dist/__tests__/type-safe-apply-prompt.test.js:
+(pass) ApplyPromptToDirCommand - Type Safe Tests > should process files with platform services [1.56ms]
+(pass) ApplyPromptToDirCommand - Type Safe Tests > should handle empty directories [2.70ms]
+
+dist/__tests__/index.test.js:
+
+# Unhandled error between tests
+-------------------------------
+1 | (function (entry, fetcher)
+              ^
+SyntaxError: Export named 'effectPatternsProcessPrompt' not found in module '/Users/paul/Projects/Effect-Patterns/cli/dist/commands/process-prompt.js'.
+      at loadAndEvaluateModule (1:11)
+-------------------------------
+
+
+dist/__tests__/final-working.test.js:
+(pass) ApplyPromptToDirCommand - Working Tests > should access FileSystem and Path services correctly [1.84ms]
+(pass) ApplyPromptToDirCommand - Working Tests > should handle directory operations [1.05ms]
+
+dist/__tests__/trace.test.js:
+(pass) TraceCommand > CLI parsing > should parse command argument correctly
+(pass) TraceCommand > CLI parsing > should parse --provider option correctly
+(pass) TraceCommand > CLI parsing > should parse --model option correctly
+(pass) TraceCommand > CLI parsing > should parse --verbose option correctly
+(pass) TraceCommand > should create trace command
+(pass) TraceCommand > should handle command option correctly
+(pass) TraceCommand > should handle provider option correctly
+(pass) TraceCommand > should handle model option correctly
+(pass) TraceCommand > should handle verbose option correctly
+(pass) TraceCommand > should execute trace command successfully [0.06ms]
+
+dist/__tests__/correct-service-access.test.js:
+(pass) ApplyPromptToDirCommand > Functionality > should process files with actual file operations [2.35ms]
+(pass) ApplyPromptToDirCommand > Functionality > should handle empty directories gracefully [1.09ms]
+(pass) ApplyPromptToDirCommand > Functionality > should handle file pattern filtering correctly [1.33ms]
+
+dist/commands/system-prompt.test.js:
+(pass) system-prompt command > should set system prompt file path in config [3.53ms]
+(pass) system-prompt command > should clear system prompt file path from config [1.54ms]
+
+dist/commands/apply-prompt-to-dir.test.js:
+(pass) apply-prompt-to-dir command > should process .mdx template with parameters
+(pass) apply-prompt-to-dir command > should handle parameter validation errors [0.16ms]
+(pass) apply-prompt-to-dir command > should handle non-mdx files as raw content
+
+src/__tests__/integration/cross-command.test.ts:
+(pass) Cross-Command CLI Integration > Complete CLI Workflow > should execute auth → config → process-prompt → health flow [3.93ms]
+(pass) Cross-Command CLI Integration > Complete CLI Workflow > should handle configuration updates across commands [2.50ms]
+(pass) Cross-Command CLI Integration > Complete CLI Workflow > should handle error recovery and rollback scenarios [1.25ms]
+(pass) Cross-Command CLI Integration > Complete CLI Workflow > should validate configuration integrity across commands [1.51ms]
+
+src/__tests__/integration/cli-flows.test.ts:
+(pass) CLI Integration Tests > End-to-End CLI Flows > should complete auth → config → process-prompt flow [1.26ms]
+(pass) CLI Integration Tests > End-to-End CLI Flows > should handle file processing with real I/O operations [1.01ms]
+(pass) CLI Integration Tests > End-to-End CLI Flows > should handle configuration file operations [1.88ms]
+(pass) CLI Integration Tests > End-to-End CLI Flows > should handle multiple file formats and encodings [1.66ms]
+(pass) CLI Integration Tests > End-to-End CLI Flows > should handle directory operations and file discovery [1.89ms]
+(pass) CLI Integration Tests > Cross-Command Integration > should maintain state across command executions [1.11ms]
+
+src/__tests__/integration/apply-prompt-integration.test.ts:
+(pass) ApplyPromptToDir Integration Tests > Real File Processing > should process actual directory with markdown files [3.75ms]
+(pass) ApplyPromptToDir Integration Tests > Real File Processing > should handle file pattern filtering with real glob operations [2.65ms]
+(pass) ApplyPromptToDir Integration Tests > Real File Processing > should handle nested directory structures [1.88ms]
+(pass) ApplyPromptToDir Integration Tests > Real File Processing > should handle large file processing gracefully [1.33ms]
+(pass) ApplyPromptToDir Integration Tests > Real File Processing > should handle error scenarios with real file system errors [0.87ms]
+(pass) ApplyPromptToDir Integration Tests > should fail gracefully when input directory is missing (CLI command)
+
+dist/__tests__/integration/apply-prompt-integration.test.js:
+(pass) ApplyPromptToDir Integration Tests > Real File Processing > should process actual directory with markdown files [1.70ms]
+(pass) ApplyPromptToDir Integration Tests > Real File Processing > should handle file pattern filtering with real glob operations [1.60ms]
+(pass) ApplyPromptToDir Integration Tests > Real File Processing > should handle nested directory structures [2.62ms]
+(pass) ApplyPromptToDir Integration Tests > Real File Processing > should handle large file processing gracefully [1.22ms]
+(pass) ApplyPromptToDir Integration Tests > Real File Processing > should handle error scenarios with real file system errors [2.62ms]
+(pass) ApplyPromptToDir Integration Tests > should fail gracefully when input directory is missing (CLI command) [0.05ms]
+
+dist/__tests__/integration/cross-command.test.js:
+(pass) Cross-Command CLI Integration > Complete CLI Workflow > should execute auth → config → process-prompt → health flow [1.95ms]
+(pass) Cross-Command CLI Integration > Complete CLI Workflow > should handle configuration updates across commands [1.13ms]
+(pass) Cross-Command CLI Integration > Complete CLI Workflow > should handle error recovery and rollback scenarios [0.85ms]
+(pass) Cross-Command CLI Integration > Complete CLI Workflow > should validate configuration integrity across commands [0.82ms]
+
+dist/__tests__/integration/cli-flows.test.js:
+(pass) CLI Integration Tests > End-to-End CLI Flows > should complete auth → config → process-prompt flow [1.07ms]
+(pass) CLI Integration Tests > End-to-End CLI Flows > should handle file processing with real I/O operations [0.81ms]
+(pass) CLI Integration Tests > End-to-End CLI Flows > should handle configuration file operations [0.78ms]
+(pass) CLI Integration Tests > End-to-End CLI Flows > should handle multiple file formats and encodings [1.09ms]
+(pass) CLI Integration Tests > End-to-End CLI Flows > should handle directory operations and file discovery [1.34ms]
+(pass) CLI Integration Tests > Cross-Command Integration > should maintain state across command executions [1.30ms]
+
+dist/services/prompt-template/service.test.js:
+(pass) TemplateService > validateParameters > should validate required parameters [0.86ms]
+(pass) TemplateService > validateParameters > should validate parameter types [0.04ms]
+(pass) TemplateService > renderTemplate > should render template with parameters [0.04ms]
+(pass) TemplateService > renderTemplate > should use default values when parameters are missing [0.01ms]
+
+src/services/config-service/__tests__/service.test.ts:
+(pass) ConfigService > Configuration Management > should handle basic get/set operations
+(pass) ConfigService > Configuration Management > should handle non-existent keys
+(pass) ConfigService > Configuration Management > should handle config listing
+(pass) ConfigService > Configuration Management > should handle config removal [0.03ms]
+(pass) ConfigService > System Prompt File Management > should handle system prompt file operations
+(pass) ConfigService > System Prompt File Management > should handle missing system prompt file
+(pass) ConfigService > File System Operations > should handle config file creation
+(pass) ConfigService > File System Operations > should handle JSON parsing and serialization [0.02ms]
+(pass) ConfigService > File System Operations > should handle file system errors gracefully
+(pass) ConfigService > Configuration Persistence > should persist configuration across operations
+(pass) ConfigService > Configuration Persistence > should handle configuration overwrites
+(pass) ConfigService > Error Handling > should handle configuration errors appropriately
+(pass) ConfigService > Error Handling > should handle edge cases
+(pass) ConfigService > Service Integration > should integrate properly with Effect system
+(pass) ConfigService > Service Integration > should work with managed runtime [0.03ms]
+(pass) ConfigService > should create ConfigService
+(pass) ConfigService > should have proper service structure
+
+src/services/llm-service/__tests__/output-writer.test.ts:
+(pass) Stage 6: Output File Redirection > should handle file writing successfully [3.16ms]
+(pass) Stage 6: Output File Redirection > should handle file writing errors gracefully [1.39ms]
+(pass) Stage 6: Output File Redirection > should handle optional output parameter correctly [0.03ms]
+(pass) Stage 6: Output File Redirection > should properly format file content [0.05ms]
+(pass) Stage 6: Output File Redirection > should handle different file extensions [0.06ms]
+
+src/services/llm-service/__tests__/error-handling.test.ts:
+(pass) LLM Service Errors > should create a RateLimitError with the correct tag
+(pass) LLM Service Errors > should create a QuotaExceededError with the correct tag [0.02ms]
+(pass) LLM Service Errors > should parse generic AI error descriptions correctly
+(pass) LLM Service Errors > should handle unexpected errors gracefully
+(pass) LLM Service Errors > should provide user-friendly error messages [0.02ms]
+
+src/services/llm-service/__tests__/service.test.ts:
+(pass) LLM Service - Comprehensive Testing Suite > Basic Function Existence > generateText should be defined [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Basic Function Existence > generateObject should be defined
+(pass) LLM Service - Comprehensive Testing Suite > Basic Function Existence > streamText should be defined
+(pass) LLM Service - Comprehensive Testing Suite > Basic Function Existence > processPromptFromText should be defined
+(pass) LLM Service - Comprehensive Testing Suite > Basic Function Existence > processPromptFromMdx should be defined
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-flash Tests > generateText with google gemini-2.5-flash should return valid Effect [0.37ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-flash Tests > generateObject with google gemini-2.5-flash should return valid Effect [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-flash Tests > streamText with google gemini-2.5-flash should return valid Stream [0.36ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-flash Tests > processPromptFromText should work with google gemini-2.5-flash defaults [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-flash Tests > processPromptFromMdx should work with google gemini-2.5-flash defaults [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-pro Tests > generateText with google gemini-2.5-pro should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-pro Tests > generateObject with google gemini-2.5-pro should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-pro Tests > streamText with google gemini-2.5-pro should return valid Stream [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-pro Tests > processPromptFromText should work with google gemini-2.5-pro defaults
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-pro Tests > processPromptFromMdx should work with google gemini-2.5-pro defaults
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o-mini Tests > generateText with openai gpt-4o-mini should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o-mini Tests > generateObject with openai gpt-4o-mini should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o-mini Tests > streamText with openai gpt-4o-mini should return valid Stream [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o-mini Tests > processPromptFromText should work with openai gpt-4o-mini defaults
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o-mini Tests > processPromptFromMdx should work with openai gpt-4o-mini defaults
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o Tests > generateText with openai gpt-4o should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o Tests > generateObject with openai gpt-4o should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o Tests > streamText with openai gpt-4o should return valid Stream [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o Tests > processPromptFromText should work with openai gpt-4o defaults
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o Tests > processPromptFromMdx should work with openai gpt-4o defaults
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-haiku Tests > generateText with anthropic claude-3-5-haiku should return valid Effect [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-haiku Tests > generateObject with anthropic claude-3-5-haiku should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-haiku Tests > streamText with anthropic claude-3-5-haiku should return valid Stream [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-haiku Tests > processPromptFromText should work with anthropic claude-3-5-haiku defaults
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-haiku Tests > processPromptFromMdx should work with anthropic claude-3-5-haiku defaults
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-sonnet Tests > generateText with anthropic claude-3-5-sonnet should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-sonnet Tests > generateObject with anthropic claude-3-5-sonnet should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-sonnet Tests > streamText with anthropic claude-3-5-sonnet should return valid Stream
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-sonnet Tests > processPromptFromText should work with anthropic claude-3-5-sonnet defaults
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-sonnet Tests > processPromptFromMdx should work with anthropic claude-3-5-sonnet defaults
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > all providers should have valid model mappings [0.04ms]
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > generateText should work with all provider-model combinations [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > generateObject should work with all provider-model combinations [0.04ms]
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > streamText should work with all provider-model combinations [0.08ms]
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > processPromptFromText should be provider-agnostic [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > processPromptFromMdx should be provider-agnostic [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Provider Tests > generateText with invalid provider should return Effect with error [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Provider Tests > generateObject with invalid provider should return Effect with error [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Provider Tests > streamText with invalid provider should return Stream with error [0.05ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Model Tests > generateText with invalid model should return Effect with error
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Model Tests > generateObject with invalid model should return Effect with error [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Model Tests > streamText with invalid model should return Stream with error [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Schema Tests > generateObject with invalid schema should return Effect with error
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Empty Input Tests > generateText with empty prompt should return Effect with error
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Empty Input Tests > generateObject with empty prompt should return Effect with error
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Empty Input Tests > streamText with empty prompt should return Stream with error [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Empty Input Tests > processPromptFromText with empty prompt should return Effect with error [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > File Handling Error Tests > processPromptFromMdx with non-existent file should return Effect with error [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > File Handling Error Tests > processPromptFromMdx with invalid file extension should return Effect with error [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Configuration Error Tests > processPromptFromText should handle missing API key gracefully
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Configuration Error Tests > processPromptFromMdx should handle missing API key gracefully [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Rate Limiting Error Tests > generateText should handle rate limit errors gracefully [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Rate Limiting Error Tests > generateObject should handle rate limit errors gracefully [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Rate Limiting Error Tests > streamText should handle rate limit errors gracefully [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Network Error Tests > generateText should handle network errors gracefully [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Network Error Tests > generateObject should handle network errors gracefully [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Network Error Tests > streamText should handle network errors gracefully [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Validation Edge Cases > generateObject with complex nested schema should work [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Validation Edge Cases > generateObject with array schema should work [0.07ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Prompt Length Edge Cases > generateText with very short prompt should work [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Prompt Length Edge Cases > generateText with very long prompt should work [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Prompt Length Edge Cases > generateText with unicode characters should work [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Provider-Specific Model Validation > Google specific model validation [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Provider-Specific Model Validation > OpenAI specific model validation [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Provider-Specific Model Validation > Anthropic specific model validation
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Streaming Edge Cases > streamText should handle: Generate a single word... [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Streaming Edge Cases > streamText should handle: Generate a very long response ... [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Streaming Edge Cases > streamText should handle: Generate code with special cha...
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with string schema should work [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with number schema should work [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with boolean schema should work [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with literal schema should work [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with union schema should work [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with optional schema should work [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Cross-Provider Consistency > All providers should handle: Write a haiku about programmin... [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Cross-Provider Consistency > All providers should handle: Explain quantum computing simp...
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Cross-Provider Consistency > All providers should handle: Generate a JSON response...
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Performance and Timeout Tests > generateText should handle timeout scenarios gracefully
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Performance and Timeout Tests > generateObject should handle large schema gracefully [0.06ms]
+
+src/services/otel-service/__tests__/otel-service.test.ts:
+[OTEL] Initializing OpenTelemetry for test-service at http://localhost:4317
+[OTEL] Shutting down OpenTelemetry
+(pass) OtelService > should initialize OTel SDK [1.17ms]
+(pass) OtelService > should handle error recording [0.29ms]
+
+src/services/run-management/__tests__/service.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+1 | (function (entry, fetcher)
+              ^
+SyntaxError: Export named 'RunManagementApi' not found in module '/Users/paul/Projects/Effect-Patterns/cli/src/services/run-management/api.ts'.
+      at loadAndEvaluateModule (1:11)
+-------------------------------
+
+
+src/services/run-management/__tests__/integration.test.ts:
+(pass) RunManagement Integration > should complete full run lifecycle
+(pass) RunManagement Integration > should handle concurrent run creation [0.03ms]
+
+src/services/run-service/__tests__/service.test.ts:
+(pass) RunService > Run Directory Management > should create run directory successfully [0.02ms]
+(pass) RunService > Run Directory Management > should create run directory without prefix [0.01ms]
+(pass) RunService > Run Directory Management > should increment sequential numbers
+(pass) RunService > Current Run State Management > should track current run after creation
+(pass) RunService > Current Run State Management > should provide run path when run is active
+(pass) RunService > Current Run State Management > should provide file path within run directory
+(pass) RunService > Error Handling > should fail when getting run path with no active run [0.01ms]
+(pass) RunService > Error Handling > should fail when getting file path with no active run
+(pass) RunService > should create RunService [0.07ms]
+
+src/services/metrics-service/__tests__/metrics-service.test.ts:
+[METRICS] Started command: test-command
+Metrics result: {
+  command: "test-command",
+  startTime: "2025-08-06T20:52:18.040Z",
+  success: true,
+  environment: {
+    nodeVersion: "v24.3.0",
+    platform: "darwin",
+    cwd: "/Users/paul/Projects/Effect-Patterns/cli",
+  },
+  endTime: "2025-08-06T20:52:18.041Z",
+  duration: 1,
+}
+(pass) MetricsService > should track command lifecycle [2.46ms]
+[METRICS] Started command: test-command
+(pass) MetricsService > should record LLM usage [3.98ms]
+[METRICS] Started command: test-command
+(pass) MetricsService > should record errors [4.97ms]
+[METRICS] Started command: test-command
+=== METRICS REPORT ===
+Total Commands: 1
+Successful: 1
+Failed: 0
+Total Tokens: 0
+Total Cost: $0.00000
+Average Duration: 0ms
+
+Provider Statistics:
+
+Model Statistics:
+(pass) MetricsService > should handle console reporting [2.87ms]
+(pass) MetricsService > should handle cost estimation correctly [0.39ms]
+(pass) MetricsService > should handle token counting correctly [0.11ms]
+
+src/services/prompt-template/__tests__/service.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find module './service.js' from '/Users/paul/Projects/Effect-Patterns/cli/src/services/prompt-template/__tests__/service.test.ts'
+-------------------------------
+
+
+src/services/output-handler/__tests__/service.test.ts:
+Hello, World!
+(pass) OutputHandlerService > should output text to console [1.23ms]
+{
+  "message": "Hello, World!",
+  "count": 42
+}
+(pass) OutputHandlerService > should output JSON to console [0.77ms]
+(pass) OutputHandlerService > should not output when quiet mode is enabled [0.52ms]
+
+dist/services/llm-service/__tests__/output-writer.test.js:
+(pass) Stage 6: Output File Redirection > should handle file writing successfully [2.81ms]
+(pass) Stage 6: Output File Redirection > should handle file writing errors gracefully [1.05ms]
+(pass) Stage 6: Output File Redirection > should handle optional output parameter correctly
+(pass) Stage 6: Output File Redirection > should properly format file content [0.02ms]
+(pass) Stage 6: Output File Redirection > should handle different file extensions
+
+dist/services/llm-service/__tests__/error-handling.test.js:
+(pass) LLM Service Errors > should create a RateLimitError with the correct tag
+(pass) LLM Service Errors > should create a QuotaExceededError with the correct tag
+(pass) LLM Service Errors > should parse generic AI error descriptions correctly [0.02ms]
+(pass) LLM Service Errors > should handle unexpected errors gracefully
+(pass) LLM Service Errors > should provide user-friendly error messages
+
+dist/services/llm-service/__tests__/service.test.js:
+(pass) LLM Service - Comprehensive Testing Suite > Basic Function Existence > generateText should be defined [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Basic Function Existence > generateObject should be defined
+(pass) LLM Service - Comprehensive Testing Suite > Basic Function Existence > streamText should be defined
+(pass) LLM Service - Comprehensive Testing Suite > Basic Function Existence > processPromptFromText should be defined [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Basic Function Existence > processPromptFromMdx should be defined
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-flash Tests > generateText with google gemini-2.5-flash should return valid Effect [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-flash Tests > generateObject with google gemini-2.5-flash should return valid Effect [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-flash Tests > streamText with google gemini-2.5-flash should return valid Stream [0.08ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-flash Tests > processPromptFromText should work with google gemini-2.5-flash defaults [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-flash Tests > processPromptFromMdx should work with google gemini-2.5-flash defaults [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-pro Tests > generateText with google gemini-2.5-pro should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-pro Tests > generateObject with google gemini-2.5-pro should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-pro Tests > streamText with google gemini-2.5-pro should return valid Stream [0.18ms]
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-pro Tests > processPromptFromText should work with google gemini-2.5-pro defaults
+(pass) LLM Service - Comprehensive Testing Suite > google Provider Tests > google - gemini-2.5-pro Tests > processPromptFromMdx should work with google gemini-2.5-pro defaults
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o-mini Tests > generateText with openai gpt-4o-mini should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o-mini Tests > generateObject with openai gpt-4o-mini should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o-mini Tests > streamText with openai gpt-4o-mini should return valid Stream [0.05ms]
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o-mini Tests > processPromptFromText should work with openai gpt-4o-mini defaults
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o-mini Tests > processPromptFromMdx should work with openai gpt-4o-mini defaults
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o Tests > generateText with openai gpt-4o should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o Tests > generateObject with openai gpt-4o should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o Tests > streamText with openai gpt-4o should return valid Stream [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o Tests > processPromptFromText should work with openai gpt-4o defaults
+(pass) LLM Service - Comprehensive Testing Suite > openai Provider Tests > openai - gpt-4o Tests > processPromptFromMdx should work with openai gpt-4o defaults
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-haiku Tests > generateText with anthropic claude-3-5-haiku should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-haiku Tests > generateObject with anthropic claude-3-5-haiku should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-haiku Tests > streamText with anthropic claude-3-5-haiku should return valid Stream [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-haiku Tests > processPromptFromText should work with anthropic claude-3-5-haiku defaults
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-haiku Tests > processPromptFromMdx should work with anthropic claude-3-5-haiku defaults
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-sonnet Tests > generateText with anthropic claude-3-5-sonnet should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-sonnet Tests > generateObject with anthropic claude-3-5-sonnet should return valid Effect
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-sonnet Tests > streamText with anthropic claude-3-5-sonnet should return valid Stream
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-sonnet Tests > processPromptFromText should work with anthropic claude-3-5-sonnet defaults
+(pass) LLM Service - Comprehensive Testing Suite > anthropic Provider Tests > anthropic - claude-3-5-sonnet Tests > processPromptFromMdx should work with anthropic claude-3-5-sonnet defaults
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > all providers should have valid model mappings [0.04ms]
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > generateText should work with all provider-model combinations [0.04ms]
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > generateObject should work with all provider-model combinations [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > streamText should work with all provider-model combinations [0.08ms]
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > processPromptFromText should be provider-agnostic
+(pass) LLM Service - Comprehensive Testing Suite > Cross-Provider & Model Validation > processPromptFromMdx should be provider-agnostic
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Provider Tests > generateText with invalid provider should return Effect with error [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Provider Tests > generateObject with invalid provider should return Effect with error [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Provider Tests > streamText with invalid provider should return Stream with error [0.05ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Model Tests > generateText with invalid model should return Effect with error
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Model Tests > generateObject with invalid model should return Effect with error [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Model Tests > streamText with invalid model should return Stream with error [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Invalid Schema Tests > generateObject with invalid schema should return Effect with error [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Empty Input Tests > generateText with empty prompt should return Effect with error [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Empty Input Tests > generateObject with empty prompt should return Effect with error [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Empty Input Tests > streamText with empty prompt should return Stream with error [0.04ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Empty Input Tests > processPromptFromText with empty prompt should return Effect with error
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > File Handling Error Tests > processPromptFromMdx with non-existent file should return Effect with error [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > File Handling Error Tests > processPromptFromMdx with invalid file extension should return Effect with error [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Configuration Error Tests > processPromptFromText should handle missing API key gracefully
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Configuration Error Tests > processPromptFromMdx should handle missing API key gracefully
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Rate Limiting Error Tests > generateText should handle rate limit errors gracefully [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Rate Limiting Error Tests > generateObject should handle rate limit errors gracefully [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Rate Limiting Error Tests > streamText should handle rate limit errors gracefully [0.05ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Network Error Tests > generateText should handle network errors gracefully [0.08ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Network Error Tests > generateObject should handle network errors gracefully [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Error Handling Tests > Network Error Tests > streamText should handle network errors gracefully [0.24ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Validation Edge Cases > generateObject with complex nested schema should work [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Validation Edge Cases > generateObject with array schema should work [0.16ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Prompt Length Edge Cases > generateText with very short prompt should work [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Prompt Length Edge Cases > generateText with very long prompt should work [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Prompt Length Edge Cases > generateText with unicode characters should work [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Provider-Specific Model Validation > Google specific model validation
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Provider-Specific Model Validation > OpenAI specific model validation
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Provider-Specific Model Validation > Anthropic specific model validation [0.01ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Streaming Edge Cases > streamText should handle: Generate a single word... [0.05ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Streaming Edge Cases > streamText should handle: Generate a very long response ...
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Streaming Edge Cases > streamText should handle: Generate code with special cha...
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with string schema should work [0.03ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with number schema should work [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with boolean schema should work [0.11ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with literal schema should work [0.04ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with union schema should work [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Schema Type Coverage > generateObject with optional schema should work [0.02ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Cross-Provider Consistency > All providers should handle: Write a haiku about programmin... [0.04ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Cross-Provider Consistency > All providers should handle: Explain quantum computing simp...
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Cross-Provider Consistency > All providers should handle: Generate a JSON response...
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Performance and Timeout Tests > generateText should handle timeout scenarios gracefully [0.06ms]
+(pass) LLM Service - Comprehensive Testing Suite > Final Priority Tests > Performance and Timeout Tests > generateObject should handle large schema gracefully [0.13ms]
+
+dist/services/otel-service/__tests__/otel-service.test.js:
+[OTEL] Initializing OpenTelemetry for test-service at http://localhost:4317
+[OTEL] Shutting down OpenTelemetry
+(pass) OtelService > should initialize OTel SDK [0.87ms]
+(pass) OtelService > should handle error recording [0.14ms]
+
+dist/services/run-management/__tests__/integration.test.js:
+(pass) RunManagement Integration > should complete full run lifecycle
+(pass) RunManagement Integration > should handle concurrent run creation [0.02ms]
+
+dist/services/run-management/__tests__/service.test.js:
+(pass) RunManagement Service > should create a run with sequential numbering
+(pass) RunManagement Service > should create a run with custom prefix [0.06ms]
+(pass) RunManagement Service > should list runs in descending order
+(pass) RunManagement Service > should create run directory structure
+(pass) RunManagement Service > should persist run info [0.02ms]
+(pass) RunManagement Service > should handle state persistence across runs
+
+dist/services/metrics-service/__tests__/metrics-service.test.js:
+[METRICS] Started command: test-command
+Metrics result: {
+  command: "test-command",
+  startTime: "2025-08-06T20:52:18.092Z",
+  success: true,
+  environment: {
+    nodeVersion: "v24.3.0",
+    platform: "darwin",
+    cwd: "/Users/paul/Projects/Effect-Patterns/cli",
+  },
+  endTime: "2025-08-06T20:52:18.093Z",
+  duration: 1,
+}
+(pass) MetricsService > should track command lifecycle [2.52ms]
+[METRICS] Started command: test-command
+(pass) MetricsService > should record LLM usage [1.77ms]
+[METRICS] Started command: test-command
+(pass) MetricsService > should record errors [2.41ms]
+[METRICS] Started command: test-command
+=== METRICS REPORT ===
+Total Commands: 1
+Successful: 1
+Failed: 0
+Total Tokens: 0
+Total Cost: $0.00000
+Average Duration: 1ms
+
+Provider Statistics:
+
+Model Statistics:
+(pass) MetricsService > should handle console reporting [2.30ms]
+(pass) MetricsService > should handle cost estimation correctly
+(pass) MetricsService > should handle token counting correctly
+
+4 tests failed:
+
+ 490 pass
+ 4 fail
+ 4 errors
+ 910 expect() calls
+Ran 494 tests across 65 files. [984.00ms]

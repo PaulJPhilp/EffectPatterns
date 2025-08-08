@@ -1,71 +1,77 @@
 // File reading and MDX processing utilities
 import { FileSystem } from "@effect/platform";
 import { Effect, Redacted } from "effect";
-import matter from "gray-matter";
+import { MdxService } from "../mdx-service/service.js";
 import { CONFIG_KEYS } from "../../config/constants.js";
-import { FileReadError, InvalidFrontmatterError, InvalidMdxFormatError } from "./errors.js";
+import { FileReadError } from "./errors.js";
 import type { Models, Providers } from "./types.js";
 
-
-export interface MdxPromptConfig {
-	provider: string;
-	model: string;
-	parameters?: Record<string, unknown>;
+interface MdxPromptConfig {
+  provider: string;
+  model: string;
+  parameters?: Record<string, unknown>;
 }
 
-export interface ParsedMdxFile {
-	attributes: { provider: string; model: string; parameters?: Record<string, unknown> };
-	body: string;
+interface ParsedMdxFile {
+  attributes: { provider: string; model: string; parameters?: Record<string, unknown> };
+  provider: string;
+  model: string;
+  parameters?: Record<string, unknown>;
+  body: string;
+}
+
+// Custom error types
+export class InvalidMdxFormatError extends Error {
+  readonly _tag = "InvalidMdxFormatError";
+  constructor(public readonly reason: string) {
+    super(`Invalid MDX format: ${reason}`);
+  }
+}
+
+export class InvalidFrontmatterError extends Error {
+  readonly _tag = "InvalidFrontmatterError";
+  constructor(public readonly reason: string) {
+    super(`Invalid frontmatter: ${reason}`);
+  }
 }
 
 // Read file content safely
 export const readFileContent = (filePath: string) =>
-	Effect.gen(function* () {
-		const fs = yield* FileSystem.FileSystem;
-		const content = yield* fs.readFileString(filePath);
-		return content;
-	}).pipe(
-		Effect.catchAll((error) => Effect.fail(new FileReadError({ filePath, reason: error instanceof Error ? error.message : String(error) }))
-		))
+  FileSystem.FileSystem.pipe(
+    Effect.flatMap((fs) => fs.readFileString(filePath)),
+    Effect.mapError((error) => new Error(`Failed to read file ${filePath}: ${error}`))
+  );
 
-// Parse MDX frontmatter
+// Parse MDX frontmatter using MDX service
 export const parseMdxFile = (content: string) =>
-	Effect.gen(function* () {
-		try {
-			const parsed = matter(content);
-
-			if (!parsed.data || typeof parsed.data !== 'object') {
-				return yield* Effect.fail(new InvalidMdxFormatError({ reason: "Invalid frontmatter format" }));
-			}
-
-			return {
-				attributes: parsed.data as Record<string, unknown>,
-				body: parsed.content,
-			};
-		} catch (error) {
-			return yield* Effect.fail(new InvalidMdxFormatError({ reason: error instanceof Error ? error.message : "Failed to parse MDX" }));
-		}
-	});
+  Effect.gen(function* () {
+    const mdxService = yield* MdxService;
+    const parsed = yield* mdxService.parseMdxFile(content);
+    return {
+      attributes: parsed.attributes as Record<string, unknown>,
+      body: parsed.body,
+    };
+  });
 
 // Validate MDX configuration
 export const validateMdxConfig = (attributes: Record<string, unknown>) =>
-	Effect.gen(function* () {
-		const provider = typeof attributes.provider === 'string' ? attributes.provider : undefined;
-		const model = typeof attributes.model === 'string' ? attributes.model : undefined;
-		const parameters = typeof attributes.parameters === 'object' && attributes.parameters !== null
-			? attributes.parameters as Record<string, unknown>
-			: undefined;
+  Effect.gen(function* () {
+    const provider = typeof attributes.provider === 'string' ? attributes.provider : undefined;
+    const model = typeof attributes.model === 'string' ? attributes.model : undefined;
+    const parameters = typeof attributes.parameters === 'object' && attributes.parameters !== null
+      ? attributes.parameters as Record<string, unknown>
+      : undefined;
 
-		if (!provider || !isValidProvider(provider)) {
-			return yield* Effect.fail(new InvalidFrontmatterError({ reason: `Invalid provider: ${String(provider)}` }));
-		}
+    if (!provider || !isValidProvider(provider)) {
+      return yield* Effect.fail(new InvalidFrontmatterError(`Invalid provider: ${String(provider)}`));
+    }
 
-		if (!model || !isValidModel(model)) {
-			return yield* Effect.fail(new InvalidFrontmatterError({ reason: `Invalid model: ${String(model)}` }));
-		}
+    if (!model || !isValidModel(model)) {
+      return yield* Effect.fail(new InvalidFrontmatterError(`Invalid model: ${String(model)}`));
+    }
 
-		return { provider, model, parameters };
-	});
+    return { provider, model, parameters };
+  });
 
 // Combine all file processing steps
 export const processMdxFile = (filePath: string) =>

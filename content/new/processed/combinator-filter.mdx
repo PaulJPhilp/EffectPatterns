@@ -1,16 +1,43 @@
 ---
-title: "Filtering Results with filter"
-id: "combinator-filter"
-skillLevel: "beginner"
-provider: "google"
-model: "gemini-2.5-flash"
-useCase: ["Combinators", "Composition", "Conditional Logic"]
-summary: "Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either."
-tags: ["filter", "combinator", "predicate", "effect", "stream", "option", "either"]
+title: Filtering Results with filter
+id: combinator-filter
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Combinators
+  - Composition
+  - Conditional Logic
+summary: Use filter to keep or discard results based on a predicate, across
+  Effect, Stream, Option, and Either.
+tags:
+  - filter
+  - combinator
+  - predicate
+  - effect
+  - stream
+  - option
+  - either
 rule:
-  description: "Use filter to declaratively express conditional logic, keeping only values that satisfy a predicate."
-related: ["combinator-map", "combinator-flatmap", "combinator-conditional"]
-author: "PaulJPhilp"
+  description: Use filter to declaratively express conditional logic, keeping only
+    values that satisfy a predicate.
+related:
+  - combinator-map
+  - combinator-flatmap
+  - combinator-conditional
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.607Z level=INFO fiber=#0 message="Effect.filter
+  result: 4"
+
+  timestamp=2025-08-07T18:29:29.608Z level=INFO fiber=#0 message="Option.filter
+  result: 4"
+
+  timestamp=2025-08-07T18:29:29.608Z level=INFO fiber=#0 message="Either.filter
+  result: 4"
+
+  timestamp=2025-08-07T18:29:29.685Z level=INFO fiber=#0 message="Stream.filter
+  result: [2, 4]"
 ---
 
 # Filtering Results with `filter`

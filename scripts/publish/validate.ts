@@ -28,9 +28,11 @@
  * - Exit with code 1 if any errors are found
  */
 
-import * as fs from "fs/promises";
+import { NodeContext } from "@effect/platform-node";
+import { FileSystem } from "@effect/platform";
+import { Effect, Layer } from "effect";
+import { MdxService } from "../../cli/src/services/mdx-service/service.js";
 import * as path from "path";
-import matter from "gray-matter";
 
 // --- CONFIGURATION ---
 const PUBLISHED_DIR = path.join(process.cwd(), "content/published");
@@ -47,113 +49,127 @@ interface ValidateOptions {
  * 2. TypeScript code blocks match their source files
  * 3. Required sections are present
  */
-async function validatePatterns({
+const validatePatterns = ({
   indir = PUBLISHED_DIR,
   srcdir = SRC_DIR
-}: ValidateOptions = {}) {
-  console.log(`Validating patterns in ${indir}`);
-  console.log(`Using TypeScript source files from ${srcdir}`);
+}: ValidateOptions = {}) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const mdxService = yield* MdxService;
+    
+    console.log(`Validating patterns in ${indir}`);
+    console.log(`Using TypeScript source files from ${srcdir}`);
 
-  const files = await fs.readdir(indir);
-  const mdxFiles = files.filter(file => file.endsWith(".mdx"));
-  const tsFiles = await fs.readdir(srcdir);
+    const files = yield* fs.readDirectory(indir);
+    const mdxFiles = files.filter(file => file.endsWith(".mdx"));
+    const tsFiles = yield* fs.readDirectory(srcdir);
 
-  console.log(`Found ${mdxFiles.length} MDX files and ${tsFiles.length} TypeScript files`);
+    console.log(`Found ${mdxFiles.length} MDX files and ${tsFiles.length} TypeScript files`);
 
-  let hasErrors = false;
-  let errorCount = 0;
+    let hasErrors = false;
+    let errorCount = 0;
 
-  for (const mdxFile of mdxFiles) {
-    const mdxPath = path.join(indir, mdxFile);
-    const content = await fs.readFile(mdxPath, "utf-8");
+    for (const mdxFile of mdxFiles) {
+      const mdxPath = path.join(indir, mdxFile);
+      const content = yield* fs.readFileString(mdxPath);
 
-    // 1. Validate frontmatter
-    try {
-      const { data: frontmatter } = matter(content);
-      const filename = path.basename(mdxFile, ".mdx");
+      // 1. Validate frontmatter
+      try {
+        const parsed = yield* mdxService.readMdxAndFrontmatter(mdxPath);
+        const frontmatter = parsed.frontmatter;
+        const filename = path.basename(mdxFile, ".mdx");
 
-      if (!frontmatter.id) {
-        console.error(`❌ Error: Missing 'id' in frontmatter of ${mdxFile}`);
-        hasErrors = true;
-        errorCount++;
-      } else if (frontmatter.id !== filename) {
-        console.error(`❌ Error: Frontmatter 'id' (${frontmatter.id}) does not match filename (${filename}) in ${mdxFile}`);
-        hasErrors = true;
-        errorCount++;
-      }
-
-      const requiredFields = ["title", "skillLevel", "useCase", "summary"];
-      for (const field of requiredFields) {
-        if (!frontmatter[field]) {
-          console.error(`❌ Error: Missing '${field}' in frontmatter of ${mdxFile}`);
+        if (!frontmatter.id) {
+          console.error(`❌ Error: Missing 'id' in frontmatter of ${mdxFile}`);
+          hasErrors = true;
+          errorCount++;
+        } else if (frontmatter.id !== filename) {
+          console.error(`❌ Error: Frontmatter 'id' (${frontmatter.id}) does not match filename (${filename}) in ${mdxFile}`);
           hasErrors = true;
           errorCount++;
         }
-      }
-    } catch (error) {
-      console.error(`❌ Error: Invalid frontmatter in ${mdxFile}:`, error);
-      hasErrors = true;
-      errorCount++;
-      continue;
-    }
 
-    // 2. Validate TypeScript code blocks match source
-    const tsFile = path.join(srcdir, mdxFile.replace(".mdx", ".ts"));
-    try {
-      const tsContent = await fs.readFile(tsFile, "utf-8");
-      
-      // Find the Good Example section
-      const goodExampleMatch = content.match(/## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/);
-      
-      if (!goodExampleMatch || !goodExampleMatch[1]) {
-        console.error(`❌ Error: No TypeScript code block found in Good Example section of ${mdxFile}`);
+        const requiredFields = ["title", "skillLevel", "useCase", "summary"];
+        for (const field of requiredFields) {
+          if (!frontmatter[field]) {
+            console.error(`❌ Error: Missing '${field}' in frontmatter of ${mdxFile}`);
+            hasErrors = true;
+            errorCount++;
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Error: Invalid frontmatter in ${mdxFile}:`, error);
         hasErrors = true;
         errorCount++;
         continue;
       }
 
-      const codeBlockContent = goodExampleMatch[1].trim();
-      const sourceContent = tsContent.trim();
+      // 2. Validate TypeScript code blocks match source
+      const tsFile = path.join(srcdir, mdxFile.replace(".mdx", ".ts"));
+      try {
+        const tsContent = yield* fs.readFileString(tsFile);
+        
+        // Find the Good Example section
+        const goodExampleMatch = content.match(/## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/);
+        
+        if (!goodExampleMatch || !goodExampleMatch[1]) {
+          console.error(`❌ Error: No TypeScript code block found in Good Example section of ${mdxFile}`);
+          hasErrors = true;
+          errorCount++;
+          continue;
+        }
 
-      if (codeBlockContent !== sourceContent) {
-        console.error(`❌ Error: TypeScript code block in ${mdxFile} does not match source file ${path.basename(tsFile)}`);
+        const codeBlockContent = goodExampleMatch[1].trim();
+        const sourceContent = tsContent.trim();
+
+        if (codeBlockContent !== sourceContent) {
+          console.error(`❌ Error: TypeScript code block in ${mdxFile} does not match source file ${path.basename(tsFile)}`);
+          hasErrors = true;
+          errorCount++;
+        }
+      } catch (error) {
+        console.error(`❌ Error: Failed to validate TypeScript code in ${mdxFile}:`, error);
         hasErrors = true;
         errorCount++;
       }
-    } catch (error) {
-      console.error(`❌ Error: Failed to validate TypeScript code in ${mdxFile}:`, error);
-      hasErrors = true;
-      errorCount++;
-    }
 
-    // 3. Validate required sections
-    const requiredSections = ["## Good Example", "## Anti-Pattern"];
-const explanationFormats = ["**Explanation:**", "## Explanation", "## Rationale"];
+      // 3. Validate required sections
+      const requiredSections = ["## Good Example", "## Anti-Pattern"];
+const explanationFormats = ["**Explanation:", "## Explanation", "## Rationale"];
 if (!explanationFormats.some(format => content.includes(format))) {
   console.error(`❌ Error: Missing explanation section (Explanation or Rationale) in ${mdxFile}`);
   hasErrors = true;
   errorCount++;
 }
-    for (const section of requiredSections) {
-      if (!content.includes(section)) {
-        console.error(`❌ Error: Missing required section '${section}' in ${mdxFile}`);
-        hasErrors = true;
-        errorCount++;
+      for (const section of requiredSections) {
+        if (!content.includes(section)) {
+          console.error(`❌ Error: Missing required section '${section}' in ${mdxFile}`);
+          hasErrors = true;
+          errorCount++;
+        }
       }
     }
-  }
 
-  if (hasErrors) {
-    console.error(`❌ Validation failed with ${errorCount} errors`);
-    process.exit(1);
-  }
+    if (hasErrors) {
+      console.error(`❌ Validation failed with ${errorCount} errors`);
+      return yield* Effect.fail(new Error(`Validation failed with ${errorCount} errors`));
+    }
 
-  console.log("✨ Validation complete! All patterns are valid.");
-}
+    console.log("✨ Validation complete! All patterns are valid.");
+  });
 
 // Run if called directly
 if (require.main === module) {
-  validatePatterns().catch(error => {
+  const program = validatePatterns();
+  
+  // Define layers
+  const allLayers = Layer.mergeAll(
+    NodeContext.layer, // Provides all Node.js platform implementations
+    Layer.provide(MdxService.Default, NodeContext.layer) // MDX service with its dependencies
+  );
+  
+  // Run the program
+  Effect.runPromise(Effect.provide(program, allLayers)).catch((error) => {
     console.error("Failed to validate patterns:", error);
     process.exit(1);
   });

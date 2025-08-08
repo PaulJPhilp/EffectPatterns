@@ -1,14 +1,44 @@
 ---
-title: "Handling Errors with catchAll, orElse, and match"
-id: "combinator-error-handling"
-skillLevel: "intermediate"
-useCase: ["Combinators", "Error Handling", "Composition"]
-summary: "Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option."
-tags: ["error-handling", "catchAll", "orElse", "match", "combinator", "effect", "either", "option"]
+title: Handling Errors with catchAll, orElse, and match
+id: combinator-error-handling
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flashmediate
+useCase:
+  - Combinators
+  - Error Handling
+  - Composition
+summary: Use catchAll, orElse, and match to recover from errors, provide
+  fallbacks, or transform errors in Effect, Either, and Option.
+tags:
+  - error-handling
+  - catchAll
+  - orElse
+  - match
+  - combinator
+  - effect
+  - either
+  - option
 rule:
-  description: "Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way."
-related: ["combinator-map", "combinator-flatmap", "combinator-conditional"]
-author: "PaulJPhilp"
+  description: Use error handling combinators to recover from failures, provide
+    fallback values, or transform errors in a composable way.
+related:
+  - combinator-map
+  - combinator-flatmap
+  - combinator-conditional
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.216Z level=INFO fiber=#0
+  message="Effect.catchAll result: Recovered from: fail!"
+
+  timestamp=2025-08-07T18:29:29.217Z level=INFO fiber=#0 message="Option.orElse
+  result: default"
+
+  timestamp=2025-08-07T18:29:29.217Z level=INFO fiber=#0 message="Either.orElse
+  result: fallback"
+
+  timestamp=2025-08-07T18:29:29.217Z level=INFO fiber=#0 message="Effect.match
+  result: Error: fail!"
 ---
 
 # Handling Errors with `catchAll`, `orElse`, and `match`

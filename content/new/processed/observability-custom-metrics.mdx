@@ -1,16 +1,40 @@
 ---
-title: "Add Custom Metrics to Your Application"
-id: "observability-custom-metrics"
-skillLevel: "intermediate"
-useCase: ["Observability", "Metrics", "Monitoring", "Performance"]
-summary: "Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators."
-tags: ["metrics", "observability", "monitoring", "performance", "effect"]
+title: Add Custom Metrics to Your Application
+id: observability-custom-metrics
+skillLevel: intermediate
+useCase:
+  - Observability
+  - Metrics
+  - Monitoring
+  - Performance
+summary: Use Effect's Metric module to instrument your code with counters,
+  gauges, and histograms to track key business and performance indicators.
+tags:
+  - metrics
+  - observability
+  - monitoring
+  - performance
+  - effect
 rule:
-  description: "Use Effect's Metric module to define and update custom metrics for business and performance monitoring."
-related: ["observability-structured-logging", "observability-tracing-spans"]
-author: "PaulJPhilp"
-provider: "google"
-model: "gemini-2.5-flash"
+  description: Use Effect's Metric module to define and update custom metrics for
+    business and performance monitoring.
+related:
+  - observability-structured-logging
+  - observability-tracing-spans
+author: PaulJPhilp
+provider: google
+model: gemini-2.5-flash
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.446Z level=INFO fiber=#0 message="Job processed"
+
+  timestamp=2025-08-07T18:29:29.447Z level=INFO fiber=#0 message="User signed
+  in"
+
+  timestamp=2025-08-07T18:29:29.447Z level=INFO fiber=#0 message="User signed
+  out"
+
+  timestamp=2025-08-07T18:29:29.447Z level=INFO fiber=#0 message="Recorded
+  request duration: 0.7s"
 ---
 
 # Add Custom Metrics to Your Application

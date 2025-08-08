@@ -1,0 +1,247 @@
+Here's the `brand-model-domain-type.ts` example:
+
+```typescript
+// src/brand-model-domain-type.ts
+
+/**
+ * Guideline:
+ * Use the `Brand` utility to create domain-specific types from primitives
+ * like `string` or `number`. This prevents accidental misuse and makes
+ * illegal states unrepresentable in your codebase.
+ */
+
+/**
+ * Rationale:
+ * Branded types add a layer of type safety, ensuring that values like
+ * `Email`, `UserId`, or `PositiveInt` are not confused with plain strings or numbers.
+ * They help you catch bugs at compile time and make your code more self-documenting.
+ */
+
+/**
+ * Represents the Brand utility.
+ * In a real project, this might come from a shared utility file or a library.
+ * It creates a "nominal" type that is distinct from its base type,
+ * even though it's structurally compatible.
+ */
+namespace Brand {
+  // A unique symbol ensures the brand property doesn't clash with real properties.
+  declare const __brand: unique symbol;
+
+  /**
+   * Branded<T, Name> creates a new type that is `T` but also has a unique
+   * phantom property, making it distinct from `T` and other branded types.
+   * `Name` is just a literal type used to differentiate brands.
+   */
+  export type Branded<T, Name> = T & { readonly [__brand]: Name };
+}
+
+// --- 1. Define Branded Domain Types ---
+
+/**
+ * Represents a validated email address.
+ * It's a string, but distinct from any other string.
+ */
+type Email = Brand.Branded<string, 'Email'>;
+
+/**
+ * Represents a validated currency code (e.g., "USD", "EUR").
+ * It's a string, but distinct from any other string.
+ */
+type CurrencyCode = Brand.Branded<string, 'CurrencyCode'>;
+
+/**
+ * Represents a positive integer (greater than 0).
+ * It's a number, but distinct from any other number.
+ */
+type PositiveInt = Brand.Branded<number, 'PositiveInt'>;
+
+/**
+ * Represents a UUID string.
+ * It's a string, but distinct from any other string.
+ */
+type Uuid = Brand.Branded<string, 'Uuid'>;
+
+
+// --- 2. Create Smart Constructors (Validation + Branding) ---
+
+/**
+ * Creates an Email branded type from a string, if it's a valid email format.
+ * Returns undefined if validation fails.
+ */
+function createEmail(value: string): Email | undefined {
+  // Basic email regex for demonstration purposes.
+  // A robust validation would be more complex.
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (emailRegex.test(value)) {
+    // Type assertion is safe here because we've just validated the input.
+    return value as Email;
+  }
+  return undefined;
+}
+
+/**
+ * Creates a CurrencyCode branded type from a string, if it's a valid 3-letter uppercase code.
+ * Returns undefined if validation fails.
+ */
+function createCurrencyCode(value: string): CurrencyCode | undefined {
+  const currencyCodeRegex = /^[A-Z]{3}$/;
+  if (currencyCodeRegex.test(value)) {
+    return value as CurrencyCode;
+  }
+  return undefined;
+}
+
+/**
+ * Creates a PositiveInt branded type from a number, if it's a positive integer.
+ * Returns undefined if validation fails.
+ */
+function createPositiveInt(value: number): PositiveInt | undefined {
+  if (Number.isInteger(value) && value > 0) {
+    return value as PositiveInt;
+  }
+  return undefined;
+}
+
+/**
+ * Creates a Uuid branded type from a string, if it matches a UUID v4 format.
+ * Returns undefined if validation fails.
+ */
+function createUuid(value: string): Uuid | undefined {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(value)) {
+    return value as Uuid;
+  }
+  return undefined;
+}
+
+// --- 3. Demonstrate Usage and Type Safety ---
+
+// --- Scenario 1: Successful Branding ---
+console.log("--- Successful Branding ---");
+
+const myEmail = createEmail("test@example.com");
+if (myEmail) {
+  console.log(`Valid Email created: ${myEmail} (Type: ${typeof myEmail})`);
+  // Type of myEmail is 'Email'
+}
+
+const usdCode = createCurrencyCode("USD");
+if (usdCode) {
+  console.log(`Valid Currency Code created: ${usdCode}`);
+  // Type of usdCode is 'CurrencyCode'
+}
+
+const positiveId = createPositiveInt(123);
+if (positiveId) {
+  console.log(`Valid Positive Int created: ${positiveId}`);
+  // Type of positiveId is 'PositiveInt'
+}
+
+const generatedUuid = createUuid("f47ac10b-58cc-4372-a567-0e02b2c3d479");
+if (generatedUuid) {
+  console.log(`Valid UUID created: ${generatedUuid}`);
+  // Type of generatedUuid is 'Uuid'
+}
+
+
+// --- Scenario 2: Failed Branding (Invalid Input) ---
+console.log("\n--- Failed Branding (Invalid Input) ---");
+
+const invalidEmail = createEmail("not-an-email");
+console.log(`Invalid Email attempt: ${invalidEmail}`); // Expected: undefined
+
+const invalidCurrency = createCurrencyCode("US");
+console.log(`Invalid Currency Code attempt: ${invalidCurrency}`); // Expected: undefined
+
+const nonPositiveInt = createPositiveInt(0);
+console.log(`Non-positive Int attempt: ${nonPositiveInt}`); // Expected: undefined
+
+const invalidUuid = createUuid("not-a-uuid");
+console.log(`Invalid UUID attempt: ${invalidUuid}`); // Expected: undefined
+
+
+// --- Scenario 3: Type Safety in Functions ---
+console.log("\n--- Type Safety in Functions ---");
+
+interface UserSettings {
+  primaryEmail: Email;
+  preferredCurrency: CurrencyCode;
+  minOrderQuantity: PositiveInt;
+  sessionId: Uuid;
+}
+
+// Function requiring branded types
+function processUserSettings(settings: UserSettings): void {
+  console.log(`Processing user settings:`);
+  console.log(`  Email: ${settings.primaryEmail}`);
+  console.log(`  Currency: ${settings.preferredCurrency}`);
+  console.log(`  Min Quantity: ${settings.minOrderQuantity}`);
+  console.log(`  Session ID: ${settings.sessionId}`);
+  // You can still use the underlying string/number values
+  const emailStringLength = settings.primaryEmail.length;
+  console.log(`  Email string length: ${emailStringLength}`);
+}
+
+// Valid usage:
+const validSettings: UserSettings = {
+  primaryEmail: myEmail!, // Using ! because we know it's not undefined from earlier checks
+  preferredCurrency: usdCode!,
+  minOrderQuantity: positiveId!,
+  sessionId: generatedUuid!,
+};
+processUserSettings(validSettings);
+
+// --- Anti-Pattern Demonstration (Compile-time Errors) ---
+
+// Uncomment the following lines to see the compile-time errors:
+
+/*
+// ERROR: Type 'string' is not assignable to type 'Email'.
+const plainStringEmail: UserSettings = {
+  primaryEmail: "another@example.com", // Expected a branded Email type
+  preferredCurrency: usdCode!,
+  minOrderQuantity: positiveId!,
+  sessionId: generatedUuid!,
+};
+// processUserSettings(plainStringEmail);
+*/
+
+/*
+// ERROR: Type 'string' is not assignable to type 'CurrencyCode'.
+const mixedTypeSettings: UserSettings = {
+  primaryEmail: myEmail!,
+  preferredCurrency: "GBP", // Expected a branded CurrencyCode type
+  minOrderQuantity: positiveId!,
+  sessionId: generatedUuid!,
+};
+// processUserSettings(mixedTypeSettings);
+*/
+
+/*
+// ERROR: Type 'number' is not assignable to type 'PositiveInt'.
+const negativeQuantitySettings: UserSettings = {
+  primaryEmail: myEmail!,
+  preferredCurrency: usdCode!,
+  minOrderQuantity: 0, // Expected a branded PositiveInt type (validation failed for 0)
+  sessionId: generatedUuid!,
+};
+// processUserSettings(negativeQuantitySettings);
+*/
+
+/*
+// ERROR: Type 'Email' is not assignable to type 'CurrencyCode'.
+// This shows that different branded types are distinct, even if their base type is the same (string).
+const incorrectBrandAssignment: UserSettings = {
+  primaryEmail: myEmail!,
+  preferredCurrency: myEmail!, // Trying to use an Email where a CurrencyCode is expected
+  minOrderQuantity: positiveId!,
+  sessionId: generatedUuid!,
+};
+// processUserSettings(incorrectBrandAssignment);
+*/
+
+console.log("\n--- Conclusion ---");
+console.log("The examples above demonstrate how `Brand` helps enforce domain rules at compile-time.");
+console.log("It prevents assigning plain primitives where validated domain types are expected,");
+console.log("and also prevents assigning one domain type where another is expected, even if their underlying primitive is the same.");
+```
