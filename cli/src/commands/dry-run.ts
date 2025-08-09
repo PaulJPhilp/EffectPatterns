@@ -35,28 +35,33 @@ export const dryRun = Command.make(
   {
     provider: Options.optional(
       Options.choice("provider", ["openai", "anthropic", "google"]).pipe(
-        Options.withDescription("LLM provider to estimate for")
+        Options.withDescription("LLM provider to estimate for"),
+        Options.withAlias("p")
       )
     ),
     model: Options.optional(
       Options.text("model").pipe(
-        Options.withDescription("Model to estimate for")
+        Options.withDescription("Model to estimate for"),
+        Options.withAlias("m")
       )
     ),
     prompt: Args.text({ name: "prompt" }).pipe(Args.optional),
     file: Options.file("file").pipe(
       Options.optional,
-      Options.withDescription("Read prompt from file")
+      Options.withDescription("Read prompt from file"),
+      Options.withAlias("i")
     ),
     output: Options.file("output").pipe(
       Options.optional,
-      Options.withDescription("Write output to file (overwrites if exists)")
+      Options.withDescription("Write output to file (overwrites if exists)"),
+      Options.withAlias("o")
     ),
     quiet: Options.boolean("quiet").pipe(
       Options.optional,
       Options.withDescription(
         "Suppress normal output (errors still go to stderr)"
-      )
+      ),
+      Options.withAlias("q")
     ),
     force: Options.boolean("force").pipe(
       Options.optional,

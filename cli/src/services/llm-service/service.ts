@@ -1,5 +1,15 @@
 // Import necessary Effect modules
-import { Config, Console, Effect, Layer, Stream, type Schema } from "effect";
+import {
+  Config,
+  Console,
+  Effect,
+  ExecutionPlan,
+  Layer,
+  Option,
+  Schedule,
+  Stream,
+  type Schema,
+} from "effect";
 
 import { AiLanguageModel } from "@effect/ai";
 import { AnthropicClient } from "@effect/ai-anthropic";
@@ -73,18 +83,16 @@ export const streamText = (
         templateService
       );
 
-      // Select the appropriate model layer and AI client layer
-      const modelLayer = selectModel(provider, model);
-      const aiClientLayer = createAiClientLayer(provider);
-      const combinedLayer = Layer.mergeAll(modelLayer, aiClientLayer);
-
-      // Create the streaming effect using unified AiLanguageModel interface
-      const streamEffect = AiLanguageModel.streamText({
+      // Create the streaming program requiring AiLanguageModel
+      const streamProgram = AiLanguageModel.streamText({
         prompt: finalPrompt,
         ...parameters,
       });
 
-      return Stream.provideLayer(streamEffect, combinedLayer);
+      // Build an execution plan with optional config overrides
+      const plan = yield* buildLlmExecutionPlanEffect(provider, model);
+
+      return Stream.withExecutionPlan(streamProgram, plan);
     })
   ).pipe(
     Stream.map((response) => {
@@ -169,15 +177,12 @@ export const generateText = Effect.fn("generateText")(function* (
     templateService
   );
 
-  // Create the appropriate model layer and AI client layer
-  const llmModelLayer = selectModel(provider, model);
-  const aiClientLayer = createAiClientLayer(provider);
+  // Build an execution plan with optional config overrides
+  const plan = yield* buildLlmExecutionPlanEffect(provider, model);
 
-  const combinedLayer = Layer.mergeAll(llmModelLayer, aiClientLayer);
-
-  const response = yield* Effect.provide(
-    AiLanguageModel.generateText({ prompt: finalPrompt }),
-    combinedLayer
+  const response = yield* Effect.withExecutionPlan(
+    AiLanguageModel.generateText({ prompt: finalPrompt, ...parameters }),
+    plan
   ).pipe(
     Effect.catchAll((error) =>
       Effect.fail(
@@ -238,52 +243,52 @@ export const generateObject = Effect.fn("generateObject")(function* <
     return yield* Effect.fail(new UnsupportedProviderError({ provider }));
   }
 
-  // Access the AiLanguageModel service through dependency injection
-  // The AI client layers should be provided at the command level
-  const languageModel = yield* AiLanguageModel.AiLanguageModel;
+  // Build an execution plan with optional config overrides
+  const plan = yield* buildLlmExecutionPlanEffect(provider, model);
 
-  const response = yield* languageModel
-    .generateObject({
+  const response = yield* Effect.withExecutionPlan(
+    AiLanguageModel.generateObject({
       prompt,
       schema,
-    })
-    .pipe(
-      Effect.catchTags({
-        AiError: (error) => {
-          // Check if this is a rate limit error based on error description
-          const isRateLimit =
-            error.description.toLowerCase().includes("rate limit") ||
-            error.description.toLowerCase().includes("quota") ||
-            error.description.toLowerCase().includes("too many requests");
+      ...parameters,
+    }),
+    plan
+  ).pipe(
+    Effect.catchTags({
+      AiError: (error) => {
+        // Check if this is a rate limit error based on error description
+        const isRateLimit =
+          error.description.toLowerCase().includes("rate limit") ||
+          error.description.toLowerCase().includes("quota") ||
+          error.description.toLowerCase().includes("too many requests");
 
-          if (isRateLimit) {
-            return Effect.fail(
-              new RateLimitError({
-                provider,
-                reason: "Rate limit exceeded. Please try again later.",
-              })
-            );
-          }
-
-          // Handle other AI errors
+        if (isRateLimit) {
           return Effect.fail(
-            new LlmServiceError({
+            new RateLimitError({
               provider,
-              reason:
-                "Service temporarily unavailable. Please try again later.",
+              reason: "Rate limit exceeded. Please try again later.",
             })
           );
-        },
-      }),
-      Effect.catchAll((error) =>
-        Effect.fail(
+        }
+
+        // Handle other AI errors
+        return Effect.fail(
           new LlmServiceError({
             provider,
             reason: "Service temporarily unavailable. Please try again later.",
           })
-        )
+        );
+      },
+    }),
+    Effect.catchAll((error) =>
+      Effect.fail(
+        new LlmServiceError({
+          provider,
+          reason: "Service temporarily unavailable. Please try again later.",
+        })
       )
-    );
+    )
+  );
 
   // Record metrics with actual token usage from response
   const metrics = yield* MetricsService;
@@ -394,6 +399,85 @@ const createAiClientLayer = (provider: Providers) => {
       throw new Error(`Unsupported provider: ${provider}`);
   }
 };
+
+// Helper to merge model + client into a single provider layer
+const createProviderLayer = (provider: Providers, model: Models) =>
+  Layer.mergeAll(selectModel(provider, model), createAiClientLayer(provider));
+
+// Build an ExecutionPlan, honoring configuration overrides for primary retries/delay
+export const buildLlmExecutionPlanEffect = (
+  primaryProvider: Providers,
+  primaryModel: Models
+) =>
+  Effect.gen(function* () {
+    const config = yield* ConfigService;
+
+    const retriesOpt = yield* config.get("planRetries");
+    const retryMsOpt = yield* config.get("planRetryMs");
+
+    const retries = Option.match(retriesOpt, {
+      onNone: () => 1,
+      onSome: (s) => {
+        const n = Number.parseInt(String(s), 10);
+        return Number.isFinite(n) && n >= 0 ? n : 1;
+      },
+    });
+
+    const retryMs = Option.match(retryMsOpt, {
+      onNone: () => 1000,
+      onSome: (s) => {
+        const n = Number.parseInt(String(s), 10);
+        return Number.isFinite(n) && n >= 0 ? n : 1000;
+      },
+    });
+
+    const attempts = retries + 1; // convert retries -> attempts
+
+    const primaryLayer = createProviderLayer(primaryProvider, primaryModel);
+
+    // Fallbacks: either from config or defaults excluding primary
+    const fallbacksJson = yield* config.get("planFallbacks");
+    const defaultFallbacks = (
+      [
+        { provider: "openai", model: "gpt-4o-mini" },
+        { provider: "anthropic", model: "claude-3-5-haiku" },
+      ] as Array<{ provider: Providers; model: Models }>
+    ).filter((f) => f.provider !== primaryProvider);
+
+    const parsedFallbacks = Option.match(fallbacksJson, {
+      onNone: () => defaultFallbacks,
+      onSome: (v) => {
+        try {
+          const arr = JSON.parse(String(v)) as Array<{
+            provider: Providers;
+            model: Models;
+          }>;
+          return arr
+            .filter((f) => f?.provider && f?.model)
+            .filter((f) => f.provider !== primaryProvider);
+        } catch {
+          return defaultFallbacks;
+        }
+      },
+    });
+
+    const fallbackLayers = parsedFallbacks.map(({ provider, model }) =>
+      createProviderLayer(provider, model)
+    );
+
+    return ExecutionPlan.make(
+      {
+        provide: primaryLayer,
+        attempts,
+        schedule: Schedule.spaced(retryMs),
+      },
+      ...fallbackLayers.map((layer) => ({
+        provide: layer,
+        attempts: 1,
+        schedule: Schedule.spaced(1500),
+      }))
+    );
+  });
 
 export class LLMService extends Effect.Service<LLMService>()("LLMService", {
   effect: Effect.succeed({

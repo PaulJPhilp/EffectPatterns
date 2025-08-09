@@ -13,7 +13,8 @@ export const health = Command.make(
   {
     provider: Options.optional(
       Options.choice("provider", ["openai", "anthropic", "google"]).pipe(
-        Options.withDescription("Check specific provider health")
+        Options.withDescription("Check specific provider health"),
+        Options.withAlias("p")
       )
     ),
     detailed: Options.boolean("detailed").pipe(
@@ -36,7 +37,8 @@ export const health = Command.make(
       Options.optional,
       Options.withDescription(
         "Suppress normal output (errors still go to stderr)"
-      )
+      ),
+      Options.withAlias("q")
     ),
   },
   ({ provider, detailed, json, output, force, quiet }) =>

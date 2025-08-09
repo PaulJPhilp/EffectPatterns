@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { Effect } from "effect";
-import { effectPatternsProcessPrompt } from "../commands/process-prompt.js";
+import { describe, expect, it } from "vitest";
+import { effectPatternsProcessPrompt } from "../commands/generate.js";
 import { runTestEffect } from "./test-utils.js";
 
 // Comprehensive process-prompt command tests
@@ -15,7 +15,7 @@ describe("ProcessPromptCommand", () => {
         commandExists: true,
         hasName: true,
         hasDescription: true,
-        hasAction: true
+        hasAction: true,
       })
     );
 
@@ -30,7 +30,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         promptOption: true,
         supportsDirectPrompts: true,
-        optionHandled: true
+        optionHandled: true,
       })
     );
 
@@ -44,7 +44,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         fileOption: true,
         supportsFileInput: true,
-        optionHandled: true
+        optionHandled: true,
       })
     );
 
@@ -58,7 +58,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         modelOption: true,
         supportsModelSelection: true,
-        optionHandled: true
+        optionHandled: true,
       })
     );
 
@@ -72,7 +72,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         providerOption: true,
         supportsProviderSelection: true,
-        optionHandled: true
+        optionHandled: true,
       })
     );
 
@@ -86,7 +86,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         outputOption: true,
         supportsOutputFile: true,
-        optionHandled: true
+        optionHandled: true,
       })
     );
 
@@ -100,7 +100,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         forceOption: true,
         supportsForceOverwrite: true,
-        optionHandled: true
+        optionHandled: true,
       })
     );
 
@@ -114,7 +114,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         quietOption: true,
         supportsQuietMode: true,
-        optionHandled: true
+        optionHandled: true,
       })
     );
 
@@ -128,7 +128,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         executed: true,
         success: true,
-        hasProperExitCode: true
+        hasProperExitCode: true,
       })
     );
 
@@ -142,7 +142,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         promptProcessed: true,
         responseGenerated: true,
-        processingSuccessful: true
+        processingSuccessful: true,
       })
     );
 
@@ -156,7 +156,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         fileProcessed: true,
         contentRead: true,
-        processingSuccessful: true
+        processingSuccessful: true,
       })
     );
 
@@ -170,7 +170,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         modelSelected: true,
         modelValid: true,
-        selectionSuccessful: true
+        selectionSuccessful: true,
       })
     );
 
@@ -184,7 +184,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         providerSelected: true,
         providerValid: true,
-        selectionSuccessful: true
+        selectionSuccessful: true,
       })
     );
 
@@ -198,7 +198,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         outputGenerated: true,
         fileWritten: true,
-        generationSuccessful: true
+        generationSuccessful: true,
       })
     );
 
@@ -212,7 +212,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         errorHandled: true,
         errorMessageProvided: true,
-        gracefulDegradation: true
+        gracefulDegradation: true,
       })
     );
 
@@ -227,7 +227,7 @@ describe("ProcessPromptCommand", () => {
         outputFormatOption: true,
         supportsTextFormat: true,
         supportsJsonFormat: true,
-        optionHandled: true
+        optionHandled: true,
       })
     );
 
@@ -242,7 +242,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         schemaPromptOption: true,
         supportsStructuredPrompts: true,
-        optionHandled: true
+        optionHandled: true,
       })
     );
 
@@ -256,7 +256,7 @@ describe("ProcessPromptCommand", () => {
       Effect.succeed({
         validationWorks: true,
         errorWhenMissing: true,
-        validationSuccessful: true
+        validationSuccessful: true,
       })
     );
 

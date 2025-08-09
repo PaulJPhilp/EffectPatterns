@@ -14,10 +14,12 @@ import { TemplateService } from "../services/prompt-template/service.js";
 // effect-patterns apply-prompt-to-dir -input <input-dir> -output <output-dir> [file-pattern] <prompt-file>
 const promptFileArg = Args.file({ name: "prompt-file", exists: "yes" });
 const inputDirOption = Options.text("input").pipe(
-  Options.withDescription("Input directory containing files to process")
+  Options.withDescription("Input directory containing files to process"),
+  Options.withAlias("i")
 );
 const outputDirOption = Options.text("output").pipe(
-  Options.withDescription("Output directory for processed files")
+  Options.withDescription("Output directory for processed files"),
+  Options.withAlias("o")
 );
 const filePatternArg = Args.text({ name: "file-pattern" }).pipe(
   Args.withDefault("*")
@@ -35,8 +37,12 @@ export const applyPromptToDir = Command.make(
     filePattern: filePatternArg,
     promptFile: promptFileArg,
     parameters: parametersOption,
+    quiet: Options.boolean("quiet").pipe(
+      Options.optional,
+      Options.withAlias("q")
+    ),
   },
-  ({ input, output, filePattern, promptFile, parameters }) =>
+  ({ input, output, filePattern, promptFile, parameters, quiet }) =>
     Effect.gen(function* () {
       const fs = yield* FileSystem;
       const path = yield* Path;
@@ -91,10 +97,13 @@ export const applyPromptToDir = Command.make(
           )
         : fs.readFileString(promptFile);
 
-      yield* Effect.log(`📁 Applying prompt to directory: ${input}`);
-      yield* Effect.log(`📄 Prompt file: ${promptFile}`);
-      yield* Effect.log(`📊 File pattern: ${filePattern}`);
-      yield* Effect.log(`📄 Parameters: ${parameters ? "provided" : "none"}`);
+      const isQuiet = Option.getOrElse(quiet, () => false);
+      if (!isQuiet) {
+        yield* Effect.log(`📁 Applying prompt to directory: ${input}`);
+        yield* Effect.log(`📄 Prompt file: ${promptFile}`);
+        yield* Effect.log(`📊 File pattern: ${filePattern}`);
+        yield* Effect.log(`📄 Parameters: ${parameters ? "provided" : "none"}`);
+      }
 
       // Get files to process
       const files = yield* fs.readDirectory(input);
@@ -104,9 +113,11 @@ export const applyPromptToDir = Command.make(
 
       const fileCount = matchingFiles.length;
 
-      yield* fileCount === 0
-        ? Effect.log("⚠️ No files found matching the pattern")
-        : Effect.log(`📊 Found ${fileCount} files to process`);
+      if (!isQuiet) {
+        yield* fileCount === 0
+          ? Effect.log("⚠️ No files found matching the pattern")
+          : Effect.log(`📊 Found ${fileCount} files to process`);
+      }
 
       yield* Effect.if(fileCount > 0, {
         onTrue: () =>
@@ -119,7 +130,9 @@ export const applyPromptToDir = Command.make(
                   const inputPath: string = path.join(input, file);
                   const outputPath: string = path.join(output, file);
 
-                  yield* Effect.log(`🔄 Processing: ${file}`);
+                  if (!isQuiet) {
+                    yield* Effect.log(`🔄 Processing: ${file}`);
+                  }
 
                   // Read file content
                   const content = yield* fs.readFileString(inputPath);
@@ -143,14 +156,18 @@ export const applyPromptToDir = Command.make(
                   // Write response to output file
                   yield* fs.writeFileString(outputPath, response);
 
-                  yield* Effect.log(`✅ Processed: ${file}`);
+                  if (!isQuiet) {
+                    yield* Effect.log(`✅ Processed: ${file}`);
+                  }
                   return file;
                 })
             ).pipe(Effect.map((results) => results.length));
 
-            yield* Effect.log(
-              `🎉 Completed processing ${processedFiles} files`
-            );
+            if (!isQuiet) {
+              yield* Effect.log(
+                `🎉 Completed processing ${processedFiles} files`
+              );
+            }
             return yield* Effect.succeed({ processedFiles });
           }),
         onFalse: () => Effect.succeed({ processedFiles: 0 }),

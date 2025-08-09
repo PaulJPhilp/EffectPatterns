@@ -4,10 +4,7 @@ import { Path } from "@effect/platform/Path";
 import { Chunk, Console, Effect, Option, Stream } from "effect";
 
 import { ConfigService } from "../services/config-service/service.js";
-import {
-  processPromptFromMdx,
-  streamText,
-} from "../services/llm-service/service.js";
+import { streamText } from "../services/llm-service/service.js";
 import type { Models, Providers } from "../services/llm-service/types.js";
 import { parseMdxFile } from "../services/llm-service/utils.js";
 import { MetricsService } from "../services/metrics-service/service.js";
@@ -15,16 +12,32 @@ import {
   ModelService,
   make as ModelServiceImpl,
 } from "../services/model-service/service.js";
-import type { Model as CatalogModel } from "../services/model-service/types.js";
+import type {
+  Model as CatalogModel,
+  ProviderSlug,
+} from "../services/model-service/types.js";
 import { OtelService } from "../services/otel-service/service.js";
 
 interface GenerateOptions {
-  file: string;
-  provider: Option.Option<"openai" | "anthropic" | "google">;
+  // Positional input that can be a file path or inline prompt text
+  file: Option.Option<string>;
+  // Provider/model selection
+  provider: Option.Option<ProviderSlug>;
   model: Option.Option<string>;
+  // Output controls
   output: Option.Option<string>;
   outputFormat: Option.Option<"text" | "json">;
   schemaPrompt: Option.Option<string>;
+  // New UX flags
+  stdin: boolean;
+  noStream: boolean;
+  quiet: boolean;
+  json: boolean;
+  // Generation parameters
+  temperature: Option.Option<number>;
+  maxTokens: Option.Option<number>;
+  topP: Option.Option<number>;
+  seed: Option.Option<number>;
 }
 
 function generateHandler({
@@ -34,6 +47,14 @@ function generateHandler({
   output,
   outputFormat,
   schemaPrompt,
+  stdin,
+  noStream,
+  quiet,
+  json,
+  temperature,
+  maxTokens,
+  topP,
+  seed,
 }: GenerateOptions) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
@@ -42,19 +63,21 @@ function generateHandler({
     const otel = yield* OtelService;
     const config = yield* ConfigService;
 
-    yield* metrics.startCommand("process-prompt");
+    yield* metrics.startCommand("generate");
 
-    const span = yield* otel.startSpan("process-prompt-operation", {
-      attributes: { file, provider, model },
+    const span = yield* otel.startSpan("generate-operation", {
+      attributes: { file: Option.getOrElse(file, () => ""), provider, model },
     });
 
-    yield* otel.addEvent(span, "starting_process_prompt", { file });
+    yield* otel.addEvent(span, "starting_process_prompt", {
+      file: Option.getOrElse(file, () => ""),
+    });
 
     const providerFromConfig = yield* config.get("defaultProvider");
     const modelFromConfig = yield* config.get("defaultModel");
     const resolvedProvider = Option.getOrElse(provider, () =>
       Option.getOrElse(
-        providerFromConfig as Option.Option<"openai" | "anthropic" | "google">,
+        providerFromConfig as Option.Option<ProviderSlug>,
         () => "google"
       )
     );
@@ -91,90 +114,127 @@ function generateHandler({
       }
     }
 
-    if (
-      Option.getOrElse(outputFormat, () => "text") === "json" &&
-      Option.isNone(schemaPrompt)
-    ) {
+    // Resolve format convenience flag
+    const resolvedFormat: "text" | "json" = json
+      ? "json"
+      : Option.getOrElse(outputFormat, () => "text");
+
+    if (resolvedFormat === "json" && Option.isNone(schemaPrompt)) {
       return yield* Effect.fail(
         new Error("Schema prompt file is required when output format is json")
       );
     }
 
-    const fileExtension = file.toLowerCase().split(".").pop();
+    // Resolve input source: stdin | file path | inline text
+    let inputText = "";
+    let isMdx = false;
     let result: unknown;
 
-    if (
-      Option.getOrElse(outputFormat, () => "text") === "json" &&
-      Option.isSome(schemaPrompt)
-    ) {
-      if (Option.getOrElse(outputFormat, () => "text") !== "json") {
-        yield* Console.log(
-          `Processing with structured output format using schema prompt: ${Option.getOrElse(
-            schemaPrompt,
-            () => ""
-          )}`
-        );
+    if (stdin) {
+      // Read from stdin
+      const stdinText = yield* Effect.tryPromise({
+        try: () =>
+          new Promise<string>((resolve, reject) => {
+            let data = "";
+            process.stdin.setEncoding("utf8");
+            process.stdin.on("data", (chunk) => {
+              data += String(chunk);
+            });
+            process.stdin.on("end", () => resolve(data));
+            process.stdin.on("error", (err) => reject(err));
+          }),
+        catch: (e) => e as Error,
+      });
+      inputText = stdinText;
+      isMdx = false;
+    } else if (Option.isSome(file)) {
+      const fileVal = file.value;
+      const exists = yield* fs.exists(fileVal);
+      if (exists) {
+        const ext = fileVal.toLowerCase().split(".").pop();
+        isMdx = ext === "mdx";
+        inputText = yield* fs.readFileString(fileVal);
+      } else {
+        // Treat as inline prompt text
+        inputText = fileVal;
       }
-      const fs2 = yield* FileSystem.FileSystem;
-      const schemaPromptContent = yield* fs2.readFileString(
+    } else {
+      return yield* Effect.fail(
+        new Error(
+          "No input provided. Pass a file path, inline prompt, or --stdin."
+        )
+      );
+    }
+
+    // Prepare generation parameters
+    const parameters: Record<string, unknown> = {};
+    if (Option.isSome(temperature)) {
+      parameters.temperature = temperature.value;
+    }
+    if (Option.isSome(maxTokens)) {
+      parameters.maxTokens = maxTokens.value;
+    }
+    if (Option.isSome(topP)) {
+      parameters.topP = topP.value;
+    }
+    if (Option.isSome(seed)) {
+      parameters.seed = seed.value;
+    }
+
+    // Build final prompt (parse MDX if needed)
+    let promptBody = inputText;
+    if (isMdx) {
+      const parsed = yield* parseMdxFile(inputText);
+      promptBody = parsed.body;
+    }
+
+    if (resolvedFormat === "json" && Option.isSome(schemaPrompt)) {
+      const schemaPromptContent = yield* fs.readFileString(
         Option.getOrElse(schemaPrompt, () => "")
       );
       const parsedSchemaPrompt = yield* parseMdxFile(schemaPromptContent);
-
-      if (fileExtension === "mdx") {
-        if (Option.getOrElse(outputFormat, () => "text") !== "json") {
-          yield* Console.log(`Processing MDX file: ${file}`);
-        }
-        const mainPromptContent = yield* fs2.readFileString(file);
-        const parsedMainPrompt = yield* parseMdxFile(mainPromptContent);
-        const combinedPrompt = `${parsedMainPrompt.body}\n\n${parsedSchemaPrompt.body}`;
+      promptBody = `${promptBody}\n\n${parsedSchemaPrompt.body}`;
+      // Always buffer in JSON mode
+      result = yield* streamText(
+        promptBody,
+        resolvedProvider as Providers,
+        resolvedModel as Models,
+        parameters
+      ).pipe(
+        Stream.runCollect,
+        Effect.map((chunks) => Chunk.toReadonlyArray(chunks).join(""))
+      );
+    } else {
+      // Text mode: stream by default unless --no-stream
+      if (noStream) {
         result = yield* streamText(
-          combinedPrompt,
+          promptBody,
           resolvedProvider as Providers,
-          resolvedModel as Models
+          resolvedModel as Models,
+          parameters
         ).pipe(
           Stream.runCollect,
           Effect.map((chunks) => Chunk.toReadonlyArray(chunks).join(""))
         );
       } else {
-        if (Option.getOrElse(outputFormat, () => "text") !== "json") {
-          yield* Console.log(`Processing text file: ${file}`);
-        }
-        const promptText = yield* fs2.readFileString(file);
-        const combinedPrompt = `${promptText}\n\n${parsedSchemaPrompt.body}`;
-        result = yield* streamText(
-          combinedPrompt,
+        let collected = "";
+        yield* streamText(
+          promptBody,
           resolvedProvider as Providers,
-          resolvedModel as Models
+          resolvedModel as Models,
+          parameters
         ).pipe(
-          Stream.runCollect,
-          Effect.map((chunks) => Chunk.toReadonlyArray(chunks).join(""))
+          Stream.runForEach((chunk) =>
+            Effect.gen(function* () {
+              collected += chunk;
+              if (!quiet) {
+                yield* Console.log(chunk);
+              }
+            })
+          )
         );
+        result = collected;
       }
-    } else if (fileExtension === "mdx") {
-      if (Option.getOrElse(outputFormat, () => "text") !== "json") {
-        yield* Console.log(`Processing MDX file: ${file}`);
-      }
-      result = yield* processPromptFromMdx(
-        file,
-        resolvedProvider as Providers,
-        resolvedModel as Models
-      );
-    } else {
-      if (Option.getOrElse(outputFormat, () => "text") !== "json") {
-        yield* Console.log(`Processing text file: ${file}`);
-      }
-      const fs3 = yield* FileSystem.FileSystem;
-      const _path = yield* Path;
-      const promptOnly = yield* fs3.readFileString(file);
-      result = yield* streamText(
-        promptOnly,
-        resolvedProvider as Providers,
-        resolvedModel as Models
-      ).pipe(
-        Stream.runCollect,
-        Effect.map((chunks) => Chunk.toReadonlyArray(chunks).join(""))
-      );
     }
 
     const textContent = (() => {
@@ -208,7 +268,7 @@ function generateHandler({
     yield* metrics.recordResponse(textContent);
     yield* metrics.endCommand();
 
-    if (Option.getOrElse(outputFormat, () => "text") === "json") {
+    if (resolvedFormat === "json") {
       const parseResponseEffect = Effect.gen(function* () {
         const parseDirect = Effect.try({
           try: () => JSON.parse(textContent),
@@ -245,7 +305,7 @@ function generateHandler({
             outputCost: metricsData.outputCost,
             totalCost: metricsData.totalCost,
           },
-          command: "process-prompt",
+          command: "generate",
           file,
           provider: resolvedProvider,
           model: resolvedModel,
@@ -268,7 +328,12 @@ function generateHandler({
       const fsw = yield* FileSystem.FileSystem;
       yield* fsw.writeFileString(outputPath, textContent);
     } else {
-      yield* Console.log(textContent);
+      if (noStream || quiet) {
+        // If we buffered due to --no-stream or were quiet, emit once unless quiet
+        if (!quiet) {
+          yield* Console.log(textContent);
+        }
+      }
     }
 
     const processedText = textContent;
@@ -281,19 +346,34 @@ function generateHandler({
 export const generateCommand = Command.make(
   "generate",
   {
-    file: Args.text({ name: "file" }),
+    // Positional input is optional and may be a file path or inline text
+    file: Args.text({ name: "file" }).pipe(Args.optional),
     provider: Options.optional(
       Options.withAlias(
         Options.choice("provider", ["openai", "anthropic", "google"] as const),
         "p"
       )
     ),
-    model: Options.optional(Options.text("model")),
-    output: Options.optional(Options.text("output")),
-    outputFormat: Options.optional(
-      Options.choice("output-format", ["text", "json"] as const)
+    model: Options.optional(Options.text("model").pipe(Options.withAlias("m"))),
+    output: Options.optional(
+      Options.text("output").pipe(Options.withAlias("o"))
     ),
-    schemaPrompt: Options.optional(Options.text("schema-prompt")),
+    outputFormat: Options.optional(
+      Options.choice("output-format", ["text", "json"] as const).pipe(
+        Options.withAlias("f")
+      )
+    ),
+    schemaPrompt: Options.optional(
+      Options.text("schema-prompt").pipe(Options.withAlias("s"))
+    ),
+    stdin: Options.boolean("stdin"),
+    noStream: Options.boolean("no-stream"),
+    quiet: Options.boolean("quiet"),
+    json: Options.boolean("json"),
+    temperature: Options.optional(Options.float("temperature")),
+    maxTokens: Options.optional(Options.integer("max-tokens")),
+    topP: Options.optional(Options.float("top-p")),
+    seed: Options.optional(Options.integer("seed")),
   },
   (opts) => generateHandler(opts)
 );
@@ -301,19 +381,33 @@ export const generateCommand = Command.make(
 export const genAliasCommand = Command.make(
   "gen",
   {
-    file: Args.text({ name: "file" }),
+    file: Args.text({ name: "file" }).pipe(Args.optional),
     provider: Options.optional(
       Options.withAlias(
         Options.choice("provider", ["openai", "anthropic", "google"] as const),
         "p"
       )
     ),
-    model: Options.optional(Options.text("model")),
-    output: Options.optional(Options.text("output")),
-    outputFormat: Options.optional(
-      Options.choice("output-format", ["text", "json"] as const)
+    model: Options.optional(Options.text("model").pipe(Options.withAlias("m"))),
+    output: Options.optional(
+      Options.text("output").pipe(Options.withAlias("o"))
     ),
-    schemaPrompt: Options.optional(Options.text("schema-prompt")),
+    outputFormat: Options.optional(
+      Options.choice("output-format", ["text", "json"] as const).pipe(
+        Options.withAlias("f")
+      )
+    ),
+    schemaPrompt: Options.optional(
+      Options.text("schema-prompt").pipe(Options.withAlias("s"))
+    ),
+    stdin: Options.boolean("stdin"),
+    noStream: Options.boolean("no-stream"),
+    quiet: Options.boolean("quiet"),
+    json: Options.boolean("json"),
+    temperature: Options.optional(Options.float("temperature")),
+    maxTokens: Options.optional(Options.integer("max-tokens")),
+    topP: Options.optional(Options.float("top-p")),
+    seed: Options.optional(Options.integer("seed")),
   },
   (opts) => generateHandler(opts)
 );
@@ -321,19 +415,33 @@ export const genAliasCommand = Command.make(
 export const processPromptLegacyCommand = Command.make(
   "process-prompt",
   {
-    file: Args.text({ name: "file" }),
+    file: Args.text({ name: "file" }).pipe(Args.optional),
     provider: Options.optional(
       Options.withAlias(
         Options.choice("provider", ["openai", "anthropic", "google"] as const),
         "p"
       )
     ),
-    model: Options.optional(Options.text("model")),
-    output: Options.optional(Options.text("output")),
-    outputFormat: Options.optional(
-      Options.choice("output-format", ["text", "json"] as const)
+    model: Options.optional(Options.text("model").pipe(Options.withAlias("m"))),
+    output: Options.optional(
+      Options.text("output").pipe(Options.withAlias("o"))
     ),
-    schemaPrompt: Options.optional(Options.text("schema-prompt")),
+    outputFormat: Options.optional(
+      Options.choice("output-format", ["text", "json"] as const).pipe(
+        Options.withAlias("f")
+      )
+    ),
+    schemaPrompt: Options.optional(
+      Options.text("schema-prompt").pipe(Options.withAlias("s"))
+    ),
+    stdin: Options.boolean("stdin"),
+    noStream: Options.boolean("no-stream"),
+    quiet: Options.boolean("quiet"),
+    json: Options.boolean("json"),
+    temperature: Options.optional(Options.float("temperature")),
+    maxTokens: Options.optional(Options.integer("max-tokens")),
+    topP: Options.optional(Options.float("top-p")),
+    seed: Options.optional(Options.integer("seed")),
   },
   (opts) => generateHandler(opts)
 );

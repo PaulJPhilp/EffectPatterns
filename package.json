@@ -60,6 +60,7 @@
     "@opentelemetry/sdk-node": "^0.203.0",
     "@opentelemetry/sdk-trace-node": "^2.0.1",
     "@opentelemetry/semantic-conventions": "^1.36.0",
+    "cli-table3": "^0.6.5",
     "dotenv": "^17.2.1",
     "effect": "^3.17.6",
     "gray-matter": "^4.0.3",

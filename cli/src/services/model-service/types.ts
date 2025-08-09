@@ -19,3 +19,6 @@ export interface Provider {
   readonly apiKeyEnvVar: string;
   readonly supportedModels: string[];
 }
+
+// Canonical provider identifiers for CLI inputs/config
+export type ProviderSlug = "openai" | "anthropic" | "google";

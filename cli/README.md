@@ -20,9 +20,17 @@ The Effect AI CLI is a production-ready command-line interface that demonstrates
 
 #### Core Commands
 - `effect-ai-cli list` - List available patterns
-- `effect-ai-cli process-prompt` - Process prompts with AI
-  - `--output-format` - Output format: text (default) or json
-  - `--schema-prompt` - Path to prompt file that defines structured output format (required when output-format is json)
+- `effect-ai-cli generate` (alias `gen`) - Generate with AI
+  - Input forms: inline text, file path, or stdin (`--stdin`)
+  - Streaming by default for text format; buffer with `--no-stream`
+  - `-o, --output <path>` write full output to file (tee when streaming)
+  - `-p, --provider <openai|anthropic|google>` select provider
+  - `-m, --model <name>` select model
+  - `-f, --format <text|json>` select output format (default: text)
+  - `--json` convenience for `--format=json`
+  - `-s, --schema-prompt <file>` required when `--format=json`
+  - `--quiet` suppress stdout (useful with `--output`)
+  - Generation params: `--temperature`, `--max-tokens`, `--top-p`, `--seed`
 - `effect-ai-cli health` - Check system health
 - `effect-ai-cli config` - Manage configuration
 - `effect-ai-cli auth` - Manage authentication
@@ -30,11 +38,33 @@ The Effect AI CLI is a production-ready command-line interface that demonstrates
 - `effect-ai-cli trace` - View traces
 - `effect-ai-cli dry-run` - Test without execution
 
+#### Execution Plan Management
+- `effect-ai-cli plan create` — Set plan overrides
+  - `--retries <n>` number of retries for the primary provider (attempts = retries + 1). Default: 1 retry
+  - `--retry-ms <ms>` delay between attempts for the primary. Default: 1000
+  - `--fallbacks <list>` comma-separated `provider:model` fallbacks, e.g. `openai:gpt-4o-mini,anthropic:claude-3-5-haiku`
+- `effect-ai-cli plan list` — Show the current plan (effective defaults if unset)
+- `effect-ai-cli plan clear` — Remove overrides
+- `effect-ai-cli plan reset` — Reset to defaults
+
+Defaults
+- Primary: 2 attempts (1 retry) with 1000ms spacing
+- Fallbacks: `openai:gpt-4o-mini` then `anthropic:claude-3-5-haiku`, each 1 attempt with 1500ms spacing
+
+Note: `process-prompt` remains available as a legacy alias for backward compatibility.
+
 #### Run Management
 - `effect-ai-cli runs list` - List all runs
 - `effect-ai-cli runs create` - Create a new run
 - `effect-ai-cli runs update` - Update run information
 - `effect-ai-cli runs delete` - Delete a run
+
+#### Metrics
+- `effect-ai-cli metrics report` — Report metrics
+  - `--format <console|json|jsonl>` (default: console)
+  - `-o, --output <path>` when `json` or `jsonl`, write to file
+- `effect-ai-cli metrics last` — Pretty table for the most recent run
+- `effect-ai-cli metrics clear` — Clear metrics history
 
 ## Architecture
 
@@ -138,8 +168,14 @@ Create a `.effect-ai-cli.json` file in your home directory:
 # List all available patterns
 effect-ai-cli list
 
-# Process a prompt with AI
-effect-ai-cli process-prompt "Create a React component"
+# Inline prompt (streams to stdout)
+effect-ai-cli generate "Create a React component"
+
+# File prompt (MDX or text)
+effect-ai-cli gen ./prompts/component.mdx
+
+# From stdin
+cat prompt.txt | effect-ai-cli generate --stdin
 
 # Check system health
 effect-ai-cli health
@@ -150,23 +186,32 @@ effect-ai-cli dry-run --pattern="component-pattern"
 
 ### Advanced Usage
 ```bash
-# Process with specific provider and model
-effect-ai-cli process-prompt \
-  --provider=anthropic \
-  --model=claude-3-sonnet \
-  --prompt="Create a data processing pipeline"
+# With provider/model and params
+effect-ai-cli generate \
+  -p anthropic \
+  -m claude-3-sonnet \
+  --temperature 0.2 \
+  --max-tokens 800 \
+  "Create a data processing pipeline"
 
-# Process with custom configuration
-effect-ai-cli process-prompt \
-  --config=/path/to/config.json \
-  --output=/path/to/output \
-  --trace
+# JSON mode with schema (buffers, writes metrics inside JSON)
+effect-ai-cli generate ./prompts/object.mdx \
+  --json \
+  -s ./prompts/object-schema.mdx \
+  -o result.json
 
-# Run with metrics collection
-effect-ai-cli process-prompt \
-  --metrics \
-  --otel-endpoint=http://localhost:4317 \
-  "Create a testing utility"
+# Plan overrides
+effect-ai-cli plan create --retries 2 --retry-ms 1200 \
+  --fallbacks openai:gpt-4o-mini,anthropic:claude-3-5-haiku
+effect-ai-cli plan list
+
+# Metrics reporting
+effect-ai-cli metrics report --format console
+effect-ai-cli metrics report --format json --output metrics.json
+effect-ai-cli metrics last
+
+# Quiet + output only
+cat prompt.txt | effect-ai-cli gen --stdin --quiet -o out.txt
 ```
 
 ## Development

@@ -11,8 +11,9 @@ const modelList = Command.make(
   "list",
   {
     provider: Options.optional(
-      Options.choice("provider", ["openai", "anthropic", "google"]).pipe(
-        Options.withDescription("Filter models by provider")
+      Options.text("provider").pipe(
+        Options.withDescription("Filter models by provider (free text)"),
+        Options.withAlias("p")
       )
     ),
   },
@@ -21,13 +22,7 @@ const modelList = Command.make(
       const config = yield* ConfigService;
       const providerFromConfig = yield* config.get("defaultProvider");
       const providerValue = EffectOption.match(provider, {
-        onNone: () =>
-          EffectOption.getOrElse(
-            providerFromConfig as EffectOption.Option<
-              "openai" | "anthropic" | "google"
-            >,
-            () => null
-          ),
+        onNone: () => EffectOption.getOrElse(providerFromConfig, () => null),
         onSome: (p) => p,
       });
 
@@ -35,7 +30,6 @@ const modelList = Command.make(
         `Listing models${providerValue ? ` for ${providerValue}` : ""}...`
       );
 
-      // Use ModelService for OpenAI/Anthropic; Google is not modeled in ModelService
       const service = yield* Effect.provideService(
         ModelService,
         ModelServiceImpl
@@ -83,14 +77,7 @@ const modelList = Command.make(
 const modelInfo = Command.make(
   "info",
   {
-    provider: Args.choice(
-      [
-        ["openai", "openai"],
-        ["anthropic", "anthropic"],
-        ["google", "google"],
-      ],
-      { name: "provider" }
-    ),
+    provider: Args.text({ name: "provider" }),
     model: Args.text({ name: "model" }),
   },
   ({ provider, model }) =>

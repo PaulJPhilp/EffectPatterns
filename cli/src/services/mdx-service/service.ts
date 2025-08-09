@@ -71,47 +71,44 @@ export class MdxService extends Effect.Service<MdxService>()("MdxService", {
     // Parse MDX frontmatter with validation
     const parseMdxFile = (content: string) =>
       Effect.gen(function* () {
-        try {
-          // Simple regex-based parsing for basic frontmatter extraction
-          const frontmatterMatch = content.match(
-            /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/
-          );
+        // Extract frontmatter
+        const frontmatterMatch = content.match(
+          /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/
+        );
 
-          if (!frontmatterMatch) {
-            return yield* Effect.fail(
-              new InvalidMdxFormatError({
-                reason: "No frontmatter found in .mdx file",
-              })
-            );
-          }
-
-          const [, frontmatterContent, templateContent] = frontmatterMatch;
-
-          // Parse YAML frontmatter
-          let metadata: Record<string, unknown>;
-          try {
-            metadata = parseYaml(frontmatterContent) as Record<string, unknown>;
-          } catch (error) {
-            return yield* Effect.fail(
-              new InvalidMdxFormatError({
-                reason: `Invalid YAML frontmatter: ${error}`,
-              })
-            );
-          }
-
-          return {
-            attributes: metadata,
-            body: templateContent,
-          };
-        } catch (error) {
+        if (!frontmatterMatch) {
           return yield* Effect.fail(
+            new InvalidMdxFormatError({
+              reason: "No frontmatter found in .mdx file",
+            })
+          );
+        }
+
+        const [, frontmatterContent, templateContent] = frontmatterMatch;
+
+        // Parse YAML with Effect.try
+        const metadataResult = yield* Effect.try({
+          try: () => parseYaml(frontmatterContent) as Record<string, unknown>,
+          catch: (error) =>
+            new InvalidMdxFormatError({
+              reason: `Invalid YAML frontmatter: ${String(error)}`,
+            }),
+        });
+
+        return {
+          attributes: metadataResult,
+          body: templateContent,
+        };
+      }).pipe(
+        Effect.catchAll((error) =>
+          Effect.fail(
             new InvalidMdxFormatError({
               reason:
                 error instanceof Error ? error.message : "Failed to parse MDX",
             })
-          );
-        }
-      });
+          )
+        )
+      );
 
     // Validate MDX configuration
     const validateMdxConfig = (attributes: Record<string, unknown>) => {

@@ -141,6 +141,19 @@ export const TestRuntime = ManagedRuntime.make(
   )
 );
 
+// Environment provided by TestRuntime
+type TestEnv =
+  | typeof NodeContext
+  | ConfigService
+  | AuthService
+  | MetricsService
+  | MdxService
+  | OtelService
+  | OutputHandlerService
+  | RunManagement
+  | LLMService
+  | TemplateService;
+
 /**
  * Helper function to run effects in the test runtime.
  *
@@ -161,7 +174,22 @@ export const TestRuntime = ManagedRuntime.make(
  * });
  * ```
  */
-export const runTestEffect = <A, E>(effect: Effect.Effect<A, E>) => {
+export const runTestEffect = <A, E>(
+  effect: Effect.Effect<
+    A,
+    E,
+    | NodeContext.NodeContext
+    | ConfigService
+    | AuthService
+    | MetricsService
+    | MdxService
+    | OtelService
+    | OutputHandlerService
+    | RunManagement
+    | LLMService
+    | TemplateService
+  >
+) => {
   return TestRuntime.runPromise(effect);
 };
 
@@ -186,6 +214,21 @@ export const runTestEffect = <A, E>(effect: Effect.Effect<A, E>) => {
  * });
  * ```
  */
-export const runTestExit = <A, E>(effect: Effect.Effect<A, E>) => {
+export const runTestExit = <A, E>(
+  effect: Effect.Effect<
+    A,
+    E,
+    | ConfigService
+    | NodeContext.NodeContext
+    | AuthService
+    | MetricsService
+    | MdxService
+    | OtelService
+    | OutputHandlerService
+    | RunManagement
+    | LLMService
+    | TemplateService
+  >
+) => {
   return TestRuntime.runSyncExit(effect);
 };

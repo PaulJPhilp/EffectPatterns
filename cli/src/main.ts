@@ -8,13 +8,16 @@ import { authCommand } from "./commands/auth.js";
 import { configCommand } from "./commands/config.js";
 import { dryRun } from "./commands/dry-run.js";
 import { echoCommand } from "./commands/echo.js";
-import { health } from "./commands/health.js";
-import { effectPatternsList } from "./commands/list.js";
 import {
   effectPatternsGen,
   effectPatternsGenerate,
   effectPatternsProcessPromptLegacy,
-} from "./commands/process-prompt.js";
+} from "./commands/generate.js";
+import { health } from "./commands/health.js";
+import { effectPatternsList } from "./commands/list.js";
+import { metricsCommand } from "./commands/metrics.js";
+import { planCommand } from "./commands/plan.js";
+import { run as runGroup } from "./commands/run.js";
 import { systemPromptCommand } from "./commands/system-prompt.js";
 import { testCommand } from "./commands/test.js";
 import { traceCommand } from "./commands/trace.js";
@@ -62,6 +65,9 @@ const command = Command.make(
     dryRun,
     configCommand,
     health,
+    runGroup,
+    metricsCommand,
+    planCommand,
     effectPatternsGenerate,
     effectPatternsGen,
     effectPatternsProcessPromptLegacy,
@@ -101,10 +107,15 @@ const main = Effect.gen(function* () {
       if (errorStr.includes("FiberFailure")) {
         const match = errorStr.match(/Error:\s*({.*?})/);
         if (match) {
-          try {
-            const parsed = JSON.parse(match[1]);
-            errorMessage = parsed.error || parsed.message || errorStr;
-          } catch {
+          const parsed = Effect.try({
+            try: () =>
+              JSON.parse(match[1]) as { error?: string; message?: string },
+            catch: () => null,
+          });
+          const parsedVal = yield* parsed;
+          if (parsedVal) {
+            errorMessage = parsedVal.error || parsedVal.message || errorStr;
+          } else {
             errorMessage = errorStr;
           }
         }

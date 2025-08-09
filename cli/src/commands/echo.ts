@@ -6,17 +6,20 @@ import { ConfigService } from "../services/config-service/service.js";
 const fileArg = Args.text({ name: "file" });
 const providerOption = Options.optional(
   Options.choice("provider", ["openai", "anthropic", "google"]).pipe(
-    Options.withDescription("LLM provider to use (google, openai, anthropic)")
+    Options.withDescription("LLM provider to use (google, openai, anthropic)"),
+    Options.withAlias("p")
   )
 );
 const modelOption = Options.optional(
   Options.text("model").pipe(
-    Options.withDescription("Model to use with the selected provider")
+    Options.withDescription("Model to use with the selected provider"),
+    Options.withAlias("m")
   )
 );
 const outputOption = Options.text("output").pipe(
   Options.optional,
-  Options.withDescription("Save AI response to file instead of console")
+  Options.withDescription("Save AI response to file instead of console"),
+  Options.withAlias("o")
 );
 
 export const echoCommand = Command.make(

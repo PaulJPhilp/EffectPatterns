@@ -6,7 +6,7 @@
 # - Runs QA validation against each pattern
 # - Produces JSON output with metadata, pass/fail status, and metrics
 # - Saves results to content/qa/results/
-# - Uses CLI process-prompt command for LLM processing
+# - Uses CLI generate command for LLM processing
 #
 # Usage:
 #   ./qa-process.sh [--debug]
@@ -78,7 +78,7 @@ run_qa_validation() {
   # Run the CLI command to process the prompt with correct arguments
   # CLI writes JSON output directly to the file
   local output_file="$RESULTS_DIR/${file_name%.mdx}-qa.json"
-  if cd "$PROJECT_ROOT" && OUTPUT_FORMAT="json" SCHEMA_PROMPT="$PROMPTS_DIR/qa-schema.mdx" node --loader ts-node/esm cli/src/main.ts process-prompt --output "$output_file" "$pattern_path"; then
+  if cd "$PROJECT_ROOT" && OUTPUT_FORMAT="json" SCHEMA_PROMPT="$PROMPTS_DIR/qa-schema.mdx" node --loader ts-node/esm cli/src/main.ts generate --output "$output_file" "$pattern_path"; then
     # Read the generated JSON file
     if [ -f "$output_file" ]; then
       cat "$output_file"

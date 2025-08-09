@@ -176,17 +176,13 @@ export class TemplateService extends Effect.Service<TemplateService>()(
             mergedParams[name] = value;
           }
 
-          // Render template with Liquid
-          try {
-            const rendered = yield* Effect.promise(() =>
-              liquid.parseAndRender(template.content, mergedParams)
-            );
-            return rendered;
-          } catch (error) {
-            return yield* Effect.fail(
-              new Error(`Template rendering failed: ${error}`)
-            );
-          }
+          // Render template with Liquid using Effect.tryPromise
+          const rendered = yield* Effect.tryPromise({
+            try: () => liquid.parseAndRender(template.content, mergedParams),
+            catch: (error) =>
+              new Error(`Template rendering failed: ${String(error)}`),
+          });
+          return rendered;
         });
 
       return {

@@ -63,26 +63,26 @@ export const effectPatternsList = Command.make(
           yield* Console.log(`DEBUG: About to read directory: ${targetPath}`);
         }
 
-        try {
-          const entries = yield* fs.readDirectory(targetPath);
-          if (verboseMode && shouldLog) {
-            yield* Console.log(`DEBUG: Found ${entries.length} entries`);
-          }
-
-          const filePaths = entries.map((entry) => `${targetPath}/${entry}`);
-          if (verboseMode && shouldLog) {
-            yield* Console.log(
-              `DEBUG: Mapped to ${filePaths.length} file paths`
-            );
-          }
-
-          return filePaths;
-        } catch (error) {
-          if (verboseMode && shouldLog) {
-            yield* Console.log(`DEBUG: Error reading directory: ${error}`);
-          }
-          return [];
+        const entries = yield* fs.readDirectory(targetPath).pipe(
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              if (verboseMode && shouldLog) {
+                yield* Console.log(`DEBUG: Error reading directory: ${error}`);
+              }
+              return [] as string[];
+            })
+          )
+        );
+        if (verboseMode && shouldLog) {
+          yield* Console.log(`DEBUG: Found ${entries.length} entries`);
         }
+
+        const filePaths = entries.map((entry) => `${targetPath}/${entry}`);
+        if (verboseMode && shouldLog) {
+          yield* Console.log(`DEBUG: Mapped to ${filePaths.length} file paths`);
+        }
+
+        return filePaths;
       }).pipe(
         Effect.catchAll((error) =>
           Effect.gen(function* () {
