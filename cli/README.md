@@ -6,6 +6,10 @@ A comprehensive TypeScript CLI application built with Effect-TS for managing AI-
 
 The Effect AI CLI is a production-ready command-line interface that demonstrates advanced Effect-TS patterns including service composition, resource management, observability, and AI integration. It provides tools for managing AI workflows, tracking metrics, and maintaining run history.
 
+Execution Plans:
+- By default, LLM calls use an ExecutionPlan with sensible retries and provider fallbacks.
+- You can override attempts and timing and also customize fallback provider/model order with the `plan` command.
+
 ## Features
 
 ### Core Capabilities
@@ -15,6 +19,22 @@ The Effect AI CLI is a production-ready command-line interface that demonstrates
 - **Observability**: Full OpenTelemetry integration for tracing and monitoring
 - **Configuration Management**: Flexible configuration with environment variables
 - **Authentication**: Secure API key management
+
+### Quick Start
+
+```bash
+# Generate (streams by default)
+effect-ai-cli generate "Write a haiku about Effect"
+
+# Configure execution plan overrides
+effect-ai-cli plan create --retries 2 --retry-ms 1200 \
+  --fallbacks openai:gpt-4o-mini,anthropic:claude-3-5-haiku
+effect-ai-cli plan list
+
+# View metrics for recent runs
+effect-ai-cli metrics last
+effect-ai-cli metrics report --format console
+```
 
 ### Commands
 
