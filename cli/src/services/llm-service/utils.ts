@@ -3,7 +3,7 @@ import { FileSystem } from "@effect/platform";
 import { Effect, Redacted } from "effect";
 import { MdxService } from "../mdx-service/service.js";
 import { CONFIG_KEYS } from "../../config/constants.js";
-import { FileReadError } from "./errors.js";
+import { FileReadError, InvalidFrontmatterError, LlmServiceError } from "./errors.js";
 import type { Models, Providers } from "./types.js";
 
 interface MdxPromptConfig {
@@ -20,26 +20,15 @@ interface ParsedMdxFile {
   body: string;
 }
 
-// Custom error types
-export class InvalidMdxFormatError extends Error {
-  readonly _tag = "InvalidMdxFormatError";
-  constructor(public readonly reason: string) {
-    super(`Invalid MDX format: ${reason}`);
-  }
-}
-
-export class InvalidFrontmatterError extends Error {
-  readonly _tag = "InvalidFrontmatterError";
-  constructor(public readonly reason: string) {
-    super(`Invalid frontmatter: ${reason}`);
-  }
-}
+// Custom error types are defined in errors.ts
 
 // Read file content safely
 export const readFileContent = (filePath: string) =>
   FileSystem.FileSystem.pipe(
     Effect.flatMap((fs) => fs.readFileString(filePath)),
-    Effect.mapError((error) => new Error(`Failed to read file ${filePath}: ${error}`))
+    Effect.mapError((error) =>
+      new FileReadError({ filePath, reason: String(error) })
+    )
   );
 
 // Parse MDX frontmatter using MDX service
@@ -63,11 +52,19 @@ export const validateMdxConfig = (attributes: Record<string, unknown>) =>
       : undefined;
 
     if (!provider || !isValidProvider(provider)) {
-      return yield* Effect.fail(new InvalidFrontmatterError(`Invalid provider: ${String(provider)}`));
+      return yield* Effect.fail(
+        new InvalidFrontmatterError({
+          reason: `Invalid provider: ${String(provider)}`,
+        })
+      );
     }
 
     if (!model || !isValidModel(model)) {
-      return yield* Effect.fail(new InvalidFrontmatterError(`Invalid model: ${String(model)}`));
+      return yield* Effect.fail(
+        new InvalidFrontmatterError({
+          reason: `Invalid model: ${String(model)}`,
+        })
+      );
     }
 
     return { provider, model, parameters };
@@ -126,27 +123,42 @@ const isValidModel = (model: string): model is Models => {
 
 // Function to get Google API key
 export const getGoogleApiKey = Effect.gen(function* () {
-	const key = process.env[CONFIG_KEYS.GOOGLE_AI_API_KEY];
-	if (!key) {
-		return yield* Effect.fail(new Error(`${CONFIG_KEYS.GOOGLE_AI_API_KEY} not found`));
-	}
-	return Redacted.make(key);
+  const key = process.env[CONFIG_KEYS.GOOGLE_AI_API_KEY];
+  if (!key) {
+    return yield* Effect.fail(
+      new LlmServiceError({
+        provider: "google",
+        reason: `${CONFIG_KEYS.GOOGLE_AI_API_KEY} not found`,
+      })
+    );
+  }
+  return Redacted.make(key);
 });
 
 // Function to get OpenAI API key
 export const getOpenAIApiKey = Effect.gen(function* () {
-	const key = process.env[CONFIG_KEYS.OPENAI_API_KEY];
-	if (!key) {
-		return yield* Effect.fail(new Error(`${CONFIG_KEYS.OPENAI_API_KEY} not found`));
-	}
-	return Redacted.make(key);
+  const key = process.env[CONFIG_KEYS.OPENAI_API_KEY];
+  if (!key) {
+    return yield* Effect.fail(
+      new LlmServiceError({
+        provider: "openai",
+        reason: `${CONFIG_KEYS.OPENAI_API_KEY} not found`,
+      })
+    );
+  }
+  return Redacted.make(key);
 });
 
 // Function to get Anthropic API key
 export const getAnthropicApiKey = Effect.gen(function* () {
-	const key = process.env[CONFIG_KEYS.ANTHROPIC_API_KEY];
-	if (!key) {
-		return yield* Effect.fail(new Error(`${CONFIG_KEYS.ANTHROPIC_API_KEY} not found`));
-	}
-	return Redacted.make(key);
+  const key = process.env[CONFIG_KEYS.ANTHROPIC_API_KEY];
+  if (!key) {
+    return yield* Effect.fail(
+      new LlmServiceError({
+        provider: "anthropic",
+        reason: `${CONFIG_KEYS.ANTHROPIC_API_KEY} not found`,
+      })
+    );
+  }
+  return Redacted.make(key);
 });

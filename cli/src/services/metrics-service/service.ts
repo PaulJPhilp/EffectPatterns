@@ -114,28 +114,28 @@ export class MetricsService extends Effect.Service<MetricsService>()(
 
       const reportToConsole = (history: MetricsHistory) =>
         Effect.gen(function* () {
-          yield* Console.log("=== METRICS REPORT ===");
-          yield* Console.log(`Total Commands: ${history.summary.totalCommands}`);
-          yield* Console.log(`Successful: ${history.summary.successfulCommands}`);
-          yield* Console.log(`Failed: ${history.summary.failedCommands}`);
-          yield* Console.log(`Total Tokens: ${history.summary.totalTokens.toLocaleString()}`);
-          yield* Console.log(`Total Cost: $${history.summary.totalCost.toFixed(5)}`);
-          yield* Console.log(`Average Duration: ${history.summary.averageDuration.toFixed(0)}ms`);
+          yield* Effect.log("=== METRICS REPORT ===");
+          yield* Effect.log(`Total Commands: ${history.summary.totalCommands}`);
+          yield* Effect.log(`Successful: ${history.summary.successfulCommands}`);
+          yield* Effect.log(`Failed: ${history.summary.failedCommands}`);
+          yield* Effect.log(`Total Tokens: ${history.summary.totalTokens.toLocaleString()}`);
+          yield* Effect.log(`Total Cost: $${history.summary.totalCost.toFixed(5)}`);
+          yield* Effect.log(`Average Duration: ${history.summary.averageDuration.toFixed(0)}ms`);
 
-          yield* Console.log("\nProvider Statistics:");
+          yield* Effect.log("\nProvider Statistics:");
           for (const [provider, stats] of Object.entries(history.summary.providerStats)) {
             const commands = Number(stats.commands || 0);
             const tokens = Number(stats.tokens || 0);
             const cost = Number(stats.cost || 0);
-            yield* Console.log(`  ${provider}: ${commands} commands, ${tokens.toLocaleString()} tokens, $${cost.toFixed(5)}`);
+            yield* Effect.log(`  ${provider}: ${commands} commands, ${tokens.toLocaleString()} tokens, $${cost.toFixed(5)}`);
           }
 
-          yield* Console.log("\nModel Statistics:");
+          yield* Effect.log("\nModel Statistics:");
           for (const [model, stats] of Object.entries(history.summary.modelStats)) {
             const commands = Number(stats.commands || 0);
             const tokens = Number(stats.tokens || 0);
             const cost = Number(stats.cost || 0);
-            yield* Console.log(`  ${model}: ${commands} commands, ${tokens.toLocaleString()} tokens, $${cost.toFixed(5)}`);
+            yield* Effect.log(`  ${model}: ${commands} commands, ${tokens.toLocaleString()} tokens, $${cost.toFixed(5)}`);
           }
         });
 
@@ -322,15 +322,38 @@ export class MetricsService extends Effect.Service<MetricsService>()(
             }
           }),
 
-        extractLLMUsage: (response, provider, model) =>
+        extractLLMUsage: (
+          response: unknown,
+          provider: string,
+          model: string
+        ) =>
           Effect.gen(function* () {
-            // Extract usage data from response metadata
-            const usageData = response?.usage || {};
-            
-            const inputTokens = usageData.promptTokens || usageData.inputTokens || 0;
-            const outputTokens = usageData.completionTokens || usageData.outputTokens || 0;
-            const thinkingTokens = usageData.reasoningTokens || usageData.thinkingTokens || 0;
-            const totalTokens = usageData.totalTokens || (inputTokens + outputTokens + thinkingTokens);
+            // Safely extract usage data from response metadata
+            const hasUsage = (x: unknown): x is { usage?: unknown } =>
+              typeof x === "object" && x !== null && "usage" in (x as Record<string, unknown>);
+
+            const usageUnknown: unknown = hasUsage(response)
+              ? (response as { usage?: unknown }).usage
+              : undefined;
+
+            const usageObj: Record<string, unknown> =
+              typeof usageUnknown === "object" && usageUnknown !== null
+                ? (usageUnknown as Record<string, unknown>)
+                : {};
+
+            const getNum = (obj: Record<string, unknown>, ...keys: Array<string>): number => {
+              for (const k of keys) {
+                const v = obj[k];
+                if (typeof v === "number") return v;
+              }
+              return 0;
+            };
+
+            const inputTokens = getNum(usageObj, "promptTokens", "inputTokens");
+            const outputTokens = getNum(usageObj, "completionTokens", "outputTokens");
+            const thinkingTokens = getNum(usageObj, "reasoningTokens", "thinkingTokens");
+            const totalTokens =
+              getNum(usageObj, "totalTokens") || (inputTokens + outputTokens + thinkingTokens);
             
             // Calculate costs
             const estimatedCost = estimateCost(provider, model, totalTokens);
@@ -352,7 +375,10 @@ export class MetricsService extends Effect.Service<MetricsService>()(
             });
           }),
 
-        saveCommandMetrics: (outputPath, format = "json") =>
+        saveCommandMetrics: (
+          outputPath?: string,
+          format: "json" | "ndjson" = "json"
+        ) =>
           Effect.gen(function* () {
             const history = yield* readMetricsFile;
             if (history.runs.length > 0) {

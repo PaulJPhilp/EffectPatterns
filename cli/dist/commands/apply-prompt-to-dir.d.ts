@@ -4,7 +4,7 @@ import { Path } from "@effect/platform/Path";
 import { Option } from "effect";
 import { ConfigService } from "../services/config-service/service.js";
 import { TemplateService } from "../services/prompt-template/service.js";
-export declare const applyPromptToDir: Command.Command<"apply-prompt-to-dir", ConfigService | TemplateService | import("@effect/ai-anthropic/AnthropicClient").AnthropicClient | import("@effect/ai-google/GoogleAiClient").GoogleAiClient | import("@effect/ai-openai/OpenAiClient").OpenAiClient | import("@effect/platform/HttpClient").HttpClient | FileSystem | Path, Error | import("@effect/platform/Error").PlatformError, {
+export declare const applyPromptToDir: Command.Command<"apply-prompt-to-dir", FileSystem | Path | ConfigService | TemplateService | import("@effect/ai-google/GoogleAiClient").GoogleAiClient | import("@effect/ai-openai/OpenAiClient").OpenAiClient | import("@effect/ai-anthropic/AnthropicClient").AnthropicClient | import("@effect/platform/HttpClient").HttpClient, import("@effect/platform/Error").PlatformError | Error, {
     readonly input: string;
     readonly output: string;
     readonly filePattern: string;

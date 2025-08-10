@@ -1,5 +1,6 @@
 import { Args, Command, Options } from "@effect/cli";
 import { Console, Effect, Option } from "effect";
+import { DryRunError_MissingInput } from "./errors.js";
 import { ConfigService } from "../services/config-service/service.js";
 import { ModelService, make as ModelServiceImpl, } from "../services/model-service/service.js";
 // Helper function to estimate tokens and cost
@@ -53,7 +54,7 @@ export const dryRun = Command.make("dry-run", {
     }
     else {
         yield* Console.error("❌ Either prompt or file must be provided");
-        return yield* Effect.fail(new Error("Missing prompt or file"));
+        return yield* Effect.fail(new DryRunError_MissingInput());
     }
     if (!quietMode) {
         yield* Console.log(`📊 Analyzing ${resolvedProvider} ${resolvedModel}...`);

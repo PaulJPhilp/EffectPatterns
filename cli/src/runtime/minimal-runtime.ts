@@ -27,9 +27,11 @@ import {
 } from "effect";
 import { ConfigService } from "../services/config-service/service.js";
 import { MdxService } from "../services/mdx-service/service.js";
+import { TemplateService } from "../services/prompt-template/service.js";
 import { MetricsService } from "../services/metrics-service/service.js";
 import { OtelService } from "../services/otel-service/service.js";
 import { OutputHandlerService } from "../services/output-handler/service.js";
+import { RunService } from "../services/run-service/service.js";
 
 /**
  * Minimal configuration provider using environment variables.
@@ -57,8 +59,10 @@ const MinimalAppLayer = Layer.mergeAll(
   ConfigService.Default,
   MetricsService.Default,
   MdxService.Default,
+  TemplateService.Default,
   OtelService.Default,
-  OutputHandlerService.Default
+  OutputHandlerService.Default,
+  RunService.Default
 );
 
 /**

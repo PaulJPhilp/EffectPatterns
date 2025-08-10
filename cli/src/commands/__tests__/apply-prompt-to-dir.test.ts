@@ -2,7 +2,7 @@ import { FileSystem, Path } from "@effect/platform";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
-import { TemplateService } from "../services/prompt-template/service.js";
+import { TemplateService } from "../../services/prompt-template/service.js";
 
 describe("apply-prompt-to-dir command", () => {
   it("should process .mdx template with parameters", () => {

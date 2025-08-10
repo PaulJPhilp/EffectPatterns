@@ -1,15 +1,27 @@
-import { Args, Command, Options } from "@effect/cli";
+import { Args, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform/FileSystem";
 import { Path } from "@effect/platform/Path";
 import { Chunk, Effect, Option, Stream } from "effect";
 import { ConfigService } from "../services/config-service/service.js";
 import { streamText } from "../services/llm-service/service.js";
 import type { Models, Providers } from "../services/llm-service/types.js";
-import {
-  ModelService,
-  make as ModelServiceImpl,
-} from "../services/model-service/service.js";
+import { ModelService } from "../services/model-service/service.js";
 import { TemplateService } from "../services/prompt-template/service.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - TS resolves .js to .ts in this repo config
+import {
+  makeCommand,
+  printText,
+  printJson,
+  setGlobalJson,
+  setGlobalCompact,
+  setGlobalOutputOptions,
+  getGlobalJson,
+  getGlobalOutputOptions,
+  optQuiet,
+  optForce,
+  optOutput,
+} from "./_shared.js";
 
 // effect-patterns apply-prompt-to-dir -input <input-dir> -output <output-dir> [file-pattern] <prompt-file>
 const promptFileArg = Args.file({ name: "prompt-file", exists: "yes" });
@@ -29,7 +41,7 @@ const parametersOption = Options.keyValueMap("parameter").pipe(
   Options.withAlias("p")
 );
 
-export const applyPromptToDir = Command.make(
+export const applyPromptToDir = makeCommand(
   "apply-prompt-to-dir",
   {
     input: inputDirOption,
@@ -37,12 +49,12 @@ export const applyPromptToDir = Command.make(
     filePattern: filePatternArg,
     promptFile: promptFileArg,
     parameters: parametersOption,
-    quiet: Options.boolean("quiet").pipe(
-      Options.optional,
-      Options.withAlias("q")
-    ),
+    json: Options.boolean("json").pipe(Options.optional),
+    quiet: optQuiet("Suppress normal output (errors still go to stderr)"),
+    outFile: optOutput("Write output summary to file"),
+    force: optForce("Force overwrite output file if it exists"),
   },
-  ({ input, output, filePattern, promptFile, parameters, quiet }) =>
+  ({ input, output, filePattern, promptFile, parameters, json, quiet, outFile, force }) =>
     Effect.gen(function* () {
       const fs = yield* FileSystem;
       const path = yield* Path;
@@ -62,10 +74,9 @@ export const applyPromptToDir = Command.make(
 
       // Validate provider/model via ModelService (all providers)
       {
-        const service = yield* Effect.provideService(
-          ModelService,
-          ModelServiceImpl
-        )(ModelService);
+        const service = yield* ModelService.pipe(
+          Effect.provide(ModelService.Default)
+        );
         const providerName =
           provider === "openai"
             ? "OpenAI"
@@ -97,12 +108,34 @@ export const applyPromptToDir = Command.make(
           )
         : fs.readFileString(promptFile);
 
-      const isQuiet = Option.getOrElse(quiet, () => false);
-      if (!isQuiet) {
-        yield* Effect.log(`📁 Applying prompt to directory: ${input}`);
-        yield* Effect.log(`📄 Prompt file: ${promptFile}`);
-        yield* Effect.log(`📊 File pattern: ${filePattern}`);
-        yield* Effect.log(`📄 Parameters: ${parameters ? "provided" : "none"}`);
+      const jsonFlag = Option.getOrElse(json as Option.Option<boolean>, () => false);
+      const quietFlag = Option.getOrElse(quiet as Option.Option<boolean>, () => false);
+      const forceFlag = Option.getOrElse(force as Option.Option<boolean>, () => false);
+      const localOutFile = Option.getOrElse(outFile as Option.Option<string>, () => undefined);
+
+      setGlobalJson(jsonFlag);
+      setGlobalCompact(false);
+      setGlobalOutputOptions(
+        quietFlag || localOutFile || forceFlag
+          ? {
+              quiet: quietFlag || undefined,
+              outputFile: localOutFile,
+              force: forceFlag || undefined,
+            }
+          : undefined
+      );
+      const resolvedOutput = getGlobalOutputOptions()?.outputFile;
+      const asJson = getGlobalJson() || !!resolvedOutput;
+
+      if (!quietFlag && !asJson) {
+        yield* printText(
+          [
+            `📁 Applying prompt to directory: ${input}`,
+            `📄 Prompt file: ${promptFile}`,
+            `📊 File pattern: ${filePattern}`,
+            `📄 Parameters: ${parameters ? "provided" : "none"}`,
+          ].join("\n")
+        );
       }
 
       // Get files to process
@@ -113,10 +146,12 @@ export const applyPromptToDir = Command.make(
 
       const fileCount = matchingFiles.length;
 
-      if (!isQuiet) {
-        yield* fileCount === 0
-          ? Effect.log("⚠️ No files found matching the pattern")
-          : Effect.log(`📊 Found ${fileCount} files to process`);
+      if (!quietFlag && !asJson) {
+        yield* printText(
+          fileCount === 0
+            ? "⚠️ No files found matching the pattern"
+            : `📊 Found ${fileCount} files to process`
+        );
       }
 
       yield* Effect.if(fileCount > 0, {
@@ -130,8 +165,8 @@ export const applyPromptToDir = Command.make(
                   const inputPath: string = path.join(input, file);
                   const outputPath: string = path.join(output, file);
 
-                  if (!isQuiet) {
-                    yield* Effect.log(`🔄 Processing: ${file}`);
+                  if (!quietFlag && !asJson) {
+                    yield* printText(`🔄 Processing: ${file}`);
                   }
 
                   // Read file content
@@ -156,21 +191,41 @@ export const applyPromptToDir = Command.make(
                   // Write response to output file
                   yield* fs.writeFileString(outputPath, response);
 
-                  if (!isQuiet) {
-                    yield* Effect.log(`✅ Processed: ${file}`);
+                  if (!quietFlag && !asJson) {
+                    yield* printText(`✅ Processed: ${file}`);
                   }
                   return file;
                 })
             ).pipe(Effect.map((results) => results.length));
 
-            if (!isQuiet) {
-              yield* Effect.log(
-                `🎉 Completed processing ${processedFiles} files`
+            const summary = {
+              processedFiles,
+              inputDir: input,
+              outputDir: output,
+              filePattern,
+              parametersProvided: !!parameters,
+              timestamp: new Date().toISOString(),
+            } as const;
+            if (asJson) {
+              yield* printJson(
+                summary,
+                false,
+                resolvedOutput ? { outputFile: resolvedOutput } : undefined
+              );
+            } else if (!quietFlag) {
+              yield* printText(
+                `🎉 Completed processing ${processedFiles} files`,
+                resolvedOutput ? { outputFile: resolvedOutput } : undefined
               );
             }
-            return yield* Effect.succeed({ processedFiles });
+            return yield* Effect.succeed(summary);
           }),
         onFalse: () => Effect.succeed({ processedFiles: 0 }),
       });
     })
+,
+  {
+    description: "Apply a prompt template to files in a directory",
+    errorPrefix: "Error in apply-prompt-to-dir",
+  }
 );

@@ -1,11 +1,13 @@
 import { Command, Options } from "@effect/cli";
 import { Console, Effect, Option } from "effect";
+import { PlanError_InvalidRetries, PlanError_InvalidRetryMs, PlanError_InvalidFallbackSpec, } from "./errors.js";
 import { ConfigService } from "../services/config-service/service.js";
 const retriesOpt = Options.integer("retries").pipe(Options.withDescription("Number of retries for the primary provider"), Options.withAlias("r"), Options.optional);
 const retryMsOpt = Options.integer("retry-ms").pipe(Options.withDescription("Delay between retry attempts in milliseconds"), Options.withAlias("d"), Options.optional);
 const fallbacksOpt = Options.text("fallbacks").pipe(Options.withDescription("Comma-separated fallbacks as provider:model pairs (e.g. openai:gpt-4o-mini,anthropic:claude-3-5-haiku)"), Options.optional);
 const planCreate = Command.make("create", { retries: retriesOpt, retryMs: retryMsOpt, fallbacks: fallbacksOpt }, ({ retries, retryMs, fallbacks }) => Effect.gen(function* () {
     const config = yield* ConfigService;
+    // Validation will fail with typed errors from ./errors
     if (Option.isNone(retries) &&
         Option.isNone(retryMs) &&
         Option.isNone(fallbacks)) {
@@ -15,7 +17,7 @@ const planCreate = Command.make("create", { retries: retriesOpt, retryMs: retryM
     if (Option.isSome(retries)) {
         const n = retries.value;
         if (!Number.isFinite(n) || n < 0) {
-            yield* Effect.die(new Error("--retries must be a non-negative integer"));
+            return yield* Effect.fail(new PlanError_InvalidRetries({ value: Number(n) }));
         }
         yield* config.set("planRetries", String(n));
         yield* Console.log(`Set planRetries=${n}`);
@@ -23,7 +25,7 @@ const planCreate = Command.make("create", { retries: retriesOpt, retryMs: retryM
     if (Option.isSome(retryMs)) {
         const ms = retryMs.value;
         if (!Number.isFinite(ms) || ms < 0) {
-            yield* Effect.die(new Error("--retry-ms must be a non-negative integer (milliseconds)"));
+            return yield* Effect.fail(new PlanError_InvalidRetryMs({ value: Number(ms) }));
         }
         yield* config.set("planRetryMs", String(ms));
         yield* Console.log(`Set planRetryMs=${ms}`);
@@ -31,8 +33,7 @@ const planCreate = Command.make("create", { retries: retriesOpt, retryMs: retryM
     if (Option.isSome(fallbacks)) {
         const parsed = parseFallbacks(fallbacks.value);
         if (parsed._tag === "Left") {
-            yield* Effect.die(new Error(parsed.left));
-            return;
+            return yield* Effect.fail(new PlanError_InvalidFallbackSpec({ reason: parsed.left }));
         }
         const fallbacksArray = parsed.right;
         yield* config.set("planFallbacks", JSON.stringify(fallbacksArray));

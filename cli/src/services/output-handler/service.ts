@@ -33,12 +33,12 @@ export class OutputHandlerService extends Effect.Service<OutputHandlerService>()
 								new OutputHandlerError(`Failed to write file: ${error._tag}`, error)
 							)
 						);
-						yield* Console.log(`Output written to ${options.outputFile}`);
+						yield* Effect.log(`Output written to ${options.outputFile}`);
 						return;
 					}
 
 					// Otherwise, output to console
-					yield* Console.log(content);
+					yield* Effect.log(content);
 				});
 			};
 
@@ -65,12 +65,12 @@ export class OutputHandlerService extends Effect.Service<OutputHandlerService>()
 								new OutputHandlerError(`Failed to write file: ${error._tag}`, error)
 							)
 						);
-						yield* Console.log(`Output written to ${options.outputFile}`);
+						yield* Effect.log(`Output written to ${options.outputFile}`);
 						return;
 					}
 
 					// Otherwise, output to console
-					yield* Console.log(jsonContent);
+					yield* Effect.log(jsonContent);
 				});
 			};
 

@@ -43,7 +43,7 @@ import { RunService } from "../services/run-service/service.js";
  * This layer resolves all dependencies and provides a complete runtime
  * environment for production execution.
  */
-export declare const ProductionLayers: Layer.Layer<ConfigService | TemplateService | AnthropicClient.AnthropicClient | GoogleAiClient.GoogleAiClient | OpenAiClient.OpenAiClient | import("@effect/platform/HttpClient").HttpClient | NodeContext.NodeContext | MdxService | MetricsService | LLMService | AuthService | OtelService | OutputHandlerService | RunService, import("../services/config-service/errors.js").ConfigError | import("effect/ConfigError").ConfigError, never>;
+export declare const ProductionLayers: Layer.Layer<MdxService | NodeContext.NodeContext | ConfigService | LLMService | TemplateService | GoogleAiClient.GoogleAiClient | OpenAiClient.OpenAiClient | AnthropicClient.AnthropicClient | import("@effect/platform/HttpClient").HttpClient | MetricsService | OtelService | OutputHandlerService | AuthService | RunService, import("../services/config-service/errors.js").ConfigError | import("effect/ConfigError").ConfigError, never>;
 /**
  * Primary production runtime for the CLI application.
  *
@@ -62,7 +62,7 @@ export declare const ProductionLayers: Layer.Layer<ConfigService | TemplateServi
  * const result = yield* ProductionRuntime.runPromise(myEffect);
  * ```
  */
-export declare const ProductionRuntime: ManagedRuntime.ManagedRuntime<ConfigService | TemplateService | AnthropicClient.AnthropicClient | GoogleAiClient.GoogleAiClient | OpenAiClient.OpenAiClient | import("@effect/platform/HttpClient").HttpClient | NodeContext.NodeContext | MdxService | MetricsService | LLMService | AuthService | OtelService | OutputHandlerService | RunService, import("../services/config-service/errors.js").ConfigError | import("effect/ConfigError").ConfigError>;
+export declare const ProductionRuntime: ManagedRuntime.ManagedRuntime<MdxService | NodeContext.NodeContext | ConfigService | LLMService | TemplateService | GoogleAiClient.GoogleAiClient | OpenAiClient.OpenAiClient | AnthropicClient.AnthropicClient | import("@effect/platform/HttpClient").HttpClient | MetricsService | OtelService | OutputHandlerService | AuthService | RunService, import("../services/config-service/errors.js").ConfigError | import("effect/ConfigError").ConfigError>;
 /**
  * Helper function to run effects in the production runtime.
  *

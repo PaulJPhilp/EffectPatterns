@@ -20,7 +20,10 @@ const MINIMAL_RUNTIME_COMMANDS = new Set([
   "list",
   "config",
   "dry-run",
+  "metrics",
+  "plan",
   "run",
+  "system-prompt",
   "test",
 ]);
 

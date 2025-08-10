@@ -1,5 +1,6 @@
 import { FileSystem, Path } from "@effect/platform";
 import { Console, Effect, Option } from "effect";
+import { NoActiveRunError } from "./errors.js";
 import type { RunInfo } from "./types.js";
 
 export class RunService extends Effect.Service<RunService>()("RunService", {
@@ -79,14 +80,13 @@ export class RunService extends Effect.Service<RunService>()("RunService", {
       const content = yield* fs
         .readFileString(pointerFile)
         .pipe(Effect.catchAll(() => Effect.succeed("{}")));
-      try {
-        const parsed = JSON.parse(content) as Partial<RunInfo>;
-        return parsed?.runDirectory && parsed?.runName
-          ? Option.some(parsed as RunInfo)
-          : Option.none<RunInfo>();
-      } catch {
-        return Option.none<RunInfo>();
-      }
+      const parsed = yield* Effect.try({
+        try: () => JSON.parse(content) as Partial<RunInfo>,
+        catch: () => ({} as Partial<RunInfo>),
+      });
+      return parsed?.runDirectory && parsed?.runName
+        ? Option.some(parsed as RunInfo)
+        : Option.none<RunInfo>();
     });
 
     return {
@@ -147,7 +147,9 @@ export class RunService extends Effect.Service<RunService>()("RunService", {
           if (!currentRun) {
             const pointer = yield* readCurrentRunPointer;
             if (Option.isNone(pointer)) {
-              return yield* Effect.fail(new Error("No active run"));
+              return yield* Effect.fail(
+                new NoActiveRunError({ reason: "No active run" })
+              );
             }
             currentRun = pointer.value;
           }
@@ -159,7 +161,9 @@ export class RunService extends Effect.Service<RunService>()("RunService", {
           if (!currentRun) {
             const pointer = yield* readCurrentRunPointer;
             if (Option.isNone(pointer)) {
-              return yield* Effect.fail(new Error("No active run"));
+              return yield* Effect.fail(
+                new NoActiveRunError({ reason: "No active run" })
+              );
             }
             currentRun = pointer.value;
           }

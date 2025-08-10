@@ -44,7 +44,7 @@ export declare const MinimalLayers: Layer.Layer<MdxService | ConfigService | Met
  * const result = yield* MinimalRuntime.runPromise(myEffect);
  * ```
  */
-export declare const MinimalRuntime: ManagedRuntime.ManagedRuntime<MdxService | ConfigService | NodeContext.NodeContext | MetricsService | OtelService | OutputHandlerService | import("@effect/platform/HttpClient").HttpClient, import("../services/config-service/errors.js").ConfigError>;
+export declare const MinimalRuntime: ManagedRuntime.ManagedRuntime<MdxService | NodeContext.NodeContext | ConfigService | import("@effect/platform/HttpClient").HttpClient | MetricsService | OtelService | OutputHandlerService, import("../services/config-service/errors.js").ConfigError>;
 /**
  * Helper function to run effects in the minimal runtime.
  */

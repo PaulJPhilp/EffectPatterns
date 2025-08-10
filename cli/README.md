@@ -19,6 +19,7 @@ Execution Plans:
 - **Observability**: Full OpenTelemetry integration for tracing and monitoring
 - **Configuration Management**: Flexible configuration with environment variables
 - **Authentication**: Secure API key management
+- **Extensibility**: Plugin system to add custom commands via `CliPlugin`
 
 ### Quick Start
 
@@ -360,16 +361,66 @@ export class CustomService extends Effect.Service<CustomService>()(
 ) {}
 ```
 
-### Plugin Architecture
-The CLI supports plugin architecture for extending functionality:
+## Extending the CLI
+You can extend the CLI programmatically with your own commands by using the
+plugin system defined in `src/core/index.ts`.
 
-```typescript
-// Plugin registration
-const plugin = {
+Key types and helpers:
+- `CliPlugin` — a lightweight plugin descriptor `{ name, commands }`.
+- `createCli(options)` — compose a root command from built-ins and plugins.
+- `runCli(root, argv?)` — run the CLI with the appropriate runtime.
+
+Minimal end‑to‑end example:
+
+```ts
+// custom-cli.ts
+import { Command, Options } from "@effect/cli";
+import { Effect } from "effect";
+import {
+  createCli,
+  runCli,
+  // Optional: reuse built‑in commands
+  listCommand,
+  generateCommand,
+} from "./src/core/index.js";
+
+// 1) Define a command
+const echoText = Options.text("text");
+export const hello = Command.make("hello", { echoText }, ({ text }) =>
+  Effect.sync(() => {
+    console.log(`Hello, ${text}!`);
+  })
+);
+
+// 2) Package as a plugin
+const myPlugin = {
   name: "my-plugin",
-  commands: [myCommand],
-  services: [MyService]
+  commands: [hello],
 };
+
+// 3) Compose a CLI (optionally include built‑ins)
+const root = createCli({
+  name: "effect-ai-cli",
+  commands: [listCommand, generateCommand],
+  plugins: [myPlugin],
+});
+
+// 4) Run
+runCli(root, process.argv);
 ```
 
-This CLI serves as a comprehensive example of modern Effect-TS patterns in a production-ready application, demonstrating best practices for service composition, resource management, and observability.
+Notes:
+- A `CliPlugin` is simply: `{ name: string; commands: Command[] }`.
+- Commands are standard `@effect/cli` commands. Provide any services within
+  your command handlers using Effect layers as usual.
+- You can also build a fully custom distribution by composing only your
+  commands and plugins.
+
+Reusing built‑in commands
+- `src/core/index.ts` re‑exports common commands so you can compose them:
+  - `listCommand`, `generateCommand`, `planCommand`, `metricsCommand`, etc.
+  - See `src/core/index.ts` for the full list of exports.
+
+This CLI serves as a comprehensive example of modern Effect‑TS patterns in a
+production‑ready application, demonstrating best practices for service
+composition, resource management, and observability.

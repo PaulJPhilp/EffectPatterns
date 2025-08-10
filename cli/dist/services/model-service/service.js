@@ -1,4 +1,5 @@
-import { Context, Effect } from "effect";
+import { Effect } from "effect";
+import { ModelNotFoundError, ProviderNotFoundError } from "./errors.js";
 const hardcodedProviders = [
     {
         name: "OpenAI",
@@ -195,10 +196,7 @@ export const make = {
         if (model) {
             return Effect.succeed(model);
         }
-        return Effect.fail({
-            _tag: "ModelNotFoundError",
-            modelName: modelName,
-        });
+        return Effect.fail(new ModelNotFoundError({ modelName }));
     },
     getModels: (providerName) => {
         const provider = hardcodedProviders.find((provider) => provider.name === providerName);
@@ -206,20 +204,14 @@ export const make = {
             const models = hardcodedModels.filter((model) => provider.supportedModels.includes(model.name));
             return Effect.succeed(models);
         }
-        return Effect.fail({
-            _tag: "ProviderNotFoundError",
-            providerName: providerName,
-        });
+        return Effect.fail(new ProviderNotFoundError({ providerName }));
     },
     getProvider: (providerName) => {
         const provider = hardcodedProviders.find((provider) => provider.name === providerName);
         if (provider) {
             return Effect.succeed(provider);
         }
-        return Effect.fail({
-            _tag: "ProviderNotFoundError",
-            providerName: providerName,
-        });
+        return Effect.fail(new ProviderNotFoundError({ providerName }));
     },
     listAllModels: () => Effect.succeed(hardcodedModels),
     getModelsByCapability: (capability) => Effect.succeed(hardcodedModels.filter((model) => model.capabilities.includes(capability))),
@@ -230,11 +222,17 @@ export const make = {
                 model.capabilities.includes(capability));
             return Effect.succeed(models);
         }
-        return Effect.fail({
-            _tag: "ProviderNotFoundError",
-            providerName: providerName,
-        });
+        return Effect.fail(new ProviderNotFoundError({ providerName }));
     },
 };
-export class ModelService extends Context.Tag("ModelService")() {
+export class ModelService extends Effect.Service()("ModelService", {
+    sync: () => ({
+        getModel: make.getModel,
+        getModels: make.getModels,
+        getProvider: make.getProvider,
+        listAllModels: make.listAllModels,
+        getModelsByCapability: make.getModelsByCapability,
+        getModelsByProviderAndCapability: make.getModelsByProviderAndCapability,
+    }),
+}) {
 }

@@ -1,7 +1,7 @@
 import { FileSystem } from "@effect/platform";
 import { Data, Effect } from "effect";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
-import { InvalidMdxFormatError } from "./types.js";
+import { InvalidMdxFormatError } from "./errors.js";
 export class MdxService extends Effect.Service()("MdxService", {
     effect: Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
@@ -11,7 +11,9 @@ export class MdxService extends Effect.Service()("MdxService", {
         Effect.sync(() => {
             const parts = content.split("---", 3); // Frontmatter is between first two '---'
             if (parts.length < 3) {
-                throw new Error("Missing or malformed frontmatter block (expected '---' delimiters).");
+                throw new InvalidMdxFormatError({
+                    reason: "Missing or malformed frontmatter block (expected '---' delimiters).",
+                });
             }
             const frontmatterStr = parts[1];
             const mdxBody = parts[2]; // Keep original leading newlines/spaces for now, trim later during update
@@ -19,7 +21,9 @@ export class MdxService extends Effect.Service()("MdxService", {
             return Data.struct({ content, frontmatter, mdxBody });
         }).pipe(
         // Map any synchronous parsing errors into Effect's error channel
-        Effect.mapError((e) => new Error(`Failed to parse frontmatter in ${filePath.toString()}: ${String(e)}`)))));
+        Effect.mapError((e) => new InvalidMdxFormatError({
+            reason: `Failed to parse frontmatter in ${filePath.toString()}: ${String(e)}`,
+        })))));
         // Reconstruct MDX content with updated frontmatter
         const updateMdxContent = (originalFullMdxContent, updatedFrontmatter) => {
             const parts = originalFullMdxContent.split("---", 3);

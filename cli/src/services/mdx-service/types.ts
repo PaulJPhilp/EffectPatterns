@@ -1,4 +1,5 @@
 import { Data } from "effect";
+export { InvalidMdxFormatError, InvalidFrontmatterError } from "./errors.js";
 
 // Frontmatter interface with readonly properties and index signature
 export interface Frontmatter {
@@ -30,6 +31,4 @@ export interface PromptTemplate {
   readonly body: string;
 }
 
-// Error types
-export class InvalidMdxFormatError extends Data.TaggedError("InvalidMdxFormatError")<{ reason: string; }> {}
-export class InvalidFrontmatterError extends Data.TaggedError("InvalidFrontmatterError")<{ reason: string; }> {}
+// Error types are defined in ./errors.ts

@@ -40,7 +40,7 @@ import { RunManagement } from "../services/run-management/service.js";
  * const result = yield* TestRuntime.runPromise(myEffect);
  * ```
  */
-export declare const TestRuntime: ManagedRuntime.ManagedRuntime<ConfigService | TemplateService | NodeContext.NodeContext | MdxService | MetricsService | LLMService | AuthService | OtelService | OutputHandlerService | RunManagement, import("../services/config-service/errors.js").ConfigError>;
+export declare const TestRuntime: ManagedRuntime.ManagedRuntime<MdxService | NodeContext.NodeContext | ConfigService | LLMService | TemplateService | MetricsService | OtelService | OutputHandlerService | AuthService | RunManagement, import("../services/config-service/errors.js").ConfigError>;
 /**
  * Helper function to run effects in the test runtime.
  *

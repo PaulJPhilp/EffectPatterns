@@ -5,7 +5,7 @@ import { Option } from "effect";
 import { ConfigService } from "../services/config-service/service.js";
 import { MetricsService } from "../services/metrics-service/service.js";
 import { OtelService } from "../services/otel-service/service.js";
-export declare const generateCommand: Command.Command<"generate", ConfigService | import("../services/prompt-template/service.js").TemplateService | import("@effect/ai-anthropic/AnthropicClient").AnthropicClient | import("@effect/ai-google/GoogleAiClient").GoogleAiClient | import("@effect/ai-openai/OpenAiClient").OpenAiClient | import("@effect/platform/HttpClient").HttpClient | FileSystem.FileSystem | Path | import("../services/mdx-service/service.js").MdxService | MetricsService | OtelService, Error | import("@effect/platform/Error").PlatformError, {
+export declare const generateCommand: Command.Command<"generate", import("../services/mdx-service/service.js").MdxService | FileSystem.FileSystem | Path | ConfigService | import("../services/prompt-template/service.js").TemplateService | import("@effect/ai-google/GoogleAiClient").GoogleAiClient | import("@effect/ai-openai/OpenAiClient").OpenAiClient | import("@effect/ai-anthropic/AnthropicClient").AnthropicClient | import("@effect/platform/HttpClient").HttpClient | MetricsService | OtelService, import("@effect/platform/Error").PlatformError | Error, {
     readonly file: Option.Option<string>;
     readonly provider: Option.Option<"google" | "openai" | "anthropic">;
     readonly model: Option.Option<string>;
@@ -21,7 +21,7 @@ export declare const generateCommand: Command.Command<"generate", ConfigService 
     readonly topP: Option.Option<number>;
     readonly seed: Option.Option<number>;
 }>;
-export declare const genAliasCommand: Command.Command<"gen", ConfigService | import("../services/prompt-template/service.js").TemplateService | import("@effect/ai-anthropic/AnthropicClient").AnthropicClient | import("@effect/ai-google/GoogleAiClient").GoogleAiClient | import("@effect/ai-openai/OpenAiClient").OpenAiClient | import("@effect/platform/HttpClient").HttpClient | FileSystem.FileSystem | Path | import("../services/mdx-service/service.js").MdxService | MetricsService | OtelService, Error | import("@effect/platform/Error").PlatformError, {
+export declare const genAliasCommand: Command.Command<"gen", import("../services/mdx-service/service.js").MdxService | FileSystem.FileSystem | Path | ConfigService | import("../services/prompt-template/service.js").TemplateService | import("@effect/ai-google/GoogleAiClient").GoogleAiClient | import("@effect/ai-openai/OpenAiClient").OpenAiClient | import("@effect/ai-anthropic/AnthropicClient").AnthropicClient | import("@effect/platform/HttpClient").HttpClient | MetricsService | OtelService, import("@effect/platform/Error").PlatformError | Error, {
     readonly file: Option.Option<string>;
     readonly provider: Option.Option<"google" | "openai" | "anthropic">;
     readonly model: Option.Option<string>;
@@ -37,7 +37,7 @@ export declare const genAliasCommand: Command.Command<"gen", ConfigService | imp
     readonly topP: Option.Option<number>;
     readonly seed: Option.Option<number>;
 }>;
-export declare const processPromptLegacyCommand: Command.Command<"process-prompt", ConfigService | import("../services/prompt-template/service.js").TemplateService | import("@effect/ai-anthropic/AnthropicClient").AnthropicClient | import("@effect/ai-google/GoogleAiClient").GoogleAiClient | import("@effect/ai-openai/OpenAiClient").OpenAiClient | import("@effect/platform/HttpClient").HttpClient | FileSystem.FileSystem | Path | import("../services/mdx-service/service.js").MdxService | MetricsService | OtelService, Error | import("@effect/platform/Error").PlatformError, {
+export declare const processPromptLegacyCommand: Command.Command<"process-prompt", import("../services/mdx-service/service.js").MdxService | FileSystem.FileSystem | Path | ConfigService | import("../services/prompt-template/service.js").TemplateService | import("@effect/ai-google/GoogleAiClient").GoogleAiClient | import("@effect/ai-openai/OpenAiClient").OpenAiClient | import("@effect/ai-anthropic/AnthropicClient").AnthropicClient | import("@effect/platform/HttpClient").HttpClient | MetricsService | OtelService, import("@effect/platform/Error").PlatformError | Error, {
     readonly file: Option.Option<string>;
     readonly provider: Option.Option<"google" | "openai" | "anthropic">;
     readonly model: Option.Option<string>;
@@ -54,7 +54,7 @@ export declare const processPromptLegacyCommand: Command.Command<"process-prompt
     readonly seed: Option.Option<number>;
 }>;
 export { genAliasCommand as effectPatternsGen, generateCommand as effectPatternsGenerate, processPromptLegacyCommand as effectPatternsProcessPromptLegacy, };
-export declare const effectPatternsProcessPrompt: Command.Command<"process-prompt", ConfigService | import("../services/prompt-template/service.js").TemplateService | import("@effect/ai-anthropic/AnthropicClient").AnthropicClient | import("@effect/ai-google/GoogleAiClient").GoogleAiClient | import("@effect/ai-openai/OpenAiClient").OpenAiClient | import("@effect/platform/HttpClient").HttpClient | FileSystem.FileSystem | Path | import("../services/mdx-service/service.js").MdxService | MetricsService | OtelService, Error | import("@effect/platform/Error").PlatformError, {
+export declare const effectPatternsProcessPrompt: Command.Command<"process-prompt", import("../services/mdx-service/service.js").MdxService | FileSystem.FileSystem | Path | ConfigService | import("../services/prompt-template/service.js").TemplateService | import("@effect/ai-google/GoogleAiClient").GoogleAiClient | import("@effect/ai-openai/OpenAiClient").OpenAiClient | import("@effect/ai-anthropic/AnthropicClient").AnthropicClient | import("@effect/platform/HttpClient").HttpClient | MetricsService | OtelService, import("@effect/platform/Error").PlatformError | Error, {
     readonly file: Option.Option<string>;
     readonly provider: Option.Option<"google" | "openai" | "anthropic">;
     readonly model: Option.Option<string>;

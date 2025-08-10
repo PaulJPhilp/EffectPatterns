@@ -1,4 +1,4 @@
-import type { Span, SpanStatusCode, SpanKind } from '@opentelemetry/api';
+import type { Span, SpanStatusCode, SpanKind, AttributeValue, Tracer, Meter } from '@opentelemetry/api';
 import { metrics, trace, context } from '@opentelemetry/api';
 import { Effect, Console } from 'effect';
 import { OtelConfig, SpanOptions, SpanStatus } from './types.js';
@@ -25,9 +25,9 @@ export class OtelService extends Effect.Service<OtelService>()("OtelService", {
         return undefined;
       });
 
-    const getTracer = () => trace.getTracer('effect-patterns-cli');
-    const getMeter = () => metrics.getMeter('effect-patterns-cli');
-    const getLogger = () => console; // Use console as logger
+    const getTracer = (): Tracer => trace.getTracer('effect-patterns-cli');
+    const getMeter = (): Meter => metrics.getMeter('effect-patterns-cli');
+    const getLogger = (): globalThis.Console => console; // Use console as logger
 
     const startSpan = (name: string, options?: SpanOptions) =>
       Effect.sync(() => {
@@ -47,12 +47,12 @@ export class OtelService extends Effect.Service<OtelService>()("OtelService", {
         span.end();
       });
 
-    const addEvent = (span: Span, name: string, attributes?: Record<string, any>) =>
+    const addEvent = (span: Span, name: string, attributes?: Record<string, AttributeValue>) =>
       Effect.sync(() => {
         span.addEvent(name, attributes);
       });
 
-    const recordException = (span: Span, exception: Error, attributes?: Record<string, any>) =>
+    const recordException = (span: Span, exception: Error, attributes?: Record<string, AttributeValue>) =>
       Effect.sync(() => {
         span.recordException(exception);
         if (attributes) {
@@ -60,21 +60,21 @@ export class OtelService extends Effect.Service<OtelService>()("OtelService", {
         }
       });
 
-    const recordCounter = (name: string, value: number, attributes?: Record<string, any>) =>
+    const recordCounter = (name: string, value: number, attributes?: Record<string, AttributeValue>) =>
       Effect.sync(() => {
         const meter = metrics.getMeter('effect-patterns-cli');
         const counter = meter.createCounter(name);
         counter.add(value, attributes);
       });
 
-    const recordHistogram = (name: string, value: number, attributes?: Record<string, any>) =>
+    const recordHistogram = (name: string, value: number, attributes?: Record<string, AttributeValue>) =>
       Effect.sync(() => {
         const meter = metrics.getMeter('effect-patterns-cli');
         const histogram = meter.createHistogram(name);
         histogram.record(value, attributes);
       });
 
-    const recordGauge = (name: string, value: number, attributes?: Record<string, any>) =>
+    const recordGauge = (name: string, value: number, attributes?: Record<string, AttributeValue>) =>
       Effect.sync(() => {
         const meter = metrics.getMeter('effect-patterns-cli');
         const gauge = meter.createGauge(name);

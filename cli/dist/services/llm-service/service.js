@@ -206,7 +206,7 @@ const createAiClientLayer = (provider) => {
                 apiKey: Config.redacted("ANTHROPIC_API_KEY"),
             });
         default:
-            throw new Error(`Unsupported provider: ${provider}`);
+            return Layer.fail(new UnsupportedProviderError({ provider: String(provider) }));
     }
 };
 // Helper to merge model + client into a single provider layer

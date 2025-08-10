@@ -1,5 +1,6 @@
 import { FileSystem, Path } from "@effect/platform";
 import { Console, Effect, Option } from "effect";
+import { NoActiveRunError } from "./errors.js";
 export class RunService extends Effect.Service()("RunService", {
     accessors: true,
     effect: Effect.gen(function* () {
@@ -116,7 +117,7 @@ export class RunService extends Effect.Service()("RunService", {
                 if (!currentRun) {
                     const pointer = yield* readCurrentRunPointer;
                     if (Option.isNone(pointer)) {
-                        return yield* Effect.fail(new Error("No active run"));
+                        return yield* Effect.fail(new NoActiveRunError({ reason: "No active run" }));
                     }
                     currentRun = pointer.value;
                 }
@@ -126,7 +127,7 @@ export class RunService extends Effect.Service()("RunService", {
                 if (!currentRun) {
                     const pointer = yield* readCurrentRunPointer;
                     if (Option.isNone(pointer)) {
-                        return yield* Effect.fail(new Error("No active run"));
+                        return yield* Effect.fail(new NoActiveRunError({ reason: "No active run" }));
                     }
                     currentRun = pointer.value;
                 }

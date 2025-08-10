@@ -1,10 +1,8 @@
 import { Args, Command, Options } from "@effect/cli";
 import { Console, Effect, Option } from "effect";
+import { DryRunError_MissingInput } from "./errors.js";
 import { ConfigService } from "../services/config-service/service.js";
-import {
-  ModelService,
-  make as ModelServiceImpl,
-} from "../services/model-service/service.js";
+import { ModelService } from "../services/model-service/service.js";
 
 // Helper function to estimate tokens and cost
 const estimateTokensAndCost = (
@@ -100,11 +98,11 @@ export const dryRun = Command.make(
         source = "cli";
       } else {
         yield* Console.error("❌ Either prompt or file must be provided");
-        return yield* Effect.fail(new Error("Missing prompt or file"));
+        return yield* Effect.fail(new DryRunError_MissingInput());
       }
 
       if (!quietMode) {
-        yield* Console.log(
+        yield* Effect.log(
           `📊 Analyzing ${resolvedProvider} ${resolvedModel}...`
         );
       }
@@ -121,10 +119,9 @@ export const dryRun = Command.make(
       const tryUseModelService = yield* Effect.succeed(true);
 
       if (tryUseModelService) {
-        const service = yield* Effect.provideService(
-          ModelService,
-          ModelServiceImpl
-        )(ModelService);
+        const service = yield* ModelService.pipe(
+          Effect.provide(ModelService.Default)
+        );
 
         // Heuristic mapping from CLI model names to ModelService names
         const providerName =
@@ -238,17 +235,17 @@ Estimated cost: $${result.cost.estimated.toFixed(6)}
         }
 
         if (!quietMode) {
-          yield* Console.log(`💾 Writing results to ${outputFile}`);
+          yield* Effect.log(`💾 Writing results to ${outputFile}`);
         }
 
         // In a real implementation, we'd write to file here
         // For now, we'll just log what would be written
         if (!quietMode) {
-          yield* Console.log(`Would write: ${JSON.stringify(result, null, 2)}`);
+          yield* Effect.log(`Would write: ${JSON.stringify(result, null, 2)}`);
         }
       } else {
         if (!quietMode) {
-          yield* Console.log(outputText);
+          yield* Effect.log(outputText);
         }
       }
     })

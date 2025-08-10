@@ -128,7 +128,8 @@ describe("MetricsService", () => {
       }).pipe(Effect.provide(Layer.merge(MetricsService.Default, NodeContext.layer)))
     );
 
-    expect(consoleSpy).toHaveBeenCalledWith("=== METRICS REPORT ===");
+    const calls = consoleSpy.mock.calls.map((args) => String(args[0]));
+    expect(calls.some((s) => s.includes("=== METRICS REPORT ==="))).toBe(true);
     consoleSpy.mockRestore();
   });
 

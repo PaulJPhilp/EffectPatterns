@@ -14,7 +14,11 @@ export interface MetricsServiceApi {
 	maxTokens?: number;
 	topP?: number;
   }) => Effect.Effect<void>;
-  extractLLMUsage: (response: any, provider: string, model: string) => Effect.Effect<LLMUsage>;
+  extractLLMUsage: (
+    response: unknown,
+    provider: string,
+    model: string
+  ) => Effect.Effect<LLMUsage>;
   saveCommandMetrics: (outputPath?: string, format?: "json" | "jsonl") => Effect.Effect<void>;
   reportMetrics: (format: "console" | "json" | "jsonl", outputFile?: string) => Effect.Effect<void>;
   getMetrics: () => Effect.Effect<Option.Option<MetricsData>>;

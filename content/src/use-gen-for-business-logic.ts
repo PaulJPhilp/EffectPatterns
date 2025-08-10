@@ -1,4 +1,4 @@
-import { Clock, Effect } from "effect";
+import { Effect } from "effect";
 
 // Concrete implementations for demonstration
 const validateUser = (
@@ -21,11 +21,11 @@ const validateUser = (
     return { email: data.email, password: data.password };
   });
 
-const hashPassword = (pw: string): Effect.Effect<string, never, Clock.Clock> =>
+const hashPassword = (pw: string): Effect.Effect<string, never, never> =>
   Effect.gen(function* () {
     yield* Effect.logInfo("Hashing password...");
     // Simulate password hashing
-    const timestamp = yield* Clock.currentTimeMillis;
+    const timestamp = yield* Effect.sync(() => Date.now());
     const hashed = `hashed_${pw}_${timestamp}`;
     yield* Effect.logInfo("✅ Password hashed successfully");
     return hashed;
@@ -43,7 +43,9 @@ const dbCreateUser = (data: {
     return user;
   });
 
-const createUser = (userData: any): Effect.Effect<{ id: number; email: string }, Error, never> =>
+const createUser = (
+  userData: any
+): Effect.Effect<{ id: number; email: string }, Error, never> =>
   Effect.gen(function* () {
     const validated = yield* validateUser(userData);
     const hashed = yield* hashPassword(validated.password);

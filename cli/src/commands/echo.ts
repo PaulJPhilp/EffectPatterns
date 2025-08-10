@@ -50,11 +50,11 @@ export const echoCommand = Command.make(
         )
       );
 
-      yield* Console.log("=== ECHO COMMAND DEBUG ===");
-      yield* Console.log(`File: ${file}`);
-      yield* Console.log(`Provider: ${resolvedProvider}`);
-      yield* Console.log(`Model: ${resolvedModel}`);
-      yield* Console.log(`Output: ${output || "console"}`);
-      yield* Console.log("=== END ECHO DEBUG ===");
+      yield* Effect.log("=== ECHO COMMAND DEBUG ===");
+      yield* Effect.log(`File: ${file}`);
+      yield* Effect.log(`Provider: ${resolvedProvider}`);
+      yield* Effect.log(`Model: ${resolvedModel}`);
+      yield* Effect.log(`Output: ${output || "console"}`);
+      yield* Effect.log("=== END ECHO DEBUG ===");
     })
 );

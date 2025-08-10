@@ -209,7 +209,9 @@ It contains important information about setup and usage.`
           }
 
           // Walk directory to count files and directories
-          function walkDirectory(dirPath: string) {
+          function walkDirectory(
+            dirPath: string
+          ) {
             return Effect.gen(function* () {
               const entries = yield* fs.readDirectory(dirPath);
               let fileCount = 0;

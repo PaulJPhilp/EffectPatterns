@@ -1,7 +1,14 @@
 import { FileSystem, Path } from "@effect/platform";
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { Liquid } from "liquidjs";
 import { MdxService } from "../mdx-service/service.js";
+import {
+  InvalidParameterTypeError,
+  MissingParametersError,
+  TemplateRenderError,
+  UnknownParametersError,
+  UnsupportedTemplateFileError,
+} from "./errors.js";
 
 export interface PromptTemplate {
   readonly content: string;
@@ -41,6 +48,8 @@ export class TemplateService extends Effect.Service<TemplateService>()(
       const path = yield* Path.Path;
       const mdxService = yield* MdxService;
 
+      // Tagged errors are imported from ./errors
+
       const loadTemplate = (
         filePath: string
       ): Effect.Effect<PromptTemplate, Error> =>
@@ -48,7 +57,9 @@ export class TemplateService extends Effect.Service<TemplateService>()(
           // Check file extension first
           if (!filePath.endsWith(".mdx")) {
             return yield* Effect.fail(
-              new Error("Only .mdx files are supported")
+              new UnsupportedTemplateFileError({
+                reason: "Only .mdx files are supported",
+              })
             );
           }
 
@@ -76,32 +87,49 @@ export class TemplateService extends Effect.Service<TemplateService>()(
             return typeof value === "string"
               ? Effect.void
               : Effect.fail(
-                  new Error(`Expected string but got ${typeof value}`)
+                  new InvalidParameterTypeError({
+                    expected: "string",
+                    got: typeof value,
+                  })
                 );
           case "number":
             return typeof value === "number"
               ? Effect.void
               : Effect.fail(
-                  new Error(`Expected number but got ${typeof value}`)
+                  new InvalidParameterTypeError({
+                    expected: "number",
+                    got: typeof value,
+                  })
                 );
           case "boolean":
             return typeof value === "boolean"
               ? Effect.void
               : Effect.fail(
-                  new Error(`Expected boolean but got ${typeof value}`)
+                  new InvalidParameterTypeError({
+                    expected: "boolean",
+                    got: typeof value,
+                  })
                 );
           case "array":
             return Array.isArray(value)
               ? Effect.void
               : Effect.fail(
-                  new Error(`Expected array but got ${typeof value}`)
+                  new InvalidParameterTypeError({
+                    expected: "array",
+                    got: typeof value,
+                  })
                 );
           case "object":
             return typeof value === "object" &&
               value !== null &&
               !Array.isArray(value)
               ? Effect.void
-              : Effect.fail(new Error(`Expected object, got ${typeof value}`));
+              : Effect.fail(
+                  new InvalidParameterTypeError({
+                    expected: "object",
+                    got: typeof value,
+                  })
+                );
           default:
             return Effect.void;
         }
@@ -125,9 +153,7 @@ export class TemplateService extends Effect.Service<TemplateService>()(
 
           if (missingParams.length > 0) {
             return yield* Effect.fail(
-              new Error(
-                `Missing required parameters: ${missingParams.join(", ")}`
-              )
+              new MissingParametersError({ params: missingParams })
             );
           }
 
@@ -138,7 +164,7 @@ export class TemplateService extends Effect.Service<TemplateService>()(
 
           if (unknownParams.length > 0) {
             return yield* Effect.fail(
-              new Error(`Unknown parameters: ${unknownParams.join(", ")}`)
+              new UnknownParametersError({ params: unknownParams })
             );
           }
 
@@ -180,7 +206,9 @@ export class TemplateService extends Effect.Service<TemplateService>()(
           const rendered = yield* Effect.tryPromise({
             try: () => liquid.parseAndRender(template.content, mergedParams),
             catch: (error) =>
-              new Error(`Template rendering failed: ${String(error)}`),
+              new TemplateRenderError({
+                reason: `Template rendering failed: ${String(error)}`,
+              }),
           });
           return rendered;
         });

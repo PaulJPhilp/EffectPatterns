@@ -6,7 +6,7 @@ export const testCommand = Command.make(
   {},
   () => {
     return Effect.gen(function* () {
-      yield* Console.log("Test command executed successfully!");
+      yield* Effect.log("Test command executed successfully!");
       return "Test completed";
     });
   }

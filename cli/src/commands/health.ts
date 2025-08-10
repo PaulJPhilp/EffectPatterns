@@ -1,14 +1,27 @@
-import { Command, Options } from "@effect/cli";
-import { Console, Effect, Option } from "effect";
+import { Options } from "@effect/cli";
+import { Effect, Option } from "effect";
 import { ConfigService } from "../services/config-service/service.js";
 import { LLMService } from "../services/llm-service/service.js";
-import {
-  ModelService,
-  make as ModelServiceImpl,
-} from "../services/model-service/service.js";
+import { ModelService } from "../services/model-service/service.js";
 import type { Model as CatalogModel } from "../services/model-service/types.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - TS resolves .js to .ts in this repo config
+import {
+  makeCommand,
+  printJson,
+  printText,
+  setGlobalJson,
+  setGlobalCompact,
+  setGlobalOutputOptions,
+  getGlobalJson,
+  getGlobalCompact,
+  getGlobalOutputOptions,
+  optQuiet,
+  optForce,
+  optOutput,
+} from "./_shared.js";
 
-export const health = Command.make(
+export const health = makeCommand(
   "health",
   {
     provider: Options.optional(
@@ -21,27 +34,13 @@ export const health = Command.make(
       Options.optional,
       Options.withDescription("Show detailed health information")
     ),
-    json: Options.boolean("json").pipe(
-      Options.optional,
-      Options.withDescription("Output results in JSON format")
-    ),
-    output: Options.file("output").pipe(
-      Options.optional,
-      Options.withDescription("Write output to file (overwrites if exists)")
-    ),
-    force: Options.boolean("force").pipe(
-      Options.optional,
-      Options.withDescription("Force overwrite output file if it exists")
-    ),
-    quiet: Options.boolean("quiet").pipe(
-      Options.optional,
-      Options.withDescription(
-        "Suppress normal output (errors still go to stderr)"
-      ),
-      Options.withAlias("q")
-    ),
+    json: Options.boolean("json").pipe(Options.optional),
+    compact: Options.boolean("compact").pipe(Options.optional),
+    output: optOutput("Write output to file (overwrites if exists)"),
+    force: optForce("Force overwrite output file if it exists"),
+    quiet: optQuiet("Suppress normal output (errors still go to stderr)"),
   },
-  ({ provider, detailed, json, output, force, quiet }) =>
+  ({ provider, detailed, json, compact, output, force, quiet }) =>
     Effect.gen(function* () {
       const config = yield* ConfigService;
       const providerFromConfig = yield* config.get("defaultProvider");
@@ -56,9 +55,46 @@ export const health = Command.make(
           ),
       });
 
-      const detailedMode = Option.getOrElse(detailed, () => false);
-      const jsonMode = Option.getOrElse(json, () => false);
-      const quietMode = Option.getOrElse(quiet, () => false);
+      const detailedMode = Option.getOrElse(
+        detailed as Option.Option<boolean>,
+        () => false
+      );
+      const jsonFlag = Option.getOrElse(
+        json as Option.Option<boolean>,
+        () => false
+      );
+      const compactFlag = Option.getOrElse(
+        compact as Option.Option<boolean>,
+        () => false
+      );
+      const quietFlag = Option.getOrElse(
+        quiet as Option.Option<boolean>,
+        () => false
+      );
+      const forceFlag = Option.getOrElse(
+        force as Option.Option<boolean>,
+        () => false
+      );
+      const localOutput = Option.getOrElse(
+        output as Option.Option<string>,
+        () => undefined
+      );
+
+      // Set global flags for helpers
+      setGlobalJson(jsonFlag);
+      setGlobalCompact(compactFlag);
+      setGlobalOutputOptions(
+        quietFlag || localOutput || forceFlag
+          ? {
+              quiet: quietFlag || undefined,
+              outputFile: localOutput,
+              force: forceFlag || undefined,
+            }
+          : undefined
+      );
+      const resolvedOutput = getGlobalOutputOptions()?.outputFile;
+      const asJson = getGlobalJson() || !!resolvedOutput;
+      const useCompact = getGlobalCompact();
 
       const healthResults: Record<
         string,
@@ -80,33 +116,39 @@ export const health = Command.make(
         ...healthResults,
       };
 
-      if (jsonMode) {
-        const jsonOutput = JSON.stringify(outputData, null, 2);
-        yield* Console.log(jsonOutput);
-      } else if (!quietMode) {
-        yield* Console.log("🔍 Health Check Results:");
-        if (providerValue) {
-          yield* Console.log(`Provider: ${providerValue}`);
-        }
-        for (const [name, result] of Object.entries(healthResults)) {
-          const status = result.status.includes("✅") ? "✅" : "❌";
-          yield* Console.log(`${status} ${name}: ${result.status}`);
-          if (detailedMode && result.details) {
-            yield* Console.log(`  Details: ${result.details}`);
-          }
+      if (asJson) {
+        yield* printJson(outputData, useCompact, resolvedOutput ? { outputFile: resolvedOutput } : undefined);
+        return;
+      }
+
+      const lines: string[] = [];
+      lines.push("🔍 Health Check Results:");
+      if (providerValue) {
+        lines.push(`Provider: ${providerValue}`);
+      }
+      for (const [name, result] of Object.entries(healthResults)) {
+        const status = result.status.includes("✅") ? "✅" : "❌";
+        lines.push(`${status} ${name}: ${result.status}`);
+        if (detailedMode && result.details) {
+          lines.push(`  Details: ${result.details}`);
         }
       }
-    })
+      yield* printText(lines.join("\n"), resolvedOutput ? { outputFile: resolvedOutput } : undefined);
+    }),
+  {
+    description: "Check provider connectivity and model availability",
+    errorPrefix: "Error in health command",
+  }
 );
 
 // Helper functions for OpenAI health check
 const checkOpenAIHealth = () =>
   Effect.gen(function* () {
     const llmService = yield* LLMService;
-    const modelService = yield* Effect.provideService(
+    const modelService = yield* Effect.provide(
       ModelService,
-      ModelServiceImpl
-    )(ModelService);
+      ModelService.Default
+    );
     const models = yield* modelService.getModels("OpenAI").pipe(
       Effect.map((ms: CatalogModel[]) => ms.map((m) => m.name)),
       Effect.catchAll(() => Effect.succeed<string[]>([]))
@@ -139,10 +181,9 @@ const checkOpenAIHealth = () =>
 const checkAnthropicHealth = () =>
   Effect.gen(function* () {
     const llmService = yield* LLMService;
-    const modelService = yield* Effect.provideService(
-      ModelService,
-      ModelServiceImpl
-    )(ModelService);
+    const modelService = yield* ModelService.pipe(
+      Effect.provide(ModelService.Default)
+    );
     const models = yield* modelService.getModels("Anthropic").pipe(
       Effect.map((ms: CatalogModel[]) => ms.map((m) => m.name)),
       Effect.catchAll(() => Effect.succeed<string[]>([]))
@@ -175,10 +216,10 @@ const checkAnthropicHealth = () =>
 const checkGoogleHealth = () =>
   Effect.gen(function* () {
     const llmService = yield* LLMService;
-    const modelService = yield* Effect.provideService(
+    const modelService = yield* Effect.provide(
       ModelService,
-      ModelServiceImpl
-    )(ModelService);
+      ModelService.Default
+    );
     const models = yield* modelService.getModels("Google").pipe(
       Effect.map((ms: CatalogModel[]) => ms.map((m) => m.name)),
       Effect.catchAll(() => Effect.succeed<string[]>([]))

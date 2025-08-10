@@ -36,12 +36,13 @@ export class ConfigService extends Effect.Service<ConfigService>()(
             ? fs.readFileString(configFile, "utf-8").pipe(
                 Effect.mapError((cause) => new ConfigError({ message: "Failed to read config file", cause })),
                 Effect.flatMap((content: string) =>
-                  Effect.sync(() => {
-                    try {
-                      return JSON.parse(content) as AppConfig;
-                    } catch (cause) {
-                      throw new ConfigError({ message: "Failed to parse config file", cause });
-                    }
+                  Effect.try<AppConfig, ConfigError>({
+                    try: () => JSON.parse(content) as AppConfig,
+                    catch: (cause) =>
+                      new ConfigError({
+                        message: "Failed to parse config file",
+                        cause,
+                      }),
                   })
                 )
               )

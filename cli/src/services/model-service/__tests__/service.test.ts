@@ -2,7 +2,6 @@ import { Effect, Exit, type Cause } from "effect";
 import { describe, expect, it } from "vitest";
 import {
   ModelService,
-  make,
   type ModelNotFoundError,
   type ProviderNotFoundError,
 } from "../service.js";
@@ -11,7 +10,7 @@ import type { Model, Provider } from "../types.js";
 describe("ModelService", () => {
   const runEffect = <E, A>(effect: Effect.Effect<A, E, ModelService>) =>
     Effect.runPromiseExit(
-      effect.pipe(Effect.provideService(ModelService, make))
+      Effect.provide(effect, ModelService.Default)
     );
 
   describe("getModel", () => {

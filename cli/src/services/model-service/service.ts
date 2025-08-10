@@ -1,15 +1,7 @@
-import { Context, Effect } from "effect";
+import { Effect } from "effect";
 import type { Model, Provider } from "./types.js";
-
-export interface ModelNotFoundError {
-  readonly _tag: "ModelNotFoundError";
-  readonly modelName: string;
-}
-
-export interface ProviderNotFoundError {
-  readonly _tag: "ProviderNotFoundError";
-  readonly providerName: string;
-}
+import { ModelNotFoundError, ProviderNotFoundError } from "./errors.js";
+export type { ModelNotFoundError, ProviderNotFoundError } from "./errors.js";
 
 const hardcodedProviders: Provider[] = [
   {
@@ -203,95 +195,57 @@ const hardcodedModels: Model[] = [
   },
 ];
 
-export const make = {
-  getModel: (modelName: string) => {
-    const model = hardcodedModels.find((model) => model.name === modelName);
-    if (model) {
-      return Effect.succeed(model);
-    }
-    return Effect.fail<ModelNotFoundError>({
-      _tag: "ModelNotFoundError",
-      modelName: modelName,
-    });
-  },
+// Implementation is provided via Effect.Service below; no separate factory needed.
 
-  getModels: (providerName: string) => {
-    const provider = hardcodedProviders.find(
-      (provider) => provider.name === providerName
-    );
-    if (provider) {
-      const models = hardcodedModels.filter((model) =>
-        provider.supportedModels.includes(model.name)
-      );
-      return Effect.succeed(models);
-    }
-    return Effect.fail<ProviderNotFoundError>({
-      _tag: "ProviderNotFoundError",
-      providerName: providerName,
-    });
-  },
-
-  getProvider: (providerName: string) => {
-    const provider = hardcodedProviders.find(
-      (provider) => provider.name === providerName
-    );
-    if (provider) {
-      return Effect.succeed(provider);
-    }
-    return Effect.fail<ProviderNotFoundError>({
-      _tag: "ProviderNotFoundError",
-      providerName: providerName,
-    });
-  },
-
-  listAllModels: () => Effect.succeed(hardcodedModels),
-
-  getModelsByCapability: (capability: string) =>
-    Effect.succeed(
-      hardcodedModels.filter((model) => model.capabilities.includes(capability))
-    ),
-
-  getModelsByProviderAndCapability: (
-    providerName: string,
-    capability: string
-  ) => {
-    const provider = hardcodedProviders.find(
-      (provider) => provider.name === providerName
-    );
-    if (provider) {
-      const models = hardcodedModels.filter(
-        (model) =>
-          provider.supportedModels.includes(model.name) &&
-          model.capabilities.includes(capability)
-      );
-      return Effect.succeed(models);
-    }
-    return Effect.fail<ProviderNotFoundError>({
-      _tag: "ProviderNotFoundError",
-      providerName: providerName,
-    });
-  },
-};
-
-export class ModelService extends Context.Tag("ModelService")<
-  ModelService,
+export class ModelService extends Effect.Service<ModelService>()(
+  "ModelService",
   {
-    readonly getModel: (
-      modelName: string
-    ) => Effect.Effect<Model, ModelNotFoundError>;
-    readonly getModels: (
-      providerName: string
-    ) => Effect.Effect<Model[], ProviderNotFoundError>;
-    readonly getProvider: (
-      providerName: string
-    ) => Effect.Effect<Provider, ProviderNotFoundError>;
-    readonly listAllModels: () => Effect.Effect<Model[]>;
-    readonly getModelsByCapability: (
-      capability: string
-    ) => Effect.Effect<Model[]>;
-    readonly getModelsByProviderAndCapability: (
-      providerName: string,
-      capability: string
-    ) => Effect.Effect<Model[], ProviderNotFoundError>;
+    sync: () => ({
+      getModel: (modelName: string) => {
+        const model = hardcodedModels.find((m) => m.name === modelName);
+        if (model) return Effect.succeed(model);
+        return Effect.fail(new ModelNotFoundError({ modelName }));
+      },
+
+      getModels: (providerName: string) => {
+        const provider = hardcodedProviders.find((p) => p.name === providerName);
+        if (provider) {
+          const models = hardcodedModels.filter((m) =>
+            provider.supportedModels.includes(m.name)
+          );
+          return Effect.succeed(models);
+        }
+        return Effect.fail(new ProviderNotFoundError({ providerName }));
+      },
+
+      getProvider: (providerName: string) => {
+        const provider = hardcodedProviders.find((p) => p.name === providerName);
+        if (provider) return Effect.succeed(provider);
+        return Effect.fail(new ProviderNotFoundError({ providerName }));
+      },
+
+      listAllModels: () => Effect.succeed(hardcodedModels),
+
+      getModelsByCapability: (capability: string) =>
+        Effect.succeed(
+          hardcodedModels.filter((m) => m.capabilities.includes(capability))
+        ),
+
+      getModelsByProviderAndCapability: (
+        providerName: string,
+        capability: string
+      ) => {
+        const provider = hardcodedProviders.find((p) => p.name === providerName);
+        if (provider) {
+          const models = hardcodedModels.filter(
+            (m) =>
+              provider.supportedModels.includes(m.name) &&
+              m.capabilities.includes(capability)
+          );
+          return Effect.succeed(models);
+        }
+        return Effect.fail(new ProviderNotFoundError({ providerName }));
+      },
+    }),
   }
->() {}
+) {}

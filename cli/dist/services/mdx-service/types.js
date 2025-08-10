@@ -1,6 +1,2 @@
-import { Data } from "effect";
-// Error types
-export class InvalidMdxFormatError extends Data.TaggedError("InvalidMdxFormatError") {
-}
-export class InvalidFrontmatterError extends Data.TaggedError("InvalidFrontmatterError") {
-}
+export { InvalidMdxFormatError, InvalidFrontmatterError } from "./errors.js";
+// Error types are defined in ./errors.ts

@@ -1,8 +1,24 @@
-import { Args, Command, Options } from "@effect/cli";
-import { Console, Effect, Option } from "effect";
+import { Args, Options } from "@effect/cli";
+import { Effect, Option } from "effect";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - TS resolves .js to .ts in this repo config
+import {
+  makeCommand,
+  printText,
+  printJson,
+  setGlobalJson,
+  setGlobalCompact,
+  setGlobalOutputOptions,
+  getGlobalJson,
+  getGlobalCompact,
+  getGlobalOutputOptions,
+  optQuiet,
+  optForce,
+  optOutput,
+} from "./_shared.js";
 
 // Trace debugging command
-export const traceCommand = Command.make(
+export const traceCommand = makeCommand(
   "trace",
   {
     command: Args.text({ name: "command" }).pipe(Args.optional),
@@ -14,36 +30,44 @@ export const traceCommand = Command.make(
       Options.optional,
       Options.withDescription("Output results in JSON format")
     ),
+    compact: Options.boolean("compact").pipe(Options.optional),
     verbose: Options.boolean("verbose").pipe(
       Options.optional,
       Options.withDescription("Show detailed trace information"),
       Options.withAlias("v")
     ),
-    output: Options.file("output").pipe(
-      Options.optional,
-      Options.withDescription("Write output to file (overwrites if exists)"),
-      Options.withAlias("o")
+    quiet: optQuiet(
+      "Suppress normal output (errors still go to stderr)"
     ),
-    force: Options.boolean("force").pipe(
-      Options.optional,
-      Options.withDescription("Force overwrite output file if it exists"),
-      Options.withAlias("f")
-    ),
-    quiet: Options.boolean("quiet").pipe(
-      Options.optional,
-      Options.withDescription(
-        "Suppress normal output (errors still go to stderr)"
-      ),
-      Options.withAlias("q")
-    ),
-    noColor: Options.boolean("no-color").pipe(Options.optional),
+    output: optOutput("Write output to file (overwrites if exists)"),
+    force: optForce("Force overwrite output file if it exists"),
   },
-  ({ command, span, json, verbose, output, force, quiet }) =>
+  ({ command, span, json, compact, verbose, output, force, quiet }) =>
     Effect.gen(function* () {
-      const verboseMode = Option.getOrElse(verbose, () => false);
-      const jsonMode = Option.getOrElse(json, () => false);
-      const quietMode = Option.getOrElse(quiet, () => false);
-      const forceMode = Option.getOrElse(force, () => false);
+      // Normalize options
+      const jsonFlag = Option.getOrElse(json as Option.Option<boolean>, () => false);
+      const compactFlag = Option.getOrElse(compact as Option.Option<boolean>, () => false);
+      const verboseMode = Option.getOrElse(verbose as Option.Option<boolean>, () => false);
+      const quietFlag = Option.getOrElse(quiet as Option.Option<boolean>, () => false);
+      const forceFlag = Option.getOrElse(force as Option.Option<boolean>, () => false);
+      const localOutput = Option.getOrElse(output as Option.Option<string>, () => undefined);
+
+      // Set shared flags so helpers can merge
+      setGlobalJson(jsonFlag);
+      setGlobalCompact(compactFlag);
+      setGlobalOutputOptions(
+        quietFlag || localOutput || forceFlag
+          ? {
+              quiet: quietFlag || undefined,
+              outputFile: localOutput,
+              force: forceFlag || undefined,
+            }
+          : undefined
+      );
+
+      const resolvedOutput = getGlobalOutputOptions()?.outputFile;
+      const asJson = getGlobalJson() || !!resolvedOutput;
+      const useCompact = getGlobalCompact();
 
       // System information
       const systemInfo = {
@@ -53,58 +77,40 @@ export const traceCommand = Command.make(
         cwd: process.cwd(),
       };
 
-      const traceInfo = {
-        timestamp: new Date().toISOString(),
-        system: systemInfo,
-        filters: {
-          command: command !== undefined ? command : null,
-          span: span !== undefined ? span : null,
-        },
-      };
+      const filters = {
+        command: command !== undefined ? command : null,
+        span: span !== undefined ? span : null,
+      } as const;
 
-      const outputData = {
-        timestamp: new Date().toISOString(),
-        system: systemInfo,
-        filters: {
-          command: command !== undefined ? command : null,
-          span: span !== undefined ? span : null,
-        },
-      };
-
-      if (jsonMode) {
-        const jsonOutput = JSON.stringify(outputData, null, 2);
-        if (Option.isSome(output)) {
-          const outputFile = output.value;
-          if (!quietMode) {
-            yield* Console.log(`💾 Writing trace results to ${outputFile}`);
-          }
-          // Real write
-          // We don't check for exists here; force flag reserved for future behavior
-          // Keep consistent behavior with other commands
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const _ = yield* Effect.succeed(undefined);
-          yield* Console.log(jsonOutput);
-        } else {
-          yield* Console.log(jsonOutput);
-        }
-      } else {
-        if (!quietMode) {
-          yield* Console.log("🔍 CLI Trace Information:");
-          yield* Console.log(`Node: ${systemInfo.nodeVersion}`);
-          yield* Console.log(`Platform: ${systemInfo.platform}`);
-          yield* Console.log(`Architecture: ${systemInfo.arch}`);
-          yield* Console.log(`Working Directory: ${systemInfo.cwd}`);
-
-          if (verboseMode) {
-            yield* Console.log("\nTrace filters:");
-            yield* Console.log(`- Command: ${command || "all"}`);
-            yield* Console.log(`- Span: ${span || "all"}`);
-          }
-        }
+      if (asJson) {
+        const payload = {
+          timestamp: new Date().toISOString(),
+          system: systemInfo,
+          filters,
+        };
+        yield* printJson(payload, useCompact, resolvedOutput ? { outputFile: resolvedOutput } : undefined);
+        return;
       }
 
-      if (!quietMode) {
-        yield* Console.log("✅ Trace analysis complete");
+      // Text output
+      const lines: string[] = [];
+      lines.push("🔍 CLI Trace Information:");
+      lines.push(`Node: ${systemInfo.nodeVersion}`);
+      lines.push(`Platform: ${systemInfo.platform}`);
+      lines.push(`Architecture: ${systemInfo.arch}`);
+      lines.push(`Working Directory: ${systemInfo.cwd}`);
+      if (verboseMode) {
+        lines.push("");
+        lines.push("Trace filters:");
+        lines.push(`- Command: ${command || "all"}`);
+        lines.push(`- Span: ${span || "all"}`);
       }
-    })
+      lines.push("✅ Trace analysis complete");
+
+      yield* printText(lines.join("\n"), resolvedOutput ? { outputFile: resolvedOutput } : undefined);
+    }),
+  {
+    description: "Debug CLI/runtime environment and optional span filters",
+    errorPrefix: "Error in trace command",
+  }
 );

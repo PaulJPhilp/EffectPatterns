@@ -17,7 +17,7 @@ declare const TemplateService_base: Effect.Service.Class<TemplateService, "Templ
         readonly loadTemplate: (filePath: string) => Effect.Effect<PromptTemplate, Error>;
         readonly renderTemplate: (template: PromptTemplate, parameters: Record<string, unknown>) => Effect.Effect<string, Error>;
         readonly validateParameters: (template: PromptTemplate, parameters: Record<string, unknown>) => Effect.Effect<void, Error>;
-    }, never, FileSystem.FileSystem | Path.Path | MdxService>;
+    }, never, MdxService | FileSystem.FileSystem | Path.Path>;
     readonly dependencies: readonly [import("effect/Layer").Layer<MdxService, never, FileSystem.FileSystem>];
 }>;
 export declare class TemplateService extends TemplateService_base {

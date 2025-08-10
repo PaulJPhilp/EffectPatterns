@@ -1,8 +1,24 @@
-import { Args, Command, Options } from "@effect/cli";
+import { Args, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
-import { Console, Effect, Option } from "effect";
+import { Effect, Option } from "effect";
 import { MetricsService } from "../services/metrics-service/service.js";
 import { OtelService } from "../services/otel-service/service.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - TS resolves .js to .ts in this repo config
+import {
+  makeCommand,
+  printJson,
+  printText,
+  setGlobalJson,
+  setGlobalCompact,
+  setGlobalOutputOptions,
+  getGlobalJson,
+  getGlobalCompact,
+  getGlobalOutputOptions,
+  optQuiet,
+  optForce,
+  optOutput,
+} from "./_shared.js";
 
 // effect-patterns list [-v | --verbose] [--json] [-q|--quiet] [--no-color] [-o|--output <file>] [-f|--force] [--] [<pathspec>...]
 const pathspec = Args.text({ name: "pathspec" }).pipe(Args.repeated);
@@ -11,21 +27,12 @@ const verbose = Options.boolean("verbose").pipe(
   Options.optional
 );
 const json = Options.boolean("json").pipe(Options.optional);
-const quiet = Options.boolean("quiet").pipe(
-  Options.withAlias("q"),
-  Options.optional
-);
+const quiet = optQuiet("Suppress normal output (errors still go to stderr)");
 const noColor = Options.boolean("no-color").pipe(Options.optional);
-const output = Options.file("output").pipe(
-  Options.withAlias("o"),
-  Options.optional
-);
-const force = Options.boolean("force").pipe(
-  Options.withAlias("f"),
-  Options.optional
-);
+const output = optOutput("Write output to file (overwrites if exists)");
+const force = optForce("Force overwrite output file if it exists");
 
-export const effectPatternsList = Command.make(
+export const effectPatternsList = makeCommand(
   "list",
   { pathspec, verbose, json, quiet, noColor, output, force },
   ({ pathspec, verbose, json, quiet, noColor, output, force }) => {
@@ -36,16 +43,33 @@ export const effectPatternsList = Command.make(
       const targetPath =
         pathspec.length === 0 ? "content/published" : pathspec[0];
 
-      const verboseMode = Option.getOrElse(verbose, () => false);
-      const jsonMode = Option.getOrElse(json, () => false);
-      const quietMode = Option.getOrElse(quiet, () => false);
-      const noColorMode = Option.getOrElse(noColor, () => false);
-      const shouldLog = !quietMode && !jsonMode;
+      const verboseMode = Option.getOrElse(verbose as Option.Option<boolean>, () => false);
+      const jsonFlag = Option.getOrElse(json as Option.Option<boolean>, () => false);
+      const quietFlag = Option.getOrElse(quiet as Option.Option<boolean>, () => false);
+      const noColorMode = Option.getOrElse(noColor as Option.Option<boolean>, () => false);
+      const forceFlag = Option.getOrElse(force as Option.Option<boolean>, () => false);
+      const localOutput = Option.getOrElse(output as Option.Option<string>, () => undefined);
+
+      // Set global flags for helpers
+      setGlobalJson(jsonFlag);
+      setGlobalCompact(false);
+      setGlobalOutputOptions(
+        quietFlag || localOutput || forceFlag
+          ? {
+              quiet: quietFlag || undefined,
+              outputFile: localOutput,
+              force: forceFlag || undefined,
+            }
+          : undefined
+      );
+      const resolvedOutput = getGlobalOutputOptions()?.outputFile;
+      const asJson = getGlobalJson() || !!resolvedOutput;
+      const shouldLog = !quietFlag && !asJson;
 
       if (verboseMode && shouldLog) {
-        yield* Console.log("=== DEBUG: Starting list command ===");
-        yield* Console.log(`Target path: ${targetPath}`);
-        yield* Console.log(`Verbose mode: ${verboseMode}`);
+        yield* Effect.log("=== DEBUG: Starting list command ===");
+        yield* Effect.log(`Target path: ${targetPath}`);
+        yield* Effect.log(`Verbose mode: ${verboseMode}`);
       }
 
       yield* metrics.startCommand("list");
@@ -60,26 +84,26 @@ export const effectPatternsList = Command.make(
       const files = yield* Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
         if (verboseMode && shouldLog) {
-          yield* Console.log(`DEBUG: About to read directory: ${targetPath}`);
+          yield* Effect.log(`DEBUG: About to read directory: ${targetPath}`);
         }
 
         const entries = yield* fs.readDirectory(targetPath).pipe(
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               if (verboseMode && shouldLog) {
-                yield* Console.log(`DEBUG: Error reading directory: ${error}`);
+                yield* Effect.log(`DEBUG: Error reading directory: ${error}`);
               }
               return [] as string[];
             })
           )
         );
         if (verboseMode && shouldLog) {
-          yield* Console.log(`DEBUG: Found ${entries.length} entries`);
+          yield* Effect.log(`DEBUG: Found ${entries.length} entries`);
         }
 
         const filePaths = entries.map((entry) => `${targetPath}/${entry}`);
         if (verboseMode && shouldLog) {
-          yield* Console.log(`DEBUG: Mapped to ${filePaths.length} file paths`);
+          yield* Effect.log(`DEBUG: Mapped to ${filePaths.length} file paths`);
         }
 
         return filePaths;
@@ -87,7 +111,7 @@ export const effectPatternsList = Command.make(
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             if (verboseMode && shouldLog) {
-              yield* Console.log(`DEBUG: CatchAll error: ${error}`);
+              yield* Effect.log(`DEBUG: CatchAll error: ${error}`);
             }
             return [];
           })
@@ -95,12 +119,12 @@ export const effectPatternsList = Command.make(
       );
 
       if (verboseMode && shouldLog) {
-        yield* Console.log(`DEBUG: Final file count: ${files.length}`);
-        yield* Console.log(`Found ${files.length} files in ${targetPath}:`);
+        yield* Effect.log(`DEBUG: Final file count: ${files.length}`);
+        yield* Effect.log(`Found ${files.length} files in ${targetPath}:`);
       }
 
       // Handle output
-      if (jsonMode) {
+      if (asJson) {
         const jsonPayload = {
           command: "list",
           path: targetPath,
@@ -108,26 +132,17 @@ export const effectPatternsList = Command.make(
           files,
           timestamp: new Date().toISOString(),
         };
-        const content = JSON.stringify(jsonPayload, null, 2);
-        if (Option.isSome(output)) {
-          const fs = yield* FileSystem.FileSystem;
-          const outPath = output.value;
-          if (!Option.getOrElse(force, () => false)) {
-            // best-effort overwrite policy; FileSystem lacks exists on this import, so try/catch write
-          }
-          yield* fs.writeFileString(outPath, content);
-        } else {
-          yield* Console.log(content);
-        }
-      } else if (!quietMode) {
-        for (const file of files) {
-          yield* Console.log(`  ${file}`);
-        }
-        if (Option.isSome(output)) {
-          const fs = yield* FileSystem.FileSystem;
-          const outPath = output.value;
-          yield* fs.writeFileString(outPath, files.join("\n"));
-        }
+        yield* printJson(
+          jsonPayload,
+          getGlobalCompact(),
+          resolvedOutput ? { outputFile: resolvedOutput } : undefined
+        );
+      } else if (!quietFlag) {
+        const content = files.map((f) => `  ${f}`).join("\n");
+        yield* printText(
+          content,
+          resolvedOutput ? { outputFile: resolvedOutput } : undefined
+        );
       }
 
       yield* otel.recordCounter("files_found", files.length);
@@ -136,5 +151,9 @@ export const effectPatternsList = Command.make(
 
       return files;
     });
+  },
+  {
+    description: "List files under a content path",
+    errorPrefix: "Error in list command",
   }
 );

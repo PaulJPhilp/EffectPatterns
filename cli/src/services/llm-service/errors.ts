@@ -2,8 +2,12 @@ import { Console, Data } from "effect";
 import { AiError } from "@effect/ai";
 import { Providers } from "./types.js";
 
+const hasTag = (x: unknown): x is { _tag: string } =>
+  typeof x === "object" && x !== null && "_tag" in (x as Record<string, unknown>) &&
+  typeof (x as Record<string, unknown>)["_tag"] === "string";
+
 const isAiError = (e: unknown): e is AiError.AiError =>
-  typeof e === "object" && e !== null && "_tag" in e && (e as any)._tag === "AiError";
+  hasTag(e) && e._tag === "AiError";
 
 export const logError = (e: unknown) => {
   if (isAiError(e)) {
@@ -18,14 +22,29 @@ export const logError = (e: unknown) => {
       ---------------------------------------
     `);
   } else {
-    const error = e as any;
+    const isObject = typeof e === "object" && e !== null;
+    let ctorName: string;
+    if (isObject) {
+      const ctor = (e as { constructor?: { name?: unknown } }).constructor;
+      ctorName = typeof ctor?.name === "string" ? ctor.name : "Object";
+    } else {
+      ctorName = typeof e;
+    }
+    const message = e instanceof Error ? e.message : String(e);
+    const stack = e instanceof Error ? (e.stack || 'No stack trace.') : 'Not an Error object.';
+    let raw = "<unserializable>";
+    try {
+      raw = JSON.stringify(e, null, 2);
+    } catch {
+      raw = "<unserializable>";
+    }
     return Console.error(`
       ---------------------------------------
       💥 OTHER ERROR CAUGHT 💥
-      Type: "${error?.constructor?.name || 'UnknownType'}"
-      Message: "${String(error)}"
-      Stack: ${error instanceof Error ? error.stack || 'No stack trace.' : 'Not an Error object.'}
-      Raw Object: ${JSON.stringify(error, null, 2)}
+      Type: "${ctorName}"
+      Message: "${message}"
+      Stack: ${stack}
+      Raw Object: ${raw}
       ---------------------------------------
     `);
   }

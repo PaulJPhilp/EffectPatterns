@@ -221,7 +221,7 @@ export const generateText = Effect.fn("generateText")(function* (
   };
 
   yield* metrics.recordLLMUsage(usage);
-  yield* Console.log(response.text);
+  yield* Effect.log(response.text);
   return response;
 });
 
@@ -317,7 +317,7 @@ export const generateObject = Effect.fn("generateObject")(function* <
   };
 
   yield* metrics.recordLLMUsage(usage);
-  yield* Console.log(response);
+  yield* Effect.log(response);
   return response;
 });
 
@@ -396,7 +396,9 @@ const createAiClientLayer = (provider: Providers) => {
         apiKey: Config.redacted("ANTHROPIC_API_KEY"),
       });
     default:
-      throw new Error(`Unsupported provider: ${provider}`);
+      return Layer.fail(
+        new UnsupportedProviderError({ provider: String(provider) })
+      );
   }
 };
 
@@ -444,21 +446,23 @@ export const buildLlmExecutionPlanEffect = (
       ] as Array<{ provider: Providers; model: Models }>
     ).filter((f) => f.provider !== primaryProvider);
 
-    const parsedFallbacks = Option.match(fallbacksJson, {
-      onNone: () => defaultFallbacks,
-      onSome: (v) => {
-        try {
-          const arr = JSON.parse(String(v)) as Array<{
-            provider: Providers;
-            model: Models;
-          }>;
-          return arr
-            .filter((f) => f?.provider && f?.model)
-            .filter((f) => f.provider !== primaryProvider);
-        } catch {
-          return defaultFallbacks;
-        }
-      },
+    const parsedFallbacks = yield* Option.match(fallbacksJson, {
+      onNone: () => Effect.succeed(defaultFallbacks),
+      onSome: (v) =>
+        Effect.try({
+          try: () =>
+            JSON.parse(String(v)) as Array<{
+              provider: Providers;
+              model: Models;
+            }>,
+          catch: () => defaultFallbacks,
+        }).pipe(
+          Effect.map((arr) =>
+            arr
+              .filter((f) => f?.provider && f?.model)
+              .filter((f) => f.provider !== primaryProvider)
+          )
+        ),
     });
 
     const fallbackLayers = parsedFallbacks.map(({ provider, model }) =>

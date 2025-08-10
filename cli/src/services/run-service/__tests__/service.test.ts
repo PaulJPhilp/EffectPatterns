@@ -125,7 +125,16 @@ describe("RunService", () => {
       if (!currentRun) {
         const result = yield* runService.getRunPath().pipe(
           Effect.flip,
-          Effect.map((error) => ({ hasError: true, errorMessage: error.message }))
+          Effect.map((error) => ({
+            hasError: true,
+            errorMessage: error instanceof Error
+              ? error.message
+              : (typeof error === "object" && error !== null &&
+                 "message" in (error as Record<string, unknown>) &&
+                 typeof (error as { message?: unknown }).message === "string")
+                ? (error as { message: string }).message
+                : String(error)
+          }))
         );
         expect(result.hasError).toBe(true);
       } else {
@@ -141,7 +150,16 @@ describe("RunService", () => {
       if (!currentRun) {
         const result = yield* runService.getRunFilePath("test.txt").pipe(
           Effect.flip,
-          Effect.map((error) => ({ hasError: true, errorMessage: error.message }))
+          Effect.map((error) => ({
+            hasError: true,
+            errorMessage: error instanceof Error
+              ? error.message
+              : (typeof error === "object" && error !== null &&
+                 "message" in (error as Record<string, unknown>) &&
+                 typeof (error as { message?: unknown }).message === "string")
+                ? (error as { message: string }).message
+                : String(error)
+          }))
         );
         expect(result.hasError).toBe(true);
       } else {

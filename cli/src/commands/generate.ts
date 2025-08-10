@@ -1,22 +1,32 @@
-import { Args, Command, Options } from "@effect/cli";
+import { Args, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
 import { Path } from "@effect/platform/Path";
-import { Chunk, Console, Effect, Option, Stream } from "effect";
+import { Chunk, Effect, Option, Stream } from "effect";
 
 import { ConfigService } from "../services/config-service/service.js";
 import { streamText } from "../services/llm-service/service.js";
 import type { Models, Providers } from "../services/llm-service/types.js";
 import { parseMdxFile } from "../services/llm-service/utils.js";
 import { MetricsService } from "../services/metrics-service/service.js";
-import {
-  ModelService,
-  make as ModelServiceImpl,
-} from "../services/model-service/service.js";
+import { ModelService } from "../services/model-service/service.js";
 import type {
   Model as CatalogModel,
   ProviderSlug,
 } from "../services/model-service/types.js";
 import { OtelService } from "../services/otel-service/service.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - TS resolves .js to .ts in this repo config
+import {
+  makeCommand,
+  printText,
+  printJson,
+  setGlobalJson,
+  setGlobalCompact,
+  setGlobalOutputOptions,
+  getGlobalJson,
+  getGlobalCompact,
+  getGlobalOutputOptions,
+} from "./_shared.js";
 
 interface GenerateOptions {
   // Positional input that can be a file path or inline prompt text
@@ -64,15 +74,6 @@ function generateHandler({
     const config = yield* ConfigService;
 
     yield* metrics.startCommand("generate");
-
-    const span = yield* otel.startSpan("generate-operation", {
-      attributes: { file: Option.getOrElse(file, () => ""), provider, model },
-    });
-
-    yield* otel.addEvent(span, "starting_process_prompt", {
-      file: Option.getOrElse(file, () => ""),
-    });
-
     const providerFromConfig = yield* config.get("defaultProvider");
     const modelFromConfig = yield* config.get("defaultModel");
     const resolvedProvider = Option.getOrElse(provider, () =>
@@ -89,12 +90,23 @@ function generateHandler({
       )
     );
 
+    const span = yield* otel.startSpan("generate-operation", {
+      attributes: {
+        file: Option.getOrElse(file, () => ""),
+        provider: resolvedProvider,
+        model: resolvedModel,
+      },
+    });
+
+    yield* otel.addEvent(span, "starting_process_prompt", {
+      file: Option.getOrElse(file, () => ""),
+    });
+
     // Validate model using ModelService for all providers
     {
-      const service = yield* Effect.provideService(
-        ModelService,
-        ModelServiceImpl
-      )(ModelService);
+      const service = yield* ModelService.pipe(
+        Effect.provide(ModelService.Default)
+      );
       const providerName =
         resolvedProvider === "openai"
           ? "OpenAI"
@@ -106,7 +118,7 @@ function generateHandler({
         Effect.catchAll(() => Effect.succeed<string[]>([]))
       );
       if (names.length > 0 && !names.includes(resolvedModel as string)) {
-        yield* Console.log(
+        yield* Effect.log(
           `⚠️ Model '${resolvedModel}' not recognized for ${providerName}. Known: ${names.join(
             ", "
           )}`
@@ -118,6 +130,18 @@ function generateHandler({
     const resolvedFormat: "text" | "json" = json
       ? "json"
       : Option.getOrElse(outputFormat, () => "text");
+
+    // Normalize output options and set shared flags
+    const outPathOpt = Option.getOrElse(output, () => undefined as unknown as string | undefined);
+    const asJson = resolvedFormat === "json" || json || !!outPathOpt;
+    setGlobalJson(asJson);
+    setGlobalCompact(false);
+    setGlobalOutputOptions(
+      {
+        outputFile: outPathOpt,
+        // Quiet behavior for this command relies on boolean quiet flag below when printing
+      }
+    );
 
     if (resolvedFormat === "json" && Option.isNone(schemaPrompt)) {
       return yield* Effect.fail(
@@ -228,7 +252,7 @@ function generateHandler({
             Effect.gen(function* () {
               collected += chunk;
               if (!quiet) {
-                yield* Console.log(chunk);
+                yield* printText(chunk);
               }
             })
           )
@@ -268,7 +292,7 @@ function generateHandler({
     yield* metrics.recordResponse(textContent);
     yield* metrics.endCommand();
 
-    if (resolvedFormat === "json") {
+    if (asJson) {
       const parseResponseEffect = Effect.gen(function* () {
         const parseDirect = Effect.try({
           try: () => JSON.parse(textContent),
@@ -311,27 +335,23 @@ function generateHandler({
           model: resolvedModel,
           timestamp: new Date().toISOString(),
         };
-        const jsonOutput = JSON.stringify(perCommandOutput, null, 2);
-        if (Option.isSome(output)) {
-          const outputPath = output.value;
-          const fsw = yield* FileSystem.FileSystem;
-          yield* fsw.writeFileString(outputPath, jsonOutput);
-          return;
-        }
-        yield* Console.log(jsonOutput);
+        const resolvedOutput = getGlobalOutputOptions()?.outputFile;
+        yield* printJson(
+          perCommandOutput,
+          getGlobalCompact(),
+          resolvedOutput ? { outputFile: resolvedOutput } : undefined
+        );
       });
       return yield* parseResponseEffect;
     }
 
-    if (Option.isSome(output)) {
-      const outputPath = Option.getOrThrow(output);
-      const fsw = yield* FileSystem.FileSystem;
-      yield* fsw.writeFileString(outputPath, textContent);
-    } else {
-      if (noStream || quiet) {
-        // If we buffered due to --no-stream or were quiet, emit once unless quiet
+    {
+      const resolvedOutput = getGlobalOutputOptions()?.outputFile;
+      if (resolvedOutput) {
+        yield* printText(textContent, { outputFile: resolvedOutput });
+      } else if (noStream || quiet) {
         if (!quiet) {
-          yield* Console.log(textContent);
+          yield* printText(textContent);
         }
       }
     }
@@ -343,7 +363,7 @@ function generateHandler({
   });
 }
 
-export const generateCommand = Command.make(
+export const generateCommand = makeCommand(
   "generate",
   {
     // Positional input is optional and may be a file path or inline text
@@ -375,10 +395,14 @@ export const generateCommand = Command.make(
     topP: Options.optional(Options.float("top-p")),
     seed: Options.optional(Options.integer("seed")),
   },
-  (opts) => generateHandler(opts)
+  (opts) => generateHandler(opts),
+  {
+    description: "Generate text from a prompt (file, inline, or stdin)",
+    errorPrefix: "Error in generate command",
+  }
 );
 
-export const genAliasCommand = Command.make(
+export const genAliasCommand = makeCommand(
   "gen",
   {
     file: Args.text({ name: "file" }).pipe(Args.optional),
@@ -409,10 +433,14 @@ export const genAliasCommand = Command.make(
     topP: Options.optional(Options.float("top-p")),
     seed: Options.optional(Options.integer("seed")),
   },
-  (opts) => generateHandler(opts)
+  (opts) => generateHandler(opts),
+  {
+    description: "Alias for generate",
+    errorPrefix: "Error in gen command",
+  }
 );
 
-export const processPromptLegacyCommand = Command.make(
+export const processPromptLegacyCommand = makeCommand(
   "process-prompt",
   {
     file: Args.text({ name: "file" }).pipe(Args.optional),
@@ -443,7 +471,11 @@ export const processPromptLegacyCommand = Command.make(
     topP: Options.optional(Options.float("top-p")),
     seed: Options.optional(Options.integer("seed")),
   },
-  (opts) => generateHandler(opts)
+  (opts) => generateHandler(opts),
+  {
+    description: "Legacy alias for generate",
+    errorPrefix: "Error in process-prompt command",
+  }
 );
 
 // Duplicates were present below; cleaned up to a single export block.

@@ -154,8 +154,20 @@ ${config.content || "Test content"}`;
  * Error matchers
  */
 export const errorMatchers = {
-  isInvalidMdxFormatError: (error: any) => error._tag === "InvalidMdxFormatError",
-  isInvalidFrontmatterError: (error: any) => error._tag === "InvalidFrontmatterError",
-  isUnsupportedProviderError: (error: any) => error._tag === "UnsupportedProviderError",
-  isAiError: (error: any) => error._tag === "AiError"
+  isInvalidMdxFormatError: (error: unknown) =>
+    typeof error === "object" && error !== null &&
+    "_tag" in (error as Record<string, unknown>) &&
+    (error as { _tag?: unknown })._tag === "InvalidMdxFormatError",
+  isInvalidFrontmatterError: (error: unknown) =>
+    typeof error === "object" && error !== null &&
+    "_tag" in (error as Record<string, unknown>) &&
+    (error as { _tag?: unknown })._tag === "InvalidFrontmatterError",
+  isUnsupportedProviderError: (error: unknown) =>
+    typeof error === "object" && error !== null &&
+    "_tag" in (error as Record<string, unknown>) &&
+    (error as { _tag?: unknown })._tag === "UnsupportedProviderError",
+  isAiError: (error: unknown) =>
+    typeof error === "object" && error !== null &&
+    "_tag" in (error as Record<string, unknown>) &&
+    (error as { _tag?: unknown })._tag === "AiError"
 };
