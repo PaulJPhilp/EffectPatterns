@@ -15,10 +15,10 @@ const processFile = (
     yield* fs.writeFileString(filePath, content);
 
     // Create a stream from file content
-    const fileStream = Stream.fromEffect(fs.readFileString(filePath))
+    const fileStream = fs.stream(filePath)
       .pipe(
         // Split content into lines
-        Stream.map((content: string) => content.split('\n')),
+        Stream.map((content) => content.toString().split('\n')),
         Stream.flatMap(Stream.fromIterable),
         // Process each line
         Stream.tap((line) => Effect.log(`Processing: ${line}`))
