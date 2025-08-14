@@ -1,18 +1,16 @@
-import { Data, Equal, Effect, HashSet } from "effect";
+import { Data, Equal } from "effect";
 
+// Create two structurally equal tuples
 const t1 = Data.tuple(1, "Alice");
 const t2 = Data.tuple(1, "Alice");
-const areEqual = Equal.equals(t1, t2);
+
+// Compare by value, not reference
+const areEqual = Equal.equals(t1, t2); // true
+
+// Use tuples as keys in a HashSet or Map
+import { HashSet } from "effect";
 const set = HashSet.make(t1);
-const hasT2 = HashSet.has(set, t2);
-const [id, name] = t1;
+console.log(HashSet.has(set, t2)); // true
 
-const program = Effect.gen(function* () {
-  yield* Effect.log(`t1: [${t1[0]}, ${t1[1]}]`);
-  yield* Effect.log(`t2: [${t2[0]}, ${t2[1]}]`);
-  yield* Effect.log(`Equal.equals(t1, t2): ${areEqual}`);
-  yield* Effect.log(`HashSet.has(set, t2): ${hasT2}`);
-  yield* Effect.log(`Pattern matched tuple: id=${id}, name=${name}`);
-});
-
-Effect.runPromise(program);
+// Pattern matching on tuples
+const [id, name] = t1; // id: number, name: string

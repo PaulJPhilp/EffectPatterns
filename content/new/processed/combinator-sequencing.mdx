@@ -1,64 +1,20 @@
 ---
-title: Sequencing with andThen, tap, and flatten
-id: combinator-sequencing
-skillLevel: beginner
-provider: google
-model: gemini-2.5-flashmediate
-useCase:
-  - Combinators
-  - Sequencing
-  - Composition
-  - Side Effects
-summary: Use andThen, tap, and flatten to sequence computations, run side
-  effects, and flatten nested structures in Effect, Stream, Option, and Either.
-tags:
-  - sequencing
-  - andThen
-  - tap
-  - flatten
-  - combinator
-  - effect
-  - stream
-  - option
-  - either
+title: "Sequencing with andThen, tap, and flatten"
+id: "combinator-sequencing"
+skillLevel: "intermediate"
+useCase: ["Combinators", "Sequencing", "Composition", "Side Effects"]
+summary: "Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either."
+tags: ["sequencing", "andThen", "tap", "flatten", "combinator", "effect", "stream", "option", "either"]
 rule:
-  description: Use sequencing combinators to run computations in order, perform
-    side effects, or flatten nested structures, while preserving error and
-    context handling.
-related:
-  - combinator-flatmap
-  - combinator-map
-  - combinator-foreach-all
-  - combinator-zip
-  - combinator-error-handling
-author: PaulJPhilp
-expectedOutput: >-
-  timestamp=2025-08-07T18:29:29.295Z level=INFO fiber=#0 message=Starting...
-
-  timestamp=2025-08-07T18:29:29.296Z level=INFO fiber=#0 message="logThenCompute
-  (andThen) result: 42"
-
-  timestamp=2025-08-07T18:29:29.296Z level=INFO fiber=#0 message="Result is 42"
-
-  timestamp=2025-08-07T18:29:29.296Z level=INFO fiber=#0 message="computeAndLog
-  (tap) result: 42"
-
-  timestamp=2025-08-07T18:29:29.296Z level=INFO fiber=#0 message="Option.flatten
-  result: 1"
-
-  timestamp=2025-08-07T18:29:29.297Z level=INFO fiber=#0 message="Effect.flatten
-  result: 1"
-
-  timestamp=2025-08-07T18:29:29.297Z level=ERROR fiber=#0 message="Error: fail!"
-
-  timestamp=2025-08-07T18:29:29.301Z level=INFO fiber=#1 message="Saw: 1"
-
-  timestamp=2025-08-07T18:29:29.301Z level=INFO fiber=#1 message="Saw: 2"
-
-  timestamp=2025-08-07T18:29:29.302Z level=INFO fiber=#1 message="Saw: 3"
-
-  timestamp=2025-08-07T18:29:29.311Z level=INFO fiber=#0 message="Stream.tap
-  result: [1, 2, 3]"
+  description: "Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures, while preserving error and context handling."
+related: [
+  "combinator-flatmap",
+  "combinator-map",
+  "combinator-foreach-all",
+  "combinator-zip",
+  "combinator-error-handling"
+]
+author: "PaulJPhilp"
 ---
 
 # Sequencing with `andThen`, `tap`, and `flatten`

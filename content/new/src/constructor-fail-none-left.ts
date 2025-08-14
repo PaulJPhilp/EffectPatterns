@@ -1,27 +1,10 @@
 import { Effect, Option, Either } from "effect";
 
-const effect = Effect.fail("Something went wrong");
-const option = Option.none();
-const either = Either.left("Invalid input");
+// Effect: Represent a failure with an error value
+const effect = Effect.fail("Something went wrong"); // Effect<string, never, never>
 
-const program = Effect.gen(function* () {
-  yield* Effect.either(effect).pipe(
-    Effect.tap((res) =>
-      Effect.log(
-        `Effect.fail result: ${
-          res._tag === "Left" ? `Error: ${res.left}` : res.right
-        }`
-      )
-    )
-  );
-  yield* Effect.log(
-    `Option.none result: ${Option.isNone(option) ? "None" : option.value}`
-  );
-  yield* Effect.log(
-    `Either.left result: ${
-      Either.isLeft(either) ? `Left: ${either.left}` : either.right
-    }`
-  );
-});
+// Option: Represent absence of a value
+const option = Option.none(); // Option<never>
 
-Effect.runPromise(program);
+// Either: Represent a failure with a left value
+const either = Either.left("Invalid input"); // Either<string, never>

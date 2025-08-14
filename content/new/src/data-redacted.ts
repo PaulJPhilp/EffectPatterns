@@ -1,21 +1,13 @@
-  import { Redacted, Effect } from "effect";
+import { Redacted } from "effect";
 
+// Wrap a sensitive value
 const secret = Redacted.make("super-secret-password");
 
-function authenticate(user: string, password: Redacted.Redacted<string>) {
-  // Simulate authentication logic
-  return Effect.succeed(
-    user === "admin" && Redacted.value(password) === "super-secret-password"
-      ? "Authenticated"
-      : "Failed"
-  );
+// Use the secret in your application logic
+function authenticate(user: string, password: Redacted<string>) {
+  // ... authentication logic
 }
 
-const program = Effect.gen(function* () {
-  yield* Effect.log(`Password: ${secret}`); // Should log <redacted>
-  yield* Effect.log(`Password as string: ${String(secret)}`); // Should log <redacted>
-  const authResult = yield* authenticate("admin", secret);
-  yield* Effect.log(`Authentication result: ${authResult}`);
-});
-
-Effect.runPromise(program);
+// Logging or stringifying a Redacted value
+console.log(`Password: ${secret}`); // Output: Password: <redacted>
+console.log(String(secret));        // Output: <redacted>

@@ -1,62 +1,37 @@
 ---
-title: Creating Case Constructors with Data.case
-id: data-case
-skillLevel: intermediate
-provider: google
-model: gemini-2.5-flash
-useCase:
-  - Data Types
-  - Case Constructors
-  - Domain Modeling
-  - Structural Equality
-summary: Use Data.case to create case constructors for data types with built-in
-  structural equality and hashing, enabling type-safe domain modeling.
-tags:
-  - Data.case
-  - case-constructor
-  - structural-equality
-  - domain-modeling
-  - data-type
-  - effect
+title: "Modeling Tagged Unions with Data.case"
+id: "data-case"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Tagged Unions", "ADTs", "Domain Modeling"]
+summary: "Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching."
+tags: ["Data.case", "tagged-union", "ADT", "domain-modeling", "pattern-matching", "data-type", "effect"]
 rule:
-  description: Use Data.case to create case constructors for data types, providing
-    automatic structural equality and hashing for domain objects.
-related:
-  - data-tagged
-  - data-struct
-  - pattern-matchtag
-author: PaulJPhilp
-expectedOutput: >-
-  timestamp=2025-08-07T18:29:29.671Z level=INFO fiber=#0 message="Hello, Alice!"
-
-  timestamp=2025-08-07T18:29:29.673Z level=INFO fiber=#0 message="Hello, Bob!"
-
-  timestamp=2025-08-07T18:29:29.674Z level=INFO fiber=#0 message="Are they
-  equal? false"
+  description: "Use Data.case to define tagged unions (ADTs) for modeling domain-specific states and enabling exhaustive pattern matching."
+related: ["data-struct", "pattern-matchtag"]
+author: "PaulJPhilp"
 ---
 
-# Creating Case Constructors with `Data.case`
+# Modeling Tagged Unions with `Data.case`
 
 ## Guideline
 
-Use `Data.case` to create case constructors for data types with built-in structural equality and hashing.  
-This provides a simple way to create domain objects that work seamlessly with Effect's collections and comparison operations.
+Use `Data.case` to create tagged unions (algebraic data types, or ADTs) for robust, type-safe domain modeling.  
+Tagged unions make it easy to represent and exhaustively handle all possible states of your domain entities.
 
 ## Rationale
 
-Case constructors created with `Data.case` automatically provide structural equality and hashing, making them ideal for domain modeling.  
-Unlike plain objects, these case constructors ensure consistent equality semantics and can be safely used in collections like `HashSet` and `HashMap`.
+Modeling domain logic with tagged unions ensures that all cases are handled, prevents illegal states, and enables safe, exhaustive pattern matching.  
+`Data.case` provides a concise, type-safe way to define and use ADTs in your application.
 
 ## Good Example
 
 <Example path="./src/data-case.ts" />
 
 **Explanation:**  
-- Define an interface for your data type.
-- `Data.case<YourType>()` creates a constructor function with built-in structural equality.
-- Case constructors automatically provide `Equal` and `Hash` implementations.
-- Perfect for domain modeling where structural equality is desired.
+- `Data.case` creates tagged constructors for each state.
+- The `_tag` property enables exhaustive pattern matching.
+- Use for domain modeling, state machines, and error types.
 
 ## Anti-Pattern
 
-Using plain objects for domain data that need structural equality, or manually implementing equality and hash functions, which can lead to inconsistent behavior in collections.
+Using plain objects or enums for domain states, which can lead to illegal states, missed cases, and less type-safe pattern matching.

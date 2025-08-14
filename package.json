@@ -43,13 +43,13 @@
     "qa:all": "./scripts/qa/qa-process.sh && bun run qa:report"
   },
   "dependencies": {
-    "@effect/ai": "^0.25.0",
-    "@effect/ai-anthropic": "^0.15.0",
+    "@effect/ai": "^0.25.2",
+    "@effect/ai-anthropic": "^0.15.1",
     "@effect/ai-google": "^0.4.0",
-    "@effect/ai-openai": "^0.28.0",
+    "@effect/ai-openai": "^0.28.2",
     "@effect/cli": "^0.69.0",
-    "@effect/platform": "^0.90.0",
-    "@effect/platform-node": "^0.94.1",
+    "@effect/platform": "^0.90.2",
+    "@effect/platform-node": "^0.90.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.203.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.203.0",
@@ -62,23 +62,24 @@
     "@opentelemetry/semantic-conventions": "^1.36.0",
     "cli-table3": "^0.6.5",
     "dotenv": "^17.2.1",
-    "effect": "^3.17.6",
+    "effect": "^3.17.7",
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.0",
     "liquidjs": "^10.21.1",
     "process": "^0.11.10",
-    "yaml": "^2.8.0"
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.1.4",
     "@effect/language-service": "^0.31.2",
     "@types/bun": "latest",
-    "@types/node": "^24.2.0",
-    "@typescript-eslint/eslint-plugin": "^8.39.0",
-    "@typescript-eslint/parser": "^8.39.0",
+    "@types/node": "^24.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.39.1",
+    "@typescript-eslint/parser": "^8.39.1",
     "@vitest/coverage-v8": "^3.2.4",
-    "eslint": "^9.32.0",
+    "eslint": "^9.33.0",
     "ts-patch": "^3.3.0",
-    "tsx": "^4.20.3",
+    "tsx": "^4.20.4",
     "typescript": "5.8.3",
     "vitest": "^3.2.4"
   },
@@ -90,9 +91,12 @@
   ],
   "author": "Paul",
   "license": "MIT",
+  "overrides": {
+    "@effect/rpc": "^0.65.2"
+  },
   "resolutions": {
     "@effect/platform": "^0.90.0",
-    "@effect/platform-node": "^0.94.0",
-    "effect": "^3.17.1"
+    "@effect/platform-node": "^0.90.0",
+    "effect": "^3.17.6"
   }
 }

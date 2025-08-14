@@ -1,0 +1,61 @@
+---
+title: Wrapping Synchronous and Asynchronous Computations
+id: constructor-try-trypromise
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Constructors
+  - Error Handling
+  - Async
+  - Interop
+summary: Use try and tryPromise to safely wrap synchronous or asynchronous
+  computations that may throw or reject, capturing errors in the Effect world.
+tags:
+  - try
+  - tryPromise
+  - constructor
+  - effect
+  - error
+  - async
+  - interop
+rule:
+  description: Use try and tryPromise to lift code that may throw or reject into
+    Effect, capturing errors in the failure channel.
+related:
+  - constructor-succeed-some-right
+  - constructor-fail-none-left
+  - constructor-sync-async
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.633Z level=INFO fiber=#0 message="Effect.try
+  result: Error: Parse error: SyntaxError: JSON Parse error: Expected '}'"
+
+  timestamp=2025-08-07T18:29:29.701Z level=INFO fiber=#0
+  message="Effect.tryPromise result: Error: Network error: Error: Unable to
+  connect. Is the computer able to access the url?"
+---
+
+# Wrapping Synchronous and Asynchronous Computations
+
+## Guideline
+
+Use the `try` and `tryPromise` constructors to safely wrap synchronous or asynchronous computations that may throw exceptions or reject promises.  
+This captures errors in the Effect failure channel, making them type-safe and composable.
+
+## Rationale
+
+Wrapping potentially unsafe code in `try` or `tryPromise` ensures that all errors are handled in a uniform, declarative way.  
+This eliminates the need for try/catch blocks and makes error handling explicit and type-safe.
+
+## Good Example
+
+<Example path="./src/constructor-try-trypromise.ts" />
+
+**Explanation:**  
+- `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
+- `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
+
+## Anti-Pattern
+
+Using try/catch for error handling, or relying on untyped Promise rejections, which leads to less composable and less type-safe code.

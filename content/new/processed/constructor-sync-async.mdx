@@ -1,37 +1,14 @@
 ---
-title: Creating from Synchronous and Callback Code
-id: constructor-sync-async
-skillLevel: beginner
-provider: google
-model: gemini-2.5-flash
-useCase:
-  - Constructors
-  - Interop
-  - Async
-  - Callback
-summary: Use sync and async to lift synchronous or callback-based computations
-  into Effect, enabling safe and composable interop with legacy code.
-tags:
-  - sync
-  - async
-  - constructor
-  - effect
-  - interop
-  - callback
-  - legacy
+title: "Creating from Synchronous and Callback Code"
+id: "constructor-sync-async"
+skillLevel: "beginner"
+useCase: ["Constructors", "Interop", "Async", "Callback"]
+summary: "Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code."
+tags: ["sync", "async", "constructor", "effect", "interop", "callback", "legacy"]
 rule:
-  description: Use sync and async to create Effects from synchronous or
-    callback-based computations, making them composable and type-safe.
-related:
-  - constructor-try-trypromise
-  - constructor-succeed-some-right
-author: PaulJPhilp
-expectedOutput: >-
-  timestamp=2025-08-07T18:29:29.377Z level=INFO fiber=#0 message="Effect.sync
-  result: 0.8940109501023357"
-
-  timestamp=2025-08-07T18:29:29.410Z level=INFO fiber=#0 message="Effect.async
-  result: file contents"
+  description: "Use sync and async to create Effects from synchronous or callback-based computations, making them composable and type-safe."
+related: ["constructor-try-trypromise", "constructor-succeed-some-right"]
+author: "PaulJPhilp"
 ---
 
 # Creating from Synchronous and Callback Code
@@ -53,7 +30,6 @@ By lifting them into Effects, you gain access to all of Effect's combinators, er
 **Explanation:**  
 - `Effect.sync` is for synchronous computations that are guaranteed not to throw.
 - `Effect.async` is for integrating callback-based APIs, converting them into Effects.
-- When using `Effect.async`, specify both the error and value types (e.g., `Effect.async<string, string>`), and ensure the error passed to `Effect.fail` matches the expected error type.
 
 ## Anti-Pattern
 

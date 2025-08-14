@@ -1,14 +1,15 @@
 import { Effect, Exit } from "effect";
 
-const program = Effect.gen(function* () {
-  const exit = yield* Effect.promise(() =>
-    Effect.runPromiseExit(Effect.succeed(42))
-  );
+// Run an Effect and capture its Exit value
+const program = Effect.succeed(42);
+
+const runAndCapture = Effect.runPromiseExit(program); // Promise<Exit<never, number>>
+
+// Pattern match on Exit
+runAndCapture.then((exit) => {
   if (Exit.isSuccess(exit)) {
-    yield* Effect.log(`Success: ${exit.value}`);
+    console.log("Success:", exit.value);
   } else if (Exit.isFailure(exit)) {
-    yield* Effect.log(`Failure: ${JSON.stringify(exit.cause)}`);
+    console.error("Failure:", exit.cause);
   }
 });
-
-Effect.runPromise(program);

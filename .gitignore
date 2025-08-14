@@ -14,7 +14,7 @@
  pnpm-debug.log*
 
  # Build output
- dist/
+ **/dist/
  build/
 +runs/ # Add this for your 'run' feature outputs
 

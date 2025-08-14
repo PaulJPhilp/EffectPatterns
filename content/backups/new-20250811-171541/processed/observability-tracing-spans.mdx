@@ -1,0 +1,55 @@
+---
+title: Trace Operations Across Services with Spans
+id: observability-tracing-spans
+skillLevel: intermediate
+useCase:
+  - Observability
+  - Tracing
+  - Performance
+  - Debugging
+summary: Use Effect.withSpan to create custom tracing spans, providing detailed
+  visibility into the performance and flow of your application's operations.
+tags:
+  - tracing
+  - spans
+  - observability
+  - performance
+  - debugging
+  - effect
+rule:
+  description: Use Effect.withSpan to create and annotate tracing spans for
+    operations, enabling distributed tracing and performance analysis.
+related:
+  - observability-structured-logging
+  - observability-custom-metrics
+author: PaulJPhilp
+provider: google
+model: gemini-2.5-flash
+expectedOutput: timestamp=2025-08-07T18:29:29.609Z level=INFO fiber=#0
+  message="Starting workflow"
+---
+
+# Trace Operations Across Services with Spans
+
+## Guideline
+
+Use `Effect.withSpan` to create custom tracing spans around important operations in your application.  
+This enables distributed tracing, performance analysis, and deep visibility into how requests flow through your system.
+
+## Rationale
+
+Tracing spans help you understand the flow and timing of operations, especially in distributed systems or complex workflows.  
+They allow you to pinpoint bottlenecks, visualize dependencies, and correlate logs and metrics with specific requests.
+
+## Good Example
+
+<Example path="./src/observability-tracing-spans.ts" />
+
+**Explanation:**  
+- `Effect.withSpan` creates a tracing span around an operation.
+- Spans can be named and annotated with attributes for richer context.
+- Tracing enables distributed observability and performance analysis.
+
+## Anti-Pattern
+
+Relying only on logs or metrics for performance analysis, or lacking visibility into the flow of requests and operations across services.

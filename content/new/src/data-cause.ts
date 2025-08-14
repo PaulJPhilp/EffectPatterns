@@ -5,7 +5,7 @@ const program = Effect.try({
   try: () => {
     throw new Error("Unexpected failure!");
   },
-  catch: (err) => err,
+  catch: (err) => err
 });
 
 // Catch all causes and inspect them
@@ -14,7 +14,7 @@ const handled = program.pipe(
     Effect.sync(() => {
       if (Cause.isDie(cause)) {
         console.error("Defect (die):", Cause.pretty(cause));
-      } else if (Cause.failureOption(cause)._tag === "Some") {
+      } else if (Cause.isFail(cause)) {
         console.error("Expected error:", Cause.pretty(cause));
       } else if (Cause.isInterrupted(cause)) {
         console.error("Interrupted:", Cause.pretty(cause));
@@ -23,5 +23,3 @@ const handled = program.pipe(
     })
   )
 );
-
-Effect.runPromise(handled);

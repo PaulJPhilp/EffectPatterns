@@ -1,26 +1,18 @@
-import { Data, Equal, Hash, Effect, HashSet } from "effect";
+import { Data, Equal, Order, Hash } from "effect";
 
+// Define a custom data type
 const User = Data.struct({ id: 1, name: "Alice" });
 
-const isEqual = Equal.equals(User, Data.struct({ id: 1, name: "Alice" }));
-const userHash = Hash.hash(User);
+// Derive equality, ordering, and hashing
+const userEqual: Equal.Equal<typeof User> = Data.Class.getEqual(User);
+const userOrder: Order.Order<typeof User> = Data.Class.getOrder(User, (a, b) => a.id - b.id);
+const userHash: Hash.Hash<typeof User> = Data.Class.getHash(User);
 
+// Use in a HashSet
+import { HashSet } from "effect";
 const set = HashSet.make(User);
-const hasUser = HashSet.has(set, Data.struct({ id: 1, name: "Alice" }));
+console.log(HashSet.has(set, Data.struct({ id: 1, name: "Alice" }))); // true
 
+// Use for sorting
 const users = [Data.struct({ id: 2, name: "Bob" }), User];
-const sorted = users.sort((a, b) => a.id - b.id);
-
-const program = Effect.gen(function* () {
-  yield* Effect.log(`User: ${JSON.stringify(User)}`);
-  yield* Effect.log(`Equal.equals(User, {id:1,name:'Alice'}): ${isEqual}`);
-  yield* Effect.log(`Hash.hash(User): ${userHash}`);
-  yield* Effect.log(`HashSet.has(set, {id:1,name:'Alice'}): ${hasUser}`);
-  yield* Effect.log(
-    `Sorted users by id: [${sorted.map((u) => u.name).join(", ")}]`
-  );
-});
-
-Effect.runPromise(
-  program.pipe(Effect.catchAll(() => Effect.succeed(undefined)))
-);
+const sorted = users.sort(userOrder.compare); // Sorted by id

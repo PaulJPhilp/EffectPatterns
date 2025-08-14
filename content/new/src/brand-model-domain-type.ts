@@ -1,18 +1,16 @@
-import { Brand, Effect } from "effect";
+import { Brand } from "effect";
 
-type Email = string & Brand.Brand<"Email">;
-const Email = Brand.nominal<Email>();
+// Define a branded type for Email
+type Email = Brand.Branded<string, "Email">;
 
+// Function that only accepts Email, not any string
 function sendWelcome(email: Email) {
-  return Effect.log(`Welcome email sent to: ${email}`);
+  // ...
 }
 
-const email = Email("user@example.com");
+// Constructing an Email value (unsafe, see next pattern for validation)
+const email = "user@example.com" as Email;
 
-const program = Effect.gen(function* () {
-  yield* Effect.log("Demonstrating branded type Email:");
-  yield* sendWelcome(email);
-  return email;
-});
-
-Effect.runPromise(program);
+sendWelcome(email); // OK
+// @ts-expect-error: demonstration of brand enforcement; string is not Email
+sendWelcome("not-an-email"); // Type error!

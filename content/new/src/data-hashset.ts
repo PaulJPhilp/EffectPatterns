@@ -1,25 +1,17 @@
-import { HashSet, Effect } from "effect";
+import { HashSet } from "effect";
 
+// Create a HashSet from an array
 const setA = HashSet.fromIterable([1, 2, 3]);
 const setB = HashSet.fromIterable([3, 4, 5]);
-const hasTwo = HashSet.has(setA, 2);
-const union = HashSet.union(setA, setB);
-const intersection = HashSet.intersection(setA, setB);
-const difference = HashSet.difference(setA, setB);
-const withSix = HashSet.add(setA, 6);
-const withoutOne = HashSet.remove(setA, 1);
 
-const program = Effect.gen(function* () {
-  yield* Effect.log(`setA: [${Array.from(setA).join(", ")}]`);
-  yield* Effect.log(`setB: [${Array.from(setB).join(", ")}]`);
-  yield* Effect.log(`setA has 2: ${hasTwo}`);
-  yield* Effect.log(`union: [${Array.from(union).join(", ")}]`);
-  yield* Effect.log(`intersection: [${Array.from(intersection).join(", ")}]`);
-  yield* Effect.log(
-    `difference (setA - setB): [${Array.from(difference).join(", ")}]`
-  );
-  yield* Effect.log(`withSix: [${Array.from(withSix).join(", ")}]`);
-  yield* Effect.log(`withoutOne: [${Array.from(withoutOne).join(", ")}]`);
-});
+// Membership check
+const hasTwo = HashSet.has(setA, 2); // true
 
-Effect.runPromise(program);
+// Union, intersection, difference
+const union = HashSet.union(setA, setB);         // HashSet {1, 2, 3, 4, 5}
+const intersection = HashSet.intersection(setA, setB); // HashSet {3}
+const difference = HashSet.difference(setA, setB);     // HashSet {1, 2}
+
+// Add and remove elements
+const withSix = HashSet.add(setA, 6);    // HashSet {1, 2, 3, 6}
+const withoutOne = HashSet.remove(setA, 1); // HashSet {2, 3}

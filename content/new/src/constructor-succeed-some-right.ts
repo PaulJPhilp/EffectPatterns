@@ -1,20 +1,10 @@
 import { Effect, Option, Either } from "effect";
 
-const effect = Effect.succeed(42);
-const option = Option.some("hello");
-const either = Either.right({ id: 1 });
+// Effect: Lift a value into an Effect that always succeeds
+const effect = Effect.succeed(42); // Effect<never, number, never>
 
-const program = Effect.gen(function* () {
-  const effectResult = yield* effect;
-  yield* Effect.log(`Effect.succeed result: ${effectResult}`);
-  yield* Effect.log(
-    `Option.some result: ${Option.isSome(option) ? option.value : "None"}`
-  );
-  yield* Effect.log(
-    `Either.right result: ${
-      Either.isRight(either) ? JSON.stringify(either.right) : either.left
-    }`
-  );
-});
+// Option: Lift a value into an Option that is always Some
+const option = Option.some("hello"); // Option<string>
 
-Effect.runPromise(program);
+// Either: Lift a value into an Either that is always Right
+const either = Either.right({ id: 1 }); // Either<never, { id: number }>

@@ -27,6 +27,12 @@ if ! command -v node &> /dev/null; then
   exit 1
 fi
 
+# Ensure jq is available (used for JSON parsing)
+if ! command -v jq &> /dev/null; then
+  echo "Error: jq is not installed or not in PATH"
+  exit 1
+fi
+
 # --- VALIDATION ---
 ensure_directories() {
   mkdir -p "$RESULTS_DIR"
@@ -78,7 +84,11 @@ run_qa_validation() {
   # Run the CLI command to process the prompt with correct arguments
   # CLI writes JSON output directly to the file
   local output_file="$RESULTS_DIR/${file_name%.mdx}-qa.json"
-  if cd "$PROJECT_ROOT" && OUTPUT_FORMAT="json" SCHEMA_PROMPT="$PROMPTS_DIR/qa-schema.mdx" node --loader ts-node/esm cli/src/main.ts generate --output "$output_file" "$pattern_path"; then
+  if cd "$PROJECT_ROOT" && npx --yes tsx cli/src/main.ts generate \
+    --output "$output_file" \
+    --output-format json \
+    --schema-prompt "$PROMPTS_DIR/qa-schema.mdx" \
+    "$pattern_path"; then
     # Read the generated JSON file
     if [ -f "$output_file" ]; then
       cat "$output_file"
@@ -153,8 +163,8 @@ main() {
   echo "Found $total_files pattern files to process"
   
   local count=0
-  local passed=0
-  local failed=0
+  local pass_count=0
+  local fail_count=0
   
   # Process each pattern file
   while IFS= read -r pattern_file; do
@@ -180,14 +190,14 @@ main() {
       fi
   
       # Check if passed
-      local passed=$(echo "$result_json" | jq -r '.passed // false')
+      local did_pass=$(echo "$result_json" | jq -r '.passed // false')
       
-      if [ "$passed" = "true" ]; then
-        echo "  $file_name"
-        passed=$((passed + 1))
+      if [ "$did_pass" = "true" ]; then
+        echo "  $file_name ✅"
+        pass_count=$((pass_count + 1))
       else
-        echo "  $file_name"
-        failed=$((failed + 1))
+        echo "  $file_name ❌"
+        fail_count=$((fail_count + 1))
       fi
       
       count=$((count + 1))
@@ -197,8 +207,8 @@ main() {
   echo ""
   echo "QA Process Complete:"
   echo "  Processed: $count"
-  echo "  Passed: $passed"
-  echo "  Failed: $failed"
+  echo "  Passed: $pass_count"
+  echo "  Failed: $fail_count"
   echo "  Results saved to: $RESULTS_DIR"
 }
 

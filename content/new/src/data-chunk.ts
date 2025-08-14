@@ -1,17 +1,15 @@
-import { Chunk, Effect } from "effect";
+import { Chunk } from "effect";
 
-const numbers = Chunk.make(1, 2, 3, 4);
-const doubled = Chunk.map(numbers, (n) => n * 2);
-const evens = Chunk.filter(numbers, (n) => n % 2 === 0);
-const moreNumbers = Chunk.make(5, 6);
-const allNumbers = Chunk.appendAll(numbers, moreNumbers);
-const arr = Chunk.toArray(allNumbers);
+// Create a Chunk from an array
+const numbers = Chunk.fromArray([1, 2, 3, 4]); // Chunk<number>
 
-const program = Effect.gen(function* () {
-  yield* Effect.log(`numbers: [${Chunk.toArray(numbers).join(", ")}]`);
-  yield* Effect.log(`doubled: [${Chunk.toArray(doubled).join(", ")}]`);
-  yield* Effect.log(`evens: [${Chunk.toArray(evens).join(", ")}]`);
-  yield* Effect.log(`allNumbers: [${arr.join(", ")}]`);
-});
+// Map and filter over a Chunk
+const doubled = Chunk.map(numbers, (n) => n * 2); // Chunk<number>
+const evens = Chunk.filter(numbers, (n) => n % 2 === 0); // Chunk<number>
 
-Effect.runPromise(program);
+// Concatenate Chunks
+const moreNumbers = Chunk.fromArray([5, 6]);
+const allNumbers = Chunk.concat(numbers, moreNumbers); // Chunk<number>
+
+// Convert back to array
+const arr = Chunk.toArray(allNumbers); // number[]

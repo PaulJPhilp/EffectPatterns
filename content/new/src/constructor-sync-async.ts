@@ -1,28 +1,16 @@
 import { Effect } from "effect";
 
-const effectSync = Effect.sync(() => Math.random());
+// Synchronous: Wrap a computation that is guaranteed not to throw
+const effectSync = Effect.sync(() => Math.random()); // Effect<never, number, never>
 
-function legacyReadFile(
-  path: string,
-  cb: (err: Error | null, data?: string) => void
-) {
+// Callback-based: Wrap a Node.js-style callback API
+function legacyReadFile(path: string, cb: (err: Error | null, data?: string) => void) {
   setTimeout(() => cb(null, "file contents"), 10);
 }
 
-const effectAsync = Effect.async<string, string>((resume) => {
+const effectAsync = Effect.async<string>((resume) => {
   legacyReadFile("file.txt", (err, data) => {
-    if (err) resume(Effect.fail(err.message));
+    if (err) resume(Effect.fail(err));
     else resume(Effect.succeed(data!));
   });
-});
-
-const program = Effect.gen(function* () {
-  const syncResult = yield* effectSync;
-  yield* Effect.log(`Effect.sync result: ${syncResult}`);
-  const asyncResult = yield* effectAsync;
-  yield* Effect.log(`Effect.async result: ${asyncResult}`);
-});
-
-Effect.runPromise(
-  program.pipe(Effect.catchAll(() => Effect.succeed(undefined)))
-);
+}); // Effect<Error, string, never>

@@ -1,51 +1,14 @@
 ---
-title: Work with Arbitrary-Precision Numbers using BigDecimal
-id: data-bigdecimal
-skillLevel: beginner
-provider: google
-model: gemini-2.5-flash
-useCase:
-  - Data Types
-  - Numeric Precision
-  - Financial
-  - Scientific
-summary: Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding
-  rounding errors and loss of precision in financial or scientific calculations.
-tags:
-  - BigDecimal
-  - numeric
-  - precision
-  - decimal
-  - data-type
-  - effect
+title: "Work with Arbitrary-Precision Numbers using BigDecimal"
+id: "data-bigdecimal"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Numeric Precision", "Financial", "Scientific"]
+summary: "Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations."
+tags: ["BigDecimal", "numeric", "precision", "decimal", "data-type", "effect"]
 rule:
-  description: Use BigDecimal to represent and compute with decimal numbers that
-    require arbitrary precision, such as in finance or scientific domains.
-related:
-  - data-chunk
-  - data-struct
-author: PaulJPhilp
-expectedOutput: >-
-  timestamp=2025-08-07T18:29:29.288Z level=INFO fiber=#0 message="a:
-  BigDecimal(0.1)"
-
-  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="b:
-  BigDecimal(0.2)"
-
-  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="sum:
-  BigDecimal(0.3)"
-
-  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="product:
-  BigDecimal(0.02)"
-
-  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="sum equals
-  0.3: true"
-
-  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="sum as string:
-  BigDecimal(0.3)"
-
-  timestamp=2025-08-07T18:29:29.289Z level=INFO fiber=#0 message="sum as number:
-  0.3"
+  description: "Use BigDecimal to represent and compute with decimal numbers that require arbitrary precision, such as in finance or scientific domains."
+related: ["data-chunk", "data-struct"]
+author: "PaulJPhilp"
 ---
 
 # Work with Arbitrary-Precision Numbers using `BigDecimal`
@@ -54,10 +17,6 @@ expectedOutput: >-
 
 Use the `BigDecimal` data type for decimal numbers that require arbitrary precision, such as financial or scientific calculations.  
 This avoids rounding errors and loss of precision that can occur with JavaScript's native `number` type.
-
-> **Note:**
-> Use `BigDecimal` when you need precise arithmetic with decimal (fractional) values—such as currency, measurements, or scientific data.  
-> For whole numbers (integers) that require arbitrary precision, prefer the built-in `bigint` type instead.
 
 ## Rationale
 
@@ -70,8 +29,6 @@ JavaScript's `number` type is a floating-point double, which can introduce subtl
 
 **Explanation:**  
 - `BigDecimal` is immutable and supports precise decimal arithmetic.
-- Use `BigDecimal.make(value: bigint, scale: number)` to construct decimals (e.g., `0.3` as `BigDecimal.make(3n, 1)`).
-- Use instance methods like `.toString()` for string conversion.
 - Use it for domains where rounding errors are unacceptable (e.g., finance, billing, scientific data).
 - Avoids the pitfalls of floating-point math in JavaScript.
 

@@ -1,24 +1,25 @@
-import { Data, Effect, Equal } from "effect";
+import { Data } from "effect";
 
-interface Person {
-  readonly name: string;
+// Define a tagged union for a simple state machine
+const Loading = Data.case("Loading", () => ({}));
+const Success = Data.case("Success", (value: { data: string }) => value);
+const Failure = Data.case("Failure", (value: { error: string }) => value);
+
+type State = ReturnType<typeof Loading> | ReturnType<typeof Success> | ReturnType<typeof Failure>;
+
+// Create instances
+const state1: State = Loading();
+const state2: State = Success({ data: "Hello" });
+const state3: State = Failure({ error: "Oops" });
+
+// Pattern match on the state
+function handleState(state: State): string {
+  switch (state._tag) {
+    case "Loading":
+      return "Loading...";
+    case "Success":
+      return `Data: ${state.data}`;
+    case "Failure":
+      return `Error: ${state.error}`;
+  }
 }
-
-const Person = Data.case<Person>();
-
-const person1 = Person({ name: "Alice" });
-const person2 = Person({ name: "Bob" });
-
-function greet(person: Person): string {
-  return `Hello, ${person.name}!`;
-}
-
-const program = Effect.gen(function* () {
-  yield* Effect.log(greet(person1));
-  yield* Effect.log(greet(person2));
-  yield* Effect.log(`Are they equal? ${Equal.equals(person1, person2)}`);
-});
-
-Effect.runPromise(
-  program.pipe(Effect.catchAll(() => Effect.succeed(undefined)))
-);

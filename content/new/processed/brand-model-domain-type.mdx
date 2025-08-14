@@ -1,33 +1,14 @@
 ---
-title: Modeling Validated Domain Types with Brand
-id: brand-model-domain-type
-skillLevel: intermediate
-provider: google
-model: gemini-2.5-flash
-useCase:
-  - Branded Types
-  - Domain Modeling
-  - Type Safety
-summary: Use Brand to create domain-specific types from primitives, making
-  illegal states unrepresentable and preventing accidental misuse.
-tags:
-  - Brand
-  - domain
-  - type-safety
-  - validation
-  - effect
+title: "Modeling Validated Domain Types with Brand"
+id: "brand-model-domain-type"
+skillLevel: "intermediate"
+useCase: ["Branded Types", "Domain Modeling", "Type Safety"]
+summary: "Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse."
+tags: ["Brand", "domain", "type-safety", "validation", "effect"]
 rule:
-  description: Use Brand to define types like Email, UserId, or PositiveInt,
-    ensuring only valid values can be constructed and used.
-related:
-  - brand-validate-parse
-author: PaulJPhilp
-expectedOutput: >-
-  timestamp=2025-08-07T18:29:29.341Z level=INFO fiber=#0 message="Demonstrating
-  branded type Email:"
-
-  timestamp=2025-08-07T18:29:29.341Z level=INFO fiber=#0 message="Welcome email
-  sent to: user@example.com"
+  description: "Use Brand to define types like Email, UserId, or PositiveInt, ensuring only valid values can be constructed and used."
+related: ["brand-validate-parse"]
+author: "PaulJPhilp"
 ---
 
 # Modeling Validated Domain Types with `Brand`

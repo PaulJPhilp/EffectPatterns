@@ -1,0 +1,220 @@
+{
+  "indir": "content/new/processed",
+  "srcdir": "content/new/src",
+  "total": 42,
+  "passed": 22,
+  "failed": 20,
+  "results": [
+    {
+      "file": "content/new/processed/combinator-conditional.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/combinator-conditional.ts(6,5): error TS2322: Type 'Effect<string, never, never>' is not assignable to type 'LazyArg<Effect<unknown, unknown, unknown>>'.\n  Type 'Effect<string, never, never>' provides no match for the signature '(): Effect<unknown, unknown, unknown>'.\ncontent/new/src/combinator-conditional.ts(6,36): error TS2322: Type 'Effect<string, never, never>' is not assignable to type 'LazyArg<Effect<unknown, unknown, unknown>>'.\n  Type 'Effect<string, never, never>' provides no match for the signature '(): Effect<unknown, unknown, unknown>'.\ncontent/new/src/combinator-conditional.ts(10,23): error TS2339: Property 'cond' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Option\")'.\ncontent/new/src/combinator-conditional.ts(16,23): error TS2339: Property 'cond' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Either\")'.\ncontent/new/src/combinator-conditional.ts(22,23): error TS2339: Property 'if' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Stream\")'.\ncontent/new/src/combinator-conditional.ts(24,58): error TS2349: This expression is not callable.\n  Type 'Stream<never, never, never>' has no call signatures.\n"
+    },
+    {
+      "file": "content/new/processed/brand-validate-parse.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/brand-validate-parse.ts(7,28): error TS2551: Property 'string' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Schema\")'. Did you mean 'String'?\ncontent/new/src/brand-validate-parse.ts(9,9): error TS2339: Property 'schema' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Brand\")'.\n"
+    },
+    {
+      "file": "content/new/processed/brand-model-domain-type.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: brand-model-domain-type.mdx\n  MDX: content/new/processed/brand-model-domain-type.mdx\n  TS: content/new/src/brand-model-domain-type.ts\n"
+    },
+    {
+      "file": "content/new/processed/combinator-error-handling.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: combinator-error-handling.mdx\n  MDX: content/new/processed/combinator-error-handling.mdx\n  TS: content/new/src/combinator-error-handling.ts\n"
+    },
+    {
+      "file": "content/new/processed/combinator-flatmap.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: combinator-flatmap.mdx\n  MDX: content/new/processed/combinator-flatmap.mdx\n  TS: content/new/src/combinator-flatmap.ts\n"
+    },
+    {
+      "file": "content/new/processed/combinator-filter.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/combinator-filter.ts(5,24): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.\ncontent/new/src/combinator-filter.ts(5,24): error TS2322: Type 'boolean' is not assignable to type 'Effect<boolean, unknown, unknown>'.\ncontent/new/src/combinator-filter.ts(15,10): error TS2339: Property 'filter' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Either\")'.\n"
+    },
+    {
+      "file": "content/new/processed/combinator-map.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: combinator-map.mdx\n  MDX: content/new/processed/combinator-map.mdx\n  TS: content/new/src/combinator-map.ts\n"
+    },
+    {
+      "file": "content/new/processed/combinator-foreach-all.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/combinator-foreach-all.ts(18,60): error TS2339: Property 'right' does not exist on type 'Either<number, never> | Either<never, string>'.\n  Property 'right' does not exist on type 'Left<never, number>'.\n"
+    },
+    {
+      "file": "content/new/processed/constructor-fail-none-left.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: constructor-fail-none-left.mdx\n  MDX: content/new/processed/constructor-fail-none-left.mdx\n  TS: content/new/src/constructor-fail-none-left.ts\n"
+    },
+    {
+      "file": "content/new/processed/combinator-zip.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/combinator-zip.ts(14,10): error TS2339: Property 'zip' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Option\")'.\ncontent/new/src/combinator-zip.ts(21,10): error TS2339: Property 'zip' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Either\")'.\n"
+    },
+    {
+      "file": "content/new/processed/combinator-sequencing.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: combinator-sequencing.mdx\n  MDX: content/new/processed/combinator-sequencing.mdx\n  TS: content/new/src/combinator-sequencing.ts\n"
+    },
+    {
+      "file": "content/new/processed/constructor-from-iterable.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: constructor-from-iterable.mdx\n  MDX: content/new/processed/constructor-from-iterable.mdx\n  TS: content/new/src/constructor-from-iterable.ts\n"
+    },
+    {
+      "file": "content/new/processed/constructor-from-nullable-option-either.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/constructor-from-nullable-option-either.ts(5,51): error TS2554: Expected 1 arguments, but got 2.\ncontent/new/src/constructor-from-nullable-option-either.ts(9,33): error TS2339: Property 'fromOption' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Effect\")'.\ncontent/new/src/constructor-from-nullable-option-either.ts(13,33): error TS2339: Property 'fromEither' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Effect\")'.\n"
+    },
+    {
+      "file": "content/new/processed/constructor-succeed-some-right.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: constructor-succeed-some-right.mdx\n  MDX: content/new/processed/constructor-succeed-some-right.mdx\n  TS: content/new/src/constructor-succeed-some-right.ts\n"
+    },
+    {
+      "file": "content/new/processed/constructor-sync-async.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/constructor-sync-async.ts(13,21): error TS2345: Argument of type 'Effect<never, Error, never>' is not assignable to parameter of type 'Effect<string, never, never>'.\n  Type 'Error' is not assignable to type 'never'.\n"
+    },
+    {
+      "file": "content/new/processed/constructor-try-trypromise.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: constructor-try-trypromise.mdx\n  MDX: content/new/processed/constructor-try-trypromise.mdx\n  TS: content/new/src/constructor-try-trypromise.ts\n"
+    },
+    {
+      "file": "content/new/processed/data-array.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: data-array.mdx\n  MDX: content/new/processed/data-array.mdx\n  TS: content/new/src/data-array.ts\n"
+    },
+    {
+      "file": "content/new/processed/data-bigdecimal.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/data-bigdecimal.ts(4,22): error TS2554: Expected 2 arguments, but got 1.\ncontent/new/src/data-bigdecimal.ts(5,22): error TS2554: Expected 2 arguments, but got 1.\ncontent/new/src/data-bigdecimal.ts(8,24): error TS2339: Property 'add' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/BigDecimal\")'.\ncontent/new/src/data-bigdecimal.ts(9,28): error TS2339: Property 'mul' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/BigDecimal\")'.\ncontent/new/src/data-bigdecimal.ts(12,51): error TS2554: Expected 2 arguments, but got 1.\ncontent/new/src/data-bigdecimal.ts(15,38): error TS2554: Expected 0 arguments, but got 1.\ncontent/new/src/data-bigdecimal.ts(16,29): error TS2339: Property 'toNumber' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/BigDecimal\")'.\n"
+    },
+    {
+      "file": "content/new/processed/data-case.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/data-case.ts(4,27): error TS2554: Expected 0 arguments, but got 2.\ncontent/new/src/data-case.ts(5,27): error TS2554: Expected 0 arguments, but got 2.\ncontent/new/src/data-case.ts(6,27): error TS2554: Expected 0 arguments, but got 2.\ncontent/new/src/data-case.ts(12,31): error TS2345: Argument of type '{ data: string; }' is not assignable to parameter of type 'void'.\ncontent/new/src/data-case.ts(13,31): error TS2345: Argument of type '{ error: string; }' is not assignable to parameter of type 'void'.\ncontent/new/src/data-case.ts(17,17): error TS2339: Property '_tag' does not exist on type 'unknown'.\ncontent/new/src/data-case.ts(21,29): error TS2339: Property 'data' does not exist on type 'unknown'.\ncontent/new/src/data-case.ts(23,30): error TS2339: Property 'error' does not exist on type 'unknown'.\n"
+    },
+    {
+      "file": "content/new/processed/data-cause.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/data-cause.ts(17,24): error TS2551: Property 'isFail' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Cause\")'. Did you mean 'fail'?\n"
+    },
+    {
+      "file": "content/new/processed/data-chunk.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/data-chunk.ts(4,23): error TS2339: Property 'fromArray' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Chunk\")'.\ncontent/new/src/data-chunk.ts(7,43): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.\ncontent/new/src/data-chunk.ts(8,44): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.\ncontent/new/src/data-chunk.ts(11,27): error TS2339: Property 'fromArray' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Chunk\")'.\ncontent/new/src/data-chunk.ts(12,26): error TS2339: Property 'concat' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Chunk\")'.\n"
+    },
+    {
+      "file": "content/new/processed/data-class.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/data-class.ts(7,18): error TS2315: Type 'Equal' is not generic.\ncontent/new/src/data-class.ts(7,56): error TS2339: Property 'getEqual' does not exist on type 'new <A extends Record<string, any> = {}>(args: Equals<A, {}> extends true ? void : { readonly [P in keyof A]: A[P]; }) => Readonly<A>'.\ncontent/new/src/data-class.ts(8,56): error TS2339: Property 'getOrder' does not exist on type 'new <A extends Record<string, any> = {}>(args: Equals<A, {}> extends true ? void : { readonly [P in keyof A]: A[P]; }) => Readonly<A>'.\ncontent/new/src/data-class.ts(9,17): error TS2315: Type 'Hash' is not generic.\ncontent/new/src/data-class.ts(9,53): error TS2339: Property 'getHash' does not exist on type 'new <A extends Record<string, any> = {}>(args: Equals<A, {}> extends true ? void : { readonly [P in keyof A]: A[P]; }) => Readonly<A>'.\ncontent/new/src/data-class.ts(18,37): error TS2339: Property 'compare' does not exist on type 'Order<{ readonly id: number; readonly name: string; }>'.\n"
+    },
+    {
+      "file": "content/new/processed/data-datetime.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/data-datetime.ts(4,22): error TS2349: This expression is not callable.\n  Type 'Effect<Utc, never, never>' has no call signatures.\ncontent/new/src/data-datetime.ts(7,25): error TS2339: Property 'fromISOString' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/DateTime\")'.\ncontent/new/src/data-datetime.ts(10,28): error TS2339: Property 'plus' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/DateTime\")'.\ncontent/new/src/data-datetime.ts(11,29): error TS2551: Property 'minus' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/DateTime\")'. Did you mean 'min'?\ncontent/new/src/data-datetime.ts(14,22): error TS2339: Property 'toISOString' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/DateTime\")'.\ncontent/new/src/data-datetime.ts(17,27): error TS2339: Property 'before' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/DateTime\")'.\n"
+    },
+    {
+      "file": "content/new/processed/data-duration.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/data-duration.ts(9,24): error TS2339: Property 'add' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Duration\")'.\ncontent/new/src/data-duration.ts(14,22): error TS2339: Property 'toISOString' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Duration\")'.\n"
+    },
+    {
+      "file": "content/new/processed/data-either.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/data-either.ts(20,62): error TS2339: Property 'right' does not exist on type 'Either<number, never> | Either<never, string>'.\n  Property 'right' does not exist on type 'Left<never, number>'.\ncontent/new/src/data-either.ts(21,64): error TS2339: Property 'left' does not exist on type 'Either<number, never> | Either<never, string>'.\n  Property 'left' does not exist on type 'Right<never, number>'.\n"
+    },
+    {
+      "file": "content/new/processed/data-hashset.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: data-hashset.mdx\n  MDX: content/new/processed/data-hashset.mdx\n  TS: content/new/src/data-hashset.ts\n"
+    },
+    {
+      "file": "content/new/processed/data-option.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/data-option.ts(19,32): error TS2709: Cannot use namespace 'Option' as a type.\n"
+    },
+    {
+      "file": "content/new/processed/data-exit.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: data-exit.mdx\n  MDX: content/new/processed/data-exit.mdx\n  TS: content/new/src/data-exit.ts\n"
+    },
+    {
+      "file": "content/new/processed/data-redacted.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/data-redacted.ts(7,47): error TS2709: Cannot use namespace 'Redacted' as a type.\n"
+    },
+    {
+      "file": "content/new/processed/data-struct.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: data-struct.mdx\n  MDX: content/new/processed/data-struct.mdx\n  TS: content/new/src/data-struct.ts\n"
+    },
+    {
+      "file": "content/new/processed/data-ref.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: data-ref.mdx\n  MDX: content/new/processed/data-ref.mdx\n  TS: content/new/src/data-ref.ts\n"
+    },
+    {
+      "file": "content/new/processed/data-tuple.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: data-tuple.mdx\n  MDX: content/new/processed/data-tuple.mdx\n  TS: content/new/src/data-tuple.ts\n"
+    },
+    {
+      "file": "content/new/processed/observability-custom-metrics.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/observability-custom-metrics.ts(10,17): error TS2339: Property 'updateMetric' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Effect\")'.\ncontent/new/src/observability-custom-metrics.ts(17,29): error TS2339: Property 'updateMetric' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Effect\")'.\ncontent/new/src/observability-custom-metrics.ts(18,30): error TS2339: Property 'updateMetric' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Effect\")'.\ncontent/new/src/observability-custom-metrics.ts(22,3): error TS2353: Object literal may only specify known properties, and 'boundaries' does not exist in type 'MetricBoundaries'.\ncontent/new/src/observability-custom-metrics.ts(27,10): error TS2339: Property 'updateMetric' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Effect\")'.\n"
+    },
+    {
+      "file": "content/new/processed/observability-effect-fn.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: observability-effect-fn.mdx\n  MDX: content/new/processed/observability-effect-fn.mdx\n  TS: content/new/src/observability-effect-fn.ts\n"
+    },
+    {
+      "file": "content/new/processed/observability-structured-logging.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: observability-structured-logging.mdx\n  MDX: content/new/processed/observability-structured-logging.mdx\n  TS: content/new/src/observability-structured-logging.ts\n"
+    },
+    {
+      "file": "content/new/processed/observability-opentelemetry.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: observability-opentelemetry.mdx\n  MDX: content/new/processed/observability-opentelemetry.mdx\n  TS: content/new/src/observability-opentelemetry.ts\n"
+    },
+    {
+      "file": "content/new/processed/pattern-catchtag.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: pattern-catchtag.mdx\n  MDX: content/new/processed/pattern-catchtag.mdx\n  TS: content/new/src/pattern-catchtag.ts\n"
+    },
+    {
+      "file": "content/new/processed/pattern-match.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: pattern-match.mdx\n  MDX: content/new/processed/pattern-match.mdx\n  TS: content/new/src/pattern-match.ts\n"
+    },
+    {
+      "file": "content/new/processed/observability-tracing-spans.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/observability-tracing-spans.ts(4,26): error TS2769: No overload matches this call.\n  Overload 1 of 2, '(name: string, options?: SpanOptions): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, ParentSpan>>', gave the following error.\n    Type 'Effect<{ id: number; name: string; }, never, never>' has no properties in common with type 'SpanOptions'.\n  Overload 2 of 2, '(self: Effect<unknown, unknown, unknown>, name: string, options?: SpanOptions): Effect<unknown, unknown, unknown>', gave the following error.\n    Argument of type 'string' is not assignable to parameter of type 'Effect<unknown, unknown, unknown>'.\ncontent/new/src/observability-tracing-spans.ts(11,3): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Effect<unknown, unknown, unknown>'.\ncontent/new/src/observability-tracing-spans.ts(21,10): error TS2488: Type '<A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, ParentSpan>>' must have a '[Symbol.iterator]()' method that returns an iterator.\ncontent/new/src/observability-tracing-spans.ts(21,17): error TS2769: No overload matches this call.\n  Overload 1 of 2, '(name: string, options?: SpanOptions): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, ParentSpan>>', gave the following error.\n    Type 'Effect<void, never, never>' has no properties in common with type 'SpanOptions'.\n  Overload 2 of 2, '(self: Effect<unknown, unknown, unknown>, name: string, options?: SpanOptions): Effect<unknown, unknown, unknown>', gave the following error.\n    Argument of type 'string' is not assignable to parameter of type 'Effect<unknown, unknown, unknown>'.\ncontent/new/src/observability-tracing-spans.ts(22,23): error TS2488: Type '<A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, ParentSpan>>' must have a '[Symbol.iterator]()' method that returns an iterator.\ncontent/new/src/observability-tracing-spans.ts(23,10): error TS2488: Type '<A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, ParentSpan>>' must have a '[Symbol.iterator]()' method that returns an iterator.\ncontent/new/src/observability-tracing-spans.ts(23,17): error TS2769: No overload matches this call.\n  Overload 1 of 2, '(name: string, options?: SpanOptions): <A, E, R>(self: Effect<A, E, R>) => Effect<A, E, Exclude<R, ParentSpan>>', gave the following error.\n    Type 'Effect<void, never, never>' has no properties in common with type 'SpanOptions'.\n  Overload 2 of 2, '(self: Effect<unknown, unknown, unknown>, name: string, options?: SpanOptions): Effect<unknown, unknown, unknown>', gave the following error.\n    Argument of type 'string' is not assignable to parameter of type 'Effect<unknown, unknown, unknown>'.\n"
+    },
+    {
+      "file": "content/new/processed/pattern-matcheffect.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: pattern-matcheffect.mdx\n  MDX: content/new/processed/pattern-matcheffect.mdx\n  TS: content/new/src/pattern-matcheffect.ts\n"
+    },
+    {
+      "file": "content/new/processed/pattern-matchtag.mdx",
+      "ok": false,
+      "output": "❌ TypeScript check failed:\ncontent/new/src/pattern-matchtag.ts(11,10): error TS2551: Property 'matchTag' does not exist on type 'typeof import(\"/Users/paul/Projects/Effect-Patterns/node_modules/effect/dist/dts/Effect\")'. Did you mean 'catchTag'?\n"
+    },
+    {
+      "file": "content/new/processed/pattern-option-either-checks.mdx",
+      "ok": true,
+      "output": "✅ Pre-publish checks passed for: pattern-option-either-checks.mdx\n  MDX: content/new/processed/pattern-option-either-checks.mdx\n  TS: content/new/src/pattern-option-either-checks.ts\n"
+    }
+  ],
+  "timestamp": "2025-08-12T17:31:20.303Z"
+}

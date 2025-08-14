@@ -1,37 +1,14 @@
 ---
-title: Handling Specific Errors with catchTag and catchTags
-id: pattern-catchtag
-skillLevel: intermediate
-useCase:
-  - Pattern Matching
-  - Error Handling
-  - Tagged Unions
-summary: Use catchTag and catchTags to recover from or handle specific error
-  types in the Effect failure channel, enabling precise and type-safe error
-  recovery.
-tags:
-  - catchTag
-  - catchTags
-  - pattern-matching
-  - effect
-  - error-handling
-  - tagged-union
+title: "Handling Specific Errors with catchTag and catchTags"
+id: "pattern-catchtag"
+skillLevel: "intermediate"
+useCase: ["Pattern Matching", "Error Handling", "Tagged Unions"]
+summary: "Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery."
+tags: ["catchTag", "catchTags", "pattern-matching", "effect", "error-handling", "tagged-union"]
 rule:
-  description: Use catchTag and catchTags to handle specific tagged error types in
-    the Effect failure channel, providing targeted recovery logic.
-related:
-  - pattern-matchtag
-  - pattern-match
-  - pattern-matcheffect
-author: PaulJPhilp
-provider: google
-model: gemini-2.5-flash
-expectedOutput: >-
-  timestamp=2025-08-07T18:29:29.696Z level=INFO fiber=#0 message="catchTag
-  result: Recovered from validation error: Invalid input"
-
-  timestamp=2025-08-07T18:29:29.698Z level=INFO fiber=#0 message="catchTags
-  result: Handled not found!"
+  description: "Use catchTag and catchTags to handle specific tagged error types in the Effect failure channel, providing targeted recovery logic."
+related: ["pattern-matchtag", "pattern-match", "pattern-matcheffect"]
+author: "PaulJPhilp"
 ---
 
 # Handling Specific Errors with `catchTag` and `catchTags`

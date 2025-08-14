@@ -1,41 +1,14 @@
 ---
-title: Accumulate Multiple Errors with Either
-id: data-either
-skillLevel: beginner
-provider: google
-model: gemini-2.5-flash
-useCase:
-  - Data Types
-  - Error Handling
-  - Domain Modeling
-summary: Use Either<E, A> to represent computations that can fail, allowing you
-  to accumulate multiple errors instead of short-circuiting on the first one.
-tags:
-  - Either
-  - error-handling
-  - data-type
-  - domain
-  - effect
+title: "Accumulate Multiple Errors with Either"
+id: "data-either"
+skillLevel: "beginner"
+useCase: ["Data Types", "Error Handling", "Domain Modeling"]
+summary: "Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one."
+tags: ["Either", "error-handling", "data-type", "domain", "effect"]
 rule:
-  description: Use Either to model computations that may fail, making errors
-    explicit and type-safe.
-related:
-  - data-option
-  - data-cause
-author: PaulJPhilp
-expectedOutput: >-
-  timestamp=2025-08-07T18:29:29.395Z level=INFO fiber=#0
-  message="Either.right(42) match: Value: 42"
-
-  timestamp=2025-08-07T18:29:29.395Z level=INFO fiber=#0
-  message="Either.left('Something went wrong') match: Error: Something went
-  wrong"
-
-  timestamp=2025-08-07T18:29:29.395Z level=INFO fiber=#0 message="Accumulated
-  Right values: [1]"
-
-  timestamp=2025-08-07T18:29:29.396Z level=INFO fiber=#0 message="Accumulated
-  Left errors: [fail1, fail2]"
+  description: "Use Either to model computations that may fail, making errors explicit and type-safe."
+related: ["data-option", "data-cause"]
+author: "PaulJPhilp"
 ---
 
 # Accumulate Multiple Errors with `Either`

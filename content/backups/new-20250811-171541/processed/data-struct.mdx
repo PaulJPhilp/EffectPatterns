@@ -1,0 +1,63 @@
+---
+title: Comparing Data by Value with Data.struct
+id: data-struct
+skillLevel: beginner
+useCase:
+  - Data Types
+  - Structural Equality
+  - Domain Modeling
+summary: Use Data.struct to create immutable, structurally-typed objects that
+  can be compared by value, not by reference.
+tags:
+  - Data.struct
+  - structural-equality
+  - immutable
+  - data-type
+  - effect
+rule:
+  description: Use Data.struct to define objects whose equality is based on their
+    contents, enabling safe and predictable comparisons.
+related:
+  - data-tuple
+  - data-equal
+author: PaulJPhilp
+provider: google
+model: gemini-2.5-flash
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.619Z level=INFO fiber=#0 message="user1:
+  {\"id\":1,\"name\":\"Alice\"}"
+
+  timestamp=2025-08-07T18:29:29.621Z level=INFO fiber=#0 message="user2:
+  {\"id\":1,\"name\":\"Alice\"}"
+
+  timestamp=2025-08-07T18:29:29.624Z level=INFO fiber=#0
+  message="Equal.equals(user1, user2): true"
+
+  timestamp=2025-08-07T18:29:29.624Z level=INFO fiber=#0
+  message="HashSet.has(set, user2): true"
+---
+
+# Comparing Data by Value with `Data.struct`
+
+## Guideline
+
+Use `Data.struct` to create immutable, structurally-typed objects whose equality is based on their contents, not their reference.  
+This enables safe, predictable comparisons and is ideal for domain modeling.
+
+## Rationale
+
+JavaScript objects are compared by reference, which can lead to subtle bugs when modeling value objects.  
+`Data.struct` ensures that two objects with the same contents are considered equal, supporting value-based logic and collections.
+
+## Good Example
+
+<Example path="./src/data-struct.ts" />
+
+**Explanation:**  
+- `Data.struct` creates immutable objects with value-based equality.
+- Use for domain entities, value objects, and when storing objects in sets or as map keys.
+- Avoids bugs from reference-based comparison.
+
+## Anti-Pattern
+
+Using plain JavaScript objects for value-based logic, which compares by reference and can lead to incorrect equality checks and collection behavior.

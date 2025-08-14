@@ -1,25 +1,25 @@
 import { Brand, Schema, Effect } from "effect";
 
-export type Email = string & Brand.Brand<"Email">;
-export const Email = Brand.nominal<Email>();
+// Define a branded type for Email
+type Email = Brand.Branded<string, "Email">;
 
-export const EmailSchema = Schema.String.pipe(
-  Schema.pattern(/^[^@]+@[^@]+\.[^@]+$/),
-  Schema.brand("Email")
+// Create a Schema for Email validation
+const EmailSchema = Schema.string.pipe(
+  Schema.pattern(/^[^@]+@[^@]+\.[^@]+$/), // Simple email regex
+  Brand.schema<Email>() // Attach the brand
 );
 
-function parseEmail(input: string) {
-  return Schema.decodeUnknown(EmailSchema)(input);
-}
+// Parse and validate an email at runtime
+const parseEmail = (input: string) =>
+  Effect.try({
+    try: () => Schema.decodeSync(EmailSchema)(input),
+    catch: (err) => `Invalid email: ${String(err)}`
+  });
 
-const program = Effect.gen(function* () {
-  yield* Effect.log("Parsing a valid email...");
-  const valid = yield* parseEmail("user@example.com");
-  yield* Effect.log(`Successfully parsed: ${valid}`);
-
-  yield* Effect.log("\nParsing an invalid email...");
-  const invalid = yield* Effect.either(parseEmail("not-an-email"));
-  yield* Effect.log(`Result of parsing invalid email: ${JSON.stringify(invalid)}`);
-});
-
-Effect.runPromise(program);
+// Usage
+parseEmail("user@example.com").pipe(
+  Effect.match({
+    onSuccess: (email) => console.log("Valid email:", email),
+    onFailure: (err) => console.error(err)
+  })
+);

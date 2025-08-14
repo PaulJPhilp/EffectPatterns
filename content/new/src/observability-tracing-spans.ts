@@ -1,27 +1,24 @@
 import { Effect } from "effect";
 
-const fetchUser = Effect.sync(() => {
+// Trace a database query with a custom span
+const fetchUser = Effect.withSpan("db.fetchUser", Effect.sync(() => {
+  // ...fetch user from database
   return { id: 1, name: "Alice" };
-}).pipe(Effect.withSpan("db.fetchUser"));
+}));
 
-const fetchData = Effect.tryPromise({
-  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
-  catch: (err) => `Network error: ${String(err)}`,
-}).pipe(
-  Effect.withSpan("http.fetchData", {
-    attributes: { url: "https://api.example.com/data" },
-  })
+// Trace an HTTP request with additional attributes
+const fetchData = Effect.withSpan(
+  "http.fetchData",
+  Effect.tryPromise({
+    try: () => fetch("https://api.example.com/data").then(res => res.json()),
+    catch: (err) => `Network error: ${String(err)}`
+  }),
+  { attributes: { url: "https://api.example.com/data" } }
 );
 
+// Use spans in a workflow
 const program = Effect.gen(function* () {
-  yield* Effect.log("Starting workflow").pipe(
-    Effect.withSpan("workflow.start")
-  );
+  yield* Effect.withSpan("workflow.start", Effect.log("Starting workflow"));
   const user = yield* fetchUser;
-  const data = yield* fetchData;
-  yield* Effect.log(`Fetched user: ${user.name}, data: ${JSON.stringify(data)}`).pipe(
-    Effect.withSpan("workflow.end")
-  );
+  yield* Effect.withSpan("workflow.end", Effect.log(`Fetched user: ${user.name}`));
 });
-
-Effect.runPromise(program);

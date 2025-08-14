@@ -1,0 +1,1 @@
+{"version":3,"file":"errors.js","sourceRoot":"","sources":["../../../src/services/output-handler/errors.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,IAAI,EAAE,MAAM,QAAQ,CAAC;AAE9B,MAAM,OAAO,kBAAmB,SAAQ,IAAI,CAAC,WAAW,CAAuB,oBAAoB,CAAC;IAInG,YAAY,OAAe,EAAE,KAAe;QAC3C,KAAK,EAAE,CAAC;QACR,IAAI,CAAC,OAAO,GAAG,OAAO,CAAC;QACvB,IAAI,CAAC,KAAK,GAAG,KAAK,CAAC;IACpB,CAAC;CACD"}

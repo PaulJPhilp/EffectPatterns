@@ -1,39 +1,14 @@
 ---
-title: Redact and Handle Sensitive Data
-id: data-redacted
-skillLevel: intermediate
-provider: google
-model: gemini-2.5-flash
-useCase:
-  - Data Types
-  - Security
-  - Sensitive Data
-  - Logging
-summary: Use Redacted to securely handle sensitive data, ensuring secrets are
-  not accidentally logged or exposed.
-tags:
-  - Redacted
-  - security
-  - sensitive-data
-  - logging
-  - data-type
-  - effect
+title: "Redact and Handle Sensitive Data"
+id: "data-redacted"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Security", "Sensitive Data", "Logging"]
+summary: "Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed."
+tags: ["Redacted", "security", "sensitive-data", "logging", "data-type", "effect"]
 rule:
-  description: Use Redacted to wrap sensitive values, preventing accidental
-    exposure in logs or error messages.
-related:
-  - data-struct
-  - observability-structured-logging
-author: PaulJPhilp
-expectedOutput: >-
-  timestamp=2025-08-07T18:29:28.907Z level=INFO fiber=#0 message="Password:
-  <redacted>"
-
-  timestamp=2025-08-07T18:29:28.916Z level=INFO fiber=#0 message="Password as
-  string: <redacted>"
-
-  timestamp=2025-08-07T18:29:28.916Z level=INFO fiber=#0 message="Authentication
-  result: Authenticated"
+  description: "Use Redacted to wrap sensitive values, preventing accidental exposure in logs or error messages."
+related: ["data-struct", "observability-structured-logging"]
+author: "PaulJPhilp"
 ---
 
 # Redact and Handle Sensitive Data with `Redacted`

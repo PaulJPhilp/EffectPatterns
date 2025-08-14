@@ -1,22 +1,14 @@
-import { Duration, Effect } from "effect";
+import { Duration } from "effect";
 
+// Create durations using helpers
 const oneSecond = Duration.seconds(1);
 const fiveMinutes = Duration.minutes(5);
 const twoHours = Duration.hours(2);
 
-const total = Duration.sum(oneSecond, fiveMinutes);
-const isLonger = Duration.greaterThan(twoHours, fiveMinutes);
-const ms = Duration.toMillis(fiveMinutes);
+// Add, subtract, and compare durations
+const total = Duration.add(oneSecond, fiveMinutes); // 5 min 1 sec
+const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
 
-const program = Effect.gen(function* () {
-  yield* Effect.log(`oneSecond: ${Duration.toMillis(oneSecond)} ms`);
-  yield* Effect.log(`fiveMinutes: ${Duration.toMillis(fiveMinutes)} ms`);
-  yield* Effect.log(`twoHours: ${Duration.toMillis(twoHours)} ms`);
-  yield* Effect.log(
-    `total (oneSecond + fiveMinutes): ${Duration.toMillis(total)} ms`
-  );
-  yield* Effect.log(`is twoHours > fiveMinutes: ${isLonger}`);
-  yield* Effect.log(`fiveMinutes in ms: ${ms}`);
-});
-
-Effect.runPromise(program);
+// Convert to milliseconds or ISO string
+const ms = Duration.toMillis(fiveMinutes); // 300000
+const iso = Duration.toISOString(oneSecond); // "PT1S"

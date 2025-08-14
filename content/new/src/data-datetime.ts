@@ -1,20 +1,17 @@
-import { DateTime, Duration, Effect } from "effect";
+import { DateTime, Duration } from "effect";
 
-const program = Effect.gen(function* () {
-    
-  const now = yield* DateTime.now;
-  const parsed = DateTime.unsafeMake(Date.parse("2024-07-19T12:34:56Z"));
-  const inOneHour = now.pipe(DateTime.add({ hours: 1 }));
-  const oneHourAgo = now.pipe(DateTime.subtract({ hours: 1 }));
-  const iso = DateTime.format()(now);
-  const isBefore = oneHourAgo.epochMillis < now.epochMillis;
-  yield* Effect.log(`now: ${DateTime.format()(now)}`);  
-  yield* Effect.log(`parsed: ${DateTime.format()(parsed)}`);
-  yield* Effect.log(`inOneHour: ${DateTime.format()(inOneHour)}`);
-  yield* Effect.log(`oneHourAgo: ${DateTime.format()(oneHourAgo)}`);
-  yield* Effect.log(`isBefore: ${isBefore}`);
-});
+// Create a DateTime for the current instant
+const now = DateTime.now(); // DateTime
 
-Effect.runPromise(
-  program.pipe(Effect.catchAll(() => Effect.succeed(undefined)))
-);
+// Parse from ISO string
+const parsed = DateTime.fromISOString("2024-07-19T12:34:56Z"); // DateTime
+
+// Add or subtract durations
+const inOneHour = DateTime.plus(now, Duration.hours(1));
+const oneHourAgo = DateTime.minus(now, Duration.hours(1));
+
+// Format as ISO string
+const iso = DateTime.toISOString(now); // e.g., "2024-07-19T23:33:19.000Z"
+
+// Compare DateTimes
+const isBefore = DateTime.before(oneHourAgo, now); // true

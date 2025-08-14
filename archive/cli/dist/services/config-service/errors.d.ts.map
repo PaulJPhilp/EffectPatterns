@@ -1,0 +1,1 @@
+{"version":3,"file":"errors.d.ts","sourceRoot":"","sources":["../../../src/services/config-service/errors.ts"],"names":[],"mappings":";;;AAEA,qBAAa,WAAY,SAAQ,iBAAgC;IAChE,QAAQ,CAAC,OAAO,EAAE,MAAM,CAAC;IACzB,QAAQ,CAAC,KAAK,CAAC,EAAE,OAAO,CAAC;CACzB,CAAC;CAAI"}
