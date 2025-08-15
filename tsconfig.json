@@ -37,5 +37,10 @@
     "minimal.ts",
     "cli/src/**/*.ts"
   ],
-  "exclude": ["node_modules", "dist", "build"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "archive/**"
+  ]
 }

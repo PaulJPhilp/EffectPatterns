@@ -38,6 +38,7 @@
         "@typescript-eslint/eslint-plugin": "^8.39.1",
         "@typescript-eslint/parser": "^8.39.1",
         "@vitest/coverage-v8": "^3.2.4",
+        "effect-ai-cli": "^0.1.2",
         "eslint": "^9.33.0",
         "ts-patch": "^3.3.0",
         "tsx": "^4.20.4",
@@ -498,6 +499,8 @@
 
     "effect": ["effect@3.17.7", "", { "dependencies": { "@standard-schema/spec": "^1.0.0", "fast-check": "^3.23.1" } }, "sha512-dpt0ONUn3zzAuul6k4nC/coTTw27AL5nhkORXgTi6NfMPzqWYa1M05oKmOMTxpVSTKepqXVcW9vIwkuaaqx9zA=="],
 
+    "effect-ai-cli": ["effect-ai-cli@0.1.2", "", { "dependencies": { "@effect/ai-anthropic": "^0.15.1", "@effect/ai-google": "^0.4.0", "@effect/ai-openai": "^0.28.2", "@effect/cli": "^0.69.0", "@effect/platform": "^0.90.2", "@effect/platform-node": "^0.90.0", "@opentelemetry/api": "^1.9.0", "cli-table3": "^0.6.5", "dotenv": "^16.6.1", "effect": "^3.17.7", "liquidjs": "^10.21.1" }, "bin": { "effect-ai": "dist/bin/effect-ai-cli.js", "effect-ai-cli": "dist/bin/effect-ai-cli.js" } }, "sha512-8hE8xMm1hnEFuvQ3cEZ9629uwI35qTC10JmlEEwBtTC89s+uvbPqdk5mup791LjqSDCY15O8v/a6mDH0B35Y9w=="],
+
     "emoji-regex": ["emoji-regex@8.0.0", "", {}, "sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A=="],
 
     "es-module-lexer": ["es-module-lexer@1.7.0", "", {}, "sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA=="],
@@ -865,6 +868,8 @@
     "@typescript-eslint/typescript-estree/minimatch": ["minimatch@9.0.5", "", { "dependencies": { "brace-expansion": "^2.0.1" } }, "sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow=="],
 
     "cliui/wrap-ansi": ["wrap-ansi@7.0.0", "", { "dependencies": { "ansi-styles": "^4.0.0", "string-width": "^4.1.0", "strip-ansi": "^6.0.0" } }, "sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q=="],
+
+    "effect-ai-cli/dotenv": ["dotenv@16.6.1", "", {}, "sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow=="],
 
     "eslint/ignore": ["ignore@5.3.2", "", {}, "sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g=="],
 
