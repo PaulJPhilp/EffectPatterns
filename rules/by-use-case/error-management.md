@@ -1,13 +1,15 @@
-# Error Management Rules
+# Error Management Patterns
 
 ## Accumulate Multiple Errors with Either
-**Rule:** Use Either to accumulate multiple validation errors instead of failing on the first one.
+
+Use Either to accumulate multiple validation errors instead of failing on the first one.
 
 ### Example
+
 Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
 
 ````typescript
-import { Effect, Schema, Data } from "effect";
+import { Effect, Schema, Data, Either } from "effect";
 
 // Define validation error type
 class ValidationError extends Data.TaggedError("ValidationError")<{
@@ -62,24 +64,26 @@ const validateUser = (input: User) =>
 
 // Process multiple users and accumulate all errors
 const program = Effect.gen(function* () {
-  console.log("Validating users...\n");
+  yield* Effect.log("Validating users...\n");
   
   for (const input of invalidInputs) {
     const result = yield* Effect.either(validateUser(input));
     
-    console.log(`Validating user: ${input.name} <${input.email}>`);
+    yield* Effect.log(`Validating user: ${input.name} <${input.email}>`);
     
-    yield* Effect.match(result, {
-      onFailure: (error) => Effect.sync(() => {
-        console.log("❌ Validation failed:");
-        console.log(error.message);
-        console.log(); // Empty line for readability
+    // Handle success and failure cases separately for clarity
+    // Using Either.match which is the idiomatic way to handle Either values
+    yield* Either.match(result, {
+      onLeft: (error) => Effect.gen(function* () {
+        yield* Effect.log("❌ Validation failed:");
+        yield* Effect.log(error.message);
+        yield* Effect.log(""); // Empty line for readability
       }),
-      onSuccess: (user) => Effect.sync(() => {
-        console.log("✅ User is valid:", user);
-        console.log(); // Empty line for readability
+      onRight: (user) => Effect.gen(function* () {
+        yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
+        yield* Effect.log(""); // Empty line for readability
       })
-    });
+    })
   }
 });
 
@@ -89,10 +93,14 @@ Effect.runSync(program);
 
 ---
 
+---
+
 ## Conditionally Branching Workflows
-**Rule:** Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
+
+Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
 
 ### Example
+
 Here, we use `Effect.filter` with named predicates to validate a user before proceeding. The intent is crystal clear, and the business rules (`isActive`, `isAdmin`) are reusable.
 
 ```typescript
@@ -157,15 +165,25 @@ const handled = program(123).pipe(
 );
 
 // Run the program
-Effect.runPromise(handled).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* handled;
+  yield* Effect.log(result);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 ```
 
 ---
 
+---
+
 ## Control Repetition with Schedule
-**Rule:** Use Schedule to create composable policies for controlling the repetition and retrying of effects.
+
+Use Schedule to create composable policies for controlling the repetition and retrying of effects.
 
 ### Example
+
 This example demonstrates composition by creating a common, robust retry policy: exponential backoff with jitter, limited to 5 attempts.
 
 ```typescript
@@ -212,10 +230,14 @@ Effect.runPromise(program)
 
 ---
 
+---
+
 ## Define Type-Safe Errors with Data.TaggedError
-**Rule:** Define type-safe errors with Data.TaggedError.
+
+Define type-safe errors with Data.TaggedError.
 
 ### Example
+
 ```typescript
 import { Data, Effect } from "effect"
 
@@ -265,10 +287,14 @@ Effect.runPromise(program)
 **Explanation:**  
 Tagged errors allow you to handle errors in a type-safe, self-documenting way.
 
+---
+
 ## Distinguish 'Not Found' from Errors
-**Rule:** Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.
+
+Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.
 
 ### Example
+
 This function to find a user can fail if the database is down, or it can succeed but find no user. The return type ``Effect.Effect<Option.Option<User>, DatabaseError>`` makes this contract perfectly clear.
 
 ````typescript
@@ -325,10 +351,14 @@ Effect.runPromise(
 )
 ````
 
+---
+
 ## Handle Errors with catchTag, catchTags, and catchAll
-**Rule:** Handle errors with catchTag, catchTags, and catchAll.
+
+Handle errors with catchTag, catchTags, and catchAll.
 
 ### Example
+
 ```typescript
 import { Data, Effect } from "effect";
 
@@ -457,10 +487,14 @@ Effect.runPromise(Effect.provide(runTests, UserService.Default));
 **Explanation:**  
 Use `catchTag` to handle specific error types in a type-safe, composable way.
 
+---
+
 ## Handle Flaky Operations with Retries and Timeouts
-**Rule:** Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects.
+
+Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects.
 
 ### Example
+
 This program attempts to fetch data from a flaky API. It will retry the request up to 3 times with increasing delays if it fails. It will also give up entirely if any single attempt takes longer than 2 seconds.
 
 ```typescript
@@ -566,10 +600,14 @@ Effect.runPromise(
 
 ---
 
+---
+
 ## Handle Unexpected Errors by Inspecting the Cause
-**Rule:** Handle unexpected errors by inspecting the cause.
+
+Handle unexpected errors by inspecting the cause.
 
 ### Example
+
 ```typescript
 import { Cause, Effect, Data, Schedule, Duration } from "effect";
 
@@ -709,7 +747,8 @@ class TestService extends Effect.Service<TestService>()(
             yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
           }
 
-          return Effect.succeed(void 0);
+          // Don't return an Effect inside Effect.gen, just return the value directly
+          return void 0;
         });
 
       const runScenario = <E, A extends { [key: string]: any }>(
@@ -732,7 +771,8 @@ class TestService extends Effect.Service<TestService>()(
             yield* Effect.logInfo(`Success: ${JSON.stringify(result)}`);
           }
 
-          return Effect.succeed(void 0);
+          // Don't return an Effect inside Effect.gen, just return the value directly
+          return void 0;
         });
 
       // Return bound methods
@@ -820,7 +860,8 @@ const program = Effect.gen(function* () {
   
   yield* Effect.logInfo("\n=== Error Handling Tests Complete ===");
 
-  return Effect.succeed(void 0);
+  // Don't return an Effect inside Effect.gen, just return the value directly
+  return void 0;
 });
 
 // Run the program with all services
@@ -842,10 +883,14 @@ Effect.runPromise(
 By inspecting the `Cause`, you can distinguish between expected and unexpected
 failures, logging or escalating as appropriate.
 
+---
+
 ## Leverage Effect's Built-in Structured Logging
-**Rule:** Leverage Effect's built-in structured logging.
+
+Leverage Effect's built-in structured logging.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -863,10 +908,14 @@ Effect.runSync(
 Using Effect's logging system ensures your logs are structured, filterable,
 and context-aware.
 
+---
+
 ## Mapping Errors to Fit Your Domain
-**Rule:** Use Effect.mapError to transform errors and create clean architectural boundaries between layers.
+
+Use Effect.mapError to transform errors and create clean architectural boundaries between layers.
 
 ### Example
+
 A `UserRepository` uses a `Database` service. The `Database` can fail with specific errors, but the `UserRepository` maps them to a single, generic `RepositoryError` before they are exposed to the rest of the application.
 
 ```typescript
@@ -925,14 +974,18 @@ Effect.runPromise(program);
 
 ---
 
+---
+
 ## Model Optional Values Safely with Option
-**Rule:** Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
+
+Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
 
 ### Example
+
 A function that looks for a user in a database is a classic use case. It might find a user, or it might not. Returning an `Option<User>` makes this contract explicit and safe.
 
 ```typescript
-import { Option } from "effect";
+import { Effect, Option } from "effect";
 
 interface User {
   id: number;
@@ -959,18 +1012,26 @@ const greeting = (id: number): string =>
     }),
   );
 
-console.log(greeting(1)); // "Welcome, Paul!"
-console.log(greeting(3)); // "User not found."
+const program = Effect.gen(function* () {
+  yield* Effect.log(greeting(1)); // "Welcome, Paul!"
+  yield* Effect.log(greeting(3)); // "User not found."
+});
+
+Effect.runPromise(program);
 ```
 
+---
+
 ## Retry Operations Based on Specific Errors
-**Rule:** Use predicate-based retry policies to retry an operation only for specific, recoverable errors.
+
+Use predicate-based retry policies to retry an operation only for specific, recoverable errors.
 
 ### Example
+
 This example simulates an API client that can fail with different, specific error types. The retry policy is configured to *only* retry on `ServerBusyError` and give up immediately on `NotFoundError`.
 
 ```typescript
-import { Effect, Data, Schedule, Duration } from "effect";
+import { Data, Effect, Schedule } from "effect";
 
 // Define specific, tagged errors for our API client
 class ServerBusyError extends Data.TaggedError("ServerBusyError") {}
@@ -1057,6 +1118,8 @@ const demonstrateNotFound = Effect.gen(function* () {
 Effect.runPromise(program.pipe(Effect.flatMap(() => demonstrateNotFound)));
 
 ```
+
+---
 
 ---
 

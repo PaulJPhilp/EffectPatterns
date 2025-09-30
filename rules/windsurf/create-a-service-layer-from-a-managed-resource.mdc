@@ -1,0 +1,80 @@
+description: Provide a managed resource to the application context using `Layer.scoped`.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Create a Service Layer from a Managed Resource
+**Rule:** Provide a managed resource to the application context using `Layer.scoped`.
+
+### Example
+```typescript
+import { Effect, Console } from "effect";
+
+// 1. Define the service interface
+interface DatabaseService {
+  readonly query: (sql: string) => Effect.Effect<string[], never, never>
+}
+
+// 2. Define the service implementation with scoped resource management
+class Database extends Effect.Service<DatabaseService>()(
+  "Database",
+  {
+    // The scoped property manages the resource lifecycle
+    scoped: Effect.gen(function* () {
+      const id = Math.floor(Math.random() * 1000);
+      
+      // Acquire the connection
+      yield* Effect.log(`[Pool ${id}] Acquired`);
+      
+      // Setup cleanup to run when scope closes
+      yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
+      
+      // Return the service implementation
+      return {
+        query: (sql: string) => Effect.sync(() => 
+          [`Result for '${sql}' from pool ${id}`]
+        )
+      };
+    })
+  }
+) {}
+
+// 3. Use the service in your program
+const program = Effect.gen(function* () {
+  const db = yield* Database;
+  const users = yield* db.query("SELECT * FROM users");
+  yield* Effect.log(`Query successful: ${users[0]}`);
+});
+
+// 4. Run the program with scoped resource management
+Effect.runPromise(
+  Effect.scoped(program).pipe(
+    Effect.provide(Database.Default)
+  )
+);
+
+/*
+Output:
+[Pool 458] Acquired
+Query successful: Result for 'SELECT * FROM users' from pool 458
+[Pool 458] Released
+*/
+```
+
+**Explanation:**
+The `Effect.Service` helper creates the `Database` class, which acts as both the service definition and its context key (Tag). The `Database.Live` layer connects this service to a concrete, lifecycle-managed implementation. When `program` asks for the `Database` service, the Effect runtime uses the `Live` layer to run the `acquire` effect once, caches the resulting `DbPool`, and injects it. The `release` effect is automatically run when the program completes.
+
+### Anti-Pattern (Avoid)
+Creating and exporting a global singleton instance of a resource. This tightly couples your application to a specific implementation, makes testing difficult, and offers no guarantees about graceful shutdown.
+
+```typescript
+// ANTI-PATTERN: Global singleton
+export const dbPool = makeDbPoolSync(); // Eagerly created, hard to test/mock
+
+function someBusinessLogic() {
+  // This function has a hidden dependency on the global dbPool
+  return dbPool.query("SELECT * FROM products");
+}
+```
+
+**Explanation:**  
+This pattern is the key to building robust, testable, and leak-proof applications in Effect. It elevates a managed resource into a first-class service that can be used anywhere in your application. The `Effect.Service` helper simplifies defining the service's interface and context key. This approach decouples your business logic from the concrete implementation, as the logic only depends on the abstract service. The `Layer` declaratively handles the resource's entire lifecycle, ensuring it is acquired lazily, shared safely, and released automatically.

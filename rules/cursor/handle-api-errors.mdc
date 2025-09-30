@@ -1,0 +1,207 @@
+description: Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Handle API Errors
+**Rule:** Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses.
+
+### Example
+This example defines two custom error types, `UserNotFoundError` and `InvalidIdError`. The route logic can fail with either. The `unhandledErrorResponse` function inspects the error and returns a `404` or `400` response accordingly, with a generic `500` for any other unexpected errors.
+
+```typescript
+import { Cause, Data, Effect } from 'effect';
+
+// Define our domain types
+export interface User {
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+  readonly role: 'admin' | 'user';
+}
+
+// Define specific, typed errors for our domain
+export class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{
+  readonly id: string;
+}> { }
+
+export class InvalidIdError extends Data.TaggedError('InvalidIdError')<{
+  readonly id: string;
+  readonly reason: string;
+}> { }
+
+export class UnauthorizedError extends Data.TaggedError('UnauthorizedError')<{
+  readonly action: string;
+  readonly role: string;
+}> { }
+
+// Define error handler service
+export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
+  'ErrorHandlerService',
+  {
+    sync: () => ({
+      // Handle API errors with proper logging
+      handleApiError: <E>(error: E): Effect.Effect<ApiResponse, never, never> =>
+        Effect.gen(function* () {
+          yield* Effect.logError(`API Error: ${JSON.stringify(error)}`);
+
+          if (error instanceof UserNotFoundError) {
+            return { error: 'Not Found', message: `User ${error.id} not found` };
+          }
+          if (error instanceof InvalidIdError) {
+            return { error: 'Bad Request', message: error.reason };
+          }
+          if (error instanceof UnauthorizedError) {
+            return { error: 'Unauthorized', message: `${error.role} cannot ${error.action}` };
+          }
+
+          return { error: 'Internal Server Error', message: 'An unexpected error occurred' };
+        }),
+
+      // Handle unexpected errors
+      handleUnexpectedError: (cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
+        Effect.gen(function* () {
+          yield* Effect.logError('Unexpected error occurred');
+
+          if (Cause.isDie(cause)) {
+            const defect = Cause.failureOption(cause);
+            if (defect._tag === 'Some') {
+              const error = defect.value as Error;
+              yield* Effect.logError(`Defect: ${error.message}`);
+              yield* Effect.logError(`Stack: ${error.stack?.split('\n')[1]?.trim() ?? 'N/A'}`);
+            }
+          }
+
+          return Effect.succeed(void 0);
+        })
+    })
+  }
+) { }
+
+// Define UserRepository service
+export class UserRepository extends Effect.Service<UserRepository>()(
+  'UserRepository',
+  {
+    sync: () => {
+      const users = new Map<string, User>([
+        ['user_123', { id: 'user_123', name: 'Paul', email: 'paul@example.com', role: 'admin' }],
+        ['user_456', { id: 'user_456', name: 'Alice', email: 'alice@example.com', role: 'user' }]
+      ]);
+
+      return {
+        // Get user by ID with proper error handling
+        getUser: (id: string): Effect.Effect<User, UserNotFoundError | InvalidIdError> =>
+          Effect.gen(function* () {
+            yield* Effect.logInfo(`Attempting to get user with id: ${id}`);
+
+            // Validate ID format
+            if (!id.match(/^user_\d+$/)) {
+              yield* Effect.logWarning(`Invalid user ID format: ${id}`);
+              return yield* Effect.fail(new InvalidIdError({
+                id,
+                reason: 'ID must be in format user_<number>'
+              }));
+            }
+
+            const user = users.get(id);
+            if (user === undefined) {
+              yield* Effect.logWarning(`User not found with id: ${id}`);
+              return yield* Effect.fail(new UserNotFoundError({ id }));
+            }
+
+            yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
+            return user;
+          }),
+
+        // Check if user has required role
+        checkRole: (user: User, requiredRole: 'admin' | 'user'): Effect.Effect<void, UnauthorizedError> =>
+          Effect.gen(function* () {
+            yield* Effect.logInfo(`Checking if user ${user.id} has role: ${requiredRole}`);
+
+            if (user.role !== requiredRole && user.role !== 'admin') {
+              yield* Effect.logWarning(`User ${user.id} with role ${user.role} cannot access ${requiredRole} resources`);
+              return yield* Effect.fail(new UnauthorizedError({
+                action: 'access_user',
+                role: user.role
+              }));
+            }
+
+            yield* Effect.logInfo(`User ${user.id} has required role: ${user.role}`);
+            return Effect.succeed(void 0);
+          })
+      };
+    }
+  }
+) { }
+
+interface ApiResponse {
+  readonly error?: string;
+  readonly message?: string;
+  readonly data?: User;
+}
+
+// Create routes with proper error handling
+const createRoutes = () => Effect.gen(function* () {
+  const repo = yield* UserRepository;
+  const errorHandler = yield* ErrorHandlerService;
+
+  yield* Effect.logInfo('=== Processing API request ===');
+
+  // Test different scenarios
+  for (const userId of ['user_123', 'user_456', 'invalid_id', 'user_789']) {
+    yield* Effect.logInfo(`\n--- Testing user ID: ${userId} ---`);
+
+    const response = yield* repo.getUser(userId).pipe(
+      Effect.map(user => ({
+        data: {
+          ...user,
+          email: user.role === 'admin' ? user.email : '[hidden]'
+        }
+      })),
+      Effect.catchAll(error => errorHandler.handleApiError(error))
+    );
+
+    yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
+  }
+
+  // Test role checking
+  const adminUser = yield* repo.getUser('user_123');
+  const regularUser = yield* repo.getUser('user_456');
+
+  yield* Effect.logInfo('\n=== Testing role checks ===');
+
+  yield* repo.checkRole(adminUser, 'admin').pipe(
+    Effect.tap(() => Effect.logInfo('Admin access successful')),
+    Effect.catchAll(error => errorHandler.handleApiError(error))
+  );
+
+  yield* repo.checkRole(regularUser, 'admin').pipe(
+    Effect.tap(() => Effect.logInfo('User admin access successful')),
+    Effect.catchAll(error => errorHandler.handleApiError(error))
+  );
+
+  return { message: 'Tests completed successfully' };
+});
+
+// Run the program with all services
+Effect.runPromise(
+  Effect.provide(
+    Effect.provide(
+      createRoutes(),
+      ErrorHandlerService.Default
+    ),
+    UserRepository.Default
+  )
+);
+```
+
+**Explanation:**  
+By default, any unhandled failure in an Effect route handler results in a generic `500 Internal Server Error`. This is a safe default, but it's not helpful for API clients who need to know *why* their request failed. Was it a client-side error (like a non-existent resource, `404`) or a true server-side problem (`500`)?
+
+Centralizing error handling at the server level provides a clean separation of concerns:
+
+1.  **Domain-Focused Logic**: Your business logic can fail with specific, descriptive errors (e.g., `UserNotFoundError`) without needing any knowledge of HTTP status codes.
+2.  **Centralized Mapping**: You define the mapping from application errors to HTTP responses in a single location. This makes your API's error handling consistent and easy to maintain. If you need to change how an error is reported, you only change it in one place.
+3.  **Type Safety**: Using `Data.TaggedClass` for your errors allows you to use `Match` to exhaustively handle all known error cases, preventing you from forgetting to map a specific error type.
+4.  **Clear Client Communication**: It produces a predictable and useful API, allowing clients to programmatically react to different failure scenarios.
+
+---

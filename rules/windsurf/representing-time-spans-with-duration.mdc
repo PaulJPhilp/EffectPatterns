@@ -1,0 +1,82 @@
+description: Use the Duration data type to represent time intervals instead of raw numbers.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Representing Time Spans with Duration
+**Rule:** Use the Duration data type to represent time intervals instead of raw numbers.
+
+### Example
+This example shows how to create and use `Duration` to make time-based operations clear and unambiguous.
+
+```typescript
+import { Effect, Duration } from "effect";
+
+// Create durations with clear, explicit units
+const fiveSeconds = Duration.seconds(5);
+const oneHundredMillis = Duration.millis(100);
+
+// Use them in Effect operators
+const program = Effect.log("Starting...").pipe(
+  Effect.delay(oneHundredMillis),
+  Effect.flatMap(() => Effect.log("Running after 100ms")),
+  Effect.timeout(fiveSeconds) // This whole operation must complete within 5 seconds
+);
+
+// Durations can also be compared
+const isLonger = Duration.greaterThan(fiveSeconds, oneHundredMillis); // true
+
+// Demonstrate the duration functionality
+const demonstration = Effect.gen(function* () {
+  yield* Effect.logInfo("=== Duration Demonstration ===");
+
+  // Show duration values
+  yield* Effect.logInfo(`Five seconds: ${Duration.toMillis(fiveSeconds)}ms`);
+  yield* Effect.logInfo(
+    `One hundred millis: ${Duration.toMillis(oneHundredMillis)}ms`
+  );
+
+  // Show comparison
+  yield* Effect.logInfo(`Is 5 seconds longer than 100ms? ${isLonger}`);
+
+  // Run the timed program
+  yield* Effect.logInfo("Running timed program...");
+  yield* program;
+
+  // Show more duration operations
+  const combined = Duration.sum(fiveSeconds, oneHundredMillis);
+  yield* Effect.logInfo(`Combined duration: ${Duration.toMillis(combined)}ms`);
+
+  // Show different duration units
+  const oneMinute = Duration.minutes(1);
+  yield* Effect.logInfo(`One minute: ${Duration.toMillis(oneMinute)}ms`);
+
+  const isMinuteLonger = Duration.greaterThan(oneMinute, fiveSeconds);
+  yield* Effect.logInfo(`Is 1 minute longer than 5 seconds? ${isMinuteLonger}`);
+});
+
+Effect.runPromise(demonstration);
+
+```
+
+---
+
+### Anti-Pattern (Avoid)
+Using raw numbers for time-based operations. This is ambiguous and error-prone.
+
+```typescript
+import { Effect } from "effect";
+
+// ❌ WRONG: What does '2000' mean? Milliseconds? Seconds?
+const program = Effect.log("Waiting...").pipe(Effect.delay(2000));
+
+// This is especially dangerous when different parts of an application
+// use different conventions (e.g., one service uses seconds, another uses milliseconds).
+// Using Duration eliminates this entire class of bugs.
+```
+
+**Explanation:**  
+Using raw numbers to represent time is a common source of bugs and confusion. When you see `setTimeout(fn, 5000)`, it's not immediately clear if the unit is seconds or milliseconds without prior knowledge of the API.
+
+`Duration` solves this by making the unit explicit in the code. It provides a type-safe, immutable, and human-readable way to work with time intervals. This eliminates ambiguity and makes your code easier to read and maintain. Durations are used throughout Effect's time-based operators, such as `Effect.sleep`, `Effect.timeout`, and `Schedule`.
+
+---

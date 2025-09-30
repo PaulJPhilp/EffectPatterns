@@ -1,0 +1,46 @@
+description: Create pre-resolved effects with succeed and fail.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Create Pre-resolved Effects with succeed and fail
+**Rule:** Create pre-resolved effects with succeed and fail.
+
+### Example
+```typescript
+import { Effect, Data } from "effect"
+
+// Create a custom error type
+class MyError extends Data.TaggedError("MyError") {}
+
+// Create a program that demonstrates pre-resolved effects
+const program = Effect.gen(function* () {
+  // Success effect
+  yield* Effect.logInfo("Running success effect...")
+  yield* Effect.gen(function* () {
+    const value = yield* Effect.succeed(42)
+    yield* Effect.logInfo(`Success value: ${value}`)
+  })
+
+  // Failure effect
+  yield* Effect.logInfo("\nRunning failure effect...")
+  yield* Effect.gen(function* () {
+    // Use return yield* for effects that never succeed
+    return yield* Effect.fail(new MyError())
+  }).pipe(
+    Effect.catchTag("MyError", (error) =>
+      Effect.logInfo(`Error occurred: ${error._tag}`)
+    )
+  )
+})
+
+// Run the program
+Effect.runPromise(program)
+```
+
+**Explanation:**  
+Use `Effect.succeed` for values you already have, and `Effect.fail` for
+immediate, known errors.
+
+**Explanation:**  
+These are the simplest effect constructors, essential for returning static
+values within functions that must return an `Effect`.

@@ -1,0 +1,39 @@
+description: Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Use Chunk for High-Performance Collections
+**Rule:** Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance.
+
+### Example
+This example shows how to create and manipulate a `Chunk`. The API is very similar to `Array`, but the underlying performance characteristics for these immutable operations are superior.
+
+```typescript
+import { Chunk, Effect } from "effect";
+
+// Create a Chunk from an array
+let numbers = Chunk.fromIterable([1, 2, 3, 4, 5]);
+
+// Append a new element. This is much faster than [...arr, 6] on large collections.
+numbers = Chunk.append(numbers, 6);
+
+// Prepend an element.
+numbers = Chunk.prepend(numbers, 0);
+
+// Take the first 3 elements
+const firstThree = Chunk.take(numbers, 3);
+
+// Convert back to an array when you need to interface with other libraries
+const finalArray = Chunk.toReadonlyArray(firstThree);
+
+Effect.runSync(Effect.log(finalArray)); // [0, 1, 2]
+```
+
+---
+
+**Explanation:**  
+JavaScript's `Array` is a mutable data structure. Every time you perform an "immutable" operation like `[...arr, newItem]` or `arr.map(...)`, you are creating a brand new array and copying all the elements from the old one. For small arrays, this is fine. For large arrays or in hot code paths, this constant allocation and copying can become a performance bottleneck.
+
+`Chunk` is designed to solve this. It's an immutable data structure that uses structural sharing internally. When you append an item to a `Chunk`, it doesn't re-copy the entire collection. Instead, it creates a new `Chunk` that reuses most of the internal structure of the original, only allocating memory for the new data. This makes immutable appends and updates significantly faster.
+
+---

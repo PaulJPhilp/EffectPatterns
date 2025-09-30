@@ -1,9 +1,11 @@
-# Concurrency Rules
+# Concurrency Patterns
 
 ## Add Caching by Wrapping a Layer
-**Rule:** Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
+
+Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
 
 ### Example
+
 We have a `WeatherService` that makes slow API calls. We create a `WeatherService.cached` wrapper layer that adds an in-memory cache using a `Ref` and a `Map`.
 
 ```typescript
@@ -77,10 +79,14 @@ Effect.runPromise(Effect.provide(program, AppLayer));
 
 ---
 
+---
+
 ## Control Repetition with Schedule
-**Rule:** Use Schedule to create composable policies for controlling the repetition and retrying of effects.
+
+Use Schedule to create composable policies for controlling the repetition and retrying of effects.
 
 ### Example
+
 This example demonstrates composition by creating a common, robust retry policy: exponential backoff with jitter, limited to 5 attempts.
 
 ```typescript
@@ -127,10 +133,14 @@ Effect.runPromise(program)
 
 ---
 
+---
+
 ## Decouple Fibers with Queues and PubSub
-**Rule:** Use Queue for point-to-point work distribution and PubSub for broadcast messaging between fibers.
+
+Use Queue for point-to-point work distribution and PubSub for broadcast messaging between fibers.
 
 ### Example
+
 A producer fiber adds jobs to a `Queue`, and a worker fiber takes jobs off the queue to process them.
 
 ```typescript
@@ -263,10 +273,14 @@ const program = Effect.gen(function* () {
 
 ---
 
+---
+
 ## Execute Long-Running Apps with Effect.runFork
-**Rule:** Use Effect.runFork to launch a long-running application as a manageable, detached fiber.
+
+Use Effect.runFork to launch a long-running application as a manageable, detached fiber.
 
 ### Example
+
 This example starts a simple "server" that runs forever. We use `runFork` to launch it and then use the returned `Fiber` to shut it down gracefully after 5 seconds.
 
 ```typescript
@@ -278,7 +292,7 @@ const server = Effect.log("Server received a request.").pipe(
   Effect.forever,
 );
 
-console.log("Starting server...");
+Effect.runSync(Effect.log("Starting server..."));
 
 // Launch the server as a detached, top-level fiber
 const appFiber = Effect.runFork(server);
@@ -286,18 +300,25 @@ const appFiber = Effect.runFork(server);
 // In a real app, you would listen for OS signals.
 // Here, we simulate a shutdown signal after 5 seconds.
 setTimeout(() => {
-  console.log("Shutdown signal received. Interrupting server fiber...");
-  // This ensures all cleanup logic within the server effect would run.
-  Effect.runPromise(Fiber.interrupt(appFiber));
+  const shutdownProgram = Effect.gen(function* () {
+    yield* Effect.log("Shutdown signal received. Interrupting server fiber...");
+    // This ensures all cleanup logic within the server effect would run.
+    yield* Fiber.interrupt(appFiber);
+  });
+  Effect.runPromise(shutdownProgram);
 }, 5000);
 ```
 
 ---
 
+---
+
 ## Implement Graceful Shutdown for Your Application
-**Rule:** Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
+
+Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
 
 ### Example
+
 This example creates a server with a "scoped" database connection. It uses `runFork` to start the server and sets up a `SIGINT` handler to interrupt the server fiber, which in turn guarantees the database finalizer is called.
 
 ```typescript
@@ -333,9 +354,9 @@ const server = Effect.gen(function* () {
 
   // Add a finalizer to close the server
   yield* Effect.addFinalizer(() =>
-    Effect.sync(() => {
+    Effect.gen(function* () {
       httpServer.close();
-      console.log("Server closed");
+      yield* Effect.log("Server closed");
     })
   );
 
@@ -362,7 +383,7 @@ const app = Effect.provide(server.pipe(Effect.scoped), Database.Default);
 
 // 4. Run the app and handle shutdown
 Effect.runPromise(app).catch((error) => {
-  console.error("Application error:", error);
+  Effect.runSync(Effect.logError("Application error: " + error));
   process.exit(1);
 });
 
@@ -370,10 +391,14 @@ Effect.runPromise(app).catch((error) => {
 
 ---
 
+---
+
 ## Manage Resource Lifecycles with Scope
-**Rule:** Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
+
+Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
 
 ### Example
+
 This example shows how to acquire a resource (like a file handle), use it, and have `Scope` guarantee its release.
 
 ```typescript
@@ -414,10 +439,14 @@ File closed
 
 ---
 
+---
+
 ## Manage Shared State Safely with Ref
-**Rule:** Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
+
+Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
 
 ### Example
+
 This program simulates 1,000 concurrent fibers all trying to increment a shared counter. Because we use `Ref.update`, every single increment is applied atomically, and the final result is always correct.
 
 ```typescript
@@ -441,16 +470,26 @@ const program = Effect.gen(function* () {
 });
 
 // The result will always be 1000
-Effect.runPromise(program).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Final counter value: ${result}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 
 ```
 
 ---
 
+---
+
 ## Poll for Status Until a Task Completes
-**Rule:** Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes.
+
+Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes.
 
 ### Example
+
 This program simulates a long-running data processing job. While it's running, a separate effect polls for its status every 2 seconds. When the main job finishes after 10 seconds, the polling automatically stops.
 
 ```typescript
@@ -488,14 +527,18 @@ Data processing complete!
 
 ---
 
+---
+
 ## Process a Collection in Parallel with Effect.forEach
-**Rule:** Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit.
+
+Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit.
 
 ### Example
+
 Imagine you have a list of 100 user IDs and you need to fetch the data for each one. `Effect.forEach` with a concurrency of 10 will process them in controlled parallel batches.
 
 ```typescript
-import { Effect } from "effect";
+import { Clock, Effect } from "effect";
 
 // Mock function to simulate fetching a user by ID
 const fetchUserById = (id: number) =>
@@ -511,11 +554,11 @@ const userIds = Array.from({ length: 10 }, (_, i) => i + 1);
 const program = Effect.gen(function* () {
   yield* Effect.logInfo("Starting parallel processing...");
 
-  const startTime = Date.now();
+  const startTime = yield* Clock.currentTimeMillis;
   const users = yield* Effect.forEach(userIds, fetchUserById, {
     concurrency: 5, // Limit to 5 concurrent operations
   });
-  const endTime = Date.now();
+  const endTime = yield* Clock.currentTimeMillis;
 
   yield* Effect.logInfo(
     `Processed ${users.length} users in ${endTime - startTime}ms`
@@ -535,10 +578,14 @@ Effect.runPromise(program);
 
 ---
 
+---
+
 ## Race Concurrent Effects for the Fastest Result
-**Rule:** Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers.
+
+Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers.
 
 ### Example
+
 A classic use case is checking a fast cache before falling back to a slower database. We can race the cache lookup against the database query.
 
 ```typescript
@@ -572,13 +619,25 @@ const program = Effect.race(checkCache, queryDatabase).pipe(
 );
 
 // In this case, the database wins the race.
-Effect.runPromise(program)
-  .then((user) => {
-    console.log("User found:", user);
-  })
-  .catch((error) => {
-    console.log("Error:", error);
-  });
+const programWithResults = Effect.gen(function* () {
+  try {
+    const user = yield* program;
+    yield* Effect.log(`User found: ${JSON.stringify(user)}`);
+    return user;
+  } catch (error) {
+    yield* Effect.logError(`Error: ${error}`);
+    throw error;
+  }
+}).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Handled error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithResults);
 
 // Also demonstrate with logging
 const programWithLogging = Effect.gen(function* () {
@@ -609,10 +668,14 @@ Effect.runPromise(programWithLogging);
 
 ---
 
+---
+
 ## Run Background Tasks with Effect.fork
-**Rule:** Use Effect.fork to start a non-blocking background process and manage its lifecycle via its Fiber.
+
+Use Effect.fork to start a non-blocking background process and manage its lifecycle via its Fiber.
 
 ### Example
+
 This program forks a background process that logs a "tick" every second. The main process does its own work for 5 seconds and then explicitly interrupts the background logger before exiting.
 
 ```typescript
@@ -679,10 +742,14 @@ Effect.runPromise(program);
 
 ---
 
+---
+
 ## Run Independent Effects in Parallel with Effect.all
-**Rule:** Use Effect.all to execute a collection of independent effects concurrently.
+
+Use Effect.all to execute a collection of independent effects concurrently.
 
 ### Example
+
 Imagine fetching a user's profile and their latest posts from two different API endpoints. These are independent operations and can be run in parallel to save time.
 
 ```typescript
@@ -703,15 +770,25 @@ const program = Effect.all([fetchUser, fetchPosts]);
 
 // The resulting effect will succeed with a tuple: [{id, name}, [{title}]]
 // Total execution time will be ~1.5 seconds (the duration of the longest task).
-Effect.runPromise(program).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const results = yield* program;
+  yield* Effect.log(`Results: ${JSON.stringify(results)}`);
+  return results;
+});
+
+Effect.runPromise(programWithLogging);
 ```
 
 ---
 
+---
+
 ## Understand Fibers as Lightweight Threads
-**Rule:** Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.
+
+Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.
 
 ### Example
+
 This program demonstrates the efficiency of fibers by forking 100,000 of them. Each fiber does a small amount of work (sleeping for 1 second). Trying to do this with 100,000 OS threads would instantly crash any system.
 
 ```typescript
@@ -762,6 +839,8 @@ const program = Effect.gen(function* () {
 Effect.runPromise(program);
 
 ```
+
+---
 
 ---
 

@@ -1,0 +1,72 @@
+description: Leverage Stream to process collections effectfully with built-in concurrency control and resource safety.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Process collections of data asynchronously
+**Rule:** Leverage Stream to process collections effectfully with built-in concurrency control and resource safety.
+
+### Example
+This example processes a list of IDs by fetching user data for each one. `Stream.mapEffect` is used to apply an effectful function (`getUserById`) to each element, with concurrency limited to 2 simultaneous requests.
+
+```typescript
+import { Effect, Stream, Chunk } from 'effect';
+
+// A mock function that simulates fetching a user from a database
+const getUserById = (id: number): Effect.Effect<{ id: number; name: string }, Error> =>
+  Effect.succeed({ id, name: `User ${id}` }).pipe(
+    Effect.delay('100 millis'),
+    Effect.tap(() => Effect.log(`Fetched user ${id}`))
+  );
+
+// The stream-based program
+const program = Stream.fromIterable([1, 2, 3, 4, 5]).pipe(
+  // Process each item with an Effect, limiting concurrency to 2
+  Stream.mapEffect(getUserById, { concurrency: 2 }),
+  // Run the stream and collect all results into a Chunk
+  Stream.runCollect
+);
+
+const programWithLogging = Effect.gen(function* () {
+  const users = yield* program;
+  yield* Effect.log(`All users fetched: ${JSON.stringify(Chunk.toArray(users))}`);
+  return users;
+});
+
+Effect.runPromise(programWithLogging);
+```
+
+### Anti-Pattern (Avoid)
+A common but flawed approach is to use `Promise.all` to handle multiple asynchronous operations. This method lacks the safety, control, and composability inherent to Effect's `Stream`.
+
+```typescript
+// A mock function that returns a Promise
+const getUserByIdAsPromise = (id: number): Promise<{ id: number; name: string }> =>
+  new Promise((resolve) => {
+    setTimeout(() => {
+      console.log(`Fetched user ${id}`);
+      resolve({ id, name: `User ${id}` });
+    }, 100);
+  });
+
+// The Promise-based program
+const ids = [1, 2, 3, 4, 5];
+const promises = ids.map(getUserByIdAsPromise);
+
+Promise.all(promises).then((users) => {
+  console.log('All users fetched:', users);
+});
+```
+
+This anti-pattern is problematic because it immediately executes all promises in parallel with no concurrency limit, it does not benefit from Effect's structured concurrency for safe interruption, and it breaks out of the Effect context, losing composability with features like logging, retries, and dependency management.
+
+**Explanation:**  
+`Stream` is a fundamental data type in Effect for handling collections of data, especially in asynchronous contexts. Unlike a simple array, a `Stream` is lazy and pull-based, meaning it only computes or fetches elements as they are needed, making it highly efficient for large or infinite datasets.
+
+The primary benefits of using `Stream` are:
+
+1.  **Concurrency Control**: `Stream` provides powerful and simple operators like `mapEffect` that have built-in concurrency management. This prevents overwhelming downstream services with too many parallel requests.
+2.  **Resource Safety**: `Stream` is built on `Scope`, ensuring that any resources opened during the stream's operation (like file handles or network connections) are safely and reliably closed, even in the case of errors or interruption.
+3.  **Composability**: Streams are highly composable. They can be filtered, mapped, transformed, and combined with other Effect data types seamlessly, allowing you to build complex data processing pipelines that remain readable and type-safe.
+4.  **Resilience**: `Stream` integrates with `Schedule` to provide sophisticated retry and repeat logic, and with Effect's structured concurrency to ensure that failures in one part of a pipeline lead to a clean and predictable shutdown of the entire process.
+
+---

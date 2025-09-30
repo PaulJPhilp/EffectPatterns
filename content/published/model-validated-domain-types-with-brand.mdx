@@ -1,0 +1,50 @@
+---
+title: "Model Validated Domain Types with Brand"
+id: "model-validated-domain-types-with-brand"
+skillLevel: "intermediate"
+useCase: ["Domain Modeling"]
+summary: "Use Brand to turn primitive types like string or number into specific, validated domain types like Email or PositiveInt, making illegal states unrepresentable."
+tags: ["branded-types", "domain-modeling", "type-safety", "validation", "invariants", "data"]
+rule:
+  description: "Model validated domain types with Brand."
+related: ["define-contracts-with-schema"]
+author: "effect_website"
+---
+
+# Model Validated Domain Types with Brand
+
+## Guideline
+
+For domain primitives that have specific rules (e.g., a valid email), create a
+Branded Type. This ensures a value can only be created after passing a
+validation check.
+
+## Rationale
+
+This pattern moves validation to the boundaries of your system. Once a value
+has been branded, the rest of your application can trust that it is valid,
+eliminating repetitive checks.
+
+## Good Example
+
+```typescript
+import { Brand, Option } from "effect";
+
+type Email = string & Brand.Brand<"Email">;
+
+const makeEmail = (s: string): Option.Option<Email> =>
+  s.includes("@") ? Option.some(s as Email) : Option.none();
+
+// A function can now trust that its input is a valid email.
+const sendEmail = (email: Email, body: string) => { /* ... */ };
+```
+
+**Explanation:**  
+Branding ensures that only validated values are used, reducing bugs and
+repetitive checks.
+
+## Anti-Pattern
+
+"Primitive obsession"—using raw primitives (`string`, `number`) and performing
+validation inside every function that uses them. This is repetitive and
+error-prone.

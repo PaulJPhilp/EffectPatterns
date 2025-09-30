@@ -1,0 +1,111 @@
+description: Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Add Caching by Wrapping a Layer
+**Rule:** Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
+
+### Example
+We have a `WeatherService` that makes slow API calls. We create a `WeatherService.cached` wrapper layer that adds an in-memory cache using a `Ref` and a `Map`.
+
+```typescript
+import { Effect, Layer, Ref } from "effect";
+
+// 1. Define the service interface
+class WeatherService extends Effect.Service<WeatherService>()(
+  "WeatherService",
+  {
+    sync: () => ({
+      getForecast: (city: string) => Effect.succeed(`Sunny in ${city}`),
+    }),
+  }
+) {}
+
+// 2. The "Live" implementation that is slow
+const WeatherServiceLive = Layer.succeed(
+  WeatherService,
+  WeatherService.of({
+    _tag: "WeatherService",
+    getForecast: (city) =>
+      Effect.succeed(`Sunny in ${city}`).pipe(
+        Effect.delay("2 seconds"),
+        Effect.tap(() => Effect.log(`Fetched live forecast for ${city}`))
+      ),
+  })
+);
+
+// 3. The Caching Wrapper Layer
+const WeatherServiceCached = Layer.effect(
+  WeatherService,
+  Effect.gen(function* () {
+    // It REQUIRES the original WeatherService
+    const underlyingService = yield* WeatherService;
+    const cache = yield* Ref.make(new Map<string, string>());
+
+    return WeatherService.of({
+      _tag: "WeatherService",
+      getForecast: (city) =>
+        Ref.get(cache).pipe(
+          Effect.flatMap((map) =>
+            map.has(city)
+              ? Effect.log(`Cache HIT for ${city}`).pipe(
+                  Effect.as(map.get(city)!)
+                )
+              : Effect.log(`Cache MISS for ${city}`).pipe(
+                  Effect.flatMap(() => underlyingService.getForecast(city)),
+                  Effect.tap((forecast) =>
+                    Ref.update(cache, (map) => map.set(city, forecast))
+                  )
+                )
+          )
+        ),
+    });
+  })
+);
+
+// 4. Compose the final layer. The wrapper is provided with the live implementation.
+const AppLayer = Layer.provide(WeatherServiceCached, WeatherServiceLive);
+
+// 5. The application logic
+const program = Effect.gen(function* () {
+  const weather = yield* WeatherService;
+  yield* weather.getForecast("London"); // First call is slow (MISS)
+  yield* weather.getForecast("London"); // Second call is instant (HIT)
+});
+
+Effect.runPromise(Effect.provide(program, AppLayer));
+
+```
+
+---
+
+### Anti-Pattern (Avoid)
+Modifying the original service implementation to include caching logic directly. This violates the Single Responsibility Principle by mixing the core logic of fetching weather with the cross-cutting concern of caching.
+
+```typescript
+// ❌ WRONG: The service is now responsible for both its logic and its caching strategy.
+const WeatherServiceWithInlineCache = Layer.effect(
+  WeatherService,
+  Effect.gen(function* () {
+    const cache = yield* Ref.make(new Map<string, string>());
+    return WeatherService.of({
+      getForecast: (city) => {
+        // ...caching logic mixed directly with fetching logic...
+        return Effect.succeed("...");
+      },
+    });
+  }),
+);
+```
+
+**Explanation:**  
+You often want to add functionality like caching, logging, or metrics to a service without polluting its core business logic. The wrapper layer pattern is a clean way to achieve this.
+
+By creating a layer that *requires* the original service, you can get an instance of it from the context, and then provide a *new* implementation of that same service that calls the original.
+
+This approach is powerful because:
+-   **It's Non-Invasive:** The original service (`DatabaseLive`) remains completely unchanged.
+-   **It's Composable:** You can apply multiple wrappers. You could wrap a database layer with a caching layer, then wrap that with a metrics layer.
+-   **It's Explicit:** The composition is clearly defined at the application's top level where you build your final `AppLayer`.
+
+---

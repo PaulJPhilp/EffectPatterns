@@ -1,0 +1,76 @@
+description: Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Poll for Status Until a Task Completes
+**Rule:** Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes.
+
+### Example
+This program simulates a long-running data processing job. While it's running, a separate effect polls for its status every 2 seconds. When the main job finishes after 10 seconds, the polling automatically stops.
+
+```typescript
+import { Effect, Schedule, Duration } from "effect";
+
+// The main task that takes a long time to complete
+const longRunningJob = Effect.log("Data processing complete!").pipe(
+  Effect.delay(Duration.seconds(10)),
+);
+
+// The polling task that checks the status
+const pollStatus = Effect.log("Polling for job status: In Progress...");
+
+// A schedule that repeats the polling task every 2 seconds, forever
+const pollingSchedule = Schedule.fixed(Duration.seconds(2));
+
+// The complete polling effect that will run indefinitely until interrupted
+const repeatingPoller = pollStatus.pipe(Effect.repeat(pollingSchedule));
+
+// Race the main job against the poller.
+// The longRunningJob will win after 10 seconds, interrupting the poller.
+const program = Effect.race(longRunningJob, repeatingPoller);
+
+Effect.runPromise(program);
+/*
+Output:
+Polling for job status: In Progress...
+Polling for job status: In Progress...
+Polling for job status: In Progress...
+Polling for job status: In Progress...
+Polling for job status: In Progress...
+Data processing complete!
+*/
+```
+
+---
+
+### Anti-Pattern (Avoid)
+Manually managing the lifecycle of the polling fiber. This is more verbose, imperative, and error-prone. You have to remember to interrupt the polling fiber in all possible exit paths (success, failure, etc.), which `Effect.race` does for you automatically.
+
+```typescript
+import { Effect, Fiber } from "effect";
+import { longRunningJob, repeatingPoller } from "./somewhere";
+
+// ❌ WRONG: Manual fiber management is complex.
+const program = Effect.gen(function* () {
+  // Manually fork the poller into the background
+  const pollerFiber = yield* Effect.fork(repeatingPoller);
+
+  try {
+    // Run the main job
+    const result = yield* longRunningJob;
+    return result;
+  } finally {
+    // You MUST remember to interrupt the poller when you're done.
+    yield* Fiber.interrupt(pollerFiber);
+  }
+});
+```
+
+**Explanation:**  
+This pattern elegantly solves the problem of coordinating a long-running job with a status-checking mechanism. Instead of manually managing fibers with `fork` and `interrupt`, you can declare this relationship with `Effect.race`.
+
+The key is that the polling effect is set up to repeat on a schedule that runs indefinitely (or for a very long time). Because it never completes on its own, it can never "win" the race. The main task is the only one that can complete successfully. When it does, it wins the race, and Effect's structured concurrency guarantees that the losing effect (the poller) is safely interrupted.
+
+This creates a self-contained, declarative, and leak-free unit of work.
+
+---

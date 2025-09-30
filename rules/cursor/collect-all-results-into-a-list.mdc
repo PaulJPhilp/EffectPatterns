@@ -1,0 +1,53 @@
+description: Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Collect All Results into a List
+**Rule:** Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.
+
+### Example
+This example creates a stream of numbers, filters for only the even ones, transforms them into strings, and then uses `runCollect` to gather the final results into a `Chunk`.
+
+```typescript
+import { Effect, Stream, Chunk } from 'effect';
+
+const program = Stream.range(1, 10).pipe(
+  // Find all the even numbers
+  Stream.filter((n) => n % 2 === 0),
+  // Transform them into strings
+  Stream.map((n) => `Even number: ${n}`),
+  // Run the stream and collect the results
+  Stream.runCollect
+);
+
+const programWithLogging = Effect.gen(function* () {
+  const results = yield* program;
+  yield* Effect.log(`Collected results: ${JSON.stringify(Chunk.toArray(results))}`);
+  return results;
+});
+
+Effect.runPromise(programWithLogging);
+/*
+Output:
+Collected results: [
+  'Even number: 2',
+  'Even number: 4',
+  'Even number: 6',
+  'Even number: 8',
+  'Even number: 10'
+]
+*/
+```
+
+**Explanation:**  
+A "sink" is a terminal operator that consumes a stream and produces a final `Effect`. `Stream.runCollect` is the most fundamental sink. It provides the bridge from the lazy, pull-based world of `Stream` back to the familiar world of a single `Effect` that resolves with a standard data structure.
+
+Using `Stream.runCollect` is essential when:
+
+1.  **You Need the Final Result**: The goal of your pipeline is to produce a complete list of transformed items that you need to use in a subsequent step (e.g., to return as a single JSON array from an API).
+2.  **Simplicity is Key**: It's the most straightforward way to "run" a stream and see its output. It declaratively states your intent: "execute this entire pipeline and give me all the results."
+3.  **The Dataset is Bounded**: It's designed for streams where the total number of items is known to be finite and small enough to fit comfortably in memory.
+
+The result of `Stream.runCollect` is an `Effect` that, when executed, yields a `Chunk` containing all the items emitted by the stream.
+
+---

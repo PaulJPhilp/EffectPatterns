@@ -1,9 +1,11 @@
-# Making HTTP Requests Rules
+# Making HTTP Requests Patterns
 
 ## Add Caching by Wrapping a Layer
-**Rule:** Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
+
+Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
 
 ### Example
+
 We have a `WeatherService` that makes slow API calls. We create a `WeatherService.cached` wrapper layer that adds an in-memory cache using a `Ref` and a `Map`.
 
 ```typescript
@@ -77,10 +79,14 @@ Effect.runPromise(Effect.provide(program, AppLayer));
 
 ---
 
+---
+
 ## Add Custom Metrics to Your Application
-**Rule:** Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
+
+Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
 
 ### Example
+
 This example creates a counter to track how many times a user is created and a histogram to track the duration of the database operation.
 
 ```typescript
@@ -113,15 +119,25 @@ const createUser = Effect.gen(function* () {
 });
 
 // Run the Effect
-Effect.runPromise(createUser).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* createUser;
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 ```
 
 ---
 
+---
+
 ## Build a Basic HTTP Server
-**Rule:** Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server.
+
+Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server.
 
 ### Example
+
 This example creates a simple server with a `Greeter` service. The server starts, creates a runtime containing the `Greeter`, and then uses that runtime to handle requests.
 
 ```typescript
@@ -154,10 +170,14 @@ Effect.runPromise(program as unknown as Effect.Effect<void, unknown, never>);
 
 ---
 
+---
+
 ## Create a Managed Runtime for Scoped Resources
-**Rule:** Create a managed runtime for scoped resources.
+
+Create a managed runtime for scoped resources.
 
 ### Example
+
 ```typescript
 import { Effect, Layer } from "effect";
 
@@ -193,59 +213,62 @@ Effect.runPromise(
 `Layer.launch` ensures that resources are acquired and released safely, even
 in the event of errors or interruptions.
 
+---
+
 ## Create a Testable HTTP Client Service
-**Rule:** Define an HttpClient service with distinct Live and Test layers to enable testable API interactions.
+
+Define an HttpClient service with distinct Live and Test layers to enable testable API interactions.
 
 ### Example
+
 ### 1. Define the Service
 
 ```typescript
-import { Effect, Data, Layer } from "effect"
+import { Effect, Data, Layer } from "effect";
 
 interface HttpErrorType {
-  readonly _tag: "HttpError"
-  readonly error: unknown
+  readonly _tag: "HttpError";
+  readonly error: unknown;
 }
 
-const HttpError = Data.tagged<HttpErrorType>("HttpError")
+const HttpError = Data.tagged<HttpErrorType>("HttpError");
 
 interface HttpClientType {
-  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>
+  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>;
 }
 
-class HttpClient extends Effect.Service<HttpClientType>()(
-  "HttpClient",
-  {
-    sync: () => ({
-      get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
-        Effect.tryPromise({
-          try: () => fetch(url).then((res) => res.json()),
-          catch: (error) => HttpError({ error })
-        })
-    })
-  }
-) {}
+class HttpClient extends Effect.Service<HttpClientType>()("HttpClient", {
+  sync: () => ({
+    get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
+      Effect.tryPromise<T>(() =>
+        fetch(url).then((res) => res.json() as T)
+      ).pipe(
+        Effect.catchAll((error) => Effect.fail(HttpError({ error })))
+      ),
+  }),
+}) {}
 
 // Test implementation
 const TestLayer = Layer.succeed(
   HttpClient,
   HttpClient.of({
-    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T)
+    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T),
   })
-)
+);
 
 // Example usage
 const program = Effect.gen(function* () {
-  const client = yield* HttpClient
-  yield* Effect.logInfo("Fetching data...")
-  const data = yield* client.get<{ title: string }>("https://api.example.com/data")
-  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`)
-})
+  const client = yield* HttpClient;
+  yield* Effect.logInfo("Fetching data...");
+  const data = yield* client.get<{ title: string }>(
+    "https://api.example.com/data"
+  );
+  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`);
+});
 
 // Run with test implementation
-Effect.runPromise(
-  Effect.provide(program, TestLayer)
-)
+Effect.runPromise(Effect.provide(program, TestLayer));
+
 ```
 
 ### 2. Create the Live Implementation
@@ -334,10 +357,14 @@ export const getUserFromApi = (id: number) =>
 
 ---
 
+---
+
 ## Model Dependencies as Services
-**Rule:** Model dependencies as services.
+
+Model dependencies as services.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -360,14 +387,17 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementation
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Random.Default
-  )
-).then(value => console.log('Random value:', value));
+const programWithLogging = Effect.gen(function* () {
+  const value = yield* Effect.provide(program, Random.Default);
+  yield* Effect.log(`Random value: ${value}`);
+  return value;
+});
+
+Effect.runPromise(programWithLogging);
 ```
 
 **Explanation:**  
 By modeling dependencies as services, you can easily substitute mocked or deterministic implementations for testing, leading to more reliable and predictable tests.
+
+---
 

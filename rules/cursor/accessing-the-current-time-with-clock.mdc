@@ -1,0 +1,85 @@
+description: Use the Clock service to get the current time, enabling deterministic testing with TestClock.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Accessing the Current Time with Clock
+**Rule:** Use the Clock service to get the current time, enabling deterministic testing with TestClock.
+
+### Example
+This example shows a function that checks if a token is expired. Its logic depends on `Clock`, making it fully testable.
+
+```typescript
+import { Effect, Clock, Duration } from "effect";
+
+interface Token {
+  readonly value: string;
+  readonly expiresAt: number; // UTC milliseconds
+}
+
+// This function is pure and testable because it depends on Clock
+const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock.Clock> =>
+  Clock.currentTimeMillis.pipe(
+    Effect.map((now) => now > token.expiresAt),
+    Effect.tap((expired) => 
+      Clock.currentTimeMillis.pipe(
+        Effect.flatMap((currentTime) => 
+          Effect.log(`Token expired? ${expired} (current time: ${new Date(currentTime).toISOString()})`)
+        )
+      )
+    )
+  );
+
+// Create a test clock service that advances time
+const makeTestClock = (timeMs: number): Clock.Clock => ({
+  currentTimeMillis: Effect.succeed(timeMs),
+  currentTimeNanos: Effect.succeed(BigInt(timeMs * 1_000_000)),
+  sleep: (duration: Duration.Duration) => Effect.succeed(void 0),
+  unsafeCurrentTimeMillis: () => timeMs,
+  unsafeCurrentTimeNanos: () => BigInt(timeMs * 1_000_000),
+  [Clock.ClockTypeId]: Clock.ClockTypeId,
+});
+
+// Create a token that expires in 1 second
+const token = { value: "abc", expiresAt: Date.now() + 1000 };
+
+// Check token expiry with different clocks
+const program = Effect.gen(function* () {
+  // Check with current time
+  yield* Effect.log("Checking with current time...");
+  yield* isTokenExpired(token);
+
+  // Check with past time
+  yield* Effect.log("\nChecking with past time (1 minute ago)...");
+  const pastClock = makeTestClock(Date.now() - 60_000);
+  yield* isTokenExpired(token).pipe(
+    Effect.provideService(Clock.Clock, pastClock)
+  );
+
+  // Check with future time
+  yield* Effect.log("\nChecking with future time (1 hour ahead)...");
+  const futureClock = makeTestClock(Date.now() + 3600_000);
+  yield* isTokenExpired(token).pipe(
+    Effect.provideService(Clock.Clock, futureClock)
+  );
+});
+
+// Run the program with default clock
+Effect.runPromise(
+  program.pipe(
+    Effect.provideService(Clock.Clock, makeTestClock(Date.now()))
+  )
+);
+```
+
+---
+
+**Explanation:**  
+Directly calling `Date.now()` makes your code impure and tightly coupled to the system clock. This makes testing difficult and unreliable, as the output of your function will change every time it's run.
+
+The `Clock` service is Effect's solution to this problem. It's an abstraction for "the current time."
+-   In **production**, the default `Live` `Clock` implementation uses the real system time.
+-   In **tests**, you can provide the `TestClock` layer. This gives you a virtual clock that you can manually control, allowing you to set the time to a specific value or advance it by a specific duration.
+
+This makes any time-dependent logic pure, deterministic, and easy to test with perfect precision.
+
+---

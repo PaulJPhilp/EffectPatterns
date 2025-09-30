@@ -1,9 +1,11 @@
-# Building APIs Rules
+# Building APIs Patterns
 
 ## Create a Basic HTTP Server
-**Rule:** Use Http.server.serve with a platform-specific layer to run an HTTP application.
+
+Use Http.server.serve with a platform-specific layer to run an HTTP application.
 
 ### Example
+
 This example creates a minimal server that responds to all requests with "Hello, World!". The application logic is a simple `Effect` that returns an `Http.response`. We use `NodeRuntime.runMain` to execute the server effect, which is the standard way to launch a long-running application.
 
 ```typescript
@@ -66,13 +68,19 @@ const program = Effect.gen(function* () {
   Effect.scoped // Ensure server is cleaned up properly
 );
 
-// Run the server
-Effect.runPromise(Effect.provide(program, HttpServer.Default)).catch(
-  (error) => {
-    console.error("Program failed:", error);
-    process.exit(1);
-  }
+// Run the server with proper error handling
+const programWithErrorHandling = Effect.provide(program, HttpServer.Default).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program failed: ${error}`);
+      return yield* Effect.fail(error);
+    })
+  )
 );
+
+Effect.runPromise(programWithErrorHandling).catch(() => {
+  process.exit(1);
+});
 
 /*
 To test:
@@ -84,10 +92,14 @@ To test:
 
 ```
 
+---
+
 ## Extract Path Parameters
-**Rule:** Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler.
+
+Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler.
 
 ### Example
+
 This example defines a route that captures a `userId`. The handler for this route accesses the parsed parameters and uses the `userId` to construct a personalized greeting. The router automatically makes the parameters available to the handler.
 
 ```typescript
@@ -174,10 +186,14 @@ Effect.runPromise(
 )
 ```
 
+---
+
 ## Handle a GET Request
-**Rule:** Use Http.router.get to associate a URL path with a specific response Effect.
+
+Use Http.router.get to associate a URL path with a specific response Effect.
 
 ### Example
+
 This example defines two separate GET routes, one for the root path (`/`) and one for `/hello`. We create an empty router and add each route to it. The resulting `app` is then served. The router automatically handles sending a `404 Not Found` response for any path that doesn't match.
 
 ```typescript
@@ -287,10 +303,14 @@ Effect.runPromise(
 );
 ```
 
+---
+
 ## Handle API Errors
-**Rule:** Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses.
+
+Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses.
 
 ### Example
+
 This example defines two custom error types, `UserNotFoundError` and `InvalidIdError`. The route logic can fail with either. The `unhandledErrorResponse` function inspects the error and returns a `404` or `400` response accordingly, with a generic `500` for any other unexpected errors.
 
 ```typescript
@@ -479,10 +499,14 @@ Effect.runPromise(
 );
 ```
 
+---
+
 ## Make an Outgoing HTTP Client Request
-**Rule:** Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem.
+
+Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem.
 
 ### Example
+
 This example creates a proxy endpoint. A request to `/proxy/posts/1` on our server will trigger an outgoing request to the JSONPlaceholder API. The response is then parsed and relayed back to the original client.
 
 ```typescript
@@ -524,7 +548,7 @@ const serverLayer = HttpServer.serve(app);
 const mainLayer = Layer.merge(Database.Default, server);
 
 const program = Effect.gen(function* () {
-  yield* Console.log("Server started on http://localhost:3457");
+  yield* Effect.log("Server started on http://localhost:3457");
   const layer = Layer.provide(serverLayer, mainLayer);
 
   // Launch server and run for a short duration to demonstrate
@@ -534,12 +558,12 @@ const program = Effect.gen(function* () {
   yield* Effect.sleep(Duration.seconds(1));
 
   // Simulate some server activity
-  yield* Console.log("Server is running and ready to handle requests");
+  yield* Effect.log("Server is running and ready to handle requests");
   yield* Effect.sleep(Duration.seconds(2));
 
   // Shutdown gracefully
   yield* Fiber.interrupt(serverFiber);
-  yield* Console.log("Server shutdown complete");
+  yield* Effect.log("Server shutdown complete");
 });
 
 NodeRuntime.runMain(
@@ -548,10 +572,14 @@ NodeRuntime.runMain(
 
 ```
 
+---
+
 ## Provide Dependencies to Routes
-**Rule:** Define dependencies with Effect.Service and provide them to your HTTP server using a Layer.
+
+Define dependencies with Effect.Service and provide them to your HTTP server using a Layer.
 
 ### Example
+
 This example defines a `Database` service. The route handler for `/users/:userId` requires this service to fetch a user. We then provide a "live" implementation of the `Database` to the entire server using a `Layer`.
 
 ```typescript
@@ -622,14 +650,18 @@ NodeRuntime.runMain(program);
 
 ```
 
+---
+
 ## Send a JSON Response
-**Rule:** Use Http.response.json to automatically serialize data structures into a JSON response.
+
+Use Http.response.json to automatically serialize data structures into a JSON response.
 
 ### Example
+
 This example defines a route that fetches a user object and returns it as a JSON response. The `Http.response.json` function handles all the necessary serialization and header configuration.
 
 ```typescript
-import { Effect, Duration } from "effect";
+import { Effect, Context, Duration, Layer } from "effect";
 import { NodeContext, NodeHttpServer } from "@effect/platform-node";
 import { createServer } from "node:http";
 
@@ -656,21 +688,21 @@ const program = Effect.gen(function* () {
 
   // Create and start HTTP server
   const server = createServer((req, res) => {
-    Effect.runPromise(jsonServer.handleRequest()).then(
-      (response) => {
+    const requestHandler = Effect.gen(function* () {
+      try {
+        const response = yield* jsonServer.handleRequest();
         res.writeHead(response.status, response.headers);
         res.end(response.body);
         // Log the response for demonstration
-        Effect.runPromise(
-          Effect.logInfo(`Sent JSON response: ${response.body}`)
-        );
-      },
-      (error) => {
+        yield* Effect.logInfo(`Sent JSON response: ${response.body}`);
+      } catch (error: any) {
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Internal Server Error" }));
-        Effect.runPromise(Effect.logError(`Request error: ${error.message}`));
+        yield* Effect.logError(`Request error: ${error.message}`);
       }
-    );
+    });
+    
+    Effect.runPromise(requestHandler);
   });
 
   // Start server with error handling
@@ -704,19 +736,30 @@ const program = Effect.gen(function* () {
       return error;
     })
   ),
-  Effect.provide(JsonServer.Default),
-  Effect.provide(NodeContext.layer)
+  // Merge layers and provide them in a single call to ensure proper lifecycle management
+  Effect.provide(Layer.merge(
+    JsonServer.Default,
+    NodeContext.layer
+  ))
 );
 
 // Run the program
-Effect.runPromise(program);
+// Use Effect.runFork for server applications that shouldn't resolve the promise
+Effect.runPromise(program.pipe(
+  // Ensure the Effect has no remaining context requirements for runPromise
+  Effect.map(() => undefined)
+));
 
 ```
 
+---
+
 ## Validate Request Body
-**Rule:** Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies.
+
+Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies.
 
 ### Example
+
 This example defines a `POST` route to create a user. It uses a `CreateUser` schema to validate the request body. If validation passes, it returns a success message with the typed data. If it fails, the platform automatically sends a descriptive 400 error.
 
 ```typescript
@@ -875,4 +918,6 @@ To test:
 */
 
 ```
+
+---
 

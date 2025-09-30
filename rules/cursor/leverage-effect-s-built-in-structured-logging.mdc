@@ -1,0 +1,24 @@
+description: Leverage Effect's built-in structured logging.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Leverage Effect's Built-in Structured Logging
+**Rule:** Leverage Effect's built-in structured logging.
+
+### Example
+```typescript
+import { Effect } from "effect";
+
+const program = Effect.logDebug("Processing user", { userId: 123 });
+
+// Run the program with debug logging enabled
+Effect.runSync(
+  program.pipe(
+    Effect.tap(() => Effect.log("Debug logging enabled"))
+  )
+);
+```
+
+**Explanation:**  
+Using Effect's logging system ensures your logs are structured, filterable,
+and context-aware.

@@ -1,0 +1,57 @@
+description: Prefer generators over long chains of .andThen.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Avoid Long Chains of .andThen; Use Generators Instead
+**Rule:** Prefer generators over long chains of .andThen.
+
+### Example
+```typescript
+import { Effect } from "effect";
+
+// Define our steps with logging
+const step1 = (): Effect.Effect<number> =>
+  Effect.succeed(42).pipe(
+    Effect.tap(n => Effect.log(`Step 1: ${n}`))
+  );
+
+const step2 = (a: number): Effect.Effect<string> =>
+  Effect.succeed(`Result: ${a * 2}`).pipe(
+    Effect.tap(s => Effect.log(`Step 2: ${s}`))
+  );
+
+// Using Effect.gen for better readability
+const program = Effect.gen(function* () {
+  const a = yield* step1();
+  const b = yield* step2(a);
+  return b;
+});
+
+// Run the program
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Final result: ${result}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
+```
+
+**Explanation:**  
+Generators keep sequential logic readable and easy to maintain.
+
+### Anti-Pattern (Avoid)
+```typescript
+import { Effect } from "effect";
+declare const step1: () => Effect.Effect<any>;
+declare const step2: (a: any) => Effect.Effect<any>;
+
+step1().pipe(Effect.flatMap((a) => step2(a))); // Or .andThen
+```
+
+Chaining many `.flatMap` or `.andThen` calls leads to deeply nested,
+hard-to-read code.
+
+**Explanation:**  
+`Effect.gen` provides a flat, linear code structure that is easier to read and
+debug than deeply nested functional chains.

@@ -1,0 +1,127 @@
+description: Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Automatically Retry Failed Operations
+**Rule:** Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
+
+### Example
+This example simulates an API that fails the first two times it's called. The stream processes a list of IDs, and the `retry` operator ensures that the failing operation for `id: 2` is automatically retried until it succeeds.
+
+````typescript
+import { Effect, Stream, Schedule } from "effect";
+
+// A mock function that simulates a flaky API call
+const processItem = (id: number): Effect.Effect<string, Error> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`Attempting to process item ${id}...`);
+
+    // Item 2 fails on first attempt but succeeds on retry
+    if (id === 2) {
+      const random = Math.random();
+      if (random < 0.5) {
+        // 50% chance of failure for demonstration
+        yield* Effect.log(`Item ${id} failed, will retry...`);
+        return yield* Effect.fail(new Error("API is temporarily down"));
+      }
+    }
+
+    yield* Effect.log(`✅ Successfully processed item ${id}`);
+    return `Processed item ${id}`;
+  });
+
+const ids = [1, 2, 3];
+
+// Define a retry policy: 3 attempts with a fixed 100ms delay
+const retryPolicy = Schedule.recurs(3).pipe(
+  Schedule.addDelay(() => "100 millis")
+);
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Stream Retry on Failure Demo ===");
+  yield* Effect.log(
+    "Processing items with retry policy (3 attempts, 100ms delay)"
+  );
+
+  // Process each item individually with retry
+  const results = yield* Effect.forEach(
+    ids,
+    (id) =>
+      processItem(id).pipe(
+        Effect.retry(retryPolicy),
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            yield* Effect.log(
+              `❌ Item ${id} failed after all retries: ${error.message}`
+            );
+            return `Failed: item ${id}`;
+          })
+        )
+      ),
+    { concurrency: 1 }
+  );
+
+  yield* Effect.log("=== Results ===");
+  for (let index = 0; index < results.length; index++) {
+  yield* Effect.log(`Item ${ids[index]}: ${results[index]}`);
+}
+
+  yield* Effect.log("✅ Stream processing completed");
+});
+
+Effect.runPromise(program).catch((error) => {
+  Effect.runSync(Effect.logError("Unexpected error: " + error));
+});
+/*
+Output:
+... level=INFO msg="Attempting to process item 1..."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Item 2 failed, attempt 1."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Item 2 failed, attempt 2."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Attempting to process item 3..."
+*/
+
+````
+
+### Anti-Pattern (Avoid)
+The anti-pattern is to either have no retry logic at all, or to write manual, imperative retry loops inside your processing function.
+
+````typescript
+import { Effect, Stream } from 'effect';
+// ... same mock processItem function ...
+
+const ids = [1, 2, 3];
+
+const program = Stream.fromIterable(ids).pipe(
+  // No retry logic. The entire stream will fail when item 2 fails.
+  Stream.mapEffect(processItem, { concurrency: 1 }),
+  Stream.runDrain
+);
+
+Effect.runPromise(program).catch((error) => {
+  console.error('Pipeline failed:', error);
+});
+/*
+Output:
+... level=INFO msg="Attempting to process item 1..."
+... level=INFO msg="Attempting to process item 2..."
+... level=INFO msg="Item 2 failed, attempt 1."
+Pipeline failed: Error: API is temporarily down
+*/
+````
+
+This "fail-fast" approach is brittle. A single, temporary network blip would cause the entire pipeline to terminate, even if subsequent items could have been processed successfully. While manual retry logic inside `processItem` is possible, it pollutes the core logic with concerns about timing and attempt counting, and is far less composable and reusable than a `Schedule`.
+
+**Explanation:**  
+Real-world systems are unreliable. Network connections drop, APIs return temporary `503` errors, and databases can experience deadlocks. A naive pipeline will fail completely on the first sign of trouble. A resilient pipeline, however, can absorb these transient errors and heal itself.
+
+The `retry` operator, combined with the `Schedule` module, provides a powerful and declarative way to build this resilience:
+
+1.  **Declarative Resilience**: Instead of writing complex `try/catch` loops with manual delay logic, you declaratively state *how* the pipeline should retry. For example, "retry 3 times, with an exponential backoff starting at 100ms."
+2.  **Separation of Concerns**: Your core pipeline logic remains focused on the "happy path." The retry strategy is a separate, composable concern that you apply to the entire stream.
+3.  **Rich Scheduling Policies**: `Schedule` is incredibly powerful. You can create schedules based on a fixed number of retries, exponential backoff, jitter (to avoid thundering herd problems), or even combinations of these.
+4.  **Prevents Cascading Failures**: By handling temporary issues at the source, you prevent a small, transient glitch from causing a complete failure of your entire application.
+
+---

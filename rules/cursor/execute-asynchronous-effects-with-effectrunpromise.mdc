@@ -1,0 +1,34 @@
+description: Execute asynchronous effects with Effect.runPromise.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Execute Asynchronous Effects with Effect.runPromise
+**Rule:** Execute asynchronous effects with Effect.runPromise.
+
+### Example
+```typescript
+import { Effect } from "effect";
+
+const program = Effect.succeed("Hello, World!").pipe(
+  Effect.delay("1 second"),
+);
+
+const promise = Effect.runPromise(program);
+
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(result); // Logs "Hello, World!" after 1 second.
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
+```
+
+**Explanation:**  
+`Effect.runPromise` executes your effect and returns a Promise, making it
+easy to integrate with existing JavaScript async workflows.
+
+**Explanation:**  
+`Effect.runPromise` is the bridge from the Effect world to the Promise-based
+world of Node.js and browsers. If the Effect succeeds, the Promise resolves;
+if it fails, the Promise rejects.

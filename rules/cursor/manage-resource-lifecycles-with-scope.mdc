@@ -1,0 +1,56 @@
+description: Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Manage Resource Lifecycles with Scope
+**Rule:** Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
+
+### Example
+This example shows how to acquire a resource (like a file handle), use it, and have `Scope` guarantee its release.
+
+```typescript
+import { Effect, Scope } from "effect";
+
+// Simulate acquiring and releasing a resource
+const acquireFile = Effect.log("File opened").pipe(
+  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) }),
+);
+const releaseFile = Effect.log("File closed.");
+
+// Create a "scoped" effect. This effect, when used, will acquire the
+// resource and register its release action with the current scope.
+const scopedFile = Effect.acquireRelease(acquireFile, () => releaseFile);
+
+// The main program that uses the scoped resource
+const program = Effect.gen(function* () {
+  // Effect.scoped "uses" the resource. It runs the acquire effect,
+  // provides the resource to the inner effect, and ensures the
+  // release effect is run when this block completes.
+  const file = yield* Effect.scoped(scopedFile);
+
+  yield* file.write("hello");
+  yield* file.write("world");
+
+  // The file will be automatically closed here.
+});
+
+Effect.runPromise(program);
+/*
+Output:
+File opened
+Wrote: hello
+Wrote: world
+File closed
+*/
+```
+
+---
+
+**Explanation:**  
+`Scope` is the fundamental building block for all resource management in Effect. While higher-level APIs like `Layer.scoped` and `Stream` are often sufficient, understanding `Scope` is key to advanced use cases.
+
+A `Scope` guarantees that any finalizers added to it will be executed when the scope is closed, regardless of whether the associated computation succeeds, fails, or is interrupted. This provides a rock-solid guarantee against resource leaks.
+
+This is especially critical in concurrent applications. When a parent fiber is interrupted, it closes its scope, which in turn automatically interrupts all its child fibers and runs all their finalizers in a structured, predictable order.
+
+---

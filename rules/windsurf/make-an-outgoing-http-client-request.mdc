@@ -1,0 +1,121 @@
+description: Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Make an Outgoing HTTP Client Request
+**Rule:** Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem.
+
+### Example
+This example creates a proxy endpoint. A request to `/proxy/posts/1` on our server will trigger an outgoing request to the JSONPlaceholder API. The response is then parsed and relayed back to the original client.
+
+```typescript
+import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
+import * as HttpRouter from "@effect/platform/HttpRouter";
+import * as HttpServer from "@effect/platform/HttpServer";
+import * as HttpResponse from "@effect/platform/HttpServerResponse";
+import { Console, Data, Duration, Effect, Fiber, Layer } from "effect";
+
+class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
+  id: string;
+}> { }
+
+export class Database extends Effect.Service<Database>()("Database", {
+  sync: () => ({
+    getUser: (id: string) =>
+      id === "123"
+        ? Effect.succeed({ name: "Paul" })
+        : Effect.fail(new UserNotFoundError({ id })),
+  }),
+}) { }
+
+const userHandler = Effect.flatMap(HttpRouter.params, (p) =>
+  Effect.flatMap(Database, (db) => db.getUser(p["userId"] ?? "")).pipe(
+    Effect.flatMap(HttpResponse.json)
+  )
+);
+
+const app = HttpRouter.empty.pipe(
+  HttpRouter.get("/users/:userId", userHandler)
+);
+
+const server = NodeHttpServer.layer(() => require("node:http").createServer(), {
+  port: 3457,
+});
+
+const serverLayer = HttpServer.serve(app);
+
+const mainLayer = Layer.merge(Database.Default, server);
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("Server started on http://localhost:3457");
+  const layer = Layer.provide(serverLayer, mainLayer);
+
+  // Launch server and run for a short duration to demonstrate
+  const serverFiber = yield* Layer.launch(layer).pipe(Effect.fork);
+
+  // Wait a moment for server to start
+  yield* Effect.sleep(Duration.seconds(1));
+
+  // Simulate some server activity
+  yield* Effect.log("Server is running and ready to handle requests");
+  yield* Effect.sleep(Duration.seconds(2));
+
+  // Shutdown gracefully
+  yield* Fiber.interrupt(serverFiber);
+  yield* Effect.log("Server shutdown complete");
+});
+
+NodeRuntime.runMain(
+  Effect.provide(program, Layer.provide(serverLayer, Layer.merge(Database.Default, server))) as Effect.Effect<void, unknown, never>
+);
+
+```
+
+### Anti-Pattern (Avoid)
+The anti-pattern is to use `fetch` inside a route handler, wrapped in `Effect.tryPromise`. This approach requires manual error handling and loses the benefits of the Effect ecosystem.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+const proxyRoute = Http.router.get(
+  '/proxy/posts/:id',
+  Effect.flatMap(Http.request.ServerRequest, (req) =>
+    // Manually wrap fetch in an Effect
+    Effect.tryPromise({
+      try: () => fetch(`https://jsonplaceholder.typicode.com/posts/${req.params.id}`),
+      catch: () => 'FetchError', // Untyped error
+    }).pipe(
+      Effect.flatMap((res) =>
+        // Manually check status and parse JSON, each with its own error case
+        res.ok
+          ? Effect.tryPromise({ try: () => res.json(), catch: () => 'JsonError' })
+          : Effect.fail('BadStatusError')
+      ),
+      Effect.map(Http.response.json),
+      // A generic catch-all because we can't easily distinguish error types
+      Effect.catchAll(() => Http.response.text('An unknown error occurred', { status: 500 }))
+    )
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(proxyRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This manual approach is significantly more complex and less safe. It forces you to reinvent status and parsing logic, uses untyped string-based errors, and most importantly, the `fetch` call will not be automatically interrupted if the parent request is cancelled.
+
+**Explanation:**  
+An API server often needs to communicate with other services. While you could use the native `fetch` API, this breaks out of the Effect ecosystem and forfeits its most powerful features. Using the built-in `Http.client` is superior for several critical reasons:
+
+1.  **Full Integration**: An `Http.client` request is a first-class `Effect`. This means it seamlessly composes with all other effects. You can add timeouts, retry logic (`Schedule`), or race it with other operations using the standard Effect operators you already know.
+2.  **Structured Concurrency**: This is a key benefit. If the original incoming request to your server is cancelled or times out, Effect will automatically interrupt the outgoing `Http.client` request. A raw `fetch` call would continue running in the background, wasting resources.
+3.  **Typed Errors**: The client provides a rich set of typed errors (e.g., `Http.error.RequestError`, `Http.error.ResponseError`). This allows you to write precise error handling logic to distinguish between a network failure and a non-2xx response from the external API.
+4.  **Testability**: The `Http.client` can be provided via a `Layer`, making it trivial to mock in tests. You can test your route's logic without making actual network calls, leading to faster and more reliable tests.
+
+---

@@ -34,7 +34,6 @@ This repository is designed to be a living document that helps developers move f
 ---
 
 ## Error Management
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Handle Errors with catchTag, catchTags, and catchAll](./content/published/handle-errors-with-catch.mdx) | 🟡 **Intermediate** | Use catchTag for type-safe recovery from specific tagged errors, and catchAll to recover from any possible failure. |
@@ -51,7 +50,6 @@ This repository is designed to be a living document that helps developers move f
 | [Handle Unexpected Errors by Inspecting the Cause](./content/published/handle-unexpected-errors-with-cause.mdx) | 🟠 **Advanced** | Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die). |
 
 ## Building APIs
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Handle a GET Request](./content/published/handle-get-request.mdx) | 🟢 **Beginner** | Define a route that responds to a specific HTTP GET request path. |
@@ -64,7 +62,6 @@ This repository is designed to be a living document that helps developers move f
 | [Make an Outgoing HTTP Client Request](./content/published/make-http-client-request.mdx) | 🟡 **Intermediate** | Use the built-in Effect HTTP client to make safe and composable requests to external services from within your API. |
 
 ## Core Concepts
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Understand that Effects are Lazy Blueprints](./content/published/effects-are-lazy.mdx) | 🟢 **Beginner** | An Effect is a lazy, immutable blueprint describing a computation, which does nothing until it is explicitly executed by a runtime. |
@@ -86,7 +83,6 @@ This repository is designed to be a living document that helps developers move f
 | [Understand Fibers as Lightweight Threads](./content/published/understand-fibers-as-lightweight-threads.mdx) | 🟠 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
 
 ## Concurrency
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Control Repetition with Schedule](./content/published/control-repetition-with-schedule.mdx) | 🟡 **Intermediate** | Use Schedule to create composable, stateful policies that define precisely how an effect should be repeated or retried. |
@@ -104,7 +100,6 @@ This repository is designed to be a living document that helps developers move f
 | [Understand Fibers as Lightweight Threads](./content/published/understand-fibers-as-lightweight-threads.mdx) | 🟠 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
 
 ## Testing
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Accessing the Current Time with Clock](./content/published/accessing-current-time-with-clock.mdx) | 🟡 **Intermediate** | Use the Clock service to access the current time in a testable, deterministic way, avoiding direct calls to Date.now(). |
@@ -116,14 +111,12 @@ This repository is designed to be a living document that helps developers move f
 | [Organize Layers into Composable Modules](./content/published/organize-layers-into-composable-modules.mdx) | 🟠 **Advanced** | Structure a large application by grouping related services into 'module' layers, which are then composed together with a shared base layer. |
 
 ## Tooling and Debugging
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Supercharge Your Editor with the Effect LSP](./content/published/supercharge-your-editor-with-the-effect-lsp.mdx) | 🟡 **Intermediate** | Install the Effect Language Server (LSP) extension for your editor to get rich, inline type information and enhanced error checking for your Effect code. |
 | [Teach your AI Agents Effect with the MCP Server](./content/published/teach-your-ai-agents-effect-with-the-mcp-server.mdx) | 🟠 **Advanced** | Use the Effect MCP server to provide live, contextual information about your application's structure directly to AI coding agents. |
 
 ## Domain Modeling
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Model Optional Values Safely with Option](./content/published/model-optional-values-with-option.mdx) | 🟡 **Intermediate** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
@@ -138,13 +131,11 @@ This repository is designed to be a living document that helps developers move f
 | [Accumulate Multiple Errors with Either](./content/published/accumulate-multiple-errors-with-either.mdx) | 🟡 **Intermediate** | Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one. |
 
 ## Modeling Data
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Comparing Data by Value with Structural Equality](./content/published/comparing-data-by-value-with-structural-equality.mdx) | 🟢 **Beginner** | Use Data.struct and Equal.equals to safely compare objects by their value instead of their reference, avoiding common JavaScript pitfalls. |
 
 ## Making HTTP Requests
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Add Custom Metrics to Your Application](./content/published/add-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
@@ -155,14 +146,12 @@ This repository is designed to be a living document that helps developers move f
 | [Create a Managed Runtime for Scoped Resources](./content/published/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
 
 ## Observability
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Add Custom Metrics to Your Application](./content/published/add-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
 | [Trace Operations Across Services with Spans](./content/published/trace-operations-with-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
 
 ## Resource Management
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Safely Bracket Resource Usage with `acquireRelease`](./content/published/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
@@ -174,25 +163,21 @@ This repository is designed to be a living document that helps developers move f
 | [Create a Managed Runtime for Scoped Resources](./content/published/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
 
 ## File Handling
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Safely Bracket Resource Usage with `acquireRelease`](./content/published/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
 
 ## Database Connections
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Safely Bracket Resource Usage with `acquireRelease`](./content/published/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
 
 ## Network Requests
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Safely Bracket Resource Usage with `acquireRelease`](./content/published/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
 
 ## Building Data Pipelines
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Create a Stream from a List](./content/published/stream-from-iterable.mdx) | 🟢 **Beginner** | Turn a simple in-memory array or list into a foundational data pipeline using Stream. |
@@ -207,7 +192,6 @@ This repository is designed to be a living document that helps developers move f
 | [Manage Resources Safely in a Pipeline](./content/published/stream-manage-resources.mdx) | 🟠 **Advanced** | Ensure resources like file handles or connections are safely acquired at the start of a pipeline and always released at the end, even on failure. |
 
 ## Application Configuration
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Access Configuration from the Context](./content/published/access-config-in-context.mdx) | 🟡 **Intermediate** | Access your type-safe configuration within an Effect.gen block by yielding the Config object you defined. |
@@ -215,7 +199,6 @@ This repository is designed to be a living document that helps developers move f
 | [Provide Configuration to Your App via a Layer](./content/published/provide-config-layer.mdx) | 🟡 **Intermediate** | Use Config.layer(schema) to create a Layer that provides your configuration schema to the application's context. |
 
 ## Modeling Time
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Accessing the Current Time with Clock](./content/published/accessing-current-time-with-clock.mdx) | 🟡 **Intermediate** | Use the Clock service to access the current time in a testable, deterministic way, avoiding direct calls to Date.now(). |
@@ -223,7 +206,6 @@ This repository is designed to be a living document that helps developers move f
 | [Beyond the Date Type - Real World Dates, Times, and Timezones](./content/published/beyond-the-date-type.mdx) | 🟡 **Intermediate** | Use the Clock service for testable access to the current time and prefer immutable primitives for storing and passing timestamps. |
 
 ## Project Setup & Execution
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Execute Synchronous Effects with Effect.runSync](./content/published/execute-with-runsync.mdx) | 🟢 **Beginner** | Use Effect.runSync at the 'end of the world' to execute a purely synchronous Effect and get its value directly. |
@@ -234,27 +216,24 @@ This repository is designed to be a living document that helps developers move f
 | [Create a Managed Runtime for Scoped Resources](./content/published/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
 
 ## Advanced Dependency Injection
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Manually Manage Lifecycles with `Scope`](./content/published/manual-scope-management.mdx) | 🟠 **Advanced** | Use `Scope` directly to manage complex resource lifecycles or when building custom layers. |
 
 ## Custom Layers
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Manually Manage Lifecycles with `Scope`](./content/published/manual-scope-management.mdx) | 🟠 **Advanced** | Use `Scope` directly to manage complex resource lifecycles or when building custom layers. |
 
 ## Dependency Injection
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Create a Service Layer from a Managed Resource](./content/published/scoped-service-layer.mdx) | 🟡 **Intermediate** | Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service. |
 | [Compose Resource Lifecycles with `Layer.merge`](./content/published/compose-scoped-layers.mdx) | 🟡 **Intermediate** | Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order. |
 
 ## Application Architecture
-
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Create a Service Layer from a Managed Resource](./content/published/scoped-service-layer.mdx) | 🟡 **Intermediate** | Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service. |
 | [Compose Resource Lifecycles with `Layer.merge`](./content/published/compose-scoped-layers.mdx) | 🟡 **Intermediate** | Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order. |
+

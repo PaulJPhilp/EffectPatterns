@@ -1,0 +1,72 @@
+description: Use Effect.mapError to transform errors and create clean architectural boundaries between layers.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Mapping Errors to Fit Your Domain
+**Rule:** Use Effect.mapError to transform errors and create clean architectural boundaries between layers.
+
+### Example
+A `UserRepository` uses a `Database` service. The `Database` can fail with specific errors, but the `UserRepository` maps them to a single, generic `RepositoryError` before they are exposed to the rest of the application.
+
+```typescript
+import { Effect, Data } from "effect";
+
+// Low-level, specific errors from the database layer
+class ConnectionError extends Data.TaggedError("ConnectionError") {}
+class QueryError extends Data.TaggedError("QueryError") {}
+
+// A generic error for the repository layer
+class RepositoryError extends Data.TaggedError("RepositoryError")<{
+  readonly cause: unknown;
+}> {}
+
+// The inner service
+const dbQuery = (): Effect.Effect<
+  { name: string },
+  ConnectionError | QueryError
+> => Effect.fail(new ConnectionError());
+
+// The outer service uses `mapError` to create a clean boundary.
+// Its public signature only exposes `RepositoryError`.
+const findUser = (): Effect.Effect<{ name: string }, RepositoryError> =>
+  dbQuery().pipe(
+    Effect.mapError((error) => new RepositoryError({ cause: error }))
+  );
+
+// Demonstrate the error mapping
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("Attempting to find user...");
+
+  try {
+    const user = yield* findUser();
+    yield* Effect.logInfo(`Found user: ${user.name}`);
+  } catch (error) {
+    yield* Effect.logInfo("This won't be reached due to Effect error handling");
+  }
+}).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      if (error instanceof RepositoryError) {
+        yield* Effect.logInfo(`Repository error occurred: ${error._tag}`);
+        if (error.cause instanceof ConnectionError || error.cause instanceof QueryError) {
+          yield* Effect.logInfo(`Original cause: ${error.cause._tag}`);
+        }
+      } else {
+        yield* Effect.logInfo(`Unexpected error: ${error}`);
+      }
+    })
+  )
+);
+
+Effect.runPromise(program);
+
+```
+
+---
+
+**Explanation:**  
+This pattern is essential for creating clean architectural boundaries and preventing "leaky abstractions." An outer layer of your application (e.g., a `UserService`) should not expose the internal failure details of the layers it depends on (e.g., a `Database` that can fail with `ConnectionError` or `QueryError`).
+
+By using `Effect.mapError`, the outer layer can define its own, more abstract error type (like `RepositoryError`) and map all the specific, low-level errors into it. This decouples the layers. If you later swap your database implementation, you only need to update the mapping logic within the repository layer; none of the code that *uses* the repository needs to change.
+
+---

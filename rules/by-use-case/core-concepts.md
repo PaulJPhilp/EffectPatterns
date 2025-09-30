@@ -1,9 +1,11 @@
-# Core Concepts Rules
+# Core Concepts Patterns
 
 ## Conditionally Branching Workflows
-**Rule:** Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
+
+Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
 
 ### Example
+
 Here, we use `Effect.filter` with named predicates to validate a user before proceeding. The intent is crystal clear, and the business rules (`isActive`, `isAdmin`) are reusable.
 
 ```typescript
@@ -68,15 +70,25 @@ const handled = program(123).pipe(
 );
 
 // Run the program
-Effect.runPromise(handled).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* handled;
+  yield* Effect.log(result);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 ```
 
 ---
 
+---
+
 ## Control Flow with Conditional Combinators
-**Rule:** Use conditional combinators for control flow.
+
+Use conditional combinators for control flow.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect"
 
@@ -105,10 +117,14 @@ Effect.runPromise(program)
 `Effect.if` and related combinators allow you to branch logic without leaving
 the Effect world or breaking the flow of composition.
 
+---
+
 ## Control Repetition with Schedule
-**Rule:** Use Schedule to create composable policies for controlling the repetition and retrying of effects.
+
+Use Schedule to create composable policies for controlling the repetition and retrying of effects.
 
 ### Example
+
 This example demonstrates composition by creating a common, robust retry policy: exponential backoff with jitter, limited to 5 attempts.
 
 ```typescript
@@ -155,10 +171,14 @@ Effect.runPromise(program)
 
 ---
 
+---
+
 ## Create Pre-resolved Effects with succeed and fail
-**Rule:** Create pre-resolved effects with succeed and fail.
+
+Create pre-resolved effects with succeed and fail.
 
 ### Example
+
 ```typescript
 import { Effect, Data } from "effect"
 
@@ -177,7 +197,8 @@ const program = Effect.gen(function* () {
   // Failure effect
   yield* Effect.logInfo("\nRunning failure effect...")
   yield* Effect.gen(function* () {
-    yield* Effect.fail(new MyError())
+    // Use return yield* for effects that never succeed
+    return yield* Effect.fail(new MyError())
   }).pipe(
     Effect.catchTag("MyError", (error) =>
       Effect.logInfo(`Error occurred: ${error._tag}`)
@@ -193,10 +214,14 @@ Effect.runPromise(program)
 Use `Effect.succeed` for values you already have, and `Effect.fail` for
 immediate, known errors.
 
+---
+
 ## Manage Shared State Safely with Ref
-**Rule:** Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
+
+Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
 
 ### Example
+
 This program simulates 1,000 concurrent fibers all trying to increment a shared counter. Because we use `Ref.update`, every single increment is applied atomically, and the final result is always correct.
 
 ```typescript
@@ -220,16 +245,26 @@ const program = Effect.gen(function* () {
 });
 
 // The result will always be 1000
-Effect.runPromise(program).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Final counter value: ${result}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 
 ```
 
 ---
 
+---
+
 ## Process Streaming Data with Stream
-**Rule:** Use Stream to model and process data that arrives over time in a composable, efficient way.
+
+Use Stream to model and process data that arrives over time in a composable, efficient way.
 
 ### Example
+
 This example demonstrates creating a `Stream` from a paginated API. The `Stream` will make API calls as needed, processing one page of users at a time without ever holding the entire user list in memory.
 
 ```typescript
@@ -279,15 +314,28 @@ const program = Stream.runForEach(userStream, (user: User) =>
   Effect.log(`Processing user: ${user.name}`),
 );
 
-Effect.runPromise(program).catch(console.error);
+const programWithErrorHandling = program.pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Stream processing error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithErrorHandling);
 ```
 
 ---
 
+---
+
 ## Solve Promise Problems with Effect
-**Rule:** Recognize that Effect solves the core limitations of Promises: untyped errors, no dependency injection, and no cancellation.
+
+Recognize that Effect solves the core limitations of Promises: untyped errors, no dependency injection, and no cancellation.
 
 ### Example
+
 This code is type-safe, testable, and cancellable. The signature `Effect.Effect<User, DbError, HttpClient>` tells us everything we need to know.
 
 ```typescript
@@ -375,10 +423,14 @@ Effect.runPromise(Effect.provide(program, HttpClient.Default));
 
 ---
 
+---
+
 ## Transform Effect Values with map and flatMap
-**Rule:** Transform Effect values with map and flatMap.
+
+Transform Effect values with map and flatMap.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -394,22 +446,22 @@ const userPosts = getUser(123).pipe(
 
 // Demonstrate transforming Effect values
 const program = Effect.gen(function* () {
-  console.log("=== Transform Effect Values Demo ===");
+  yield* Effect.log("=== Transform Effect Values Demo ===");
 
   // 1. Basic transformation with map
-  console.log("\n1. Transform with map:");
+  yield* Effect.log("\n1. Transform with map:");
   const userWithUpperName = yield* getUser(123).pipe(
     Effect.map((user) => ({ ...user, name: user.name.toUpperCase() }))
   );
-  console.log("Transformed user:", userWithUpperName);
+  yield* Effect.log("Transformed user:", userWithUpperName);
 
   // 2. Chain effects with flatMap
-  console.log("\n2. Chain effects with flatMap:");
+  yield* Effect.log("\n2. Chain effects with flatMap:");
   const posts = yield* userPosts;
-  console.log("User posts:", posts);
+  yield* Effect.log("User posts:", posts);
 
   // 3. Transform and combine multiple effects
-  console.log("\n3. Transform and combine multiple effects:");
+  yield* Effect.log("\n3. Transform and combine multiple effects:");
   const userWithPosts = yield* getUser(456).pipe(
     Effect.flatMap((user) =>
       getPosts(user.id).pipe(
@@ -421,19 +473,17 @@ const program = Effect.gen(function* () {
       )
     )
   );
-  console.log("User with posts:", userWithPosts);
+  yield* Effect.log("User with posts:", userWithPosts);
 
   // 4. Transform with tap for side effects
-  console.log("\n4. Transform with tap for side effects:");
+  yield* Effect.log("\n4. Transform with tap for side effects:");
   const result = yield* getUser(789).pipe(
-    Effect.tap((user) =>
-      Effect.sync(() => console.log(`Processing user: ${user.name}`))
-    ),
+    Effect.tap((user) => Effect.log(`Processing user: ${user.name}`)),
     Effect.map((user) => `Hello, ${user.name}!`)
   );
-  console.log("Final result:", result);
+  yield* Effect.log("Final result:", result);
 
-  console.log("\n✅ All transformations completed successfully!");
+  yield* Effect.log("\n✅ All transformations completed successfully!");
 });
 
 Effect.runPromise(program);
@@ -444,10 +494,14 @@ Effect.runPromise(program);
 Use `flatMap` to chain effects that depend on each other, and `map` for
 simple value transformations.
 
+---
+
 ## Understand Fibers as Lightweight Threads
-**Rule:** Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.
+
+Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.
 
 ### Example
+
 This program demonstrates the efficiency of fibers by forking 100,000 of them. Each fiber does a small amount of work (sleeping for 1 second). Trying to do this with 100,000 OS threads would instantly crash any system.
 
 ```typescript
@@ -501,10 +555,14 @@ Effect.runPromise(program);
 
 ---
 
+---
+
 ## Understand Layers for Dependency Injection
-**Rule:** Understand that a Layer is a blueprint describing how to construct a service and its dependencies.
+
+Understand that a Layer is a blueprint describing how to construct a service and its dependencies.
 
 ### Example
+
 Here, we define a `Notifier` service that requires a `Logger` to be built. The `NotifierLive` layer's type signature, `Layer<Logger, never, Notifier>`, clearly documents this dependency.
 
 ```typescript
@@ -516,7 +574,7 @@ export class Logger extends Effect.Service<Logger>()(
   {
     // Provide a synchronous implementation
     sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`LOG: ${msg}`))
+      log: (msg: string) => Effect.log(`LOG: ${msg}`)
     })
   }
 ) {}
@@ -554,33 +612,44 @@ Effect.runPromise(
 
 ---
 
+---
+
 ## Understand that Effects are Lazy Blueprints
-**Rule:** Understand that effects are lazy blueprints.
+
+Understand that effects are lazy blueprints.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
-console.log("1. Defining the Effect blueprint...");
+Effect.runSync(Effect.log("1. Defining the Effect blueprint..."));
 
-const program = Effect.sync(() => {
-  console.log("3. The blueprint is now being executed!");
+const program = Effect.gen(function* () {
+  yield* Effect.log("3. The blueprint is now being executed!");
   return 42;
 });
 
-console.log("2. The blueprint has been defined. No work has been done yet.");
+const demonstrationProgram = Effect.gen(function* () {
+  yield* Effect.log("2. The blueprint has been defined. No work has been done yet.");
+  yield* program;
+});
 
-Effect.runSync(program);
+Effect.runSync(demonstrationProgram);
 ```
 
 **Explanation:**  
 Defining an `Effect` does not execute any code inside it. Only when you call
 `Effect.runSync(program)` does the computation actually happen.
 
+---
+
 ## Understand the Three Effect Channels (A, E, R)
-**Rule:** Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
+
+Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
 
 ### Example
+
 This function signature is a self-documenting contract. It clearly states that to get a `User`, you must provide a `Database` service, and the operation might fail with a `UserNotFoundError`.
 
 ```typescript
@@ -615,20 +684,25 @@ const getUser = (id: number): Effect.Effect<User, UserNotFoundError, Database> =
 const program = getUser(1);
 
 // Run the program with the default implementation
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Database.Default
-  )
-).then(console.log); // { name: 'Paul' }
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* Effect.provide(program, Database.Default);
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`); // { name: 'Paul' }
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 ```
 
 ---
 
+---
+
 ## Use .pipe for Composition
-**Rule:** Use .pipe for composition.
+
+Use .pipe for composition.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -640,37 +714,35 @@ const program = Effect.succeed(5).pipe(
 
 // Demonstrate various pipe composition patterns
 const demo = Effect.gen(function* () {
-  console.log("=== Using Pipe for Composition Demo ===");
+  yield* Effect.log("=== Using Pipe for Composition Demo ===");
 
   // 1. Basic pipe composition
-  console.log("\n1. Basic pipe composition:");
+  yield* Effect.log("\n1. Basic pipe composition:");
   yield* program;
 
   // 2. Complex pipe composition with multiple transformations
-  console.log("\n2. Complex pipe composition:");
+  yield* Effect.log("\n2. Complex pipe composition:");
   const complexResult = yield* Effect.succeed(10).pipe(
     Effect.map((n) => n + 5),
     Effect.map((n) => n * 2),
-    Effect.tap((n) =>
-      Effect.sync(() => console.log(`Intermediate result: ${n}`))
-    ),
+    Effect.tap((n) => Effect.log(`Intermediate result: ${n}`)),
     Effect.map((n) => n.toString()),
     Effect.map((s) => `Final: ${s}`)
   );
-  console.log("Complex result:", complexResult);
+  yield* Effect.log("Complex result: " + complexResult);
 
   // 3. Pipe with flatMap for chaining effects
-  console.log("\n3. Pipe with flatMap for chaining effects:");
+  yield* Effect.log("\n3. Pipe with flatMap for chaining effects:");
   const chainedResult = yield* Effect.succeed("hello").pipe(
     Effect.map((s) => s.toUpperCase()),
     Effect.flatMap((s) => Effect.succeed(`${s} WORLD`)),
     Effect.flatMap((s) => Effect.succeed(`${s}!`)),
-    Effect.tap((s) => Effect.sync(() => console.log(`Chained: ${s}`)))
+    Effect.tap((s) => Effect.log(`Chained: ${s}`))
   );
-  console.log("Chained result:", chainedResult);
+  yield* Effect.log("Chained result: " + chainedResult);
 
   // 4. Pipe with error handling
-  console.log("\n4. Pipe with error handling:");
+  yield* Effect.log("\n4. Pipe with error handling:");
   const errorHandledResult = yield* Effect.succeed(-1).pipe(
     Effect.flatMap((n) =>
       n > 0 ? Effect.succeed(n) : Effect.fail(new Error("Negative number"))
@@ -678,25 +750,21 @@ const demo = Effect.gen(function* () {
     Effect.catchAll((error) =>
       Effect.succeed("Handled error: " + error.message)
     ),
-    Effect.tap((result) =>
-      Effect.sync(() => console.log(`Error handled: ${result}`))
-    )
+    Effect.tap((result) => Effect.log(`Error handled: ${result}`))
   );
-  console.log("Error handled result:", errorHandledResult);
+  yield* Effect.log("Error handled result: " + errorHandledResult);
 
   // 5. Pipe with multiple operations
-  console.log("\n5. Pipe with multiple operations:");
+  yield* Effect.log("\n5. Pipe with multiple operations:");
   const multiOpResult = yield* Effect.succeed([1, 2, 3, 4, 5]).pipe(
     Effect.map((arr) => arr.filter((n) => n % 2 === 0)),
     Effect.map((arr) => arr.map((n) => n * 2)),
     Effect.map((arr) => arr.reduce((sum, n) => sum + n, 0)),
-    Effect.tap((sum) =>
-      Effect.sync(() => console.log(`Sum of even numbers doubled: ${sum}`))
-    )
+    Effect.tap((sum) => Effect.log(`Sum of even numbers doubled: ${sum}`))
   );
-  console.log("Multi-operation result:", multiOpResult);
+  yield* Effect.log("Multi-operation result: " + multiOpResult);
 
-  console.log("\n✅ Pipe composition demonstration completed!");
+  yield* Effect.log("\n✅ Pipe composition demonstration completed!");
 });
 
 Effect.runPromise(demo);
@@ -707,14 +775,18 @@ Effect.runPromise(demo);
 Using `.pipe()` allows you to compose operations in a top-to-bottom style,
 improving readability and maintainability.
 
+---
+
 ## Use Chunk for High-Performance Collections
-**Rule:** Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance.
+
+Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance.
 
 ### Example
+
 This example shows how to create and manipulate a `Chunk`. The API is very similar to `Array`, but the underlying performance characteristics for these immutable operations are superior.
 
 ```typescript
-import { Chunk } from "effect";
+import { Chunk, Effect } from "effect";
 
 // Create a Chunk from an array
 let numbers = Chunk.fromIterable([1, 2, 3, 4, 5]);
@@ -731,15 +803,19 @@ const firstThree = Chunk.take(numbers, 3);
 // Convert back to an array when you need to interface with other libraries
 const finalArray = Chunk.toReadonlyArray(firstThree);
 
-console.log(finalArray); // [0, 1, 2]
+Effect.runSync(Effect.log(finalArray)); // [0, 1, 2]
 ```
 
 ---
 
+---
+
 ## Wrap Asynchronous Computations with tryPromise
-**Rule:** Wrap asynchronous computations with tryPromise.
+
+Wrap asynchronous computations with tryPromise.
 
 ### Example
+
 ```typescript
 import { Effect, Data } from "effect";
 
@@ -857,10 +933,14 @@ Effect.runPromise(Effect.provide(program, MockHttpClient.Default));
 `Effect.tryPromise` wraps a `Promise`-returning function and safely handles
 rejections, moving errors into the Effect's error channel.
 
+---
+
 ## Wrap Synchronous Computations with sync and try
-**Rule:** Wrap synchronous computations with sync and try.
+
+Wrap synchronous computations with sync and try.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -883,49 +963,47 @@ const divide = (a: number, b: number) =>
   });
 
 const processString = (str: string) =>
-  Effect.sync(() => {
-    console.log(`Processing string: "${str}"`);
+  Effect.gen(function* () {
+    yield* Effect.log(`Processing string: "${str}"`);
     return str.toUpperCase().split("").reverse().join("");
   });
 
 // Demonstrate wrapping synchronous computations
 const program = Effect.gen(function* () {
-  console.log("=== Wrapping Synchronous Computations Demo ===");
+  yield* Effect.log("=== Wrapping Synchronous Computations Demo ===");
 
   // Example 1: Basic sync computation
-  console.log("\n1. Basic sync computation (random number):");
+  yield* Effect.log("\n1. Basic sync computation (random number):");
   const random1 = yield* randomNumber;
   const random2 = yield* randomNumber;
-  console.log(`Random numbers: ${random1.toFixed(4)}, ${random2.toFixed(4)}`);
+  yield* Effect.log(`Random numbers: ${random1.toFixed(4)}, ${random2.toFixed(4)}`);
 
   // Example 2: Successful JSON parsing
-  console.log("\n2. Successful JSON parsing:");
+  yield* Effect.log("\n2. Successful JSON parsing:");
   const validJson = '{"name": "Paul", "age": 30}';
   const parsed = yield* parseJson(validJson).pipe(
     Effect.catchAll((error) =>
       Effect.gen(function* () {
-        console.log(`Parsing failed: ${error.message}`);
-        return { error: "Failed to parse" };
+        yield* Effect.log(`Parsing failed: ${error.message}`);
       })
     )
   );
-  console.log("Parsed JSON:", parsed);
+  yield* Effect.log("Parsed JSON:" + JSON.stringify(parsed));
 
   // Example 3: Failed JSON parsing with error handling
-  console.log("\n3. Failed JSON parsing with error handling:");
+  yield* Effect.log("\n3. Failed JSON parsing with error handling:");
   const invalidJson = '{"name": "Paul", "age":}';
   const parsedWithError = yield* parseJson(invalidJson).pipe(
     Effect.catchAll((error) =>
       Effect.gen(function* () {
-        console.log(`Parsing failed: ${error.message}`);
-        return { error: "Invalid JSON", input: invalidJson };
+        yield* Effect.log(`Parsing failed: ${error.message}`);
       })
     )
   );
-  console.log("Error result:", parsedWithError);
+  yield* Effect.log("Error result:" + JSON.stringify(parsedWithError));
 
   // Example 4: Division with error handling
-  console.log("\n4. Division with error handling:");
+  yield* Effect.log("\n4. Division with error handling:");
   const division1 = yield* divide(10, 2).pipe(
     Effect.catchAll((error) =>
       Effect.gen(function* () {
@@ -934,7 +1012,7 @@ const program = Effect.gen(function* () {
       })
     )
   );
-  console.log(`10 / 2 = ${division1}`);
+  yield* Effect.log(`10 / 2 = ${division1}`);
 
   const division2 = yield* divide(10, 0).pipe(
     Effect.catchAll((error) =>
@@ -944,24 +1022,24 @@ const program = Effect.gen(function* () {
       })
     )
   );
-  console.log(`10 / 0 = ${division2} (error handled)`);
+  yield* Effect.log(`10 / 0 = ${division2} (error handled)`);
 
   // Example 5: String processing
-  console.log("\n5. String processing:");
+  yield* Effect.log("\n5. String processing:");
   const processed = yield* processString("Hello Effect");
-  console.log(`Processed result: "${processed}"`);
+  yield* Effect.log(`Processed result: "${processed}"`);
 
   // Example 6: Combining multiple sync operations
-  console.log("\n6. Combining multiple sync operations:");
+  yield* Effect.log("\n6. Combining multiple sync operations:");
   const combined = yield* Effect.gen(function* () {
     const num = yield* randomNumber;
     const multiplied = yield* Effect.sync(() => num * 100);
     const rounded = yield* Effect.sync(() => Math.round(multiplied));
     return rounded;
   });
-  console.log(`Combined operations result: ${combined}`);
+  yield* Effect.log(`Combined operations result: ${combined}`);
 
-  console.log("\n✅ Synchronous computations demonstration completed!");
+  yield* Effect.log("\n✅ Synchronous computations demonstration completed!");
 });
 
 Effect.runPromise(program);
@@ -972,10 +1050,14 @@ Effect.runPromise(program);
 Use `Effect.sync` for safe synchronous code, and `Effect.try` to safely
 handle exceptions from potentially unsafe code.
 
+---
+
 ## Write Sequential Code with Effect.gen
-**Rule:** Write sequential code with Effect.gen.
+
+Write sequential code with Effect.gen.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -1141,4 +1223,6 @@ Effect.runPromise(program);
 **Explanation:**  
 `Effect.gen` allows you to write top-to-bottom code that is easy to read and
 maintain, even when chaining many asynchronous steps.
+
+---
 

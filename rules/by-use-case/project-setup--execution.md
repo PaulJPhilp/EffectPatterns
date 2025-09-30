@@ -1,9 +1,11 @@
-# Project Setup & Execution Rules
+# Project Setup & Execution Patterns
 
 ## Create a Managed Runtime for Scoped Resources
-**Rule:** Create a managed runtime for scoped resources.
+
+Create a managed runtime for scoped resources.
 
 ### Example
+
 ```typescript
 import { Effect, Layer } from "effect";
 
@@ -39,10 +41,14 @@ Effect.runPromise(
 `Layer.launch` ensures that resources are acquired and released safely, even
 in the event of errors or interruptions.
 
+---
+
 ## Create a Reusable Runtime from Layers
-**Rule:** Create a reusable runtime from layers.
+
+Create a reusable runtime from layers.
 
 ### Example
+
 ```typescript
 import { Effect, Layer, Runtime } from "effect";
 
@@ -69,10 +75,14 @@ Runtime.runPromise(runtime)(Effect.log("Hello"));
 By compiling your layers into a Runtime once, you avoid rebuilding the
 dependency graph for every effect execution.
 
+---
+
 ## Execute Asynchronous Effects with Effect.runPromise
-**Rule:** Execute asynchronous effects with Effect.runPromise.
+
+Execute asynchronous effects with Effect.runPromise.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -82,17 +92,27 @@ const program = Effect.succeed("Hello, World!").pipe(
 
 const promise = Effect.runPromise(program);
 
-promise.then(console.log); // Logs "Hello, World!" after 1 second.
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(result); // Logs "Hello, World!" after 1 second.
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 ```
 
 **Explanation:**  
 `Effect.runPromise` executes your effect and returns a Promise, making it
 easy to integrate with existing JavaScript async workflows.
 
+---
+
 ## Execute Long-Running Apps with Effect.runFork
-**Rule:** Use Effect.runFork to launch a long-running application as a manageable, detached fiber.
+
+Use Effect.runFork to launch a long-running application as a manageable, detached fiber.
 
 ### Example
+
 This example starts a simple "server" that runs forever. We use `runFork` to launch it and then use the returned `Fiber` to shut it down gracefully after 5 seconds.
 
 ```typescript
@@ -104,7 +124,7 @@ const server = Effect.log("Server received a request.").pipe(
   Effect.forever,
 );
 
-console.log("Starting server...");
+Effect.runSync(Effect.log("Starting server..."));
 
 // Launch the server as a detached, top-level fiber
 const appFiber = Effect.runFork(server);
@@ -112,26 +132,33 @@ const appFiber = Effect.runFork(server);
 // In a real app, you would listen for OS signals.
 // Here, we simulate a shutdown signal after 5 seconds.
 setTimeout(() => {
-  console.log("Shutdown signal received. Interrupting server fiber...");
-  // This ensures all cleanup logic within the server effect would run.
-  Effect.runPromise(Fiber.interrupt(appFiber));
+  const shutdownProgram = Effect.gen(function* () {
+    yield* Effect.log("Shutdown signal received. Interrupting server fiber...");
+    // This ensures all cleanup logic within the server effect would run.
+    yield* Fiber.interrupt(appFiber);
+  });
+  Effect.runPromise(shutdownProgram);
 }, 5000);
 ```
 
 ---
 
+---
+
 ## Execute Synchronous Effects with Effect.runSync
-**Rule:** Execute synchronous effects with Effect.runSync.
+
+Execute synchronous effects with Effect.runSync.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect"
 
 // Simple synchronous program
-const program1 = Effect.sync(() => {
+const program1 = Effect.gen(function* () {
   const n = 10
   const result = n * 2
-  console.log(`Simple program result: ${result}`)
+  yield* Effect.log(`Simple program result: ${result}`)
   return result
 })
 
@@ -184,10 +211,14 @@ Effect.runSync(program3)
 Use `runSync` only for Effects that are fully synchronous. If the Effect
 contains async code, use `runPromise` instead.
 
+---
+
 ## Set Up a New Effect Project
-**Rule:** Set up a new Effect project.
+
+Set up a new Effect project.
 
 ### Example
+
 ```typescript
 // 1. Init project (e.g., `npm init -y`)
 // 2. Install deps (e.g., `npm install effect`, `npm install -D typescript tsx`)
@@ -205,4 +236,6 @@ Effect.runSync(program);
 **Explanation:**  
 This setup ensures you have TypeScript and Effect ready to go, with strict
 type-checking for maximum safety and correctness.
+
+---
 

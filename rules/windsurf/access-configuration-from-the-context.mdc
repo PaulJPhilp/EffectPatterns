@@ -1,0 +1,42 @@
+description: Access configuration from the Effect context.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Access Configuration from the Context
+**Rule:** Access configuration from the Effect context.
+
+### Example
+```typescript
+import { Config, Effect, Layer } from "effect";
+
+// Define config service
+class AppConfig extends Effect.Service<AppConfig>()(
+  "AppConfig",
+  {
+    sync: () => ({
+      host: "localhost",
+      port: 3000
+    })
+  }
+) {}
+
+// Create program that uses config
+const program = Effect.gen(function* () {
+  const config = yield* AppConfig;
+  yield* Effect.log(`Starting server on http://${config.host}:${config.port}`);
+});
+
+// Run the program with default config
+Effect.runPromise(
+  Effect.provide(program, AppConfig.Default)
+);
+```
+
+**Explanation:**  
+By yielding the config object, you make your dependency explicit and leverage Effect's context system for testability and modularity.
+
+### Anti-Pattern (Avoid)
+Passing configuration values down through multiple function arguments ("prop-drilling"). This is cumbersome and obscures which components truly need which values.
+
+**Explanation:**  
+This allows your business logic to declaratively state its dependency on a piece of configuration. The logic is clean, type-safe, and completely decoupled from *how* the configuration is provided.

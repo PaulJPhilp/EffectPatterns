@@ -1,0 +1,220 @@
+description: Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Validate Request Body
+**Rule:** Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies.
+
+### Example
+This example defines a `POST` route to create a user. It uses a `CreateUser` schema to validate the request body. If validation passes, it returns a success message with the typed data. If it fails, the platform automatically sends a descriptive 400 error.
+
+```typescript
+import { Duration, Effect } from "effect";
+import * as S from "effect/Schema";
+import { createServer, IncomingMessage, ServerResponse } from "http";
+
+// Define user schema
+const UserSchema = S.Struct({
+  name: S.String,
+  email: S.String.pipe(S.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
+});
+type User = S.Schema.Type<typeof UserSchema>;
+
+// Define user service interface
+interface UserServiceInterface {
+  readonly validateUser: (data: unknown) => Effect.Effect<User, Error, never>;
+}
+
+// Define user service
+class UserService extends Effect.Service<UserService>()("UserService", {
+  sync: () => ({
+    validateUser: (data: unknown) => S.decodeUnknown(UserSchema)(data),
+  }),
+}) { }
+
+// Define HTTP server service interface
+interface HttpServerInterface {
+  readonly handleRequest: (
+    request: IncomingMessage,
+    response: ServerResponse
+  ) => Effect.Effect<void, Error, never>;
+  readonly start: () => Effect.Effect<void, Error, never>;
+}
+
+// Define HTTP server service
+class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
+  // Define effect-based implementation that uses dependencies
+  effect: Effect.gen(function* () {
+    const userService = yield* UserService;
+
+    return {
+      handleRequest: (request: IncomingMessage, response: ServerResponse) =>
+        Effect.gen(function* () {
+          // Only handle POST /users
+          if (request.method !== "POST" || request.url !== "/users") {
+            response.writeHead(404, { "Content-Type": "application/json" });
+            response.end(JSON.stringify({ error: "Not Found" }));
+            return;
+          }
+
+          try {
+            // Read request body
+            const body = yield* Effect.async<unknown, Error>((resume) => {
+              let data = "";
+              request.on("data", (chunk) => {
+                data += chunk;
+              });
+              request.on("end", () => {
+                try {
+                  resume(Effect.succeed(JSON.parse(data)));
+                } catch (e) {
+                  resume(
+                    Effect.fail(e instanceof Error ? e : new Error(String(e)))
+                  );
+                }
+              });
+              request.on("error", (e) =>
+                resume(
+                  Effect.fail(e instanceof Error ? e : new Error(String(e)))
+                )
+              );
+            });
+
+            // Validate body against schema
+            const user = yield* userService.validateUser(body);
+
+            response.writeHead(200, { "Content-Type": "application/json" });
+            response.end(
+              JSON.stringify({
+                message: `Successfully created user: ${user.name}`,
+              })
+            );
+          } catch (error) {
+            response.writeHead(400, { "Content-Type": "application/json" });
+            response.end(JSON.stringify({ error: String(error) }));
+          }
+        }),
+
+      start: function (this: HttpServer) {
+        const self = this;
+        return Effect.gen(function* () {
+          // Create HTTP server
+          const server = createServer((req, res) =>
+            Effect.runFork(self.handleRequest(req, res))
+          );
+
+          // Add cleanup finalizer
+          yield* Effect.addFinalizer(() =>
+            Effect.gen(function* () {
+              yield* Effect.sync(() => server.close());
+              yield* Effect.logInfo("Server shut down");
+            })
+          );
+
+          // Start server
+          yield* Effect.async<void, Error>((resume) => {
+            server.on("error", (error) => resume(Effect.fail(error)));
+            server.listen(3456, () => {
+              Effect.runFork(
+                Effect.logInfo("Server running at http://localhost:3456/")
+              );
+              resume(Effect.succeed(void 0));
+            });
+          });
+
+          // Run for demonstration period
+          yield* Effect.sleep(Duration.seconds(3));
+          yield* Effect.logInfo("Demo completed - shutting down server");
+        });
+      },
+    };
+  }),
+  // Specify dependencies
+  dependencies: [UserService.Default],
+}) { }
+
+// Create program with proper error handling
+const program = Effect.gen(function* () {
+  const server = yield* HttpServer;
+
+  yield* Effect.logInfo("Starting HTTP server...");
+
+  yield* server.start().pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.logError(`Server error: ${error}`);
+        return yield* Effect.fail(error);
+      })
+    )
+  );
+}).pipe(
+  Effect.scoped // Ensure server is cleaned up
+);
+
+// Run the server
+Effect.runFork(Effect.provide(program, HttpServer.Default));
+
+/*
+To test:
+- POST http://localhost:3456/users with body {"name": "Paul", "email": "paul@effect.com"}
+  -> Returns 200 OK with message "Successfully created user: Paul"
+
+- POST http://localhost:3456/users with body {"name": "Paul"}
+  -> Returns 400 Bad Request with error message about missing email field
+*/
+
+```
+
+### Anti-Pattern (Avoid)
+The anti-pattern is to manually parse the JSON and then write imperative validation checks. This approach is verbose, error-prone, and not type-safe.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+const createUserRoute = Http.router.post(
+  '/users',
+  Http.request.json.pipe(
+    // Http.request.json returns Effect<unknown, ...>
+    Effect.flatMap((body) => {
+      // Manually check the type and properties of the body.
+      if (
+        typeof body === 'object' &&
+        body !== null &&
+        'name' in body &&
+        typeof body.name === 'string' &&
+        'email' in body &&
+        typeof body.email === 'string'
+      ) {
+        // The type is still not safely inferred here without casting.
+        return Http.response.text(`Successfully created user: ${body.name}`);
+      } else {
+        // Manually create and return a generic error response.
+        return Http.response.text('Invalid request body', { status: 400 });
+      }
+    })
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(createUserRoute));
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This manual code is significantly worse. It's hard to read, easy to get wrong, and loses all static type information from the parsed body. Crucially, it forces you to reinvent the wheel for error reporting, which will likely be less detailed and consistent than the automatic responses provided by the platform.
+
+**Explanation:**  
+Accepting user-provided data is one of the most critical and sensitive parts of an API. You must never trust incoming data. The `Http` module's integration with `Schema` provides a robust, declarative solution for this.
+
+Using `Http.request.schemaBodyJson` offers several major advantages:
+
+1.  **Automatic Validation and Error Handling**: If the incoming body does not match the schema, the server automatically rejects the request with a `400 Bad Request` status and a detailed JSON response explaining the validation errors. You don't have to write any of this boilerplate logic.
+2.  **Type Safety**: If the validation succeeds, the value produced by the `Effect` is fully typed according to your `Schema`. This eliminates `any` types and brings static analysis benefits to your request handlers.
+3.  **Declarative and Clean**: The validation rules are defined once in the `Schema` and then simply applied. This separates the validation logic from your business logic, keeping handlers clean and focused on their core task.
+4.  **Security**: It acts as a security gateway, ensuring that malformed or unexpected data structures never reach your application's core logic.
+
+---

@@ -1,9 +1,11 @@
-# Resource Management Rules
+# Resource Management Patterns
 
 ## Compose Resource Lifecycles with `Layer.merge`
-**Rule:** Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.
+
+Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.
 
 ### Example
+
 ```typescript
 import { Effect, Layer, Console } from "effect";
 
@@ -49,8 +51,8 @@ const program = Effect.gen(function* () {
   const dbResult = yield* db.query("SELECT *");
   const apiResult = yield* api.fetch("/users");
 
-  yield* Console.log(dbResult);
-  yield* Console.log(apiResult);
+  yield* Effect.log(dbResult);
+  yield* Effect.log(apiResult);
 });
 
 // Provide the combined layer to the program.
@@ -70,10 +72,14 @@ Database pool closed
 **Explanation:**
 We define two completely independent services, `Database` and `ApiClient`, each with its own resource lifecycle. By combining them with `Layer.merge`, we create a single `AppLayer`. When `program` runs, Effect acquires the resources for both layers. When `program` finishes, Effect closes the application's scope, releasing the resources in the reverse order they were acquired (`ApiClient` then `Database`), ensuring a clean and predictable shutdown.
 
+---
+
 ## Create a Managed Runtime for Scoped Resources
-**Rule:** Create a managed runtime for scoped resources.
+
+Create a managed runtime for scoped resources.
 
 ### Example
+
 ```typescript
 import { Effect, Layer } from "effect";
 
@@ -109,10 +115,14 @@ Effect.runPromise(
 `Layer.launch` ensures that resources are acquired and released safely, even
 in the event of errors or interruptions.
 
+---
+
 ## Create a Service Layer from a Managed Resource
-**Rule:** Provide a managed resource to the application context using `Layer.scoped`.
+
+Provide a managed resource to the application context using `Layer.scoped`.
 
 ### Example
+
 ```typescript
 import { Effect, Console } from "effect";
 
@@ -130,12 +140,10 @@ class Database extends Effect.Service<DatabaseService>()(
       const id = Math.floor(Math.random() * 1000);
       
       // Acquire the connection
-      yield* Console.log(`[Pool ${id}] Acquired`);
+      yield* Effect.log(`[Pool ${id}] Acquired`);
       
       // Setup cleanup to run when scope closes
-      yield* Effect.addFinalizer(() => 
-        Console.log(`[Pool ${id}] Released`)
-      );
+      yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
       
       // Return the service implementation
       return {
@@ -151,7 +159,7 @@ class Database extends Effect.Service<DatabaseService>()(
 const program = Effect.gen(function* () {
   const db = yield* Database;
   const users = yield* db.query("SELECT * FROM users");
-  yield* Console.log(`Query successful: ${users[0]}`);
+  yield* Effect.log(`Query successful: ${users[0]}`);
 });
 
 // 4. Run the program with scoped resource management
@@ -170,12 +178,16 @@ Query successful: Result for 'SELECT * FROM users' from pool 458
 ```
 
 **Explanation:**
-The `Effect.Service` helper creates the `Database` class with a `scoped` implementation. When `program` asks for the `Database` service, the Effect runtime creates a new connection pool, logs the acquisition, and automatically releases it when the scope closes. The `scoped` implementation ensures proper resource lifecycle management - the pool is acquired when first needed and released when the scope ends.
+The `Effect.Service` helper creates the `Database` class, which acts as both the service definition and its context key (Tag). The `Database.Live` layer connects this service to a concrete, lifecycle-managed implementation. When `program` asks for the `Database` service, the Effect runtime uses the `Live` layer to run the `acquire` effect once, caches the resulting `DbPool`, and injects it. The `release` effect is automatically run when the program completes.
+
+---
 
 ## Implement Graceful Shutdown for Your Application
-**Rule:** Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
+
+Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
 
 ### Example
+
 This example creates a server with a "scoped" database connection. It uses `runFork` to start the server and sets up a `SIGINT` handler to interrupt the server fiber, which in turn guarantees the database finalizer is called.
 
 ```typescript
@@ -211,9 +223,9 @@ const server = Effect.gen(function* () {
 
   // Add a finalizer to close the server
   yield* Effect.addFinalizer(() =>
-    Effect.sync(() => {
+    Effect.gen(function* () {
       httpServer.close();
-      console.log("Server closed");
+      yield* Effect.log("Server closed");
     })
   );
 
@@ -240,7 +252,7 @@ const app = Effect.provide(server.pipe(Effect.scoped), Database.Default);
 
 // 4. Run the app and handle shutdown
 Effect.runPromise(app).catch((error) => {
-  console.error("Application error:", error);
+  Effect.runSync(Effect.logError("Application error: " + error));
   process.exit(1);
 });
 
@@ -248,10 +260,14 @@ Effect.runPromise(app).catch((error) => {
 
 ---
 
+---
+
 ## Manage Resource Lifecycles with Scope
-**Rule:** Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
+
+Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
 
 ### Example
+
 This example shows how to acquire a resource (like a file handle), use it, and have `Scope` guarantee its release.
 
 ```typescript
@@ -292,26 +308,30 @@ File closed
 
 ---
 
+---
+
 ## Manually Manage Lifecycles with `Scope`
-**Rule:** Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup.
+
+Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup.
 
 ### Example
+
 ```typescript
 import { Effect, Console } from "effect";
 
 // Mocking a complex file operation
 const openFile = (path: string) =>
   Effect.succeed({ path, handle: Math.random() }).pipe(
-    Effect.tap((f) => Console.log(`Opened ${f.path}`)),
+    Effect.tap((f) => Effect.log(`Opened ${f.path}`)),
   );
 const createTempFile = (path: string) =>
   Effect.succeed({ path: `${path}.tmp`, handle: Math.random() }).pipe(
-    Effect.tap((f) => Console.log(`Created temp file ${f.path}`)),
+    Effect.tap((f) => Effect.log(`Created temp file ${f.path}`)),
   );
 const closeFile = (file: { path: string }) =>
-  Effect.sync(() => Console.log(`Closed ${file.path}`));
+  Effect.sync(() => Effect.log(`Closed ${file.path}`));
 const deleteFile = (file: { path: string }) =>
-  Effect.sync(() => Console.log(`Deleted ${file.path}`));
+  Effect.sync(() => Effect.log(`Deleted ${file.path}`));
 
 // This program acquires two resources (a file and a temp file)
 // and ensures both are cleaned up correctly using acquireRelease.
@@ -326,7 +346,7 @@ const program = Effect.gen(function* () {
     (f) => deleteFile(f)
   );
 
-  yield* Console.log("...writing data from temp file to main file...");
+  yield* Effect.log("...writing data from temp file to main file...");
 });
 
 // Run the program with a scope
@@ -345,20 +365,24 @@ Closed data.csv
 **Explanation:**
 `Effect.scope` creates a new `Scope` and provides it to the `program`. Inside `program`, we access this `Scope` and use `addFinalizer` to register cleanup actions immediately after acquiring each resource. When `Effect.scope` finishes executing `program`, it closes the scope, which in turn executes all registered finalizers in the reverse order of their addition.
 
+---
+
 ## Safely Bracket Resource Usage with `acquireRelease`
-**Rule:** Bracket the use of a resource between an `acquire` and a `release` effect.
+
+Bracket the use of a resource between an `acquire` and a `release` effect.
 
 ### Example
+
 ```typescript
 import { Effect, Console } from "effect";
 
 // A mock resource that needs to be managed
 const getDbConnection = Effect.sync(() => ({ id: Math.random() })).pipe(
-  Effect.tap(() => Console.log("Connection Acquired")),
+  Effect.tap(() => Effect.log("Connection Acquired")),
 );
 
 const closeDbConnection = (conn: { id: number }): Effect.Effect<void, never, never> =>
-  Effect.sync(() => console.log(`Connection ${conn.id} Released`));
+  Effect.log(`Connection ${conn.id} Released`);
 
 // The program that uses the resource
 const program = Effect.acquireRelease(
@@ -366,7 +390,7 @@ const program = Effect.acquireRelease(
   (connection) => closeDbConnection(connection) // 2. cleanup
 ).pipe(
   Effect.tap((connection) =>
-    Console.log(`Using connection ${connection.id} to run query...`)
+    Effect.log(`Using connection ${connection.id} to run query...`)
   )
 );
 
@@ -382,4 +406,6 @@ Connection 0.12345... Released
 
 **Explanation:**
 By using `Effect.acquireRelease`, the `closeDbConnection` logic is guaranteed to run after the main logic completes. This creates a self-contained, leak-proof unit of work that can be safely composed into larger programs.
+
+---
 

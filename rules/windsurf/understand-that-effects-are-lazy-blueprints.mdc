@@ -1,0 +1,39 @@
+description: Understand that effects are lazy blueprints.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Understand that Effects are Lazy Blueprints
+**Rule:** Understand that effects are lazy blueprints.
+
+### Example
+```typescript
+import { Effect } from "effect";
+
+Effect.runSync(Effect.log("1. Defining the Effect blueprint..."));
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("3. The blueprint is now being executed!");
+  return 42;
+});
+
+const demonstrationProgram = Effect.gen(function* () {
+  yield* Effect.log("2. The blueprint has been defined. No work has been done yet.");
+  yield* program;
+});
+
+Effect.runSync(demonstrationProgram);
+```
+
+**Explanation:**  
+Defining an `Effect` does not execute any code inside it. Only when you call
+`Effect.runSync(program)` does the computation actually happen.
+
+### Anti-Pattern (Avoid)
+Assuming an `Effect` behaves like a `Promise`. A `Promise` executes its work
+immediately upon creation. Never expect a side effect to occur just from
+defining an `Effect`.
+
+**Explanation:**  
+This laziness is a superpower because it makes your code composable,
+predictable, and testable. Unlike a `Promise` which executes immediately,
+an `Effect` is just a description of work, like a recipe waiting for a chef.

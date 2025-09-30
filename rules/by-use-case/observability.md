@@ -1,9 +1,11 @@
-# Observability Rules
+# Observability Patterns
 
 ## Add Custom Metrics to Your Application
-**Rule:** Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
+
+Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
 
 ### Example
+
 This example creates a counter to track how many times a user is created and a histogram to track the duration of the database operation.
 
 ```typescript
@@ -36,15 +38,25 @@ const createUser = Effect.gen(function* () {
 });
 
 // Run the Effect
-Effect.runPromise(createUser).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* createUser;
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 ```
 
 ---
 
+---
+
 ## Trace Operations Across Services with Spans
-**Rule:** Use Effect.withSpan to create custom tracing spans for important operations.
+
+Use Effect.withSpan to create custom tracing spans for important operations.
 
 ### Example
+
 This example shows a multi-step operation. Each step, and the overall operation, is wrapped in a span. This creates a parent-child hierarchy in the trace that is easy to visualize.
 
 ```typescript
@@ -120,6 +132,8 @@ const program = Effect.gen(function* () {
 Effect.runPromise(program);
 
 ```
+
+---
 
 ---
 

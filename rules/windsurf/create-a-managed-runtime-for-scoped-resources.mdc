@@ -1,0 +1,52 @@
+description: Create a managed runtime for scoped resources.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Create a Managed Runtime for Scoped Resources
+**Rule:** Create a managed runtime for scoped resources.
+
+### Example
+```typescript
+import { Effect, Layer } from "effect";
+
+class DatabasePool extends Effect.Service<DatabasePool>()(
+  "DbPool",
+  {
+    effect: Effect.gen(function* () {
+      yield* Effect.log("Acquiring pool");
+      return {
+        query: () => Effect.succeed("result")
+      };
+    })
+  }
+) {}
+
+// Create a program that uses the DatabasePool service
+const program = Effect.gen(function* () {
+  const db = yield* DatabasePool;
+  yield* Effect.log("Using DB");
+  yield* db.query();
+});
+
+// Run the program with the service implementation
+Effect.runPromise(
+  program.pipe(
+    Effect.provide(DatabasePool.Default),
+    Effect.scoped
+  )
+);
+```
+
+**Explanation:**  
+`Layer.launch` ensures that resources are acquired and released safely, even
+in the event of errors or interruptions.
+
+### Anti-Pattern (Avoid)
+Do not use `Layer.toRuntime` with layers that contain scoped resources. This
+will acquire the resource, but the runtime has no mechanism to release it,
+leading to resource leaks.
+
+**Explanation:**  
+`Layer.launch` is designed for resource safety. It acquires all resources,
+provides them to your effect, and—crucially—guarantees that all registered
+finalizers are executed upon completion or interruption.

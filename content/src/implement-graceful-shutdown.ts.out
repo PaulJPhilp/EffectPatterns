@@ -1,4 +1,0 @@
-timestamp=2025-07-08T02:32:25.698Z level=INFO fiber=#0 message="Acquiring DB connection"
-timestamp=2025-07-08T02:32:25.709Z level=INFO fiber=#0 message="Server started on port 3456. Press Ctrl+C to exit."
-timestamp=2025-07-08T02:32:27.711Z level=INFO fiber=#0 message="Shutting down gracefully..."
-Server closed

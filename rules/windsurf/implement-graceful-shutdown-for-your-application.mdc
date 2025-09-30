@@ -1,0 +1,100 @@
+description: Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Implement Graceful Shutdown for Your Application
+**Rule:** Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
+
+### Example
+This example creates a server with a "scoped" database connection. It uses `runFork` to start the server and sets up a `SIGINT` handler to interrupt the server fiber, which in turn guarantees the database finalizer is called.
+
+```typescript
+import { Effect, Layer, Fiber, Context, Scope } from "effect";
+import * as http from "http";
+
+// 1. A service with a finalizer for cleanup
+class Database extends Effect.Service<Database>()("Database", {
+  effect: Effect.gen(function* () {
+    yield* Effect.log("Acquiring DB connection");
+    return {
+      query: () => Effect.succeed("data"),
+    };
+  }),
+}) {}
+
+// 2. The main server logic
+const server = Effect.gen(function* () {
+  const db = yield* Database;
+
+  // Create server with proper error handling
+  const httpServer = yield* Effect.sync(() => {
+    const server = http.createServer((_req, res) => {
+      Effect.runFork(
+        Effect.provide(
+          db.query().pipe(Effect.map((data) => res.end(data))),
+          Database.Default
+        )
+      );
+    });
+    return server;
+  });
+
+  // Add a finalizer to close the server
+  yield* Effect.addFinalizer(() =>
+    Effect.gen(function* () {
+      httpServer.close();
+      yield* Effect.log("Server closed");
+    })
+  );
+
+  // Start server with error handling
+  yield* Effect.async<void, Error>((resume) => {
+    httpServer.once('error', (err: Error) => {
+      resume(Effect.fail(new Error(`Failed to start server: ${err.message}`)));
+    });
+
+    httpServer.listen(3456, () => {
+      resume(Effect.succeed(void 0));
+    });
+  });
+
+  yield* Effect.log("Server started on port 3456. Press Ctrl+C to exit.");
+
+  // For testing purposes, we'll run for a short time instead of forever
+  yield* Effect.sleep("2 seconds");
+  yield* Effect.log("Shutting down gracefully...");
+});
+
+// 3. Provide the layer and launch with runFork
+const app = Effect.provide(server.pipe(Effect.scoped), Database.Default);
+
+// 4. Run the app and handle shutdown
+Effect.runPromise(app).catch((error) => {
+  Effect.runSync(Effect.logError("Application error: " + error));
+  process.exit(1);
+});
+
+```
+
+---
+
+### Anti-Pattern (Avoid)
+Letting the Node.js process exit without proper cleanup. If you run a long-running effect with `Effect.runPromise` or don't handle OS signals, pressing Ctrl+C will terminate the process abruptly, and none of your `Effect` finalizers will have a chance to run.
+
+```typescript
+import { Effect } from "effect";
+import { app } from "./somewhere"; // From previous example
+
+// ❌ WRONG: This will run the server, but Ctrl+C will kill it instantly.
+// The database connection finalizer will NOT be called.
+Effect.runPromise(app);
+```
+
+**Explanation:**  
+When a server process is terminated, you need to ensure that it cleans up properly. This includes closing database connections, finishing in-flight requests, and releasing file handles. Failing to do so can lead to resource leaks or data corruption.
+
+Effect's structured concurrency makes this robust and easy. When a fiber is interrupted, Effect guarantees that it will run all finalizers registered within that fiber's scope, in the reverse order they were acquired.
+
+By launching your app with `runFork`, you get a `Fiber` that represents the entire application. Triggering `Fiber.interrupt` on this top-level fiber initiates a clean, orderly shutdown sequence for all its resources.
+
+---

@@ -1,0 +1,99 @@
+description: Use Schema.transform to safely convert data types during the validation and parsing process.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Transform Data During Validation with Schema
+**Rule:** Use Schema.transform to safely convert data types during the validation and parsing process.
+
+### Example
+This schema parses a string but produces a `Date` object, making the final data structure much more useful.
+
+```typescript
+import { Schema, Effect } from "effect";
+
+// Define types for better type safety
+type RawEvent = {
+  name: string;
+  timestamp: string;
+};
+
+type ParsedEvent = {
+  name: string;
+  timestamp: Date;
+};
+
+// Define the schema for our event
+const ApiEventSchema = Schema.Struct({
+  name: Schema.String,
+  timestamp: Schema.String
+});
+
+// Example input
+const rawInput: RawEvent = {
+  name: "User Login",
+  timestamp: "2025-06-22T20:08:42.000Z"
+};
+
+// Parse and transform
+const program = Effect.gen(function* () {
+  const parsed = yield* Schema.decode(ApiEventSchema)(rawInput);
+  return {
+    name: parsed.name,
+    timestamp: new Date(parsed.timestamp)
+  } as ParsedEvent;
+});
+
+const programWithLogging = Effect.gen(function* () {
+  try {
+    const event = yield* program;
+    yield* Effect.log(`Event year: ${event.timestamp.getFullYear()}`);
+    yield* Effect.log(`Full event: ${JSON.stringify(event, null, 2)}`);
+    return event;
+  } catch (error) {
+    yield* Effect.logError(`Failed to parse event: ${error}`);
+    throw error;
+  }
+}).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithLogging);
+```
+
+
+`transformOrFail` is perfect for creating branded types, as the validation can fail.
+
+```typescript
+import { Schema, Effect, Brand, Either } from "effect";
+
+type Email = string & Brand.Brand<"Email">;
+const Email = Schema.string.pipe(
+  Schema.transformOrFail(
+    Schema.brand<Email>("Email"),
+    (s, _, ast) =>
+      s.includes("@")
+        ? Either.right(s as Email)
+        : Either.left(Schema.ParseError.create(ast, "Invalid email format")),
+    (email) => Either.right(email),
+  ),
+);
+
+const result = Schema.decode(Email)("paul@example.com"); // Succeeds
+const errorResult = Schema.decode(Email)("invalid-email"); // Fails
+```
+
+---
+
+**Explanation:**  
+Often, the data you receive from external sources (like an API) isn't in the ideal format for your application's domain model. For example, dates are sent as ISO strings, but you want to work with `Date` objects.
+
+`Schema.transform` integrates this conversion directly into the parsing step. It takes two functions: one to `decode` the input type into the domain type, and one to `encode` it back. This makes your schema the single source of truth for both the shape and the type transformation of your data.
+
+For transformations that can fail (like creating a branded type), you can use `Schema.transformOrFail`, which allows the decoding step to return an `Either`.
+
+---

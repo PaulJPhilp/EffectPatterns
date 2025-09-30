@@ -1,0 +1,106 @@
+description: Use Http.server.serve with a platform-specific layer to run an HTTP application.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Create a Basic HTTP Server
+**Rule:** Use Http.server.serve with a platform-specific layer to run an HTTP application.
+
+### Example
+This example creates a minimal server that responds to all requests with "Hello, World!". The application logic is a simple `Effect` that returns an `Http.response`. We use `NodeRuntime.runMain` to execute the server effect, which is the standard way to launch a long-running application.
+
+```typescript
+import { Effect, Duration } from "effect";
+import * as http from "http";
+
+// Create HTTP server service
+class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
+  sync: () => ({
+    start: () =>
+      Effect.gen(function* () {
+        const server = http.createServer(
+          (req: http.IncomingMessage, res: http.ServerResponse) => {
+            res.writeHead(200, { "Content-Type": "text/plain" });
+            res.end("Hello, World!");
+          }
+        );
+
+        // Add cleanup finalizer
+        yield* Effect.addFinalizer(() =>
+          Effect.gen(function* () {
+            yield* Effect.sync(() => server.close());
+            yield* Effect.logInfo("Server shut down");
+          })
+        );
+
+        // Start server with timeout
+        yield* Effect.async<void, Error>((resume) => {
+          server.on("error", (error) => resume(Effect.fail(error)));
+          server.listen(3456, "localhost", () => {
+            resume(Effect.succeed(void 0));
+          });
+        }).pipe(
+          Effect.timeout(Duration.seconds(5)),
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              yield* Effect.logError(`Failed to start server: ${error}`);
+              return yield* Effect.fail(error);
+            })
+          )
+        );
+
+        yield* Effect.logInfo("Server running at http://localhost:3456/");
+
+        // Run for a short duration to demonstrate the server is working
+        yield* Effect.sleep(Duration.seconds(3));
+        yield* Effect.logInfo("Server demonstration complete");
+      }),
+  }),
+}) {}
+
+// Create program with proper error handling
+const program = Effect.gen(function* () {
+  const server = yield* HttpServer;
+
+  yield* Effect.logInfo("Starting HTTP server...");
+
+  yield* server.start();
+}).pipe(
+  Effect.scoped // Ensure server is cleaned up properly
+);
+
+// Run the server with proper error handling
+const programWithErrorHandling = Effect.provide(program, HttpServer.Default).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program failed: ${error}`);
+      return yield* Effect.fail(error);
+    })
+  )
+);
+
+Effect.runPromise(programWithErrorHandling).catch(() => {
+  process.exit(1);
+});
+
+/*
+To test:
+1. Server will timeout after 5 seconds if it can't start
+2. Server runs on port 3456 to avoid conflicts
+3. Proper cleanup on shutdown
+4. Demonstrates server lifecycle: start -> run -> shutdown
+*/
+
+```
+
+**Explanation:**  
+In Effect, an HTTP server is not just a side effect; it's a managed, effectful process. The `@effect/platform` package provides a platform-agnostic API for defining HTTP applications, while packages like `@effect/platform-node` provide the concrete implementation.
+
+The core function `Http.server.serve(app)` takes your application logic and returns an `Effect` that, when run, starts the server. This `Effect` is designed to run indefinitely, only terminating if the server crashes or is gracefully shut down.
+
+This approach provides several key benefits:
+
+1.  **Lifecycle Management**: The server's lifecycle is managed by the Effect runtime. This means structured concurrency applies, ensuring graceful shutdowns and proper resource handling automatically.
+2.  **Integration**: The server is a first-class citizen in the Effect ecosystem. It can seamlessly access dependencies provided by `Layer`, use `Config` for configuration, and integrate with `Logger`.
+3.  **Platform Agnosticism**: By coding to the `Http.App` interface, your application logic remains portable across different JavaScript runtimes (Node.js, Bun, Deno) by simply swapping out the platform layer.
+
+---

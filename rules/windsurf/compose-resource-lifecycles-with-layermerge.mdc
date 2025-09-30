@@ -1,0 +1,101 @@
+description: Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Compose Resource Lifecycles with `Layer.merge`
+**Rule:** Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.
+
+### Example
+```typescript
+import { Effect, Layer, Console } from "effect";
+
+// --- Service 1: Database ---
+interface DatabaseOps {
+  query: (sql: string) => Effect.Effect<string, never, never>;
+}
+
+class Database extends Effect.Service<DatabaseOps>()(
+  "Database",
+  {
+    sync: () => ({
+      query: (sql: string): Effect.Effect<string, never, never> =>
+        Effect.sync(() => `db says: ${sql}`)
+    })
+  }
+) {}
+
+// --- Service 2: API Client ---
+interface ApiClientOps {
+  fetch: (path: string) => Effect.Effect<string, never, never>;
+}
+
+class ApiClient extends Effect.Service<ApiClientOps>()(
+  "ApiClient",
+  {
+    sync: () => ({
+      fetch: (path: string): Effect.Effect<string, never, never> =>
+        Effect.sync(() => `api says: ${path}`)
+    })
+  }
+) {}
+
+// --- Application Layer ---
+// We merge the two independent layers into one.
+const AppLayer = Layer.merge(Database.Default, ApiClient.Default);
+
+// This program uses both services, unaware of their implementation details.
+const program = Effect.gen(function* () {
+  const db = yield* Database;
+  const api = yield* ApiClient;
+
+  const dbResult = yield* db.query("SELECT *");
+  const apiResult = yield* api.fetch("/users");
+
+  yield* Effect.log(dbResult);
+  yield* Effect.log(apiResult);
+});
+
+// Provide the combined layer to the program.
+Effect.runPromise(Effect.provide(program, AppLayer));
+
+/*
+Output (note the LIFO release order):
+Database pool opened
+API client session started
+db says: SELECT *
+api says: /users
+API client session ended
+Database pool closed
+*/
+```
+
+**Explanation:**
+We define two completely independent services, `Database` and `ApiClient`, each with its own resource lifecycle. By combining them with `Layer.merge`, we create a single `AppLayer`. When `program` runs, Effect acquires the resources for both layers. When `program` finishes, Effect closes the application's scope, releasing the resources in the reverse order they were acquired (`ApiClient` then `Database`), ensuring a clean and predictable shutdown.
+
+### Anti-Pattern (Avoid)
+A manual, imperative startup and shutdown script. This approach is brittle and error-prone. The developer is responsible for maintaining the correct order of initialization and, more importantly, the reverse order for shutdown. This becomes unmanageable as an application grows.
+
+```typescript
+// ANTI-PATTERN: Manual, brittle, and error-prone
+async function main() {
+  const db = await initDb(); // acquire 1
+  const client = await initApiClient(); // acquire 2
+
+  try {
+    await doWork(db, client); // use
+  } finally {
+    // This order is easy to get wrong!
+    await client.close(); // release 2
+    await db.close(); // release 1
+  }
+}
+```
+
+**Explanation:**  
+This pattern is the ultimate payoff for defining services with `Layer`. It allows for true modularity. Each service can be defined in its own file, declaring its own resource requirements in its `Live` layer, completely unaware of other services.
+
+When you assemble the final application layer, Effect analyzes the dependencies:
+1.  **Acquisition Order:** It ensures resources are acquired in the correct order. For example, a `Logger` layer might be initialized before a `Database` layer that uses it for logging.
+2.  **Release Order:** It guarantees that resources are released in the **exact reverse order** of their acquisition. This is critical for preventing shutdown errors, such as a `UserRepository` trying to log a final message after the `Logger` has already been shut down.
+
+This automates one of the most complex and error-prone parts of application architecture.

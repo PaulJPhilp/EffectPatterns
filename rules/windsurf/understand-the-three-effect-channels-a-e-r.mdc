@@ -1,0 +1,85 @@
+description: Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
+globs: "**/*.ts"
+alwaysApply: true
+
+# Understand the Three Effect Channels (A, E, R)
+**Rule:** Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
+
+### Example
+This function signature is a self-documenting contract. It clearly states that to get a `User`, you must provide a `Database` service, and the operation might fail with a `UserNotFoundError`.
+
+```typescript
+import { Effect, Data } from "effect";
+
+// Define the types for our channels
+interface User { readonly name: string; } // The 'A' type
+class UserNotFoundError extends Data.TaggedError("UserNotFoundError") {} // The 'E' type
+
+// Define the Database service using Effect.Service
+export class Database extends Effect.Service<Database>()(
+  "Database",
+  {
+    // Provide a default implementation
+    sync: () => ({
+      findUser: (id: number) =>
+        id === 1
+          ? Effect.succeed({ name: "Paul" })
+          : Effect.fail(new UserNotFoundError())
+    })
+  }
+) {}
+
+// This function's signature shows all three channels
+const getUser = (id: number): Effect.Effect<User, UserNotFoundError, Database> =>
+  Effect.gen(function* () {
+    const db = yield* Database;
+    return yield* db.findUser(id);
+  });
+
+// The program will use the default implementation
+const program = getUser(1);
+
+// Run the program with the default implementation
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* Effect.provide(program, Database.Default);
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`); // { name: 'Paul' }
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
+```
+
+---
+
+### Anti-Pattern (Avoid)
+Ignoring the type system and using generic types. This throws away all the safety and clarity that Effect provides.
+
+```typescript
+import { Effect } from "effect";
+
+// ❌ WRONG: This signature is dishonest and unsafe.
+// It hides the dependency on a database and the possibility of failure.
+function getUserUnsafely(id: number, db: any): Effect.Effect<any> {
+  try {
+    const user = db.findUser(id);
+    if (!user) {
+      // This will be an unhandled defect, not a typed error.
+      throw new Error("User not found");
+    }
+    return Effect.succeed(user);
+  } catch (e) {
+    // This is also an untyped failure.
+    return Effect.fail(e);
+  }
+}
+```
+
+**Explanation:**  
+This three-channel signature is what makes Effect so expressive and safe. Unlike a ``Promise<A>`` which can only describe its success type, an ``Effect``'s signature tells you everything you need to know about a computation before you run it:
+1.  **What it produces (`A`):** The data you get on the "happy path."
+2.  **How it can fail (`E`):** The specific, known errors you need to handle. This makes error handling type-safe and explicit, unlike throwing generic `Error`s.
+3.  **What it needs (`R`):** The "ingredients" or dependencies required to run the effect. This is the foundation of Effect's powerful dependency injection system. An `Effect` can only be executed when its `R` channel is `never`, meaning all its dependencies have been provided.
+
+This turns the TypeScript compiler into a powerful assistant that ensures you've handled all possible outcomes and provided all necessary dependencies.
+
+---

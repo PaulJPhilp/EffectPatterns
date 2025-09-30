@@ -1,0 +1,81 @@
+description: Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Comparing Data by Value with Structural Equality
+**Rule:** Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
+
+### Example
+We define two points using `Data.struct`. Even though `p1` and `p2` are different instances in memory, `Equal.equals` correctly reports them as equal because their contents match.
+
+```typescript
+import { Data, Equal, Effect } from "effect";
+
+// Define a Point type with structural equality
+interface Point {
+  readonly _tag: "Point";
+  readonly x: number;
+  readonly y: number;
+}
+
+const Point = Data.tagged<Point>("Point");
+
+// Create a program to demonstrate structural equality
+const program = Effect.gen(function* () {
+  const p1 = Point({ x: 1, y: 2 });
+  const p2 = Point({ x: 1, y: 2 });
+  const p3 = Point({ x: 3, y: 4 });
+
+  // Standard reference equality fails
+  yield* Effect.log("Comparing points with reference equality (===):");
+  yield* Effect.log(`p1 === p2: ${p1 === p2}`);
+
+  // Structural equality works as expected
+  yield* Effect.log("\nComparing points with structural equality:");
+  yield* Effect.log(`p1 equals p2: ${Equal.equals(p1, p2)}`);
+  yield* Effect.log(`p1 equals p3: ${Equal.equals(p1, p3)}`);
+
+  // Show the actual points
+  yield* Effect.log("\nPoint values:");
+  yield* Effect.log(`p1: ${JSON.stringify(p1)}`);
+  yield* Effect.log(`p2: ${JSON.stringify(p2)}`);
+  yield* Effect.log(`p3: ${JSON.stringify(p3)}`);
+});
+
+// Run the program
+Effect.runPromise(program);
+```
+
+---
+
+### Anti-Pattern (Avoid)
+Relying on `===` for object or array comparison. This will lead to bugs when you expect two objects with the same values to be treated as equal, especially when working with data in collections, `Ref`s, or `Effect`'s success values.
+
+```typescript
+// ❌ WRONG: This will not behave as expected.
+const user1 = { id: 1, name: "Paul" };
+const user2 = { id: 1, name: "Paul" };
+
+if (user1 === user2) {
+  // This code block will never be reached.
+  console.log("Users are the same.");
+}
+
+// Another common pitfall
+const selectedUsers = [user1];
+// This check will fail, even though a user with id 1 is in the array.
+if (selectedUsers.includes({ id: 1, name: "Paul" })) {
+  // ...
+}
+```
+
+**Explanation:**  
+In JavaScript, comparing two non-primitive values with `===` checks for *referential equality*. It only returns `true` if they are the exact same instance in memory. This means two objects with identical contents are not considered equal, which is a common source of bugs.
+
+```typescript
+{ a: 1 } === { a: 1 } // false!
+```
+
+Effect solves this with **structural equality**. All of Effect's built-in data structures (`Option`, `Either`, `Chunk`, etc.) can be compared by their structure and values. By using helpers like `Data.struct`, you can easily give your own data structures this same powerful and predictable behavior.
+
+---

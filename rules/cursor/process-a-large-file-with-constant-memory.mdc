@@ -1,0 +1,80 @@
+description: Use Stream.fromReadable with a Node.js Readable stream to process files efficiently.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Process a Large File with Constant Memory
+**Rule:** Use Stream.fromReadable with a Node.js Readable stream to process files efficiently.
+
+### Example
+This example demonstrates reading a text file, splitting it into individual lines, and processing each line. The combination of `Stream.fromReadable`, `Stream.decodeText`, and `Stream.splitLines` is a powerful and common pattern for handling text-based files.
+
+```typescript
+import { FileSystem } from '@effect/platform';
+import { NodeFileSystem } from '@effect/platform-node';
+import type { PlatformError } from '@effect/platform/Error';
+import { Effect, Stream } from 'effect';
+import * as path from 'node:path';
+
+const processFile = (
+  filePath: string,
+  content: string
+): Effect.Effect<void, PlatformError, FileSystem.FileSystem> =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+
+    // Write content to file
+    yield* fs.writeFileString(filePath, content);
+
+    // Create a stream from file content
+    const fileStream = Stream.fromEffect(fs.readFileString(filePath))
+      .pipe(
+        // Split content into lines
+        Stream.map((content: string) => content.split('\n')),
+        Stream.flatMap(Stream.fromIterable),
+        // Process each line
+        Stream.tap((line) => Effect.log(`Processing: ${line}`))
+      );
+
+    // Run the stream to completion
+    yield* Stream.runDrain(fileStream);
+
+    // Clean up file
+    yield* fs.remove(filePath);
+  });
+
+const program = Effect.gen(function* () {
+  const filePath = path.join(__dirname, 'large-file.txt');
+
+  yield* processFile(
+    filePath,
+    'line 1\nline 2\nline 3'
+  ).pipe(
+    Effect.catchAll((error: PlatformError) =>
+      Effect.logError(`Error processing file: ${error.message}`)
+    )
+  );
+});
+
+Effect.runPromise(
+  program.pipe(
+    Effect.provide(NodeFileSystem.layer)
+  ))
+
+  /*
+Output:
+... level=INFO msg="Processing: line 1"
+... level=INFO msg="Processing: line 2"
+... level=INFO msg="Processing: line 3"
+*/
+```
+
+**Explanation:**  
+The most significant advantage of a streaming architecture is its ability to handle datasets far larger than available RAM. When you need to process a multi-gigabyte log file or CSV, loading it all into memory is not an option—it will crash your application.
+
+The `Stream.fromReadable` constructor provides a bridge from Node.js's built-in file streaming capabilities to the Effect ecosystem. This approach is superior because:
+
+1.  **Constant Memory Usage**: The file is read in small, manageable chunks. Your application's memory usage remains low and constant, regardless of whether the file is 1 megabyte or 100 gigabytes.
+2.  **Composability**: Once the file is represented as an Effect `Stream`, you can apply the full suite of powerful operators to it: `mapEffect` for concurrent processing, `filter` for selectively choosing lines, `grouped` for batching, and `retry` for resilience.
+3.  **Resource Safety**: Effect's `Stream` is built on `Scope`, which guarantees that the underlying file handle will be closed automatically when the stream finishes, fails, or is interrupted. This prevents resource leaks, a common problem in manual file handling.
+
+---

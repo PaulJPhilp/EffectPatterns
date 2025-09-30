@@ -1,0 +1,128 @@
+description: Use Http.router.get to associate a URL path with a specific response Effect.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Handle a GET Request
+**Rule:** Use Http.router.get to associate a URL path with a specific response Effect.
+
+### Example
+This example defines two separate GET routes, one for the root path (`/`) and one for `/hello`. We create an empty router and add each route to it. The resulting `app` is then served. The router automatically handles sending a `404 Not Found` response for any path that doesn't match.
+
+```typescript
+import { Data, Effect } from 'effect'
+
+// Define response types
+interface RouteResponse {
+  readonly status: number;
+  readonly body: string;
+}
+
+// Define error types
+class RouteNotFoundError extends Data.TaggedError("RouteNotFoundError")<{
+  readonly path: string;
+}> {}
+
+class RouteHandlerError extends Data.TaggedError("RouteHandlerError")<{
+  readonly path: string;
+  readonly error: string;
+}> {}
+
+// Define route service
+class RouteService extends Effect.Service<RouteService>()(
+  "RouteService",
+  {
+    sync: () => {
+      // Create instance methods
+      const handleRoute = (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
+        Effect.gen(function* () {
+          yield* Effect.logInfo(`Processing request for path: ${path}`);
+          
+          try {
+            switch (path) {
+              case '/':
+                const home = 'Welcome to the home page!';
+                yield* Effect.logInfo(`Serving home page`);
+                return { status: 200, body: home };
+
+              case '/hello':
+                const hello = 'Hello, Effect!';
+                yield* Effect.logInfo(`Serving hello page`);
+                return { status: 200, body: hello };
+
+              default:
+                yield* Effect.logWarning(`Route not found: ${path}`);
+                return yield* Effect.fail(new RouteNotFoundError({ path }));
+            }
+          } catch (e) {
+            const error = e instanceof Error ? e.message : String(e);
+            yield* Effect.logError(`Error handling route ${path}: ${error}`);
+            return yield* Effect.fail(new RouteHandlerError({ path, error }));
+          }
+        });
+
+      // Return service implementation
+      return {
+        handleRoute,
+        // Simulate GET request
+        simulateGet: (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
+          Effect.gen(function* () {
+            yield* Effect.logInfo(`GET ${path}`);
+            const response = yield* handleRoute(path);
+            yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
+            return response;
+          })
+      };
+    }
+  }
+) {}
+
+// Create program with proper error handling
+const program = Effect.gen(function* () {
+  const router = yield* RouteService;
+  
+  yield* Effect.logInfo("=== Starting Route Tests ===");
+  
+  // Test different routes
+  for (const path of ['/', '/hello', '/other', '/error']) {
+    yield* Effect.logInfo(`\n--- Testing ${path} ---`);
+    
+    const result = yield* router.simulateGet(path).pipe(
+      Effect.catchTags({
+        RouteNotFoundError: (error) =>
+          Effect.gen(function* () {
+            const response = { status: 404, body: `Not Found: ${error.path}` };
+            yield* Effect.logWarning(`${response.status} ${response.body}`);
+            return response;
+          }),
+        RouteHandlerError: (error) =>
+          Effect.gen(function* () {
+            const response = { status: 500, body: `Internal Error: ${error.error}` };
+            yield* Effect.logError(`${response.status} ${response.body}`);
+            return response;
+          })
+      })
+    );
+    
+    yield* Effect.logInfo(`Final Response: ${JSON.stringify(result)}`);
+  }
+  
+  yield* Effect.logInfo("\n=== Route Tests Complete ===");
+});
+
+// Run the program
+Effect.runPromise(
+  Effect.provide(program, RouteService.Default)
+);
+```
+
+**Explanation:**  
+A real application needs to respond differently to different URLs. The `Http.router` provides a declarative, type-safe, and composable way to manage this routing logic. Instead of a single handler with complex conditional logic, you define many small, focused handlers and assign them to specific paths and HTTP methods.
+
+This approach has several advantages:
+
+1.  **Declarative and Readable**: Your code clearly expresses the mapping between a URL path and its behavior, making the application's structure easy to understand.
+2.  **Composability**: Routers are just values that can be created, combined, and passed around. This makes it easy to organize routes into logical groups (e.g., a `userRoutes` router and a `productRoutes` router) and merge them.
+3.  **Type Safety**: The router ensures that the handler for a route is only ever called for a matching request, simplifying the logic within the handler itself.
+4.  **Integration**: Each route handler is an `Effect`, meaning it has full access to dependency injection, structured concurrency, and integrated error handling, just like any other part of an Effect application.
+
+---

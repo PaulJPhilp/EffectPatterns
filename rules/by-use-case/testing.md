@@ -1,9 +1,11 @@
-# Testing Rules
+# Testing Patterns
 
 ## Accessing the Current Time with Clock
-**Rule:** Use the Clock service to get the current time, enabling deterministic testing with TestClock.
+
+Use the Clock service to get the current time, enabling deterministic testing with TestClock.
 
 ### Example
+
 This example shows a function that checks if a token is expired. Its logic depends on `Clock`, making it fully testable.
 
 ```typescript
@@ -18,7 +20,13 @@ interface Token {
 const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock.Clock> =>
   Clock.currentTimeMillis.pipe(
     Effect.map((now) => now > token.expiresAt),
-    Effect.tap((expired) => Effect.log(`Token expired? ${expired} (current time: ${new Date().toISOString()})`))
+    Effect.tap((expired) => 
+      Clock.currentTimeMillis.pipe(
+        Effect.flatMap((currentTime) => 
+          Effect.log(`Token expired? ${expired} (current time: ${new Date(currentTime).toISOString()})`)
+        )
+      )
+    )
   );
 
 // Create a test clock service that advances time
@@ -65,59 +73,62 @@ Effect.runPromise(
 
 ---
 
+---
+
 ## Create a Testable HTTP Client Service
-**Rule:** Define an HttpClient service with distinct Live and Test layers to enable testable API interactions.
+
+Define an HttpClient service with distinct Live and Test layers to enable testable API interactions.
 
 ### Example
+
 ### 1. Define the Service
 
 ```typescript
-import { Effect, Data, Layer } from "effect"
+import { Effect, Data, Layer } from "effect";
 
 interface HttpErrorType {
-  readonly _tag: "HttpError"
-  readonly error: unknown
+  readonly _tag: "HttpError";
+  readonly error: unknown;
 }
 
-const HttpError = Data.tagged<HttpErrorType>("HttpError")
+const HttpError = Data.tagged<HttpErrorType>("HttpError");
 
 interface HttpClientType {
-  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>
+  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>;
 }
 
-class HttpClient extends Effect.Service<HttpClientType>()(
-  "HttpClient",
-  {
-    sync: () => ({
-      get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
-        Effect.tryPromise({
-          try: () => fetch(url).then((res) => res.json()),
-          catch: (error) => HttpError({ error })
-        })
-    })
-  }
-) {}
+class HttpClient extends Effect.Service<HttpClientType>()("HttpClient", {
+  sync: () => ({
+    get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
+      Effect.tryPromise<T>(() =>
+        fetch(url).then((res) => res.json() as T)
+      ).pipe(
+        Effect.catchAll((error) => Effect.fail(HttpError({ error })))
+      ),
+  }),
+}) {}
 
 // Test implementation
 const TestLayer = Layer.succeed(
   HttpClient,
   HttpClient.of({
-    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T)
+    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T),
   })
-)
+);
 
 // Example usage
 const program = Effect.gen(function* () {
-  const client = yield* HttpClient
-  yield* Effect.logInfo("Fetching data...")
-  const data = yield* client.get<{ title: string }>("https://api.example.com/data")
-  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`)
-})
+  const client = yield* HttpClient;
+  yield* Effect.logInfo("Fetching data...");
+  const data = yield* client.get<{ title: string }>(
+    "https://api.example.com/data"
+  );
+  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`);
+});
 
 // Run with test implementation
-Effect.runPromise(
-  Effect.provide(program, TestLayer)
-)
+Effect.runPromise(Effect.provide(program, TestLayer));
+
 ```
 
 ### 2. Create the Live Implementation
@@ -206,10 +217,14 @@ export const getUserFromApi = (id: number) =>
 
 ---
 
+---
+
 ## Mocking Dependencies in Tests
-**Rule:** Provide mock service implementations via a test-specific Layer to isolate the unit under test.
+
+Provide mock service implementations via a test-specific Layer to isolate the unit under test.
 
 ### Example
+
 We want to test a `Notifier` service that uses an `EmailClient` to send emails. In our test, we provide a mock `EmailClient` that doesn't actually send emails but just returns a success value.
 
 ```typescript
@@ -260,9 +275,8 @@ const program = Effect.gen(function* () {
     EmailClient,
     {
       send: (address: string, body: string) =>
-        Effect.sync(() => 
-          Effect.log(`MOCK: Would send to ${address} with body: ${body}`)
-        )
+        // Directly return the Effect.log without nesting it in Effect.sync
+        Effect.log(`MOCK: Would send to ${address} with body: ${body}`)
     } as EmailClientService
   );
 
@@ -283,10 +297,14 @@ Effect.runPromise(
 
 ---
 
+---
+
 ## Model Dependencies as Services
-**Rule:** Model dependencies as services.
+
+Model dependencies as services.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -309,21 +327,26 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementation
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Random.Default
-  )
-).then(value => console.log('Random value:', value));
+const programWithLogging = Effect.gen(function* () {
+  const value = yield* Effect.provide(program, Random.Default);
+  yield* Effect.log(`Random value: ${value}`);
+  return value;
+});
+
+Effect.runPromise(programWithLogging);
 ```
 
 **Explanation:**  
 By modeling dependencies as services, you can easily substitute mocked or deterministic implementations for testing, leading to more reliable and predictable tests.
 
+---
+
 ## Organize Layers into Composable Modules
-**Rule:** Organize services into modular Layers that are composed hierarchically to manage complexity in large applications.
+
+Organize services into modular Layers that are composed hierarchically to manage complexity in large applications.
 
 ### Example
+
 This example shows a `BaseLayer` with a `Logger`, a `UserModule` that uses the `Logger`, and a final `AppLayer` that wires them together.
 
 ### 1. The Base Infrastructure Layer
@@ -336,7 +359,7 @@ export class Logger extends Effect.Service<Logger>()(
   "App/Core/Logger",
   {
     sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`))
+      log: (msg: string) => Effect.log(`[LOG] ${msg}`)
     })
   }
 ) {}
@@ -374,7 +397,15 @@ Effect.runPromise(
     program,
     UserRepository.Default
   )
-).then(console.log);
+);
+
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Program result: ${JSON.stringify(result)}`);
+  return result;
+});
+
+Effect.runPromise(Effect.provide(programWithLogging, UserRepository.Default));
 ```
 
 ### 2. The Feature Module Layer
@@ -445,10 +476,14 @@ export const AppLayer = Layer.provide(AllModules, BaseLayer);
 
 ---
 
+---
+
 ## Use the Auto-Generated .Default Layer in Tests
-**Rule:** Use the auto-generated .Default layer in tests.
+
+Use the auto-generated .Default layer in tests.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -485,10 +520,14 @@ Effect.runPromise(
 **Explanation:**  
 This approach ensures your tests are idiomatic, maintainable, and take full advantage of Effect's dependency injection system.
 
+---
+
 ## Write Tests That Adapt to Application Code
-**Rule:** Write tests that adapt to application code.
+
+Write tests that adapt to application code.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -664,4 +703,6 @@ Effect.runPromise(
 
 **Explanation:**  
 Tests should reflect the real interface and behavior of your code, not force changes to it.
+
+---
 

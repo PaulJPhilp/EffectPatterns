@@ -1,13 +1,15 @@
-# Domain Modeling Rules
+# Domain Modeling Patterns
 
 ## Accumulate Multiple Errors with Either
-**Rule:** Use Either to accumulate multiple validation errors instead of failing on the first one.
+
+Use Either to accumulate multiple validation errors instead of failing on the first one.
 
 ### Example
+
 Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
 
 ````typescript
-import { Effect, Schema, Data } from "effect";
+import { Effect, Schema, Data, Either } from "effect";
 
 // Define validation error type
 class ValidationError extends Data.TaggedError("ValidationError")<{
@@ -62,24 +64,26 @@ const validateUser = (input: User) =>
 
 // Process multiple users and accumulate all errors
 const program = Effect.gen(function* () {
-  console.log("Validating users...\n");
+  yield* Effect.log("Validating users...\n");
   
   for (const input of invalidInputs) {
     const result = yield* Effect.either(validateUser(input));
     
-    console.log(`Validating user: ${input.name} <${input.email}>`);
+    yield* Effect.log(`Validating user: ${input.name} <${input.email}>`);
     
-    yield* Effect.match(result, {
-      onFailure: (error) => Effect.sync(() => {
-        console.log("❌ Validation failed:");
-        console.log(error.message);
-        console.log(); // Empty line for readability
+    // Handle success and failure cases separately for clarity
+    // Using Either.match which is the idiomatic way to handle Either values
+    yield* Either.match(result, {
+      onLeft: (error) => Effect.gen(function* () {
+        yield* Effect.log("❌ Validation failed:");
+        yield* Effect.log(error.message);
+        yield* Effect.log(""); // Empty line for readability
       }),
-      onSuccess: (user) => Effect.sync(() => {
-        console.log("✅ User is valid:", user);
-        console.log(); // Empty line for readability
+      onRight: (user) => Effect.gen(function* () {
+        yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
+        yield* Effect.log(""); // Empty line for readability
       })
-    });
+    })
   }
 });
 
@@ -89,10 +93,14 @@ Effect.runSync(program);
 
 ---
 
+---
+
 ## Avoid Long Chains of .andThen; Use Generators Instead
-**Rule:** Prefer generators over long chains of .andThen.
+
+Prefer generators over long chains of .andThen.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -115,18 +123,26 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program
-Effect.runPromise(program).then(
-  result => Effect.runSync(Effect.log(`Final result: ${result}`))
-);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Final result: ${result}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 ```
 
 **Explanation:**  
 Generators keep sequential logic readable and easy to maintain.
 
+---
+
 ## Define Contracts Upfront with Schema
-**Rule:** Define contracts upfront with schema.
+
+Define contracts upfront with schema.
 
 ### Example
+
 ```typescript
 import { Schema, Effect, Data } from "effect"
 
@@ -203,10 +219,14 @@ Effect.runPromise(
 Defining schemas upfront clarifies your contracts and ensures both type safety
 and runtime validation.
 
+---
+
 ## Define Type-Safe Errors with Data.TaggedError
-**Rule:** Define type-safe errors with Data.TaggedError.
+
+Define type-safe errors with Data.TaggedError.
 
 ### Example
+
 ```typescript
 import { Data, Effect } from "effect"
 
@@ -256,10 +276,14 @@ Effect.runPromise(program)
 **Explanation:**  
 Tagged errors allow you to handle errors in a type-safe, self-documenting way.
 
+---
+
 ## Distinguish 'Not Found' from Errors
-**Rule:** Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.
+
+Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.
 
 ### Example
+
 This function to find a user can fail if the database is down, or it can succeed but find no user. The return type ``Effect.Effect<Option.Option<User>, DatabaseError>`` makes this contract perfectly clear.
 
 ````typescript
@@ -316,14 +340,18 @@ Effect.runPromise(
 )
 ````
 
+---
+
 ## Model Optional Values Safely with Option
-**Rule:** Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
+
+Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
 
 ### Example
+
 A function that looks for a user in a database is a classic use case. It might find a user, or it might not. Returning an `Option<User>` makes this contract explicit and safe.
 
 ```typescript
-import { Option } from "effect";
+import { Effect, Option } from "effect";
 
 interface User {
   id: number;
@@ -350,14 +378,22 @@ const greeting = (id: number): string =>
     }),
   );
 
-console.log(greeting(1)); // "Welcome, Paul!"
-console.log(greeting(3)); // "User not found."
+const program = Effect.gen(function* () {
+  yield* Effect.log(greeting(1)); // "Welcome, Paul!"
+  yield* Effect.log(greeting(3)); // "User not found."
+});
+
+Effect.runPromise(program);
 ```
 
+---
+
 ## Model Validated Domain Types with Brand
-**Rule:** Model validated domain types with Brand.
+
+Model validated domain types with Brand.
 
 ### Example
+
 ```typescript
 import { Brand, Option } from "effect";
 
@@ -374,10 +410,14 @@ const sendEmail = (email: Email, body: string) => { /* ... */ };
 Branding ensures that only validated values are used, reducing bugs and
 repetitive checks.
 
+---
+
 ## Parse and Validate Data with Schema.decode
-**Rule:** Parse and validate data with Schema.decode.
+
+Parse and validate data with Schema.decode.
 
 ### Example
+
 ```typescript
 import { Effect, Schema } from "effect";
 
@@ -423,10 +463,14 @@ Effect.runPromise(program);
 `Schema.decode` integrates parsing and validation into the Effect workflow,
 making error handling composable and type-safe.
 
+---
+
 ## Transform Data During Validation with Schema
-**Rule:** Use Schema.transform to safely convert data types during the validation and parsing process.
+
+Use Schema.transform to safely convert data types during the validation and parsing process.
 
 ### Example
+
 This schema parses a string but produces a `Date` object, making the final data structure much more useful.
 
 ```typescript
@@ -464,15 +508,26 @@ const program = Effect.gen(function* () {
   } as ParsedEvent;
 });
 
-Effect.runPromise(program).then(
-  (event) => {
-    console.log('Event year:', event.timestamp.getFullYear());
-    console.log('Full event:', event);
-  },
-  (error) => {
-    console.error('Failed to parse event:', error);
+const programWithLogging = Effect.gen(function* () {
+  try {
+    const event = yield* program;
+    yield* Effect.log(`Event year: ${event.timestamp.getFullYear()}`);
+    yield* Effect.log(`Full event: ${JSON.stringify(event, null, 2)}`);
+    return event;
+  } catch (error) {
+    yield* Effect.logError(`Failed to parse event: ${error}`);
+    throw error;
   }
+}).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
 );
+
+Effect.runPromise(programWithLogging);
 ```
 
 
@@ -499,10 +554,14 @@ const errorResult = Schema.decode(Email)("invalid-email"); // Fails
 
 ---
 
+---
+
 ## Use Effect.gen for Business Logic
-**Rule:** Use Effect.gen for business logic.
+
+Use Effect.gen for business logic.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -531,7 +590,8 @@ const hashPassword = (pw: string): Effect.Effect<string, never, never> =>
   Effect.gen(function* () {
     yield* Effect.logInfo("Hashing password...");
     // Simulate password hashing
-    const hashed = `hashed_${pw}_${Date.now()}`;
+    const timestamp = yield* Effect.sync(() => Date.now());
+    const hashed = `hashed_${pw}_${timestamp}`;
     yield* Effect.logInfo("✅ Password hashed successfully");
     return hashed;
   });
@@ -548,7 +608,9 @@ const dbCreateUser = (data: {
     return user;
   });
 
-const createUser = (userData: any): Effect.Effect<{ id: number; email: string }, Error, never> =>
+const createUser = (
+  userData: any
+): Effect.Effect<{ id: number; email: string }, Error, never> =>
   Effect.gen(function* () {
     const validated = yield* validateUser(userData);
     const hashed = yield* hashPassword(validated.password);
@@ -599,4 +661,6 @@ Effect.runPromise(program);
 **Explanation:**  
 `Effect.gen` allows you to express business logic in a clear, sequential style,
 improving maintainability.
+
+---
 

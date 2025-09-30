@@ -1,0 +1,39 @@
+description: Use conditional combinators for control flow.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Control Flow with Conditional Combinators
+**Rule:** Use conditional combinators for control flow.
+
+### Example
+```typescript
+import { Effect } from "effect"
+
+const attemptAdminAction = (user: { isAdmin: boolean }) =>
+  Effect.if(user.isAdmin, {
+    onTrue: () => Effect.succeed("Admin action completed."),
+    onFalse: () => Effect.fail("Permission denied.")
+  })
+
+const program = Effect.gen(function* () {
+  // Try with admin user
+  yield* Effect.logInfo("\nTrying with admin user...")
+  const adminResult = yield* Effect.either(attemptAdminAction({ isAdmin: true }))
+  yield* Effect.logInfo(`Admin result: ${adminResult._tag === 'Right' ? adminResult.right : adminResult.left}`)
+
+  // Try with non-admin user
+  yield* Effect.logInfo("\nTrying with non-admin user...")
+  const userResult = yield* Effect.either(attemptAdminAction({ isAdmin: false }))
+  yield* Effect.logInfo(`User result: ${userResult._tag === 'Right' ? userResult.right : userResult.left}`)
+})
+
+Effect.runPromise(program)
+```
+
+**Explanation:**  
+`Effect.if` and related combinators allow you to branch logic without leaving
+the Effect world or breaking the flow of composition.
+
+**Explanation:**  
+These combinators allow you to embed conditional logic directly into your
+`.pipe()` compositions, maintaining a declarative style for simple branching.

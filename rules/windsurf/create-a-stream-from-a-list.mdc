@@ -1,0 +1,63 @@
+description: Use Stream.fromIterable to begin a pipeline from an in-memory collection.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Create a Stream from a List
+**Rule:** Use Stream.fromIterable to begin a pipeline from an in-memory collection.
+
+### Example
+This example takes a simple array of numbers, creates a stream from it, performs a transformation on each number, and then runs the stream to collect the results.
+
+```typescript
+import { Effect, Stream, Chunk } from 'effect';
+
+const numbers = [1, 2, 3, 4, 5];
+
+// Create a stream from the array of numbers.
+const program = Stream.fromIterable(numbers).pipe(
+  // Perform a simple, synchronous transformation on each item.
+  Stream.map((n) => `Item: ${n}`),
+  // Run the stream and collect all the transformed items into a Chunk.
+  Stream.runCollect
+);
+
+const programWithLogging = Effect.gen(function* () {
+  const processedItems = yield* program;
+  yield* Effect.log(`Processed items: ${JSON.stringify(Chunk.toArray(processedItems))}`);
+  return processedItems;
+});
+
+Effect.runPromise(programWithLogging);
+/*
+Output:
+[ 'Item: 1', 'Item: 2', 'Item: 3', 'Item: 4', 'Item: 5' ]
+*/
+```
+
+### Anti-Pattern (Avoid)
+The common alternative is to use standard array methods like `.map()` or a `for...of` loop. While perfectly fine for simple, synchronous tasks, this approach is an anti-pattern when building a *pipeline*.
+
+```typescript
+const numbers = [1, 2, 3, 4, 5];
+
+// Using Array.prototype.map
+const processedItems = numbers.map((n) => `Item: ${n}`);
+
+console.log(processedItems);
+```
+
+This is an anti-pattern in the context of building a larger pipeline because:
+
+1.  **It's Not Composable with Effects**: The result is just a new array. If the next step in your pipeline was an asynchronous database call for each item, you couldn't simply `.pipe()` the result into it. You would have to leave the synchronous world of `.map()` and start a new `Effect.forEach`, breaking the unified pipeline structure.
+2.  **It's Eager**: The `.map()` operation processes the entire array at once. `Stream` is lazy; it only processes items as they are requested by downstream consumers, which is far more efficient for large collections or complex transformations.
+
+**Explanation:**  
+Every data pipeline needs a source. The simplest and most common source is a pre-existing list of items in memory. `Stream.fromIterable` is the bridge from standard JavaScript data structures to the powerful, composable world of Effect's `Stream`.
+
+This pattern is fundamental for several reasons:
+
+1.  **Entry Point**: It's the "Hello, World!" of data pipelines, providing the easiest way to start experimenting with stream transformations.
+2.  **Testing**: In tests, you frequently need to simulate a data source (like a database query or API call). Creating a stream from a mock array of data is the standard way to do this, allowing you to test your pipeline's logic in isolation.
+3.  **Composability**: It transforms a static, eager data structure (an array) into a lazy, pull-based stream. This allows you to pipe it into the rest of the Effect ecosystem, enabling asynchronous operations, concurrency, and resource management in subsequent steps.
+
+---

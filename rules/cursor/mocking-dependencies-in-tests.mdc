@@ -1,0 +1,90 @@
+description: Provide mock service implementations via a test-specific Layer to isolate the unit under test.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Mocking Dependencies in Tests
+**Rule:** Provide mock service implementations via a test-specific Layer to isolate the unit under test.
+
+### Example
+We want to test a `Notifier` service that uses an `EmailClient` to send emails. In our test, we provide a mock `EmailClient` that doesn't actually send emails but just returns a success value.
+
+```typescript
+import { Effect, Layer } from "effect";
+
+// --- The Services ---
+interface EmailClientService {
+  send: (address: string, body: string) => Effect.Effect<void>
+}
+
+class EmailClient extends Effect.Service<EmailClientService>()(
+  "EmailClient",
+  {
+    sync: () => ({
+      send: (address: string, body: string) => 
+        Effect.sync(() => Effect.log(`Sending email to ${address}: ${body}`))
+    })
+  }
+) {}
+
+interface NotifierService {
+  notifyUser: (userId: number, message: string) => Effect.Effect<void>
+}
+
+class Notifier extends Effect.Service<NotifierService>()(
+  "Notifier",
+  {
+    effect: Effect.gen(function* () {
+      const emailClient = yield* EmailClient;
+      return {
+        notifyUser: (userId: number, message: string) =>
+          emailClient.send(`user-${userId}@example.com`, message)
+      };
+    }),
+    dependencies: [EmailClient.Default]
+  }
+) {}
+
+// Create a program that uses the Notifier service
+const program = Effect.gen(function* () {
+  yield* Effect.log("Using default EmailClient implementation...");
+  const notifier = yield* Notifier;
+  yield* notifier.notifyUser(123, "Your invoice is ready.");
+
+  // Create mock EmailClient that logs differently
+  yield* Effect.log("\nUsing mock EmailClient implementation...");
+  const mockEmailClient = Layer.succeed(
+    EmailClient,
+    {
+      send: (address: string, body: string) =>
+        // Directly return the Effect.log without nesting it in Effect.sync
+        Effect.log(`MOCK: Would send to ${address} with body: ${body}`)
+    } as EmailClientService
+  );
+
+  // Run the same notification with mock client
+  yield* Effect.gen(function* () {
+    const notifier = yield* Notifier;
+    yield* notifier.notifyUser(123, "Your invoice is ready.");
+  }).pipe(
+    Effect.provide(mockEmailClient)
+  );
+});
+
+// Run the program
+Effect.runPromise(
+  Effect.provide(program, Notifier.Default)
+);
+```
+
+---
+
+**Explanation:**  
+The primary goal of a unit test is to verify the logic of a single unit of code, independent of its external dependencies. Effect's dependency injection system is designed to make this easy and type-safe.
+
+By providing a mock `Layer` in your test, you replace a real dependency (like an `HttpClient` that makes network calls) with a fake one that returns predictable data. This provides several key benefits:
+-   **Determinism:** Your tests always produce the same result, free from the flakiness of network or database connections.
+-   **Speed:** Tests run instantly without waiting for slow I/O operations.
+-   **Type Safety:** The TypeScript compiler ensures your mock implementation perfectly matches the real service's interface, preventing your tests from becoming outdated.
+-   **Explicitness:** The test setup clearly documents all the dependencies required for the code to run.
+
+---

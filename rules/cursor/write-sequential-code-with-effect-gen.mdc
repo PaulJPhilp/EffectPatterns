@@ -1,0 +1,172 @@
+description: Express sequential workflows ergonomically with Effect.gen
+globs: "**/*.ts"
+alwaysApply: false
+
+# Write Sequential Code with Effect.gen
+**Rule:** Write sequential code with Effect.gen.
+
+### Example
+```typescript
+import { Effect } from "effect";
+
+// Mock API functions for demonstration
+const fetchUser = (id: number) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo(`Fetching user ${id}...`);
+    // Simulate API call
+    yield* Effect.sleep("100 millis");
+    return { id, name: `User ${id}`, email: `user${id}@example.com` };
+  });
+
+const fetchUserPosts = (userId: number) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo(`Fetching posts for user ${userId}...`);
+    // Simulate API call
+    yield* Effect.sleep("150 millis");
+    return [
+      { id: 1, title: "First Post", userId },
+      { id: 2, title: "Second Post", userId },
+    ];
+  });
+
+const fetchPostComments = (postId: number) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo(`Fetching comments for post ${postId}...`);
+    // Simulate API call
+    yield* Effect.sleep("75 millis");
+    return [
+      { id: 1, text: "Great post!", postId },
+      { id: 2, text: "Thanks for sharing", postId },
+    ];
+  });
+
+// Example of sequential code with Effect.gen
+const getUserDataWithGen = (userId: number) =>
+  Effect.gen(function* () {
+    // Step 1: Fetch user
+    const user = yield* fetchUser(userId);
+    yield* Effect.logInfo(`✅ Got user: ${user.name}`);
+
+    // Step 2: Fetch user's posts (depends on user data)
+    const posts = yield* fetchUserPosts(user.id);
+    yield* Effect.logInfo(`✅ Got ${posts.length} posts`);
+
+    // Step 3: Fetch comments for first post (depends on posts data)
+    const firstPost = posts[0];
+    const comments = yield* fetchPostComments(firstPost.id);
+    yield* Effect.logInfo(
+      `✅ Got ${comments.length} comments for "${firstPost.title}"`
+    );
+
+    // Step 4: Combine all data
+    const result = {
+      user,
+      posts,
+      featuredPost: {
+        ...firstPost,
+        comments,
+      },
+    };
+
+    yield* Effect.logInfo("✅ Successfully combined all user data");
+    return result;
+  });
+
+// Example without Effect.gen (more complex)
+const getUserDataWithoutGen = (userId: number) =>
+  fetchUser(userId).pipe(
+    Effect.flatMap((user) =>
+      fetchUserPosts(user.id).pipe(
+        Effect.flatMap((posts) =>
+          fetchPostComments(posts[0].id).pipe(
+            Effect.map((comments) => ({
+              user,
+              posts,
+              featuredPost: {
+                ...posts[0],
+                comments,
+              },
+            }))
+          )
+        )
+      )
+    )
+  );
+
+// Demonstrate writing sequential code with gen
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("=== Writing Sequential Code with Effect.gen Demo ===");
+
+  // Example 1: Sequential operations with Effect.gen
+  yield* Effect.logInfo("\n1. Sequential operations with Effect.gen:");
+  const userData = yield* getUserDataWithGen(123).pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.logError(`Failed to get user data: ${error}`);
+        return null;
+      })
+    )
+  );
+
+  if (userData) {
+    yield* Effect.logInfo(
+      `Final result: User "${userData.user.name}" has ${userData.posts.length} posts`
+    );
+    yield* Effect.logInfo(
+      `Featured post: "${userData.featuredPost.title}" with ${userData.featuredPost.comments.length} comments`
+    );
+  }
+
+  // Example 2: Compare with traditional promise-like chaining
+  yield* Effect.logInfo("\n2. Same logic without Effect.gen (for comparison):");
+  const userData2 = yield* getUserDataWithoutGen(456).pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.logError(`Failed to get user data: ${error}`);
+        return null;
+      })
+    )
+  );
+
+  if (userData2) {
+    yield* Effect.logInfo(
+      `Result from traditional approach: User "${userData2.user.name}"`
+    );
+  }
+
+  // Example 3: Error handling in sequential code
+  yield* Effect.logInfo("\n3. Error handling in sequential operations:");
+  const errorHandling = yield* Effect.gen(function* () {
+    try {
+      const user = yield* fetchUser(999);
+      const posts = yield* fetchUserPosts(user.id);
+      return { user, posts };
+    } catch (error) {
+      yield* Effect.logError(`Error in sequential operations: ${error}`);
+      return null;
+    }
+  }).pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.logError(`Caught error: ${error}`);
+        return { user: null, posts: [] };
+      })
+    )
+  );
+
+  yield* Effect.logInfo(
+    `Error handling result: ${errorHandling ? "Success" : "Handled error"}`
+  );
+
+  yield* Effect.logInfo("\n✅ Sequential code demonstration completed!");
+  yield* Effect.logInfo(
+    "Effect.gen makes sequential async code look like synchronous code!"
+  );
+});
+
+Effect.runPromise(program);
+
+```
+
+**Explanation:**  
+`Effect.gen` allows you to write top-to-bottom code that is easy to read and maintain, even when chaining many asynchronous steps.

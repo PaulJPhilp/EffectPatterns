@@ -1,5 +1,0 @@
-timestamp=2025-07-08T02:31:58.362Z level=INFO fiber=#0 message="Running success effect..."
-timestamp=2025-07-08T02:31:58.363Z level=INFO fiber=#0 message="Success value: 42"
-timestamp=2025-07-08T02:31:58.363Z level=INFO fiber=#0 message="
-Running failure effect..."
-timestamp=2025-07-08T02:31:58.363Z level=INFO fiber=#0 message="Error occurred: MyError"

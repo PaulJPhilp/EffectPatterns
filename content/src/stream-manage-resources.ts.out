@@ -1,8 +1,0 @@
-=== Stream Resource Management Demo ===
-This demonstrates proper resource cleanup even when errors occur
-Processed: data 1
-Processed: data 2
-⚠️  Skipped line due to error: Failed to process line
-Processed: data 4
-✅ Processing completed with proper resource management
-✅ Resource cleaned up successfully

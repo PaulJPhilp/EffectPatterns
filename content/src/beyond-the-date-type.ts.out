@@ -1,8 +1,0 @@
-Login event: {
-  message: "User logged in",
-  timestamp: 1751941915145,
-}
-Logout event: {
-  message: "User logged out",
-  timestamp: 1751941915146,
-}

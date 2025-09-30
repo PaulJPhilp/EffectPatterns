@@ -1,0 +1,123 @@
+description: Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Handle Flaky Operations with Retries and Timeouts
+**Rule:** Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects.
+
+### Example
+This program attempts to fetch data from a flaky API. It will retry the request up to 3 times with increasing delays if it fails. It will also give up entirely if any single attempt takes longer than 2 seconds.
+
+```typescript
+import { Data, Duration, Effect, Schedule } from "effect";
+
+// Define domain types
+interface ApiResponse {
+  readonly data: string;
+}
+
+// Define error types
+class ApiError extends Data.TaggedError("ApiError")<{
+  readonly message: string;
+  readonly attempt: number;
+}> { }
+
+class TimeoutError extends Data.TaggedError("TimeoutError")<{
+  readonly duration: string;
+  readonly attempt: number;
+}> { }
+
+// Define API service
+class ApiService extends Effect.Service<ApiService>()(
+  "ApiService",
+  {
+    sync: () => ({
+      // Flaky API call that might fail or be slow
+      fetchData: (): Effect.Effect<ApiResponse, ApiError | TimeoutError> =>
+        Effect.gen(function* () {
+          const attempt = Math.floor(Math.random() * 5) + 1;
+          yield* Effect.logInfo(`Attempt ${attempt}: Making API call...`);
+
+          if (Math.random() > 0.3) {
+            yield* Effect.logWarning(`Attempt ${attempt}: API call failed`);
+            return yield* Effect.fail(new ApiError({
+              message: "API Error",
+              attempt
+            }));
+          }
+
+          const delay = Math.random() * 3000;
+          yield* Effect.logInfo(`Attempt ${attempt}: API call will take ${delay.toFixed(0)}ms`);
+
+          yield* Effect.sleep(Duration.millis(delay));
+
+          const response = { data: "some important data" };
+          yield* Effect.logInfo(`Attempt ${attempt}: API call succeeded with data: ${JSON.stringify(response)}`);
+          return response;
+        })
+    })
+  }
+) { }
+
+// Define retry policy: exponential backoff, up to 3 retries
+const retryPolicy = Schedule.exponential(Duration.millis(100)).pipe(
+  Schedule.compose(Schedule.recurs(3)),
+  Schedule.tapInput((error: ApiError | TimeoutError) =>
+    Effect.logWarning(`Retrying after error: ${error._tag} (Attempt ${error.attempt})`)
+  )
+);
+
+// Create program with proper error handling
+const program = Effect.gen(function* () {
+  const api = yield* ApiService;
+
+  yield* Effect.logInfo("=== Starting API calls with retry and timeout ===");
+
+  // Make multiple test calls
+  for (let i = 1; i <= 3; i++) {
+    yield* Effect.logInfo(`\n--- Test Call ${i} ---`);
+
+    const result = yield* api.fetchData().pipe(
+      Effect.timeout(Duration.seconds(2)),
+      Effect.catchTag("TimeoutException", () =>
+        Effect.fail(new TimeoutError({ duration: "2 seconds", attempt: i }))
+      ),
+      Effect.retry(retryPolicy),
+      Effect.catchTags({
+        ApiError: (error) =>
+          Effect.gen(function* () {
+            yield* Effect.logError(`All retries failed: ${error.message} (Last attempt: ${error.attempt})`);
+            return { data: "fallback data due to API error" } as ApiResponse;
+          }),
+        TimeoutError: (error) =>
+          Effect.gen(function* () {
+            yield* Effect.logError(`All retries timed out after ${error.duration} (Last attempt: ${error.attempt})`);
+            return { data: "fallback data due to timeout" } as ApiResponse;
+          })
+      })
+    );
+
+    yield* Effect.logInfo(`Result: ${JSON.stringify(result)}`);
+  }
+
+  yield* Effect.logInfo("\n=== API calls complete ===");
+});
+
+// Run the program
+Effect.runPromise(
+  Effect.provide(program, ApiService.Default)
+);
+```
+
+---
+
+**Explanation:**  
+In distributed systems, failure is normal. APIs can fail intermittently, and network latency can spike. Hard-coding your application to try an operation only once makes it brittle.
+
+-   **Retries:** The `Effect.retry` operator, combined with a `Schedule` policy, provides a powerful, declarative way to handle transient failures. Instead of writing complex `try/catch` loops, you can simply define a policy like "retry 3 times, with an exponential backoff delay between attempts."
+
+-   **Timeouts:** An operation might not fail, but instead hang indefinitely. `Effect.timeout` prevents this by racing your effect against a timer. If your effect doesn't complete within the specified duration, it is automatically interrupted, preventing your application from getting stuck.
+
+Combining these two patterns is a best practice for any interaction with an external service.
+
+---

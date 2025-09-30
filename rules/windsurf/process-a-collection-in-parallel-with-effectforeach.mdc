@@ -1,0 +1,69 @@
+description: Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Process a Collection in Parallel with Effect.forEach
+**Rule:** Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit.
+
+### Example
+Imagine you have a list of 100 user IDs and you need to fetch the data for each one. `Effect.forEach` with a concurrency of 10 will process them in controlled parallel batches.
+
+```typescript
+import { Clock, Effect } from "effect";
+
+// Mock function to simulate fetching a user by ID
+const fetchUserById = (id: number) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo(`Fetching user ${id}...`);
+    yield* Effect.sleep("1 second"); // Simulate network delay
+    return { id, name: `User ${id}`, email: `user${id}@example.com` };
+  });
+
+const userIds = Array.from({ length: 10 }, (_, i) => i + 1);
+
+// Process the entire array, but only run 5 fetches at a time.
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("Starting parallel processing...");
+
+  const startTime = yield* Clock.currentTimeMillis;
+  const users = yield* Effect.forEach(userIds, fetchUserById, {
+    concurrency: 5, // Limit to 5 concurrent operations
+  });
+  const endTime = yield* Clock.currentTimeMillis;
+
+  yield* Effect.logInfo(
+    `Processed ${users.length} users in ${endTime - startTime}ms`
+  );
+  yield* Effect.logInfo(
+    `First few users: ${JSON.stringify(users.slice(0, 3), null, 2)}`
+  );
+
+  return users;
+});
+
+// The result will be an array of all user objects.
+// The total time will be much less than running them sequentially.
+Effect.runPromise(program);
+
+```
+
+---
+
+### Anti-Pattern (Avoid)
+The anti-pattern is using `Effect.all` to process a large or dynamically-sized collection. This can lead to unpredictable and potentially catastrophic resource consumption.
+
+```typescript
+import { Effect } from "effect";
+import { userIds, fetchUserById } from "./somewhere"; // From previous example
+
+// ❌ DANGEROUS: This will attempt to start 100 concurrent network requests.
+// If userIds had 10,000 items, this could crash your application or get you blocked by an API.
+const program = Effect.all(userIds.map(fetchUserById));
+```
+
+**Explanation:**  
+Running `Effect.all` on a large array of tasks is dangerous. If you have 1,000 items, it will try to start 1,000 concurrent fibers at once, which can exhaust memory, overwhelm your CPU, or hit API rate limits.
+
+`Effect.forEach` with a concurrency limit solves this problem elegantly. It acts as a concurrent processing pool. It will start processing items up to your specified limit (e.g., 10 at a time). As soon as one task finishes, it will pick up the next available item from the list, ensuring that no more than 10 tasks are ever running simultaneously. This provides massive performance gains over sequential processing while maintaining stability and control.
+
+---

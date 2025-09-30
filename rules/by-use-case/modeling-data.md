@@ -1,9 +1,11 @@
-# Modeling Data Rules
+# Modeling Data Patterns
 
 ## Comparing Data by Value with Structural Equality
-**Rule:** Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
+
+Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
 
 ### Example
+
 We define two points using `Data.struct`. Even though `p1` and `p2` are different instances in memory, `Equal.equals` correctly reports them as equal because their contents match.
 
 ```typescript
@@ -43,6 +45,8 @@ const program = Effect.gen(function* () {
 // Run the program
 Effect.runPromise(program);
 ```
+
+---
 
 ---
 

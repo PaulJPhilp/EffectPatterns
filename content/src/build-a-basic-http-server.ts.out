@@ -1,2 +1,0 @@
-timestamp=2025-07-08T02:31:55.465Z level=INFO fiber=#1 message="Server starting on http://localhost:3001"
-timestamp=2025-07-08T02:31:57.478Z level=INFO fiber=#1 message="Server shutdown complete"

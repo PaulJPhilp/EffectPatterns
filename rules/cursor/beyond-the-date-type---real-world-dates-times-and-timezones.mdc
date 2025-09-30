@@ -1,0 +1,61 @@
+description: Use the Clock service for testable time-based logic and immutable primitives for timestamps.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Beyond the Date Type - Real World Dates, Times, and Timezones
+**Rule:** Use the Clock service for testable time-based logic and immutable primitives for timestamps.
+
+### Example
+This example shows a function that creates a timestamped event. It depends on the `Clock` service, making it fully testable.
+
+```typescript
+import { Effect, Clock } from "effect";
+import type * as Types from "effect/Clock";
+
+interface Event {
+  readonly message: string;
+  readonly timestamp: number; // Store as a primitive number (UTC millis)
+}
+
+// This function is pure and testable because it depends on Clock
+const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> =>
+  Effect.gen(function* () {
+    const timestamp = yield* Clock.currentTimeMillis;
+    return { message, timestamp };
+  });
+
+// Create and log some events
+const program = Effect.gen(function* () {
+  const loginEvent = yield* createEvent("User logged in");
+  yield* Effect.log("Login event:", loginEvent);
+
+  const logoutEvent = yield* createEvent("User logged out");
+  yield* Effect.log("Logout event:", logoutEvent);
+});
+
+// Run the program
+const programWithErrorHandling = program.pipe(
+  Effect.provideService(Clock.Clock, Clock.make()),
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithErrorHandling);
+```
+
+---
+
+**Explanation:**  
+JavaScript's native `Date` object is a common source of bugs. It is mutable, its behavior can be inconsistent across different JavaScript environments (especially with timezones), and its reliance on the system clock makes time-dependent logic difficult to test.
+
+Effect's approach solves these problems:
+-   The **`Clock` service** abstracts away the concept of "now." In production, the `Live` clock uses the system time. In tests, you can provide a `TestClock` that gives you complete, deterministic control over the passage of time.
+-   Using **primitive `number` or `string`** for timestamps ensures immutability and makes your data easy to serialize, store, and transfer.
+
+This makes your time-based logic pure, predictable, and easy to test.
+
+---

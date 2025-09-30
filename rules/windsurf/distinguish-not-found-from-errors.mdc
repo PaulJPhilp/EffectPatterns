@@ -1,0 +1,93 @@
+description: Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Distinguish 'Not Found' from Errors
+**Rule:** Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.
+
+### Example
+This function to find a user can fail if the database is down, or it can succeed but find no user. The return type ``Effect.Effect<Option.Option<User>, DatabaseError>`` makes this contract perfectly clear.
+
+````typescript
+import { Effect, Option, Data } from "effect"
+
+interface User {
+  id: number
+  name: string
+}
+class DatabaseError extends Data.TaggedError("DatabaseError") {}
+
+// This signature is extremely honest about its possible outcomes.
+const findUserInDb = (
+  id: number
+): Effect.Effect<Option.Option<User>, DatabaseError> =>
+  Effect.gen(function* () {
+    // This could fail with a DatabaseError
+    const dbResult = yield* Effect.try({
+      try: () => (id === 1 ? { id: 1, name: "Paul" } : null),
+      catch: () => new DatabaseError()
+    })
+
+    // We wrap the potentially null result in an Option
+    return Option.fromNullable(dbResult)
+  })
+
+// The caller can now handle all three cases explicitly.
+const program = (id: number) =>
+  findUserInDb(id).pipe(
+    Effect.flatMap((maybeUser) =>
+      Option.match(maybeUser, {
+        onNone: () =>
+          Effect.logInfo(`Result: User with ID ${id} was not found.`),
+        onSome: (user) =>
+          Effect.logInfo(`Result: Found user ${user.name}.`)
+      })
+    ),
+    Effect.catchAll((error) =>
+      Effect.logInfo("Error: Could not connect to the database.")
+    )
+  )
+
+// Run the program with different IDs
+Effect.runPromise(
+  Effect.gen(function* () {
+    // Try with existing user
+    yield* Effect.logInfo("Looking for user with ID 1...")
+    yield* program(1)
+
+    // Try with non-existent user
+    yield* Effect.logInfo("\nLooking for user with ID 2...")
+    yield* program(2)
+  })
+)
+````
+
+### Anti-Pattern (Avoid)
+A common alternative is to create a specific NotFoundError and put it in the error channel alongside other errors.
+
+````typescript
+class NotFoundError extends Data.TaggedError("NotFoundError") {}
+	
+	// ❌ This signature conflates two different kinds of failure.
+	const findUserUnsafely = (
+	  id: number,
+	): Effect.Effect<User, DatabaseError | NotFoundError> => {
+	  // ...
+	  return Effect.fail(new NotFoundError());
+	};
+````
+
+While this works, it can be less expressive. It treats a "not found" result—which might be a normal part of your application's flow—the same as a catastrophic DatabaseError. 
+
+Using ````Effect<Option<A>>```` often leads to clearer and more precise business logic.
+
+**Explanation:**  
+This pattern provides a precise way to handle three distinct outcomes of an operation:
+
+1.  **Success with a value:** `Effect.succeed(Option.some(value))`
+2.  **Success with no value:** `Effect.succeed(Option.none())` (e.g., user not found)
+3.  **Failure:** `Effect.fail(new DatabaseError())` (e.g., database connection lost)
+
+By using `Option` inside the success channel of an `Effect`, you keep the error channel clean for true, unexpected, or unrecoverable errors. The "not found" case is often an expected and recoverable part of your business logic, and `Option.none()` models this perfectly.
+
+---

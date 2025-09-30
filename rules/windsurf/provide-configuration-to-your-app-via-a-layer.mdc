@@ -1,0 +1,45 @@
+description: Provide configuration to your app via a Layer.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Provide Configuration to Your App via a Layer
+**Rule:** Provide configuration to your app via a Layer.
+
+### Example
+````typescript
+import { Effect, Layer } from "effect";
+
+class ServerConfig extends Effect.Service<ServerConfig>()(
+  "ServerConfig",
+  {
+    sync: () => ({
+      port: process.env.PORT ? parseInt(process.env.PORT) : 8080
+    })
+  }
+) {}
+
+const program = Effect.gen(function* () {
+  const config = yield* ServerConfig;
+  yield* Effect.log(`Starting application on port ${config.port}...`);
+});
+
+const programWithErrorHandling = Effect.provide(program, ServerConfig.Default).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithErrorHandling);
+````
+
+**Explanation:**  
+This approach makes configuration available contextually, supporting better testing and modularity.
+
+### Anti-Pattern (Avoid)
+Manually reading environment variables deep inside business logic. This tightly couples that logic to the external environment, making it difficult to test and reuse.
+
+**Explanation:**  
+Integrating configuration as a `Layer` plugs it directly into Effect's dependency injection system. This makes your configuration available anywhere in the program and dramatically simplifies testing by allowing you to substitute mock configuration.

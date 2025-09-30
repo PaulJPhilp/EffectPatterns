@@ -1,0 +1,47 @@
+description: Model dependencies as services.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Model Dependencies as Services
+**Rule:** Model dependencies as services.
+
+### Example
+```typescript
+import { Effect } from "effect";
+
+// Define Random service with production implementation as default
+export class Random extends Effect.Service<Random>()(
+  "Random",
+  {
+    // Default production implementation
+    sync: () => ({
+      next: Effect.sync(() => Math.random())
+    })
+  }
+) {}
+
+// Example usage
+const program = Effect.gen(function* () {
+  const random = yield* Random;
+  const value = yield* random.next;
+  return value;
+});
+
+// Run with default implementation
+const programWithLogging = Effect.gen(function* () {
+  const value = yield* Effect.provide(program, Random.Default);
+  yield* Effect.log(`Random value: ${value}`);
+  return value;
+});
+
+Effect.runPromise(programWithLogging);
+```
+
+**Explanation:**  
+By modeling dependencies as services, you can easily substitute mocked or deterministic implementations for testing, leading to more reliable and predictable tests.
+
+### Anti-Pattern (Avoid)
+Directly calling external APIs like `fetch` or using impure functions like `Math.random()` within your business logic. This tightly couples your logic to a specific implementation and makes it difficult to test.
+
+**Explanation:**  
+This pattern is the key to testability. It allows you to provide a `Live` implementation in production and a `Test` implementation (returning mock data) in your tests, making your code decoupled and reliable.

@@ -1,0 +1,143 @@
+description: Organize services into modular Layers that are composed hierarchically to manage complexity in large applications.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Organize Layers into Composable Modules
+**Rule:** Organize services into modular Layers that are composed hierarchically to manage complexity in large applications.
+
+### Example
+This example shows a `BaseLayer` with a `Logger`, a `UserModule` that uses the `Logger`, and a final `AppLayer` that wires them together.
+
+### 1. The Base Infrastructure Layer
+
+```typescript
+// src/core/Logger.ts
+import { Effect } from "effect";
+
+export class Logger extends Effect.Service<Logger>()(
+  "App/Core/Logger",
+  {
+    sync: () => ({
+      log: (msg: string) => Effect.log(`[LOG] ${msg}`)
+    })
+  }
+) {}
+
+// src/features/User/UserRepository.ts
+export class UserRepository extends Effect.Service<UserRepository>()(
+  "App/User/UserRepository",
+  {
+    // Define implementation that uses Logger
+    effect: Effect.gen(function* () {
+      const logger = yield* Logger;
+      return {
+        findById: (id: number) =>
+          Effect.gen(function* () {
+            yield* logger.log(`Finding user ${id}`);
+            return { id, name: `User ${id}` };
+          })
+      };
+    }),
+    // Declare Logger dependency
+    dependencies: [Logger.Default]
+  }
+) {}
+
+// Example usage
+const program = Effect.gen(function* () {
+  const repo = yield* UserRepository;
+  const user = yield* repo.findById(1);
+  return user;
+});
+
+// Run with default implementations
+Effect.runPromise(
+  Effect.provide(
+    program,
+    UserRepository.Default
+  )
+);
+
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Program result: ${JSON.stringify(result)}`);
+  return result;
+});
+
+Effect.runPromise(Effect.provide(programWithLogging, UserRepository.Default));
+```
+
+### 2. The Feature Module Layer
+
+```typescript
+// src/core/Logger.ts
+import { Effect } from "effect";
+
+export class Logger extends Effect.Service<Logger>()(
+  "App/Core/Logger",
+  {
+    sync: () => ({
+      log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`))
+    })
+  }
+) {}
+
+// src/features/User/UserRepository.ts
+export class UserRepository extends Effect.Service<UserRepository>()(
+  "App/User/UserRepository",
+  {
+    // Define implementation that uses Logger
+    effect: Effect.gen(function* () {
+      const logger = yield* Logger;
+      return {
+        findById: (id: number) =>
+          Effect.gen(function* () {
+            yield* logger.log(`Finding user ${id}`);
+            return { id, name: `User ${id}` };
+          })
+      };
+    }),
+    // Declare Logger dependency
+    dependencies: [Logger.Default]
+  }
+) {}
+
+// Example usage
+const program = Effect.gen(function* () {
+  const repo = yield* UserRepository;
+  const user = yield* repo.findById(1);
+  return user;
+});
+
+// Run with default implementations
+Effect.runPromise(
+  Effect.provide(
+    program,
+    UserRepository.Default
+  )
+).then(console.log);
+```
+
+### 3. The Final Application Composition
+
+```typescript
+// src/layers.ts
+import { Layer } from "effect";
+import { BaseLayer } from "./core";
+import { UserModuleLive } from "./features/User";
+// import { ProductModuleLive } from "./features/Product";
+
+const AllModules = Layer.mergeAll(UserModuleLive /*, ProductModuleLive */);
+
+// Provide the BaseLayer to all modules at once, creating a self-contained AppLayer.
+export const AppLayer = Layer.provide(AllModules, BaseLayer);
+```
+
+---
+
+**Explanation:**  
+As an application grows, a flat composition strategy where all services are merged into one giant layer becomes unwieldy and hard to reason about. The Composable Modules pattern solves this by introducing structure.
+
+This approach creates a clean, scalable, and highly testable architecture where complexity is contained within each module. The top-level composition becomes a clear, high-level diagram of your application's architecture, and feature modules can be tested in isolation by providing them with a mocked `BaseLayer`.
+
+---

@@ -1,0 +1,49 @@
+description: Use the auto-generated .Default layer in tests.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Use the Auto-Generated .Default Layer in Tests
+**Rule:** Use the auto-generated .Default layer in tests.
+
+### Example
+```typescript
+import { Effect } from "effect";
+
+// Define MyService using Effect.Service pattern
+class MyService extends Effect.Service<MyService>()(
+  "MyService",
+  {
+    sync: () => ({
+      doSomething: () => 
+        Effect.succeed("done").pipe(
+          Effect.tap(() => Effect.log("MyService did something!"))
+        )
+    })
+  }
+) {}
+
+// Create a program that uses MyService
+const program = Effect.gen(function* () {
+  yield* Effect.log("Getting MyService...");
+  const service = yield* MyService;
+  
+  yield* Effect.log("Calling doSomething()...");
+  const result = yield* service.doSomething();
+  
+  yield* Effect.log(`Result: ${result}`);
+});
+
+// Run the program with default service implementation
+Effect.runPromise(
+  Effect.provide(program, MyService.Default)
+);
+```
+
+**Explanation:**  
+This approach ensures your tests are idiomatic, maintainable, and take full advantage of Effect's dependency injection system.
+
+### Anti-Pattern (Avoid)
+Do not create manual layers for your service in tests (`Layer.succeed(...)`) or try to provide the service class directly. This bypasses the intended dependency injection mechanism.
+
+**Explanation:**  
+The `.Default` layer is the canonical way to provide a service in a test environment. It's automatically created, correctly scoped, and handles resolving any transitive dependencies, making tests cleaner and more robust.

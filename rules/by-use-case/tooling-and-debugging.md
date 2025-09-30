@@ -1,9 +1,11 @@
-# Tooling and Debugging Rules
+# Tooling and Debugging Patterns
 
 ## Supercharge Your Editor with the Effect LSP
-**Rule:** Install and use the Effect LSP extension for enhanced type information and error checking in your editor.
+
+Install and use the Effect LSP extension for enhanced type information and error checking in your editor.
 
 ### Example
+
 Imagine you have the following code. Without the LSP, hovering over `program` might show a complex, hard-to-read inferred type.
 
 ```typescript
@@ -14,7 +16,7 @@ class Logger extends Effect.Service<Logger>()(
   "Logger",
   {
     sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`LOG: ${msg}`))
+      log: (msg: string) => Effect.log(`LOG: ${msg}`)
     })
   }
 ) {}
@@ -40,10 +42,14 @@ This immediately tells you that the final program returns nothing (`void`), has 
 
 ---
 
+---
+
 ## Teach your AI Agents Effect with the MCP Server
-**Rule:** Use the MCP server to provide live application context to AI coding agents, enabling more accurate assistance.
+
+Use the MCP server to provide live application context to AI coding agents, enabling more accurate assistance.
 
 ### Example
+
 The "Good Example" is the workflow this pattern enables.
 
 1.  **You run the MCP server** in your terminal, pointing it at your main `AppLayer`.
@@ -65,14 +71,17 @@ The "Good Example" is the workflow this pattern enables.
 ```typescript
 // The AI generates this correct code:
 import { Effect } from "effect";
-import { UserService } from "./features/User/UserService";
+import { UserService } from "./features/User/UserService.js";
 const program = Effect.gen(function* () {
   const userService = yield* UserService;
 
   const user = yield* userService.getUser("123");
   yield* Effect.log(`Found user: ${user.name}`);
 });
+
 ```
+
+---
 
 ---
 

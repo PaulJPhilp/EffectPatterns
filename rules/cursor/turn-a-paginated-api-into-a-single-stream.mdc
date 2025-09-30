@@ -1,0 +1,101 @@
+description: Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Turn a Paginated API into a Single Stream
+**Rule:** Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.
+
+### Example
+This example simulates fetching users from a paginated API. The `fetchUsersPage` function gets one page of data and returns the next page number. `Stream.paginateEffect` uses this function to create a single stream of all users across all pages.
+
+```typescript
+import { Effect, Stream, Chunk, Option } from 'effect';
+
+// --- Mock Paginated API ---
+interface User {
+  id: number;
+  name: string;
+}
+
+// Define FetchError as a class with a literal type tag
+class FetchError {
+  readonly _tag = 'FetchError' as const;
+  constructor(readonly message: string) {}
+}
+
+// Helper to create FetchError instances
+const fetchError = (message: string): FetchError => new FetchError(message);
+
+const allUsers: User[] = Array.from({ length: 25 }, (_, i) => ({
+  id: i + 1,
+  name: `User ${i + 1}`,
+}));
+
+// This function simulates fetching a page of users from an API.
+const fetchUsersPage = (
+  page: number
+): Effect.Effect<[Chunk.Chunk<User>, Option.Option<number>], FetchError> =>
+  Effect.gen(function* () {
+    const pageSize = 10;
+    const offset = (page - 1) * pageSize;
+
+    // Simulate potential API errors
+    if (page < 1) {
+      return yield* Effect.fail(fetchError('Invalid page number'));
+    }
+
+    const users = Chunk.fromIterable(allUsers.slice(offset, offset + pageSize));
+
+    const nextPage =
+      Chunk.isNonEmpty(users) && allUsers.length > offset + pageSize
+        ? Option.some(page + 1)
+        : Option.none();
+
+    yield* Effect.log(`Fetched page ${page}`);
+    return [users, nextPage];
+  });
+
+// --- The Pattern ---
+// Use paginateEffect, providing an initial state (page 1) and the fetch function.
+const userStream = Stream.paginateEffect(1, fetchUsersPage);
+
+const program = userStream.pipe(
+  Stream.runCollect,
+  Effect.map((users) => users.length),
+  Effect.tap((totalUsers) => 
+    Effect.log(`Total users fetched: ${totalUsers}`)
+  ),
+  Effect.catchTag('FetchError', (error) => 
+    Effect.succeed(`Error fetching users: ${error.message}`)
+  )
+);
+
+// Run the program
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Program result: ${result}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
+
+/*
+Output:
+... level=INFO msg="Fetched page 1"
+... level=INFO msg="Fetched page 2"
+... level=INFO msg="Fetched page 3"
+... level=INFO msg="Total users fetched: 25"
+25
+*/
+```
+
+**Explanation:**  
+Calling paginated APIs is a classic programming challenge. It often involves writing complex, stateful, and imperative code with manual loops to fetch one page, check if there's a next page, fetch that page, and so on, all while accumulating the results. This logic is tedious to write and easy to get wrong.
+
+`Stream.paginateEffect` elegantly solves this by declaratively modeling the pagination process:
+
+1.  **Declarative and Stateless**: You provide a function that knows how to fetch a single page, and the `Stream` handles the looping, state management (the current page token/number), and termination logic for you. Your business logic remains clean and stateless.
+2.  **Lazy and Efficient**: The stream fetches pages on demand as they are consumed. If a downstream consumer only needs the first 20 items, the stream will only make enough API calls to satisfy that need, rather than wastefully fetching all pages upfront.
+3.  **Fully Composable**: The result is a standard `Stream`. This means you can pipe the continuous flow of items directly into other powerful operators like `mapEffect` for concurrent processing or `grouped` for batching, without ever thinking about page boundaries again.
+
+---

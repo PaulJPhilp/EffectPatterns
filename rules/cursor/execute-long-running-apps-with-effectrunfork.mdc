@@ -1,0 +1,44 @@
+description: Use Effect.runFork to launch a long-running application as a manageable, detached fiber.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Execute Long-Running Apps with Effect.runFork
+**Rule:** Use Effect.runFork to launch a long-running application as a manageable, detached fiber.
+
+### Example
+This example starts a simple "server" that runs forever. We use `runFork` to launch it and then use the returned `Fiber` to shut it down gracefully after 5 seconds.
+
+```typescript
+import { Effect, Fiber } from "effect";
+
+// A server that listens for requests forever
+const server = Effect.log("Server received a request.").pipe(
+  Effect.delay("1 second"),
+  Effect.forever,
+);
+
+Effect.runSync(Effect.log("Starting server..."));
+
+// Launch the server as a detached, top-level fiber
+const appFiber = Effect.runFork(server);
+
+// In a real app, you would listen for OS signals.
+// Here, we simulate a shutdown signal after 5 seconds.
+setTimeout(() => {
+  const shutdownProgram = Effect.gen(function* () {
+    yield* Effect.log("Shutdown signal received. Interrupting server fiber...");
+    // This ensures all cleanup logic within the server effect would run.
+    yield* Fiber.interrupt(appFiber);
+  });
+  Effect.runPromise(shutdownProgram);
+}, 5000);
+```
+
+---
+
+**Explanation:**  
+Unlike `Effect.runPromise`, which waits for the effect to complete, `Effect.runFork` starts the effect and immediately returns a `Fiber`. This is the ideal way to run an application that is meant to run forever, because it gives you a handle to the process.
+
+The most critical use case for this is enabling graceful shutdown. You can start your application with `runFork`, and then set up listeners for OS signals (like `SIGINT` for Ctrl+C). When a shutdown signal is received, you call `Fiber.interrupt` on the application fiber, which guarantees that all finalizers (like closing database connections) are run before the process exits.
+
+---

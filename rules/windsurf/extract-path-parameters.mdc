@@ -1,0 +1,138 @@
+description: Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Extract Path Parameters
+**Rule:** Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler.
+
+### Example
+This example defines a route that captures a `userId`. The handler for this route accesses the parsed parameters and uses the `userId` to construct a personalized greeting. The router automatically makes the parameters available to the handler.
+
+```typescript
+import { Data, Effect } from 'effect'
+
+// Define tagged error for invalid paths
+interface InvalidPathErrorSchema {
+  readonly _tag: "InvalidPathError"
+  readonly path: string
+}
+
+const makeInvalidPathError = (path: string): InvalidPathErrorSchema => ({
+  _tag: "InvalidPathError",
+  path
+})
+
+// Define service interface
+interface PathOps {
+  readonly extractUserId: (path: string) => Effect.Effect<string, InvalidPathErrorSchema>
+  readonly greetUser: (userId: string) => Effect.Effect<string>
+}
+
+// Create service
+class PathService extends Effect.Service<PathService>()(
+  "PathService",
+  {
+    sync: () => ({
+      extractUserId: (path: string) =>
+        Effect.gen(function* () {
+          yield* Effect.logInfo(`Attempting to extract user ID from path: ${path}`)
+          
+          const match = path.match(/\/users\/([^/]+)/);
+          if (!match) {
+            yield* Effect.logInfo(`No user ID found in path: ${path}`)
+            return yield* Effect.fail(makeInvalidPathError(path))
+          }
+          
+          const userId = match[1];
+          yield* Effect.logInfo(`Successfully extracted user ID: ${userId}`)
+          return userId
+        }),
+
+      greetUser: (userId: string) =>
+        Effect.gen(function* () {
+          const greeting = `Hello, user ${userId}!`
+          yield* Effect.logInfo(greeting)
+          return greeting
+        })
+    })
+  }
+) {}
+
+// Compose the functions with proper error handling
+const processPath = (path: string): Effect.Effect<string, InvalidPathErrorSchema, PathService> =>
+  Effect.gen(function* () {
+    const pathService = yield* PathService
+    yield* Effect.logInfo(`Processing path: ${path}`)
+    const userId = yield* pathService.extractUserId(path)
+    return yield* pathService.greetUser(userId)
+  })
+
+// Run examples with proper error handling
+const program = Effect.gen(function* () {
+  // Test valid paths
+  yield* Effect.logInfo("=== Testing valid paths ===")
+  const result1 = yield* processPath('/users/123')
+  yield* Effect.logInfo(`Result 1: ${result1}`)
+  
+  const result2 = yield* processPath('/users/abc')
+  yield* Effect.logInfo(`Result 2: ${result2}`)
+  
+  // Test invalid path
+  yield* Effect.logInfo("\n=== Testing invalid path ===")
+  const result3 = yield* processPath('/invalid/path').pipe(
+    Effect.catchTag("InvalidPathError", (error) =>
+      Effect.succeed(`Error: Invalid path ${error.path}`)
+    )
+  )
+  yield* Effect.logInfo(result3)
+})
+
+Effect.runPromise(
+  Effect.provide(program, PathService.Default)
+)
+```
+
+### Anti-Pattern (Avoid)
+The anti-pattern is to manually parse the URL string inside the handler. This approach is brittle, imperative, and mixes concerns.
+
+```typescript
+import { Effect } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+// This route matches any sub-path of /users/, forcing manual parsing.
+const app = Http.router.get(
+  '/users/*', // Using a wildcard
+  Http.request.ServerRequest.pipe(
+    Effect.flatMap((req) => {
+      // Manually split the URL to find the ID.
+      const parts = req.url.split('/'); // e.g., ['', 'users', '123']
+      if (parts.length === 3 && parts[2]) {
+        const userId = parts[2];
+        return Http.response.text(`Hello, user ${userId}!`);
+      }
+      // Manual handling for missing ID.
+      return Http.response.empty({ status: 404 });
+    })
+  )
+);
+
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This manual method is highly discouraged. It's fragile—a change in the base path or an extra slash could break the logic (`parts[2]`). It's also not declarative; the intent is hidden inside imperative code. The router's built-in parameter handling is safer, clearer, and the correct approach.
+
+**Explanation:**  
+APIs often need to operate on specific resources identified by a unique key in the URL, such as `/products/123` or `/orders/abc`. The `Http.router` provides a clean, declarative way to handle these dynamic paths without resorting to manual string parsing.
+
+By defining parameters directly in the path string, you gain several benefits:
+
+1.  **Declarative**: The route's structure is immediately obvious from its definition. The code clearly states, "this route expects a dynamic segment here."
+2.  **Safe and Robust**: The router handles the logic of extracting the parameter. This is less error-prone and more robust than manually splitting or using regular expressions on the URL string.
+3.  **Clean Handler Logic**: The business logic inside your handler is separated from the concern of URL parsing. The handler simply receives the parameters it needs to do its job.
+4.  **Composability**: This pattern composes perfectly with the rest of the `Http` module, allowing you to build complex and well-structured APIs.
+
+---

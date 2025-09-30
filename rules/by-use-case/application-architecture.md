@@ -1,9 +1,11 @@
-# Application Architecture Rules
+# Application Architecture Patterns
 
 ## Compose Resource Lifecycles with `Layer.merge`
-**Rule:** Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.
+
+Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.
 
 ### Example
+
 ```typescript
 import { Effect, Layer, Console } from "effect";
 
@@ -49,8 +51,8 @@ const program = Effect.gen(function* () {
   const dbResult = yield* db.query("SELECT *");
   const apiResult = yield* api.fetch("/users");
 
-  yield* Console.log(dbResult);
-  yield* Console.log(apiResult);
+  yield* Effect.log(dbResult);
+  yield* Effect.log(apiResult);
 });
 
 // Provide the combined layer to the program.
@@ -70,10 +72,14 @@ Database pool closed
 **Explanation:**
 We define two completely independent services, `Database` and `ApiClient`, each with its own resource lifecycle. By combining them with `Layer.merge`, we create a single `AppLayer`. When `program` runs, Effect acquires the resources for both layers. When `program` finishes, Effect closes the application's scope, releasing the resources in the reverse order they were acquired (`ApiClient` then `Database`), ensuring a clean and predictable shutdown.
 
+---
+
 ## Create a Service Layer from a Managed Resource
-**Rule:** Provide a managed resource to the application context using `Layer.scoped`.
+
+Provide a managed resource to the application context using `Layer.scoped`.
 
 ### Example
+
 ```typescript
 import { Effect, Console } from "effect";
 
@@ -91,12 +97,10 @@ class Database extends Effect.Service<DatabaseService>()(
       const id = Math.floor(Math.random() * 1000);
       
       // Acquire the connection
-      yield* Console.log(`[Pool ${id}] Acquired`);
+      yield* Effect.log(`[Pool ${id}] Acquired`);
       
       // Setup cleanup to run when scope closes
-      yield* Effect.addFinalizer(() => 
-        Console.log(`[Pool ${id}] Released`)
-      );
+      yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
       
       // Return the service implementation
       return {
@@ -112,7 +116,7 @@ class Database extends Effect.Service<DatabaseService>()(
 const program = Effect.gen(function* () {
   const db = yield* Database;
   const users = yield* db.query("SELECT * FROM users");
-  yield* Console.log(`Query successful: ${users[0]}`);
+  yield* Effect.log(`Query successful: ${users[0]}`);
 });
 
 // 4. Run the program with scoped resource management
@@ -131,5 +135,7 @@ Query successful: Result for 'SELECT * FROM users' from pool 458
 ```
 
 **Explanation:**
-The `Effect.Service` helper creates the `Database` class with a `scoped` implementation. When `program` asks for the `Database` service, the Effect runtime creates a new connection pool, logs the acquisition, and automatically releases it when the scope closes. The `scoped` implementation ensures proper resource lifecycle management - the pool is acquired when first needed and released when the scope ends.
+The `Effect.Service` helper creates the `Database` class, which acts as both the service definition and its context key (Tag). The `Database.Live` layer connects this service to a concrete, lifecycle-managed implementation. When `program` asks for the `Database` service, the Effect runtime uses the `Live` layer to run the `acquire` effect once, caches the resulting `DbPool`, and injects it. The `release` effect is automatically run when the program completes.
+
+---
 

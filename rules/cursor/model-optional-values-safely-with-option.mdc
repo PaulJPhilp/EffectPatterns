@@ -1,0 +1,52 @@
+description: Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Model Optional Values Safely with Option
+**Rule:** Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
+
+### Example
+A function that looks for a user in a database is a classic use case. It might find a user, or it might not. Returning an `Option<User>` makes this contract explicit and safe.
+
+```typescript
+import { Effect, Option } from "effect";
+
+interface User {
+  id: number;
+  name: string;
+}
+
+const users: User[] = [
+  { id: 1, name: "Paul" },
+  { id: 2, name: "Alex" },
+];
+
+// This function safely returns an Option, not a User or null.
+const findUserById = (id: number): Option.Option<User> => {
+  const user = users.find((u) => u.id === id);
+  return Option.fromNullable(user); // A useful helper for existing APIs
+};
+
+// The caller MUST handle both cases.
+const greeting = (id: number): string =>
+  findUserById(id).pipe(
+    Option.match({
+      onNone: () => "User not found.",
+      onSome: (user) => `Welcome, ${user.name}!`,
+    }),
+  );
+
+const program = Effect.gen(function* () {
+  yield* Effect.log(greeting(1)); // "Welcome, Paul!"
+  yield* Effect.log(greeting(3)); // "User not found."
+});
+
+Effect.runPromise(program);
+```
+
+**Explanation:**  
+Functions that can return a value or `null`/`undefined` are a primary source of runtime errors in TypeScript (`Cannot read properties of null`).
+
+The `Option` type solves this by making the possibility of an absent value explicit in the type system. A function that returns `Option<User>` cannot be mistaken for a function that returns `User`. The compiler forces you to handle the `None` case before you can access the value inside a `Some`, eliminating an entire class of bugs.
+
+---

@@ -1,0 +1,77 @@
+description: Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Understand Fibers as Lightweight Threads
+**Rule:** Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.
+
+### Example
+This program demonstrates the efficiency of fibers by forking 100,000 of them. Each fiber does a small amount of work (sleeping for 1 second). Trying to do this with 100,000 OS threads would instantly crash any system.
+
+```typescript
+import { Effect, Fiber } from "effect";
+
+const program = Effect.gen(function* () {
+  // Demonstrate the lightweight nature of fibers by creating 100,000 of them
+  // This would be impossible with OS threads due to memory and context switching overhead
+  const fiberCount = 100_000;
+  yield* Effect.log(`Forking ${fiberCount} fibers...`);
+
+  // Create an array of 100,000 simple effects
+  // Each effect sleeps for 1 second and then returns its index
+  // This simulates lightweight concurrent tasks
+  const tasks = Array.from({ length: fiberCount }, (_, i) =>
+    Effect.sleep("1 second").pipe(Effect.as(i))
+  );
+
+  // Fork all of them into background fibers
+  // Effect.fork creates a new fiber for each task without blocking
+  // This demonstrates fiber creation scalability - 100k fibers created almost instantly
+  // Each fiber is much lighter than an OS thread (typically ~1KB vs ~8MB per thread)
+  const fibers = yield* Effect.forEach(tasks, Effect.fork);
+
+  yield* Effect.log(
+    "All fibers have been forked. Now waiting for them to complete..."
+  );
+
+  // Wait for all fibers to finish their work
+  // Fiber.joinAll waits for all fibers to complete and collects their results
+  // This demonstrates fiber coordination - managing thousands of concurrent operations
+  // The runtime efficiently schedules these fibers using a work-stealing thread pool
+  const results = yield* Fiber.joinAll(fibers);
+
+  yield* Effect.log(`All ${results.length} fibers have completed.`);
+
+  // Key insights from this example:
+  // 1. Fibers are extremely lightweight - 100k fibers use minimal memory
+  // 2. Fiber creation is fast - no expensive OS thread allocation
+  // 3. The Effect runtime efficiently schedules fibers across available CPU cores
+  // 4. Fibers can be suspended and resumed without blocking OS threads
+  // 5. This enables massive concurrency for I/O-bound operations
+});
+
+// This program runs successfully, demonstrating the low overhead of fibers.
+// Try running this with OS threads - you'd likely hit system limits around 1000-10000 threads
+// With fibers, 100k+ concurrent operations are easily achievable
+Effect.runPromise(program);
+
+```
+
+---
+
+### Anti-Pattern (Avoid)
+The anti-pattern is thinking that a `Fiber` is the same as an OS thread. This can lead to incorrect assumptions about performance and behavior.
+
+-   **Don't assume parallelism on CPU-bound tasks:** In a standard Node.js environment, all fibers run on a single OS thread. If you run 10 CPU-intensive tasks on 10 fibers, they will not run in parallel on 10 different CPU cores. They will share time on the single main thread. Fibers provide massive concurrency for I/O-bound tasks (like network requests), not CPU-bound parallelism.
+-   **Don't worry about blocking:** A `Fiber` that is "sleeping" or waiting for I/O (like `Effect.sleep` or a `fetch` request) does not block the underlying OS thread. The Effect runtime simply puts it aside and uses the thread to run other ready fibers.
+
+**Explanation:**  
+In traditional multi-threaded programming, each thread is managed by the operating system, consumes significant memory (for its stack), and involves expensive context switching. This limits the number of concurrent threads you can realistically create.
+
+Effect's `Fiber`s are different. They are managed entirely by the Effect runtime, not the OS. They are incredibly lightweight data structures that don't have their own OS thread stack. The Effect runtime uses a cooperative scheduling mechanism to run many fibers on a small pool of OS threads (often just one in Node.js).
+
+This model, known as M:N threading (M fibers on N OS threads), allows for a massive level of concurrency that is impossible with traditional threads. It's what makes Effect so powerful for building highly concurrent applications like servers, data pipelines, and real-time systems.
+
+When you use operators like `Effect.fork` or `Effect.all`, you are creating new fibers.
+
+---

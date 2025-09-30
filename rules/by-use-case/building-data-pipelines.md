@@ -1,9 +1,11 @@
-# Building Data Pipelines Rules
+# Building Data Pipelines Patterns
 
 ## Automatically Retry Failed Operations
-**Rule:** Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
+
+Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
 
 ### Example
+
 This example simulates an API that fails the first two times it's called. The stream processes a list of IDs, and the `retry` operator ensures that the failing operation for `id: 2` is automatically retried until it succeeds.
 
 ````typescript
@@ -60,15 +62,15 @@ const program = Effect.gen(function* () {
   );
 
   yield* Effect.log("=== Results ===");
-  results.forEach((result, index) => {
-    console.log(`Item ${ids[index]}: ${result}`);
-  });
+  for (let index = 0; index < results.length; index++) {
+  yield* Effect.log(`Item ${ids[index]}: ${results[index]}`);
+}
 
   yield* Effect.log("✅ Stream processing completed");
 });
 
 Effect.runPromise(program).catch((error) => {
-  console.error("Unexpected error:", error);
+  Effect.runSync(Effect.logError("Unexpected error: " + error));
 });
 /*
 Output:
@@ -83,10 +85,14 @@ Output:
 
 ````
 
+---
+
 ## Collect All Results into a List
-**Rule:** Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.
+
+Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.
 
 ### Example
+
 This example creates a stream of numbers, filters for only the even ones, transforms them into strings, and then uses `runCollect` to gather the final results into a `Chunk`.
 
 ```typescript
@@ -101,9 +107,13 @@ const program = Stream.range(1, 10).pipe(
   Stream.runCollect
 );
 
-Effect.runPromise(program).then((results) => {
-  console.log('Collected results:', Chunk.toArray(results));
+const programWithLogging = Effect.gen(function* () {
+  const results = yield* program;
+  yield* Effect.log(`Collected results: ${JSON.stringify(Chunk.toArray(results))}`);
+  return results;
 });
+
+Effect.runPromise(programWithLogging);
 /*
 Output:
 Collected results: [
@@ -116,10 +126,14 @@ Collected results: [
 */
 ```
 
+---
+
 ## Create a Stream from a List
-**Rule:** Use Stream.fromIterable to begin a pipeline from an in-memory collection.
+
+Use Stream.fromIterable to begin a pipeline from an in-memory collection.
 
 ### Example
+
 This example takes a simple array of numbers, creates a stream from it, performs a transformation on each number, and then runs the stream to collect the results.
 
 ```typescript
@@ -135,19 +149,27 @@ const program = Stream.fromIterable(numbers).pipe(
   Stream.runCollect
 );
 
-Effect.runPromise(program).then((processedItems) => {
-  console.log(Chunk.toArray(processedItems));
+const programWithLogging = Effect.gen(function* () {
+  const processedItems = yield* program;
+  yield* Effect.log(`Processed items: ${JSON.stringify(Chunk.toArray(processedItems))}`);
+  return processedItems;
 });
+
+Effect.runPromise(programWithLogging);
 /*
 Output:
 [ 'Item: 1', 'Item: 2', 'Item: 3', 'Item: 4', 'Item: 5' ]
 */
 ```
 
+---
+
 ## Manage Resources Safely in a Pipeline
-**Rule:** Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline.
+
+Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline.
 
 ### Example
+
 This example creates and writes to a temporary file. `Stream.acquireRelease` is used to acquire a readable stream from that file. The pipeline then processes the file but is designed to fail partway through. The logs demonstrate that the `release` effect (which deletes the file) is still executed, preventing any resource leaks.
 
 ```typescript
@@ -178,7 +200,7 @@ export class FileService extends Effect.Service<FileService>()("FileService", {
     return {
       createTempFile: () => Effect.succeed({ filePath }),
       cleanup: (filePath: string) =>
-        Effect.sync(() => console.log("✅ Resource cleaned up successfully")),
+        Effect.log("✅ Resource cleaned up successfully"),
       readFile: (filePath: string) =>
         Effect.succeed("data 1\ndata 2\nFAIL\ndata 4"),
     };
@@ -189,12 +211,12 @@ export class FileService extends Effect.Service<FileService>()("FileService", {
 const processLine = (line: string): Effect.Effect<void, ProcessError> =>
   line === "FAIL"
     ? Effect.fail(ProcessError("Failed to process line"))
-    : Effect.sync(() => console.log(`Processed: ${line}`));
+    : Effect.log(`Processed: ${line}`);
 
 // Create and process the file with proper resource management
 const program = Effect.gen(function* () {
-  console.log("=== Stream Resource Management Demo ===");
-  console.log(
+  yield* Effect.log("=== Stream Resource Management Demo ===");
+  yield* Effect.log(
     "This demonstrates proper resource cleanup even when errors occur"
   );
 
@@ -213,14 +235,12 @@ const program = Effect.gen(function* () {
       for (const line of lines) {
         yield* processLine(line).pipe(
           Effect.catchAll((error) =>
-            Effect.sync(() =>
-              console.log(`⚠️  Skipped line due to error: ${error.message}`)
-            )
+            Effect.log(`⚠️  Skipped line due to error: ${error.message}`)
           )
         );
       }
 
-      console.log("✅ Processing completed with proper resource management");
+      yield* Effect.log("✅ Processing completed with proper resource management");
     })
   );
 });
@@ -228,16 +248,20 @@ const program = Effect.gen(function* () {
 // Run the program with FileService layer
 Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
   (error) => {
-    console.error("Unexpected error:", error);
+    Effect.runSync(Effect.logError("Unexpected error: " + error));
   }
 );
 
 ```
 
+---
+
 ## Process a Large File with Constant Memory
-**Rule:** Use Stream.fromReadable with a Node.js Readable stream to process files efficiently.
+
+Use Stream.fromReadable with a Node.js Readable stream to process files efficiently.
 
 ### Example
+
 This example demonstrates reading a text file, splitting it into individual lines, and processing each line. The combination of `Stream.fromReadable`, `Stream.decodeText`, and `Stream.splitLines` is a powerful and common pattern for handling text-based files.
 
 ```typescript
@@ -290,9 +314,9 @@ const program = Effect.gen(function* () {
 Effect.runPromise(
   program.pipe(
     Effect.provide(NodeFileSystem.layer)
-  )
-).catch(console.error);
-/*
+  ))
+
+  /*
 Output:
 ... level=INFO msg="Processing: line 1"
 ... level=INFO msg="Processing: line 2"
@@ -300,10 +324,14 @@ Output:
 */
 ```
 
+---
+
 ## Process collections of data asynchronously
-**Rule:** Leverage Stream to process collections effectfully with built-in concurrency control and resource safety.
+
+Leverage Stream to process collections effectfully with built-in concurrency control and resource safety.
 
 ### Example
+
 This example processes a list of IDs by fetching user data for each one. `Stream.mapEffect` is used to apply an effectful function (`getUserById`) to each element, with concurrency limited to 2 simultaneous requests.
 
 ```typescript
@@ -324,15 +352,23 @@ const program = Stream.fromIterable([1, 2, 3, 4, 5]).pipe(
   Stream.runCollect
 );
 
-Effect.runPromise(program).then((users) => {
-  console.log('All users fetched:', Chunk.toArray(users));
+const programWithLogging = Effect.gen(function* () {
+  const users = yield* program;
+  yield* Effect.log(`All users fetched: ${JSON.stringify(Chunk.toArray(users))}`);
+  return users;
 });
+
+Effect.runPromise(programWithLogging);
 ```
 
+---
+
 ## Process Items Concurrently
-**Rule:** Use Stream.mapEffect with the `concurrency` option to process stream items in parallel.
+
+Use Stream.mapEffect with the `concurrency` option to process stream items in parallel.
 
 ### Example
+
 This example processes four items, each taking one second. By setting `concurrency: 2`, the total runtime is approximately two seconds instead of four, because items are processed in parallel pairs.
 
 ```typescript
@@ -357,10 +393,21 @@ const program = Stream.fromIterable(ids).pipe(
 // Measure the total time taken
 const timedProgram = Effect.timed(program);
 
-Effect.runPromise(timedProgram).then(([duration, _]) => {
+const programWithLogging = Effect.gen(function* () {
+  const [duration, _] = yield* timedProgram;
   const durationMs = Number(duration);
-  console.log(`\nTotal time: ${Math.round(durationMs / 1000)} seconds`);
-}).catch(console.error);
+  yield* Effect.log(`\nTotal time: ${Math.round(durationMs / 1000)} seconds`);
+  return duration;
+}).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithLogging);
 /*
 Output:
 ... level=INFO msg="Starting item 1..."
@@ -376,10 +423,14 @@ Total time: 2 seconds
 */
 ```
 
+---
+
 ## Process Items in Batches
-**Rule:** Use Stream.grouped(n) to transform a stream of items into a stream of batched chunks.
+
+Use Stream.grouped(n) to transform a stream of items into a stream of batched chunks.
 
 ### Example
+
 This example processes 10 users. By using `Stream.grouped(5)`, it transforms the stream of 10 individual users into a stream of two chunks (each a batch of 5). The `saveUsersInBulk` function is then called only twice, once for each batch.
 
 ```typescript
@@ -413,10 +464,14 @@ Output:
 */
 ```
 
+---
+
 ## Run a Pipeline for its Side Effects
-**Rule:** Use Stream.runDrain to execute a stream for its side effects when you don't need the final values.
+
+Use Stream.runDrain to execute a stream for its side effects when you don't need the final values.
 
 ### Example
+
 This example creates a stream of tasks. For each task, it performs a side effect (logging it as "complete"). `Stream.runDrain` executes the pipeline, ensuring all logs are written, but without collecting the `void` results of each logging operation.
 
 ```typescript
@@ -435,9 +490,12 @@ const program = Stream.fromIterable(tasks).pipe(
   Stream.runDrain
 );
 
-Effect.runPromise(program).then(() => {
-  console.log('\nAll tasks have been processed.');
+const programWithLogging = Effect.gen(function* () {
+  yield* program;
+  yield* Effect.log('\nAll tasks have been processed.');
 });
+
+Effect.runPromise(programWithLogging);
 /*
 Output:
 ... level=INFO msg="Completing task 1"
@@ -448,10 +506,14 @@ All tasks have been processed.
 */
 ```
 
+---
+
 ## Turn a Paginated API into a Single Stream
-**Rule:** Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.
+
+Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.
 
 ### Example
+
 This example simulates fetching users from a paginated API. The `fetchUsersPage` function gets one page of data and returns the next page number. `Stream.paginateEffect` uses this function to create a single stream of all users across all pages.
 
 ```typescript
@@ -517,7 +579,13 @@ const program = userStream.pipe(
 );
 
 // Run the program
-Effect.runPromise(program).then(console.log);
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* program;
+  yield* Effect.log(`Program result: ${result}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
 
 /*
 Output:
@@ -528,4 +596,6 @@ Output:
 25
 */
 ```
+
+---
 

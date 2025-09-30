@@ -1,0 +1,62 @@
+description: Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Add Custom Metrics to Your Application
+**Rule:** Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
+
+### Example
+This example creates a counter to track how many times a user is created and a histogram to track the duration of the database operation.
+
+```typescript
+import { Effect, Metric, Duration } from "effect";  // We don't need MetricBoundaries anymore
+
+// 1. Define your metrics
+const userRegisteredCounter = Metric.counter("users_registered_total", {
+  description: "A counter for how many users have been registered.",
+});
+
+const dbDurationTimer = Metric.timer(
+  "db_operation_duration",
+  "A timer for DB operation durations"
+);
+
+// 2. Simulated database call
+const saveUserToDb = Effect.succeed("user saved").pipe(
+  Effect.delay(Duration.millis(Math.random() * 100)),
+);
+
+// 3. Instrument the business logic
+const createUser = Effect.gen(function* () {
+  // Time the operation
+  yield* saveUserToDb.pipe(Metric.trackDuration(dbDurationTimer));
+
+  // Increment the counter
+  yield* Metric.increment(userRegisteredCounter);
+
+  return { status: "success" };
+});
+
+// Run the Effect
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* createUser;
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
+```
+
+---
+
+**Explanation:**  
+While logs are for events and traces are for requests, metrics are for aggregation. They provide a high-level, numerical view of your system's health over time, which is perfect for building dashboards and setting up alerts.
+
+Effect's `Metric` module provides a simple, declarative way to add this instrumentation. By defining your metrics upfront, you can then use operators like `Metric.increment` or `Effect.timed` to update them. This is fully integrated with Effect's context system, allowing you to provide different metric backends (like Prometheus or StatsD) via a `Layer`.
+
+This allows you to answer questions like:
+-   "What is our user sign-up rate over the last 24 hours?"
+-   "Are we approaching our maximum number of database connections?"
+-   "What is the 95th percentile latency for our API requests?"
+
+---

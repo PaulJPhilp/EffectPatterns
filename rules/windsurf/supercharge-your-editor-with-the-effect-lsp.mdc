@@ -1,0 +1,58 @@
+description: Install and use the Effect LSP extension for enhanced type information and error checking in your editor.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Supercharge Your Editor with the Effect LSP
+**Rule:** Install and use the Effect LSP extension for enhanced type information and error checking in your editor.
+
+### Example
+Imagine you have the following code. Without the LSP, hovering over `program` might show a complex, hard-to-read inferred type.
+
+```typescript
+import { Effect } from "effect";
+
+// Define Logger service using Effect.Service pattern
+class Logger extends Effect.Service<Logger>()(
+  "Logger",
+  {
+    sync: () => ({
+      log: (msg: string) => Effect.log(`LOG: ${msg}`)
+    })
+  }
+) {}
+
+const program = Effect.succeed(42).pipe(
+  Effect.map((n) => n.toString()),
+  Effect.flatMap((s) => Effect.log(s)),
+  Effect.provide(Logger.Default)
+);
+
+// Run the program
+Effect.runPromise(program);
+```
+
+With the Effect LSP installed, your editor would display a clear, readable overlay right above the `program` variable, looking something like this:
+
+```
+// (LSP Inlay Hint)
+// program: Effect<void, never, never>
+```
+
+This immediately tells you that the final program returns nothing (`void`), has no expected failures (`never`), and has no remaining requirements (`never`), so it's ready to be run.
+
+---
+
+### Anti-Pattern (Avoid)
+Going without the LSP. While your code will still compile and work perfectly fine, you are essentially "flying blind." You miss out on the rich, real-time feedback that the LSP provides, forcing you to rely more heavily on manual type checking, `tsc` runs, and deciphering complex inferred types from your editor's default tooltips. This leads to a slower, less efficient development cycle.
+
+**Explanation:**  
+Effect's type system is incredibly powerful, but TypeScript's default language server doesn't always display the rich information contained within the `A`, `E`, and `R` channels in the most intuitive way.
+
+The Effect LSP is a specialized tool that understands the semantics of Effect. It hooks into your editor to provide a superior experience:
+-   **Rich Inline Types:** It displays the full `Effect<A, E, R>` signature directly in your code as you work, so you always know exactly what an effect produces, how it can fail, and what it requires.
+-   **Clear Error Messages:** It provides more specific and helpful error messages tailored to Effect's APIs.
+-   **Enhanced Autocompletion:** It can offer more context-aware suggestions.
+
+This tool essentially makes the compiler's knowledge visible at a glance, reducing the mental overhead of tracking complex types and allowing you to catch errors before you even save the file.
+
+---

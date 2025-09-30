@@ -1,0 +1,46 @@
+description: Define a type-safe configuration schema.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Define a Type-Safe Configuration Schema
+**Rule:** Define a type-safe configuration schema.
+
+### Example
+```typescript
+import { Config, Effect, ConfigProvider, Layer } from "effect"
+
+const ServerConfig = Config.nested("SERVER")(
+  Config.all({
+    host: Config.string("HOST"),
+    port: Config.number("PORT"),
+  })
+)
+
+// Example program that uses the config
+const program = Effect.gen(function* () {
+  const config = yield* ServerConfig
+  yield* Effect.logInfo(`Server config loaded: ${JSON.stringify(config)}`)
+})
+
+// Create a config provider with test values
+const TestConfig = ConfigProvider.fromMap(
+  new Map([
+    ["SERVER.HOST", "localhost"],
+    ["SERVER.PORT", "3000"]
+  ])
+)
+
+// Run with test config
+Effect.runPromise(
+  Effect.provide(
+    program,
+    Layer.setConfigProvider(TestConfig)
+  )
+)
+```
+
+**Explanation:**  
+This schema ensures that both `host` and `port` are present and properly typed, and that their source is clearly defined.
+
+**Explanation:**  
+This creates a single, type-safe source of truth for your configuration, eliminating runtime errors from missing or malformed environment variables and making the required configuration explicit.

@@ -1,0 +1,33 @@
+description: Model validated domain types with Brand.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Model Validated Domain Types with Brand
+**Rule:** Model validated domain types with Brand.
+
+### Example
+```typescript
+import { Brand, Option } from "effect";
+
+type Email = string & Brand.Brand<"Email">;
+
+const makeEmail = (s: string): Option.Option<Email> =>
+  s.includes("@") ? Option.some(s as Email) : Option.none();
+
+// A function can now trust that its input is a valid email.
+const sendEmail = (email: Email, body: string) => { /* ... */ };
+```
+
+**Explanation:**  
+Branding ensures that only validated values are used, reducing bugs and
+repetitive checks.
+
+### Anti-Pattern (Avoid)
+"Primitive obsession"—using raw primitives (`string`, `number`) and performing
+validation inside every function that uses them. This is repetitive and
+error-prone.
+
+**Explanation:**  
+This pattern moves validation to the boundaries of your system. Once a value
+has been branded, the rest of your application can trust that it is valid,
+eliminating repetitive checks.

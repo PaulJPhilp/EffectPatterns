@@ -1,9 +1,11 @@
-# Application Configuration Rules
+# Application Configuration Patterns
 
 ## Access Configuration from the Context
-**Rule:** Access configuration from the Effect context.
+
+Access configuration from the Effect context.
 
 ### Example
+
 ```typescript
 import { Config, Effect, Layer } from "effect";
 
@@ -33,10 +35,14 @@ Effect.runPromise(
 **Explanation:**  
 By yielding the config object, you make your dependency explicit and leverage Effect's context system for testability and modularity.
 
+---
+
 ## Define a Type-Safe Configuration Schema
-**Rule:** Define a type-safe configuration schema.
+
+Define a type-safe configuration schema.
 
 ### Example
+
 ```typescript
 import { Config, Effect, ConfigProvider, Layer } from "effect"
 
@@ -73,10 +79,14 @@ Effect.runPromise(
 **Explanation:**  
 This schema ensures that both `host` and `port` are present and properly typed, and that their source is clearly defined.
 
+---
+
 ## Provide Configuration to Your App via a Layer
-**Rule:** Provide configuration to your app via a Layer.
+
+Provide configuration to your app via a Layer.
 
 ### Example
+
 ````typescript
 import { Effect, Layer } from "effect";
 
@@ -94,11 +104,20 @@ const program = Effect.gen(function* () {
   yield* Effect.log(`Starting application on port ${config.port}...`);
 });
 
-Effect.runPromise(
-  Effect.provide(program, ServerConfig.Default)
-).catch(console.error);
+const programWithErrorHandling = Effect.provide(program, ServerConfig.Default).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithErrorHandling);
 ````
 
 **Explanation:**  
 This approach makes configuration available contextually, supporting better testing and modularity.
+
+---
 

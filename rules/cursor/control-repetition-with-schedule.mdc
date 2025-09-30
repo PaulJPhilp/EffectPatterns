@@ -1,0 +1,62 @@
+description: Use Schedule to create composable policies for controlling the repetition and retrying of effects.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Control Repetition with Schedule
+**Rule:** Use Schedule to create composable policies for controlling the repetition and retrying of effects.
+
+### Example
+This example demonstrates composition by creating a common, robust retry policy: exponential backoff with jitter, limited to 5 attempts.
+
+```typescript
+import { Effect, Schedule, Duration } from "effect"
+
+// A simple effect that can fail
+const flakyEffect = Effect.try({
+  try: () => {
+    if (Math.random() > 0.2) {
+      throw new Error("Transient error")
+    }
+    return "Operation succeeded!"
+  },
+  catch: (error: unknown) => {
+    Effect.logInfo("Operation failed, retrying...")
+    return error
+  }
+})
+
+// --- Building a Composable Schedule ---
+
+// 1. Start with a base exponential backoff (100ms, 200ms, 400ms...)
+const exponentialBackoff = Schedule.exponential("100 millis")
+
+// 2. Add random jitter to avoid thundering herd problems
+const withJitter = Schedule.jittered(exponentialBackoff)
+
+// 3. Limit the schedule to a maximum of 5 repetitions
+const limitedWithJitter = Schedule.compose(
+  withJitter,
+  Schedule.recurs(5)
+)
+
+// --- Using the Schedule ---
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("Starting operation...")
+  const result = yield* Effect.retry(flakyEffect, limitedWithJitter)
+  yield* Effect.logInfo(`Final result: ${result}`)
+})
+
+// Run the program
+Effect.runPromise(program)
+```
+
+---
+
+**Explanation:**  
+While you could write manual loops or recursive functions, `Schedule` provides a much more powerful, declarative, and composable way to manage repetition. The key benefits are:
+
+-   **Declarative:** You separate the *what* (the effect to run) from the *how* and *when* (the schedule it runs on).
+-   **Composable:** You can build complex schedules from simple, primitive ones. For example, you can create a schedule that runs "up to 5 times, with an exponential backoff, plus some random jitter" by composing `Schedule.recurs`, `Schedule.exponential`, and `Schedule.jittered`.
+-   **Stateful:** A `Schedule` keeps track of its own state (like the number of repetitions), making it easy to create policies that depend on the execution history.
+
+---
