@@ -84,10 +84,16 @@ run_qa_validation() {
   # Run the CLI command to process the prompt with correct arguments
   # CLI writes JSON output directly to the file
   local output_file="$RESULTS_DIR/${file_name%.mdx}-qa.json"
+  # Use enhanced QA schema if it exists, otherwise fall back to standard
+  local schema_file="$PROMPTS_DIR/qa-schema-enhanced.mdx"
+  if [ ! -f "$schema_file" ]; then
+    schema_file="$PROMPTS_DIR/qa-schema.mdx"
+  fi
+  
   if cd "$PROJECT_ROOT" && npx --yes tsx cli/src/main.ts generate \
     --output "$output_file" \
     --output-format json \
-    --schema-prompt "$PROMPTS_DIR/qa-schema.mdx" \
+    --schema-prompt "$schema_file" \
     "$pattern_path"; then
     # Read the generated JSON file
     if [ -f "$output_file" ]; then
