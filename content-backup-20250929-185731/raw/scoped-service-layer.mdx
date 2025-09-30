@@ -1,0 +1,43 @@
+---
+title: "Create a Service Layer from a Managed Resource"
+id: "scoped-service-layer"
+skillLevel: "intermediate"
+useCase: ["Resource Management", "Dependency Injection", "Application Architecture"]
+summary: "Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service."
+tags: ["resource", "layer", "scope", "service", "dependency-injection", "context", "acquire-release"]
+rule:
+  description: "Provide a managed resource to the application context using `Layer.scoped`."
+related: ["acquire-release-bracket"]
+author: "PaulJPhilp"
+---
+
+# Create a Service Layer from a Managed Resource
+
+## Guideline
+
+Define a service using `class MyService extends Effect.Service(...)`.   Implement the service using the `scoped` property of the service class. This property should be a scoped `Effect` (typically from `Effect.acquireRelease`) that builds and releases the underlying resource.
+
+## Rationale
+
+This pattern is the key to building robust, testable, and leak-proof applications in Effect. It elevates a managed resource into a first-class service that can be used anywhere in your application. The `Effect.Service` helper simplifies defining the service's interface and context key. This approach decouples your business logic from the concrete implementation, as the logic only depends on the abstract service. The `Layer` declaratively handles the resource's entire lifecycle, ensuring it is acquired lazily, shared safely, and released automatically.
+
+## Good Example
+
+<Example path="./src/scoped-service-layer.ts" />
+
+**Explanation:**
+The `Effect.Service` helper creates the `Database` class, which acts as both the service definition and its context key (Tag). The `Database.Live` layer connects this service to a concrete, lifecycle-managed implementation. When `program` asks for the `Database` service, the Effect runtime uses the `Live` layer to run the `acquire` effect once, caches the resulting `DbPool`, and injects it. The `release` effect is automatically run when the program completes.
+
+## Anti-Pattern
+
+Creating and exporting a global singleton instance of a resource. This tightly couples your application to a specific implementation, makes testing difficult, and offers no guarantees about graceful shutdown.
+
+```typescript
+// ANTI-PATTERN: Global singleton
+export const dbPool = makeDbPoolSync(); // Eagerly created, hard to test/mock
+
+function someBusinessLogic() {
+  // This function has a hidden dependency on the global dbPool
+  return dbPool.query("SELECT * FROM products");
+}
+```

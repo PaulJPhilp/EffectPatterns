@@ -1,0 +1,39 @@
+---
+title: "Handle Unexpected Errors by Inspecting the Cause"
+id: "handle-unexpected-errors-with-cause"
+skillLevel: "advanced"
+useCase: ["Error Management"]
+summary: "Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die)."
+tags: ["error-handling", "cause", "exit", "defect", "die", "unexpected-error", "runtime"]
+rule:
+  description: "Handle unexpected errors by inspecting the cause."
+related: ["define-tagged-errors", "execute-with-runpromise"]
+author: "Sandro Maglione"
+---
+
+# Handle Unexpected Errors by Inspecting the Cause
+
+## Guideline
+
+To build truly resilient applications, differentiate between known business
+errors (`Fail`) and unknown defects (`Die`). Use `Effect.catchAllCause` to
+inspect the full `Cause` of a failure.
+
+## Rationale
+
+The `Cause` object explains *why* an effect failed. A `Fail` is an expected
+error (e.g., `ValidationError`). A `Die` is an unexpected defect (e.g., a
+thrown exception). They should be handled differently.
+
+## Good Example
+
+<Example path="./src/handle-unexpected-errors-with-cause.ts" />
+
+**Explanation:**  
+By inspecting the `Cause`, you can distinguish between expected and unexpected
+failures, logging or escalating as appropriate.
+
+## Anti-Pattern
+
+Using a simple `Effect.catchAll` can dangerously conflate expected errors and
+unexpected defects, masking critical bugs as recoverable errors.

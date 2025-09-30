@@ -1,0 +1,55 @@
+---
+title: "Compose Resource Lifecycles with `Layer.merge`"
+id: "compose-scoped-layers"
+skillLevel: "intermediate"
+useCase: ["Application Architecture", "Resource Management", "Dependency Injection"]
+summary: "Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order."
+tags: ["resource", "layer", "scope", "compose", "merge", "dependency-graph", "architecture"]
+rule:
+  description: "Compose multiple scoped layers using `Layer.merge` or by providing one layer to another."
+related: ["scoped-service-layer"]
+author: "PaulJPhilp"
+---
+
+# Compose Resource Lifecycles with `Layer.merge`
+
+## Guideline
+
+Combine multiple resource-managing `Layer`s into a single application layer using functions like `Layer.merge`. The Effect runtime will automatically build a dependency graph, acquire resources in the correct order, and release them in the reverse order.
+
+## Rationale
+
+This pattern is the ultimate payoff for defining services with `Layer`. It allows for true modularity. Each service can be defined in its own file, declaring its own resource requirements in its `Live` layer, completely unaware of other services.
+
+When you assemble the final application layer, Effect analyzes the dependencies:
+1.  **Acquisition Order:** It ensures resources are acquired in the correct order. For example, a `Logger` layer might be initialized before a `Database` layer that uses it for logging.
+2.  **Release Order:** It guarantees that resources are released in the **exact reverse order** of their acquisition. This is critical for preventing shutdown errors, such as a `UserRepository` trying to log a final message after the `Logger` has already been shut down.
+
+This automates one of the most complex and error-prone parts of application architecture.
+
+## Good Example
+
+<Example path="./src/compose-scoped-layers.ts" />
+
+**Explanation:**
+We define two completely independent services, `Database` and `ApiClient`, each with its own resource lifecycle. By combining them with `Layer.merge`, we create a single `AppLayer`. When `program` runs, Effect acquires the resources for both layers. When `program` finishes, Effect closes the application's scope, releasing the resources in the reverse order they were acquired (`ApiClient` then `Database`), ensuring a clean and predictable shutdown.
+
+## Anti-Pattern
+
+A manual, imperative startup and shutdown script. This approach is brittle and error-prone. The developer is responsible for maintaining the correct order of initialization and, more importantly, the reverse order for shutdown. This becomes unmanageable as an application grows.
+
+```typescript
+// ANTI-PATTERN: Manual, brittle, and error-prone
+async function main() {
+  const db = await initDb(); // acquire 1
+  const client = await initApiClient(); // acquire 2
+
+  try {
+    await doWork(db, client); // use
+  } finally {
+    // This order is easy to get wrong!
+    await client.close(); // release 2
+    await db.close(); // release 1
+  }
+}
+```

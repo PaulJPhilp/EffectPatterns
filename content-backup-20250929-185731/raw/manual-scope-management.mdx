@@ -1,0 +1,57 @@
+---
+title: "Manually Manage Lifecycles with `Scope`"
+id: "manual-scope-management"
+skillLevel: "advanced"
+useCase: ["Resource Management", "Advanced Dependency Injection", "Custom Layers"]
+summary: "Use `Scope` directly to manage complex resource lifecycles or when building custom layers."
+tags: ["resource", "scope", "finalizer", "layer", "advanced", "lifecycle"]
+rule:
+  description: "Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup."
+related: ["acquire-release-bracket", "scoped-service-layer"]
+author: "PaulJPhilp"
+---
+
+# Manually Manage Lifecycles with `Scope`
+
+## Guideline
+
+For complex scenarios where a resource's lifecycle doesn't fit a simple `acquireRelease` pattern, use `Effect.scope` to create a boundary for finalizers. Inside this boundary, you can access the `Scope` service and manually register cleanup actions using `Scope.addFinalizer`.
+
+## Rationale
+
+While `Effect.acquireRelease` and `Layer.scoped` are sufficient for most use cases, sometimes you need more control. This pattern is essential when:
+1.  A single logical operation acquires multiple resources that need independent cleanup.
+2.  You are building a custom, complex `Layer` that orchestrates several dependent resources.
+3.  You need to understand the fundamental mechanism that powers all of Effect's resource management.
+
+By interacting with `Scope` directly, you gain precise, imperative-style control over resource cleanup within Effect's declarative, functional framework. Finalizers added to a scope are guaranteed to run in Last-In-First-Out (LIFO) order when the scope is closed.
+
+## Good Example
+
+<Example path="./src/manual-scope-management.ts" />
+
+**Explanation:**
+`Effect.scope` creates a new `Scope` and provides it to the `program`. Inside `program`, we access this `Scope` and use `addFinalizer` to register cleanup actions immediately after acquiring each resource. When `Effect.scope` finishes executing `program`, it closes the scope, which in turn executes all registered finalizers in the reverse order of their addition.
+
+## Anti-Pattern
+
+Attempting to manage multiple, interdependent resource cleanups using nested `try...finally` blocks. This leads to a "pyramid of doom," is difficult to read, and remains unsafe in the face of interruptions.
+
+```typescript
+// ANTI-PATTERN: Nested, unsafe, and hard to read
+async function complexOperation() {
+  const file = await openFilePromise(); // acquire 1
+  try {
+    const tempFile = await createTempFilePromise(); // acquire 2
+    try {
+      await doWorkPromise(file, tempFile); // use
+    } finally {
+      // This block may not run on interruption!
+      await deleteFilePromise(tempFile); // release 2
+    }
+  } finally {
+    // This block may also not run on interruption!
+    await closeFilePromise(file); // release 1
+  }
+}
+```

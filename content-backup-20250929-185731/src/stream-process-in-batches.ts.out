@@ -1,0 +1,2 @@
+timestamp=2025-07-08T02:33:09.150Z level=INFO fiber=#1 message="Saving batch of 5 users: 1, 2, 3, 4, 5"
+timestamp=2025-07-08T02:33:09.151Z level=INFO fiber=#1 message="Saving batch of 5 users: 6, 7, 8, 9, 10"

@@ -11,6 +11,7 @@
     "generate": "bun run scripts/publish/generate.ts",
     "test": "bun run scripts/publish/test-improved.ts",
     "test:simple": "bun run scripts/publish/test.ts",
+    "test:behavioral": "bun run scripts/publish/test-behavioral.ts",
     "rules": "bun run scripts/publish/rules-improved.ts",
     "rules:simple": "bun run scripts/publish/rules.ts",
     "ingest": "bun run scripts/ingest/ingest-pipeline-improved.ts",

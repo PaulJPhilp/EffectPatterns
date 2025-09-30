@@ -1,0 +1,69 @@
+---
+title: Combining Values with zip
+id: combinator-zip
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Combinators
+  - Composition
+  - Pairing
+summary: Use zip to combine two computations, pairing their results together in
+  Effect, Stream, Option, or Either.
+tags:
+  - zip
+  - combinator
+  - pair
+  - effect
+  - stream
+  - option
+  - either
+rule:
+  description: Use zip to run two computations and combine their results into a
+    tuple, preserving error and context handling.
+related:
+  - combinator-map
+  - combinator-flatmap
+  - combinator-all-race
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.434Z level=INFO fiber=#0 message="Effect.zip
+  result: [1, hello]"
+
+  timestamp=2025-08-07T18:29:29.435Z level=INFO fiber=#0 message="Option.zip
+  result: [1, hello]"
+
+  timestamp=2025-08-07T18:29:29.435Z level=INFO fiber=#0 message="Either.zip
+  result: [1, hello]"
+
+  timestamp=2025-08-07T18:29:29.464Z level=INFO fiber=#0 message="Stream.zip
+  result: [[1, a], [2, b], [3, c]]"
+---
+
+# Combining Values with `zip`
+
+## Guideline
+
+Use the `zip` combinator to combine two computations, pairing their results together.  
+This works for `Effect` and `Stream`.  
+For `Option` and `Either`, use manual pattern matching to combine values if both are present/right.
+
+## Rationale
+
+`zip` lets you compose computations that are independent but whose results you want to use together.  
+It preserves error handling and context, and keeps your code declarative and type-safe.
+
+## Good Example
+
+<Example path="./src/combinator-zip.ts" />
+
+**Explanation:**  
+`zip` runs both computations and pairs their results for `Effect` and `Stream`.  
+For `Option` and `Either`, you can pair values using conditional logic: if both are `Some`/`Right`, return a tuple; otherwise, return `None`/`Left`.
+If either computation fails (or is None/Left/empty), the result is a failure (or None/Left/empty).
+
+## Anti-Pattern
+
+Manually running two computations, extracting their results, and pairing them outside the combinator world for `Effect` and `Stream`.  
+For `Option` and `Either`, avoid deeply nested conditionals—prefer concise pattern matching.
+This breaks composability, loses error/context handling, and can lead to subtle bugs.

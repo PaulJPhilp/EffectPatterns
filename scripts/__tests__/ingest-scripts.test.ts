@@ -1,15 +1,31 @@
-import { describe, it, expect } from "vitest";
+import { FileSystem } from "@effect/platform";
+import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
-import { NodeContext } from "@effect/platform-node";
-import { MdxService } from "../../cli/src/services/mdx-service/service.js";
+import { MdxService } from "effect-mdx";
+import { beforeEach, describe, expect, it } from "vitest";
 
 // Test layer that provides all required services
 const testLayer = Layer.mergeAll(
-  NodeContext.layer,
-  Layer.provide(MdxService.Default, NodeContext.layer)
+  NodeFileSystem.layer,
+  NodePath.layer,
+  MdxService.Default
 );
 
 describe("Ingest Scripts", () => {
+  const cleanupLayer = Layer.mergeAll(NodeFileSystem.layer, NodePath.layer);
+
+  const cleanup = Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    yield* fs.remove("content/new/src", { recursive: true });
+    yield* fs.remove("content/new/processed", { recursive: true });
+  }).pipe(
+    Effect.provide(cleanupLayer),
+    Effect.catchAll(() => Effect.void)
+  );
+
+  beforeEach(() => {
+    return Effect.runPromise(cleanup);
+  });
   it("should have proper Effect structure for populate-expectations.ts", async () => {
     // This test ensures the script exports a proper Effect
     const script = await import("../ingest/populate-expectations.js");
@@ -21,7 +37,16 @@ describe("Ingest Scripts", () => {
   it("should have proper Effect structure for test-publish.ts", async () => {
     // This test ensures the script exports a proper Effect
     const script = await import("../ingest/test-publish.js");
-    expect(script).toBeDefined();
+    const effect = script.publishPatterns({
+      indir: "content/new/processed",
+      outdir: "content/new/published",
+      srcdir: "content/new/src",
+    });
+    expect(Effect.isEffect(effect)).toBe(true);
+    // Note: We're not running the full Effect here because it would require
+    // actual file system operations which would be complex to set up for unit tests.
+    // In a real scenario, we would use proper test fixtures and run the Effect
+    // with appropriate layers.
   });
 
   it("should have proper Effect structure for process.ts", async () => {

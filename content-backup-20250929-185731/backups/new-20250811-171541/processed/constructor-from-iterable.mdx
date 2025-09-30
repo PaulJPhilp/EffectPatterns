@@ -1,0 +1,63 @@
+---
+title: Creating from Collections
+id: constructor-from-iterable
+skillLevel: beginner
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Constructors
+  - Collections
+  - Streams
+  - Batch Processing
+summary: Use fromIterable and fromArray to create Streams or Effects from
+  arrays, iterables, or other collections, enabling batch and streaming
+  operations.
+tags:
+  - fromIterable
+  - fromArray
+  - constructor
+  - stream
+  - effect
+  - collection
+  - batch
+rule:
+  description: Use fromIterable and fromArray to lift collections into Streams or
+    Effects for batch or streaming processing.
+related:
+  - constructor-succeed-some-right
+  - constructor-from-nullable-option-either
+author: PaulJPhilp
+expectedOutput: >-
+  timestamp=2025-08-07T18:29:29.365Z level=INFO fiber=#0
+  message="Stream.fromIterable(numbers): [1, 2, 3, 4]"
+
+  timestamp=2025-08-07T18:29:29.372Z level=INFO fiber=#0
+  message="Stream.fromIterable(gen()): [a, b]"
+
+  timestamp=2025-08-07T18:29:29.373Z level=INFO fiber=#0 message="Effect.all
+  result: [1, 2]"
+---
+
+# Creating from Collections
+
+## Guideline
+
+Use the `fromIterable` and `fromArray` constructors to create Streams or Effects from arrays, iterables, or other collections.  
+This is the foundation for batch processing, streaming, and working with large or dynamic data sources.
+
+## Rationale
+
+Lifting collections into Streams or Effects allows you to process data in a composable, resource-safe, and potentially concurrent way.  
+It also enables you to use all of Effect's combinators for transformation, filtering, and error handling.
+
+## Good Example
+
+<Example path="./src/constructor-from-iterable.ts" />
+
+**Explanation:**  
+- `Stream.fromIterable` creates a stream from any array or iterable, enabling streaming and batch operations.
+- `Effect.all` (covered elsewhere) can be used to process arrays of effects in batch.
+
+## Anti-Pattern
+
+Manually looping over collections and running effects or streams imperatively, which loses composability, error handling, and resource safety.

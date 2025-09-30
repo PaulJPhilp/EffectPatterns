@@ -1,0 +1,53 @@
+---
+title: "Use Chunk for High-Performance Collections"
+id: "data-chunk"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Collections", "Performance"]
+summary: "Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines."
+tags: ["Chunk", "collection", "performance", "immutable", "data-type", "effect"]
+rule:
+  description: "Use Chunk to model immutable, high-performance collections for efficient data processing and transformation."
+related: ["data-array", "data-hashset"]
+author: "PaulJPhilp"
+---
+
+# Use `Chunk` for High-Performance Collections
+
+## Guideline
+
+Use the `Chunk<A>` data type as an immutable, high-performance alternative to JavaScript's `Array`.  
+`Chunk` is optimized for functional programming, batch processing, and streaming scenarios.
+
+## Rationale
+
+`Chunk` provides efficient, immutable operations for large or frequently transformed collections.  
+It avoids the pitfalls of mutable arrays and is designed for use in concurrent and streaming workflows.
+
+## Good Example
+
+```typescript
+import { Chunk } from "effect";
+
+// Create a Chunk from an array
+const numbers = Chunk.fromArray([1, 2, 3, 4]); // Chunk<number>
+
+// Map and filter over a Chunk
+const doubled = Chunk.map(numbers, (n) => n * 2); // Chunk<number>
+const evens = Chunk.filter(numbers, (n) => n % 2 === 0); // Chunk<number>
+
+// Concatenate Chunks
+const moreNumbers = Chunk.fromArray([5, 6]);
+const allNumbers = Chunk.concat(numbers, moreNumbers); // Chunk<number>
+
+// Convert back to array
+const arr = Chunk.toArray(allNumbers); // number[]
+```
+
+**Explanation:**  
+- `Chunk` is immutable and optimized for performance.
+- It supports efficient batch operations, concatenation, and transformation.
+- Use `Chunk` in data pipelines, streaming, and concurrent scenarios.
+
+## Anti-Pattern
+
+Using mutable JavaScript arrays for shared or concurrent data, or for large-scale data processing, which can lead to bugs, inefficiency, and unpredictable behavior.

@@ -1,0 +1,22 @@
+=== Using Pipe for Composition Demo ===
+
+1. Basic pipe composition:
+timestamp=2025-07-08T02:33:14.534Z level=INFO fiber=#0 message="The result is 10"
+
+2. Complex pipe composition:
+Intermediate result: 30
+Complex result: Final: 30
+
+3. Pipe with flatMap for chaining effects:
+Chained: HELLO WORLD!
+Chained result: HELLO WORLD!
+
+4. Pipe with error handling:
+Error handled: Handled error: Negative number
+Error handled result: Handled error: Negative number
+
+5. Pipe with multiple operations:
+Sum of even numbers doubled: 12
+Multi-operation result: 12
+
+✅ Pipe composition demonstration completed!

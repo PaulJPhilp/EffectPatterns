@@ -22,10 +22,9 @@
  * - Exit with code 1 if any errors occur
  */
 
-import { NodeContext } from "@effect/platform-node";
 import { FileSystem } from "@effect/platform";
-import { Effect, Layer } from "effect";
-import { MdxService } from "../../cli/src/services/mdx-service/service.js";
+import { Effect } from "effect";
+import { MdxService } from "effect-mdx";
 import * as path from "path";
 
 // --- CONFIGURATION ---
@@ -64,54 +63,44 @@ const publishPatterns = ({
 
     console.log(`Found ${mdxFiles.length} MDX files to process`);
 
-    for (const mdxFile of mdxFiles) {
-      const inPath = path.join(indir, mdxFile);
-      const outPath = path.join(outdir, mdxFile);
+    const results = yield* Effect.forEach(
+      mdxFiles,
+      (mdxFile) =>
+        Effect.gen(function* () {
+          const inPath = path.join(indir, mdxFile);
+          const outPath = path.join(outdir, mdxFile);
+          const tsFile = path.join(srcdir, mdxFile.replace(".mdx", ".ts"));
 
-      // Read processed MDX content
-      const content = yield* fs.readFileString(inPath);
-      // Parse MDX with frontmatter using MDX service
-      const parsed = yield* mdxService.readMdxAndFrontmatter(inPath);
+          const content = yield* fs.readFileString(inPath);
+          const tsContent = yield* fs.readFileString(tsFile);
 
-      // Find corresponding TypeScript file
-      const tsFile = path.join(srcdir, mdxFile.replace(".mdx", ".ts"));
+          const processedContent = content.replace(
+            /<Example path=".\/src\/.*?" \/>/g,
+            "```typescript\n" + tsContent + "\n```"
+          );
 
-      try {
-        const tsContent = yield* fs.readFileString(tsFile);
-
-        // Replace Example component with TypeScript code block
-        const processedContent = content.replace(
-          /<Example path="\.\/src\/.*?" \/>/g,
-          "```typescript\n" + tsContent + "\n```"
-        );
-
-        // Write published MDX
-        yield* fs.writeFileString(outPath, processedContent);
-        console.log(`✅ Published ${mdxFile} to ${outPath}`);
-      } catch (error) {
-        console.error(`❌ Error processing ${mdxFile}:`, error);
-        process.exit(1);
-      }
-    }
+          yield* fs.writeFileString(outPath, processedContent);
+          return { mdxFile, status: "published" as const };
+        }).pipe(
+          Effect.tap(() =>
+            Effect.sync(() =>
+              console.log(
+                `✅ Published ${mdxFile} to ${path.join(outdir, mdxFile)}`
+              )
+            )
+          ),
+          Effect.catchAll((error) =>
+            Effect.sync(() => {
+              console.error(`❌ Error processing ${mdxFile}:`, error);
+              return { mdxFile, status: "error" as const, error };
+            })
+          )
+        ),
+      { concurrency: "inherit" }
+    );
 
     console.log("✨ Publishing complete!");
+    return results;
   });
-
-// Run if called directly
-if (require.main === module) {
-  const program = publishPatterns();
-
-  // Define layers
-  const allLayers = Layer.mergeAll(
-    NodeContext.layer, // Provides all Node.js platform implementations
-    Layer.provide(MdxService.Default, NodeContext.layer) // MDX service with its dependencies
-  );
-
-  // Run the program
-  Effect.runPromise(Effect.provide(program, allLayers)).catch((error) => {
-    console.error("Failed to publish patterns:", error);
-    process.exit(1);
-  });
-}
 
 export { publishPatterns };

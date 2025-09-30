@@ -1,0 +1,3 @@
+timestamp=2025-07-08T02:31:52.714Z level=INFO fiber=#0 message="Cache MISS for London"
+timestamp=2025-07-08T02:31:54.719Z level=INFO fiber=#0 message="Fetched live forecast for London"
+timestamp=2025-07-08T02:31:54.719Z level=INFO fiber=#0 message="Cache HIT for London"

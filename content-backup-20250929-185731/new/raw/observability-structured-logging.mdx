@@ -1,0 +1,59 @@
+---
+title: "Leverage Effect's Built-in Structured Logging"
+id: "observability-structured-logging"
+skillLevel: "intermediate"
+useCase: ["Observability", "Logging", "Debugging"]
+summary: "Use Effect's built-in logging functions for structured, configurable, and context-aware logging."
+tags: ["logging", "observability", "debugging", "effect", "structured-logging"]
+rule:
+  description: "Use Effect.log, Effect.logInfo, and Effect.logError to add structured, context-aware logging to your Effect code."
+related: ["observability-custom-metrics", "observability-tracing-spans"]
+author: "PaulJPhilp"
+---
+
+# Leverage Effect's Built-in Structured Logging
+
+## Guideline
+
+Use `Effect.log`, `Effect.logInfo`, `Effect.logError`, and related functions to add structured, context-aware logging to your Effect code.  
+This enables you to capture important events, errors, and business information in a consistent and configurable way.
+
+## Rationale
+
+Structured logging makes it easier to search, filter, and analyze logs in production.  
+Effect’s logging functions are context-aware, meaning they automatically include relevant metadata and can be configured globally.
+
+## Good Example
+
+```typescript
+import { Effect } from "effect";
+
+// Log a simple message
+const program = Effect.log("Starting the application");
+
+// Log at different levels
+const info = Effect.logInfo("User signed in");
+const error = Effect.logError("Failed to connect to database");
+
+// Log with dynamic values
+const userId = 42;
+const logUser = Effect.logInfo(`Processing user: ${userId}`);
+
+// Use logging in a workflow
+const workflow = Effect.gen(function* () {
+  yield* Effect.log("Beginning workflow");
+  // ... do some work
+  yield* Effect.logInfo("Workflow step completed");
+  // ... handle errors
+  yield* Effect.logError("Something went wrong");
+});
+```
+
+**Explanation:**  
+- `Effect.log` logs a message at the default level.
+- `Effect.logInfo` and `Effect.logError` log at specific levels.
+- Logging is context-aware and can be used anywhere in your Effect workflows.
+
+## Anti-Pattern
+
+Using `console.log` or ad-hoc logging scattered throughout your code, which is not structured, not context-aware, and harder to manage in production.

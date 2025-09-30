@@ -1,0 +1,3 @@
+timestamp=2025-07-08T02:33:02.839Z level=INFO fiber=#1 message="Server running at http://localhost:3459"
+timestamp=2025-07-08T02:33:02.840Z level=INFO fiber=#1 message="Try: curl http://localhost:3459"
+timestamp=2025-07-08T02:33:05.841Z level=INFO fiber=#1 message="Server shutdown complete"

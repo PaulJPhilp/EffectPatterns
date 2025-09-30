@@ -1,0 +1,52 @@
+---
+title: "Representing Time Spans with Duration"
+id: "data-duration"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Time", "Duration", "Domain Modeling"]
+summary: "Use Duration to represent time intervals in a type-safe, human-readable, and composable way."
+tags: ["Duration", "time", "interval", "data-type", "effect"]
+rule:
+  description: "Use Duration to model and manipulate time spans, enabling safe and expressive time-based logic."
+related: ["data-datetime", "data-cause"]
+author: "PaulJPhilp"
+---
+
+# Representing Time Spans with `Duration`
+
+## Guideline
+
+Use the `Duration` data type to represent and manipulate time intervals in a type-safe, human-readable, and composable way.  
+This enables robust time-based logic for scheduling, retries, timeouts, and more.
+
+## Rationale
+
+Working with raw numbers for time intervals (e.g., milliseconds) is error-prone and hard to read.  
+`Duration` provides a clear, expressive API for modeling time spans, improving code safety and maintainability.
+
+## Good Example
+
+```typescript
+import { Duration } from "effect";
+
+// Create durations using helpers
+const oneSecond = Duration.seconds(1);
+const fiveMinutes = Duration.minutes(5);
+const twoHours = Duration.hours(2);
+
+// Add, subtract, and compare durations
+const total = Duration.add(oneSecond, fiveMinutes); // 5 min 1 sec
+const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
+
+// Convert to milliseconds or ISO string
+const ms = Duration.toMillis(fiveMinutes); // 300000
+const iso = Duration.toISOString(oneSecond); // "PT1S"
+```
+
+**Explanation:**  
+- `Duration` is immutable and type-safe.
+- Use helpers for common intervals and arithmetic for composition.
+- Prefer `Duration` over raw numbers for all time-based logic.
+
+## Anti-Pattern
+
+Using raw numbers (e.g., `5000` for 5 seconds) for time intervals, which is error-prone, hard to read, and less maintainable.

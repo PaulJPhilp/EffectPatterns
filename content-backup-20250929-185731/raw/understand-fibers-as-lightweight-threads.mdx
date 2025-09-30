@@ -1,0 +1,55 @@
+---
+title: "Understand Fibers as Lightweight Threads"
+id: "understand-fibers-as-lightweight-threads"
+skillLevel: "advanced"
+useCase:
+  - "Concurrency"
+  - "Core Concepts"
+summary: "A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading."
+tags:
+  - "fiber"
+  - "concurrency"
+  - "virtual-thread"
+  - "lightweight-thread"
+  - "performance"
+  - "runtime"
+rule:
+  description: "Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency."
+related:
+  - "run-background-tasks-with-fork"
+  - "execute-long-running-apps-with-runfork"
+author: "effect_website"
+---
+
+## Guideline
+
+Think of a `Fiber` as a "virtual thread" or a "green thread." It is the fundamental unit of concurrency in Effect. Every `Effect` you run is executed on a `Fiber`. Unlike OS threads, which are heavy and limited, you can create hundreds of thousands or even millions of fibers without issue.
+
+---
+
+## Rationale
+
+In traditional multi-threaded programming, each thread is managed by the operating system, consumes significant memory (for its stack), and involves expensive context switching. This limits the number of concurrent threads you can realistically create.
+
+Effect's `Fiber`s are different. They are managed entirely by the Effect runtime, not the OS. They are incredibly lightweight data structures that don't have their own OS thread stack. The Effect runtime uses a cooperative scheduling mechanism to run many fibers on a small pool of OS threads (often just one in Node.js).
+
+This model, known as M:N threading (M fibers on N OS threads), allows for a massive level of concurrency that is impossible with traditional threads. It's what makes Effect so powerful for building highly concurrent applications like servers, data pipelines, and real-time systems.
+
+When you use operators like `Effect.fork` or `Effect.all`, you are creating new fibers.
+
+---
+
+## Good Example
+
+This program demonstrates the efficiency of fibers by forking 100,000 of them. Each fiber does a small amount of work (sleeping for 1 second). Trying to do this with 100,000 OS threads would instantly crash any system.
+
+<Example path="./src/understand-fibers-as-lightweight-threads.ts" />
+
+---
+
+## Anti-Pattern: Mental Model Mismatch
+
+The anti-pattern is thinking that a `Fiber` is the same as an OS thread. This can lead to incorrect assumptions about performance and behavior.
+
+-   **Don't assume parallelism on CPU-bound tasks:** In a standard Node.js environment, all fibers run on a single OS thread. If you run 10 CPU-intensive tasks on 10 fibers, they will not run in parallel on 10 different CPU cores. They will share time on the single main thread. Fibers provide massive concurrency for I/O-bound tasks (like network requests), not CPU-bound parallelism.
+-   **Don't worry about blocking:** A `Fiber` that is "sleeping" or waiting for I/O (like `Effect.sleep` or a `fetch` request) does not block the underlying OS thread. The Effect runtime simply puts it aside and uses the thread to run other ready fibers.

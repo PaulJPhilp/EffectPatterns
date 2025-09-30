@@ -1,0 +1,52 @@
+---
+title: "Matching Tagged Unions with matchTag and matchTags"
+id: "pattern-matchtag"
+skillLevel: "intermediate"
+useCase: ["Pattern Matching", "Tagged Unions", "Error Handling", "Branching"]
+summary: "Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching."
+tags: ["matchTag", "matchTags", "pattern-matching", "tagged-union", "effect", "error-handling", "branching"]
+rule:
+  description: "Use matchTag and matchTags to handle specific cases of tagged unions or custom error types in a declarative, type-safe way."
+related: ["pattern-match", "pattern-catchtag", "pattern-matcheffect"]
+author: "PaulJPhilp"
+---
+
+# Matching Tagged Unions with `matchTag` and `matchTags`
+
+## Guideline
+
+Use the `matchTag` and `matchTags` combinators to pattern match on specific cases of tagged unions or custom error types.  
+This enables precise, type-safe branching and is especially useful for handling domain-specific errors or ADTs.
+
+## Rationale
+
+Tagged unions (a.k.a. algebraic data types or ADTs) are a powerful way to model domain logic.  
+Pattern matching on tags lets you handle each case explicitly, making your code robust, maintainable, and exhaustive.
+
+## Good Example
+
+```typescript
+import { Effect, Data } from "effect";
+
+// Define a tagged error type
+class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{ message: string }> {}
+
+type MyError = NotFoundError | ValidationError;
+
+// Effect: Match on specific error tags
+const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as MyError).pipe(
+  Effect.matchTag({
+    NotFoundError: () => "Not found!",
+    ValidationError: (err) => `Validation failed: ${err.message}`,
+  })
+); // Effect<string>
+```
+
+**Explanation:**  
+- `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
+- This is safer and more maintainable than using `instanceof` or manual property checks.
+
+## Anti-Pattern
+
+Using `instanceof`, manual property checks, or switch statements to distinguish between cases, which is error-prone and less type-safe than declarative pattern matching.
