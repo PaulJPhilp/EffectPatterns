@@ -1,291 +1,48 @@
-description: Handle unexpected errors by inspecting the cause.
+description: Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions.
 globs: "**/*.ts"
 alwaysApply: true
 
 # Handle Unexpected Errors by Inspecting the Cause
-**Rule:** Handle unexpected errors by inspecting the cause.
+**Rule:** Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions.
 
 ### Example
 ```typescript
-import { Cause, Effect, Data, Schedule, Duration } from "effect";
+import { Cause, Effect } from "effect";
 
-// Define domain types
-interface DatabaseConfig {
-  readonly url: string;
-}
-
-interface DatabaseConnection {
-  readonly success: true;
-}
-
-interface UserData {
-  readonly id: string;
-  readonly name: string;
-}
-
-// Define error types
-class DatabaseError extends Data.TaggedError("DatabaseError")<{
-  readonly operation: string;
-  readonly details: string;
-}> {}
-
-class ValidationError extends Data.TaggedError("ValidationError")<{
-  readonly field: string;
-  readonly message: string;
-}> {}
-
-// Define database service
-class DatabaseService extends Effect.Service<DatabaseService>()(
-  "DatabaseService",
-  {
-    sync: () => ({
-      // Connect to database with proper error handling
-      connect: (config: DatabaseConfig): Effect.Effect<DatabaseConnection, DatabaseError> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`Connecting to database: ${config.url}`);
-          
-          if (!config.url) {
-            const error = new DatabaseError({
-              operation: "connect",
-              details: "Missing URL"
-            });
-            yield* Effect.logError(`Database error: ${JSON.stringify(error)}`);
-            return yield* Effect.fail(error);
-          }
-          
-          // Simulate unexpected errors
-          if (config.url === "invalid") {
-            yield* Effect.logError("Invalid connection string");
-            return yield* Effect.sync(() => {
-              throw new Error("Failed to parse connection string");
-            });
-          }
-          
-          if (config.url === "timeout") {
-            yield* Effect.logError("Connection timeout");
-            return yield* Effect.sync(() => {
-              throw new Error("Connection timed out");
-            });
-          }
-          
-          yield* Effect.logInfo("Database connection successful");
-          return { success: true };
-        })
-    })
-  }
-) {}
-
-// Define user service
-class UserService extends Effect.Service<UserService>()(
-  "UserService",
-  {
-    sync: () => ({
-      // Parse user data with validation
-      parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`Parsing user data: ${JSON.stringify(input)}`);
-          
-          try {
-            if (typeof input !== "object" || !input) {
-              const error = new ValidationError({
-                field: "input",
-                message: "Invalid input type"
-              });
-              yield* Effect.logWarning(`Validation error: ${JSON.stringify(error)}`);
-              throw error;
-            }
-            
-            const data = input as Record<string, unknown>;
-            
-            if (typeof data.id !== "string" || typeof data.name !== "string") {
-              const error = new ValidationError({
-                field: "input",
-                message: "Missing required fields"
-              });
-              yield* Effect.logWarning(`Validation error: ${JSON.stringify(error)}`);
-              throw error;
-            }
-            
-            const user = { id: data.id, name: data.name };
-            yield* Effect.logInfo(`Successfully parsed user: ${JSON.stringify(user)}`);
-            return user;
-          } catch (e) {
-            if (e instanceof ValidationError) {
-              return yield* Effect.fail(e);
-            }
-            yield* Effect.logError(`Unexpected error: ${e instanceof Error ? e.message : String(e)}`);
-            throw e;
-          }
-        })
-    })
-  }
-) {}
-
-// Define test service
-class TestService extends Effect.Service<TestService>()(
-  "TestService",
-  {
-    sync: () => {
-      // Create instance methods
-      const printCause = (prefix: string, cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`\n=== ${prefix} ===`);
-          
-          if (Cause.isDie(cause)) {
-            const defect = Cause.failureOption(cause);
-            if (defect._tag === "Some") {
-              const error = defect.value as Error;
-              yield* Effect.logError("Defect (unexpected error)");
-              yield* Effect.logError(`Message: ${error.message}`);
-              yield* Effect.logError(`Stack: ${error.stack?.split('\n')[1]?.trim() ?? 'N/A'}`);
-            }
-          } else if (Cause.isFailure(cause)) {
-            const error = Cause.failureOption(cause);
-            yield* Effect.logWarning("Expected failure");
-            yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
-          }
-
-          // Don't return an Effect inside Effect.gen, just return the value directly
-          return void 0;
-        });
-
-      const runScenario = <E, A extends { [key: string]: any }>(
-        name: string,
-        program: Effect.Effect<A, E>
-      ): Effect.Effect<void, never, never> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`\n=== Testing: ${name} ===`);
-          
-          type TestError = { readonly _tag: "error"; readonly cause: Cause.Cause<E> };
-          
-          const result = yield* Effect.catchAllCause(
-            program,
-            (cause) => Effect.succeed({ _tag: "error" as const, cause } as TestError)
-          );
-          
-          if ("cause" in result) {
-            yield* printCause("Error details", result.cause);
-          } else {
-            yield* Effect.logInfo(`Success: ${JSON.stringify(result)}`);
-          }
-
-          // Don't return an Effect inside Effect.gen, just return the value directly
-          return void 0;
-        });
-
-      // Return bound methods
-      return {
-        printCause,
-        runScenario
-      };
-    }
-  }
-) {}
-
-// Create program with proper error handling
-const program = Effect.gen(function* () {
-  const db = yield* DatabaseService;
-  const users = yield* UserService;
-  const test = yield* TestService;
-  
-  yield* Effect.logInfo("=== Starting Error Handling Tests ===");
-  
-  // Test expected database errors
-  yield* test.runScenario(
-    "Expected database error",
-    Effect.gen(function* () {
-      const result = yield* Effect.retry(
-        db.connect({ url: "" }),
-        Schedule.exponential(100)
-      ).pipe(
-        Effect.timeout(Duration.seconds(5)),
-        Effect.catchAll(() => Effect.fail("Connection timeout"))
-      );
-      return result;
-    })
-  );
-  
-  // Test unexpected connection errors
-  yield* test.runScenario(
-    "Unexpected connection error",
-    Effect.gen(function* () {
-      const result = yield* Effect.retry(
-        db.connect({ url: "invalid" }),
-        Schedule.recurs(3)
-      ).pipe(
-        Effect.catchAllCause(cause =>
-          Effect.gen(function* () {
-            yield* Effect.logError("Failed after 3 retries");
-            yield* Effect.logError(Cause.pretty(cause));
-            return yield* Effect.fail("Max retries exceeded");
-          })
-        )
-      );
-      return result;
-    })
-  );
-  
-  // Test user validation with recovery
-  yield* test.runScenario(
-    "Valid user data",
-    Effect.gen(function* () {
-      const result = yield* users.parseUser({ id: "1", name: "John" }).pipe(
-        Effect.orElse(() => 
-          Effect.succeed({ id: "default", name: "Default User" })
-        )
-      );
-      return result;
-    })
-  );
-  
-  // Test concurrent error handling with timeout
-  yield* test.runScenario(
-    "Concurrent operations",
-    Effect.gen(function* () {
-      const results = yield* Effect.all([
-        db.connect({ url: "" }).pipe(
-          Effect.timeout(Duration.seconds(1)),
-          Effect.catchAll(() => Effect.succeed({ success: true }))
-        ),
-        users.parseUser({ id: "invalid" }).pipe(
-          Effect.timeout(Duration.seconds(1)),
-          Effect.catchAll(() => Effect.succeed({ id: "timeout", name: "Timeout" }))
-        )
-      ], { concurrency: 2 });
-      return results;
-    })
-  );
-  
-  yield* Effect.logInfo("\n=== Error Handling Tests Complete ===");
-
-  // Don't return an Effect inside Effect.gen, just return the value directly
-  return void 0;
+// An Effect that may fail with an error or defect
+const program = Effect.try({
+  try: () => {
+    throw new Error("Unexpected failure!");
+  },
+  catch: (err) => err,
 });
 
-// Run the program with all services
-Effect.runPromise(
-  Effect.provide(
-    Effect.provide(
-      Effect.provide(
-        program,
-        TestService.Default
-      ),
-      DatabaseService.Default
-    ),
-    UserService.Default
+// Catch all causes and inspect them
+const handled = program.pipe(
+  Effect.catchAllCause((cause) =>
+    Effect.sync(() => {
+      if (Cause.isDie(cause)) {
+        console.error("Defect (die):", Cause.pretty(cause));
+      } else if (Cause.isFailure(cause)) {
+        console.error("Expected error:", Cause.pretty(cause));
+      } else if (Cause.isInterrupted(cause)) {
+        console.error("Interrupted:", Cause.pretty(cause));
+      }
+      // Handle or rethrow as needed
+    })
   )
 );
+
 ```
 
 **Explanation:**  
-By inspecting the `Cause`, you can distinguish between expected and unexpected
-failures, logging or escalating as appropriate.
+- `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
+- Use `Cause.pretty` for human-readable error traces.
+- Enables advanced error handling and debugging.
 
 ### Anti-Pattern (Avoid)
-Using a simple `Effect.catchAll` can dangerously conflate expected errors and
-unexpected defects, masking critical bugs as recoverable errors.
+Catching only expected errors and ignoring defects or interruptions, which can lead to silent failures, missed bugs, and harder debugging.
 
 **Explanation:**  
-The `Cause` object explains *why* an effect failed. A `Fail` is an expected
-error (e.g., `ValidationError`). A `Die` is an unexpected defect (e.g., a
-thrown exception). They should be handled differently.
+Traditional error handling often loses information about *why* a failure occurred.  
+`Cause` preserves the full error context, enabling advanced debugging, error reporting, and robust recovery strategies.

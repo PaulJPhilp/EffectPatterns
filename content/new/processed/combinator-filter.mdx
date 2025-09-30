@@ -1,0 +1,36 @@
+---
+title: "Filtering Results with filter"
+id: "combinator-filter"
+skillLevel: "beginner"
+useCase: ["Combinators", "Composition", "Conditional Logic"]
+summary: "Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either."
+tags: ["filter", "combinator", "predicate", "effect", "stream", "option", "either"]
+rule:
+  description: "Use filter to declaratively express conditional logic, keeping only values that satisfy a predicate."
+related: ["combinator-map", "combinator-flatmap", "combinator-conditional"]
+author: "PaulJPhilp"
+---
+
+# Filtering Results with `filter`
+
+## Guideline
+
+Use the `filter` combinator to keep only those values that satisfy a predicate.  
+This works for `Effect`, `Stream`, `Option`, and `Either`, allowing you to express conditional logic declaratively and safely.
+
+## Rationale
+
+`filter` lets you express "only continue if..." logic without resorting to manual checks or imperative branching.  
+It keeps your code composable and type-safe, and ensures that failures or empty results are handled consistently.
+
+## Good Example
+
+<Example path="./src/combinator-filter.ts" />
+
+**Explanation:**  
+`filter` applies a predicate to the value(s) inside the structure. If the predicate fails, the result is a failure (`Effect.fail`, `Either.left`), `Option.none`, or an empty stream.
+
+## Anti-Pattern
+
+Using `map` with a conditional that returns `Option` or `Either`, then manually flattening, instead of using `filter`.  
+This leads to unnecessary complexity and less readable code.

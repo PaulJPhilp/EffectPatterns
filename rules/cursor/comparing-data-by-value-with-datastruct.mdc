@@ -1,0 +1,32 @@
+description: Use Data.struct to define objects whose equality is based on their contents, enabling safe and predictable comparisons.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Comparing Data by Value with Data.struct
+**Rule:** Use Data.struct to define objects whose equality is based on their contents, enabling safe and predictable comparisons.
+
+### Example
+```typescript
+import { Data, Equal } from "effect";
+
+// Create two structurally equal objects
+const user1 = Data.struct({ id: 1, name: "Alice" });
+const user2 = Data.struct({ id: 1, name: "Alice" });
+
+// Compare by value, not reference
+const areEqual = Equal.equals(user1, user2); // true
+
+// Use in a HashSet or as keys in a Map
+import { HashSet } from "effect";
+const set = HashSet.make(user1);
+console.log(HashSet.has(set, user2)); // true
+```
+
+**Explanation:**  
+- `Data.struct` creates immutable objects with value-based equality.
+- Use for domain entities, value objects, and when storing objects in sets or as map keys.
+- Avoids bugs from reference-based comparison.
+
+**Explanation:**  
+JavaScript objects are compared by reference, which can lead to subtle bugs when modeling value objects.  
+`Data.struct` ensures that two objects with the same contents are considered equal, supporting value-based logic and collections.

@@ -1,0 +1,49 @@
+description: Use filter to declaratively express conditional logic, keeping only values that satisfy a predicate.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Filtering Results with filter
+**Rule:** Use filter to declaratively express conditional logic, keeping only values that satisfy a predicate.
+
+### Example
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Only succeed if the value is even, fail otherwise
+const effect = Effect.succeed(4).pipe(
+  Effect.filterOrFail(
+    (n): n is number => n % 2 === 0,
+    () => "Number is not even"
+  )
+); // Effect<number, string>
+
+// Option: Only keep the value if it is even
+const option = Option.some(4).pipe(
+  Option.filter((n): n is number => n % 2 === 0)
+); // Option<number>
+
+// Either: Use map and flatMap to filter
+const either = Either.right(4).pipe(
+  Either.flatMap((n) => 
+    n % 2 === 0
+      ? Either.right(n)
+      : Either.left("Number is not even")
+  )
+); // Either<string, number>
+
+// Stream: Only emit even numbers
+const stream = Stream.fromIterable([1, 2, 3, 4]).pipe(
+  Stream.filter((n): n is number => n % 2 === 0)
+); // Stream<number>
+```
+
+**Explanation:**  
+`filter` applies a predicate to the value(s) inside the structure. If the predicate fails, the result is a failure (`Effect.fail`, `Either.left`), `Option.none`, or an empty stream.
+
+### Anti-Pattern (Avoid)
+Using `map` with a conditional that returns `Option` or `Either`, then manually flattening, instead of using `filter`.  
+This leads to unnecessary complexity and less readable code.
+
+**Explanation:**  
+`filter` lets you express "only continue if..." logic without resorting to manual checks or imperative branching.  
+It keeps your code composable and type-safe, and ensures that failures or empty results are handled consistently.

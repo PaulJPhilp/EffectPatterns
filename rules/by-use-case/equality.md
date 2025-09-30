@@ -1,0 +1,38 @@
+# Equality Patterns
+
+## Type Classes for Equality, Ordering, and Hashing with Data.Class
+
+Use Data.Class to define and derive type classes for your data types, supporting composable equality, ordering, and hashing.
+
+### Example
+
+```typescript
+import { Data, Equal, HashSet } from "effect";
+
+// Define custom data types with structural equality
+const user1 = Data.struct({ id: 1, name: "Alice" });
+const user2 = Data.struct({ id: 1, name: "Alice" });
+const user3 = Data.struct({ id: 2, name: "Bob" });
+
+// Data.struct provides automatic structural equality
+console.log(Equal.equals(user1, user2)); // true (same structure)
+console.log(Equal.equals(user1, user3)); // false (different values)
+
+// Use in a HashSet (works because Data.struct implements Equal)
+const set = HashSet.make(user1);
+console.log(HashSet.has(set, user2)); // true (structural equality)
+
+// Create an array and use structural equality
+const users = [user1, user3];
+console.log(users.some((u) => Equal.equals(u, user2))); // true
+
+```
+
+**Explanation:**  
+- `Data.Class.getEqual` derives an equality type class for your data type.
+- `Data.Class.getOrder` derives an ordering type class, useful for sorting.
+- `Data.Class.getHash` derives a hash function for use in sets and maps.
+- These type classes make your types fully compatible with Effect’s collections and algorithms.
+
+---
+

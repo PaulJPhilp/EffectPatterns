@@ -1,0 +1,42 @@
+description: Use matchTag and matchTags to handle specific cases of tagged unions or custom error types in a declarative, type-safe way.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Matching Tagged Unions with matchTag and matchTags
+**Rule:** Use matchTag and matchTags to handle specific cases of tagged unions or custom error types in a declarative, type-safe way.
+
+### Example
+```typescript
+import { Data, Effect } from "effect";
+
+// Define a tagged error type
+class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
+
+type MyError = NotFoundError | ValidationError;
+
+// Effect: Match on specific error tags
+const effect: Effect.Effect<string, never, never> = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
+  Effect.catchTags({
+    NotFoundError: () => Effect.succeed("Not found!"),
+    ValidationError: (err) =>
+      Effect.succeed(`Validation failed: ${err.message}`),
+  })
+); // Effect<string>
+
+```
+
+**Explanation:**  
+- `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
+- This is safer and more maintainable than using `instanceof` or manual property checks.
+
+### Anti-Pattern (Avoid)
+Using `instanceof`, manual property checks, or switch statements to distinguish between cases, which is error-prone and less type-safe than declarative pattern matching.
+
+**Explanation:**  
+Tagged unions (a.k.a. algebraic data types or ADTs) are a powerful way to model domain logic.  
+Pattern matching on tags lets you handle each case explicitly, making your code robust, maintainable, and exhaustive.

@@ -1,49 +1,43 @@
-description: Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
+description: Use Ref to safely manage shared, mutable state in concurrent and effectful programs.
 globs: "**/*.ts"
 alwaysApply: true
 
 # Manage Shared State Safely with Ref
-**Rule:** Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
+**Rule:** Use Ref to safely manage shared, mutable state in concurrent and effectful programs.
 
 ### Example
-This program simulates 1,000 concurrent fibers all trying to increment a shared counter. Because we use `Ref.update`, every single increment is applied atomically, and the final result is always correct.
-
 ```typescript
 import { Effect, Ref } from "effect";
 
+// Create a Ref with an initial value
+const makeCounter = Ref.make(0);
+
+// Increment the counter atomically
+const increment = makeCounter.pipe(
+  Effect.flatMap((counter) =>
+    Ref.update(counter, (n) => n + 1)
+  )
+);
+
+// Read the current value
+const getValue = makeCounter.pipe(
+  Effect.flatMap((counter) => Ref.get(counter))
+);
+
+// Use Ref in a workflow
 const program = Effect.gen(function* () {
-  // Create a new Ref with an initial value of 0
-  const ref = yield* Ref.make(0);
-
-  // Define an effect that increments the counter by 1
-  const increment = Ref.update(ref, (n) => n + 1);
-
-  // Create an array of 1,000 increment effects
-  const tasks = Array.from({ length: 1000 }, () => increment);
-
-  // Run all 1,000 effects concurrently
-  yield* Effect.all(tasks, { concurrency: "unbounded" });
-
-  // Get the final value of the counter
-  return yield* Ref.get(ref);
+  const counter = yield* Ref.make(0);
+  yield* Ref.update(counter, (n) => n + 1);
+  const value = yield* Ref.get(counter);
+  yield* Effect.log(`Counter value: ${value}`);
 });
-
-// The result will always be 1000
-const programWithLogging = Effect.gen(function* () {
-  const result = yield* program;
-  yield* Effect.log(`Final counter value: ${result}`);
-  return result;
-});
-
-Effect.runPromise(programWithLogging);
-
 ```
 
----
+**Explanation:**  
+- `Ref` is an atomic, mutable reference for effectful and concurrent code.
+- All operations are safe, composable, and free of race conditions.
+- Use `Ref` for counters, caches, or any shared mutable state.
 
 **Explanation:**  
-Directly using a mutable variable (e.g., `let myState = ...`) in a concurrent system is dangerous. Multiple fibers could try to read and write to it at the same time, leading to race conditions and unpredictable results.
-
-`Ref` solves this by wrapping the state in a fiber-safe container. It's like a synchronized, in-memory cell. All operations on a `Ref` are atomic effects, guaranteeing that updates are applied correctly without being interrupted or interleaved with other updates. This eliminates race conditions and ensures data integrity.
-
----
+Managing shared state with plain variables or objects is unsafe in concurrent or asynchronous code.  
+`Ref` ensures all updates are atomic and free of race conditions, making your code robust and predictable.

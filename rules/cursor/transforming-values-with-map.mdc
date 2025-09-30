@@ -1,0 +1,39 @@
+description: Use map to apply a pure function to the value inside an Effect, Stream, Option, or Either.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Transforming Values with map
+**Rule:** Use map to apply a pure function to the value inside an Effect, Stream, Option, or Either.
+
+### Example
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Transform the result of an effect
+const effect = Effect.succeed(2).pipe(
+  Effect.map((n) => n * 10)
+); // Effect<number>
+
+// Option: Transform an optional value
+const option = Option.some(2).pipe(
+  Option.map((n) => n * 10)
+); // Option<number>
+
+// Either: Transform a value that may be an error
+const either = Either.right(2).pipe(
+  Either.map((n) => n * 10)
+); // Either<never, number>
+
+// Stream: Transform every value in a stream
+const stream = Stream.fromIterable([1, 2, 3]).pipe(
+  Stream.map((n) => n * 10)
+); // Stream<number>
+```
+
+**Explanation:**  
+No matter which type you use, `map` lets you apply a function to the value inside, without changing the error or context.
+
+**Explanation:**  
+`map` is the most fundamental combinator in functional programming.  
+It allows you to focus on *what* you want to do with a value, not *how* to extract it.  
+The same mental model applies across all major Effect types.

@@ -1,0 +1,32 @@
+description: Use succeed, some, and right to create Effect, Option, or Either from plain values.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Lifting Values with succeed, some, and right
+**Rule:** Use succeed, some, and right to create Effect, Option, or Either from plain values.
+
+### Example
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Lift a value into an Effect that always succeeds
+const effect = Effect.succeed(42); // Effect<never, number, never>
+
+// Option: Lift a value into an Option that is always Some
+const option = Option.some("hello"); // Option<string>
+
+// Either: Lift a value into an Either that is always Right
+const either = Either.right({ id: 1 }); // Either<never, { id: number }>
+```
+
+**Explanation:**  
+- `Effect.succeed(value)` creates an effect that always succeeds with `value`.
+- `Option.some(value)` creates an option that is always present.
+- `Either.right(value)` creates an either that always represents success.
+
+### Anti-Pattern (Avoid)
+Passing plain values around outside the Effect, Option, or Either world, or using `null`/`undefined` to represent absence or success.  
+This leads to less composable, less type-safe code and makes error handling harder.
+
+**Explanation:**  
+Lifting values into these structures allows you to compose them with other effects, options, or eithers, and to take advantage of all the combinators and error handling that Effect provides.

@@ -1,0 +1,59 @@
+---
+title: "Transforming Values with map"
+id: "combinator-map"
+skillLevel: "beginner"
+useCase: ["Combinators", "Composition"]
+summary: "Use map to transform the result of an Effect, Stream, Option, or Either in a declarative, type-safe way."
+tags: ["map", "combinator", "functor", "effect", "stream", "option", "either"]
+rule:
+  description: "Use map to apply a pure function to the value inside an Effect, Stream, Option, or Either."
+related: ["combinator-flatmap", "combinator-filter"]
+author: "PaulJPhilp"
+---
+
+# Transforming Values with `map`
+
+## Guideline
+
+Use the `map` combinator to apply a pure function to the value inside an `Effect`, `Stream`, `Option`, or `Either`.  
+This lets you transform results without changing the structure or error-handling behavior of the original type.
+
+## Rationale
+
+`map` is the most fundamental combinator in functional programming.  
+It allows you to focus on *what* you want to do with a value, not *how* to extract it.  
+The same mental model applies across all major Effect types.
+
+## Good Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Transform the result of an effect
+const effect = Effect.succeed(2).pipe(
+  Effect.map((n) => n * 10)
+); // Effect<number>
+
+// Option: Transform an optional value
+const option = Option.some(2).pipe(
+  Option.map((n) => n * 10)
+); // Option<number>
+
+// Either: Transform a value that may be an error
+const either = Either.right(2).pipe(
+  Either.map((n) => n * 10)
+); // Either<never, number>
+
+// Stream: Transform every value in a stream
+const stream = Stream.fromIterable([1, 2, 3]).pipe(
+  Stream.map((n) => n * 10)
+); // Stream<number>
+```
+
+**Explanation:**  
+No matter which type you use, `map` lets you apply a function to the value inside, without changing the error or context.
+
+## Anti-Pattern
+
+Manually extracting the value (e.g., with `.getOrElse`, `.unsafeRunSync`, or similar) just to transform it, then re-wrapping it.  
+This breaks composability and loses the benefits of type safety and error handling.

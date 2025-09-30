@@ -2,19 +2,27 @@
 
 - **Access Configuration from the Context**: Access configuration from the Effect context.
 - **Accessing the Current Time with Clock**: Use the Clock service to get the current time, enabling deterministic testing with TestClock.
+- **Accumulate Multiple Errors with Either**: Use Either to model computations that may fail, making errors explicit and type-safe.
 - **Accumulate Multiple Errors with Either**: Use Either to accumulate multiple validation errors instead of failing on the first one.
 - **Add Caching by Wrapping a Layer**: Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
 - **Add Custom Metrics to Your Application**: Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
+- **Add Custom Metrics to Your Application**: Use Effect's Metric module to define and update custom metrics for business and performance monitoring.
 - **Automatically Retry Failed Operations**: Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
 - **Avoid Long Chains of .andThen; Use Generators Instead**: Prefer generators over long chains of .andThen.
 - **Beyond the Date Type - Real World Dates, Times, and Timezones**: Use the Clock service for testable time-based logic and immutable primitives for timestamps.
 - **Build a Basic HTTP Server**: Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server.
+- **Chaining Computations with flatMap**: Use flatMap to sequence computations, flattening nested structures and preserving error and context handling.
+- **Checking Option and Either Cases**: Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe conditional logic.
 - **Collect All Results into a List**: Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.
+- **Combining Values with zip**: Use zip to run two computations and combine their results into a tuple, preserving error and context handling.
+- **Comparing Data by Value with Data.struct**: Use Data.struct to define objects whose equality is based on their contents, enabling safe and predictable comparisons.
 - **Comparing Data by Value with Structural Equality**: Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
 - **Compose Resource Lifecycles with `Layer.merge`**: Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.
+- **Conditional Branching with if, when, and cond**: Use combinators such as if, when, and cond to branch computations based on runtime conditions, without imperative if statements.
 - **Conditionally Branching Workflows**: Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
 - **Control Flow with Conditional Combinators**: Use conditional combinators for control flow.
 - **Control Repetition with Schedule**: Use Schedule to create composable policies for controlling the repetition and retrying of effects.
+- **Converting from Nullable, Option, or Either**: Use fromNullable, fromOption, and fromEither to lift nullable values, Option, or Either into Effects or Streams for safe, typeful interop.
 - **Create a Basic HTTP Server**: Use Http.server.serve with a platform-specific layer to run an HTTP application.
 - **Create a Managed Runtime for Scoped Resources**: Create a managed runtime for scoped resources.
 - **Create a Reusable Runtime from Layers**: Create a reusable runtime from layers.
@@ -22,32 +30,52 @@
 - **Create a Stream from a List**: Use Stream.fromIterable to begin a pipeline from an in-memory collection.
 - **Create a Testable HTTP Client Service**: Define an HttpClient service with distinct Live and Test layers to enable testable API interactions.
 - **Create Pre-resolved Effects with succeed and fail**: Create pre-resolved effects with succeed and fail.
+- **Creating from Collections**: Use fromIterable and fromArray to lift collections into Streams or Effects for batch or streaming processing.
+- **Creating from Synchronous and Callback Code**: Use sync and async to create Effects from synchronous or callback-based computations, making them composable and type-safe.
 - **Decouple Fibers with Queues and PubSub**: Use Queue for point-to-point work distribution and PubSub for broadcast messaging between fibers.
 - **Define a Type-Safe Configuration Schema**: Define a type-safe configuration schema.
 - **Define Contracts Upfront with Schema**: Define contracts upfront with schema.
 - **Define Type-Safe Errors with Data.TaggedError**: Define type-safe errors with Data.TaggedError.
 - **Distinguish 'Not Found' from Errors**: Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.
+- **Effectful Pattern Matching with matchEffect**: Use matchEffect to pattern match on the result of an Effect, running effectful logic for both success and failure cases.
 - **Execute Asynchronous Effects with Effect.runPromise**: Execute asynchronous effects with Effect.runPromise.
 - **Execute Long-Running Apps with Effect.runFork**: Use Effect.runFork to launch a long-running application as a manageable, detached fiber.
 - **Execute Synchronous Effects with Effect.runSync**: Execute synchronous effects with Effect.runSync.
 - **Extract Path Parameters**: Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler.
+- **Filtering Results with filter**: Use filter to declaratively express conditional logic, keeping only values that satisfy a predicate.
 - **Handle a GET Request**: Use Http.router.get to associate a URL path with a specific response Effect.
 - **Handle API Errors**: Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses.
 - **Handle Errors with catchTag, catchTags, and catchAll**: Handle errors with catchTag, catchTags, and catchAll.
 - **Handle Flaky Operations with Retries and Timeouts**: Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects.
 - **Handle Unexpected Errors by Inspecting the Cause**: Handle unexpected errors by inspecting the cause.
+- **Handle Unexpected Errors by Inspecting the Cause**: Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions.
+- **Handling Errors with catchAll, orElse, and match**: Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way.
+- **Handling Specific Errors with catchTag and catchTags**: Use catchTag and catchTags to handle specific tagged error types in the Effect failure channel, providing targeted recovery logic.
 - **Implement Graceful Shutdown for Your Application**: Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
+- **Instrument and Observe Function Calls with Effect.fn**: Use Effect.fn to wrap functions with effectful instrumentation, such as logging, metrics, or tracing, in a composable and type-safe way.
+- **Integrate Effect Tracing with OpenTelemetry**: Integrate Effect.withSpan with OpenTelemetry to export traces and visualize request flows across services.
+- **Leverage Effect's Built-in Structured Logging**: Use Effect.log, Effect.logInfo, and Effect.logError to add structured, context-aware logging to your Effect code.
 - **Leverage Effect's Built-in Structured Logging**: Leverage Effect's built-in structured logging.
+- **Lifting Errors and Absence with fail, none, and left**: Use fail, none, and left to create Effect, Option, or Either that represent failure or absence.
+- **Lifting Values with succeed, some, and right**: Use succeed, some, and right to create Effect, Option, or Either from plain values.
 - **Make an Outgoing HTTP Client Request**: Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem.
 - **Manage Resource Lifecycles with Scope**: Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
 - **Manage Resources Safely in a Pipeline**: Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline.
 - **Manage Shared State Safely with Ref**: Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
+- **Manage Shared State Safely with Ref**: Use Ref to safely manage shared, mutable state in concurrent and effectful programs.
 - **Manually Manage Lifecycles with `Scope`**: Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup.
+- **Mapping and Chaining over Collections with forEach and all**: Use forEach and all to process collections of values with effectful functions, collecting results in a type-safe and composable way.
 - **Mapping Errors to Fit Your Domain**: Use Effect.mapError to transform errors and create clean architectural boundaries between layers.
+- **Matching on Success and Failure with match**: Use match to pattern match on the result of an Effect, Option, or Either, handling both success and failure cases declaratively.
+- **Matching Tagged Unions with matchTag and matchTags**: Use matchTag and matchTags to handle specific cases of tagged unions or custom error types in a declarative, type-safe way.
 - **Mocking Dependencies in Tests**: Provide mock service implementations via a test-specific Layer to isolate the unit under test.
 - **Model Dependencies as Services**: Model dependencies as services.
+- **Model Optional Values Safely with Option**: Use Option to model values that may be present or absent, making absence explicit and type-safe.
 - **Model Optional Values Safely with Option**: Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
 - **Model Validated Domain Types with Brand**: Model validated domain types with Brand.
+- **Modeling Effect Results with Exit**: Use Exit to capture the outcome of an Effect, including success, failure, and defects, for robust error handling and coordination.
+- **Modeling Tagged Unions with Data.case**: Use Data.case to define tagged unions (ADTs) for modeling domain-specific states and enabling exhaustive pattern matching.
+- **Modeling Validated Domain Types with Brand**: Use Brand to define types like Email, UserId, or PositiveInt, ensuring only valid values can be constructed and used.
 - **Organize Layers into Composable Modules**: Organize services into modular Layers that are composed hierarchically to manage complexity in large applications.
 - **Parse and Validate Data with Schema.decode**: Parse and validate data with Schema.decode.
 - **Poll for Status Until a Task Completes**: Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes.
@@ -60,6 +88,8 @@
 - **Provide Configuration to Your App via a Layer**: Provide configuration to your app via a Layer.
 - **Provide Dependencies to Routes**: Define dependencies with Effect.Service and provide them to your HTTP server using a Layer.
 - **Race Concurrent Effects for the Fastest Result**: Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers.
+- **Redact and Handle Sensitive Data**: Use Redacted to wrap sensitive values, preventing accidental exposure in logs or error messages.
+- **Representing Time Spans with Duration**: Use Duration to model and manipulate time spans, enabling safe and expressive time-based logic.
 - **Representing Time Spans with Duration**: Use the Duration data type to represent time intervals instead of raw numbers.
 - **Retry Operations Based on Specific Errors**: Use predicate-based retry policies to retry an operation only for specific, recoverable errors.
 - **Run a Pipeline for its Side Effects**: Use Stream.runDrain to execute a stream for its side effects when you don't need the final values.
@@ -67,24 +97,36 @@
 - **Run Independent Effects in Parallel with Effect.all**: Use Effect.all to execute a collection of independent effects concurrently.
 - **Safely Bracket Resource Usage with `acquireRelease`**: Bracket the use of a resource between an `acquire` and a `release` effect.
 - **Send a JSON Response**: Use Http.response.json to automatically serialize data structures into a JSON response.
+- **Sequencing with andThen, tap, and flatten**: Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures, while preserving error and context handling.
 - **Set Up a New Effect Project**: Set up a new Effect project.
 - **Solve Promise Problems with Effect**: Recognize that Effect solves the core limitations of Promises: untyped errors, no dependency injection, and no cancellation.
 - **Supercharge Your Editor with the Effect LSP**: Install and use the Effect LSP extension for enhanced type information and error checking in your editor.
 - **Teach your AI Agents Effect with the MCP Server**: Use the MCP server to provide live application context to AI coding agents, enabling more accurate assistance.
+- **Trace Operations Across Services with Spans**: Use Effect.withSpan to create and annotate tracing spans for operations, enabling distributed tracing and performance analysis.
 - **Trace Operations Across Services with Spans**: Use Effect.withSpan to create custom tracing spans for important operations.
 - **Transform Data During Validation with Schema**: Use Schema.transform to safely convert data types during the validation and parsing process.
 - **Transform Effect Values with map and flatMap**: Transform Effect values with map and flatMap.
+- **Transforming Values with map**: Use map to apply a pure function to the value inside an Effect, Stream, Option, or Either.
 - **Turn a Paginated API into a Single Stream**: Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.
+- **Type Classes for Equality, Ordering, and Hashing with Data.Class**: Use Data.Class to define and derive type classes for your data types, supporting composable equality, ordering, and hashing.
 - **Understand Fibers as Lightweight Threads**: Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.
 - **Understand Layers for Dependency Injection**: Understand that a Layer is a blueprint describing how to construct a service and its dependencies.
 - **Understand that Effects are Lazy Blueprints**: Understand that effects are lazy blueprints.
 - **Understand the Three Effect Channels (A, E, R)**: Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
 - **Use .pipe for Composition**: Use .pipe for composition.
+- **Use Chunk for High-Performance Collections**: Use Chunk to model immutable, high-performance collections for efficient data processing and transformation.
 - **Use Chunk for High-Performance Collections**: Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance.
 - **Use Effect.gen for Business Logic**: Use Effect.gen for business logic.
 - **Use the Auto-Generated .Default Layer in Tests**: Use the auto-generated .Default layer in tests.
 - **Validate Request Body**: Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies.
+- **Validating and Parsing Branded Types**: Combine Schema and Brand to validate and parse branded types, guaranteeing only valid domain values are created at runtime.
+- **Work with Arbitrary-Precision Numbers using BigDecimal**: Use BigDecimal to represent and compute with decimal numbers that require arbitrary precision, such as in finance or scientific domains.
+- **Work with Dates and Times using DateTime**: Use DateTime to represent and manipulate dates and times in a type-safe, immutable, and time-zone-aware way.
+- **Work with Immutable Sets using HashSet**: Use HashSet to represent sets of unique values with efficient, immutable operations for membership, union, intersection, and difference.
+- **Working with Immutable Arrays using Data.array**: Use Data.array to define arrays whose equality is based on their contents, enabling safe, predictable comparisons and functional operations.
+- **Working with Tuples using Data.tuple**: Use Data.tuple to define tuples whose equality is based on their contents, enabling safe and predictable comparisons and pattern matching.
 - **Wrap Asynchronous Computations with tryPromise**: Wrap asynchronous computations with tryPromise.
 - **Wrap Synchronous Computations with sync and try**: Wrap synchronous computations with sync and try.
+- **Wrapping Synchronous and Asynchronous Computations**: Use try and tryPromise to lift code that may throw or reject into Effect, capturing errors in the failure channel.
 - **Write Sequential Code with Effect.gen**: Write sequential code with Effect.gen.
 - **Write Tests That Adapt to Application Code**: Write tests that adapt to application code.

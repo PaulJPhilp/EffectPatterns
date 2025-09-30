@@ -1,0 +1,37 @@
+---
+title: "Integrate Effect Tracing with OpenTelemetry"
+id: "observability-opentelemetry"
+skillLevel: "advanced"
+useCase: ["Observability", "Tracing", "OpenTelemetry", "Distributed Systems"]
+summary: "Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization."
+tags: ["tracing", "opentelemetry", "observability", "effect", "distributed-tracing"]
+rule:
+  description: "Integrate Effect.withSpan with OpenTelemetry to export traces and visualize request flows across services."
+related: ["observability-tracing-spans", "observability-structured-logging"]
+author: "PaulJPhilp"
+---
+
+# Integrate Effect Tracing with OpenTelemetry
+
+## Guideline
+
+Connect Effect's tracing spans to OpenTelemetry to enable distributed tracing, visualization, and correlation across your entire stack.
+
+## Rationale
+
+OpenTelemetry is the industry standard for distributed tracing.  
+By integrating Effect's spans with OpenTelemetry, you gain deep visibility into request flows, performance bottlenecks, and dependencies—across all your services and infrastructure.
+
+## Good Example
+
+<Example path="./src/observability-opentelemetry.ts" />
+
+**Explanation:**  
+- Start an OpenTelemetry span when entering an Effectful operation.
+- Set status and attributes as needed.
+- End the span when the operation completes or fails.
+- This enables full distributed tracing and visualization in your observability platform.
+
+## Anti-Pattern
+
+Using Effect.withSpan without exporting to OpenTelemetry, or lacking distributed tracing, which limits your ability to diagnose and visualize complex request flows.

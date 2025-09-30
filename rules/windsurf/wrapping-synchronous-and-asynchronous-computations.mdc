@@ -1,0 +1,34 @@
+description: Use try and tryPromise to lift code that may throw or reject into Effect, capturing errors in the failure channel.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Wrapping Synchronous and Asynchronous Computations
+**Rule:** Use try and tryPromise to lift code that may throw or reject into Effect, capturing errors in the failure channel.
+
+### Example
+```typescript
+import { Effect } from "effect";
+
+// Synchronous: Wrap code that may throw
+const effectSync = Effect.try({
+  try: () => JSON.parse("{ invalid json }"),
+  catch: (error) => `Parse error: ${String(error)}`
+}); // Effect<string, never, never>
+
+// Asynchronous: Wrap a promise that may reject
+const effectAsync = Effect.tryPromise({
+  try: () => fetch("https://api.example.com/data").then(res => res.json()),
+  catch: (error) => `Network error: ${String(error)}`
+}); // Effect<string, any, never>
+```
+
+**Explanation:**  
+- `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
+- `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
+
+### Anti-Pattern (Avoid)
+Using try/catch for error handling, or relying on untyped Promise rejections, which leads to less composable and less type-safe code.
+
+**Explanation:**  
+Wrapping potentially unsafe code in `try` or `tryPromise` ensures that all errors are handled in a uniform, declarative way.  
+This eliminates the need for try/catch blocks and makes error handling explicit and type-safe.

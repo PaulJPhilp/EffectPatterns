@@ -2,6 +2,46 @@
 
 ## Accumulate Multiple Errors with Either
 
+Use Either to model computations that may fail, making errors explicit and type-safe.
+
+### Example
+
+```typescript
+import { Either } from "effect";
+
+// Create a Right (success) or Left (failure)
+const success = Either.right(42); // Either<never, number>
+const failure = Either.left("Something went wrong"); // Either<string, never>
+
+// Pattern match on Either
+const result = success.pipe(
+  Either.match({
+    onLeft: (err) => `Error: ${err}`,
+    onRight: (value) => `Value: ${value}`,
+  })
+); // string
+
+// Combine multiple Eithers and accumulate errors
+const e1 = Either.right(1);
+const e2 = Either.left("fail1");
+const e3 = Either.left("fail2");
+
+const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
+const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
+const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
+
+```
+
+**Explanation:**  
+- `Either.right(value)` represents success.
+- `Either.left(error)` represents failure.
+- Pattern matching ensures all cases are handled.
+- You can accumulate errors or results from multiple Eithers.
+
+---
+
+## Accumulate Multiple Errors with Either
+
 Use Either to accumulate multiple validation errors instead of failing on the first one.
 
 ### Example
@@ -134,6 +174,35 @@ Effect.runPromise(programWithLogging);
 
 **Explanation:**  
 Generators keep sequential logic readable and easy to maintain.
+
+---
+
+## Comparing Data by Value with Data.struct
+
+Use Data.struct to define objects whose equality is based on their contents, enabling safe and predictable comparisons.
+
+### Example
+
+```typescript
+import { Data, Equal } from "effect";
+
+// Create two structurally equal objects
+const user1 = Data.struct({ id: 1, name: "Alice" });
+const user2 = Data.struct({ id: 1, name: "Alice" });
+
+// Compare by value, not reference
+const areEqual = Equal.equals(user1, user2); // true
+
+// Use in a HashSet or as keys in a Map
+import { HashSet } from "effect";
+const set = HashSet.make(user1);
+console.log(HashSet.has(set, user2)); // true
+```
+
+**Explanation:**  
+- `Data.struct` creates immutable objects with value-based equality.
+- Use for domain entities, value objects, and when storing objects in sets or as map keys.
+- Avoids bugs from reference-based comparison.
 
 ---
 
@@ -344,6 +413,45 @@ Effect.runPromise(
 
 ## Model Optional Values Safely with Option
 
+Use Option to model values that may be present or absent, making absence explicit and type-safe.
+
+### Example
+
+```typescript
+import { Option } from "effect";
+
+// Create an Option from a value
+const someValue = Option.some(42); // Option<number>
+const noValue = Option.none(); // Option<never>
+
+// Safely convert a nullable value to Option
+const fromNullable = Option.fromNullable(Math.random() > 0.5 ? "hello" : null); // Option<string>
+
+// Pattern match on Option
+const result = someValue.pipe(
+  Option.match({
+    onNone: () => "No value",
+    onSome: (n) => `Value: ${n}`,
+  })
+); // string
+
+// Use Option in a workflow
+function findUser(id: number): Option.Option<{ id: number; name: string }> {
+  return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
+}
+
+```
+
+**Explanation:**  
+- `Option.some(value)` represents a present value.
+- `Option.none()` represents absence.
+- `Option.fromNullable` safely lifts nullable values into Option.
+- Pattern matching ensures all cases are handled.
+
+---
+
+## Model Optional Values Safely with Option
+
 Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
 
 ### Example
@@ -412,6 +520,80 @@ repetitive checks.
 
 ---
 
+## Modeling Tagged Unions with Data.case
+
+Use Data.case to define tagged unions (ADTs) for modeling domain-specific states and enabling exhaustive pattern matching.
+
+### Example
+
+```typescript
+import { Data } from "effect";
+
+// Define a tagged union for a simple state machine
+type State = Data.TaggedEnum<{
+  Loading: {}
+  Success: { data: string }
+  Failure: { error: string }
+}>
+const { Loading, Success, Failure } = Data.taggedEnum<State>()
+
+// Create instances
+const state1: State = Loading()
+const state2: State = Success({ data: "Hello" })
+const state3: State = Failure({ error: "Oops" })
+
+// Pattern match on the state
+function handleState(state: State): string {
+  switch (state._tag) {
+    case "Loading":
+      return "Loading...";
+    case "Success":
+      return `Data: ${state.data}`;
+    case "Failure":
+      return `Error: ${state.error}`;
+  }
+}
+```
+
+**Explanation:**  
+- `Data.case` creates tagged constructors for each state.
+- The `_tag` property enables exhaustive pattern matching.
+- Use for domain modeling, state machines, and error types.
+
+---
+
+## Modeling Validated Domain Types with Brand
+
+Use Brand to define types like Email, UserId, or PositiveInt, ensuring only valid values can be constructed and used.
+
+### Example
+
+```typescript
+import { Brand } from "effect";
+
+// Define a branded type for Email
+type Email = string & Brand.Brand<"Email">;
+
+// Function that only accepts Email, not any string
+function sendWelcome(email: Email) {
+  // ...
+}
+
+// Constructing an Email value (unsafe, see next pattern for validation)
+const email = "user@example.com" as Email;
+
+sendWelcome(email); // OK
+// sendWelcome("not-an-email"); // Type error! (commented to allow compilation)
+
+```
+
+**Explanation:**  
+- `Brand.Branded<T, Name>` creates a new type that is distinct from its base type.
+- Only values explicitly branded as `Email` can be used where an `Email` is required.
+- This prevents accidental mixing of domain types.
+
+---
+
 ## Parse and Validate Data with Schema.decode
 
 Parse and validate data with Schema.decode.
@@ -462,6 +644,37 @@ Effect.runPromise(program);
 **Explanation:**  
 `Schema.decode` integrates parsing and validation into the Effect workflow,
 making error handling composable and type-safe.
+
+---
+
+## Representing Time Spans with Duration
+
+Use Duration to model and manipulate time spans, enabling safe and expressive time-based logic.
+
+### Example
+
+```typescript
+import { Duration } from "effect";
+
+// Create durations using helpers
+const oneSecond = Duration.seconds(1);
+const fiveMinutes = Duration.minutes(5);
+const twoHours = Duration.hours(2);
+
+// Add, subtract, and compare durations
+const total = Duration.sum(oneSecond, fiveMinutes); // 5 min 1 sec
+const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
+
+// Convert to milliseconds or human-readable format
+const ms = Duration.toMillis(fiveMinutes); // 300000
+const readable = Duration.format(oneSecond); // "1s"
+
+```
+
+**Explanation:**  
+- `Duration` is immutable and type-safe.
+- Use helpers for common intervals and arithmetic for composition.
+- Prefer `Duration` over raw numbers for all time-based logic.
 
 ---
 
@@ -661,6 +874,120 @@ Effect.runPromise(program);
 **Explanation:**  
 `Effect.gen` allows you to express business logic in a clear, sequential style,
 improving maintainability.
+
+---
+
+## Validating and Parsing Branded Types
+
+Combine Schema and Brand to validate and parse branded types, guaranteeing only valid domain values are created at runtime.
+
+### Example
+
+```typescript
+import { Brand, Effect, Schema } from "effect";
+
+// Define a branded type for Email
+type Email = string & Brand.Brand<"Email">;
+
+// Create a Schema for Email validation
+const EmailSchema = Schema.String.pipe(
+  Schema.pattern(/^[^@]+@[^@]+\.[^@]+$/), // Simple email regex
+  Schema.brand("Email" as const) // Attach the brand
+);
+
+// Parse and validate an email at runtime
+const parseEmail = (input: string) =>
+  Effect.try({
+    try: () => Schema.decodeSync(EmailSchema)(input),
+    catch: (err) => `Invalid email: ${String(err)}`,
+  });
+
+// Usage
+parseEmail("user@example.com").pipe(
+  Effect.match({
+    onSuccess: (email) => console.log("Valid email:", email),
+    onFailure: (err) => console.error(err),
+  })
+);
+
+```
+
+**Explanation:**  
+- `Schema` is used to define validation logic for the branded type.
+- `Brand.schema<Email>()` attaches the brand to the schema, so only validated values can be constructed as `Email`.
+- This pattern ensures both compile-time and runtime safety.
+
+---
+
+## Work with Dates and Times using DateTime
+
+Use DateTime to represent and manipulate dates and times in a type-safe, immutable, and time-zone-aware way.
+
+### Example
+
+```typescript
+import { DateTime } from "effect";
+
+// Create a DateTime for the current instant (returns an Effect)
+import { Effect } from "effect";
+
+const program = Effect.gen(function* () {
+  const now = yield* DateTime.now; // DateTime.Utc
+
+  // Parse from ISO string
+  const parsed = DateTime.unsafeMakeZoned("2024-07-19T12:34:56Z"); // DateTime.Zoned
+
+  // Add or subtract durations
+  const inOneHour = DateTime.add(now, { hours: 1 });
+  const oneHourAgo = DateTime.subtract(now, { hours: 1 });
+
+  // Format as ISO string
+  const iso = DateTime.formatIso(now); // e.g., "2024-07-19T23:33:19.000Z"
+
+  // Compare DateTimes
+  const isBefore = DateTime.lessThan(oneHourAgo, now); // true
+
+  return { now, inOneHour, oneHourAgo, iso, isBefore };
+});
+
+```
+
+**Explanation:**  
+- `DateTime` is immutable and time-zone-aware.
+- Supports parsing, formatting, arithmetic, and comparison.
+- Use for all date/time logic to avoid bugs with native `Date`.
+
+---
+
+## Working with Tuples using Data.tuple
+
+Use Data.tuple to define tuples whose equality is based on their contents, enabling safe and predictable comparisons and pattern matching.
+
+### Example
+
+```typescript
+import { Data, Equal } from "effect";
+
+// Create two structurally equal tuples
+const t1 = Data.tuple(1, "Alice");
+const t2 = Data.tuple(1, "Alice");
+
+// Compare by value, not reference
+const areEqual = Equal.equals(t1, t2); // true
+
+// Use tuples as keys in a HashSet or Map
+import { HashSet } from "effect";
+const set = HashSet.make(t1);
+console.log(HashSet.has(set, t2)); // true
+
+// Pattern matching on tuples
+const [id, name] = t1; // id: number, name: string
+```
+
+**Explanation:**  
+- `Data.tuple` creates immutable tuples with value-based equality.
+- Useful for modeling pairs, coordinates, or any fixed-size, heterogeneous data.
+- Supports safe pattern matching and collection operations.
 
 ---
 
