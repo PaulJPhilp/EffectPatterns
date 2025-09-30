@@ -1,0 +1,70 @@
+---
+title: Modeling Effect Results with Exit
+id: data-exit
+skillLevel: intermediate
+provider: google
+model: gemini-2.5-flash
+useCase:
+  - Data Types
+  - Effect Results
+  - Error Handling
+  - Concurrency
+summary: Use Exit<E, A> to represent the result of running an Effect, capturing
+  both success and failure (including defects) in a type-safe way.
+tags:
+  - Exit
+  - effect
+  - result
+  - error-handling
+  - concurrency
+  - data-type
+rule:
+  description: Use Exit to capture the outcome of an Effect, including success,
+    failure, and defects, for robust error handling and coordination.
+related:
+  - data-cause
+  - data-either
+author: PaulJPhilp
+expectedOutput: 'timestamp=2025-08-07T18:29:29.574Z level=INFO fiber=#0 message="Success: 42"'
+---
+
+# Modeling Effect Results with `Exit`
+
+## Guideline
+
+Use the `Exit<E, A>` data type to represent the result of running an `Effect`, capturing both success and failure (including defects) in a type-safe way.  
+`Exit` is especially useful for coordinating concurrent workflows and robust error handling.
+
+## Rationale
+
+When running or supervising effects, you often need to know not just if they succeeded or failed, but *how* they failed (e.g., error vs. defect).  
+`Exit` provides a complete, type-safe summary of an effect's outcome.
+
+## Good Example
+
+```typescript
+import { Effect, Exit } from "effect";
+
+const program = Effect.gen(function* () {
+  const exit = yield* Effect.promise(() =>
+    Effect.runPromiseExit(Effect.succeed(42))
+  );
+  if (Exit.isSuccess(exit)) {
+    yield* Effect.log(`Success: ${exit.value}`);
+  } else if (Exit.isFailure(exit)) {
+    yield* Effect.log(`Failure: ${JSON.stringify(exit.cause)}`);
+  }
+});
+
+Effect.runPromise(program);
+
+```
+
+**Explanation:**  
+- `Exit` captures both success (`Exit.succeed(value)`) and failure (`Exit.fail(error)`).
+- Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
+- Pattern matching on `Exit` lets you handle all possible outcomes.
+
+## Anti-Pattern
+
+Ignoring the outcome of an effect, or only handling success/failure without distinguishing between error types or defects, which can lead to missed errors and less robust code.

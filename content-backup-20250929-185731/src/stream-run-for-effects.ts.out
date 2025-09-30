@@ -1,0 +1,5 @@
+timestamp=2025-07-08T02:33:09.504Z level=INFO fiber=#1 message="Completing task 1"
+timestamp=2025-07-08T02:33:09.505Z level=INFO fiber=#1 message="Completing task 2"
+timestamp=2025-07-08T02:33:09.505Z level=INFO fiber=#1 message="Completing task 3"
+
+All tasks have been processed.

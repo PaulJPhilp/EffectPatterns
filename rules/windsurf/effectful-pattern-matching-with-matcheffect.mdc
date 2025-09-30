@@ -1,0 +1,30 @@
+description: Use matchEffect to pattern match on the result of an Effect, running effectful logic for both success and failure cases.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Effectful Pattern Matching with matchEffect
+**Rule:** Use matchEffect to pattern match on the result of an Effect, running effectful logic for both success and failure cases.
+
+### Example
+```typescript
+import { Effect } from "effect";
+
+// Effect: Run different Effects on success or failure
+const effect = Effect.fail("Oops!").pipe(
+  Effect.matchEffect({
+    onFailure: (err) => Effect.logError(`Error: ${err}`),
+    onSuccess: (value) => Effect.log(`Success: ${value}`),
+  })
+); // Effect<void>
+```
+
+**Explanation:**  
+- `matchEffect` allows you to run an Effect for both the success and failure cases.
+- This is useful for logging, cleanup, retries, or any effectful side effect that depends on the outcome.
+
+### Anti-Pattern (Avoid)
+Using `match` to return values and then wrapping them in Effects, or duplicating logic for side effects, instead of using `matchEffect` for direct effectful branching.
+
+**Explanation:**  
+Sometimes, handling a success or failure requires running additional Effects (e.g., logging, retries, cleanup).  
+`matchEffect` lets you do this declaratively, keeping your code composable and type-safe.

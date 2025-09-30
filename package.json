@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "effect-patterns-hub",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "description": "A community-driven knowledge base for Effect-TS patterns.",
   "scripts": {
@@ -11,6 +11,12 @@
     "generate": "bun run scripts/publish/generate.ts",
     "test": "bun run scripts/publish/test-improved.ts",
     "test:simple": "bun run scripts/publish/test.ts",
+    "test:behavioral": "bun run scripts/publish/test-behavioral.ts",
+    "test:integration": "bun run scripts/publish/test-integration.ts",
+    "test:all": "bun run test && bun run test:behavioral && bun run test:integration",
+    "lint": "biome check .",
+    "lint:effect": "bun run scripts/publish/lint-effect-patterns.ts",
+    "lint:all": "bun run lint && bun run lint:effect",
     "rules": "bun run scripts/publish/rules-improved.ts",
     "rules:simple": "bun run scripts/publish/rules.ts",
     "ingest": "bun run scripts/ingest/ingest-pipeline-improved.ts",
@@ -31,7 +37,8 @@
     "qa:repair": "bun run scripts/qa/qa-repair.ts",
     "qa:status": "bun run scripts/qa/qa-status.ts",
     "qa:repair:dry": "bun run scripts/qa/qa-repair.ts --dry-run",
-    "qa:all": "./scripts/qa/qa-process.sh && bun run qa:report"
+    "qa:all": "./scripts/qa/qa-process.sh && bun run qa:report",
+    "qa:test": "bun run scripts/qa/test-enhanced-qa.ts"
   },
   "dependencies": {
     "@effect/ai": "^0.25.2",

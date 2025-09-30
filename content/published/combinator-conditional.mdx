@@ -1,0 +1,57 @@
+---
+title: "Conditional Branching with if, when, and cond"
+id: "combinator-conditional"
+skillLevel: "beginner"
+useCase: ["Combinators", "Composition", "Conditional Logic"]
+summary: "Use combinators like if, when, and cond to express conditional logic declaratively across Effect, Stream, Option, and Either."
+tags: ["conditional", "if", "when", "cond", "combinator", "effect", "stream", "option", "either"]
+rule:
+  description: "Use combinators such as if, when, and cond to branch computations based on runtime conditions, without imperative if statements."
+related: ["combinator-filter", "combinator-map", "combinator-flatmap"]
+author: "PaulJPhilp"
+---
+
+# Conditional Branching with `if`, `when`, and `cond`
+
+## Guideline
+
+Use combinators like `if`, `when`, and `cond` to express conditional logic in a declarative, composable way.  
+These combinators allow you to branch computations based on runtime conditions, without resorting to imperative `if` statements.
+
+## Rationale
+
+Declarative branching keeps your code composable, testable, and easy to reason about.  
+It also ensures that error handling and context propagation are preserved, and that your code remains consistent across different Effect types.
+
+## Good Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Branch based on a condition
+const effect = Effect.if(true, {
+  onTrue: () => Effect.succeed("yes"),
+  onFalse: () => Effect.succeed("no")
+}); // Effect<string>
+
+// Option: Conditionally create an Option
+const option = true ? Option.some("yes") : Option.none(); // Option<string> (Some("yes"))
+
+// Either: Conditionally create an Either
+const either = true
+  ? Either.right("yes")
+  : Either.left("error"); // Either<string, string> (Right("yes"))
+
+// Stream: Conditionally emit a stream
+const stream = false
+  ? Stream.fromIterable([1, 2])
+  : Stream.empty; // Stream<number> (empty)
+```
+
+**Explanation:**  
+These combinators let you branch your computation based on a boolean or predicate, without leaving the world of composable, type-safe code.  
+You can also use `when` to run an effect only if a condition is true, or `unless` to run it only if a condition is false.
+
+## Anti-Pattern
+
+Using imperative `if` statements to decide which effect, option, either, or stream to return, breaking composability and making error/context handling less predictable.

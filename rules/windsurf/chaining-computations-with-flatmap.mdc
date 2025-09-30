@@ -1,0 +1,42 @@
+description: Use flatMap to sequence computations, flattening nested structures and preserving error and context handling.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Chaining Computations with flatMap
+**Rule:** Use flatMap to sequence computations, flattening nested structures and preserving error and context handling.
+
+### Example
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Chain two effectful computations
+const effect = Effect.succeed(2).pipe(
+  Effect.flatMap((n) => Effect.succeed(n * 10))
+); // Effect<number>
+
+// Option: Chain two optional computations
+const option = Option.some(2).pipe(
+  Option.flatMap((n) => Option.some(n * 10))
+); // Option<number>
+
+// Either: Chain two computations that may fail
+const either = Either.right(2).pipe(
+  Either.flatMap((n) => Either.right(n * 10))
+); // Either<never, number>
+
+// Stream: Chain streams (flattening)
+const stream = Stream.fromIterable([1, 2]).pipe(
+  Stream.flatMap((n) => Stream.fromIterable([n, n * 10]))
+); // Stream<number>
+```
+
+**Explanation:**  
+`flatMap` lets you build pipelines where each step can depend on the result of the previous one, and the structure is always flattened—no `Option<Option<A>>` or `Effect<Effect<A>>`.
+
+### Anti-Pattern (Avoid)
+Manually unwrapping the value (e.g., with `.getOrElse`, `.unsafeRunSync`, etc.), then creating a new effect/option/either/stream.  
+This breaks composability, loses error/context handling, and leads to deeply nested or unsafe code.
+
+**Explanation:**  
+`flatMap` is the key to sequencing dependent steps in functional programming.  
+It allows you to express workflows where each step may fail, be optional, or produce multiple results, and ensures that errors and context are handled automatically.

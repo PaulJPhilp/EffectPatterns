@@ -1,0 +1,64 @@
+---
+title: "Handle Unexpected Errors by Inspecting the Cause"
+id: "data-cause"
+skillLevel: "advanced"
+useCase: ["Data Types", "Error Handling", "Debugging", "Effect Results"]
+summary: "Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces."
+tags: ["Cause", "error-handling", "debugging", "effect", "failure", "data-type"]
+rule:
+  description: "Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions."
+related: ["data-exit", "data-either"]
+author: "PaulJPhilp"
+---
+
+# Handle Unexpected Errors by Inspecting the `Cause`
+
+## Guideline
+
+Use the `Cause<E>` data type to get rich, structured information about errors and failures in your Effects.  
+`Cause` captures not just expected errors, but also defects (unhandled exceptions), interruptions, and error traces.
+
+## Rationale
+
+Traditional error handling often loses information about *why* a failure occurred.  
+`Cause` preserves the full error context, enabling advanced debugging, error reporting, and robust recovery strategies.
+
+## Good Example
+
+```typescript
+import { Cause, Effect } from "effect";
+
+// An Effect that may fail with an error or defect
+const program = Effect.try({
+  try: () => {
+    throw new Error("Unexpected failure!");
+  },
+  catch: (err) => err,
+});
+
+// Catch all causes and inspect them
+const handled = program.pipe(
+  Effect.catchAllCause((cause) =>
+    Effect.sync(() => {
+      if (Cause.isDie(cause)) {
+        console.error("Defect (die):", Cause.pretty(cause));
+      } else if (Cause.isFailure(cause)) {
+        console.error("Expected error:", Cause.pretty(cause));
+      } else if (Cause.isInterrupted(cause)) {
+        console.error("Interrupted:", Cause.pretty(cause));
+      }
+      // Handle or rethrow as needed
+    })
+  )
+);
+
+```
+
+**Explanation:**  
+- `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
+- Use `Cause.pretty` for human-readable error traces.
+- Enables advanced error handling and debugging.
+
+## Anti-Pattern
+
+Catching only expected errors and ignoring defects or interruptions, which can lead to silent failures, missed bugs, and harder debugging.

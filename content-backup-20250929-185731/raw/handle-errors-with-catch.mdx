@@ -1,0 +1,38 @@
+---
+title: "Handle Errors with catchTag, catchTags, and catchAll"
+id: "handle-errors-with-catch"
+skillLevel: "intermediate"
+useCase: ["Error Management"]
+summary: "Use catchTag for type-safe recovery from specific tagged errors, and catchAll to recover from any possible failure."
+tags: ["error-handling", "catch", "tagged-error", "recovery"]
+rule:
+  description: "Handle errors with catchTag, catchTags, and catchAll."
+related: ["define-tagged-errors"]
+author: "effect_website"
+---
+
+# Handle Errors with catchTag, catchTags, and catchAll
+
+## Guideline
+
+To recover from failures, use the `catch*` family of functions.
+`Effect.catchTag` for specific tagged errors, `Effect.catchTags` for multiple,
+and `Effect.catchAll` for any error.
+
+## Rationale
+
+Effect's structured error handling allows you to build resilient applications.
+By using tagged errors and `catchTag`, you can handle different failure
+scenarios with different logic in a type-safe way.
+
+## Good Example
+
+<Example path="./src/handle-errors-with-catch.ts" />
+
+**Explanation:**  
+Use `catchTag` to handle specific error types in a type-safe, composable way.
+
+## Anti-Pattern
+
+Using `try/catch` blocks inside your Effect compositions. It breaks the
+declarative flow and bypasses Effect's powerful, type-safe error channels.

@@ -1,0 +1,15 @@
+timestamp=2025-07-08T02:33:09.267Z level=INFO fiber=#0 message="=== Stream Retry on Failure Demo ==="
+timestamp=2025-07-08T02:33:09.268Z level=INFO fiber=#0 message="Processing items with retry policy (3 attempts, 100ms delay)"
+timestamp=2025-07-08T02:33:09.269Z level=INFO fiber=#0 message="Attempting to process item 1..."
+timestamp=2025-07-08T02:33:09.269Z level=INFO fiber=#0 message="✅ Successfully processed item 1"
+timestamp=2025-07-08T02:33:09.269Z level=INFO fiber=#0 message="Attempting to process item 2..."
+timestamp=2025-07-08T02:33:09.269Z level=INFO fiber=#0 message="Item 2 failed, will retry..."
+timestamp=2025-07-08T02:33:09.372Z level=INFO fiber=#0 message="Attempting to process item 2..."
+timestamp=2025-07-08T02:33:09.373Z level=INFO fiber=#0 message="✅ Successfully processed item 2"
+timestamp=2025-07-08T02:33:09.373Z level=INFO fiber=#0 message="Attempting to process item 3..."
+timestamp=2025-07-08T02:33:09.373Z level=INFO fiber=#0 message="✅ Successfully processed item 3"
+timestamp=2025-07-08T02:33:09.373Z level=INFO fiber=#0 message="=== Results ==="
+Item 1: Processed item 1
+Item 2: Processed item 2
+Item 3: Processed item 3
+timestamp=2025-07-08T02:33:09.373Z level=INFO fiber=#0 message="✅ Stream processing completed"

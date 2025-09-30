@@ -1,0 +1,62 @@
+---
+title: "Handling Errors with catchAll, orElse, and match"
+id: "combinator-error-handling"
+skillLevel: "intermediate"
+useCase: ["Combinators", "Error Handling", "Composition"]
+summary: "Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option."
+tags: ["error-handling", "catchAll", "orElse", "match", "combinator", "effect", "either", "option"]
+rule:
+  description: "Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way."
+related: ["combinator-map", "combinator-flatmap", "combinator-conditional"]
+author: "PaulJPhilp"
+---
+
+# Handling Errors with `catchAll`, `orElse`, and `match`
+
+## Guideline
+
+Use combinators like `catchAll`, `orElse`, and `match` to handle errors declaratively.  
+These allow you to recover from failures, provide fallback values, or transform errors, all while preserving composability and type safety.
+
+## Rationale
+
+Error handling is a first-class concern in functional programming.  
+By using combinators, you keep error recovery logic close to where errors may occur, and avoid scattering try/catch or null checks throughout your code.
+
+## Good Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Recover from any error
+const effect = Effect.fail("fail!").pipe(
+  Effect.catchAll((err) => Effect.succeed(`Recovered from: ${err}`))
+); // Effect<string>
+
+// Option: Provide a fallback if value is None
+const option = Option.none().pipe(
+  Option.orElse(() => Option.some("default"))
+); // Option<string>
+
+// Either: Provide a fallback if value is Left
+const either = Either.left("error").pipe(
+  Either.orElse(() => Either.right("fallback"))
+); // Either<never, string>
+
+// Effect: Pattern match on success or failure
+const matchEffect = Effect.fail("fail!").pipe(
+  Effect.match({
+    onFailure: (err) => `Error: ${err}`,
+    onSuccess: (value) => `Success: ${value}`,
+  })
+); // Effect<string>
+```
+
+**Explanation:**  
+These combinators let you handle errors, provide defaults, or transform error values in a way that is composable and type-safe.  
+You can recover from errors, provide alternative computations, or pattern match on success/failure.
+
+## Anti-Pattern
+
+Using try/catch, null checks, or imperative error handling outside the combinator world.  
+This breaks composability, loses type safety, and makes error propagation unpredictable.

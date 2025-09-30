@@ -1,8 +1,7 @@
-import { Effect, Layer, Config, Console, Data, Context } from "effect";
-import { FileSystem, Path, Command } from "@effect/platform";
-import { NodeContext, NodeRuntime } from "@effect/platform-node";
-import * as ReadonlyArray from "effect/Array"; // Explicit import for array operations
-import { MdxService } from "../../cli/src/services/mdx-service/service.js";
+import { Command, FileSystem, Path } from "@effect/platform";
+import { NodeContext } from "@effect/platform-node";
+import { Console, Context, Data, Effect, Layer } from "effect";
+import { MdxService } from "effect-mdx";
 
 // --- Configuration Service (Idiomatic Effect.Service pattern) ---
 // Define the AppConfig interface
@@ -12,16 +11,14 @@ interface AppConfigService {
 }
 
 // Create the AppConfig service using Effect.Service pattern
-class AppConfig extends Effect.Service<AppConfig>()(
-  "AppConfig",
-  {
-    // Provide a sync implementation that loads config values
-    sync: () => ({
-      srcDir: process.env.SRC_DIR || process.cwd() + "/content/new/src",
-      processedDir: process.env.PROCESSED_DIR || process.cwd() + "/content/new/processed"
-    })
-  }
-) {}
+class AppConfig extends Effect.Service<AppConfig>()("AppConfig", {
+  // Provide a sync implementation that loads config values
+  sync: () => ({
+    srcDir: process.env.SRC_DIR || process.cwd() + "/content/new/src",
+    processedDir:
+      process.env.PROCESSED_DIR || process.cwd() + "/content/new/processed",
+  }),
+}) {}
 
 // The AppConfigLive layer is now available as AppConfig.Default
 
@@ -61,15 +58,19 @@ class LLMService extends Context.Tag("LLMService")<
 const LLMLive = Layer.succeed(
   LLMService,
   LLMService.of({
-    generateExpectations: (prompt): Effect.Effect<GeneratedExpectations, Error, never> => {
+    generateExpectations: (
+      prompt
+    ): Effect.Effect<GeneratedExpectations, Error, never> => {
       // Log the processing
-      return Effect.succeed(Console.info(
-        `[LLM Sim] Processing prompt for status: ${
-          prompt.executionStatus
-        } for pattern ${prompt.patternMdxContent
-          .split("\n")[0]
-          .substring(0, 50)}...`
-      )).pipe(
+      return Effect.succeed(
+        Console.info(
+          `[LLM Sim] Processing prompt for status: ${
+            prompt.executionStatus
+          } for pattern ${prompt.patternMdxContent
+            .split("\n")[0]
+            .substring(0, 50)}...`
+        )
+      ).pipe(
         // Simulate network latency
         Effect.flatMap(() => Effect.sleep(100)), // 100ms as numeric value
         // Generate the expectations
@@ -147,9 +148,8 @@ const processPatternFile = (mdxFilePath: string) =>
     yield* Console.log(`Processing pattern: ${baseName}`);
 
     // 1. Read MDX content and frontmatter
-    const { content: mdxContent, frontmatter } = yield* mdxService.readMdxAndFrontmatter(
-      mdxFilePath
-    );
+    const { content: mdxContent, frontmatter } =
+      yield* mdxService.readMdxAndFrontmatter(mdxFilePath);
 
     // 2. Read TS code content (handle missing file gracefully)
     const tsCodeContent = yield* fs.readFileString(tsFilePath).pipe(
@@ -230,14 +230,16 @@ const processPatternFile = (mdxFilePath: string) =>
     });
 
     // 5. Call LLM service to generate expectations
-    const generatedExpectations = yield* llm.generateExpectations(llmPrompt as ExpectationPrompt);
+    const generatedExpectations = yield* llm.generateExpectations(
+      llmPrompt as ExpectationPrompt
+    );
 
     // 6. Update frontmatter with generated expectations and potential discrepancy flag
     // Create a new object with updated properties to respect readonly constraints
-    let updatedFrontmatter: Frontmatter = { 
+    let updatedFrontmatter: Frontmatter = {
       ...frontmatter,
       expectedOutput: generatedExpectations.expectedOutput,
-      expectedError: generatedExpectations.expectedError
+      expectedError: generatedExpectations.expectedError,
     };
 
     if (generatedExpectations.discrepancyFlag) {
@@ -247,7 +249,9 @@ const processPatternFile = (mdxFilePath: string) =>
       );
     } else {
       // Safely remove 'needsReview' if it exists and no discrepancy is flagged
-      if (Object.prototype.hasOwnProperty.call(updatedFrontmatter, "needsReview")) {
+      if (
+        Object.prototype.hasOwnProperty.call(updatedFrontmatter, "needsReview")
+      ) {
         // Create a new object without the needsReview property
         const { needsReview, ...restProps } = updatedFrontmatter;
         // Reassign updatedFrontmatter to the new object without needsReview
@@ -257,20 +261,23 @@ const processPatternFile = (mdxFilePath: string) =>
     }
 
     // 7. Write updated MDX content back to file
-    const updatedContent = mdxService.updateMdxContent(mdxContent, updatedFrontmatter);
+    const updatedContent = mdxService.updateMdxContent(
+      mdxContent,
+      updatedFrontmatter
+    );
     yield* fs.writeFileString(mdxFilePath.toString(), updatedContent);
 
     yield* Console.log(`Finished processing ${baseName}.mdx`);
   }).pipe(
     // Catch errors for this specific file processing and log them, allowing main program to continue
     Effect.catchAll((err) =>
-      Console.error(`🔴 Error processing file ${mdxFilePath}: ${String(err)}`)
+      Console.error(`Error processing file ${mdxFilePath}: ${String(err)}`)
     )
   );
 
 // --- Main Program (Idiomatic Effect.gen) ---
 const mainProgram = Effect.gen(function* () {
-  const config = yield* AppConfig; // Access AppConfig service
+  const config = yield* AppConfig;
   const fs = yield* FileSystem.FileSystem;
   const path_ = yield* Path.Path;
 
@@ -288,14 +295,15 @@ const mainProgram = Effect.gen(function* () {
   // Process each MDX file in parallel using Effect.forEach
   yield* Effect.forEach(
     mdxFiles,
-    (file) => Effect.gen(function* () {
-      // In Effect-TS 3.16.16, we need to access the Path service from the Effect context
-      const path = yield* Path.Path;
-      // Then use the service's methods to create paths
-      const filePath = path.join(config.processedDir, file);
-      // Pass the Path object to processPatternFile
-      return yield* processPatternFile(filePath);
-    }),
+    (file) =>
+      Effect.gen(function* () {
+        // In Effect-TS 3.16.16, we need to access the Path service from the Effect context
+        const path = yield* Path.Path;
+        // Then use the service's methods to create paths
+        const filePath = path.join(config.processedDir, file);
+        // Pass the Path object to processPatternFile
+        return yield* processPatternFile(filePath);
+      }),
     {
       concurrency: "unbounded", // Adjust concurrency as needed for LLM API limits/performance
       discard: true, // Discard results as we're doing side effects (file writes)
@@ -324,11 +332,3 @@ const runnable = mainProgram.pipe(
   // Use the default console implementation provided by Effect
   Effect.provide(allLayers)
 );
-
-// Execute the Effect program at the "end of the world"
-// Explicitly type the Effect to handle the unknown context
-Effect.runPromise(runnable as Effect.Effect<void, unknown>).catch((error) => {
-  // eslint-disable-next-line no-console
-  console.error("Fatal error during script execution:", error);
-  process.exit(1);
-});

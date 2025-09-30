@@ -1,0 +1,94 @@
+---
+title: "Manage Shared State Safely with Ref"
+id: "manage-shared-state-with-ref"
+skillLevel: "intermediate"
+useCase:
+  - "Core Concepts"
+  - "Concurrency"
+summary: "Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions."
+tags:
+  - "ref"
+  - "state-management"
+  - "concurrency"
+  - "atomic"
+  - "mutable-state"
+rule:
+  description: "Use Ref to manage shared, mutable state concurrently, ensuring atomicity."
+related:
+  - "write-sequential-code-with-gen"
+author: "effect_website"
+---
+
+## Guideline
+
+When you need to share mutable state between different concurrent fibers, create a `Ref<A>`. Use `Ref.get` to read the value and `Ref.update` or `Ref.set` to modify it. All operations on a `Ref` are atomic.
+
+---
+
+## Rationale
+
+Directly using a mutable variable (e.g., `let myState = ...`) in a concurrent system is dangerous. Multiple fibers could try to read and write to it at the same time, leading to race conditions and unpredictable results.
+
+`Ref` solves this by wrapping the state in a fiber-safe container. It's like a synchronized, in-memory cell. All operations on a `Ref` are atomic effects, guaranteeing that updates are applied correctly without being interrupted or interleaved with other updates. This eliminates race conditions and ensures data integrity.
+
+---
+
+## Good Example
+
+This program simulates 1,000 concurrent fibers all trying to increment a shared counter. Because we use `Ref.update`, every single increment is applied atomically, and the final result is always correct.
+
+```typescript
+import { Effect, Ref } from "effect";
+
+const program = Effect.gen(function* () {
+  // Create a new Ref with an initial value of 0
+  const ref = yield* Ref.make(0);
+
+  // Define an effect that increments the counter by 1
+  const increment = Ref.update(ref, (n) => n + 1);
+
+  // Create an array of 1,000 increment effects
+  const tasks = Array.from({ length: 1000 }, () => increment);
+
+  // Run all 1,000 effects concurrently
+  yield* Effect.all(tasks, { concurrency: "unbounded" });
+
+  // Get the final value of the counter
+  return yield* Ref.get(ref);
+});
+
+// The result will always be 1000
+Effect.runPromise(program).then(console.log);
+
+```
+
+---
+
+## Anti-Pattern
+
+The anti-pattern is using a standard JavaScript variable for shared state. The following example is not guaranteed to produce the correct result.
+
+```typescript
+import { Effect } from "effect";
+
+// ❌ WRONG: This is a classic race condition.
+const programWithRaceCondition = Effect.gen(function* () {
+  let count = 0; // A plain, mutable variable
+
+  // An effect that reads, increments, and writes the variable
+  const increment = Effect.sync(() => {
+    const current = count;
+    // Another fiber could run between this read and the write below!
+    count = current + 1;
+  });
+
+  const tasks = Array.from({ length: 1000 }, () => increment);
+
+  yield* Effect.all(tasks, { concurrency: "unbounded" });
+
+  return count;
+});
+
+// The result is unpredictable and will likely be less than 1000.
+Effect.runPromise(programWithRaceCondition).then(console.log);
+```

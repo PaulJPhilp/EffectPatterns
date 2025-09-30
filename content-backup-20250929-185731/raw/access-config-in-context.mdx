@@ -1,0 +1,33 @@
+---
+title: "Access Configuration from the Context"
+id: "access-config-in-context"
+skillLevel: "intermediate"
+useCase: ["Application Configuration"]
+summary: "Access your type-safe configuration within an Effect.gen block by yielding the Config object you defined."
+tags: ["configuration", "config", "context", "generators", "business-logic"]
+rule:
+  description: "Access configuration from the Effect context."
+related: ["define-config-schema", "provide-config-layer"]
+author: "Sandro Maglione"
+---
+
+# Access Configuration from the Context
+
+## Guideline
+
+Inside an `Effect.gen` block, use `yield*` on your `Config` object to access the resolved, type-safe configuration values from the context.
+
+## Rationale
+
+This allows your business logic to declaratively state its dependency on a piece of configuration. The logic is clean, type-safe, and completely decoupled from *how* the configuration is provided.
+
+## Good Example
+
+<Example path="./src/access-config-in-context.ts" />
+
+**Explanation:**  
+By yielding the config object, you make your dependency explicit and leverage Effect's context system for testability and modularity.
+
+## Anti-Pattern
+
+Passing configuration values down through multiple function arguments ("prop-drilling"). This is cumbersome and obscures which components truly need which values.

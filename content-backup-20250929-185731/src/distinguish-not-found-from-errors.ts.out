@@ -1,0 +1,5 @@
+timestamp=2025-07-08T02:32:09.151Z level=INFO fiber=#0 message="Looking for user with ID 1..."
+timestamp=2025-07-08T02:32:09.152Z level=INFO fiber=#0 message="Result: Found user Paul."
+timestamp=2025-07-08T02:32:09.152Z level=INFO fiber=#0 message="
+Looking for user with ID 2..."
+timestamp=2025-07-08T02:32:09.152Z level=INFO fiber=#0 message="Result: User with ID 2 was not found."

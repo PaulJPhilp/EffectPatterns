@@ -1,0 +1,64 @@
+---
+title: "Run Independent Effects in Parallel with Effect.all"
+id: "run-effects-in-parallel-with-all"
+skillLevel: "intermediate"
+useCase:
+  - "Concurrency"
+summary: "Use Effect.all to run multiple independent effects concurrently and collect all their results into a single tuple."
+tags:
+  - "concurrency"
+  - "parallel"
+  - "performance"
+  - "all"
+  - "effect"
+rule:
+  description: "Use Effect.all to execute a collection of independent effects concurrently."
+related:
+  - "write-sequential-code-with-gen"
+  - "manage-shared-state-with-ref"
+author: "effect_website"
+---
+
+## Guideline
+
+When you have multiple `Effect`s that do not depend on each other's results, run them concurrently using `Effect.all`. This will execute all effects at the same time and return a new `Effect` that succeeds with a tuple containing all the results.
+
+---
+
+## Rationale
+
+Running tasks sequentially when they could be done in parallel is a common source of performance bottlenecks. `Effect.all` is the solution. It's the direct equivalent of `Promise.all` in the Effect ecosystem.
+
+Instead of waiting for Task A to finish before starting Task B, `Effect.all` starts all tasks simultaneously. The total time to complete is determined by the duration of the *longest* running effect, not the sum of all durations. If any single effect in the collection fails, the entire `Effect.all` will fail immediately.
+
+---
+
+## Good Example
+
+Imagine fetching a user's profile and their latest posts from two different API endpoints. These are independent operations and can be run in parallel to save time.
+
+<Example path="./src/run-effects-in-parallel-with-all.ts" />
+
+---
+
+## Anti-Pattern
+
+The anti-pattern is running independent tasks sequentially using `Effect.gen`. This is inefficient and unnecessarily slows down your application.
+
+```typescript
+import { Effect } from "effect";
+import { fetchUser, fetchPosts } from "./somewhere"; // From previous example
+
+// ❌ WRONG: This is inefficient.
+const program = Effect.gen(function* () {
+  // fetchUser runs and completes...
+  const user = yield* fetchUser;
+  // ...only then does fetchPosts begin.
+  const posts = yield* fetchPosts;
+  return [user, posts];
+});
+
+// Total execution time will be ~2.5 seconds (1s + 1.5s),
+// which is a full second slower than the parallel version.
+Effect.runPromise(program).then(console.log);
+```

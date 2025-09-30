@@ -1,0 +1,81 @@
+---
+title: "Sequencing with andThen, tap, and flatten"
+id: "combinator-sequencing"
+skillLevel: "intermediate"
+useCase: ["Combinators", "Sequencing", "Composition", "Side Effects"]
+summary: "Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either."
+tags: ["sequencing", "andThen", "tap", "flatten", "combinator", "effect", "stream", "option", "either"]
+rule:
+  description: "Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures, while preserving error and context handling."
+related: [
+  "combinator-flatmap",
+  "combinator-map",
+  "combinator-foreach-all",
+  "combinator-zip",
+  "combinator-error-handling"
+]
+author: "PaulJPhilp"
+---
+
+# Sequencing with `andThen`, `tap`, and `flatten`
+
+## Guideline
+
+Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures.  
+- `andThen` runs one computation after another, ignoring the first result.
+- `tap` runs a side-effecting computation with the result, without changing the value.
+- `flatten` removes one level of nesting from nested structures.
+
+These work for `Effect`, `Stream`, `Option`, and `Either`.
+
+## Rationale
+
+Sequencing is fundamental for expressing workflows.  
+These combinators let you:
+- Run computations in order (`andThen`)
+- Attach logging, metrics, or other side effects (`tap`)
+- Simplify nested structures (`flatten`)
+
+All while preserving composability, error handling, and type safety.
+
+## Good Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// andThen: Run one effect, then another, ignore the first result
+const logThenCompute = Effect.log("Starting...").pipe(
+  Effect.andThen(Effect.succeed(42))
+); // Effect<number>
+
+// tap: Log the result of an effect, but keep the value
+const computeAndLog = Effect.succeed(42).pipe(
+  Effect.tap((n) => Effect.log(`Result is ${n}`))
+); // Effect<number>
+
+// flatten: Remove one level of nesting
+const nestedOption = Option.some(Option.some(1));
+const flatOption = Option.flatten(nestedOption); // Option<number>
+
+const nestedEffect = Effect.succeed(Effect.succeed(1));
+const flatEffect = Effect.flatten(nestedEffect); // Effect<number>
+
+// tapError: Log errors without handling them
+const mightFail = Effect.fail("fail!").pipe(
+  Effect.tapError((err) => Effect.logError(`Error: ${err}`))
+); // Effect<never>
+
+// Stream: tap for side effects on each element
+const stream = Stream.fromIterable([1, 2, 3]).pipe(
+  Stream.tap((n) => Effect.log(`Saw: ${n}`))
+); // Stream<number>
+```
+
+**Explanation:**  
+- `andThen` is for sequencing when you don’t care about the first result.
+- `tap` is for running side effects (like logging) without changing the value.
+- `flatten` is for removing unnecessary nesting (e.g., `Option<Option<A>>` → `Option<A>`).
+
+## Anti-Pattern
+
+Using `flatMap` with a function that ignores its argument, or manually unwrapping and re-wrapping nested structures, instead of using the dedicated combinators.

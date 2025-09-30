@@ -1,0 +1,37 @@
+---
+title: "Work with Dates and Times using DateTime"
+id: "data-datetime"
+skillLevel: "intermediate"
+useCase: ["Data Types", "Time", "Date", "Domain Modeling"]
+summary: "Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations."
+tags: ["DateTime", "date", "time", "timezone", "data-type", "effect"]
+rule:
+  description: "Use DateTime to represent and manipulate dates and times in a type-safe, immutable, and time-zone-aware way."
+related: ["data-duration", "data-struct"]
+author: "PaulJPhilp"
+---
+
+# Work with Dates and Times using `DateTime`
+
+## Guideline
+
+Use the `DateTime` data type to represent and manipulate dates and times in a type-safe, immutable, and time-zone-aware way.  
+This enables safe, precise, and reliable time calculations in your applications.
+
+## Rationale
+
+JavaScript's native `Date` is mutable, not time-zone-aware, and can be error-prone.  
+`DateTime` provides an immutable, functional alternative with explicit time zone handling and robust APIs for time arithmetic.
+
+## Good Example
+
+<Example path="./src/data-datetime.ts" />
+
+**Explanation:**  
+- `DateTime` is immutable and time-zone-aware.
+- Supports parsing, formatting, arithmetic, and comparison.
+- Use for all date/time logic to avoid bugs with native `Date`.
+
+## Anti-Pattern
+
+Using JavaScript's mutable `Date` for time calculations, or ignoring time zones, which can lead to subtle and hard-to-debug errors.

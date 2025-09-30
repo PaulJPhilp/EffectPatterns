@@ -34,13 +34,14 @@
     "content/new/src/**/*.ts",
     "content/new/processed/**/*.ts",
     "content/new/raw/**/*.ts",
-    "minimal.ts",
     "cli/src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "build",
-    "archive/**"
+    "archive/**",
+    "content/backups/**",
+    "content-backup-*/**"
   ]
 }

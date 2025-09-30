@@ -1,0 +1,62 @@
+---
+title: "Race Concurrent Effects for the Fastest Result"
+id: "race-concurrent-effects"
+skillLevel: "intermediate"
+useCase:
+  - "Concurrency"
+summary: "Use Effect.race to run multiple effects concurrently and proceed with the result of the one that succeeds first, automatically interrupting the others."
+tags:
+  - "concurrency"
+  - "race"
+  - "performance"
+  - "timeout"
+  - "fallback"
+rule:
+  description: "Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers."
+related:
+  - "run-effects-in-parallel-with-all"
+  - "add-timeouts-to-effects"
+author: "effect_website"
+---
+
+## Guideline
+
+When you have multiple effects that can produce the same type of result, and you only care about the one that finishes first, use `Effect.race(effectA, effectB)`.
+
+---
+
+## Rationale
+
+`Effect.race` is a powerful concurrency primitive for performance and resilience. It starts all provided effects in parallel. The moment one of them succeeds, `Effect.race` immediately interrupts all the other "losing" effects and returns the winning result. If one of the effects fails before any have succeeded, the race is not over; the remaining effects continue to run. The entire race only fails if *all* participating effects fail.
+
+This is commonly used for:
+-   **Performance:** Querying multiple redundant data sources (e.g., two API replicas) and taking the response from whichever is faster.
+-   **Implementing Timeouts:** Racing a primary effect against a delayed `Effect.fail`, effectively creating a timeout mechanism.
+
+---
+
+## Good Example
+
+A classic use case is checking a fast cache before falling back to a slower database. We can race the cache lookup against the database query.
+
+<Example path="./src/race-concurrent-effects.ts" />
+
+---
+
+## Anti-Pattern
+
+Don't use `Effect.race` if you need the results of *all* the effects. That is the job of `Effect.all`. Using `race` in this scenario will cause you to lose data, as all but one of the effects will be interrupted and their results discarded.
+
+```typescript
+import { Effect } from "effect";
+
+const fetchProfile = Effect.succeed({ name: "Paul" });
+const fetchPermissions = Effect.succeed(["admin", "editor"]);
+
+// ❌ WRONG: This will only return either the profile OR the permissions,
+// whichever resolves first. You will lose the other piece of data.
+const incompleteData = Effect.race(fetchProfile, fetchPermissions);
+
+// ✅ CORRECT: Use Effect.all when you need all the results.
+const completeData = Effect.all([fetchProfile, fetchPermissions]);
+```

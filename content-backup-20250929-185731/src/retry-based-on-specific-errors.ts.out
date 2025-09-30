@@ -1,0 +1,8 @@
+timestamp=2025-07-08T02:32:54.439Z level=INFO fiber=#0 message="=== Retry Based on Specific Errors Demo ==="
+Attempt 1: API call failed - Server is busy. Retrying...
+Attempt 2: API call failed - Server is busy. Retrying...
+Attempt 3: API call succeeded!
+timestamp=2025-07-08T02:32:54.653Z level=INFO fiber=#0 message="Success: {\"data\":\"success\",\"attempt\":3}"
+timestamp=2025-07-08T02:32:54.654Z level=INFO fiber=#0 message="
+=== Demonstrating Non-Retryable Error ==="
+timestamp=2025-07-08T02:32:54.655Z level=INFO fiber=#0 message="NotFoundError was not retried: NotFoundError"

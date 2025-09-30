@@ -1,0 +1,43 @@
+description: Use match to pattern match on the result of an Effect, Option, or Either, handling both success and failure cases declaratively.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Matching on Success and Failure with match
+**Rule:** Use match to pattern match on the result of an Effect, Option, or Either, handling both success and failure cases declaratively.
+
+### Example
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Handle both success and failure
+const effect = Effect.fail("Oops!").pipe(
+  Effect.match({
+    onFailure: (err) => `Error: ${err}`,
+    onSuccess: (value) => `Success: ${value}`,
+  })
+); // Effect<string>
+
+// Option: Handle Some and None cases
+const option = Option.some(42).pipe(
+  Option.match({
+    onNone: () => "No value",
+    onSome: (n) => `Value: ${n}`,
+  })
+); // string
+
+// Either: Handle Left and Right cases
+const either = Either.left("fail").pipe(
+  Either.match({
+    onLeft: (err) => `Error: ${err}`,
+    onRight: (value) => `Value: ${value}`,
+  })
+); // string
+```
+
+**Explanation:**  
+- `Effect.match` lets you handle both the error and success channels in one place.
+- `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
+
+**Explanation:**  
+Pattern matching with `match` keeps your code clear and type-safe, ensuring you handle all possible outcomes.  
+It avoids scattered if/else or switch statements and makes your intent explicit.

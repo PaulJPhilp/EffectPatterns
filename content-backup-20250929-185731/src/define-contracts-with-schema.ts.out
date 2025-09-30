@@ -1,0 +1,13 @@
+timestamp=2025-07-08T02:32:08.919Z level=INFO fiber=#0 message="Looking up user 1..."
+timestamp=2025-07-08T02:32:08.920Z level=INFO fiber=#0 message="Found user: {\"id\":1,\"name\":\"John\"}"
+timestamp=2025-07-08T02:32:08.920Z level=INFO fiber=#0 message="
+Looking up user 999..."
+timestamp=2025-07-08T02:32:08.920Z level=INFO fiber=#0 message="Attempting to get user 999..."
+timestamp=2025-07-08T02:32:08.921Z level=INFO fiber=#0 message="Error: User with id 999 not found"
+timestamp=2025-07-08T02:32:08.921Z level=INFO fiber=#0 message="
+Trying to decode invalid user data..."
+timestamp=2025-07-08T02:32:08.922Z level=INFO fiber=#0 message="Validation failed:
+{
+  \"_id\": \"ParseError\",
+  \"message\": \"{ readonly id: number; readonly name: string }\n└─ [\"id\"]\n   └─ Expected number, actual \"not-a-number\"\"
+}"

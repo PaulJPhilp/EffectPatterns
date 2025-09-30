@@ -1,0 +1,31 @@
+=== Wrapping Synchronous Computations Demo ===
+
+1. Basic sync computation (random number):
+Random numbers: 0.9848, 0.4078
+
+2. Successful JSON parsing:
+Parsed JSON: {
+  name: "Paul",
+  age: 30,
+}
+
+3. Failed JSON parsing with error handling:
+Parsing failed: JSON parsing failed: SyntaxError: JSON Parse error: Unexpected token '}'
+Error result: {
+  error: "Invalid JSON",
+  input: "{\"name\": \"Paul\", \"age\":}",
+}
+
+4. Division with error handling:
+10 / 2 = 5
+Division error: Division failed: Error: Division by zero
+10 / 0 = -1 (error handled)
+
+5. String processing:
+Processing string: "Hello Effect"
+Processed result: "TCEFFE OLLEH"
+
+6. Combining multiple sync operations:
+Combined operations result: 77
+
+✅ Synchronous computations demonstration completed!

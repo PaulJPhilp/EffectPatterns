@@ -1,0 +1,60 @@
+---
+title: "Create a Reusable Runtime from Layers"
+id: "create-reusable-runtime-from-layers"
+skillLevel: "advanced"
+useCase: ["Project Setup & Execution"]
+summary: "Compile your application's layers into a reusable Runtime object to efficiently execute multiple effects that share the same context."
+tags: ["runtime", "layers", "execution", "dependency-injection", "performance"]
+rule:
+  description: "Create a reusable runtime from layers."
+related: ["execute-with-runpromise", "compose-layers-using-pipe"]
+author: "Sandro Maglione"
+---
+
+# Create a Reusable Runtime from Layers
+
+## Guideline
+
+For applications that need to run multiple effects (e.g., a web server), use
+`Layer.toRuntime(appLayer)` to compile your dependency graph into a single,
+reusable `Runtime` object.
+
+## Rationale
+
+Building the dependency graph from layers has a one-time cost. Creating a
+`Runtime` once when your application starts is highly efficient for
+long-running applications.
+
+## Good Example
+
+```typescript
+import { Effect, Layer, Runtime } from "effect";
+
+class GreeterService extends Effect.Service<GreeterService>()(
+  "Greeter",
+  {
+    sync: () => ({
+      greet: (name: string) => Effect.sync(() => `Hello ${name}`)
+    })
+  }
+) {}
+
+const runtime = Effect.runSync(
+  Layer.toRuntime(GreeterService.Default).pipe(
+    Effect.scoped
+  )
+);
+
+// In a server, you would reuse `run` for every request.
+Runtime.runPromise(runtime)(Effect.log("Hello"));
+```
+
+**Explanation:**  
+By compiling your layers into a Runtime once, you avoid rebuilding the
+dependency graph for every effect execution.
+
+## Anti-Pattern
+
+For a long-running application, avoid providing layers and running an effect
+in a single operation. This forces Effect to rebuild the dependency graph on
+every execution.

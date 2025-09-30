@@ -1,0 +1,10 @@
+timestamp=2025-07-08T02:33:07.981Z level=INFO fiber=#5 message="Starting item 1..."
+timestamp=2025-07-08T02:33:07.983Z level=INFO fiber=#5 message="Finished item 1"
+timestamp=2025-07-08T02:33:07.990Z level=INFO fiber=#8 message="Starting item 2..."
+timestamp=2025-07-08T02:33:07.990Z level=INFO fiber=#8 message="Finished item 2"
+timestamp=2025-07-08T02:33:08.991Z level=INFO fiber=#11 message="Starting item 3..."
+timestamp=2025-07-08T02:33:08.991Z level=INFO fiber=#11 message="Finished item 3"
+timestamp=2025-07-08T02:33:08.992Z level=INFO fiber=#14 message="Starting item 4..."
+timestamp=2025-07-08T02:33:08.993Z level=INFO fiber=#14 message="Finished item 4"
+
+Total time: NaN seconds

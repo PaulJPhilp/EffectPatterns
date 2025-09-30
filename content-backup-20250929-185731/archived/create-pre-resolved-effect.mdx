@@ -1,0 +1,65 @@
+---
+title: "Create Pre-resolved Effects with succeed and fail"
+id: "create-pre-resolved-effect"
+skillLevel: "beginner"
+useCase: ["Core Concepts"]
+summary: "Use Effect.succeed(value) to create an Effect that immediately succeeds with a value, and Effect.fail(error) for an Effect that immediately fails."
+tags: ["creation", "succeed", "fail", "sync"]
+rule:
+  description: "Create pre-resolved effects with succeed and fail."
+related: ["wrap-synchronous-computations"]
+author: "effect_website"
+---
+
+# Create Pre-resolved Effects with succeed and fail
+
+## Guideline
+
+To lift a pure, already-known value into an `Effect`, use `Effect.succeed()`.
+To represent an immediate and known failure, use `Effect.fail()`.
+
+## Rationale
+
+These are the simplest effect constructors, essential for returning static
+values within functions that must return an `Effect`.
+
+## Good Example
+
+```typescript
+import { Effect, Data } from "effect"
+
+// Create a custom error type
+class MyError extends Data.TaggedError("MyError") {}
+
+// Create a program that demonstrates pre-resolved effects
+const program = Effect.gen(function* () {
+  // Success effect
+  yield* Effect.logInfo("Running success effect...")
+  yield* Effect.gen(function* () {
+    const value = yield* Effect.succeed(42)
+    yield* Effect.logInfo(`Success value: ${value}`)
+  })
+
+  // Failure effect
+  yield* Effect.logInfo("\nRunning failure effect...")
+  yield* Effect.gen(function* () {
+    yield* Effect.fail(new MyError())
+  }).pipe(
+    Effect.catchTag("MyError", (error) =>
+      Effect.logInfo(`Error occurred: ${error._tag}`)
+    )
+  )
+})
+
+// Run the program
+Effect.runPromise(program)
+```
+
+**Explanation:**  
+Use `Effect.succeed` for values you already have, and `Effect.fail` for
+immediate, known errors.
+
+## Anti-Pattern
+
+Do not wrap a static value in `Effect.sync`. While it works, `Effect.succeed`
+is more descriptive and direct for values that are already available.

@@ -1,0 +1,81 @@
+---
+title: "Handle API Errors"
+id: "handle-api-errors"
+skillLevel: "intermediate"
+useCase: ['Building APIs']
+summary: "Translate application-specific errors from the Effect failure channel into meaningful HTTP error responses."
+tags:
+  - "http"
+  - "server"
+  - "error-handling"
+  - "api"
+  - "data"
+rule:
+  description: "Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses."
+author: "PaulJPhilp"
+related:
+  - "validate-request-body"
+  - "data-taggedclass"
+---
+
+## Guideline
+
+Define specific error types for your application logic and use `Http.server.serveOptions` with a custom `unhandledErrorResponse` function to map those errors to appropriate HTTP status codes and responses.
+
+---
+
+## Rationale
+
+By default, any unhandled failure in an Effect route handler results in a generic `500 Internal Server Error`. This is a safe default, but it's not helpful for API clients who need to know *why* their request failed. Was it a client-side error (like a non-existent resource, `404`) or a true server-side problem (`500`)?
+
+Centralizing error handling at the server level provides a clean separation of concerns:
+
+1.  **Domain-Focused Logic**: Your business logic can fail with specific, descriptive errors (e.g., `UserNotFoundError`) without needing any knowledge of HTTP status codes.
+2.  **Centralized Mapping**: You define the mapping from application errors to HTTP responses in a single location. This makes your API's error handling consistent and easy to maintain. If you need to change how an error is reported, you only change it in one place.
+3.  **Type Safety**: Using `Data.TaggedClass` for your errors allows you to use `Match` to exhaustively handle all known error cases, preventing you from forgetting to map a specific error type.
+4.  **Clear Client Communication**: It produces a predictable and useful API, allowing clients to programmatically react to different failure scenarios.
+
+---
+
+## Good Example
+
+This example defines two custom error types, `UserNotFoundError` and `InvalidIdError`. The route logic can fail with either. The `unhandledErrorResponse` function inspects the error and returns a `404` or `400` response accordingly, with a generic `500` for any other unexpected errors.
+
+<Example path="./src/handle-api-errors.ts" />
+
+## Anti-Pattern
+
+The anti-pattern is to handle HTTP-specific error logic inside each route handler using functions like `Effect.catchTag`.
+
+```typescript
+import { Effect, Data } from 'effect';
+import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+
+class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{ id: string }> {}
+// ... same getUser function and error classes
+
+const userRoute = Http.router.get(
+  '/users/:userId',
+  Effect.flatMap(Http.request.ServerRequest, (req) => getUser(req.params.userId)).pipe(
+    Effect.map(Http.response.json),
+    // Manually catching errors inside the route logic
+    Effect.catchTag('UserNotFoundError', (e) =>
+      Http.response.text(`User ${e.id} not found`, { status: 404 })
+    ),
+    Effect.catchTag('InvalidIdError', (e) =>
+      Http.response.text(`ID ${e.id} is not a valid format`, { status: 400 })
+    )
+  )
+);
+
+const app = Http.router.empty.pipe(Http.router.addRoute(userRoute));
+
+// No centralized error handling
+const program = Http.server.serve(app).pipe(
+  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
+);
+
+NodeRuntime.runMain(program);
+```
+
+This approach is problematic because it pollutes the business logic of the route handler with details about HTTP status codes. It's also highly repetitive; if ten different routes could produce a `UserNotFoundError`, you would need to copy this `catchTag` logic into all ten of them, making the API difficult to maintain.

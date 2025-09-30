@@ -1,0 +1,37 @@
+# Conversion Patterns
+
+## Converting from Nullable, Option, or Either
+
+Use fromNullable, fromOption, and fromEither to lift nullable values, Option, or Either into Effects or Streams for safe, typeful interop.
+
+### Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Option: Convert a nullable value to an Option
+const nullableValue: string | null = Math.random() > 0.5 ? "hello" : null;
+const option = Option.fromNullable(nullableValue); // Option<string>
+
+// Effect: Convert an Option to an Effect that may fail
+const someValue = Option.some(42);
+const effectFromOption = Option.match(someValue, {
+  onNone: () => Effect.fail("No value"),
+  onSome: (value) => Effect.succeed(value)
+}); // Effect<number, string, never>
+
+// Effect: Convert an Either to an Effect
+const either = Either.right("success");
+const effectFromEither = Either.match(either, {
+  onLeft: (error) => Effect.fail(error),
+  onRight: (value) => Effect.succeed(value)
+}); // Effect<string, never, never>
+```
+
+**Explanation:**  
+- `Effect.fromNullable` lifts a nullable value into an Effect, failing if the value is `null` or `undefined`.
+- `Effect.fromOption` lifts an Option into an Effect, failing if the Option is `none`.
+- `Effect.fromEither` lifts an Either into an Effect, failing if the Either is `left`.
+
+---
+

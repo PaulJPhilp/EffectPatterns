@@ -1,0 +1,3 @@
+timestamp=2025-07-08T02:31:55.025Z level=INFO fiber=#0 message="Step 1: 42"
+timestamp=2025-07-08T02:31:55.025Z level=INFO fiber=#0 message="Step 2: Result: 84"
+timestamp=2025-07-08T02:31:55.026Z level=INFO fiber=#1 message="Final result: Result: 84"

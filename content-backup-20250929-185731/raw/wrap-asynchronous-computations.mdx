@@ -1,0 +1,37 @@
+---
+title: "Wrap Asynchronous Computations with tryPromise"
+id: "wrap-asynchronous-computations"
+skillLevel: "beginner"
+useCase: ["Core Concepts"]
+summary: "Use Effect.tryPromise to safely convert a function that returns a Promise into an Effect, capturing rejections in the error channel."
+tags: ["promise", "async", "integration", "creation", "try"]
+rule:
+  description: "Wrap asynchronous computations with tryPromise."
+related: ["wrap-synchronous-computations"]
+author: "effect_website"
+---
+
+# Wrap Asynchronous Computations with tryPromise
+
+## Guideline
+
+To integrate a `Promise`-based function (like `fetch`), use `Effect.tryPromise`.
+
+## Rationale
+
+This is the standard bridge from the Promise-based world to Effect, allowing
+you to leverage the massive `async/await` ecosystem safely.
+
+## Good Example
+
+<Example path="./src/wrap-asynchronous-computations.ts" />
+
+**Explanation:**  
+`Effect.tryPromise` wraps a `Promise`-returning function and safely handles
+rejections, moving errors into the Effect's error channel.
+
+## Anti-Pattern
+
+Manually handling `.then()` and `.catch()` inside an `Effect.sync`. This is
+verbose, error-prone, and defeats the purpose of using Effect's built-in
+Promise integration.

@@ -1,0 +1,29 @@
+=== Transform Effect Values Demo ===
+
+1. Transform with map:
+Transformed user: {
+  id: 123,
+  name: "PAUL",
+}
+
+2. Chain effects with flatMap:
+User posts: [
+  {
+    title: "My First Post",
+  }, {
+    title: "Second Post",
+  }
+]
+
+3. Transform and combine multiple effects:
+User with posts: {
+  user: "Paul",
+  postCount: 2,
+  titles: [ "My First Post", "Second Post" ],
+}
+
+4. Transform with tap for side effects:
+Processing user: Paul
+Final result: Hello, Paul!
+
+✅ All transformations completed successfully!

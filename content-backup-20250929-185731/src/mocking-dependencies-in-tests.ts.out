@@ -1,0 +1,3 @@
+timestamp=2025-07-08T02:32:35.091Z level=INFO fiber=#0 message="Using default EmailClient implementation..."
+timestamp=2025-07-08T02:32:35.092Z level=INFO fiber=#0 message="
+Using mock EmailClient implementation..."

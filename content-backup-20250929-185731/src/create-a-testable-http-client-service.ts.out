@@ -1,0 +1,2 @@
+timestamp=2025-07-08T02:31:58.117Z level=INFO fiber=#0 message="Fetching data..."
+timestamp=2025-07-08T02:31:58.118Z level=INFO fiber=#0 message="Received data: {\"title\":\"Mock Data\"}"
