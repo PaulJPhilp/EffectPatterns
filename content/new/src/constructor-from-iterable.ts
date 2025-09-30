@@ -13,4 +13,4 @@ const letterStream = Stream.fromIterable(gen()); // Stream<string>
 
 // Effect: Create an effect from an array of effects (batch)
 const effects = [Effect.succeed(1), Effect.succeed(2)];
-const batchEffect = Effect.all(effects); // Effect<[1, 2]>
+const batchEffect = Effect.all(effects, { concurrency: "unbounded" }); // Effect<[1, 2]>
