@@ -12,6 +12,8 @@
     "test": "bun run scripts/publish/test-improved.ts",
     "test:simple": "bun run scripts/publish/test.ts",
     "test:behavioral": "bun run scripts/publish/test-behavioral.ts",
+    "test:integration": "bun run scripts/publish/test-integration.ts",
+    "test:all": "bun run test && bun run test:behavioral && bun run test:integration",
     "lint": "biome check .",
     "lint:effect": "bun run scripts/publish/lint-effect-patterns.ts",
     "lint:all": "bun run lint && bun run lint:effect",
