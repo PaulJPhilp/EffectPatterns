@@ -1483,7 +1483,7 @@ It also ensures that error handling and context propagation are preserved, and t
 
 ### Good Example
 
-Here, we use `Effect.filter` with named predicates to validate a user before proceeding. The intent is crystal clear, and the business rules (`isActive`, `isAdmin`) are reusable.
+Here, we use `Effect.filterOrFail` with named predicates to validate a user before proceeding. The intent is crystal clear, and the business rules (`isActive`, `isAdmin`) are reusable.
 
 ```typescript
 import { Effect } from "effect";
@@ -1500,32 +1500,27 @@ const findUser = (id: number): Effect.Effect<User, "DbError"> =>
   Effect.succeed({ id, status: "active", roles: ["admin"] });
 
 // Reusable, testable predicates that document business rules.
-const isActive = (user: User): Effect.Effect<boolean> =>
-  Effect.succeed(user.status === "active");
+const isActive = (user: User): boolean =>
+  user.status === "active";
 
-const isAdmin = (user: User): Effect.Effect<boolean> =>
-  Effect.succeed(user.roles.includes("admin"));
+const isAdmin = (user: User): boolean =>
+  user.roles.includes("admin");
 
 const program = (id: number): Effect.Effect<string, UserError> =>
-  Effect.gen(function* () {
-    // Find the user
-    const user = yield* findUser(id);
-
-    // Check if user is active
-    const active = yield* isActive(user);
-    if (!active) {
-      return yield* Effect.fail("UserIsInactive" as const);
-    }
-
-    // Check if user is admin
-    const admin = yield* isAdmin(user);
-    if (!admin) {
-      return yield* Effect.fail("UserIsNotAdmin" as const);
-    }
-
+  findUser(id).pipe(
+    // Validate user is active using Effect.filterOrFail
+    Effect.filterOrFail(
+      isActive,
+      () => "UserIsInactive" as const
+    ),
+    // Validate user is admin using Effect.filterOrFail
+    Effect.filterOrFail(
+      isAdmin,
+      () => "UserIsNotAdmin" as const
+    ),
     // Success case
-    return `Welcome, admin user #${user.id}!`;
-  });
+    Effect.map((user) => `Welcome, admin user #${user.id}!`)
+  );
 
 // We can then handle the specific failures in a type-safe way.
 const handled = program(123).pipe(
@@ -1582,7 +1577,7 @@ const program = (id: number) =>
     Effect.map((u) => `Welcome, ${u.name}!`),
   );
 
-// `Effect.filter` avoids this problem entirely by forcing a failure,
+// `Effect.filterOrFail` avoids this problem entirely by forcing a failure,
 // which keeps the success channel clean and correctly typed.
 ```
 
@@ -1590,7 +1585,7 @@ const program = (id: number) =>
 
 *   **It's a Real Bug:** This isn't just a style issue; it's a legitimate logical error that leads to incorrect types and broken code.
 *   **It's a Common Mistake:** Developers new to functional pipelines often forget that every path must return a value.
-*   **It Reinforces the "Why":** It perfectly demonstrates *why* `Effect.filter` is superior: `filter` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
+*   **It Reinforces the "Why":** It perfectly demonstrates *why* `Effect.filterOrFail` is superior: `filterOrFail` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
 
 ### Explanation
 
