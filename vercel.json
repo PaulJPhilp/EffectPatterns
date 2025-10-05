@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "npm install --legacy-peer-deps",
   "builds": [
     {
       "src": "api/index.ts",
