@@ -1,0 +1,309 @@
+/**
+ * ep rules add Command Tests
+ *
+ * Comprehensive test suite for the CLI rules add command
+ */
+
+import { FileSystem } from "@effect/platform";
+import { NodeContext } from "@effect/platform-node";
+import { Effect } from "effect";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { spawn, type ChildProcess } from "child_process";
+import * as fs from "fs/promises";
+import * as path from "path";
+
+// --- TEST UTILITIES ---
+
+let serverProcess: ChildProcess | null = null;
+
+const startServer = async () => {
+  serverProcess = spawn("bun", ["run", "server/index.ts"], {
+    stdio: "pipe",
+  });
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+};
+
+const stopServer = () => {
+  if (serverProcess) {
+    serverProcess.kill();
+    serverProcess = null;
+  }
+};
+
+const runCommand = async (args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
+  return new Promise((resolve) => {
+    const proc = spawn("bun", ["run", "scripts/ep.ts", ...args], {
+      stdio: "pipe",
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    proc.stdout?.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr?.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    proc.on("close", (code) => {
+      resolve({ stdout, stderr, exitCode: code || 0 });
+    });
+  });
+};
+
+const TEST_DIR = ".cursor-test";
+const TEST_FILE = path.join(TEST_DIR, "rules.md");
+
+// --- TESTS ---
+
+describe.sequential("ep rules add command", () => {
+  beforeEach(async () => {
+    // Start server before each test
+    await startServer();
+
+    // Clean up test directory
+    try {
+      await fs.rm(TEST_DIR, { recursive: true });
+    } catch {}
+  });
+
+  afterEach(async () => {
+    // Stop server after each test
+    stopServer();
+
+    // Clean up test directory
+    try {
+      await fs.rm(TEST_DIR, { recursive: true });
+    } catch {}
+  });
+
+  describe("Tool Validation", () => {
+    it("should require --tool option", async () => {
+      const result = await runCommand(["rules", "add"]);
+
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stderr).toContain("tool");
+    });
+
+    it("should reject unsupported tools", async () => {
+      const result = await runCommand(["rules", "add", "--tool", "windsurf"]);
+
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stdout).toContain("not supported");
+      expect(result.stdout).toContain("windsurf");
+    });
+
+    it("should accept cursor tool", async () => {
+      // Override target file for test
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("Fetching rules");
+    });
+  });
+
+  describe("API Integration", () => {
+    it("should fetch rules from server", async () => {
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("Fetched");
+      expect(result.stdout).toContain("rules");
+    });
+
+    it("should handle server unavailable gracefully", async () => {
+      // Stop server first
+      stopServer();
+
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      expect(result.exitCode).not.toBe(0);
+      expect(result.stdout).toContain("Failed to fetch");
+    });
+  });
+
+  describe("File Operations", () => {
+    it("should create .cursor directory if not exists", async () => {
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      expect(result.exitCode).toBe(0);
+
+      // Check directory was created
+      const dirExists = await fs.stat(".cursor")
+        .then(() => true)
+        .catch(() => false);
+
+      expect(dirExists).toBe(true);
+    });
+
+    it("should create rules.md file", async () => {
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      expect(result.exitCode).toBe(0);
+
+      // Check file was created
+      const fileExists = await fs.stat(".cursor/rules.md")
+        .then(() => true)
+        .catch(() => false);
+
+      expect(fileExists).toBe(true);
+    });
+
+    it("should include managed block markers", async () => {
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      expect(result.exitCode).toBe(0);
+
+      const content = await fs.readFile(".cursor/rules.md", "utf-8");
+
+      expect(content).toContain("# --- BEGIN EFFECTPATTERNS RULES ---");
+      expect(content).toContain("# --- END EFFECTPATTERNS RULES ---");
+    });
+
+    it("should format rules correctly", async () => {
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      expect(result.exitCode).toBe(0);
+
+      const content = await fs.readFile(".cursor/rules.md", "utf-8");
+
+      // Check for rule formatting
+      expect(content).toContain("###");
+      expect(content).toContain("**ID:**");
+      expect(content).toContain("**Use Case:**");
+      expect(content).toContain("**Skill Level:**");
+    });
+  });
+
+  describe("Update Behavior", () => {
+    it("should replace existing managed block", async () => {
+      // Create initial file
+      await fs.mkdir(".cursor", { recursive: true });
+      const initialContent = `# My Custom Rules
+
+Some custom content here
+
+# --- BEGIN EFFECTPATTERNS RULES ---
+Old rules content
+# --- END EFFECTPATTERNS RULES ---
+
+More custom content`;
+
+      await fs.writeFile(".cursor/rules.md", initialContent);
+
+      // Run command
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+      expect(result.exitCode).toBe(0);
+
+      // Check content
+      const content = await fs.readFile(".cursor/rules.md", "utf-8");
+
+      // Should preserve custom content
+      expect(content).toContain("My Custom Rules");
+      expect(content).toContain("Some custom content here");
+      expect(content).toContain("More custom content");
+
+      // Should replace managed block
+      expect(content).not.toContain("Old rules content");
+      expect(content).toContain("# --- BEGIN EFFECTPATTERNS RULES ---");
+      expect(content).toContain("# --- END EFFECTPATTERNS RULES ---");
+    });
+
+    it("should append managed block if not present", async () => {
+      // Create initial file without managed block
+      await fs.mkdir(".cursor", { recursive: true });
+      const initialContent = `# My Custom Rules
+
+Some custom content here`;
+
+      await fs.writeFile(".cursor/rules.md", initialContent);
+
+      // Run command
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+      expect(result.exitCode).toBe(0);
+
+      // Check content
+      const content = await fs.readFile(".cursor/rules.md", "utf-8");
+
+      // Should preserve custom content
+      expect(content).toContain("My Custom Rules");
+      expect(content).toContain("Some custom content here");
+
+      // Should add managed block
+      expect(content).toContain("# --- BEGIN EFFECTPATTERNS RULES ---");
+      expect(content).toContain("# --- END EFFECTPATTERNS RULES ---");
+    });
+  });
+
+  describe("Output Messages", () => {
+    it("should show progress messages", async () => {
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain("Fetching rules");
+      expect(result.stdout).toContain("Injecting rules");
+      expect(result.stdout).toContain("Successfully added");
+      expect(result.stdout).toContain("Rules integration complete");
+    });
+
+    it("should show rule count", async () => {
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toMatch(/Fetched \d+ rules/);
+      expect(result.stdout).toMatch(/Successfully added \d+ rules/);
+    });
+  });
+
+  describe("Error Handling", () => {
+    it("should handle file system errors", async () => {
+      // Clean up .cursor directory if it exists
+      try {
+        await fs.rm(".cursor", { recursive: true });
+      } catch {}
+
+      // Create a file where directory should be
+      await fs.writeFile(".cursor", "This is a file, not a directory");
+
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      // Should fail due to file system error
+      expect(result.exitCode).not.toBe(0);
+
+      // Clean up the file
+      await fs.unlink(".cursor");
+    });
+
+    it("should show helpful error messages", async () => {
+      stopServer();
+
+      const result = await runCommand(["rules", "add", "--tool", "cursor"]);
+
+      expect(result.stdout).toContain("Make sure the Pattern Server is running");
+      expect(result.stdout).toContain("bun run server:dev");
+    });
+  });
+});
+
+describe.sequential("ep rules command structure", () => {
+  it("should have rules subcommand", async () => {
+    const result = await runCommand(["rules", "--help"]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("rules");
+  });
+
+  it("should have add subcommand", async () => {
+    const result = await runCommand(["rules", "--help"]);
+
+    expect(result.stdout).toContain("add");
+  });
+
+  it("should have generate subcommand", async () => {
+    const result = await runCommand(["rules", "--help"]);
+
+    expect(result.stdout).toContain("generate");
+  });
+});

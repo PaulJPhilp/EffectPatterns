@@ -5,6 +5,7 @@
   "private": true,
   "description": "A community-driven knowledge base for Effect-TS patterns.",
   "scripts": {
+    "ep": "bun run scripts/ep.ts",
     "publish": "bun run scripts/publish/publish.ts",
     "validate": "bun run scripts/publish/validate-improved.ts",
     "validate:simple": "bun run scripts/publish/validate.ts",
@@ -19,6 +20,7 @@
     "lint:all": "bun run lint && bun run lint:effect",
     "rules": "bun run scripts/publish/rules-improved.ts",
     "rules:simple": "bun run scripts/publish/rules.ts",
+    "rules:claude": "bun run scripts/publish/generate-claude-rules.ts",
     "ingest": "bun run scripts/ingest/ingest-pipeline-improved.ts",
     "ingest:old": "bun run scripts/ingest/process.ts",
     "pipeline": "bun run scripts/publish/pipeline.ts",
@@ -38,7 +40,12 @@
     "qa:status": "bun run scripts/qa/qa-status.ts",
     "qa:repair:dry": "bun run scripts/qa/qa-repair.ts --dry-run",
     "qa:all": "./scripts/qa/qa-process.sh && bun run qa:report",
-    "qa:test": "bun run scripts/qa/test-enhanced-qa.ts"
+    "qa:test": "bun run scripts/qa/test-enhanced-qa.ts",
+    "server:dev": "bun --watch server/index.ts",
+    "test:server": "vitest run server",
+    "test:cli": "vitest run scripts/ep-rules-add.test.ts",
+    "test:e2e": "vitest run scripts/integration.test.ts",
+    "test:api": "vitest run server scripts/ep-rules-add.test.ts scripts/integration.test.ts"
   },
   "dependencies": {
     "@effect/ai": "^0.25.2",
@@ -59,13 +66,17 @@
     "@opentelemetry/sdk-trace-node": "^2.1.0",
     "@opentelemetry/semantic-conventions": "^1.37.0",
     "cli-table3": "^0.6.5",
+    "conventional-commits-parser": "^6.2.0",
+    "conventional-recommended-bump": "^11.2.0",
     "dotenv": "^17.2.2",
     "effect": "^3.17.14",
     "effect-mdx": "^0.1.0",
+    "glob": "^11.0.3",
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.0",
     "liquidjs": "^10.21.1",
     "process": "^0.11.10",
+    "semver": "^7.7.2",
     "yaml": "^2.8.1"
   },
   "devDependencies": {
