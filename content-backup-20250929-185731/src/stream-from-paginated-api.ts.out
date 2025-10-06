@@ -1,5 +1,0 @@
-timestamp=2025-07-08T02:33:06.734Z level=INFO fiber=#1 message="Fetched page 1"
-timestamp=2025-07-08T02:33:06.735Z level=INFO fiber=#1 message="Fetched page 2"
-timestamp=2025-07-08T02:33:06.735Z level=INFO fiber=#1 message="Fetched page 3"
-timestamp=2025-07-08T02:33:06.737Z level=INFO fiber=#0 message="Total users fetched: 3"
-3

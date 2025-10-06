@@ -207,7 +207,7 @@ const effect = Effect.forEach(numbers, (n) => Effect.succeed(n * 2));
 
 // Effect: Run multiple effects in parallel and collect results
 const effects = [Effect.succeed(1), Effect.succeed(2)];
-const allEffect = Effect.all(effects); // Effect<[1, 2]>
+const allEffect = Effect.all(effects, { concurrency: "unbounded" }); // Effect<[1, 2]>
 
 // Option: Map over a collection of options and collect only the Some values
 const options = [Option.some(1), Option.none(), Option.some(3)];

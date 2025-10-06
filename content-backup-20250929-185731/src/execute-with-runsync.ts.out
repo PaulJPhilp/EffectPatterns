@@ -1,7 +1,0 @@
-Simple program result: 20
-timestamp=2025-07-08T02:32:15.691Z level=INFO fiber=#1 message="Starting calculation..."
-timestamp=2025-07-08T02:32:15.692Z level=INFO fiber=#1 message="Got number: 10"
-timestamp=2025-07-08T02:32:15.692Z level=INFO fiber=#1 message="Result: 20"
-timestamp=2025-07-08T02:32:15.692Z level=INFO fiber=#2 message="Starting division..."
-timestamp=2025-07-08T02:32:15.692Z level=INFO fiber=#2 message="Attempting to divide 10 by 0..."
-timestamp=2025-07-08T02:32:15.692Z level=INFO fiber=#2 message="Error occurred: Cannot divide by zero"

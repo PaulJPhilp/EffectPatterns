@@ -5623,7 +5623,7 @@ const effect = Effect.forEach(numbers, (n) => Effect.succeed(n * 2));
 
 // Effect: Run multiple effects in parallel and collect results
 const effects = [Effect.succeed(1), Effect.succeed(2)];
-const allEffect = Effect.all(effects); // Effect<[1, 2]>
+const allEffect = Effect.all(effects, { concurrency: "unbounded" }); // Effect<[1, 2]>
 
 // Option: Map over a collection of options and collect only the Some values
 const options = [Option.some(1), Option.none(), Option.some(3)];
@@ -6772,12 +6772,13 @@ const processFile = (
     // Write content to file
     yield* fs.writeFileString(filePath, content);
 
-    // Create a stream from file content
-    const fileStream = Stream.fromEffect(fs.readFileString(filePath))
+    // Create a STREAMING pipeline - reads file in chunks, not all at once
+    const fileStream = fs.readFile(filePath)
       .pipe(
-        // Split content into lines
-        Stream.map((content: string) => content.split('\n')),
-        Stream.flatMap(Stream.fromIterable),
+        // Decode bytes to text
+        Stream.decodeText('utf-8'),
+        // Split into lines
+        Stream.splitLines,
         // Process each line
         Stream.tap((line) => Effect.log(`Processing: ${line}`))
       );
@@ -8098,8 +8099,8 @@ const fetchPosts = Effect.succeed([{ title: "Effect is great" }]).pipe(
   Effect.delay("1.5 seconds"),
 );
 
-// Run both effects concurrently
-const program = Effect.all([fetchUser, fetchPosts]);
+// Run both effects concurrently - must specify concurrency option!
+const program = Effect.all([fetchUser, fetchPosts], { concurrency: "unbounded" });
 
 // The resulting effect will succeed with a tuple: [{id, name}, [{title}]]
 // Total execution time will be ~1.5 seconds (the duration of the longest task).
@@ -10772,46 +10773,27 @@ const program = Effect.gen(function* () {
   // Example 2: Successful JSON parsing
   yield* Effect.log("\n2. Successful JSON parsing:");
   const validJson = '{"name": "Paul", "age": 30}';
-  const parsed = yield* parseJson(validJson).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        yield* Effect.log(`Parsing failed: ${error.message}`);
-      })
-    )
-  );
+  const parsed = yield* parseJson(validJson);
   yield* Effect.log("Parsed JSON:" + JSON.stringify(parsed));
 
-  // Example 3: Failed JSON parsing with error handling
-  yield* Effect.log("\n3. Failed JSON parsing with error handling:");
+  // Example 3: Failed JSON parsing with error logging
+  yield* Effect.log("\n3. Failed JSON parsing with error logging:");
   const invalidJson = '{"name": "Paul", "age":}';
-  const parsedWithError = yield* parseJson(invalidJson).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        yield* Effect.log(`Parsing failed: ${error.message}`);
-      })
-    )
+  yield* parseJson(invalidJson).pipe(
+    Effect.tapError((error) => Effect.log(`Parsing failed: ${error.message}`)),
+    Effect.catchAll(() => Effect.succeed({ name: "default", age: 0 }))
   );
-  yield* Effect.log("Error result:" + JSON.stringify(parsedWithError));
+  yield* Effect.log("Continued after error (with recovery)");
 
-  // Example 4: Division with error handling
-  yield* Effect.log("\n4. Division with error handling:");
-  const division1 = yield* divide(10, 2).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        console.log(`Division error: ${error.message}`);
-        return -1;
-      })
-    )
-  );
+  // Example 4: Division with error logging and recovery
+  yield* Effect.log("\n4. Division with error logging and recovery:");
+  const division1 = yield* divide(10, 2);
   yield* Effect.log(`10 / 2 = ${division1}`);
 
+  // Use tapError to log, then catchAll to recover
   const division2 = yield* divide(10, 0).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        console.log(`Division error: ${error.message}`);
-        return -1;
-      })
-    )
+    Effect.tapError((error) => Effect.log(`Division error: ${error.message}`)),
+    Effect.catchAll(() => Effect.succeed(-1))
   );
   yield* Effect.log(`10 / 0 = ${division2} (error handled)`);
 

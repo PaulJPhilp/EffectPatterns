@@ -46,46 +46,27 @@ const program = Effect.gen(function* () {
   // Example 2: Successful JSON parsing
   yield* Effect.log("\n2. Successful JSON parsing:");
   const validJson = '{"name": "Paul", "age": 30}';
-  const parsed = yield* parseJson(validJson).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        yield* Effect.log(`Parsing failed: ${error.message}`);
-      })
-    )
-  );
+  const parsed = yield* parseJson(validJson);
   yield* Effect.log("Parsed JSON:" + JSON.stringify(parsed));
 
-  // Example 3: Failed JSON parsing with error handling
-  yield* Effect.log("\n3. Failed JSON parsing with error handling:");
+  // Example 3: Failed JSON parsing with error logging
+  yield* Effect.log("\n3. Failed JSON parsing with error logging:");
   const invalidJson = '{"name": "Paul", "age":}';
-  const parsedWithError = yield* parseJson(invalidJson).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        yield* Effect.log(`Parsing failed: ${error.message}`);
-      })
-    )
+  yield* parseJson(invalidJson).pipe(
+    Effect.tapError((error) => Effect.log(`Parsing failed: ${error.message}`)),
+    Effect.catchAll(() => Effect.succeed({ name: "default", age: 0 }))
   );
-  yield* Effect.log("Error result:" + JSON.stringify(parsedWithError));
+  yield* Effect.log("Continued after error (with recovery)");
 
-  // Example 4: Division with error handling
-  yield* Effect.log("\n4. Division with error handling:");
-  const division1 = yield* divide(10, 2).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        console.log(`Division error: ${error.message}`);
-        return -1;
-      })
-    )
-  );
+  // Example 4: Division with error logging and recovery
+  yield* Effect.log("\n4. Division with error logging and recovery:");
+  const division1 = yield* divide(10, 2);
   yield* Effect.log(`10 / 2 = ${division1}`);
 
+  // Use tapError to log, then catchAll to recover
   const division2 = yield* divide(10, 0).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        console.log(`Division error: ${error.message}`);
-        return -1;
-      })
-    )
+    Effect.tapError((error) => Effect.log(`Division error: ${error.message}`)),
+    Effect.catchAll(() => Effect.succeed(-1))
   );
   yield* Effect.log(`10 / 0 = ${division2} (error handled)`);
 

@@ -281,12 +281,13 @@ const processFile = (
     // Write content to file
     yield* fs.writeFileString(filePath, content);
 
-    // Create a stream from file content
-    const fileStream = Stream.fromEffect(fs.readFileString(filePath))
+    // Create a STREAMING pipeline - reads file in chunks, not all at once
+    const fileStream = fs.readFile(filePath)
       .pipe(
-        // Split content into lines
-        Stream.map((content: string) => content.split('\n')),
-        Stream.flatMap(Stream.fromIterable),
+        // Decode bytes to text
+        Stream.decodeText('utf-8'),
+        // Split into lines
+        Stream.splitLines,
         // Process each line
         Stream.tap((line) => Effect.log(`Processing: ${line}`))
       );

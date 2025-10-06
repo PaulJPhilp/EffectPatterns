@@ -53,7 +53,9 @@ const extract = Effect.gen(function* () {
 
         // Simple validation for now, can be expanded
         if (!frontmatter.id || !frontmatter.title) {
-          return Effect.fail(new Error(`Missing id or title in ${file}`));
+          return yield* Effect.fail(
+            new Error(`Missing id or title in ${file}`)
+          );
         }
 
         const codeBlockRegex =
@@ -62,7 +64,7 @@ const extract = Effect.gen(function* () {
         const tsCode = tsCodeMatch ? tsCodeMatch[1] : null;
 
         if (!tsCode) {
-          return Effect.fail(
+          return yield* Effect.fail(
             new Error(`No TypeScript code block found in ${file}`)
           );
         }
@@ -110,4 +112,4 @@ const runnable = main.pipe(
   )
 );
 
-Effect.runFork(runnable);
+Effect.runFork(runnable as Effect.Effect<void, unknown, never>);

@@ -1,4 +1,0 @@
-timestamp=2025-07-08T02:33:14.660Z level=INFO fiber=#0 message="Starting HTTP server..."
-timestamp=2025-07-08T02:33:14.668Z level=INFO fiber=#1 message="Server running at http://localhost:3456/"
-timestamp=2025-07-08T02:33:17.671Z level=INFO fiber=#0 message="Demo completed - shutting down server"
-timestamp=2025-07-08T02:33:17.674Z level=INFO fiber=#0 message="Server shut down"

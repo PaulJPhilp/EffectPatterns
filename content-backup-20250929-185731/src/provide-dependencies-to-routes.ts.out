@@ -1,6 +1,0 @@
-[22:32:49.902] INFO (#1): Starting server on port 3458...
-[22:32:49.905] INFO (#1): Server started successfully on http://localhost:3458
-[22:32:49.905] INFO (#1): Try: curl http://localhost:3458/users/123
-[22:32:49.905] INFO (#1): Try: curl http://localhost:3458/users/456
-[22:32:52.907] INFO (#1): Shutting down server...
-[22:32:52.911] INFO (#1): Server shutdown complete

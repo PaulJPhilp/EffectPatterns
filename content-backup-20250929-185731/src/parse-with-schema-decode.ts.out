@@ -1,3 +1,0 @@
-timestamp=2025-07-08T02:32:35.780Z level=INFO fiber=#0 message="Valid input result: Welcome, Paul!"
-timestamp=2025-07-08T02:32:35.781Z level=INFO fiber=#0 message="Invalid input result: Invalid user data."
-timestamp=2025-07-08T02:32:35.781Z level=INFO fiber=#0 message="Bad input result: Invalid user data."

@@ -99,7 +99,7 @@ const program = (id: number) =>
     Effect.map((u) => `Welcome, ${u.name}!`),
   );
 
-// `Effect.filter` avoids this problem entirely by forcing a failure,
+// `Effect.filterOrFail` avoids this problem entirely by forcing a failure,
 // which keeps the success channel clean and correctly typed.
 ```
 
@@ -107,7 +107,7 @@ const program = (id: number) =>
 
 *   **It's a Real Bug:** This isn't just a style issue; it's a legitimate logical error that leads to incorrect types and broken code.
 *   **It's a Common Mistake:** Developers new to functional pipelines often forget that every path must return a value.
-*   **It Reinforces the "Why":** It perfectly demonstrates *why* `Effect.filter` is superior: `filter` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
+*   **It Reinforces the "Why":** It perfectly demonstrates *why* `Effect.filterOrFail` is superior: `filterOrFail` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
 
 **Explanation:**  
 This pattern allows you to embed decision-making logic directly into your composition pipelines, making your code more declarative and readable. It solves two key problems:

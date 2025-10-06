@@ -1,3 +1,0 @@
-timestamp=2025-07-08T02:32:34.927Z level=INFO fiber=#0 message="Attempting to find user..."
-timestamp=2025-07-08T02:32:34.929Z level=INFO fiber=#0 message="Repository error occurred: RepositoryError"
-timestamp=2025-07-08T02:32:34.929Z level=INFO fiber=#0 message="Original cause: ConnectionError"
