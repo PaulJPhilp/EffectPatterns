@@ -1,4 +1,0 @@
-{
-  "typescript.tsconfig": "tsconfig.editor.json",
-  "typescript.tsdk": "node_modules/typescript/lib"
-}

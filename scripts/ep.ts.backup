@@ -11,7 +11,7 @@ import { Args, Command, Options, Prompt } from '@effect/cli';
 import { FileSystem, HttpClient } from '@effect/platform';
 import { Command as PlatformCommand } from '@effect/platform';
 import { NodeContext, NodeRuntime } from '@effect/platform-node';
-import { Console, Effect, Layer, Option, Schema } from 'effect';
+import { Console, Effect, Schema } from 'effect';
 import { spawn, execSync } from 'child_process';
 import * as semver from 'semver';
 import { glob } from 'glob';
@@ -151,25 +151,10 @@ const getLatestTag = (): Effect.Effect<string, Error> =>
       }).trim();
       return tag;
     },
-    catch: (error) => {
-      const message = error instanceof Error ? error.message : String(error);
-
-      if (message.includes('No names found')) {
-        return new Error(
-          'No git tags found in this repository.\n\n' +
-          'This is likely the first release. Create an initial tag:\n' +
-          '  git tag v0.1.0\n' +
-          '  git push origin v0.1.0\n\n' +
-          'Or use conventional commits and run:\n' +
-          '  bun run ep release create'
-        );
-      }
-
-      return new Error(
-        `Failed to get latest tag: ${message}\n\n` +
-        'Make sure you are in a git repository with at least one tag.'
-      );
-    },
+    catch: (error) =>
+      new Error(
+        `Failed to get latest tag: ${error instanceof Error ? error.message : String(error)}`
+      ),
   });
 
 /**
@@ -186,19 +171,10 @@ const getCommitsSinceTag = (tag: string): Effect.Effect<string[], Error> =>
         .filter((commit) => commit.length > 0);
       return commits;
     },
-    catch: (error) => {
-      const message = error instanceof Error ? error.message : String(error);
-      return new Error(
-        `Failed to get commits since tag ${tag}: ${message}\n\n` +
-        'Possible causes:\n' +
-        `  • Tag "${tag}" does not exist\n` +
-        '  • Not in a git repository\n' +
-        '  • Repository history is corrupted\n\n' +
-        'Try:\n' +
-        '  git tag -l    # List all tags\n' +
-        '  git log --oneline    # Verify git history'
-      );
-    },
+    catch: (error) =>
+      new Error(
+        `Failed to get commits: ${error instanceof Error ? error.message : String(error)}`
+      ),
   });
 
 /**
@@ -213,8 +189,7 @@ const getRecommendedBump = (
   Effect.async((resume) => {
     import('conventional-recommended-bump')
       .then((module) => {
-        // Handle both ESM and CommonJS exports
-        const conventionalRecommendedBump = (module as any).default || module;
+        const conventionalRecommendedBump = module.default;
 
         conventionalRecommendedBump(
           {
@@ -248,9 +223,7 @@ const getRecommendedBump = (
  * Parse commits and categorize them
  */
 const categorizeCommits = async (commits: string[]) => {
-  // Handle both ESM and CommonJS exports
-  const module = await import('conventional-commits-parser');
-  const parseCommit = (module as any).default || module;
+  const { default: parseCommit } = await import('conventional-commits-parser');
 
   const categories = {
     breaking: [] as string[],
@@ -364,6 +337,10 @@ const toKebabCase = (str: string): string => {
 };
 
 // --- LINTER TYPES & FUNCTIONS ---
+// Temporarily commented out for release - will be re-enabled soon
+
+if (false as any) {
+// The following linter code is disabled - will be re-enabled in a future release
 
 interface LintIssue {
   rule: string;
@@ -1003,6 +980,8 @@ function printLintResults(results: LintResult[]): number {
   }
 }
 
+} // End of disabled linter code
+
 /**
  * Analyze release - shared logic for preview and create
  */
@@ -1026,9 +1005,10 @@ const analyzeRelease = () =>
     const nextVersion = semver.inc(currentVersion, bump.releaseType);
 
     if (!nextVersion) {
-      return yield* Effect.fail(
+      yield* Effect.fail(
         new Error(`Failed to calculate next version from ${currentVersion}`)
       );
+      return { hasChanges: false } as const;
     }
 
     // Categorize commits
@@ -1058,7 +1038,7 @@ const analyzeRelease = () =>
 // --- SUBCOMMAND DEFINITIONS ---
 
 /**
- * admin:validate - Validates all pattern files
+ * validate - Validates all pattern files
  */
 const validateCommand = Command.make('validate', {
   options: {
@@ -1071,6 +1051,27 @@ const validateCommand = Command.make('validate', {
   args: {},
 }).pipe(
   Command.withDescription('Validates all pattern files for correctness and consistency.'),
+  Command.withHelp(`
+Validates all pattern files in the repository, checking:
+  • MDX frontmatter structure and required fields
+  • Corresponding TypeScript example files exist
+  • Broken links and references
+  • Code block syntax and formatting
+
+EXAMPLES:
+  # Validate all patterns
+  bun run ep validate
+
+  # Validate with detailed output
+  bun run ep validate --verbose
+  bun run ep validate -v
+
+EXIT CODES:
+  0  All patterns valid
+  1  Validation errors found
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withHandler(({ options }) =>
     executeScriptWithProgress(
       'scripts/publish/validate-improved.ts',
@@ -1081,7 +1082,7 @@ const validateCommand = Command.make('validate', {
 );
 
 /**
- * admin:test - Runs all TypeScript example tests
+ * test - Runs all TypeScript example tests
  */
 const testCommand = Command.make('test', {
   options: {
@@ -1094,6 +1095,28 @@ const testCommand = Command.make('test', {
   args: {},
 }).pipe(
   Command.withDescription('Runs all TypeScript example tests to ensure patterns execute correctly.'),
+  Command.withHelp(`
+Executes all TypeScript example files in content/new/src/ to verify:
+  • Code runs without errors
+  • Examples demonstrate the pattern correctly
+  • No runtime exceptions or hangs
+
+This ensures all published patterns have working, executable examples.
+
+EXAMPLES:
+  # Run all pattern tests
+  bun run ep test
+
+  # Run tests with detailed output
+  bun run ep test --verbose
+  bun run ep test -v
+
+EXIT CODES:
+  0  All tests passed
+  1  One or more tests failed
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withHandler(({ options }) =>
     executeScriptWithProgress(
       'scripts/publish/test-improved.ts',
@@ -1104,7 +1127,7 @@ const testCommand = Command.make('test', {
 );
 
 /**
- * admin:pipeline - Runs the full ingestion and publishing pipeline
+ * pipeline - Runs the full ingestion and publishing pipeline
  */
 const pipelineCommand = Command.make('pipeline', {
   options: {
@@ -1117,6 +1140,35 @@ const pipelineCommand = Command.make('pipeline', {
   args: {},
 }).pipe(
   Command.withDescription('Runs the complete pattern publishing pipeline from test to rules generation.'),
+  Command.withHelp(`
+Executes the complete pattern publishing pipeline in sequence:
+  1. Test      - Validates all TypeScript examples run successfully
+  2. Publish   - Converts raw MDX to published format
+  3. Validate  - Checks published files for errors
+  4. Generate  - Creates README.md from pattern metadata
+  5. Rules     - Generates AI coding rules for IDEs
+
+The pipeline stops at the first step that fails.
+
+EXAMPLES:
+  # Run the complete pipeline
+  bun run ep pipeline
+
+  # Run with detailed output
+  bun run ep pipeline --verbose
+  bun run ep pipeline -v
+
+WHEN TO USE:
+  • Before creating a pull request
+  • After adding or modifying patterns
+  • To ensure repository is in a valid state
+
+EXIT CODES:
+  0  All steps completed successfully
+  1  One or more steps failed
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withHandler(({ options }) =>
     executeScriptWithProgress(
       'scripts/publish/pipeline.ts',
@@ -1127,7 +1179,7 @@ const pipelineCommand = Command.make('pipeline', {
 );
 
 /**
- * admin:generate - Generates the main project README.md file
+ * generate - Generates the main project README.md file
  */
 const generateCommand = Command.make('generate', {
   options: {
@@ -1140,6 +1192,31 @@ const generateCommand = Command.make('generate', {
   args: {},
 }).pipe(
   Command.withDescription('Generates the main project README.md file from pattern metadata.'),
+  Command.withHelp(`
+Generates README.md by extracting metadata from all published pattern files.
+The README includes:
+  • Pattern catalog organized by category
+  • Skill level indicators
+  • Brief summaries and descriptions
+  • Links to full pattern documentation
+
+EXAMPLES:
+  # Regenerate README.md
+  bun run ep generate
+
+  # Generate with detailed output
+  bun run ep generate --verbose
+  bun run ep generate -v
+
+WHEN TO USE:
+  • After adding new patterns
+  • After modifying pattern metadata (title, summary, category)
+  • When README.md needs updating
+
+The generated file will be written to: README.md
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withHandler(({ options }) =>
     executeScriptWithProgress(
       'scripts/publish/generate.ts',
@@ -1166,98 +1243,20 @@ const RuleSchema = Schema.Struct({
 type Rule = typeof RuleSchema.Type;
 
 /**
- * Check if Pattern Server is reachable
+ * Fetch rules from the Pattern Server API
  */
-const checkServerHealth = (serverUrl: string) =>
-  Effect.tryPromise({
-    try: async () => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
+const fetchRulesFromAPI = Effect.gen(function* () {
+  const client = (yield* HttpClient.HttpClient).pipe(
+    HttpClient.filterStatusOk
+  );
 
-        const response = await fetch(`${serverUrl}/health`, {
-          signal: controller.signal
-        });
+  const response = yield* client.get('http://localhost:3001/api/v1/rules').pipe(
+    Effect.flatMap((response) => response.json),
+    Effect.flatMap(Schema.decodeUnknown(Schema.Array(RuleSchema)))
+  );
 
-        clearTimeout(timeoutId);
-        return response.ok;
-      } catch {
-        return false;
-      }
-    },
-    catch: () => false,
-  });
-
-/**
- * Fetch rules from the Pattern Server API with enhanced error handling
- */
-const fetchRulesFromAPI = (serverUrl: string) =>
-  Effect.gen(function* () {
-    const client = (yield* HttpClient.HttpClient).pipe(
-      HttpClient.filterStatusOk
-    );
-
-    const response = yield* client.get(`${serverUrl}/api/v1/rules`).pipe(
-      Effect.flatMap((response) => response.json),
-      Effect.flatMap(Schema.decodeUnknown(Schema.Array(RuleSchema))),
-      Effect.catchAll((error) =>
-        Effect.gen(function* () {
-          // Check if server is reachable
-          const isServerUp = yield* checkServerHealth(serverUrl);
-
-          if (!isServerUp) {
-            yield* Console.error(colorize('\n❌ Cannot connect to Pattern Server\n', 'red'));
-            yield* Console.error(`The Pattern Server at ${serverUrl} is not running or not reachable.\n`);
-            yield* Console.error(colorize('How to fix:\n', 'bright'));
-            yield* Console.error('  1. Start the Pattern Server:');
-            yield* Console.error(colorize('     bun run server:dev\n', 'cyan'));
-            yield* Console.error('  2. Verify the server is running:');
-            yield* Console.error(colorize(`     curl ${serverUrl}/health\n`, 'cyan'));
-            yield* Console.error('  3. If using a different port, specify it:');
-            yield* Console.error(colorize('     bun run ep rules add --tool cursor --server-url http://localhost:PORT\n', 'cyan'));
-            yield* Console.error(colorize('Documentation:\n', 'dim'));
-            yield* Console.error(colorize('  https://github.com/patrady/effect-patterns#pattern-server\n', 'cyan'));
-
-            return yield* Effect.fail(new Error('Pattern Server not reachable'));
-          }
-
-          // Server is up but API failed
-          if (error._tag === 'ResponseError') {
-            yield* Console.error(colorize('\n❌ Failed to fetch rules from Pattern Server\n', 'red'));
-            yield* Console.error(`HTTP ${error.response.status}\n`);
-            yield* Console.error(colorize('Possible causes:\n', 'bright'));
-            yield* Console.error('  • API endpoint has changed - try updating the CLI');
-            yield* Console.error('  • Server version mismatch - ensure server and CLI are compatible\n');
-            yield* Console.error(colorize('How to fix:\n', 'bright'));
-            yield* Console.error('  1. Check server logs for errors');
-            yield* Console.error('  2. Restart the Pattern Server:');
-            yield* Console.error(colorize('     pkill -f "bun.*server" && bun run server:dev\n', 'cyan'));
-            yield* Console.error('  3. Verify API endpoint:');
-            yield* Console.error(colorize(`     curl ${serverUrl}/api/v1/rules\n`, 'cyan'));
-          } else if (error._tag === 'ParseError') {
-            yield* Console.error(colorize('\n❌ Failed to parse rules from Pattern Server\n', 'red'));
-            yield* Console.error('The server response format is invalid or incompatible.\n');
-            yield* Console.error(colorize('How to fix:\n', 'bright'));
-            yield* Console.error('  1. Update both the Pattern Server and CLI:');
-            yield* Console.error(colorize('     git pull && bun install\n', 'cyan'));
-            yield* Console.error('  2. Restart the Pattern Server:');
-            yield* Console.error(colorize('     pkill -f "bun.*server" && bun run server:dev\n', 'cyan'));
-          } else {
-            yield* Console.error(colorize('\n❌ Unexpected error fetching rules\n', 'red'));
-            yield* Console.error(`Error: ${error}\n`);
-            yield* Console.error(colorize('How to fix:\n', 'bright'));
-            yield* Console.error('  1. Check your network connection');
-            yield* Console.error('  2. Verify firewall settings');
-            yield* Console.error('  3. Try restarting the Pattern Server\n');
-          }
-
-          return yield* Effect.fail(new Error('Failed to fetch rules'));
-        })
-      )
-    );
-
-    return response;
-  });
+  return response;
+});
 
 /**
  * Format a single rule for .cursor/rules.md
@@ -1283,7 +1282,7 @@ const formatRule = (rule: Rule): string => {
  */
 const injectRulesIntoFile = (
   filePath: string,
-  rules: readonly Rule[]
+  rules: Rule[]
 ) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
@@ -1330,115 +1329,71 @@ const injectRulesIntoFile = (
   });
 
 /**
- * install:add - Add rules to AI tool configuration
+ * rules:add - Add rules to AI tool configuration
  */
-const installAddCommand = Command.make('add', {
+const rulesAddCommand = Command.make('add', {
   options: {
     tool: Options.text('tool').pipe(
-      Options.withDescription('The AI tool to add rules for (cursor, agents, etc.)'),
-    ),
-    serverUrl: Options.text('server-url').pipe(
-      Options.withDescription('Pattern Server URL'),
-      Options.withDefault('http://localhost:3001')
-    ),
-    skillLevel: Options.text('skill-level').pipe(
-      Options.withDescription('Filter by skill level (beginner, intermediate, advanced)'),
-      Options.optional
-    ),
-    useCase: Options.text('use-case').pipe(
-      Options.withDescription('Filter by use case (error-management, core-concepts, etc.)'),
-      Options.optional
+      Options.withDescription('The AI tool to add rules for (cursor, windsurf, etc.)'),
     ),
   },
   args: {},
 }).pipe(
   Command.withDescription('Fetch rules from Pattern Server and inject them into AI tool configuration.'),
+  Command.withHelp(`
+Fetches AI coding rules from the Pattern Server API and injects them into
+your AI coding assistant's configuration file (e.g., .cursor/rules.md).
+
+PREREQUISITES:
+  The Pattern Server must be running locally:
+    bun run server:dev
+
+SUPPORTED TOOLS:
+  • cursor   - Injects rules into .cursor/rules.md
+
+EXAMPLES:
+  # Add rules for Cursor
+  bun run ep rules add --tool cursor
+
+WHAT IT DOES:
+  1. Fetches rules from http://localhost:3001/api/v1/rules
+  2. Formats rules with metadata (ID, title, skill level, use case)
+  3. Injects rules between managed block markers in the config file
+  4. Preserves any existing custom rules outside the managed block
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
       const tool = options.tool;
-      const serverUrl = options.serverUrl;
-      const skillLevelFilter = options.skillLevel;
-      const useCaseFilter = options.useCase;
 
-      // Validate supported tools
-      const supportedTools = ['cursor', 'agents', 'windsurf', 'gemini', 'claude', 'vscode', 'kilo', 'kira', 'trae', 'goose'];
-      if (!supportedTools.includes(tool)) {
-        yield* Console.error(colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, 'red'));
-        yield* Console.error(colorize('Currently supported tools:\n', 'bright'));
-        yield* Console.error('  • cursor - Cursor IDE (.cursor/rules.md)');
-        yield* Console.error('  • agents - AGENTS.md standard (AGENTS.md)');
-        yield* Console.error('  • windsurf - Windsurf IDE (.windsurf/rules.md)');
-        yield* Console.error('  • gemini - Gemini AI (GEMINI.md)');
-        yield* Console.error('  • claude - Claude AI (CLAUDE.md)');
-        yield* Console.error('  • vscode - VS Code / Continue.dev (.vscode/rules.md)');
-        yield* Console.error('  • kilo - Kilo IDE (.kilo/rules.md)');
-        yield* Console.error('  • kira - Kira IDE (.kira/rules.md)');
-        yield* Console.error('  • trae - Trae IDE (.trae/rules.md)');
-        yield* Console.error('  • goose - Goose AI (.goosehints)\n');
-        yield* Console.error(colorize('Coming soon:\n', 'dim'));
-        yield* Console.error('  • codeium - Codeium\n');
-        yield* Console.error(colorize('Examples:\n', 'bright'));
-        yield* Console.error(colorize('  bun run ep install add --tool cursor\n', 'cyan'));
-        yield* Console.error(colorize('  bun run ep install add --tool agents --skill-level beginner\n', 'cyan'));
-        yield* Console.error(colorize('  bun run ep install add --tool goose --use-case error-management\n', 'cyan'));
+      // Only support cursor for now
+      if (tool !== 'cursor') {
+        yield* Console.log(colorize(`\n❌ Error: Tool "${tool}" is not supported yet\n`, 'red'));
+        yield* Console.log('Currently supported tools:');
+        yield* Console.log('  - cursor\n');
         return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
       }
 
       yield* Console.log(colorize('\n🔄 Fetching rules from Pattern Server...\n', 'cyan'));
-      yield* Console.log(colorize(`Server: ${serverUrl}\n`, 'dim'));
 
       // Fetch rules from API
-      const allRules = yield* fetchRulesFromAPI(serverUrl);
+      const rules = yield* fetchRulesFromAPI.pipe(
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            yield* Console.log(colorize('❌ Failed to fetch rules from API\n', 'red'));
+            yield* Console.log('Make sure the Pattern Server is running:');
+            yield* Console.log('  bun run server:dev\n');
+            yield* Console.log(`Error: ${error}\n`);
+            return yield* Effect.fail(new Error('Failed to fetch rules'));
+          })
+        )
+      );
 
-      yield* Console.log(colorize(`✓ Fetched ${allRules.length} rules\n`, 'green'));
-
-      // Filter rules based on options
-      let rules = allRules;
-
-      if (Option.isSome(skillLevelFilter)) {
-        const level = skillLevelFilter.value;
-        rules = rules.filter(rule =>
-          rule.skillLevel?.toLowerCase() === level.toLowerCase()
-        );
-        yield* Console.log(colorize(`📊 Filtered to ${rules.length} rules with skill level: ${level}\n`, 'cyan'));
-      }
-
-      if (Option.isSome(useCaseFilter)) {
-        const useCase = useCaseFilter.value;
-        rules = rules.filter(rule =>
-          rule.useCase?.some(uc => uc.toLowerCase() === useCase.toLowerCase())
-        );
-        yield* Console.log(colorize(`📊 Filtered to ${rules.length} rules with use case: ${useCase}\n`, 'cyan'));
-      }
-
-      if (rules.length === 0) {
-        yield* Console.log(colorize('⚠️  No rules match the specified filters\n', 'yellow'));
-        return;
-      }
+      yield* Console.log(colorize(`✓ Fetched ${rules.length} rules\n`, 'green'));
 
       // Determine target file based on tool
-      let targetFile: string;
-      if (tool === 'agents') {
-        targetFile = 'AGENTS.md';
-      } else if (tool === 'windsurf') {
-        targetFile = '.windsurf/rules.md';
-      } else if (tool === 'gemini') {
-        targetFile = 'GEMINI.md';
-      } else if (tool === 'claude') {
-        targetFile = 'CLAUDE.md';
-      } else if (tool === 'vscode') {
-        targetFile = '.vscode/rules.md';
-      } else if (tool === 'kilo') {
-        targetFile = '.kilo/rules.md';
-      } else if (tool === 'kira') {
-        targetFile = '.kira/rules.md';
-      } else if (tool === 'trae') {
-        targetFile = '.trae/rules.md';
-      } else if (tool === 'goose') {
-        targetFile = '.goosehints';
-      } else {
-        targetFile = '.cursor/rules.md';
-      }
+      const targetFile = '.cursor/rules.md';
 
       yield* Console.log(colorize(`📝 Injecting rules into ${targetFile}...\n`, 'cyan'));
 
@@ -1461,49 +1416,6 @@ const installAddCommand = Command.make('add', {
 );
 
 /**
- * install:list - List all supported AI tools and their target files
- */
-const installListCommand = Command.make('list', {
-  options: {},
-  args: {},
-}).pipe(
-  Command.withDescription('List all supported AI tools and their configuration file paths.'),
-  Command.withHandler(() =>
-    Effect.gen(function* () {
-      yield* Console.log(colorize('\n📋 Supported AI Tools\n', 'bright'));
-      yield* Console.log('═'.repeat(60));
-      yield* Console.log('');
-
-      const tools = [
-        { name: 'cursor', desc: 'Cursor IDE', file: '.cursor/rules.md' },
-        { name: 'agents', desc: 'AGENTS.md standard', file: 'AGENTS.md' },
-        { name: 'windsurf', desc: 'Windsurf IDE', file: '.windsurf/rules.md' },
-        { name: 'gemini', desc: 'Gemini AI', file: 'GEMINI.md' },
-        { name: 'claude', desc: 'Claude AI', file: 'CLAUDE.md' },
-        { name: 'vscode', desc: 'VS Code / Continue.dev', file: '.vscode/rules.md' },
-        { name: 'kilo', desc: 'Kilo IDE', file: '.kilo/rules.md' },
-        { name: 'kira', desc: 'Kira IDE', file: '.kira/rules.md' },
-        { name: 'trae', desc: 'Trae IDE', file: '.trae/rules.md' },
-        { name: 'goose', desc: 'Goose AI', file: '.goosehints' },
-      ];
-
-      for (const tool of tools) {
-        yield* Console.log(colorize(`  ${tool.name.padEnd(12)}`, 'cyan') +
-                          `${tool.desc.padEnd(30)}` +
-                          colorize(tool.file, 'dim'));
-      }
-
-      yield* Console.log('');
-      yield* Console.log('═'.repeat(60));
-      yield* Console.log(colorize('\n💡 Usage:\n', 'bright'));
-      yield* Console.log(colorize('  bun run ep install add --tool <name>\n', 'cyan'));
-      yield* Console.log(colorize('Example:\n', 'dim'));
-      yield* Console.log(colorize('  bun run ep install add --tool cursor\n', 'cyan'));
-    })
-  )
-);
-
-/**
  * rules:generate - Generates all AI coding rules from patterns (legacy)
  */
 const rulesGenerateCommand = Command.make('generate', {
@@ -1517,6 +1429,31 @@ const rulesGenerateCommand = Command.make('generate', {
   args: {},
 }).pipe(
   Command.withDescription('Generates AI coding rules (.mdc files) from all pattern files.'),
+  Command.withHelp(`
+Generates AI coding rules in .mdc format from all published pattern files.
+Output is written to the rules/ directory.
+
+These rules can be used by AI coding assistants to learn Effect-TS patterns
+and provide better code suggestions.
+
+EXAMPLES:
+  # Generate all rules
+  bun run ep rules generate
+
+  # Generate with detailed output
+  bun run ep rules generate --verbose
+  bun run ep rules generate -v
+
+OUTPUT:
+  Rules are written to: rules/*.mdc
+
+WHEN TO USE:
+  • After adding new patterns
+  • After updating pattern content
+  • As part of the publishing pipeline
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withHandler(({ options }) =>
     executeScriptWithProgress(
       'scripts/publish/rules-improved.ts',
@@ -1527,20 +1464,32 @@ const rulesGenerateCommand = Command.make('generate', {
 );
 
 /**
- * install - Install Effect patterns rules into AI tools
+ * rules - Manage AI coding rules
  */
-const installCommand = Command.make('install').pipe(
-  Command.withDescription('Install Effect patterns rules into AI tool configurations'),
-  Command.withSubcommands([installAddCommand, installListCommand])
+const rulesCommand = Command.make('rules').pipe(
+  Command.withDescription('Manage AI coding rules for IDE integration'),
+  Command.withHelp(`
+Manage AI coding rules that teach coding assistants about Effect-TS patterns.
+
+SUBCOMMANDS:
+  add       - Fetch rules from Pattern Server and inject into AI tool config
+  generate  - Generate .mdc rule files from pattern files
+
+EXAMPLES:
+  # Add rules to Cursor IDE
+  bun run ep rules add --tool cursor
+
+  # Generate rule files
+  bun run ep rules generate
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
+  Command.withSubcommands([rulesAddCommand, rulesGenerateCommand])
 );
 
-// --- TEMPORARILY DISABLED COMMANDS ---
-// These commands are disabled for the initial release but will be re-enabled soon
-
+// Temporarily commented out for release - will be re-enabled soon
 if (false as any) {
-/**
- * init - Initialize ep.json configuration file
- */
+// init - Initialize ep.json configuration file
 const initCommand = Command.make('init', {
   options: {},
   args: {},
@@ -1598,9 +1547,7 @@ const initCommand = Command.make('init', {
   )
 );
 
-/**
- * lint:rules - Display all available linting rules
- */
+// lint:rules - Display all available linting rules
 const lintRulesCommand = Command.make('rules', {
   options: {},
   args: {},
@@ -1692,9 +1639,7 @@ const lintRulesCommand = Command.make('rules', {
   )
 );
 
-/**
- * lint - Lint TypeScript files for Effect-TS patterns
- */
+// lint - Lint TypeScript files for Effect-TS patterns
 const lintCommand = Command.make('lint', {
   options: {
     apply: Options.boolean('apply').pipe(
@@ -1921,31 +1866,38 @@ const releasePreviewCommand = Command.make('preview', {
   Command.withDescription(
     'Analyze commits and preview the next release version without making any changes.'
   ),
+  Command.withHelp(`
+Analyzes commits since the last release tag and determines the next version
+based on conventional commit messages, without making any changes to the repository.
+
+WHAT IT SHOWS:
+  • Current version from latest git tag
+  • Recommended version bump (major/minor/patch)
+  • Number of commits since last release
+  • Draft changelog with categorized changes
+
+EXAMPLES:
+  # Preview next release
+  bun run ep release preview
+
+VERSION BUMP RULES (Conventional Commits):
+  • BREAKING CHANGE or feat!:  → major (1.0.0 → 2.0.0)
+  • feat: new feature         → minor (1.0.0 → 1.1.0)
+  • fix: bug fix              → patch (1.0.0 → 1.0.1)
+  • docs:, chore:, etc.       → patch (1.0.0 → 1.0.1)
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withHandler(() =>
     Effect.gen(function* () {
       yield* Console.log('\n🔍 Analyzing commits for release preview...\n');
 
-      const analysis = yield* analyzeRelease().pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Console.error(colorize('\n❌ Failed to analyze release\n', 'red'));
-            yield* Console.error(String(error).replace('Error: ', ''));
-            yield* Console.error('');
-            return yield* Effect.fail(error);
-          })
-        )
-      );
+      const analysis = yield* analyzeRelease();
 
       if (!analysis.hasChanges) {
-        yield* Console.log(colorize('\n⚠️  No commits found since last release\n', 'yellow'));
-        yield* Console.log('There are no new commits to release.\n');
-        yield* Console.log(colorize('To create a new release:\n', 'bright'));
-        yield* Console.log('  1. Make changes and commit them');
-        yield* Console.log('  2. Use conventional commit messages:');
-        yield* Console.log(colorize('     feat: add new feature     ', 'dim') + '(minor version bump)');
-        yield* Console.log(colorize('     fix: fix bug              ', 'dim') + '(patch version bump)');
-        yield* Console.log(colorize('     feat!: breaking change    ', 'dim') + '(major version bump)');
-        yield* Console.log('  3. Run: bun run ep release preview\n');
+        yield* Console.log(
+          '⚠️  No commits found since last release. Nothing to release.\n'
+        );
         return;
       }
 
@@ -1981,25 +1933,48 @@ const releaseCreateCommand = Command.make('create', {
   args: {},
 }).pipe(
   Command.withDescription('Create a new release with version bump, changelog, and git tag.'),
+  Command.withHelp(`
+Creates a new release by:
+  1. Analyzing commits since last release
+  2. Determining version bump based on conventional commits
+  3. Updating package.json with new version
+  4. Updating CHANGELOG.md with categorized changes
+  5. Creating a git commit and tag
+  6. Pushing changes and tags to remote
+
+⚠️  WARNING: This command modifies files and pushes to remote.
+You will be prompted for confirmation before any changes are made.
+
+EXAMPLES:
+  # Create a new release (interactive)
+  bun run ep release create
+
+WHAT IT DOES:
+  • Prompts for confirmation before proceeding
+  • Updates package.json version
+  • Prepends to CHANGELOG.md
+  • Creates git commit: "chore(release): vX.Y.Z"
+  • Creates git tag: vX.Y.Z
+  • Pushes commit and tags to remote
+
+PREREQUISITES:
+  • Clean working directory (no uncommitted changes)
+  • Conventional commit messages since last release
+  • Push access to the remote repository
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withHandler(() =>
     Effect.gen(function* () {
       yield* Console.log('\n🚀 Creating new release...\n');
 
       // Analyze release (reuse preview logic)
-      const analysis = yield* analyzeRelease().pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Console.error(colorize('\n❌ Failed to analyze release\n', 'red'));
-            yield* Console.error(String(error).replace('Error: ', ''));
-            yield* Console.error('');
-            return yield* Effect.fail(error);
-          })
-        )
-      );
+      const analysis = yield* analyzeRelease();
 
       if (!analysis.hasChanges) {
-        yield* Console.log(colorize('\n⚠️  No commits found since last release\n', 'yellow'));
-        yield* Console.log('There are no new commits to release.\n');
+        yield* Console.log(
+          '⚠️  No commits found since last release. Nothing to release.\n'
+        );
         return;
       }
 
@@ -2044,49 +2019,12 @@ const releaseCreateCommand = Command.make('create', {
       // 1. Update package.json
       yield* Console.log('📝 Updating package.json...');
       const packageJsonPath = 'package.json';
-
-      const packageJsonContent = yield* fs.readFileString(packageJsonPath).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Console.error(colorize('\n❌ Failed to read package.json\n', 'red'));
-            yield* Console.error('Make sure package.json exists in the current directory.\n');
-            yield* Console.error(`Error: ${error}\n`);
-            return yield* Effect.fail(new Error('Cannot read package.json'));
-          })
-        )
-      );
-
-      const packageJson = yield* Effect.try({
-        try: () => JSON.parse(packageJsonContent),
-        catch: (error) => new Error(
-          'Failed to parse package.json.\n' +
-          'The file may be corrupted or contain invalid JSON.\n\n' +
-          `Error: ${error instanceof Error ? error.message : String(error)}`
-        ),
-      }).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Console.error(colorize('\n❌ Invalid package.json\n', 'red'));
-            yield* Console.error(String(error).replace('Error: ', ''));
-            yield* Console.error('');
-            return yield* Effect.fail(error);
-          })
-        )
-      );
-
+      const packageJsonContent = yield* fs.readFileString(packageJsonPath);
+      const packageJson = JSON.parse(packageJsonContent);
       packageJson.version = nextVersion;
       yield* fs.writeFileString(
         packageJsonPath,
         JSON.stringify(packageJson, null, 2) + '\n'
-      ).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Console.error(colorize('\n❌ Failed to write package.json\n', 'red'));
-            yield* Console.error('Check file permissions and disk space.\n');
-            yield* Console.error(`Error: ${error}\n`);
-            return yield* Effect.fail(new Error('Cannot write package.json'));
-          })
-        )
       );
       yield* Console.log(`   ✓ Version updated to ${nextVersion}`);
 
@@ -2147,6 +2085,34 @@ const patternNewCommand = Command.make('new', {
   args: {},
 }).pipe(
   Command.withDescription('Create a new pattern with interactive wizard and scaffolded files.'),
+  Command.withHelp(`
+Creates a new Effect-TS pattern with:
+  • MDX documentation file with frontmatter template
+  • TypeScript example file with starter code
+  • Properly formatted filenames (kebab-case)
+
+The wizard prompts for:
+  • Pattern title
+  • Skill level (Beginner/Intermediate/Advanced)
+  • Use case category
+  • Brief summary
+
+FILES CREATED:
+  content/new/raw/{pattern-name}.mdx    - Pattern documentation
+  content/new/src/{pattern-name}.ts     - Executable example code
+
+EXAMPLES:
+  # Create a new pattern interactively
+  bun run ep pattern new
+
+NEXT STEPS AFTER CREATION:
+  1. Edit the MDX file to add pattern documentation
+  2. Edit the TypeScript file to add working examples
+  3. Run: bun run ep validate
+  4. Run: bun run ep test
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withHandler(() =>
     Effect.gen(function* () {
       yield* Console.log('\n✨ Creating a new pattern\n');
@@ -2190,69 +2156,13 @@ const patternNewCommand = Command.make('new', {
       // Generate kebab-case filename
       const filename = toKebabCase(title);
 
-      if (!filename || filename.length === 0) {
-        yield* Console.error(colorize('\n❌ Invalid pattern title\n', 'red'));
-        yield* Console.error('The title must contain at least one alphanumeric character.\n');
-        yield* Console.error(colorize('Examples of valid titles:\n', 'bright'));
-        yield* Console.error('  • "Retry with Exponential Backoff"');
-        yield* Console.error('  • "Resource Pool Pattern"');
-        yield* Console.error('  • "Circuit Breaker"\n');
-        return yield* Effect.fail(new Error('Invalid title'));
-      }
-
       yield* Console.log(`\n📝 Creating files for: ${filename}\n`);
 
       // Get FileSystem service
       const fs = yield* FileSystem.FileSystem;
 
-      // Check if pattern already exists
-      const mdxPath = `content/new/raw/${filename}.mdx`;
-      const tsPath = `content/new/src/${filename}.ts`;
-
-      const mdxExists = yield* fs.exists(mdxPath);
-      const tsExists = yield* fs.exists(tsPath);
-
-      if (mdxExists || tsExists) {
-        yield* Console.error(colorize('\n❌ Pattern already exists\n', 'red'));
-        if (mdxExists) {
-          yield* Console.error(`  File exists: ${mdxPath}`);
-        }
-        if (tsExists) {
-          yield* Console.error(`  File exists: ${tsPath}`);
-        }
-        yield* Console.error('\n');
-        yield* Console.error(colorize('Options:\n', 'bright'));
-        yield* Console.error('  1. Use a different pattern name');
-        yield* Console.error('  2. Delete the existing files:');
-        yield* Console.error(colorize(`     rm ${mdxPath} ${tsPath}\n`, 'cyan'));
-        yield* Console.error('  3. Edit the existing pattern files directly\n');
-        return yield* Effect.fail(new Error('Pattern already exists'));
-      }
-
-      // Ensure directories exist
-      yield* fs.makeDirectory('content/new/raw', { recursive: true }).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Console.error(colorize('\n❌ Failed to create content/new/raw directory\n', 'red'));
-            yield* Console.error('Check directory permissions.\n');
-            yield* Console.error(`Error: ${error}\n`);
-            return yield* Effect.fail(new Error('Cannot create directory'));
-          })
-        )
-      );
-
-      yield* fs.makeDirectory('content/new/src', { recursive: true }).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Console.error(colorize('\n❌ Failed to create content/new/src directory\n', 'red'));
-            yield* Console.error('Check directory permissions.\n');
-            yield* Console.error(`Error: ${error}\n`);
-            return yield* Effect.fail(new Error('Cannot create directory'));
-          })
-        )
-      );
-
       // Create MDX file
+      const mdxPath = `content/new/raw/${filename}.mdx`;
       const mdxContent = `---
 id: ${filename}
 title: '${title}'
@@ -2268,20 +2178,11 @@ summary: '${summary}'
 ## Rationale
 `;
 
-      yield* fs.writeFileString(mdxPath, mdxContent).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Console.error(colorize('\n❌ Failed to create MDX file\n', 'red'));
-            yield* Console.error(`Path: ${mdxPath}\n`);
-            yield* Console.error('Check file permissions and disk space.\n');
-            yield* Console.error(`Error: ${error}\n`);
-            return yield* Effect.fail(new Error('Cannot create MDX file'));
-          })
-        )
-      );
-      yield* Console.log(colorize(`✓ Created: ${mdxPath}`, 'green'));
+      yield* fs.writeFileString(mdxPath, mdxContent);
+      yield* Console.log(`✓ Created: ${mdxPath}`);
 
       // Create TypeScript file
+      const tsPath = `content/new/src/${filename}.ts`;
       const tsContent = `import { Effect } from "effect";
 
 // Add your TypeScript example code here
@@ -2289,18 +2190,8 @@ summary: '${summary}'
 Effect.runSync(Effect.succeed("Hello, World!"));
 `;
 
-      yield* fs.writeFileString(tsPath, tsContent).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Console.error(colorize('\n❌ Failed to create TypeScript file\n', 'red'));
-            yield* Console.error(`Path: ${tsPath}\n`);
-            yield* Console.error('Check file permissions and disk space.\n');
-            yield* Console.error(`Error: ${error}\n`);
-            return yield* Effect.fail(new Error('Cannot create TypeScript file'));
-          })
-        )
-      );
-      yield* Console.log(colorize(`✓ Created: ${tsPath}`, 'green'));
+      yield* fs.writeFileString(tsPath, tsContent);
+      yield* Console.log(`✓ Created: ${tsPath}`);
 
       yield* Console.log('\n━'.repeat(60));
       yield* Console.log('✨ Pattern scaffolding complete!');
@@ -2317,44 +2208,61 @@ Effect.runSync(Effect.succeed("Hello, World!"));
 );
 
 /**
- * pattern - Create and manage Effect-TS patterns
+ * pattern - Manage patterns
  */
 const patternCommand = Command.make('pattern').pipe(
-  Command.withDescription('Create new Effect-TS patterns with scaffolding'),
+  Command.withDescription('Manage Effect-TS patterns (create, edit, scaffold)'),
+  Command.withHelp(`
+Manage Effect-TS pattern files in the repository.
+
+SUBCOMMANDS:
+  new  - Create a new pattern with interactive wizard
+
+EXAMPLES:
+  # Create a new pattern
+  bun run ep pattern new
+
+PATTERN STRUCTURE:
+  Each pattern consists of two files:
+    • .mdx file - Documentation with examples and explanations
+    • .ts file  - Executable TypeScript code demonstrating the pattern
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withSubcommands([patternNewCommand])
 );
 
 /**
- * admin:release - Manage releases
+ * release - Manage releases
  */
 const releaseCommand = Command.make('release').pipe(
-  Command.withDescription('Create and preview project releases using conventional commits'),
+  Command.withDescription('Manage project releases using conventional commits'),
+  Command.withHelp(`
+Manage semantic versioning releases based on conventional commit messages.
+
+SUBCOMMANDS:
+  preview  - Preview next release version and changelog
+  create   - Create and publish a new release
+
+EXAMPLES:
+  # Preview what the next release would be
+  bun run ep release preview
+
+  # Create a new release (with confirmation prompt)
+  bun run ep release create
+
+CONVENTIONAL COMMIT FORMAT:
+  <type>(<scope>): <description>
+
+  Types that affect versioning:
+    • feat:     New feature (minor bump)
+    • fix:      Bug fix (patch bump)
+    • feat!:    Breaking change (major bump)
+    • BREAKING CHANGE: in commit body (major bump)
+
+For more information, see: https://github.com/patrady/effect-patterns
+  `),
   Command.withSubcommands([releasePreviewCommand, releaseCreateCommand])
-);
-
-// --- ADMIN COMMAND ---
-
-/**
- * admin:rules - Generate AI coding rules
- */
-const rulesCommand = Command.make('rules').pipe(
-  Command.withDescription('Generate AI coding rules from patterns'),
-  Command.withSubcommands([rulesGenerateCommand])
-);
-
-/**
- * admin - Administrative commands for repository management
- */
-const adminCommand = Command.make('admin').pipe(
-  Command.withDescription('Administrative commands for managing the Effect Patterns repository'),
-  Command.withSubcommands([
-    validateCommand,
-    testCommand,
-    pipelineCommand,
-    generateCommand,
-    rulesCommand,
-    releaseCommand,
-  ])
 );
 
 // --- MAIN COMMAND ---
@@ -2363,11 +2271,62 @@ const adminCommand = Command.make('admin').pipe(
  * ep - Main command with all subcommands
  */
 const epCommand = Command.make('ep').pipe(
-  Command.withDescription('A CLI for Effect Patterns Hub - Create, manage, and learn Effect-TS patterns'),
+  Command.withDescription('A project management CLI for Effect Patterns Hub'),
+  Command.withHelp(`
+Effect Patterns CLI - Manage Effect-TS patterns, validation, and publishing.
+
+COMMANDS:
+  validate   - Validate all pattern files
+  test       - Run all TypeScript example tests
+  pipeline   - Run complete publishing pipeline
+  generate   - Generate README.md from patterns
+  rules      - Manage AI coding rules
+  pattern    - Manage patterns (create, scaffold)
+  release    - Manage semantic releases
+
+EXAMPLES:
+  # Validate all patterns
+  bun run ep validate
+
+  # Run the complete pipeline
+  bun run ep pipeline
+
+  # Create a new pattern
+  bun run ep pattern new
+
+  # Preview next release
+  bun run ep release preview
+
+  # Get help for a specific command
+  bun run ep <command> --help
+
+COMMON WORKFLOWS:
+  1. Adding a new pattern:
+     bun run ep pattern new
+     # Edit the generated files
+     bun run ep validate
+     bun run ep test
+
+  2. Before committing changes:
+     bun run ep pipeline
+
+  3. Creating a release:
+     bun run ep release preview
+     bun run ep release create
+
+For more information: https://github.com/patrady/effect-patterns
+Repository: https://github.com/patrady/effect-patterns
+  `),
   Command.withSubcommands([
+    // initCommand, // Temporarily commented out for release
+    validateCommand,
+    testCommand,
+    pipelineCommand,
+    generateCommand,
+    rulesCommand,
+    // lintCommand, // Temporarily commented out for release
     patternCommand,
-    installCommand,
-    adminCommand,
+    releaseCommand,
   ])
 );
 
@@ -2375,7 +2334,7 @@ const epCommand = Command.make('ep').pipe(
 
 const cli = Command.run(epCommand, {
   name: 'EffectPatterns CLI',
-  version: '0.4.0',
+  version: '0.1.0',
 });
 
 // --- RUNTIME EXECUTION ---
@@ -2383,8 +2342,7 @@ const cli = Command.run(epCommand, {
 import { FetchHttpClient } from '@effect/platform';
 
 cli(process.argv).pipe(
-  Effect.provide(
-    Layer.mergeAll(FetchHttpClient.layer, NodeContext.layer)
-  ),
+  Effect.provide(FetchHttpClient.layer),
+  Effect.provide(NodeContext.layer),
   NodeRuntime.runMain
 );

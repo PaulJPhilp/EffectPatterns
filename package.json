@@ -1,9 +1,12 @@
 {
   "type": "module",
   "name": "effect-patterns-hub",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "description": "A community-driven knowledge base for Effect-TS patterns.",
+  "bin": {
+    "ep": "./scripts/ep.ts"
+  },
   "scripts": {
     "ep": "bun run scripts/ep.ts",
     "publish": "bun run scripts/publish/publish.ts",
@@ -43,7 +46,7 @@
     "qa:test": "bun run scripts/qa/test-enhanced-qa.ts",
     "server:dev": "bun --watch server/index.ts",
     "test:server": "vitest run server",
-    "test:cli": "vitest run scripts/ep-rules-add.test.ts",
+    "test:cli": "vitest run scripts/__tests__/ep-cli.test.ts scripts/ep-rules-add.test.ts",
     "test:e2e": "vitest run scripts/integration.test.ts",
     "test:api": "vitest run server scripts/ep-rules-add.test.ts scripts/integration.test.ts"
   },
@@ -75,6 +78,7 @@
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.0",
     "liquidjs": "^10.21.1",
+    "ora": "^9.0.0",
     "process": "^0.11.10",
     "semver": "^7.7.2",
     "yaml": "^2.8.1"
