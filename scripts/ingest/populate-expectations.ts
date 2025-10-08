@@ -126,11 +126,12 @@ const LLMLive = Layer.succeed(
 // --- Utility Types & Functions ---
 
 // Frontmatter interface with readonly properties and index signature
+// Using 'any' for index signature to be compatible with effect-mdx JSONObject
 interface Frontmatter {
   readonly expectedOutput?: string;
   readonly expectedError?: string;
   needsReview?: boolean; // Can be updated, so not readonly if it is to be written to.
-  readonly [key: string]: unknown; // Allows for any other properties in frontmatter
+  readonly [key: string]: any; // Compatible with effect-mdx JSONValue
 }
 
 // --- Core Logic for Processing a Single Pattern File (Idiomatic Effect.gen) ---
