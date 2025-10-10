@@ -1,0 +1,50 @@
+{
+  "version": "0.1.0",
+  "patterns": [
+    {
+      "id": "retry-with-backoff",
+      "title": "Retry with Exponential Backoff",
+      "description": "Automatically retry failed operations with exponential backoff strategy",
+      "category": "error-handling",
+      "difficulty": "intermediate",
+      "tags": ["retry", "resilience", "error-handling", "backoff"],
+      "examples": [
+        {
+          "language": "typescript",
+          "code": "import { Effect, Schedule } from \"effect\";\n\nconst retryableTask = Effect.gen(function* () {\n  // Simulated API call that might fail\n  const response = yield* Effect.tryPromise(() =>\n    fetch(\"https://api.example.com/data\")\n  );\n  return yield* Effect.tryPromise(() => response.json());\n});\n\n// Retry with exponential backoff (1s, 2s, 4s, 8s, 16s)\nconst withRetry = retryableTask.pipe(\n  Effect.retry(Schedule.exponential(\"1 second\", 2)),\n  Effect.retryN(5)\n);\n\nexport { withRetry };",
+          "description": "Retry a failing Effect with exponential backoff"
+        }
+      ],
+      "useCases": [
+        "API calls that might fail due to network issues",
+        "Database connections with temporary unavailability",
+        "Rate-limited external services"
+      ],
+      "relatedPatterns": ["circuit-breaker", "timeout"],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "concurrent-batch-processing",
+      "title": "Concurrent Batch Processing",
+      "description": "Process large datasets in concurrent batches with controlled parallelism",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": ["concurrency", "batching", "parallel", "throughput"],
+      "examples": [
+        {
+          "language": "typescript",
+          "code": "import { Effect, Array as A } from \"effect\";\n\nconst processItem = (item: string) =>\n  Effect.gen(function* () {\n    console.log(`Processing: ${item}`);\n    yield* Effect.sleep(\"100 millis\");\n    return item.toUpperCase();\n  });\n\nconst items = A.range(1, 100).map(String);\n\n// Process in batches of 10 with concurrency of 5\nconst batchProcess = Effect.forEach(\n  items,\n  processItem,\n  { concurrency: 5, batching: true }\n);\n\nexport { batchProcess };",
+          "description": "Process array items with controlled concurrency"
+        }
+      ],
+      "useCases": [
+        "Bulk data processing",
+        "Image thumbnail generation",
+        "Parallel API requests with rate limiting"
+      ],
+      "relatedPatterns": ["resource-pool", "queue-management"],
+      "effectVersion": "3.x"
+    }
+  ],
+  "lastUpdated": "2025-01-09T00:00:00Z"
+}
