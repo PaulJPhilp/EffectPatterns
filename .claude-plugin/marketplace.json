@@ -1,0 +1,20 @@
+{
+  "name": "effect-patterns",
+  "version": "0.1.0",
+  "description": "Effect Patterns plugin for Claude Code - search and generate Effect-TS code patterns",
+  "author": "Paul J Philp",
+  "homepage": "https://github.com/PaulJPhilp/EffectPatterns",
+  "repository": "https://github.com/PaulJPhilp/EffectPatterns",
+  "license": "MIT",
+  "keywords": [
+    "effect",
+    "effect-ts",
+    "typescript",
+    "patterns",
+    "code-generation"
+  ],
+  "category": "development",
+  "apiEndpoint": "https://effect-patterns-mcp.vercel.app",
+  "requiresAuth": true,
+  "authType": "api-key"
+}

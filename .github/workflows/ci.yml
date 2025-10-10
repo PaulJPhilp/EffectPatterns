@@ -1,0 +1,230 @@
+name: CI
+
+on:
+  push:
+    branches: [main, feat/**]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same workflow + branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run Prettier check
+        run: bunx prettier --check "**/*.{ts,tsx,js,jsx,json,md}"
+
+      - name: Run Biome lint
+        run: bun run lint
+
+  typecheck:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: TypeScript type check
+        run: bun run typecheck
+
+  test-toolkit:
+    name: Unit Tests - Toolkit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run toolkit tests with coverage
+        run: bun --filter @effect-patterns/toolkit run test:coverage
+        env:
+          CI: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./packages/toolkit/coverage/coverage-final.json
+          flags: toolkit
+          name: toolkit-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolkit-coverage
+          path: packages/toolkit/coverage/
+          retention-days: 7
+
+  build-toolkit:
+    name: Build - Toolkit
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test-toolkit]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build toolkit
+        run: bun --filter @effect-patterns/toolkit run build
+
+      - name: Emit JSON schemas
+        run: bun --filter @effect-patterns/toolkit run build:schemas
+
+      - name: Verify schema output
+        run: |
+          if [ ! -f "packages/toolkit/dist/schemas/generate-request.json" ]; then
+            echo "Error: JSON schemas not generated"
+            exit 1
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolkit-dist
+          path: packages/toolkit/dist/
+          retention-days: 7
+
+  build-mcp-server:
+    name: Build - MCP Server
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build MCP server
+        run: bun --filter @effect-patterns/mcp-server run build
+        env:
+          SKIP_ENV_VALIDATION: true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-server-dist
+          path: services/mcp-server/.next/
+          retention-days: 7
+
+  test-integration:
+    name: Integration Tests - MCP Server
+    runs-on: ubuntu-latest
+    needs: [build-toolkit, build-mcp-server]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Start MCP server in background
+        run: |
+          bun --filter @effect-patterns/mcp-server run dev &
+          echo $! > server.pid
+        env:
+          PATTERN_API_KEY: test-api-key-for-ci
+          OTLP_ENDPOINT: http://localhost:4318/v1/traces
+          NODE_ENV: test
+
+      - name: Wait for server to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:3000/api/health; do sleep 2; done'
+
+      - name: Run integration tests
+        run: bun --filter @effect-patterns/mcp-server run test:integration
+        env:
+          PATTERN_API_KEY: test-api-key-for-ci
+          TEST_BASE_URL: http://localhost:3000
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+          fi
+
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: [test-toolkit]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: toolkit-coverage
+
+      - name: Display coverage summary
+        run: |
+          if [ -f coverage-summary.json ]; then
+            cat coverage-summary.json
+          fi
+
+  # All checks must pass
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test-toolkit, build-toolkit, build-mcp-server, test-integration]
+    if: always()
+    steps:
+      - name: Check all jobs status
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "One or more CI jobs failed"
+            exit 1
+          fi
+          if [[ "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more CI jobs were cancelled"
+            exit 1
+          fi
+          echo "All CI jobs passed successfully!"

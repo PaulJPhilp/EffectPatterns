@@ -1,0 +1,42 @@
+{
+  "name": "@effect-patterns/toolkit",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Effect Patterns Toolkit - Core domain types and utilities",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:schemas": "bun run src/emit-schemas.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.90.10",
+    "@effect/platform-node": "^0.94.2",
+    "@effect/schema": "^0.75.5",
+    "effect": "^3.18.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.2",
+    "@vitest/coverage-v8": "^3.2.4",
+    "typescript": "5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "keywords": [
+    "effect",
+    "effect-ts",
+    "patterns",
+    "toolkit"
+  ],
+  "author": "Paul",
+  "license": "MIT"
+}
