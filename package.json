@@ -4,6 +4,10 @@
   "version": "0.4.0",
   "private": true,
   "description": "A community-driven knowledge base for Effect-TS patterns.",
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
   "bin": {
     "ep": "./scripts/ep.ts"
   },
@@ -48,7 +52,14 @@
     "test:server": "vitest run server",
     "test:cli": "vitest run scripts/__tests__/ep-cli.test.ts scripts/ep-rules-add.test.ts",
     "test:e2e": "vitest run scripts/integration.test.ts",
-    "test:api": "vitest run server scripts/ep-rules-add.test.ts scripts/integration.test.ts"
+    "test:api": "vitest run server scripts/ep-rules-add.test.ts scripts/integration.test.ts",
+    "toolkit:build": "bun --filter @effect-patterns/toolkit run build",
+    "toolkit:test": "bun --filter @effect-patterns/toolkit run test",
+    "toolkit:build:schemas": "bun --filter @effect-patterns/toolkit run build:schemas",
+    "mcp:dev": "bun --filter @effect-patterns/mcp-server run dev",
+    "mcp:build": "bun --filter @effect-patterns/mcp-server run build",
+    "mcp:test": "bun --filter @effect-patterns/mcp-server run test",
+    "mcp:test:integration": "bun --filter @effect-patterns/mcp-server run test:integration"
   },
   "dependencies": {
     "@effect/ai": "^0.25.2",
