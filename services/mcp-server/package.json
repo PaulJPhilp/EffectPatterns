@@ -11,6 +11,8 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "smoke-test": "bun run smoke-test.ts",
+    "smoke-test:bash": "bash smoke-test.sh",
     "typecheck": "tsc --noEmit",
     "lint": "next lint"
   },
