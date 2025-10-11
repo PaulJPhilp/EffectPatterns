@@ -29,7 +29,7 @@ Feedback welcome! 🚀
 
 Hey Effect community! Just shipped a massive update to Effect Patterns 🚀
 
-**What's New:**
+### What's New:
 
 📦 **42 New Patterns** across 6 categories:
 • Combinators (map, flatMap, filter, zip, etc.)
@@ -84,7 +84,7 @@ I'm excited to share that **Effect Patterns v0.3.0** is now live! This is a majo
 
 ### 42 New Effect Patterns
 
-**Combinators (8 patterns)**
+### Combinators (8 patterns)
 Transform, chain, filter, and combine values:
 • `map` - Transform values
 • `flatMap` - Chain computations
@@ -94,14 +94,14 @@ Transform, chain, filter, and combine values:
 • `andThen/tap/flatten` - Sequencing
 • Conditional branching & error handling
 
-**Constructors (6 patterns)**
+### Constructors (6 patterns)
 Create Effect values from various sources:
 • Lift values/errors (`succeed`, `fail`, `some`, `none`, `right`, `left`)
 • Wrap sync/async computations
 • Convert from nullable, Option, Either
 • Create from collections
 
-**Data Types (15 patterns)**
+### Data Types (15 patterns)
 Work with Effect's powerful data structures:
 • `Option`, `Either`, `Exit` - Core types
 • `Data.struct`, `Data.Class` - Value-based equality

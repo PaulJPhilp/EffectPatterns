@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import {
   GenerateRequest,
   SearchPatternsRequest,
+  ExplainPatternRequest,
 } from "./schemas/generate.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -59,6 +60,7 @@ function main(): void {
   // Emit schemas for tool-call functions
   emitSchema(GenerateRequest, "generate-request", outputDir);
   emitSchema(SearchPatternsRequest, "search-patterns-request", outputDir);
+  emitSchema(ExplainPatternRequest, "explain-pattern-request", outputDir);
 
   console.log("\nAll schemas emitted successfully!");
 }

@@ -75,3 +75,14 @@ export const SearchPatternsResponse = S.Struct({
 export type SearchPatternsResponse = S.Schema.Type<
   typeof SearchPatternsResponse
 >;
+
+/**
+ * Explain pattern request
+ */
+export const ExplainPatternRequest = S.Struct({
+  patternId: S.String,
+});
+
+export type ExplainPatternRequest = S.Schema.Type<
+  typeof ExplainPatternRequest
+>;

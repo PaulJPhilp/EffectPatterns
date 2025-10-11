@@ -34,3 +34,4 @@
  *.swp
 node_modules
 pnpm-lock.yaml
+.env

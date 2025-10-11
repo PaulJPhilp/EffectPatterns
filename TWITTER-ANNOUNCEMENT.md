@@ -1,22 +1,24 @@
 # Twitter/X Announcement Thread for v0.4.0
 
 ## Tweet 1 (Main Announcement)
-🎉 Announcing Effect Patterns Hub CLI v0.4.0! 
+
+🎉 Announcing Effect Patterns Hub CLI v0.4.0!
 
 A production-ready CLI that brings Effect-TS best practices directly into your AI development workflow.
 
-✨ 10 AI tools supported
-📦 88+ patterns
-🧪 73 tests (100% passing)
-🚀 Smart filtering & automation
+- ✨ 10 AI tools supported
+- 📦 88+ patterns
+- 🧪 73 tests (100% passing)
+- 🚀 Smart filtering & automation
 
 🧵 Thread 👇
 
-#EffectTS #TypeScript #CLI
+\# EffectTS \# TypeScript \# CLI
 
 ---
 
 ## Tweet 2 (AI Tool Integration)
+
 🤖 Install Effect-TS coding rules into your favorite AI tools with one command:
 
 ```bash
@@ -30,6 +32,7 @@ Your AI assistant now knows Effect-TS patterns! 🎯
 ---
 
 ## Tweet 3 (Smart Filtering)
+
 🎯 Smart filtering lets you customize what rules to install:
 
 ```bash
@@ -45,6 +48,7 @@ Learn at your own pace! 📚
 ---
 
 ## Tweet 4 (Pattern Management)
+
 📦 Create, validate, and test Effect-TS patterns:
 
 ```bash
@@ -59,6 +63,7 @@ Maintain quality with automated workflows! ✅
 ---
 
 ## Tweet 5 (Release Automation)
+
 🚀 Built-in release automation with conventional commits:
 
 ```bash
@@ -71,6 +76,7 @@ Semantic versioning made easy! 📈
 ---
 
 ## Tweet 6 (Quality & Testing)
+
 🧪 Production-ready quality:
 
 ✅ 73 automated tests (100% pass rate)
@@ -84,6 +90,7 @@ Built with @effect/cli for type-safe, composable CLIs! 💪
 ---
 
 ## Tweet 7 (Quick Start)
+
 ⚡️ Get started in 30 seconds:
 
 ```bash
@@ -99,6 +106,7 @@ That's it! Your AI now knows Effect-TS patterns! 🎊
 ---
 
 ## Tweet 8 (What's Next)
+
 🔮 Coming soon:
 
 • npm/pnpm support
@@ -107,26 +115,41 @@ That's it! Your AI now knows Effect-TS patterns! 🎊
 • Rule update notifications
 • Pattern templates
 
-See our roadmap: https://github.com/PaulJPhilp/EffectPatterns/blob/main/ROADMAP.md
+See our roadmap: <https://github.com/PaulJPhilp/EffectPatterns/blob/main/ROADMAP.md>
 
 ---
 
 ## Tweet 9 (Call to Action)
+
 🙏 Try it out and let us know what you think!
 
-⭐️ Star: https://github.com/PaulJPhilp/EffectPatterns
-📖 Docs: https://github.com/PaulJPhilp/EffectPatterns/blob/main/SETUP.md
-💬 Discuss: https://github.com/PaulJPhilp/EffectPatterns/discussions
+## Tweet 9 (Call to Action)
+
+⭐️ Star: [GitHub Repository](https://github.com/PaulJPhilp/EffectPatterns)  
+📖 Docs: [Setup Guide](https://github.com/PaulJPhilp/EffectPatterns/blob/main/SETUP.md)  
+💬 Discuss: [GitHub Discussions](https://github.com/PaulJPhilp/EffectPatterns/discussions)
 
 Contributions welcome! 🚀
 
-#EffectTS #TypeScript #OpenSource
+### Popular Hashtags
+
+- \#EffectTS
+- \#TypeScript
+- \#Javascript
+- \#FunctionalProgramming
+- \#DeveloperTools
+- \#OpenSource
+- \#TypeLevel
+- \#ProgrammingTips
+- \#BuildInPublic
+- \#100DaysOfCode
 
 ---
 
 ## Alternative Formats
 
 ### Short Version (Single Tweet)
+
 🎉 Effect Patterns Hub CLI v0.4.0 is here!
 
 Install Effect-TS coding rules into 10 AI tools with one command:
@@ -137,9 +160,9 @@ Install Effect-TS coding rules into 10 AI tools with one command:
 🧪 100% test coverage
 📚 Full docs
 
-Get started: https://github.com/PaulJPhilp/EffectPatterns
+Get started: <https://github.com/PaulJPhilp/EffectPatterns>
 
-#EffectTS #TypeScript
+# EffectTS #TypeScript
 
 ---
 
@@ -168,10 +191,11 @@ A CLI that brings Effect-TS best practices into your AI development workflow.
 `ep pattern new`
 `ep admin validate`
 
-Your AI assistant now knows Effect-TS! 
+Your AI assistant now knows Effect-TS!
 
 **Tweet 3:**
 ⚡️ Quick start:
+
 ```
 git clone https://github.com/PaulJPhilp/EffectPatterns.git
 cd EffectPatterns
@@ -179,20 +203,22 @@ bun install && bun link
 ep install add --tool cursor
 ```
 
-⭐️ https://github.com/PaulJPhilp/EffectPatterns
+⭐️ <https://github.com/PaulJPhilp/EffectPatterns>
 
-#EffectTS #TypeScript #CLI
+# EffectTS #TypeScript #CLI
 
 ---
 
 ## Hashtag Suggestions
 
 Primary:
+
 - #EffectTS
 - #TypeScript
 - #CLI
 
 Secondary:
+
 - #FunctionalProgramming
 - #OpenSource
 - #DevTools
@@ -202,6 +228,7 @@ Secondary:
 - #NodeJS
 
 Community:
+
 - #BuildInPublic
 - #100DaysOfCode
 - #CodeNewbie
@@ -210,19 +237,23 @@ Community:
 
 ## Timing Recommendations
 
-**Best times to post (EST):**
+### Best Times to Post
+
 - Morning: 8-10 AM
-- Lunch: 12-1 PM
-- Evening: 5-6 PM
+- Afternoon: 12-2 PM
+- Evening: 4-6 PM
 
-**Best days:**
+Best Days:
+
 - Tuesday-Thursday for max engagement
-- Avoid weekends for tech announcements
+- Weekends for deeper tech discussions
 
-**Thread strategy:**
+Thread Strategy:
+
 - Post thread over 2-3 hours (1 tweet every 20-30 min)
-- Or post all at once for immediate impact
-- Pin the main announcement tweet
+- Quote tweet first post with key points
+- Use reply threads for code examples
+- Pin thread to profile
 
 ---
 
@@ -242,15 +273,11 @@ Community:
 
 ---
 
-## Media Suggestions
+### Image Suggestions
 
-Consider adding:
 - 📸 Screenshot of CLI in action
-- 🎥 Short demo GIF (30 seconds)
-- 📊 Infographic of features
-- 💻 Terminal recording with asciinema
-
-Tools:
+- Terminal recording of pattern generation
+- Diagrams showing integration workflow
+- Effect-TS logo + CLI preview
+- Command usage examples
 - asciinema.org for terminal recordings
-- carbon.now.sh for code screenshots
-- excalidraw.com for diagrams

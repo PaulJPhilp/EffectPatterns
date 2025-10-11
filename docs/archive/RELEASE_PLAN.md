@@ -193,7 +193,7 @@ bun run pipeline
 
 ### Phase 4: Update Documentation
 
-- Update CHANGELOG.md with all changes
+- Update docs/reference/CHANGELOG.md with all changes
 - Update README.md if needed
 - Verify all pattern links work
 - Check that rules generation works

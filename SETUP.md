@@ -242,7 +242,7 @@ ep admin release create
 This will:
 1. Determine version bump from conventional commits
 2. Generate changelog
-3. Update `package.json` and `CHANGELOG.md`
+3. Update `package.json` and `docs/reference/CHANGELOG.md`
 4. Create git commit and tag
 5. Push to remote
 
@@ -396,7 +396,7 @@ ep admin validate                         # Validate patterns
 ep admin test                             # Test examples
 ep admin pipeline                         # Full pipeline
 
-# Documentation
+# Documentation Commands
 ep admin generate                         # Generate README
 ep admin rules generate                   # Generate AI rules
 

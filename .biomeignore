@@ -1,0 +1,4 @@
+# Ignore archived docs and generated files
+
+docs/archive/
+docs/archive/**

@@ -1,8 +1,9 @@
 ```markdown
 # Product Requirements Document (PRD)
-Product: Effect Patterns Claude Code Plugin (EP-Plugin)  
-Owner: Paul J Philp  
-Version: 0.1.0  
+
+- **Product:** Effect Patterns Claude Code Plugin (EP-Plugin)
+- **Owner:** Paul J Philp
+- **Version:** 0.1.0
 Last updated: 2025-10-09
 
 ---

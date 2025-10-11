@@ -1,0 +1,100 @@
+{
+  "messages": [
+    {
+      "id": "1001",
+      "type": "Default",
+      "timestamp": "2024-01-15T10:30:00.000+00:00",
+      "content": "How do I handle errors in Effect?",
+      "author": {
+        "id": "user_1",
+        "name": "user_1",
+        "discriminator": "0001",
+        "nickname": "Alice",
+        "isBot": false
+      },
+      "attachments": [],
+      "embeds": [],
+      "reactions": []
+    },
+    {
+      "id": "1002",
+      "type": "Default",
+      "timestamp": "2024-01-15T10:32:00.000+00:00",
+      "content": "You can use Effect.catchAll or Effect.catchTag for typed error handling!",
+      "author": {
+        "id": "user_2",
+        "name": "user_2",
+        "discriminator": "0002",
+        "nickname": "Bob",
+        "isBot": false
+      },
+      "attachments": [],
+      "embeds": [],
+      "reactions": []
+    },
+    {
+      "id": "1003",
+      "type": "Default",
+      "timestamp": "2024-01-15T10:35:00.000+00:00",
+      "content": "What's the difference between Effect.gen and Effect.flatMap?",
+      "author": {
+        "id": "user_3",
+        "name": "user_3",
+        "discriminator": "0003",
+        "nickname": "Charlie",
+        "isBot": false
+      },
+      "attachments": [],
+      "embeds": [],
+      "reactions": []
+    },
+    {
+      "id": "1004",
+      "type": "Default",
+      "timestamp": "2024-01-15T10:38:00.000+00:00",
+      "content": "Effect.gen is syntactic sugar that uses generator functions. It makes the code more readable!",
+      "author": {
+        "id": "user_1",
+        "name": "user_1",
+        "discriminator": "0001",
+        "nickname": "Alice",
+        "isBot": false
+      },
+      "attachments": [],
+      "embeds": [],
+      "reactions": []
+    },
+    {
+      "id": "1005",
+      "type": "Default",
+      "timestamp": "2024-01-15T10:40:00.000+00:00",
+      "content": "How do I run multiple Effects in parallel?",
+      "author": {
+        "id": "user_4",
+        "name": "user_4",
+        "discriminator": "0004",
+        "nickname": "Diana",
+        "isBot": false
+      },
+      "attachments": [],
+      "embeds": [],
+      "reactions": []
+    },
+    {
+      "id": "1006",
+      "type": "Default",
+      "timestamp": "2024-01-15T10:42:00.000+00:00",
+      "content": "Use Effect.all with an array of effects, or Effect.forEach with concurrency option!",
+      "author": {
+        "id": "user_2",
+        "name": "user_2",
+        "discriminator": "0002",
+        "nickname": "Bob",
+        "isBot": false
+      },
+      "attachments": [],
+      "embeds": [],
+      "reactions": []
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.assistant-header {
+  font-size: 0.65rem;
+  line-height: 0.95rem;
+}
+
+.assistant-header__title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.assistant-header__subtitle {
+  font-size: 0.6rem;
+  color: rgb(107 114 128);
+  line-height: 0.9rem;
+}

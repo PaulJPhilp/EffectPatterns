@@ -5,12 +5,14 @@ Complete checklist for preparing and announcing the Effect Patterns Hub CLI rele
 ## Pre-Release
 
 ### Code Quality
+
 - [x] All tests passing (73/73 tests)
 - [x] No lint errors
 - [x] TypeScript compilation successful
 - [x] All examples execute correctly
 
 ### Documentation
+
 - [x] README.md updated with CLI section
 - [x] SETUP.md complete and accurate
 - [x] TESTING.md comprehensive
@@ -20,6 +22,7 @@ Complete checklist for preparing and announcing the Effect Patterns Hub CLI rele
 - [x] Code comments up to date
 
 ### Testing
+
 - [x] Unit tests passing
 - [x] Integration tests passing
 - [x] CLI commands tested manually
@@ -28,6 +31,7 @@ Complete checklist for preparing and announcing the Effect Patterns Hub CLI rele
 - [x] Edge cases covered
 
 ### Package Configuration
+
 - [ ] package.json version correct
 - [ ] package.json bin entry correct
 - [ ] package.json scripts working
@@ -38,6 +42,7 @@ Complete checklist for preparing and announcing the Effect Patterns Hub CLI rele
 ## Release Process
 
 ### Version Management
+
 - [ ] Determine version number (current: 0.3.1)
 - [ ] Follow semantic versioning
 - [ ] Update package.json version
@@ -45,6 +50,7 @@ Complete checklist for preparing and announcing the Effect Patterns Hub CLI rele
 - [ ] Tag release in git
 
 ### Git Operations
+
 - [ ] All changes committed
 - [ ] Working directory clean
 - [ ] Branch up to date with main
@@ -70,19 +76,22 @@ Complete checklist for preparing and announcing the Effect Patterns Hub CLI rele
 - [ ] Test `ep install add --tool cursor`
 - [ ] Verify all commands functional
 
-### Documentation
+### Post-Release Documentation
+
+### Post-Release Steps
+
 - [ ] Update GitHub README if needed
-- [ ] Update any external documentation
-- [ ] Verify all links work
-- [ ] Check documentation formatting
+- [ ] Update documentation if needed
+- [ ] Double check all links work
 
 ### Announcement
+
 - [ ] Post release announcement
-- [ ] Share on social media (if applicable)
-- [ ] Notify contributors
-- [ ] Update project website (if applicable)
+- [ ] Share on social media
+- [ ] Update Discord
 
 ### Monitoring
+
 - [ ] Monitor GitHub issues for bug reports
 - [ ] Check for installation problems
 - [ ] Respond to questions
@@ -231,7 +240,7 @@ Please report issues at: https://github.com/patrady/effect-patterns/issues
 
 ### Social Media Template
 
-```
+```text
 🎉 Announcing Effect Patterns Hub CLI v0.4.0!
 
 ✨ Install Effect-TS coding rules into 10 AI tools
@@ -239,9 +248,9 @@ Please report issues at: https://github.com/patrady/effect-patterns/issues
 📦 Pattern management & validation
 🚀 Automated release management
 
-Get started: https://github.com/patrady/effect-patterns
+Get started: [https://github.com/patrady/effect-patterns](https://github.com/patrady/effect-patterns)
 
-#EffectTS #TypeScript #CLI #AI
+\#EffectTS \#TypeScript \#CLI \#AI
 ```
 
 ## Support Channels
@@ -254,6 +263,7 @@ After release, monitor:
 - Social media mentions
 
 Respond to:
+
 - Bug reports within 24 hours
 - Feature requests within 48 hours
 - Questions within 24 hours

@@ -1,7 +1,9 @@
 # Effect Patterns v0.3.0 - 42 New Patterns + 4-Layer QA System
 
-**Release Date:** September 30, 2025  
-**Tag:** `v0.3.0`  
+**Release Date:** September 30, 2025
+
+**Tag:** `v0.3.0`
+
 **Pull Request:** #12
 
 ---
@@ -23,7 +25,9 @@ This is a **major feature release** that:
 ### 42 New Effect Patterns
 
 #### Combinators (8 patterns)
+
 Transform, chain, filter, and combine values:
+
 - `combinator-map` - Transform values with map
 - `combinator-flatmap` - Chain computations with flatMap
 - `combinator-filter` - Filter results with filter
@@ -34,7 +38,9 @@ Transform, chain, filter, and combine values:
 - `combinator-error-handling` - Handle errors with catchAll, orElse, and match
 
 #### Constructors (6 patterns)
+
 Create Effect values from various sources:
+
 - `constructor-succeed-some-right` - Lift values with succeed, some, and right
 - `constructor-fail-none-left` - Lift errors with fail, none, and left
 - `constructor-sync-async` - Wrap synchronous and asynchronous computations
@@ -43,7 +49,9 @@ Create Effect values from various sources:
 - `constructor-try-trypromise` - Wrap computations with try
 
 #### Data Types (15 patterns)
+
 Work with Effect's powerful data structures:
+
 - `data-option` - Check Option and Either cases
 - `data-either` - Work with Either values
 - `data-exit` - Model Effect results with Exit
@@ -62,12 +70,16 @@ Work with Effect's powerful data structures:
 - `data-cause` - Inspect error causes
 
 #### Brand Types (2 patterns)
+
 Create validated domain types:
+
 - `brand-model-domain-type` - Model validated domain types with Brand
 - `brand-validate-parse` - Validate and parse branded types
 
 #### Pattern Matching (5 patterns)
+
 Match on success, failure, and tagged unions:
+
 - `pattern-match` - Match on success and failure
 - `pattern-matcheffect` - Effectful pattern matching
 - `pattern-matchtag` - Match tagged unions
@@ -75,7 +87,9 @@ Match on success, failure, and tagged unions:
 - `pattern-option-either-checks` - Check Option and Either cases
 
 #### Observability (5 patterns)
+
 Monitor and trace your applications:
+
 - `observability-structured-logging` - Leverage structured logging
 - `observability-tracing-spans` - Trace operations with spans
 - `observability-custom-metrics` - Add custom metrics
@@ -89,6 +103,7 @@ Monitor and trace your applications:
 ### Critical Fixes
 
 **PR #11: Stream-from-file Memory Bug** 🔴 CRITICAL
+
 - **Reporter:** @ToliaGuy
 - **Issue:** "Good Example" was loading entire file into memory instead of streaming
 - **Root Cause:** Used `fs.readFileString()` which reads entire file
@@ -96,6 +111,7 @@ Monitor and trace your applications:
 - **Impact:** Pattern now demonstrates true constant-memory streaming
 
 **PR #10: Effect.all Concurrency Bug** 🔴 CRITICAL
+
 - **Reporter:** @ToliaGuy
 - **Issue:** `Effect.all` running sequentially instead of in parallel
 - **Root Cause:** Missing explicit `concurrency` option (defaults to sequential)
@@ -103,6 +119,7 @@ Monitor and trace your applications:
 - **Impact:** Patterns now correctly demonstrate parallel execution
 
 **PR #9: Error Handling Idiom** 🟡 IMPROVEMENT
+
 - **Reporter:** @ToliaGuy
 - **Issue:** Verbose error logging using `catchAll` + `Effect.gen`
 - **Improvement:** Simplified to use `Effect.tapError`
@@ -115,28 +132,36 @@ Monitor and trace your applications:
 A comprehensive quality assurance system that catches bugs before they reach production:
 
 ### Phase 1: Behavioral Tests (~1s)
+
 **Script:** `scripts/publish/test-behavioral.ts`
+
 - Memory monitoring for streaming patterns
 - Timing validation for parallel execution
 - Concurrency option checking
 - **Would have caught:** PR #11 (memory), PR #10 (timing)
 
 ### Phase 2: Effect Patterns Linter (~30ms)
+
 **Script:** `scripts/publish/lint-effect-patterns.ts`
+
 - 6 custom Effect-specific rules
 - Detects deprecated APIs, non-idiomatic patterns
 - Enforces explicit concurrency options
 - **Would have caught:** PR #10 (concurrency), PR #9 (idioms)
 
 ### Phase 3: Enhanced LLM QA (~5-10s/pattern)
+
 **Prompt:** `scripts/qa/prompts/qa-schema-enhanced.mdx`
+
 - Semantic validation of memory behavior
 - Concurrency claims verification
 - Effect idiom enforcement
 - **Would have caught:** All 3 PRs (semantic issues)
 
 ### Phase 4: Integration Tests (~5s)
+
 **Script:** `scripts/publish/test-integration.ts`
+
 - Large file streaming (90MB+)
 - Parallel vs. sequential performance
 - Error handling under stress
@@ -163,30 +188,37 @@ A comprehensive quality assurance system that catches bugs before they reach pro
 
 ### Modern Effect API Usage
 
-**Schema API**
+### Schema API
+
 - `Schema.string` → `Schema.String`
 
-**Brand API**
+### Brand API
+
 - `Brand.Branded<T, "X">` → `T & Brand.Brand<"X">`
 - `Brand.schema()` → `Schema.brand()`
 
-**Effect Constructors**
+### Effect Constructors
+
 - `Effect.fromOption` → `Option.match` + `Effect.succeed/fail`
+
 - `Effect.fromEither` → `Either.match` + `Effect.succeed/fail`
 
-**Data Types**
+### Data Types
+
 - `Data.case` → `Data.taggedEnum`
 - `Chunk.fromArray` → `Chunk.fromIterable`
 - `BigDecimal.make` → `BigDecimal.fromNumber`
 - `DateTime.plus/minus` → `DateTime.add/subtract`
+
 - `Duration.add` → `Duration.sum`
 - `Cause.isFail` → `Cause.isFailure`
 
-**Pattern Matching**
+### Pattern Matching
+
 - `Effect.matchTag` → `Effect.catchTags`
 - `Option.zip/Either.zip` → `Option.all/Either.all`
 
-[See CHANGELOG.md for complete API update list]
+[See docs/reference/CHANGELOG.md for complete API update list]
 
 ---
 
@@ -206,7 +238,7 @@ A comprehensive quality assurance system that catches bugs before they reach pro
 ## 📚 New Documentation
 
 - **`QA_GAP_ANALYSIS.md`** - Why bugs slipped through & how we fixed it
-- **`EFFECT_LINTER_RULES.md`** - Custom Effect linter rules reference
+- **`EFFECT_LINTER_RULES`** - docs/release/EFFECT_LINTER_RULES.md - Custom Effect linter rules reference
 - **`ENHANCED_QA_GUIDE.md`** - LLM semantic validation guide
 - **`INTEGRATION_TESTING_GUIDE.md`** - Integration testing scenarios
 - **`MERGE_COMPLETE.md`** - Complete PR #12 merge summary
@@ -253,22 +285,25 @@ Thank you to the Effect community for your valuable feedback! 💙
 
 ## 🔗 Links
 
-- **Repository:** https://github.com/PaulJPhilp/EffectPatterns
-- **Pull Request:** https://github.com/PaulJPhilp/EffectPatterns/pull/12
-- **Effect Documentation:** https://effect.website
-- **Effect Discord:** https://discord.gg/effect-ts
+- **Repository:** <https://github.com/PaulJPhilp/EffectPatterns>
+- **Pull Request:** <https://github.com/PaulJPhilp/EffectPatterns/pull/12>
+- **Effect Documentation:** <https://effect.website>
+- **Effect Discord:** <https://discord.gg/effect-ts>
 
 ---
 
 ## 📋 Upgrade Notes
 
 ### Breaking Changes
+
 None. This is a pure feature addition release.
 
 ### Deprecations
+
 None. All patterns use modern Effect APIs.
 
 ### Migration Guide
+
 If you're using the old patterns that had bugs:
 
 1. **stream-from-file**: Replace `fs.readFileString()` with `fs.readFile().pipe(Stream.decodeText, Stream.splitLines)`
@@ -286,7 +321,6 @@ If you're using the old patterns that had bugs:
 
 ---
 
-**Full Changelog:** https://github.com/PaulJPhilp/EffectPatterns/blob/main/CHANGELOG.md
+**Full Changelog:** <https://github.com/PaulJPhilp/EffectPatterns/blob/main/CHANGELOG.md>
 
 🚀 **Effect Patterns v0.3.0 - Production Ready!**
-

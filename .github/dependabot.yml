@@ -1,0 +1,100 @@
+version: 2
+updates:
+  # Enable version updates for npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "PaulJPhilp"
+    assignees:
+      - "PaulJPhilp"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automated"
+    # Security updates only during first month
+    versioning-strategy: increase-if-necessary
+
+    # Group updates to reduce PR noise
+    groups:
+      effect-ecosystem:
+        patterns:
+          - "@effect/*"
+          - "effect"
+        update-types:
+          - "minor"
+          - "patch"
+
+      opentelemetry:
+        patterns:
+          - "@opentelemetry/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "patch"
+
+    # Always create security update PRs separately
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Toolkit package
+  - package-ecosystem: "npm"
+    directory: "/packages/toolkit"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(toolkit/deps)"
+    labels:
+      - "dependencies"
+      - "toolkit"
+
+  # MCP Server package
+  - package-ecosystem: "npm"
+    directory: "/services/mcp-server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(mcp-server/deps)"
+    labels:
+      - "dependencies"
+      - "mcp-server"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    reviewers:
+      - "PaulJPhilp"

@@ -1,22 +1,26 @@
-# Market Requirements Document (MRD)  
-Product: Effect Patterns Claude Code Plugin (EP-Plugin)  
-Owner: Paul J Philp  
-Version: 0.2.0  
+# Market Requirements Document (MRD)
+
+**Product:** Effect Patterns Claude Code Plugin (EP-Plugin)
+**Owner:** Paul J Philp
+**Version:** 0.2.0
 Last updated: 2025-10-09
 
 ---
 
 ## 1. Executive summary
+
 EP-Plugin brings the EffectPatterns library directly into developer workflows inside Claude Code by providing:
-- a curated Claude Code marketplace plugin (slash commands, agents),
-- a secure, observable MCP server that serves pattern metadata and deterministic code snippets,
-- an Effect-native toolkit (library) that encapsulates search, ranking, and template generation logic.
+
+- A curated Claude Code marketplace plugin (slash commands, agents)
+- A secure, observable MCP server that serves pattern metadata and deterministic code snippets
+- An Effect-native toolkit (library) that encapsulates search, ranking, and template generation logic
 
 The product emphasizes deterministic, audit-friendly code generation (no default LLM calls), full Effect-based server implementation (including Next/Vercel endpoints written with Effect primitives), and trace-first observability (OpenTelemetry/OTLP + LangGraph guidance).
 
 ---
 
 ## 2. Goals & purpose
+
 - Make canonical Effect patterns discoverable and actionable inside AI-assisted developer workflows.
 - Provide deterministic snippet generation tailored to project settings (ESM/CJS, Effect version).
 - Offer a safe, authenticated MCP server and a pure, testable toolkit that agents/LLMs can call.
@@ -25,16 +29,20 @@ The product emphasizes deterministic, audit-friendly code generation (no default
 ---
 
 ## 3. Target users & personas
+
 Primary
+
 - TypeScript engineers using Effect in production who want canonical, reusable patterns.
 
 Secondary
+
 - AI-assisted developers using Claude Code and Claude Code plugin ecosystem.
 - Platform engineers who curate internal marketplaces for team-standard patterns and workflows.
 
 ---
 
 ## 4. Key user problems
+
 - Slow discovery of appropriate Effect patterns for a given problem.
 - Manual generation of snippets that mismatch project module type or Effect version.
 - Lack of traceability / audit trail for AI-suggested code actions.
@@ -43,6 +51,7 @@ Secondary
 ---
 
 ## 5. Value proposition
+
 - Fast, reproducible pattern discovery and snippet generation directly in Claude Code.
 - Deterministic code generation reduces risk and review effort vs. LLM-only generation.
 - Trace-first design enables audits and observability of AI-driven actions.
@@ -51,13 +60,16 @@ Secondary
 ---
 
 ## 6. Core product features (MVP)
+
 A. Marketplace & Plugin
+
 - .claude-plugin/marketplace.json + plugin manifest exposing:
   - slash commands: /pattern search, /pattern explain, /pattern generate
   - agent definitions: recommender agent (maps problem descriptions → pattern suggestions)
   - install UX: /plugin marketplace add <owner/repo>
 
 B. Effect Patterns Toolkit (intermediate deliverable)
+
 - Pure library (TypeScript + Effect where appropriate) with:
   - loadPatternsFromJson, searchPatterns, getPatternById
   - buildSnippet(pattern, { moduleType, effectVersion, name, input })
@@ -66,6 +78,7 @@ B. Effect Patterns Toolkit (intermediate deliverable)
 - Deterministic logic; fully unit-tested.
 
 C. Standalone MCP Server (intermediate deliverable → deployed on Vercel / serverless)
+
 - All endpoints implemented with Effect (Next App Router or a lightweight Effect-friendly HTTP server):
   - GET /api/patterns?q=
   - GET /api/patterns/:id
@@ -78,22 +91,27 @@ C. Standalone MCP Server (intermediate deliverable → deployed on Vercel / serv
 - Rate-limit middleware stub; protection against template injection.
 
 D. Observability & Tracing docs
+
 - Example wiring: Effect + @effect/opentelemetry, OTLP exporter config, and LangGraph (Python) examples to share collector and correlate traces.
 
 E. Automation & CI
-- GitHub Action to extract metadata from https://github.com/PaulJPhilp/EffectPatterns → data/patterns.json (fallback to sample if unavailable).
+
+- GitHub Action to extract metadata from <https://github.com/PaulJPhilp/EffectPatterns> → data/patterns.json (fallback to sample if unavailable).
 - Tests (unit + integration), linting, formatting (Prettier printWidth=80), and CI workflow.
 
 ---
 
 ## 7. Acceptance criteria & success metrics
+
 Functional acceptance
+
 - All endpoints implemented and return expected JSON contracts (see API Contracts section).
 - Toolkit functions correctly for search and snippet generation (unit test coverage).
 - MCP server instrumented with OTLP spans for requests; generated responses include a traceId.
 - Marketplace manifests present and valid.
 
 Success metrics (first 90 days)
+
 - 1,000 installs (public + orgs) OR adoption by 3 orgs for private marketplaces.
 - 70% of installs generate ≥1 snippet within 7 days.
 - p50 latency for search < 150ms; p95 < 300ms (on small pattern indexes).
@@ -103,6 +121,7 @@ Success metrics (first 90 days)
 ---
 
 ## 8. API contracts (MVP)
+
 - GET /api/patterns?q=...
   - Auth: x-api-key header or ?key
   - Response 200:
@@ -129,6 +148,7 @@ All endpoints must return structured error objects and use consistent status cod
 ---
 
 ## 9. Intermediate deliverables (required)
+
 1. Effect Patterns Toolkit (library)
    - Purpose: deterministic domain logic for search & snippet rendering callable by LLMs/agents.
    - Deliverables: npm/monorepo package, types, zod schemas, unit tests, LLM function descriptors.
@@ -142,12 +162,15 @@ These two allow parallel development: toolkit for correctness and safety; MCP se
 ---
 
 ## 10. Non-goals & constraints
+
 Non-goals (MVP)
+
 - No default LLM-based generation in server (LLM-assisted generation is stage-2, opt-in).
 - Not running arbitrary user code on server; deterministic templates only.
 - Not providing paid hosting or SaaS for customers (customer-supplied OTLP endpoints).
 
 Constraints
+
 - All server runtime code must use Effect primitives / layers for side effects, concurrency, and tracing.
 - Must run on Vercel serverless or an Effect-compatible node environment.
 - Prettier printWidth = 80; TypeScript only.
@@ -155,6 +178,7 @@ Constraints
 ---
 
 ## 11. Key assumptions
+
 - Claude Code plugin platform supports MCP servers and slash-command plugin model as described.
 - Effect and @effect/opentelemetry libraries are compatible with serverless environment used.
 - Users/teams will supply OTLP/collector endpoints or use SaaS tracing.
@@ -162,6 +186,7 @@ Constraints
 ---
 
 ## 12. Risks & mitigations
+
 - Supply-chain / malicious plugin risk
   - Mitigation: private marketplaces, code review, signed releases, manual vetting step.
 
@@ -177,24 +202,29 @@ Constraints
 ---
 
 ## 13. Observability & security requirements
+
 Observability
+
 - Each request creates a root span; include attributes: service.name, route, patternId, client.ip (if available).
 - Export traces to OTLP collector configured via env vars (OTLP_ENDPOINT, OTLP_HEADERS).
 - Responses include traceId; logs include traceId and request id.
 
 Security
+
 - PATTERN_API_KEY stored as masked env var in Vercel; rotate regularly.
 - OTLP_HEADERS masked; scope credentials.
 - Limit the surface: rate limiting, input validation, and audit logs for /generate.
 - Marketplace governance: require PRs and code review for marketplace changes.
 
 Compliance
+
 - Avoid storing customer secrets; do not persist API keys sent by clients.
 - Data retention policy: logs and traces retained per customer configuration; document defaults.
 
 ---
 
 ## 14. Dependencies
+
 - Effect (TypeScript) and @effect/opentelemetry
 - Next.js (App Router) or a lightweight HTTP server with Effect wrappers
 - Vercel for serverless deployment (optional)
@@ -204,10 +234,12 @@ Compliance
 ---
 
 ## 15. Timeline & rough estimates
+
 Assumptions: 1 product owner + 2 engineers (Effect + TS) + 1 SRE  
 Total: ~8–12 weeks for high-quality public beta (MVP + docs + CI + tests)
 
 Suggested phased schedule
+
 - Week 0–1 (Sprint 0): Approve MRD; repo scaffold, tooling, Prettier/ESLint.
 - Week 1–2: Implement Effect Patterns Toolkit + unit tests (2–4 days).
 - Week 3–4: Implement MCP server core endpoints in Effect (search, get by id, health).
@@ -220,6 +252,7 @@ Suggested phased schedule
 ---
 
 ## 16. Stakeholders & roles
+
 - Product owner: Paul J Philp (prioritize, review MRD/PRD)
 - Engineers (2): implement toolkit and MCP server (Effect)
 - SRE/Infra (1): OTLP config, Vercel setup, secrets management
@@ -229,6 +262,7 @@ Suggested phased schedule
 ---
 
 ## 17. Next steps (immediate)
+
 1. Confirm MRD approval or requested changes.
 2. Choose immediate first deliverable: Toolkit (recommended) or MCP server.
 3. Create repo scaffold (monorepo with packages/toolkit + services/mcp).
@@ -238,6 +272,7 @@ Suggested phased schedule
 ---
 
 ## 18. Deliverables (MVP)
+
 - MRD.md (this document)
 - Toolkit package: source, types, zod schemas, unit tests
 - MCP server: Effect-based Next/Vercel route handlers or Effect-friendly server, tracing layer

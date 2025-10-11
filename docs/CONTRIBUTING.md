@@ -1,63 +1,10 @@
-# Contributing to The Effect Patterns Hub
+<!-- Moved: canonical content is now at docs/guides/CONTRIBUTING.md -->
 
-Thank you for your interest in contributing! This project aims to be the best
-community-driven knowledge base for Effect-TS patterns. Every contribution helps.
+This top-level file has been moved. See the canonical guide at:
 
-## Documentation Pipeline
+   docs/guides/CONTRIBUTING.md
 
-This project uses a two-stage pipeline system:
-
-### 1. Ingest Stage
-
-New patterns start in `/content/new` and go through validation:
-
-- **Source Files**
-  - TypeScript examples in `/content/new/src/*.ts`
-  - MDX documentation in `/content/new/*.mdx`
-  - Run `npm run ingest` to process
-
-### 2. Publishing Pipeline
-
-The main pipeline has five sequential steps:
-
-1. **Test** (`/content/src`)
-   - Run all TypeScript examples
-   - Verify code correctness
-
-2. **Publish** (`/content/raw` → `/content/published`)
-   - Convert raw MDX to published format
-   - Expand TypeScript examples inline
-
-3. **Validate** (`/content/published`)
-   - Check frontmatter and sections
-   - Verify code block consistency
-
-4. **Generate** (`README.md`)
-   - Create main README
-   - Group patterns by use case
-
-5. **Rules** (`/rules`)
-   - Generate AI coding rules
-   - Multiple output formats
-
-### Available Commands
-
-- `npm run ingest` - Process new patterns from `/content/new`
-- `npm run pipeline` - Run all publishing steps in sequence
-- `npm run all` - Alias for pipeline
-
-Individual pipeline steps:
-- `npm run test` - Run TypeScript examples
-- `npm run publish` - Convert raw to published MDX
-- `npm run validate` - Validate published files
-- `npm run generate` - Generate README
-- `npm run rules` - Generate AI rules
-
-### Validation Rules
-
-All patterns must have:
-1. Valid frontmatter with required fields
-2. A Good Example section with TypeScript code
+(This stub preserves the old path while directing readers to the new location.)
 3. An Anti-Pattern section
 4. Either an Explanation or Rationale section
 5. TypeScript code that matches the source file

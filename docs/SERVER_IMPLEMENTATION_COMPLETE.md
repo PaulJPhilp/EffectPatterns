@@ -11,7 +11,7 @@ Successfully created the foundational boilerplate for the Effect-based HTTP Patt
 - **Lines**: ~105
 - **Status**: ✅ Working and tested
 
-### 2. `STEP_1_SERVER_BOILERPLATE.md` (Implementation Guide)
+### 2. `docs/implementation/STEP_1_SERVER_BOILERPLATE.md` (Implementation Guide)
 - Comprehensive prompt for AI coding agents
 - Reference patterns and validation criteria
 - Expected deliverables and testing instructions
@@ -200,7 +200,7 @@ With Step 1 complete, the foundation is ready for:
 
 ## 🎉 Success Criteria Met
 
-All requirements from STEP_1_SERVER_BOILERPLATE.md have been successfully implemented:
+All requirements from docs/implementation/STEP_1_SERVER_BOILERPLATE.md have been successfully implemented:
 
 1. ✅ Created `server/` directory with `index.ts`
 2. ✅ Used Effect ecosystem libraries correctly
@@ -218,7 +218,7 @@ All requirements from STEP_1_SERVER_BOILERPLATE.md have been successfully implem
 ## 📚 Documentation Created
 
 1. `server/index.ts` - Working implementation
-2. `STEP_1_SERVER_BOILERPLATE.md` - AI agent prompt/guide
+2. `docs/implementation/STEP_1_SERVER_BOILERPLATE.md` - AI agent prompt/guide
 3. `SERVER_IMPLEMENTATION_COMPLETE.md` - This document
 4. Updated `package.json` - Added `server:dev` script
 
