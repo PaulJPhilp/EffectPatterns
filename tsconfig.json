@@ -42,6 +42,8 @@
     "build",
     "archive/**",
     "content/backups/**",
-    "content-backup-*/**"
+    "content-backup-*/**",
+    "scripts/autofix/ai/suggestions/**",
+    "agents/analyzer/**"
   ]
 }

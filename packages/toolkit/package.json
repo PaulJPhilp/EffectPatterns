@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./splitSections": {
+      "types": "./dist/splitSections.d.ts",
+      "default": "./dist/splitSections.js"
     }
   },
   "scripts": {

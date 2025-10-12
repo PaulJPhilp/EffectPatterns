@@ -13,9 +13,11 @@
  *   bunx tsx scripts/ingest/process.ts
  */
 
-import * as path from "node:path";
 import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import * as yaml from "yaml";
+// Use shared utility to split markdown content into sections by headings
+import { splitSections } from "../../packages/toolkit/src/splitSections.js";
 
 // --- CONFIGURATION ---
 const PROJECT_ROOT = process.cwd();
@@ -71,10 +73,10 @@ function validateFrontMatter(filePath: string, fm: any): FrontMatter {
 }
 
 function validateSections(filePath: string, content: string): void {
-  const sections = content.split("\n## ");
+  const sections = splitSections(content);
   const requiredSections = ["Good Example", "Anti-Pattern"];
-  const hasExplanation = sections.some(
-    (s) => s.startsWith("Explanation") || s.startsWith("Rationale")
+  const hasExplanation = sections.some((s) =>
+    s.startsWith("Explanation") || s.startsWith("Rationale")
   );
   if (!hasExplanation) {
     throw new Error(

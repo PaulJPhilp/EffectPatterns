@@ -17,7 +17,7 @@ const PROCESSED_DIR = path.join(process.cwd(), "content/new/processed");
 const NEW_PUBLISHED_DIR = path.join(process.cwd(), "content/new/published");
 const NEW_SRC_DIR = path.join(process.cwd(), "content/new/src");
 
-async function publishPatterns() {
+export async function publishPatterns() {
   console.log(
     `Publishing patterns from ${PROCESSED_DIR} to ${NEW_PUBLISHED_DIR}`
   );

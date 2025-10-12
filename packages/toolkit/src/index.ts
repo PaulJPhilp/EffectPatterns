@@ -7,10 +7,12 @@
  */
 
 // Export schemas
-export * from "./schemas/pattern.js";
 export * from "./schemas/generate.js";
+export * from "./schemas/pattern.js";
 
 // Export pure functions
-export * from "./search.js";
-export * from "./template.js";
 export * from "./io.js";
+export * from "./search.js";
+export * from "./splitSections.js";
+export * from "./template.js";
+

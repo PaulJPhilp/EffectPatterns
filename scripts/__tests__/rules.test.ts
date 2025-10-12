@@ -1,9 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { Effect, Layer } from "effect";
-import { NodeContext } from "@effect/platform-node";
-import { MdxService } from "../../cli/src/services/mdx-service/service.js";
-
-// Import the functions we want to test
 import { generateFullRules, generateCompactRules, generateJsonRules } from "../publish/rules.js";
 
 describe("Rules generation functions", () => {

@@ -1,0 +1,25 @@
+# Environment variables
+.env
+.env.local
+
+# Output directory
+output/
+
+# Test artifacts
+*.log
+*.tmp
+
+# Node modules (if any)
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

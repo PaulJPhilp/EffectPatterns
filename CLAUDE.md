@@ -15,6 +15,7 @@ Effect Patterns Hub is a community-driven knowledge base of practical, goal-orie
 4. **MCP Server** - REST API for programmatic access
 5. **ChatGPT App** - Interactive pattern explorer
 6. **AI Coding Rules** - Machine-readable rules for 10+ AI tools
+7. **Data Analysis Engine** - Discord export service and LangGraph-powered thematic analysis for data-driven pattern discovery
 
 ## Architecture
 
@@ -67,6 +68,13 @@ Effect-Patterns/
 ├── scripts/
 │   ├── ep.ts              # CLI entry point
 │   ├── ingest-discord.ts  # Discord channel data ingestion
+│   ├── analyzer.ts        # Entry point for LangGraph analysis agent
+│   ├── analyzer/          # LangGraph-powered thematic analysis
+│   │   ├── graph.ts       # LangGraph workflow orchestration
+│   │   ├── nodes.ts       # Analysis workflow nodes (chunk, analyze, aggregate)
+│   │   ├── state.ts       # Workflow state management
+│   │   ├── services/      # Effect services (LLM, file operations)
+│   │   └── __tests__/     # Live integration tests
 │   ├── publish/           # Publishing pipeline
 │   │   ├── pipeline.ts    # Main orchestration
 │   │   ├── validate.ts    # Pattern validation
@@ -112,6 +120,10 @@ bun run ingest              # Ingest new patterns from content/new/
 bun run pipeline            # Full publishing pipeline (validate → test → publish → rules)
 bun run validate            # Validate pattern structure and frontmatter
 bun run publish             # Publish validated patterns to content/published/
+
+# Data Pipeline
+bun run ingest:discord      # Export and anonymize Discord channel data
+bun run analyze             # Run LangGraph thematic analysis on ingested data
 
 # Testing
 bun test                    # Run all tests
@@ -366,6 +378,117 @@ See:
 - [packages/effect-discord/INTEGRATION_TESTS.md](./packages/effect-discord/INTEGRATION_TESTS.md) - Test setup
 - [scripts/ingest-discord.ts](./scripts/ingest-discord.ts) - Production example
 
+### Working with the Data Analysis Engine
+
+The Data Analysis Engine combines Discord data export with AI-powered thematic analysis to identify community patterns and guide content strategy.
+
+**Architecture:**
+- **Discord Exporter** (`@effect-patterns/effect-discord`) - Effect-native service for exporting Discord channel data
+- **Analysis Agent** (`scripts/analyzer/`) - LangGraph workflow for thematic analysis using Effect services
+- **LLM Service** (`scripts/analyzer/services/llm.ts`) - Effect service wrapping Anthropic Claude for analysis
+- **File Service** (`scripts/analyzer/services/file.ts`) - Effect service for reading/writing analysis results
+
+**Workflow:**
+
+1. **Data Ingestion** (`bun run ingest:discord`):
+   - Exports Discord channel messages using DiscordChatExporter.Cli
+   - Anonymizes user data (replaces usernames/IDs with hashes)
+   - Saves to `/tmp/discord-exports/` directory
+   - Returns structured `ChannelExport` data
+
+2. **Thematic Analysis** (`bun run analyze`):
+   - Loads exported Discord data from disk
+   - Chunks messages into analyzable segments
+   - Sends chunks to Claude via LLM service
+   - Aggregates themes across all chunks
+   - Generates markdown report with:
+     - Top themes and pain points
+     - Code examples and patterns
+     - Pattern recommendations
+     - Community insights
+
+**Usage Example:**
+
+```bash
+# Step 1: Export Discord data
+export DISCORD_BOT_TOKEN="your-bot-token"
+bun run ingest:discord
+
+# Step 2: Run analysis
+export ANTHROPIC_API_KEY="your-api-key"
+bun run analyze
+
+# Results saved to:
+# - /tmp/discord-exports/channel-{id}-{timestamp}.json (raw data)
+# - data/analysis/analysis-report-{timestamp}.md (analysis report)
+```
+
+**Analysis Agent Structure:**
+
+```typescript
+// scripts/analyzer/graph.ts - Main workflow orchestration
+const workflow = new StateGraph<AnalysisState>()
+  .addNode("chunk", chunkNode)      // Split data into chunks
+  .addNode("analyze", analyzeNode)  // Analyze each chunk
+  .addNode("aggregate", aggregateNode) // Combine results
+  .addEdge(START, "chunk")
+  .addEdge("chunk", "analyze")
+  .addEdge("analyze", "aggregate")
+  .addEdge("aggregate", END)
+
+// Effect services provide dependencies
+const program = Effect.gen(function* () {
+  const llm = yield* LLMService
+  const file = yield* FileService
+
+  // Run LangGraph workflow
+  const result = await workflow.invoke({
+    messages: exportedData.messages,
+    chunks: [],
+    analyses: [],
+    finalReport: null
+  })
+
+  // Save report
+  yield* file.writeReport(result.finalReport)
+})
+```
+
+**Key Features:**
+
+- **Effect-First Architecture**: All I/O operations use Effect services
+- **Type-Safe State Management**: LangGraph state is fully typed with TypeScript
+- **Streaming Support**: LLM responses can be streamed for real-time feedback
+- **Error Handling**: Tagged errors throughout (DiscordError, LLMError, FileError)
+- **Testable**: Mock services for unit tests, live tests for integration
+- **Observability**: Structured logging and OpenTelemetry integration
+
+**Testing:**
+
+```bash
+# Unit tests (mocked services)
+bun test scripts/analyzer/__tests__/nodes.test.ts
+
+# Integration tests (real Discord + Claude APIs)
+bun test scripts/analyzer/__tests__/graph.test.ts
+
+# Skip integration tests
+SKIP_INTEGRATION_TESTS=true bun test scripts/analyzer/
+```
+
+**Configuration:**
+
+Environment variables:
+- `DISCORD_BOT_TOKEN` - Discord bot authentication
+- `ANTHROPIC_API_KEY` - Claude API key for analysis
+- `ANALYSIS_OUTPUT_DIR` - Output directory (default: `data/analysis/`)
+- `DISCORD_EXPORT_DIR` - Export directory (default: `/tmp/discord-exports/`)
+
+See:
+- [scripts/analyzer/README.md](./scripts/analyzer/README.md) - Detailed architecture
+- [scripts/analyzer/graph.ts](./scripts/analyzer/graph.ts) - Workflow implementation
+- [scripts/analyzer/services/](./scripts/analyzer/services/) - Effect services
+
 ### Working with the Toolkit
 
 The toolkit is a pure Effect library for pattern operations.
@@ -541,6 +664,9 @@ describe("MyService", () => {
 | `scripts/publish/publish.ts` | Pattern publishing |
 | `scripts/publish/rules.ts` | AI rules generation |
 | `scripts/ingest/ingest-pipeline-improved.ts` | Pattern ingestion |
+| `scripts/ingest-discord.ts` | Discord data export and anonymization |
+| `scripts/analyzer.ts` | Analysis agent entry point |
+| `scripts/analyzer/graph.ts` | LangGraph workflow orchestration |
 
 ### Documentation
 
@@ -791,6 +917,7 @@ vercel --prod
 - ✅ MCP server with REST API
 - ✅ ChatGPT app for interactive exploration
 - ✅ AI coding rules for 10+ tools
+- ✅ Data analysis engine with Discord export and LangGraph thematic analysis
 - ✅ Comprehensive test coverage (80%+)
 - ✅ CI/CD with GitHub Actions
 - ✅ Vercel deployment

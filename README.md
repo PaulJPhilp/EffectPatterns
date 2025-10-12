@@ -27,6 +27,11 @@ A comprehensive, community-driven knowledge base of practical, goal-oriented pat
 - **OpenTelemetry integration** for observability
 - Deployed on Vercel with staging and production environments
 
+### 🤖 Data Analysis Engine
+- **Discord Exporter Service** (`@effect-patterns/effect-discord`) to create datasets from community conversations
+- **AI-Powered Analysis Agent** (`scripts/analyzer.ts`) using LangGraph to perform thematic analysis on ingested data
+- **Data-Driven Content Strategy** to identify community pain points and guide new pattern creation
+
 ### 🌐 ChatGPT App
 - **Interactive pattern explorer** via ChatGPT interface
 - Natural language pattern search
@@ -266,13 +271,8 @@ Effect-Patterns/
 │   ├── server/            # API routes and server logic
 │   └── mcp/               # MCP server integration
 ├── packages/
-│   └── toolkit/           # Effect Patterns Toolkit
-│       ├── src/
-│       │   ├── patterns/  # Pattern data access
-│       │   ├── search/    # Search functionality
-│       │   ├── generate/  # Code generation
-│       │   └── schemas/   # JSON schemas
-│       └── dist/          # Built toolkit
+│   ├── toolkit/           # Effect Patterns Toolkit
+│   └── effect-discord/    # Effect-native Discord Exporter Service
 ├── services/
 │   └── mcp-server/        # MCP server implementation
 │       ├── src/
@@ -285,6 +285,8 @@ Effect-Patterns/
 │   ├── new/               # New patterns being developed
 │   └── src/               # TypeScript examples
 ├── scripts/
+│   ├── analyzer/          # LangGraph Analysis Agent logic
+│   ├── ingest-discord.ts  # Script to run the Discord ingestion pipeline
 │   ├── publish/           # Publishing pipeline
 │   ├── ingest/            # Pattern ingestion
 │   └── ep.ts              # CLI entry point
@@ -397,6 +399,10 @@ bun run ingest          # Ingest new patterns
 bun run pipeline        # Full publishing pipeline
 bun run validate        # Validate patterns
 bun run publish         # Publish patterns
+
+# Data Pipeline
+bun run ingest:discord  # Ingests and anonymizes data from Discord
+bun run analyze         # Runs thematic analysis on ingested data
 
 # Testing
 bun test                # Run all tests

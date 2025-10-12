@@ -71,7 +71,7 @@ async function extractRules(): Promise<Rule[]> {
   return rules.sort((a, b) => a.title.localeCompare(b.title));
 }
 
-async function generateFullRules(rules: Rule[]) {
+export async function generateFullRules(rules: Rule[]) {
   const content = ['# Effect-TS Patterns - Complete Rules\n'];
   for (const rule of rules) {
     content.push(`## ${rule.title}\n`);
@@ -93,7 +93,7 @@ async function generateFullRules(rules: Rule[]) {
   console.log(`✅ Generated ${filePath}`);
 }
 
-async function generateCompactRules(rules: Rule[]) {
+export async function generateCompactRules(rules: Rule[]) {
   const content = ['# Effect-TS Patterns - Compact Rules\n\n'];
   for (const rule of rules) {
     content.push(`- **${rule.title}**: ${rule.description}\n`);
@@ -104,13 +104,13 @@ async function generateCompactRules(rules: Rule[]) {
   console.log(`✅ Generated ${filePath}`);
 }
 
-async function generateJsonRules(rules: Rule[]) {
+export async function generateJsonRules(rules: Rule[]) {
   const filePath = path.join(RULES_DIR, "rules.json");
   await fs.writeFile(filePath, JSON.stringify(rules, null, 2), "utf-8");
   console.log(`✅ Generated ${filePath}`);
 }
 
-async function generateUseCaseRules(rules: Rule[]) {
+export async function generateUseCaseRules(rules: Rule[]) {
   await fs.mkdir(USE_CASE_DIR, { recursive: true });
 
   const useCaseGroups = new Map<string, Rule[]>();

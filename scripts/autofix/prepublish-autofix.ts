@@ -535,7 +535,7 @@ async function extractGeminiText(apiKey: string, model: string, system: string, 
   const json: any = await response.json();
   const text: string | undefined =
     json?.candidates?.[0]?.content?.parts?.[0]?.text;
-  return text;
+  return text ?? "";
 }
 
 // --- Banlist & style helpers ---

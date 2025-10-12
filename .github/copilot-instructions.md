@@ -439,7 +439,9 @@ const PatternSchema = Schema.struct({
     Schema.filter((c) => c.includes("## Good Example")),
     Schema.transformer((content) => ({
       raw: content,
-      sections: content.split("\n##").map((s) => s.trim()),
+      // Use the shared utility to split content into sections by markdown headings
+      // (handles CRLF, multiple heading levels, and trims results).
+      sections: splitSections(content),
       examples: content.match(/\`\`\`[^\n]*([\s\S]*?)\`\`\`/g) ?? []
     }))
   ),
