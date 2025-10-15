@@ -1,0 +1,64 @@
+{
+  "patterns": [
+    {
+      "id": "retry-with-backoff",
+      "title": "Retry with Exponential Backoff",
+      "description": "Automatically retry failed operations with exponentially increasing delays between attempts",
+      "category": "error-handling",
+      "difficulty": "intermediate",
+      "tags": ["retry", "resilience", "error-handling", "backoff"],
+      "examples": [
+        {
+          "language": "typescript",
+          "code": "import { Effect, Schedule } from \"effect\";\n\nconst retryWithBackoff = Effect.retry(\n  apiCall,\n  Schedule.exponential(\"100 millis\").pipe(\n    Schedule.compose(Schedule.recurs(5))\n  )\n);\n\nexport { retryWithBackoff };",
+          "description": "Retry an API call up to 5 times with exponential backoff"
+        }
+      ],
+      "useCases": [
+        "API calls that may fail due to network issues",
+        "Database operations with transient failures",
+        "External service integrations"
+      ]
+    },
+    {
+      "id": "concurrent-batch-processing",
+      "title": "Concurrent Batch Processing",
+      "description": "Process large datasets concurrently with controlled parallelism",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": ["concurrency", "batch", "parallel", "performance"],
+      "examples": [
+        {
+          "language": "typescript",
+          "code": "import { Effect, Array } from \"effect\";\n\nconst processBatch = (items: string[]) =>\n  Effect.forEach(\n    items,\n    (item) => processItem(item),\n    { concurrency: 10 }\n  );\n\nexport { processBatch };",
+          "description": "Process items with max 10 concurrent operations"
+        }
+      ],
+      "useCases": [
+        "Processing large datasets",
+        "Bulk API operations",
+        "Parallel file processing"
+      ]
+    },
+    {
+      "id": "simple-effect",
+      "title": "Creating Simple Effects",
+      "description": "Learn how to create basic Effect values for success and failure cases",
+      "category": "error-handling",
+      "difficulty": "beginner",
+      "tags": ["basics", "effect", "success", "failure"],
+      "examples": [
+        {
+          "language": "typescript",
+          "code": "import { Effect } from \"effect\";\n\nconst success = Effect.succeed(\"Hello, Effect!\");\nconst failure = Effect.fail(\"Something went wrong\");\n\nexport { success, failure };",
+          "description": "Basic Effect creation"
+        }
+      ],
+      "useCases": [
+        "Learning Effect basics",
+        "Simple synchronous operations",
+        "Error handling fundamentals"
+      ]
+    }
+  ]
+}
