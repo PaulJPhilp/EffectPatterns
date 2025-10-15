@@ -1,6 +1,6 @@
-import { Effect, Option, Either } from "effect";
+import { Effect, Either, Option } from 'effect';
 
-const effect = Effect.fail("Oops!").pipe(
+const effect = Effect.fail('Oops!').pipe(
   Effect.match({
     onFailure: (err) => `Error: ${err}`,
     onSuccess: (value) => `Success: ${value}`,
@@ -9,12 +9,12 @@ const effect = Effect.fail("Oops!").pipe(
 
 const option = Option.some(42).pipe(
   Option.match({
-    onNone: () => "No value",
+    onNone: () => 'No value',
     onSome: (n) => `Value: ${n}`,
   })
 );
 
-const either = Either.left("fail").pipe(
+const either = Either.left('fail').pipe(
   Either.match({
     onLeft: (err) => `Error: ${err}`,
     onRight: (value) => `Value: ${value}`,

@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from 'effect';
 
 function add(a: number, b: number): number {
   return a + b;

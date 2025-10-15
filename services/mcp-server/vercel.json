@@ -1,16 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && bun install --frozen-lockfile && bun --filter @effect-patterns/mcp-server run build",
-  "installCommand": "cd ../.. && bun install --frozen-lockfile",
   "framework": "nextjs",
-  "env": {
-    "PATTERN_API_KEY": "@pattern-api-key-staging",
-    "OTLP_ENDPOINT": "@otlp-endpoint-staging",
-    "OTLP_HEADERS": "@otlp-headers-staging",
-    "SERVICE_NAME": "effect-patterns-mcp-server-staging",
-    "NODE_ENV": "production",
-    "NEXT_TELEMETRY_DISABLED": "1"
-  },
+  "buildCommand": "cd ../../packages/toolkit && bun run build && cd ../../services/mcp-server && bun run build",
+  "installCommand": "bun install",
   "regions": ["iad1"],
   "functions": {
     "app/api/**/*.ts": {

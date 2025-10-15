@@ -6,13 +6,8 @@
     "name": "Paul J Philp",
     "url": "https://github.com/PaulJPhilp"
   },
-  "commands": [
-    "./commands/search.md",
-    "./commands/explain.md"
-  ],
-  "agents": [
-    "./agents/recommender.md"
-  ],
+  "commands": ["./commands/search.md", "./commands/explain.md"],
+  "agents": ["./agents/recommender.md"],
   "mcpServers": {
     "effect-patterns-server": {
       "source": "http",

@@ -1,7 +1,7 @@
-import { Effect, Stream, Option, Either, Data } from "effect";
+import { Data, Effect, Either, Option, Stream } from 'effect';
 
 // Define a custom error for odd numbers
-class OddNumberError extends Data.TaggedError("OddNumberError") {}
+class OddNumberError extends Data.TaggedError('OddNumberError') {}
 
 // Effect: Only succeed if the value is even, otherwise fail
 const effect = Effect.succeed(4).pipe(
@@ -12,15 +12,13 @@ const effect = Effect.succeed(4).pipe(
 ); // Effect<number, OddNumberError>
 
 // Option: Only keep the value if it is even
-const option = Option.some(4).pipe(
-  Option.filter((n) => n % 2 === 0)
-); // Option<number>
+const option = Option.some(4).pipe(Option.filter((n) => n % 2 === 0)); // Option<number>
 
 // Either: Only keep the value if it is even, otherwise turn into Left
 const either = Either.right(4).pipe(
   Either.filterOrElse(
     (n) => n % 2 === 0,
-    () => "Value is odd"
+    () => 'Value is odd'
   )
 ); // Either<string, number>
 

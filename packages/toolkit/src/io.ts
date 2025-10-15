@@ -4,11 +4,12 @@
  * Effect-based file system operations for loading patterns data.
  */
 
-import { Effect } from "effect";
-import { Schema as S } from "@effect/schema";
-import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
-import * as FileSystem from "@effect/platform/FileSystem";
-import { PatternsIndex } from "./schemas/pattern.js";
+import { FileSystem } from '@effect/platform/FileSystem';
+import type { FileSystem as FileSystemService } from '@effect/platform/FileSystem';
+import { layer as NodeFileSystemLayer } from '@effect/platform-node/NodeFileSystem';
+import { Schema as S } from '@effect/schema';
+import { Effect } from 'effect';
+import { PatternsIndex } from './schemas/pattern.js';
 
 /**
  * Load and parse patterns from a JSON file
@@ -18,13 +19,9 @@ import { PatternsIndex } from "./schemas/pattern.js";
  */
 export const loadPatternsFromJson = (
   filePath: string
-): Effect.Effect<
-  typeof PatternsIndex.Type,
-  Error,
-  FileSystem.FileSystem
-> =>
+): Effect.Effect<typeof PatternsIndex.Type, Error, FileSystemService> =>
   Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
+    const fs = yield* FileSystem;
 
     // Read file as UTF-8 string
     const content = yield* fs.readFileString(filePath);
@@ -42,4 +39,4 @@ export const loadPatternsFromJson = (
  * Runnable version with Node FileSystem layer
  */
 export const loadPatternsFromJsonRunnable = (filePath: string) =>
-  loadPatternsFromJson(filePath).pipe(Effect.provide(NodeFileSystem.layer));
+  loadPatternsFromJson(filePath).pipe(Effect.provide(NodeFileSystemLayer));

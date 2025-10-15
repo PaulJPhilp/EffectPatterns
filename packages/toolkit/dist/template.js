@@ -13,9 +13,9 @@
  */
 export function sanitizeInput(input) {
     return input
-        .replace(/[<>]/g, "") // Remove angle brackets
-        .replace(/[`$]/g, "") // Remove backticks and dollar signs
-        .replace(/[\r\n]+/g, " ") // Replace newlines with spaces
+        .replace(/[<>]/g, '') // Remove angle brackets
+        .replace(/[`$]/g, '') // Remove backticks and dollar signs
+        .replace(/[\r\n]+/g, ' ') // Replace newlines with spaces
         .trim()
         .slice(0, 100); // Limit length
 }
@@ -25,8 +25,8 @@ export function sanitizeInput(input) {
  * @param moduleType - ESM or CJS
  * @returns Import/require statement
  */
-function generateImport(moduleType = "esm") {
-    if (moduleType === "cjs") {
+function generateImport(moduleType = 'esm') {
+    if (moduleType === 'cjs') {
         return `const { Effect, pipe } = require("effect");`;
     }
     return `import { Effect, pipe } from "effect";`;
@@ -38,8 +38,8 @@ function generateImport(moduleType = "esm") {
  * @param name - Export name
  * @returns Export statement
  */
-function generateExport(name, moduleType = "esm") {
-    if (moduleType === "cjs") {
+function generateExport(name, moduleType = 'esm') {
+    if (moduleType === 'cjs') {
         return `module.exports = { ${name} };`;
     }
     return `export { ${name} };`;
@@ -51,64 +51,69 @@ function generateExport(name, moduleType = "esm") {
  * examples. Supports module type variations and Effect version
  * comments.
  *
- * @param pattern - Pattern to generate snippet from
- * @param name - Optional custom name for the example
- * @param input - Optional custom input parameter
- * @param moduleType - Module type (esm or cjs)
- * @param effectVersion - Optional Effect version to include in comment
+ * @param params - Snippet generation parameters
  * @returns Generated code snippet
+ * @example
+ * ```typescript
+ * const snippet = buildSnippet({
+ *   pattern: myPattern,
+ *   customName: "retryRequest",
+ *   moduleType: "esm"
+ * })
+ * ```
  */
-export function buildSnippet(pattern, name, input, moduleType = "esm", effectVersion) {
-    const sanitizedName = name ? sanitizeInput(name) : "example";
-    const sanitizedInput = input ? sanitizeInput(input) : "input";
+export function buildSnippet(params) {
+    const { pattern, customName, customInput, moduleType = 'esm', effectVersion } = params;
+    const sanitizedName = customName ? sanitizeInput(customName) : 'example';
+    const sanitizedInput = customInput ? sanitizeInput(customInput) : 'input';
     // Use first example if available
-    const example = pattern.examples[0];
+    const example = pattern.examples?.[0];
     if (!example) {
         // Generate a minimal placeholder if no example exists
         const header = [
             `// ${pattern.title}`,
-            effectVersion ? `// Effect version: ${effectVersion}` : "",
+            effectVersion ? `// Effect version: ${effectVersion}` : '',
             `// Pattern ID: ${pattern.id}`,
-            "",
+            '',
             generateImport(moduleType),
-            "",
+            '',
             `// ${pattern.description}`,
-            "",
+            '',
             `const ${sanitizedName} = Effect.succeed("${sanitizedInput}");`,
-            "",
+            '',
             generateExport(sanitizedName, moduleType),
         ]
             .filter(Boolean)
-            .join("\n");
+            .join('\n');
         return header;
     }
     // Build snippet from example with header
     const header = [
         `// ${pattern.title}`,
-        effectVersion ? `// Effect version: ${effectVersion}` : "",
+        effectVersion ? `// Effect version: ${effectVersion}` : '',
         `// Pattern ID: ${pattern.id}`,
-        example.description ? `// ${example.description}` : "",
-        "",
+        example.description ? `// ${example.description}` : '',
+        '',
         generateImport(moduleType),
-        "",
+        '',
     ]
         .filter(Boolean)
-        .join("\n");
+        .join('\n');
     // Process the example code (sanitize but preserve structure)
     const processedCode = example.code
-        .split("\n")
+        .split('\n')
         .map((line) => {
         // Replace any template variables if present
         let processedLine = line;
-        if (name) {
+        if (customName) {
             processedLine = processedLine.replace(/\bexample\b/g, sanitizedName);
         }
-        if (input) {
+        if (customInput) {
             processedLine = processedLine.replace(/"input"/g, `"${sanitizedInput}"`);
         }
         return processedLine;
     })
-        .join("\n");
+        .join('\n');
     return `${header}\n${processedCode}`;
 }
 /**
@@ -125,12 +130,12 @@ export function generateUsageExample(pattern) {
     return [
         `// ${pattern.title}`,
         `// ${pattern.description}`,
-        "",
-        example.description || "",
-        "",
+        '',
+        example.description || '',
+        '',
         example.code,
     ]
         .filter(Boolean)
-        .join("\n");
+        .join('\n');
 }
 //# sourceMappingURL=template.js.map

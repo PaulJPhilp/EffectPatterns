@@ -1,8 +1,7 @@
-import { tool } from "ai";
-import { z } from "zod";
-import { Effect } from "effect";
-import { runEffect } from "./runtime";
-import { searchPatterns, toPatternSummary } from "@effect-patterns/toolkit";
+import { tool } from 'ai';
+import { Effect } from 'effect';
+import { z } from 'zod';
+import { runEffect } from './runtime';
 
 interface PatternRecord {
   readonly id: string;
@@ -17,19 +16,19 @@ interface PatternRecord {
 
 const patternLibrary: readonly PatternRecord[] = [
   {
-    id: "run-tasks-in-parallel",
-    title: "Run Tasks in Parallel",
+    id: 'run-tasks-in-parallel',
+    title: 'Run Tasks in Parallel',
     description:
-      "Use Effect.all or Effect.forEachPar to orchestrate parallel work.",
-    category: "concurrency",
-    difficulty: "intermediate",
-    tags: ["concurrency", "parallel", "fibers"],
+      'Use Effect.all or Effect.forEachPar to orchestrate parallel work.',
+    category: 'concurrency',
+    difficulty: 'intermediate',
+    tags: ['concurrency', 'parallel', 'fibers'],
     keywords: [
-      "concurrency",
-      "parallel",
-      "parallelize",
-      "forEachPar",
-      "Effect.all",
+      'concurrency',
+      'parallel',
+      'parallelize',
+      'forEachPar',
+      'Effect.all',
     ],
     content: `## Run Tasks in Parallel
 
@@ -56,14 +55,14 @@ const withLimit = Effect.forEach(
 `,
   },
   {
-    id: "coordinate-fibers",
-    title: "Coordinate Fibers Safely",
+    id: 'coordinate-fibers',
+    title: 'Coordinate Fibers Safely',
     description:
-      "Fork fibers and join or interrupt them to manage concurrency explicitly.",
-    category: "concurrency",
-    difficulty: "advanced",
-    tags: ["concurrency", "fibers", "coordination"],
-    keywords: ["fiber", "fibers", "join", "interrupt"],
+      'Fork fibers and join or interrupt them to manage concurrency explicitly.',
+    category: 'concurrency',
+    difficulty: 'advanced',
+    tags: ['concurrency', 'fibers', 'coordination'],
+    keywords: ['fiber', 'fibers', 'join', 'interrupt'],
     content: `## Coordinate Fibers Safely
 
 Fibers let you manage concurrent workflows:
@@ -88,14 +87,14 @@ yield* Effect.acquireUseRelease(
 `,
   },
   {
-    id: "retry-with-schedule",
-    title: "Retry with Exponential Backoff",
+    id: 'retry-with-schedule',
+    title: 'Retry with Exponential Backoff',
     description:
-      "Combine Effect.retry with Schedule.exponential and jitter for robustness.",
-    category: "resilience",
-    difficulty: "intermediate",
-    tags: ["retry", "schedule", "backoff"],
-    keywords: ["retry", "backoff", "exponential", "schedule"],
+      'Combine Effect.retry with Schedule.exponential and jitter for robustness.',
+    category: 'resilience',
+    difficulty: 'intermediate',
+    tags: ['retry', 'schedule', 'backoff'],
+    keywords: ['retry', 'backoff', 'exponential', 'schedule'],
     content: `## Retry with Exponential Backoff
 
 Use schedules to add resilience:
@@ -127,14 +126,14 @@ const safe = Effect.catchAll(withBackoff, (error) =>
 `,
   },
   {
-    id: "handle-errors-with-catch",
-    title: "Handle Errors with catchTag, catchTags, and catchAll",
+    id: 'handle-errors-with-catch',
+    title: 'Handle Errors with catchTag, catchTags, and catchAll',
     description:
-      "Learn how to handle errors in Effect programs using typed error recovery.",
-    category: "error-handling",
-    difficulty: "beginner",
-    tags: ["error-handling", "recovery", "typed-errors"],
-    keywords: ["error", "catch", "typed", "recovery"],
+      'Learn how to handle errors in Effect programs using typed error recovery.',
+    category: 'error-handling',
+    difficulty: 'beginner',
+    tags: ['error-handling', 'recovery', 'typed-errors'],
+    keywords: ['error', 'catch', 'typed', 'recovery'],
     content: `## Handle Errors with catchTag, catchTags, and catchAll
 
 Recover from specific error types:
@@ -169,10 +168,22 @@ export const searchPatternsTool = tool({
     Returns matching patterns with descriptions and code examples.`,
 
   parameters: z.object({
-    query: z.string().describe("The search query (e.g., 'retry with backoff', 'error handling', 'concurrent processing')"),
-    category: z.string().optional().describe("Filter by category if specified"),
-    difficulty: z.string().optional().describe("Filter by difficulty level: beginner, intermediate, or advanced"),
-    limit: z.number().optional().describe("Maximum number of results to return (default: 5)"),
+    query: z
+      .string()
+      .describe(
+        "The search query (e.g., 'retry with backoff', 'error handling', 'concurrent processing')"
+      ),
+    category: z.string().optional().describe('Filter by category if specified'),
+    difficulty: z
+      .string()
+      .optional()
+      .describe(
+        'Filter by difficulty level: beginner, intermediate, or advanced'
+      ),
+    limit: z
+      .number()
+      .optional()
+      .describe('Maximum number of results to return (default: 5)'),
   }),
 
   execute: async ({ query, category, difficulty, limit = 5 }) => {
@@ -216,7 +227,7 @@ export const searchPatternsTool = tool({
     const total = filtered.length;
     const summary =
       limited.length > 0
-        ? `Found ${total} pattern${total === 1 ? "" : "s"} matching "${query}". Top match: "${limited[0].title}" (${limited[0].category}).`
+        ? `Found ${total} pattern${total === 1 ? '' : 's'} matching "${query}". Top match: "${limited[0].title}" (${limited[0].category}).`
         : `No patterns found for "${query}".`;
 
     return {
@@ -244,12 +255,12 @@ export const reviewCodeSnippetTool = tool({
     Returns analysis, suggestions, and optionally a diff showing the improved code.`,
 
   parameters: z.object({
-    code: z.string().describe("The Effect-TS code snippet to review"),
+    code: z.string().describe('The Effect-TS code snippet to review'),
   }),
 
   execute: async ({ code }) => {
     // Import McpClient dynamically to use in Effect context
-    const { McpClient } = await import("./services/mcp-client");
+    const { McpClient } = await import('./services/mcp-client');
 
     try {
       const result = await runEffect(
@@ -268,11 +279,13 @@ export const reviewCodeSnippetTool = tool({
     } catch (error) {
       // If MCP server is not available, provide basic feedback
       return {
-        analysis: "MCP server is not available for detailed code review.",
-        suggestion: "Please ensure the MCP server is running at " + (process.env.MCP_SERVER_URL || "http://localhost:3000"),
-        diff: "",
+        analysis: 'MCP server is not available for detailed code review.',
+        suggestion:
+          'Please ensure the MCP server is running at ' +
+          (process.env.MCP_SERVER_URL || 'http://localhost:3000'),
+        diff: '',
         reviewed: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   },

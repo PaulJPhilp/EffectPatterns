@@ -1,7 +1,7 @@
-import { Data, Equal, Effect, HashSet } from "effect";
+import { Data, Effect, Equal, HashSet } from 'effect';
 
-const t1 = Data.tuple(1, "Alice");
-const t2 = Data.tuple(1, "Alice");
+const t1 = Data.tuple(1, 'Alice');
+const t2 = Data.tuple(1, 'Alice');
 const areEqual = Equal.equals(t1, t2);
 const set = HashSet.make(t1);
 const hasT2 = HashSet.has(set, t2);

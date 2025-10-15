@@ -1,19 +1,19 @@
-import { NodeContext } from "@effect/platform-node";
-import { FileSystem } from "@effect/platform/FileSystem";
-import { Effect, Layer } from "effect";
-import { z } from "zod";
-import { chunkMessagesDefault } from "./chunking-service.js";
+import { FileSystem } from '@effect/platform/FileSystem';
+import { NodeContext } from '@effect/platform-node';
+import { Effect, Layer } from 'effect';
+import { z } from 'zod';
+import { chunkMessagesDefault } from './chunking-service.js';
 import {
+  type AnalyzerError,
   FileReadError,
   InvalidJSONError,
-  type AnalyzerError,
-} from "./errors.js";
-import type { Message } from "./schemas.js";
-import { LLMService, LLMServiceLive } from "./services.js";
+} from './errors.js';
+import type { Message } from './schemas.js';
+import { LLMService, LLMServiceLive } from './services.js';
 import {
   DataValidationService,
   validateMessageCollection,
-} from "./validation-service.js";
+} from './validation-service.js';
 
 // GraphState now uses proper Message types instead of z.any()
 const GraphStateSchema = z.object({
@@ -34,7 +34,7 @@ export type GraphState = z.infer<typeof GraphStateSchema>;
 const AnalysisLayer = Layer.mergeAll(
   LLMServiceLive,
   DataValidationService.Live,
-  NodeContext.layer,
+  NodeContext.layer
 );
 
 const nodes = {
@@ -54,11 +54,11 @@ const nodes = {
             new FileReadError({
               path: state.inputFile,
               cause,
-            }),
+            })
         ),
         Effect.tapError((error) =>
-          Effect.logError(`Failed to read file: ${error.path}`),
-        ),
+          Effect.logError(`Failed to read file: ${error.path}`)
+        )
       );
 
       // Parse JSON with error handling
@@ -71,30 +71,29 @@ const nodes = {
           }),
       }).pipe(
         Effect.tapError((error) =>
-          Effect.logError(`Invalid JSON in file: ${error.path}`),
-        ),
+          Effect.logError(`Invalid JSON in file: ${error.path}`)
+        )
       );
 
       // Validate message structure using our schema
-      yield* Effect.log("✅ Validating message data...");
+      yield* Effect.log('✅ Validating message data...');
       const rawCollection = yield* validateMessageCollection(parsedData);
 
-      // Extract validated messages with type assertion
-      // (validation ensures this is a MessageCollection)
-      const messages: Message[] = (rawCollection as any).messages;
+      // Extract validated messages from the MessageCollection result
+      const messages = [...rawCollection.messages];
 
       yield* Effect.log(`📊 Found ${messages.length} messages`);
 
       // Smart chunking with our heuristic
-      yield* Effect.log("🧩 Creating smart chunks...");
+      yield* Effect.log('🧩 Creating smart chunks...');
       // Deleting the TypeScript error since it's a known issue with zod
       const chunkingResult = yield* chunkMessagesDefault(messages);
 
       yield* Effect.log(
-        `✅ Created ${chunkingResult.chunkCount} chunks (strategy: ${chunkingResult.strategy})`,
+        `✅ Created ${chunkingResult.chunkCount} chunks (strategy: ${chunkingResult.strategy})`
       );
       yield* Effect.log(
-        `   Average chunk size: ${chunkingResult.averageChunkSize} messages`,
+        `   Average chunk size: ${chunkingResult.averageChunkSize} messages`
       );
 
       return {
@@ -110,8 +109,8 @@ const nodes = {
           yield* Effect.logError(`❌ Load and chunk failed: ${error._tag}`);
           // Re-throw to stop the workflow
           return yield* Effect.fail(error);
-        }),
-      ),
+        })
+      )
     );
 
     return await Effect.runPromise(Effect.provide(program, AnalysisLayer));
@@ -123,7 +122,7 @@ const nodes = {
   analyzeSingleChunk: async (
     _state: GraphState,
     _config: { recursionLimit?: number },
-    chunk: unknown[],
+    chunk: unknown[]
   ) => {
     const program = Effect.gen(function* () {
       const llm = yield* LLMService;
@@ -131,8 +130,10 @@ const nodes = {
 
       const partialAnalysis = yield* llm.analyzeChunk(chunk as Message[]);
 
-      yield* Effect.log("✅ Chunk analysis complete");
-      return { partialAnalyses: [partialAnalysis] } satisfies Partial<GraphState>;
+      yield* Effect.log('✅ Chunk analysis complete');
+      return {
+        partialAnalyses: [partialAnalysis],
+      } satisfies Partial<GraphState>;
     });
 
     return await Effect.runPromise(Effect.provide(program, AnalysisLayer));
@@ -146,19 +147,19 @@ const nodes = {
       const llm = yield* LLMService;
       const fs = yield* FileSystem;
 
-      yield* Effect.log("📝 Aggregating partial analyses...");
+      yield* Effect.log('📝 Aggregating partial analyses...');
       yield* Effect.log(
-        `   Processing ${state.partialAnalyses?.length ?? 0} partial analyses`,
+        `   Processing ${state.partialAnalyses?.length ?? 0} partial analyses`
       );
 
       const finalReport = yield* llm.aggregateAnalyses(
-        state.partialAnalyses ?? [],
+        state.partialAnalyses ?? []
       );
 
       yield* Effect.log(`💾 Saving report to: ${state.outputFile}`);
       yield* fs.writeFileString(state.outputFile, finalReport);
 
-      yield* Effect.log("✅ Final report saved successfully");
+      yield* Effect.log('✅ Final report saved successfully');
       return { finalReport } satisfies Partial<GraphState>;
     });
 
@@ -171,7 +172,10 @@ const nodes = {
  * Replaces LangGraph with native Effect composition
  */
 export const app = {
-  invoke: async (input: { inputFile: string; outputFile: string }): Promise<GraphState> => {
+  invoke: async (input: {
+    inputFile: string;
+    outputFile: string;
+  }): Promise<GraphState> => {
     const program = Effect.gen(function* () {
       // Step 1: Load and chunk data
       const step1Result = yield* Effect.promise(() =>
@@ -204,5 +208,5 @@ export const app = {
     });
 
     return await Effect.runPromise(Effect.provide(program, AnalysisLayer));
-  }
+  },
 };

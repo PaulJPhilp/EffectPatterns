@@ -3,16 +3,16 @@
  *
  * Effect-based file system operations for loading patterns data.
  */
-import { Effect } from "effect";
-import * as FileSystem from "@effect/platform/FileSystem";
-import { PatternsIndex } from "./schemas/pattern.js";
+import type { FileSystem as FileSystemService } from '@effect/platform/FileSystem';
+import { Effect } from 'effect';
+import { PatternsIndex } from './schemas/pattern.js';
 /**
  * Load and parse patterns from a JSON file
  *
  * @param filePath - Absolute path to patterns.json
  * @returns Effect that yields validated PatternsIndex
  */
-export declare const loadPatternsFromJson: (filePath: string) => Effect.Effect<typeof PatternsIndex.Type, Error, FileSystem.FileSystem>;
+export declare const loadPatternsFromJson: (filePath: string) => Effect.Effect<typeof PatternsIndex.Type, Error, FileSystemService>;
 /**
  * Runnable version with Node FileSystem layer
  */

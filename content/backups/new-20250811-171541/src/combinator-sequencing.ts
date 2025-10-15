@@ -1,6 +1,6 @@
-import { Effect, Stream, Option } from "effect";
+import { Effect, Option, Stream } from 'effect';
 
-const logThenCompute = Effect.log("Starting...").pipe(
+const logThenCompute = Effect.log('Starting...').pipe(
   Effect.andThen(Effect.succeed(42))
 );
 
@@ -14,7 +14,7 @@ const flatOption = Option.flatten(nestedOption);
 const nestedEffect = Effect.succeed(Effect.succeed(1));
 const flatEffect = Effect.flatten(nestedEffect);
 
-const mightFail = Effect.fail("fail!").pipe(
+const mightFail = Effect.fail('fail!').pipe(
   Effect.tapError((err) => Effect.logError(`Error: ${err}`))
 );
 
@@ -29,7 +29,7 @@ const program = Effect.gen(function* () {
   yield* Effect.log(`computeAndLog (tap) result: ${computeAndLogResult}`);
   yield* Effect.log(
     `Option.flatten result: ${
-      Option.isSome(flatOption) ? flatOption.value : "None"
+      Option.isSome(flatOption) ? flatOption.value : 'None'
     }`
   );
   const flatEffectResult = yield* flatEffect;
@@ -39,7 +39,7 @@ const program = Effect.gen(function* () {
   yield* Stream.runForEach(stream, (n) =>
     Effect.sync(() => streamValues.push(n))
   );
-  yield* Effect.log(`Stream.tap result: [${streamValues.join(", ")}]`);
+  yield* Effect.log(`Stream.tap result: [${streamValues.join(', ')}]`);
 });
 
 Effect.runPromise(program);

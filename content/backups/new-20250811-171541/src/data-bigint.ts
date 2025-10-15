@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from 'effect';
 
 const a: bigint = 9007199254740991n; // Number.MAX_SAFE_INTEGER
 const b: bigint = 123456789012345678901234567890n;

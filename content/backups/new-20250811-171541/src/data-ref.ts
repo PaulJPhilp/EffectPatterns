@@ -1,4 +1,4 @@
-import { Effect, Ref } from "effect";
+import { Effect, Ref } from 'effect';
 
 const program = Effect.gen(function* () {
   const counter = yield* Ref.make(0);

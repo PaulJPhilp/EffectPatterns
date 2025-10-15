@@ -1,9 +1,9 @@
-import { Effect, Cause } from "effect";
+import { Cause, Effect } from 'effect';
 
 // An Effect that may fail with an error or defect
 const program = Effect.try({
   try: () => {
-    throw new Error("Unexpected failure!");
+    throw new Error('Unexpected failure!');
   },
   catch: (err) => err,
 });
@@ -13,11 +13,11 @@ const handled = program.pipe(
   Effect.catchAllCause((cause) =>
     Effect.sync(() => {
       if (Cause.isDie(cause)) {
-        console.error("Defect (die):", Cause.pretty(cause));
-      } else if (Cause.failureOption(cause)._tag === "Some") {
-        console.error("Expected error:", Cause.pretty(cause));
+        console.error('Defect (die):', Cause.pretty(cause));
+      } else if (Cause.failureOption(cause)._tag === 'Some') {
+        console.error('Expected error:', Cause.pretty(cause));
       } else if (Cause.isInterrupted(cause)) {
-        console.error("Interrupted:", Cause.pretty(cause));
+        console.error('Interrupted:', Cause.pretty(cause));
       }
       // Handle or rethrow as needed
     })

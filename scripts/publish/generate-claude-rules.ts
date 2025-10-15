@@ -8,26 +8,26 @@
  * Output: rules/generated/rules-for-claude.md
  */
 
-import * as fs from "fs/promises";
-import matter from "gray-matter";
-import * as path from "path";
+import * as fs from 'fs/promises';
+import matter from 'gray-matter';
+import * as path from 'path';
 
 // --- CONFIGURATION ---
-const PUBLISHED_DIR = path.join(process.cwd(), "content/published");
-const CLAUDE_MD_PATH = path.join(process.cwd(), "CLAUDE.md");
-const OUTPUT_DIR = path.join(process.cwd(), "rules/generated");
-const OUTPUT_FILE = path.join(OUTPUT_DIR, "rules-for-claude.md");
+const PUBLISHED_DIR = path.join(process.cwd(), 'content/published');
+const CLAUDE_MD_PATH = path.join(process.cwd(), 'CLAUDE.md');
+const OUTPUT_DIR = path.join(process.cwd(), 'rules/generated');
+const OUTPUT_FILE = path.join(OUTPUT_DIR, 'rules-for-claude.md');
 
 // --- COLORS ---
 const colors = {
-  reset: "\x1b[0m",
-  bright: "\x1b[1m",
-  dim: "\x1b[2m",
-  red: "\x1b[31m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  blue: "\x1b[34m",
-  cyan: "\x1b[36m",
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  cyan: '\x1b[36m',
 };
 
 function colorize(text: string, color: keyof typeof colors): string {
@@ -52,14 +52,14 @@ interface PatternRule {
  * Extract a specific section from markdown content
  */
 function extractSection(content: string, ...sectionNames: string[]): string {
-  const contentLines = content.split("\n");
+  const contentLines = content.split('\n');
   let inSection = false;
   const sectionLines: string[] = [];
 
   for (const line of contentLines) {
     // Check if we're entering the target section
     if (
-      sectionNames.some((name) => new RegExp(`^##\\s+${name}`, "i").test(line))
+      sectionNames.some((name) => new RegExp(`^##\\s+${name}`, 'i').test(line))
     ) {
       inSection = true;
       continue;
@@ -67,14 +67,14 @@ function extractSection(content: string, ...sectionNames: string[]): string {
 
     // If we're in the section, collect lines until the next section
     if (inSection) {
-      if (line.startsWith("## ")) {
+      if (line.startsWith('## ')) {
         break;
       }
       sectionLines.push(line);
     }
   }
 
-  return sectionLines.length > 0 ? sectionLines.join("\n").trim() : "";
+  return sectionLines.length > 0 ? sectionLines.join('\n').trim() : '';
 }
 
 /**
@@ -82,26 +82,26 @@ function extractSection(content: string, ...sectionNames: string[]): string {
  */
 async function extractRules(): Promise<PatternRule[]> {
   console.log(
-    colorize("📖 Extracting rules from published patterns...", "cyan")
+    colorize('📖 Extracting rules from published patterns...', 'cyan')
   );
 
   const files = await fs.readdir(PUBLISHED_DIR);
-  const mdxFiles = files.filter((file) => file.endsWith(".mdx"));
+  const mdxFiles = files.filter((file) => file.endsWith('.mdx'));
   const rules: PatternRule[] = [];
 
   for (const file of mdxFiles) {
     const filePath = path.join(PUBLISHED_DIR, file);
-    const fileContent = await fs.readFile(filePath, "utf-8");
+    const fileContent = await fs.readFile(filePath, 'utf-8');
     const { data, content } = matter(fileContent);
 
     // Only include patterns that have a rule definition
     if ((data as any).rule?.description) {
       // Extract Good Example section
-      const goodExample = extractSection(content, "Good Example");
+      const goodExample = extractSection(content, 'Good Example');
       // Extract Anti-Pattern section
-      const antiPattern = extractSection(content, "Anti-Pattern");
+      const antiPattern = extractSection(content, 'Anti-Pattern');
       // Extract Rationale section
-      const rationale = extractSection(content, "Rationale", "Explanation");
+      const rationale = extractSection(content, 'Rationale', 'Explanation');
 
       rules.push({
         id: (data as any).id,
@@ -118,7 +118,9 @@ async function extractRules(): Promise<PatternRule[]> {
     }
   }
 
-  console.log(colorize(`✓ Found ${rules.length} patterns with rules\n`, "green"));
+  console.log(
+    colorize(`✓ Found ${rules.length} patterns with rules\n`, 'green')
+  );
   return rules.sort((a, b) => a.title.localeCompare(b.title));
 }
 
@@ -128,29 +130,29 @@ async function extractRules(): Promise<PatternRule[]> {
 function generateRulesContent(rules: PatternRule[]): string {
   const content: string[] = [];
 
-  content.push("# Effect-TS Patterns - Coding Rules for Claude\n\n");
+  content.push('# Effect-TS Patterns - Coding Rules for Claude\n\n');
   content.push(
-    "This file contains auto-generated coding rules from Effect-TS patterns, "
+    'This file contains auto-generated coding rules from Effect-TS patterns, '
   );
   content.push(
-    "followed by project-specific guidance for working in this repository.\n\n"
+    'followed by project-specific guidance for working in this repository.\n\n'
   );
-  content.push("---\n\n");
-  content.push("# Part 1: Effect-TS Pattern Rules\n\n");
+  content.push('---\n\n');
+  content.push('# Part 1: Effect-TS Pattern Rules\n\n');
   content.push(
     `Generated from ${rules.length} published patterns. These rules provide best practices for working with Effect-TS.\n\n`
   );
 
   // Group by skill level for better organization
   const bySkillLevel = {
-    beginner: rules.filter((r) => r.skillLevel === "beginner"),
-    intermediate: rules.filter((r) => r.skillLevel === "intermediate"),
-    advanced: rules.filter((r) => r.skillLevel === "advanced"),
+    beginner: rules.filter((r) => r.skillLevel === 'beginner'),
+    intermediate: rules.filter((r) => r.skillLevel === 'intermediate'),
+    advanced: rules.filter((r) => r.skillLevel === 'advanced'),
   };
 
   // Generate beginner rules
   if (bySkillLevel.beginner.length > 0) {
-    content.push("## 🟢 Beginner Patterns\n\n");
+    content.push('## 🟢 Beginner Patterns\n\n');
     for (const rule of bySkillLevel.beginner) {
       content.push(...formatRule(rule));
     }
@@ -158,7 +160,7 @@ function generateRulesContent(rules: PatternRule[]): string {
 
   // Generate intermediate rules
   if (bySkillLevel.intermediate.length > 0) {
-    content.push("## 🟡 Intermediate Patterns\n\n");
+    content.push('## 🟡 Intermediate Patterns\n\n');
     for (const rule of bySkillLevel.intermediate) {
       content.push(...formatRule(rule));
     }
@@ -166,13 +168,13 @@ function generateRulesContent(rules: PatternRule[]): string {
 
   // Generate advanced rules
   if (bySkillLevel.advanced.length > 0) {
-    content.push("## 🟠 Advanced Patterns\n\n");
+    content.push('## 🟠 Advanced Patterns\n\n');
     for (const rule of bySkillLevel.advanced) {
       content.push(...formatRule(rule));
     }
   }
 
-  return content.join("");
+  return content.join('');
 }
 
 /**
@@ -185,7 +187,7 @@ function formatRule(rule: PatternRule): string[] {
   lines.push(`**Rule:** ${rule.description}\n\n`);
 
   if (rule.useCases && rule.useCases.length > 0) {
-    lines.push(`**Use Cases:** ${rule.useCases.join(", ")}\n\n`);
+    lines.push(`**Use Cases:** ${rule.useCases.join(', ')}\n\n`);
   }
 
   if (rule.rationale) {
@@ -200,7 +202,7 @@ function formatRule(rule: PatternRule): string[] {
     lines.push(`**Anti-Pattern:**\n\n${rule.antiPattern}\n\n`);
   }
 
-  lines.push("---\n\n");
+  lines.push('---\n\n');
 
   return lines;
 }
@@ -209,73 +211,69 @@ function formatRule(rule: PatternRule): string[] {
  * Main execution
  */
 async function main() {
-  console.log(
-    colorize("\n🚀 Generating Claude Rules File\n", "bright")
-  );
+  console.log(colorize('\n🚀 Generating Claude Rules File\n', 'bright'));
 
   try {
     // Step 1: Extract rules from patterns
     const rules = await extractRules();
 
     // Step 2: Generate rules content
-    console.log(colorize("📝 Generating rules content...", "cyan"));
+    console.log(colorize('📝 Generating rules content...', 'cyan'));
     const rulesContent = generateRulesContent(rules);
-    console.log(colorize("✓ Rules content generated\n", "green"));
+    console.log(colorize('✓ Rules content generated\n', 'green'));
 
     // Step 3: Read CLAUDE.md
-    console.log(colorize("📖 Reading CLAUDE.md...", "cyan"));
+    console.log(colorize('📖 Reading CLAUDE.md...', 'cyan'));
     let claudeMdContent: string;
     try {
-      claudeMdContent = await fs.readFile(CLAUDE_MD_PATH, "utf-8");
-      console.log(colorize("✓ CLAUDE.md loaded\n", "green"));
+      claudeMdContent = await fs.readFile(CLAUDE_MD_PATH, 'utf-8');
+      console.log(colorize('✓ CLAUDE.md loaded\n', 'green'));
     } catch (error) {
-      console.log(
-        colorize("⚠️  CLAUDE.md not found, skipping...\n", "yellow")
-      );
-      claudeMdContent = "";
+      console.log(colorize('⚠️  CLAUDE.md not found, skipping...\n', 'yellow'));
+      claudeMdContent = '';
     }
 
     // Step 4: Combine content
-    console.log(colorize("🔀 Combining content...", "cyan"));
+    console.log(colorize('🔀 Combining content...', 'cyan'));
     const finalContent =
       rulesContent +
-      "\n\n" +
-      "---\n\n" +
-      "# Part 2: Repository-Specific Guidance\n\n" +
+      '\n\n' +
+      '---\n\n' +
+      '# Part 2: Repository-Specific Guidance\n\n' +
       (claudeMdContent ||
-        "No repository-specific guidance available (CLAUDE.md not found).");
-    console.log(colorize("✓ Content combined\n", "green"));
+        'No repository-specific guidance available (CLAUDE.md not found).');
+    console.log(colorize('✓ Content combined\n', 'green'));
 
     // Step 5: Ensure output directory exists
-    console.log(colorize("📁 Creating output directory...", "cyan"));
+    console.log(colorize('📁 Creating output directory...', 'cyan'));
     await fs.mkdir(OUTPUT_DIR, { recursive: true });
-    console.log(colorize("✓ Output directory ready\n", "green"));
+    console.log(colorize('✓ Output directory ready\n', 'green'));
 
     // Step 6: Write the final file
-    console.log(colorize("💾 Writing rules file...", "cyan"));
-    await fs.writeFile(OUTPUT_FILE, finalContent, "utf-8");
-    console.log(colorize("✓ File written successfully\n", "green"));
+    console.log(colorize('💾 Writing rules file...', 'cyan'));
+    await fs.writeFile(OUTPUT_FILE, finalContent, 'utf-8');
+    console.log(colorize('✓ File written successfully\n', 'green'));
 
     // Summary
-    console.log(colorize("=" .repeat(60), "cyan"));
-    console.log(colorize("✨ Rules file generated successfully!", "green"));
-    console.log(colorize("=" .repeat(60), "cyan"));
-    console.log(`\n📄 Output file: ${colorize(OUTPUT_FILE, "bright")}`);
+    console.log(colorize('='.repeat(60), 'cyan'));
+    console.log(colorize('✨ Rules file generated successfully!', 'green'));
+    console.log(colorize('='.repeat(60), 'cyan'));
+    console.log(`\n📄 Output file: ${colorize(OUTPUT_FILE, 'bright')}`);
     console.log(
-      `📊 Pattern rules: ${colorize(rules.length.toString(), "bright")}`
+      `📊 Pattern rules: ${colorize(rules.length.toString(), 'bright')}`
     );
     console.log(
       `📏 File size: ${colorize(
-        Math.round(finalContent.length / 1024).toString() + " KB",
-        "bright"
+        Math.round(finalContent.length / 1024).toString() + ' KB',
+        'bright'
       )}`
     );
-    console.log("");
+    console.log('');
   } catch (error) {
-    console.error(colorize("\n❌ Error generating rules file:", "red"));
+    console.error(colorize('\n❌ Error generating rules file:', 'red'));
     if (error instanceof Error) {
-      console.error(colorize(error.message, "red"));
-      console.error(colorize(error.stack || "", "dim"));
+      console.error(colorize(error.message, 'red'));
+      console.error(colorize(error.stack || '', 'dim'));
     }
     process.exit(1);
   }

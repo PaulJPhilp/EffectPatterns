@@ -7,33 +7,38 @@
  */
 
 import {
-  searchPatterns,
   getPatternById,
-  toPatternSummary,
   type Pattern,
   type PatternSummary,
-} from "@effect-patterns/toolkit"
+  searchPatterns,
+  toPatternSummary,
+} from '@effect-patterns/toolkit';
+
+type SearchOptions = {
+  readonly query?: string;
+  readonly category?: string;
+  readonly difficulty?: string;
+  readonly limit?: number;
+};
 
 /**
  * Search patterns (pure function)
  */
 export function searchPatternsLocal(
-  patterns: Pattern[],
-  query?: string,
-  category?: string,
-  difficulty?: string,
-  limit?: number
+  patterns: readonly Pattern[],
+  options: SearchOptions = {}
 ): PatternSummary[] {
-  const results = searchPatterns(patterns, query, category, difficulty, limit)
-  return results.map(toPatternSummary)
+  const { query, category, difficulty, limit } = options;
+  const results = searchPatterns(patterns, query, category, difficulty, limit);
+  return results.map(toPatternSummary);
 }
 
 /**
  * Get pattern by ID (pure function)
  */
 export function getPatternByIdLocal(
-  patterns: Pattern[],
+  patterns: readonly Pattern[],
   id: string
 ): Pattern | undefined {
-  return getPatternById(patterns, id)
+  return getPatternById(patterns, id);
 }

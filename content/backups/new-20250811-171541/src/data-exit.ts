@@ -1,4 +1,4 @@
-import { Effect, Exit } from "effect";
+import { Effect, Exit } from 'effect';
 
 const program = Effect.gen(function* () {
   const exit = yield* Effect.promise(() =>

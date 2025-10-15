@@ -1,11 +1,11 @@
-import { Brand, Schema, Effect } from "effect";
+import { Brand, Effect, Schema } from 'effect';
 
-export type Email = string & Brand.Brand<"Email">;
+export type Email = string & Brand.Brand<'Email'>;
 export const Email = Brand.nominal<Email>();
 
 export const EmailSchema = Schema.String.pipe(
   Schema.pattern(/^[^@]+@[^@]+\.[^@]+$/),
-  Schema.brand("Email")
+  Schema.brand('Email')
 );
 
 function parseEmail(input: string) {
@@ -13,13 +13,15 @@ function parseEmail(input: string) {
 }
 
 const program = Effect.gen(function* () {
-  yield* Effect.log("Parsing a valid email...");
-  const valid = yield* parseEmail("user@example.com");
+  yield* Effect.log('Parsing a valid email...');
+  const valid = yield* parseEmail('user@example.com');
   yield* Effect.log(`Successfully parsed: ${valid}`);
 
-  yield* Effect.log("\nParsing an invalid email...");
-  const invalid = yield* Effect.either(parseEmail("not-an-email"));
-  yield* Effect.log(`Result of parsing invalid email: ${JSON.stringify(invalid)}`);
+  yield* Effect.log('\nParsing an invalid email...');
+  const invalid = yield* Effect.either(parseEmail('not-an-email'));
+  yield* Effect.log(
+    `Result of parsing invalid email: ${JSON.stringify(invalid)}`
+  );
 });
 
 Effect.runPromise(program);

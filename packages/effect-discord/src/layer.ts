@@ -1,14 +1,13 @@
-import { FileSystem } from "@effect/platform/FileSystem";
-import { Path } from "@effect/platform/Path";
-import * as Command from "@effect/platform/Command";
-import { CommandExecutor } from "@effect/platform/CommandExecutor";
-import { Effect, Layer, Secret } from "effect";
+import { exitCode as commandExitCode, make as commandMake } from '@effect/platform/Command';
+import { CommandExecutor } from '@effect/platform/CommandExecutor';
+import { FileSystem } from '@effect/platform/FileSystem';
+import { Effect, Layer, Secret } from 'effect';
 import {
-  ChannelExport,
+  type ChannelExport,
   Discord,
   DiscordConfig,
   DiscordExportError,
-} from "./index.js";
+} from './index.js';
 
 // The live implementation of the Discord service.
 // It requires FileSystem, CommandExecutor, and DiscordConfig services from its context.
@@ -20,7 +19,7 @@ export const DiscordLive = Layer.effect(
     const executor = yield* CommandExecutor;
 
     const exportChannel = (
-      channelId: string,
+      channelId: string
     ): Effect.Effect<ChannelExport, DiscordExportError, never> =>
       Effect.scoped(
         Effect.gen(function* () {
@@ -28,37 +27,37 @@ export const DiscordLive = Layer.effect(
           const tempFile = `/tmp/ep-discord-export-${Date.now()}.json`;
 
           // 2. Construct the CLI command to run the exporter.
-          const command = Command.make(
+          const command = commandMake(
             config.exporterPath,
-            "export", // The subcommand
-            "-t",
+            'export', // The subcommand
+            '-t',
             Secret.value(config.botToken), // Securely unwrap the secret
-            "-c",
+            '-c',
             channelId,
-            "-o",
+            '-o',
             tempFile,
-            "-f",
-            "Json",
-            "--media", // Do not download media files
-            "False",
+            '-f',
+            'Json',
+            '--media', // Do not download media files
+            'False'
           );
 
           // 3. Define the core logic: execute, read, parse, and clean up.
           const logic = Effect.gen(function* () {
             // 3a. Execute the command. Map errors to our domain error.
-            const exitCode = yield* Command.exitCode(command).pipe(
+            const exitCode = yield* commandExitCode(command).pipe(
               Effect.provideService(CommandExecutor, executor),
               Effect.mapError(
                 (cause) =>
-                  new DiscordExportError({ reason: "CommandFailed", cause }),
-              ),
+                  new DiscordExportError({ reason: 'CommandFailed', cause })
+              )
             );
             if (exitCode !== 0) {
               return yield* Effect.fail(
                 new DiscordExportError({
-                  reason: "CommandFailed",
+                  reason: 'CommandFailed',
                   cause: new Error(`Command exited with code ${exitCode}`),
-                }),
+                })
               );
             }
 
@@ -67,15 +66,15 @@ export const DiscordLive = Layer.effect(
               Effect.provideService(FileSystem, fs),
               Effect.mapError(
                 (cause) =>
-                  new DiscordExportError({ reason: "FileNotFound", cause }),
-              ),
+                  new DiscordExportError({ reason: 'FileNotFound', cause })
+              )
             );
 
             // 3c. Parse the JSON. Map errors.
             return yield* Effect.try({
               try: () => JSON.parse(content) as ChannelExport,
               catch: (cause) =>
-                new DiscordExportError({ reason: "JsonParseError", cause }),
+                new DiscordExportError({ reason: 'JsonParseError', cause }),
             });
           });
 
@@ -83,15 +82,14 @@ export const DiscordLive = Layer.effect(
           // whether the logic succeeds or fails.
           return yield* Effect.ensuring(
             logic,
-            fs.remove(tempFile).pipe(
-              Effect.provideService(FileSystem, fs),
-              Effect.ignore,
-            ),
+            fs
+              .remove(tempFile)
+              .pipe(Effect.provideService(FileSystem, fs), Effect.ignore)
           );
-        }),
+        })
       );
 
     // 5. Return the service implementation.
     return Discord.of({ exportChannel });
-  }),
+  })
 );

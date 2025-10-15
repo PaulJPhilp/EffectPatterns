@@ -4,18 +4,18 @@
  * Comprehensive test suite for the CLI install add command
  */
 
-import { spawn, type ChildProcess } from "child_process";
-import * as fs from "fs/promises";
-import * as path from "path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { type ChildProcess, spawn } from 'child_process';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 // --- TEST UTILITIES ---
 
 let serverProcess: ChildProcess | null = null;
 
 const startServer = async () => {
-  serverProcess = spawn("bun", ["run", "server/index.ts"], {
-    stdio: "pipe",
+  serverProcess = spawn('bun', ['run', 'server/index.ts'], {
+    stdio: 'pipe',
   });
   await new Promise((resolve) => setTimeout(resolve, 2000));
 };
@@ -27,35 +27,36 @@ const stopServer = () => {
   }
 };
 
-const runCommand = async (args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
-  return new Promise((resolve) => {
-    const proc = spawn("bun", ["run", "scripts/ep.ts", ...args], {
-      stdio: "pipe",
+const runCommand = async (
+  args: string[]
+): Promise<{ stdout: string; stderr: string; exitCode: number }> =>
+  new Promise((resolve) => {
+    const proc = spawn('bun', ['run', 'scripts/ep.ts', ...args], {
+      stdio: 'pipe',
     });
 
-    let stdout = "";
-    let stderr = "";
+    let stdout = '';
+    let stderr = '';
 
-    proc.stdout?.on("data", (data) => {
+    proc.stdout?.on('data', (data) => {
       stdout += data.toString();
     });
 
-    proc.stderr?.on("data", (data) => {
+    proc.stderr?.on('data', (data) => {
       stderr += data.toString();
     });
 
-    proc.on("close", (code) => {
+    proc.on('close', (code) => {
       resolve({ stdout, stderr, exitCode: code || 0 });
     });
   });
-};
 
-const TEST_DIR = ".cursor-test";
-const TEST_FILE = path.join(TEST_DIR, "rules.md");
+const TEST_DIR = '.cursor-test';
+const TEST_FILE = path.join(TEST_DIR, 'rules.md');
 
 // --- TESTS ---
 
-describe("ep install add command", () => {
+describe('ep install add command', () => {
   beforeEach(async () => {
     // Start server before each test
     await startServer();
@@ -63,7 +64,7 @@ describe("ep install add command", () => {
     // Clean up test directory
     try {
       await fs.rm(TEST_DIR, { recursive: true });
-    } catch { }
+    } catch {}
   });
 
   afterEach(async () => {
@@ -73,114 +74,128 @@ describe("ep install add command", () => {
     // Clean up test directory
     try {
       await fs.rm(TEST_DIR, { recursive: true });
-    } catch { }
+    } catch {}
   });
 
-  describe("Tool Validation", () => {
-    it("should require --tool option", async () => {
-      const result = await runCommand(["install", "add"]);
+  describe('Tool Validation', () => {
+    it('should require --tool option', async () => {
+      const result = await runCommand(['install', 'add']);
 
       expect(result.exitCode).not.toBe(0);
-      expect(result.stderr).toContain("tool");
+      expect(result.stderr).toContain('tool');
     });
 
-    it("should reject unsupported tools", async () => {
-      const result = await runCommand(["install", "add", "--tool", "unsupported-tool"]);
+    it('should reject unsupported tools', async () => {
+      const result = await runCommand([
+        'install',
+        'add',
+        '--tool',
+        'unsupported-tool',
+      ]);
 
       expect(result.exitCode).not.toBe(0);
       const output = result.stdout + result.stderr;
-      expect(output).toContain("not supported");
+      expect(output).toContain('not supported');
     });
 
-    it("should accept cursor tool", async () => {
+    it('should accept cursor tool', async () => {
       // Override target file for test
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("Fetching rules");
+      expect(result.stdout).toContain('Fetching rules');
     });
   });
 
-  describe("API Integration", () => {
-    it("should fetch rules from server", async () => {
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+  describe('API Integration', () => {
+    it('should fetch rules from server', async () => {
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("Fetched");
-      expect(result.stdout).toContain("rules");
+      expect(result.stdout).toContain('Fetched');
+      expect(result.stdout).toContain('rules');
     });
 
-    it("should handle server unavailable gracefully", async () => {
+    it('should handle server unavailable gracefully', async () => {
       // Stop server first
       stopServer();
-      
+
       // Wait for server to fully stop
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const result = await runCommand(["install", "add", "--tool", "cursor", "--server-url", "http://localhost:9999"]);
+      const result = await runCommand([
+        'install',
+        'add',
+        '--tool',
+        'cursor',
+        '--server-url',
+        'http://localhost:9999',
+      ]);
 
       expect(result.exitCode).not.toBe(0);
-      expect(result.stdout + result.stderr).toContain("Cannot connect");
+      expect(result.stdout + result.stderr).toContain('Cannot connect');
     });
   });
 
-  describe("File Operations", () => {
-    it("should create .cursor directory if not exists", async () => {
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+  describe('File Operations', () => {
+    it('should create .cursor directory if not exists', async () => {
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       expect(result.exitCode).toBe(0);
 
       // Check directory was created
-      const dirExists = await fs.stat(".cursor")
+      const dirExists = await fs
+        .stat('.cursor')
         .then(() => true)
         .catch(() => false);
 
       expect(dirExists).toBe(true);
     });
 
-    it("should create rules.md file", async () => {
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+    it('should create rules.md file', async () => {
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       expect(result.exitCode).toBe(0);
 
       // Check file was created
-      const fileExists = await fs.stat(".cursor/rules.md")
+      const fileExists = await fs
+        .stat('.cursor/rules.md')
         .then(() => true)
         .catch(() => false);
 
       expect(fileExists).toBe(true);
     });
 
-    it("should include managed block markers", async () => {
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+    it('should include managed block markers', async () => {
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       expect(result.exitCode).toBe(0);
 
-      const content = await fs.readFile(".cursor/rules.md", "utf-8");
+      const content = await fs.readFile('.cursor/rules.md', 'utf-8');
 
-      expect(content).toContain("# --- BEGIN EFFECTPATTERNS RULES ---");
-      expect(content).toContain("# --- END EFFECTPATTERNS RULES ---");
+      expect(content).toContain('# --- BEGIN EFFECTPATTERNS RULES ---');
+      expect(content).toContain('# --- END EFFECTPATTERNS RULES ---');
     });
 
-    it("should format rules correctly", async () => {
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+    it('should format rules correctly', async () => {
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       expect(result.exitCode).toBe(0);
 
-      const content = await fs.readFile(".cursor/rules.md", "utf-8");
+      const content = await fs.readFile('.cursor/rules.md', 'utf-8');
 
       // Check for rule formatting
-      expect(content).toContain("###");
-      expect(content).toContain("**ID:**");
-      expect(content).toContain("**Use Case:**");
-      expect(content).toContain("**Skill Level:**");
+      expect(content).toContain('###');
+      expect(content).toContain('**ID:**');
+      expect(content).toContain('**Use Case:**');
+      expect(content).toContain('**Skill Level:**');
     });
   });
 
-  describe("Update Behavior", () => {
-    it("should replace existing managed block", async () => {
+  describe('Update Behavior', () => {
+    it('should replace existing managed block', async () => {
       // Create initial file
-      await fs.mkdir(".cursor", { recursive: true });
+      await fs.mkdir('.cursor', { recursive: true });
       const initialContent = `# My Custom Rules
 
 Some custom content here
@@ -191,65 +206,65 @@ Old rules content
 
 More custom content`;
 
-      await fs.writeFile(".cursor/rules.md", initialContent);
+      await fs.writeFile('.cursor/rules.md', initialContent);
 
       // Run command
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
       expect(result.exitCode).toBe(0);
 
       // Check content
-      const content = await fs.readFile(".cursor/rules.md", "utf-8");
+      const content = await fs.readFile('.cursor/rules.md', 'utf-8');
 
       // Should preserve custom content
-      expect(content).toContain("My Custom Rules");
-      expect(content).toContain("Some custom content here");
-      expect(content).toContain("More custom content");
+      expect(content).toContain('My Custom Rules');
+      expect(content).toContain('Some custom content here');
+      expect(content).toContain('More custom content');
 
       // Should replace managed block
-      expect(content).not.toContain("Old rules content");
-      expect(content).toContain("# --- BEGIN EFFECTPATTERNS RULES ---");
-      expect(content).toContain("# --- END EFFECTPATTERNS RULES ---");
+      expect(content).not.toContain('Old rules content');
+      expect(content).toContain('# --- BEGIN EFFECTPATTERNS RULES ---');
+      expect(content).toContain('# --- END EFFECTPATTERNS RULES ---');
     });
 
-    it("should append managed block if not present", async () => {
+    it('should append managed block if not present', async () => {
       // Create initial file without managed block
-      await fs.mkdir(".cursor", { recursive: true });
+      await fs.mkdir('.cursor', { recursive: true });
       const initialContent = `# My Custom Rules
 
 Some custom content here`;
 
-      await fs.writeFile(".cursor/rules.md", initialContent);
+      await fs.writeFile('.cursor/rules.md', initialContent);
 
       // Run command
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
       expect(result.exitCode).toBe(0);
 
       // Check content
-      const content = await fs.readFile(".cursor/rules.md", "utf-8");
+      const content = await fs.readFile('.cursor/rules.md', 'utf-8');
 
       // Should preserve custom content
-      expect(content).toContain("My Custom Rules");
-      expect(content).toContain("Some custom content here");
+      expect(content).toContain('My Custom Rules');
+      expect(content).toContain('Some custom content here');
 
       // Should add managed block
-      expect(content).toContain("# --- BEGIN EFFECTPATTERNS RULES ---");
-      expect(content).toContain("# --- END EFFECTPATTERNS RULES ---");
+      expect(content).toContain('# --- BEGIN EFFECTPATTERNS RULES ---');
+      expect(content).toContain('# --- END EFFECTPATTERNS RULES ---');
     });
   });
 
-  describe("Output Messages", () => {
-    it("should show progress messages", async () => {
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+  describe('Output Messages', () => {
+    it('should show progress messages', async () => {
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain("Fetching rules");
-      expect(result.stdout).toContain("Injecting rules");
-      expect(result.stdout).toContain("Successfully added");
-      expect(result.stdout).toContain("Rules integration complete");
+      expect(result.stdout).toContain('Fetching rules');
+      expect(result.stdout).toContain('Injecting rules');
+      expect(result.stdout).toContain('Successfully added');
+      expect(result.stdout).toContain('Rules integration complete');
     });
 
-    it("should show rule count", async () => {
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+    it('should show rule count', async () => {
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toMatch(/Fetched \d+ rules/);
@@ -257,62 +272,69 @@ Some custom content here`;
     });
   });
 
-  describe("Error Handling", () => {
-    it("should handle file system errors", async () => {
+  describe('Error Handling', () => {
+    it('should handle file system errors', async () => {
       // Clean up .cursor directory if it exists
       try {
-        await fs.rm(".cursor", { recursive: true });
-      } catch { }
+        await fs.rm('.cursor', { recursive: true });
+      } catch {}
 
       // Create a file where directory should be
-      await fs.writeFile(".cursor", "This is a file, not a directory");
+      await fs.writeFile('.cursor', 'This is a file, not a directory');
 
-      const result = await runCommand(["install", "add", "--tool", "cursor"]);
+      const result = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       // Should fail due to file system error
       expect(result.exitCode).not.toBe(0);
 
       // Clean up the file
-      await fs.unlink(".cursor");
+      await fs.unlink('.cursor');
     });
 
-    it("should show helpful error messages", async () => {
+    it('should show helpful error messages', async () => {
       stopServer();
-      
+
       // Wait for server to fully stop
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const result = await runCommand(["install", "add", "--tool", "cursor", "--server-url", "http://localhost:9999"]);
+      const result = await runCommand([
+        'install',
+        'add',
+        '--tool',
+        'cursor',
+        '--server-url',
+        'http://localhost:9999',
+      ]);
 
       const output = result.stdout + result.stderr;
-      expect(output).toContain("Pattern Server");
-      expect(output.toLowerCase()).toContain("server");
+      expect(output).toContain('Pattern Server');
+      expect(output.toLowerCase()).toContain('server');
     });
   });
 });
 
-describe.sequential("ep install command structure", () => {
-  it("should have install subcommand", async () => {
-    const result = await runCommand(["install", "--help"]);
+describe.sequential('ep install command structure', () => {
+  it('should have install subcommand', async () => {
+    const result = await runCommand(['install', '--help']);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("install");
+    expect(result.stdout).toContain('install');
   });
 
-  it("should have add subcommand", async () => {
-    const result = await runCommand(["install", "--help"]);
+  it('should have add subcommand', async () => {
+    const result = await runCommand(['install', '--help']);
 
-    expect(result.stdout).toContain("add");
+    expect(result.stdout).toContain('add');
   });
 
-  it("should have list subcommand", async () => {
-    const result = await runCommand(["install", "--help"]);
+  it('should have list subcommand', async () => {
+    const result = await runCommand(['install', '--help']);
 
-    expect(result.stdout).toContain("list");
+    expect(result.stdout).toContain('list');
   });
 });
 
-describe.sequential("ep install filtering", () => {
+describe.sequential('ep install filtering', () => {
   beforeEach(async () => {
     await startServer();
   });
@@ -322,30 +344,30 @@ describe.sequential("ep install filtering", () => {
 
     // Clean up test files
     try {
-      await fs.rm(".cursor", { recursive: true });
-    } catch { }
+      await fs.rm('.cursor', { recursive: true });
+    } catch {}
   });
 
-  it("should show skill-level option in help", async () => {
-    const result = await runCommand(["install", "add", "--help"]);
+  it('should show skill-level option in help', async () => {
+    const result = await runCommand(['install', 'add', '--help']);
 
-    expect(result.stdout).toContain("skill-level");
+    expect(result.stdout).toContain('skill-level');
   });
 
-  it("should show use-case option in help", async () => {
-    const result = await runCommand(["install", "add", "--help"]);
+  it('should show use-case option in help', async () => {
+    const result = await runCommand(['install', 'add', '--help']);
 
-    expect(result.stdout).toContain("use-case");
+    expect(result.stdout).toContain('use-case');
   });
 
-  it("should filter by skill level", async () => {
+  it('should filter by skill level', async () => {
     const result = await runCommand([
-      "install",
-      "add",
-      "--tool",
-      "cursor",
-      "--skill-level",
-      "beginner",
+      'install',
+      'add',
+      '--tool',
+      'cursor',
+      '--skill-level',
+      'beginner',
     ]);
 
     // Command should complete successfully
@@ -354,18 +376,18 @@ describe.sequential("ep install filtering", () => {
     // Should show it's filtering
     const output = result.stdout;
     expect(
-      output.includes("Filtered to") || output.includes("No rules match")
+      output.includes('Filtered to') || output.includes('No rules match')
     ).toBe(true);
   });
 
-  it("should filter by use case", async () => {
+  it('should filter by use case', async () => {
     const result = await runCommand([
-      "install",
-      "add",
-      "--tool",
-      "cursor",
-      "--use-case",
-      "error-management",
+      'install',
+      'add',
+      '--tool',
+      'cursor',
+      '--use-case',
+      'error-management',
     ]);
 
     // Command should complete successfully
@@ -374,66 +396,66 @@ describe.sequential("ep install filtering", () => {
     // Should show it's filtering
     const output = result.stdout;
     expect(
-      output.includes("Filtered to") || output.includes("No rules match")
+      output.includes('Filtered to') || output.includes('No rules match')
     ).toBe(true);
   });
 
-  it("should combine skill-level and use-case filters", async () => {
+  it('should combine skill-level and use-case filters', async () => {
     const result = await runCommand([
-      "install",
-      "add",
-      "--tool",
-      "cursor",
-      "--skill-level",
-      "intermediate",
-      "--use-case",
-      "concurrency",
+      'install',
+      'add',
+      '--tool',
+      'cursor',
+      '--skill-level',
+      'intermediate',
+      '--use-case',
+      'concurrency',
     ]);
 
     // Command should complete successfully
     expect([0, 1]).toContain(result.exitCode);
-    expect(result.stdout).toContain("Fetched");
+    expect(result.stdout).toContain('Fetched');
   });
 
-  it("should warn when no rules match filters", async () => {
+  it('should warn when no rules match filters', async () => {
     const result = await runCommand([
-      "install",
-      "add",
-      "--tool",
-      "cursor",
-      "--skill-level",
-      "nonexistent",
+      'install',
+      'add',
+      '--tool',
+      'cursor',
+      '--skill-level',
+      'nonexistent',
     ]);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("No rules match");
+    expect(result.stdout).toContain('No rules match');
   });
 
-  it("should be case-insensitive for skill-level", async () => {
+  it('should be case-insensitive for skill-level', async () => {
     const result = await runCommand([
-      "install",
-      "add",
-      "--tool",
-      "cursor",
-      "--skill-level",
-      "BEGINNER",
+      'install',
+      'add',
+      '--tool',
+      'cursor',
+      '--skill-level',
+      'BEGINNER',
     ]);
 
     expect([0, 1]).toContain(result.exitCode);
-    expect(result.stdout).toContain("Fetched");
+    expect(result.stdout).toContain('Fetched');
   });
 
-  it("should be case-insensitive for use-case", async () => {
+  it('should be case-insensitive for use-case', async () => {
     const result = await runCommand([
-      "install",
-      "add",
-      "--tool",
-      "cursor",
-      "--use-case",
-      "ERROR-MANAGEMENT",
+      'install',
+      'add',
+      '--tool',
+      'cursor',
+      '--use-case',
+      'ERROR-MANAGEMENT',
     ]);
 
     expect([0, 1]).toContain(result.exitCode);
-    expect(result.stdout).toContain("Fetched");
+    expect(result.stdout).toContain('Fetched');
   });
 });

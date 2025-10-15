@@ -4,13 +4,11 @@
  * End-to-end integration tests for Pattern Server + CLI
  */
 
-import { HttpClient } from "@effect/platform";
-import { FetchHttpClient } from "@effect/platform";
-import { Effect, Schema } from "effect";
-import { describe, expect, it, beforeAll, afterAll } from "vitest";
-import { spawn, type ChildProcess } from "child_process";
-import * as fs from "fs/promises";
-import * as path from "path";
+import { FetchHttpClient, HttpClient } from '@effect/platform';
+import { type ChildProcess, spawn } from 'child_process';
+import { Effect, Schema } from 'effect';
+import * as fs from 'fs/promises';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // --- SCHEMAS ---
 
@@ -25,40 +23,39 @@ const RuleSchema = Schema.Struct({
 
 // --- TEST UTILITIES ---
 
-const BASE_URL = "http://localhost:3001";
+const BASE_URL = 'http://localhost:3001';
 const TestLayer = FetchHttpClient.layer;
 
 let serverProcess: ChildProcess | null = null;
 
 const runCommand = async (
   args: string[]
-): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
-  return new Promise((resolve) => {
-    const proc = spawn("bun", ["run", "scripts/ep.ts", ...args], {
-      stdio: "pipe",
+): Promise<{ stdout: string; stderr: string; exitCode: number }> =>
+  new Promise((resolve) => {
+    const proc = spawn('bun', ['run', 'scripts/ep.ts', ...args], {
+      stdio: 'pipe',
     });
 
-    let stdout = "";
-    let stderr = "";
+    let stdout = '';
+    let stderr = '';
 
-    proc.stdout?.on("data", (data) => {
+    proc.stdout?.on('data', (data) => {
       stdout += data.toString();
     });
 
-    proc.stderr?.on("data", (data) => {
+    proc.stderr?.on('data', (data) => {
       stderr += data.toString();
     });
 
-    proc.on("close", (code) => {
+    proc.on('close', (code) => {
       resolve({ stdout, stderr, exitCode: code || 0 });
     });
   });
-};
 
 beforeAll(async () => {
   // Start the server
-  serverProcess = spawn("bun", ["run", "server/index.ts"], {
-    stdio: "pipe",
+  serverProcess = spawn('bun', ['run', 'server/index.ts'], {
+    stdio: 'pipe',
   });
 
   // Wait for server to start
@@ -73,15 +70,15 @@ afterAll(async () => {
 
   // Clean up test files
   try {
-    await fs.rm(".cursor", { recursive: true });
+    await fs.rm('.cursor', { recursive: true });
   } catch {}
 });
 
 // --- TESTS ---
 
-describe.sequential("End-to-End Integration", () => {
-  describe("Server → CLI Flow", () => {
-    it("should fetch rules from server and inject into file", async () => {
+describe.sequential('End-to-End Integration', () => {
+  describe('Server → CLI Flow', () => {
+    it('should fetch rules from server and inject into file', async () => {
       // 1. Verify server is running and has rules
       const checkServer = Effect.gen(function* () {
         const client = (yield* HttpClient.HttpClient).pipe(
@@ -103,7 +100,7 @@ describe.sequential("End-to-End Integration", () => {
       );
 
       // 2. Run CLI command to inject rules
-      const cliResult = await runCommand(["rules", "add", "--tool", "cursor"]);
+      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
 
       expect(cliResult.exitCode).toBe(0);
       expect(cliResult.stdout).toContain(`Fetched ${serverRuleCount} rules`);
@@ -112,15 +109,15 @@ describe.sequential("End-to-End Integration", () => {
       );
 
       // 3. Verify file was created with correct content
-      const fileContent = await fs.readFile(".cursor/rules.md", "utf-8");
+      const fileContent = await fs.readFile('.cursor/rules.md', 'utf-8');
 
-      expect(fileContent).toContain("# --- BEGIN EFFECTPATTERNS RULES ---");
-      expect(fileContent).toContain("# --- END EFFECTPATTERNS RULES ---");
-      expect(fileContent).toContain("###"); // Rule title markers
-      expect(fileContent).toContain("**ID:**");
+      expect(fileContent).toContain('# --- BEGIN EFFECTPATTERNS RULES ---');
+      expect(fileContent).toContain('# --- END EFFECTPATTERNS RULES ---');
+      expect(fileContent).toContain('###'); // Rule title markers
+      expect(fileContent).toContain('**ID:**');
     });
 
-    it("should handle server-to-cli-to-file round trip", async () => {
+    it('should handle server-to-cli-to-file round trip', async () => {
       // 1. Get a specific rule from server
       const getRule = Effect.gen(function* () {
         const client = (yield* HttpClient.HttpClient).pipe(
@@ -141,44 +138,44 @@ describe.sequential("End-to-End Integration", () => {
       );
 
       // 2. Run CLI command
-      const cliResult = await runCommand(["rules", "add", "--tool", "cursor"]);
+      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
       expect(cliResult.exitCode).toBe(0);
 
       // 3. Verify the specific rule is in the file
-      const fileContent = await fs.readFile(".cursor/rules.md", "utf-8");
+      const fileContent = await fs.readFile('.cursor/rules.md', 'utf-8');
 
       expect(fileContent).toContain(serverRule.id);
       expect(fileContent).toContain(serverRule.title);
     });
   });
 
-  describe("Multiple Updates", () => {
-    it("should handle multiple CLI runs correctly", async () => {
+  describe('Multiple Updates', () => {
+    it('should handle multiple CLI runs correctly', async () => {
       // Run command first time
-      const result1 = await runCommand(["rules", "add", "--tool", "cursor"]);
+      const result1 = await runCommand(['rules', 'add', '--tool', 'cursor']);
       expect(result1.exitCode).toBe(0);
 
-      const content1 = await fs.readFile(".cursor/rules.md", "utf-8");
-      const lineCount1 = content1.split("\n").length;
+      const content1 = await fs.readFile('.cursor/rules.md', 'utf-8');
+      const lineCount1 = content1.split('\n').length;
 
       // Run command second time
-      const result2 = await runCommand(["rules", "add", "--tool", "cursor"]);
+      const result2 = await runCommand(['rules', 'add', '--tool', 'cursor']);
       expect(result2.exitCode).toBe(0);
 
-      const content2 = await fs.readFile(".cursor/rules.md", "utf-8");
-      const lineCount2 = content2.split("\n").length;
+      const content2 = await fs.readFile('.cursor/rules.md', 'utf-8');
+      const lineCount2 = content2.split('\n').length;
 
       // Should have similar line count (not duplicated)
       expect(Math.abs(lineCount2 - lineCount1)).toBeLessThan(10);
 
       // Should still have markers
-      expect(content2).toContain("# --- BEGIN EFFECTPATTERNS RULES ---");
-      expect(content2).toContain("# --- END EFFECTPATTERNS RULES ---");
+      expect(content2).toContain('# --- BEGIN EFFECTPATTERNS RULES ---');
+      expect(content2).toContain('# --- END EFFECTPATTERNS RULES ---');
     });
   });
 
-  describe("Data Integrity", () => {
-    it("should preserve all rule data through the pipeline", async () => {
+  describe('Data Integrity', () => {
+    it('should preserve all rule data through the pipeline', async () => {
       // 1. Get all rules from server
       const getAllRules = Effect.gen(function* () {
         const client = (yield* HttpClient.HttpClient).pipe(
@@ -195,22 +192,22 @@ describe.sequential("End-to-End Integration", () => {
       );
 
       // 2. Run CLI command
-      const cliResult = await runCommand(["rules", "add", "--tool", "cursor"]);
+      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
       expect(cliResult.exitCode).toBe(0);
 
       // 3. Verify all rules are in the file
-      const fileContent = await fs.readFile(".cursor/rules.md", "utf-8");
+      const fileContent = await fs.readFile('.cursor/rules.md', 'utf-8');
 
       for (const rule of serverRules) {
         expect(fileContent).toContain(rule.id);
       }
     });
 
-    it("should maintain rule formatting consistency", async () => {
-      const cliResult = await runCommand(["rules", "add", "--tool", "cursor"]);
+    it('should maintain rule formatting consistency', async () => {
+      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
       expect(cliResult.exitCode).toBe(0);
 
-      const fileContent = await fs.readFile(".cursor/rules.md", "utf-8");
+      const fileContent = await fs.readFile('.cursor/rules.md', 'utf-8');
 
       // Each rule should have ID and metadata
       const idMarkers = fileContent.match(/\*\*ID:\*\*/g);
@@ -228,47 +225,47 @@ describe.sequential("End-to-End Integration", () => {
     });
   });
 
-  describe("Error Scenarios", () => {
-    it("should handle partial server data gracefully", async () => {
+  describe('Error Scenarios', () => {
+    it('should handle partial server data gracefully', async () => {
       // This tests that even if server returns partial data,
       // CLI handles it correctly
-      const cliResult = await runCommand(["rules", "add", "--tool", "cursor"]);
+      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
 
       // Should succeed even with any data shape
       expect(cliResult.exitCode).toBe(0);
-      expect(cliResult.stdout).toContain("Successfully added");
+      expect(cliResult.stdout).toContain('Successfully added');
     });
   });
 
-  describe("File System Edge Cases", () => {
-    it("should create directory structure if missing", async () => {
+  describe('File System Edge Cases', () => {
+    it('should create directory structure if missing', async () => {
       // Clean up first
       try {
-        await fs.rm(".cursor", { recursive: true });
+        await fs.rm('.cursor', { recursive: true });
       } catch {}
 
       // Verify directory doesn't exist
       const dirExistsBefore = await fs
-        .stat(".cursor")
+        .stat('.cursor')
         .then(() => true)
         .catch(() => false);
       expect(dirExistsBefore).toBe(false);
 
       // Run command
-      const cliResult = await runCommand(["rules", "add", "--tool", "cursor"]);
+      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
       expect(cliResult.exitCode).toBe(0);
 
       // Verify directory was created
       const dirExistsAfter = await fs
-        .stat(".cursor")
+        .stat('.cursor')
         .then(() => true)
         .catch(() => false);
       expect(dirExistsAfter).toBe(true);
     });
 
-    it("should preserve user content outside managed block", async () => {
+    it('should preserve user content outside managed block', async () => {
       // Create file with custom content
-      await fs.mkdir(".cursor", { recursive: true });
+      await fs.mkdir('.cursor', { recursive: true });
       const customContent = `# My Custom Cursor Rules
 
 These are my personal rules.
@@ -276,32 +273,32 @@ These are my personal rules.
 ## Section 1
 Content here`;
 
-      await fs.writeFile(".cursor/rules.md", customContent);
+      await fs.writeFile('.cursor/rules.md', customContent);
 
       // Run command
-      const cliResult = await runCommand(["rules", "add", "--tool", "cursor"]);
+      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
       expect(cliResult.exitCode).toBe(0);
 
       // Verify custom content is preserved
-      const fileContent = await fs.readFile(".cursor/rules.md", "utf-8");
+      const fileContent = await fs.readFile('.cursor/rules.md', 'utf-8');
 
-      expect(fileContent).toContain("My Custom Cursor Rules");
-      expect(fileContent).toContain("These are my personal rules");
-      expect(fileContent).toContain("Section 1");
+      expect(fileContent).toContain('My Custom Cursor Rules');
+      expect(fileContent).toContain('These are my personal rules');
+      expect(fileContent).toContain('Section 1');
     });
   });
 });
 
-describe.sequential("Performance", () => {
-  it("should complete end-to-end flow in reasonable time", async () => {
+describe.sequential('Performance', () => {
+  it('should complete end-to-end flow in reasonable time', async () => {
     const startTime = Date.now();
 
-    const cliResult = await runCommand(["rules", "add", "--tool", "cursor"]);
+    const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
     expect(cliResult.exitCode).toBe(0);
 
     const duration = Date.now() - startTime;
 
     // Should complete within 10 seconds
-    expect(duration).toBeLessThan(10000);
-  }, 15000); // 15 second timeout for this test
+    expect(duration).toBeLessThan(10_000);
+  }, 15_000); // 15 second timeout for this test
 });

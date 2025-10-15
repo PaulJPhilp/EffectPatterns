@@ -1,4 +1,4 @@
-import { Data, Effect, Equal } from "effect";
+import { Data, Effect, Equal } from 'effect';
 
 interface Person {
   readonly name: string;
@@ -6,8 +6,8 @@ interface Person {
 
 const Person = Data.case<Person>();
 
-const person1 = Person({ name: "Alice" });
-const person2 = Person({ name: "Bob" });
+const person1 = Person({ name: 'Alice' });
+const person2 = Person({ name: 'Bob' });
 
 function greet(person: Person): string {
   return `Hello, ${person.name}!`;

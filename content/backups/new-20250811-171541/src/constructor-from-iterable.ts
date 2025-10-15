@@ -1,11 +1,11 @@
-import { Stream, Effect } from "effect";
+import { Effect, Stream } from 'effect';
 
 const numbers = [1, 2, 3, 4];
 const numberStream = Stream.fromIterable(numbers);
 
 function* gen() {
-  yield "a";
-  yield "b";
+  yield 'a';
+  yield 'b';
 }
 const letterStream = Stream.fromIterable(gen());
 
@@ -18,17 +18,17 @@ const program = Effect.gen(function* () {
     Effect.sync(() => numberValues.push(n))
   );
   yield* Effect.log(
-    `Stream.fromIterable(numbers): [${numberValues.join(", ")}]`
+    `Stream.fromIterable(numbers): [${numberValues.join(', ')}]`
   );
 
   const letterValues: string[] = [];
   yield* Stream.runForEach(letterStream, (l) =>
     Effect.sync(() => letterValues.push(l))
   );
-  yield* Effect.log(`Stream.fromIterable(gen()): [${letterValues.join(", ")}]`);
+  yield* Effect.log(`Stream.fromIterable(gen()): [${letterValues.join(', ')}]`);
 
   const batch = yield* batchEffect;
-  yield* Effect.log(`Effect.all result: [${batch.join(", ")}]`);
+  yield* Effect.log(`Effect.all result: [${batch.join(', ')}]`);
 });
 
 Effect.runPromise(

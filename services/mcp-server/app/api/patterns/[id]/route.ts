@@ -5,11 +5,17 @@
  * Returns full pattern details for a specific pattern ID
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { Effect } from "effect";
-import { runWithRuntime, PatternsService } from "../../../../src/server/init.js";
-import { TracingService } from "../../../../src/tracing/otlpLayer.js";
-import { validateApiKey, isAuthenticationError } from "../../../../src/auth/apiKey.js";
+import { Effect } from 'effect';
+import { type NextRequest, NextResponse } from 'next/server';
+import {
+  isAuthenticationError,
+  validateApiKey,
+} from '../../../../src/auth/apiKey.js';
+import {
+  PatternsService,
+  runWithRuntime,
+} from '../../../../src/server/init.js';
+import { TracingService } from '../../../../src/tracing/otlpLayer.js';
 
 export async function GET(
   request: NextRequest,
@@ -29,9 +35,7 @@ export async function GET(
     const pattern = yield* patternsService.getPatternById(id);
 
     if (!pattern) {
-      return yield* Effect.fail(
-        new Error(`Pattern not found: ${id}`)
-      );
+      return yield* Effect.fail(new Error(`Pattern not found: ${id}`));
     }
 
     const traceId = tracing.getTraceId();
@@ -48,22 +52,16 @@ export async function GET(
     return NextResponse.json(result, {
       status: 200,
       headers: {
-        "x-trace-id": result.traceId || "",
+        'x-trace-id': result.traceId || '',
       },
     });
   } catch (error) {
     if (isAuthenticationError(error)) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
-    if (error instanceof Error && error.message.includes("not found")) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 404 }
-      );
+    if (error instanceof Error && error.message.includes('not found')) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
 
     return NextResponse.json(

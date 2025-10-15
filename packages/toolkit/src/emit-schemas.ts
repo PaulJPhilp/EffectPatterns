@@ -5,18 +5,19 @@
  * schemas for LLM tool-call function parameter specifications.
  */
 
-import { JSONSchema, Schema as S } from "@effect/schema";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import { fileURLToPath } from "node:url";
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { stderr, stdout } from 'node:process';
+import { JSONSchema, type Schema as S } from '@effect/schema';
 import {
+  ExplainPatternRequest,
   GenerateRequest,
   SearchPatternsRequest,
-  ExplainPatternRequest,
-} from "./schemas/generate.js";
+} from './schemas/generate.js';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
 
 /**
  * Emit JSON Schema for a given Effect schema
@@ -29,17 +30,13 @@ function emitSchema<A, I, R>(
   try {
     const jsonSchema = JSONSchema.make(schema);
 
-    const outputPath = path.join(outputDir, `${name}.json`);
+    const outputPath = join(outputDir, `${name}.json`);
 
-    fs.writeFileSync(
-      outputPath,
-      JSON.stringify(jsonSchema, null, 2),
-      "utf-8"
-    );
+    writeFileSync(outputPath, JSON.stringify(jsonSchema, null, 2), 'utf-8');
 
-    console.log(`✓ Emitted ${name}.json`);
+    stdout.write(`✓ Emitted ${name}.json\n`);
   } catch (error) {
-    console.error(`✗ Failed to emit ${name}:`, error);
+    stderr.write(`✗ Failed to emit ${name}: ${String(error)}\n`);
     process.exit(1);
   }
 }
@@ -48,21 +45,21 @@ function emitSchema<A, I, R>(
  * Main emitter function
  */
 function main(): void {
-  console.log("Emitting JSON Schemas for LLM tool calls...\n");
+  stdout.write('Emitting JSON Schemas for LLM tool calls...\n\n');
 
-  const outputDir = path.join(__dirname, "../dist/schemas");
+  const outputDir = join(__dirname, '../dist/schemas');
 
   // Ensure output directory exists
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
+  if (!existsSync(outputDir)) {
+    mkdirSync(outputDir, { recursive: true });
   }
 
   // Emit schemas for tool-call functions
-  emitSchema(GenerateRequest, "generate-request", outputDir);
-  emitSchema(SearchPatternsRequest, "search-patterns-request", outputDir);
-  emitSchema(ExplainPatternRequest, "explain-pattern-request", outputDir);
+  emitSchema(GenerateRequest, 'generate-request', outputDir);
+  emitSchema(SearchPatternsRequest, 'search-patterns-request', outputDir);
+  emitSchema(ExplainPatternRequest, 'explain-pattern-request', outputDir);
 
-  console.log("\nAll schemas emitted successfully!");
+  stdout.write('\nAll schemas emitted successfully!\n');
 }
 
 main();

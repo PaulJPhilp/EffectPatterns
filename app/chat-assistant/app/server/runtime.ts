@@ -1,5 +1,5 @@
-import { Effect, Layer, Runtime, Logger } from "effect";
-import { McpClient, McpClientLive } from "./services/mcp-client";
+import { Effect, Layer, Logger, Runtime } from 'effect';
+import { type McpClient, McpClientLive } from './services/mcp-client';
 
 /**
  * AppContext - Union of all services required by the application
@@ -10,10 +10,7 @@ export type AppContext = McpClient;
  * AppLayer - Composition of all application layers
  * This is where all service dependencies are wired together
  */
-export const AppLayer = Layer.mergeAll(
-  McpClientLive,
-  Logger.pretty
-);
+export const AppLayer = Layer.mergeAll(McpClientLive, Logger.pretty);
 
 /**
  * appRuntime - Singleton Effect Runtime for the entire application

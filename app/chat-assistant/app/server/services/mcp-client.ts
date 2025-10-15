@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Data } from "effect";
+import { Context, Data, Effect, Layer } from 'effect';
 
 /**
  * Code Review result from MCP Server
@@ -12,7 +12,7 @@ export interface CodeReview {
 /**
  * MCP Error - tagged error for MCP server communication failures
  */
-export class McpError extends Data.TaggedError("McpError")<{
+export class McpError extends Data.TaggedError('McpError')<{
   message: string;
   cause?: unknown;
 }> {}
@@ -20,7 +20,7 @@ export class McpError extends Data.TaggedError("McpError")<{
 /**
  * McpClient Service Interface
  */
-export class McpClient extends Context.Tag("McpClient")<
+export class McpClient extends Context.Tag('McpClient')<
   McpClient,
   {
     readonly reviewCode: (code: string) => Effect.Effect<CodeReview, McpError>;
@@ -36,24 +36,25 @@ export const McpClientLive = Layer.succeed(
   McpClient.of({
     reviewCode: (code: string) =>
       Effect.gen(function* () {
-        const mcpServerUrl = process.env.MCP_SERVER_URL || "http://localhost:3000";
+        const mcpServerUrl =
+          process.env.MCP_SERVER_URL || 'http://localhost:3000';
 
         // Make HTTP request to MCP server
         const response = yield* Effect.tryPromise({
           try: () =>
             fetch(`${mcpServerUrl}/api/patterns/explain`, {
-              method: "POST",
+              method: 'POST',
               headers: {
-                "Content-Type": "application/json",
+                'Content-Type': 'application/json',
               },
               body: JSON.stringify({
                 code,
-                context: "Review this Effect-TS code and suggest improvements",
+                context: 'Review this Effect-TS code and suggest improvements',
               }),
             }),
           catch: (error) =>
             new McpError({
-              message: "Failed to connect to MCP server",
+              message: 'Failed to connect to MCP server',
               cause: error,
             }),
         });
@@ -72,16 +73,17 @@ export const McpClientLive = Layer.succeed(
           try: () => response.json(),
           catch: (error) =>
             new McpError({
-              message: "Failed to parse MCP server response",
+              message: 'Failed to parse MCP server response',
               cause: error,
             }),
         });
 
         // Extract code review information
         const codeReview: CodeReview = {
-          analysis: data.explanation || data.analysis || "No analysis provided",
-          suggestion: data.suggestion || "Consider reviewing Effect best practices",
-          diff: data.diff || "",
+          analysis: data.explanation || data.analysis || 'No analysis provided',
+          suggestion:
+            data.suggestion || 'Consider reviewing Effect best practices',
+          diff: data.diff || '',
         };
 
         return codeReview;

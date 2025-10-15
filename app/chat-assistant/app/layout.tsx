@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Effect Patterns AI Assistant",
-  description: "AI-powered code reviewer and learning tool for Effect-TS",
+  title: 'Effect Patterns AI Assistant',
+  description: 'AI-powered code reviewer and learning tool for Effect-TS',
 };
 
 export default function RootLayout({

@@ -4,11 +4,14 @@
  * Comprehensive test suite for the Pattern Server API endpoints
  */
 
-import { HttpClient, HttpClientResponse } from "@effect/platform";
-import { FetchHttpClient } from "@effect/platform";
-import { Effect, Layer, Schema } from "effect";
-import { describe, expect, it, beforeAll, afterAll } from "vitest";
-import { spawn, type ChildProcess } from "child_process";
+import {
+  FetchHttpClient,
+  HttpClient,
+  type HttpClientResponse,
+} from '@effect/platform';
+import { type ChildProcess, spawn } from 'child_process';
+import { Effect, Schema } from 'effect';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // --- SCHEMAS ---
 
@@ -25,7 +28,7 @@ type Rule = typeof RuleSchema.Type;
 
 // --- TEST UTILITIES ---
 
-const BASE_URL = "http://localhost:3001";
+const BASE_URL = 'http://localhost:3001';
 
 /**
  * Make HTTP request with Effect
@@ -57,8 +60,8 @@ let serverProcess: ChildProcess | null = null;
 
 beforeAll(async () => {
   // Start the server
-  serverProcess = spawn("bun", ["run", "server/index.ts"], {
-    stdio: "pipe",
+  serverProcess = spawn('bun', ['run', 'server/index.ts'], {
+    stdio: 'pipe',
   });
 
   // Wait for server to start
@@ -74,14 +77,14 @@ afterAll(async () => {
 
 // --- TESTS ---
 
-describe.sequential("Pattern Server", () => {
-  describe("GET /health", () => {
-    it("should return 200 OK with status", async () => {
+describe.sequential('Pattern Server', () => {
+  describe('GET /health', () => {
+    it('should return 200 OK with status', async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest("/health");
+        const response = yield* makeRequest('/health');
         const json = yield* getJson(response);
 
-        expect(json).toEqual({ status: "ok" });
+        expect(json).toEqual({ status: 'ok' });
         expect(response.status).toBe(200);
       });
 
@@ -89,10 +92,10 @@ describe.sequential("Pattern Server", () => {
     });
   });
 
-  describe("GET /api/v1/rules", () => {
-    it("should return array of rules", async () => {
+  describe('GET /api/v1/rules', () => {
+    it('should return array of rules', async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest("/api/v1/rules");
+        const response = yield* makeRequest('/api/v1/rules');
         const json = yield* getJson(response);
 
         expect(Array.isArray(json)).toBe(true);
@@ -102,40 +105,40 @@ describe.sequential("Pattern Server", () => {
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
     });
 
-    it("should return rules with correct schema", async () => {
+    it('should return rules with correct schema', async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest("/api/v1/rules");
+        const response = yield* makeRequest('/api/v1/rules');
         const json = yield* getJson(response);
 
         // Validate against schema
-        const validated = yield* Schema.decodeUnknown(
-          Schema.Array(RuleSchema)
-        )(json);
+        const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
+          json
+        );
 
         expect(validated.length).toBeGreaterThan(0);
 
         // Check first rule has required fields
         const firstRule = validated[0];
-        expect(firstRule).toHaveProperty("id");
-        expect(firstRule).toHaveProperty("title");
-        expect(firstRule).toHaveProperty("description");
-        expect(firstRule).toHaveProperty("content");
+        expect(firstRule).toHaveProperty('id');
+        expect(firstRule).toHaveProperty('title');
+        expect(firstRule).toHaveProperty('description');
+        expect(firstRule).toHaveProperty('content');
       });
 
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
     });
 
-    it("should return valid rule IDs", async () => {
+    it('should return valid rule IDs', async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest("/api/v1/rules");
+        const response = yield* makeRequest('/api/v1/rules');
         const json = yield* getJson(response);
-        const validated = yield* Schema.decodeUnknown(
-          Schema.Array(RuleSchema)
-        )(json);
+        const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
+          json
+        );
 
         validated.forEach((rule: Rule) => {
           expect(rule.id).toBeTruthy();
-          expect(typeof rule.id).toBe("string");
+          expect(typeof rule.id).toBe('string');
           expect(rule.id.length).toBeGreaterThan(0);
         });
       });
@@ -143,13 +146,13 @@ describe.sequential("Pattern Server", () => {
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
     });
 
-    it("should return rules with content", async () => {
+    it('should return rules with content', async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest("/api/v1/rules");
+        const response = yield* makeRequest('/api/v1/rules');
         const json = yield* getJson(response);
-        const validated = yield* Schema.decodeUnknown(
-          Schema.Array(RuleSchema)
-        )(json);
+        const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
+          json
+        );
 
         validated.forEach((rule: Rule) => {
           expect(rule.content).toBeTruthy();
@@ -161,17 +164,17 @@ describe.sequential("Pattern Server", () => {
     });
   });
 
-  describe("GET /api/v1/rules/:id", () => {
-    it("should return a single rule by ID", async () => {
+  describe('GET /api/v1/rules/:id', () => {
+    it('should return a single rule by ID', async () => {
       const program = Effect.gen(function* () {
         const response = yield* makeRequest(
-          "/api/v1/rules/use-effect-gen-for-business-logic"
+          '/api/v1/rules/use-effect-gen-for-business-logic'
         );
         const json = yield* getJson(response);
 
         const validated = yield* Schema.decodeUnknown(RuleSchema)(json);
 
-        expect(validated.id).toBe("use-effect-gen-for-business-logic");
+        expect(validated.id).toBe('use-effect-gen-for-business-logic');
         expect(validated.title).toBeTruthy();
         expect(validated.content).toBeTruthy();
       });
@@ -179,7 +182,7 @@ describe.sequential("Pattern Server", () => {
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
     });
 
-    it("should return 404 for non-existent rule", async () => {
+    it('should return 404 for non-existent rule', async () => {
       const program = Effect.gen(function* () {
         const client = yield* HttpClient.HttpClient;
 
@@ -187,7 +190,7 @@ describe.sequential("Pattern Server", () => {
           client.get(`${BASE_URL}/api/v1/rules/non-existent-rule-id`)
         );
 
-        if (result._tag === "Left") {
+        if (result._tag === 'Left') {
           // Should fail with status error
           expect(result.left).toBeDefined();
         } else {
@@ -195,18 +198,18 @@ describe.sequential("Pattern Server", () => {
           expect(response.status).toBe(404);
 
           const json = yield* getJson(response);
-          expect(json).toHaveProperty("error");
-          expect(json.error).toBe("Rule not found");
+          expect(json).toHaveProperty('error');
+          expect(json.error).toBe('Rule not found');
         }
       });
 
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
     });
 
-    it("should return valid schema for existing rules", async () => {
+    it('should return valid schema for existing rules', async () => {
       const program = Effect.gen(function* () {
         // First get all rules to find a valid ID
-        const listResponse = yield* makeRequest("/api/v1/rules");
+        const listResponse = yield* makeRequest('/api/v1/rules');
         const listJson = yield* getJson(listResponse);
         const rules = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
           listJson
@@ -228,12 +231,12 @@ describe.sequential("Pattern Server", () => {
     });
   });
 
-  describe("Server Logging", () => {
-    it("should log requests", async () => {
+  describe('Server Logging', () => {
+    it('should log requests', async () => {
       // This test verifies the server logs requests
       // In a real implementation, you might capture stdout
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest("/health");
+        const response = yield* makeRequest('/health');
         expect(response.status).toBe(200);
       });
 
@@ -241,13 +244,13 @@ describe.sequential("Pattern Server", () => {
     });
   });
 
-  describe("CORS and Headers", () => {
-    it("should return correct content-type", async () => {
+  describe('CORS and Headers', () => {
+    it('should return correct content-type', async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest("/api/v1/rules");
+        const response = yield* makeRequest('/api/v1/rules');
 
-        const contentType = response.headers["content-type"];
-        expect(contentType).toContain("application/json");
+        const contentType = response.headers['content-type'];
+        expect(contentType).toContain('application/json');
       });
 
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));

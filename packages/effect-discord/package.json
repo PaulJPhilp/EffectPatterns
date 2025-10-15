@@ -18,7 +18,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "effect": "^3.18.4",
     "@effect/platform": "^0.90.10"
   },
   "devDependencies": {

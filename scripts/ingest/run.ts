@@ -6,17 +6,17 @@
  * and preparing pattern files for publishing.
  */
 
-import { FileSystem, Path } from "@effect/platform";
-import { NodeContext } from "@effect/platform-node";
-import { Console, Effect, Layer } from "effect";
-import { MdxService } from "effect-mdx";
+import { FileSystem, Path } from '@effect/platform';
+import { NodeContext } from '@effect/platform-node';
+import { Console, Effect, Layer } from 'effect';
+import { MdxService } from 'effect-mdx';
 
 // --- Configuration Service ---
-class AppConfig extends Effect.Service<AppConfig>()("AppConfig", {
+class AppConfig extends Effect.Service<AppConfig>()('AppConfig', {
   sync: () => ({
-    rawDir: process.cwd() + "/content/new/raw",
-    srcDir: process.cwd() + "/content/new/src",
-    processedDir: process.cwd() + "/content/new/processed",
+    rawDir: process.cwd() + '/content/new/raw',
+    srcDir: process.cwd() + '/content/new/src',
+    processedDir: process.cwd() + '/content/new/processed',
   }),
 }) {}
 
@@ -36,7 +36,7 @@ const extract = Effect.gen(function* () {
   const path = yield* Path.Path;
   const mdx = yield* MdxService;
 
-  yield* Console.log("--- Running: Extract Stage ---");
+  yield* Console.log('--- Running: Extract Stage ---');
 
   const rawMdxFiles = yield* fs.readDirectory(config.rawDir);
 
@@ -47,12 +47,11 @@ const extract = Effect.gen(function* () {
         const filePath = path.join(config.rawDir, file);
         yield* Console.log(`Processing ${file}...`);
 
-        const { content, frontmatter } = yield* mdx.readMdxAndFrontmatter(
-          filePath
-        );
+        const { content, frontmatter } =
+          yield* mdx.readMdxAndFrontmatter(filePath);
 
         // Simple validation for now, can be expanded
-        if (!frontmatter.id || !frontmatter.title) {
+        if (!(frontmatter.id && frontmatter.title)) {
           return yield* Effect.fail(
             new Error(`Missing id or title in ${file}`)
           );
@@ -84,21 +83,21 @@ const extract = Effect.gen(function* () {
 
         yield* Console.log(`✅ Successfully extracted ${file}`);
       }).pipe(Effect.catchAll((error) => Console.error(String(error)))),
-    { concurrency: "unbounded", discard: true }
+    { concurrency: 'unbounded', discard: true }
   );
 
-  yield* Console.log("--- Completed: Extract Stage ---");
+  yield* Console.log('--- Completed: Extract Stage ---');
 });
 
 // --- Main Orchestrator ---
 const main = Effect.gen(function* () {
-  yield* Console.log("🚀 Starting ingest pipeline...");
+  yield* Console.log('🚀 Starting ingest pipeline...');
 
   // For now, we only run the extract stage.
   // We will add more stages here.
   yield* extract;
 
-  yield* Console.log("✅ Ingest pipeline completed successfully!");
+  yield* Console.log('✅ Ingest pipeline completed successfully!');
 });
 
 // --- Run the Program ---

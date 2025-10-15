@@ -1,4 +1,4 @@
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Either, Option, Stream } from 'effect';
 
 // Effect: Apply an effectful function to each item in an array
 const numbers = [1, 2, 3];
@@ -17,12 +17,13 @@ const filtered = options.filter(Option.isSome).map((o) => o.value); // [1, 3]
 // Explicitly type the array to ensure consistent Either<E, A> inference
 const eithers: Either<string, number>[] = [
   Either.right(1),
-  Either.left("fail"),
+  Either.left('fail'),
   Either.right(3),
 ];
 const rights = eithers.filter(Either.isRight).map((e) => e.right); // [1, 3]
 
 // Stream: Map and flatten a stream of arrays
-const stream = Stream.fromIterable([[1, 2], [3, 4]]).pipe(
-  Stream.flatMap((arr) => Stream.fromIterable(arr))
-); // Stream<number>
+const stream = Stream.fromIterable([
+  [1, 2],
+  [3, 4],
+]).pipe(Stream.flatMap((arr) => Stream.fromIterable(arr))); // Stream<number>

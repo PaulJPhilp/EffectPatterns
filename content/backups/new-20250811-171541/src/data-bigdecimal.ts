@@ -1,10 +1,10 @@
-import { BigDecimal, Effect, Option } from "effect";
+import { BigDecimal, Effect } from 'effect';
 
-const aOpt = BigDecimal.fromString("0.1");
-const bOpt = BigDecimal.fromString("0.2");
+const aOpt = BigDecimal.fromString('0.1');
+const bOpt = BigDecimal.fromString('0.2');
 
 const program = Effect.gen(function* () {
-  if (aOpt._tag === "Some" && bOpt._tag === "Some") {
+  if (aOpt._tag === 'Some' && bOpt._tag === 'Some') {
     const a = aOpt.value;
     const b = bOpt.value;
     const sum = BigDecimal.sum(a, b);
@@ -22,7 +22,7 @@ const program = Effect.gen(function* () {
     yield* Effect.log(`sum as string: ${asString}`);
     yield* Effect.log(`sum as number: ${asNumber}`);
   } else {
-    yield* Effect.log("Failed to parse one or both BigDecimal values.");
+    yield* Effect.log('Failed to parse one or both BigDecimal values.');
   }
 });
 

@@ -4,120 +4,119 @@ import * as path from 'path';
 const openapiFile = path.resolve(process.cwd(), '.well-known', 'openapi.json');
 
 const searchSchema = {
-    "type": "object",
-    "properties": {
-        "q": {
-            "type": "string"
-        },
-        "category": {
-            "type": "string"
-        },
-        "difficulty": {
-            "type": "string"
-        },
-        "limit": {
-            "type": "number"
-        }
-    }
+  type: 'object',
+  properties: {
+    q: {
+      type: 'string',
+    },
+    category: {
+      type: 'string',
+    },
+    difficulty: {
+      type: 'string',
+    },
+    limit: {
+      type: 'number',
+    },
+  },
 };
 
 const explainSchema = {
-    "type": "object",
-    "properties": {
-        "patternId": {
-            "type": "string"
-        }
+  type: 'object',
+  properties: {
+    patternId: {
+      type: 'string',
     },
-    "required": ["patternId"]
+  },
+  required: ['patternId'],
 };
 
 const generateSchema = {
-    "type": "object",
-    "properties": {
-        "patternId": {
-            "type": "string"
-        },
-        "name": {
-            "type": "string"
-        },
-        "input": {
-            "type": "string"
-        },
-        "moduleType": {
-            "type": "string",
-            "enum": ["esm", "cjs"]
-        },
-        "effectVersion": {
-            "type": "string"
-        }
+  type: 'object',
+  properties: {
+    patternId: {
+      type: 'string',
     },
-    "required": ["patternId"]
+    name: {
+      type: 'string',
+    },
+    input: {
+      type: 'string',
+    },
+    moduleType: {
+      type: 'string',
+      enum: ['esm', 'cjs'],
+    },
+    effectVersion: {
+      type: 'string',
+    },
+  },
+  required: ['patternId'],
 };
 
-
 const main = () => {
-    const openapi = {
-        openapi: '3.0.0',
-        info: {
-            title: 'Effect Patterns API',
-            version: '1.0.0',
-        },
-        paths: {
-            '/mcp/pattern_search': {
-                post: {
-                    summary: 'Search for patterns',
-                    requestBody: {
-                        content: {
-                            'application/json': {
-                                schema: searchSchema
-                            }
-                        }
-                    },
-                    responses: {
-                        '200': {
-                            description: 'A list of patterns'
-                        }
-                    }
-                }
+  const openapi = {
+    openapi: '3.0.0',
+    info: {
+      title: 'Effect Patterns API',
+      version: '1.0.0',
+    },
+    paths: {
+      '/mcp/pattern_search': {
+        post: {
+          summary: 'Search for patterns',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: searchSchema,
+              },
             },
-            '/mcp/pattern_explain': {
-                post: {
-                    summary: 'Explain a pattern',
-                    requestBody: {
-                        content: {
-                            'application/json': {
-                                schema: explainSchema
-                            }
-                        }
-                    },
-                    responses: {
-                        '200': {
-                            description: 'A pattern explanation'
-                        }
-                    }
-                }
+          },
+          responses: {
+            '200': {
+              description: 'A list of patterns',
             },
-            '/mcp/pattern_generate': {
-                post: {
-                    summary: 'Generate a pattern',
-                    requestBody: {
-                        content: {
-                            'application/json': {
-                                schema: generateSchema
-                            }
-                        }
-                    },
-                    responses: {
-                        '200': {
-                            description: 'A generated pattern'
-                        }
-                    }
-                }
-            }
+          },
         },
-    };
+      },
+      '/mcp/pattern_explain': {
+        post: {
+          summary: 'Explain a pattern',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: explainSchema,
+              },
+            },
+          },
+          responses: {
+            '200': {
+              description: 'A pattern explanation',
+            },
+          },
+        },
+      },
+      '/mcp/pattern_generate': {
+        post: {
+          summary: 'Generate a pattern',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: generateSchema,
+              },
+            },
+          },
+          responses: {
+            '200': {
+              description: 'A generated pattern',
+            },
+          },
+        },
+      },
+    },
+  };
 
-    fs.writeFileSync(openapiFile, JSON.stringify(openapi, null, 2));
+  fs.writeFileSync(openapiFile, JSON.stringify(openapi, null, 2));
 };
 
 main();

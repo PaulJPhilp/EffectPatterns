@@ -51,9 +51,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "patternId"
-                ]
+                "required": ["patternId"]
               }
             }
           }
@@ -85,18 +83,13 @@
                   },
                   "moduleType": {
                     "type": "string",
-                    "enum": [
-                      "esm",
-                      "cjs"
-                    ]
+                    "enum": ["esm", "cjs"]
                   },
                   "effectVersion": {
                     "type": "string"
                   }
                 },
-                "required": [
-                  "patternId"
-                ]
+                "required": ["patternId"]
               }
             }
           }

@@ -1,6 +1,7 @@
 // File: /Users/paul/Projects/Effect-Patterns/app/chat-assistant/app/layout.tsx
-import * as entry from '../../../app/layout.js'
+
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
+import * as entry from '../../../app/layout.js'
 
 type TEntry = typeof import('../../../app/layout.js')
 

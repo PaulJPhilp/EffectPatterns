@@ -1,4 +1,4 @@
-import { Duration, Effect } from "effect";
+import { Duration, Effect } from 'effect';
 
 const oneSecond = Duration.seconds(1);
 const fiveMinutes = Duration.minutes(5);

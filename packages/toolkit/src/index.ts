@@ -6,13 +6,32 @@
  * primitives.
  */
 
-// Export schemas
-export * from "./schemas/generate.js";
-export * from "./schemas/pattern.js";
-
 // Export pure functions
-export * from "./io.js";
-export * from "./search.js";
-export * from "./splitSections.js";
-export * from "./template.js";
-
+export { loadPatternsFromJson, loadPatternsFromJsonRunnable } from './io.js';
+// Export schemas
+export {
+  ExplainPatternRequest,
+  GenerateRequest,
+  GenerateResponse,
+  ModuleType,
+  SearchPatternsRequest,
+  SearchPatternsResponse,
+} from './schemas/generate.js';
+export {
+  Pattern,
+  PatternSummary,
+  PatternsIndex,
+} from './schemas/pattern.js';
+export {
+  getPatternById,
+  searchPatterns,
+  toPatternSummary,
+  type SearchPatternsParams,
+} from './search.js';
+export { splitSections } from './splitSections.js';
+export {
+  buildSnippet,
+  generateUsageExample,
+  sanitizeInput,
+  type BuildSnippetParams,
+} from './template.js';

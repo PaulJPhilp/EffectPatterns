@@ -9,17 +9,17 @@
  *   bun run qa:report                 # Generate report for published patterns (content/qa)
  */
 
-import * as fs from "fs/promises";
-import * as path from "path";
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 // --- CONFIGURATION ---
 const PROJECT_ROOT = process.cwd();
-const useNewPatterns = process.argv.includes("--new");
+const useNewPatterns = process.argv.includes('--new');
 const QA_DIR = useNewPatterns
-  ? path.join(PROJECT_ROOT, "content/new/qa")
-  : path.join(PROJECT_ROOT, "content/qa");
-const RESULTS_DIR = path.join(QA_DIR, "results");
-const REPORT_FILE = path.join(QA_DIR, "qa-report.json");
+  ? path.join(PROJECT_ROOT, 'content/new/qa')
+  : path.join(PROJECT_ROOT, 'content/qa');
+const RESULTS_DIR = path.join(QA_DIR, 'results');
+const REPORT_FILE = path.join(QA_DIR, 'qa-report.json');
 
 // --- INTERFACES ---
 interface QAReport {
@@ -71,19 +71,19 @@ interface QAReport {
 
 // --- MAIN PROCESSING ---
 async function main() {
-  const patternType = useNewPatterns ? "new patterns" : "published patterns";
+  const patternType = useNewPatterns ? 'new patterns' : 'published patterns';
   console.log(`Generating QA report for ${patternType}...`);
   console.log(`Source: ${QA_DIR}`);
 
   try {
     // Check if results exist
     const files = await fs.readdir(RESULTS_DIR);
-    const qaResults = files.filter((f) => f.endsWith(".json"));
+    const qaResults = files.filter((f) => f.endsWith('.json'));
 
     if (qaResults.length === 0) {
       const processCmd = useNewPatterns
-        ? "bun run qa:process --new"
-        : "bun run qa:process";
+        ? 'bun run qa:process --new'
+        : 'bun run qa:process';
       console.log(`No QA results found. Run "${processCmd}" first.`);
       return;
     }
@@ -94,7 +94,7 @@ async function main() {
     const results = [];
     for (const file of qaResults) {
       const filePath = path.join(RESULTS_DIR, file);
-      const content = await fs.readFile(filePath, "utf-8");
+      const content = await fs.readFile(filePath, 'utf-8');
       results.push(JSON.parse(content));
     }
 
@@ -107,7 +107,7 @@ async function main() {
     // Display summary
     displaySummary(report);
   } catch (error) {
-    console.error("Report generation failed:", error);
+    console.error('Report generation failed:', error);
     process.exit(1);
   }
 }
@@ -133,10 +133,10 @@ async function generateReport(results: any[]): Promise<QAReport> {
 
   // Build failure patterns list
   const failurePatterns = failedPatterns.map((result) => ({
-    patternId: result.patternId || "unknown",
-    fileName: result.fileName || "unknown",
-    title: result.metadata?.title || "Unknown",
-    skillLevel: result.metadata?.skillLevel || "unknown",
+    patternId: result.patternId || 'unknown',
+    fileName: result.fileName || 'unknown',
+    title: result.metadata?.title || 'Unknown',
+    skillLevel: result.metadata?.skillLevel || 'unknown',
     tags: result.metadata?.tags || [],
     errors: result.errors || [],
     warnings: result.warnings || [],
@@ -149,7 +149,7 @@ async function generateReport(results: any[]): Promise<QAReport> {
   const tagStats: Record<string, { passed: number; failed: number }> = {};
 
   for (const result of results) {
-    const level = result.metadata?.skillLevel || "unknown";
+    const level = result.metadata?.skillLevel || 'unknown';
     if (!skillLevelStats[level]) {
       skillLevelStats[level] = { passed: 0, failed: 0 };
     }
@@ -272,25 +272,25 @@ function analyzeCommonIssues(failedPatterns: any[]): string[] {
 function categorizeError(error: string): string {
   const errorLower = error.toLowerCase();
 
-  if (errorLower.includes("import") || errorLower.includes("export"))
-    return "import/export issues";
-  if (errorLower.includes("type") || errorLower.includes("typescript"))
-    return "TypeScript errors";
-  if (errorLower.includes("deprecated") || errorLower.includes("outdated"))
-    return "deprecated APIs";
-  if (errorLower.includes("example") || errorLower.includes("demo"))
-    return "example problems";
-  if (errorLower.includes("documentation") || errorLower.includes("clarity"))
-    return "documentation issues";
-  if (errorLower.includes("metadata") || errorLower.includes("frontmatter"))
-    return "metadata issues";
+  if (errorLower.includes('import') || errorLower.includes('export'))
+    return 'import/export issues';
+  if (errorLower.includes('type') || errorLower.includes('typescript'))
+    return 'TypeScript errors';
+  if (errorLower.includes('deprecated') || errorLower.includes('outdated'))
+    return 'deprecated APIs';
+  if (errorLower.includes('example') || errorLower.includes('demo'))
+    return 'example problems';
+  if (errorLower.includes('documentation') || errorLower.includes('clarity'))
+    return 'documentation issues';
+  if (errorLower.includes('metadata') || errorLower.includes('frontmatter'))
+    return 'metadata issues';
 
-  return "other issues";
+  return 'other issues';
 }
 
 function displaySummary(report: QAReport) {
-  console.log("QA Report Generated");
-  console.log("==================");
+  console.log('QA Report Generated');
+  console.log('==================');
   console.log(`Total Patterns: ${report.summary.totalPatterns}`);
   console.log(`Passed: ${report.summary.passed}`);
   console.log(`Failed: ${report.summary.failed}`);
@@ -301,18 +301,18 @@ function displaySummary(report: QAReport) {
   if (report.failures.patterns.length > 0) {
     console.log(`\nFailed Patterns: ${report.failures.patterns.length}`);
     console.log(`Report saved to: ${REPORT_FILE}`);
-    console.log(`\nRecommendations:`);
+    console.log('\nRecommendations:');
     report.recommendations.forEach((rec) => console.log(`  - ${rec}`));
   }
 }
 
 // --- ERROR HANDLING ---
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
 
 main().catch((error) => {
-  console.error("Report generation failed:", error);
+  console.error('Report generation failed:', error);
   process.exit(1);
 });

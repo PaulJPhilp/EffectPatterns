@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from 'effect';
 
 const effectSync = Effect.sync(() => Math.random());
 
@@ -6,11 +6,11 @@ function legacyReadFile(
   path: string,
   cb: (err: Error | null, data?: string) => void
 ) {
-  setTimeout(() => cb(null, "file contents"), 10);
+  setTimeout(() => cb(null, 'file contents'), 10);
 }
 
 const effectAsync = Effect.async<string, string>((resume) => {
-  legacyReadFile("file.txt", (err, data) => {
+  legacyReadFile('file.txt', (err, data) => {
     if (err) resume(Effect.fail(err.message));
     else resume(Effect.succeed(data!));
   });

@@ -4,11 +4,11 @@
  * Schemas for the code generation API endpoints, including request
  * validation and response format.
  */
-import { Schema as S } from "@effect/schema";
+import { Schema as S } from '@effect/schema';
 /**
  * Module type for generated code
  */
-export const ModuleType = S.Literal("esm", "cjs");
+export const ModuleType = S.Literal('esm', 'cjs');
 /**
  * Generate snippet request
  */
@@ -52,5 +52,11 @@ export const SearchPatternsResponse = S.Struct({
         tags: S.Array(S.String),
     })),
     traceId: S.optional(S.String),
+});
+/**
+ * Explain pattern request
+ */
+export const ExplainPatternRequest = S.Struct({
+    patternId: S.String,
 });
 //# sourceMappingURL=generate.js.map

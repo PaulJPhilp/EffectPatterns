@@ -71,14 +71,20 @@ function calculateRelevance(pattern, query) {
 /**
  * Search patterns with fuzzy matching and filtering
  *
- * @param patterns - Array of patterns to search
- * @param query - Search query (optional)
- * @param category - Filter by category (optional)
- * @param difficulty - Filter by difficulty (optional)
- * @param limit - Maximum number of results (default: no limit)
+ * @param params - Search parameters
  * @returns Matched patterns sorted by relevance
+ * @example
+ * ```typescript
+ * const results = searchPatterns({
+ *   patterns: allPatterns,
+ *   query: "retry",
+ *   difficulty: "intermediate",
+ *   limit: 10
+ * })
+ * ```
  */
-export function searchPatterns(patterns, query, category, difficulty, limit) {
+export function searchPatterns(params) {
+    const { patterns, query, category, difficulty, limit } = params;
     let results = [...patterns];
     // Apply category filter
     if (category) {

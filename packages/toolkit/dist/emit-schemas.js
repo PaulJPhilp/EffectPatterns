@@ -4,25 +4,26 @@
  * Build-time script to emit JSON Schema representations of Effect
  * schemas for LLM tool-call function parameter specifications.
  */
-import { JSONSchema } from "@effect/schema";
-import * as fs from "node:fs";
-import * as path from "node:path";
-import { fileURLToPath } from "node:url";
-import { GenerateRequest, SearchPatternsRequest, } from "./schemas/generate.js";
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { stderr, stdout } from 'node:process';
+import { JSONSchema } from '@effect/schema';
+import { ExplainPatternRequest, GenerateRequest, SearchPatternsRequest, } from './schemas/generate.js';
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
 /**
  * Emit JSON Schema for a given Effect schema
  */
 function emitSchema(schema, name, outputDir) {
     try {
         const jsonSchema = JSONSchema.make(schema);
-        const outputPath = path.join(outputDir, `${name}.json`);
-        fs.writeFileSync(outputPath, JSON.stringify(jsonSchema, null, 2), "utf-8");
-        console.log(`✓ Emitted ${name}.json`);
+        const outputPath = join(outputDir, `${name}.json`);
+        writeFileSync(outputPath, JSON.stringify(jsonSchema, null, 2), 'utf-8');
+        stdout.write(`✓ Emitted ${name}.json\n`);
     }
     catch (error) {
-        console.error(`✗ Failed to emit ${name}:`, error);
+        stderr.write(`✗ Failed to emit ${name}: ${String(error)}\n`);
         process.exit(1);
     }
 }
@@ -30,16 +31,17 @@ function emitSchema(schema, name, outputDir) {
  * Main emitter function
  */
 function main() {
-    console.log("Emitting JSON Schemas for LLM tool calls...\n");
-    const outputDir = path.join(__dirname, "../dist/schemas");
+    stdout.write('Emitting JSON Schemas for LLM tool calls...\n\n');
+    const outputDir = join(__dirname, '../dist/schemas');
     // Ensure output directory exists
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
+    if (!existsSync(outputDir)) {
+        mkdirSync(outputDir, { recursive: true });
     }
     // Emit schemas for tool-call functions
-    emitSchema(GenerateRequest, "generate-request", outputDir);
-    emitSchema(SearchPatternsRequest, "search-patterns-request", outputDir);
-    console.log("\nAll schemas emitted successfully!");
+    emitSchema(GenerateRequest, 'generate-request', outputDir);
+    emitSchema(SearchPatternsRequest, 'search-patterns-request', outputDir);
+    emitSchema(ExplainPatternRequest, 'explain-pattern-request', outputDir);
+    stdout.write('\nAll schemas emitted successfully!\n');
 }
 main();
 //# sourceMappingURL=emit-schemas.js.map

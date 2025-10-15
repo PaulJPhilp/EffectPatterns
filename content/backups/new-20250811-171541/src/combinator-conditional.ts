@@ -1,13 +1,13 @@
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Either, Option, Stream } from 'effect';
 
 const effect = Effect.if(true, {
-  onTrue: () => Effect.succeed("yes"),
-  onFalse: () => Effect.succeed("no"),
+  onTrue: () => Effect.succeed('yes'),
+  onFalse: () => Effect.succeed('no'),
 });
 
-const option = true ? Option.some("yes") : Option.none();
+const option = true ? Option.some('yes') : Option.none();
 
-const either = true ? Either.right("yes") : Either.left("error");
+const either = true ? Either.right('yes') : Either.left('error');
 
 const stream: Stream.Stream<number> = false
   ? Stream.fromIterable([1, 2])
@@ -17,7 +17,7 @@ const program = Effect.gen(function* () {
   const result = yield* effect;
   yield* Effect.log(`Effect.if result: ${result}`);
   yield* Effect.log(
-    `Option result: ${Option.isSome(option) ? option.value : "None"}`
+    `Option result: ${Option.isSome(option) ? option.value : 'None'}`
   );
   yield* Effect.log(
     `Either result: ${Either.isRight(either) ? either.right : either.left}`
@@ -26,7 +26,7 @@ const program = Effect.gen(function* () {
   yield* Stream.runForEach(stream, (n) =>
     Effect.sync(() => streamValues.push(n))
   );
-  yield* Effect.log(`Stream result: [${streamValues.join(", ")}]`);
+  yield* Effect.log(`Stream result: [${streamValues.join(', ')}]`);
 });
 
 Effect.runPromise(program);

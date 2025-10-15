@@ -34,7 +34,8 @@
     "content/new/src/**/*.ts",
     "content/new/processed/**/*.ts",
     "content/new/raw/**/*.ts",
-    "cli/src/**/*.ts"
+    "cli/src/**/*.ts",
+    "agents/**/*.ts"
   ],
   "exclude": [
     "node_modules",
@@ -43,7 +44,6 @@
     "archive/**",
     "content/backups/**",
     "content-backup-*/**",
-    "scripts/autofix/ai/suggestions/**",
-    "agents/analyzer/**"
+    "scripts/autofix/ai/suggestions/**"
   ]
 }

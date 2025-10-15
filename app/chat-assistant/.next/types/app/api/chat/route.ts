@@ -1,6 +1,7 @@
 // File: /Users/paul/Projects/Effect-Patterns/app/chat-assistant/app/api/chat/route.ts
-import * as entry from '../../../../../app/api/chat/route.js'
+
 import type { NextRequest } from 'next/server.js'
+import * as entry from '../../../../../app/api/chat/route.js'
 
 type TEntry = typeof import('../../../../../app/api/chat/route.js')
 
