@@ -38,3 +38,7 @@ node_modules
 pnpm-lock.yaml
 .env
 .vercel
+app/_backup/
+tools/
+
+content/backups/
