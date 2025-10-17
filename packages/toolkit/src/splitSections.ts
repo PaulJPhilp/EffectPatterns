@@ -34,4 +34,4 @@ export function splitSections(content: string): string[] {
   );
 }
 
-export default splitSections;
+ 
