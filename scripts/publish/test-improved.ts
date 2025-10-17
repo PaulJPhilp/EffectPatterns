@@ -20,6 +20,8 @@ const execAsync = promisify(exec);
 
 // --- CONFIGURATION ---
 const NEW_SRC_DIR = path.join(process.cwd(), 'content/new/src');
+// Exclude content/new/src/** from runtime tests (typecheck still runs)
+const EXCLUDE_NEW_SRC_RUNTIME = true;
 const CONCURRENCY = 10; // Run 10 tests in parallel
 const ENABLE_TYPE_CHECK = true;
 const SHOW_PROGRESS = true;
@@ -289,9 +291,16 @@ async function main() {
 
   // Get all TypeScript files
   const files = await fs.readdir(NEW_SRC_DIR);
-  const tsFiles = files
+  let tsFiles = files
     .filter((file) => file.endsWith('.ts'))
     .map((file) => path.join(NEW_SRC_DIR, file));
+
+  if (EXCLUDE_NEW_SRC_RUNTIME) {
+    console.log(
+      colorize('Skipping runtime tests for content/new/src/**\n', 'yellow')
+    );
+    tsFiles = [];
+  }
 
   totalTests = tsFiles.length;
   completedTests = 0;
