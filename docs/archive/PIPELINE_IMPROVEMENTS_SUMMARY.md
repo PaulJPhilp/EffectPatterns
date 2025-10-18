@@ -8,13 +8,13 @@ Successfully improved the publishing pipeline with better error reporting, paral
 
 ### 1. ✅ Test Step - **5.6x faster** 
 
-**Before:**
+### Before:
 - Sequential execution
 - ~135 seconds for 89 tests
 - Basic error output
 - No type checking
 
-**After:**
+### After:
 - Parallel execution (10 workers)
 - **24 seconds for 89 tests** (~5.6x speedup)
 - Color-coded output with progress bar
@@ -36,13 +36,13 @@ All passing
 
 ### 2. ✅ Validation Step - **28x faster**
 
-**Before:**
+### Before:
 - Sequential validation
 - ~1 second for 88 patterns
 - 3 basic checks
 - Minimal error reporting
 
-**After:**
+### After:
 - Parallel execution (10 workers)
 - **35ms for 88 patterns** (~28x speedup)
 - 6 comprehensive validators

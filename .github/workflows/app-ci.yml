@@ -1,0 +1,27 @@
+name: App CI
+
+on:
+  push:
+    branches:
+      - feat/chatgpt-app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build app
+        run: npm run build --workspace=app
+
+      - name: Run tests
+        run: npm test --workspace=app

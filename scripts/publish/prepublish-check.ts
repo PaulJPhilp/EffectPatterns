@@ -14,9 +14,9 @@
  *     [--concurrency 4]
  */
 
-import * as path from "node:path";
-import * as fs from "node:fs/promises";
-import { spawn } from "node:child_process";
+import { spawn } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 function argValue(flag: string): string | undefined {
   const idx = process.argv.indexOf(flag);
@@ -37,24 +37,24 @@ async function runCmd(
   return new Promise((resolve) => {
     const child = spawn(cmd, args, {
       cwd: opts.cwd,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
-    let stdout = "";
-    let stderr = "";
-    child.stdout.on("data", (d) => (stdout += String(d)));
-    child.stderr.on("data", (d) => (stderr += String(d)));
-    child.on("close", (code) => resolve({ code: code ?? 0, stdout, stderr }));
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => (stdout += String(d)));
+    child.stderr.on('data', (d) => (stderr += String(d)));
+    child.on('close', (code) => resolve({ code: code ?? 0, stdout, stderr }));
   });
 }
 
 const PROJECT_ROOT = process.cwd();
-const DEFAULT_IN = path.join(PROJECT_ROOT, "content/new/processed");
-const DEFAULT_SRC = path.join(PROJECT_ROOT, "content/new/src");
+const DEFAULT_IN = path.join(PROJECT_ROOT, 'content/new/processed');
+const DEFAULT_SRC = path.join(PROJECT_ROOT, 'content/new/src');
 
 async function listMdx(dir: string): Promise<string[]> {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   return entries
-    .filter((e) => e.isFile() && e.name.toLowerCase().endsWith(".mdx"))
+    .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.mdx'))
     .map((e) => path.join(dir, e.name));
 }
 
@@ -71,29 +71,29 @@ async function worker(
     console.log(`▶ Prepublish: ${rel}`);
 
     const args = [
-      "tsx",
-      path.join("scripts", "publish", "prepublish-check-one.ts"),
-      "--mdx",
+      'tsx',
+      path.join('scripts', 'publish', 'prepublish-check-one.ts'),
+      '--mdx',
       file,
-      "--srcdir",
+      '--srcdir',
       opts.srcDir,
     ];
-    if (opts.eslint) args.push("--eslint");
+    if (opts.eslint) args.push('--eslint');
 
-    const res = await runCmd("bunx", args, { cwd: PROJECT_ROOT });
+    const res = await runCmd('bunx', args, { cwd: PROJECT_ROOT });
     const ok = res.code === 0;
-    console.log(`${ok ? "✅" : "❌"} ${rel}`);
+    console.log(`${ok ? '✅' : '❌'} ${rel}`);
     results.push({ file, ok, output: res.stderr || res.stdout });
   }
 }
 
 async function main() {
-  const inDir = path.resolve(argValue("--indir") ?? DEFAULT_IN);
-  const srcDir = path.resolve(argValue("--srcdir") ?? DEFAULT_SRC);
-  const eslint = hasFlag("--eslint");
-  const conc = Math.max(1, Number(argValue("--concurrency") ?? 4));
-  const countArg = argValue("--count");
-  const reportPath = argValue("--report");
+  const inDir = path.resolve(argValue('--indir') ?? DEFAULT_IN);
+  const srcDir = path.resolve(argValue('--srcdir') ?? DEFAULT_SRC);
+  const eslint = hasFlag('--eslint');
+  const conc = Math.max(1, Number(argValue('--concurrency') ?? 4));
+  const countArg = argValue('--count');
+  const reportPath = argValue('--report');
 
   try {
     await fs.access(inDir);
@@ -112,7 +112,7 @@ async function main() {
     if (Number.isFinite(n) && n > 0) files = files.slice(0, n);
   }
   if (files.length === 0) {
-    console.log("No .mdx files found in", path.relative(PROJECT_ROOT, inDir));
+    console.log('No .mdx files found in', path.relative(PROJECT_ROOT, inDir));
     return;
   }
 
@@ -127,16 +127,16 @@ async function main() {
   const passed = results.filter((r) => r.ok);
   const failed = results.filter((r) => !r.ok);
 
-  console.log("\nPrepublish summary:");
+  console.log('\nPrepublish summary:');
   console.log(`  Total:  ${results.length}`);
   console.log(`  Passed: ${passed.length}`);
   console.log(`  Failed: ${failed.length}`);
 
   if (failed.length > 0) {
-    console.log("\nFailures:");
+    console.log('\nFailures:');
     for (const f of failed) {
-      console.log("-", path.relative(PROJECT_ROOT, f.file));
-      process.stderr.write(f.output + "\n");
+      console.log('-', path.relative(PROJECT_ROOT, f.file));
+      process.stderr.write(f.output + '\n');
     }
   }
 
@@ -155,14 +155,18 @@ async function main() {
       })),
       timestamp: new Date().toISOString(),
     };
-    await fs.writeFile(path.resolve(reportPath), JSON.stringify(report, null, 2), "utf8");
-    console.log("\nReport written:", path.resolve(reportPath));
+    await fs.writeFile(
+      path.resolve(reportPath),
+      JSON.stringify(report, null, 2),
+      'utf8'
+    );
+    console.log('\nReport written:', path.resolve(reportPath));
   }
 
   if (failed.length > 0) process.exit(1);
 }
 
 main().catch((err) => {
-  console.error("❌ Batch prepublish error:", err);
+  console.error('❌ Batch prepublish error:', err);
   process.exit(1);
 });

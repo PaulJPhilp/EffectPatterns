@@ -4,18 +4,38 @@
  * Pure functions for searching and filtering patterns using fuzzy
  * matching and filtering by category/difficulty.
  */
-import { Pattern, PatternSummary } from "./schemas/pattern.js";
+import type { Pattern, PatternSummary } from './schemas/pattern.js';
+/**
+ * Parameters for searching patterns
+ */
+export interface SearchPatternsParams {
+    /** Array of patterns to search */
+    patterns: Pattern[];
+    /** Search query (optional) */
+    query?: string;
+    /** Filter by category (optional) */
+    category?: string;
+    /** Filter by difficulty level (optional) */
+    difficulty?: string;
+    /** Maximum number of results (default: no limit) */
+    limit?: number;
+}
 /**
  * Search patterns with fuzzy matching and filtering
  *
- * @param patterns - Array of patterns to search
- * @param query - Search query (optional)
- * @param category - Filter by category (optional)
- * @param difficulty - Filter by difficulty (optional)
- * @param limit - Maximum number of results (default: no limit)
+ * @param params - Search parameters
  * @returns Matched patterns sorted by relevance
+ * @example
+ * ```typescript
+ * const results = searchPatterns({
+ *   patterns: allPatterns,
+ *   query: "retry",
+ *   difficulty: "intermediate",
+ *   limit: 10
+ * })
+ * ```
  */
-export declare function searchPatterns(patterns: Pattern[], query?: string, category?: string, difficulty?: string, limit?: number): Pattern[];
+export declare function searchPatterns(params: SearchPatternsParams): Pattern[];
 /**
  * Get a single pattern by ID
  *

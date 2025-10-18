@@ -5,12 +5,15 @@
  * Returns patterns matching search criteria
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { Effect } from "effect";
-import { runWithRuntime, PatternsService } from "../../../src/server/init.js";
-import { TracingService } from "../../../src/tracing/otlpLayer.js";
-import { validateApiKey, isAuthenticationError } from "../../../src/auth/apiKey.js";
-import { searchPatterns, toPatternSummary } from "@effect-patterns/toolkit";
+import { searchPatterns, toPatternSummary } from '@effect-patterns/toolkit';
+import { Effect } from 'effect';
+import { type NextRequest, NextResponse } from 'next/server';
+import {
+  isAuthenticationError,
+  validateApiKey,
+} from '../../../src/auth/apiKey.js';
+import { PatternsService, runWithRuntime } from '../../../src/server/init.js';
+import { TracingService } from '../../../src/tracing/otlpLayer.js';
 
 export async function GET(request: NextRequest) {
   const searchEffect = Effect.gen(function* () {
@@ -22,24 +25,24 @@ export async function GET(request: NextRequest) {
 
     // Extract query parameters
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q") || undefined;
-    const category = searchParams.get("category") || undefined;
-    const difficulty = searchParams.get("difficulty") || undefined;
-    const limit = searchParams.get("limit")
-      ? parseInt(searchParams.get("limit")!, 10)
+    const query = searchParams.get('q') || undefined;
+    const category = searchParams.get('category') || undefined;
+    const difficulty = searchParams.get('difficulty') || undefined;
+    const limit = searchParams.get('limit')
+      ? Number.parseInt(searchParams.get('limit')!, 10)
       : undefined;
 
     // Get all patterns
     const allPatterns = yield* patterns.getAllPatterns();
 
-    // Search with filters
-    const results = searchPatterns(
-      allPatterns,
+    // Search with filters (convert readonly to mutable for search function)
+    const results = searchPatterns({
+      patterns: [...allPatterns],
       query,
       category,
       difficulty,
-      limit
-    );
+      limit,
+    });
 
     // Convert to summaries
     const summaries = results.map(toPatternSummary);
@@ -59,15 +62,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result, {
       status: 200,
       headers: {
-        "x-trace-id": result.traceId || "",
+        'x-trace-id': result.traceId || '',
       },
     });
   } catch (error) {
     if (isAuthenticationError(error)) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
     return NextResponse.json(

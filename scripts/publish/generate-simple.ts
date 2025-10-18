@@ -4,13 +4,13 @@
  * Simplified README generation that doesn't use effect-mdx
  */
 
-import * as fs from "fs/promises";
-import matter from "gray-matter";
-import * as path from "path";
+import * as fs from 'fs/promises';
+import matter from 'gray-matter';
+import * as path from 'path';
 
 // --- CONFIGURATION ---
-const PUBLISHED_DIR = path.join(process.cwd(), "content/published");
-const README_PATH = path.join(process.cwd(), "README.md");
+const PUBLISHED_DIR = path.join(process.cwd(), 'content/published');
+const README_PATH = path.join(process.cwd(), 'README.md');
 
 interface PatternFrontmatter {
   id: string;
@@ -21,15 +21,15 @@ interface PatternFrontmatter {
 }
 
 async function generateReadme() {
-  console.log("Starting README generation...");
+  console.log('Starting README generation...');
 
   // Read all MDX files and parse frontmatter
   const files = await fs.readdir(PUBLISHED_DIR);
-  const mdxFiles = files.filter((file) => file.endsWith(".mdx"));
+  const mdxFiles = files.filter((file) => file.endsWith('.mdx'));
 
   const patterns: PatternFrontmatter[] = [];
   for (const file of mdxFiles) {
-    const content = await fs.readFile(path.join(PUBLISHED_DIR, file), "utf-8");
+    const content = await fs.readFile(path.join(PUBLISHED_DIR, file), 'utf-8');
     const { data } = matter(content);
     patterns.push(data as PatternFrontmatter);
   }
@@ -51,12 +51,12 @@ async function generateReadme() {
   const toc: string[] = [];
 
   for (const [useCase, patterns] of useCaseGroups) {
-    const anchor = useCase.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const anchor = useCase.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     toc.push(`- [${useCase}](#${anchor})`);
 
     sections.push(`## ${useCase}\n`);
     sections.push(
-      "| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n"
+      '| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n'
     );
 
     // Sort patterns by skill level (beginner -> intermediate -> advanced)
@@ -71,10 +71,10 @@ async function generateReadme() {
     for (const pattern of sortedPatterns) {
       const skillEmoji =
         {
-          beginner: "🟢",
-          intermediate: "🟡",
-          advanced: "🟠",
-        }[pattern.skillLevel] || "⚪️";
+          beginner: '🟢',
+          intermediate: '🟡',
+          advanced: '🟠',
+        }[pattern.skillLevel] || '⚪️';
 
       sections.push(
         `| [${pattern.title}](./content/published/${
@@ -86,7 +86,7 @@ async function generateReadme() {
       );
     }
 
-    sections.push("\n");
+    sections.push('\n');
   }
 
   // Generate full README
@@ -100,18 +100,18 @@ This repository is designed to be a living document that helps developers move f
 
 ## Table of Contents
 
-${toc.join("\n")}
+${toc.join('\n')}
 
 ---
 
-${sections.join("")}`;
+${sections.join('')}`;
 
   // Write README
-  await fs.writeFile(README_PATH, readme, "utf-8");
+  await fs.writeFile(README_PATH, readme, 'utf-8');
   console.log(`✅ Generated README.md at ${README_PATH}`);
 }
 
 generateReadme().catch((error) => {
-  console.error("Failed to generate README:", error);
+  console.error('Failed to generate README:', error);
   process.exit(1);
 });

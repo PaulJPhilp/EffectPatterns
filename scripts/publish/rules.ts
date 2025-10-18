@@ -1,17 +1,17 @@
 /**
  * rules-simple.ts
- * 
+ *
  * Simplified rules generation that doesn't use effect-mdx
  */
 
-import * as fs from "fs/promises";
-import * as path from "path";
-import matter from "gray-matter";
+import * as fs from 'fs/promises';
+import matter from 'gray-matter';
+import * as path from 'path';
 
 // --- CONFIGURATION ---
-const PUBLISHED_DIR = path.join(process.cwd(), "content/published");
-const RULES_DIR = path.join(process.cwd(), "rules");
-const USE_CASE_DIR = path.join(RULES_DIR, "by-use-case");
+const PUBLISHED_DIR = path.join(process.cwd(), 'content/published');
+const RULES_DIR = path.join(process.cwd(), 'rules');
+const USE_CASE_DIR = path.join(RULES_DIR, 'by-use-case');
 
 // --- TYPE DEFINITIONS ---
 interface Rule {
@@ -24,17 +24,20 @@ interface Rule {
   content?: string;
 }
 
-const sanitizeName = (name: string) => 
-  name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+const sanitizeName = (name: string) =>
+  name
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
 
 async function extractRules(): Promise<Rule[]> {
   const files = await fs.readdir(PUBLISHED_DIR);
-  const mdxFiles = files.filter(file => file.endsWith(".mdx"));
+  const mdxFiles = files.filter((file) => file.endsWith('.mdx'));
   const rules: Rule[] = [];
 
   for (const file of mdxFiles) {
     const filePath = path.join(PUBLISHED_DIR, file);
-    const fileContent = await fs.readFile(filePath, "utf-8");
+    const fileContent = await fs.readFile(filePath, 'utf-8');
     const { data, content } = matter(fileContent);
 
     if ((data as any).rule?.description) {
@@ -62,8 +65,9 @@ async function extractRules(): Promise<Rule[]> {
         description: (data as any).rule.description,
         skillLevel: (data as any).skillLevel,
         useCases: (data as any).useCase,
-        example: exampleLines.length > 0 ? exampleLines.join('\n').trim() : undefined,
-        content: content.trim()
+        example:
+          exampleLines.length > 0 ? exampleLines.join('\n').trim() : undefined,
+        content: content.trim(),
       });
     }
   }
@@ -71,7 +75,7 @@ async function extractRules(): Promise<Rule[]> {
   return rules.sort((a, b) => a.title.localeCompare(b.title));
 }
 
-async function generateFullRules(rules: Rule[]) {
+export async function generateFullRules(rules: Rule[]) {
   const content = ['# Effect-TS Patterns - Complete Rules\n'];
   for (const rule of rules) {
     content.push(`## ${rule.title}\n`);
@@ -88,29 +92,29 @@ async function generateFullRules(rules: Rule[]) {
     content.push('\n---\n\n');
   }
 
-  const filePath = path.join(RULES_DIR, "rules.md");
-  await fs.writeFile(filePath, content.join(''), "utf-8");
+  const filePath = path.join(RULES_DIR, 'rules.md');
+  await fs.writeFile(filePath, content.join(''), 'utf-8');
   console.log(`✅ Generated ${filePath}`);
 }
 
-async function generateCompactRules(rules: Rule[]) {
+export async function generateCompactRules(rules: Rule[]) {
   const content = ['# Effect-TS Patterns - Compact Rules\n\n'];
   for (const rule of rules) {
     content.push(`- **${rule.title}**: ${rule.description}\n`);
   }
 
-  const filePath = path.join(RULES_DIR, "rules-compact.md");
-  await fs.writeFile(filePath, content.join(''), "utf-8");
+  const filePath = path.join(RULES_DIR, 'rules-compact.md');
+  await fs.writeFile(filePath, content.join(''), 'utf-8');
   console.log(`✅ Generated ${filePath}`);
 }
 
-async function generateJsonRules(rules: Rule[]) {
-  const filePath = path.join(RULES_DIR, "rules.json");
-  await fs.writeFile(filePath, JSON.stringify(rules, null, 2), "utf-8");
+export async function generateJsonRules(rules: Rule[]) {
+  const filePath = path.join(RULES_DIR, 'rules.json');
+  await fs.writeFile(filePath, JSON.stringify(rules, null, 2), 'utf-8');
   console.log(`✅ Generated ${filePath}`);
 }
 
-async function generateUseCaseRules(rules: Rule[]) {
+export async function generateUseCaseRules(rules: Rule[]) {
   await fs.mkdir(USE_CASE_DIR, { recursive: true });
 
   const useCaseGroups = new Map<string, Rule[]>();
@@ -138,13 +142,13 @@ async function generateUseCaseRules(rules: Rule[]) {
 
     const fileName = sanitizeName(useCase) + '.md';
     const filePath = path.join(USE_CASE_DIR, fileName);
-    await fs.writeFile(filePath, content.join(''), "utf-8");
+    await fs.writeFile(filePath, content.join(''), 'utf-8');
     console.log(`✅ Generated ${filePath}`);
   }
 }
 
 async function generateRules() {
-  console.log("Generating rules from published patterns...");
+  console.log('Generating rules from published patterns...');
 
   // Ensure rules directory exists
   await fs.mkdir(RULES_DIR, { recursive: true });
@@ -159,10 +163,10 @@ async function generateRules() {
   await generateJsonRules(rules);
   await generateUseCaseRules(rules);
 
-  console.log("\n✅ All rule files generated successfully!");
+  console.log('\n✅ All rule files generated successfully!');
 }
 
-generateRules().catch(error => {
-  console.error("Failed to generate rules:", error);
+generateRules().catch((error) => {
+  console.error('Failed to generate rules:', error);
   process.exit(1);
 });

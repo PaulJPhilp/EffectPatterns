@@ -4,15 +4,15 @@
  * Canonical domain types for Effect patterns, including full Pattern
  * representation and PatternSummary for list views.
  */
-import { Schema as S } from "@effect/schema";
+import { Schema as S } from '@effect/schema';
 /**
  * Pattern category enumeration
  */
-export const PatternCategory = S.Literal("error-handling", "concurrency", "data-transformation", "testing", "services", "streams", "caching", "observability", "scheduling", "resource-management");
+export const PatternCategory = S.Literal('error-handling', 'concurrency', 'data-transformation', 'testing', 'services', 'streams', 'caching', 'observability', 'scheduling', 'resource-management');
 /**
  * Pattern difficulty level
  */
-export const DifficultyLevel = S.Literal("beginner", "intermediate", "advanced");
+export const DifficultyLevel = S.Literal('beginner', 'intermediate', 'advanced');
 /**
  * Code example schema
  */

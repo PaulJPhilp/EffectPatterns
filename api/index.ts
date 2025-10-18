@@ -5,13 +5,17 @@
  * It handles incoming HTTP requests and routes them to the appropriate handlers.
  */
 
-import { FileSystem } from "@effect/platform";
-import { HttpRouter, HttpServerResponse } from "@effect/platform";
-import { NodeFileSystem, NodeRuntime } from "@effect/platform-node";
-import { Data, Effect, Schema } from "effect";
-import matter from "gray-matter";
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import * as path from "node:path";
+import * as path from 'node:path';
+import { FileSystem } from '@effect/platform';
+import { NodeFileSystem } from '@effect/platform-node';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Data, Effect, Schema } from 'effect';
+import matter from 'gray-matter';
+
+const TITLE_HEADING_REGEX = /^#\s+(.+)$/;
+const RULE_PATH_REGEX = /^\/api\/v1\/rules\/([^/]+)$/;
+const HTTP_STATUS_OK = 200;
+const HTTP_STATUS_NOT_FOUND = 404;
 
 // --- SCHEMA DEFINITIONS ---
 
@@ -26,37 +30,37 @@ const RuleSchema = Schema.Struct({
 
 // --- ERROR TYPES ---
 
-class RuleLoadError extends Data.TaggedError("RuleLoadError")<{
+class RuleLoadError extends Data.TaggedError('RuleLoadError')<{
   readonly path: string;
   readonly cause: unknown;
 }> {}
 
-class RuleParseError extends Data.TaggedError("RuleParseError")<{
+class RuleParseError extends Data.TaggedError('RuleParseError')<{
   readonly file: string;
   readonly cause: unknown;
 }> {}
 
 class RulesDirectoryNotFoundError extends Data.TaggedError(
-  "RulesDirectoryNotFoundError"
+  'RulesDirectoryNotFoundError'
 )<{
   readonly path: string;
 }> {}
 
-class RuleNotFoundError extends Data.TaggedError("RuleNotFoundError")<{
+class RuleNotFoundError extends Data.TaggedError('RuleNotFoundError')<{
   readonly id: string;
 }> {}
 
 // --- HELPER FUNCTIONS ---
 
 const extractTitle = (content: string): string => {
-  const lines = content.split("\n");
+  const lines = content.split('\n');
   for (const line of lines) {
-    const match = line.match(/^#\s+(.+)$/);
+    const match = line.match(TITLE_HEADING_REGEX);
     if (match) {
       return match[1].trim();
     }
   }
-  return "Untitled Rule";
+  return 'Untitled Rule';
 };
 
 const parseRuleFile = (
@@ -65,11 +69,13 @@ const parseRuleFile = (
   fileId: string
 ) =>
   Effect.gen(function* () {
-    const content = yield* fs.readFileString(filePath).pipe(
-      Effect.catchAll((error) =>
-        Effect.fail(new RuleLoadError({ path: filePath, cause: error }))
-      )
-    );
+    const content = yield* fs
+      .readFileString(filePath)
+      .pipe(
+        Effect.catchAll((error) =>
+          Effect.fail(new RuleLoadError({ path: filePath, cause: error }))
+        )
+      );
 
     let parsed: { data: Record<string, unknown>; content: string };
     try {
@@ -83,16 +89,22 @@ const parseRuleFile = (
     const { data, content: markdownContent } = parsed;
     const title = extractTitle(markdownContent);
 
+    const rawUseCase = data.useCase;
+    let useCase: string[] | undefined;
+    if (Array.isArray(rawUseCase)) {
+      useCase = rawUseCase.filter((value): value is string =>
+        typeof value === 'string'
+      );
+    } else if (typeof rawUseCase === 'string') {
+      useCase = [rawUseCase];
+    }
+
     return {
       id: fileId,
       title,
-      description: (data.description as string) || "",
+      description: (data.description as string) || '',
       skillLevel: data.skillLevel as string | undefined,
-      useCase: data.useCase
-        ? Array.isArray(data.useCase)
-          ? (data.useCase as string[])
-          : [data.useCase as string]
-        : undefined,
+      useCase,
       content: markdownContent,
     };
   });
@@ -100,7 +112,7 @@ const parseRuleFile = (
 const readRuleById = (id: string) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const rulesDir = path.join(process.cwd(), "rules/cursor");
+    const rulesDir = path.join(process.cwd(), 'rules/cursor');
     const filePath = path.join(rulesDir, `${id}.mdc`);
 
     const fileExists = yield* fs.exists(filePath);
@@ -113,7 +125,7 @@ const readRuleById = (id: string) =>
 
 const readAndParseRules = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
-  const rulesDir = path.join(process.cwd(), "rules/cursor");
+  const rulesDir = path.join(process.cwd(), 'rules/cursor');
 
   const dirExists = yield* fs.exists(rulesDir);
   if (!dirExists) {
@@ -122,22 +134,24 @@ const readAndParseRules = Effect.gen(function* () {
     );
   }
 
-  const files = yield* fs.readDirectory(rulesDir).pipe(
-    Effect.catchAll((error) =>
-      Effect.fail(new RuleLoadError({ path: rulesDir, cause: error }))
-    )
-  );
+  const files = yield* fs
+    .readDirectory(rulesDir)
+    .pipe(
+      Effect.catchAll((error) =>
+        Effect.fail(new RuleLoadError({ path: rulesDir, cause: error }))
+      )
+    );
 
-  const mdcFiles = files.filter((file) => file.endsWith(".mdc"));
+  const mdcFiles = files.filter((file) => file.endsWith('.mdc'));
 
   const rules = yield* Effect.forEach(
     mdcFiles,
     (file) => {
       const filePath = path.join(rulesDir, file);
-      const fileId = path.basename(file, ".mdc");
+      const fileId = path.basename(file, '.mdc');
       return parseRuleFile(fs, filePath, fileId);
     },
-    { concurrency: "unbounded" }
+    { concurrency: 'unbounded' }
   );
 
   return rules;
@@ -145,9 +159,7 @@ const readAndParseRules = Effect.gen(function* () {
 
 // --- ROUTE HANDLERS ---
 
-const healthHandler = Effect.gen(function* () {
-  return { status: "ok" };
-});
+const healthHandler = Effect.succeed({ status: 'ok' });
 
 const rulesHandler = Effect.gen(function* () {
   const rulesResult = yield* Effect.either(
@@ -160,16 +172,16 @@ const rulesHandler = Effect.gen(function* () {
     })
   );
 
-  if (rulesResult._tag === "Left") {
+  if (rulesResult._tag === 'Left') {
     return {
-      error: "Failed to load rules",
+      error: 'Failed to load rules',
       statusCode: 500,
     };
   }
 
   return {
     data: rulesResult.right,
-    statusCode: 200,
+    statusCode: HTTP_STATUS_OK,
   };
 });
 
@@ -183,25 +195,25 @@ const singleRuleHandler = (id: string) =>
       })
     );
 
-    if (ruleResult._tag === "Left") {
+    if (ruleResult._tag === 'Left') {
       const error = ruleResult.left;
 
-      if (error._tag === "RuleNotFoundError") {
+      if (error._tag === 'RuleNotFoundError') {
         return {
-          error: "Rule not found",
-          statusCode: 404,
+          error: 'Rule not found',
+          statusCode: HTTP_STATUS_NOT_FOUND,
         };
       }
 
       return {
-        error: "Failed to load rule",
+        error: 'Failed to load rule',
         statusCode: 500,
       };
     }
 
     return {
       data: ruleResult.right,
-      statusCode: 200,
+      statusCode: HTTP_STATUS_OK,
     };
   });
 
@@ -211,37 +223,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { url } = req;
 
   // Health check
-  if (url === "/health") {
+  if (url === '/health') {
     const result = await Effect.runPromise(
       healthHandler.pipe(Effect.provide(NodeFileSystem.layer))
     );
-    return res.status(200).json(result);
+    return res.status(HTTP_STATUS_OK).json(result);
   }
 
   // List all rules
-  if (url === "/api/v1/rules") {
+  if (url === '/api/v1/rules') {
     const result = await Effect.runPromise(
       rulesHandler.pipe(Effect.provide(NodeFileSystem.layer))
     );
-    if ("error" in result) {
+    if ('error' in result) {
       return res.status(result.statusCode).json({ error: result.error });
     }
-    return res.status(200).json(result.data);
+    return res.status(HTTP_STATUS_OK).json(result.data);
   }
 
   // Get single rule by ID
-  const ruleMatch = url?.match(/^\/api\/v1\/rules\/([^/]+)$/);
+  const ruleMatch = url?.match(RULE_PATH_REGEX);
   if (ruleMatch) {
     const id = ruleMatch[1];
     const result = await Effect.runPromise(
       singleRuleHandler(id).pipe(Effect.provide(NodeFileSystem.layer))
     );
-    if ("error" in result) {
+    if ('error' in result) {
       return res.status(result.statusCode).json({ error: result.error });
     }
-    return res.status(200).json(result.data);
+    return res.status(HTTP_STATUS_OK).json(result.data);
   }
 
   // 404 for unknown routes
-  return res.status(404).json({ error: "Not found" });
+  return res.status(HTTP_STATUS_NOT_FOUND).json({ error: 'Not found' });
 }

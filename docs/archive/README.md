@@ -48,19 +48,26 @@ development sessions but are no longer part of the active documentation.
 
 ## Active Documentation
 
-For current documentation, see the main `/docs` folder:
-- `CHANGELOG.md` - Active changelog
-- `CONTRIBUTING.md` - Contribution guidelines
-- `patterns-guide.md` - Patterns guide
-- `SERVICE_PATTERNS.md` - Service patterns reference
-- `EFFECT_LINTER_RULES.md` - Effect linter rules
-- `IdiomaticEffect.mdx` - Idiomatic Effect guide
-- `template.mdx` - Pattern template
+For current documentation, see the main `/docs` folder (canonical locations):
+
+- `docs/reference/CHANGELOG.md` - Active changelog
+
+- `docs/guides/CONTRIBUTING.md` - Contribution guidelines
+
+- `docs/guides/patterns-guide.md` - Patterns guide
+
+- `docs/SERVICE_PATTERNS.md` - Service patterns reference
+
+- `docs/release/EFFECT_LINTER_RULES.md` - Effect linter rules
+
+- `docs/IdiomaticEffect.mdx` - Idiomatic Effect guide
+
+- `docs/template.mdx` - Pattern template
 
 ## Roadmap
 
 Project roadmap documentation is in `/docs/roadmap`:
 - `ROADMAP.md` - Project roadmap overview
 
-The 10 detailed roadmap module files remain in the `/roadmap` folder at 
+The 10 detailed roadmap module files remain in the `/roadmap` folder at
 the project root.

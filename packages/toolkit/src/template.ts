@@ -6,8 +6,8 @@
  * code evaluation or execution.
  */
 
-import { Pattern } from "./schemas/pattern.js";
-import { ModuleType } from "./schemas/generate.js";
+import type { ModuleType } from './schemas/generate.js';
+import type { Pattern } from './schemas/pattern.js';
 
 /**
  * Sanitize user input to prevent template injection
@@ -17,9 +17,9 @@ import { ModuleType } from "./schemas/generate.js";
  */
 export function sanitizeInput(input: string): string {
   return input
-    .replace(/[<>]/g, "") // Remove angle brackets
-    .replace(/[`$]/g, "") // Remove backticks and dollar signs
-    .replace(/[\r\n]+/g, " ") // Replace newlines with spaces
+    .replace(/[<>]/g, '') // Remove angle brackets
+    .replace(/[`$]/g, '') // Remove backticks and dollar signs
+    .replace(/[\r\n]+/g, ' ') // Replace newlines with spaces
     .trim()
     .slice(0, 100); // Limit length
 }
@@ -30,8 +30,8 @@ export function sanitizeInput(input: string): string {
  * @param moduleType - ESM or CJS
  * @returns Import/require statement
  */
-function generateImport(moduleType: ModuleType = "esm"): string {
-  if (moduleType === "cjs") {
+function generateImport(moduleType: ModuleType = 'esm'): string {
+  if (moduleType === 'cjs') {
     return `const { Effect, pipe } = require("effect");`;
   }
   return `import { Effect, pipe } from "effect";`;
@@ -44,14 +44,27 @@ function generateImport(moduleType: ModuleType = "esm"): string {
  * @param name - Export name
  * @returns Export statement
  */
-function generateExport(
-  name: string,
-  moduleType: ModuleType = "esm"
-): string {
-  if (moduleType === "cjs") {
+function generateExport(name: string, moduleType: ModuleType = 'esm'): string {
+  if (moduleType === 'cjs') {
     return `module.exports = { ${name} };`;
   }
   return `export { ${name} };`;
+}
+
+/**
+ * Parameters for building a code snippet
+ */
+export interface BuildSnippetParams {
+  /** Pattern to generate snippet from */
+  pattern: Pattern;
+  /** Optional custom name for the example function/const */
+  customName?: string;
+  /** Optional custom input value */
+  customInput?: string;
+  /** Module type (default: 'esm') */
+  moduleType?: ModuleType;
+  /** Optional Effect version to include in comment */
+  effectVersion?: string;
 }
 
 /**
@@ -61,43 +74,49 @@ function generateExport(
  * examples. Supports module type variations and Effect version
  * comments.
  *
- * @param pattern - Pattern to generate snippet from
- * @param name - Optional custom name for the example
- * @param input - Optional custom input parameter
- * @param moduleType - Module type (esm or cjs)
- * @param effectVersion - Optional Effect version to include in comment
+ * @param params - Snippet generation parameters
  * @returns Generated code snippet
+ * @example
+ * ```typescript
+ * const snippet = buildSnippet({
+ *   pattern: myPattern,
+ *   customName: "retryRequest",
+ *   moduleType: "esm"
+ * })
+ * ```
  */
-export function buildSnippet(
-  pattern: Pattern,
-  name?: string,
-  input?: string,
-  moduleType: ModuleType = "esm",
-  effectVersion?: string
-): string {
-  const sanitizedName = name ? sanitizeInput(name) : "example";
-  const sanitizedInput = input ? sanitizeInput(input) : "input";
+export function buildSnippet(params: BuildSnippetParams): string {
+  const {
+    pattern,
+    customName,
+    customInput,
+    moduleType = 'esm',
+    effectVersion
+  } = params;
+
+  const sanitizedName = customName ? sanitizeInput(customName) : 'example';
+  const sanitizedInput = customInput ? sanitizeInput(customInput) : 'input';
 
   // Use first example if available
-  const example = pattern.examples[0];
+  const example = pattern.examples?.[0];
 
   if (!example) {
     // Generate a minimal placeholder if no example exists
     const header = [
       `// ${pattern.title}`,
-      effectVersion ? `// Effect version: ${effectVersion}` : "",
+      effectVersion ? `// Effect version: ${effectVersion}` : '',
       `// Pattern ID: ${pattern.id}`,
-      "",
+      '',
       generateImport(moduleType),
-      "",
+      '',
       `// ${pattern.description}`,
-      "",
+      '',
       `const ${sanitizedName} = Effect.succeed("${sanitizedInput}");`,
-      "",
+      '',
       generateExport(sanitizedName, moduleType),
     ]
       .filter(Boolean)
-      .join("\n");
+      .join('\n');
 
     return header;
   }
@@ -105,29 +124,26 @@ export function buildSnippet(
   // Build snippet from example with header
   const header = [
     `// ${pattern.title}`,
-    effectVersion ? `// Effect version: ${effectVersion}` : "",
+    effectVersion ? `// Effect version: ${effectVersion}` : '',
     `// Pattern ID: ${pattern.id}`,
-    example.description ? `// ${example.description}` : "",
-    "",
+    example.description ? `// ${example.description}` : '',
+    '',
     generateImport(moduleType),
-    "",
+    '',
   ]
     .filter(Boolean)
-    .join("\n");
+    .join('\n');
 
   // Process the example code (sanitize but preserve structure)
   const processedCode = example.code
-    .split("\n")
+    .split('\n')
     .map((line) => {
       // Replace any template variables if present
       let processedLine = line;
-      if (name) {
-        processedLine = processedLine.replace(
-          /\bexample\b/g,
-          sanitizedName
-        );
+      if (customName) {
+        processedLine = processedLine.replace(/\bexample\b/g, sanitizedName);
       }
-      if (input) {
+      if (customInput) {
         processedLine = processedLine.replace(
           /"input"/g,
           `"${sanitizedInput}"`
@@ -135,7 +151,7 @@ export function buildSnippet(
       }
       return processedLine;
     })
-    .join("\n");
+    .join('\n');
 
   return `${header}\n${processedCode}`;
 }
@@ -156,11 +172,11 @@ export function generateUsageExample(pattern: Pattern): string {
   return [
     `// ${pattern.title}`,
     `// ${pattern.description}`,
-    "",
-    example.description || "",
-    "",
+    '',
+    example.description || '',
+    '',
     example.code,
   ]
     .filter(Boolean)
-    .join("\n");
+    .join('\n');
 }

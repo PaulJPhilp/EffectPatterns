@@ -215,7 +215,7 @@ Want to work on any of these features?
 4. Create a feature branch
 5. Submit a pull request
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+See [CONTRIBUTING](./docs/guides/CONTRIBUTING.md) for details.
 
 ## Feedback
 

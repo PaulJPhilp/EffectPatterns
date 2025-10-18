@@ -5,8 +5,8 @@
  * types and Effect versions. All generation is pure functions - no
  * code evaluation or execution.
  */
-import { Pattern } from "./schemas/pattern.js";
-import { ModuleType } from "./schemas/generate.js";
+import type { ModuleType } from './schemas/generate.js';
+import type { Pattern } from './schemas/pattern.js';
 /**
  * Sanitize user input to prevent template injection
  *
@@ -15,20 +15,39 @@ import { ModuleType } from "./schemas/generate.js";
  */
 export declare function sanitizeInput(input: string): string;
 /**
+ * Parameters for building a code snippet
+ */
+export interface BuildSnippetParams {
+    /** Pattern to generate snippet from */
+    pattern: Pattern;
+    /** Optional custom name for the example function/const */
+    customName?: string;
+    /** Optional custom input value */
+    customInput?: string;
+    /** Module type (default: 'esm') */
+    moduleType?: ModuleType;
+    /** Optional Effect version to include in comment */
+    effectVersion?: string;
+}
+/**
  * Build a code snippet from a pattern
  *
  * Generates deterministic, sanitized code snippets based on pattern
  * examples. Supports module type variations and Effect version
  * comments.
  *
- * @param pattern - Pattern to generate snippet from
- * @param name - Optional custom name for the example
- * @param input - Optional custom input parameter
- * @param moduleType - Module type (esm or cjs)
- * @param effectVersion - Optional Effect version to include in comment
+ * @param params - Snippet generation parameters
  * @returns Generated code snippet
+ * @example
+ * ```typescript
+ * const snippet = buildSnippet({
+ *   pattern: myPattern,
+ *   customName: "retryRequest",
+ *   moduleType: "esm"
+ * })
+ * ```
  */
-export declare function buildSnippet(pattern: Pattern, name?: string, input?: string, moduleType?: ModuleType, effectVersion?: string): string;
+export declare function buildSnippet(params: BuildSnippetParams): string;
 /**
  * Generate a minimal usage example for a pattern
  *

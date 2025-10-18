@@ -340,6 +340,6 @@ run_test \
 
 ## Related Documentation
 
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Full deployment guide
+- [DEPLOYMENT](../../docs/guides/DEPLOYMENT.md) - Full deployment guide
 - [README.md](../../README.md) - Project overview
 - [Integration Tests](./tests/integration/README.md) - Full integration test suite

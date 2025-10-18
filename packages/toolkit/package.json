@@ -2,24 +2,42 @@
   "name": "@effect-patterns/toolkit",
   "version": "0.1.0",
   "type": "module",
-  "description": "Effect Patterns Toolkit - Core domain types and utilities",
+  "description": "Type-safe Effect library for working with Effect-TS patterns - search, validate, and generate code from the Effect Patterns Hub",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./splitSections": {
+      "types": "./dist/splitSections.d.ts",
+      "default": "./dist/splitSections.js"
     }
   },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "build:schemas": "bun run src/emit-schemas.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
+    "@effect/platform": "^0.90.10",
+    "@effect/platform-node": "^0.94.2",
+    "@effect/schema": "^0.75.5",
+    "effect": "^3.18.2"
+  },
+  "peerDependencies": {
     "@effect/platform": "^0.90.10",
     "@effect/platform-node": "^0.94.2",
     "@effect/schema": "^0.75.5",
@@ -35,8 +53,29 @@
     "effect",
     "effect-ts",
     "patterns",
-    "toolkit"
+    "toolkit",
+    "functional-programming",
+    "typescript",
+    "type-safe",
+    "schema",
+    "validation",
+    "code-generation"
   ],
-  "author": "Paul",
-  "license": "MIT"
+  "author": "Paul Philp",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PaulJPhilp/Effect-Patterns.git",
+    "directory": "packages/toolkit"
+  },
+  "bugs": {
+    "url": "https://github.com/PaulJPhilp/Effect-Patterns/issues"
+  },
+  "homepage": "https://github.com/PaulJPhilp/Effect-Patterns#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

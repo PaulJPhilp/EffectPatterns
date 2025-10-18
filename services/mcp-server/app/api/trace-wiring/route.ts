@@ -5,11 +5,14 @@
  * Returns example code for integrating trace IDs across platforms
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { Effect } from "effect";
-import { runWithRuntime } from "../../../src/server/init.js";
-import { TracingService } from "../../../src/tracing/otlpLayer.js";
-import { validateApiKey, isAuthenticationError } from "../../../src/auth/apiKey.js";
+import { Effect } from 'effect';
+import { type NextRequest, NextResponse } from 'next/server';
+import {
+  isAuthenticationError,
+  validateApiKey,
+} from '../../../src/auth/apiKey.js';
+import { runWithRuntime } from '../../../src/server/init.js';
+import { TracingService } from '../../../src/tracing/otlpLayer.js';
 
 const EFFECT_NODE_SDK_EXAMPLE = `
 // Effect + OpenTelemetry Node SDK Example
@@ -119,15 +122,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result, {
       status: 200,
       headers: {
-        "x-trace-id": result.traceId || "",
+        'x-trace-id': result.traceId || '',
       },
     });
   } catch (error) {
     if (isAuthenticationError(error)) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
     return NextResponse.json(

@@ -5,63 +5,69 @@
  * Stores received traces in memory for verification in integration tests.
  */
 
-import { createServer, IncomingMessage, ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from 'node:http';
 
-export interface OTLPSpan {
+const HTTP_STATUS_OK = 200;
+const HTTP_STATUS_BAD_REQUEST = 400;
+const HTTP_STATUS_NOT_FOUND = 404;
+
+export type OTLPSpan = {
   traceId: string;
   spanId: string;
   name: string;
   attributes?: Record<string, string | number | boolean>;
   startTime?: string;
   endTime?: string;
-}
+};
 
-export interface OTLPTrace {
+export type OTLPTrace = {
   resourceSpans: Array<{
     resource: {
-      attributes: Array<{ key: string; value: any }>;
+      attributes: Array<{ key: string; value: unknown }>;
     };
     scopeSpans: Array<{
       spans: OTLPSpan[];
     }>;
   }>;
-}
+};
 
 export class MockOTLPCollector {
   private server: ReturnType<typeof createServer> | null = null;
   private traces: OTLPTrace[] = [];
-  private port: number;
+  private readonly port: number;
 
-  constructor(port: number = 4318) {
+  constructor(port = 4318) {
     this.port = port;
   }
 
   /**
    * Start the mock OTLP collector server
    */
-  async start(): Promise<void> {
+  start(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.server = createServer((req, res) => {
         this.handleRequest(req, res);
       });
 
       this.server.listen(this.port, () => {
-        console.log(`[MockOTLP] Listening on port ${this.port}`);
         resolve();
       });
 
-      this.server.on("error", reject);
+      this.server.on('error', reject);
     });
   }
 
   /**
    * Stop the mock OTLP collector server
    */
-  async stop(): Promise<void> {
+  stop(): Promise<void> {
     return new Promise((resolve) => {
       if (this.server) {
         this.server.close(() => {
-          console.log("[MockOTLP] Server stopped");
           resolve();
         });
       } else {
@@ -75,32 +81,32 @@ export class MockOTLPCollector {
    */
   private handleRequest(req: IncomingMessage, res: ServerResponse): void {
     // Handle OTLP trace export
-    if (req.url === "/v1/traces" && req.method === "POST") {
-      let body = "";
+    if (req.url === '/v1/traces' && req.method === 'POST') {
+      let body = '';
 
-      req.on("data", (chunk) => {
+      req.on('data', (chunk) => {
         body += chunk.toString();
       });
 
-      req.on("end", () => {
+      req.on('end', () => {
         try {
           const trace = JSON.parse(body) as OTLPTrace;
           this.traces.push(trace);
+          const spanCount = this.countSpans(trace);
 
-          console.log(
-            `[MockOTLP] Received trace with ${this.countSpans(trace)} spans`
-          );
-
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ status: "success" }));
-        } catch (error) {
-          console.error("[MockOTLP] Error parsing trace:", error);
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Invalid trace data" }));
+          res.writeHead(HTTP_STATUS_OK, {
+            'Content-Type': 'application/json',
+          });
+          res.end(JSON.stringify({ status: 'success', spanCount }));
+        } catch (_error) {
+          res.writeHead(HTTP_STATUS_BAD_REQUEST, {
+            'Content-Type': 'application/json',
+          });
+          res.end(JSON.stringify({ error: 'Invalid trace data' }));
         }
       });
     } else {
-      res.writeHead(404);
+      res.writeHead(HTTP_STATUS_NOT_FOUND);
       res.end();
     }
   }
@@ -109,14 +115,15 @@ export class MockOTLPCollector {
    * Count total spans in a trace
    */
   private countSpans(trace: OTLPTrace): number {
-    return trace.resourceSpans.reduce((total, rs) => {
-      return (
+    return trace.resourceSpans.reduce(
+      (total, rs) =>
         total +
-        rs.scopeSpans.reduce((scopeTotal, ss) => {
-          return scopeTotal + ss.spans.length;
-        }, 0)
-      );
-    }, 0);
+        rs.scopeSpans.reduce(
+          (scopeTotal, ss) => scopeTotal + ss.spans.length,
+          0
+        ),
+      0
+    );
   }
 
   /**
@@ -183,7 +190,7 @@ export class MockOTLPCollector {
  * Helper to create and start a mock OTLP collector
  */
 export async function createMockOTLPCollector(
-  port: number = 4318
+  port = 4318
 ): Promise<MockOTLPCollector> {
   const collector = new MockOTLPCollector(port);
   await collector.start();

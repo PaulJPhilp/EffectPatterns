@@ -386,6 +386,6 @@ To enhance the QA schema:
 ## Related
 
 - [QA_GAP_ANALYSIS.md](./QA_GAP_ANALYSIS.md) - Why we need these checks
-- [EFFECT_LINTER_RULES.md](./EFFECT_LINTER_RULES.md) - Pattern linter rules
+- [EFFECT_LINTER_RULES](../release/EFFECT_LINTER_RULES.md) - Pattern linter rules
 - [test-behavioral.ts](./scripts/publish/test-behavioral.ts) - Runtime validation
 

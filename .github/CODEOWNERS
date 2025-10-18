@@ -1,0 +1,3 @@
+# Protect core content paths: require @PaulJPhilp review before merge
+/content/published/** @PaulJPhilp
+/content/** @PaulJPhilp

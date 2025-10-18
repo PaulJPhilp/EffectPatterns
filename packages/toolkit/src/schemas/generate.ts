@@ -5,12 +5,12 @@
  * validation and response format.
  */
 
-import { Schema as S } from "@effect/schema";
+import { Schema as S } from '@effect/schema';
 
 /**
  * Module type for generated code
  */
-export const ModuleType = S.Literal("esm", "cjs");
+export const ModuleType = S.Literal('esm', 'cjs');
 
 export type ModuleType = S.Schema.Type<typeof ModuleType>;
 
@@ -50,9 +50,7 @@ export const SearchPatternsRequest = S.Struct({
   limit: S.optional(S.NumberFromString),
 });
 
-export type SearchPatternsRequest = S.Schema.Type<
-  typeof SearchPatternsRequest
->;
+export type SearchPatternsRequest = S.Schema.Type<typeof SearchPatternsRequest>;
 
 /**
  * Search patterns response
@@ -75,3 +73,12 @@ export const SearchPatternsResponse = S.Struct({
 export type SearchPatternsResponse = S.Schema.Type<
   typeof SearchPatternsResponse
 >;
+
+/**
+ * Explain pattern request
+ */
+export const ExplainPatternRequest = S.Struct({
+  patternId: S.String,
+});
+
+export type ExplainPatternRequest = S.Schema.Type<typeof ExplainPatternRequest>;

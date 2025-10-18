@@ -1,0 +1,19 @@
+---
+id: test-pattern-3
+title: "Test Pattern Three"
+skillLevel: advanced
+useCase: ["error-handling"]
+summary: "Advanced error recovery pattern"
+---
+
+# Test Pattern Three
+
+Advanced error recovery pattern
+
+## Example
+
+```typescript
+import { Effect } from "effect"
+
+const program = Effect.retry(task, { times: 3 })
+```

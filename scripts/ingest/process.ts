@@ -13,16 +13,18 @@
  *   bunx tsx scripts/ingest/process.ts
  */
 
-import * as path from "node:path";
-import * as fs from "node:fs/promises";
-import * as yaml from "yaml";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import * as yaml from 'yaml';
+// Use shared utility to split markdown content into sections by headings
+import { splitSections } from '../../packages/toolkit/src/splitSections.js';
 
 // --- CONFIGURATION ---
 const PROJECT_ROOT = process.cwd();
-const NEW_DIR = path.join(PROJECT_ROOT, "content/new");
-const NEW_RAW_DIR = path.join(NEW_DIR, "raw");
-const NEW_SRC_DIR = path.join(NEW_DIR, "src");
-const NEW_PROCESSED_DIR = path.join(NEW_DIR, "processed");
+const NEW_DIR = path.join(PROJECT_ROOT, 'content/new');
+const NEW_RAW_DIR = path.join(NEW_DIR, 'raw');
+const NEW_SRC_DIR = path.join(NEW_DIR, 'src');
+const NEW_PROCESSED_DIR = path.join(NEW_DIR, 'processed');
 
 // --- VALIDATION ---
 interface FrontMatter {
@@ -33,7 +35,10 @@ interface FrontMatter {
   summary: string;
 }
 
-function parseMdx(filePath: string, raw: string): {
+function parseMdx(
+  filePath: string,
+  raw: string
+): {
   frontmatter: any;
   content: string;
 } {
@@ -42,25 +47,26 @@ function parseMdx(filePath: string, raw: string): {
   if (!fmMatch) {
     throw new Error(`Missing or invalid frontmatter in ${filePath}`);
   }
-  const frontmatter = yaml.parse(fmMatch[1] || "{}");
-  const content = fmMatch[2] ?? "";
+  const frontmatter = yaml.parse(fmMatch[1] || '{}');
+  const content = fmMatch[2] ?? '';
   return { frontmatter, content };
 }
 
 function validateFrontMatter(filePath: string, fm: any): FrontMatter {
-  const required = ["id", "title", "skillLevel", "useCase", "summary"];
+  const required = ['id', 'title', 'skillLevel', 'useCase', 'summary'];
   for (const key of required) {
-    if (!fm[key]) throw new Error(`Missing required field '${key}' in ${filePath}`);
+    if (!fm[key])
+      throw new Error(`Missing required field '${key}' in ${filePath}`);
   }
-  const validSkill = ["Beginner", "Intermediate", "Advanced"];
-  const rawSkill = String(fm.skillLevel ?? "");
+  const validSkill = ['Beginner', 'Intermediate', 'Advanced'];
+  const rawSkill = String(fm.skillLevel ?? '');
   const normalizedSkill =
     rawSkill.length > 0
       ? rawSkill.charAt(0).toUpperCase() + rawSkill.slice(1).toLowerCase()
       : rawSkill;
   if (!validSkill.includes(normalizedSkill)) {
     throw new Error(
-      `Invalid skillLevel '${fm.skillLevel}' in ${filePath}. Must be one of: ${validSkill.join(", ")}`
+      `Invalid skillLevel '${fm.skillLevel}' in ${filePath}. Must be one of: ${validSkill.join(', ')}`
     );
   }
   fm.skillLevel = normalizedSkill;
@@ -71,10 +77,10 @@ function validateFrontMatter(filePath: string, fm: any): FrontMatter {
 }
 
 function validateSections(filePath: string, content: string): void {
-  const sections = content.split("\n## ");
-  const requiredSections = ["Good Example", "Anti-Pattern"];
+  const sections = splitSections(content);
+  const requiredSections = ['Good Example', 'Anti-Pattern'];
   const hasExplanation = sections.some(
-    (s) => s.startsWith("Explanation") || s.startsWith("Rationale")
+    (s) => s.startsWith('Explanation') || s.startsWith('Rationale')
   );
   if (!hasExplanation) {
     throw new Error(
@@ -90,14 +96,19 @@ function validateSections(filePath: string, content: string): void {
 
 // --- EXTRACTION ---
 function extractGoodExampleTS(mdxContent: string): string | null {
-  const goodExampleMatch = mdxContent.match(/## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/);
+  const goodExampleMatch = mdxContent.match(
+    /## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/
+  );
   return goodExampleMatch ? goodExampleMatch[1] : null;
 }
 
-function replaceGoodExampleWithExampleTag(mdxContent: string, id: string): string {
+function replaceGoodExampleWithExampleTag(
+  mdxContent: string,
+  id: string
+): string {
   return mdxContent.replace(
     /## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/,
-    `## Good Example\n\n<Example path=\"./src/${id}.ts\" />`
+    `## Good Example\n\n<Example path="./src/${id}.ts" />`
   );
 }
 
@@ -120,9 +131,9 @@ async function main() {
 
   // Read raw mdx files
   const files = await fs.readdir(NEW_RAW_DIR);
-  const mdxFiles = files.filter((f) => f.toLowerCase().endsWith(".mdx"));
+  const mdxFiles = files.filter((f) => f.toLowerCase().endsWith('.mdx'));
   if (mdxFiles.length === 0) {
-    console.log("No new patterns to process");
+    console.log('No new patterns to process');
     return;
   }
 
@@ -130,7 +141,7 @@ async function main() {
   for (const file of mdxFiles) {
     const filePath = path.join(NEW_RAW_DIR, file);
     console.log(`\nProcessing ${file}...`);
-    const raw = await fs.readFile(filePath, "utf8");
+    const raw = await fs.readFile(filePath, 'utf8');
 
     const parsed = parseMdx(filePath, raw);
     const fm = validateFrontMatter(filePath, parsed.frontmatter);
@@ -145,20 +156,20 @@ async function main() {
 
     // Write TS file
     const tsTarget = path.join(NEW_SRC_DIR, `${fm.id}.ts`);
-    await fs.writeFile(tsTarget, tsCode, "utf8");
+    await fs.writeFile(tsTarget, tsCode, 'utf8');
 
     // Replace Good Example with Example tag and write processed mdx
     const processedMdx = replaceGoodExampleWithExampleTag(raw, fm.id);
     const mdxTarget = path.join(NEW_PROCESSED_DIR, `${fm.id}.mdx`);
-    await fs.writeFile(mdxTarget, processedMdx, "utf8");
+    await fs.writeFile(mdxTarget, processedMdx, 'utf8');
 
     console.log(`✅ Successfully processed ${fm.title}`);
   }
 
-  console.log("\n✨ All patterns processed successfully!");
+  console.log('\n✨ All patterns processed successfully!');
 }
 
 main().catch((err) => {
-  console.error("❌ Error processing patterns:", err);
+  console.error('❌ Error processing patterns:', err);
   process.exit(1);
 });

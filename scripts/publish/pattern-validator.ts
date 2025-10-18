@@ -10,9 +10,9 @@
  *     [--srcdir content/new/src]
  */
 
-import * as path from "node:path";
-import * as fs from "node:fs/promises";
-import { parse as parseYaml } from "yaml";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { parse as parseYaml } from 'yaml';
 
 function argValue(flag: string): string | undefined {
   const idx = process.argv.indexOf(flag);
@@ -29,35 +29,35 @@ function extractPublishedTs(mdxContent: string): string | null {
 }
 
 const PROJECT_ROOT = process.cwd();
-const DEFAULT_SRC = path.join(PROJECT_ROOT, "content/new/src");
+const DEFAULT_SRC = path.join(PROJECT_ROOT, 'content/new/src');
 
 async function main() {
-  const fileOpt = argValue("--file");
+  const fileOpt = argValue('--file');
   if (!fileOpt) {
-    throw new Error("--file <published.mdx> is required");
+    throw new Error('--file <published.mdx> is required');
   }
   const filePath = path.resolve(fileOpt);
-  const srcDir = path.resolve(argValue("--srcdir") ?? DEFAULT_SRC);
+  const srcDir = path.resolve(argValue('--srcdir') ?? DEFAULT_SRC);
 
-  const full = await fs.readFile(filePath, "utf8");
-  const parts = full.split("---", 3);
+  const full = await fs.readFile(filePath, 'utf8');
+  const parts = full.split('---', 3);
   if (parts.length < 3) {
-    throw new Error("Missing or malformed frontmatter block");
+    throw new Error('Missing or malformed frontmatter block');
   }
   const fm = parseYaml(parts[1]) as Record<string, any>;
   if (!fm.id) {
-    throw new Error("Missing frontmatter id");
+    throw new Error('Missing frontmatter id');
   }
   const id = String(fm.id);
 
   const body = parts[2];
   const embedded = extractPublishedTs(body);
   if (!embedded) {
-    throw new Error("No TypeScript block found in Good Example section");
+    throw new Error('No TypeScript block found in Good Example section');
   }
 
   const tsPath = path.join(srcDir, `${id}.ts`);
-  const tsContent = (await fs.readFile(tsPath, "utf8")).trim();
+  const tsContent = (await fs.readFile(tsPath, 'utf8')).trim();
 
   if (embedded.trim() !== tsContent.trim()) {
     console.error(`❌ Validation failed for ${path.basename(filePath)}`);
@@ -72,6 +72,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("❌ Validator error:", err);
+  console.error('❌ Validator error:', err);
   process.exit(1);
 });

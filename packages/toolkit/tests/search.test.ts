@@ -4,320 +4,310 @@
  * Comprehensive tests for fuzzy search, filtering, and pattern lookup.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from 'vitest';
+import type { Pattern } from '../src/schemas/pattern.js';
 import {
-  searchPatterns,
   getPatternById,
+  searchPatterns,
   toPatternSummary,
-} from "../src/search.js";
-import { Pattern } from "../src/schemas/pattern.js";
+} from '../src/search.js';
 
 // Test fixtures
 const createMockPattern = (overrides: Partial<Pattern> = {}): Pattern => ({
-  id: "test-pattern",
-  title: "Test Pattern",
-  description: "A test pattern for unit testing",
-  category: "error-handling",
-  difficulty: "beginner",
-  tags: ["test", "example"],
+  id: 'test-pattern',
+  title: 'Test Pattern',
+  description: 'A test pattern for unit testing',
+  category: 'error-handling',
+  difficulty: 'beginner',
+  tags: ['test', 'example'],
   examples: [
     {
-      language: "typescript",
+      language: 'typescript',
       code: 'const test = "example";',
-      description: "Test example",
+      description: 'Test example',
     },
   ],
-  useCases: ["Testing"],
+  useCases: ['Testing'],
   relatedPatterns: [],
-  effectVersion: "3.x",
+  effectVersion: '3.x',
   ...overrides,
 });
 
 const mockPatterns: Pattern[] = [
   createMockPattern({
-    id: "retry-backoff",
-    title: "Retry with Exponential Backoff",
-    description: "Retry failed operations with exponential backoff",
-    category: "error-handling",
-    difficulty: "intermediate",
-    tags: ["retry", "resilience", "error-handling"],
+    id: 'retry-backoff',
+    title: 'Retry with Exponential Backoff',
+    description: 'Retry failed operations with exponential backoff',
+    category: 'error-handling',
+    difficulty: 'intermediate',
+    tags: ['retry', 'resilience', 'error-handling'],
   }),
   createMockPattern({
-    id: "concurrent-batch",
-    title: "Concurrent Batch Processing",
-    description: "Process large datasets in concurrent batches",
-    category: "concurrency",
-    difficulty: "intermediate",
-    tags: ["concurrency", "batching", "parallel"],
+    id: 'concurrent-batch',
+    title: 'Concurrent Batch Processing',
+    description: 'Process large datasets in concurrent batches',
+    category: 'concurrency',
+    difficulty: 'intermediate',
+    tags: ['concurrency', 'batching', 'parallel'],
   }),
   createMockPattern({
-    id: "resource-pool",
-    title: "Resource Pool Management",
-    description: "Manage a pool of reusable resources",
-    category: "resource-management",
-    difficulty: "advanced",
-    tags: ["pool", "resources", "management"],
+    id: 'resource-pool',
+    title: 'Resource Pool Management',
+    description: 'Manage a pool of reusable resources',
+    category: 'resource-management',
+    difficulty: 'advanced',
+    tags: ['pool', 'resources', 'management'],
   }),
   createMockPattern({
-    id: "simple-effect",
-    title: "Simple Effect Example",
-    description: "Basic Effect usage for beginners",
-    category: "error-handling",
-    difficulty: "beginner",
-    tags: ["basics", "beginner", "simple"],
+    id: 'simple-effect',
+    title: 'Simple Effect Example',
+    description: 'Basic Effect usage for beginners',
+    category: 'error-handling',
+    difficulty: 'beginner',
+    tags: ['basics', 'beginner', 'simple'],
   }),
 ];
 
-describe("searchPatterns", () => {
-  describe("fuzzy search", () => {
-    it("should find patterns by exact title match", () => {
-      const results = searchPatterns(mockPatterns, "Retry");
+describe('searchPatterns', () => {
+  describe('fuzzy search', () => {
+    it('should find patterns by exact title match', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: 'Retry' });
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("retry-backoff");
+      expect(results[0].id).toBe('retry-backoff');
     });
 
-    it("should find patterns by partial title match", () => {
-      const results = searchPatterns(mockPatterns, "batch");
+    it('should find patterns by partial title match', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: 'batch' });
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("concurrent-batch");
+      expect(results[0].id).toBe('concurrent-batch');
     });
 
-    it("should find patterns by description match", () => {
-      const results = searchPatterns(mockPatterns, "datasets");
+    it('should find patterns by description match', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: 'datasets' });
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("concurrent-batch");
+      expect(results[0].id).toBe('concurrent-batch');
     });
 
-    it("should find patterns by tag match", () => {
-      const results = searchPatterns(mockPatterns, "resilience");
+    it('should find patterns by tag match', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: 'resilience' });
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("retry-backoff");
+      expect(results[0].id).toBe('retry-backoff');
     });
 
-    it("should find patterns by category match", () => {
-      const results = searchPatterns(mockPatterns, "concurrency");
+    it('should find patterns by category match', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: 'concurrency' });
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("concurrent-batch");
+      expect(results[0].id).toBe('concurrent-batch');
     });
 
-    it("should handle case-insensitive search", () => {
-      const results = searchPatterns(mockPatterns, "RETRY");
+    it('should handle case-insensitive search', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: 'RETRY' });
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("retry-backoff");
+      expect(results[0].id).toBe('retry-backoff');
     });
 
-    it("should handle queries with spaces", () => {
-      const results = searchPatterns(mockPatterns, "resource pool");
+    it('should handle queries with spaces', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: 'resource pool' });
       expect(results.length).toBeGreaterThan(0);
     });
 
-    it("should return empty array for no matches", () => {
-      const results = searchPatterns(mockPatterns, "nonexistent");
+    it('should return empty array for no matches', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: 'nonexistent' });
       expect(results).toHaveLength(0);
     });
 
-    it("should return all patterns for empty query", () => {
-      const results = searchPatterns(mockPatterns, "");
+    it('should return all patterns for empty query', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: '' });
       expect(results).toHaveLength(mockPatterns.length);
     });
 
-    it("should return all patterns for undefined query", () => {
-      const results = searchPatterns(mockPatterns);
+    it('should return all patterns for undefined query', () => {
+      const results = searchPatterns({ patterns: mockPatterns });
       expect(results).toHaveLength(mockPatterns.length);
     });
 
-    it("should prioritize title matches over description matches", () => {
+    it('should prioritize title matches over description matches', () => {
       const patternsWithOverlap: Pattern[] = [
         createMockPattern({
-          id: "title-match",
-          title: "Error Handler",
-          description: "Handles various errors",
+          id: 'title-match',
+          title: 'Error Handler',
+          description: 'Handles various errors',
         }),
         createMockPattern({
-          id: "desc-match",
-          title: "Something Else",
-          description: "This is an error handler implementation",
+          id: 'desc-match',
+          title: 'Something Else',
+          description: 'This is an error handler implementation',
         }),
       ];
 
-      const results = searchPatterns(patternsWithOverlap, "error handler");
-      expect(results[0].id).toBe("title-match");
+      const results = searchPatterns({ patterns: patternsWithOverlap, query: 'error handler' });
+      expect(results[0].id).toBe('title-match');
     });
   });
 
-  describe("category filter", () => {
-    it("should filter by exact category", () => {
-      const results = searchPatterns(
-        mockPatterns,
-        undefined,
-        "error-handling"
-      );
+  describe('category filter', () => {
+    it('should filter by exact category', () => {
+      const results = searchPatterns({ patterns: mockPatterns, category: 'error-handling' });
       expect(results).toHaveLength(2);
-      expect(results.every((p) => p.category === "error-handling")).toBe(
-        true
-      );
+      expect(results.every((p) => p.category === 'error-handling')).toBe(true);
     });
 
-    it("should handle case-insensitive category filter", () => {
-      const results = searchPatterns(
-        mockPatterns,
-        undefined,
-        "ERROR-HANDLING"
-      );
+    it('should handle case-insensitive category filter', () => {
+      const results = searchPatterns({ patterns: mockPatterns, category: 'ERROR-HANDLING' });
       expect(results).toHaveLength(2);
     });
 
-    it("should combine category filter with search query", () => {
-      const results = searchPatterns(mockPatterns, "retry", "error-handling");
+    it('should combine category filter with search query', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: 'retry', category: 'error-handling' });
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("retry-backoff");
+      expect(results[0].id).toBe('retry-backoff');
     });
 
-    it("should return empty array for non-matching category", () => {
-      const results = searchPatterns(mockPatterns, undefined, "nonexistent");
+    it('should return empty array for non-matching category', () => {
+      const results = searchPatterns({ patterns: mockPatterns, category: 'nonexistent' });
       expect(results).toHaveLength(0);
     });
   });
 
-  describe("difficulty filter", () => {
-    it("should filter by exact difficulty", () => {
-      const results = searchPatterns(
-        mockPatterns,
-        undefined,
-        undefined,
-        "intermediate"
-      );
+  describe('difficulty filter', () => {
+    it('should filter by exact difficulty', () => {
+      const results = searchPatterns({ patterns: mockPatterns, difficulty: 'intermediate' });
       expect(results).toHaveLength(2);
-      expect(results.every((p) => p.difficulty === "intermediate")).toBe(
-        true
-      );
+      expect(results.every((p) => p.difficulty === 'intermediate')).toBe(true);
     });
 
-    it("should handle case-insensitive difficulty filter", () => {
-      const results = searchPatterns(
-        mockPatterns,
-        undefined,
-        undefined,
-        "BEGINNER"
-      );
+    it('should handle case-insensitive difficulty filter', () => {
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        difficulty: 'BEGINNER'
+      });
       expect(results).toHaveLength(1);
     });
 
-    it("should combine difficulty filter with category filter", () => {
-      const results = searchPatterns(
-        mockPatterns,
-        undefined,
-        "error-handling",
-        "beginner"
-      );
+    it('should combine difficulty filter with category filter', () => {
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        category: 'error-handling',
+        difficulty: 'beginner'
+      });
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("simple-effect");
+      expect(results[0].id).toBe('simple-effect');
     });
 
-    it("should combine all filters with search query", () => {
-      const results = searchPatterns(
-        mockPatterns,
-        "effect",
-        "error-handling",
-        "beginner"
-      );
+    it('should combine all filters with search query', () => {
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'effect',
+        category: 'error-handling',
+        difficulty: 'beginner'
+      });
       expect(results).toHaveLength(1);
-      expect(results[0].id).toBe("simple-effect");
+      expect(results[0].id).toBe('simple-effect');
     });
   });
 
-  describe("limit parameter", () => {
-    it("should limit number of results", () => {
-      const results = searchPatterns(mockPatterns, undefined, undefined, undefined, 2);
+  describe('limit parameter', () => {
+    it('should limit number of results', () => {
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        limit: 2
+      });
       expect(results).toHaveLength(2);
     });
 
-    it("should return all results if limit is greater than result count", () => {
-      const results = searchPatterns(mockPatterns, undefined, undefined, undefined, 100);
+    it('should return all results if limit is greater than result count', () => {
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        limit: 100
+      });
       expect(results).toHaveLength(mockPatterns.length);
     });
 
-    it("should handle limit of 0 (returns all)", () => {
+    it('should handle limit of 0 (returns all)', () => {
       // Limit of 0 is treated as no limit (returns all results)
-      const results = searchPatterns(mockPatterns, undefined, undefined, undefined, 0);
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        limit: 0
+      });
       expect(results).toHaveLength(mockPatterns.length);
     });
 
-    it("should ignore negative limits", () => {
-      const results = searchPatterns(mockPatterns, undefined, undefined, undefined, -1);
+    it('should ignore negative limits', () => {
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        limit: -1
+      });
       expect(results).toHaveLength(mockPatterns.length);
     });
 
-    it("should apply limit after filtering and sorting", () => {
-      const results = searchPatterns(
-        mockPatterns,
-        "error",
-        undefined,
-        undefined,
-        1
-      );
+    it('should apply limit after filtering and sorting', () => {
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'error',
+        limit: 1
+      });
       expect(results).toHaveLength(1);
     });
   });
 
-  describe("edge cases", () => {
-    it("should handle empty patterns array", () => {
-      const results = searchPatterns([], "test");
+  describe('edge cases', () => {
+    it('should handle empty patterns array', () => {
+      const results = searchPatterns({ patterns: [], query: 'test' });
       expect(results).toHaveLength(0);
     });
 
-    it("should handle patterns with missing optional fields", () => {
+    it('should handle patterns with missing optional fields', () => {
       const minimalPattern = createMockPattern({
         relatedPatterns: undefined,
         effectVersion: undefined,
       });
 
-      const results = searchPatterns([minimalPattern], "test");
+      const results = searchPatterns({ patterns: [minimalPattern], query: 'test' });
       expect(results).toHaveLength(1);
     });
 
-    it("should handle special characters in query", () => {
-      const results = searchPatterns(mockPatterns, "error-handling");
+    it('should handle special characters in query', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: 'error-handling' });
       expect(results.length).toBeGreaterThan(0);
     });
 
-    it("should trim whitespace from query", () => {
-      const results = searchPatterns(mockPatterns, "  retry  ");
+    it('should trim whitespace from query', () => {
+      const results = searchPatterns({ patterns: mockPatterns, query: '  retry  ' });
       expect(results).toHaveLength(1);
     });
   });
 });
 
-describe("getPatternById", () => {
-  it("should find pattern by exact ID", () => {
-    const pattern = getPatternById(mockPatterns, "retry-backoff");
+describe('getPatternById', () => {
+  it('should find pattern by exact ID', () => {
+    const pattern = getPatternById(mockPatterns, 'retry-backoff');
     expect(pattern).toBeDefined();
-    expect(pattern?.id).toBe("retry-backoff");
+    expect(pattern?.id).toBe('retry-backoff');
   });
 
-  it("should return undefined for non-existent ID", () => {
-    const pattern = getPatternById(mockPatterns, "nonexistent");
+  it('should return undefined for non-existent ID', () => {
+    const pattern = getPatternById(mockPatterns, 'nonexistent');
     expect(pattern).toBeUndefined();
   });
 
-  it("should handle empty patterns array", () => {
-    const pattern = getPatternById([], "test");
+  it('should handle empty patterns array', () => {
+    const pattern = getPatternById([], 'test');
     expect(pattern).toBeUndefined();
   });
 
-  it("should handle empty ID string", () => {
-    const pattern = getPatternById(mockPatterns, "");
+  it('should handle empty ID string', () => {
+    const pattern = getPatternById(mockPatterns, '');
     expect(pattern).toBeUndefined();
   });
 
-  it("should be case-sensitive", () => {
-    const pattern = getPatternById(mockPatterns, "RETRY-BACKOFF");
+  it('should be case-sensitive', () => {
+    const pattern = getPatternById(mockPatterns, 'RETRY-BACKOFF');
     expect(pattern).toBeUndefined();
   });
 });
 
-describe("toPatternSummary", () => {
-  it("should convert pattern to summary correctly", () => {
+describe('toPatternSummary', () => {
+  it('should convert pattern to summary correctly', () => {
     const pattern = mockPatterns[0];
     const summary = toPatternSummary(pattern);
 
@@ -329,28 +319,28 @@ describe("toPatternSummary", () => {
     expect(summary.tags).toEqual(pattern.tags);
   });
 
-  it("should not include examples in summary", () => {
+  it('should not include examples in summary', () => {
     const pattern = mockPatterns[0];
     const summary = toPatternSummary(pattern);
 
-    expect("examples" in summary).toBe(false);
+    expect('examples' in summary).toBe(false);
   });
 
-  it("should not include useCases in summary", () => {
+  it('should not include useCases in summary', () => {
     const pattern = mockPatterns[0];
     const summary = toPatternSummary(pattern);
 
-    expect("useCases" in summary).toBe(false);
+    expect('useCases' in summary).toBe(false);
   });
 
-  it("should not include relatedPatterns in summary", () => {
+  it('should not include relatedPatterns in summary', () => {
     const pattern = mockPatterns[0];
     const summary = toPatternSummary(pattern);
 
-    expect("relatedPatterns" in summary).toBe(false);
+    expect('relatedPatterns' in summary).toBe(false);
   });
 
-  it("should handle patterns with empty tags", () => {
+  it('should handle patterns with empty tags', () => {
     const pattern = createMockPattern({ tags: [] });
     const summary = toPatternSummary(pattern);
 

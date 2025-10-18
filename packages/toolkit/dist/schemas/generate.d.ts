@@ -4,7 +4,7 @@
  * Schemas for the code generation API endpoints, including request
  * validation and response format.
  */
-import { Schema as S } from "@effect/schema";
+import { Schema as S } from '@effect/schema';
 /**
  * Module type for generated code
  */
@@ -58,4 +58,11 @@ export declare const SearchPatternsResponse: S.Struct<{
     traceId: S.optional<typeof S.String>;
 }>;
 export type SearchPatternsResponse = S.Schema.Type<typeof SearchPatternsResponse>;
+/**
+ * Explain pattern request
+ */
+export declare const ExplainPatternRequest: S.Struct<{
+    patternId: typeof S.String;
+}>;
+export type ExplainPatternRequest = S.Schema.Type<typeof ExplainPatternRequest>;
 //# sourceMappingURL=generate.d.ts.map

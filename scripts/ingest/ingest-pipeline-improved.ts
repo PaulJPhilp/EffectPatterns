@@ -14,35 +14,35 @@
  * 8. Reporting - Generate detailed report
  */
 
-import { exec } from "child_process";
-import * as fs from "fs/promises";
-import matter from "gray-matter";
-import * as path from "path";
-import { promisify } from "util";
+import { exec } from 'child_process';
+import * as fs from 'fs/promises';
+import matter from 'gray-matter';
+import * as path from 'path';
+import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
 // --- CONFIGURATION ---
-const NEW_DIR = path.join(process.cwd(), "content/new");
-const NEW_RAW = path.join(NEW_DIR, "raw");
-const NEW_SRC = path.join(NEW_DIR, "src");
-const NEW_PROCESSED = path.join(NEW_DIR, "processed");
-const NEW_PUBLISHED = path.join(NEW_DIR, "published");
+const NEW_DIR = path.join(process.cwd(), 'content/new');
+const NEW_RAW = path.join(NEW_DIR, 'raw');
+const NEW_SRC = path.join(NEW_DIR, 'src');
+const NEW_PROCESSED = path.join(NEW_DIR, 'processed');
+const NEW_PUBLISHED = path.join(NEW_DIR, 'published');
 
-const TARGET_PUBLISHED = path.join(process.cwd(), "content/published");
+const TARGET_PUBLISHED = path.join(process.cwd(), 'content/published');
 
-const REPORT_DIR = path.join(process.cwd(), "content/new/ingest-reports");
+const REPORT_DIR = path.join(process.cwd(), 'content/new/ingest-reports');
 
 // --- COLORS ---
 const colors = {
-  reset: "\x1b[0m",
-  bright: "\x1b[1m",
-  dim: "\x1b[2m",
-  red: "\x1b[31m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  blue: "\x1b[34m",
-  cyan: "\x1b[36m",
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  cyan: '\x1b[36m',
 };
 
 function colorize(text: string, color: keyof typeof colors): string {
@@ -61,7 +61,7 @@ interface Pattern {
 }
 
 interface ValidationIssue {
-  type: "error" | "warning";
+  type: 'error' | 'warning';
   category: string;
   message: string;
 }
@@ -91,14 +91,14 @@ interface IngestReport {
 
 // --- STAGE 1: DISCOVERY & EXTRACTION ---
 async function discoverPatterns(): Promise<Pattern[]> {
-  console.log(colorize("\n📖 Stage 1: Pattern Discovery & Extraction", "cyan"));
-  console.log(colorize("━".repeat(60), "dim"));
+  console.log(colorize('\n📖 Stage 1: Pattern Discovery & Extraction', 'cyan'));
+  console.log(colorize('━'.repeat(60), 'dim'));
 
   const rawFiles = await fs.readdir(NEW_RAW);
-  const mdxFiles = rawFiles.filter((f) => f.endsWith(".mdx"));
+  const mdxFiles = rawFiles.filter((f) => f.endsWith('.mdx'));
 
   console.log(
-    colorize(`Found ${mdxFiles.length} MDX files in content/new\n`, "bright")
+    colorize(`Found ${mdxFiles.length} MDX files in content/new\n`, 'bright')
   );
 
   // Ensure src directory exists
@@ -108,10 +108,10 @@ async function discoverPatterns(): Promise<Pattern[]> {
 
   for (const file of mdxFiles) {
     const rawPath = path.join(NEW_RAW, file);
-    const content = await fs.readFile(rawPath, "utf-8");
+    const content = await fs.readFile(rawPath, 'utf-8');
     const { data: frontmatter } = matter(content);
 
-    const id = frontmatter.id || path.basename(file, ".mdx");
+    const id = frontmatter.id || path.basename(file, '.mdx');
     const srcPath = path.join(NEW_SRC, `${id}.ts`);
     const processedPath = path.join(NEW_PROCESSED, file);
 
@@ -123,11 +123,11 @@ async function discoverPatterns(): Promise<Pattern[]> {
 
     if (match && match[1]) {
       const tsCode = match[1].trim();
-      await fs.writeFile(srcPath, tsCode, "utf-8");
+      await fs.writeFile(srcPath, tsCode, 'utf-8');
       hasTypeScript = true;
-      console.log(`  ✅ ${colorize(id, "dim")} (extracted TypeScript)`);
+      console.log(`  ✅ ${colorize(id, 'dim')} (extracted TypeScript)`);
     } else {
-      console.log(`  ⚠️  ${colorize(id, "dim")} (no TypeScript code found)`);
+      console.log(`  ⚠️  ${colorize(id, 'dim')} (no TypeScript code found)`);
     }
 
     patterns.push({
@@ -149,12 +149,12 @@ async function validatePattern(pattern: Pattern): Promise<ValidationResult> {
   const issues: ValidationIssue[] = [];
 
   // Validate frontmatter
-  const required = ["id", "title", "skillLevel", "useCase", "summary"];
+  const required = ['id', 'title', 'skillLevel', 'useCase', 'summary'];
   for (const field of required) {
     if (!pattern.frontmatter[field]) {
       issues.push({
-        type: "error",
-        category: "frontmatter",
+        type: 'error',
+        category: 'frontmatter',
         message: `Missing required field: ${field}`,
       });
     }
@@ -163,34 +163,34 @@ async function validatePattern(pattern: Pattern): Promise<ValidationResult> {
   // Validate TypeScript file
   if (!pattern.hasTypeScript) {
     issues.push({
-      type: "error",
-      category: "files",
-      message: "TypeScript file not found",
+      type: 'error',
+      category: 'files',
+      message: 'TypeScript file not found',
     });
   }
 
   // Validate content structure
-  const content = await fs.readFile(pattern.rawPath, "utf-8");
+  const content = await fs.readFile(pattern.rawPath, 'utf-8');
   const hasGoodExample = /##\s+Good Example/i.test(content);
   const hasAntiPattern = /##\s+Anti-Pattern/i.test(content);
 
   if (!hasGoodExample) {
     issues.push({
-      type: "error",
-      category: "structure",
+      type: 'error',
+      category: 'structure',
       message: "Missing 'Good Example' section",
     });
   }
 
   if (!hasAntiPattern) {
     issues.push({
-      type: "warning",
-      category: "structure",
+      type: 'warning',
+      category: 'structure',
       message: "Missing 'Anti-Pattern' section",
     });
   }
 
-  const errors = issues.filter((i) => i.type === "error").length;
+  const errors = issues.filter((i) => i.type === 'error').length;
 
   return {
     pattern,
@@ -202,8 +202,8 @@ async function validatePattern(pattern: Pattern): Promise<ValidationResult> {
 async function validatePatterns(
   patterns: Pattern[]
 ): Promise<ValidationResult[]> {
-  console.log(colorize("\n🔍 Stage 2: Validation", "cyan"));
-  console.log(colorize("━".repeat(60), "dim"));
+  console.log(colorize('\n🔍 Stage 2: Validation', 'cyan'));
+  console.log(colorize('━'.repeat(60), 'dim'));
 
   const results: ValidationResult[] = [];
 
@@ -211,15 +211,15 @@ async function validatePatterns(
     const result = await validatePattern(pattern);
 
     const status = result.valid
-      ? colorize("✅", "green")
-      : colorize("❌", "red");
-    const errorCount = result.issues.filter((i) => i.type === "error").length;
-    const warnCount = result.issues.filter((i) => i.type === "warning").length;
+      ? colorize('✅', 'green')
+      : colorize('❌', 'red');
+    const errorCount = result.issues.filter((i) => i.type === 'error').length;
+    const warnCount = result.issues.filter((i) => i.type === 'warning').length;
 
     console.log(
       `${status} ${pattern.id} ${
-        errorCount > 0 ? colorize(`(${errorCount} errors)`, "red") : ""
-      } ${warnCount > 0 ? colorize(`(${warnCount} warnings)`, "yellow") : ""}`
+        errorCount > 0 ? colorize(`(${errorCount} errors)`, 'red') : ''
+      } ${warnCount > 0 ? colorize(`(${warnCount} warnings)`, 'yellow') : ''}`
     );
 
     results.push(result);
@@ -227,7 +227,7 @@ async function validatePatterns(
 
   const valid = results.filter((r) => r.valid).length;
   console.log(
-    colorize(`\nValidated: ${valid}/${results.length} patterns`, "bright")
+    colorize(`\nValidated: ${valid}/${results.length} patterns`, 'bright')
   );
 
   return results;
@@ -242,7 +242,7 @@ async function qaPattern(result: ValidationResult): Promise<void> {
 
   try {
     // Copy pattern to QA directory for processing
-    const qaDir = path.join(NEW_DIR, "qa");
+    const qaDir = path.join(NEW_DIR, 'qa');
     await fs.mkdir(qaDir, { recursive: true });
 
     const qaPath = path.join(qaDir, `${result.pattern.id}.mdx`);
@@ -266,34 +266,34 @@ async function qaPattern(result: ValidationResult): Promise<void> {
 async function qaPatterns(
   results: ValidationResult[]
 ): Promise<ValidationResult[]> {
-  console.log(colorize("\n🔍 Stage 3: QA Review", "cyan"));
-  console.log(colorize("━".repeat(60), "dim"));
+  console.log(colorize('\n🔍 Stage 3: QA Review', 'cyan'));
+  console.log(colorize('━'.repeat(60), 'dim'));
 
   const validResults = results.filter((r) => r.valid);
   console.log(
-    colorize(`Running QA on ${validResults.length} valid patterns\n`, "dim")
+    colorize(`Running QA on ${validResults.length} valid patterns\n`, 'dim')
   );
 
   for (const result of validResults) {
     await qaPattern(result);
 
     const status = result.qaPassed
-      ? colorize("✅", "green")
-      : colorize("❌", "red");
+      ? colorize('✅', 'green')
+      : colorize('❌', 'red');
     const score = result.qaScore
-      ? colorize(`(${Math.round(result.qaScore * 100)}%)`, "dim")
-      : "";
+      ? colorize(`(${Math.round(result.qaScore * 100)}%)`, 'dim')
+      : '';
     console.log(`${status} ${result.pattern.id} ${score}`);
   }
 
   const passed = results.filter((r) => r.qaPassed).length;
   console.log(
-    colorize(`\nQA passed: ${passed}/${validResults.length}`, "bright")
+    colorize(`\nQA passed: ${passed}/${validResults.length}`, 'bright')
   );
   console.log(
     colorize(
       `\n💡 Note: Running full QA with AI analysis via 'bun run qa:process'`,
-      "dim"
+      'dim'
     )
   );
 
@@ -302,13 +302,13 @@ async function qaPatterns(
 
 // --- STAGE 4: TESTING ---
 async function testPattern(result: ValidationResult): Promise<boolean> {
-  if (!result.valid || !result.pattern.hasTypeScript) {
+  if (!(result.valid && result.pattern.hasTypeScript)) {
     return false;
   }
 
   try {
     await execAsync(`bun run ${result.pattern.srcPath}`, {
-      timeout: 10000,
+      timeout: 10_000,
       maxBuffer: 1024 * 1024,
     });
     return true;
@@ -320,25 +320,25 @@ async function testPattern(result: ValidationResult): Promise<boolean> {
 async function testPatterns(
   results: ValidationResult[]
 ): Promise<ValidationResult[]> {
-  console.log(colorize("\n🧪 Stage 4: Testing", "cyan"));
-  console.log(colorize("━".repeat(60), "dim"));
+  console.log(colorize('\n🧪 Stage 4: Testing', 'cyan'));
+  console.log(colorize('━'.repeat(60), 'dim'));
 
   const validResults = results.filter((r) => r.valid);
   console.log(
-    colorize(`Testing ${validResults.length} valid patterns\n`, "dim")
+    colorize(`Testing ${validResults.length} valid patterns\n`, 'dim')
   );
 
   for (const result of validResults) {
     const passed = await testPattern(result);
     result.testPassed = passed;
 
-    const status = passed ? colorize("✅", "green") : colorize("❌", "red");
+    const status = passed ? colorize('✅', 'green') : colorize('❌', 'red');
     console.log(`${status} ${result.pattern.id}`);
   }
 
   const passed = results.filter((r) => r.testPassed).length;
   console.log(
-    colorize(`\nTests passed: ${passed}/${validResults.length}`, "bright")
+    colorize(`\nTests passed: ${passed}/${validResults.length}`, 'bright')
   );
 
   return results;
@@ -348,24 +348,24 @@ async function testPatterns(
 async function checkDuplicates(
   results: ValidationResult[]
 ): Promise<ValidationResult[]> {
-  console.log(colorize("\n🔎 Stage 5: Duplicate Detection", "cyan"));
-  console.log(colorize("━".repeat(60), "dim"));
+  console.log(colorize('\n🔎 Stage 5: Duplicate Detection', 'cyan'));
+  console.log(colorize('━'.repeat(60), 'dim'));
 
   // Get existing pattern IDs from published patterns
   const existing = await fs.readdir(TARGET_PUBLISHED);
   const existingIds = new Set(
     existing
-      .filter((f) => f.endsWith(".mdx"))
-      .map((f) => path.basename(f, ".mdx"))
+      .filter((f) => f.endsWith('.mdx'))
+      .map((f) => path.basename(f, '.mdx'))
   );
 
   for (const result of results) {
     if (existingIds.has(result.pattern.id)) {
       result.isDuplicate = true;
       result.existingPatternId = result.pattern.id;
-      console.log(colorize(`⚠️  ${result.pattern.id} - DUPLICATE`, "yellow"));
+      console.log(colorize(`⚠️  ${result.pattern.id} - DUPLICATE`, 'yellow'));
     } else {
-      console.log(colorize(`✅ ${result.pattern.id} - NEW`, "green"));
+      console.log(colorize(`✅ ${result.pattern.id} - NEW`, 'green'));
     }
   }
 
@@ -375,7 +375,7 @@ async function checkDuplicates(
   console.log(
     colorize(
       `\nNew patterns: ${newPatterns}, Duplicates: ${duplicates}`,
-      "bright"
+      'bright'
     )
   );
 
@@ -385,7 +385,7 @@ async function checkDuplicates(
 // --- STAGE 6: MIGRATION ---
 // Migrates validated patterns to content/new/published/ (with embedded code)
 async function migratePattern(result: ValidationResult): Promise<boolean> {
-  if (!result.valid || !result.testPassed || result.isDuplicate) {
+  if (!(result.valid && result.testPassed) || result.isDuplicate) {
     return false;
   }
 
@@ -393,13 +393,13 @@ async function migratePattern(result: ValidationResult): Promise<boolean> {
     // Read the processed MDX (with <Example /> tags)
     const processedMdx = await fs.readFile(
       result.pattern.processedPath,
-      "utf-8"
+      'utf-8'
     );
 
     // Read TypeScript code
     let publishedMdx = processedMdx;
     if (result.pattern.hasTypeScript) {
-      const tsCode = await fs.readFile(result.pattern.srcPath, "utf-8");
+      const tsCode = await fs.readFile(result.pattern.srcPath, 'utf-8');
       // Replace <Example /> tags with embedded code
       publishedMdx = processedMdx.replace(
         /<Example\s+path="\.\/src\/[^"]+"\s*\/>/g,
@@ -412,7 +412,7 @@ async function migratePattern(result: ValidationResult): Promise<boolean> {
       NEW_PUBLISHED,
       `${result.pattern.id}.mdx`
     );
-    await fs.writeFile(targetPublished, publishedMdx, "utf-8");
+    await fs.writeFile(targetPublished, publishedMdx, 'utf-8');
 
     return true;
   } catch {
@@ -423,21 +423,21 @@ async function migratePattern(result: ValidationResult): Promise<boolean> {
 async function migratePatterns(
   results: ValidationResult[]
 ): Promise<ValidationResult[]> {
-  console.log(colorize("\n📦 Stage 6: Migration", "cyan"));
-  console.log(colorize("━".repeat(60), "dim"));
+  console.log(colorize('\n📦 Stage 6: Migration', 'cyan'));
+  console.log(colorize('━'.repeat(60), 'dim'));
 
   const migratable = results.filter(
     (r) => r.valid && r.testPassed && !r.isDuplicate
   );
 
-  console.log(colorize(`Migrating ${migratable.length} patterns\n`, "dim"));
+  console.log(colorize(`Migrating ${migratable.length} patterns\n`, 'dim'));
 
   let migrated = 0;
 
   for (const result of migratable) {
     const success = await migratePattern(result);
 
-    const status = success ? colorize("✅", "green") : colorize("❌", "red");
+    const status = success ? colorize('✅', 'green') : colorize('❌', 'red');
     console.log(`${status} ${result.pattern.id}`);
 
     if (success) {
@@ -446,7 +446,7 @@ async function migratePatterns(
   }
 
   console.log(
-    colorize(`\nMigrated: ${migrated}/${migratable.length}`, "bright")
+    colorize(`\nMigrated: ${migrated}/${migratable.length}`, 'bright')
   );
 
   return results;
@@ -454,27 +454,27 @@ async function migratePatterns(
 
 // --- STAGE 7: INTEGRATION ---
 async function integratePatterns(): Promise<void> {
-  console.log(colorize("\n🔄 Stage 7: Integration", "cyan"));
-  console.log(colorize("━".repeat(60), "dim"));
+  console.log(colorize('\n🔄 Stage 7: Integration', 'cyan'));
+  console.log(colorize('━'.repeat(60), 'dim'));
 
-  console.log(colorize("Running publish pipeline...\n", "dim"));
+  console.log(colorize('Running publish pipeline...\n', 'dim'));
 
   try {
-    await execAsync("bun run pipeline", {
+    await execAsync('bun run pipeline', {
       cwd: process.cwd(),
       maxBuffer: 10 * 1024 * 1024,
     });
 
-    console.log(colorize("✅ Pipeline completed successfully", "green"));
+    console.log(colorize('✅ Pipeline completed successfully', 'green'));
   } catch (error: any) {
-    console.log(colorize("⚠️  Pipeline had issues (check output)", "yellow"));
+    console.log(colorize('⚠️  Pipeline had issues (check output)', 'yellow'));
   }
 }
 
 // --- STAGE 8: REPORTING ---
 async function generateReport(results: ValidationResult[]): Promise<void> {
-  console.log(colorize("\n📊 Stage 8: Report Generation", "cyan"));
-  console.log(colorize("━".repeat(60), "dim"));
+  console.log(colorize('\n📊 Stage 8: Report Generation', 'cyan'));
+  console.log(colorize('━'.repeat(60), 'dim'));
 
   await fs.mkdir(REPORT_DIR, { recursive: true });
 
@@ -486,31 +486,31 @@ async function generateReport(results: ValidationResult[]): Promise<void> {
     duplicates: results.filter((r) => r.isDuplicate).length,
     migrated: results.filter((r) => r.valid && r.testPassed && !r.isDuplicate)
       .length,
-    failed: results.filter((r) => !r.valid || !r.testPassed).length,
+    failed: results.filter((r) => !(r.valid && r.testPassed)).length,
     results,
   };
 
   // JSON report
   const jsonPath = path.join(REPORT_DIR, `ingest-report-${Date.now()}.json`);
-  await fs.writeFile(jsonPath, JSON.stringify(report, null, 2), "utf-8");
+  await fs.writeFile(jsonPath, JSON.stringify(report, null, 2), 'utf-8');
 
   // Markdown report
   const mdPath = path.join(REPORT_DIR, `ingest-report-${Date.now()}.md`);
   const mdContent = generateMarkdownReport(report);
-  await fs.writeFile(mdPath, mdContent, "utf-8");
+  await fs.writeFile(mdPath, mdContent, 'utf-8');
 
-  console.log(colorize(`\n📄 Reports generated:`, "bright"));
-  console.log(colorize(`   JSON: ${jsonPath}`, "dim"));
-  console.log(colorize(`   Markdown: ${mdPath}`, "dim"));
+  console.log(colorize('\n📄 Reports generated:', 'bright'));
+  console.log(colorize(`   JSON: ${jsonPath}`, 'dim'));
+  console.log(colorize(`   Markdown: ${mdPath}`, 'dim'));
 }
 
 function generateMarkdownReport(report: IngestReport): string {
   const lines: string[] = [];
 
-  lines.push(`# Ingest Pipeline Report`);
+  lines.push('# Ingest Pipeline Report');
   lines.push(`\nGenerated: ${new Date(report.timestamp).toLocaleString()}\n`);
 
-  lines.push(`## Summary\n`);
+  lines.push('## Summary\n');
   lines.push(`- Total Patterns: ${report.totalPatterns}`);
   lines.push(`- Validated: ${report.validated}`);
   lines.push(`- Tests Passed: ${report.testsPassed}`);
@@ -527,7 +527,7 @@ function generateMarkdownReport(report: IngestReport): string {
     for (const r of migrated) {
       lines.push(`- ${r.pattern.id} - ${r.pattern.title}`);
     }
-    lines.push(``);
+    lines.push('');
   }
 
   // Duplicates
@@ -537,40 +537,40 @@ function generateMarkdownReport(report: IngestReport): string {
     for (const r of duplicates) {
       lines.push(`- ${r.pattern.id} - Already exists`);
     }
-    lines.push(``);
+    lines.push('');
   }
 
   // Failed patterns
-  const failed = report.results.filter((r) => !r.valid || !r.testPassed);
+  const failed = report.results.filter((r) => !(r.valid && r.testPassed));
   if (failed.length > 0) {
     lines.push(`## ❌ Failed Patterns (${failed.length})\n`);
     for (const r of failed) {
       lines.push(`### ${r.pattern.id}\n`);
       if (r.issues.length > 0) {
         for (const issue of r.issues) {
-          const icon = issue.type === "error" ? "❌" : "⚠️";
+          const icon = issue.type === 'error' ? '❌' : '⚠️';
           lines.push(`${icon} [${issue.category}] ${issue.message}`);
         }
       }
       if (r.valid && !r.testPassed) {
-        lines.push(`❌ [testing] TypeScript execution failed`);
+        lines.push('❌ [testing] TypeScript execution failed');
       }
-      lines.push(``);
+      lines.push('');
     }
   }
 
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 // --- MAIN PIPELINE ---
 async function main() {
   const startTime = Date.now();
 
-  console.log(colorize("\n🚀 Effect Patterns Ingest Pipeline", "bright"));
-  console.log(colorize("━".repeat(60), "dim"));
-  console.log(colorize(`Source: content/new/processed/`, "dim"));
+  console.log(colorize('\n🚀 Effect Patterns Ingest Pipeline', 'bright'));
+  console.log(colorize('━'.repeat(60), 'dim'));
+  console.log(colorize('Source: content/new/processed/', 'dim'));
   console.log(
-    colorize(`Target: content/new/published/ (with embedded code)`, "dim")
+    colorize('Target: content/new/published/ (with embedded code)', 'dim')
   );
 
   try {
@@ -600,15 +600,15 @@ async function main() {
 
     // Final summary
     const duration = Date.now() - startTime;
-    console.log(colorize("\n" + "═".repeat(60), "bright"));
+    console.log(colorize('\n' + '═'.repeat(60), 'bright'));
     console.log(
       colorize(
         `\n✨ Ingest pipeline completed in ${Math.round(duration / 1000)}s!\n`,
-        "green"
+        'green'
       )
     );
   } catch (error) {
-    console.error(colorize("\n💥 Pipeline failed:", "red"));
+    console.error(colorize('\n💥 Pipeline failed:', 'red'));
     console.error(error);
     process.exit(1);
   }

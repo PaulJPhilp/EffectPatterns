@@ -1,0 +1,18 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Effect Patterns (staging)",
+  "name_for_model": "effect_patterns_staging",
+  "description_for_human": "Search and generate Effect pattern snippets (staging).",
+  "description_for_model": "Tool for searching and generating Effect patterns. Use function-calls via the OpenAPI spec.",
+  "auth": {
+    "type": "service_http",
+    "authorization_type": "bearer"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://YOUR-STAGING-URL.vercel.app/.well-known/openapi.json"
+  },
+  "logo_url": "https://YOUR-STAGING-URL.vercel.app/logo.png",
+  "contact_email": "ops@your-org.example",
+  "legal_info_url": "https://your-org.example/legal"
+}

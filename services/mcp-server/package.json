@@ -30,7 +30,8 @@
     "effect": "^3.18.2",
     "next": "^15.3.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "vercel": "^48.3.0"
   },
   "devDependencies": {
     "@types/node": "^24.6.2",

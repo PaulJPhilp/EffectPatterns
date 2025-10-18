@@ -1,63 +1,57 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.8.3/schema.json",
-	"organizeImports": {
-		"enabled": true
-	},
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"recommended": true,
-			"suspicious": {
-				"noExplicitAny": "error"
-			},
-			"style": {
-				"useBlockStatements": "error",
-				"noVar": "error",
-				"useSingleCaseStatement": "error",
-				"useConsistentArrayType": "error",
-				"noUselessElse": "error",
-				"noNamespace": "error"
-			},
-			"complexity": {
-				"noForEach": "warn",
-				"noUselessFragments": "error"
-			},
-			"a11y": {
-				"useKeyWithClickEvents": "off",
-				"useAnchorContent": "off",
-				"useButtonType": "off"
-			}
-		}
-	},
-	"formatter": {
-		"enabled": true,
-		"indentStyle": "space",
-		"indentWidth": 2,
-		"lineWidth": 80,
-		"lineEnding": "lf"
-	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "single",
-			"jsxQuoteStyle": "double",
-			"semicolons": "always"
-		}
-	},
-	"json": {
-		"formatter": {
-			"indentStyle": "space",
-			"indentWidth": 2,
-			"lineWidth": 80
-		}
-	},
-	"files": {
-		"ignore": [
-			"dist/",
-			"node_modules/",
-			"coverage/",
-			"*.js",
-			"*.mjs",
-			"*.cjs"
-		]
-	}
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": ["ultracite"],
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noExplicitAny": "error"
+      },
+      "complexity": {
+        "noForEach": "warn",
+        "noUselessFragments": "error"
+      },
+      "a11y": {
+        "useKeyWithClickEvents": "off",
+        "useAnchorContent": "off",
+        "useButtonType": "off"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always"
+    }
+  },
+  "json": {
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": true
+    },
+    "formatter": {
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 80
+    }
+  },
+  "files": {
+    "includes": [
+      "api/**/*.ts",
+      "agents/**/*.ts",
+      "cli/**/*.ts",
+      "packages/**/*.ts",
+      "services/**/*.ts",
+      "scripts/**/*.ts",
+      "server/**/*.ts",
+      "content/src/**/*.ts"
+    ]
+  }
 }

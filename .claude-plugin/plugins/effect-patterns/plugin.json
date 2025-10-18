@@ -1,108 +1,18 @@
 {
   "name": "effect-patterns",
-  "version": "0.1.0",
-  "description": "Search and generate Effect-TS patterns directly in Claude Code",
-  "commands": [
-    {
-      "name": "search-patterns",
-      "description": "Search for Effect patterns by keyword, category, or difficulty",
-      "endpoint": "/api/patterns",
-      "method": "GET",
-      "parameters": {
-        "q": {
-          "type": "string",
-          "description": "Search query for fuzzy matching",
-          "required": false
-        },
-        "category": {
-          "type": "string",
-          "description": "Filter by category (error-handling, concurrency, etc.)",
-          "required": false
-        },
-        "difficulty": {
-          "type": "string",
-          "description": "Filter by difficulty (beginner, intermediate, advanced)",
-          "required": false
-        },
-        "limit": {
-          "type": "number",
-          "description": "Maximum number of results to return",
-          "required": false
-        }
-      }
-    },
-    {
-      "name": "get-pattern",
-      "description": "Get full details for a specific pattern by ID",
-      "endpoint": "/api/patterns/{id}",
-      "method": "GET",
-      "parameters": {
-        "id": {
-          "type": "string",
-          "description": "Pattern ID",
-          "required": true
-        }
-      }
-    },
-    {
-      "name": "generate-snippet",
-      "description": "Generate a code snippet from a pattern with customization",
-      "endpoint": "/api/generate",
-      "method": "POST",
-      "parameters": {
-        "patternId": {
-          "type": "string",
-          "description": "ID of the pattern to generate from",
-          "required": true
-        },
-        "name": {
-          "type": "string",
-          "description": "Custom name for the generated code",
-          "required": false
-        },
-        "input": {
-          "type": "string",
-          "description": "Custom input value for the example",
-          "required": false
-        },
-        "moduleType": {
-          "type": "string",
-          "enum": ["esm", "cjs"],
-          "description": "Module type (ESM or CommonJS)",
-          "required": false
-        },
-        "effectVersion": {
-          "type": "string",
-          "description": "Effect version to target",
-          "required": false
-        }
-      }
-    },
-    {
-      "name": "trace-wiring",
-      "description": "Get examples for integrating trace IDs across platforms",
-      "endpoint": "/api/trace-wiring",
-      "method": "GET",
-      "parameters": {}
-    },
-    {
-      "name": "health-check",
-      "description": "Check if the Effect Patterns service is available",
-      "endpoint": "/api/health",
-      "method": "GET",
-      "parameters": {}
+  "version": "0.0.1",
+  "description": "Effect Patterns – search, explain and generate TypeScript Effect snippets (staging).",
+  "author": {
+    "name": "Paul J Philp",
+    "url": "https://github.com/PaulJPhilp"
+  },
+  "commands": ["./commands/search.md", "./commands/explain.md"],
+  "agents": ["./agents/recommender.md"],
+  "mcpServers": {
+    "effect-patterns-server": {
+      "source": "http",
+      "url": "__MCP_BASE_URL__/api"
     }
-  ],
-  "agents": [
-    {
-      "name": "effect-pattern-assistant",
-      "description": "AI assistant specialized in Effect-TS patterns",
-      "systemPrompt": "You are an expert in Effect-TS patterns. Help users find, understand, and implement Effect patterns. When users ask about error handling, concurrency, or other Effect topics, search for relevant patterns and provide code examples. Always explain the pattern's purpose and use cases.",
-      "tools": [
-        "search-patterns",
-        "get-pattern",
-        "generate-snippet"
-      ]
-    }
-  ]
+  },
+  "strict": false
 }

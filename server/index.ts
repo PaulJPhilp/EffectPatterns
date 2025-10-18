@@ -12,13 +12,17 @@
  * - Graceful shutdown handling
  */
 
-import { FileSystem } from "@effect/platform";
-import { HttpRouter, HttpServer, HttpServerResponse } from "@effect/platform";
-import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
-import { Data, Effect, Layer, Schema } from "effect";
-import matter from "gray-matter";
-import { createServer } from "node:http";
-import * as path from "node:path";
+import { createServer } from 'node:http';
+import * as path from 'node:path';
+import {
+  FileSystem,
+  HttpRouter,
+  HttpServer,
+  HttpServerResponse,
+} from '@effect/platform';
+import { NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Data, Effect, Layer, Schema } from 'effect';
+import matter from 'gray-matter';
 
 // --- SCHEMA DEFINITIONS ---
 
@@ -39,7 +43,7 @@ const RuleSchema = Schema.Struct({
 /**
  * Tagged error for server-related failures
  */
-class ServerError extends Data.TaggedError("ServerError")<{
+class ServerError extends Data.TaggedError('ServerError')<{
   readonly message: string;
   readonly cause?: unknown;
 }> {}
@@ -47,7 +51,7 @@ class ServerError extends Data.TaggedError("ServerError")<{
 /**
  * Tagged error for rule loading failures
  */
-class RuleLoadError extends Data.TaggedError("RuleLoadError")<{
+class RuleLoadError extends Data.TaggedError('RuleLoadError')<{
   readonly path: string;
   readonly cause: unknown;
 }> {}
@@ -55,7 +59,7 @@ class RuleLoadError extends Data.TaggedError("RuleLoadError")<{
 /**
  * Tagged error for rule parsing failures
  */
-class RuleParseError extends Data.TaggedError("RuleParseError")<{
+class RuleParseError extends Data.TaggedError('RuleParseError')<{
   readonly file: string;
   readonly cause: unknown;
 }> {}
@@ -64,7 +68,7 @@ class RuleParseError extends Data.TaggedError("RuleParseError")<{
  * Tagged error for directory not found
  */
 class RulesDirectoryNotFoundError extends Data.TaggedError(
-  "RulesDirectoryNotFoundError"
+  'RulesDirectoryNotFoundError'
 )<{
   readonly path: string;
 }> {}
@@ -72,7 +76,7 @@ class RulesDirectoryNotFoundError extends Data.TaggedError(
 /**
  * Tagged error for rule not found
  */
-class RuleNotFoundError extends Data.TaggedError("RuleNotFoundError")<{
+class RuleNotFoundError extends Data.TaggedError('RuleNotFoundError')<{
   readonly id: string;
 }> {}
 
@@ -88,7 +92,7 @@ interface ServerConfig {
 
 const DEFAULT_CONFIG: ServerConfig = {
   port: 3001,
-  host: "localhost",
+  host: 'localhost',
 };
 
 // --- HELPER FUNCTIONS ---
@@ -97,14 +101,14 @@ const DEFAULT_CONFIG: ServerConfig = {
  * Extract the first # heading from markdown content as the title
  */
 const extractTitle = (content: string): string => {
-  const lines = content.split("\n");
+  const lines = content.split('\n');
   for (const line of lines) {
     const match = line.match(/^#\s+(.+)$/);
     if (match) {
       return match[1].trim();
     }
   }
-  return "Untitled Rule";
+  return 'Untitled Rule';
 };
 
 /**
@@ -117,11 +121,13 @@ const parseRuleFile = (
 ) =>
   Effect.gen(function* () {
     // Read file content
-    const content = yield* fs.readFileString(filePath).pipe(
-      Effect.catchAll((error) =>
-        Effect.fail(new RuleLoadError({ path: filePath, cause: error }))
-      )
-    );
+    const content = yield* fs
+      .readFileString(filePath)
+      .pipe(
+        Effect.catchAll((error) =>
+          Effect.fail(new RuleLoadError({ path: filePath, cause: error }))
+        )
+      );
 
     // Parse frontmatter
     let parsed: { data: Record<string, unknown>; content: string };
@@ -142,7 +148,7 @@ const parseRuleFile = (
     return {
       id: fileId,
       title,
-      description: (data.description as string) || "",
+      description: (data.description as string) || '',
       skillLevel: data.skillLevel as string | undefined,
       useCase: data.useCase
         ? Array.isArray(data.useCase)
@@ -159,7 +165,7 @@ const parseRuleFile = (
 const readRuleById = (id: string) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const rulesDir = "rules/cursor";
+    const rulesDir = 'rules/cursor';
     const filePath = path.join(rulesDir, `${id}.mdc`);
 
     yield* Effect.logInfo(`Loading rule by ID: ${id}`);
@@ -182,7 +188,7 @@ const readRuleById = (id: string) =>
  */
 const readAndParseRules = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
-  const rulesDir = "rules/cursor";
+  const rulesDir = 'rules/cursor';
 
   yield* Effect.logInfo(`Loading rules from ${rulesDir}`);
 
@@ -195,14 +201,16 @@ const readAndParseRules = Effect.gen(function* () {
   }
 
   // Read all files in directory
-  const files = yield* fs.readDirectory(rulesDir).pipe(
-    Effect.catchAll((error) =>
-      Effect.fail(new RuleLoadError({ path: rulesDir, cause: error }))
-    )
-  );
+  const files = yield* fs
+    .readDirectory(rulesDir)
+    .pipe(
+      Effect.catchAll((error) =>
+        Effect.fail(new RuleLoadError({ path: rulesDir, cause: error }))
+      )
+    );
 
   // Filter for .mdc files
-  const mdcFiles = files.filter((file) => file.endsWith(".mdc"));
+  const mdcFiles = files.filter((file) => file.endsWith('.mdc'));
   yield* Effect.logInfo(`Found ${mdcFiles.length} rule files`);
 
   // Parse each file
@@ -210,10 +218,10 @@ const readAndParseRules = Effect.gen(function* () {
     mdcFiles,
     (file) => {
       const filePath = path.join(rulesDir, file);
-      const fileId = path.basename(file, ".mdc");
+      const fileId = path.basename(file, '.mdc');
       return parseRuleFile(fs, filePath, fileId);
     },
-    { concurrency: "unbounded" }
+    { concurrency: 'unbounded' }
   );
 
   yield* Effect.logInfo(`Successfully parsed ${rules.length} rules`);
@@ -227,8 +235,8 @@ const readAndParseRules = Effect.gen(function* () {
  * Returns: {"status": "ok"}
  */
 const healthHandler = Effect.gen(function* () {
-  yield* Effect.logInfo("Health check requested");
-  return yield* HttpServerResponse.json({ status: "ok" });
+  yield* Effect.logInfo('Health check requested');
+  return yield* HttpServerResponse.json({ status: 'ok' });
 });
 
 /**
@@ -236,7 +244,7 @@ const healthHandler = Effect.gen(function* () {
  * Returns: Array of rules from rules/cursor directory
  */
 const rulesHandler = Effect.gen(function* () {
-  yield* Effect.logInfo("Rules endpoint requested");
+  yield* Effect.logInfo('Rules endpoint requested');
 
   // Try to read, parse and validate rules
   const rulesResult = yield* Effect.either(
@@ -250,12 +258,12 @@ const rulesHandler = Effect.gen(function* () {
   );
 
   // Handle success or failure
-  if (rulesResult._tag === "Left") {
-    yield* Effect.logError("Failed to load and validate rules", {
+  if (rulesResult._tag === 'Left') {
+    yield* Effect.logError('Failed to load and validate rules', {
       error: rulesResult.left,
     });
     return yield* HttpServerResponse.json(
-      { error: "Failed to load rules" },
+      { error: 'Failed to load rules' },
       { status: 500 }
     );
   }
@@ -283,22 +291,22 @@ const singleRuleHandler = (id: string) =>
     );
 
     // Handle success or failure
-    if (ruleResult._tag === "Left") {
+    if (ruleResult._tag === 'Left') {
       const error = ruleResult.left;
 
       // Check if it's a RuleNotFoundError
-      if (error._tag === "RuleNotFoundError") {
+      if (error._tag === 'RuleNotFoundError') {
         yield* Effect.logInfo(`Rule not found: ${id}`);
         return yield* HttpServerResponse.json(
-          { error: "Rule not found" },
+          { error: 'Rule not found' },
           { status: 404 }
         );
       }
 
       // Other errors are 500
-      yield* Effect.logError("Failed to load and validate rule", { error });
+      yield* Effect.logError('Failed to load and validate rule', { error });
       return yield* HttpServerResponse.json(
-        { error: "Failed to load rule" },
+        { error: 'Failed to load rule' },
         { status: 500 }
       );
     }
@@ -314,10 +322,10 @@ const singleRuleHandler = (id: string) =>
  * HTTP Router with all application routes
  */
 const router = HttpRouter.empty.pipe(
-  HttpRouter.get("/health", healthHandler),
-  HttpRouter.get("/api/v1/rules", rulesHandler),
+  HttpRouter.get('/health', healthHandler),
+  HttpRouter.get('/api/v1/rules', rulesHandler),
   HttpRouter.get(
-    "/api/v1/rules/:id",
+    '/api/v1/rules/:id',
     Effect.gen(function* () {
       const params = yield* HttpRouter.params;
       const id = params.id;
@@ -352,17 +360,19 @@ const program = Effect.gen(function* () {
   yield* Effect.logInfo(
     `🚀 Pattern Server starting on http://${DEFAULT_CONFIG.host}:${DEFAULT_CONFIG.port}`
   );
-  yield* Effect.logInfo(`📍 Health check: http://${DEFAULT_CONFIG.host}:${DEFAULT_CONFIG.port}/health`);
+  yield* Effect.logInfo(
+    `📍 Health check: http://${DEFAULT_CONFIG.host}:${DEFAULT_CONFIG.port}/health`
+  );
 
   // Launch the server and keep it running
   yield* Layer.launch(HttpLive);
 
-  yield* Effect.logInfo("✨ Server is ready to accept requests");
+  yield* Effect.logInfo('✨ Server is ready to accept requests');
 }).pipe(
   Effect.tapErrorCause((cause) =>
-    Effect.logError("Server failed to start", { cause })
+    Effect.logError('Server failed to start', { cause })
   ),
-  Effect.catchTag("ServerError", (error) =>
+  Effect.catchTag('ServerError', (error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Server error: ${error.message}`);
       return yield* Effect.fail(error);

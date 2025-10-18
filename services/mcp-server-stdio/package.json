@@ -1,0 +1,44 @@
+{
+  "name": "@effect-patterns/mcp-server-stdio",
+  "version": "0.1.0",
+  "description": "MCP server for Effect-TS patterns - provides tools for searching and generating Effect code",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "effect-patterns-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@effect-patterns/toolkit": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.20.0",
+    "effect": "^3.18.4",
+    "@effect/platform": "^0.90.10",
+    "@effect/platform-node": "^0.94.2",
+    "@effect/schema": "^0.75.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.2",
+    "tsx": "^4.19.2",
+    "typescript": "5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "effect",
+    "effect-ts",
+    "patterns",
+    "ai",
+    "claude",
+    "assistant"
+  ],
+  "author": "Paul Philp",
+  "license": "MIT"
+}

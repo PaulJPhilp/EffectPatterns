@@ -1,0 +1,330 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main, feat/**]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run weekly on Mondays at 9:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same workflow + branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-audit:
+    name: Dependency Vulnerability Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run npm audit
+        id: audit
+        continue-on-error: true
+        run: |
+          npm audit --json > audit-results.json
+          npm audit
+
+      - name: Check audit results
+        run: |
+          # Parse audit results
+          CRITICAL=$(jq -r '.metadata.vulnerabilities.critical // 0' audit-results.json)
+          HIGH=$(jq -r '.metadata.vulnerabilities.high // 0' audit-results.json)
+          MODERATE=$(jq -r '.metadata.vulnerabilities.moderate // 0' audit-results.json)
+          LOW=$(jq -r '.metadata.vulnerabilities.low // 0' audit-results.json)
+
+          echo "## Dependency Audit Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| High     | $HIGH |" >> $GITHUB_STEP_SUMMARY
+          echo "| Moderate | $MODERATE |" >> $GITHUB_STEP_SUMMARY
+          echo "| Low      | $LOW |" >> $GITHUB_STEP_SUMMARY
+
+          # Fail if critical or high vulnerabilities found
+          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+            echo "❌ Critical or high severity vulnerabilities found!"
+            exit 1
+          fi
+
+          echo "✅ No critical or high severity vulnerabilities"
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-results
+          path: audit-results.json
+          retention-days: 30
+
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for comprehensive scan
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript', 'typescript']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check licenses
+        run: |
+          # Install license checker
+          bun add -D license-checker
+
+          # Generate license report
+          bunx license-checker --json > licenses.json
+
+          # Check for prohibited licenses
+          PROHIBITED_LICENSES="GPL-2.0 GPL-3.0 AGPL"
+
+          echo "## License Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Parse and check licenses
+          jq -r 'to_entries[] | "\(.key): \(.value.licenses)"' licenses.json | while read -r line; do
+            for prohibited in $PROHIBITED_LICENSES; do
+              if echo "$line" | grep -q "$prohibited"; then
+                echo "❌ Prohibited license found: $line" | tee -a $GITHUB_STEP_SUMMARY
+                exit 1
+              fi
+            done
+          done
+
+          echo "✅ No prohibited licenses found" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report
+          path: licenses.json
+          retention-days: 30
+
+  docker-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    # Only run if Dockerfile exists
+    if: github.event_name != 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for Dockerfile
+        id: check-dockerfile
+        run: |
+          if [ -f "Dockerfile" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Docker image
+        if: steps.check-dockerfile.outputs.exists == 'true'
+        run: docker build -t effect-patterns-mcp-server:test .
+
+      - name: Run Trivy vulnerability scanner
+        if: steps.check-dockerfile.outputs.exists == 'true'
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'effect-patterns-mcp-server:test'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        if: steps.check-dockerfile.outputs.exists == 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  sbom-generation:
+    name: Generate Software Bill of Materials
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate SBOM (CycloneDX format)
+        run: |
+          # Install CycloneDX BOM tool
+          bun add -D @cyclonedx/bom
+
+          # Generate SBOM
+          bunx @cyclonedx/bom --output sbom.json
+
+          echo "✅ SBOM generated successfully"
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+          retention-days: 90
+
+      - name: Attach SBOM to release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-release
+          path: sbom.json
+          retention-days: 365
+
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-audit, secret-scan, license-check]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check job statuses
+          DEPENDENCY_STATUS="${{ needs.dependency-audit.result }}"
+          SECRET_STATUS="${{ needs.secret-scan.result }}"
+          LICENSE_STATUS="${{ needs.license-check.result }}"
+
+          echo "## Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Audit | $DEPENDENCY_STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scan | $SECRET_STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "| License Check | $LICENSE_STATUS |" >> $GITHUB_STEP_SUMMARY
+
+          # Overall status
+          if [ "$DEPENDENCY_STATUS" = "success" ] && \
+             [ "$SECRET_STATUS" = "success" ] && \
+             [ "$LICENSE_STATUS" = "success" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **All security checks passed!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Some security checks failed. Please review the logs.**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes('Security Scan Summary')
+            );
+
+            const body = `## 🔒 Security Scan Summary
+
+            **Status**: ${{ needs.dependency-audit.result == 'success' && needs.secret-scan.result == 'success' && needs.license-check.result == 'success' && '✅ All checks passed' || '❌ Some checks failed' }}
+
+            | Check | Result |
+            |-------|--------|
+            | Dependency Audit | ${{ needs.dependency-audit.result }} |
+            | Secret Scan | ${{ needs.secret-scan.result }} |
+            | License Check | ${{ needs.license-check.result }} |
+
+            [View detailed results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }

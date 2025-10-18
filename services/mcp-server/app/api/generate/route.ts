@@ -5,12 +5,16 @@
  * Generates a code snippet from a pattern with customization options
  */
 
-import { NextRequest, NextResponse } from "next/server";
-import { Effect, Schema as S } from "effect";
-import { runWithRuntime, PatternsService } from "../../../src/server/init.js";
-import { TracingService } from "../../../src/tracing/otlpLayer.js";
-import { validateApiKey, isAuthenticationError } from "../../../src/auth/apiKey.js";
-import { buildSnippet, GenerateRequest } from "@effect-patterns/toolkit";
+import { buildSnippet, GenerateRequest } from '@effect-patterns/toolkit';
+import { Effect } from 'effect';
+import { Schema as S } from '@effect/schema';
+import { type NextRequest, NextResponse } from 'next/server';
+import {
+  isAuthenticationError,
+  validateApiKey,
+} from '../../../src/auth/apiKey.js';
+import { PatternsService, runWithRuntime } from '../../../src/server/init.js';
+import { TracingService } from '../../../src/tracing/otlpLayer.js';
 
 export async function POST(request: NextRequest) {
   const generateEffect = Effect.gen(function* () {
@@ -36,13 +40,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate snippet
-    const snippet = buildSnippet(
+    const snippet = buildSnippet({
       pattern,
-      generateRequest.name,
-      generateRequest.input,
-      generateRequest.moduleType,
-      generateRequest.effectVersion
-    );
+      customName: generateRequest.name,
+      customInput: generateRequest.input,
+      moduleType: generateRequest.moduleType,
+      effectVersion: generateRequest.effectVersion,
+    });
 
     const traceId = tracing.getTraceId();
 
@@ -61,22 +65,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result, {
       status: 200,
       headers: {
-        "x-trace-id": result.traceId || "",
+        'x-trace-id': result.traceId || '',
       },
     });
   } catch (error) {
     if (isAuthenticationError(error)) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
-    if (error instanceof Error && error.message.includes("not found")) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 404 }
-      );
+    if (error instanceof Error && error.message.includes('not found')) {
+      return NextResponse.json({ error: error.message }, { status: 404 });
     }
 
     return NextResponse.json(
