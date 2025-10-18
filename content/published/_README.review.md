@@ -1,0 +1,473 @@
+# Effect Patterns Index (Review)
+
+Grouped by skillLevel (intro → intermediate → advanced) then by the 
+primary useCase (first element). Remaining useCase values appear as 
+badges. Tie-breaker within groups is title (A–Z).
+
+## Table of Contents
+
+- [Start Here](#start-here)
+- [Intro](#intro)
+- [Intermediate](#intermediate)
+- [Advanced](#advanced)
+
+---
+
+## Start Here
+
+- [Understand that Effects are Lazy Blueprints](./effects-are-lazy.mdx)
+- [Understand the Three Effect Channels (A, E, R)](./understand-effect-channels.mdx)
+- [Use .pipe for Composition](./use-pipe-for-composition.mdx)
+- [Create Pre-resolved Effects with succeed and fail](./create-pre-resolved-effect.mdx)
+- [Wrap Synchronous Computations with sync and try](./wrap-synchronous-computations.mdx)
+- [Wrap Asynchronous Computations with tryPromise](./wrap-asynchronous-computations.mdx)
+- [Transform Effect Values with map and flatMap](./transform-effect-values.mdx)
+- [Write Sequential Code with Effect.gen](./write-sequential-code-with-gen.mdx)
+- [Converting from Nullable, Option, or Either](./constructor-from-nullable-option-either.mdx)
+- [Model Optional Values Safely with Option](./data-option.mdx)
+
+---
+
+## Intro
+
+### Building APIs (4)
+
+- [Create a Basic HTTP Server](./launch-http-server.mdx)  - tags: `http`
+  - summary: Launch a simple, effect-native HTTP server to respond to incoming requests.
+- [Extract Path Parameters](./extract-path-parameters.mdx)  - tags: `http`
+  - summary: Capture and use dynamic segments from a request URL, such as a resource ID.
+- [Handle a GET Request](./handle-get-request.mdx)  - tags: `http`
+  - summary: Define a route that responds to a specific HTTP GET request path.
+- [Send a JSON Response](./send-json-response.mdx)  - tags: `http`
+  - summary: Create and send a structured JSON response with the correct headers and status code.
+
+### Building Data Pipelines (3)
+
+- [Collect All Results into a List](./stream-collect-results.mdx)  - tags: `stream`
+  - summary: Run a pipeline and gather all of its results into an in-memory array.
+- [Create a Stream from a List](./stream-from-iterable.mdx)  - tags: `stream`
+  - summary: Turn a simple in-memory array or list into a foundational data pipeline using Stream.
+- [Run a Pipeline for its Side Effects](./stream-run-for-effects.mdx)  - tags: `stream`
+  - summary: Execute a pipeline for its effects without collecting the results, saving memory.
+
+### Combinators (5)
+
+- [Chaining Computations with flatMap](./combinator-flatmap.mdx)  - badges: `Composition`, `Sequencing`
+- tags: `flatMap`, `combinator`, `monad`, `effect`, `stream`, `option`, `either`
+  - summary: Use flatMap to chain together computations where each step may itself be effectful, optional, or error-prone.
+- [Combining Values with zip](./combinator-zip.mdx)  - badges: `Composition`, `Pairing`
+- tags: `zip`, `combinator`, `pair`, `effect`, `stream`, `option`, `either`
+  - summary: Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either.
+- [Conditional Branching with if, when, and cond](./combinator-conditional.mdx)  - badges: `Composition`, `Conditional Logic`
+- tags: `conditional`, `if`, `when`, `cond`, `combinator`, `effect`, `stream`, `option`, `either`
+  - summary: Use combinators like if, when, and cond to express conditional logic declaratively across Effect, Stream, Option, and Either.
+- [Filtering Results with filter](./combinator-filter.mdx)  - badges: `Composition`, `Conditional Logic`
+- tags: `filter`, `combinator`, `predicate`, `effect`, `stream`, `option`, `either`
+  - summary: Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either.
+- [Transforming Values with map](./combinator-map.mdx)  - badges: `Composition`
+- tags: `map`, `combinator`, `functor`, `effect`, `stream`, `option`, `either`
+  - summary: Use map to transform the result of an Effect, Stream, Option, or Either in a declarative, type-safe way.
+
+### Constructors (6)
+
+- [Converting from Nullable, Option, or Either](./constructor-from-nullable-option-either.mdx)  - badges: `Interop`, `Conversion`
+- tags: `fromNullable`, `fromOption`, `fromEither`, `constructor`, `effect`, `stream`, `option`, `either`, `interop`, `conversion`
+  - summary: Use fromNullable, fromOption, and fromEither to convert nullable values, Option, or Either into Effects or Streams, enabling safe and composable interop.
+- [Creating from Collections](./constructor-from-iterable.mdx)  - badges: `Collections`, `Streams`, `Batch Processing`
+- tags: `fromIterable`, `fromArray`, `constructor`, `stream`, `effect`, `collection`, `batch`
+  - summary: Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations.
+- [Creating from Synchronous and Callback Code](./constructor-sync-async.mdx)  - badges: `Interop`, `Async`, `Callback`
+- tags: `sync`, `async`, `constructor`, `effect`, `interop`, `callback`, `legacy`
+  - summary: Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code.
+- [Lifting Errors and Absence with fail, none, and left](./constructor-fail-none-left.mdx)  - badges: `Lifting`, `Error Handling`, `Absence`
+- tags: `fail`, `none`, `left`, `constructor`, `effect`, `option`, `either`, `error`, `absence`
+  - summary: Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe.
+- [Lifting Values with succeed, some, and right](./constructor-succeed-some-right.mdx)  - badges: `Lifting`, `Composition`
+- tags: `succeed`, `some`, `right`, `constructor`, `effect`, `option`, `either`, `lifting`
+  - summary: Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe.
+- [Wrapping Synchronous and Asynchronous Computations](./constructor-try-trypromise.mdx)  - badges: `Error Handling`, `Async`, `Interop`
+- tags: `try`, `tryPromise`, `constructor`, `effect`, `error`, `async`, `interop`
+  - summary: Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world.
+
+### Core Concepts (9)
+
+- [Create Pre-resolved Effects with succeed and fail](./create-pre-resolved-effect.mdx)  - tags: `creation`, `succeed`, `fail`, `sync`
+  - summary: Use Effect.succeed(value) to create an Effect that immediately succeeds with a value, and Effect.fail(error) for an Effect that immediately fails.
+- [Solve Promise Problems with Effect](./solve-promise-problems-with-effect.mdx)  - tags: `promise`
+  - summary: Understand how Effect solves the fundamental problems of native Promises, such as untyped errors, lack of dependency injection, and no built-in cancellation.
+- [Transform Effect Values with map and flatMap](./transform-effect-values.mdx)  - tags: `map`, `flatMap`, `composition`, `transformation`, `chaining`
+  - summary: Use Effect.map for synchronous transformations and Effect.flatMap to chain operations that return another Effect.
+- [Understand that Effects are Lazy Blueprints](./effects-are-lazy.mdx)  - tags: `laziness`, `immutability`, `blueprint`, `execution`, `runtime`, `core-concept`
+  - summary: An Effect is a lazy, immutable blueprint describing a computation, which does nothing until it is explicitly executed by a runtime.
+- [Understand the Three Effect Channels (A, E, R)](./understand-effect-channels.mdx)  - tags: `effect`
+  - summary: Learn about the three generic parameters of an Effect: the success value (A), the failure error (E), and the context requirements (R).
+- [Use .pipe for Composition](./use-pipe-for-composition.mdx)  - tags: `pipe`, `composition`, `chaining`, `readability`
+  - summary: Use the .pipe() method to chain multiple operations onto an Effect in a readable, top-to-bottom sequence.
+- [Wrap Asynchronous Computations with tryPromise](./wrap-asynchronous-computations.mdx)  - tags: `promise`, `async`, `integration`, `creation`, `try`
+  - summary: Use Effect.tryPromise to safely convert a function that returns a Promise into an Effect, capturing rejections in the error channel.
+- [Wrap Synchronous Computations with sync and try](./wrap-synchronous-computations.mdx)  - tags: `sync`, `try`, `creation`, `error-handling`, `integration`, `exceptions`
+  - summary: Use Effect.sync for non-throwing synchronous code and Effect.try for synchronous code that might throw an exception.
+- [Write Sequential Code with Effect.gen](./write-sequential-code-with-gen.mdx)  - tags: `generators`, `gen`, `sequential`, `async-await`, `readability`
+  - summary: Use Effect.gen with yield* to write sequential, asynchronous code in a style that looks and feels like familiar async/await.
+
+### Data Types (5)
+
+- [Accumulate Multiple Errors with Either](./data-either.mdx)  - badges: `Error Handling`, `Domain Modeling`
+- tags: `Either`, `error-handling`, `data-type`, `domain`, `effect`
+  - summary: Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one.
+- [Comparing Data by Value with Data.struct](./data-struct.mdx)  - badges: `Structural Equality`, `Domain Modeling`
+- tags: `Data.struct`, `structural-equality`, `immutable`, `data-type`, `effect`
+  - summary: Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference.
+- [Model Optional Values Safely with Option](./data-option.mdx)  - badges: `Domain Modeling`, `Optional Values`
+- tags: `Option`, `optional`, `data-type`, `domain`, `effect`
+  - summary: Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors.
+- [Working with Immutable Arrays using Data.array](./data-array.mdx)  - badges: `Arrays`, `Structural Equality`, `Collections`
+- tags: `Data.array`, `array`, `structural-equality`, `immutable`, `data-type`, `effect`
+  - summary: Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations.
+- [Working with Tuples using Data.tuple](./data-tuple.mdx)  - badges: `Tuples`, `Structural Equality`, `Domain Modeling`
+- tags: `Data.tuple`, `tuple`, `structural-equality`, `immutable`, `data-type`, `effect`
+  - summary: Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching.
+
+### Modeling Data (1)
+
+- [Comparing Data by Value with Structural Equality](./comparing-data-by-value-with-structural-equality.mdx)  - tags: `equality`
+  - summary: Use Data.struct and Equal.equals to safely compare objects by their value instead of their reference, avoiding common JavaScript pitfalls.
+
+### Pattern Matching (2)
+
+- [Checking Option and Either Cases](./pattern-option-either-checks.mdx)  - badges: `Option`, `Either`, `Branching`, `Checks`
+- tags: `isSome`, `isNone`, `isLeft`, `isRight`, `pattern-matching`, `option`, `either`, `checks`
+  - summary: Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching.
+- [Matching on Success and Failure with match](./pattern-match.mdx)  - badges: `Error Handling`, `Branching`
+- tags: `match`, `pattern-matching`, `effect`, `option`, `either`, `error-handling`, `branching`
+  - summary: Use match to handle both success and failure cases in a single, declarative place for Effect, Option, and Either.
+
+### Project Setup & Execution (3)
+
+- [Execute Asynchronous Effects with Effect.runPromise](./execute-with-runpromise.mdx)  - tags: `execution`, `runtime`, `promise`, `async`, `end-of-world`
+  - summary: Use Effect.runPromise at the 'end of the world' to execute an asynchronous Effect and get its result as a JavaScript Promise.
+- [Execute Synchronous Effects with Effect.runSync](./execute-with-runsync.mdx)  - tags: `execution`, `runtime`, `sync`, `end-of-world`
+  - summary: Use Effect.runSync at the 'end of the world' to execute a purely synchronous Effect and get its value directly.
+- [Set Up a New Effect Project](./setup-new-project.mdx)  - tags: `project-setup`, `getting-started`, `typescript`, `tsconfig`, `npm`, `pnpm`, `bun`
+  - summary: Initialize a new Node.js project with the necessary TypeScript configuration and Effect dependencies to start building.
+
+### Resource Management (1)
+
+- [Safely Bracket Resource Usage with `acquireRelease`](./safely-bracket-resource-usage.mdx)  - badges: `File Handling`, `Database Connections`, `Network Requests`
+- tags: `resource`, `scope`, `acquire`, `release`, `bracket`, `finalizer`, `try-finally`, `interruption`
+  - summary: Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur.
+
+
+---
+
+## Intermediate
+
+### Application Architecture (1)
+
+- [Compose Resource Lifecycles with `Layer.merge`](./compose-scoped-layers.mdx)  - badges: `Resource Management`, `Dependency Injection`
+- tags: `resource`, `layer`, `scope`, `compose`, `merge`, `dependency-graph`, `architecture`
+  - summary: Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order.
+
+### Application Configuration (3)
+
+- [Access Configuration from the Context](./access-config-in-context.mdx)  - tags: `configuration`, `config`, `context`, `generators`, `business-logic`
+  - summary: Access your type-safe configuration within an Effect.gen block by yielding the Config object you defined.
+- [Define a Type-Safe Configuration Schema](./define-config-schema.mdx)  - tags: `configuration`, `config`, `schema`, `type-safety`
+  - summary: Use Effect.Config primitives to define a schema for your application's configuration, ensuring type-safety and separation from code.
+- [Provide Configuration to Your App via a Layer](./provide-config-layer.mdx)  - tags: `configuration`, `config`, `layers`, `dependency-injection`
+  - summary: Use Config.layer(schema) to create a Layer that provides your configuration schema to the application's context.
+
+### Branded Types (2)
+
+- [Modeling Validated Domain Types with Brand](./brand-model-domain-type.mdx)  - badges: `Domain Modeling`, `Type Safety`
+- tags: `Brand`, `domain`, `type-safety`, `validation`, `effect`
+  - summary: Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse.
+- [Validating and Parsing Branded Types](./brand-validate-parse.mdx)  - badges: `Domain Modeling`, `Validation`, `Parsing`
+- tags: `Brand`, `Schema`, `validation`, `parsing`, `domain`, `type-safety`, `effect`
+  - summary: Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed.
+
+### Building APIs (4)
+
+- [Handle API Errors](./handle-api-errors.mdx)  - tags: `http`
+  - summary: Translate application-specific errors from the Effect failure channel into meaningful HTTP error responses.
+- [Make an Outgoing HTTP Client Request](./make-http-client-request.mdx)  - tags: `http`
+  - summary: Use the built-in Effect HTTP client to make safe and composable requests to external services from within your API.
+- [Provide Dependencies to Routes](./provide-dependencies-to-routes.mdx)  - tags: `http`
+  - summary: Inject services like database connections into HTTP route handlers using Layer and Effect.Service.
+- [Validate Request Body](./validate-request-body.mdx)  - tags: `http`
+  - summary: Safely parse and validate an incoming JSON request body against a predefined Schema.
+
+### Building Data Pipelines (6)
+
+- [Automatically Retry Failed Operations](./stream-retry-on-failure.mdx)  - tags: `stream`
+  - summary: Build a self-healing pipeline that can automatically retry failed processing steps using a configurable backoff strategy.
+- [Process a Large File with Constant Memory](./stream-from-file.mdx)  - tags: `stream`
+  - summary: Create a data pipeline from a file on disk, processing it line-by-line without loading the entire file into memory.
+- [Process collections of data asynchronously](./process-a-collection-of-data-asynchronously.mdx)  - tags: `stream`
+  - summary: Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream.
+- [Process Items Concurrently](./stream-process-concurrently.mdx)  - tags: `stream`
+  - summary: Perform an asynchronous action for each item in a stream with controlled parallelism to dramatically improve performance.
+- [Process Items in Batches](./stream-process-in-batches.mdx)  - tags: `stream`
+  - summary: Group items into chunks for efficient bulk operations, like database inserts or batch API calls.
+- [Turn a Paginated API into a Single Stream](./stream-from-paginated-api.mdx)  - tags: `stream`
+  - summary: Convert a paginated API into a continuous, easy-to-use stream, abstracting away the complexity of fetching page by page.
+
+### Combinators (3)
+
+- [Handling Errors with catchAll, orElse, and match](./combinator-error-handling.mdx)  - badges: `Error Handling`, `Composition`
+- tags: `error-handling`, `catchAll`, `orElse`, `match`, `combinator`, `effect`, `either`, `option`
+  - summary: Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option.
+- [Mapping and Chaining over Collections with forEach and all](./combinator-foreach-all.mdx)  - badges: `Collections`, `Parallelism`, `Batch Processing`
+- tags: `forEach`, `all`, `collections`, `parallelism`, `batch`, `combinator`, `effect`, `stream`, `option`, `either`
+  - summary: Use forEach and all to apply effectful functions to collections and combine the results, enabling batch and parallel processing.
+- [Sequencing with andThen, tap, and flatten](./combinator-sequencing.mdx)  - badges: `Sequencing`, `Composition`, `Side Effects`
+- tags: `sequencing`, `andThen`, `tap`, `flatten`, `combinator`, `effect`, `stream`, `option`, `either`
+  - summary: Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either.
+
+### Concurrency (3)
+
+- [Process a Collection in Parallel with Effect.forEach](./process-collection-in-parallel-with-foreach.mdx)  - tags: `concurrency`
+  - summary: Use Effect.forEach with the `concurrency` option to process a collection of items in parallel with a fixed limit, preventing resource exhaustion.
+- [Race Concurrent Effects for the Fastest Result](./race-concurrent-effects.mdx)  - tags: `concurrency`
+  - summary: Use Effect.race to run multiple effects concurrently and proceed with the result of the one that succeeds first, automatically interrupting the others.
+- [Run Independent Effects in Parallel with Effect.all](./run-effects-in-parallel-with-all.mdx)  - tags: `concurrency`
+  - summary: Use Effect.all to run multiple independent effects concurrently and collect all their results into a single tuple.
+
+### Core Concepts (7)
+
+- [Conditionally Branching Workflows](./conditionally-branching-workflows.mdx)  - tags: `predicate`
+  - summary: Use predicate-based operators like Effect.filter and Effect.if to make decisions and control the flow of your application based on runtime values.
+- [Control Flow with Conditional Combinators](./control-flow-with-combinators.mdx)  - tags: `control-flow`, `conditional`, `if`, `when`, `cond`, `declarative`
+  - summary: Use combinators like Effect.if, Effect.when, and Effect.cond to handle conditional logic in a declarative, composable way.
+- [Control Repetition with Schedule](./control-repetition-with-schedule.mdx)  - tags: `schedule`
+  - summary: Use Schedule to create composable, stateful policies that define precisely how an effect should be repeated or retried.
+- [Manage Shared State Safely with Ref](./manage-shared-state-with-ref.mdx)  - tags: `ref`
+  - summary: Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions.
+- [Process Streaming Data with Stream](./process-streaming-data-with-stream.mdx)  - tags: `stream`
+  - summary: Use Stream<A, E, R> to represent and process data that arrives over time, such as file reads, WebSocket messages, or paginated API results.
+- [Understand Layers for Dependency Injection](./understand-layers-for-dependency-injection.mdx)  - tags: `layer`
+  - summary: A Layer is a blueprint that describes how to build a service, detailing its own requirements and any potential errors during its construction.
+- [Use Chunk for High-Performance Collections](./use-chunk-for-high-performance-collections.mdx)  - tags: `chunk`
+  - summary: Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines.
+
+### Data Types (10)
+
+- [Manage Shared State Safely with Ref](./data-ref.mdx)  - badges: `State`, `Concurrency`, `Mutable State`
+- tags: `Ref`, `state`, `concurrency`, `mutable`, `data-type`, `effect`
+  - summary: Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions.
+- [Modeling Effect Results with Exit](./data-exit.mdx)  - badges: `Effect Results`, `Error Handling`, `Concurrency`
+- tags: `Exit`, `effect`, `result`, `error-handling`, `concurrency`, `data-type`
+  - summary: Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way.
+- [Modeling Tagged Unions with Data.case](./data-case.mdx)  - badges: `Tagged Unions`, `ADTs`, `Domain Modeling`
+- tags: `Data.case`, `tagged-union`, `ADT`, `domain-modeling`, `pattern-matching`, `data-type`, `effect`
+  - summary: Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching.
+- [Redact and Handle Sensitive Data](./data-redacted.mdx)  - badges: `Security`, `Sensitive Data`, `Logging`
+- tags: `Redacted`, `security`, `sensitive-data`, `logging`, `data-type`, `effect`
+  - summary: Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed.
+- [Representing Time Spans with Duration](./data-duration.mdx)  - badges: `Time`, `Duration`, `Domain Modeling`
+- tags: `Duration`, `time`, `interval`, `data-type`, `effect`
+  - summary: Use Duration to represent time intervals in a type-safe, human-readable, and composable way.
+- [Type Classes for Equality, Ordering, and Hashing with Data.Class](./data-class.mdx)  - badges: `Type Classes`, `Equality`, `Ordering`, `Hashing`
+- tags: `Data.Class`, `type-class`, `equality`, `ordering`, `hashing`, `data-type`, `effect`
+  - summary: Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions.
+- [Use Chunk for High-Performance Collections](./data-chunk.mdx)  - badges: `Collections`, `Performance`
+- tags: `Chunk`, `collection`, `performance`, `immutable`, `data-type`, `effect`
+  - summary: Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines.
+- [Work with Arbitrary-Precision Numbers using BigDecimal](./data-bigdecimal.mdx)  - badges: `Numeric Precision`, `Financial`, `Scientific`
+- tags: `BigDecimal`, `numeric`, `precision`, `decimal`, `data-type`, `effect`
+  - summary: Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations.
+- [Work with Dates and Times using DateTime](./data-datetime.mdx)  - badges: `Time`, `Date`, `Domain Modeling`
+- tags: `DateTime`, `date`, `time`, `timezone`, `data-type`, `effect`
+  - summary: Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations.
+- [Work with Immutable Sets using HashSet](./data-hashset.mdx)  - badges: `Collections`, `Set Operations`
+- tags: `HashSet`, `set`, `collection`, `immutable`, `data-type`, `effect`
+  - summary: Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations.
+
+### Domain Modeling (7)
+
+- [Avoid Long Chains of .andThen; Use Generators Instead](./avoid-long-andthen-chains.mdx)  - tags: `andThen`, `generators`, `readability`, `composition`, `anti-pattern`
+  - summary: Prefer Effect.gen over long chains of .andThen for sequential logic to improve readability and maintainability.
+- [Define Contracts Upfront with Schema](./define-contracts-with-schema.mdx)  - tags: `schema`, `design`, `architecture`, `type-safety`, `contract-first`, `data-modeling`
+  - summary: Use Schema to define the types for your data models and function signatures before writing the implementation, creating clear, type-safe contracts.
+- [Model Optional Values Safely with Option](./model-optional-values-with-option.mdx)  - tags: `option`
+  - summary: Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors.
+- [Model Validated Domain Types with Brand](./model-validated-domain-types-with-brand.mdx)  - tags: `branded-types`, `domain-modeling`, `type-safety`, `validation`, `invariants`, `data`
+  - summary: Use Brand to turn primitive types like string or number into specific, validated domain types like Email or PositiveInt, making illegal states unrepresentable.
+- [Parse and Validate Data with Schema.decode](./parse-with-schema-decode.mdx)  - tags: `schema`, `validation`, `parsing`, `data`
+  - summary: Use Schema.decode(schema) to create an Effect that parses and validates unknown data, which integrates seamlessly with Effect's error handling.
+- [Transform Data During Validation with Schema](./transform-data-with-schema.mdx)  - tags: `schema`
+  - summary: Use Schema.transform to safely convert data from one type to another during the parsing phase, such as from a string to a Date.
+- [Use Effect.gen for Business Logic](./use-gen-for-business-logic.mdx)  - tags: `generators`, `business-logic`, `control-flow`, `readability`
+  - summary: Encapsulate sequential business logic, control flow, and dependency access within Effect.gen for improved readability and maintainability.
+
+### Error Management (8)
+
+- [Accumulate Multiple Errors with Either](./accumulate-multiple-errors-with-either.mdx)  - tags: `either`
+  - summary: Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one.
+- [Define Type-Safe Errors with Data.TaggedError](./define-tagged-errors.mdx)  - badges: `Domain Modeling`
+- tags: `error-handling`, `tagged-error`, `type-safety`, `Data.TaggedError`, `errors`
+  - summary: Create custom, type-safe error classes by extending Data.TaggedError to make error handling robust, predictable, and self-documenting.
+- [Distinguish 'Not Found' from Errors](./distinguish-not-found-from-errors.mdx)  - tags: `option`
+  - summary: Use Effect<Option<A>> to clearly distinguish between a recoverable 'not found' case (None) and a true failure (Fail).
+- [Handle Errors with catchTag, catchTags, and catchAll](./handle-errors-with-catch.mdx)  - tags: `error-handling`, `catch`, `tagged-error`, `recovery`
+  - summary: Use catchTag for type-safe recovery from specific tagged errors, and catchAll to recover from any possible failure.
+- [Handle Flaky Operations with Retries and Timeouts](./handle-flaky-operations-with-retry-timeout.mdx)  - tags: `retry`
+  - summary: Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing operations, such as network requests.
+- [Leverage Effect's Built-in Structured Logging](./leverage-structured-logging.mdx)  - tags: `logging`, `logger`, `structured-logging`, `observability`, `debug`
+  - summary: Use Effect's built-in logging functions (Effect.log, Effect.logInfo, etc.) for structured, configurable, and context-aware logging.
+- [Mapping Errors to Fit Your Domain](./mapping-errors-to-fit-your-domain.mdx)  - tags: `error-handling`
+  - summary: Use Effect.mapError to transform specific, low-level errors into more general domain errors, creating clean architectural boundaries.
+- [Retry Operations Based on Specific Errors](./retry-based-on-specific-errors.mdx)  - tags: `retry`
+  - summary: Use Effect.retry and predicate functions to selectively retry an operation only when specific, recoverable errors occur.
+
+### Making HTTP Requests (2)
+
+- [Create a Testable HTTP Client Service](./create-a-testable-http-client-service.mdx)  - tags: `http-client`
+  - summary: Define an HttpClient service with separate 'Live' and 'Test' layers to enable robust, testable interactions with external APIs.
+- [Model Dependencies as Services](./model-dependencies-as-services.mdx)  - badges: `Testing`
+- tags: `service`, `architecture`, `dependency-injection`, `layers`, `testing`, `decoupling`
+  - summary: Abstract external dependencies and capabilities into swappable, testable services using Effect's dependency injection system.
+
+### Modeling Time (3)
+
+- [Accessing the Current Time with Clock](./accessing-current-time-with-clock.mdx)  - tags: `clock`
+  - summary: Use the Clock service to access the current time in a testable, deterministic way, avoiding direct calls to Date.now().
+- [Beyond the Date Type - Real World Dates, Times, and Timezones](./beyond-the-date-type.mdx)  - tags: `time`
+  - summary: Use the Clock service for testable access to the current time and prefer immutable primitives for storing and passing timestamps.
+- [Representing Time Spans with Duration](./representing-time-spans-with-duration.mdx)  - tags: `duration`
+  - summary: Use the Duration data type to represent time intervals in a type-safe, human-readable, and composable way.
+
+### Observability (6)
+
+- [Add Custom Metrics to Your Application](./add-custom-metrics.mdx)  - tags: `metrics`
+  - summary: Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators.
+- [Add Custom Metrics to Your Application](./observability-custom-metrics.mdx)  - badges: `Metrics`, `Monitoring`, `Performance`
+- tags: `metrics`, `observability`, `monitoring`, `performance`, `effect`
+  - summary: Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators.
+- [Instrument and Observe Function Calls with Effect.fn](./observability-effect-fn.mdx)  - badges: `Instrumentation`, `Function Calls`, `Debugging`
+- tags: `Effect.fn`, `observability`, `instrumentation`, `function`, `logging`, `metrics`, `tracing`
+  - summary: Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries.
+- [Leverage Effect's Built-in Structured Logging](./observability-structured-logging.mdx)  - badges: `Logging`, `Debugging`
+- tags: `logging`, `observability`, `debugging`, `effect`, `structured-logging`
+  - summary: Use Effect's built-in logging functions for structured, configurable, and context-aware logging.
+- [Trace Operations Across Services with Spans](./observability-tracing-spans.mdx)  - badges: `Tracing`, `Performance`, `Debugging`
+- tags: `tracing`, `spans`, `observability`, `performance`, `debugging`, `effect`
+  - summary: Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations.
+- [Trace Operations Across Services with Spans](./trace-operations-with-spans.mdx)  - tags: `tracing`
+  - summary: Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations.
+
+### Pattern Matching (3)
+
+- [Effectful Pattern Matching with matchEffect](./pattern-matcheffect.mdx)  - badges: `Effectful Branching`, `Error Handling`
+- tags: `matchEffect`, `pattern-matching`, `effect`, `branching`, `error-handling`
+  - summary: Use matchEffect to perform effectful branching based on success or failure, enabling rich workflows in the Effect world.
+- [Handling Specific Errors with catchTag and catchTags](./pattern-catchtag.mdx)  - badges: `Error Handling`, `Tagged Unions`
+- tags: `catchTag`, `catchTags`, `pattern-matching`, `effect`, `error-handling`, `tagged-union`
+  - summary: Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery.
+- [Matching Tagged Unions with matchTag and matchTags](./pattern-matchtag.mdx)  - badges: `Tagged Unions`, `Error Handling`, `Branching`
+- tags: `matchTag`, `matchTags`, `pattern-matching`, `tagged-union`, `effect`, `error-handling`, `branching`
+  - summary: Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching.
+
+### Resource Management (1)
+
+- [Create a Service Layer from a Managed Resource](./scoped-service-layer.mdx)  - badges: `Dependency Injection`, `Application Architecture`
+- tags: `resource`, `layer`, `scope`, `service`, `dependency-injection`, `context`, `acquire-release`
+  - summary: Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service.
+
+### Testing (3)
+
+- [Mocking Dependencies in Tests](./mocking-dependencies-in-tests.mdx)  - tags: `testing`
+  - summary: Use a test-specific Layer to provide mock implementations of services your code depends on, enabling isolated and deterministic unit tests.
+- [Use the Auto-Generated .Default Layer in Tests](./use-default-layer-for-tests.mdx)  - tags: `testing`, `service`, `layers`, `dependency-injection`
+  - summary: When testing, always use the MyService.Default layer that is automatically generated by the Effect.Service class for dependency injection.
+- [Write Tests That Adapt to Application Code](./write-tests-that-adapt-to-application-code.mdx)  - tags: `testing`, `philosophy`, `best-practice`, `architecture`
+  - summary: A cardinal rule of testing: Tests must adapt to the application's interface, not the other way around. Never modify application code solely to make a test pass.
+
+### Tooling and Debugging (1)
+
+- [Supercharge Your Editor with the Effect LSP](./supercharge-your-editor-with-the-effect-lsp.mdx)  - tags: `lsp`
+  - summary: Install the Effect Language Server (LSP) extension for your editor to get rich, inline type information and enhanced error checking for your Effect code.
+
+
+---
+
+## Advanced
+
+### Building Data Pipelines (1)
+
+- [Manage Resources Safely in a Pipeline](./stream-manage-resources.mdx)  - tags: `stream`
+  - summary: Ensure resources like file handles or connections are safely acquired at the start of a pipeline and always released at the end, even on failure.
+
+### Concurrency (5)
+
+- [Decouple Fibers with Queues and PubSub](./decouple-fibers-with-queue-pubsub.mdx)  - tags: `queue`
+  - summary: Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers.
+- [Implement Graceful Shutdown for Your Application](./implement-graceful-shutdown.mdx)  - tags: `graceful-shutdown`
+  - summary: Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released.
+- [Poll for Status Until a Task Completes](./poll-for-status-until-task-completes.mdx)  - tags: `polling`
+  - summary: Use Effect.race to run a repeating polling effect alongside a main task, automatically stopping the polling when the main task finishes.
+- [Run Background Tasks with Effect.fork](./run-background-tasks-with-fork.mdx)  - tags: `concurrency`
+  - summary: Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting.
+- [Understand Fibers as Lightweight Threads](./understand-fibers-as-lightweight-threads.mdx)  - tags: `fiber`
+  - summary: A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading.
+
+### Data Types (1)
+
+- [Handle Unexpected Errors by Inspecting the Cause](./data-cause.mdx)  - badges: `Error Handling`, `Debugging`, `Effect Results`
+- tags: `Cause`, `error-handling`, `debugging`, `effect`, `failure`, `data-type`
+  - summary: Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces.
+
+### Error Management (1)
+
+- [Handle Unexpected Errors by Inspecting the Cause](./handle-unexpected-errors-with-cause.mdx)  - tags: `error-handling`, `cause`, `exit`, `defect`, `die`, `unexpected-error`, `runtime`
+  - summary: Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die).
+
+### Making HTTP Requests (2)
+
+- [Add Caching by Wrapping a Layer](./add-caching-by-wrapping-a-layer.mdx)  - tags: `caching`
+  - summary: Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service.
+- [Build a Basic HTTP Server](./build-a-basic-http-server.mdx)  - tags: `http`
+  - summary: Combine Layer, Runtime, and Effect to create a simple, robust HTTP server using Node.js's built-in http module.
+
+### Observability (1)
+
+- [Integrate Effect Tracing with OpenTelemetry](./observability-opentelemetry.mdx)  - badges: `Tracing`, `OpenTelemetry`, `Distributed Systems`
+- tags: `tracing`, `opentelemetry`, `observability`, `effect`, `distributed-tracing`
+  - summary: Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization.
+
+### Project Setup & Execution (3)
+
+- [Create a Managed Runtime for Scoped Resources](./create-managed-runtime-for-scoped-resources.mdx)  - badges: `Making HTTP Requests`, `Resource Management`
+- tags: `runtime`, `scope`, `resource-management`, `layers`, `scoped`, `finalizer`, `launch`
+  - summary: Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run.
+- [Create a Reusable Runtime from Layers](./create-reusable-runtime-from-layers.mdx)  - tags: `runtime`, `layers`, `execution`, `dependency-injection`, `performance`
+  - summary: Compile your application's layers into a reusable Runtime object to efficiently execute multiple effects that share the same context.
+- [Execute Long-Running Apps with Effect.runFork](./execute-long-running-apps-with-runfork.mdx)  - tags: `runFork`
+  - summary: Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown.
+
+### Resource Management (2)
+
+- [Manage Resource Lifecycles with Scope](./manage-resource-lifecycles-with-scope.mdx)  - tags: `scope`
+  - summary: Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed.
+- [Manually Manage Lifecycles with `Scope`](./manual-scope-management.mdx)  - badges: `Advanced Dependency Injection`, `Custom Layers`
+- tags: `resource`, `scope`, `finalizer`, `layer`, `advanced`, `lifecycle`
+  - summary: Use `Scope` directly to manage complex resource lifecycles or when building custom layers.
+
+### Testing (1)
+
+- [Organize Layers into Composable Modules](./organize-layers-into-composable-modules.mdx)  - tags: `layer`
+  - summary: Structure a large application by grouping related services into 'module' layers, which are then composed together with a shared base layer.
+
+### Tooling and Debugging (1)
+
+- [Teach your AI Agents Effect with the MCP Server](./teach-your-ai-agents-effect-with-the-mcp-server.mdx)  - tags: `mcp`
+  - summary: Use the Effect MCP server to provide live, contextual information about your application's structure directly to AI coding agents.
+
+
+---
+
+Notes:
+
+- Primary useCase is the first element in the useCase array.
+- Remaining useCase values appear as badges under each item.
+- Ordering within each bucket is title A–Z.

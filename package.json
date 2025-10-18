@@ -68,7 +68,8 @@
     "chat:build": "bun --filter @effect-patterns/chat-app run build",
     "chat:preview": "bun --filter @effect-patterns/chat-app run preview",
     "app:build:openapi": "bun run app/server/utils/openapiEmitter.ts",
-    "test:app": "vitest run app"
+    "test:app": "vitest run app",
+    "generate:readme": "npx tsx scripts/generate_readme_by_skill_usecase.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.0.20",

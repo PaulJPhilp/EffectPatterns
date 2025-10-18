@@ -1,0 +1,14 @@
+{
+  "ids": [
+    "effects-are-lazy",
+    "understand-effect-channels",
+    "use-pipe-for-composition",
+    "create-pre-resolved-effect",
+    "wrap-synchronous-computations",
+    "wrap-asynchronous-computations",
+    "transform-effect-values",
+    "write-sequential-code-with-gen",
+    "constructor-from-nullable-option-either",
+    "data-option"
+  ]
+}
