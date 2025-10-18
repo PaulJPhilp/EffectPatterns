@@ -1,5 +1,8 @@
 # The Effect Patterns Hub
 
+[![CI](https://github.com/PaulJPhilp/Effect-Patterns/actions/workflows/ci.yml/badge.svg)](https://github.com/PaulJPhilp/Effect-Patterns/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/PaulJPhilp/Effect-Patterns/branch/main/graph/badge.svg)](https://codecov.io/gh/PaulJPhilp/Effect-Patterns)
+
 A community-driven knowledge base of practical, goal-oriented patterns for building robust applications with Effect-TS.
 
 This repository is designed to be a living document that helps developers move from core concepts to advanced architectural strategies by focusing on the "why" behind the code.
