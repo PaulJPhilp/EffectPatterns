@@ -31,7 +31,7 @@
     "next": "^15.3.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "vercel": "^48.3.0"
+    "vercel": "^48.4.1"
   },
   "devDependencies": {
     "@types/node": "^24.6.2",
