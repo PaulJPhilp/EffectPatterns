@@ -47,8 +47,8 @@ importers:
         specifier: ^0.206.0
         version: 0.206.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/exporter-trace-otlp-http':
-        specifier: ^0.206.0
-        version: 0.206.0(@opentelemetry/api@1.9.0)
+        specifier: ^0.203.0
+        version: 0.203.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/exporter-trace-otlp-proto':
         specifier: ^0.206.0
         version: 0.206.0(@opentelemetry/api@1.9.0)
@@ -111,7 +111,7 @@ importers:
         version: 7.7.3
       vercel:
         specifier: ^48.4.0
-        version: 48.4.0(rollup@4.52.4)
+        version: 48.4.1(rollup@4.52.4)
       yaml:
         specifier: ^2.8.1
         version: 2.8.1
@@ -332,7 +332,7 @@ importers:
         version: 3.18.4
     devDependencies:
       '@types/node':
-        specifier: ^24.6.2
+        specifier: ^24.8.1
         version: 24.8.1
       '@vitest/coverage-v8':
         specifier: ^3.2.4
@@ -383,14 +383,14 @@ importers:
         specifier: ^15.3.0
         version: 15.5.6(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react:
-        specifier: ^19.0.0
+        specifier: ^19.2.0
         version: 19.2.0
       react-dom:
-        specifier: ^19.0.0
+        specifier: ^19.2.0
         version: 19.2.0(react@19.2.0)
       vercel:
         specifier: ^48.3.0
-        version: 48.4.0(rollup@4.52.4)
+        version: 48.4.1(rollup@4.52.4)
     devDependencies:
       '@types/node':
         specifier: ^24.6.2
@@ -1587,6 +1587,12 @@ packages:
     peerDependencies:
       '@opentelemetry/api': ^1.3.0
 
+  '@opentelemetry/exporter-trace-otlp-http@0.203.0':
+    resolution: {integrity: sha512-ZDiaswNYo0yq/cy1bBLJFe691izEJ6IgNmkjm4C6kE9ub/OMQqDXORx2D2j8fzTBTxONyzusbaZlqtfmyqURPw==}
+    engines: {node: ^18.19.0 || >=20.6.0}
+    peerDependencies:
+      '@opentelemetry/api': ^1.3.0
+
   '@opentelemetry/exporter-trace-otlp-http@0.206.0':
     resolution: {integrity: sha512-xiEhJZxE9yDb13FVW4XaF7J56boLv1NALOGEVu3F8jMC24iZmX5TSVRJCNGLWyy1Xb3N27Yu31kdSsmEBCnxyw==}
     engines: {node: ^18.19.0 || >=20.6.0}
@@ -2333,8 +2339,8 @@ packages:
   '@vercel/error-utils@2.0.3':
     resolution: {integrity: sha512-CqC01WZxbLUxoiVdh9B/poPbNpY9U+tO1N9oWHwTl5YAZxcqXmmWJ8KNMFItJCUUWdY3J3xv8LvAuQv2KZ5YdQ==}
 
-  '@vercel/express@0.0.25':
-    resolution: {integrity: sha512-PlgrRy/Esakm/ZMa2H/yal5s3wX8zBIkuBu17iAarHbG4GE+rWxU8Be7IuC23WOJN4+iSnClm7wPLMJttsxtYQ==}
+  '@vercel/express@0.0.26':
+    resolution: {integrity: sha512-a1q9lOIFX/lv5hNzuHOtc8UOPM0pImLPH5pTcYvS5pe2YUc/h+ons5xiy0A6QX3RAzZz09vrg4Ej+7xRXxln9w==}
 
   '@vercel/fun@1.1.6':
     resolution: {integrity: sha512-xDiM+bD0fSZyzcjsAua3D+guXclvHOSTzr03UcZEQwYzIjwWjLduT7bl2gAaeNIe7fASAIZd0P00clcj0On4rQ==}
@@ -2349,11 +2355,11 @@ packages:
   '@vercel/go@3.2.3':
     resolution: {integrity: sha512-PErgHlV7cf8hyPq31aRsL4xm5t4rCSO6vN5AQLlAGSy3ctdgqG7sI6hq/CAKo3CfgIhVHUwNYapFJgGJB/s4OA==}
 
-  '@vercel/h3@0.1.5':
-    resolution: {integrity: sha512-c8/ds+I79jKg3CGLT4o09yhvXvRllITXytSv5tzfFOxlsse7l2NyV9CwQKVnsAHi/Oo7KAXRyp/Lt6ujTXt+ow==}
+  '@vercel/h3@0.1.6':
+    resolution: {integrity: sha512-RjdgVVEClEBsFNwXENoRxuU0IH7wfjKlhPbol7714zIfNkhb7BlvEUq15CPyJYFKrnQ3W3RjdrNenZycAU0NgA==}
 
-  '@vercel/hono@0.1.6':
-    resolution: {integrity: sha512-ilpevE0o6iySJ8muuO/4bHxhy93wrki/HV21+s5KvSric0kKvMUD5Ga4oYCnb9vMVwK+b+6lGFtEppn93IVgWA==}
+  '@vercel/hono@0.1.7':
+    resolution: {integrity: sha512-fBMeyG7HoXkDgyeL7yRfl3AE+BH1QH7XeVwWysxQRlbSNOjXijVYgTHH2UffcD8mUzTx4Ejw+VqiQncA1wydCA==}
 
   '@vercel/hydrogen@1.2.4':
     resolution: {integrity: sha512-eb16oesfgHuBlXxe+WqI+rMdP4QpeHXLJh9ropFy+StkWC2F0ZFKegutEpvJCRg0FHttRnn9uMzMmzJ2F4xKkg==}
@@ -2368,6 +2374,9 @@ packages:
 
   '@vercel/node@5.4.0':
     resolution: {integrity: sha512-HZ6DohO1w59lmu+wn90hIblkEQQ0QQ11MH0XE5TrQdEHDX6qHyaO0BFS1jL8M79H7IUdEaJmgAgU6mJ78cYyig==}
+
+  '@vercel/node@5.4.1':
+    resolution: {integrity: sha512-FEEy/fZq/HY1D+IgVT3hdYncg3DdwuXmi8lgVdZCWiJTdV7AhOgblFFObbF1vRps7ehk4aBq4d+kSfoueiJMGQ==}
 
   '@vercel/python@5.0.10':
     resolution: {integrity: sha512-ZtTH/s2PIdzgN54n0XmB2x1sQZconOR3U1wIGFUc27HQvk+Zzl2YmqId+8HDURhvRjTyGlxZtkjHI6RZU8D0xw==}
@@ -5488,8 +5497,8 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  vercel@48.4.0:
-    resolution: {integrity: sha512-A8P4Vx8WI+I0OqX4UtYKlZl2Ww8UEgHXR2Y01AaoPX34U8D2BwCCe0gMsCTwq5Cdsn1IUFHdD133ZDGaqZ5cKg==}
+  vercel@48.4.1:
+    resolution: {integrity: sha512-EzunA8iHf55CDM5CUQQYR2+xp+1n8AqJziuOJx19w8Io2aQK1NjsRhmsHsogw9zsQ3xpdofaCs4MTjPHFNhdtA==}
     engines: {node: '>= 18'}
     hasBin: true
 
@@ -6713,6 +6722,15 @@ snapshots:
       '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-base': 2.1.0(@opentelemetry/api@1.9.0)
 
+  '@opentelemetry/exporter-trace-otlp-http@0.203.0(@opentelemetry/api@1.9.0)':
+    dependencies:
+      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/core': 2.0.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/otlp-exporter-base': 0.203.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/otlp-transformer': 0.203.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-base': 2.0.1(@opentelemetry/api@1.9.0)
+
   '@opentelemetry/exporter-trace-otlp-http@0.206.0(@opentelemetry/api@1.9.0)':
     dependencies:
       '@opentelemetry/api': 1.9.0
@@ -7403,10 +7421,10 @@ snapshots:
 
   '@vercel/error-utils@2.0.3': {}
 
-  '@vercel/express@0.0.25(rollup@4.52.4)':
+  '@vercel/express@0.0.26(rollup@4.52.4)':
     dependencies:
       '@vercel/nft': 0.30.1(rollup@4.52.4)
-      '@vercel/node': 5.4.0(rollup@4.52.4)
+      '@vercel/node': 5.4.1(rollup@4.52.4)
       '@vercel/static-config': 3.1.2
       fs-extra: 11.1.0
       path-to-regexp: 8.3.0
@@ -7458,9 +7476,9 @@ snapshots:
 
   '@vercel/go@3.2.3': {}
 
-  '@vercel/h3@0.1.5(rollup@4.52.4)':
+  '@vercel/h3@0.1.6(rollup@4.52.4)':
     dependencies:
-      '@vercel/node': 5.4.0(rollup@4.52.4)
+      '@vercel/node': 5.4.1(rollup@4.52.4)
       '@vercel/static-config': 3.1.2
     transitivePeerDependencies:
       - '@swc/core'
@@ -7469,10 +7487,10 @@ snapshots:
       - rollup
       - supports-color
 
-  '@vercel/hono@0.1.6(rollup@4.52.4)':
+  '@vercel/hono@0.1.7(rollup@4.52.4)':
     dependencies:
       '@vercel/nft': 0.30.1(rollup@4.52.4)
-      '@vercel/node': 5.4.0(rollup@4.52.4)
+      '@vercel/node': 5.4.1(rollup@4.52.4)
       '@vercel/static-config': 3.1.2
       fs-extra: 11.1.0
       path-to-regexp: 8.3.0
@@ -7519,6 +7537,37 @@ snapshots:
       - supports-color
 
   '@vercel/node@5.4.0(rollup@4.52.4)':
+    dependencies:
+      '@edge-runtime/node-utils': 2.3.0
+      '@edge-runtime/primitives': 4.1.0
+      '@edge-runtime/vm': 3.2.0
+      '@types/node': 16.18.11
+      '@vercel/build-utils': 12.1.3
+      '@vercel/error-utils': 2.0.3
+      '@vercel/nft': 0.30.1(rollup@4.52.4)
+      '@vercel/static-config': 3.1.2
+      async-listen: 3.0.0
+      cjs-module-lexer: 1.2.3
+      edge-runtime: 2.5.9
+      es-module-lexer: 1.4.1
+      esbuild: 0.14.47
+      etag: 1.8.1
+      mime-types: 2.1.35
+      node-fetch: 2.6.9
+      path-to-regexp: 6.1.0
+      path-to-regexp-updated: path-to-regexp@6.3.0
+      ts-morph: 12.0.0
+      ts-node: 10.9.1(@types/node@16.18.11)(typescript@4.9.5)
+      typescript: 4.9.5
+      undici: 5.28.4
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - encoding
+      - rollup
+      - supports-color
+
+  '@vercel/node@5.4.1(rollup@4.52.4)':
     dependencies:
       '@edge-runtime/node-utils': 2.3.0
       '@edge-runtime/primitives': 4.1.0
@@ -11342,19 +11391,19 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vercel@48.4.0(rollup@4.52.4):
+  vercel@48.4.1(rollup@4.52.4):
     dependencies:
       '@vercel/blob': 1.0.2
       '@vercel/build-utils': 12.1.3
       '@vercel/detect-agent': 1.0.0
-      '@vercel/express': 0.0.25(rollup@4.52.4)
+      '@vercel/express': 0.0.26(rollup@4.52.4)
       '@vercel/fun': 1.1.6
       '@vercel/go': 3.2.3
-      '@vercel/h3': 0.1.5(rollup@4.52.4)
-      '@vercel/hono': 0.1.6(rollup@4.52.4)
+      '@vercel/h3': 0.1.6(rollup@4.52.4)
+      '@vercel/hono': 0.1.7(rollup@4.52.4)
       '@vercel/hydrogen': 1.2.4
       '@vercel/next': 4.13.4(rollup@4.52.4)
-      '@vercel/node': 5.4.0(rollup@4.52.4)
+      '@vercel/node': 5.4.1(rollup@4.52.4)
       '@vercel/python': 5.0.10
       '@vercel/redwood': 2.3.6(rollup@4.52.4)
       '@vercel/remix-builder': 5.4.13(rollup@4.52.4)
