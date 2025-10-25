@@ -1,22 +1,25 @@
 ---
-title: "Run Background Tasks with Effect.fork"
-id: "run-background-tasks-with-fork"
-skillLevel: "advanced"
-useCase:
-  - "Concurrency"
-summary: "Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting."
+title: Run Background Tasks with Effect.fork
+id: run-background-tasks-with-fork
+skillLevel: advanced
+useCase: concurrency
+summary: >-
+  Use Effect.fork to start a computation in a background fiber, allowing the
+  parent fiber to continue its work without waiting.
 tags:
-  - "concurrency"
-  - "fork"
-  - "fiber"
-  - "background-process"
-  - "asynchronous"
+  - concurrency
+  - fork
+  - fiber
+  - background-process
+  - asynchronous
 rule:
-  description: "Use Effect.fork to start a non-blocking background process and manage its lifecycle via its Fiber."
+  description: >-
+    Use Effect.fork to start a non-blocking background process and manage its
+    lifecycle via its Fiber.
 related:
-  - "run-effects-in-parallel-with-all"
-  - "create-managed-runtime-for-scoped-resources"
-author: "effect_website"
+  - run-effects-in-parallel-with-all
+  - create-managed-runtime-for-scoped-resources
+author: effect_website
 ---
 
 ## Guideline

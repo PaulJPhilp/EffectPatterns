@@ -1,23 +1,25 @@
 ---
-title: "Manage Resource Lifecycles with Scope"
-id: "manage-resource-lifecycles-with-scope"
-skillLevel: "advanced"
-useCase:
-  - "Resource Management"
-  - "Concurrency"
-summary: "Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed."
+title: Manage Resource Lifecycles with Scope
+id: manage-resource-lifecycles-with-scope
+skillLevel: advanced
+useCase: concurrency
+summary: >-
+  Use Scope for fine-grained, manual control over resource lifecycles, ensuring
+  cleanup logic (finalizers) is always executed.
 tags:
-  - "scope"
-  - "resource-management"
-  - "finalizer"
-  - "acquire-release"
-  - "memory-safety"
+  - scope
+  - resource-management
+  - finalizer
+  - acquire-release
+  - memory-safety
 rule:
-  description: "Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees."
+  description: >-
+    Use Scope for fine-grained, manual control over resource lifecycles and
+    cleanup guarantees.
 related:
-  - "create-managed-runtime-for-scoped-resources"
-  - "understand-fibers-as-lightweight-threads"
-author: "effect_website"
+  - create-managed-runtime-for-scoped-resources
+  - understand-fibers-as-lightweight-threads
+author: effect_website
 ---
 
 ## Guideline

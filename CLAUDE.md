@@ -1,7 +1,7 @@
 # Effect Patterns Hub - Claude Code Context
 
-**Version:** 0.4.0
-**Last Updated:** 2025-10-10
+**Version:** 0.4.1
+**Last Updated:** 2025-10-23
 
 This document provides comprehensive context for Claude Code when working on the Effect Patterns Hub project.
 
@@ -13,9 +13,10 @@ Effect Patterns Hub is a community-driven knowledge base of practical, goal-orie
 2. **CLI Tool (`ep`)** - Search, discover, and install patterns
 3. **Effect Patterns Toolkit** - Type-safe library for pattern operations
 4. **MCP Server** - REST API for programmatic access
-5. **ChatGPT App** - Interactive pattern explorer
-6. **AI Coding Rules** - Machine-readable rules for 10+ AI tools
-7. **Data Analysis Engine** - Discord export service and LangGraph-powered thematic analysis for data-driven pattern discovery
+5. **Code Assistant** - AI-powered coding agent with Supermemory integration (NEW!)
+6. **Chat Assistant** - Legacy chat interface for patterns
+7. **AI Coding Rules** - Machine-readable rules for 10+ AI tools
+8. **Data Analysis Engine** - Discord export service and LangGraph-powered thematic analysis for data-driven pattern discovery
 
 ## Architecture
 
@@ -23,11 +24,19 @@ Effect Patterns Hub is a community-driven knowledge base of practical, goal-orie
 
 ```
 Effect-Patterns/
-├── app/                    # Next.js ChatGPT app
-│   ├── app/               # Next.js 15 app directory
-│   ├── server/            # API routes and server logic
-│   ├── mcp/               # MCP server integration
-│   └── package.json       # App dependencies
+├── app/                    # AI Assistant Applications
+│   ├── code-assistant/    # Vercel coding-agent with Supermemory (Phase 1) ✨ NEW
+│   │   ├── app/           # Next.js 16 routes
+│   │   │   ├── api/       # API endpoints
+│   │   │   ├── chat/      # Chat mode (Supermemory + Effect Patterns)
+│   │   │   └── tasks/     # Task mode (coding agent with sandbox)
+│   │   ├── lib/           # Database, auth, sandbox utilities
+│   │   ├── components/    # React components
+│   │   └── .env.local     # Environment configuration
+│   │
+│   └── chat-assistant/    # Legacy chat interface
+│       ├── app/           # Next.js 15 app directory
+│       └── package.json   # App dependencies
 │
 ├── packages/
 │   ├── toolkit/           # Effect Patterns Toolkit
@@ -798,6 +807,94 @@ Claude Code can access these rules for context-aware assistance:
 - Code generation
 - Error detection
 - Best practice enforcement
+
+## Code Assistant (NEW - Phase 1 Complete)
+
+### Overview
+
+The Code Assistant is a production-ready AI-powered coding platform built on Vercel's coding-agent-template with:
+
+- **Dual-Mode Architecture**:
+  - **Chat Mode** (`/chat`) - Conversational AI with Supermemory for user preferences
+  - **Task Mode** (`/tasks`) - Full coding agent with sandbox execution and Git integration
+
+- **Tech Stack**:
+  - Next.js 16 + React 19
+  - Vercel Sandbox for isolated code execution
+  - Neon PostgreSQL (via Vercel)
+  - GitHub OAuth authentication
+  - AI SDK 5 with multiple agent support
+
+- **AI Agents Supported**:
+  - Claude Code CLI (recommended for Effect-TS)
+  - OpenAI Codex
+  - Cursor CLI
+  - Google Gemini CLI
+  - GitHub Copilot CLI
+  - OpenCode
+
+### Running the Code Assistant
+
+```bash
+# Development
+cd app/code-assistant
+pnpm dev
+# Open: http://localhost:3002 (or available port)
+
+# Chat mode: http://localhost:3002/chat
+# Task mode: http://localhost:3002/tasks
+```
+
+### Key Features (Phase 1)
+
+**Chat Mode** (✅ Complete):
+- Conversational AI powered by Claude
+- Supermemory integration for user preferences
+- Effect Patterns search (ready to enable)
+- No sandbox execution - pure conversational
+
+**Task Mode** (✅ Complete):
+- Full coding agent with sandbox execution
+- Automatic Git branch creation and commits
+- File browser and diff viewer
+- PR creation and management
+- Real-time logs and progress tracking
+
+### Configuration
+
+See `app/code-assistant/.env.local` for environment variables:
+
+**Required**:
+- `POSTGRES_URL` - Neon database connection
+- `ANTHROPIC_API_KEY` - For Claude agent
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` - OAuth
+- `JWE_SECRET` / `ENCRYPTION_KEY` - Security keys
+
+**Optional** (for Task mode):
+- `SANDBOX_VERCEL_TEAM_ID` - Vercel sandbox credentials
+- `SANDBOX_VERCEL_PROJECT_ID`
+- `SANDBOX_VERCEL_TOKEN`
+
+**Optional** (for features):
+- `SUPERMEMORY_API_KEY` - Memory features
+- `OPENAI_API_KEY`, `GEMINI_API_KEY`, etc. - Other agents
+
+### Documentation
+
+- `app/code-assistant/READY_TO_TEST.md` - Testing guide (Drop 2)
+- `app/code-assistant/SETUP_CHECKLIST.md` - Setup instructions
+- `app/code-assistant/SUPERMEMORY_SETUP.md` - Supermemory integration
+- `app/code-assistant/SUPERMEMORY_INTEGRATION.md` - Architecture details
+- `CODE_ASSISTANT_PHASE1.md` (root) - Overview and setup summary
+
+### Phase 2 Roadmap
+
+- Add Effect Patterns toolkit integration to chat
+- Create MCP server for Supermemory (unified memory across modes)
+- Code review tools with AST analysis
+- Migration assessment (TS → Effect, Effect 3 → 4)
+- Pattern violation detection
+- Automated refactoring suggestions
 
 ## Common Tasks
 

@@ -1,24 +1,26 @@
 ---
-title: "Distinguish 'Not Found' from Errors"
-id: "distinguish-not-found-from-errors"
-skillLevel: "intermediate"
-useCase:
-  - "Error Management"
-  - "Domain Modeling"
-summary: "Use Effect<Option<A>> to clearly distinguish between a recoverable 'not found' case (None) and a true failure (Fail)."
+title: Distinguish 'Not Found' from Errors
+id: distinguish-not-found-from-errors
+skillLevel: intermediate
+useCase: domain-modeling
+summary: >-
+  Use Effect<Option<A>> to clearly distinguish between a recoverable 'not found'
+  case (None) and a true failure (Fail).
 tags:
-  - "option"
-  - "error-management"
-  - "not-found"
-  - "effect"
-  - "composition"
-  - "data"
+  - option
+  - error-management
+  - not-found
+  - effect
+  - composition
+  - data
 rule:
-  description: "Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures."
+  description: >-
+    Use Effect<Option<A>> to distinguish between recoverable 'not found' cases
+    and actual failures.
 related:
-  - "model-optional-values-with-option"
-  - "define-tagged-errors"
-author: "effect_website"
+  - model-optional-values-with-option
+  - define-tagged-errors
+author: effect_website
 ---
 
 ## Guideline

@@ -1,25 +1,27 @@
 ---
-title: "Execute Long-Running Apps with Effect.runFork"
-id: "execute-long-running-apps-with-runfork"
-skillLevel: "advanced"
-useCase:
-  - "Project Setup & Execution"
-  - "Concurrency"
-summary: "Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown."
+title: Execute Long-Running Apps with Effect.runFork
+id: execute-long-running-apps-with-runfork
+skillLevel: advanced
+useCase: concurrency
+summary: >-
+  Use Effect.runFork at the application's entry point to launch a long-running
+  process as a detached fiber, allowing for graceful shutdown.
 tags:
-  - "runFork"
-  - "execution"
-  - "runtime"
-  - "fiber"
-  - "concurrency"
-  - "graceful-shutdown"
-  - "daemon"
+  - runFork
+  - execution
+  - runtime
+  - fiber
+  - concurrency
+  - graceful-shutdown
+  - daemon
 rule:
-  description: "Use Effect.runFork to launch a long-running application as a manageable, detached fiber."
+  description: >-
+    Use Effect.runFork to launch a long-running application as a manageable,
+    detached fiber.
 related:
-  - "run-background-tasks-with-fork"
-  - "create-managed-runtime-for-scoped-resources"
-author: "effect_website"
+  - run-background-tasks-with-fork
+  - create-managed-runtime-for-scoped-resources
+author: effect_website
 ---
 
 ## Guideline

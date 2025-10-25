@@ -1,25 +1,28 @@
 ---
-title: "Add Caching by Wrapping a Layer"
-id: "add-caching-by-wrapping-a-layer"
-skillLevel: "advanced"
-useCase:
-  - "Making HTTP Requests"
-  - "Concurrency"
-summary: "Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service."
+title: Add Caching by Wrapping a Layer
+id: add-caching-by-wrapping-a-layer
+skillLevel: advanced
+useCase: concurrency
+summary: >-
+  Implement caching by creating a new layer that wraps a live service,
+  intercepting method calls to add caching logic without modifying the original
+  service.
 tags:
-  - "caching"
-  - "wrapper"
-  - "layer"
-  - "dependency-injection"
-  - "architecture"
-  - "performance"
+  - caching
+  - wrapper
+  - layer
+  - dependency-injection
+  - architecture
+  - performance
 rule:
-  description: "Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation."
+  description: >-
+    Use a wrapping Layer to add cross-cutting concerns like caching to a service
+    without altering its original implementation.
 related:
-  - "model-dependencies-as-services"
-  - "manage-shared-state-with-ref"
-  - "understand-layers-for-dependency-injection"
-author: "effect_website"
+  - model-dependencies-as-services
+  - manage-shared-state-with-ref
+  - understand-layers-for-dependency-injection
+author: effect_website
 ---
 
 ## Guideline

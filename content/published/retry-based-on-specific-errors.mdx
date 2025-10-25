@@ -1,23 +1,26 @@
 ---
-title: "Retry Operations Based on Specific Errors"
-id: "retry-based-on-specific-errors"
-skillLevel: "intermediate"
-useCase:
-  - "Error Management"
-summary: "Use Effect.retry and predicate functions to selectively retry an operation only when specific, recoverable errors occur."
+title: Retry Operations Based on Specific Errors
+id: retry-based-on-specific-errors
+skillLevel: intermediate
+useCase: error-management
+summary: >-
+  Use Effect.retry and predicate functions to selectively retry an operation
+  only when specific, recoverable errors occur.
 tags:
-  - "retry"
-  - "error-handling"
-  - "predicate"
-  - "resilience"
-  - "schedule"
+  - retry
+  - error-handling
+  - predicate
+  - resilience
+  - schedule
 rule:
-  description: "Use predicate-based retry policies to retry an operation only for specific, recoverable errors."
+  description: >-
+    Use predicate-based retry policies to retry an operation only for specific,
+    recoverable errors.
 related:
-  - "handle-flaky-operations-with-retry-timeout"
-  - "define-tagged-errors"
-  - "validate-a-result-with-predicates"
-author: "effect_website"
+  - handle-flaky-operations-with-retry-timeout
+  - define-tagged-errors
+  - validate-a-result-with-predicates
+author: effect_website
 ---
 
 ## Guideline

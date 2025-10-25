@@ -1,14 +1,25 @@
 ---
-title: "Handle Unexpected Errors by Inspecting the Cause"
-id: "handle-unexpected-errors-with-cause"
-skillLevel: "advanced"
-useCase: ["Error Management"]
-summary: "Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die)."
-tags: ["error-handling", "cause", "exit", "defect", "die", "unexpected-error", "runtime"]
+title: Handle Unexpected Errors by Inspecting the Cause
+id: handle-unexpected-errors-with-cause
+skillLevel: advanced
+useCase: error-management
+summary: >-
+  Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure,
+  distinguishing between expected errors (Fail) and unexpected defects (Die).
+tags:
+  - error-handling
+  - cause
+  - exit
+  - defect
+  - die
+  - unexpected-error
+  - runtime
 rule:
-  description: "Handle unexpected errors by inspecting the cause."
-related: ["define-tagged-errors", "execute-with-runpromise"]
-author: "Sandro Maglione"
+  description: Handle unexpected errors by inspecting the cause.
+related:
+  - define-tagged-errors
+  - execute-with-runpromise
+author: Sandro Maglione
 ---
 
 # Handle Unexpected Errors by Inspecting the Cause

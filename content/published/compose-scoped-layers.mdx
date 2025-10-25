@@ -1,14 +1,26 @@
 ---
-title: "Compose Resource Lifecycles with `Layer.merge`"
-id: "compose-scoped-layers"
-skillLevel: "intermediate"
-useCase: ["Application Architecture", "Resource Management", "Dependency Injection"]
-summary: "Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order."
-tags: ["resource", "layer", "scope", "compose", "merge", "dependency-graph", "architecture"]
+title: Compose Resource Lifecycles with `Layer.merge`
+id: compose-scoped-layers
+skillLevel: intermediate
+useCase: resource-management
+summary: >-
+  Combine multiple resource-managing layers, letting Effect automatically handle
+  the acquisition and release order.
+tags:
+  - resource
+  - layer
+  - scope
+  - compose
+  - merge
+  - dependency-graph
+  - architecture
 rule:
-  description: "Compose multiple scoped layers using `Layer.merge` or by providing one layer to another."
-related: ["scoped-service-layer"]
-author: "PaulJPhilp"
+  description: >-
+    Compose multiple scoped layers using `Layer.merge` or by providing one layer
+    to another.
+related:
+  - scoped-service-layer
+author: PaulJPhilp
 ---
 
 # Compose Resource Lifecycles with `Layer.merge`

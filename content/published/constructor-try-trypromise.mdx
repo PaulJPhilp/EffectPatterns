@@ -1,14 +1,28 @@
 ---
-title: "Wrapping Synchronous and Asynchronous Computations"
-id: "constructor-try-trypromise"
-skillLevel: "beginner"
-useCase: ["Constructors", "Error Handling", "Async", "Interop"]
-summary: "Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world."
-tags: ["try", "tryPromise", "constructor", "effect", "error", "async", "interop"]
+title: Wrapping Synchronous and Asynchronous Computations
+id: constructor-try-trypromise
+skillLevel: beginner
+useCase: error-management
+summary: >-
+  Use try and tryPromise to safely wrap synchronous or asynchronous computations
+  that may throw or reject, capturing errors in the Effect world.
+tags:
+  - try
+  - tryPromise
+  - constructor
+  - effect
+  - error
+  - async
+  - interop
 rule:
-  description: "Use try and tryPromise to lift code that may throw or reject into Effect, capturing errors in the failure channel."
-related: ["constructor-succeed-some-right", "constructor-fail-none-left", "constructor-sync-async"]
-author: "PaulJPhilp"
+  description: >-
+    Use try and tryPromise to lift code that may throw or reject into Effect,
+    capturing errors in the failure channel.
+related:
+  - constructor-succeed-some-right
+  - constructor-fail-none-left
+  - constructor-sync-async
+author: PaulJPhilp
 ---
 
 # Wrapping Synchronous and Asynchronous Computations

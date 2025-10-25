@@ -1,22 +1,25 @@
 ---
-title: "Automatically Retry Failed Operations"
-id: "stream-retry-on-failure"
-skillLevel: "intermediate"
-useCase:
-  - "Building Data Pipelines"
-summary: "Build a self-healing pipeline that can automatically retry failed processing steps using a configurable backoff strategy."
+title: Automatically Retry Failed Operations
+id: stream-retry-on-failure
+skillLevel: intermediate
+useCase: building-data-pipelines
+summary: >-
+  Build a self-healing pipeline that can automatically retry failed processing
+  steps using a configurable backoff strategy.
 tags:
-  - "stream"
-  - "retry"
-  - "resilience"
-  - "error-handling"
-  - "schedule"
+  - stream
+  - retry
+  - resilience
+  - error-handling
+  - schedule
 rule:
-  description: "Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures."
-author: "PaulJPhilp"
+  description: >-
+    Compose a Stream with the .retry(Schedule) operator to automatically recover
+    from transient failures.
+author: PaulJPhilp
 related:
-  - "stream-process-concurrently"
-  - "handle-api-errors"
+  - stream-process-concurrently
+  - handle-api-errors
 ---
 
 ## Guideline

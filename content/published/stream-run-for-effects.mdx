@@ -1,24 +1,27 @@
 ---
-title: "Run a Pipeline for its Side Effects"
-id: "stream-run-for-effects"
-skillLevel: "beginner"
-useCase:
-  - "Building Data Pipelines"
-summary: "Execute a pipeline for its effects without collecting the results, saving memory."
+title: Run a Pipeline for its Side Effects
+id: stream-run-for-effects
+skillLevel: beginner
+useCase: building-data-pipelines
+summary: >-
+  Execute a pipeline for its effects without collecting the results, saving
+  memory.
 tags:
-  - "stream"
-  - "run"
-  - "drain"
-  - "sink"
-  - "effects"
-  - "performance"
-  - "memory"
+  - stream
+  - run
+  - drain
+  - sink
+  - effects
+  - performance
+  - memory
 rule:
-  description: "Use Stream.runDrain to execute a stream for its side effects when you don't need the final values."
-author: "PaulJPhilp"
+  description: >-
+    Use Stream.runDrain to execute a stream for its side effects when you don't
+    need the final values.
+author: PaulJPhilp
 related:
-  - "stream-collect-results"
-  - "stream-process-in-batches"
+  - stream-collect-results
+  - stream-process-in-batches
 ---
 
 ## Guideline

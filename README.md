@@ -1,11 +1,44 @@
+# Effect Patterns Hub
+
+A community-driven knowledge base of practical, goal-oriented patterns for building robust applications with Effect-TS.
+
+## 🎉 New: Code Assistant (Phase 1 Complete!)
+
+**Production-ready AI coding platform** now available at `app/code-assistant`!
+
+**Quick Start:**
+```bash
+cd app/code-assistant
+pnpm dev
+# Open: http://localhost:3002
+```
+
+**Features:**
+- **Dual-Mode Architecture**: Chat Mode (Supermemory + Claude) and Task Mode (full coding agent)
+- **Supermemory Integration**: Long-term memory for user preferences
+- **Effect Patterns Search**: Built-in toolkit integration (ready to enable)
+- **Multiple AI Agents**: Claude Code CLI, OpenAI Codex, Cursor CLI, Gemini CLI
+- **Git Workflow**: Automatic branch creation, commits, and PR management
+
+**Test Supermemory (Drop 2):**
+1. Visit http://localhost:3002/chat
+2. Sign in with GitHub
+3. Try: "Remember that I prefer Effect.gen over .pipe chains"
+4. Ask: "What do you know about my preferences?"
+
+See [CODE_ASSISTANT_COMPLETE.md](./CODE_ASSISTANT_COMPLETE.md) for full documentation.
+
+---
+
 # Effect Patterns Index (Review)
 
-Grouped by skillLevel (intro → intermediate → advanced) then by the 
-primary useCase (first element). Remaining useCase values appear as 
+Grouped by skillLevel (intro → intermediate → advanced) then by the
+primary useCase (first element). Remaining useCase values appear as
 badges. Tie-breaker within groups is title (A–Z).
 
 ## Table of Contents
 
+- [Code Assistant](#-new-code-assistant-phase-1-complete)
 - [Start Here](#start-here)
 - [Intro](#intro)
 - [Intermediate](#intermediate)

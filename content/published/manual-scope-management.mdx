@@ -1,14 +1,26 @@
 ---
-title: "Manually Manage Lifecycles with `Scope`"
-id: "manual-scope-management"
-skillLevel: "advanced"
-useCase: ["Resource Management", "Advanced Dependency Injection", "Custom Layers"]
-summary: "Use `Scope` directly to manage complex resource lifecycles or when building custom layers."
-tags: ["resource", "scope", "finalizer", "layer", "advanced", "lifecycle"]
+title: Manually Manage Lifecycles with `Scope`
+id: manual-scope-management
+skillLevel: advanced
+useCase: resource-management
+summary: >-
+  Use `Scope` directly to manage complex resource lifecycles or when building
+  custom layers.
+tags:
+  - resource
+  - scope
+  - finalizer
+  - layer
+  - advanced
+  - lifecycle
 rule:
-  description: "Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup."
-related: ["acquire-release-bracket", "scoped-service-layer"]
-author: "PaulJPhilp"
+  description: >-
+    Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over
+    resource cleanup.
+related:
+  - acquire-release-bracket
+  - scoped-service-layer
+author: PaulJPhilp
 ---
 
 # Manually Manage Lifecycles with `Scope`

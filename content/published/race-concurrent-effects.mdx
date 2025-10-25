@@ -1,22 +1,25 @@
 ---
-title: "Race Concurrent Effects for the Fastest Result"
-id: "race-concurrent-effects"
-skillLevel: "intermediate"
-useCase:
-  - "Concurrency"
-summary: "Use Effect.race to run multiple effects concurrently and proceed with the result of the one that succeeds first, automatically interrupting the others."
+title: Race Concurrent Effects for the Fastest Result
+id: race-concurrent-effects
+skillLevel: intermediate
+useCase: concurrency
+summary: >-
+  Use Effect.race to run multiple effects concurrently and proceed with the
+  result of the one that succeeds first, automatically interrupting the others.
 tags:
-  - "concurrency"
-  - "race"
-  - "performance"
-  - "timeout"
-  - "fallback"
+  - concurrency
+  - race
+  - performance
+  - timeout
+  - fallback
 rule:
-  description: "Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers."
+  description: >-
+    Use Effect.race to get the result from the first of several effects to
+    succeed, automatically interrupting the losers.
 related:
-  - "run-effects-in-parallel-with-all"
-  - "add-timeouts-to-effects"
-author: "effect_website"
+  - run-effects-in-parallel-with-all
+  - add-timeouts-to-effects
+author: effect_website
 ---
 
 ## Guideline

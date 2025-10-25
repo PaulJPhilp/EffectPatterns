@@ -1,14 +1,22 @@
 ---
-title: "Avoid Long Chains of .andThen; Use Generators Instead"
-id: "avoid-long-andthen-chains"
-skillLevel: "intermediate"
-useCase: ["Domain Modeling"]
-summary: "Prefer Effect.gen over long chains of .andThen for sequential logic to improve readability and maintainability."
-tags: ["andThen", "generators", "readability", "composition", "anti-pattern"]
+title: Avoid Long Chains of .andThen; Use Generators Instead
+id: avoid-long-andthen-chains
+skillLevel: intermediate
+useCase: domain-modeling
+summary: >-
+  Prefer Effect.gen over long chains of .andThen for sequential logic to improve
+  readability and maintainability.
+tags:
+  - andThen
+  - generators
+  - readability
+  - composition
+  - anti-pattern
 rule:
-  description: "Prefer generators over long chains of .andThen."
-related: ["use-gen-for-business-logic"]
-author: "Dillon Mulroy"
+  description: Prefer generators over long chains of .andThen.
+related:
+  - use-gen-for-business-logic
+author: Dillon Mulroy
 ---
 
 # Avoid Long Chains of .andThen; Use Generators Instead

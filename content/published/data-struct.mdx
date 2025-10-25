@@ -1,14 +1,25 @@
 ---
-title: "Comparing Data by Value with Data.struct"
-id: "data-struct"
-skillLevel: "beginner"
-useCase: ["Data Types", "Structural Equality", "Domain Modeling"]
-summary: "Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference."
-tags: ["Data.struct", "structural-equality", "immutable", "data-type", "effect"]
+title: Comparing Data by Value with Data.struct
+id: data-struct
+skillLevel: beginner
+useCase: domain-modeling
+summary: >-
+  Use Data.struct to create immutable, structurally-typed objects that can be
+  compared by value, not by reference.
+tags:
+  - Data.struct
+  - structural-equality
+  - immutable
+  - data-type
+  - effect
 rule:
-  description: "Use Data.struct to define objects whose equality is based on their contents, enabling safe and predictable comparisons."
-related: ["data-tuple", "data-equal"]
-author: "PaulJPhilp"
+  description: >-
+    Use Data.struct to define objects whose equality is based on their contents,
+    enabling safe and predictable comparisons.
+related:
+  - data-tuple
+  - data-equal
+author: PaulJPhilp
 ---
 
 # Comparing Data by Value with `Data.struct`

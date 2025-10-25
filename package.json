@@ -5,9 +5,11 @@
   "private": true,
   "description": "A community-driven knowledge base for Effect-TS patterns.",
   "workspaces": [
+    "app/*",
     "apps/*",
     "packages/*",
-    "services/*"
+    "services/*",
+    "agents/*"
   ],
   "bin": {
     "ep": "./scripts/ep.ts"

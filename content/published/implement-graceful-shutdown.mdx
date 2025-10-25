@@ -1,26 +1,28 @@
 ---
-title: "Implement Graceful Shutdown for Your Application"
-id: "implement-graceful-shutdown"
-skillLevel: "advanced"
-useCase:
-  - "Concurrency"
-  - "Resource Management"
-summary: "Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released."
+title: Implement Graceful Shutdown for Your Application
+id: implement-graceful-shutdown
+skillLevel: advanced
+useCase: concurrency
+summary: >-
+  Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a
+  Fiber.interrupt, ensuring all resources are safely released.
 tags:
-  - "graceful-shutdown"
-  - "resource-management"
-  - "server"
-  - "fiber"
-  - "runFork"
-  - "interrupt"
-  - "finalizer"
+  - graceful-shutdown
+  - resource-management
+  - server
+  - fiber
+  - runFork
+  - interrupt
+  - finalizer
 rule:
-  description: "Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications."
+  description: >-
+    Use Effect.runFork and OS signal listeners to implement graceful shutdown
+    for long-running applications.
 related:
-  - "execute-long-running-apps-with-runfork"
-  - "create-managed-runtime-for-scoped-resources"
-  - "build-a-basic-http-server"
-author: "effect_website"
+  - execute-long-running-apps-with-runfork
+  - create-managed-runtime-for-scoped-resources
+  - build-a-basic-http-server
+author: effect_website
 ---
 
 ## Guideline

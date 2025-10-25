@@ -31,12 +31,12 @@ const SHOW_PROGRESS = true;
 interface ValidationIssue {
   type: 'error' | 'warning';
   category:
-    | 'frontmatter'
-    | 'structure'
-    | 'links'
-    | 'code'
-    | 'content'
-    | 'files';
+  | 'frontmatter'
+  | 'structure'
+  | 'links'
+  | 'code'
+  | 'content'
+  | 'files';
   message: string;
 }
 
@@ -112,6 +112,67 @@ const VALID_USE_CASES = [
   'advanced-dependency-injection',
 ];
 
+const USE_CASE_ALIASES: Record<string, string | readonly string[]> = {
+  'combinators': 'core-concepts',
+  'sequencing': 'core-concepts',
+  'composition': 'core-concepts',
+  'pairing': 'core-concepts',
+  'side-effects': 'core-concepts',
+  'constructors': 'core-concepts',
+  'lifting': 'core-concepts',
+  'effect-results': 'core-concepts',
+  'data-types': 'modeling-data',
+  'collections': 'modeling-data',
+  'set-operations': 'modeling-data',
+  'optional-values': 'modeling-data',
+  'time': 'modeling-time',
+  'duration': 'modeling-time',
+  'logging': 'observability',
+  'instrumentation': 'observability',
+  'metrics': 'observability',
+  'monitoring': 'observability',
+  'function-calls': 'observability',
+  'debugging': 'tooling-and-debugging',
+  'performance': 'resource-management',
+  'security': 'application-architecture',
+  'sensitive-data': 'application-architecture',
+  'interop': 'application-architecture',
+  'async': 'concurrency',
+  'callback': 'concurrency',
+  'error-handling': 'error-management',
+};
+
+const normalizeUseCaseValue = (value: string): readonly string[] => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return [];
+  }
+
+  const lower = trimmed.toLowerCase();
+  const slug = lower.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+  for (const candidate of [lower, slug]) {
+    if (VALID_USE_CASES.includes(candidate)) {
+      return [candidate];
+    }
+  }
+
+  const aliasKey = [lower, slug].find((candidate): candidate is keyof typeof USE_CASE_ALIASES =>
+    Object.prototype.hasOwnProperty.call(USE_CASE_ALIASES, candidate)
+  );
+
+  if (!aliasKey) {
+    return [];
+  }
+
+  const mapped = USE_CASE_ALIASES[aliasKey];
+  if (typeof mapped === 'string') {
+    return [mapped];
+  }
+
+  return mapped;
+};
+
 // Required sections
 const REQUIRED_SECTIONS = [
   { pattern: /##\s+Good Example/i, name: 'Good Example' },
@@ -153,21 +214,51 @@ function validateFrontmatter(
     issues.push({
       type: 'warning',
       category: 'frontmatter',
-      message: `Invalid skillLevel '${
-        frontmatter.skillLevel
-      }'. Valid values: ${VALID_SKILL_LEVELS.join(', ')}`,
+      message: `Invalid skillLevel '${frontmatter.skillLevel
+        }'. Valid values: ${VALID_SKILL_LEVELS.join(', ')}`,
     });
   }
 
-  // Validate use case
-  if (frontmatter.useCase && !VALID_USE_CASES.includes(frontmatter.useCase)) {
-    issues.push({
-      type: 'warning',
-      category: 'frontmatter',
-      message: `Invalid useCase '${
-        frontmatter.useCase
-      }'. Valid values: ${VALID_USE_CASES.join(', ')}`,
-    });
+  // Validate use case (can be array or string)
+  if (frontmatter.useCase) {
+    const useCases = Array.isArray(frontmatter.useCase)
+      ? frontmatter.useCase
+      : [frontmatter.useCase];
+
+    const normalizedUseCases = new Set<string>();
+    const unmapped: string[] = [];
+
+    for (const raw of useCases) {
+      if (typeof raw !== 'string') {
+        unmapped.push(String(raw));
+        continue;
+      }
+
+      const normalized = normalizeUseCaseValue(raw);
+      if (normalized.length === 0) {
+        unmapped.push(raw);
+        continue;
+      }
+
+      for (const entry of normalized) {
+        normalizedUseCases.add(entry);
+      }
+    }
+
+    if (normalizedUseCases.size === 0) {
+      issues.push({
+        type: 'warning',
+        category: 'frontmatter',
+        message: `Invalid useCase '${Array.isArray(frontmatter.useCase) ? frontmatter.useCase.join(', ') : frontmatter.useCase
+          }'. Valid values: ${VALID_USE_CASES.join(', ')}`,
+      });
+    } else if (unmapped.length > 0) {
+      issues.push({
+        type: 'warning',
+        category: 'frontmatter',
+        message: `Some useCase values could not be normalized (${unmapped.join(', ')}). Valid values: ${VALID_USE_CASES.join(', ')}`,
+      });
+    }
   }
 
   // Check summary length
@@ -452,8 +543,7 @@ function printResults(results: ValidationResult[]) {
 
     for (const result of invalid) {
       console.log(
-        `\n${colorize(result.file + '.mdx', 'bright')} (${
-          result.errors
+        `\n${colorize(result.file + '.mdx', 'bright')} (${result.errors
         } error(s), ${result.warnings} warning(s))`
       );
 
@@ -484,8 +574,7 @@ function printResults(results: ValidationResult[]) {
 
     for (const result of patternsWithWarnings) {
       console.log(
-        `\n${colorize(result.file + '.mdx', 'bright')} (${
-          result.warnings
+        `\n${colorize(result.file + '.mdx', 'bright')} (${result.warnings
         } warning(s))`
       );
 

@@ -1,24 +1,27 @@
 ---
-title: "Manage Resources Safely in a Pipeline"
-id: "stream-manage-resources"
-skillLevel: "advanced"
-useCase:
-  - "Building Data Pipelines"
-summary: "Ensure resources like file handles or connections are safely acquired at the start of a pipeline and always released at the end, even on failure."
+title: Manage Resources Safely in a Pipeline
+id: stream-manage-resources
+skillLevel: advanced
+useCase: building-data-pipelines
+summary: >-
+  Ensure resources like file handles or connections are safely acquired at the
+  start of a pipeline and always released at the end, even on failure.
 tags:
-  - "stream"
-  - "resource"
-  - "scope"
-  - "acquireRelease"
-  - "bracket"
-  - "safety"
-  - "file"
+  - stream
+  - resource
+  - scope
+  - acquireRelease
+  - bracket
+  - safety
+  - file
 rule:
-  description: "Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline."
-author: "PaulJPhilp"
+  description: >-
+    Use Stream.acquireRelease to safely manage the lifecycle of a resource
+    within a pipeline.
+author: PaulJPhilp
 related:
-  - "stream-from-file"
-  - "stream-run-for-effects"
+  - stream-from-file
+  - stream-run-for-effects
 ---
 
 ## Guideline

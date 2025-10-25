@@ -1,15 +1,25 @@
 ---
-
-title: "Safely Bracket Resource Usage with `acquireRelease`"
-id: "safely-bracket-resource-usage"
-skillLevel: "beginner"
-useCase: ["Resource Management", "File Handling", "Database Connections", "Network Requests"]
-summary: "Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur."
-tags: ["resource", "scope", "acquire", "release", "bracket", "finalizer", "try-finally", "interruption"]
+title: Safely Bracket Resource Usage with `acquireRelease`
+id: safely-bracket-resource-usage
+skillLevel: beginner
+useCase: resource-management
+summary: >-
+  Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even
+  if errors or interruptions occur.
+tags:
+  - resource
+  - scope
+  - acquire
+  - release
+  - bracket
+  - finalizer
+  - try-finally
+  - interruption
 rule:
-  description: "Bracket the use of a resource between an `acquire` and a `release` effect."
-related: ["scoped-service-layer"]
-author: "PaulJPhilp"
+  description: Bracket the use of a resource between an `acquire` and a `release` effect.
+related:
+  - scoped-service-layer
+author: PaulJPhilp
 ---
 
 # Safely Bracket Resource Usage with `acquireRelease`

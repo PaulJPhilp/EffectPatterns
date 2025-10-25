@@ -1,23 +1,26 @@
 ---
-title: "Poll for Status Until a Task Completes"
-id: "poll-for-status-until-task-completes"
-skillLevel: "advanced"
-useCase:
-  - "Concurrency"
-summary: "Use Effect.race to run a repeating polling effect alongside a main task, automatically stopping the polling when the main task finishes."
+title: Poll for Status Until a Task Completes
+id: poll-for-status-until-task-completes
+skillLevel: advanced
+useCase: concurrency
+summary: >-
+  Use Effect.race to run a repeating polling effect alongside a main task,
+  automatically stopping the polling when the main task finishes.
 tags:
-  - "polling"
-  - "repeat"
-  - "race"
-  - "concurrency"
-  - "schedule"
-  - "long-running-task"
+  - polling
+  - repeat
+  - race
+  - concurrency
+  - schedule
+  - long-running-task
 rule:
-  description: "Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes."
+  description: >-
+    Use Effect.race to run a repeating polling task that is automatically
+    interrupted when a main task completes.
 related:
-  - "race-concurrent-effects"
-  - "run-background-tasks-with-fork"
-author: "paul"
+  - race-concurrent-effects
+  - run-background-tasks-with-fork
+author: paul
 ---
 
 ## Guideline

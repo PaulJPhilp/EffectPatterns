@@ -1,22 +1,25 @@
 ---
-title: "Process Items in Batches"
-id: "stream-process-in-batches"
-skillLevel: "intermediate"
-useCase:
-  - "Building Data Pipelines"
-summary: "Group items into chunks for efficient bulk operations, like database inserts or batch API calls."
+title: Process Items in Batches
+id: stream-process-in-batches
+skillLevel: intermediate
+useCase: building-data-pipelines
+summary: >-
+  Group items into chunks for efficient bulk operations, like database inserts
+  or batch API calls.
 tags:
-  - "stream"
-  - "batch"
-  - "chunk"
-  - "performance"
-  - "grouped"
+  - stream
+  - batch
+  - chunk
+  - performance
+  - grouped
 rule:
-  description: "Use Stream.grouped(n) to transform a stream of items into a stream of batched chunks."
-author: "PaulJPhilp"
+  description: >-
+    Use Stream.grouped(n) to transform a stream of items into a stream of
+    batched chunks.
+author: PaulJPhilp
 related:
-  - "stream-process-concurrently"
-  - "stream-run-for-effects"
+  - stream-process-concurrently
+  - stream-run-for-effects
 ---
 
 ## Guideline

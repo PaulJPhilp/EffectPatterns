@@ -1,22 +1,25 @@
 ---
-title: "Process a Large File with Constant Memory"
-id: "stream-from-file"
-skillLevel: "intermediate"
-useCase:
-  - "Building Data Pipelines"
-summary: "Create a data pipeline from a file on disk, processing it line-by-line without loading the entire file into memory."
+title: Process a Large File with Constant Memory
+id: stream-from-file
+skillLevel: intermediate
+useCase: building-data-pipelines
+summary: >-
+  Create a data pipeline from a file on disk, processing it line-by-line without
+  loading the entire file into memory.
 tags:
-  - "stream"
-  - "file"
-  - "memory"
-  - "performance"
-  - "node"
+  - stream
+  - file
+  - memory
+  - performance
+  - node
 rule:
-  description: "Use Stream.fromReadable with a Node.js Readable stream to process files efficiently."
-author: "PaulJPhilp"
+  description: >-
+    Use Stream.fromReadable with a Node.js Readable stream to process files
+    efficiently.
+author: PaulJPhilp
 related:
-  - "stream-from-iterable"
-  - "stream-manage-resources"
+  - stream-from-iterable
+  - stream-manage-resources
 ---
 
 ## Guideline

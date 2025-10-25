@@ -16,8 +16,9 @@ The Effect Patterns Hub is a community-driven knowledge base for Effect-TS patte
 - **Core:** Effect-TS 3.18+, TypeScript 5.8+, Bun
 - **Testing:** Vitest, comprehensive test suites
 - **Linting:** Biome (ultracite configuration), custom Effect-TS rules
-- **Infrastructure:** Next.js 15, OpenTelemetry, MCP protocol
-- **Package Management:** Bun (primary), npm/pnpm support planned
+- **Infrastructure:** Next.js 15/16, OpenTelemetry, MCP protocol, Vercel AI SDK 5
+- **Package Management:** Bun (primary), pnpm for apps, npm support planned
+- **Applications:** Code Assistant (Next.js 16, React 19, AI SDK 5, Supermemory)
 
 ## Commands
 
@@ -76,7 +77,8 @@ ep qa:repair                          # Auto-repair issues
 # Development Servers
 bun run server:dev                    # Start pattern server (port 3001)
 bun run mcp:dev                       # Start MCP server in dev mode
-cd app && npm run dev                 # Start ChatGPT app (port 3000)
+cd app/chat-assistant && npm run dev  # Start ChatGPT app (port 3000)
+cd app/code-assistant && pnpm dev     # Start Code Assistant (port 3002)
 
 # Production Builds
 bun run mcp:build                     # Build MCP server
@@ -114,7 +116,9 @@ effect-patterns/
 │   └── effect-discord/              # Discord export service
 ├── services/
 │   └── mcp-server/                  # MCP server with OpenTelemetry
-├── app/                             # Next.js ChatGPT application
+├── app/
+│   ├── code-assistant/              # AI coding platform (Next.js 16, AI SDK 5)
+│   └── chat-assistant/              # ChatGPT application (Next.js 15)
 ├── content/
 │   ├── published/                   # 150+ published MDX patterns
 │   ├── src/                         # TypeScript pattern examples
@@ -133,7 +137,9 @@ effect-patterns/
 
 **MCP Server**: Model Context Protocol server providing AI tools with access to pattern data and generation capabilities.
 
-**Chat Application**: Next.js-based interface for interactive pattern exploration and AI-assisted development.
+**Chat Applications**:
+- **Code Assistant**: Production-ready AI coding platform with dual-mode architecture (Chat + Task modes), Supermemory integration, and multiple AI agent support
+- **Chat Assistant**: Legacy Next.js interface for pattern exploration
 
 **Analysis Engine**: LangGraph-powered system for processing Discord data and generating thematic insights.
 
@@ -718,12 +724,103 @@ vitest --ui scripts/__tests__/ep-cli.test.ts
 - **Pattern Marketplace:** Community contribution platform
 - **AI-Powered Suggestions:** Context-aware pattern recommendations
 
+## Code Assistant
+
+### Overview
+
+The **Code Assistant** is a production-ready AI-powered coding platform built on Vercel's coding-agent-template, providing dual-mode architecture for both conversational AI assistance and full coding agent capabilities.
+
+**Key Features:**
+- **Dual-Mode Architecture**: Chat Mode (AI SDK direct) and Task Mode (CLI agents in sandbox)
+- **Supermemory Integration**: Long-term memory for user preferences and coding context
+- **Multiple AI Agents**: Claude Code CLI, OpenAI Codex, Cursor CLI, Gemini CLI, and more
+- **Effect Patterns Search**: Built-in integration with @effect-patterns/toolkit
+- **Git Integration**: Automatic branch creation, commits, and PR management
+- **Sandbox Execution**: Isolated code execution environments
+
+### Running Code Assistant
+
+```bash
+cd app/code-assistant
+pnpm dev
+# Open: http://localhost:3002
+```
+
+**Access Points:**
+- **Chat Mode**: http://localhost:3002/chat (Supermemory + Claude)
+- **Task Mode**: http://localhost:3002/tasks (Full coding agent with sandbox)
+
+### Architecture
+
+**Chat Mode** (`/chat`):
+- Direct AI SDK integration with Anthropic Claude
+- Supermemory tools for user preferences and context
+- Effect Patterns search integration (ready to enable)
+- No sandbox - pure conversational AI
+
+**Task Mode** (`/tasks`):
+- CLI-based agents running in Vercel sandboxes
+- Full git workflow (branch, commit, PR)
+- File browser and diff viewer
+- Real-time logs and progress tracking
+- Multiple agent support (Claude Code CLI, Cursor CLI, etc.)
+
+### Configuration
+
+**Environment Variables** (in `app/code-assistant/.env.local`):
+
+Required:
+- `POSTGRES_URL` - Neon database connection
+- `ANTHROPIC_API_KEY` - Claude API key
+- `SUPERMEMORY_API_KEY` - Supermemory API key
+- `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` - OAuth
+- `JWE_SECRET` / `ENCRYPTION_KEY` - Security keys
+
+Optional:
+- `OPENAI_API_KEY` - OpenAI agents
+- `GEMINI_API_KEY` - Gemini agent
+- `SANDBOX_VERCEL_TEAM_ID` / `SANDBOX_VERCEL_PROJECT_ID` / `SANDBOX_VERCEL_TOKEN` - Vercel sandbox
+
+### Testing Supermemory (Drop 2)
+
+1. Open http://localhost:3002/chat
+2. Sign in with GitHub
+3. Test memory features:
+   - "Remember that I prefer Effect.gen over .pipe chains"
+   - "What do you know about my preferences?"
+4. Verify persistence across browser sessions
+
+### Database Commands
+
+```bash
+cd app/code-assistant
+pnpm db:push       # Push schema changes to Neon
+pnpm db:studio     # Open Drizzle Studio GUI
+```
+
+### Documentation
+
+- **[app/code-assistant/READY_TO_TEST.md](./app/code-assistant/READY_TO_TEST.md)** - Testing guide
+- **[app/code-assistant/SETUP_CHECKLIST.md](./app/code-assistant/SETUP_CHECKLIST.md)** - Setup steps
+- **[app/code-assistant/SUPERMEMORY_INTEGRATION.md](./app/code-assistant/SUPERMEMORY_INTEGRATION.md)** - Architecture
+- **[CODE_ASSISTANT_COMPLETE.md](./CODE_ASSISTANT_COMPLETE.md)** - Completion summary
+
+### Phase 2 Roadmap
+
+After Drop 2 validation:
+- Enable Effect Pattern Search in Chat mode
+- Add navigation between Chat and Task modes
+- Create Supermemory MCP server for Task mode
+- Code review tools with AST analysis
+- Migration assessment (TypeScript → Effect, Effect 3 → 4)
+
 ## See Also
 
 - **[SETUP.md](./SETUP.md)** - Complete setup and installation guide
 - **[TESTING.md](./TESTING.md)** - Comprehensive testing documentation
 - **[ROADMAP.md](./ROADMAP.md)** - Future development plans
 - **[CLAUDE.md](./CLAUDE.md)** - Claude-specific AI guidance
+- **[CODE_ASSISTANT_COMPLETE.md](./CODE_ASSISTANT_COMPLETE.md)** - Code Assistant summary
 - **[docs/guides/CONTRIBUTING.md](./docs/guides/CONTRIBUTING.md)** - Contribution guidelines
 - **[docs/patterns-guide.md](./docs/guides/patterns-guide.md)** - Pattern development guide
 - **[CHANGELOG.md](./docs/CHANGELOG.md)** - Version history and changes

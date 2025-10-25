@@ -1,23 +1,26 @@
 ---
-title: "Process Items Concurrently"
-id: "stream-process-concurrently"
-skillLevel: "intermediate"
-useCase:
-  - "Building Data Pipelines"
-summary: "Perform an asynchronous action for each item in a stream with controlled parallelism to dramatically improve performance."
+title: Process Items Concurrently
+id: stream-process-concurrently
+skillLevel: intermediate
+useCase: building-data-pipelines
+summary: >-
+  Perform an asynchronous action for each item in a stream with controlled
+  parallelism to dramatically improve performance.
 tags:
-  - "stream"
-  - "concurrency"
-  - "performance"
-  - "mapEffect"
-  - "parallelism"
+  - stream
+  - concurrency
+  - performance
+  - mapEffect
+  - parallelism
 rule:
-  description: "Use Stream.mapEffect with the `concurrency` option to process stream items in parallel."
-author: "PaulJPhilp"
+  description: >-
+    Use Stream.mapEffect with the `concurrency` option to process stream items
+    in parallel.
+author: PaulJPhilp
 related:
-  - "stream-from-iterable"
-  - "stream-from-paginated-api"
-  - "stream-retry-on-failure"
+  - stream-from-iterable
+  - stream-from-paginated-api
+  - stream-retry-on-failure
 ---
 
 ## Guideline
