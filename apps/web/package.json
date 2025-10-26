@@ -18,7 +18,6 @@
     "ingest:patterns": "bun run scripts/ingest-patterns.ts"
   },
   "dependencies": {
-    "@effect-patterns/components": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
     "@effect/platform": "^0.90.10",
     "@effect/platform-node": "^0.98.3",
@@ -27,10 +26,10 @@
     "effect": "^3.18.4",
     "effect-mdx": "^0.2.2",
     "gray-matter": "^4.0.3",
-    "next": "^15.5.2",
+    "next": "^16.0.0",
     "postgres": "^3.4.7",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
