@@ -302,7 +302,9 @@ function displaySummary(report: QAReport) {
     console.log(`\nFailed Patterns: ${report.failures.patterns.length}`);
     console.log(`Report saved to: ${REPORT_FILE}`);
     console.log('\nRecommendations:');
-    report.recommendations.forEach((rec) => console.log(`  - ${rec}`));
+    for (const rec of report.recommendations) {
+      console.log(`  - ${rec}`);
+    }
   }
 }
 
