@@ -41,8 +41,12 @@ async function runCmd(
     });
     let stdout = '';
     let stderr = '';
-    child.stdout.on('data', (d) => (stdout += String(d)));
-    child.stderr.on('data', (d) => (stderr += String(d)));
+    child.stdout.on('data', (d) => {
+      stdout += String(d);
+    });
+    child.stderr.on('data', (d) => {
+      stderr += String(d);
+    });
     child.on('close', (code) => resolve({ code: code ?? 0, stdout, stderr }));
   });
 }
