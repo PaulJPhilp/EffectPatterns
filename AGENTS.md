@@ -13,12 +13,12 @@ The Effect Patterns Hub is a community-driven knowledge base for Effect-TS patte
 - Support for 10+ AI development tools
 
 **Tech Stack:**
-- **Core:** Effect-TS 3.18+, TypeScript 5.8+, Bun
+- **Core:** Effect-TS 3.18+, TypeScript 5.9+, Bun
 - **Testing:** Vitest, comprehensive test suites
-- **Linting:** Biome (ultracite configuration), custom Effect-TS rules
-- **Infrastructure:** Next.js 15/16, OpenTelemetry, MCP protocol, Vercel AI SDK 5
-- **Package Management:** Bun (primary), pnpm for apps, npm support planned
-- **Applications:** Code Assistant (Next.js 16, React 19, AI SDK 5, Supermemory)
+- **Linting:** Biome, custom Effect-TS rules
+- **Infrastructure:** Next.js 16.0, React 19.2, OpenTelemetry, MCP protocol, Vercel AI SDK 5
+- **Package Management:** Bun (primary), pnpm for apps
+- **Applications:** Code Assistant (experimental, Next.js 16, React 19.2, AI SDK 5)
 
 ## Commands
 

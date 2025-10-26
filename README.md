@@ -2,9 +2,9 @@
 
 A community-driven knowledge base of practical, goal-oriented patterns for building robust applications with Effect-TS.
 
-## 🎉 New: Code Assistant (Phase 1 Complete!)
+## 🎉 Code Assistant (Experimental)
 
-**Production-ready AI coding platform** now available at `app/code-assistant`!
+**Experimental AI coding platform** available at `app/code-assistant` for testing ideas.
 
 **Quick Start:**
 ```bash
@@ -14,19 +14,11 @@ pnpm dev
 ```
 
 **Features:**
-- **Dual-Mode Architecture**: Chat Mode (Supermemory + Claude) and Task Mode (full coding agent)
-- **Supermemory Integration**: Long-term memory for user preferences
-- **Effect Patterns Search**: Built-in toolkit integration (ready to enable)
-- **Multiple AI Agents**: Claude Code CLI, OpenAI Codex, Cursor CLI, Gemini CLI
-- **Git Workflow**: Automatic branch creation, commits, and PR management
+- **Dual-Mode Architecture**: Chat Mode and Task Mode
+- **Multiple AI Agents**: Claude, OpenAI, Gemini
+- **Git Workflow**: Branch creation, commits, PR management
 
-**Test Supermemory (Drop 2):**
-1. Visit http://localhost:3002/chat
-2. Sign in with GitHub
-3. Try: "Remember that I prefer Effect.gen over .pipe chains"
-4. Ask: "What do you know about my preferences?"
-
-See [CODE_ASSISTANT_COMPLETE.md](./CODE_ASSISTANT_COMPLETE.md) for full documentation.
+**Note:** This is an experimental playground and not intended for production use.
 
 ---
 
