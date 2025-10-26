@@ -4,7 +4,7 @@ import { MdxService } from 'effect-mdx';
 import { describe, expect, it } from 'vitest';
 
 // Test layer that provides all required services
-const testLayer = Layer.mergeAll(MdxService.Default, NodeContext.layer);
+const _testLayer = Layer.mergeAll(MdxService.Default, NodeContext.layer);
 
 describe('Publish Scripts', () => {
   it('should have proper Effect structure for generate.ts', async () => {

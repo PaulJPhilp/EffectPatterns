@@ -34,7 +34,7 @@ export type GraphState = z.infer<typeof GraphStateSchema>;
 const AnalysisLayer = Layer.mergeAll(
   LLMServiceLive,
   DataValidationService.Live,
-  NodeContext.layer
+  NodeContext.layer,
 );
 
 const nodes = {
@@ -54,11 +54,11 @@ const nodes = {
             new FileReadError({
               path: state.inputFile,
               cause,
-            })
+            }),
         ),
         Effect.tapError((error) =>
-          Effect.logError(`Failed to read file: ${error.path}`)
-        )
+          Effect.logError(`Failed to read file: ${error.path}`),
+        ),
       );
 
       // Parse JSON with error handling
@@ -71,8 +71,8 @@ const nodes = {
           }),
       }).pipe(
         Effect.tapError((error) =>
-          Effect.logError(`Invalid JSON in file: ${error.path}`)
-        )
+          Effect.logError(`Invalid JSON in file: ${error.path}`),
+        ),
       );
 
       // Validate message structure using our schema
@@ -90,10 +90,10 @@ const nodes = {
       const chunkingResult = yield* chunkMessagesDefault(messages);
 
       yield* Effect.log(
-        `✅ Created ${chunkingResult.chunkCount} chunks (strategy: ${chunkingResult.strategy})`
+        `✅ Created ${chunkingResult.chunkCount} chunks (strategy: ${chunkingResult.strategy})`,
       );
       yield* Effect.log(
-        `   Average chunk size: ${chunkingResult.averageChunkSize} messages`
+        `   Average chunk size: ${chunkingResult.averageChunkSize} messages`,
       );
 
       return {
@@ -109,8 +109,8 @@ const nodes = {
           yield* Effect.logError(`❌ Load and chunk failed: ${error._tag}`);
           // Re-throw to stop the workflow
           return yield* Effect.fail(error);
-        })
-      )
+        }),
+      ),
     );
 
     return await Effect.runPromise(Effect.provide(program, AnalysisLayer));
@@ -122,7 +122,7 @@ const nodes = {
   analyzeSingleChunk: async (
     _state: GraphState,
     _config: { recursionLimit?: number },
-    chunk: unknown[]
+    chunk: unknown[],
   ) => {
     const program = Effect.gen(function* () {
       const llm = yield* LLMService;
@@ -149,11 +149,11 @@ const nodes = {
 
       yield* Effect.log('📝 Aggregating partial analyses...');
       yield* Effect.log(
-        `   Processing ${state.partialAnalyses?.length ?? 0} partial analyses`
+        `   Processing ${state.partialAnalyses?.length ?? 0} partial analyses`,
       );
 
       const finalReport = yield* llm.aggregateAnalyses(
-        state.partialAnalyses ?? []
+        state.partialAnalyses ?? [],
       );
 
       yield* Effect.log(`💾 Saving report to: ${state.outputFile}`);
@@ -179,7 +179,7 @@ export const app = {
     const program = Effect.gen(function* () {
       // Step 1: Load and chunk data
       const step1Result = yield* Effect.promise(() =>
-        nodes.loadAndChunkData({ ...input })
+        nodes.loadAndChunkData({ ...input }),
       );
 
       const state1: GraphState = { ...input, ...step1Result };
@@ -190,7 +190,7 @@ export const app = {
 
       for (const chunk of chunks) {
         const step2Result = yield* Effect.promise(() =>
-          nodes.analyzeSingleChunk(state1, {}, chunk)
+          nodes.analyzeSingleChunk(state1, {}, chunk),
         );
         partialAnalyses.push(...(step2Result.partialAnalyses ?? []));
       }
@@ -199,7 +199,7 @@ export const app = {
 
       // Step 3: Aggregate results
       const step3Result = yield* Effect.promise(() =>
-        nodes.aggregateResults(state2)
+        nodes.aggregateResults(state2),
       );
 
       const finalState: GraphState = { ...state2, ...step3Result };

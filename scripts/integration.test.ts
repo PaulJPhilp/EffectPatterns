@@ -4,10 +4,10 @@
  * End-to-end integration tests for Pattern Server + CLI
  */
 
+import { type ChildProcess, spawn } from 'node:child_process';
+import * as fs from 'node:fs/promises';
 import { FetchHttpClient, HttpClient } from '@effect/platform';
-import { type ChildProcess, spawn } from 'child_process';
 import { Effect, Schema } from 'effect';
-import * as fs from 'fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // --- SCHEMAS ---
@@ -29,7 +29,7 @@ const TestLayer = FetchHttpClient.layer;
 let serverProcess: ChildProcess | null = null;
 
 const runCommand = async (
-  args: string[]
+  args: string[],
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> =>
   new Promise((resolve) => {
     const proc = spawn('bun', ['run', 'scripts/ep.ts', ...args], {
@@ -82,13 +82,13 @@ describe.sequential('End-to-End Integration', () => {
       // 1. Verify server is running and has rules
       const checkServer = Effect.gen(function* () {
         const client = (yield* HttpClient.HttpClient).pipe(
-          HttpClient.filterStatusOk
+          HttpClient.filterStatusOk,
         );
 
         const response = yield* client.get(`${BASE_URL}/api/v1/rules`);
         const json = yield* response.json;
         const rules = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-          json
+          json,
         );
 
         expect(rules.length).toBeGreaterThan(0);
@@ -96,7 +96,7 @@ describe.sequential('End-to-End Integration', () => {
       });
 
       const serverRuleCount = await Effect.runPromise(
-        checkServer.pipe(Effect.provide(TestLayer))
+        checkServer.pipe(Effect.provide(TestLayer)),
       );
 
       // 2. Run CLI command to inject rules
@@ -105,7 +105,7 @@ describe.sequential('End-to-End Integration', () => {
       expect(cliResult.exitCode).toBe(0);
       expect(cliResult.stdout).toContain(`Fetched ${serverRuleCount} rules`);
       expect(cliResult.stdout).toContain(
-        `Successfully added ${serverRuleCount} rules`
+        `Successfully added ${serverRuleCount} rules`,
       );
 
       // 3. Verify file was created with correct content
@@ -121,11 +121,11 @@ describe.sequential('End-to-End Integration', () => {
       // 1. Get a specific rule from server
       const getRule = Effect.gen(function* () {
         const client = (yield* HttpClient.HttpClient).pipe(
-          HttpClient.filterStatusOk
+          HttpClient.filterStatusOk,
         );
 
         const response = yield* client.get(
-          `${BASE_URL}/api/v1/rules/use-effect-gen-for-business-logic`
+          `${BASE_URL}/api/v1/rules/use-effect-gen-for-business-logic`,
         );
         const json = yield* response.json;
         const rule = yield* Schema.decodeUnknown(RuleSchema)(json);
@@ -134,7 +134,7 @@ describe.sequential('End-to-End Integration', () => {
       });
 
       const serverRule = await Effect.runPromise(
-        getRule.pipe(Effect.provide(TestLayer))
+        getRule.pipe(Effect.provide(TestLayer)),
       );
 
       // 2. Run CLI command
@@ -179,7 +179,7 @@ describe.sequential('End-to-End Integration', () => {
       // 1. Get all rules from server
       const getAllRules = Effect.gen(function* () {
         const client = (yield* HttpClient.HttpClient).pipe(
-          HttpClient.filterStatusOk
+          HttpClient.filterStatusOk,
         );
 
         const response = yield* client.get(`${BASE_URL}/api/v1/rules`);
@@ -188,7 +188,7 @@ describe.sequential('End-to-End Integration', () => {
       });
 
       const serverRules = await Effect.runPromise(
-        getAllRules.pipe(Effect.provide(TestLayer))
+        getAllRules.pipe(Effect.provide(TestLayer)),
       );
 
       // 2. Run CLI command
@@ -212,16 +212,16 @@ describe.sequential('End-to-End Integration', () => {
       // Each rule should have ID and metadata
       const idMarkers = fileContent.match(/\*\*ID:\*\*/g);
       expect(idMarkers).toBeTruthy();
-      expect(idMarkers!.length).toBeGreaterThan(0);
+      expect(idMarkers?.length).toBeGreaterThan(0);
 
       // Each rule should have use case and skill level
       const useCaseMarkers = fileContent.match(/\*\*Use Case:\*\*/g);
       expect(useCaseMarkers).toBeTruthy();
-      expect(useCaseMarkers!.length).toBe(idMarkers!.length);
+      expect(useCaseMarkers?.length).toBe(idMarkers?.length);
 
       const skillLevelMarkers = fileContent.match(/\*\*Skill Level:\*\*/g);
       expect(skillLevelMarkers).toBeTruthy();
-      expect(skillLevelMarkers!.length).toBe(idMarkers!.length);
+      expect(skillLevelMarkers?.length).toBe(idMarkers?.length);
     });
   });
 

@@ -11,8 +11,8 @@
  * Complements Biome's general linting with Effect-specific checks.
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 // --- CONFIGURATION ---
 const NEW_SRC_DIR = path.join(process.cwd(), 'content/new/src');
@@ -60,7 +60,7 @@ function colorize(text: string, color: keyof typeof colors): string {
  * Detects: Effect.catchAll with Effect.gen just for logging
  * Suggests: Use Effect.tapError instead
  */
-function checkUseTapError(content: string, filePath: string): LintIssue[] {
+function checkUseTapError(content: string, _filePath: string): LintIssue[] {
   const issues: LintIssue[] = [];
   const lines = content.split('\n');
 
@@ -75,11 +75,11 @@ function checkUseTapError(content: string, filePath: string): LintIssue[] {
     ) {
       // Check if the next few lines only contain Effect.log or console.log
       let nextLines = '';
-      let endFound = false;
+      let _endFound = false;
       for (let j = i + 1; j < Math.min(i + 10, lines.length); j++) {
         nextLines += lines[j];
         if (lines[j].includes('))')) {
-          endFound = true;
+          _endFound = true;
           break;
         }
       }
@@ -116,7 +116,7 @@ function checkUseTapError(content: string, filePath: string): LintIssue[] {
  */
 function checkExplicitConcurrency(
   content: string,
-  filePath: string
+  filePath: string,
 ): LintIssue[] {
   const issues: LintIssue[] = [];
   const lines = content.split('\n');
@@ -176,7 +176,7 @@ function checkExplicitConcurrency(
  * Rule: effect-deprecated-api
  * Detects: Usage of deprecated Effect APIs
  */
-function checkDeprecatedAPIs(content: string, filePath: string): LintIssue[] {
+function checkDeprecatedAPIs(content: string, _filePath: string): LintIssue[] {
   const issues: LintIssue[] = [];
   const lines = content.split('\n');
 
@@ -243,7 +243,7 @@ function checkDeprecatedAPIs(content: string, filePath: string): LintIssue[] {
  * Detects: Long .then() chains or nested calls
  * Suggests: Use pipe for composition
  */
-function checkPreferPipe(content: string, filePath: string): LintIssue[] {
+function checkPreferPipe(content: string, _filePath: string): LintIssue[] {
   const issues: LintIssue[] = [];
   const lines = content.split('\n');
 
@@ -331,7 +331,7 @@ function checkStreamMemory(content: string, filePath: string): LintIssue[] {
  * Rule: effect-error-model
  * Detects: Generic Error instead of typed errors
  */
-function checkErrorModel(content: string, filePath: string): LintIssue[] {
+function checkErrorModel(content: string, _filePath: string): LintIssue[] {
   const issues: LintIssue[] = [];
   const lines = content.split('\n');
 
@@ -429,7 +429,7 @@ function printResults(results: LintResult[]) {
   const totalWarnings = results.reduce((sum, r) => sum + r.warnings, 0);
   const totalInfo = results.reduce((sum, r) => sum + r.info, 0);
   const clean = results.filter(
-    (r) => r.errors === 0 && r.warnings === 0
+    (r) => r.errors === 0 && r.warnings === 0,
   ).length;
 
   console.log(`${colorize('Total:', 'bright')}     ${results.length} files`);
@@ -447,19 +447,19 @@ function printResults(results: LintResult[]) {
   // Files with errors
   const filesWithErrors = results.filter((r) => r.errors > 0);
   if (filesWithErrors.length > 0) {
-    console.log('\n' + colorize('❌ Files with Errors:', 'red'));
+    console.log(`\n${colorize('❌ Files with Errors:', 'red')}`);
     console.log('─'.repeat(60));
 
     for (const result of filesWithErrors) {
-      console.log(`\n${colorize(result.file + '.ts', 'bright')}`);
+      console.log(`\n${colorize(`${result.file}.ts`, 'bright')}`);
 
       for (const issue of result.issues) {
         if (issue.severity === 'error') {
           console.log(
             colorize(
               `  ${issue.line}:${issue.column} - ${issue.rule}: ${issue.message}`,
-              'red'
-            )
+              'red',
+            ),
           );
           if (issue.suggestion) {
             console.log(colorize(`    → ${issue.suggestion}`, 'dim'));
@@ -471,22 +471,22 @@ function printResults(results: LintResult[]) {
 
   // Files with warnings
   const filesWithWarnings = results.filter(
-    (r) => r.warnings > 0 && r.errors === 0
+    (r) => r.warnings > 0 && r.errors === 0,
   );
   if (filesWithWarnings.length > 0) {
-    console.log('\n' + colorize('⚠️  Files with Warnings:', 'yellow'));
+    console.log(`\n${colorize('⚠️  Files with Warnings:', 'yellow')}`);
     console.log('─'.repeat(60));
 
     for (const result of filesWithWarnings) {
-      console.log(`\n${colorize(result.file + '.ts', 'bright')}`);
+      console.log(`\n${colorize(`${result.file}.ts`, 'bright')}`);
 
       for (const issue of result.issues) {
         if (issue.severity === 'warning') {
           console.log(
             colorize(
               `  ${issue.line}:${issue.column} - ${issue.rule}: ${issue.message}`,
-              'yellow'
-            )
+              'yellow',
+            ),
           );
           if (issue.suggestion) {
             console.log(colorize(`    → ${issue.suggestion}`, 'dim'));
@@ -499,12 +499,12 @@ function printResults(results: LintResult[]) {
   // Info suggestions (only show count, not details)
   if (totalInfo > 0) {
     console.log(
-      '\n' + colorize(`ℹ️  ${totalInfo} style suggestions available`, 'blue')
+      `\n${colorize(`ℹ️  ${totalInfo} style suggestions available`, 'blue')}`,
     );
     console.log(colorize('  Run with --verbose to see details', 'dim'));
   }
 
-  console.log('\n' + '═'.repeat(60));
+  console.log(`\n${'═'.repeat(60)}`);
 }
 
 // --- MAIN ---
@@ -513,7 +513,7 @@ async function main() {
 
   console.log(colorize('\n🔍 Effect Patterns Linter', 'bright'));
   console.log(
-    colorize('Checking Effect-TS idioms and best practices\n', 'dim')
+    colorize('Checking Effect-TS idioms and best practices\n', 'dim'),
   );
 
   // Get all TypeScript files from new and published
@@ -549,23 +549,23 @@ async function main() {
     console.log(
       colorize(
         `\n❌ Linting completed in ${duration}ms with ${totalErrors} error(s)\n`,
-        'red'
-      )
+        'red',
+      ),
     );
     process.exit(1);
   } else if (totalWarnings > 0) {
     console.log(
       colorize(
         `\n⚠️  Linting completed in ${duration}ms with ${totalWarnings} warning(s)\n`,
-        'yellow'
-      )
+        'yellow',
+      ),
     );
   } else {
     console.log(
       colorize(
         `\n✨ All files passed Effect patterns linting in ${duration}ms!\n`,
-        'green'
-      )
+        'green',
+      ),
     );
   }
 }

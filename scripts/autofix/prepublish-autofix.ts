@@ -72,7 +72,7 @@ function parseOnly(): Set<string> | undefined {
     raw
       .split(',')
       .map((s) => s.trim())
-      .filter(Boolean)
+      .filter(Boolean),
   );
   return set;
 }
@@ -95,7 +95,7 @@ function summarize(
   opts: {
     only?: Set<string>;
     limit?: number;
-  }
+  },
 ) {
   const { results } = report;
   const limited =
@@ -132,7 +132,7 @@ function summarize(
 
   const freqArr = [...freq.entries()].sort((a, b) => b[1] - a[1]);
   const byCodeArr = [...byCode.entries()].sort(
-    (a, b) => b[1].count - a[1].count
+    (a, b) => b[1].count - a[1].count,
   );
 
   return { freqArr, byCodeArr, failsCount: fails.length };
@@ -150,7 +150,7 @@ async function main() {
   const only = parseOnly();
   const limitArg = argValue('--limit');
   const limit = limitArg ? Number(limitArg) : undefined;
-  const dryRun = hasFlag('--write') ? false : true;
+  const dryRun = !hasFlag('--write');
   const out = argValue('--out');
   const ai = hasFlag('--ai');
   const aiLimitArg = argValue('--ai-limit');
@@ -224,7 +224,7 @@ async function main() {
   if (!dryRun) {
     console.log(
       '\n--write provided, but no codemods implemented yet. ' +
-        'This scaffold only summarizes errors.'
+        'This scaffold only summarizes errors.',
     );
   }
 
@@ -259,7 +259,7 @@ async function main() {
           'teaching intent. Keep lines <= 80 chars. Explain changes briefly.',
         mdx: path.relative(
           CWD,
-          r.file.replace(/src\//, 'processed/').replace(/\.ts$/, '.mdx')
+          r.file.replace(/src\//, 'processed/').replace(/\.ts$/, '.mdx'),
         ),
         tsFile: tsPath,
         errorOutput: r.output,
@@ -283,9 +283,9 @@ async function main() {
           timestamp: new Date().toISOString(),
         },
         null,
-        2
+        2,
       ),
-      'utf8'
+      'utf8',
     );
     console.log('\nAI prompt packs written to:', aiDir);
     console.log('Consolidated:', consolidated);
@@ -294,7 +294,7 @@ async function main() {
   if (aiCall) {
     if (provider !== 'google') {
       throw new Error(
-        `Only provider=google supported in this scaffold (got ${provider})`
+        `Only provider=google supported in this scaffold (got ${provider})`,
       );
     }
 
@@ -315,7 +315,7 @@ async function main() {
       process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error(
-        'GOOGLE_API_KEY env var is required for --ai-call provider=google'
+        'GOOGLE_API_KEY env var is required for --ai-call provider=google',
       );
     }
     const usedKeyName = process.env.GOOGLE_API_KEY
@@ -347,7 +347,7 @@ async function main() {
       console.log('\n▶ AI fixing:', path.relative(CWD, tsPath));
       let attempt = 0;
       let fixed = false;
-      let lastProposal = '';
+      let _lastProposal = '';
       while (attempt < attempts && !fixed) {
         attempt++;
         const proposal = await callGeminiFix({
@@ -359,7 +359,7 @@ async function main() {
           guidance: undefined,
           idiom: idiomText,
         });
-        lastProposal = proposal;
+        _lastProposal = proposal;
 
         let extracted = extractCodeBlock(proposal) ?? proposal;
         const banned = findBanned(extracted);
@@ -371,7 +371,7 @@ async function main() {
           console.log(
             'Suggestion failed gate (banned/missing/format/lint).' +
               (banned.length ? ` Banned: ${banned.join(', ')}.` : '') +
-              ' Retrying with stricter guidance...'
+              ' Retrying with stricter guidance...',
           );
           const retry = await callGeminiFix({
             apiKey,
@@ -390,12 +390,12 @@ async function main() {
         }
         if (styleGate && !(await passesStyleGate(extracted))) {
           console.log(
-            'Suggestion still fails style gate; saving anyway for review.'
+            'Suggestion still fails style gate; saving anyway for review.',
           );
         }
         const outFile = path.join(
           suggDir,
-          path.basename(tsPath).replace(/\.ts$/, `.attempt${attempt}.ts`)
+          path.basename(tsPath).replace(/\.ts$/, `.attempt${attempt}.ts`),
         );
         // Save formatted when style gate enabled
         const toSave = styleGate ? await formatWithBiome(extracted) : extracted;
@@ -406,7 +406,7 @@ async function main() {
           await fs.writeFile(
             tsPath,
             styleGate ? await formatWithBiome(extracted) : extracted,
-            'utf8'
+            'utf8',
           );
           // Re-check the single file
           const ok = await prepublishCheckOne({ mdxPath, srcdir });
@@ -483,23 +483,23 @@ async function callGeminiFix(args: {
   const user = [
     'File:',
     args.tsPath,
-    '\nErrors:\n' + args.errorOutput,
-    '\nCurrent content:\n```ts\n' + args.tsContent + '\n```',
-    args.guidance ? '\nGuidance:\n' + args.guidance : '',
+    `\nErrors:\n${args.errorOutput}`,
+    `\nCurrent content:\n\`\`\`ts\n${args.tsContent}\n\`\`\``,
+    args.guidance ? `\nGuidance:\n${args.guidance}` : '',
     '\nOutput: corrected file as ```ts fenced block only.',
   ].join('\n');
 
   const url =
     'https://generativelanguage.googleapis.com/v1beta/models/' +
     `${encodeURIComponent(args.model)}:generateContent?key=${encodeURIComponent(
-      args.apiKey
+      args.apiKey,
     )}`;
 
   const body = {
     contents: [
       {
         role: 'user',
-        parts: [{ text: system + '\n\n' + rules + '\n\n' + user }],
+        parts: [{ text: `${system}\n\n${rules}\n\n${user}` }],
       },
     ],
     generationConfig: {
@@ -516,17 +516,17 @@ async function callGeminiFix(args: {
     const txt = await res.text();
     throw new Error(`Gemini request failed: ${res.status} ${txt}`);
   }
-  const json: any = await res.json();
+  const _json: any = await res.json();
   const text = await extractGeminiText(
     args.apiKey,
     args.model,
     system,
     user,
-    args.guidance
+    args.guidance,
   );
-  if (!(text && text.trim())) {
+  if (!text?.trim()) {
     console.warn(
-      'Gemini response missing text; returning empty string to allow retry.'
+      'Gemini response missing text; returning empty string to allow retry.',
     );
     return '';
   }
@@ -538,7 +538,7 @@ async function extractGeminiText(
   model: string,
   system: string,
   user: string,
-  guidance?: string
+  _guidance?: string,
 ): Promise<string> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
@@ -546,12 +546,12 @@ async function extractGeminiText(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: system + '\n\n' + user }] }],
+        contents: [{ role: 'user', parts: [{ text: `${system}\n\n${user}` }] }],
         generationConfig: {
           temperature: 0.2,
         },
       }),
-    }
+    },
   );
   const json: any = await response.json();
   const text: string | undefined =
@@ -631,7 +631,7 @@ async function passesStyleGate(code: string): Promise<boolean> {
   try {
     const { stdout } = await exec(
       `bunx biome lint --reporter json ${JSON.stringify(tmpFile)}`,
-      { cwd: CWD }
+      { cwd: CWD },
     );
     // Parse Biome JSON and check for errors
     try {
@@ -640,7 +640,7 @@ async function passesStyleGate(code: string): Promise<boolean> {
         ? report.files.some(
             (f: any) =>
               Array.isArray(f.diagnostics) &&
-              f.diagnostics.some((d: any) => d.severity === 'error')
+              f.diagnostics.some((d: any) => d.severity === 'error'),
           )
         : false;
       if (hasErrors) return false;
@@ -668,7 +668,7 @@ async function prepublishCheckOne(args: {
     const { stdout, stderr } = await exec(cmd, { cwd: CWD });
     const ok = /Pre-publish checks passed/.test(stdout) && !stderr;
     return ok;
-  } catch (e: any) {
+  } catch (_e: any) {
     return false;
   }
 }

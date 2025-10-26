@@ -33,5 +33,3 @@ export function splitSections(content: string): string[] {
       .filter((s) => s.length > 0)
   );
 }
-
- 

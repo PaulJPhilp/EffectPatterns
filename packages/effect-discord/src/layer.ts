@@ -1,4 +1,7 @@
-import { exitCode as commandExitCode, make as commandMake } from '@effect/platform/Command';
+import {
+  exitCode as commandExitCode,
+  make as commandMake,
+} from '@effect/platform/Command';
 import { CommandExecutor } from '@effect/platform/CommandExecutor';
 import { FileSystem } from '@effect/platform/FileSystem';
 import { Effect, Layer, Secret } from 'effect';
@@ -19,7 +22,7 @@ export const DiscordLive = Layer.effect(
     const executor = yield* CommandExecutor;
 
     const exportChannel = (
-      channelId: string
+      channelId: string,
     ): Effect.Effect<ChannelExport, DiscordExportError, never> =>
       Effect.scoped(
         Effect.gen(function* () {
@@ -39,7 +42,7 @@ export const DiscordLive = Layer.effect(
             '-f',
             'Json',
             '--media', // Do not download media files
-            'False'
+            'False',
           );
 
           // 3. Define the core logic: execute, read, parse, and clean up.
@@ -49,15 +52,15 @@ export const DiscordLive = Layer.effect(
               Effect.provideService(CommandExecutor, executor),
               Effect.mapError(
                 (cause) =>
-                  new DiscordExportError({ reason: 'CommandFailed', cause })
-              )
+                  new DiscordExportError({ reason: 'CommandFailed', cause }),
+              ),
             );
             if (exitCode !== 0) {
               return yield* Effect.fail(
                 new DiscordExportError({
                   reason: 'CommandFailed',
                   cause: new Error(`Command exited with code ${exitCode}`),
-                })
+                }),
               );
             }
 
@@ -66,8 +69,8 @@ export const DiscordLive = Layer.effect(
               Effect.provideService(FileSystem, fs),
               Effect.mapError(
                 (cause) =>
-                  new DiscordExportError({ reason: 'FileNotFound', cause })
-              )
+                  new DiscordExportError({ reason: 'FileNotFound', cause }),
+              ),
             );
 
             // 3c. Parse the JSON. Map errors.
@@ -84,12 +87,12 @@ export const DiscordLive = Layer.effect(
             logic,
             fs
               .remove(tempFile)
-              .pipe(Effect.provideService(FileSystem, fs), Effect.ignore)
+              .pipe(Effect.provideService(FileSystem, fs), Effect.ignore),
           );
-        })
+        }),
       );
 
     // 5. Return the service implementation.
     return Discord.of({ exportChannel });
-  })
+  }),
 );

@@ -71,48 +71,72 @@ const mockPatterns: Pattern[] = [
 describe('searchPatterns', () => {
   describe('fuzzy search', () => {
     it('should find patterns by exact title match', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: 'Retry' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'Retry',
+      });
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('retry-backoff');
     });
 
     it('should find patterns by partial title match', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: 'batch' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'batch',
+      });
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('concurrent-batch');
     });
 
     it('should find patterns by description match', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: 'datasets' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'datasets',
+      });
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('concurrent-batch');
     });
 
     it('should find patterns by tag match', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: 'resilience' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'resilience',
+      });
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('retry-backoff');
     });
 
     it('should find patterns by category match', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: 'concurrency' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'concurrency',
+      });
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('concurrent-batch');
     });
 
     it('should handle case-insensitive search', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: 'RETRY' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'RETRY',
+      });
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('retry-backoff');
     });
 
     it('should handle queries with spaces', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: 'resource pool' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'resource pool',
+      });
       expect(results.length).toBeGreaterThan(0);
     });
 
     it('should return empty array for no matches', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: 'nonexistent' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'nonexistent',
+      });
       expect(results).toHaveLength(0);
     });
 
@@ -140,38 +164,57 @@ describe('searchPatterns', () => {
         }),
       ];
 
-      const results = searchPatterns({ patterns: patternsWithOverlap, query: 'error handler' });
+      const results = searchPatterns({
+        patterns: patternsWithOverlap,
+        query: 'error handler',
+      });
       expect(results[0].id).toBe('title-match');
     });
   });
 
   describe('category filter', () => {
     it('should filter by exact category', () => {
-      const results = searchPatterns({ patterns: mockPatterns, category: 'error-handling' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        category: 'error-handling',
+      });
       expect(results).toHaveLength(2);
       expect(results.every((p) => p.category === 'error-handling')).toBe(true);
     });
 
     it('should handle case-insensitive category filter', () => {
-      const results = searchPatterns({ patterns: mockPatterns, category: 'ERROR-HANDLING' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        category: 'ERROR-HANDLING',
+      });
       expect(results).toHaveLength(2);
     });
 
     it('should combine category filter with search query', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: 'retry', category: 'error-handling' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'retry',
+        category: 'error-handling',
+      });
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('retry-backoff');
     });
 
     it('should return empty array for non-matching category', () => {
-      const results = searchPatterns({ patterns: mockPatterns, category: 'nonexistent' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        category: 'nonexistent',
+      });
       expect(results).toHaveLength(0);
     });
   });
 
   describe('difficulty filter', () => {
     it('should filter by exact difficulty', () => {
-      const results = searchPatterns({ patterns: mockPatterns, difficulty: 'intermediate' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        difficulty: 'intermediate',
+      });
       expect(results).toHaveLength(2);
       expect(results.every((p) => p.difficulty === 'intermediate')).toBe(true);
     });
@@ -179,7 +222,7 @@ describe('searchPatterns', () => {
     it('should handle case-insensitive difficulty filter', () => {
       const results = searchPatterns({
         patterns: mockPatterns,
-        difficulty: 'BEGINNER'
+        difficulty: 'BEGINNER',
       });
       expect(results).toHaveLength(1);
     });
@@ -188,7 +231,7 @@ describe('searchPatterns', () => {
       const results = searchPatterns({
         patterns: mockPatterns,
         category: 'error-handling',
-        difficulty: 'beginner'
+        difficulty: 'beginner',
       });
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('simple-effect');
@@ -199,7 +242,7 @@ describe('searchPatterns', () => {
         patterns: mockPatterns,
         query: 'effect',
         category: 'error-handling',
-        difficulty: 'beginner'
+        difficulty: 'beginner',
       });
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('simple-effect');
@@ -210,7 +253,7 @@ describe('searchPatterns', () => {
     it('should limit number of results', () => {
       const results = searchPatterns({
         patterns: mockPatterns,
-        limit: 2
+        limit: 2,
       });
       expect(results).toHaveLength(2);
     });
@@ -218,7 +261,7 @@ describe('searchPatterns', () => {
     it('should return all results if limit is greater than result count', () => {
       const results = searchPatterns({
         patterns: mockPatterns,
-        limit: 100
+        limit: 100,
       });
       expect(results).toHaveLength(mockPatterns.length);
     });
@@ -227,7 +270,7 @@ describe('searchPatterns', () => {
       // Limit of 0 is treated as no limit (returns all results)
       const results = searchPatterns({
         patterns: mockPatterns,
-        limit: 0
+        limit: 0,
       });
       expect(results).toHaveLength(mockPatterns.length);
     });
@@ -235,7 +278,7 @@ describe('searchPatterns', () => {
     it('should ignore negative limits', () => {
       const results = searchPatterns({
         patterns: mockPatterns,
-        limit: -1
+        limit: -1,
       });
       expect(results).toHaveLength(mockPatterns.length);
     });
@@ -244,7 +287,7 @@ describe('searchPatterns', () => {
       const results = searchPatterns({
         patterns: mockPatterns,
         query: 'error',
-        limit: 1
+        limit: 1,
       });
       expect(results).toHaveLength(1);
     });
@@ -262,17 +305,26 @@ describe('searchPatterns', () => {
         effectVersion: undefined,
       });
 
-      const results = searchPatterns({ patterns: [minimalPattern], query: 'test' });
+      const results = searchPatterns({
+        patterns: [minimalPattern],
+        query: 'test',
+      });
       expect(results).toHaveLength(1);
     });
 
     it('should handle special characters in query', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: 'error-handling' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: 'error-handling',
+      });
       expect(results.length).toBeGreaterThan(0);
     });
 
     it('should trim whitespace from query', () => {
-      const results = searchPatterns({ patterns: mockPatterns, query: '  retry  ' });
+      const results = searchPatterns({
+        patterns: mockPatterns,
+        query: '  retry  ',
+      });
       expect(results).toHaveLength(1);
     });
   });

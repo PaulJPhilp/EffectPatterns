@@ -5,18 +5,18 @@
  * to verify it catches semantic issues.
  */
 
-import { exec } from 'child_process';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { promisify } from 'util';
+import { exec } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
 
-const execAsync = promisify(exec);
+const _execAsync = promisify(exec);
 
 const PROJECT_ROOT = process.cwd();
 const PATTERNS_DIR = path.join(PROJECT_ROOT, 'content/new/processed');
 const SCHEMA_PROMPT = path.join(
   PROJECT_ROOT,
-  'scripts/qa/prompts/qa-schema-enhanced.mdx'
+  'scripts/qa/prompts/qa-schema-enhanced.mdx',
 );
 
 // Test patterns known to have issues
@@ -60,7 +60,7 @@ async function testPattern(patternFile: string): Promise<void> {
       `  npx tsx cli/src/main.ts generate \\
     --schema-prompt ${SCHEMA_PROMPT} \\
     --output-format json \\
-    ${patternPath}`
+    ${patternPath}`,
     );
 
     console.log('\n📊 Enhanced validation checks:');
@@ -68,7 +68,7 @@ async function testPattern(patternFile: string): Promise<void> {
     console.log('  • Concurrency claims vs implementation');
     console.log('  • Effect idioms (tapError, typed errors, etc.)');
     console.log('  • API modernization (deprecated APIs)');
-  } catch (error) {
+  } catch (_error) {
     console.log(`❌ Pattern file not found: ${patternPath}`);
   }
 }
@@ -87,7 +87,7 @@ async function main() {
     await testPattern(pattern);
   }
 
-  console.log('\n' + '═'.repeat(60));
+  console.log(`\n${'═'.repeat(60)}`);
   console.log('\n✨ Enhanced QA Schema Ready!');
   console.log('\nTo use in QA process:');
   console.log('  1. Update qa-process.sh to use qa-schema-enhanced.mdx');

@@ -5,9 +5,9 @@
  * Generates a code snippet from a pattern with customization options
  */
 
+import { Schema as S } from '@effect/schema';
 import { buildSnippet, GenerateRequest } from '@effect-patterns/toolkit';
 import { Effect } from 'effect';
-import { Schema as S } from '@effect/schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   isAuthenticationError,
@@ -30,12 +30,12 @@ export async function POST(request: NextRequest) {
 
     // Get the pattern
     const pattern = yield* patternsService.getPatternById(
-      generateRequest.patternId
+      generateRequest.patternId,
     );
 
     if (!pattern) {
       return yield* Effect.fail(
-        new Error(`Pattern not found: ${generateRequest.patternId}`)
+        new Error(`Pattern not found: ${generateRequest.patternId}`),
       );
     }
 
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       {
         error: String(error),
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

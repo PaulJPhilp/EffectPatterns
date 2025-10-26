@@ -7,10 +7,10 @@ const analyzerCommand = Command.make(
   'analyzer',
   {
     inputFile: Options.text('input').pipe(
-      Options.withDescription('Path to the input JSON file.')
+      Options.withDescription('Path to the input JSON file.'),
     ),
     outputFile: Options.text('output').pipe(
-      Options.withDescription('Path for the output report.')
+      Options.withDescription('Path for the output report.'),
     ),
   },
   ({ inputFile, outputFile }) =>
@@ -23,7 +23,7 @@ const analyzerCommand = Command.make(
         message: 'Analyzer result',
         result,
       });
-    })
+    }),
 );
 
 const cli = Command.run(analyzerCommand, {
@@ -31,7 +31,4 @@ const cli = Command.run(analyzerCommand, {
   version: '0.1.0',
 });
 
-cli(process.argv).pipe(
-  Effect.provide(NodeContext.layer),
-  NodeRuntime.runMain
-);
+cli(process.argv).pipe(Effect.provide(NodeContext.layer), NodeRuntime.runMain);

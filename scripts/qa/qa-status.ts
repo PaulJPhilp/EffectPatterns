@@ -9,8 +9,8 @@
  *   bun run qa:status             # Status for published patterns (content/qa)
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 // --- CONFIGURATION ---
 const PROJECT_ROOT = process.cwd();
@@ -108,7 +108,7 @@ async function showStatus() {
         console.log(
           `  ${level}: ${stats.passed}/${
             stats.passed + stats.failed
-          } (${levelRate}%)`
+          } (${levelRate}%)`,
         );
       }
     }

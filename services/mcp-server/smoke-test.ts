@@ -56,7 +56,7 @@ function printInfo(text: string) {
 // Test runner
 async function runTest(
   name: string,
-  testFn: () => Promise<void>
+  testFn: () => Promise<void>,
 ): Promise<void> {
   testsRun++;
   printTest(name);
@@ -67,7 +67,7 @@ async function runTest(
     testsPassed++;
   } catch (error) {
     printError(
-      `Failed: ${error instanceof Error ? error.message : String(error)}`
+      `Failed: ${error instanceof Error ? error.message : String(error)}`,
     );
     testsFailed++;
   }
@@ -94,7 +94,7 @@ function assertContains(haystack: string, needle: string, message?: string) {
 
 function assertNotNull<T>(
   value: T | null | undefined,
-  message?: string
+  message?: string,
 ): asserts value is T {
   if (value == null) {
     throw new Error(message || 'Expected value to not be null or undefined');
@@ -156,7 +156,7 @@ async function runSmokeTests() {
       assert(data.patterns.length > 0, 'Should return at least one pattern');
       assertNotNull(data.count);
       assertNotNull(data.traceId);
-    }
+    },
   );
 
   // Test 6: Patterns with Valid Key (Query)
@@ -186,7 +186,7 @@ async function runSmokeTests() {
       `${baseUrl}/api/patterns?category=error-handling`,
       {
         headers: { 'x-api-key': API_KEY },
-      }
+      },
     );
     assertEquals(response.status, 200);
 
@@ -199,7 +199,7 @@ async function runSmokeTests() {
         assertEquals(
           pattern.category,
           'error-handling',
-          'All patterns should match category filter'
+          'All patterns should match category filter',
         );
       }
     }
@@ -228,7 +228,7 @@ async function runSmokeTests() {
       `${baseUrl}/api/patterns/nonexistent-pattern-id`,
       {
         headers: { 'x-api-key': API_KEY },
-      }
+      },
     );
     assertEquals(response.status, 404);
 
@@ -260,7 +260,7 @@ async function runSmokeTests() {
     // Accept either 200 (pattern exists) or 404 (pattern doesn't exist)
     assert(
       response.status === 200 || response.status === 404,
-      `Expected 200 or 404, got ${response.status}`
+      `Expected 200 or 404, got ${response.status}`,
     );
 
     if (response.status === 200) {
@@ -373,7 +373,7 @@ async function runSmokeTests() {
 
     assert(
       responseTime < 3,
-      `Response time too slow: ${responseTime.toFixed(2)}s`
+      `Response time too slow: ${responseTime.toFixed(2)}s`,
     );
     printInfo(`Response time: ${responseTime.toFixed(2)}s`);
   });
@@ -389,7 +389,7 @@ async function runSmokeTests() {
     assertEquals(
       data.traceId,
       headerTraceId,
-      'Trace ID in body should match header'
+      'Trace ID in body should match header',
     );
   });
 

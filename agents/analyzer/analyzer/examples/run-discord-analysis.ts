@@ -50,7 +50,7 @@ const program = Effect.gen(function* () {
     projectRoot,
     'packages',
     'data',
-    'discord-qna.json'
+    'discord-qna.json',
   );
 
   const outputDir = path.resolve(projectRoot, 'scripts', 'analyzer', 'output');
@@ -59,7 +59,7 @@ const program = Effect.gen(function* () {
 
   // Create output directory if it doesn't exist
   yield* fs.makeDirectory(outputDir, { recursive: true }).pipe(
-    Effect.catchAll(() => Effect.void) // Ignore if already exists
+    Effect.catchAll(() => Effect.void), // Ignore if already exists
   );
 
   yield* Console.log(`   📥 Input:  ${inputPath}`);
@@ -75,8 +75,8 @@ const program = Effect.gen(function* () {
     return yield* Effect.fail(
       new Error(
         `❌ Input file not found: ${inputPath}\n` +
-          '   Please ensure discord-qna.json exists in packages/data/'
-      )
+          '   Please ensure discord-qna.json exists in packages/data/',
+      ),
     );
   }
   const fileInfo = yield* fs.stat(inputPath);
@@ -94,7 +94,7 @@ const program = Effect.gen(function* () {
     app.invoke({
       inputFile: inputPath,
       outputFile: outputPath,
-    })
+    }),
   )) as GraphState;
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -107,10 +107,10 @@ const program = Effect.gen(function* () {
   yield* Console.log(`   • Total Messages: ${result.totalMessages ?? 0}`);
   yield* Console.log(`   • Chunks Created: ${result.chunkCount ?? 0}`);
   yield* Console.log(
-    `   • Chunking Strategy: ${result.chunkingStrategy ?? 'N/A'}`
+    `   • Chunking Strategy: ${result.chunkingStrategy ?? 'N/A'}`,
   );
   yield* Console.log(
-    `   • Analyses Generated: ${result.partialAnalyses?.length ?? 0}`
+    `   • Analyses Generated: ${result.partialAnalyses?.length ?? 0}`,
   );
   yield* Console.log(`   • Processing Time: ${duration}s\n`);
 
@@ -175,7 +175,7 @@ const program = Effect.gen(function* () {
 
   const passedCount = checks.filter((c) => c.passed).length;
   yield* Console.log(
-    `\n   Quality Score: ${passedCount}/${checks.length} checks passed`
+    `\n   Quality Score: ${passedCount}/${checks.length} checks passed`,
   ); // ============================================================
   // Step 8: Next Steps
   // ============================================================
@@ -230,9 +230,9 @@ const handleError = (error: unknown): Effect.Effect<void> => {
  */
 const main = program.pipe(
   Effect.catchAll((error) =>
-    handleError(error).pipe(Effect.flatMap(() => Effect.fail(error)))
+    handleError(error).pipe(Effect.flatMap(() => Effect.fail(error))),
   ),
-  Effect.provide(NodeContext.layer)
+  Effect.provide(NodeContext.layer),
 );
 
 // Run the program and exit with appropriate code

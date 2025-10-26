@@ -9,8 +9,8 @@
  * Writes to content/new/published/ (MDX with embedded code)
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 // --- CONFIGURATION ---
 const PROCESSED_DIR = path.join(process.cwd(), 'content/new/processed');
@@ -19,7 +19,7 @@ const NEW_SRC_DIR = path.join(process.cwd(), 'content/new/src');
 
 export async function publishPatterns() {
   console.log(
-    `Publishing patterns from ${PROCESSED_DIR} to ${NEW_PUBLISHED_DIR}`
+    `Publishing patterns from ${PROCESSED_DIR} to ${NEW_PUBLISHED_DIR}`,
   );
   console.log(`Using TypeScript source files from ${NEW_SRC_DIR}`);
 
@@ -51,7 +51,7 @@ export async function publishPatterns() {
       // Replace Example component with TypeScript code block
       const processedContent = content.replace(
         /<Example path="\.\/src\/.*?" \/>/g,
-        '```typescript\n' + tsContent + '\n```'
+        `\`\`\`typescript\n${tsContent}\n\`\`\``,
       );
 
       // Write published MDX

@@ -16,9 +16,9 @@
  * ```
  */
 
-import { exec } from 'child_process';
-import * as path from 'path';
-import { promisify } from 'util';
+import { exec } from 'node:child_process';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
@@ -91,7 +91,7 @@ async function main() {
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`\n✨ Pipeline completed successfully in ${duration}s!`);
-  } catch (error) {
+  } catch (_error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     console.error(`\n❌ Pipeline failed after ${duration}s`);
     process.exit(1);

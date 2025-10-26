@@ -37,7 +37,7 @@ interface FrontMatter {
 
 function parseMdx(
   filePath: string,
-  raw: string
+  raw: string,
 ): {
   frontmatter: any;
   content: string;
@@ -66,7 +66,7 @@ function validateFrontMatter(filePath: string, fm: any): FrontMatter {
       : rawSkill;
   if (!validSkill.includes(normalizedSkill)) {
     throw new Error(
-      `Invalid skillLevel '${fm.skillLevel}' in ${filePath}. Must be one of: ${validSkill.join(', ')}`
+      `Invalid skillLevel '${fm.skillLevel}' in ${filePath}. Must be one of: ${validSkill.join(', ')}`,
     );
   }
   fm.skillLevel = normalizedSkill;
@@ -80,11 +80,11 @@ function validateSections(filePath: string, content: string): void {
   const sections = splitSections(content);
   const requiredSections = ['Good Example', 'Anti-Pattern'];
   const hasExplanation = sections.some(
-    (s) => s.startsWith('Explanation') || s.startsWith('Rationale')
+    (s) => s.startsWith('Explanation') || s.startsWith('Rationale'),
   );
   if (!hasExplanation) {
     throw new Error(
-      `Missing required section in ${filePath}: Explanation or Rationale`
+      `Missing required section in ${filePath}: Explanation or Rationale`,
     );
   }
   for (const section of requiredSections) {
@@ -97,18 +97,18 @@ function validateSections(filePath: string, content: string): void {
 // --- EXTRACTION ---
 function extractGoodExampleTS(mdxContent: string): string | null {
   const goodExampleMatch = mdxContent.match(
-    /## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/
+    /## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/,
   );
   return goodExampleMatch ? goodExampleMatch[1] : null;
 }
 
 function replaceGoodExampleWithExampleTag(
   mdxContent: string,
-  id: string
+  id: string,
 ): string {
   return mdxContent.replace(
     /## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/,
-    `## Good Example\n\n<Example path="./src/${id}.ts" />`
+    `## Good Example\n\n<Example path="./src/${id}.ts" />`,
   );
 }
 
@@ -150,7 +150,7 @@ async function main() {
     const tsCode = extractGoodExampleTS(parsed.content);
     if (!tsCode) {
       throw new Error(
-        `No TypeScript code block found in Good Example section of ${file}`
+        `No TypeScript code block found in Good Example section of ${file}`,
       );
     }
 

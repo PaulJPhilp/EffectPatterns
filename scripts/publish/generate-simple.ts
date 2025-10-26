@@ -4,9 +4,9 @@
  * Simplified README generation that doesn't use effect-mdx
  */
 
-import * as fs from 'fs/promises';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import matter from 'gray-matter';
-import * as path from 'path';
 
 // --- CONFIGURATION ---
 const PUBLISHED_DIR = path.join(process.cwd(), 'content/published');
@@ -42,7 +42,7 @@ async function generateReadme() {
       if (!useCaseGroups.has(useCase)) {
         useCaseGroups.set(useCase, []);
       }
-      useCaseGroups.get(useCase)!.push(pattern);
+      useCaseGroups.get(useCase)?.push(pattern);
     }
   }
 
@@ -56,7 +56,7 @@ async function generateReadme() {
 
     sections.push(`## ${useCase}\n`);
     sections.push(
-      '| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n'
+      '| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n',
     );
 
     // Sort patterns by skill level (beginner -> intermediate -> advanced)
@@ -82,7 +82,7 @@ async function generateReadme() {
         }.mdx) | ${skillEmoji} **${
           pattern.skillLevel.charAt(0).toUpperCase() +
           pattern.skillLevel.slice(1)
-        }** | ${pattern.summary} |\n`
+        }** | ${pattern.summary} |\n`,
       );
     }
 

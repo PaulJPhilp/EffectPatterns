@@ -65,7 +65,7 @@ export const SearchPatternsResponse = S.Struct({
       category: S.String,
       difficulty: S.String,
       tags: S.Array(S.String),
-    })
+    }),
   ),
   traceId: S.optional(S.String),
 });

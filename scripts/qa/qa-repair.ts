@@ -36,9 +36,9 @@ const RESULTS_DIR = path.join(QA_DIR, 'results');
 const BACKUPS_DIR = path.join(QA_DIR, 'backups');
 const REPAIRS_DIR = path.join(QA_DIR, 'repairs');
 const PATTERNS_DIR = path.join(PROJECT_ROOT, 'content/new/processed');
-const REPAIR_PROMPT = path.join(
+const _REPAIR_PROMPT = path.join(
   PROJECT_ROOT,
-  'scripts/qa/prompts/repair-schema.mdx'
+  'scripts/qa/prompts/repair-schema.mdx',
 );
 
 // --- SETUP ---
@@ -144,7 +144,7 @@ async function repairPattern(result: QaResult, dryRun: boolean): Promise<void> {
   // Generate repair instructions using CLI
   const repairInstructions = await generateRepairInstructions(
     result,
-    originalContent
+    originalContent,
   );
 
   if (!repairInstructions) {
@@ -158,7 +158,7 @@ async function repairPattern(result: QaResult, dryRun: boolean): Promise<void> {
 
   if (dryRun) {
     console.log(
-      `  DRY RUN: Would apply ${repairInstructions.changes.length} changes`
+      `  DRY RUN: Would apply ${repairInstructions.changes.length} changes`,
     );
     console.log(`  Changes: ${repairInstructions.changes.join('; ')}`);
     return;
@@ -167,13 +167,13 @@ async function repairPattern(result: QaResult, dryRun: boolean): Promise<void> {
   // Apply repairs
   await applyRepairs(patternPath, repairInstructions);
   console.log(
-    `  ✓ Repaired: ${repairInstructions.changes.length} changes applied`
+    `  ✓ Repaired: ${repairInstructions.changes.length} changes applied`,
   );
 }
 
 async function generateRepairInstructions(
   result: QaResult,
-  originalContent: string
+  originalContent: string,
 ): Promise<RepairInstructions | null> {
   const prompt = `Generate repair instructions for this failed Effect pattern:
 
@@ -209,7 +209,7 @@ Return JSON only.`;
 
 async function applyRepairs(
   patternPath: string,
-  repairInstructions: RepairInstructions
+  repairInstructions: RepairInstructions,
 ): Promise<void> {
   const { repairedContent } = repairInstructions;
 

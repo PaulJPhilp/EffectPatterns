@@ -41,7 +41,7 @@ export class Discord extends Context.Tag('Discord')<
   Discord,
   {
     readonly exportChannel: (
-      channelId: string
+      channelId: string,
     ) => Effect.Effect<ChannelExport, DiscordExportError, never>;
   }
 >() {}

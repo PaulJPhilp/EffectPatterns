@@ -41,7 +41,7 @@ class RuleParseError extends Data.TaggedError('RuleParseError')<{
 }> {}
 
 class RulesDirectoryNotFoundError extends Data.TaggedError(
-  'RulesDirectoryNotFoundError'
+  'RulesDirectoryNotFoundError',
 )<{
   readonly path: string;
 }> {}
@@ -66,15 +66,15 @@ const extractTitle = (content: string): string => {
 const parseRuleFile = (
   fs: FileSystem.FileSystem,
   filePath: string,
-  fileId: string
+  fileId: string,
 ) =>
   Effect.gen(function* () {
     const content = yield* fs
       .readFileString(filePath)
       .pipe(
         Effect.catchAll((error) =>
-          Effect.fail(new RuleLoadError({ path: filePath, cause: error }))
-        )
+          Effect.fail(new RuleLoadError({ path: filePath, cause: error })),
+        ),
       );
 
     let parsed: { data: Record<string, unknown>; content: string };
@@ -82,7 +82,7 @@ const parseRuleFile = (
       parsed = matter(content);
     } catch (error) {
       return yield* Effect.fail(
-        new RuleParseError({ file: filePath, cause: error })
+        new RuleParseError({ file: filePath, cause: error }),
       );
     }
 
@@ -92,8 +92,8 @@ const parseRuleFile = (
     const rawUseCase = data.useCase;
     let useCase: string[] | undefined;
     if (Array.isArray(rawUseCase)) {
-      useCase = rawUseCase.filter((value): value is string =>
-        typeof value === 'string'
+      useCase = rawUseCase.filter(
+        (value): value is string => typeof value === 'string',
       );
     } else if (typeof rawUseCase === 'string') {
       useCase = [rawUseCase];
@@ -130,7 +130,7 @@ const readAndParseRules = Effect.gen(function* () {
   const dirExists = yield* fs.exists(rulesDir);
   if (!dirExists) {
     return yield* Effect.fail(
-      new RulesDirectoryNotFoundError({ path: rulesDir })
+      new RulesDirectoryNotFoundError({ path: rulesDir }),
     );
   }
 
@@ -138,8 +138,8 @@ const readAndParseRules = Effect.gen(function* () {
     .readDirectory(rulesDir)
     .pipe(
       Effect.catchAll((error) =>
-        Effect.fail(new RuleLoadError({ path: rulesDir, cause: error }))
-      )
+        Effect.fail(new RuleLoadError({ path: rulesDir, cause: error })),
+      ),
     );
 
   const mdcFiles = files.filter((file) => file.endsWith('.mdc'));
@@ -151,7 +151,7 @@ const readAndParseRules = Effect.gen(function* () {
       const fileId = path.basename(file, '.mdc');
       return parseRuleFile(fs, filePath, fileId);
     },
-    { concurrency: 'unbounded' }
+    { concurrency: 'unbounded' },
   );
 
   return rules;
@@ -166,10 +166,10 @@ const rulesHandler = Effect.gen(function* () {
     Effect.gen(function* () {
       const rules = yield* readAndParseRules;
       const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-        rules
+        rules,
       );
       return validated;
-    })
+    }),
   );
 
   if (rulesResult._tag === 'Left') {
@@ -192,7 +192,7 @@ const singleRuleHandler = (id: string) =>
         const rule = yield* readRuleById(id);
         const validated = yield* Schema.decodeUnknown(RuleSchema)(rule);
         return validated;
-      })
+      }),
     );
 
     if (ruleResult._tag === 'Left') {
@@ -225,7 +225,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Health check
   if (url === '/health') {
     const result = await Effect.runPromise(
-      healthHandler.pipe(Effect.provide(NodeFileSystem.layer))
+      healthHandler.pipe(Effect.provide(NodeFileSystem.layer)),
     );
     return res.status(HTTP_STATUS_OK).json(result);
   }
@@ -233,7 +233,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // List all rules
   if (url === '/api/v1/rules') {
     const result = await Effect.runPromise(
-      rulesHandler.pipe(Effect.provide(NodeFileSystem.layer))
+      rulesHandler.pipe(Effect.provide(NodeFileSystem.layer)),
     );
     if ('error' in result) {
       return res.status(result.statusCode).json({ error: result.error });
@@ -246,7 +246,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (ruleMatch) {
     const id = ruleMatch[1];
     const result = await Effect.runPromise(
-      singleRuleHandler(id).pipe(Effect.provide(NodeFileSystem.layer))
+      singleRuleHandler(id).pipe(Effect.provide(NodeFileSystem.layer)),
     );
     if ('error' in result) {
       return res.status(result.statusCode).json({ error: result.error });

@@ -7,15 +7,15 @@
  * Built with @effect/cli for type-safe, composable command-line interfaces.
  */
 
+import { execSync, spawn } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import { Args, Command, Options, Prompt } from '@effect/cli';
 import { FileSystem, HttpClient } from '@effect/platform';
 import { NodeContext, NodeRuntime } from '@effect/platform-node';
-import { execSync, spawn } from 'child_process';
 import { Console, Effect, Layer, Option, Schema } from 'effect';
-import * as fs from 'fs/promises';
 import { glob } from 'glob';
 import ora from 'ora';
-import * as path from 'path';
 import * as semver from 'semver';
 
 // --- HELPER FUNCTIONS ---
@@ -23,7 +23,7 @@ import * as semver from 'semver';
 /**
  * Execute a script and stream its output to the console
  */
-const executeScript = (scriptPath: string) =>
+const _executeScript = (scriptPath: string) =>
   Effect.async<void, Error>((resume) => {
     const child = spawn('bun', ['run', scriptPath], {
       stdio: 'inherit',
@@ -49,7 +49,7 @@ const executeScript = (scriptPath: string) =>
 const executeScriptWithProgress = (
   scriptPath: string,
   taskName: string,
-  options?: { verbose?: boolean }
+  options?: { verbose?: boolean },
 ) =>
   Effect.async<void, Error>((resume) => {
     // Only show spinner in TTY environments and when not verbose
@@ -88,7 +88,7 @@ const executeScriptWithProgress = (
 
       // Show captured output on failure
       if (!options?.verbose && output) {
-        console.error('\n' + output);
+        console.error(`\n${output}`);
       }
 
       resume(Effect.fail(error));
@@ -111,7 +111,7 @@ const executeScriptWithProgress = (
 
         // Show captured output on failure
         if (!options?.verbose && output) {
-          console.error('\n' + output);
+          console.error(`\n${output}`);
         }
 
         resume(Effect.fail(new Error(`Script exited with code ${code}`)));
@@ -124,7 +124,7 @@ const executeScriptWithProgress = (
  */
 const execGitCommand = (
   command: string,
-  args: string[]
+  args: string[],
 ): Effect.Effect<void, Error> =>
   Effect.try({
     try: () => {
@@ -135,7 +135,7 @@ const execGitCommand = (
     },
     catch: (error) =>
       new Error(
-        `Git command failed: ${error instanceof Error ? error.message : String(error)}`
+        `Git command failed: ${error instanceof Error ? error.message : String(error)}`,
       ),
   });
 
@@ -160,13 +160,13 @@ const getLatestTag = (): Effect.Effect<string, Error> =>
             '  git tag v0.1.0\n' +
             '  git push origin v0.1.0\n\n' +
             'Or use conventional commits and run:\n' +
-            '  bun run ep release create'
+            '  bun run ep release create',
         );
       }
 
       return new Error(
         `Failed to get latest tag: ${message}\n\n` +
-          'Make sure you are in a git repository with at least one tag.'
+          'Make sure you are in a git repository with at least one tag.',
       );
     },
   });
@@ -195,7 +195,7 @@ const getCommitsSinceTag = (tag: string): Effect.Effect<string[], Error> =>
           '  • Repository history is corrupted\n\n' +
           'Try:\n' +
           '  git tag -l    # List all tags\n' +
-          '  git log --oneline    # Verify git history'
+          '  git log --oneline    # Verify git history',
       );
     },
   });
@@ -204,7 +204,7 @@ const getCommitsSinceTag = (tag: string): Effect.Effect<string[], Error> =>
  * Determine the recommended version bump based on conventional commits
  */
 const getRecommendedBump = (
-  commits: string[]
+  _commits: string[],
 ): Effect.Effect<
   { releaseType: 'major' | 'minor' | 'patch'; reason: string },
   Error
@@ -223,8 +223,8 @@ const getRecommendedBump = (
             if (err) {
               resume(
                 Effect.fail(
-                  new Error(`Failed to determine bump: ${err.message}`)
-                )
+                  new Error(`Failed to determine bump: ${err.message}`),
+                ),
               );
             } else {
               resume(
@@ -234,15 +234,15 @@ const getRecommendedBump = (
                     | 'minor'
                     | 'patch',
                   reason: result.reason || 'No specific reason provided',
-                })
+                }),
               );
             }
-          }
+          },
         );
       })
       .catch((error) => {
         resume(
-          Effect.fail(new Error(`Failed to load module: ${error.message}`))
+          Effect.fail(new Error(`Failed to load module: ${error.message}`)),
         );
       });
   });
@@ -267,10 +267,7 @@ const categorizeCommits = async (commits: string[]) => {
   for (const commitMsg of commits) {
     const parsed = parseCommit(commitMsg);
 
-    if (
-      parsed.notes &&
-      parsed.notes.some((note: any) => note.title === 'BREAKING CHANGE')
-    ) {
+    if (parsed.notes?.some((note: any) => note.title === 'BREAKING CHANGE')) {
       categories.breaking.push(parsed.header || commitMsg);
     } else if (parsed.type === 'feat') {
       categories.features.push(parsed.subject || commitMsg);
@@ -298,7 +295,7 @@ const categorizeCommits = async (commits: string[]) => {
 const generateChangelog = (
   categories: Awaited<ReturnType<typeof categorizeCommits>>,
   currentVersion: string,
-  nextVersion: string
+  nextVersion: string,
 ) => {
   const lines: string[] = [];
 
@@ -455,7 +452,7 @@ function colorize(text: string, color: keyof typeof colors): string {
 /**
  * Rule: effect-use-taperror
  */
-function checkUseTapError(content: string, filePath: string): LintIssue[] {
+function checkUseTapError(content: string, _filePath: string): LintIssue[] {
   const issues: LintIssue[] = [];
   const lines = content.split('\n');
 
@@ -502,7 +499,7 @@ function checkUseTapError(content: string, filePath: string): LintIssue[] {
  */
 function checkExplicitConcurrency(
   content: string,
-  filePath: string
+  filePath: string,
 ): LintIssue[] {
   const issues: LintIssue[] = [];
   const lines = content.split('\n');
@@ -557,7 +554,7 @@ function checkExplicitConcurrency(
 /**
  * Rule: effect-deprecated-api
  */
-function checkDeprecatedAPIs(content: string, filePath: string): LintIssue[] {
+function checkDeprecatedAPIs(content: string, _filePath: string): LintIssue[] {
   const issues: LintIssue[] = [];
   const lines = content.split('\n');
 
@@ -622,7 +619,7 @@ function checkDeprecatedAPIs(content: string, filePath: string): LintIssue[] {
 /**
  * Rule: effect-prefer-pipe
  */
-function checkPreferPipe(content: string, filePath: string): LintIssue[] {
+function checkPreferPipe(content: string, _filePath: string): LintIssue[] {
   const issues: LintIssue[] = [];
   const lines = content.split('\n');
 
@@ -702,7 +699,7 @@ function checkStreamMemory(content: string, filePath: string): LintIssue[] {
 /**
  * Rule: effect-error-model
  */
-function checkErrorModel(content: string, filePath: string): LintIssue[] {
+function checkErrorModel(content: string, _filePath: string): LintIssue[] {
   const issues: LintIssue[] = [];
   const lines = content.split('\n');
 
@@ -835,7 +832,7 @@ function fixExplicitConcurrency(content: string, issue: LintIssue): string {
       const before = lines[currentLineIndex].substring(0, closingIndex);
       const after = lines[currentLineIndex].substring(closingIndex);
       lines[currentLineIndex] =
-        before + ', { concurrency: "unbounded" }' + after;
+        `${before}, { concurrency: "unbounded" }${after}`;
       break;
     }
 
@@ -891,7 +888,7 @@ function fixDeprecatedAPI(content: string, issue: LintIssue): string {
  */
 async function applyFixes(
   filePath: string,
-  issues: LintIssue[]
+  issues: LintIssue[],
 ): Promise<{ fixed: number; content: string }> {
   let content = await fs.readFile(filePath, 'utf-8');
   let fixedCount = 0;
@@ -902,7 +899,7 @@ async function applyFixes(
   for (const issue of sortedIssues) {
     // Check if this rule can be auto-fixed
     const rule = LINT_RULES.find((r) => r.name === issue.rule);
-    if (!(rule && rule.canFix)) {
+    if (!rule?.canFix) {
       continue;
     }
 
@@ -936,7 +933,7 @@ function printLintResults(results: LintResult[]): number {
   const totalWarnings = results.reduce((sum, r) => sum + r.warnings, 0);
   const totalInfo = results.reduce((sum, r) => sum + r.info, 0);
   const clean = results.filter(
-    (r) => r.errors === 0 && r.warnings === 0
+    (r) => r.errors === 0 && r.warnings === 0,
   ).length;
 
   console.log(`${colorize('Total:', 'bright')}     ${results.length} files`);
@@ -954,7 +951,7 @@ function printLintResults(results: LintResult[]): number {
   // Files with errors
   const filesWithErrors = results.filter((r) => r.errors > 0);
   if (filesWithErrors.length > 0) {
-    console.log('\n' + colorize('❌ Files with Errors:', 'red'));
+    console.log(`\n${colorize('❌ Files with Errors:', 'red')}`);
     console.log('─'.repeat(60));
 
     for (const result of filesWithErrors) {
@@ -965,8 +962,8 @@ function printLintResults(results: LintResult[]): number {
           console.log(
             colorize(
               `  ${issue.line}:${issue.column} - ${issue.rule}: ${issue.message}`,
-              'red'
-            )
+              'red',
+            ),
           );
           if (issue.suggestion) {
             console.log(colorize(`    → ${issue.suggestion}`, 'dim'));
@@ -978,10 +975,10 @@ function printLintResults(results: LintResult[]): number {
 
   // Files with warnings
   const filesWithWarnings = results.filter(
-    (r) => r.warnings > 0 && r.errors === 0
+    (r) => r.warnings > 0 && r.errors === 0,
   );
   if (filesWithWarnings.length > 0) {
-    console.log('\n' + colorize('⚠️  Files with Warnings:', 'yellow'));
+    console.log(`\n${colorize('⚠️  Files with Warnings:', 'yellow')}`);
     console.log('─'.repeat(60));
 
     for (const result of filesWithWarnings) {
@@ -992,8 +989,8 @@ function printLintResults(results: LintResult[]): number {
           console.log(
             colorize(
               `  ${issue.line}:${issue.column} - ${issue.rule}: ${issue.message}`,
-              'yellow'
-            )
+              'yellow',
+            ),
           );
           if (issue.suggestion) {
             console.log(colorize(`    → ${issue.suggestion}`, 'dim'));
@@ -1006,16 +1003,16 @@ function printLintResults(results: LintResult[]): number {
   // Info suggestions
   if (totalInfo > 0) {
     console.log(
-      '\n' + colorize(`ℹ️  ${totalInfo} style suggestions available`, 'blue')
+      `\n${colorize(`ℹ️  ${totalInfo} style suggestions available`, 'blue')}`,
     );
     console.log(colorize('  Run with --verbose to see details', 'dim'));
   }
 
-  console.log('\n' + '═'.repeat(60));
+  console.log(`\n${'═'.repeat(60)}`);
 
   if (totalErrors > 0) {
     console.log(
-      colorize(`\n❌ Linting failed with ${totalErrors} error(s)\n`, 'red')
+      colorize(`\n❌ Linting failed with ${totalErrors} error(s)\n`, 'red'),
     );
     return 1;
   }
@@ -1023,13 +1020,13 @@ function printLintResults(results: LintResult[]): number {
     console.log(
       colorize(
         `\n⚠️  Linting completed with ${totalWarnings} warning(s)\n`,
-        'yellow'
-      )
+        'yellow',
+      ),
     );
     return 0;
   }
   console.log(
-    colorize('\n✨ All files passed Effect patterns linting!\n', 'green')
+    colorize('\n✨ All files passed Effect patterns linting!\n', 'green'),
   );
   return 0;
 }
@@ -1058,7 +1055,7 @@ const analyzeRelease = () =>
 
     if (!nextVersion) {
       return yield* Effect.fail(
-        new Error(`Failed to calculate next version from ${currentVersion}`)
+        new Error(`Failed to calculate next version from ${currentVersion}`),
       );
     }
 
@@ -1067,7 +1064,7 @@ const analyzeRelease = () =>
       try: () => categorizeCommits(commits),
       catch: (error) =>
         new Error(
-          `Failed to categorize commits: ${error instanceof Error ? error.message : String(error)}`
+          `Failed to categorize commits: ${error instanceof Error ? error.message : String(error)}`,
         ),
     });
 
@@ -1075,7 +1072,7 @@ const analyzeRelease = () =>
     const changelog = generateChangelog(
       categories,
       currentVersion,
-      nextVersion
+      nextVersion,
     );
 
     return {
@@ -1100,21 +1097,21 @@ const validateCommand = Command.make('validate', {
     verbose: Options.boolean('verbose').pipe(
       Options.withAlias('v'),
       Options.withDescription('Show detailed validation output'),
-      Options.withDefault(false)
+      Options.withDefault(false),
     ),
   },
   args: {},
 }).pipe(
   Command.withDescription(
-    'Validates all pattern files for correctness and consistency.'
+    'Validates all pattern files for correctness and consistency.',
   ),
   Command.withHandler(({ options }) =>
     executeScriptWithProgress(
       'scripts/publish/validate-improved.ts',
       'Validating pattern files',
-      { verbose: options.verbose }
-    )
-  )
+      { verbose: options.verbose },
+    ),
+  ),
 );
 
 /**
@@ -1125,21 +1122,21 @@ const testCommand = Command.make('test', {
     verbose: Options.boolean('verbose').pipe(
       Options.withAlias('v'),
       Options.withDescription('Show detailed test output'),
-      Options.withDefault(false)
+      Options.withDefault(false),
     ),
   },
   args: {},
 }).pipe(
   Command.withDescription(
-    'Runs all TypeScript example tests to ensure patterns execute correctly.'
+    'Runs all TypeScript example tests to ensure patterns execute correctly.',
   ),
   Command.withHandler(({ options }) =>
     executeScriptWithProgress(
       'scripts/publish/test-improved.ts',
       'Running TypeScript example tests',
-      { verbose: options.verbose }
-    )
-  )
+      { verbose: options.verbose },
+    ),
+  ),
 );
 
 /**
@@ -1150,21 +1147,21 @@ const pipelineCommand = Command.make('pipeline', {
     verbose: Options.boolean('verbose').pipe(
       Options.withAlias('v'),
       Options.withDescription('Show detailed output from each step'),
-      Options.withDefault(false)
+      Options.withDefault(false),
     ),
   },
   args: {},
 }).pipe(
   Command.withDescription(
-    'Runs the complete pattern publishing pipeline from test to rules generation.'
+    'Runs the complete pattern publishing pipeline from test to rules generation.',
   ),
   Command.withHandler(({ options }) =>
     executeScriptWithProgress(
       'scripts/publish/pipeline.ts',
       'Running publishing pipeline',
-      { verbose: options.verbose }
-    )
-  )
+      { verbose: options.verbose },
+    ),
+  ),
 );
 
 /**
@@ -1175,21 +1172,21 @@ const generateCommand = Command.make('generate', {
     verbose: Options.boolean('verbose').pipe(
       Options.withAlias('v'),
       Options.withDescription('Show detailed generation output'),
-      Options.withDefault(false)
+      Options.withDefault(false),
     ),
   },
   args: {},
 }).pipe(
   Command.withDescription(
-    'Generates the main project README.md file from pattern metadata.'
+    'Generates the main project README.md file from pattern metadata.',
   ),
   Command.withHandler(({ options }) =>
     executeScriptWithProgress(
       'scripts/publish/generate.ts',
       'Generating README.md',
-      { verbose: options.verbose }
-    )
-  )
+      { verbose: options.verbose },
+    ),
+  ),
 );
 
 // --- RULES SCHEMA ---
@@ -1237,7 +1234,7 @@ const checkServerHealth = (serverUrl: string) =>
 const fetchRulesFromAPI = (serverUrl: string) =>
   Effect.gen(function* () {
     const client = (yield* HttpClient.HttpClient).pipe(
-      HttpClient.filterStatusOk
+      HttpClient.filterStatusOk,
     );
 
     const response = yield* client.get(`${serverUrl}/api/v1/rules`).pipe(
@@ -1250,35 +1247,35 @@ const fetchRulesFromAPI = (serverUrl: string) =>
 
           if (!isServerUp) {
             yield* Console.error(
-              colorize('\n❌ Cannot connect to Pattern Server\n', 'red')
+              colorize('\n❌ Cannot connect to Pattern Server\n', 'red'),
             );
             yield* Console.error(
-              `The Pattern Server at ${serverUrl} is not running or not reachable.\n`
+              `The Pattern Server at ${serverUrl} is not running or not reachable.\n`,
             );
             yield* Console.error(colorize('How to fix:\n', 'bright'));
             yield* Console.error('  1. Start the Pattern Server:');
             yield* Console.error(colorize('     bun run server:dev\n', 'cyan'));
             yield* Console.error('  2. Verify the server is running:');
             yield* Console.error(
-              colorize(`     curl ${serverUrl}/health\n`, 'cyan')
+              colorize(`     curl ${serverUrl}/health\n`, 'cyan'),
             );
             yield* Console.error('  3. If using a different port, specify it:');
             yield* Console.error(
               colorize(
                 '     bun run ep rules add --tool cursor --server-url http://localhost:PORT\n',
-                'cyan'
-              )
+                'cyan',
+              ),
             );
             yield* Console.error(colorize('Documentation:\n', 'dim'));
             yield* Console.error(
               colorize(
                 '  https://github.com/patrady/effect-patterns#pattern-server\n',
-                'cyan'
-              )
+                'cyan',
+              ),
             );
 
             return yield* Effect.fail(
-              new Error('Pattern Server not reachable')
+              new Error('Pattern Server not reachable'),
             );
           }
 
@@ -1287,16 +1284,16 @@ const fetchRulesFromAPI = (serverUrl: string) =>
             yield* Console.error(
               colorize(
                 '\n❌ Failed to fetch rules from Pattern Server\n',
-                'red'
-              )
+                'red',
+              ),
             );
             yield* Console.error(`HTTP ${error.response.status}\n`);
             yield* Console.error(colorize('Possible causes:\n', 'bright'));
             yield* Console.error(
-              '  • API endpoint has changed - try updating the CLI'
+              '  • API endpoint has changed - try updating the CLI',
             );
             yield* Console.error(
-              '  • Server version mismatch - ensure server and CLI are compatible\n'
+              '  • Server version mismatch - ensure server and CLI are compatible\n',
             );
             yield* Console.error(colorize('How to fix:\n', 'bright'));
             yield* Console.error('  1. Check server logs for errors');
@@ -1304,40 +1301,40 @@ const fetchRulesFromAPI = (serverUrl: string) =>
             yield* Console.error(
               colorize(
                 '     pkill -f "bun.*server" && bun run server:dev\n',
-                'cyan'
-              )
+                'cyan',
+              ),
             );
             yield* Console.error('  3. Verify API endpoint:');
             yield* Console.error(
-              colorize(`     curl ${serverUrl}/api/v1/rules\n`, 'cyan')
+              colorize(`     curl ${serverUrl}/api/v1/rules\n`, 'cyan'),
             );
           } else if (error._tag === 'ParseError') {
             yield* Console.error(
               colorize(
                 '\n❌ Failed to parse rules from Pattern Server\n',
-                'red'
-              )
+                'red',
+              ),
             );
             yield* Console.error(
-              'The server response format is invalid or incompatible.\n'
+              'The server response format is invalid or incompatible.\n',
             );
             yield* Console.error(colorize('How to fix:\n', 'bright'));
             yield* Console.error(
-              '  1. Update both the Pattern Server and CLI:'
+              '  1. Update both the Pattern Server and CLI:',
             );
             yield* Console.error(
-              colorize('     git pull && bun install\n', 'cyan')
+              colorize('     git pull && bun install\n', 'cyan'),
             );
             yield* Console.error('  2. Restart the Pattern Server:');
             yield* Console.error(
               colorize(
                 '     pkill -f "bun.*server" && bun run server:dev\n',
-                'cyan'
-              )
+                'cyan',
+              ),
             );
           } else {
             yield* Console.error(
-              colorize('\n❌ Unexpected error fetching rules\n', 'red')
+              colorize('\n❌ Unexpected error fetching rules\n', 'red'),
             );
             yield* Console.error(`Error: ${error}\n`);
             yield* Console.error(colorize('How to fix:\n', 'bright'));
@@ -1347,8 +1344,8 @@ const fetchRulesFromAPI = (serverUrl: string) =>
           }
 
           return yield* Effect.fail(new Error('Failed to fetch rules'));
-        })
-      )
+        }),
+      ),
     );
 
     return response;
@@ -1430,30 +1427,30 @@ const installAddCommand = Command.make('add', {
   options: {
     tool: Options.text('tool').pipe(
       Options.withDescription(
-        'The AI tool to add rules for (cursor, agents, etc.)'
-      )
+        'The AI tool to add rules for (cursor, agents, etc.)',
+      ),
     ),
     serverUrl: Options.text('server-url').pipe(
       Options.withDescription('Pattern Server URL'),
-      Options.withDefault('http://localhost:3001')
+      Options.withDefault('http://localhost:3001'),
     ),
     skillLevel: Options.text('skill-level').pipe(
       Options.withDescription(
-        'Filter by skill level (beginner, intermediate, advanced)'
+        'Filter by skill level (beginner, intermediate, advanced)',
       ),
-      Options.optional
+      Options.optional,
     ),
     useCase: Options.text('use-case').pipe(
       Options.withDescription(
-        'Filter by use case (error-management, core-concepts, etc.)'
+        'Filter by use case (error-management, core-concepts, etc.)',
       ),
-      Options.optional
+      Options.optional,
     ),
   },
   args: {},
 }).pipe(
   Command.withDescription(
-    'Fetch rules from Pattern Server and inject them into AI tool configuration.'
+    'Fetch rules from Pattern Server and inject them into AI tool configuration.',
   ),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
@@ -1477,20 +1474,20 @@ const installAddCommand = Command.make('add', {
       ];
       if (!supportedTools.includes(tool)) {
         yield* Console.error(
-          colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, 'red')
+          colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, 'red'),
         );
         yield* Console.error(
-          colorize('Currently supported tools:\n', 'bright')
+          colorize('Currently supported tools:\n', 'bright'),
         );
         yield* Console.error('  • cursor - Cursor IDE (.cursor/rules.md)');
         yield* Console.error('  • agents - AGENTS.md standard (AGENTS.md)');
         yield* Console.error(
-          '  • windsurf - Windsurf IDE (.windsurf/rules.md)'
+          '  • windsurf - Windsurf IDE (.windsurf/rules.md)',
         );
         yield* Console.error('  • gemini - Gemini AI (GEMINI.md)');
         yield* Console.error('  • claude - Claude AI (CLAUDE.md)');
         yield* Console.error(
-          '  • vscode - VS Code / Continue.dev (.vscode/rules.md)'
+          '  • vscode - VS Code / Continue.dev (.vscode/rules.md)',
         );
         yield* Console.error('  • kilo - Kilo IDE (.kilo/rules.md)');
         yield* Console.error('  • kira - Kira IDE (.kira/rules.md)');
@@ -1500,25 +1497,25 @@ const installAddCommand = Command.make('add', {
         yield* Console.error('  • codeium - Codeium\n');
         yield* Console.error(colorize('Examples:\n', 'bright'));
         yield* Console.error(
-          colorize('  bun run ep install add --tool cursor\n', 'cyan')
+          colorize('  bun run ep install add --tool cursor\n', 'cyan'),
         );
         yield* Console.error(
           colorize(
             '  bun run ep install add --tool agents --skill-level beginner\n',
-            'cyan'
-          )
+            'cyan',
+          ),
         );
         yield* Console.error(
           colorize(
             '  bun run ep install add --tool goose --use-case error-management\n',
-            'cyan'
-          )
+            'cyan',
+          ),
         );
         return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
       }
 
       yield* Console.log(
-        colorize('\n🔄 Fetching rules from Pattern Server...\n', 'cyan')
+        colorize('\n🔄 Fetching rules from Pattern Server...\n', 'cyan'),
       );
       yield* Console.log(colorize(`Server: ${serverUrl}\n`, 'dim'));
 
@@ -1526,7 +1523,7 @@ const installAddCommand = Command.make('add', {
       const allRules = yield* fetchRulesFromAPI(serverUrl);
 
       yield* Console.log(
-        colorize(`✓ Fetched ${allRules.length} rules\n`, 'green')
+        colorize(`✓ Fetched ${allRules.length} rules\n`, 'green'),
       );
 
       // Filter rules based on options
@@ -1535,32 +1532,34 @@ const installAddCommand = Command.make('add', {
       if (Option.isSome(skillLevelFilter)) {
         const level = skillLevelFilter.value;
         rules = rules.filter(
-          (rule) => rule.skillLevel?.toLowerCase() === level.toLowerCase()
+          (rule) => rule.skillLevel?.toLowerCase() === level.toLowerCase(),
         );
         yield* Console.log(
           colorize(
             `📊 Filtered to ${rules.length} rules with skill level: ${level}\n`,
-            'cyan'
-          )
+            'cyan',
+          ),
         );
       }
 
       if (Option.isSome(useCaseFilter)) {
         const useCase = useCaseFilter.value;
         rules = rules.filter((rule) =>
-          rule.useCase?.some((uc) => uc.toLowerCase() === useCase.toLowerCase())
+          rule.useCase?.some(
+            (uc) => uc.toLowerCase() === useCase.toLowerCase(),
+          ),
         );
         yield* Console.log(
           colorize(
             `📊 Filtered to ${rules.length} rules with use case: ${useCase}\n`,
-            'cyan'
-          )
+            'cyan',
+          ),
         );
       }
 
       if (rules.length === 0) {
         yield* Console.log(
-          colorize('⚠️  No rules match the specified filters\n', 'yellow')
+          colorize('⚠️  No rules match the specified filters\n', 'yellow'),
         );
         return;
       }
@@ -1590,7 +1589,7 @@ const installAddCommand = Command.make('add', {
       }
 
       yield* Console.log(
-        colorize(`📝 Injecting rules into ${targetFile}...\n`, 'cyan')
+        colorize(`📝 Injecting rules into ${targetFile}...\n`, 'cyan'),
       );
 
       // Inject rules into file
@@ -1600,22 +1599,22 @@ const installAddCommand = Command.make('add', {
             yield* Console.log(colorize('❌ Failed to inject rules\n', 'red'));
             yield* Console.log(`Error: ${error}\n`);
             return yield* Effect.fail(new Error('Failed to inject rules'));
-          })
-        )
+          }),
+        ),
       );
 
       yield* Console.log(
         colorize(
           `✅ Successfully added ${count} rules to ${targetFile}\n`,
-          'green'
-        )
+          'green',
+        ),
       );
       yield* Console.log('━'.repeat(60));
       yield* Console.log(
-        colorize('✨ Rules integration complete!\n', 'bright')
+        colorize('✨ Rules integration complete!\n', 'bright'),
       );
-    })
-  )
+    }),
+  ),
 );
 
 /**
@@ -1626,7 +1625,7 @@ const installListCommand = Command.make('list', {
   args: {},
 }).pipe(
   Command.withDescription(
-    'List all supported AI tools and their configuration file paths.'
+    'List all supported AI tools and their configuration file paths.',
   ),
   Command.withHandler(() =>
     Effect.gen(function* () {
@@ -1655,7 +1654,7 @@ const installListCommand = Command.make('list', {
         yield* Console.log(
           colorize(`  ${tool.name.padEnd(12)}`, 'cyan') +
             `${tool.desc.padEnd(30)}` +
-            colorize(tool.file, 'dim')
+            colorize(tool.file, 'dim'),
         );
       }
 
@@ -1663,14 +1662,14 @@ const installListCommand = Command.make('list', {
       yield* Console.log('═'.repeat(60));
       yield* Console.log(colorize('\n💡 Usage:\n', 'bright'));
       yield* Console.log(
-        colorize('  bun run ep install add --tool <name>\n', 'cyan')
+        colorize('  bun run ep install add --tool <name>\n', 'cyan'),
       );
       yield* Console.log(colorize('Example:\n', 'dim'));
       yield* Console.log(
-        colorize('  bun run ep install add --tool cursor\n', 'cyan')
+        colorize('  bun run ep install add --tool cursor\n', 'cyan'),
       );
-    })
-  )
+    }),
+  ),
 );
 
 /**
@@ -1681,21 +1680,21 @@ const rulesGenerateCommand = Command.make('generate', {
     verbose: Options.boolean('verbose').pipe(
       Options.withAlias('v'),
       Options.withDescription('Show detailed generation output'),
-      Options.withDefault(false)
+      Options.withDefault(false),
     ),
   },
   args: {},
 }).pipe(
   Command.withDescription(
-    'Generates AI coding rules (.mdc files) from all pattern files.'
+    'Generates AI coding rules (.mdc files) from all pattern files.',
   ),
   Command.withHandler(({ options }) =>
     executeScriptWithProgress(
       'scripts/publish/rules-improved.ts',
       'Generating AI coding rules',
-      { verbose: options.verbose }
-    )
-  )
+      { verbose: options.verbose },
+    ),
+  ),
 );
 
 /**
@@ -1703,9 +1702,9 @@ const rulesGenerateCommand = Command.make('generate', {
  */
 const installCommand = Command.make('install').pipe(
   Command.withDescription(
-    'Install Effect patterns rules into AI tool configurations'
+    'Install Effect patterns rules into AI tool configurations',
   ),
-  Command.withSubcommands([installAddCommand, installListCommand])
+  Command.withSubcommands([installAddCommand, installListCommand]),
 );
 
 // --- TEMPORARILY DISABLED COMMANDS ---
@@ -1715,7 +1714,7 @@ if (false as any) {
   /**
    * init - Initialize ep.json configuration file
    */
-  const initCommand = Command.make('init', {
+  const _initCommand = Command.make('init', {
     options: {},
     args: {},
   }).pipe(
@@ -1723,7 +1722,7 @@ if (false as any) {
     Command.withHandler(() =>
       Effect.gen(function* () {
         yield* Console.log(
-          colorize('\n🔧 Initializing ep.json configuration\n', 'bright')
+          colorize('\n🔧 Initializing ep.json configuration\n', 'bright'),
         );
 
         const fs = yield* FileSystem.FileSystem;
@@ -1745,7 +1744,7 @@ if (false as any) {
         if (exists) {
           yield* Console.log(colorize('⚠️  ep.json already exists\n', 'yellow'));
           yield* Console.log(
-            'Configuration file already present in this directory.'
+            'Configuration file already present in this directory.',
           );
           yield* Console.log('Delete it first if you want to regenerate.\n');
           return;
@@ -1763,7 +1762,7 @@ if (false as any) {
 
         yield* fs.writeFileString(
           configPath,
-          JSON.stringify(defaultConfig, null, 2) + '\n'
+          `${JSON.stringify(defaultConfig, null, 2)}\n`,
         );
 
         yield* Console.log(colorize('✅ Created ep.json\n', 'green'));
@@ -1772,10 +1771,10 @@ if (false as any) {
         yield* Console.log('\nYou can now run:');
         yield* Console.log('  ep lint           # Use config file');
         yield* Console.log(
-          '  ep lint <files>   # Override with specific files\n'
+          '  ep lint <files>   # Override with specific files\n',
         );
-      })
-    )
+      }),
+    ),
   );
 
   /**
@@ -1786,7 +1785,7 @@ if (false as any) {
     args: {},
   }).pipe(
     Command.withDescription(
-      'Display all available linting rules and their configuration.'
+      'Display all available linting rules and their configuration.',
     ),
     Command.withHandler(() =>
       Effect.gen(function* () {
@@ -1821,7 +1820,7 @@ if (false as any) {
         yield* Console.log(colorize('Available Rules:', 'bright'));
         yield* Console.log('─'.repeat(100));
         yield* Console.log(
-          `${colorize('Rule Name', 'bright').padEnd(45)} ${colorize('Severity', 'bright').padEnd(20)} ${colorize('Description', 'bright')}`
+          `${colorize('Rule Name', 'bright').padEnd(45)} ${colorize('Severity', 'bright').padEnd(20)} ${colorize('Description', 'bright')}`,
         );
         yield* Console.log('─'.repeat(100));
 
@@ -1848,7 +1847,7 @@ if (false as any) {
             : '';
 
           yield* Console.log(
-            `${rule.name.padEnd(35)} ${(severityDisplay + overrideIndicator).padEnd(30)} ${rule.description}`
+            `${rule.name.padEnd(35)} ${(severityDisplay + overrideIndicator).padEnd(30)} ${rule.description}`,
           );
         }
 
@@ -1856,45 +1855,48 @@ if (false as any) {
 
         if (configExists && userConfig?.linter?.rules) {
           yield* Console.log(
-            colorize('\n✓ Using custom configuration from ep.json', 'green')
+            colorize('\n✓ Using custom configuration from ep.json', 'green'),
           );
         } else {
           yield* Console.log(
-            colorize('\nℹ️  Using default severities (no ep.json found)', 'blue')
+            colorize(
+              '\nℹ️  Using default severities (no ep.json found)',
+              'blue',
+            ),
           );
           yield* Console.log(
             colorize(
               '  Run "ep init" to create a config file with custom rule settings',
-              'dim'
-            )
+              'dim',
+            ),
           );
         }
 
         yield* Console.log('\nSeverity levels:');
         yield* Console.log(
-          `  ${colorize('error', 'red')}    - Fails linting and exits with code 1`
+          `  ${colorize('error', 'red')}    - Fails linting and exits with code 1`,
         );
         yield* Console.log(
-          `  ${colorize('warning', 'yellow')}  - Shows warning but exits with code 0`
+          `  ${colorize('warning', 'yellow')}  - Shows warning but exits with code 0`,
         );
         yield* Console.log(
-          `  ${colorize('info', 'blue')}     - Shows informational suggestion`
+          `  ${colorize('info', 'blue')}     - Shows informational suggestion`,
         );
         yield* Console.log(
-          `  ${colorize('off', 'dim')}      - Rule is disabled\n`
+          `  ${colorize('off', 'dim')}      - Rule is disabled\n`,
         );
-      })
-    )
+      }),
+    ),
   );
 
   /**
    * lint - Lint TypeScript files for Effect-TS patterns
    */
-  const lintCommand = Command.make('lint', {
+  const _lintCommand = Command.make('lint', {
     options: {
       apply: Options.boolean('apply').pipe(
         Options.withDescription('Automatically fix issues where possible'),
-        Options.withDefault(false)
+        Options.withDefault(false),
       ),
     },
     args: {
@@ -1903,7 +1905,7 @@ if (false as any) {
   })
     .pipe(
       Command.withDescription(
-        'Lint TypeScript files for Effect-TS idioms and best practices.'
+        'Lint TypeScript files for Effect-TS idioms and best practices.',
       ),
       Command.withHandler(({ args, options }) =>
         Effect.gen(function* () {
@@ -1932,13 +1934,13 @@ if (false as any) {
               yield* Console.log(
                 colorize(
                   '\n❌ Error: No files specified and no ep.json found\n',
-                  'red'
-                )
+                  'red',
+                ),
               );
               yield* Console.log('You can either:');
               yield* Console.log('  1. Run: ep init');
               yield* Console.log(
-                '  2. Provide files directly: ep lint <file-or-glob-pattern>...'
+                '  2. Provide files directly: ep lint <file-or-glob-pattern>...',
               );
               yield* Console.log('\nExamples:');
               yield* Console.log('  ep lint src/index.ts');
@@ -1953,7 +1955,7 @@ if (false as any) {
               try: () => JSON.parse(configContent),
               catch: (error) =>
                 new Error(
-                  `Failed to parse ep.json: ${error instanceof Error ? error.message : String(error)}`
+                  `Failed to parse ep.json: ${error instanceof Error ? error.message : String(error)}`,
                 ),
             });
 
@@ -1961,14 +1963,14 @@ if (false as any) {
             if (config.linter?.files?.include) {
               filePatterns = config.linter.files.include;
               yield* Console.log(
-                colorize('\n📋 Using configuration from ep.json\n', 'cyan')
+                colorize('\n📋 Using configuration from ep.json\n', 'cyan'),
               );
             } else {
               yield* Console.log(
                 colorize(
                   '\n❌ Error: No linter.files.include found in ep.json\n',
-                  'red'
-                )
+                  'red',
+                ),
               );
               yield* Console.log('Expected format:');
               yield* Console.log(
@@ -1982,19 +1984,19 @@ if (false as any) {
                     },
                   },
                   null,
-                  2
-                )
+                  2,
+                ),
               );
               yield* Console.log('');
               return yield* Effect.fail(
-                new Error('Invalid ep.json configuration')
+                new Error('Invalid ep.json configuration'),
               );
             }
           }
 
           yield* Console.log(colorize('\n🔍 Effect Patterns Linter', 'bright'));
           yield* Console.log(
-            colorize('Checking Effect-TS idioms and best practices\n', 'dim')
+            colorize('Checking Effect-TS idioms and best practices\n', 'dim'),
           );
 
           // Expand glob patterns
@@ -2004,13 +2006,13 @@ if (false as any) {
               try: () => glob(pattern, { absolute: true }),
               catch: (error) =>
                 new Error(
-                  `Failed to expand pattern "${pattern}": ${error instanceof Error ? error.message : String(error)}`
+                  `Failed to expand pattern "${pattern}": ${error instanceof Error ? error.message : String(error)}`,
                 ),
             });
 
             // Filter for TypeScript files only
             const tsFiles = expandedFiles.filter((file) =>
-              file.endsWith('.ts')
+              file.endsWith('.ts'),
             );
             allFiles.push(...tsFiles);
           }
@@ -2019,8 +2021,8 @@ if (false as any) {
             yield* Console.log(
               colorize(
                 '⚠️  No TypeScript files found matching the patterns\n',
-                'yellow'
-              )
+                'yellow',
+              ),
             );
             return;
           }
@@ -2031,8 +2033,8 @@ if (false as any) {
           yield* Console.log(
             colorize(
               `Found ${uniqueFiles.length} TypeScript file(s) to lint\n`,
-              'bright'
-            )
+              'bright',
+            ),
           );
 
           // Run linter
@@ -2040,7 +2042,7 @@ if (false as any) {
             try: () => lintInParallel(uniqueFiles),
             catch: (error) =>
               new Error(
-                `Linting failed: ${error instanceof Error ? error.message : String(error)}`
+                `Linting failed: ${error instanceof Error ? error.message : String(error)}`,
               ),
           });
 
@@ -2053,7 +2055,7 @@ if (false as any) {
 
             if (fixableResults.length === 0) {
               yield* Console.log(
-                colorize('\nℹ️  No fixable issues found\n', 'blue')
+                colorize('\nℹ️  No fixable issues found\n', 'blue'),
               );
             } else {
               yield* Console.log(colorize('\n🔧 Applying fixes...\n', 'cyan'));
@@ -2066,7 +2068,7 @@ if (false as any) {
               for (const result of fixableResults) {
                 // Find the full path for this file
                 const filePath = uniqueFiles.find((f) =>
-                  f.endsWith(result.file)
+                  f.endsWith(result.file),
                 );
                 if (!filePath) continue;
 
@@ -2075,7 +2077,7 @@ if (false as any) {
                   try: () => applyFixes(filePath, result.issues),
                   catch: (error) =>
                     new Error(
-                      `Failed to apply fixes to ${result.file}: ${error instanceof Error ? error.message : String(error)}`
+                      `Failed to apply fixes to ${result.file}: ${error instanceof Error ? error.message : String(error)}`,
                     ),
                 });
 
@@ -2085,7 +2087,7 @@ if (false as any) {
                     try: () => fs.writeFile(filePath, content, 'utf-8'),
                     catch: (error) =>
                       new Error(
-                        `Failed to write fixes to ${result.file}: ${error instanceof Error ? error.message : String(error)}`
+                        `Failed to write fixes to ${result.file}: ${error instanceof Error ? error.message : String(error)}`,
                       ),
                   });
 
@@ -2110,33 +2112,33 @@ if (false as any) {
               if (fixSummary.size > 0) {
                 const totalFixes = Array.from(fixSummary.values()).reduce(
                   (sum, s) => sum + s.count,
-                  0
+                  0,
                 );
 
                 yield* Console.log(
                   colorize(
                     `✓ Fixed ${totalFixes} issue(s) in ${fixSummary.size} file(s)\n`,
-                    'green'
-                  )
+                    'green',
+                  ),
                 );
 
                 yield* Console.log(colorize('Files modified:', 'bright'));
-                for (const [filePath, summary] of fixSummary) {
+                for (const [_filePath, summary] of fixSummary) {
                   const rulesList = Array.from(summary.rules).join(', ');
                   yield* Console.log(
-                    `  - ${summary.file} (${summary.count} fix${summary.count > 1 ? 'es' : ''}: ${rulesList})`
+                    `  - ${summary.file} (${summary.count} fix${summary.count > 1 ? 'es' : ''}: ${rulesList})`,
                   );
                 }
 
                 yield* Console.log(
-                  colorize('\n✨ Auto-fix complete!\n', 'green')
+                  colorize('\n✨ Auto-fix complete!\n', 'green'),
                 );
               } else {
                 yield* Console.log(
                   colorize(
                     '⚠️  No fixes could be applied automatically\n',
-                    'yellow'
-                  )
+                    'yellow',
+                  ),
                 );
               }
             }
@@ -2145,8 +2147,8 @@ if (false as any) {
           if (exitCode !== 0 && !shouldApplyFixes) {
             return yield* Effect.fail(new Error('Linting failed'));
           }
-        })
-      )
+        }),
+      ),
     )
     .pipe(Command.withSubcommands([lintRulesCommand]));
 } // End of disabled init/lint commands
@@ -2159,7 +2161,7 @@ const releasePreviewCommand = Command.make('preview', {
   args: {},
 }).pipe(
   Command.withDescription(
-    'Analyze commits and preview the next release version without making any changes.'
+    'Analyze commits and preview the next release version without making any changes.',
   ),
   Command.withHandler(() =>
     Effect.gen(function* () {
@@ -2169,18 +2171,18 @@ const releasePreviewCommand = Command.make('preview', {
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Console.error(
-              colorize('\n❌ Failed to analyze release\n', 'red')
+              colorize('\n❌ Failed to analyze release\n', 'red'),
             );
             yield* Console.error(String(error).replace('Error: ', ''));
             yield* Console.error('');
             return yield* Effect.fail(error);
-          })
-        )
+          }),
+        ),
       );
 
       if (!analysis.hasChanges) {
         yield* Console.log(
-          colorize('\n⚠️  No commits found since last release\n', 'yellow')
+          colorize('\n⚠️  No commits found since last release\n', 'yellow'),
         );
         yield* Console.log('There are no new commits to release.\n');
         yield* Console.log(colorize('To create a new release:\n', 'bright'));
@@ -2188,15 +2190,15 @@ const releasePreviewCommand = Command.make('preview', {
         yield* Console.log('  2. Use conventional commit messages:');
         yield* Console.log(
           colorize('     feat: add new feature     ', 'dim') +
-            '(minor version bump)'
+            '(minor version bump)',
         );
         yield* Console.log(
           colorize('     fix: fix bug              ', 'dim') +
-            '(patch version bump)'
+            '(patch version bump)',
         );
         yield* Console.log(
           colorize('     feat!: breaking change    ', 'dim') +
-            '(major version bump)'
+            '(major version bump)',
         );
         yield* Console.log('  3. Run: bun run ep release preview\n');
         return;
@@ -2213,7 +2215,7 @@ const releasePreviewCommand = Command.make('preview', {
 
       yield* Console.log(`📌 Current version: ${currentVersion}`);
       yield* Console.log(
-        `📊 Found ${commits.length} commits since ${latestTag}\n`
+        `📊 Found ${commits.length} commits since ${latestTag}\n`,
       );
 
       // Display results
@@ -2224,16 +2226,16 @@ const releasePreviewCommand = Command.make('preview', {
       yield* Console.log(`   Reason: ${bump.reason}`);
       yield* Console.log(`\n🎯 Next Version: ${nextVersion}`);
       yield* Console.log(
-        `   Current: ${currentVersion} → Next: ${nextVersion}\n`
+        `   Current: ${currentVersion} → Next: ${nextVersion}\n`,
       );
       yield* Console.log('━'.repeat(60));
       yield* Console.log('📝 DRAFT CHANGELOG');
       yield* Console.log('━'.repeat(60));
-      yield* Console.log('\n' + changelog);
+      yield* Console.log(`\n${changelog}`);
       yield* Console.log('━'.repeat(60));
       yield* Console.log('\n✅ Preview complete. No changes made.\n');
-    })
-  )
+    }),
+  ),
 );
 
 /**
@@ -2244,7 +2246,7 @@ const releaseCreateCommand = Command.make('create', {
   args: {},
 }).pipe(
   Command.withDescription(
-    'Create a new release with version bump, changelog, and git tag.'
+    'Create a new release with version bump, changelog, and git tag.',
   ),
   Command.withHandler(() =>
     Effect.gen(function* () {
@@ -2255,18 +2257,18 @@ const releaseCreateCommand = Command.make('create', {
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Console.error(
-              colorize('\n❌ Failed to analyze release\n', 'red')
+              colorize('\n❌ Failed to analyze release\n', 'red'),
             );
             yield* Console.error(String(error).replace('Error: ', ''));
             yield* Console.error('');
             return yield* Effect.fail(error);
-          })
-        )
+          }),
+        ),
       );
 
       if (!analysis.hasChanges) {
         yield* Console.log(
-          colorize('\n⚠️  No commits found since last release\n', 'yellow')
+          colorize('\n⚠️  No commits found since last release\n', 'yellow'),
         );
         yield* Console.log('There are no new commits to release.\n');
         return;
@@ -2283,7 +2285,7 @@ const releaseCreateCommand = Command.make('create', {
 
       yield* Console.log(`📌 Current version: ${currentVersion}`);
       yield* Console.log(
-        `📊 Found ${commits.length} commits since ${latestTag}\n`
+        `📊 Found ${commits.length} commits since ${latestTag}\n`,
       );
 
       // Display preview
@@ -2294,12 +2296,12 @@ const releaseCreateCommand = Command.make('create', {
       yield* Console.log(`   Reason: ${bump.reason}`);
       yield* Console.log(`\n🎯 Next Version: ${nextVersion}`);
       yield* Console.log(
-        `   Current: ${currentVersion} → Next: ${nextVersion}\n`
+        `   Current: ${currentVersion} → Next: ${nextVersion}\n`,
       );
       yield* Console.log('━'.repeat(60));
       yield* Console.log('📝 CHANGELOG');
       yield* Console.log('━'.repeat(60));
-      yield* Console.log('\n' + changelog);
+      yield* Console.log(`\n${changelog}`);
       yield* Console.log('━'.repeat(60));
 
       // Prompt for confirmation
@@ -2329,15 +2331,15 @@ const releaseCreateCommand = Command.make('create', {
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Console.error(
-              colorize('\n❌ Failed to read package.json\n', 'red')
+              colorize('\n❌ Failed to read package.json\n', 'red'),
             );
             yield* Console.error(
-              'Make sure package.json exists in the current directory.\n'
+              'Make sure package.json exists in the current directory.\n',
             );
             yield* Console.error(`Error: ${error}\n`);
             return yield* Effect.fail(new Error('Cannot read package.json'));
-          })
-        )
+          }),
+        ),
       );
 
       const packageJson = yield* Effect.try({
@@ -2346,38 +2348,38 @@ const releaseCreateCommand = Command.make('create', {
           new Error(
             'Failed to parse package.json.\n' +
               'The file may be corrupted or contain invalid JSON.\n\n' +
-              `Error: ${error instanceof Error ? error.message : String(error)}`
+              `Error: ${error instanceof Error ? error.message : String(error)}`,
           ),
       }).pipe(
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Console.error(
-              colorize('\n❌ Invalid package.json\n', 'red')
+              colorize('\n❌ Invalid package.json\n', 'red'),
             );
             yield* Console.error(String(error).replace('Error: ', ''));
             yield* Console.error('');
             return yield* Effect.fail(error);
-          })
-        )
+          }),
+        ),
       );
 
       packageJson.version = nextVersion;
       yield* fs
         .writeFileString(
           packageJsonPath,
-          JSON.stringify(packageJson, null, 2) + '\n'
+          `${JSON.stringify(packageJson, null, 2)}\n`,
         )
         .pipe(
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               yield* Console.error(
-                colorize('\n❌ Failed to write package.json\n', 'red')
+                colorize('\n❌ Failed to write package.json\n', 'red'),
               );
               yield* Console.error('Check file permissions and disk space.\n');
               yield* Console.error(`Error: ${error}\n`);
               return yield* Effect.fail(new Error('Cannot write package.json'));
-            })
-          )
+            }),
+          ),
         );
       yield* Console.log(`   ✓ Version updated to ${nextVersion}`);
 
@@ -2396,7 +2398,7 @@ const releaseCreateCommand = Command.make('create', {
         existingChangelog = yield* fs.readFileString(changelogPath);
       }
 
-      const newChangelog = changelog + '\n\n' + existingChangelog;
+      const newChangelog = `${changelog}\n\n${existingChangelog}`;
       yield* fs.writeFileString(changelogPath, newChangelog);
       yield* Console.log('   ✓ Changelog updated');
 
@@ -2412,7 +2414,7 @@ const releaseCreateCommand = Command.make('create', {
         `"chore(release): v${nextVersion}"`,
       ]);
       yield* Console.log(
-        `   ✓ Commit created: chore(release): v${nextVersion}`
+        `   ✓ Commit created: chore(release): v${nextVersion}`,
       );
 
       // 5. Git tag
@@ -2431,8 +2433,8 @@ const releaseCreateCommand = Command.make('create', {
       yield* Console.log(`\n📌 Tag: v${nextVersion}`);
       yield* Console.log(`📝 Commit: chore(release): v${nextVersion}`);
       yield* Console.log('🚀 Pushed to remote with tags\n');
-    })
-  )
+    }),
+  ),
 );
 
 /**
@@ -2443,7 +2445,7 @@ const patternNewCommand = Command.make('new', {
   args: {},
 }).pipe(
   Command.withDescription(
-    'Create a new pattern with interactive wizard and scaffolded files.'
+    'Create a new pattern with interactive wizard and scaffolded files.',
   ),
   Command.withHandler(() =>
     Effect.gen(function* () {
@@ -2491,7 +2493,7 @@ const patternNewCommand = Command.make('new', {
       if (!filename || filename.length === 0) {
         yield* Console.error(colorize('\n❌ Invalid pattern title\n', 'red'));
         yield* Console.error(
-          'The title must contain at least one alphanumeric character.\n'
+          'The title must contain at least one alphanumeric character.\n',
         );
         yield* Console.error(colorize('Examples of valid titles:\n', 'bright'));
         yield* Console.error('  • "Retry with Exponential Backoff"');
@@ -2525,7 +2527,7 @@ const patternNewCommand = Command.make('new', {
         yield* Console.error('  1. Use a different pattern name');
         yield* Console.error('  2. Delete the existing files:');
         yield* Console.error(
-          colorize(`     rm ${mdxPath} ${tsPath}\n`, 'cyan')
+          colorize(`     rm ${mdxPath} ${tsPath}\n`, 'cyan'),
         );
         yield* Console.error('  3. Edit the existing pattern files directly\n');
         return yield* Effect.fail(new Error('Pattern already exists'));
@@ -2538,14 +2540,14 @@ const patternNewCommand = Command.make('new', {
             yield* Console.error(
               colorize(
                 '\n❌ Failed to create content/new/raw directory\n',
-                'red'
-              )
+                'red',
+              ),
             );
             yield* Console.error('Check directory permissions.\n');
             yield* Console.error(`Error: ${error}\n`);
             return yield* Effect.fail(new Error('Cannot create directory'));
-          })
-        )
+          }),
+        ),
       );
 
       yield* fs.makeDirectory('content/new/src', { recursive: true }).pipe(
@@ -2554,14 +2556,14 @@ const patternNewCommand = Command.make('new', {
             yield* Console.error(
               colorize(
                 '\n❌ Failed to create content/new/src directory\n',
-                'red'
-              )
+                'red',
+              ),
             );
             yield* Console.error('Check directory permissions.\n');
             yield* Console.error(`Error: ${error}\n`);
             return yield* Effect.fail(new Error('Cannot create directory'));
-          })
-        )
+          }),
+        ),
       );
 
       // Create MDX file
@@ -2584,14 +2586,14 @@ summary: '${summary}'
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Console.error(
-              colorize('\n❌ Failed to create MDX file\n', 'red')
+              colorize('\n❌ Failed to create MDX file\n', 'red'),
             );
             yield* Console.error(`Path: ${mdxPath}\n`);
             yield* Console.error('Check file permissions and disk space.\n');
             yield* Console.error(`Error: ${error}\n`);
             return yield* Effect.fail(new Error('Cannot create MDX file'));
-          })
-        )
+          }),
+        ),
       );
       yield* Console.log(colorize(`✓ Created: ${mdxPath}`, 'green'));
 
@@ -2607,16 +2609,16 @@ Effect.runSync(Effect.succeed("Hello, World!"));
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Console.error(
-              colorize('\n❌ Failed to create TypeScript file\n', 'red')
+              colorize('\n❌ Failed to create TypeScript file\n', 'red'),
             );
             yield* Console.error(`Path: ${tsPath}\n`);
             yield* Console.error('Check file permissions and disk space.\n');
             yield* Console.error(`Error: ${error}\n`);
             return yield* Effect.fail(
-              new Error('Cannot create TypeScript file')
+              new Error('Cannot create TypeScript file'),
             );
-          })
-        )
+          }),
+        ),
       );
       yield* Console.log(colorize(`✓ Created: ${tsPath}`, 'green'));
 
@@ -2628,14 +2630,14 @@ Effect.runSync(Effect.succeed("Hello, World!"));
       yield* Console.log(`   - ${tsPath}`);
       yield* Console.log('\n💡 Next steps:');
       yield* Console.log(
-        '   1. Edit the MDX file to add pattern documentation'
+        '   1. Edit the MDX file to add pattern documentation',
       );
       yield* Console.log(
-        '   2. Edit the TypeScript file to add working examples'
+        '   2. Edit the TypeScript file to add working examples',
       );
       yield* Console.log('   3. Run `bun ep validate` to check your pattern\n');
-    })
-  )
+    }),
+  ),
 );
 
 /**
@@ -2643,7 +2645,7 @@ Effect.runSync(Effect.succeed("Hello, World!"));
  */
 const patternCommand = Command.make('pattern').pipe(
   Command.withDescription('Create new Effect-TS patterns with scaffolding'),
-  Command.withSubcommands([patternNewCommand])
+  Command.withSubcommands([patternNewCommand]),
 );
 
 /**
@@ -2651,9 +2653,9 @@ const patternCommand = Command.make('pattern').pipe(
  */
 const releaseCommand = Command.make('release').pipe(
   Command.withDescription(
-    'Create and preview project releases using conventional commits'
+    'Create and preview project releases using conventional commits',
   ),
-  Command.withSubcommands([releasePreviewCommand, releaseCreateCommand])
+  Command.withSubcommands([releasePreviewCommand, releaseCreateCommand]),
 );
 
 // --- ADMIN COMMAND ---
@@ -2663,7 +2665,7 @@ const releaseCommand = Command.make('release').pipe(
  */
 const rulesCommand = Command.make('rules').pipe(
   Command.withDescription('Generate AI coding rules from patterns'),
-  Command.withSubcommands([rulesGenerateCommand])
+  Command.withSubcommands([rulesGenerateCommand]),
 );
 
 /**
@@ -2671,7 +2673,7 @@ const rulesCommand = Command.make('rules').pipe(
  */
 const adminCommand = Command.make('admin').pipe(
   Command.withDescription(
-    'Administrative commands for managing the Effect Patterns repository'
+    'Administrative commands for managing the Effect Patterns repository',
   ),
   Command.withSubcommands([
     validateCommand,
@@ -2680,7 +2682,7 @@ const adminCommand = Command.make('admin').pipe(
     generateCommand,
     rulesCommand,
     releaseCommand,
-  ])
+  ]),
 );
 
 // --- MAIN COMMAND ---
@@ -2690,9 +2692,9 @@ const adminCommand = Command.make('admin').pipe(
  */
 const epCommand = Command.make('ep').pipe(
   Command.withDescription(
-    'A CLI for Effect Patterns Hub - Create, manage, and learn Effect-TS patterns'
+    'A CLI for Effect Patterns Hub - Create, manage, and learn Effect-TS patterns',
   ),
-  Command.withSubcommands([patternCommand, installCommand, adminCommand])
+  Command.withSubcommands([patternCommand, installCommand, adminCommand]),
 );
 
 // --- CLI APPLICATION ---
@@ -2708,5 +2710,5 @@ import { FetchHttpClient } from '@effect/platform';
 
 cli(process.argv).pipe(
   Effect.provide(Layer.mergeAll(FetchHttpClient.layer, NodeContext.layer)),
-  NodeRuntime.runMain
+  NodeRuntime.runMain,
 );

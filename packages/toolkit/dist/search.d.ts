@@ -9,16 +9,16 @@ import type { Pattern, PatternSummary } from './schemas/pattern.js';
  * Parameters for searching patterns
  */
 export interface SearchPatternsParams {
-    /** Array of patterns to search */
-    patterns: Pattern[];
-    /** Search query (optional) */
-    query?: string;
-    /** Filter by category (optional) */
-    category?: string;
-    /** Filter by difficulty level (optional) */
-    difficulty?: string;
-    /** Maximum number of results (default: no limit) */
-    limit?: number;
+  /** Array of patterns to search */
+  patterns: Pattern[];
+  /** Search query (optional) */
+  query?: string;
+  /** Filter by category (optional) */
+  category?: string;
+  /** Filter by difficulty level (optional) */
+  difficulty?: string;
+  /** Maximum number of results (default: no limit) */
+  limit?: number;
 }
 /**
  * Search patterns with fuzzy matching and filtering
@@ -43,7 +43,10 @@ export declare function searchPatterns(params: SearchPatternsParams): Pattern[];
  * @param id - Pattern ID
  * @returns Pattern if found, undefined otherwise
  */
-export declare function getPatternById(patterns: Pattern[], id: string): Pattern | undefined;
+export declare function getPatternById(
+  patterns: Pattern[],
+  id: string,
+): Pattern | undefined;
 /**
  * Convert Pattern to PatternSummary (lighter weight)
  *

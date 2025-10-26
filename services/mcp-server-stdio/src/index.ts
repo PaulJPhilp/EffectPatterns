@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * Effect Patterns MCP Server
  *
@@ -6,25 +7,22 @@
  * snippets. Communicates via stdio following the Model Context Protocol.
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  type CallToolRequest,
-  type ListToolsRequest,
-} from '@modelcontextprotocol/sdk/types.js';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   buildSnippet,
   getPatternById,
-  loadPatternsFromJsonRunnable,
-  searchPatterns,
   type Pattern,
+  searchPatterns,
 } from '@effect-patterns/toolkit';
-import { Effect } from 'effect';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  type CallToolRequest,
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -53,7 +51,7 @@ const server = new Server(
     capabilities: {
       tools: {},
     },
-  }
+  },
 );
 
 // List available tools
@@ -133,8 +131,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             customName: {
               type: 'string',
-              description:
-                'Custom name for the generated function/constant',
+              description: 'Custom name for the generated function/constant',
             },
             customInput: {
               type: 'string',
@@ -204,7 +201,7 @@ server.setRequestHandler(
                     })),
                   },
                   null,
-                  2
+                  2,
                 ),
               },
             ],
@@ -299,7 +296,7 @@ server.setRequestHandler(
         isError: true,
       };
     }
-  }
+  },
 );
 
 // Start server

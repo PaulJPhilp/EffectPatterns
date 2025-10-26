@@ -40,7 +40,7 @@ function extractGoodExamplePath(mdx: string): string | null {
 async function runCmd(
   cmd: string,
   args: string[],
-  opts: { cwd?: string } = {}
+  opts: { cwd?: string } = {},
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     const child = spawn(cmd, args, {
@@ -94,7 +94,7 @@ async function main() {
   const expected = `./src/${id}.ts`;
   if (examplePath !== expected) {
     throw new Error(
-      `Example path mismatch. Expected '${expected}', got '${examplePath}'`
+      `Example path mismatch. Expected '${expected}', got '${examplePath}'`,
     );
   }
 

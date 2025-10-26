@@ -6,9 +6,9 @@
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { stderr, stdout } from 'node:process';
+import { fileURLToPath } from 'node:url';
 import { JSONSchema, type Schema as S } from '@effect/schema';
 import {
   ExplainPatternRequest,
@@ -25,7 +25,7 @@ const __dirname = dirname(__filename);
 function emitSchema<A, I, R>(
   schema: S.Schema<A, I, R>,
   name: string,
-  outputDir: string
+  outputDir: string,
 ): void {
   try {
     const jsonSchema = JSONSchema.make(schema);

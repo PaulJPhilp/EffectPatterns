@@ -38,7 +38,7 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
      * Fails fast if data doesn't match expected structure
      */
     readonly validateMessages: (
-      data: unknown
+      data: unknown,
     ) => Effect.Effect<MessageCollection, SchemaValidationError>;
 
     /**
@@ -47,21 +47,21 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
      */
     readonly validateMessageCount: (
       messages: readonly Message[],
-      min: number
+      min: number,
     ) => Effect.Effect<readonly Message[], InsufficientDataError>;
 
     /**
      * Validate a single message against schema
      */
     readonly validateMessage: (
-      data: unknown
+      data: unknown,
     ) => Effect.Effect<Message, SchemaValidationError>;
 
     /**
      * Validate data structure (top-level check)
      */
     readonly validateStructure: (
-      data: unknown
+      data: unknown,
     ) => Effect.Effect<void, InvalidDataFormatError>;
   }
 >() {
@@ -77,28 +77,29 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
 
           // Decode using Effect.Schema
           const decodedCollection = yield* Schema.decodeUnknown(
-            MessageCollectionSchema
+            MessageCollectionSchema,
           )(data).pipe(
-            Effect.mapError((parseError) =>
-              new SchemaValidationError({
-                errors: extractValidationErrors(parseError),
-              })
+            Effect.mapError(
+              (parseError) =>
+                new SchemaValidationError({
+                  errors: extractValidationErrors(parseError),
+                }),
             ),
             Effect.tapError((error) =>
               Effect.gen(function* () {
                 yield* Effect.logError(
-                  `Schema validation failed: ${error.errors.length} error(s)`
+                  `Schema validation failed: ${error.errors.length} error(s)`,
                 );
                 for (const err of error.errors) {
                   yield* Effect.logError(`  - ${err}`);
                 }
-              })
+              }),
             ),
             Effect.tap((collection) =>
               Effect.logDebug(
-                `Validated ${collection.messages.length} messages successfully`
-              )
-            )
+                `Validated ${collection.messages.length} messages successfully`,
+              ),
+            ),
           );
 
           return decodedCollection;
@@ -109,12 +110,12 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
           const count = messages.length;
 
           yield* Effect.logDebug(
-            `Checking message count: ${count} messages (minimum: ${min})`
+            `Checking message count: ${count} messages (minimum: ${min})`,
           );
 
           if (count < min) {
             yield* Effect.logError(
-              `Insufficient messages: found ${count}, need at least ${min}`
+              `Insufficient messages: found ${count}, need at least ${min}`,
             );
 
             return yield* Effect.fail(
@@ -122,7 +123,7 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
                 count,
                 min,
                 message: `Found ${count} messages, but at least ${min} required`,
-              })
+              }),
             );
           }
 
@@ -135,7 +136,7 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
           Effect.mapError((parseError) => {
             const errors = extractValidationErrors(parseError);
             return new SchemaValidationError({ errors });
-          })
+          }),
         ),
 
       validateStructure: (data: unknown) =>
@@ -148,7 +149,7 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
               new InvalidDataFormatError({
                 expected: "object with 'messages' array",
                 received: typeof data,
-              })
+              }),
             );
           }
 
@@ -159,7 +160,7 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
               new InvalidDataFormatError({
                 expected: "object with 'messages' property",
                 received: `object with keys: ${Object.keys(dataObj).join(', ')}`,
-              })
+              }),
             );
           }
 
@@ -169,13 +170,13 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
               new InvalidDataFormatError({
                 expected: "'messages' to be an array",
                 received: typeof dataObj.messages,
-              })
+              }),
             );
           }
 
           yield* Effect.logDebug('Data structure validation passed');
         }),
-    })
+    }),
   );
 }
 
@@ -186,9 +187,7 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
 /**
  * Extract validation error messages from ParseError
  */
-const extractValidationErrors = (
-  parseError: unknown
-): readonly string[] => {
+const extractValidationErrors = (parseError: unknown): readonly string[] => {
   if (!isRecord(parseError)) {
     return [String(parseError)];
   }
@@ -211,7 +210,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const collectTopLevelMessage = (
   errorObj: Record<string, unknown>,
-  errors: string[]
+  errors: string[],
 ) => {
   const message = errorObj.message;
   if (typeof message === 'string') {

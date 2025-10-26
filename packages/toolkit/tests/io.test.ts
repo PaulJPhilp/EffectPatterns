@@ -58,8 +58,8 @@ describe('loadPatternsFromJson', () => {
 
       const result = await Effect.runPromise(
         loadPatternsFromJson(testFilePath).pipe(
-          Effect.provide(NodeFileSystem.layer)
-        )
+          Effect.provide(NodeFileSystem.layer),
+        ),
       );
 
       expect(result.version).toBe('1.0.0');
@@ -87,8 +87,8 @@ describe('loadPatternsFromJson', () => {
 
       const result = await Effect.runPromise(
         loadPatternsFromJson(testFilePath).pipe(
-          Effect.provide(NodeFileSystem.layer)
-        )
+          Effect.provide(NodeFileSystem.layer),
+        ),
       );
 
       expect(result.patterns).toHaveLength(1);
@@ -126,8 +126,8 @@ describe('loadPatternsFromJson', () => {
 
       const result = await Effect.runPromise(
         loadPatternsFromJson(testFilePath).pipe(
-          Effect.provide(NodeFileSystem.layer)
-        )
+          Effect.provide(NodeFileSystem.layer),
+        ),
       );
 
       expect(result.patterns).toHaveLength(2);
@@ -145,8 +145,8 @@ describe('loadPatternsFromJson', () => {
 
       const result = await Effect.runPromise(
         loadPatternsFromJson(testFilePath).pipe(
-          Effect.provide(NodeFileSystem.layer)
-        )
+          Effect.provide(NodeFileSystem.layer),
+        ),
       );
 
       expect(result.patterns).toHaveLength(0);
@@ -184,8 +184,8 @@ describe('loadPatternsFromJson', () => {
 
       const result = await Effect.runPromise(
         loadPatternsFromJson(testFilePath).pipe(
-          Effect.provide(NodeFileSystem.layer)
-        )
+          Effect.provide(NodeFileSystem.layer),
+        ),
       );
 
       const pattern = result.patterns[0];
@@ -204,9 +204,9 @@ describe('loadPatternsFromJson', () => {
       await expect(
         Effect.runPromise(
           loadPatternsFromJson(nonExistentPath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
-        )
+            Effect.provide(NodeFileSystem.layer),
+          ),
+        ),
       ).rejects.toThrow();
     });
 
@@ -216,9 +216,9 @@ describe('loadPatternsFromJson', () => {
       await expect(
         Effect.runPromise(
           loadPatternsFromJson(testFilePath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
-        )
+            Effect.provide(NodeFileSystem.layer),
+          ),
+        ),
       ).rejects.toThrow();
     });
 
@@ -228,9 +228,9 @@ describe('loadPatternsFromJson', () => {
       await expect(
         Effect.runPromise(
           loadPatternsFromJson(testFilePath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
-        )
+            Effect.provide(NodeFileSystem.layer),
+          ),
+        ),
       ).rejects.toThrow();
     });
 
@@ -245,9 +245,9 @@ describe('loadPatternsFromJson', () => {
       await expect(
         Effect.runPromise(
           loadPatternsFromJson(testFilePath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
-        )
+            Effect.provide(NodeFileSystem.layer),
+          ),
+        ),
       ).rejects.toThrow();
     });
 
@@ -272,9 +272,9 @@ describe('loadPatternsFromJson', () => {
       await expect(
         Effect.runPromise(
           loadPatternsFromJson(testFilePath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
-        )
+            Effect.provide(NodeFileSystem.layer),
+          ),
+        ),
       ).rejects.toThrow();
     });
 
@@ -299,9 +299,9 @@ describe('loadPatternsFromJson', () => {
       await expect(
         Effect.runPromise(
           loadPatternsFromJson(testFilePath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
-        )
+            Effect.provide(NodeFileSystem.layer),
+          ),
+        ),
       ).rejects.toThrow();
     });
 
@@ -320,9 +320,9 @@ describe('loadPatternsFromJson', () => {
       await expect(
         Effect.runPromise(
           loadPatternsFromJson(testFilePath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
-        )
+            Effect.provide(NodeFileSystem.layer),
+          ),
+        ),
       ).rejects.toThrow();
     });
 
@@ -347,9 +347,9 @@ describe('loadPatternsFromJson', () => {
       await expect(
         Effect.runPromise(
           loadPatternsFromJson(testFilePath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
-        )
+            Effect.provide(NodeFileSystem.layer),
+          ),
+        ),
       ).rejects.toThrow();
     });
 
@@ -374,9 +374,9 @@ describe('loadPatternsFromJson', () => {
       await expect(
         Effect.runPromise(
           loadPatternsFromJson(testFilePath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
-        )
+            Effect.provide(NodeFileSystem.layer),
+          ),
+        ),
       ).rejects.toThrow();
     });
   });
@@ -408,8 +408,8 @@ describe('loadPatternsFromJson', () => {
 
       const result = await Effect.runPromise(
         loadPatternsFromJson(testFilePath).pipe(
-          Effect.provide(NodeFileSystem.layer)
-        )
+          Effect.provide(NodeFileSystem.layer),
+        ),
       );
 
       expect(result.patterns[0].examples[0].language).toBe('typescript');
@@ -441,8 +441,8 @@ describe('loadPatternsFromJson', () => {
 
       const result = await Effect.runPromise(
         loadPatternsFromJson(testFilePath).pipe(
-          Effect.provide(NodeFileSystem.layer)
-        )
+          Effect.provide(NodeFileSystem.layer),
+        ),
       );
 
       expect(result.patterns[0].examples[0].description).toBeUndefined();
@@ -482,8 +482,8 @@ describe('loadPatternsFromJson', () => {
 
         const result = await Effect.runPromise(
           loadPatternsFromJson(testFilePath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
+            Effect.provide(NodeFileSystem.layer),
+          ),
         );
 
         expect(result.patterns[0].category).toBe(category);
@@ -513,8 +513,8 @@ describe('loadPatternsFromJson', () => {
 
         const result = await Effect.runPromise(
           loadPatternsFromJson(testFilePath).pipe(
-            Effect.provide(NodeFileSystem.layer)
-          )
+            Effect.provide(NodeFileSystem.layer),
+          ),
         );
 
         expect(result.patterns[0].difficulty).toBe(difficulty);
@@ -543,8 +543,8 @@ describe('loadPatternsFromJson', () => {
 
       const result = await Effect.runPromise(
         loadPatternsFromJson(testFilePath).pipe(
-          Effect.provide(NodeFileSystem.layer)
-        )
+          Effect.provide(NodeFileSystem.layer),
+        ),
       );
 
       expect(result.patterns[0].title).toContain('🚀');

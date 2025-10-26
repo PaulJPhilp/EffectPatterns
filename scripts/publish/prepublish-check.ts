@@ -32,7 +32,7 @@ function hasFlag(flag: string): boolean {
 async function runCmd(
   cmd: string,
   args: string[],
-  opts: { cwd?: string } = {}
+  opts: { cwd?: string } = {},
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     const child = spawn(cmd, args, {
@@ -61,7 +61,7 @@ async function listMdx(dir: string): Promise<string[]> {
 async function worker(
   queue: string[],
   results: Array<{ file: string; ok: boolean; output: string }>,
-  opts: { srcDir: string; eslint: boolean }
+  opts: { srcDir: string; eslint: boolean },
 ) {
   for (;;) {
     const file = queue.pop();
@@ -120,7 +120,7 @@ async function main() {
   const results: Array<{ file: string; ok: boolean; output: string }> = [];
 
   const workers = Array.from({ length: conc }, () =>
-    worker(queue, results, { srcDir, eslint })
+    worker(queue, results, { srcDir, eslint }),
   );
   await Promise.all(workers);
 
@@ -136,7 +136,7 @@ async function main() {
     console.log('\nFailures:');
     for (const f of failed) {
       console.log('-', path.relative(PROJECT_ROOT, f.file));
-      process.stderr.write(f.output + '\n');
+      process.stderr.write(`${f.output}\n`);
     }
   }
 
@@ -158,7 +158,7 @@ async function main() {
     await fs.writeFile(
       path.resolve(reportPath),
       JSON.stringify(report, null, 2),
-      'utf8'
+      'utf8',
     );
     console.log('\nReport written:', path.resolve(reportPath));
   }

@@ -40,7 +40,7 @@ describe('Pattern schemas', () => {
 
       for (const category of validCategories) {
         const result = await Effect.runPromise(
-          S.decode(PatternCategory)(category)
+          S.decode(PatternCategory)(category),
         );
         expect(result).toBe(category);
       }
@@ -48,7 +48,7 @@ describe('Pattern schemas', () => {
 
     it('should reject invalid categories', async () => {
       await expect(
-        Effect.runPromise(S.decode(PatternCategory)('invalid-category'))
+        Effect.runPromise(S.decode(PatternCategory)('invalid-category')),
       ).rejects.toThrow();
     });
   });
@@ -59,7 +59,7 @@ describe('Pattern schemas', () => {
 
       for (const level of validLevels) {
         const result = await Effect.runPromise(
-          S.decode(DifficultyLevel)(level)
+          S.decode(DifficultyLevel)(level),
         );
         expect(result).toBe(level);
       }
@@ -67,7 +67,7 @@ describe('Pattern schemas', () => {
 
     it('should reject invalid difficulty levels', async () => {
       await expect(
-        Effect.runPromise(S.decode(DifficultyLevel)('expert'))
+        Effect.runPromise(S.decode(DifficultyLevel)('expert')),
       ).rejects.toThrow();
     });
   });
@@ -101,7 +101,7 @@ describe('Pattern schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(CodeExample)(invalid))
+        Effect.runPromise(S.decode(CodeExample)(invalid)),
       ).rejects.toThrow();
     });
 
@@ -111,7 +111,7 @@ describe('Pattern schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(CodeExample)(invalid))
+        Effect.runPromise(S.decode(CodeExample)(invalid)),
       ).rejects.toThrow();
     });
   });
@@ -163,7 +163,7 @@ describe('Pattern schemas', () => {
       delete (invalid as any).id;
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(invalid))
+        Effect.runPromise(S.decode(Pattern)(invalid)),
       ).rejects.toThrow();
     });
 
@@ -172,7 +172,7 @@ describe('Pattern schemas', () => {
       delete (invalid as any).title;
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(invalid))
+        Effect.runPromise(S.decode(Pattern)(invalid)),
       ).rejects.toThrow();
     });
 
@@ -181,7 +181,7 @@ describe('Pattern schemas', () => {
       delete (invalid as any).category;
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(invalid))
+        Effect.runPromise(S.decode(Pattern)(invalid)),
       ).rejects.toThrow();
     });
 
@@ -192,7 +192,7 @@ describe('Pattern schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(invalid))
+        Effect.runPromise(S.decode(Pattern)(invalid)),
       ).rejects.toThrow();
     });
 
@@ -203,7 +203,7 @@ describe('Pattern schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(invalid))
+        Effect.runPromise(S.decode(Pattern)(invalid)),
       ).rejects.toThrow();
     });
 
@@ -219,7 +219,7 @@ describe('Pattern schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(withInvalidExample))
+        Effect.runPromise(S.decode(Pattern)(withInvalidExample)),
       ).rejects.toThrow();
     });
   });
@@ -236,7 +236,7 @@ describe('Pattern schemas', () => {
 
     it('should validate valid summary', async () => {
       const result = await Effect.runPromise(
-        S.decode(PatternSummary)(validSummary)
+        S.decode(PatternSummary)(validSummary),
       );
       expect(result).toEqual(validSummary);
     });
@@ -249,7 +249,7 @@ describe('Pattern schemas', () => {
 
       // Schema should still validate but examples won't be in type
       const result = await Effect.runPromise(
-        S.decode(PatternSummary)(withExamples)
+        S.decode(PatternSummary)(withExamples),
       );
       expect(result).toMatchObject(validSummary);
     });
@@ -259,7 +259,7 @@ describe('Pattern schemas', () => {
       delete (invalid as any).description;
 
       await expect(
-        Effect.runPromise(S.decode(PatternSummary)(invalid))
+        Effect.runPromise(S.decode(PatternSummary)(invalid)),
       ).rejects.toThrow();
     });
   });
@@ -284,7 +284,7 @@ describe('Pattern schemas', () => {
 
     it('should validate valid patterns index', async () => {
       const result = await Effect.runPromise(
-        S.decode(PatternsIndex)(validIndex)
+        S.decode(PatternsIndex)(validIndex),
       );
       expect(result.version).toBe('1.0.0');
       expect(result.patterns).toHaveLength(1);
@@ -306,7 +306,7 @@ describe('Pattern schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(PatternsIndex)(invalid))
+        Effect.runPromise(S.decode(PatternsIndex)(invalid)),
       ).rejects.toThrow();
     });
 
@@ -316,7 +316,7 @@ describe('Pattern schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(PatternsIndex)(invalid))
+        Effect.runPromise(S.decode(PatternsIndex)(invalid)),
       ).rejects.toThrow();
     });
 
@@ -345,7 +345,7 @@ describe('Generate schemas', () => {
 
     it('should reject invalid module types', async () => {
       await expect(
-        Effect.runPromise(S.decode(ModuleType)('amd'))
+        Effect.runPromise(S.decode(ModuleType)('amd')),
       ).rejects.toThrow();
     });
   });
@@ -357,7 +357,7 @@ describe('Generate schemas', () => {
       };
 
       const result = await Effect.runPromise(
-        S.decode(GenerateRequest)(request)
+        S.decode(GenerateRequest)(request),
       );
       expect(result.patternId).toBe('test-pattern');
     });
@@ -372,7 +372,7 @@ describe('Generate schemas', () => {
       };
 
       const result = await Effect.runPromise(
-        S.decode(GenerateRequest)(request)
+        S.decode(GenerateRequest)(request),
       );
       expect(result).toEqual(request);
     });
@@ -383,7 +383,7 @@ describe('Generate schemas', () => {
       };
 
       const result = await Effect.runPromise(
-        S.decode(GenerateRequest)(request)
+        S.decode(GenerateRequest)(request),
       );
       expect(result.name).toBeUndefined();
       expect(result.input).toBeUndefined();
@@ -395,7 +395,7 @@ describe('Generate schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(GenerateRequest)(invalid))
+        Effect.runPromise(S.decode(GenerateRequest)(invalid)),
       ).rejects.toThrow();
     });
 
@@ -406,7 +406,7 @@ describe('Generate schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(GenerateRequest)(invalid))
+        Effect.runPromise(S.decode(GenerateRequest)(invalid)),
       ).rejects.toThrow();
     });
   });
@@ -421,7 +421,7 @@ describe('Generate schemas', () => {
       };
 
       const result = await Effect.runPromise(
-        S.decode(GenerateResponse)(response)
+        S.decode(GenerateResponse)(response),
       );
       expect(result).toMatchObject(response);
     });
@@ -436,7 +436,7 @@ describe('Generate schemas', () => {
       };
 
       const result = await Effect.runPromise(
-        S.decode(GenerateResponse)(response)
+        S.decode(GenerateResponse)(response),
       );
       expect(result.traceId).toBe('abc123');
     });
@@ -449,7 +449,7 @@ describe('Generate schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(GenerateResponse)(invalid))
+        Effect.runPromise(S.decode(GenerateResponse)(invalid)),
       ).rejects.toThrow();
     });
 
@@ -461,7 +461,7 @@ describe('Generate schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(GenerateResponse)(invalid))
+        Effect.runPromise(S.decode(GenerateResponse)(invalid)),
       ).rejects.toThrow();
     });
   });
@@ -471,7 +471,7 @@ describe('Generate schemas', () => {
       const request = {};
 
       const result = await Effect.runPromise(
-        S.decode(SearchPatternsRequest)(request)
+        S.decode(SearchPatternsRequest)(request),
       );
       expect(result.q).toBeUndefined();
     });
@@ -485,7 +485,7 @@ describe('Generate schemas', () => {
       };
 
       const result = await Effect.runPromise(
-        S.decode(SearchPatternsRequest)(request)
+        S.decode(SearchPatternsRequest)(request),
       );
       expect(result.q).toBe('retry');
       expect(result.category).toBe('error-handling');
@@ -499,7 +499,7 @@ describe('Generate schemas', () => {
       };
 
       const result = await Effect.runPromise(
-        S.decode(SearchPatternsRequest)(request)
+        S.decode(SearchPatternsRequest)(request),
       );
       expect(result.limit).toBe(25);
       expect(typeof result.limit).toBe('number');
@@ -511,7 +511,7 @@ describe('Generate schemas', () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(SearchPatternsRequest)(invalid))
+        Effect.runPromise(S.decode(SearchPatternsRequest)(invalid)),
       ).rejects.toThrow();
     });
   });
@@ -533,7 +533,7 @@ describe('Schema edge cases', () => {
 
     // Schema should handle or reject null based on its definition
     await expect(
-      Effect.runPromise(S.decode(Pattern)(withNull))
+      Effect.runPromise(S.decode(Pattern)(withNull)),
     ).rejects.toThrow();
   });
 

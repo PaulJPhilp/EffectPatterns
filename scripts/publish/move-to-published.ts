@@ -13,8 +13,8 @@
  *   bun scripts/publish/move-to-published.ts [--dry-run]
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 const PROJECT_ROOT = process.cwd();
 const NEW_PUBLISHED_DIR = path.join(PROJECT_ROOT, 'content/new/published');
@@ -92,7 +92,7 @@ async function movePatternFiles(): Promise<MoveResult[]> {
         // Check if target already exists
         if (await fileExists(targetPath)) {
           console.log(
-            `  ⚠️  ${file} already exists in published/, overwriting...`
+            `  ⚠️  ${file} already exists in published/, overwriting...`,
           );
         }
 
@@ -124,7 +124,7 @@ async function cleanupWorkingDirectories(): Promise<string[]> {
     try {
       if (!(await fileExists(dir))) {
         console.log(
-          `  ℹ️  ${path.relative(PROJECT_ROOT, dir)} does not exist, skipping`
+          `  ℹ️  ${path.relative(PROJECT_ROOT, dir)} does not exist, skipping`,
         );
         continue;
       }
@@ -133,7 +133,7 @@ async function cleanupWorkingDirectories(): Promise<string[]> {
 
       if (files.length === 0) {
         console.log(
-          `  ✅ ${path.relative(PROJECT_ROOT, dir)} is already empty`
+          `  ✅ ${path.relative(PROJECT_ROOT, dir)} is already empty`,
         );
         continue;
       }
@@ -142,7 +142,7 @@ async function cleanupWorkingDirectories(): Promise<string[]> {
         console.log(
           `  [DRY RUN] Would clean: ${path.relative(PROJECT_ROOT, dir)} (${
             files.length
-          } files)`
+          } files)`,
         );
         cleaned.push(dir);
       } else {
@@ -161,14 +161,14 @@ async function cleanupWorkingDirectories(): Promise<string[]> {
         console.log(
           `  ✅ Cleaned: ${path.relative(PROJECT_ROOT, dir)} (${
             files.length
-          } files removed)`
+          } files removed)`,
         );
         cleaned.push(dir);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error(
-        `  ❌ Failed to clean ${path.relative(PROJECT_ROOT, dir)}: ${errorMsg}`
+        `  ❌ Failed to clean ${path.relative(PROJECT_ROOT, dir)}: ${errorMsg}`,
       );
     }
   }
@@ -201,7 +201,7 @@ async function verifyCleanup(): Promise<string[]> {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error(
-        `  ⚠️  Could not verify ${path.relative(PROJECT_ROOT, dir)}: ${errorMsg}`
+        `  ⚠️  Could not verify ${path.relative(PROJECT_ROOT, dir)}: ${errorMsg}`,
       );
     }
   }
@@ -210,7 +210,7 @@ async function verifyCleanup(): Promise<string[]> {
 }
 
 function generateReport(report: MoveReport): void {
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
   console.log('📊 Move Report');
   console.log('='.repeat(60));
 
@@ -234,7 +234,7 @@ function generateReport(report: MoveReport): void {
   console.log(
     `  🧹 ${report.cleaned.length} director${
       report.cleaned.length === 1 ? 'y' : 'ies'
-    } cleaned`
+    } cleaned`,
   );
 
   if (report.errors.length > 0) {
@@ -244,7 +244,7 @@ function generateReport(report: MoveReport): void {
     });
   }
 
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
 }
 
 async function main(): Promise<void> {
@@ -284,14 +284,14 @@ async function main(): Promise<void> {
 
     if (hasFailures) {
       console.log(
-        '\n⚠️  Move completed with errors. Please review failed operations.'
+        '\n⚠️  Move completed with errors. Please review failed operations.',
       );
       process.exit(1);
     }
 
     if (isDryRun) {
       console.log(
-        '\n✨ Dry run completed! Run without --dry-run to apply changes.'
+        '\n✨ Dry run completed! Run without --dry-run to apply changes.',
       );
     } else {
       console.log('\n✨ Move completed successfully!');

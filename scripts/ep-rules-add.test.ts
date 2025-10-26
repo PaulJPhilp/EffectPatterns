@@ -4,9 +4,9 @@
  * Comprehensive test suite for the CLI install add command
  */
 
-import { type ChildProcess, spawn } from 'child_process';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import { type ChildProcess, spawn } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 // --- TEST UTILITIES ---
@@ -28,7 +28,7 @@ const stopServer = () => {
 };
 
 const runCommand = async (
-  args: string[]
+  args: string[],
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> =>
   new Promise((resolve) => {
     const proc = spawn('bun', ['run', 'scripts/ep.ts', ...args], {
@@ -52,7 +52,7 @@ const runCommand = async (
   });
 
 const TEST_DIR = '.cursor-test';
-const TEST_FILE = path.join(TEST_DIR, 'rules.md');
+const _TEST_FILE = path.join(TEST_DIR, 'rules.md');
 
 // --- TESTS ---
 
@@ -376,7 +376,7 @@ describe.sequential('ep install filtering', () => {
     // Should show it's filtering
     const output = result.stdout;
     expect(
-      output.includes('Filtered to') || output.includes('No rules match')
+      output.includes('Filtered to') || output.includes('No rules match'),
     ).toBe(true);
   });
 
@@ -396,7 +396,7 @@ describe.sequential('ep install filtering', () => {
     // Should show it's filtering
     const output = result.stdout;
     expect(
-      output.includes('Filtered to') || output.includes('No rules match')
+      output.includes('Filtered to') || output.includes('No rules match'),
     ).toBe(true);
   });
 

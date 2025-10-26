@@ -13,10 +13,10 @@ export class LLMService extends Context.Tag('LLMService')<
   LLMService,
   {
     readonly analyzeChunk: (
-      chunk: Message[]
+      chunk: Message[],
     ) => Effect.Effect<string, LLMServiceError | AnalysisError>;
     readonly aggregateAnalyses: (
-      analyses: string[]
+      analyses: string[],
     ) => Effect.Effect<string, LLMServiceError | AnalysisError>;
   }
 >() {}
@@ -84,8 +84,9 @@ export const LLMServiceLive = Layer.effect(
       Schedule.intersect(Schedule.recurs(2)), // Max 3 total attempts (original + 2 retries)
       Schedule.whileInput(
         (error: LLMServiceError | AnalysisError) =>
-          error._tag === 'LLMTimeoutError' || error._tag === 'LLMRateLimitError'
-      )
+          error._tag === 'LLMTimeoutError' ||
+          error._tag === 'LLMRateLimitError',
+      ),
     );
 
     return LLMService.of({
@@ -120,9 +121,9 @@ Return your analysis in JSON format with these fields:
             Effect.logError(
               `Chunk analysis failed after retries: ${error._tag} - ${
                 'message' in error ? error.message : 'Unknown error'
-              }`
-            )
-          )
+              }`,
+            ),
+          ),
         );
       },
 
@@ -169,11 +170,11 @@ Format the output as well-structured Markdown.`;
             Effect.logError(
               `Analysis aggregation failed after retries: ${error._tag} - ${
                 'message' in error ? error.message : 'Unknown error'
-              }`
-            )
-          )
+              }`,
+            ),
+          ),
         );
       },
     });
-  })
+  }),
 );

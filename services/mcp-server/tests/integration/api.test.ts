@@ -122,13 +122,13 @@ describe('MCP Server API Integration Tests', () => {
         `${BASE_URL}/api/patterns?category=error-handling`,
         {
           headers: { 'x-api-key': API_KEY },
-        }
+        },
       );
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(
-        data.patterns.every((p: any) => p.category === 'error-handling')
+        data.patterns.every((p: any) => p.category === 'error-handling'),
       ).toBe(true);
     });
 
@@ -137,13 +137,13 @@ describe('MCP Server API Integration Tests', () => {
         `${BASE_URL}/api/patterns?difficulty=intermediate`,
         {
           headers: { 'x-api-key': API_KEY },
-        }
+        },
       );
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(
-        data.patterns.every((p: any) => p.difficulty === 'intermediate')
+        data.patterns.every((p: any) => p.difficulty === 'intermediate'),
       ).toBe(true);
     });
 
@@ -201,7 +201,7 @@ describe('MCP Server API Integration Tests', () => {
         `${BASE_URL}/api/patterns/retry-with-backoff`,
         {
           headers: { 'x-api-key': API_KEY },
-        }
+        },
       );
 
       if (response.status === 200) {
@@ -223,7 +223,7 @@ describe('MCP Server API Integration Tests', () => {
         `${BASE_URL}/api/patterns/nonexistent-pattern`,
         {
           headers: { 'x-api-key': API_KEY },
-        }
+        },
       );
 
       expect(response.status).toBe(404);
@@ -234,7 +234,7 @@ describe('MCP Server API Integration Tests', () => {
         `${BASE_URL}/api/patterns/retry-with-backoff`,
         {
           headers: { 'x-api-key': API_KEY },
-        }
+        },
       );
 
       if (response.status === 200) {
@@ -498,7 +498,7 @@ describe('MCP Server API Integration Tests', () => {
       const attributes = firstTrace.resourceSpans[0]?.resource.attributes;
 
       const serviceName = attributes?.find(
-        (attr) => attr.key === 'service.name'
+        (attr) => attr.key === 'service.name',
       );
       expect(serviceName).toBeDefined();
     });

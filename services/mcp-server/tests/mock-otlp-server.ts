@@ -120,9 +120,9 @@ export class MockOTLPCollector {
         total +
         rs.scopeSpans.reduce(
           (scopeTotal, ss) => scopeTotal + ss.spans.length,
-          0
+          0,
         ),
-      0
+      0,
     );
   }
 
@@ -190,7 +190,7 @@ export class MockOTLPCollector {
  * Helper to create and start a mock OTLP collector
  */
 export async function createMockOTLPCollector(
-  port = 4318
+  port = 4318,
 ): Promise<MockOTLPCollector> {
   const collector = new MockOTLPCollector(port);
   await collector.start();
