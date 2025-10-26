@@ -107,7 +107,7 @@ const analyzeMessage = (msg: Message): MessageWithMetadata => {
  */
 const calculateRelationshipScore = (
   current: MessageWithMetadata,
-  previous: MessageWithMetadata
+  previous: MessageWithMetadata,
 ): number => {
   let score = 0;
 
@@ -153,7 +153,7 @@ const calculateRelationshipScore = (
  */
 const smartChunk = (
   messages: Message[],
-  config: ChunkingConfig
+  config: ChunkingConfig,
 ): Message[][] => {
   if (messages.length === 0) {
     return [];
@@ -169,7 +169,7 @@ const smartChunk = (
   for (let i = 1; i < analyzed.length; i++) {
     const relationshipScore = calculateRelationshipScore(
       analyzed[i],
-      analyzed[i - 1]
+      analyzed[i - 1],
     );
 
     analyzed[i].relationshipScore = relationshipScore;
@@ -223,7 +223,7 @@ const simpleChunk = (messages: Message[], chunkSize: number): Message[][] => {
  */
 export const chunkMessages = (
   messages: Message[],
-  config: ChunkingConfig
+  config: ChunkingConfig,
 ): Effect.Effect<ChunkingResult, ChunkingError | InvalidChunkSizeError> =>
   Effect.gen(function* () {
     // Validate chunk size
@@ -236,7 +236,7 @@ export const chunkMessages = (
           size: config.targetSize,
           min: MIN_TARGET_CHUNK_SIZE,
           max: MAX_TARGET_CHUNK_SIZE,
-        })
+        }),
       );
     }
 
@@ -246,7 +246,7 @@ export const chunkMessages = (
         new ChunkingError({
           reason: 'No messages to chunk',
           messageCount: 0,
-        })
+        }),
       );
     }
 
@@ -281,7 +281,7 @@ export const chunkMessages = (
  * Convenience function: chunk messages with default configuration
  */
 export const chunkMessagesDefault = (
-  messages: Message[]
+  messages: Message[],
 ): Effect.Effect<ChunkingResult, ChunkingError | InvalidChunkSizeError> =>
   chunkMessages(messages, {
     targetSize: 50,
@@ -295,7 +295,7 @@ export const chunkMessagesDefault = (
  */
 export const chunkMessagesSimple = (
   messages: Message[],
-  chunkSize: number
+  chunkSize: number,
 ): Effect.Effect<ChunkingResult, ChunkingError | InvalidChunkSizeError> =>
   chunkMessages(messages, {
     targetSize: chunkSize,

@@ -23,7 +23,7 @@ function argValue(flag: string): string | undefined {
 
 function extractPublishedTs(mdxContent: string): string | null {
   const m = mdxContent.match(
-    /## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/
+    /## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/,
   );
   return m ? m[1].trim() : null;
 }
@@ -62,7 +62,7 @@ async function main() {
   if (embedded.trim() !== tsContent.trim()) {
     console.error(`❌ Validation failed for ${path.basename(filePath)}`);
     console.error(
-      `   Embedded code does not match ${path.relative(PROJECT_ROOT, tsPath)}`
+      `   Embedded code does not match ${path.relative(PROJECT_ROOT, tsPath)}`,
     );
     process.exitCode = 1;
     return;

@@ -13,13 +13,13 @@
  * Checks for corresponding TypeScript files in content/new/src/
  */
 
-import { exec } from 'child_process';
-import * as fs from 'fs/promises';
+import { exec } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
 import matter from 'gray-matter';
-import * as path from 'path';
-import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const _execAsync = promisify(exec);
 
 // --- CONFIGURATION ---
 const NEW_PUBLISHED_DIR = path.join(process.cwd(), 'content/new/published');
@@ -31,12 +31,12 @@ const SHOW_PROGRESS = true;
 interface ValidationIssue {
   type: 'error' | 'warning';
   category:
-  | 'frontmatter'
-  | 'structure'
-  | 'links'
-  | 'code'
-  | 'content'
-  | 'files';
+    | 'frontmatter'
+    | 'structure'
+    | 'links'
+    | 'code'
+    | 'content'
+    | 'files';
   message: string;
 }
 
@@ -75,7 +75,7 @@ function updateProgress() {
     '█'.repeat(Math.floor(percent / 2)) +
     '░'.repeat(50 - Math.floor(percent / 2));
   process.stdout.write(
-    `\r${bar} ${percent}% (${completedValidations}/${totalValidations})`
+    `\r${bar} ${percent}% (${completedValidations}/${totalValidations})`,
   );
 }
 
@@ -113,32 +113,32 @@ const VALID_USE_CASES = [
 ];
 
 const USE_CASE_ALIASES: Record<string, string | readonly string[]> = {
-  'combinators': 'core-concepts',
-  'sequencing': 'core-concepts',
-  'composition': 'core-concepts',
-  'pairing': 'core-concepts',
+  combinators: 'core-concepts',
+  sequencing: 'core-concepts',
+  composition: 'core-concepts',
+  pairing: 'core-concepts',
   'side-effects': 'core-concepts',
-  'constructors': 'core-concepts',
-  'lifting': 'core-concepts',
+  constructors: 'core-concepts',
+  lifting: 'core-concepts',
   'effect-results': 'core-concepts',
   'data-types': 'modeling-data',
-  'collections': 'modeling-data',
+  collections: 'modeling-data',
   'set-operations': 'modeling-data',
   'optional-values': 'modeling-data',
-  'time': 'modeling-time',
-  'duration': 'modeling-time',
-  'logging': 'observability',
-  'instrumentation': 'observability',
-  'metrics': 'observability',
-  'monitoring': 'observability',
+  time: 'modeling-time',
+  duration: 'modeling-time',
+  logging: 'observability',
+  instrumentation: 'observability',
+  metrics: 'observability',
+  monitoring: 'observability',
   'function-calls': 'observability',
-  'debugging': 'tooling-and-debugging',
-  'performance': 'resource-management',
-  'security': 'application-architecture',
+  debugging: 'tooling-and-debugging',
+  performance: 'resource-management',
+  security: 'application-architecture',
   'sensitive-data': 'application-architecture',
-  'interop': 'application-architecture',
-  'async': 'concurrency',
-  'callback': 'concurrency',
+  interop: 'application-architecture',
+  async: 'concurrency',
+  callback: 'concurrency',
   'error-handling': 'error-management',
 };
 
@@ -157,8 +157,9 @@ const normalizeUseCaseValue = (value: string): readonly string[] => {
     }
   }
 
-  const aliasKey = [lower, slug].find((candidate): candidate is keyof typeof USE_CASE_ALIASES =>
-    Object.prototype.hasOwnProperty.call(USE_CASE_ALIASES, candidate)
+  const aliasKey = [lower, slug].find(
+    (candidate): candidate is keyof typeof USE_CASE_ALIASES =>
+      Object.hasOwn(USE_CASE_ALIASES, candidate),
   );
 
   if (!aliasKey) {
@@ -182,7 +183,7 @@ const REQUIRED_SECTIONS = [
 
 function validateFrontmatter(
   frontmatter: any,
-  filename: string
+  filename: string,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
 
@@ -214,8 +215,9 @@ function validateFrontmatter(
     issues.push({
       type: 'warning',
       category: 'frontmatter',
-      message: `Invalid skillLevel '${frontmatter.skillLevel
-        }'. Valid values: ${VALID_SKILL_LEVELS.join(', ')}`,
+      message: `Invalid skillLevel '${
+        frontmatter.skillLevel
+      }'. Valid values: ${VALID_SKILL_LEVELS.join(', ')}`,
     });
   }
 
@@ -249,8 +251,11 @@ function validateFrontmatter(
       issues.push({
         type: 'warning',
         category: 'frontmatter',
-        message: `Invalid useCase '${Array.isArray(frontmatter.useCase) ? frontmatter.useCase.join(', ') : frontmatter.useCase
-          }'. Valid values: ${VALID_USE_CASES.join(', ')}`,
+        message: `Invalid useCase '${
+          Array.isArray(frontmatter.useCase)
+            ? frontmatter.useCase.join(', ')
+            : frontmatter.useCase
+        }'. Valid values: ${VALID_USE_CASES.join(', ')}`,
       });
     } else if (unmapped.length > 0) {
       issues.push({
@@ -433,7 +438,7 @@ async function validatePattern(filePath: string): Promise<ValidationResult> {
     const tsFile = path.join(NEW_SRC_DIR, `${fileName}.ts`);
     try {
       await fs.access(tsFile);
-    } catch (error) {
+    } catch (_error) {
       issues.push({
         type: 'error',
         category: 'files',
@@ -471,7 +476,7 @@ async function validatePattern(filePath: string): Promise<ValidationResult> {
 
 // --- PARALLEL EXECUTION ---
 async function validateInParallel(
-  files: string[]
+  files: string[],
 ): Promise<ValidationResult[]> {
   const results: ValidationResult[] = [];
   const queue = [...files];
@@ -529,7 +534,7 @@ function printResults(results: ValidationResult[]) {
   }
 
   if (issuesByCategory.size > 0) {
-    console.log('\n' + colorize('Issues by Category:', 'bright'));
+    console.log(`\n${colorize('Issues by Category:', 'bright')}`);
     console.log('─'.repeat(60));
     for (const [category, count] of issuesByCategory.entries()) {
       console.log(`  ${category.padEnd(20)} ${count} issue(s)`);
@@ -538,13 +543,14 @@ function printResults(results: ValidationResult[]) {
 
   // Invalid patterns details
   if (invalid.length > 0) {
-    console.log('\n' + colorize('Patterns with Errors:', 'red'));
+    console.log(`\n${colorize('Patterns with Errors:', 'red')}`);
     console.log('─'.repeat(60));
 
     for (const result of invalid) {
       console.log(
-        `\n${colorize(result.file + '.mdx', 'bright')} (${result.errors
-        } error(s), ${result.warnings} warning(s))`
+        `\n${colorize(`${result.file}.mdx`, 'bright')} (${
+          result.errors
+        } error(s), ${result.warnings} warning(s))`,
       );
 
       // Group issues by category
@@ -569,26 +575,27 @@ function printResults(results: ValidationResult[]) {
   // Patterns with warnings
   const patternsWithWarnings = results.filter((r) => r.valid && r.warnings > 0);
   if (patternsWithWarnings.length > 0) {
-    console.log('\n' + colorize('Patterns with Warnings:', 'yellow'));
+    console.log(`\n${colorize('Patterns with Warnings:', 'yellow')}`);
     console.log('─'.repeat(60));
 
     for (const result of patternsWithWarnings) {
       console.log(
-        `\n${colorize(result.file + '.mdx', 'bright')} (${result.warnings
-        } warning(s))`
+        `\n${colorize(`${result.file}.mdx`, 'bright')} (${
+          result.warnings
+        } warning(s))`,
       );
 
       for (const issue of result.issues) {
         if (issue.type === 'warning') {
           console.log(
-            colorize(`  [${issue.category}] ${issue.message}`, 'yellow')
+            colorize(`  [${issue.category}] ${issue.message}`, 'yellow'),
           );
         }
       }
     }
   }
 
-  console.log('\n' + '═'.repeat(60));
+  console.log(`\n${'═'.repeat(60)}`);
 }
 
 // --- MAIN ---
@@ -608,7 +615,7 @@ async function main() {
   completedValidations = 0;
 
   console.log(
-    colorize(`Found ${mdxFiles.length} patterns to validate\n`, 'bright')
+    colorize(`Found ${mdxFiles.length} patterns to validate\n`, 'bright'),
   );
   console.log(colorize(`Using concurrency: ${CONCURRENCY}\n`, 'dim'));
 
@@ -625,8 +632,8 @@ async function main() {
     console.log(
       colorize(
         `\n❌ Validation completed in ${duration}ms with ${invalid} invalid pattern(s)\n`,
-        'red'
-      )
+        'red',
+      ),
     );
     process.exit(1);
   } else {
@@ -635,15 +642,15 @@ async function main() {
       console.log(
         colorize(
           `\n✅ All patterns valid in ${duration}ms (${totalWarnings} warnings)\n`,
-          'yellow'
-        )
+          'yellow',
+        ),
       );
     } else {
       console.log(
         colorize(
           `\n✨ All patterns valid in ${duration}ms with no issues!\n`,
-          'green'
-        )
+          'green',
+        ),
       );
     }
   }

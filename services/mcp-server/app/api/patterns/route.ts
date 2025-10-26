@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       {
         error: String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

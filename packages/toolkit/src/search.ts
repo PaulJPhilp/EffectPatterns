@@ -113,19 +113,19 @@ export function searchPatterns(params: SearchPatternsParams): Pattern[] {
   // Apply category filter
   if (category) {
     results = results.filter(
-      (p) => p.category.toLowerCase() === category.toLowerCase()
+      (p) => p.category.toLowerCase() === category.toLowerCase(),
     );
   }
 
   // Apply difficulty filter
   if (difficulty) {
     results = results.filter(
-      (p) => p.difficulty.toLowerCase() === difficulty.toLowerCase()
+      (p) => p.difficulty.toLowerCase() === difficulty.toLowerCase(),
     );
   }
 
   // Apply fuzzy search if query provided
-  if (query && query.trim()) {
+  if (query?.trim()) {
     const scored = results
       .map((pattern) => ({
         pattern,
@@ -154,7 +154,7 @@ export function searchPatterns(params: SearchPatternsParams): Pattern[] {
  */
 export function getPatternById(
   patterns: Pattern[],
-  id: string
+  id: string,
 ): Pattern | undefined {
   return patterns.find((p) => p.id === id);
 }

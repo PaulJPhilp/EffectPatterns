@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  searchPatterns,
-  getPatternById,
   buildSnippet,
+  getPatternById,
   type Pattern,
+  searchPatterns,
 } from '@effect-patterns/toolkit';
+import { describe, expect, it } from 'vitest';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,7 +18,7 @@ describe('MCP Server Integration', () => {
   it('should load patterns from JSON file', () => {
     const patternsPath = join(
       __dirname,
-      '../../../../data/patterns-index.json'
+      '../../../../data/patterns-index.json',
     );
     const data = readFileSync(patternsPath, 'utf-8');
     const parsed = JSON.parse(data);
@@ -32,7 +32,7 @@ describe('MCP Server Integration', () => {
   it('should search patterns successfully', () => {
     const patternsPath = join(
       __dirname,
-      '../../../../data/patterns-index.json'
+      '../../../../data/patterns-index.json',
     );
     const data = readFileSync(patternsPath, 'utf-8');
     const parsed = JSON.parse(data);
@@ -51,7 +51,7 @@ describe('MCP Server Integration', () => {
   it('should get pattern by ID', () => {
     const patternsPath = join(
       __dirname,
-      '../../../../data/patterns-index.json'
+      '../../../../data/patterns-index.json',
     );
     const data = readFileSync(patternsPath, 'utf-8');
     const parsed = JSON.parse(data);
@@ -69,7 +69,7 @@ describe('MCP Server Integration', () => {
   it('should generate code snippet', () => {
     const patternsPath = join(
       __dirname,
-      '../../../../data/patterns-index.json'
+      '../../../../data/patterns-index.json',
     );
     const data = readFileSync(patternsPath, 'utf-8');
     const parsed = JSON.parse(data);
@@ -92,7 +92,7 @@ describe('MCP Server Integration', () => {
   it('should handle missing pattern gracefully', () => {
     const patternsPath = join(
       __dirname,
-      '../../../../data/patterns-index.json'
+      '../../../../data/patterns-index.json',
     );
     const data = readFileSync(patternsPath, 'utf-8');
     const parsed = JSON.parse(data);

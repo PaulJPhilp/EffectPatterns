@@ -4,12 +4,12 @@
  * Comprehensive test suite for the Pattern Server API endpoints
  */
 
+import { type ChildProcess, spawn } from 'node:child_process';
 import {
   FetchHttpClient,
   HttpClient,
   type HttpClientResponse,
 } from '@effect/platform';
-import { type ChildProcess, spawn } from 'child_process';
 import { Effect, Schema } from 'effect';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -36,7 +36,7 @@ const BASE_URL = 'http://localhost:3001';
 const makeRequest = (path: string) =>
   Effect.gen(function* () {
     const client = (yield* HttpClient.HttpClient).pipe(
-      HttpClient.filterStatusOk
+      HttpClient.filterStatusOk,
     );
     return yield* client.get(`${BASE_URL}${path}`);
   });
@@ -112,7 +112,7 @@ describe.sequential('Pattern Server', () => {
 
         // Validate against schema
         const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-          json
+          json,
         );
 
         expect(validated.length).toBeGreaterThan(0);
@@ -133,7 +133,7 @@ describe.sequential('Pattern Server', () => {
         const response = yield* makeRequest('/api/v1/rules');
         const json = yield* getJson(response);
         const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-          json
+          json,
         );
 
         validated.forEach((rule: Rule) => {
@@ -151,7 +151,7 @@ describe.sequential('Pattern Server', () => {
         const response = yield* makeRequest('/api/v1/rules');
         const json = yield* getJson(response);
         const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-          json
+          json,
         );
 
         validated.forEach((rule: Rule) => {
@@ -168,7 +168,7 @@ describe.sequential('Pattern Server', () => {
     it('should return a single rule by ID', async () => {
       const program = Effect.gen(function* () {
         const response = yield* makeRequest(
-          '/api/v1/rules/use-effect-gen-for-business-logic'
+          '/api/v1/rules/use-effect-gen-for-business-logic',
         );
         const json = yield* getJson(response);
 
@@ -187,7 +187,7 @@ describe.sequential('Pattern Server', () => {
         const client = yield* HttpClient.HttpClient;
 
         const result = yield* Effect.either(
-          client.get(`${BASE_URL}/api/v1/rules/non-existent-rule-id`)
+          client.get(`${BASE_URL}/api/v1/rules/non-existent-rule-id`),
         );
 
         if (result._tag === 'Left') {
@@ -212,7 +212,7 @@ describe.sequential('Pattern Server', () => {
         const listResponse = yield* makeRequest('/api/v1/rules');
         const listJson = yield* getJson(listResponse);
         const rules = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-          listJson
+          listJson,
         );
 
         // Pick a random rule

@@ -23,7 +23,7 @@ const program = Effect.gen(function* () {
 // Compose layers
 const MainLayer = DiscordLive.pipe(
   Layer.provide(ConfigLive),
-  Layer.provide(NodeContext.layer)
+  Layer.provide(NodeContext.layer),
 );
 
 // Run

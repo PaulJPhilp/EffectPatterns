@@ -4,9 +4,9 @@
  * Simplified rules generation that doesn't use effect-mdx
  */
 
-import * as fs from 'fs/promises';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import matter from 'gray-matter';
-import * as path from 'path';
 
 // --- CONFIGURATION ---
 const PUBLISHED_DIR = path.join(process.cwd(), 'content/published');
@@ -124,7 +124,7 @@ async function generateUseCaseRules(rules: Rule[]) {
         if (!useCaseGroups.has(useCase)) {
           useCaseGroups.set(useCase, []);
         }
-        useCaseGroups.get(useCase)!.push(rule);
+        useCaseGroups.get(useCase)?.push(rule);
       }
     }
   }
@@ -140,7 +140,7 @@ async function generateUseCaseRules(rules: Rule[]) {
       content.push('---\n\n');
     }
 
-    const fileName = sanitizeName(useCase) + '.md';
+    const fileName = `${sanitizeName(useCase)}.md`;
     const filePath = path.join(USE_CASE_DIR, fileName);
     await fs.writeFile(filePath, content.join(''), 'utf-8');
     console.log(`✅ Generated ${filePath}`);

@@ -35,7 +35,7 @@ function extractGoodExampleTS(mdx: string): string | null {
 function replaceGoodExampleWithTag(mdx: string, id: string): string {
   return mdx.replace(
     /## Good Example[\s\S]*?```typescript\n([\s\S]*?)\n```/,
-    `## Good Example\n\n<Example path="./src/${id}.ts" />`
+    `## Good Example\n\n<Example path="./src/${id}.ts" />`,
   );
 }
 
@@ -71,8 +71,8 @@ async function main() {
   if (!tsCode) {
     throw new Error(
       `No TypeScript code block found in Good Example section of ${path.basename(
-        filePath
-      )}`
+        filePath,
+      )}`,
     );
   }
 

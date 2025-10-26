@@ -57,14 +57,14 @@ async function main() {
   // Replace Example tag(s) with code block
   const processed = content.replace(
     /<Example path="\.\/src\/.*?" \/>/g,
-    '```typescript\n' + tsContent + '\n```'
+    `\`\`\`typescript\n${tsContent}\n\`\`\``,
   );
 
   const outFile = path.join(outDir, path.basename(filePath));
   await fs.writeFile(outFile, processed, 'utf8');
 
   console.log(
-    `✅ Published one pattern -> ${path.relative(PROJECT_ROOT, outFile)}`
+    `✅ Published one pattern -> ${path.relative(PROJECT_ROOT, outFile)}`,
   );
 }
 

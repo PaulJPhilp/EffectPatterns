@@ -15,7 +15,7 @@ import {
   type PatternsIndex,
 } from '@effect-patterns/toolkit';
 import { Context, Effect, Layer, Ref } from 'effect';
-import { TracingLayerLive, TracingService } from '../tracing/otlpLayer.js';
+import { TracingLayerLive, type TracingService } from '../tracing/otlpLayer.js';
 
 /**
  * Patterns service tag - provides in-memory pattern cache
@@ -40,7 +40,6 @@ export class ConfigService extends Context.Tag('ConfigService')<
     readonly nodeEnv: string;
   }
 >() {}
-
 
 /**
  * Config Layer - Provides environment configuration
@@ -67,7 +66,7 @@ export const PatternsLayer = Layer.scoped(
 
     // Load patterns at cold start
     const patternsIndex = yield* loadPatternsFromJsonRunnable(
-      config.patternsPath
+      config.patternsPath,
     ).pipe(
       Effect.catchAll((error) => {
         console.error('[Patterns] Failed to load patterns:', error);
@@ -77,7 +76,7 @@ export const PatternsLayer = Layer.scoped(
           patterns: [],
           lastUpdated: new Date().toISOString(),
         } as PatternsIndex);
-      })
+      }),
     );
 
     console.log(`[Patterns] Loaded ${patternsIndex.patterns.length} patterns`);
@@ -99,7 +98,7 @@ export const PatternsLayer = Layer.scoped(
       getAllPatterns,
       getPatternById,
     };
-  })
+  }),
 );
 
 /**
@@ -119,9 +118,5 @@ export const AppLayer = Layer.mergeAll(BaseLayers, PatternsLayerWithDeps);
  * This provides all layers to the effect before running it.
  */
 export const runWithRuntime = <A, E>(
-  effect: Effect.Effect<A, E, PatternsService | ConfigService | TracingService>
-): Promise<A> =>
-  effect.pipe(
-    Effect.provide(AppLayer),
-    Effect.runPromise
-  );
+  effect: Effect.Effect<A, E, PatternsService | ConfigService | TracingService>,
+): Promise<A> => effect.pipe(Effect.provide(AppLayer), Effect.runPromise);

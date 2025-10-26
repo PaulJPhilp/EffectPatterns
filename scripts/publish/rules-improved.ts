@@ -9,9 +9,9 @@
  * - Better reporting
  */
 
-import * as fs from 'fs/promises';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import matter from 'gray-matter';
-import * as path from 'path';
 
 // --- CONFIGURATION ---
 const PUBLISHED_DIR = path.join(process.cwd(), 'content/published');
@@ -58,7 +58,7 @@ const sanitizeName = (name: string) =>
 // --- EXTRACTION ---
 async function extractRules(): Promise<Rule[]> {
   console.log(
-    colorize('📖 Extracting rules from published patterns...', 'cyan')
+    colorize('📖 Extracting rules from published patterns...', 'cyan'),
   );
 
   const files = await fs.readdir(PUBLISHED_DIR);
@@ -193,7 +193,7 @@ async function generateUseCaseRules(rules: Rule[]): Promise<string[]> {
         if (!useCaseGroups.has(useCase)) {
           useCaseGroups.set(useCase, []);
         }
-        useCaseGroups.get(useCase)!.push(rule);
+        useCaseGroups.get(useCase)?.push(rule);
       }
     }
   }
@@ -214,7 +214,7 @@ async function generateUseCaseRules(rules: Rule[]): Promise<string[]> {
       content.push('---\n\n');
     }
 
-    const fileName = sanitizeName(useCase) + '.md';
+    const fileName = `${sanitizeName(useCase)}.md`;
     const filePath = path.join(USE_CASE_DIR, fileName);
     await fs.writeFile(filePath, content.join(''), 'utf-8');
     generatedFiles.push(filePath);
@@ -255,7 +255,7 @@ async function generateCursorRules(rules: Rule[]): Promise<string[]> {
       content.push(`**Explanation:**  \n${rule.description}\n`);
     }
 
-    const fileName = sanitizeName(rule.title) + '.mdc';
+    const fileName = `${sanitizeName(rule.title)}.mdc`;
     const filePath = path.join(CURSOR_DIR, fileName);
     await fs.writeFile(filePath, content.join(''), 'utf-8');
     generatedFiles.push(filePath);
@@ -300,7 +300,7 @@ async function generateWindsurfRules(rules: Rule[]): Promise<string[]> {
       content.push(`**Explanation:**  \n${rule.description}\n`);
     }
 
-    const fileName = sanitizeName(rule.title) + '.mdc';
+    const fileName = `${sanitizeName(rule.title)}.mdc`;
     const filePath = path.join(WINDSURF_DIR, fileName);
     await fs.writeFile(filePath, content.join(''), 'utf-8');
     generatedFiles.push(filePath);
@@ -318,17 +318,17 @@ function printResults(results: Record<string, number>) {
   console.log(`${colorize('Compact Rules:', 'bright')}     1 file`);
   console.log(`${colorize('JSON Rules:', 'bright')}        1 file`);
   console.log(
-    `${colorize('Use Case Rules:', 'bright')}    ${results.useCase} files`
+    `${colorize('Use Case Rules:', 'bright')}    ${results.useCase} files`,
   );
   console.log(
-    `${colorize('Cursor Rules:', 'bright')}      ${results.cursor} files`
+    `${colorize('Cursor Rules:', 'bright')}      ${results.cursor} files`,
   );
   console.log(
-    `${colorize('Windsurf Rules:', 'bright')}    ${results.windsurf} files`
+    `${colorize('Windsurf Rules:', 'bright')}    ${results.windsurf} files`,
   );
 
   const total = 3 + results.useCase + results.cursor + results.windsurf;
-  console.log('\n' + colorize(`Total Files: ${total}`, 'green'));
+  console.log(`\n${colorize(`Total Files: ${total}`, 'green')}`);
   console.log('═'.repeat(60));
 }
 
@@ -347,7 +347,7 @@ async function main() {
 
   if (rules.length === 0) {
     console.log(
-      colorize('\n⚠️  No rules found in published patterns', 'yellow')
+      colorize('\n⚠️  No rules found in published patterns', 'yellow'),
     );
     return;
   }
@@ -356,9 +356,9 @@ async function main() {
   console.log(colorize('🎯 Generating rule formats...\n', 'cyan'));
 
   const [
-    fullPath,
-    compactPath,
-    jsonPath,
+    _fullPath,
+    _compactPath,
+    _jsonPath,
     useCasePaths,
     cursorPaths,
     windsurfPaths,
@@ -383,8 +383,8 @@ async function main() {
   console.log(
     colorize(
       `\n✨ All rules generated successfully in ${duration}ms!\n`,
-      'green'
-    )
+      'green',
+    ),
   );
 
   // Show sample output locations

@@ -5,10 +5,10 @@ import { MdxService } from 'effect-mdx';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 // Test layer that provides all required services
-const testLayer = Layer.mergeAll(
+const _testLayer = Layer.mergeAll(
   NodeFileSystem.layer,
   NodePath.layer,
-  MdxService.Default
+  MdxService.Default,
 );
 
 describe('Ingest Scripts', () => {
@@ -20,7 +20,7 @@ describe('Ingest Scripts', () => {
     yield* fs.remove('content/new/processed', { recursive: true });
   }).pipe(
     Effect.provide(cleanupLayer),
-    Effect.catchAll(() => Effect.void)
+    Effect.catchAll(() => Effect.void),
   );
 
   beforeEach(() => Effect.runPromise(cleanup));

@@ -17,10 +17,10 @@
  * ```
  */
 
-import { exec } from 'child_process';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { promisify } from 'util';
+import { exec } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
@@ -47,14 +47,14 @@ async function runTypeScriptFile(filePath: string): Promise<void> {
     // Check if this is an expected error
     const errorMessage = error.message || String(error);
     const isExpectedError = expectedErrors.some((expected) =>
-      errorMessage.includes(expected)
+      errorMessage.includes(expected),
     );
 
     if (isExpectedError) {
       console.log(
         `✅ ${relativePath} failed as expected with ${expectedErrors.join(
-          ', '
-        )}`
+          ', ',
+        )}`,
       );
     } else {
       console.error(`❌ Error running ${relativePath}:`);
@@ -80,7 +80,7 @@ async function main() {
     const filePath = path.join(NEW_SRC_DIR, file);
     try {
       await runTypeScriptFile(filePath);
-    } catch (error) {
+    } catch (_error) {
       errorCount++;
     }
   }

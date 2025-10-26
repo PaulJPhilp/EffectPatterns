@@ -19,7 +19,7 @@ import { TracingService } from '../../../../src/tracing/otlpLayer.js';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const getPatternEffect = Effect.gen(function* () {
     const tracing = yield* TracingService;
@@ -68,7 +68,7 @@ export async function GET(
       {
         error: String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -14,9 +14,9 @@ interface AppConfigService {
 class AppConfig extends Effect.Service<AppConfig>()('AppConfig', {
   // Provide a sync implementation that loads config values
   sync: () => ({
-    srcDir: process.env.SRC_DIR || process.cwd() + '/content/new/src',
+    srcDir: process.env.SRC_DIR || `${process.cwd()}/content/new/src`,
     processedDir:
-      process.env.PROCESSED_DIR || process.cwd() + '/content/new/processed',
+      process.env.PROCESSED_DIR || `${process.cwd()}/content/new/processed`,
   }),
 }) {}
 
@@ -48,7 +48,7 @@ class LLMService extends Context.Tag('LLMService')<
   LLMService,
   {
     generateExpectations: (
-      prompt: ExpectationPrompt
+      prompt: ExpectationPrompt,
     ) => Effect.Effect<GeneratedExpectations, Error, never>; // LLM-related errors
   }
 >() {}
@@ -59,7 +59,7 @@ const LLMLive = Layer.succeed(
   LLMService,
   LLMService.of({
     generateExpectations: (
-      prompt
+      prompt,
     ): Effect.Effect<GeneratedExpectations, Error, never> => {
       // Log the processing
       return Effect.succeed(
@@ -68,8 +68,8 @@ const LLMLive = Layer.succeed(
             prompt.executionStatus
           } for pattern ${prompt.patternMdxContent
             .split('\n')[0]
-            .substring(0, 50)}...`
-        )
+            .substring(0, 50)}...`,
+        ),
       ).pipe(
         // Simulate network latency
         Effect.flatMap(() => Effect.sleep(100)), // 100ms as numeric value
@@ -117,10 +117,10 @@ const LLMLive = Layer.succeed(
             discrepancyFlag: discrepancy,
             discrepancyReason,
           });
-        })
+        }),
       );
     },
-  })
+  }),
 );
 
 // --- Utility Types & Functions ---
@@ -156,11 +156,11 @@ const processPatternFile = (mdxFilePath: string) =>
     const tsCodeContent = yield* fs.readFileString(tsFilePath).pipe(
       Effect.catchAll((error) =>
         Console.warn(
-          `TypeScript file ${tsFilePath} not found for pattern ${baseName}: ${error.message}. Proceeding without TS content.`
+          `TypeScript file ${tsFilePath} not found for pattern ${baseName}: ${error.message}. Proceeding without TS content.`,
         ).pipe(
-          Effect.as('') // Provide an empty string to allow flow to continue
-        )
-      )
+          Effect.as(''), // Provide an empty string to allow flow to continue
+        ),
+      ),
     );
 
     let actualStdout = '';
@@ -179,7 +179,7 @@ const processPatternFile = (mdxFilePath: string) =>
             type: 'success' as const,
             stdout,
             stderr: '', // Command.string only captures stdout
-          })
+          }),
         ),
         // Catch command execution errors and map to a tagged failure type
         Effect.catchAll((e) =>
@@ -189,9 +189,9 @@ const processPatternFile = (mdxFilePath: string) =>
               error: e.message || String(e), // Ensure error.message is used
               stdout: '', // Command.string doesn't provide stdout on error
               stderr: '', // Command.string doesn't provide stderr
-            })
-          )
-        )
+            }),
+          ),
+        ),
       );
 
       if (executionResult.type === 'success') {
@@ -207,12 +207,12 @@ const processPatternFile = (mdxFilePath: string) =>
         yield* Console.error(
           `  Execution of ${baseName}.ts failed: ${
             actualErrorDetail.split('\n')[0]
-          }`
+          }`,
         );
       }
     } else {
       yield* Console.log(
-        `  No executable TypeScript code for ${baseName}.ts to run.`
+        `  No executable TypeScript code for ${baseName}.ts to run.`,
       );
       // If no code, we can't get actual output/error from execution.
       // Treat as a conceptual "success" for the LLM to process the MDX, but warn.
@@ -232,7 +232,7 @@ const processPatternFile = (mdxFilePath: string) =>
 
     // 5. Call LLM service to generate expectations
     const generatedExpectations = yield* llm.generateExpectations(
-      llmPrompt as ExpectationPrompt
+      llmPrompt as ExpectationPrompt,
     );
 
     // 6. Update frontmatter with generated expectations and potential discrepancy flag
@@ -246,7 +246,7 @@ const processPatternFile = (mdxFilePath: string) =>
     if (generatedExpectations.discrepancyFlag) {
       updatedFrontmatter.needsReview = true; // Set flag if LLM detected discrepancy
       yield* Console.warn(
-        `Discrepancy flagged by LLM for ${baseName}: ${generatedExpectations.discrepancyReason}`
+        `Discrepancy flagged by LLM for ${baseName}: ${generatedExpectations.discrepancyReason}`,
       );
     } else {
       // Safely remove 'needsReview' if it exists and no discrepancy is flagged
@@ -262,7 +262,7 @@ const processPatternFile = (mdxFilePath: string) =>
     // 7. Write updated MDX content back to file
     const updatedContent = mdxService.updateMdxContent(
       mdxContent,
-      updatedFrontmatter
+      updatedFrontmatter,
     );
     yield* fs.writeFileString(mdxFilePath.toString(), updatedContent);
 
@@ -270,8 +270,8 @@ const processPatternFile = (mdxFilePath: string) =>
   }).pipe(
     // Catch errors for this specific file processing and log them, allowing main program to continue
     Effect.catchAll((err) =>
-      Console.error(`Error processing file ${mdxFilePath}: ${String(err)}`)
-    )
+      Console.error(`Error processing file ${mdxFilePath}: ${String(err)}`),
+    ),
   );
 
 // --- Main Program (Idiomatic Effect.gen) ---
@@ -288,7 +288,7 @@ const mainProgram = Effect.gen(function* () {
   const mdxFiles = files.filter((file) => file.endsWith('.mdx'));
 
   yield* Console.log(
-    `Found ${mdxFiles.length} MDX pattern files in ${config.processedDir}`
+    `Found ${mdxFiles.length} MDX pattern files in ${config.processedDir}`,
   );
 
   // Process each MDX file in parallel using Effect.forEach
@@ -306,7 +306,7 @@ const mainProgram = Effect.gen(function* () {
     {
       concurrency: 'unbounded', // Adjust concurrency as needed for LLM API limits/performance
       discard: true, // Discard results as we're doing side effects (file writes)
-    }
+    },
   );
 
   yield* Console.log('Expectation population complete.');
@@ -318,7 +318,7 @@ const allLayers = Layer.mergeAll(
   AppConfig.Default, // AppConfig default implementation
   LLMLive, // The simulated LLM service
   NodeContext.layer, // Provides all Node.js platform implementations
-  Layer.provide(MdxService.Default, NodeContext.layer) // MDX service with its dependencies
+  Layer.provide(MdxService.Default, NodeContext.layer), // MDX service with its dependencies
   // Console is automatically provided as a default service in Effect 3.16.16
 );
 
@@ -327,7 +327,7 @@ const allLayers = Layer.mergeAll(
 // Let's simplify and use the default console implementation
 
 // Provide layers to the main program
-const runnable = mainProgram.pipe(
+const _runnable = mainProgram.pipe(
   // Use the default console implementation provided by Effect
-  Effect.provide(allLayers)
+  Effect.provide(allLayers),
 );

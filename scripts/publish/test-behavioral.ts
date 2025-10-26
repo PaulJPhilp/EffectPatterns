@@ -10,10 +10,10 @@
  * Complements test-improved.ts (syntax/runtime) with semantic checks.
  */
 
-import { exec } from 'child_process';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { promisify } from 'util';
+import { exec } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
@@ -87,7 +87,7 @@ function updateProgress() {
     '█'.repeat(Math.floor(percent / 2)) +
     '░'.repeat(50 - Math.floor(percent / 2));
   process.stdout.write(
-    `\r${bar} ${percent}% (${completedTests}/${totalTests})`
+    `\r${bar} ${percent}% (${completedTests}/${totalTests})`,
   );
 }
 
@@ -97,7 +97,7 @@ function updateProgress() {
  * Test streaming patterns for constant memory usage
  */
 async function testStreamingPattern(
-  filePath: string
+  filePath: string,
 ): Promise<BehavioralTestResult> {
   const fileName = path.basename(filePath, '.ts');
   const issues: string[] = [];
@@ -146,7 +146,7 @@ async function testStreamingPattern(
       {
         timeout: 30_000,
         maxBuffer: 10 * 1024 * 1024,
-      }
+      },
     );
 
     // Parse memory metrics
@@ -159,11 +159,11 @@ async function testStreamingPattern(
     // Check if memory growth is within threshold
     if (memoryDelta > STREAMING_MEMORY_THRESHOLD) {
       issues.push(
-        `Memory grew by ${(memoryDelta / 1024 / 1024).toFixed(2)}MB, exceeds ${(STREAMING_MEMORY_THRESHOLD / 1024 / 1024).toFixed(2)}MB threshold for streaming`
+        `Memory grew by ${(memoryDelta / 1024 / 1024).toFixed(2)}MB, exceeds ${(STREAMING_MEMORY_THRESHOLD / 1024 / 1024).toFixed(2)}MB threshold for streaming`,
       );
     } else if (memoryDelta > STREAMING_MEMORY_THRESHOLD * 0.7) {
       warnings.push(
-        `Memory grew by ${(memoryDelta / 1024 / 1024).toFixed(2)}MB, approaching threshold`
+        `Memory grew by ${(memoryDelta / 1024 / 1024).toFixed(2)}MB, approaching threshold`,
       );
     }
 
@@ -191,7 +191,7 @@ async function testStreamingPattern(
  * Test parallel patterns for actual parallelism
  */
 async function testParallelPattern(
-  filePath: string
+  filePath: string,
 ): Promise<BehavioralTestResult> {
   const fileName = path.basename(filePath, '.ts');
   const issues: string[] = [];
@@ -215,7 +215,7 @@ async function testParallelPattern(
 
     let estimatedSequentialTime = 0;
     for (const match of [...delayMatches, ...sleepMatches]) {
-      const ms = Number.parseInt(match.match(/(\d+)/)?.[1] || '0');
+      const ms = Number.parseInt(match.match(/(\d+)/)?.[1] || '0', 10);
       estimatedSequentialTime += ms;
     }
 
@@ -226,11 +226,11 @@ async function testParallelPattern(
 
       if (executionTime > expectedParallelTime * 1.5) {
         issues.push(
-          `Execution took ${executionTime}ms, expected ~${expectedParallelTime.toFixed(0)}ms for parallel execution (sequential would be ~${estimatedSequentialTime}ms)`
+          `Execution took ${executionTime}ms, expected ~${expectedParallelTime.toFixed(0)}ms for parallel execution (sequential would be ~${estimatedSequentialTime}ms)`,
         );
       } else if (executionTime > expectedParallelTime) {
         warnings.push(
-          `Execution took ${executionTime}ms, slower than ideal parallel time of ${expectedParallelTime.toFixed(0)}ms`
+          `Execution took ${executionTime}ms, slower than ideal parallel time of ${expectedParallelTime.toFixed(0)}ms`,
         );
       }
     }
@@ -238,7 +238,7 @@ async function testParallelPattern(
     // Check for explicit concurrency option in Effect.all calls
     if (content.includes('Effect.all') && !content.includes('concurrency')) {
       warnings.push(
-        "Pattern uses Effect.all but doesn't explicitly set concurrency option (sequential by default)"
+        "Pattern uses Effect.all but doesn't explicitly set concurrency option (sequential by default)",
       );
     }
 
@@ -269,7 +269,7 @@ async function testParallelPattern(
  * General memory check for all patterns
  */
 async function testGeneralMemory(
-  filePath: string
+  filePath: string,
 ): Promise<BehavioralTestResult> {
   const fileName = path.basename(filePath, '.ts');
   const issues: string[] = [];
@@ -291,7 +291,7 @@ async function testGeneralMemory(
       {
         timeout: 30_000,
         maxBuffer: 10 * 1024 * 1024,
-      }
+      },
     );
 
     const lines = result.stdout.split('\n').filter((line) => line.trim());
@@ -301,7 +301,7 @@ async function testGeneralMemory(
 
     if (memoryDelta > BASELINE_MEMORY_THRESHOLD) {
       warnings.push(
-        `Memory grew by ${(memoryDelta / 1024 / 1024).toFixed(2)}MB, which is quite high`
+        `Memory grew by ${(memoryDelta / 1024 / 1024).toFixed(2)}MB, which is quite high`,
       );
     }
 
@@ -313,7 +313,7 @@ async function testGeneralMemory(
       issues,
       warnings,
     };
-  } catch (error: any) {
+  } catch (_error: any) {
     // Many patterns will fail general memory test due to Node.js quirks
     // Don't fail the test, just note it
     return {
@@ -349,7 +349,7 @@ async function testPattern(filePath: string): Promise<BehavioralTestResult> {
 
 // --- PARALLEL EXECUTION ---
 async function runTestsInParallel(
-  files: string[]
+  files: string[],
 ): Promise<BehavioralTestResult[]> {
   const results: BehavioralTestResult[] = [];
   const queue = [...files];
@@ -394,23 +394,23 @@ function printResults(results: BehavioralTestResult[]) {
   }
   if (withWarnings.length > 0) {
     console.log(
-      `${colorize('Warnings:', 'yellow')}    ${withWarnings.length} tests`
+      `${colorize('Warnings:', 'yellow')}    ${withWarnings.length} tests`,
     );
   }
 
-  console.log('\n' + colorize('By Category:', 'bright'));
+  console.log(`\n${colorize('By Category:', 'bright')}`);
   console.log(`  Streaming:  ${streaming.length} tests`);
   console.log(`  Parallel:   ${parallel.length} tests`);
   console.log(`  General:    ${general.length} tests`);
 
   // Failed tests
   if (failed.length > 0) {
-    console.log('\n' + colorize('❌ Failed Tests:', 'red'));
+    console.log(`\n${colorize('❌ Failed Tests:', 'red')}`);
     console.log('─'.repeat(60));
 
     for (const result of failed) {
       console.log(
-        `\n${colorize(result.file + '.ts', 'bright')} (${result.category})`
+        `\n${colorize(`${result.file}.ts`, 'bright')} (${result.category})`,
       );
       for (const issue of result.issues) {
         console.log(colorize(`  ✗ ${issue}`, 'red'));
@@ -419,13 +419,13 @@ function printResults(results: BehavioralTestResult[]) {
         console.log(
           colorize(
             `  Memory: ${(result.metrics.memoryDelta / 1024 / 1024).toFixed(2)}MB`,
-            'dim'
-          )
+            'dim',
+          ),
         );
       }
       if (result.metrics.executionTime) {
         console.log(
-          colorize(`  Time: ${result.metrics.executionTime}ms`, 'dim')
+          colorize(`  Time: ${result.metrics.executionTime}ms`, 'dim'),
         );
       }
     }
@@ -433,12 +433,12 @@ function printResults(results: BehavioralTestResult[]) {
 
   // Warnings
   if (withWarnings.length > 0) {
-    console.log('\n' + colorize('⚠️  Tests with Warnings:', 'yellow'));
+    console.log(`\n${colorize('⚠️  Tests with Warnings:', 'yellow')}`);
     console.log('─'.repeat(60));
 
     for (const result of withWarnings) {
       console.log(
-        `\n${colorize(result.file + '.ts', 'bright')} (${result.category})`
+        `\n${colorize(`${result.file}.ts`, 'bright')} (${result.category})`,
       );
       for (const warning of result.warnings) {
         console.log(colorize(`  ⚠ ${warning}`, 'yellow'));
@@ -448,10 +448,10 @@ function printResults(results: BehavioralTestResult[]) {
 
   // Success cases with metrics
   const successWithMetrics = passed.filter(
-    (r) => r.metrics.memoryDelta || r.metrics.executionTime
+    (r) => r.metrics.memoryDelta || r.metrics.executionTime,
   );
   if (successWithMetrics.length > 0) {
-    console.log('\n' + colorize('✅ Validated Patterns:', 'green'));
+    console.log(`\n${colorize('✅ Validated Patterns:', 'green')}`);
     console.log('─'.repeat(60));
 
     for (const result of successWithMetrics.slice(0, 10)) {
@@ -464,17 +464,17 @@ function printResults(results: BehavioralTestResult[]) {
         metricStr += `Time: ${result.metrics.executionTime}ms`;
       }
       console.log(
-        `  ${colorize('✓', 'green')} ${result.file}.ts ${colorize(`(${metricStr})`, 'dim')}`
+        `  ${colorize('✓', 'green')} ${result.file}.ts ${colorize(`(${metricStr})`, 'dim')}`,
       );
     }
     if (successWithMetrics.length > 10) {
       console.log(
-        colorize(`  ... and ${successWithMetrics.length - 10} more`, 'dim')
+        colorize(`  ... and ${successWithMetrics.length - 10} more`, 'dim'),
       );
     }
   }
 
-  console.log('\n' + '═'.repeat(60));
+  console.log(`\n${'═'.repeat(60)}`);
 }
 
 // --- MAIN ---
@@ -491,7 +491,7 @@ async function main() {
     .map((file) => path.join(NEW_SRC_DIR, file));
 
   // Also check key published patterns (streaming, parallel)
-  const publishedFiles: string[] = [];
+  const _publishedFiles: string[] = [];
   for (const pattern of [...STREAMING_PATTERNS, ...PARALLEL_PATTERNS]) {
     const mdxPath = path.join(PUBLISHED_SRC_DIR, `${pattern}.mdx`);
     try {
@@ -510,24 +510,24 @@ async function main() {
   console.log(
     colorize(
       `Found ${allFiles.length} patterns to test behaviorally\n`,
-      'bright'
-    )
+      'bright',
+    ),
   );
   console.log(colorize('Test Categories:', 'dim'));
   console.log(
     colorize(
       `  • Streaming: ${STREAMING_PATTERNS.length} patterns (memory checks)`,
-      'dim'
-    )
+      'dim',
+    ),
   );
   console.log(
     colorize(
       `  • Parallel: ${PARALLEL_PATTERNS.length} patterns (timing checks)`,
-      'dim'
-    )
+      'dim',
+    ),
   );
   console.log(
-    colorize('  • General: All others (basic memory checks)\n', 'dim')
+    colorize('  • General: All others (basic memory checks)\n', 'dim'),
   );
 
   // Run behavioral tests
@@ -543,13 +543,13 @@ async function main() {
     console.log(
       colorize(
         `\n❌ Behavioral testing completed in ${duration}ms with ${failed} failure(s)\n`,
-        'red'
-      )
+        'red',
+      ),
     );
     process.exit(1);
   } else {
     console.log(
-      colorize(`\n✨ All behavioral tests passed in ${duration}ms!\n`, 'green')
+      colorize(`\n✨ All behavioral tests passed in ${duration}ms!\n`, 'green'),
     );
   }
 }

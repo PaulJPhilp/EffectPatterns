@@ -39,7 +39,7 @@ export async function GET() {
         ok: false,
         error: String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

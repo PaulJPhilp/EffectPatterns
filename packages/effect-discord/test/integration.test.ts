@@ -69,13 +69,13 @@ describe('Discord Integration Tests', () => {
   // Compose all layers
   const TestLayer = DiscordLive.pipe(
     Layer.provide(ConfigLive),
-    Layer.provide(NodeContext.layer)
+    Layer.provide(NodeContext.layer),
   );
 
   // Helper to run an Effect with our test layer
   const runTest = <E, A>(effect: Effect.Effect<A, E, Discord>) =>
     Effect.runPromise(
-      effect.pipe(Effect.provide(TestLayer), Effect.provide(NodeContext.layer))
+      effect.pipe(Effect.provide(TestLayer), Effect.provide(NodeContext.layer)),
     );
 
   test.skipIf(shouldSkip)(
@@ -85,7 +85,7 @@ describe('Discord Integration Tests', () => {
 
       if (!channelId) {
         throw new Error(
-          'DISCORD_TEST_CHANNEL_ID environment variable is missing'
+          'DISCORD_TEST_CHANNEL_ID environment variable is missing',
         );
       }
 
@@ -113,7 +113,7 @@ describe('Discord Integration Tests', () => {
       expect(firstMessage.author.id).toBeDefined();
       expect(firstMessage.author.name).toBeDefined();
     },
-    30_000
+    30_000,
   ); // 30 second timeout for API call
 
   test.skipIf(shouldSkip)(
@@ -128,8 +128,8 @@ describe('Discord Integration Tests', () => {
         program.pipe(
           Effect.provide(TestLayer),
           Effect.provide(NodeContext.layer),
-          Effect.exit
-        )
+          Effect.exit,
+        ),
       );
 
       // Should fail with DiscordExportError
@@ -141,7 +141,7 @@ describe('Discord Integration Tests', () => {
         expect(error).toBeDefined();
       }
     },
-    30_000
+    30_000,
   );
 
   test.skipIf(shouldSkip)(
@@ -151,7 +151,7 @@ describe('Discord Integration Tests', () => {
 
       if (!channelId) {
         throw new Error(
-          'DISCORD_TEST_CHANNEL_ID environment variable is missing'
+          'DISCORD_TEST_CHANNEL_ID environment variable is missing',
         );
       }
 
@@ -171,7 +171,7 @@ describe('Discord Integration Tests', () => {
         expect(typeof message.author.name).toBe('string');
       });
     },
-    30_000
+    30_000,
   );
 
   test('should have correct service interface', async () => {

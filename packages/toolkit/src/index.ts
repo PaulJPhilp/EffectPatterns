@@ -24,14 +24,14 @@ export {
 } from './schemas/pattern.js';
 export {
   getPatternById,
+  type SearchPatternsParams,
   searchPatterns,
   toPatternSummary,
-  type SearchPatternsParams,
 } from './search.js';
 export { splitSections } from './splitSections.js';
 export {
+  type BuildSnippetParams,
   buildSnippet,
   generateUsageExample,
   sanitizeInput,
-  type BuildSnippetParams,
 } from './template.js';

@@ -4,8 +4,8 @@
  * Effect-based file system operations for loading patterns data.
  */
 
-import { FileSystem } from '@effect/platform/FileSystem';
 import type { FileSystem as FileSystemService } from '@effect/platform/FileSystem';
+import { FileSystem } from '@effect/platform/FileSystem';
 import { layer as NodeFileSystemLayer } from '@effect/platform-node/NodeFileSystem';
 import { Schema as S } from '@effect/schema';
 import { Effect } from 'effect';
@@ -18,7 +18,7 @@ import { PatternsIndex } from './schemas/pattern.js';
  * @returns Effect that yields validated PatternsIndex
  */
 export const loadPatternsFromJson = (
-  filePath: string
+  filePath: string,
 ): Effect.Effect<typeof PatternsIndex.Type, Error, FileSystemService> =>
   Effect.gen(function* () {
     const fs = yield* FileSystem;

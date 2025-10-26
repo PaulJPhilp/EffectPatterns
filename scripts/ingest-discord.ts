@@ -19,7 +19,7 @@ const DiscordConfigLive = Layer.effect(
       botToken,
       exporterPath,
     });
-  })
+  }),
 );
 
 // 2. Define the main application logic as a single Effect.
@@ -36,7 +36,7 @@ const program = Effect.gen(function* () {
   const channelExport = yield* discord.exportChannel(channelId);
 
   yield* Effect.log(
-    `Successfully exported ${channelExport.messages.length} messages.`
+    `Successfully exported ${channelExport.messages.length} messages.`,
   );
   yield* Effect.log('Anonymizing user data...');
 
@@ -68,7 +68,7 @@ const program = Effect.gen(function* () {
   yield* fs.makeDirectory('content/discord', { recursive: true });
   yield* fs.writeFileString(
     outputPath,
-    JSON.stringify({ messages: anonymizedMessages }, null, 2)
+    JSON.stringify({ messages: anonymizedMessages }, null, 2),
   );
 
   yield* Effect.logInfo('Export complete!');
@@ -79,13 +79,13 @@ const program = Effect.gen(function* () {
 const MainLayer = DiscordLive.pipe(
   Layer.provide(DiscordConfigLive),
   Layer.provide(NodeContext.layer),
-  Layer.provide(Logger.minimumLogLevel(LogLevel.Info))
+  Layer.provide(Logger.minimumLogLevel(LogLevel.Info)),
 );
 
 // 5. Create an executable version of our program with the layer provided.
 const runnable = program.pipe(
   Effect.provide(MainLayer),
-  Effect.provide(NodeContext.layer)
+  Effect.provide(NodeContext.layer),
 );
 
 // 6. Run the program using the Node.js runtime.

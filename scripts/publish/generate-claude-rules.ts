@@ -8,9 +8,9 @@
  * Output: rules/generated/rules-for-claude.md
  */
 
-import * as fs from 'fs/promises';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import matter from 'gray-matter';
-import * as path from 'path';
 
 // --- CONFIGURATION ---
 const PUBLISHED_DIR = path.join(process.cwd(), 'content/published');
@@ -82,7 +82,7 @@ function extractSection(content: string, ...sectionNames: string[]): string {
  */
 async function extractRules(): Promise<PatternRule[]> {
   console.log(
-    colorize('📖 Extracting rules from published patterns...', 'cyan')
+    colorize('📖 Extracting rules from published patterns...', 'cyan'),
   );
 
   const files = await fs.readdir(PUBLISHED_DIR);
@@ -119,7 +119,7 @@ async function extractRules(): Promise<PatternRule[]> {
   }
 
   console.log(
-    colorize(`✓ Found ${rules.length} patterns with rules\n`, 'green')
+    colorize(`✓ Found ${rules.length} patterns with rules\n`, 'green'),
   );
   return rules.sort((a, b) => a.title.localeCompare(b.title));
 }
@@ -132,15 +132,15 @@ function generateRulesContent(rules: PatternRule[]): string {
 
   content.push('# Effect-TS Patterns - Coding Rules for Claude\n\n');
   content.push(
-    'This file contains auto-generated coding rules from Effect-TS patterns, '
+    'This file contains auto-generated coding rules from Effect-TS patterns, ',
   );
   content.push(
-    'followed by project-specific guidance for working in this repository.\n\n'
+    'followed by project-specific guidance for working in this repository.\n\n',
   );
   content.push('---\n\n');
   content.push('# Part 1: Effect-TS Pattern Rules\n\n');
   content.push(
-    `Generated from ${rules.length} published patterns. These rules provide best practices for working with Effect-TS.\n\n`
+    `Generated from ${rules.length} published patterns. These rules provide best practices for working with Effect-TS.\n\n`,
   );
 
   // Group by skill level for better organization
@@ -228,7 +228,7 @@ async function main() {
     try {
       claudeMdContent = await fs.readFile(CLAUDE_MD_PATH, 'utf-8');
       console.log(colorize('✓ CLAUDE.md loaded\n', 'green'));
-    } catch (error) {
+    } catch (_error) {
       console.log(colorize('⚠️  CLAUDE.md not found, skipping...\n', 'yellow'));
       claudeMdContent = '';
     }
@@ -260,13 +260,13 @@ async function main() {
     console.log(colorize('='.repeat(60), 'cyan'));
     console.log(`\n📄 Output file: ${colorize(OUTPUT_FILE, 'bright')}`);
     console.log(
-      `📊 Pattern rules: ${colorize(rules.length.toString(), 'bright')}`
+      `📊 Pattern rules: ${colorize(rules.length.toString(), 'bright')}`,
     );
     console.log(
       `📏 File size: ${colorize(
-        Math.round(finalContent.length / 1024).toString() + ' KB',
-        'bright'
-      )}`
+        `${Math.round(finalContent.length / 1024).toString()} KB`,
+        'bright',
+      )}`,
     );
     console.log('');
   } catch (error) {

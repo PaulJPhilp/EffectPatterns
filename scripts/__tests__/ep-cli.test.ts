@@ -4,8 +4,8 @@
  * Comprehensive tests for all CLI commands
  */
 
-import { type ChildProcess, spawn } from 'child_process';
-import * as fs from 'fs/promises';
+import { type ChildProcess, spawn } from 'node:child_process';
+import * as fs from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 // --- TEST UTILITIES ---
@@ -29,7 +29,7 @@ const stopServer = () => {
 
 const runCommand = async (
   args: string[],
-  options?: { timeout?: number }
+  options?: { timeout?: number },
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
   return new Promise((resolve, reject) => {
     const proc = spawn('bun', ['run', 'scripts/ep.ts', ...args], {
@@ -542,7 +542,7 @@ describe.sequential('ep admin', () => {
         ['admin', 'rules', 'generate', '--verbose'],
         {
           timeout: 60_000,
-        }
+        },
       );
 
       expect([0, 1]).toContain(result.exitCode);

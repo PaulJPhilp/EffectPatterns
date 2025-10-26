@@ -9,8 +9,8 @@
  *   bun run qa:report                 # Generate report for published patterns (content/qa)
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 // --- CONFIGURATION ---
 const PROJECT_ROOT = process.cwd();
@@ -219,13 +219,13 @@ async function generateReport(results: any[]): Promise<QAReport> {
 
 function generateRecommendations(
   results: any[],
-  failedPatterns: any[]
+  failedPatterns: any[],
 ): string[] {
   const recommendations: string[] = [];
 
   if (failedPatterns.length > 0) {
     recommendations.push(
-      `Found ${failedPatterns.length} failed patterns. Run "bun run qa:repair" to fix them.`
+      `Found ${failedPatterns.length} failed patterns. Run "bun run qa:repair" to fix them.`,
     );
 
     // Analyze common issues
@@ -235,7 +235,7 @@ function generateRecommendations(
 
   if (results.length === 0) {
     recommendations.push(
-      'No QA results found. Run "bun run qa:process" to generate validation results.'
+      'No QA results found. Run "bun run qa:process" to generate validation results.',
     );
   }
 
@@ -261,7 +261,7 @@ function analyzeCommonIssues(failedPatterns: any[]): string[] {
   for (const [type, count] of Object.entries(errorCounts)) {
     if (count > 1) {
       issues.push(
-        `Multiple patterns have ${type} issues (${count} occurrences). Consider batch fixes.`
+        `Multiple patterns have ${type} issues (${count} occurrences). Consider batch fixes.`,
       );
     }
   }

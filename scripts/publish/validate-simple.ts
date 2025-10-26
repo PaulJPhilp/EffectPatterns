@@ -7,9 +7,9 @@
  * Checks for corresponding TypeScript files in content/new/src/
  */
 
-import * as fs from 'fs/promises';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import matter from 'gray-matter';
-import * as path from 'path';
 
 // --- CONFIGURATION ---
 const NEW_PUBLISHED_DIR = path.join(process.cwd(), 'content/new/published');
@@ -24,7 +24,7 @@ async function validatePatterns() {
   const tsFiles = await fs.readdir(NEW_SRC_DIR);
 
   console.log(
-    `Found ${mdxFiles.length} MDX files and ${tsFiles.length} TypeScript files`
+    `Found ${mdxFiles.length} MDX files and ${tsFiles.length} TypeScript files`,
   );
 
   let hasErrors = false;
@@ -45,7 +45,7 @@ async function validatePatterns() {
         errorCount++;
       } else if (frontmatter.id !== filename) {
         console.error(
-          `❌ Error: Frontmatter 'id' (${frontmatter.id}) does not match filename (${filename}) in ${mdxFile}`
+          `❌ Error: Frontmatter 'id' (${frontmatter.id}) does not match filename (${filename}) in ${mdxFile}`,
         );
         hasErrors = true;
         errorCount++;
@@ -55,7 +55,7 @@ async function validatePatterns() {
       for (const field of requiredFields) {
         if (!frontmatter[field]) {
           console.error(
-            `❌ Error: Missing '${field}' in frontmatter of ${mdxFile}`
+            `❌ Error: Missing '${field}' in frontmatter of ${mdxFile}`,
           );
           hasErrors = true;
           errorCount++;
@@ -72,7 +72,7 @@ async function validatePatterns() {
     const hasGoodExample = /##\s+Good Example/i.test(content);
     const hasAntiPattern = /##\s+Anti-Pattern/i.test(content);
     const hasExplanationOrRationale = /##\s+(Explanation|Rationale)/i.test(
-      content
+      content,
     );
 
     if (!hasGoodExample) {
@@ -89,7 +89,7 @@ async function validatePatterns() {
 
     if (!hasExplanationOrRationale) {
       console.error(
-        `❌ Error: Missing 'Explanation' or 'Rationale' section in ${mdxFile}`
+        `❌ Error: Missing 'Explanation' or 'Rationale' section in ${mdxFile}`,
       );
       hasErrors = true;
       errorCount++;
@@ -99,7 +99,7 @@ async function validatePatterns() {
     const tsFile = path.join(NEW_SRC_DIR, mdxFile.replace('.mdx', '.ts'));
     try {
       await fs.access(tsFile);
-    } catch (error) {
+    } catch (_error) {
       console.error(`❌ Error: TypeScript file not found: ${tsFile}`);
       hasErrors = true;
       errorCount++;

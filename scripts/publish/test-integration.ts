@@ -12,17 +12,17 @@
  * Complements unit tests with real-world validation.
  */
 
-import { exec } from 'child_process';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { promisify } from 'util';
+import { exec } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
 // --- CONFIGURATION ---
-const NEW_SRC_DIR = path.join(process.cwd(), 'content/new/src');
+const _NEW_SRC_DIR = path.join(process.cwd(), 'content/new/src');
 const TEST_DATA_DIR = path.join(process.cwd(), 'test-data');
-const CONCURRENCY = 3; // Lower for resource-intensive tests
+const _CONCURRENCY = 3; // Lower for resource-intensive tests
 
 // --- TYPES ---
 interface IntegrationTestResult {
@@ -59,7 +59,7 @@ function colorize(text: string, color: keyof typeof colors): string {
 // --- TEST UTILITIES ---
 
 async function createTestFile(
-  size: 'small' | 'medium' | 'large'
+  size: 'small' | 'medium' | 'large',
 ): Promise<string> {
   await fs.mkdir(TEST_DATA_DIR, { recursive: true });
 
@@ -69,7 +69,7 @@ async function createTestFile(
   const lines = size === 'small' ? 100 : size === 'medium' ? 10_000 : 1_000_000;
   const content = Array.from(
     { length: lines },
-    (_, i) => `Line ${i + 1}: ${'x'.repeat(80)}\n`
+    (_, i) => `Line ${i + 1}: ${'x'.repeat(80)}\n`,
   ).join('');
 
   await fs.writeFile(filePath, content);
@@ -150,14 +150,14 @@ async function testStreamingLargeFile(): Promise<IntegrationTestResult> {
     const memDelta = Math.abs(memAfter - memBefore) / (1024 * 1024); // MB
 
     // Parse result
-    const output = JSON.parse(result.stdout.trim());
+    const _output = JSON.parse(result.stdout.trim());
     const throughput = fileSize / (duration / 1000); // MB/s
 
     // Check if memory usage is reasonable for streaming
     const memoryThreshold = 100; // MB - should use much less than file size
     if (memDelta > memoryThreshold) {
       issues.push(
-        `Memory usage (${memDelta.toFixed(2)}MB) exceeds threshold for streaming (${memoryThreshold}MB)`
+        `Memory usage (${memDelta.toFixed(2)}MB) exceeds threshold for streaming (${memoryThreshold}MB)`,
       );
     }
 
@@ -232,14 +232,14 @@ async function testParallelPerformance(): Promise<IntegrationTestResult> {
     const speedup = sequentialTime / parallelTime;
     if (speedup < 2) {
       issues.push(
-        `Parallel execution not fast enough: ${speedup.toFixed(2)}x speedup (expected >2x)`
+        `Parallel execution not fast enough: ${speedup.toFixed(2)}x speedup (expected >2x)`,
       );
     }
 
     // Parallel should be close to single task time (~500ms)
     if (parallelTime > 800) {
       issues.push(
-        `Parallel time (${parallelTime}ms) too slow, expected ~500-600ms`
+        `Parallel time (${parallelTime}ms) too slow, expected ~500-600ms`,
       );
     }
 
@@ -323,7 +323,7 @@ async function testErrorHandlingStress(): Promise<IntegrationTestResult> {
 
     if (failedTests.length > 0) {
       issues.push(
-        `Failed error handling tests: ${failedTests.map((t: any) => t.test).join(', ')}`
+        `Failed error handling tests: ${failedTests.map((t: any) => t.test).join(', ')}`,
       );
     }
 
@@ -415,7 +415,7 @@ async function testResourceManagement(): Promise<IntegrationTestResult> {
     // All acquired resources should be released
     if (acquired !== released) {
       issues.push(
-        `Resource leak detected: ${acquired} acquired but only ${released} released`
+        `Resource leak detected: ${acquired} acquired but only ${released} released`,
       );
     }
 
@@ -452,48 +452,48 @@ async function runIntegrationTests(): Promise<IntegrationTestResult[]> {
 
   // Test 1: Streaming
   console.log(
-    colorize('1/4', 'dim') + ' Testing streaming with large files...'
+    `${colorize('1/4', 'dim')} Testing streaming with large files...`,
   );
   const streamingResult = await testStreamingLargeFile();
   results.push(streamingResult);
   console.log(
     streamingResult.passed
       ? colorize('  ✓ Passed', 'green')
-      : colorize('  ✗ Failed', 'red')
+      : colorize('  ✗ Failed', 'red'),
   );
 
   // Test 2: Parallel
   console.log(
-    colorize('\n2/4', 'dim') + ' Testing parallel vs sequential performance...'
+    `${colorize('\n2/4', 'dim')} Testing parallel vs sequential performance...`,
   );
   const parallelResult = await testParallelPerformance();
   results.push(parallelResult);
   console.log(
     parallelResult.passed
       ? colorize('  ✓ Passed', 'green')
-      : colorize('  ✗ Failed', 'red')
+      : colorize('  ✗ Failed', 'red'),
   );
 
   // Test 3: Error Handling
   console.log(
-    colorize('\n3/4', 'dim') + ' Testing error handling under stress...'
+    `${colorize('\n3/4', 'dim')} Testing error handling under stress...`,
   );
   const errorResult = await testErrorHandlingStress();
   results.push(errorResult);
   console.log(
     errorResult.passed
       ? colorize('  ✓ Passed', 'green')
-      : colorize('  ✗ Failed', 'red')
+      : colorize('  ✗ Failed', 'red'),
   );
 
   // Test 4: Resource Management
-  console.log(colorize('\n4/4', 'dim') + ' Testing resource management...');
+  console.log(`${colorize('\n4/4', 'dim')} Testing resource management...`);
   const resourceResult = await testResourceManagement();
   results.push(resourceResult);
   console.log(
     resourceResult.passed
       ? colorize('  ✓ Passed', 'green')
-      : colorize('  ✗ Failed', 'red')
+      : colorize('  ✗ Failed', 'red'),
   );
 
   // Cleanup
@@ -518,13 +518,13 @@ function printResults(results: IntegrationTestResult[]) {
   }
 
   // Test details
-  console.log('\n' + colorize('Test Details:', 'bright'));
+  console.log(`\n${colorize('Test Details:', 'bright')}`);
   console.log('─'.repeat(60));
 
   for (const result of results) {
     const icon = result.passed ? colorize('✓', 'green') : colorize('✗', 'red');
     console.log(
-      `\n${icon} ${colorize(result.pattern, 'bright')} (${result.testType})`
+      `\n${icon} ${colorize(result.pattern, 'bright')} (${result.testType})`,
     );
     console.log(colorize(`  ${result.details}`, 'dim'));
 
@@ -547,7 +547,7 @@ function printResults(results: IntegrationTestResult[]) {
     }
   }
 
-  console.log('\n' + '═'.repeat(60));
+  console.log(`\n${'═'.repeat(60)}`);
 }
 
 // --- MAIN ---
@@ -571,13 +571,16 @@ async function main() {
     console.log(
       colorize(
         `\n❌ Integration testing completed in ${duration}ms with ${failed} failure(s)\n`,
-        'red'
-      )
+        'red',
+      ),
     );
     process.exit(1);
   } else {
     console.log(
-      colorize(`\n✨ All integration tests passed in ${duration}ms!\n`, 'green')
+      colorize(
+        `\n✨ All integration tests passed in ${duration}ms!\n`,
+        'green',
+      ),
     );
   }
 }

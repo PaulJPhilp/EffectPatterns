@@ -123,13 +123,13 @@ export class AnalyzerConfigService extends Context.Tag('AnalyzerConfigService')<
                   value: key,
                   reason:
                     'OpenAI API key is required. Set the OPENAI_API_KEY environment variable.',
-                })
-              )
-        )
+                }),
+              ),
+        ),
       );
 
       const chunkSize = yield* Config.number('CHUNK_SIZE').pipe(
-        Config.withDefault(DEFAULT_CHUNK_SIZE)
+        Config.withDefault(DEFAULT_CHUNK_SIZE),
       );
       if (chunkSize < MIN_CHUNK_SIZE || chunkSize > MAX_CHUNK_SIZE) {
         return yield* Effect.fail(
@@ -137,16 +137,16 @@ export class AnalyzerConfigService extends Context.Tag('AnalyzerConfigService')<
             key: 'CHUNK_SIZE',
             value: chunkSize,
             reason: `Chunk size must be between ${MIN_CHUNK_SIZE} and ${MAX_CHUNK_SIZE}`,
-          })
+          }),
         );
       }
 
       const modelName = yield* Config.string('MODEL_NAME').pipe(
-        Config.withDefault(DEFAULT_MODEL_NAME)
+        Config.withDefault(DEFAULT_MODEL_NAME),
       );
 
       const temperature = yield* Config.number('TEMPERATURE').pipe(
-        Config.withDefault(MIN_TEMPERATURE)
+        Config.withDefault(MIN_TEMPERATURE),
       );
       if (temperature < MIN_TEMPERATURE || temperature > MAX_TEMPERATURE) {
         return yield* Effect.fail(
@@ -154,12 +154,12 @@ export class AnalyzerConfigService extends Context.Tag('AnalyzerConfigService')<
             key: 'TEMPERATURE',
             value: temperature,
             reason: `Temperature must be between ${MIN_TEMPERATURE} and ${MAX_TEMPERATURE}`,
-          })
+          }),
         );
       }
 
       const requestTimeout = yield* Config.number('REQUEST_TIMEOUT').pipe(
-        Config.withDefault(DEFAULT_REQUEST_TIMEOUT)
+        Config.withDefault(DEFAULT_REQUEST_TIMEOUT),
       );
       if (
         requestTimeout < MIN_REQUEST_TIMEOUT ||
@@ -170,12 +170,12 @@ export class AnalyzerConfigService extends Context.Tag('AnalyzerConfigService')<
             key: 'REQUEST_TIMEOUT',
             value: requestTimeout,
             reason: `Request timeout must be between ${MIN_REQUEST_TIMEOUT}ms and ${MAX_REQUEST_TIMEOUT}ms`,
-          })
+          }),
         );
       }
 
       const maxRetries = yield* Config.number('MAX_RETRIES').pipe(
-        Config.withDefault(DEFAULT_MAX_RETRIES)
+        Config.withDefault(DEFAULT_MAX_RETRIES),
       );
       if (maxRetries < MIN_MAX_RETRIES || maxRetries > MAX_MAX_RETRIES) {
         return yield* Effect.fail(
@@ -183,16 +183,16 @@ export class AnalyzerConfigService extends Context.Tag('AnalyzerConfigService')<
             key: 'MAX_RETRIES',
             value: maxRetries,
             reason: `Max retries must be between ${MIN_MAX_RETRIES} and ${MAX_MAX_RETRIES}`,
-          })
+          }),
         );
       }
 
       const smartChunking = yield* Config.boolean('SMART_CHUNKING').pipe(
-        Config.withDefault(true)
+        Config.withDefault(true),
       );
 
       const minRelationshipScore = yield* Config.number(
-        'MIN_RELATIONSHIP_SCORE'
+        'MIN_RELATIONSHIP_SCORE',
       ).pipe(Config.withDefault(DEFAULT_MIN_RELATIONSHIP_SCORE));
       if (
         minRelationshipScore < MIN_RELATIONSHIP_SCORE ||
@@ -203,12 +203,12 @@ export class AnalyzerConfigService extends Context.Tag('AnalyzerConfigService')<
             key: 'MIN_RELATIONSHIP_SCORE',
             value: minRelationshipScore,
             reason: `Relationship score must be between ${MIN_RELATIONSHIP_SCORE} and ${MAX_RELATIONSHIP_SCORE}`,
-          })
+          }),
         );
       }
 
       const verboseLogging = yield* Config.boolean('VERBOSE_LOGGING').pipe(
-        Config.withDefault(false)
+        Config.withDefault(false),
       );
 
       // Create the configuration object
@@ -248,7 +248,7 @@ export class AnalyzerConfigService extends Context.Tag('AnalyzerConfigService')<
           Effect.succeed(config.minRelationshipScore),
         getVerboseLogging: () => Effect.succeed(config.verboseLogging),
       });
-    })
+    }),
   );
 
   /**
@@ -287,11 +287,11 @@ export class AnalyzerConfigService extends Context.Tag('AnalyzerConfigService')<
         getSmartChunking: () => Effect.succeed(overrides.smartChunking ?? true),
         getMinRelationshipScore: () =>
           Effect.succeed(
-            overrides.minRelationshipScore ?? DEFAULT_MIN_RELATIONSHIP_SCORE
+            overrides.minRelationshipScore ?? DEFAULT_MIN_RELATIONSHIP_SCORE,
           ),
         getVerboseLogging: () =>
           Effect.succeed(overrides.verboseLogging ?? false),
-      })
+      }),
     );
 }
 

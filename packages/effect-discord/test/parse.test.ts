@@ -10,7 +10,7 @@ const EXPECTED_MESSAGE_COUNT = 8;
 const TestLayer = Layer.mergeAll(
   NodeContext.layer,
   NodeFileSystem.layer,
-  NodePath.layer
+  NodePath.layer,
 );
 
 describe('Discord export fixture', () => {
@@ -23,7 +23,7 @@ describe('Discord export fixture', () => {
         'scripts',
         'analyzer',
         'test-data',
-        'mock-export.json'
+        'mock-export.json',
       );
       const raw = yield* fs.readFileString(fixturePath);
       const parsed = JSON.parse(raw) as ChannelExport;
@@ -35,7 +35,7 @@ describe('Discord export fixture', () => {
         ChannelExport['messages'],
         never,
         never
-      >
+      >,
     );
 
     expect(messages.length).toBe(EXPECTED_MESSAGE_COUNT);
@@ -54,7 +54,7 @@ describe('Discord export fixture', () => {
         'scripts',
         'analyzer',
         'test-data',
-        'mock-export.json'
+        'mock-export.json',
       );
       const raw = yield* fs.readFileString(fixturePath);
       const parsed = JSON.parse(raw) as ChannelExport;
@@ -68,7 +68,7 @@ describe('Discord export fixture', () => {
         ChannelExport['messages'][number] | undefined,
         never,
         never
-      >
+      >,
     );
 
     expect(botMessage).toBeDefined();

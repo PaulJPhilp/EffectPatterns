@@ -22,10 +22,10 @@
  * - Exit with code 1 if any errors occur
  */
 
+import * as path from 'node:path';
 import { FileSystem } from '@effect/platform';
 import { Effect } from 'effect';
 import { MdxService } from 'effect-mdx';
-import * as path from 'path';
 
 // --- CONFIGURATION ---
 const PROCESSED_DIR = path.join(process.cwd(), 'content/new/processed');
@@ -49,7 +49,7 @@ const publishPatterns = ({
 }: PublishOptions = {}) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const mdxService = yield* MdxService;
+    const _mdxService = yield* MdxService;
 
     console.log(`Publishing MDX files from ${indir}`);
     console.log(`Writing published files to ${outdir}`);
@@ -76,7 +76,7 @@ const publishPatterns = ({
 
           const processedContent = content.replace(
             /<Example path=".\/src\/.*?" \/>/g,
-            '```typescript\n' + tsContent + '\n```'
+            `\`\`\`typescript\n${tsContent}\n\`\`\``,
           );
 
           yield* fs.writeFileString(outPath, processedContent);
@@ -85,18 +85,18 @@ const publishPatterns = ({
           Effect.tap(() =>
             Effect.sync(() =>
               console.log(
-                `✅ Published ${mdxFile} to ${path.join(outdir, mdxFile)}`
-              )
-            )
+                `✅ Published ${mdxFile} to ${path.join(outdir, mdxFile)}`,
+              ),
+            ),
           ),
           Effect.catchAll((error) =>
             Effect.sync(() => {
               console.error(`❌ Error processing ${mdxFile}:`, error);
               return { mdxFile, status: 'error' as const, error };
-            })
-          )
+            }),
+          ),
         ),
-      { concurrency: 'inherit' }
+      { concurrency: 'inherit' },
     );
 
     console.log('✨ Publishing complete!');

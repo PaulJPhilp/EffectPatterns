@@ -27,7 +27,7 @@ export const loadEnvironment = Effect.gen(function* () {
     catch: (error) =>
       new Error(
         'Failed to load dotenv. Install it with: bun add dotenv\n' +
-          `Error: ${error}`
+          `Error: ${error}`,
       ),
   });
 
@@ -56,17 +56,17 @@ export const loadEnvironment = Effect.gen(function* () {
 
     if (result.error) {
       return yield* Effect.fail(
-        new Error(`Failed to parse .env file: ${result.error.message}`)
+        new Error(`Failed to parse .env file: ${result.error.message}`),
       );
     }
 
     yield* Console.log('   ✅ Environment loaded');
   } else {
     yield* Console.log(
-      '⚠️  No .env file found. Using system environment variables.'
+      '⚠️  No .env file found. Using system environment variables.',
     );
     yield* Console.log(
-      '   💡 Tip: Copy .env.example to .env and add your API key'
+      '   💡 Tip: Copy .env.example to .env and add your API key',
     );
   }
 });
@@ -92,8 +92,8 @@ export const validateEnvironment = (required: string[]) =>
         new Error(
           '❌ Missing required environment variables:\n' +
             missing.map((v) => `   - ${v}`).join('\n') +
-            '\n\n💡 Tip: Copy .env.example to .env and fill in the values'
-        )
+            '\n\n💡 Tip: Copy .env.example to .env and fill in the values',
+        ),
       );
     }
 
@@ -109,7 +109,7 @@ export const validateEnvironment = (required: string[]) =>
 export const setupEnvironment = (required: string[] = ['OPENAI_API_KEY']) =>
   Effect.gen(function* () {
     yield* loadEnvironment.pipe(
-      Effect.catchAll((error) => Console.log(`⚠️  ${error.message}`))
+      Effect.catchAll((error) => Console.log(`⚠️  ${error.message}`)),
     );
 
     return yield* validateEnvironment(required);

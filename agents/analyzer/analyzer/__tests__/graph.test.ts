@@ -21,7 +21,7 @@ describeLive('Analyzer graph (live)', () => {
           'scripts',
           'analyzer',
           'test-data',
-          'mock-export.json'
+          'mock-export.json',
         );
         const tempDir = yield* fs.makeTempDirectoryScoped();
         const outputPath = path.join(tempDir, 'report.txt');
@@ -29,14 +29,14 @@ describeLive('Analyzer graph (live)', () => {
           app.invoke({
             inputFile: fixturePath,
             outputFile: outputPath,
-          })
+          }),
         )) as GraphState;
         const reportContent = yield* fs.readFileString(outputPath);
         return {
           finalState: graphState,
           reportText: reportContent,
         };
-      })
+      }),
     );
 
     expect(finalState.chunks?.length ?? 0).toBeGreaterThan(0);
@@ -56,7 +56,7 @@ describeLive('Analyzer graph (live)', () => {
           process.cwd(),
           'packages',
           'data',
-          'discord-qna.json'
+          'discord-qna.json',
         );
 
         const tempDir = yield* fs.makeTempDirectoryScoped();
@@ -66,7 +66,7 @@ describeLive('Analyzer graph (live)', () => {
           app.invoke({
             inputFile: fixturePath,
             outputFile: outputPath,
-          })
+          }),
         )) as GraphState;
 
         const reportContent = yield* fs.readFileString(outputPath);
@@ -80,7 +80,7 @@ describeLive('Analyzer graph (live)', () => {
             chunkingStrategy: graphState.chunkingStrategy,
           },
         };
-      })
+      }),
     );
 
     // ============================================================
@@ -165,7 +165,7 @@ describeLive('Analyzer graph (live)', () => {
     console.log(`   Chunking Strategy: ${metadata.chunkingStrategy}`);
     console.log(`   Report Length: ${reportText.length} characters`);
     console.log(
-      `   Topics Mentioned: ${topicsMentioned}/4 (HttpApi, Errors, Schema, RPC)`
+      `   Topics Mentioned: ${topicsMentioned}/4 (HttpApi, Errors, Schema, RPC)`,
     );
     console.log(`   Has Code Examples: ${hasCodeExamples}`);
     console.log(`   Has Section Headers: ${hasSectionHeaders}`);

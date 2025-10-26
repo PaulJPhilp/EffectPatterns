@@ -91,7 +91,7 @@ export function buildSnippet(params: BuildSnippetParams): string {
     customName,
     customInput,
     moduleType = 'esm',
-    effectVersion
+    effectVersion,
   } = params;
 
   const sanitizedName = customName ? sanitizeInput(customName) : 'example';
@@ -146,7 +146,7 @@ export function buildSnippet(params: BuildSnippetParams): string {
       if (customInput) {
         processedLine = processedLine.replace(
           /"input"/g,
-          `"${sanitizedInput}"`
+          `"${sanitizedInput}"`,
         );
       }
       return processedLine;

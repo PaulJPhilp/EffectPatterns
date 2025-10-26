@@ -11,7 +11,10 @@
 
 import * as api from '@opentelemetry/api';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { defaultResource, resourceFromAttributes } from '@opentelemetry/resources';
+import {
+  defaultResource,
+  resourceFromAttributes,
+} from '@opentelemetry/resources';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import {
   ATTR_SERVICE_NAME,
@@ -38,12 +41,12 @@ export class TracingService extends Context.Tag('TracingService')<
     readonly getTraceId: () => string | undefined;
     readonly startSpan: <A, E, R>(
       name: string,
-      attributes?: Record<string, string | number | boolean>
+      attributes?: Record<string, string | number | boolean>,
     ) => (effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>;
     readonly withSpan: <A, E, R>(
       name: string,
       fn: () => Effect.Effect<A, E, R>,
-      attributes?: Record<string, string | number | boolean>
+      attributes?: Record<string, string | number | boolean>,
     ) => Effect.Effect<A, E, R>;
   }
 >() {}
@@ -53,7 +56,7 @@ export class TracingService extends Context.Tag('TracingService')<
  * Format: "key1=value1,key2=value2"
  */
 function parseOtlpHeaders(headersString: string): Record<string, string> {
-  if (!(headersString && headersString.trim())) {
+  if (!headersString?.trim()) {
     return {};
   }
 
@@ -106,7 +109,7 @@ const initializeTracing = (config: TracingConfig): Effect.Effect<NodeSDK> =>
       resourceFromAttributes({
         [ATTR_SERVICE_NAME]: config.serviceName,
         [ATTR_SERVICE_VERSION]: config.serviceVersion,
-      })
+      }),
     );
 
     // Initialize SDK
@@ -118,7 +121,7 @@ const initializeTracing = (config: TracingConfig): Effect.Effect<NodeSDK> =>
     sdk.start();
 
     console.log(
-      `[Tracing] OTLP initialized: ${config.serviceName} -> ${config.otlpEndpoint}`
+      `[Tracing] OTLP initialized: ${config.serviceName} -> ${config.otlpEndpoint}`,
     );
 
     return sdk;
@@ -133,7 +136,7 @@ const shutdownTracing = (sdk: NodeSDK): Effect.Effect<void> =>
   Effect.promise(() =>
     sdk.shutdown().then(() => {
       console.log('[Tracing] OTLP SDK shutdown complete');
-    })
+    }),
   );
 
 /**
@@ -159,7 +162,7 @@ const getTraceId = (): string | undefined => {
 const startSpan =
   <A, E, R>(
     _name: string,
-    _attributes?: Record<string, string | number | boolean>
+    _attributes?: Record<string, string | number | boolean>,
   ) =>
   (effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
     // For now, just pass through the effect without creating spans
@@ -174,7 +177,7 @@ const startSpan =
 const withSpan = <A, E, R>(
   _name: string,
   fn: () => Effect.Effect<A, E, R>,
-  _attributes?: Record<string, string | number | boolean>
+  _attributes?: Record<string, string | number | boolean>,
 ): Effect.Effect<A, E, R> => fn();
 
 /**
@@ -198,14 +201,11 @@ export const TracingLayer = Layer.scoped(
     const config = yield* loadTracingConfig;
 
     // Acquire: Initialize SDK
-    yield* Effect.acquireRelease(
-      initializeTracing(config),
-      shutdownTracing
-    );
+    yield* Effect.acquireRelease(initializeTracing(config), shutdownTracing);
 
     // Return tracing service
     return yield* makeTracingService;
-  })
+  }),
 );
 
 /**

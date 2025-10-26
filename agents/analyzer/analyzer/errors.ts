@@ -56,7 +56,7 @@ export class InvalidJSONError extends Data.TaggedError('InvalidJSONError')<{
  * Error thrown when data fails schema validation
  */
 export class SchemaValidationError extends Data.TaggedError(
-  'SchemaValidationError'
+  'SchemaValidationError',
 )<{
   readonly errors: readonly string[];
   readonly path?: string;
@@ -66,7 +66,7 @@ export class SchemaValidationError extends Data.TaggedError(
  * Error thrown when insufficient data is provided
  */
 export class InsufficientDataError extends Data.TaggedError(
-  'InsufficientDataError'
+  'InsufficientDataError',
 )<{
   readonly count: number;
   readonly min: number;
@@ -77,7 +77,7 @@ export class InsufficientDataError extends Data.TaggedError(
  * Error thrown when data format is invalid
  */
 export class InvalidDataFormatError extends Data.TaggedError(
-  'InvalidDataFormatError'
+  'InvalidDataFormatError',
 )<{
   readonly expected: string;
   readonly received: string;
@@ -116,7 +116,7 @@ export class LLMRateLimitError extends Data.TaggedError('LLMRateLimitError')<{
  * Error thrown when LLM returns invalid response
  */
 export class LLMInvalidResponseError extends Data.TaggedError(
-  'LLMInvalidResponseError'
+  'LLMInvalidResponseError',
 )<{
   readonly response: unknown;
   readonly expectedFormat: string;
@@ -126,7 +126,7 @@ export class LLMInvalidResponseError extends Data.TaggedError(
  * Error thrown when LLM API authentication fails
  */
 export class LLMAuthenticationError extends Data.TaggedError(
-  'LLMAuthenticationError'
+  'LLMAuthenticationError',
 )<{
   readonly message: string;
 }> {}
@@ -147,7 +147,7 @@ export class ConfigurationError extends Data.TaggedError('ConfigurationError')<{
  * Error thrown when configuration value is invalid
  */
 export class InvalidConfigurationError extends Data.TaggedError(
-  'InvalidConfigurationError'
+  'InvalidConfigurationError',
 )<{
   readonly key: string;
   readonly value: unknown;
@@ -170,7 +170,7 @@ export class ChunkingError extends Data.TaggedError('ChunkingError')<{
  * Error thrown when chunk size is invalid
  */
 export class InvalidChunkSizeError extends Data.TaggedError(
-  'InvalidChunkSizeError'
+  'InvalidChunkSizeError',
 )<{
   readonly size: number;
   readonly min: number;

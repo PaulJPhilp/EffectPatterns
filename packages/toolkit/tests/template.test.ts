@@ -171,7 +171,10 @@ describe('buildSnippet', () => {
 
     it('should sanitize custom name', () => {
       const pattern = createMockPattern();
-      const snippet = buildSnippet({ pattern, customName: "<script>alert('xss')</script>" });
+      const snippet = buildSnippet({
+        pattern,
+        customName: "<script>alert('xss')</script>",
+      });
 
       expect(snippet).not.toContain('<script>');
       expect(snippet).not.toContain('>');
@@ -196,7 +199,10 @@ describe('buildSnippet', () => {
   describe('custom input parameter', () => {
     it('should use custom input value', () => {
       const pattern = createMockPattern();
-      const snippet = buildSnippet({ pattern, customInput: 'customInputValue' });
+      const snippet = buildSnippet({
+        pattern,
+        customInput: 'customInputValue',
+      });
 
       expect(snippet).toContain('customInputValue');
     });
@@ -229,7 +235,7 @@ describe('buildSnippet', () => {
       const pattern = createMockPattern();
       const snippet = buildSnippet({
         pattern,
-        effectVersion: '3.0.0'
+        effectVersion: '3.0.0',
       });
 
       expect(snippet).toContain('// Effect version: 3.0.0');
@@ -360,7 +366,7 @@ export { step2 };`,
         customName: 'customName',
         customInput: 'customInput',
         moduleType: 'cjs',
-        effectVersion: '3.0.0'
+        effectVersion: '3.0.0',
       });
 
       expect(snippet).toContain('customName');
@@ -376,7 +382,7 @@ export { step2 };`,
         customName: '<name>',
         customInput: '`input`',
         moduleType: 'esm',
-        effectVersion: '3.0.0'
+        effectVersion: '3.0.0',
       });
 
       expect(snippet).not.toContain('<name>');
@@ -449,7 +455,7 @@ describe('generateUsageExample', () => {
 
     // Unlike buildSnippet, this doesn't add imports
     const codeLines = example.split('\n');
-    const commentLines = codeLines.filter((line) => line.startsWith('//'));
+    const _commentLines = codeLines.filter((line) => line.startsWith('//'));
     const exampleCode = pattern.examples[0].code;
 
     expect(example).not.toContain('import { Effect, pipe } from "effect"');
