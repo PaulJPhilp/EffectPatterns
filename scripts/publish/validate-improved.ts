@@ -159,7 +159,7 @@ const normalizeUseCaseValue = (value: string): readonly string[] => {
 
   const aliasKey = [lower, slug].find(
     (candidate): candidate is keyof typeof USE_CASE_ALIASES =>
-      Object.hasOwn(USE_CASE_ALIASES, candidate),
+      candidate in USE_CASE_ALIASES,
   );
 
   if (!aliasKey) {
