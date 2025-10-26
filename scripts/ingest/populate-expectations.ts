@@ -250,7 +250,7 @@ const processPatternFile = (mdxFilePath: string) =>
       );
     } else {
       // Safely remove 'needsReview' if it exists and no discrepancy is flagged
-      if (Object.hasOwn(updatedFrontmatter, 'needsReview')) {
+      if ('needsReview' in updatedFrontmatter) {
         // Create a new object without the needsReview property
         const { needsReview, ...restProps } = updatedFrontmatter;
         // Reassign updatedFrontmatter to the new object without needsReview
