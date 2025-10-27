@@ -34,10 +34,12 @@
     "vercel": "^48.3.0"
   },
   "devDependencies": {
+    "@ai-sdk/openai": "^2.0.53",
     "@types/node": "^24.6.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitest/coverage-v8": "^3.2.4",
+    "ai": "^5.0.80",
     "eslint": "^9.37.0",
     "eslint-config-next": "^16.0.0",
     "typescript": "5.9.3",
