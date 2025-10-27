@@ -4,13 +4,13 @@ set -euo pipefail
 echo "=== Dry-run + validation + prompt script (refined) ==="
 
 NEXT_WS=(
-  "apps/web"
+  "app/web"
   "app/chat-assistant"
   "services/mcp-server"
 )
 
 REACT_WS=(
-  "apps/web"
+  "app/web"
   "app/chat-assistant"
 )
 

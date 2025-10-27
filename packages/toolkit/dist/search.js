@@ -95,7 +95,7 @@ export function searchPatterns(params) {
         results = results.filter((p) => p.difficulty.toLowerCase() === difficulty.toLowerCase());
     }
     // Apply fuzzy search if query provided
-    if (query && query.trim()) {
+    if (query?.trim()) {
         const scored = results
             .map((pattern) => ({
             pattern,

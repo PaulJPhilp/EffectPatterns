@@ -18,16 +18,16 @@ export declare function sanitizeInput(input: string): string;
  * Parameters for building a code snippet
  */
 export interface BuildSnippetParams {
-  /** Pattern to generate snippet from */
-  pattern: Pattern;
-  /** Optional custom name for the example function/const */
-  customName?: string;
-  /** Optional custom input value */
-  customInput?: string;
-  /** Module type (default: 'esm') */
-  moduleType?: ModuleType;
-  /** Optional Effect version to include in comment */
-  effectVersion?: string;
+    /** Pattern to generate snippet from */
+    pattern: Pattern;
+    /** Optional custom name for the example function/const */
+    customName?: string;
+    /** Optional custom input value */
+    customInput?: string;
+    /** Module type (default: 'esm') */
+    moduleType?: ModuleType;
+    /** Optional Effect version to include in comment */
+    effectVersion?: string;
 }
 /**
  * Build a code snippet from a pattern

@@ -30,7 +30,7 @@ Tasks
 
 Deliverables
 - turbo.json, tsconfig, eslint/prettier
-- apps/web booted, loads shared components package
+- app/web booted, loads shared components package
 - packages/components with initial primitives and theme
 - .env.sample and config loader
 
@@ -106,7 +106,7 @@ Milestones
 
 Tasks
 1. Convex setup
-- Init Convex in apps/web
+- Init Convex in app/web
 - Configure Clerk auth integration for Convex
 - Create schema: sessions, plans_rt
 - Write queries/mutations:
@@ -227,7 +227,7 @@ Monorepo
   - tailwind.config.ts, postcss.config.js
   - src/components/{LayoutShell, PageHeader, Card, Button, CodeBlock, ProgressBar}.tsx
   - src/theme/tokens.ts
-- apps/web/
+- app/web/
   - app/layout.tsx, app/page.tsx (home)
   - app/modules/page.tsx, app/modules/[moduleId]/page.tsx
   - app/patterns/[patternId]/page.tsx

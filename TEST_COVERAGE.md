@@ -57,7 +57,7 @@ Generated: 2025-10-26
 ### ✅ MCP Server STDIO (`services/mcp-server-stdio/`)
 - **server.test.ts** - STDIO protocol tests
 
-### ✅ Web Application (`apps/web/`)
+### ✅ Web Application (`app/web/`)
 - **catalog.test.ts** - Pattern catalog
 - **learning-plan.service.test.ts** - Learning plan generation
 - **search.service.test.ts** - Search service

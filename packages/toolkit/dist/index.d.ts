@@ -1,31 +1,9 @@
 /**
- * Effect Patterns Toolkit
- *
- * Canonical domain types, pure functions, and utilities for working
- * with Effect patterns. All business logic is implemented using Effect
- * primitives.
+ * Effect Patterns Toolkit - Minimal Version for Deployment Testing
  */
-export { loadPatternsFromJson, loadPatternsFromJsonRunnable } from './io.js';
-export {
-  ExplainPatternRequest,
-  GenerateRequest,
-  GenerateResponse,
-  ModuleType,
-  SearchPatternsRequest,
-  SearchPatternsResponse,
-} from './schemas/generate.js';
-export { Pattern, PatternSummary, PatternsIndex } from './schemas/pattern.js';
-export {
-  getPatternById,
-  searchPatterns,
-  toPatternSummary,
-  type SearchPatternsParams,
-} from './search.js';
+export declare const searchPatterns: () => Promise<never[]>;
+export declare const toPatternSummary: () => {};
+export declare const buildSnippet: () => string;
+export declare const GenerateRequest: {};
 export { splitSections } from './splitSections.js';
-export {
-  buildSnippet,
-  generateUsageExample,
-  sanitizeInput,
-  type BuildSnippetParams,
-} from './template.js';
 //# sourceMappingURL=index.d.ts.map
