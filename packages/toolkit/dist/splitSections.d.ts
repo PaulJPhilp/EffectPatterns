@@ -11,5 +11,4 @@
  * => ['# Title', 'One\ncontent', 'Two']
  */
 export declare function splitSections(content: string): string[];
-export default splitSections;
 //# sourceMappingURL=splitSections.d.ts.map

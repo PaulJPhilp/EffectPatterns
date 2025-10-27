@@ -29,5 +29,4 @@ export function splitSections(content) {
         .map((s) => s.replace(/^#{2,6}\s*/, ''))
         .filter((s) => s.length > 0));
 }
-export default splitSections;
 //# sourceMappingURL=splitSections.js.map

@@ -63,7 +63,7 @@ function generateExport(name, moduleType = 'esm') {
  * ```
  */
 export function buildSnippet(params) {
-    const { pattern, customName, customInput, moduleType = 'esm', effectVersion } = params;
+    const { pattern, customName, customInput, moduleType = 'esm', effectVersion, } = params;
     const sanitizedName = customName ? sanitizeInput(customName) : 'example';
     const sanitizedInput = customInput ? sanitizeInput(customInput) : 'input';
     // Use first example if available

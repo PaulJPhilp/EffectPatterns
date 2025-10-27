@@ -115,7 +115,7 @@ Runtime Architecture
 - Entitlements
   - Tier-gated features (e.g., plan generation limit, chat access)
   - Middleware checks tier on protected routes
-- MVP: integrate Polar in apps/web via Convex actions; extract to effect-polar later
+- MVP: integrate Polar in app/web via Convex actions; extract to effect-polar later
 
 6) AI (Learning Plans)
 - Service
@@ -174,11 +174,11 @@ Data Flows
 - Middleware and UI conditionally unlock features
 
 Deployment and Environments
-- Vercel for apps/web hosting
+- Vercel for app/web hosting
 - Convex hosted backend (managed)
 - Postgres (Vercel Postgres or managed Postgres)
 - Environment config via Next runtime env and Effect Config layer for services
-- Build pipeline (Turborepo) builds packages/components, apps/web
+- Build pipeline (Turborepo) builds packages/components, app/web
 
 Roadmap for Post-MVP Architecture Evolution
 - Extract effect-convex: Effect Layer/Service for Convex queries/mutations/actions; unify error handling; typed responses with Schema
