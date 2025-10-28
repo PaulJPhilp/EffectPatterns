@@ -44,7 +44,7 @@ jobs:
       # Step 6g: This is the magic step. It checks if any files have changed.
       # If they have, it automatically commits and pushes them back to your repo.
       - name: Commit and Push Changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           # The message for the automatic commit.
           commit_message: "docs: auto-generate README and rules"
