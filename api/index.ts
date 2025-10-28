@@ -222,6 +222,23 @@ const singleRuleHandler = (id: string) =>
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { url } = req;
 
+  // Root route - API documentation
+  if (url === '/') {
+    return res.status(HTTP_STATUS_OK).json({
+      name: 'Effect Patterns API',
+      version: 'v1',
+      description: 'AI coding rules for Effect-TS patterns',
+      repository: 'https://github.com/PaulJPhilp/EffectPatterns',
+      endpoints: {
+        health: '/health',
+        rules: {
+          list: '/api/v1/rules',
+          get: '/api/v1/rules/{id}'
+        }
+      }
+    });
+  }
+
   // Health check
   if (url === '/health') {
     const result = await Effect.runPromise(
