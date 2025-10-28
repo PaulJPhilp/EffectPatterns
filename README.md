@@ -1,36 +1,11 @@
-# Effect Patterns Hub
-
-A community-driven knowledge base of practical, goal-oriented patterns for building robust applications with Effect-TS.
-
-## 🎉 Code Assistant (Experimental)
-
-**Experimental AI coding platform** available at `app/code-assistant` for testing ideas.
-
-**Quick Start:**
-```bash
-cd app/code-assistant
-pnpm dev
-# Open: http://localhost:3002
-```
-
-**Features:**
-- **Dual-Mode Architecture**: Chat Mode and Task Mode
-- **Multiple AI Agents**: Claude, OpenAI, Gemini
-- **Git Workflow**: Branch creation, commits, PR management
-
-**Note:** This is an experimental playground and not intended for production use.
-
----
-
 # Effect Patterns Index (Review)
 
-Grouped by skillLevel (intro → intermediate → advanced) then by the
-primary useCase (first element). Remaining useCase values appear as
+Grouped by skillLevel (intro → intermediate → advanced) then by the 
+primary useCase (first element). Remaining useCase values appear as 
 badges. Tie-breaker within groups is title (A–Z).
 
 ## Table of Contents
 
-- [Code Assistant](#-new-code-assistant-phase-1-complete)
 - [Start Here](#start-here)
 - [Intro](#intro)
 - [Intermediate](#intermediate)
