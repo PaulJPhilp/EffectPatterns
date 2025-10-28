@@ -70,13 +70,3 @@ jobs:
           curl -f https://effect-patterns-web.vercel.app/
 
           echo "✅ All services are healthy"
-
-  notify:
-    needs: health-check
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

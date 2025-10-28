@@ -27,7 +27,7 @@ export const environments = {
 } as const;
 
 export type Environment = keyof typeof environments;
-export type ServiceConfig = typeof environments.production;
+export type ServiceConfig = typeof environments[Environment];
 
 // Get current environment
 export const getCurrentEnvironment = (): Environment => {

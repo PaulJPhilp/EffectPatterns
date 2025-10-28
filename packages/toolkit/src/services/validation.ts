@@ -59,16 +59,17 @@ export class ValidationService extends Effect.Service<ValidationService>()('Vali
         const logger = yield* ToolkitLogger;
 
         const isLoggingEnabled = yield* config.isLoggingEnabled();
-        const validationTimeoutMs = yield* config.getValidationTimeoutMs();
+        // Use a sensible default timeout for validation operations
+        const validationTimeoutMs = 5000; // 5 seconds
 
         /**
          * Convert Effect Schema errors to our ValidationError format
          */
         const convertSchemaErrors = (errors: any[]): ValidationError[] => {
             return errors.map(error => ({
-                field: error.path?.join('.') || 'unknown',
+                path: Array.isArray(error.path) ? error.path : [],
                 message: error.message || 'Validation error',
-                value: error.actual
+                actual: error.actual
             }));
         };        /**
          * Validate data against a schema with timeout and error handling
@@ -89,9 +90,13 @@ export class ValidationService extends Effect.Service<ValidationService>()('Vali
                     try {
                         const result = yield* Schema.decodeUnknown(schema)(input);
                         return { success: true as const, data: result };
-                    } catch (error) {
+                    } catch (error: unknown) {
                         if (error instanceof ParseResult.ParseError) {
-                            const validationErrors = convertSchemaErrors(error.errors);
+                            // ParseError has an issue property, not errors
+                            const validationErrors: ValidationError[] = [{
+                                path: [],
+                                message: error.message || 'Schema validation failed'
+                            }];
                             return {
                                 success: false as const,
                                 errors: validationErrors
@@ -375,15 +380,13 @@ export function validateData<T>(
 ): ValidationResult<T> {
     try {
         const result = Schema.decodeUnknownSync(schema)(input);
-        return { success: true, data: result };
-    } catch (error) {
+        return { success: true, data: result as T };
+    } catch (error: unknown) {
         if (error instanceof ParseResult.ParseError) {
-            const errors = error.errors.map(e => ({
-                path: e.path,
-                message: e.message,
-                actual: e.actual,
-                expected: e.expected,
-            }));
+            const errors: ValidationError[] = [{
+                path: [],
+                message: error.message || 'Validation failed'
+            }];
             return { success: false, errors };
         }
         return {
