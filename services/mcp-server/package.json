@@ -31,7 +31,7 @@
     "next": "^16.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "vercel": "^48.3.0"
+    "vercel": "^48.6.0"
   },
   "devDependencies": {
     "@ai-sdk/openai": "^2.0.53",
