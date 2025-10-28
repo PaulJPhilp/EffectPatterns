@@ -11,6 +11,10 @@
   For project information, see ABOUT.md
 -->
 
+> [!WARNING]
+> **This is an auto-generated file.** Manual edits will be overwritten by the publishing pipeline.
+> For project information, see [ABOUT.md](./ABOUT.md)
+
 # Effect Patterns Index (Review)
 
 Grouped by skillLevel (intro → intermediate → advanced) then by the
