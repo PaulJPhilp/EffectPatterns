@@ -67,7 +67,7 @@ jobs:
           echo "✅ patterns.json generated successfully"
 
       - name: Upload patterns.json as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: patterns-data
           path: data/patterns.json
