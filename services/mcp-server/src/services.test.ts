@@ -39,10 +39,6 @@ import {
 // Create combined test layers
 const TestBaseLayer = MCPConfigServiceLive;
 const TestLoggerLayer = Layer.provide(MCPLoggerServiceLive, TestBaseLayer);
-const TestCacheLayer = Layer.provide(MCPCacheServiceLive, TestLoggerLayer);
-const TestValidationLayer = Layer.provide(MCPValidationServiceLive, TestLoggerLayer);
-const TestRateLimitLayer = Layer.provide(MCRateLimitServiceLive, TestLoggerLayer);
-const TestMetricsLayer = Layer.provide(MCPMetricsServiceLive, TestLoggerLayer);
 const TestFullLayer = Layer.provideMerge(
     Layer.provideMerge(
         Layer.provideMerge(
@@ -447,7 +443,7 @@ describe('MCP Server Services', () => {
                     const rateLimit = yield* MCRateLimitService;
 
                     yield* rateLimit.checkRateLimit('reset-test');
-                    const resetResult = yield* rateLimit.resetRateLimit('reset-test');
+                    yield* rateLimit.resetRateLimit('reset-test');
                     const status = yield* rateLimit.getRateLimitStatus('reset-test');
 
                     return { resetResult: 'ok', status };
