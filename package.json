@@ -85,10 +85,6 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^2.0.28",
-    "@effect/ai": "^0.25.2",
-    "@effect/ai-anthropic": "^0.15.1",
-    "@effect/ai-google": "^0.4.0",
-    "@effect/ai-openai": "^0.28.2",
     "@effect/cli": "^0.69.2",
     "@effect/platform": "^0.90.10",
     "@effect/platform-node": "^0.98.4",
