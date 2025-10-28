@@ -87,7 +87,7 @@ export class CacheService extends Effect.Service<CacheService>()('CacheService',
             if (cleanupInterval) return;
 
             cleanupInterval = setInterval(() => {
-                Effect.runSync(cleanupExpired());
+                Effect.runSync(cleanupExpired);
             }, cleanupIntervalMs);
 
             if (isLoggingEnabled) {
@@ -200,7 +200,7 @@ export class CacheService extends Effect.Service<CacheService>()('CacheService',
                     }
 
                     totalHits++;
-                    if (isLoggingEnabled) {
+                    if (isLoggingEnabled && entry) {
                         yield* operationLogger.debug('Cache hit', {
                             key,
                             accessCount: entry.accessCount,
@@ -208,7 +208,7 @@ export class CacheService extends Effect.Service<CacheService>()('CacheService',
                         });
                     }
 
-                    return entry.value as T;
+                    return (entry as CacheEntry).value as T;
                 } catch (error) {
                     yield* operationLogger.error('Cache get operation failed', { key, error });
                     yield* Effect.fail(new CacheError({
@@ -367,7 +367,7 @@ export class CacheService extends Effect.Service<CacheService>()('CacheService',
         });
 
         // Start cleanup on service initialization
-        yield* startCleanup();
+        yield* startCleanup;
 
         return {
             get,
