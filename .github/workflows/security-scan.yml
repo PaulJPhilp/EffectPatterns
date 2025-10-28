@@ -66,7 +66,7 @@ jobs:
 
       - name: Upload audit results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: audit-results
           path: audit-results.json
@@ -162,7 +162,7 @@ jobs:
           echo "✅ No prohibited licenses found" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload license report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: license-report
           path: licenses.json
@@ -232,7 +232,7 @@ jobs:
           echo "✅ SBOM generated successfully"
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: sbom
           path: sbom.json
@@ -240,7 +240,7 @@ jobs:
 
       - name: Attach SBOM to release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: sbom-release
           path: sbom.json
