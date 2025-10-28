@@ -10,7 +10,6 @@ Effect Patterns Hub is a comprehensive resource for developers learning and mast
 - **CLI Tool (`ep`)** - Search, discover, and install patterns from the command line
 - **Effect Patterns Toolkit** - Type-safe library for pattern operations
 - **AI Coding Rules** - Machine-readable rules for 10+ AI coding tools
-- **Data Analysis Engine** - Discord export service and LangGraph-powered thematic analysis for data-driven pattern discovery
 
 ## Features
 
@@ -80,28 +79,6 @@ Auto-generated coding rules for AI tools:
 - And 6 more tools
 
 Generated from patterns using `bun run rules`
-
-### Data Analysis Engine
-
-Extract insights from community discussions:
-
-**Discord Exporter** - Effect-native service for exporting Discord channel data
-```bash
-export DISCORD_BOT_TOKEN="your-token"
-bun run ingest:discord
-```
-
-**Analysis Agent** - LangGraph workflow for AI-powered thematic analysis
-```bash
-export ANTHROPIC_API_KEY="your-key"
-bun run analyze
-```
-
-Identifies:
-- Common pain points
-- Frequently asked questions
-- Emerging patterns
-- Code examples from the community
 
 ## Installation
 
@@ -201,14 +178,12 @@ Effect-Patterns/
 │   └── raw/              # Raw pattern data
 │
 ├── packages/
-│   ├── toolkit/          # Effect Patterns Toolkit
-│   └── effect-discord/   # Discord integration service
+│   └── toolkit/          # Effect Patterns Toolkit
 │
 ├── scripts/
 │   ├── ep.ts             # CLI entry point
 │   ├── publish/          # Publishing pipeline
 │   ├── ingest/           # Pattern ingestion
-│   ├── analyzer/         # LangGraph analysis agent
 │   └── qa/               # Quality assurance
 │
 ├── rules/
@@ -229,10 +204,6 @@ bun run ingest              # Ingest new patterns
 bun run pipeline            # Full publishing pipeline
 bun run validate            # Validate pattern structure
 bun run publish             # Publish validated patterns
-
-# Data Pipeline
-bun run ingest:discord      # Export Discord data
-bun run analyze             # Run thematic analysis
 
 # Testing
 bun test                    # Run all tests
@@ -255,7 +226,6 @@ bun run rules:claude        # Generate Claude-specific rules
 - **TypeScript** (5.8+) - Type safety
 - **Vitest** - Testing framework
 - **Biome** - Fast linter and formatter
-- **LangGraph** - AI workflow orchestration
 - **@effect/cli** - CLI framework
 - **@effect/schema** - Runtime validation
 
@@ -368,7 +338,6 @@ describe("MyService", () => {
 - ✅ CLI tool with search and installation
 - ✅ Effect Patterns Toolkit
 - ✅ AI coding rules for 10+ tools
-- ✅ Data analysis engine
 - ✅ Comprehensive test coverage (80%+)
 
 ### Next 3 Months
