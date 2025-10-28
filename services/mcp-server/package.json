@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@ai-sdk/openai": "^2.0.53",
-    "@types/node": "^24.6.2",
+    "@types/node": "^24.9.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitest/coverage-v8": "^4.0.4",
