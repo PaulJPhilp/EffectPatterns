@@ -1,111 +1,74 @@
 {
-  "id": "bf8aa930-6f9e-4446-ab60-3591a07cff5b",
+  "id": "715ec9ec-6715-4d0f-9f6c-9b5c7f09827c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.tasks": {
-      "name": "tasks",
+    "public.Chat": {
+      "name": "Chat",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
           "notNull": true
         },
-        "prompt": {
-          "name": "prompt",
-          "type": "text",
+        "messages": {
+          "name": "messages",
+          "type": "json",
           "primaryKey": false,
           "notNull": true
         },
-        "title": {
-          "name": "title",
-          "type": "text",
+        "userId": {
+          "name": "userId",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": false
-        },
-        "repo_url": {
-          "name": "repo_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "selected_agent": {
-          "name": "selected_agent",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'claude'"
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "Chat_userId_User_id_fk": {
+          "name": "Chat_userId_User_id_fk",
+          "tableFrom": "Chat",
+          "tableTo": "User",
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.User": {
+      "name": "User",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
           "notNull": true,
-          "default": "'pending'"
+          "default": "gen_random_uuid()"
         },
-        "progress": {
-          "name": "progress",
-          "type": "integer",
+        "email": {
+          "name": "email",
+          "type": "varchar(64)",
           "primaryKey": false,
-          "notNull": false,
-          "default": 0
+          "notNull": true
         },
-        "logs": {
-          "name": "logs",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "error": {
-          "name": "error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "instructions": {
-          "name": "instructions",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "branch_name": {
-          "name": "branch_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sandbox_url": {
-          "name": "sandbox_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "completed_at": {
-          "name": "completed_at",
-          "type": "timestamp",
+        "password": {
+          "name": "password",
+          "type": "varchar(64)",
           "primaryKey": false,
           "notNull": false
         }
@@ -113,18 +76,12 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "uniqueConstraints": {}
     }
   },
   "enums": {},
   "schemas": {},
   "sequences": {},
-  "roles": {},
-  "policies": {},
-  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

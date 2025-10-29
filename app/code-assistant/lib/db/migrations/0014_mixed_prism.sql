@@ -1,1 +1,0 @@
-ALTER TABLE "tasks" ADD COLUMN "pr_merge_commit_sha" text;

@@ -1,1 +1,0 @@
-ALTER TABLE "tasks" ADD COLUMN "mcp_server_ids" jsonb;
