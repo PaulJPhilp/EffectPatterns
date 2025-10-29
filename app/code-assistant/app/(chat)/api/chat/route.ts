@@ -27,6 +27,7 @@ import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
+import { searchPatternsTool, getPatternByIdTool, listPatternCategoriesTool } from "@/lib/ai/tools/search-patterns";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -197,6 +198,9 @@ export async function POST(request: Request) {
                   "createDocument",
                   "updateDocument",
                   "requestSuggestions",
+                  "searchPatterns",
+                  "getPatternById",
+                  "listPatternCategories",
                 ],
           experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
@@ -207,6 +211,9 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            searchPatterns: searchPatternsTool,
+            getPatternById: getPatternByIdTool,
+            listPatternCategories: listPatternCategoriesTool,
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
