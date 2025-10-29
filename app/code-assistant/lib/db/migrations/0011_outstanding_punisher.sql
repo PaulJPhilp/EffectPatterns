@@ -1,1 +1,0 @@
-ALTER TABLE "connectors" ALTER COLUMN "env" SET DATA TYPE text;

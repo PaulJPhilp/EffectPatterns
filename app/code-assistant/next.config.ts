@@ -1,22 +1,16 @@
-import type { NextConfig } from 'next'
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    ppr: true,
+  },
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'avatars.githubusercontent.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'github.com',
-        port: '',
-        pathname: '/**',
+        hostname: "avatar.vercel.sh",
       },
     ],
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;
