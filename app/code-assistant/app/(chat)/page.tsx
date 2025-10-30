@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
-import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
+import { DEFAULT_CHAT_MODEL, chatModelIdSchema } from "@/lib/ai/models";
 import { generateUUID } from "@/lib/utils";
 import { auth } from "../(auth)/auth";
 import { getUserPreferences } from "@/lib/memory";
@@ -28,8 +28,16 @@ export default async function Page() {
   const cookieStore = await cookies();
   const modelIdFromCookie = cookieStore.get("chat-model");
 
-  // Determine initial model: preferences > cookie > default
-  const initialModel = userPreferences.selectedModel || modelIdFromCookie?.value || DEFAULT_CHAT_MODEL;
+  // Validate and parse the model ID: preferences > cookie > default
+  let initialModel = DEFAULT_CHAT_MODEL;
+  const candidateModel = userPreferences.selectedModel || modelIdFromCookie?.value;
+  if (candidateModel) {
+    const parseResult = chatModelIdSchema.safeParse(candidateModel);
+    if (parseResult.success) {
+      initialModel = parseResult.data;
+    }
+    // If parsing fails, fall back to default
+  }
 
   return (
     <>

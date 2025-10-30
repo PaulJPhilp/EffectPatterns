@@ -19,7 +19,7 @@ import { getUsage } from "tokenlens/helpers";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
-import type { ChatModel } from "@/lib/ai/models";
+import type { ChatModel, ChatModelId } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
 import { rememberModelChoice } from "@/lib/memory";
@@ -88,7 +88,7 @@ export function getStreamContext() {
 
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
-  let selectedChatModel: ChatModel["id"] = "chat-model"; // Default value
+  let selectedChatModel: ChatModelId = "chat-model" as const; // Default value
 
   try {
     const json = await request.json();
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     }: {
       id: string;
       message: ChatMessage;
-      selectedChatModel: ChatModel["id"];
+      selectedChatModel: ChatModelId;
       selectedVisibilityType: VisibilityType;
     } = requestBody;
 

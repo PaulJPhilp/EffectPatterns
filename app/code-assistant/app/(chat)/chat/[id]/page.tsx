@@ -5,7 +5,7 @@ import { auth } from "@/app/(auth)/auth";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
+import { DEFAULT_CHAT_MODEL, chatModelIdSchema } from "@/lib/ai/models";
 import { getChatById, getMessagesByChatId } from "@/lib/db/queries";
 import { convertToUIMessages } from "@/lib/utils";
 
@@ -43,23 +43,14 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   const cookieStore = await cookies();
   const chatModelFromCookie = cookieStore.get("chat-model");
 
-  if (!chatModelFromCookie) {
-    return (
-      <>
-        <ErrorBoundary>
-          <Chat
-            autoResume={true}
-            id={chat.id}
-            initialChatModel={DEFAULT_CHAT_MODEL}
-            initialLastContext={chat.lastContext ?? undefined}
-            initialMessages={uiMessages}
-            initialVisibilityType={chat.visibility}
-            isReadonly={session?.user?.id !== chat.userId}
-          />
-        </ErrorBoundary>
-        <DataStreamHandler />
-      </>
-    );
+  // Validate and parse the model ID from the cookie
+  let initialChatModel = DEFAULT_CHAT_MODEL;
+  if (chatModelFromCookie?.value) {
+    const parseResult = chatModelIdSchema.safeParse(chatModelFromCookie.value);
+    if (parseResult.success) {
+      initialChatModel = parseResult.data;
+    }
+    // If parsing fails, fall back to default
   }
 
   return (
@@ -68,7 +59,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
         <Chat
           autoResume={true}
           id={chat.id}
-          initialChatModel={chatModelFromCookie.value}
+          initialChatModel={initialChatModel}
           initialLastContext={chat.lastContext ?? undefined}
           initialMessages={uiMessages}
           initialVisibilityType={chat.visibility}
