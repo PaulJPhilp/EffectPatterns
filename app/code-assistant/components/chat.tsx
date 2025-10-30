@@ -68,6 +68,9 @@ export function Chat({
 
   // Remember model choice in user preferences
   const handleModelChange = async (modelId: string) => {
+    // Update ref first (synchronously) to ensure it's used in next message
+    currentModelIdRef.current = modelId;
+    // Then update state (asynchronously) for re-render
     setCurrentModelId(modelId);
     try {
       await updatePreference("selectedModel", modelId);
