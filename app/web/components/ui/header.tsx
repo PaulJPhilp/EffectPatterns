@@ -1,28 +1,31 @@
 "use client";
-import React from "react";
+
+import type { Route } from "next";
+import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { Route } from "next";
+import { cn } from "../../lib/utils.js";
 import { Button } from "./button.js";
 
-function DarkModeToggle() {
-  const [isDark, setIsDark] = React.useState<boolean>(false);
+const NAV_LINKS: ReadonlyArray<{ href: Route; label: string }> = [
+  { href: "/", label: "Home" },
+  { href: "/modules", label: "Modules" },
+  { href: "/patterns", label: "Patterns" },
+  { href: "/dashboard", label: "Dashboard" },
+] as const;
 
-  React.useEffect(() => {
-    const root = document.documentElement;
-    const initial = root.classList.contains("dark");
-    setIsDark(initial);
-  }, []);
-
-  function onToggle() {
-    const root = document.documentElement;
-    const next = !isDark;
-    setIsDark(next);
-    root.classList.toggle("dark", next);
-  }
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
 
   return (
-    <Button variant="ghost" size="sm" onClick={onToggle} aria-label="Toggle dark mode" className="text-muted-foreground hover:text-foreground hover:bg-accent">
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      aria-label="Toggle color theme"
+      className="text-muted-foreground hover:text-foreground"
+    >
       {isDark ? "☀️ Light" : "🌙 Dark"}
     </Button>
   );
@@ -30,48 +33,47 @@ function DarkModeToggle() {
 
 export function Header() {
   const pathname = usePathname();
-  const links: ReadonlyArray<{ href: Route; label: string }> = [
-    { href: "/", label: "Home" },
-    { href: "/modules", label: "Modules" },
-    { href: "/patterns", label: "Patterns" },
-    { href: "/dashboard", label: "Dashboard" },
-  ] as const;
 
   return (
-    <header className="bg-background border-b border-border shadow-sm">
-      <div className="mx-auto max-w-7xl px-4 py-4">
-        <div className="flex flex-row items-center justify-between w-full">
-          <Link href="/" className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg p-1">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-orange-500 shadow-sm">
-              <span className="text-white font-bold text-sm">EP</span>
-            </div>
-            <span className="text-lg font-bold bg-linear-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent dark:from-white dark:to-gray-300 group-hover:from-orange-500 group-hover:to-orange-600 transition-all duration-200">
-              Effect Patterns Hub
-            </span>
-          </Link>
+    <header className="sticky top-0 z-[var(--z-header)] border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className="group inline-flex items-center gap-3 rounded-md px-1 py-1 focus-ring"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange/80 text-sm font-bold text-background shadow-sm transition group-hover:bg-orange">
+            EP
+          </span>
+          <span className="text-lg font-semibold tracking-tight text-foreground transition group-hover:text-primary">
+            Effect Patterns Hub
+          </span>
+        </Link>
 
-          <nav className="flex items-center gap-4 flex-nowrap">
-            {links.map((l) => {
-              const active = pathname === l.href;
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={`font-medium transition-all duration-200 px-2 py-1 rounded-md ${
-                    active
-                      ? "text-orange-500 border-b-2 border-orange-500 pb-1"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              );
-            })}
+        <nav className="hidden items-center gap-2 md:flex">
+          {NAV_LINKS.map((nav) => {
+            const isActive = pathname === nav.href;
+            return (
+              <Link
+                key={nav.href}
+                href={nav.href}
+                className={cn(
+                  "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+                )}
+              >
+                {nav.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-            <div className="border-l border-border pl-6 ml-2">
-              <DarkModeToggle />
-            </div>
-          </nav>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <Button asChild size="sm" variant="secondary" className="hidden md:inline-flex">
+            <Link href="/patterns">Explore patterns</Link>
+          </Button>
         </div>
       </div>
     </header>

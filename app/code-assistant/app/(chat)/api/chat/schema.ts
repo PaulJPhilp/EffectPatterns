@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { chatModelIdSchema } from "@/lib/ai/models";
 
 const textPartSchema = z.object({
   type: z.enum(["text"]),
@@ -21,7 +22,12 @@ export const postRequestBodySchema = z.object({
     role: z.enum(["user"]),
     parts: z.array(partSchema),
   }),
-  selectedChatModel: z.enum(["chat-model", "chat-model-reasoning", "gpt-5", "gemini-2.0-flash"]),
+  /**
+   * Use the type-safe schema from models.ts to ensure the schema
+   * stays in sync with available models. This schema automatically
+   * updates when new models are added to CHAT_MODEL_IDS.
+   */
+  selectedChatModel: chatModelIdSchema,
   selectedVisibilityType: z.enum(["public", "private"]),
 });
 

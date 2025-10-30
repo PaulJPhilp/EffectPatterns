@@ -25,6 +25,9 @@ import { myProvider } from "@/lib/ai/providers";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
 import { cn } from "@/lib/utils";
+import { MAX_MESSAGE_LENGTH } from "@/lib/constants";
+import { supportsAttachments } from "@/lib/ai/models";
+import type { ChatModelId } from "@/lib/ai/models";
 import { Context } from "./elements/context";
 import {
   PromptInput,
@@ -76,8 +79,8 @@ function PureMultimodalInput({
   sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
   className?: string;
   selectedVisibilityType: VisibilityType;
-  selectedModelId: string;
-  onModelChange?: (modelId: string) => void;
+  selectedModelId: ChatModelId;
+  onModelChange?: (modelId: ChatModelId) => void;
   usage?: AppUsage;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -127,8 +130,6 @@ function PureMultimodalInput({
 
   const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
-    // Limit message length to 4096 characters
-    const MAX_MESSAGE_LENGTH = 4096;
     if (value.length > MAX_MESSAGE_LENGTH) {
       toast.error(`Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`);
       setInput(value.substring(0, MAX_MESSAGE_LENGTH));
@@ -139,7 +140,7 @@ function PureMultimodalInput({
 
   // Validation helpers
   const isMessageEmpty = !input?.trim();
-  const isMessageTooLong = (input?.length ?? 0) > 4096;
+  const isMessageTooLong = (input?.length ?? 0) > MAX_MESSAGE_LENGTH;
   const isWaitingForResponse = status !== "ready";
   const isUploading = uploadQueue.length > 0;
   const canSubmit = !isMessageEmpty && !isMessageTooLong && !isWaitingForResponse && !isUploading;
@@ -152,7 +153,7 @@ function PureMultimodalInput({
     }
 
     if (isMessageTooLong) {
-      toast.error("Message is too long. Maximum 4096 characters allowed.");
+      toast.error(`Message is too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`);
       return;
     }
 
@@ -409,15 +410,15 @@ function PureAttachmentsButton({
 }: {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
   status: UseChatHelpers<ChatMessage>["status"];
-  selectedModelId: string;
+  selectedModelId: ChatModelId;
 }) {
-  const isReasoningModel = selectedModelId === "chat-model-reasoning";
+  const canAttach = supportsAttachments(selectedModelId);
 
   return (
     <Button
       className="aspect-square h-8 rounded-lg p-1 transition-colors hover:bg-accent"
       data-testid="attachments-button"
-      disabled={status !== "ready" || isReasoningModel}
+      disabled={status !== "ready" || !canAttach}
       onClick={(event) => {
         event.preventDefault();
         fileInputRef.current?.click();
@@ -435,10 +436,10 @@ function PureModelSelectorCompact({
   selectedModelId,
   onModelChange,
 }: {
-  selectedModelId: string;
-  onModelChange?: (modelId: string) => void;
+  selectedModelId: ChatModelId;
+  onModelChange?: (modelId: ChatModelId) => void;
 }) {
-  const [optimisticModelId, setOptimisticModelId] = useState(selectedModelId);
+  const [optimisticModelId, setOptimisticModelId] = useState<ChatModelId>(selectedModelId);
 
   useEffect(() => {
     setOptimisticModelId(selectedModelId);

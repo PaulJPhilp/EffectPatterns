@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
+import type { ChatModelId } from "@/lib/ai/models";
 import { ChatHeader } from "@/components/chat-header";
 import {
   AlertDialog,
@@ -45,7 +46,7 @@ export function Chat({
 }: {
   id: string;
   initialMessages: ChatMessage[];
-  initialChatModel: string;
+  initialChatModel: ChatModelId;
   initialVisibilityType: VisibilityType;
   isReadonly: boolean;
   autoResume: boolean;
@@ -63,14 +64,14 @@ export function Chat({
   const [input, setInput] = useState<string>("");
   const [usage, setUsage] = useState<AppUsage | undefined>(initialLastContext);
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
-  const [currentModelId, setCurrentModelId] = useState(initialChatModel);
-  const currentModelIdRef = useRef(currentModelId);
+  const [currentModelId, setCurrentModelId] = useState<ChatModelId>(initialChatModel);
+  const currentModelIdRef = useRef<ChatModelId>(currentModelId);
 
   // If preferences are still loading, defer rendering until they're available
   const isInitializing = preferencesLoading;
 
   // Remember model choice in user preferences
-  const handleModelChange = async (modelId: string) => {
+  const handleModelChange = async (modelId: ChatModelId) => {
     // Update ref first (synchronously) to ensure it's used in next message
     currentModelIdRef.current = modelId;
     // Then update state (asynchronously) for re-render
