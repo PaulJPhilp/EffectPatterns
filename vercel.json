@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm install --legacy-peer-deps",
+  "installCommand": "bun install",
+  "buildCommand": "cd packages/toolkit && bun run build",
   "builds": [
     {
       "src": "api/index.ts",
@@ -8,6 +9,10 @@
     }
   ],
   "routes": [
+    {
+      "src": "/",
+      "dest": "/api/index.ts"
+    },
     {
       "src": "/health",
       "dest": "/api/index.ts"
