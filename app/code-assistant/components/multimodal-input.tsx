@@ -122,6 +122,9 @@ function PureMultimodalInput({
     setLocalStorageInput(input);
   }, [input, setLocalStorageInput]);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadQueue, setUploadQueue] = useState<string[]>([]);
+
   const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
     // Limit message length to 4096 characters
@@ -140,9 +143,6 @@ function PureMultimodalInput({
   const isWaitingForResponse = status !== "ready";
   const isUploading = uploadQueue.length > 0;
   const canSubmit = !isMessageEmpty && !isMessageTooLong && !isWaitingForResponse && !isUploading;
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadQueue, setUploadQueue] = useState<string[]>([]);
 
   const submitForm = useCallback(() => {
     // Validate message before submission
