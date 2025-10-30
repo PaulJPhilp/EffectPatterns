@@ -123,13 +123,49 @@ function PureMultimodalInput({
   }, [input, setLocalStorageInput]);
 
   const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(event.target.value);
+    const value = event.target.value;
+    // Limit message length to 4096 characters
+    const MAX_MESSAGE_LENGTH = 4096;
+    if (value.length > MAX_MESSAGE_LENGTH) {
+      toast.error(`Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`);
+      setInput(value.substring(0, MAX_MESSAGE_LENGTH));
+      return;
+    }
+    setInput(value);
   };
+
+  // Validation helpers
+  const isMessageEmpty = !input.trim();
+  const isMessageTooLong = input.length > 4096;
+  const isWaitingForResponse = status !== "ready";
+  const isUploading = uploadQueue.length > 0;
+  const canSubmit = !isMessageEmpty && !isMessageTooLong && !isWaitingForResponse && !isUploading;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
 
   const submitForm = useCallback(() => {
+    // Validate message before submission
+    if (isMessageEmpty) {
+      toast.error("Please enter a message");
+      return;
+    }
+
+    if (isMessageTooLong) {
+      toast.error("Message is too long. Maximum 4096 characters allowed.");
+      return;
+    }
+
+    if (isWaitingForResponse) {
+      toast.error("Please wait for the model to finish its response!");
+      return;
+    }
+
+    if (isUploading) {
+      toast.error("Please wait for files to upload");
+      return;
+    }
+
     window.history.replaceState({}, "", `/chat/${chatId}`);
 
     sendMessage({
@@ -143,7 +179,7 @@ function PureMultimodalInput({
         })),
         {
           type: "text",
-          text: input,
+          text: input.trim(),
         },
       ],
     });
@@ -166,6 +202,10 @@ function PureMultimodalInput({
     width,
     chatId,
     resetHeight,
+    isMessageEmpty,
+    isMessageTooLong,
+    isWaitingForResponse,
+    isUploading,
   ]);
 
   const uploadFile = useCallback(async (file: File) => {
@@ -257,11 +297,7 @@ function PureMultimodalInput({
         className="rounded-xl border border-border bg-background p-3 shadow-xs transition-all duration-200 focus-within:border-border hover:border-muted-foreground/50"
         onSubmit={(event) => {
           event.preventDefault();
-          if (status !== "ready") {
-            toast.error("Please wait for the model to finish its response!");
-          } else {
-            submitForm();
-          }
+          submitForm();
         }}
       >
         {(attachments.length > 0 || uploadQueue.length > 0) && (
@@ -331,7 +367,7 @@ function PureMultimodalInput({
           ) : (
             <PromptInputSubmit
               className="size-8 rounded-full bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
-              disabled={!input.trim() || uploadQueue.length > 0}
+              disabled={!canSubmit}
               status={status}
             >
               <ArrowUpIcon size={14} />
