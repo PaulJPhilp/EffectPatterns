@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "installCommand": "bun install",
+  "installCommand": "bun install --frozen-lockfile=false",
   "buildCommand": "cd packages/toolkit && bun run build",
   "builds": [
     {
