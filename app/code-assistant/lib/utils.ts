@@ -24,14 +24,14 @@ export const fetcher = async (url: string) => {
       throw new ChatSDKError(code as ErrorCode, cause);
     } catch (error) {
       if (error instanceof ChatSDKError) throw error;
-      throw new ChatSDKError('api_error:invalid_response', 'Failed to parse error response');
+      throw new ChatSDKError('bad_request:api', 'Failed to parse error response');
     }
   }
 
   try {
     return await response.json();
   } catch (error) {
-    throw new ChatSDKError('api_error:invalid_response', 'Failed to parse response JSON');
+    throw new ChatSDKError('bad_request:api', 'Failed to parse response JSON');
   }
 };
 
@@ -48,7 +48,7 @@ export async function fetchWithErrorHandlers(
         throw new ChatSDKError(code as ErrorCode, cause);
       } catch (error) {
         if (error instanceof ChatSDKError) throw error;
-        throw new ChatSDKError('api_error:invalid_response', 'Failed to parse error response');
+        throw new ChatSDKError('bad_request:api', 'Failed to parse error response');
       }
     }
 
