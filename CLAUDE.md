@@ -1,9 +1,31 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+---
+
 # Effect Patterns Hub - Claude Code Context
 
 **Version:** 0.4.1
-**Last Updated:** 2025-10-23
+**Last Updated:** 2025-10-30
 
 This document provides comprehensive context for Claude Code when working on the Effect Patterns Hub project.
+
+## Quick Start
+
+For first-time setup or getting started:
+
+```bash
+bun install                    # Install dependencies
+bun test                       # Verify setup
+bun run ep search "effect"     # Test CLI
+```
+
+See "Common Commands" below for your specific task, or jump to the relevant section:
+- **Adding a pattern?** → "Pattern Development Cycle"
+- **Working on the CLI?** → "Working with the CLI"
+- **Running the Code Assistant?** → "Code Assistant (NEW - Phase 1 Complete)"
+- **Debugging the API?** → "Working with the MCP Server"
 
 ## Project Overview
 
@@ -113,15 +135,33 @@ Effect-Patterns/
 - **Effect-TS** (v3.18+) - Functional TypeScript framework
 - **Bun** (v1.0+) - Fast JavaScript runtime (recommended)
 - **TypeScript** (5.8+) - Type safety
-- **Next.js** (15.3+) - React framework for ChatGPT app
+- **Next.js** (15.3+) - React framework for web apps
 - **Vercel** - Serverless deployment
 - **OpenTelemetry** - Observability and tracing
 - **Biome** - Fast linter and formatter
 - **Vitest** - Testing framework
 
+### Monorepo Workspace Structure
+
+The project uses Bun workspaces (configured in `package.json`):
+
+- **Root workspace** - Core patterns, CLI, toolkit, MCP server, and scripts
+  - `packages/` - Shared libraries (toolkit, effect-discord)
+  - `services/mcp-server/` - REST API server
+  - `scripts/` - Build and automation scripts
+  - `content/` - Pattern data and examples
+
+- **App workspaces** - Separate Next.js projects
+  - `app/code-assistant/` - Next.js 16 coding agent with sandbox
+  - `app/chat-assistant/` - Next.js 15 conversational interface
+
+Each workspace has its own `package.json` but shares dependencies via Bun's workspace hoisting.
+
 ## Development Workflow
 
 ### Common Commands
+
+**Root-level commands use Bun:**
 
 ```bash
 # Pattern Management
@@ -161,16 +201,26 @@ bun run mcp:dev             # Start in dev mode (watch)
 bun run mcp:build           # Build for production
 bun run mcp:test            # Run server tests
 
-# ChatGPT App
-cd app
-npm install                 # Install dependencies
-npm run dev                 # Start dev server (localhost:3000)
-npm run build               # Build for production
-
 # Rules Generation
 bun run rules               # Generate all AI tool rules
 bun run rules:claude        # Generate Claude-specific rules
 ```
+
+**App commands use Bun (with `bun run`):**
+
+```bash
+# Code Assistant (Next.js 16 + React 19)
+cd app/code-assistant
+bun run dev                 # Start dev server (localhost:3002)
+bun run build               # Build for production
+
+# Chat Assistant (Next.js 15)
+cd app/chat-assistant
+bun run dev                 # Start dev server (localhost:3000)
+bun run build               # Build for production
+```
+
+> **Note:** Root-level commands use Bun because it provides a monorepo workspace setup. The `app/*` directories also use Bun but are configured as separate Next.js projects with their own package management.
 
 ### Pattern Development Cycle
 
@@ -838,7 +888,7 @@ The Code Assistant is a production-ready AI-powered coding platform built on Ver
 ```bash
 # Development
 cd app/code-assistant
-pnpm dev
+bun run dev
 # Open: http://localhost:3002 (or available port)
 
 # Chat mode: http://localhost:3002/chat
