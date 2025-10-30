@@ -139,7 +139,7 @@ function PureMultimodalInput({
 
   // Validation helpers
   const isMessageEmpty = !input?.trim();
-  const isMessageTooLong = input?.length ?? 0 > 4096;
+  const isMessageTooLong = (input?.length ?? 0) > 4096;
   const isWaitingForResponse = status !== "ready";
   const isUploading = uploadQueue.length > 0;
   const canSubmit = !isMessageEmpty && !isMessageTooLong && !isWaitingForResponse && !isUploading;
