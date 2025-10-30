@@ -20,8 +20,13 @@ export function useUserPreferences() {
         throw new Error("Failed to load preferences");
       }
 
-      const data = await response.json();
-      setPreferences(data.preferences || {});
+      try {
+        const data = await response.json();
+        setPreferences(data.preferences || {});
+      } catch (parseError) {
+        console.error("Error parsing preferences response:", parseError);
+        throw new Error("Invalid preferences response format");
+      }
       setError(null);
     } catch (err) {
       console.error("Error loading preferences:", err);
@@ -44,6 +49,15 @@ export function useUserPreferences() {
 
       if (!response.ok) {
         throw new Error("Failed to save preferences");
+      }
+
+      // Try to parse response (may be empty)
+      try {
+        if (response.headers.get("content-length") !== "0") {
+          await response.json();
+        }
+      } catch (parseError) {
+        console.warn("Error parsing save preferences response:", parseError);
       }
 
       // Update local state
