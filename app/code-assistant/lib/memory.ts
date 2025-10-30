@@ -9,19 +9,19 @@ export interface UserPreferences {
   sidebarCollapsed?: boolean;
   messageCount?: number;
   lastActivity?: string;
-  favoriteModels?: string[];
+  favoriteModels?: readonly string[];
   customInstructions?: string;
 }
 
 // Schema for type-safe JSON parsing
 const UserPreferencesSchema = Schema.Struct({
-  selectedModel: Schema.Optional(Schema.String),
-  theme: Schema.Optional(Schema.Union(Schema.Literal("light"), Schema.Literal("dark"), Schema.Literal("system"))),
-  sidebarCollapsed: Schema.Optional(Schema.Boolean),
-  messageCount: Schema.Optional(Schema.Number),
-  lastActivity: Schema.Optional(Schema.String),
-  favoriteModels: Schema.Optional(Schema.Array(Schema.String)),
-  customInstructions: Schema.Optional(Schema.String),
+  selectedModel: Schema.optional(Schema.String),
+  theme: Schema.optional(Schema.Union(Schema.Literal("light"), Schema.Literal("dark"), Schema.Literal("system"))),
+  sidebarCollapsed: Schema.optional(Schema.Boolean),
+  messageCount: Schema.optional(Schema.Number),
+  lastActivity: Schema.optional(Schema.String),
+  favoriteModels: Schema.optional(Schema.Array(Schema.String)),
+  customInstructions: Schema.optional(Schema.String),
 });
 
 // Memory service using Supermemory API
