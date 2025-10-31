@@ -40,7 +40,10 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        "chat-model": anthropic.languageModel(process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022"),
+        "chat-model": wrapLanguageModel({
+          model: anthropic.languageModel(process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022"),
+          middleware: extractReasoningMiddleware({ tagName: "thinking" }),
+        }),
         "chat-model-reasoning": wrapLanguageModel({
           model: anthropic.languageModel(process.env.ANTHROPIC_MODEL || "claude-3-opus-20240229"),
           middleware: extractReasoningMiddleware({ tagName: "think" }),
