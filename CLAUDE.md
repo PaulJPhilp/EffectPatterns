@@ -596,6 +596,7 @@ const snippet = yield* buildSnippet({
 - **No Promise in core** - Use `Effect.tryPromise` to convert
 - **Prefer `Effect.gen`** over `.pipe` for readability in complex flows
 - **Use `.pipe`** for simple, linear transformations
+- **NEVER use `Context.Tag`** - Always use `Effect.Service` pattern with class syntax instead
 
 **Good Example:**
 ```typescript

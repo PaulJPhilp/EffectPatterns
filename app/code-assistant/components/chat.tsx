@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
+import type { ChatModelId } from "@/lib/ai/models";
 import { ChatHeader } from "@/components/chat-header";
 import {
   AlertDialog,
@@ -45,7 +46,7 @@ export function Chat({
 }: {
   id: string;
   initialMessages: ChatMessage[];
-  initialChatModel: string;
+  initialChatModel: ChatModelId;
   initialVisibilityType: VisibilityType;
   isReadonly: boolean;
   autoResume: boolean;
@@ -58,16 +59,22 @@ export function Chat({
 
   const { mutate } = useSWRConfig();
   const { setDataStream } = useDataStream();
-  const { preferences, updatePreference } = useUserPreferences();
+  const { preferences, loading: preferencesLoading, updatePreference } = useUserPreferences();
 
   const [input, setInput] = useState<string>("");
   const [usage, setUsage] = useState<AppUsage | undefined>(initialLastContext);
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
-  const [currentModelId, setCurrentModelId] = useState(initialChatModel);
-  const currentModelIdRef = useRef(currentModelId);
+  const [currentModelId, setCurrentModelId] = useState<ChatModelId>(initialChatModel);
+  const currentModelIdRef = useRef<ChatModelId>(currentModelId);
+
+  // If preferences are still loading, defer rendering until they're available
+  const isInitializing = preferencesLoading;
 
   // Remember model choice in user preferences
-  const handleModelChange = async (modelId: string) => {
+  const handleModelChange = async (modelId: ChatModelId) => {
+    // Update ref first (synchronously) to ensure it's used in next message
+    currentModelIdRef.current = modelId;
+    // Then update state (asynchronously) for re-render
     setCurrentModelId(modelId);
     try {
       await updatePreference("selectedModel", modelId);
@@ -165,6 +172,18 @@ export function Chat({
     resumeStream,
     setMessages,
   });
+
+  // Show loading state while preferences are being loaded
+  if (isInitializing) {
+    return (
+      <div className="overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col bg-background items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading preferences...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

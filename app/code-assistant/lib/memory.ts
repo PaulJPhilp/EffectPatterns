@@ -1,4 +1,6 @@
 import Supermemory from "supermemory";
+import * as Json from "effect-json";
+import { Schema, Effect } from "effect";
 
 // User preferences types
 export interface UserPreferences {
@@ -7,17 +9,34 @@ export interface UserPreferences {
   sidebarCollapsed?: boolean;
   messageCount?: number;
   lastActivity?: string;
-  favoriteModels?: string[];
+  favoriteModels?: readonly string[];
   customInstructions?: string;
 }
 
-// Simple memory service using the published supermemory package
+// Schema for type-safe JSON parsing
+const UserPreferencesSchema = Schema.Struct({
+  selectedModel: Schema.optional(Schema.String),
+  theme: Schema.optional(Schema.Union(Schema.Literal("light"), Schema.Literal("dark"), Schema.Literal("system"))),
+  sidebarCollapsed: Schema.optional(Schema.Boolean),
+  messageCount: Schema.optional(Schema.Number),
+  lastActivity: Schema.optional(Schema.String),
+  favoriteModels: Schema.optional(Schema.Array(Schema.String)),
+  customInstructions: Schema.optional(Schema.String),
+});
+
+// Memory service using Supermemory API
 class UserMemoryService {
   private client: Supermemory;
 
   constructor() {
+    const apiKey = process.env.SUPERMEMORY_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "SUPERMEMORY_API_KEY environment variable is required. Set it in your .env.local file."
+      );
+    }
     this.client = new Supermemory({
-      apiKey: process.env.SUPERMEMORY_API_KEY || "sm_BpkYMBGxk4M4jYH2LbiFWx_IDnzEaZotdMhLYnsvFzmmhIBuHDVCcrjWolHBQyPOwajLrEeNmOwnqDasgCjvruf",
+      apiKey,
     });
   }
 
@@ -30,26 +49,28 @@ class UserMemoryService {
     try {
       const key = this.getPreferencesKey(userId);
 
-      // Try Supermemory API first
-      try {
-        const memories = await this.client.search.memories({
-          q: key,
-          limit: 1
-        });
+      const memories = await this.client.search.memories({
+        q: key,
+        limit: 1
+      });
 
-        if (memories.results && memories.results.length > 0) {
-          const memory = memories.results[0];
-          return JSON.parse(memory.memory);
+      if (memories.results && memories.results.length > 0) {
+        const memory = memories.results[0];
+        try {
+          // Use effect-json for safe parsing with error handling
+          const result = await Effect.runPromise(
+            Json.parse(UserPreferencesSchema, memory.memory).pipe(
+              Effect.catchTag("ParseError", () => Effect.succeed({})),
+              Effect.catchTag("ValidationError", () => Effect.succeed({}))
+            )
+          );
+          return result;
+        } catch (parseError) {
+          console.warn("Failed to parse preference data:", parseError);
+          return {};
         }
-      } catch (apiError) {
-        console.warn("Supermemory API error, falling back to localStorage:", apiError);
       }
 
-      // Fallback to localStorage
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(key);
-        return stored ? JSON.parse(stored) : {};
-      }
       return {};
     } catch (error) {
       console.warn("Failed to get user preferences:", error);
@@ -63,30 +84,15 @@ class UserMemoryService {
       const existing = await this.getPreferences(userId);
       const updated = { ...existing, ...preferences };
 
-      // Try Supermemory API first
-      try {
-        await this.client.memories.add({
-          content: JSON.stringify(updated),
-          metadata: {
-            type: "user_preferences",
-            userId,
-            key,
-            timestamp: new Date().toISOString()
-          }
-        });
-      } catch (apiError) {
-        console.warn("Supermemory API error, falling back to localStorage:", apiError);
-        // Fallback to localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(key, JSON.stringify(updated));
+      await this.client.memories.add({
+        content: JSON.stringify(updated),
+        metadata: {
+          type: "user_preferences",
+          userId,
+          key,
+          timestamp: new Date().toISOString()
         }
-        throw apiError;
-      }
-
-      // Also update localStorage as backup
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(key, JSON.stringify(updated));
-      }
+      });
     } catch (error) {
       console.warn("Failed to set user preferences:", error);
       throw error;
@@ -97,10 +103,28 @@ class UserMemoryService {
   async getConversationMemory(userId: string, chatId: string): Promise<any> {
     try {
       const key = this.getConversationKey(userId, chatId);
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(key);
-        return stored ? JSON.parse(stored) : null;
+      const memories = await this.client.search.memories({
+        q: key,
+        limit: 1
+      });
+
+      if (memories.results && memories.results.length > 0) {
+        const memory = memories.results[0];
+        try {
+          // Use effect-json for safe parsing with error handling (using a lenient schema for any data)
+          const result = await Effect.runPromise(
+            Json.parse(Schema.Any, memory.memory).pipe(
+              Effect.catchTag("ParseError", () => Effect.succeed(null)),
+              Effect.catchTag("ValidationError", () => Effect.succeed(null))
+            )
+          );
+          return result;
+        } catch (parseError) {
+          console.warn("Failed to parse conversation memory:", parseError);
+          return null;
+        }
       }
+
       return null;
     } catch (error) {
       console.warn("Failed to get conversation memory:", error);
@@ -111,9 +135,17 @@ class UserMemoryService {
   async setConversationMemory(userId: string, chatId: string, memoryData: any): Promise<void> {
     try {
       const key = this.getConversationKey(userId, chatId);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(key, JSON.stringify(memoryData));
-      }
+
+      await this.client.memories.add({
+        content: JSON.stringify(memoryData),
+        metadata: {
+          type: "conversation_memory",
+          userId,
+          chatId,
+          key,
+          timestamp: new Date().toISOString()
+        }
+      });
     } catch (error) {
       console.warn("Failed to set conversation memory:", error);
       throw error;
@@ -124,10 +156,28 @@ class UserMemoryService {
   async getUserData(userId: string, key: string): Promise<any> {
     try {
       const fullKey = this.getUserKey(userId, key);
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(fullKey);
-        return stored ? JSON.parse(stored) : null;
+      const memories = await this.client.search.memories({
+        q: fullKey,
+        limit: 1
+      });
+
+      if (memories.results && memories.results.length > 0) {
+        const memory = memories.results[0];
+        try {
+          // Use effect-json for safe parsing with error handling (using a lenient schema for any data)
+          const result = await Effect.runPromise(
+            Json.parse(Schema.Any, memory.memory).pipe(
+              Effect.catchTag("ParseError", () => Effect.succeed(null)),
+              Effect.catchTag("ValidationError", () => Effect.succeed(null))
+            )
+          );
+          return result;
+        } catch (parseError) {
+          console.warn("Failed to parse user data:", parseError);
+          return null;
+        }
       }
+
       return null;
     } catch (error) {
       console.warn("Failed to get user data:", error);
@@ -138,9 +188,16 @@ class UserMemoryService {
   async setUserData(userId: string, key: string, data: any): Promise<void> {
     try {
       const fullKey = this.getUserKey(userId, key);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(fullKey, JSON.stringify(data));
-      }
+
+      await this.client.memories.add({
+        content: JSON.stringify(data),
+        metadata: {
+          type: "user_data",
+          userId,
+          key: fullKey,
+          timestamp: new Date().toISOString()
+        }
+      });
     } catch (error) {
       console.warn("Failed to set user data:", error);
       throw error;
@@ -150,10 +207,9 @@ class UserMemoryService {
   async deleteUserData(userId: string, key: string): Promise<boolean> {
     try {
       const fullKey = this.getUserKey(userId, key);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(fullKey);
-      }
-      return true;
+      // Note: Supermemory doesn't have direct delete, but we can mark as deleted
+      console.warn("Delete not directly supported in Supermemory");
+      return false;
     } catch (error) {
       console.warn("Failed to delete user data:", error);
       return false;
@@ -162,11 +218,8 @@ class UserMemoryService {
 
   async clearUserData(userId: string): Promise<void> {
     try {
-      // This is a simple implementation - in production you'd want to clear all user keys
-      if (typeof window !== 'undefined') {
-        const keys = Object.keys(localStorage).filter(key => key.startsWith(`user:${userId}:`));
-        keys.forEach(key => localStorage.removeItem(key));
-      }
+      // Note: Supermemory doesn't have bulk delete
+      console.warn("Bulk clear not directly supported in Supermemory");
     } catch (error) {
       console.warn("Failed to clear user data:", error);
       throw error;

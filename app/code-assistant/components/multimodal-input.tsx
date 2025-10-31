@@ -25,6 +25,9 @@ import { myProvider } from "@/lib/ai/providers";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
 import { cn } from "@/lib/utils";
+import { MAX_MESSAGE_LENGTH } from "@/lib/constants";
+import { supportsAttachments } from "@/lib/ai/models";
+import type { ChatModelId } from "@/lib/ai/models";
 import { Context } from "./elements/context";
 import {
   PromptInput,
@@ -76,8 +79,8 @@ function PureMultimodalInput({
   sendMessage: UseChatHelpers<ChatMessage>["sendMessage"];
   className?: string;
   selectedVisibilityType: VisibilityType;
-  selectedModelId: string;
-  onModelChange?: (modelId: string) => void;
+  selectedModelId: ChatModelId;
+  onModelChange?: (modelId: ChatModelId) => void;
   usage?: AppUsage;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -122,14 +125,48 @@ function PureMultimodalInput({
     setLocalStorageInput(input);
   }, [input, setLocalStorageInput]);
 
-  const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(event.target.value);
-  };
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
 
+  const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = event.target.value;
+    if (value.length > MAX_MESSAGE_LENGTH) {
+      toast.error(`Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`);
+      setInput(value.substring(0, MAX_MESSAGE_LENGTH));
+      return;
+    }
+    setInput(value);
+  };
+
+  // Validation helpers
+  const isMessageEmpty = !input?.trim();
+  const isMessageTooLong = (input?.length ?? 0) > MAX_MESSAGE_LENGTH;
+  const isWaitingForResponse = status !== "ready";
+  const isUploading = uploadQueue.length > 0;
+  const canSubmit = !isMessageEmpty && !isMessageTooLong && !isWaitingForResponse && !isUploading;
+
   const submitForm = useCallback(() => {
+    // Validate message before submission
+    if (isMessageEmpty) {
+      toast.error("Please enter a message");
+      return;
+    }
+
+    if (isMessageTooLong) {
+      toast.error(`Message is too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`);
+      return;
+    }
+
+    if (isWaitingForResponse) {
+      toast.error("Please wait for the model to finish its response!");
+      return;
+    }
+
+    if (isUploading) {
+      toast.error("Please wait for files to upload");
+      return;
+    }
+
     window.history.replaceState({}, "", `/chat/${chatId}`);
 
     sendMessage({
@@ -143,7 +180,7 @@ function PureMultimodalInput({
         })),
         {
           type: "text",
-          text: input,
+          text: input.trim(),
         },
       ],
     });
@@ -166,6 +203,10 @@ function PureMultimodalInput({
     width,
     chatId,
     resetHeight,
+    isMessageEmpty,
+    isMessageTooLong,
+    isWaitingForResponse,
+    isUploading,
   ]);
 
   const uploadFile = useCallback(async (file: File) => {
@@ -257,11 +298,7 @@ function PureMultimodalInput({
         className="rounded-xl border border-border bg-background p-3 shadow-xs transition-all duration-200 focus-within:border-border hover:border-muted-foreground/50"
         onSubmit={(event) => {
           event.preventDefault();
-          if (status !== "ready") {
-            toast.error("Please wait for the model to finish its response!");
-          } else {
-            submitForm();
-          }
+          submitForm();
         }}
       >
         {(attachments.length > 0 || uploadQueue.length > 0) && (
@@ -331,7 +368,7 @@ function PureMultimodalInput({
           ) : (
             <PromptInputSubmit
               className="size-8 rounded-full bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
-              disabled={!input.trim() || uploadQueue.length > 0}
+              disabled={!canSubmit}
               status={status}
             >
               <ArrowUpIcon size={14} />
@@ -373,15 +410,15 @@ function PureAttachmentsButton({
 }: {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
   status: UseChatHelpers<ChatMessage>["status"];
-  selectedModelId: string;
+  selectedModelId: ChatModelId;
 }) {
-  const isReasoningModel = selectedModelId === "chat-model-reasoning";
+  const canAttach = supportsAttachments(selectedModelId);
 
   return (
     <Button
       className="aspect-square h-8 rounded-lg p-1 transition-colors hover:bg-accent"
       data-testid="attachments-button"
-      disabled={status !== "ready" || isReasoningModel}
+      disabled={status !== "ready" || !canAttach}
       onClick={(event) => {
         event.preventDefault();
         fileInputRef.current?.click();
@@ -399,10 +436,10 @@ function PureModelSelectorCompact({
   selectedModelId,
   onModelChange,
 }: {
-  selectedModelId: string;
-  onModelChange?: (modelId: string) => void;
+  selectedModelId: ChatModelId;
+  onModelChange?: (modelId: ChatModelId) => void;
 }) {
-  const [optimisticModelId, setOptimisticModelId] = useState(selectedModelId);
+  const [optimisticModelId, setOptimisticModelId] = useState<ChatModelId>(selectedModelId);
 
   useEffect(() => {
     setOptimisticModelId(selectedModelId);
