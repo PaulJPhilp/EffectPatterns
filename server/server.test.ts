@@ -4,13 +4,13 @@
  * Comprehensive test suite for the Pattern Server API endpoints
  */
 
-import { type ChildProcess, spawn } from 'node:child_process';
 import {
   FetchHttpClient,
   HttpClient,
   type HttpClientResponse,
 } from '@effect/platform';
 import { Effect, Schema } from 'effect';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // --- SCHEMAS ---
@@ -28,7 +28,8 @@ type Rule = typeof RuleSchema.Type;
 
 // --- TEST UTILITIES ---
 
-const BASE_URL = 'http://localhost:3001';
+const TEST_PORT = 45103;
+let BASE_URL = `http://localhost:${TEST_PORT}`;
 
 /**
  * Make HTTP request with Effect
@@ -59,13 +60,38 @@ const TestLayer = FetchHttpClient.layer;
 let serverProcess: ChildProcess | null = null;
 
 beforeAll(async () => {
+  BASE_URL = `http://localhost:${TEST_PORT}`;
+  process.env.PORT = String(TEST_PORT);
+
   // Start the server
   serverProcess = spawn('bun', ['run', 'server/index.ts'], {
     stdio: 'pipe',
+    env: {
+      ...process.env,
+      PORT: String(TEST_PORT),
+    },
   });
 
   // Wait for server to start
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  const startTime = Date.now();
+  const timeoutMs = 5000;
+  let serverReady = false;
+  while (Date.now() - startTime < timeoutMs) {
+    try {
+      const response = await fetch(`${BASE_URL}/health`);
+      if (response.ok) {
+        serverReady = true;
+        break;
+      }
+    } catch {
+      // retry until ready
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  if (!serverReady) {
+    throw new Error(`Pattern Server failed to start on ${BASE_URL}`);
+  }
 });
 
 afterAll(async () => {
@@ -73,11 +99,15 @@ afterAll(async () => {
   if (serverProcess) {
     serverProcess.kill();
   }
+
+  serverProcess = null;
+  delete process.env.PORT;
+  BASE_URL = `http://localhost:${TEST_PORT}`;
 });
 
 // --- TESTS ---
 
-describe.sequential('Pattern Server', () => {
+describe('Pattern Server', { sequential: true }, () => {
   describe('GET /health', () => {
     it('should return 200 OK with status', async () => {
       const program = Effect.gen(function* () {
@@ -99,7 +129,8 @@ describe.sequential('Pattern Server', () => {
         const json = yield* getJson(response);
 
         expect(Array.isArray(json)).toBe(true);
-        expect(json.length).toBeGreaterThan(0);
+        const rules = json as ReadonlyArray<unknown>;
+        expect(rules.length).toBeGreaterThan(0);
       });
 
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
@@ -111,9 +142,9 @@ describe.sequential('Pattern Server', () => {
         const json = yield* getJson(response);
 
         // Validate against schema
-        const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-          json,
-        );
+        const validated = yield* Schema.decodeUnknown(
+          Schema.Array(RuleSchema),
+        )(json);
 
         expect(validated.length).toBeGreaterThan(0);
 
@@ -132,9 +163,9 @@ describe.sequential('Pattern Server', () => {
       const program = Effect.gen(function* () {
         const response = yield* makeRequest('/api/v1/rules');
         const json = yield* getJson(response);
-        const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-          json,
-        );
+        const validated = yield* Schema.decodeUnknown(
+          Schema.Array(RuleSchema),
+        )(json);
 
         validated.forEach((rule: Rule) => {
           expect(rule.id).toBeTruthy();
@@ -197,7 +228,7 @@ describe.sequential('Pattern Server', () => {
           const response = result.right;
           expect(response.status).toBe(404);
 
-          const json = yield* getJson(response);
+          const json = (yield* getJson(response)) as { error?: unknown };
           expect(json).toHaveProperty('error');
           expect(json.error).toBe('Rule not found');
         }

@@ -1,15 +1,15 @@
 import Link from "next/link";
-import { cn } from "../lib/utils.js";
-import { Badge } from "./ui/badge.js";
-import { Button } from "./ui/button.js";
+import { cn } from "../lib/utils";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "./ui/card.js";
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 
 export interface PatternCardProps {
   id: string;

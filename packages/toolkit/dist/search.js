@@ -5,10 +5,22 @@
  * matching and filtering by category/difficulty.
  */
 /**
+ * Normalize separators in a string to spaces
+ * Converts hyphens and underscores to spaces for consistent matching
+ * @param str - String to normalize
+ * @returns Normalized string
+ */
+function normalizeSeparators(str) {
+    return str.replace(/[-_]+/g, ' ');
+}
+/**
  * Simple fuzzy matching score calculator
  *
  * Returns a score between 0 and 1 based on how well the query matches
  * the target string. Higher scores indicate better matches.
+ *
+ * Normalizes hyphens and underscores to spaces to allow "error handling"
+ * to match "error-handling" and other separator variations.
  *
  * @param query - Search query (lowercased)
  * @param target - Target string to match against (lowercased)
@@ -19,12 +31,15 @@ function fuzzyScore(query, target) {
         return 1;
     if (!target)
         return 0;
+    // Normalize separators to handle hyphen/underscore/space variations
+    const normalizedQuery = normalizeSeparators(query);
+    const normalizedTarget = normalizeSeparators(target);
     let queryIndex = 0;
     let targetIndex = 0;
     let matches = 0;
     let consecutiveMatches = 0;
-    while (queryIndex < query.length && targetIndex < target.length) {
-        if (query[queryIndex] === target[targetIndex]) {
+    while (queryIndex < normalizedQuery.length && targetIndex < normalizedTarget.length) {
+        if (normalizedQuery[queryIndex] === normalizedTarget[targetIndex]) {
             matches++;
             consecutiveMatches++;
             queryIndex++;
@@ -34,10 +49,10 @@ function fuzzyScore(query, target) {
         }
         targetIndex++;
     }
-    if (queryIndex !== query.length)
+    if (queryIndex !== normalizedQuery.length)
         return 0;
-    const baseScore = matches / query.length;
-    const consecutiveBonus = consecutiveMatches / query.length;
+    const baseScore = matches / normalizedQuery.length;
+    const consecutiveBonus = consecutiveMatches / normalizedQuery.length;
     return baseScore * 0.7 + consecutiveBonus * 0.3;
 }
 /**
