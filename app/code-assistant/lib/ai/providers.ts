@@ -49,9 +49,9 @@ export const myProvider = isTestEnvironment
         "artifact-model": openai.languageModel(process.env.OPENAI_MODEL || "gpt-3.5-turbo"),
         "gpt-5": openai.languageModel("gpt-4o"),
         "gemini-2.0-flash": google.languageModel("gemini-2.0-flash-001"),
-        "gemini-2.5-flash": google.languageModel("gemini-2.5-flash"),
-        "gpt-4.1": openai.languageModel("gpt-4.1"),
-        "gpt-5-mini": openai.languageModel("gpt-5-mini"),
-        "claude-4.5-haiku": anthropic.languageModel("claude-4.5-haiku"),
+        "gemini-2.5-flash": google.languageModel("gemini-2.0-flash-001"), // fallback to 2.0 until 2.5 available
+        "gpt-4.1": openai.languageModel("gpt-4-turbo"),
+        "gpt-5-mini": openai.languageModel("gpt-4-turbo"),
+        "claude-4.5-haiku": anthropic.languageModel("claude-3-5-haiku-20241022"),
       },
     });
