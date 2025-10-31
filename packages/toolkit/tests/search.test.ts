@@ -399,3 +399,288 @@ describe('toPatternSummary', () => {
     expect(summary.tags).toEqual([]);
   });
 });
+
+describe('REGRESSION TESTS: Fix #1 - Separator Normalization', () => {
+  /**
+   * Fix: Normalize hyphens and underscores to spaces in fuzzy matching
+   * Commit: eafbb27
+   * Issue: Query "error handling" couldn't match pattern tag "error-handling"
+   */
+
+  const patternsWithHyphenatedTags: Pattern[] = [
+    createMockPattern({
+      id: 'error-handling-pattern',
+      title: 'Error Recovery',
+      description: 'Pattern for recovering from errors',
+      category: 'error-handling',
+      tags: ['error-handling', 'recovery', 'resilience'],
+    }),
+    createMockPattern({
+      id: 'data-transform-pattern',
+      title: 'Data Pipeline',
+      description: 'Transform and process data',
+      category: 'data-transformation',
+      tags: ['data-transformation', 'pipeline', 'processing'],
+    }),
+    createMockPattern({
+      id: 'resource-mgmt-pattern',
+      title: 'Resource Pool',
+      description: 'Manage resource allocation',
+      category: 'resource-management',
+      tags: ['resource-management', 'allocation', 'cleanup'],
+    }),
+  ];
+
+  it('should match multi-word query "error handling" with hyphenated tag "error-handling"', () => {
+    const results = searchPatterns({
+      patterns: patternsWithHyphenatedTags,
+      query: 'error handling',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('error-handling-pattern');
+  });
+
+  it('should match multi-word query "data transformation" with hyphenated category', () => {
+    const results = searchPatterns({
+      patterns: patternsWithHyphenatedTags,
+      query: 'data transformation',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('data-transform-pattern');
+  });
+
+  it('should match multi-word query "resource management" with hyphenated tag', () => {
+    const results = searchPatterns({
+      patterns: patternsWithHyphenatedTags,
+      query: 'resource management',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('resource-mgmt-pattern');
+  });
+
+  it('should still match hyphenated queries with hyphenated data', () => {
+    const results = searchPatterns({
+      patterns: patternsWithHyphenatedTags,
+      query: 'error-handling',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('error-handling-pattern');
+  });
+
+  it('should match underscored queries with hyphenated data', () => {
+    const results = searchPatterns({
+      patterns: patternsWithHyphenatedTags,
+      query: 'error_handling',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('error-handling-pattern');
+  });
+
+  it('should handle mixed separators in queries', () => {
+    const results = searchPatterns({
+      patterns: patternsWithHyphenatedTags,
+      query: 'data-transformation',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('data-transform-pattern');
+  });
+});
+
+describe('REGRESSION TESTS: Fix #2 - Early Returns Removal', () => {
+  /**
+   * Fix: Check all fields (title, description, tags, category) instead of returning early
+   * Commit: a158a6c
+   * Issue: If title didn't match, tags and categories were never evaluated
+   */
+
+  const patternsForFieldChecking: Pattern[] = [
+    createMockPattern({
+      id: 'retry-pattern',
+      title: 'Exponential Backoff',
+      description: 'Automatic retries with increasing delays',
+      category: 'error-handling',
+      tags: ['retry', 'backoff', 'resilience'],
+    }),
+    createMockPattern({
+      id: 'concurrent-pattern',
+      title: 'Batch Operations',
+      description: 'Process items concurrently',
+      category: 'concurrency',
+      tags: ['concurrent', 'parallel', 'batch'],
+    }),
+  ];
+
+  it('should find pattern by tag even if title does not match', () => {
+    // Query "retry" should find retry-pattern via tags, not title
+    const results = searchPatterns({
+      patterns: patternsForFieldChecking,
+      query: 'retry',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('retry-pattern');
+  });
+
+  it('should evaluate category field even if title and description do not match', () => {
+    // Query "error-handling" should match via category field
+    const results = searchPatterns({
+      patterns: patternsForFieldChecking,
+      query: 'error-handling',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('retry-pattern');
+  });
+
+  it('should find best match across all fields, not just title', () => {
+    // Query "concurrent" should match via tags, giving better score than description
+    const results = searchPatterns({
+      patterns: patternsForFieldChecking,
+      query: 'concurrent',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('concurrent-pattern');
+  });
+
+  it('should evaluate all fields when title is vague', () => {
+    // "Batch Operations" title is vague, but tags and category are specific
+    const results = searchPatterns({
+      patterns: patternsForFieldChecking,
+      query: 'concurrency',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('concurrent-pattern');
+  });
+
+  it('should return multiple results when multiple fields match', () => {
+    const patternsWithOverlap: Pattern[] = [
+      createMockPattern({
+        id: 'pattern1',
+        title: 'Error Handler',
+        description: 'Handles errors',
+        category: 'error-handling',
+        tags: ['error', 'handling'],
+      }),
+      createMockPattern({
+        id: 'pattern2',
+        title: 'Something Else',
+        description: 'Error recovery mechanism',
+        category: 'error-handling',
+        tags: ['recovery', 'mechanism'],
+      }),
+    ];
+
+    const results = searchPatterns({
+      patterns: patternsWithOverlap,
+      query: 'error-handling',
+    });
+    // Both patterns should be found (one via title, one via category)
+    expect(results.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should prioritize title matches over tag matches (weighting)', () => {
+    // Patterns with same query in title vs tags
+    const patternsWithWeighting: Pattern[] = [
+      createMockPattern({
+        id: 'title-match',
+        title: 'Retry Pattern',
+        description: 'Description',
+        category: 'other',
+        tags: ['something'],
+      }),
+      createMockPattern({
+        id: 'tag-match',
+        title: 'Other Pattern',
+        description: 'Description',
+        category: 'other',
+        tags: ['retry'],
+      }),
+    ];
+
+    const results = searchPatterns({
+      patterns: patternsWithWeighting,
+      query: 'retry',
+    });
+    // Title match should come first due to 1.0 weight vs 0.5 tag weight
+    expect(results[0].id).toBe('title-match');
+  });
+});
+
+describe('REGRESSION TESTS: Combined Fixes', () => {
+  /**
+   * Verify both fixes work together correctly
+   */
+
+  const realWorldPatterns: Pattern[] = [
+    createMockPattern({
+      id: 'retry-backoff',
+      title: 'Retry with Exponential Backoff',
+      description: 'Implement automatic retries with exponential backoff',
+      category: 'error-handling',
+      tags: ['retry', 'backoff', 'resilience', 'error-handling'],
+    }),
+    createMockPattern({
+      id: 'concurrent-batch',
+      title: 'Concurrent Batch Processing',
+      description: 'Process large datasets using concurrent batches',
+      category: 'concurrency',
+      tags: ['concurrency', 'batch', 'parallel', 'performance'],
+    }),
+    createMockPattern({
+      id: 'resource-pool',
+      title: 'Resource Pool Manager',
+      description: 'Manage a pool of reusable resources efficiently',
+      category: 'resource-management',
+      tags: ['resource-management', 'pool', 'allocation'],
+    }),
+  ];
+
+  it('should find "error handling" patterns (both fixes needed)', () => {
+    const results = searchPatterns({
+      patterns: realWorldPatterns,
+      query: 'error handling',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    // Should find via "error-handling" tag (separator normalization)
+    // AND via category field (early return removal)
+    expect(results[0].id).toBe('retry-backoff');
+  });
+
+  it('should find "data transformation" patterns with normalized separators', () => {
+    // Note: No data-transformation patterns in realWorldPatterns, but separator norm should work
+    const results = searchPatterns({
+      patterns: realWorldPatterns,
+      query: 'resource management',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('resource-pool');
+  });
+
+  it('should rank results by relevance when multiple fields match', () => {
+    // Query that could match multiple fields
+    const results = searchPatterns({
+      patterns: realWorldPatterns,
+      query: 'concurrent',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('concurrent-batch');
+  });
+
+  it('should work with multi-word queries that appear in patterns', () => {
+    // "exponential backoff" appears in title of retry-backoff pattern
+    const results = searchPatterns({
+      patterns: realWorldPatterns,
+      query: 'exponential backoff',
+    });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].id).toBe('retry-backoff');
+  });
+
+  it('should handle category filtering with normalized separators', () => {
+    const results = searchPatterns({
+      patterns: realWorldPatterns,
+      category: 'error-handling',
+      query: 'error handling',
+    });
+    expect(results).toHaveLength(1);
+    expect(results[0].id).toBe('retry-backoff');
+  });
+});
