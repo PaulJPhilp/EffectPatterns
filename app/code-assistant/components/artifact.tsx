@@ -17,6 +17,7 @@ import { imageArtifact } from "@/artifacts/image/client";
 import { sheetArtifact } from "@/artifacts/sheet/client";
 import { textArtifact } from "@/artifacts/text/client";
 import { useArtifact } from "@/hooks/use-artifact";
+import type { ChatModelId } from "@/lib/ai/models";
 import type { Document, Vote } from "@/lib/db/schema";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import { fetcher } from "@/lib/utils";
@@ -83,7 +84,7 @@ function PureArtifact({
   regenerate: UseChatHelpers<ChatMessage>["regenerate"];
   isReadonly: boolean;
   selectedVisibilityType: VisibilityType;
-  selectedModelId: string;
+  selectedModelId: ChatModelId;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
 
