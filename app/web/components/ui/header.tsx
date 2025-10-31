@@ -4,8 +4,8 @@ import type { Route } from "next";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "../../lib/utils.js";
-import { Button } from "./button.js";
+import { cn } from "../../lib/utils";
+import { Button } from "./button";
 
 const NAV_LINKS: ReadonlyArray<{ href: Route; label: string }> = [
   { href: "/", label: "Home" },
