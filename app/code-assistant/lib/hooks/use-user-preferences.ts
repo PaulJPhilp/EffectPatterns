@@ -48,7 +48,7 @@ export function useUserPreferences() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save preferences");
+        throw new Error(`Failed to save preferences: ${response.status}`);
       }
 
       // Try to parse response (may be empty)
@@ -64,9 +64,11 @@ export function useUserPreferences() {
       setPreferences(prev => ({ ...prev, ...newPreferences }));
       setError(null);
     } catch (err) {
-      console.error("Error saving preferences:", err);
-      setError(err instanceof Error ? err.message : "Unknown error");
-      throw err; // Re-throw so caller can handle
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      console.error("Error saving preferences:", errorMessage);
+      setError(errorMessage);
+      // Don't re-throw - allow UI to recover gracefully
+      // The preference save failure shouldn't crash the app
     }
   };
 
