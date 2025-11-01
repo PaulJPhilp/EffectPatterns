@@ -22,7 +22,9 @@ import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import type { ChatModel, ChatModelId } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { myProvider } from "@/lib/ai/providers";
-import { rememberModelChoice } from "@/lib/memory";
+import { rememberModelChoice, getUserPreferences, getConversationContext, updateConversationContext, autoTagConversation, detectConversationOutcome } from "@/lib/memory";
+import { generateEmbedding } from "@/lib/semantic-search";
+import { getSupermemoryStore } from "@/lib/semantic-search/supermemory-store";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
@@ -165,6 +167,13 @@ export async function POST(request: Request) {
       country,
     };
 
+    // Fetch user's custom instructions from preferences
+    const userPreferences = await getUserPreferences(session.user.id);
+    const customInstructions = userPreferences.customInstructions;
+
+    // Fetch conversation context for better AI responses
+    const conversationContext = await getConversationContext(session.user.id, id);
+
     await saveMessages({
       messages: [
         {
@@ -187,7 +196,7 @@ export async function POST(request: Request) {
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          system: systemPrompt({ selectedChatModel, requestHints, customInstructions, conversationContext: conversationContext || undefined }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
@@ -273,6 +282,71 @@ export async function POST(request: Request) {
             chatId: id,
           })),
         });
+
+        // Update conversation context for next interaction
+        try {
+          const allMessages = [...uiMessages, ...messages];
+          await updateConversationContext(session.user.id, id, allMessages);
+        } catch (err) {
+          console.warn("Failed to update conversation context", err);
+        }
+
+        // Store embeddings for semantic search in Supermemory
+        try {
+          const supermemoryStore = getSupermemoryStore();
+          const allMessages = [...uiMessages, ...messages];
+
+          // Combine all conversation text
+          const conversationText = allMessages
+            .map((m: any) => {
+              if (typeof m.parts === "string") return m.parts;
+              return m.parts?.[0]?.text || "";
+            })
+            .join(" ");
+
+          if (conversationText.trim()) {
+            // Generate embedding for full conversation
+            const embedding = await generateEmbedding(conversationText);
+
+            // Generate tags and detect outcome
+            const tags = autoTagConversation(allMessages);
+            const outcome = detectConversationOutcome(allMessages);
+
+            // Store in Supermemory (unified backend for all memories)
+            await supermemoryStore.add(
+              id,
+              session.user.id,
+              embedding.vector,
+              {
+                content: conversationText,
+                timestamp: new Date().toISOString(),
+                outcome,
+                type: "conversation",
+              },
+              tags
+            );
+
+            console.log(
+              `[Supermemory] Stored conversation embedding (${tags.length} tags, ${outcome} outcome)`
+            );
+          }
+        } catch (err: any) {
+          // Don't fail the chat if embedding fails
+          if (err?.code === "RATE_LIMIT") {
+            console.warn(
+              "[Supermemory] Rate limited, skipping embedding storage"
+            );
+          } else if (err?.code === "AUTH_ERROR") {
+            console.warn(
+              "[Supermemory] Missing API key, skipping embedding storage"
+            );
+          } else {
+            console.warn(
+              "[Supermemory] Failed to store embedding:",
+              err?.message || err
+            );
+          }
+        }
 
         if (finalMergedUsage) {
           try {
