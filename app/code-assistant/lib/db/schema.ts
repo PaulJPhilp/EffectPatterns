@@ -2,15 +2,19 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  index,
   json,
   jsonb,
   pgTable,
   primaryKey,
+  serial,
   text,
   timestamp,
   uuid,
   varchar,
+  vector,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import type { AppUsage } from "../usage";
 
 export const user = pgTable("User", {
@@ -171,3 +175,108 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+/**
+ * Semantic Search & Embeddings Tables
+ * Stores conversation embeddings for vector similarity search
+ */
+
+export const conversationEmbedding = pgTable(
+  "ConversationEmbedding",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    chatId: uuid("chatId")
+      .notNull()
+      .references(() => chat.id, { onDelete: "cascade" }),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+    metadata: jsonb("metadata").$type<{
+      tags: readonly string[];
+      outcome: "solved" | "unsolved" | "partial" | "revisited";
+      satisfactionScore?: number;
+      contentSummary: string;
+      messageCount: number;
+      duration: number;
+    }>(),
+    contentHash: varchar("contentHash", { length: 64 }).notNull(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.id] }),
+    userChatIdx: index("conversation_embedding_user_chat_idx").on(
+      table.userId,
+      table.chatId
+    ),
+    userCreatedIdx: index("conversation_embedding_user_created_idx").on(
+      table.userId,
+      table.createdAt
+    ),
+    chatRef: foreignKey({
+      columns: [table.chatId],
+      foreignColumns: [chat.id],
+    }),
+    userRef: foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+    }),
+  })
+);
+
+export type ConversationEmbedding = InferSelectModel<typeof conversationEmbedding>;
+
+export const conversationTag = pgTable(
+  "ConversationTag",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    chatId: uuid("chatId")
+      .notNull()
+      .references(() => chat.id, { onDelete: "cascade" }),
+    tag: varchar("tag", { length: 100 }).notNull(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.id] }),
+    tagIdx: index("conversation_tag_tag_idx").on(table.tag),
+    chatTagIdx: index("conversation_tag_chat_tag_idx").on(table.chatId, table.tag),
+    chatRef: foreignKey({
+      columns: [table.chatId],
+      foreignColumns: [chat.id],
+    }),
+  })
+);
+
+export type ConversationTag = InferSelectModel<typeof conversationTag>;
+
+export const searchCache = pgTable(
+  "SearchCache",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    userId: uuid("userId")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    queryHash: varchar("queryHash", { length: 64 }).notNull(),
+    queryText: text("queryText").notNull(),
+    queryEmbedding: vector("queryEmbedding", { dimensions: 1536 }).notNull(),
+    resultIds: json("resultIds").$type<readonly string[]>().notNull(),
+    resultCount: serial("resultCount").notNull(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+    expiresAt: timestamp("expiresAt").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.id] }),
+    userQueryIdx: index("search_cache_user_query_idx").on(
+      table.userId,
+      table.queryHash
+    ),
+    expiresAtIdx: index("search_cache_expires_at_idx").on(table.expiresAt),
+    userRef: foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+    }),
+  })
+);
+
+export type SearchCache = InferSelectModel<typeof searchCache>;

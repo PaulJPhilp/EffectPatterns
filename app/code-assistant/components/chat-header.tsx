@@ -2,25 +2,36 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useWindowSize } from "usehooks-ts";
+import { BookOpen } from "lucide-react";
 import { SidebarToggle } from "@/components/sidebar-toggle";
 import { Button } from "@/components/ui/button";
+import { CustomInstructions } from "./custom-instructions";
 import { PlusIcon, VercelIcon } from "./icons";
 import { useSidebar } from "./ui/sidebar";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
+import { MemoriesGuideDialog } from "./memories-guide";
+import type { UserPreferences } from "@/lib/memory";
 
 function PureChatHeader({
   chatId,
   selectedVisibilityType,
   isReadonly,
+  preferences,
+  onUpdatePreferences,
+  isLoadingPreferences,
 }: {
   chatId: string;
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
+  preferences: UserPreferences | null;
+  onUpdatePreferences: (customInstructions: string) => Promise<void>;
+  isLoadingPreferences?: boolean;
 }) {
   const router = useRouter();
   const { open } = useSidebar();
+  const [showMemoriesGuide, setShowMemoriesGuide] = useState(false);
 
   const { width: windowWidth } = useWindowSize();
 
@@ -43,12 +54,30 @@ function PureChatHeader({
       )}
 
       {!isReadonly && (
-        <VisibilitySelector
-          chatId={chatId}
-          className="order-1 md:order-2"
-          selectedVisibilityType={selectedVisibilityType}
-        />
+        <>
+          <VisibilitySelector
+            chatId={chatId}
+            className="order-1 md:order-2"
+            selectedVisibilityType={selectedVisibilityType}
+          />
+          <CustomInstructions
+            preferences={preferences}
+            onUpdate={onUpdatePreferences}
+            isLoading={isLoadingPreferences}
+          />
+        </>
       )}
+
+      <Button
+        onClick={() => setShowMemoriesGuide(true)}
+        variant="outline"
+        size="sm"
+        className="order-2 md:order-3 md:ml-auto"
+        title="Learn about Memories"
+      >
+        <BookOpen className="h-4 w-4" />
+        <span className="hidden sm:inline ml-1">Memories</span>
+      </Button>
 
       <Button
         asChild
@@ -63,6 +92,8 @@ function PureChatHeader({
           Deploy with Vercel
         </Link>
       </Button>
+
+      <MemoriesGuideDialog open={showMemoriesGuide} onOpenChange={setShowMemoriesGuide} />
     </header>
   );
 }
@@ -71,6 +102,8 @@ export const ChatHeader = memo(PureChatHeader, (prevProps, nextProps) => {
   return (
     prevProps.chatId === nextProps.chatId &&
     prevProps.selectedVisibilityType === nextProps.selectedVisibilityType &&
-    prevProps.isReadonly === nextProps.isReadonly
+    prevProps.isReadonly === nextProps.isReadonly &&
+    prevProps.preferences === nextProps.preferences &&
+    prevProps.isLoadingPreferences === nextProps.isLoadingPreferences
   );
 });

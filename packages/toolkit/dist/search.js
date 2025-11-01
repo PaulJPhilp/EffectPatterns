@@ -58,30 +58,31 @@ function fuzzyScore(query, target) {
 /**
  * Calculate relevance score for a pattern against a search query
  *
+ * Checks all fields (title, description, tags, category) and returns the
+ * highest weighted score. This ensures that even if a query doesn't match
+ * the title, it can still find highly relevant results from tags or category.
+ *
  * @param pattern - Pattern to score
  * @param query - Search query
  * @returns Relevance score (0-1)
  */
 function calculateRelevance(pattern, query) {
     const q = query.toLowerCase();
-    // Check title (highest weight)
+    // Check all fields and collect scores with their weights
     const titleScore = fuzzyScore(q, pattern.title.toLowerCase());
-    if (titleScore > 0)
-        return titleScore * 1.0;
-    // Check description (medium weight)
     const descScore = fuzzyScore(q, pattern.description.toLowerCase());
-    if (descScore > 0)
-        return descScore * 0.7;
-    // Check tags (lower weight)
     const tagScores = pattern.tags.map((tag) => fuzzyScore(q, tag.toLowerCase()));
     const bestTagScore = Math.max(...tagScores, 0);
-    if (bestTagScore > 0)
-        return bestTagScore * 0.5;
-    // Check category
     const categoryScore = fuzzyScore(q, pattern.category.toLowerCase());
-    if (categoryScore > 0)
-        return categoryScore * 0.4;
-    return 0;
+    // Apply weights and find the highest score
+    // This ensures tags and categories can match even if title doesn't
+    const scores = [
+        titleScore * 1.0, // Title: highest weight
+        descScore * 0.7, // Description: medium weight
+        bestTagScore * 0.5, // Tags: lower weight
+        categoryScore * 0.4, // Category: lowest weight
+    ];
+    return Math.max(...scores);
 }
 /**
  * Search patterns with fuzzy matching and filtering

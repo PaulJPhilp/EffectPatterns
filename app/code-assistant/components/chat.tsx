@@ -192,6 +192,11 @@ export function Chat({
           chatId={id}
           isReadonly={isReadonly}
           selectedVisibilityType={initialVisibilityType}
+          preferences={preferences}
+          onUpdatePreferences={(customInstructions) =>
+            updatePreference("customInstructions", customInstructions)
+          }
+          isLoadingPreferences={preferencesLoading}
         />
 
         <Messages

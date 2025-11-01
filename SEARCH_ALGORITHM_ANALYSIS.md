@@ -226,17 +226,17 @@ From the sample data (patterns-index.json):
 1. **"Retry with Exponential Backoff"**
    - Category: `error-handling`
    - Tags: `["retry", "resilience", "error-handling", "backoff"]`
-   
-   Search failures:
-   ```
-   Query "error handling"    → NO MATCH (space vs hyphen in category)
-   Query "data transform"    → Would fail if searched
-   ```
+
+  Search failures:
+  ```
+  Query "error handling" → NO MATCH (space vs hyphen in category)
+  Query "data transform" → Would fail if searched
+  ```
 
 2. **"Concurrent Batch Processing"**
    - Category: `concurrency`
    - Tags: `["concurrency", "batch", "parallel", "performance"]`
-   
+
    Search issues:
    ```
    Query "concurrent batch"  → NO MATCH (space vs literal tag match)

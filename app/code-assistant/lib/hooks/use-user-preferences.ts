@@ -16,8 +16,16 @@ export function useUserPreferences() {
       setLoading(true);
       const response = await fetch("/api/user/preferences");
 
+      // Handle 401 Unauthorized - user not authenticated
+      if (response.status === 401) {
+        console.debug("User not authenticated, using default preferences");
+        setPreferences({});
+        setError(null);
+        return;
+      }
+
       if (!response.ok) {
-        throw new Error("Failed to load preferences");
+        throw new Error(`Failed to load preferences: ${response.status}`);
       }
 
       try {
@@ -29,9 +37,16 @@ export function useUserPreferences() {
       }
       setError(null);
     } catch (err) {
-      console.error("Error loading preferences:", err);
-      setError(err instanceof Error ? err.message : "Unknown error");
-      setPreferences({});
+      // Only log as error if it's not a network/fetch error
+      const isNetworkError = err instanceof TypeError && err.message.includes("fetch");
+      if (isNetworkError) {
+        console.debug("Network error loading preferences, using defaults:", err);
+      } else {
+        console.error("Error loading preferences:", err);
+      }
+
+      setError(null); // Don't show error to user - gracefully degrade
+      setPreferences({}); // Use empty preferences object as fallback
     } finally {
       setLoading(false);
     }
@@ -46,6 +61,15 @@ export function useUserPreferences() {
         },
         body: JSON.stringify({ preferences: newPreferences }),
       });
+
+      // Handle 401 Unauthorized - user not authenticated
+      if (response.status === 401) {
+        console.debug("User not authenticated, cannot save preferences");
+        // Still update local state optimistically for guest experience
+        setPreferences(prev => ({ ...prev, ...newPreferences }));
+        setError(null);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`Failed to save preferences: ${response.status}`);
@@ -64,9 +88,16 @@ export function useUserPreferences() {
       setPreferences(prev => ({ ...prev, ...newPreferences }));
       setError(null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      console.error("Error saving preferences:", errorMessage);
-      setError(errorMessage);
+      // Only log network errors as debug, not as errors
+      if (err instanceof TypeError && err.message.includes("fetch")) {
+        console.debug("Network error saving preferences, using local state:", err);
+      } else {
+        console.warn("Error saving preferences:", err);
+      }
+
+      // Still update local state optimistically - app should work in offline mode
+      setPreferences(prev => ({ ...prev, ...newPreferences }));
+      setError(null);
       // Don't re-throw - allow UI to recover gracefully
       // The preference save failure shouldn't crash the app
     }
