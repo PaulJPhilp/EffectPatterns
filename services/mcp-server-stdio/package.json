@@ -24,7 +24,7 @@
     "@effect/schema": "^0.75.5"
   },
   "devDependencies": {
-    "@types/node": "^24.6.2",
+    "@types/node": "^22.19.0",
     "tsx": "^4.19.2",
     "typescript": "5.9.3",
     "vitest": "^3.2.4"
