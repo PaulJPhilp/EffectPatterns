@@ -4,7 +4,21 @@
 
 import { Effect, Context, Data, Layer } from 'effect';
 import Supermemory from 'supermemory';
-import type { Memory, MemoryMetadata, UploadResult, ProcessingDocument, ProcessingQueue } from '../types.js';
+import type {
+  Memory,
+  MemoryMetadata,
+  UploadResult,
+  ProcessingDocument,
+  ProcessingQueue,
+  UserProfile,
+  UserProfileWithSearch,
+  ProfileComparison,
+  ProfileStats,
+  DocumentSearchOptions,
+  DocumentSearchResult,
+  MemorySearchOptions,
+  MemorySearchResult,
+} from '../types.js';
 
 class SupermemoryError extends Data.TaggedError('SupermemoryError')<{
   message: string;
@@ -33,6 +47,24 @@ export interface SupermemoryService {
     id: string,
     maxWaitMs?: number,
   ) => Effect.Effect<ProcessingDocument, SupermemoryError>;
+  // User Profiles
+  readonly getUserProfile: (userId: string) => Effect.Effect<UserProfile, SupermemoryError>;
+  readonly getUserProfileWithSearch: (
+    userId: string,
+    query: string,
+  ) => Effect.Effect<UserProfileWithSearch, SupermemoryError>;
+  readonly compareUserProfiles: (
+    user1Id: string,
+    user2Id: string,
+  ) => Effect.Effect<ProfileComparison, SupermemoryError>;
+  readonly getProfileStats: (containerTag: string) => Effect.Effect<ProfileStats, SupermemoryError>;
+  // Advanced Search (v3 and v4 endpoints)
+  readonly searchDocuments: (
+    options: DocumentSearchOptions,
+  ) => Effect.Effect<DocumentSearchResult, SupermemoryError>;
+  readonly searchMemoriesAdvanced: (
+    options: MemorySearchOptions,
+  ) => Effect.Effect<MemorySearchResult, SupermemoryError>;
 }
 
 export const SupermemoryService = Context.GenericTag<SupermemoryService>(
@@ -242,6 +274,219 @@ export const SupermemoryServiceLive = (apiKey: string): Effect.Effect<Supermemor
           );
         });
 
+      // User Profile Methods
+      const getUserProfile = (userId: string) =>
+        Effect.gen(function* () {
+          const response = yield* Effect.tryPromise({
+            try: () =>
+              fetch('https://api.supermemory.ai/v4/profile', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  containerTag: userId,
+                }),
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to fetch user profile: ${res.status}`);
+                }
+                return res.json();
+              }),
+            catch: (error) =>
+              new SupermemoryError({
+                message: `Failed to get user profile: ${error}`,
+              }),
+          });
+
+          if (!(response as any)?.profile) {
+            return yield* Effect.fail(
+              new SupermemoryError({
+                message: `No profile data returned for user ${userId}`,
+              }),
+            );
+          }
+
+          const profile = (response as any).profile;
+          return {
+            userId,
+            static: profile.static || [],
+            dynamic: profile.dynamic || [],
+            retrievedAt: new Date().toISOString(),
+          } as UserProfile;
+        });
+
+      const getUserProfileWithSearch = (userId: string, query: string) =>
+        Effect.gen(function* () {
+          const response = yield* Effect.tryPromise({
+            try: () =>
+              fetch('https://api.supermemory.ai/v4/profile', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  containerTag: userId,
+                  q: query,
+                }),
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to fetch profile with search: ${res.status}`);
+                }
+                return res.json();
+              }),
+            catch: (error) =>
+              new SupermemoryError({
+                message: `Failed to get profile with search: ${error}`,
+              }),
+          });
+
+          if (!(response as any)?.profile) {
+            return yield* Effect.fail(
+              new SupermemoryError({
+                message: `No profile data returned for user ${userId}`,
+              }),
+            );
+          }
+
+          const profile = (response as any).profile;
+          const searchResults = (response as any).searchResults || {};
+
+          return {
+            profile: {
+              userId,
+              static: profile.static || [],
+              dynamic: profile.dynamic || [],
+              retrievedAt: new Date().toISOString(),
+            },
+            searchResults: (searchResults.results || []) as any[],
+            searchQuery: query,
+            searchTiming: searchResults.timing || 0,
+          } as UserProfileWithSearch;
+        });
+
+      const compareUserProfiles = (user1Id: string, user2Id: string) =>
+        Effect.gen(function* () {
+          const profile1 = yield* getUserProfile(user1Id);
+          const profile2 = yield* getUserProfile(user2Id);
+
+          const static1Set = new Set(profile1.static);
+          const static2Set = new Set(profile2.static);
+          const dynamic1Set = new Set(profile1.dynamic);
+          const dynamic2Set = new Set(profile2.dynamic);
+
+          const commonStatic = Array.from(static1Set).filter((s) => static2Set.has(s));
+          const uniqueStatic1 = Array.from(static1Set).filter((s) => !static2Set.has(s));
+          const uniqueStatic2 = Array.from(static2Set).filter((s) => !static1Set.has(s));
+
+          const commonDynamic = Array.from(dynamic1Set).filter((d) => dynamic2Set.has(d));
+          const uniqueDynamic1 = Array.from(dynamic1Set).filter((d) => !dynamic2Set.has(d));
+          const uniqueDynamic2 = Array.from(dynamic2Set).filter((d) => !dynamic1Set.has(d));
+
+          return {
+            user1: user1Id,
+            user2: user2Id,
+            commonStatic,
+            uniqueStatic1,
+            uniqueStatic2,
+            commonDynamic,
+            uniqueDynamic1,
+            uniqueDynamic2,
+          } as ProfileComparison;
+        });
+
+      const getProfileStats = (containerTag: string) =>
+        Effect.gen(function* () {
+          const response = yield* Effect.tryPromise({
+            try: () =>
+              fetch('https://api.supermemory.ai/v4/profile/stats', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  containerTag,
+                }),
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to fetch profile stats: ${res.status}`);
+                }
+                return res.json();
+              }),
+            catch: (error) =>
+              new SupermemoryError({
+                message: `Failed to get profile stats: ${error}`,
+              }),
+          });
+
+          return {
+            container: containerTag,
+            totalUsers: (response as any)?.totalUsers || 0,
+            avgStaticFacts: (response as any)?.avgStaticFacts || 0,
+            avgDynamicFacts: (response as any)?.avgDynamicFacts || 0,
+            maxStaticFacts: (response as any)?.maxStaticFacts || 0,
+            maxDynamicFacts: (response as any)?.maxDynamicFacts || 0,
+            commonTopics: (response as any)?.commonTopics || {},
+            retrievedAt: new Date().toISOString(),
+          } as ProfileStats;
+        });
+
+      // Advanced Search Methods
+      const searchDocuments = (options: DocumentSearchOptions) =>
+        Effect.gen(function* () {
+          const response = yield* Effect.tryPromise({
+            try: () =>
+              fetch('https://api.supermemory.ai/v3/search', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(options),
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to search documents: ${res.status}`);
+                }
+                return res.json();
+              }),
+            catch: (error) =>
+              new SupermemoryError({
+                message: `Failed to search documents: ${error}`,
+              }),
+          });
+
+          return response as DocumentSearchResult;
+        });
+
+      const searchMemoriesAdvanced = (options: MemorySearchOptions) =>
+        Effect.gen(function* () {
+          const response = yield* Effect.tryPromise({
+            try: () =>
+              fetch('https://api.supermemory.ai/v4/search', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(options),
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to search memories: ${res.status}`);
+                }
+                return res.json();
+              }),
+            catch: (error) =>
+              new SupermemoryError({
+                message: `Failed to search memories: ${error}`,
+              }),
+          });
+
+          return response as MemorySearchResult;
+        });
+
       return {
         listMemories,
         countMemories,
@@ -251,5 +496,11 @@ export const SupermemoryServiceLive = (apiKey: string): Effect.Effect<Supermemor
         getDocumentStatus,
         deleteDocument,
         pollDocumentStatus,
+        getUserProfile,
+        getUserProfileWithSearch,
+        compareUserProfiles,
+        getProfileStats,
+        searchDocuments,
+        searchMemoriesAdvanced,
       };
     });
