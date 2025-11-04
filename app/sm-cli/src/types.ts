@@ -53,3 +53,19 @@ export interface OutputOptions {
   format: 'human' | 'json';
   verbose?: boolean;
 }
+
+export type ProcessingStatus = 'queued' | 'extracting' | 'chunking' | 'embedding' | 'indexing' | 'done' | 'failed';
+
+export interface ProcessingDocument {
+  id: string;
+  status: ProcessingStatus;
+  created_at: string;
+  updated_at: string;
+  container_tags: string[];
+  metadata: Record<string, unknown>;
+}
+
+export interface ProcessingQueue {
+  documents: ProcessingDocument[];
+  total: number;
+}
