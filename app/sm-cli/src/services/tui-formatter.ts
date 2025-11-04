@@ -104,9 +104,11 @@ export const createMemoryTable = (memories: any[]): string => {
       day: '2-digit',
     });
 
+    const title = memory.title || memory.summary?.substring(0, 47) || '(untitled)';
+
     table.push([
       chalk.cyan(memory.id.substring(0, 10)),
-      chalk.white(memory.title.substring(0, 47)),
+      chalk.white(title.substring(0, 47)),
       typeColor(memory.type || 'unknown'),
       statusColor(memory.status),
       chalk.gray(created),
