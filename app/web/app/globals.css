@@ -222,12 +222,10 @@
   @apply text-muted-foreground;
 }
 
-@layer utilities {
-  @utility text-balance {
-    text-wrap: balance;
-  }
+@utility text-balance {
+  text-wrap: balance;
+}
 
-  @utility isolation-isolate {
-    isolation: isolate;
-  }
+@utility isolation-isolate {
+  isolation: isolate;
 }

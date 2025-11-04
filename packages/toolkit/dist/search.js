@@ -5,10 +5,22 @@
  * matching and filtering by category/difficulty.
  */
 /**
+ * Normalize separators in a string to spaces
+ * Converts hyphens and underscores to spaces for consistent matching
+ * @param str - String to normalize
+ * @returns Normalized string
+ */
+function normalizeSeparators(str) {
+    return str.replace(/[-_]+/g, ' ');
+}
+/**
  * Simple fuzzy matching score calculator
  *
  * Returns a score between 0 and 1 based on how well the query matches
  * the target string. Higher scores indicate better matches.
+ *
+ * Normalizes hyphens and underscores to spaces to allow "error handling"
+ * to match "error-handling" and other separator variations.
  *
  * @param query - Search query (lowercased)
  * @param target - Target string to match against (lowercased)
@@ -19,12 +31,15 @@ function fuzzyScore(query, target) {
         return 1;
     if (!target)
         return 0;
+    // Normalize separators to handle hyphen/underscore/space variations
+    const normalizedQuery = normalizeSeparators(query);
+    const normalizedTarget = normalizeSeparators(target);
     let queryIndex = 0;
     let targetIndex = 0;
     let matches = 0;
     let consecutiveMatches = 0;
-    while (queryIndex < query.length && targetIndex < target.length) {
-        if (query[queryIndex] === target[targetIndex]) {
+    while (queryIndex < normalizedQuery.length && targetIndex < normalizedTarget.length) {
+        if (normalizedQuery[queryIndex] === normalizedTarget[targetIndex]) {
             matches++;
             consecutiveMatches++;
             queryIndex++;
@@ -34,14 +49,18 @@ function fuzzyScore(query, target) {
         }
         targetIndex++;
     }
-    if (queryIndex !== query.length)
+    if (queryIndex !== normalizedQuery.length)
         return 0;
-    const baseScore = matches / query.length;
-    const consecutiveBonus = consecutiveMatches / query.length;
+    const baseScore = matches / normalizedQuery.length;
+    const consecutiveBonus = consecutiveMatches / normalizedQuery.length;
     return baseScore * 0.7 + consecutiveBonus * 0.3;
 }
 /**
  * Calculate relevance score for a pattern against a search query
+ *
+ * Checks all fields (title, description, tags, category) and returns the
+ * highest weighted score. This ensures that even if a query doesn't match
+ * the title, it can still find highly relevant results from tags or category.
  *
  * @param pattern - Pattern to score
  * @param query - Search query
@@ -49,24 +68,21 @@ function fuzzyScore(query, target) {
  */
 function calculateRelevance(pattern, query) {
     const q = query.toLowerCase();
-    // Check title (highest weight)
+    // Check all fields and collect scores with their weights
     const titleScore = fuzzyScore(q, pattern.title.toLowerCase());
-    if (titleScore > 0)
-        return titleScore * 1.0;
-    // Check description (medium weight)
     const descScore = fuzzyScore(q, pattern.description.toLowerCase());
-    if (descScore > 0)
-        return descScore * 0.7;
-    // Check tags (lower weight)
     const tagScores = pattern.tags.map((tag) => fuzzyScore(q, tag.toLowerCase()));
     const bestTagScore = Math.max(...tagScores, 0);
-    if (bestTagScore > 0)
-        return bestTagScore * 0.5;
-    // Check category
     const categoryScore = fuzzyScore(q, pattern.category.toLowerCase());
-    if (categoryScore > 0)
-        return categoryScore * 0.4;
-    return 0;
+    // Apply weights and find the highest score
+    // This ensures tags and categories can match even if title doesn't
+    const scores = [
+        titleScore * 1.0, // Title: highest weight
+        descScore * 0.7, // Description: medium weight
+        bestTagScore * 0.5, // Tags: lower weight
+        categoryScore * 0.4, // Category: lowest weight
+    ];
+    return Math.max(...scores);
 }
 /**
  * Search patterns with fuzzy matching and filtering

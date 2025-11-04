@@ -1,0 +1,254 @@
+{
+  "id": "a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6",
+  "prevId": "097660a7-976a-4b3e-8ebb-79312e3ece6f",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.ConversationEmbedding": {
+      "name": "ConversationEmbedding",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "chatId": {
+          "name": "chatId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "embedding": {
+          "name": "embedding",
+          "type": "vector(1536)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contentHash": {
+          "name": "contentHash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "conversation_embedding_user_chat_idx": {
+          "name": "conversation_embedding_user_chat_idx",
+          "columns": ["userId", "chatId"],
+          "isUnique": false
+        },
+        "conversation_embedding_user_created_idx": {
+          "name": "conversation_embedding_user_created_idx",
+          "columns": ["userId", "createdAt"],
+          "isUnique": false
+        },
+        "conversation_embedding_vector_idx": {
+          "name": "conversation_embedding_vector_idx",
+          "columns": ["embedding"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "ConversationEmbedding_chatId_Chat_id_fk": {
+          "name": "ConversationEmbedding_chatId_Chat_id_fk",
+          "tableFrom": "ConversationEmbedding",
+          "tableTo": "Chat",
+          "columnsFrom": ["chatId"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ConversationEmbedding_userId_User_id_fk": {
+          "name": "ConversationEmbedding_userId_User_id_fk",
+          "tableFrom": "ConversationEmbedding",
+          "tableTo": "User",
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.ConversationTag": {
+      "name": "ConversationTag",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "chatId": {
+          "name": "chatId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tag": {
+          "name": "tag",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "conversation_tag_tag_idx": {
+          "name": "conversation_tag_tag_idx",
+          "columns": ["tag"],
+          "isUnique": false
+        },
+        "conversation_tag_chat_tag_idx": {
+          "name": "conversation_tag_chat_tag_idx",
+          "columns": ["chatId", "tag"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "ConversationTag_chatId_Chat_id_fk": {
+          "name": "ConversationTag_chatId_Chat_id_fk",
+          "tableFrom": "ConversationTag",
+          "tableTo": "Chat",
+          "columnsFrom": ["chatId"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.SearchCache": {
+      "name": "SearchCache",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "userId": {
+          "name": "userId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "queryHash": {
+          "name": "queryHash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "queryText": {
+          "name": "queryText",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "queryEmbedding": {
+          "name": "queryEmbedding",
+          "type": "vector(1536)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resultIds": {
+          "name": "resultIds",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resultCount": {
+          "name": "resultCount",
+          "type": "serial",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expiresAt": {
+          "name": "expiresAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "search_cache_user_query_idx": {
+          "name": "search_cache_user_query_idx",
+          "columns": ["userId", "queryHash"],
+          "isUnique": false
+        },
+        "search_cache_expires_at_idx": {
+          "name": "search_cache_expires_at_idx",
+          "columns": ["expiresAt"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "SearchCache_userId_User_id_fk": {
+          "name": "SearchCache_userId_User_id_fk",
+          "tableFrom": "SearchCache",
+          "tableTo": "User",
+          "columnsFrom": ["userId"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

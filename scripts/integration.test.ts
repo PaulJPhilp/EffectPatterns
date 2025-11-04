@@ -4,10 +4,10 @@
  * End-to-end integration tests for Pattern Server + CLI
  */
 
-import { type ChildProcess, spawn } from 'node:child_process';
-import * as fs from 'node:fs/promises';
 import { FetchHttpClient, HttpClient } from '@effect/platform';
 import { Effect, Schema } from 'effect';
+import { type ChildProcess, spawn } from 'node:child_process';
+import * as fs from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // --- SCHEMAS ---
@@ -23,7 +23,8 @@ const RuleSchema = Schema.Struct({
 
 // --- TEST UTILITIES ---
 
-const BASE_URL = 'http://localhost:3001';
+const TEST_PORT = 45102;
+let BASE_URL = `http://localhost:${TEST_PORT}`;
 const TestLayer = FetchHttpClient.layer;
 
 let serverProcess: ChildProcess | null = null;
@@ -32,7 +33,11 @@ const runCommand = async (
   args: string[],
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> =>
   new Promise((resolve) => {
-    const proc = spawn('bun', ['run', 'scripts/ep.ts', ...args], {
+    const finalArgs = !args.includes('--server-url')
+      ? [...args, '--server-url', BASE_URL]
+      : args;
+
+    const proc = spawn('bun', ['run', 'scripts/ep.ts', ...finalArgs], {
       stdio: 'pipe',
     });
 
@@ -53,13 +58,38 @@ const runCommand = async (
   });
 
 beforeAll(async () => {
+  BASE_URL = `http://localhost:${TEST_PORT}`;
+  process.env.PORT = String(TEST_PORT);
+
   // Start the server
   serverProcess = spawn('bun', ['run', 'server/index.ts'], {
     stdio: 'pipe',
+    env: {
+      ...process.env,
+      PORT: String(TEST_PORT),
+    },
   });
 
   // Wait for server to start
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  const startTime = Date.now();
+  const timeoutMs = 5000;
+  let serverReady = false;
+  while (Date.now() - startTime < timeoutMs) {
+    try {
+      const response = await fetch(`${BASE_URL}/health`);
+      if (response.ok) {
+        serverReady = true;
+        break;
+      }
+    } catch {
+      // Keep polling until the server is reachable
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  if (!serverReady) {
+    throw new Error(`Pattern Server failed to start on ${BASE_URL}`);
+  }
 });
 
 afterAll(async () => {
@@ -68,15 +98,19 @@ afterAll(async () => {
     serverProcess.kill();
   }
 
+  serverProcess = null;
+  delete process.env.PORT;
+  BASE_URL = `http://localhost:${TEST_PORT}`;
+
   // Clean up test files
   try {
     await fs.rm('.cursor', { recursive: true });
-  } catch {}
+  } catch { }
 });
 
 // --- TESTS ---
 
-describe.sequential('End-to-End Integration', () => {
+describe('End-to-End Integration', { sequential: true }, () => {
   describe('Server → CLI Flow', () => {
     it('should fetch rules from server and inject into file', async () => {
       // 1. Verify server is running and has rules
@@ -242,7 +276,7 @@ describe.sequential('End-to-End Integration', () => {
       // Clean up first
       try {
         await fs.rm('.cursor', { recursive: true });
-      } catch {}
+      } catch { }
 
       // Verify directory doesn't exist
       const dirExistsBefore = await fs
@@ -289,7 +323,7 @@ Content here`;
   });
 });
 
-describe.sequential('Performance', () => {
+describe('Performance', { sequential: true }, () => {
   it('should complete end-to-end flow in reasonable time', async () => {
     const startTime = Date.now();
 

@@ -10,14 +10,41 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 // --- TEST UTILITIES ---
 
+const TEST_PORT = 45104;
+const BASE_URL = `http://localhost:${TEST_PORT}`;
+
 let serverProcess: ChildProcess | null = null;
 
 const startServer = async () => {
+  process.env.PORT = String(TEST_PORT);
   serverProcess = spawn('bun', ['run', 'server/index.ts'], {
     stdio: 'pipe',
+    env: {
+      ...process.env,
+      PORT: String(TEST_PORT),
+    },
   });
-  // Wait for server to start
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  const startTime = Date.now();
+  const timeoutMs = 5000;
+  let serverReady = false;
+
+  while (Date.now() - startTime < timeoutMs) {
+    try {
+      const response = await fetch(`${BASE_URL}/health`);
+      if (response.ok) {
+        serverReady = true;
+        break;
+      }
+    } catch {
+      // retry
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  if (!serverReady) {
+    throw new Error(`Pattern Server failed to start on ${BASE_URL}`);
+  }
 };
 
 const stopServer = () => {
@@ -25,6 +52,7 @@ const stopServer = () => {
     serverProcess.kill();
     serverProcess = null;
   }
+  delete process.env.PORT;
 };
 
 const runCommand = async (
@@ -32,7 +60,17 @@ const runCommand = async (
   options?: { timeout?: number },
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
   return new Promise((resolve, reject) => {
-    const proc = spawn('bun', ['run', 'scripts/ep.ts', ...args], {
+    const needsServerUrl =
+      serverProcess !== null &&
+      args[0] === 'install' &&
+      args[1] === 'add' &&
+      !args.includes('--server-url') &&
+      !args.includes('--help');
+
+    const finalArgs = needsServerUrl
+      ? [...args, '--server-url', `http://localhost:${TEST_PORT}`]
+      : args;
+    const proc = spawn('bun', ['run', 'scripts/ep.ts', ...finalArgs], {
       stdio: 'pipe',
     });
 
@@ -66,7 +104,7 @@ const runCommand = async (
 
 // --- MAIN CLI TESTS ---
 
-describe.sequential('ep CLI', () => {
+describe('ep CLI', { sequential: true }, () => {
   describe('Help and Version', () => {
     it('should show help with --help flag', async () => {
       const result = await runCommand(['--help']);
@@ -118,7 +156,7 @@ describe.sequential('ep CLI', () => {
 
 // --- INSTALL COMMAND TESTS ---
 
-describe.sequential('ep install', () => {
+describe('ep install', { sequential: true }, () => {
   beforeAll(async () => {
     await startServer();
   });
@@ -434,7 +472,7 @@ More custom content`;
 
 // --- PATTERN COMMAND TESTS ---
 
-describe.sequential('ep pattern', () => {
+describe('ep pattern', { sequential: true }, () => {
   describe('pattern new', () => {
     it('should show help for pattern new', async () => {
       const result = await runCommand(['pattern', 'new', '--help']);
@@ -457,7 +495,7 @@ describe.sequential('ep pattern', () => {
 
 // --- ADMIN COMMAND TESTS ---
 
-describe.sequential('ep admin', () => {
+describe('ep admin', { sequential: true }, () => {
   describe('admin validate', () => {
     it('should run validation', async () => {
       const result = await runCommand(['admin', 'validate'], {
@@ -630,7 +668,7 @@ describe('CLI Command Structure', () => {
 
 // --- INTEGRATION TESTS ---
 
-describe.sequential('CLI Integration', () => {
+describe('CLI Integration', { sequential: true }, () => {
   beforeAll(async () => {
     await startServer();
   });
@@ -643,7 +681,7 @@ describe.sequential('CLI Integration', () => {
     // Clean up
     try {
       await fs.rm('.cursor', { recursive: true });
-    } catch {}
+    } catch { }
   });
 
   it('should complete full workflow: install -> validate', async () => {
@@ -685,6 +723,6 @@ describe.sequential('CLI Integration', () => {
     expect(agentsExists).toBe(true);
 
     // Clean up
-    await fs.rm('AGENTS.md').catch(() => {});
+    await fs.rm('AGENTS.md').catch(() => { });
   });
 });

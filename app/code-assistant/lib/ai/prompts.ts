@@ -1,6 +1,7 @@
 import type { Geo } from "@vercel/functions";
 import type { ArtifactKind } from "@/components/artifact";
 import { ChatModelId, isReasoningModel } from "@/lib/ai/models";
+import type { ConversationContext } from "@/lib/memory";
 
 export const artifactsPrompt = `
 Artifacts is a special user interface mode that helps users with writing, editing, and other content creation tasks. When artifact is open, it is on the right side of the screen, while the conversation is on the left side. When creating or updating documents, changes are reflected in real-time on the artifacts and visible to the user.
@@ -54,17 +55,49 @@ About the origin of user's request:
 export const systemPrompt = ({
   selectedChatModel,
   requestHints,
+  customInstructions,
+  conversationContext,
 }: {
   selectedChatModel: ChatModelId;
   requestHints: RequestHints;
+  customInstructions?: string;
+  conversationContext?: ConversationContext;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
 
-  if (isReasoningModel(selectedChatModel)) {
-    return `${regularPrompt}\n\n${requestPrompt}`;
+  // Build custom instructions section if provided
+  const customInstructionsSection = customInstructions
+    ? `\n\n## User's Custom Instructions\n${customInstructions}`
+    : "";
+
+  // Build conversation context section if provided
+  let conversationContextSection = "";
+  if (conversationContext?.summary) {
+    const { topic, mainPoints, keyTerms, userIntent } = conversationContext.summary;
+    conversationContextSection = "\n\n## Conversation Context";
+
+    if (topic) {
+      conversationContextSection += `\nTopic: ${topic}`;
+    }
+
+    if (userIntent) {
+      conversationContextSection += `\nUser Intent: ${userIntent}`;
+    }
+
+    if (mainPoints && mainPoints.length > 0) {
+      conversationContextSection += `\nMain Points:\n${mainPoints.map(p => `- ${p}`).join("\n")}`;
+    }
+
+    if (keyTerms && keyTerms.length > 0) {
+      conversationContextSection += `\nKey Themes: ${keyTerms.join(", ")}`;
+    }
   }
 
-  return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  if (isReasoningModel(selectedChatModel)) {
+    return `${regularPrompt}${customInstructionsSection}${conversationContextSection}\n\n${requestPrompt}`;
+  }
+
+  return `${regularPrompt}${customInstructionsSection}${conversationContextSection}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
 };
 
 export const codePrompt = `

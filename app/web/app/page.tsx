@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { PatternCard } from "../components/pattern-card.js";
-import { Button } from "../components/ui/button.js";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card.js";
+import { PatternCard } from "../components/pattern-card";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 
 export default function HomePage() {
   return (
