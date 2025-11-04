@@ -2,7 +2,7 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
 import { motion } from "framer-motion";
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
@@ -18,7 +18,7 @@ import {
   ToolInput,
   ToolOutput,
 } from "./elements/tool";
-import { SparklesIcon } from "./icons";
+import { ThreeDotsIcon } from "./icons";
 import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
 import { MessageReasoning } from "./message-reasoning";
@@ -66,12 +66,6 @@ const PurePreviewMessage = ({
           "justify-start": message.role === "assistant",
         })}
       >
-        {message.role === "assistant" && (
-          <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
-            <SparklesIcon size={14} />
-          </div>
-        )}
-
         <div
           className={cn("flex flex-col", {
             "gap-2 md:gap-4": message.parts?.some(
@@ -309,8 +303,40 @@ export const PreviewMessage = memo(
   }
 );
 
+const RAINBOW = [
+  "bg-red-500",
+  "bg-orange-500",
+  "bg-yellow-500",
+  "bg-green-500",
+  "bg-blue-500",
+  "bg-indigo-500",
+  "bg-purple-500",
+];
+
 export const ThinkingMessage = () => {
   const role = "assistant";
+  const [colors, setColors] = useState<string[]>([]);
+
+  // Initialize with random colors from rainbow and animate them
+  useEffect(() => {
+    // Initialize colors
+    const initialColors = [
+      RAINBOW[Math.floor(Math.random() * RAINBOW.length)],
+      RAINBOW[Math.floor(Math.random() * RAINBOW.length)],
+      RAINBOW[Math.floor(Math.random() * RAINBOW.length)],
+    ];
+    setColors(initialColors);
+
+    // Rotate colors every 0.6 seconds (matching animation duration)
+    const interval = setInterval(() => {
+      setColors((prevColors) => {
+        // Move colors: last color goes to first, others shift right
+        return [prevColors[prevColors.length - 1], ...prevColors.slice(0, -1)];
+      });
+    }, 600); // 600ms = 0.6s animation duration
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <motion.div
@@ -322,16 +348,37 @@ export const ThinkingMessage = () => {
       initial={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="flex items-start justify-start gap-3">
-        <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
-          <SparklesIcon size={14} />
-        </div>
-
-        <div className="flex w-full flex-col gap-2 md:gap-4">
-          <div className="p-0 text-muted-foreground text-sm">
-            Thinking...
-          </div>
-        </div>
+      <div className="flex items-center gap-1">
+        <motion.div
+          animate={{ y: [0, -4, 0] }}
+          transition={{
+            duration: 0.6,
+            repeat: Number.POSITIVE_INFINITY,
+            delay: 0,
+          }}
+        >
+          <div className={cn("size-1 rounded-full", colors[0])} />
+        </motion.div>
+        <motion.div
+          animate={{ y: [0, -4, 0] }}
+          transition={{
+            duration: 0.6,
+            repeat: Number.POSITIVE_INFINITY,
+            delay: 0.2,
+          }}
+        >
+          <div className={cn("size-1 rounded-full", colors[1])} />
+        </motion.div>
+        <motion.div
+          animate={{ y: [0, -4, 0] }}
+          transition={{
+            duration: 0.6,
+            repeat: Number.POSITIVE_INFINITY,
+            delay: 0.4,
+          }}
+        >
+          <div className={cn("size-1 rounded-full", colors[2])} />
+        </motion.div>
       </div>
     </motion.div>
   );

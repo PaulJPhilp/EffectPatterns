@@ -146,11 +146,18 @@ export function processChat({
         throw new ChatSDKError("forbidden:chat");
       }
     } else {
-      const title = yield* Effect.promise(() =>
-        generateTitleFromUserMessage({
-          message,
-        })
-      );
+      let title: string;
+      try {
+        title = yield* Effect.promise(() =>
+          generateTitleFromUserMessage({
+            message,
+          })
+        );
+      } catch (error) {
+        console.error("Error generating chat title:", error);
+        // Fallback title if generation fails
+        title = "New Chat";
+      }
 
       yield* Effect.promise(() =>
         saveChat({

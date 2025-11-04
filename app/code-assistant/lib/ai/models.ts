@@ -46,6 +46,11 @@ export const DEFAULT_CHAT_MODEL: ChatModelId = CHAT_MODEL_IDS.DEFAULT;
 
 export const chatModels: ChatModel[] = [
   {
+    id: CHAT_MODEL_IDS.DEFAULT,
+    name: "Claude Sonnet",
+    description: "Anthropic's balanced model (default)",
+  },
+  {
     id: CHAT_MODEL_IDS.REASONING,
     name: "Grok Reasoning",
     description:

@@ -11,13 +11,67 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 // --- TEST UTILITIES ---
 
+const TEST_PORT = 45101;
+const BASE_URL = `http://localhost:${TEST_PORT}`;
+
 let serverProcess: ChildProcess | null = null;
+let serverLogs = '';
 
 const startServer = async () => {
+  process.env.PORT = String(TEST_PORT);
+  serverLogs = '';
   serverProcess = spawn('bun', ['run', 'server/index.ts'], {
     stdio: 'pipe',
+    env: {
+      ...process.env,
+      PORT: String(TEST_PORT),
+    },
   });
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+
+  serverProcess.stdout?.on('data', (data) => {
+    const chunk = data.toString();
+    serverLogs += chunk;
+  });
+
+  serverProcess.stderr?.on('data', (data) => {
+    const chunk = data.toString();
+    serverLogs += chunk;
+  });
+
+  serverProcess.on('exit', (code, signal) => {
+    serverLogs += `\n[server-exit] code=${code ?? 'null'} signal=${signal ?? 'null'}\n`;
+  });
+
+  const startTime = Date.now();
+  const timeoutMs = 5000;
+  let serverReady = false;
+
+  while (Date.now() - startTime < timeoutMs) {
+    try {
+      const response = await fetch(`${BASE_URL}/health`);
+      if (response.ok) {
+        serverReady = true;
+        break;
+      }
+    } catch {
+      // retry until ready
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+
+  if (!serverReady) {
+    throw new Error(
+      `Pattern Server failed to start on ${BASE_URL}\nLogs:\n${serverLogs.trim()}`,
+    );
+  }
+
+  const sanityResponse = await fetch(`${BASE_URL}/api/v1/rules`);
+  if (!sanityResponse.ok) {
+    const body = await sanityResponse.text();
+    throw new Error(
+      `Pattern Server returned ${sanityResponse.status} for /api/v1/rules: ${body}\nLogs:\n${serverLogs.trim()}`,
+    );
+  }
 };
 
 const stopServer = () => {
@@ -25,13 +79,24 @@ const stopServer = () => {
     serverProcess.kill();
     serverProcess = null;
   }
+  delete process.env.PORT;
 };
 
 const runCommand = async (
   args: string[],
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> =>
   new Promise((resolve) => {
-    const proc = spawn('bun', ['run', 'scripts/ep.ts', ...args], {
+    const needsServerUrl =
+      args[0] === 'install' &&
+      args[1] === 'add' &&
+      !args.includes('--server-url') &&
+      !args.includes('--help');
+
+    const finalArgs = needsServerUrl
+      ? [...args, '--server-url', BASE_URL]
+      : args;
+
+    const proc = spawn('bun', ['run', 'scripts/ep.ts', ...finalArgs], {
       stdio: 'pipe',
     });
 
@@ -64,7 +129,7 @@ describe('ep install add command', () => {
     // Clean up test directory
     try {
       await fs.rm(TEST_DIR, { recursive: true });
-    } catch {}
+    } catch { }
   });
 
   afterEach(async () => {
@@ -74,7 +139,7 @@ describe('ep install add command', () => {
     // Clean up test directory
     try {
       await fs.rm(TEST_DIR, { recursive: true });
-    } catch {}
+    } catch { }
   });
 
   describe('Tool Validation', () => {
@@ -277,7 +342,7 @@ Some custom content here`;
       // Clean up .cursor directory if it exists
       try {
         await fs.rm('.cursor', { recursive: true });
-      } catch {}
+      } catch { }
 
       // Create a file where directory should be
       await fs.writeFile('.cursor', 'This is a file, not a directory');
@@ -313,7 +378,7 @@ Some custom content here`;
   });
 });
 
-describe.sequential('ep install command structure', () => {
+describe('ep install command structure', { sequential: true }, () => {
   it('should have install subcommand', async () => {
     const result = await runCommand(['install', '--help']);
 
@@ -334,7 +399,7 @@ describe.sequential('ep install command structure', () => {
   });
 });
 
-describe.sequential('ep install filtering', () => {
+describe('ep install filtering', { sequential: true }, () => {
   beforeEach(async () => {
     await startServer();
   });
@@ -345,7 +410,7 @@ describe.sequential('ep install filtering', () => {
     // Clean up test files
     try {
       await fs.rm('.cursor', { recursive: true });
-    } catch {}
+    } catch { }
   });
 
   it('should show skill-level option in help', async () => {

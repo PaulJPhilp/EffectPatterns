@@ -1,4 +1,7 @@
+"use client";
+
 import { motion } from "framer-motion";
+import { MemoriesWelcomeBanner } from "./memories-welcome";
 
 export const Greeting = () => {
   return (
@@ -8,21 +11,23 @@ export const Greeting = () => {
     >
       <motion.div
         animate={{ opacity: 1, y: 0 }}
-        className="font-semibold text-xl md:text-2xl"
+        className="space-y-6"
         exit={{ opacity: 0, y: 10 }}
         initial={{ opacity: 0, y: 10 }}
         transition={{ delay: 0.5 }}
       >
-        Hello there!
-      </motion.div>
-      <motion.div
-        animate={{ opacity: 1, y: 0 }}
-        className="text-xl text-zinc-500 md:text-2xl"
-        exit={{ opacity: 0, y: 10 }}
-        initial={{ opacity: 0, y: 10 }}
-        transition={{ delay: 0.6 }}
-      >
-        How can I help you today?
+        {/* Memories Welcome Banner */}
+        <MemoriesWelcomeBanner />
+
+        {/* Greeting Text */}
+        <div>
+          <div className="font-semibold text-xl md:text-2xl">
+            Hello there!
+          </div>
+          <div className="text-xl text-zinc-500 md:text-2xl">
+            How can I help you today?
+          </div>
+        </div>
       </motion.div>
     </div>
   );

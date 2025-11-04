@@ -25,6 +25,7 @@ import { Data, Effect, Layer, Ref, Schema } from 'effect';
 import matter from 'gray-matter';
 import { createServer } from 'node:http';
 import * as path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // --- CONFIGURATION ---
 
@@ -32,19 +33,40 @@ import * as path from 'node:path';
  * Server configuration schema
  */
 const ServerConfigSchema = Schema.Struct({
-  port: Schema.Number.pipe(Schema.between(1000, 65535)),
+  port: Schema.Number.pipe(Schema.between(0, 65535)),
   host: Schema.String,
   nodeEnv: Schema.Literal('development', 'staging', 'production'),
   logLevel: Schema.Literal('debug', 'info', 'warn', 'error'),
 });
 
 type ServerConfig = typeof ServerConfigSchema.Type;
+const parsePort = (value: string | undefined): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed)) {
+    return undefined;
+  }
+  if (parsed < 0 || parsed > 65535) {
+    return undefined;
+  }
+  return parsed;
+};
+
+const resolveNodeEnv = (value: string | undefined): ServerConfig['nodeEnv'] => {
+  if (value === 'production' || value === 'staging') {
+    return value;
+  }
+  return 'development';
+};
+
+const envPort = parsePort(process.env.PORT);
 
 const DEFAULT_CONFIG: ServerConfig = {
-  port: 3001,
+  port: envPort !== undefined ? envPort : 3001,
   host: 'localhost',
-  nodeEnv: process.env.NODE_ENV === 'production' ? 'production' :
-    process.env.NODE_ENV === 'staging' ? 'staging' : 'development',
+  nodeEnv: resolveNodeEnv(process.env.NODE_ENV),
   logLevel: (process.env.LOG_LEVEL as ServerConfig['logLevel']) || 'info',
 };
 
@@ -968,10 +990,13 @@ const program = Effect.gen(function* () {
     `📊 Log level: ${DEFAULT_CONFIG.logLevel}`,
   );
 
-  // Launch the server and keep it running
-  yield* Layer.launch(HttpLive);
-
-  yield* Effect.logInfo('✨ Server is ready to accept requests');
+  yield* Effect.scoped(
+    Effect.gen(function* () {
+      yield* Layer.launch(HttpLive);
+      yield* Effect.logInfo('✨ Server is ready to accept requests');
+      yield* Effect.never;
+    }),
+  );
 }).pipe(
   Effect.provide(RateLimiter.Default),
   Effect.provide(MetricsService.Default),
@@ -983,4 +1008,28 @@ const program = Effect.gen(function* () {
  * Run the server using NodeRuntime.runMain
  * This handles graceful shutdown on SIGINT/SIGTERM
  */
-NodeRuntime.runMain(program);
+const isMainModule = (() => {
+  const meta = import.meta as { main?: boolean };
+  if (typeof meta.main === 'boolean') {
+    return meta.main;
+  }
+
+  const entrypoint = process.argv[1];
+  if (!entrypoint) {
+    return false;
+  }
+
+  try {
+    return import.meta.url === pathToFileURL(entrypoint).href
+      || import.meta.url.endsWith(entrypoint);
+  } catch {
+    return false;
+  }
+})();
+
+if (isMainModule) {
+  NodeRuntime.runMain(program);
+}
+
+export { DEFAULT_CONFIG, program, ServerConfigSchema };
+

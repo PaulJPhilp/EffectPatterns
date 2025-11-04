@@ -1,0 +1,45 @@
+{
+  "name": "@effect-patterns/sm-cli",
+  "version": "0.1.0",
+  "description": "Supermemory CLI for managing Effect Patterns",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "sm-cli": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "cli": "node dist/index.js",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest watch --config vitest.config.ts",
+    "test:ui": "vitest --ui --config vitest.config.ts",
+    "test:coverage": "vitest run --coverage --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@effect/cli": "^0.40.0",
+    "@effect/platform": "^0.64.0",
+    "@effect/platform-node": "^0.59.0",
+    "@effect/printer": "^0.34.0",
+    "@effect/printer-ansi": "^0.34.0",
+    "@effect/schema": "^0.70.0",
+    "@effect/typeclass": "^0.37.0",
+    "chalk": "^5.6.2",
+    "cli-table3": "^0.6.5",
+    "effect": "^3.18.0",
+    "strip-ansi": "^7.1.2",
+    "supermemory": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/ui": "^2.1.8",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "vitest": "^2.1.8"
+  }
+}
