@@ -2,11 +2,11 @@
  * Memories Management Commands
  */
 
-import { Effect } from 'effect';
+import { Effect, Option } from 'effect';
 import { Command, Options } from '@effect/cli';
 import { loadConfig, ConfigServiceLive } from '../services/config.js';
 import { SupermemoryServiceLive } from '../services/supermemory.js';
-import { displayOutput, displayJson, displayLines } from '../services/ui.js';
+import { displayOutput, displayJson, displayLines, displaySuccess, displayError } from '../services/ui.js';
 import {
   formatMemoriesHuman,
   formatMemoriesJson,
@@ -16,6 +16,10 @@ import {
   createHeader,
   createStatPanel,
   createInfo,
+  createInfoCard,
+  createSuccess,
+  createError,
+  createBadge,
 } from '../services/tui-formatter.js';
 
 const formatOption = Options.choice('format', ['human', 'json'] as const)
@@ -93,6 +97,98 @@ export const memoriesCount: any = Command.make(
 );
 
 /**
+ * Add a new memory
+ */
+export const memoriesAdd: any = Command.make(
+  'add',
+  {
+    content: Options.text('content'),
+    type: Options.optional(Options.text('type')),
+    title: Options.optional(Options.text('title')),
+    format: formatOption,
+  },
+  (options) =>
+    Effect.gen(function* () {
+      const config = yield* loadConfig;
+      const supermemoryService = yield* SupermemoryServiceLive(config.apiKey);
+
+      const typeValue = Option.match(options.type, {
+        onNone: () => 'memory',
+        onSome: (v) => v,
+      });
+      const titleValue = Option.match(options.title, {
+        onNone: () => 'Untitled',
+        onSome: (v) => v,
+      });
+
+      const metadata = {
+        type: typeValue,
+        title: titleValue,
+      };
+
+      const memoryId = yield* supermemoryService.addMemory(options.content, metadata);
+
+      if (options.format === 'json') {
+        yield* displayJson({
+          success: true,
+          id: memoryId,
+          type: metadata.type,
+          title: metadata.title,
+        });
+      } else {
+        const message =
+          createHeader('Memory Added', `ID: ${memoryId}`) +
+          '\n' +
+          createInfoCard({
+            'Memory ID': memoryId,
+            'Type': metadata.type,
+            'Title': metadata.title,
+            'Status': 'Created ✓',
+          });
+        yield* Effect.sync(() => console.log(message));
+      }
+    }),
+);
+
+/**
+ * Search memories
+ */
+export const memoriesSearch: any = Command.make(
+  'search',
+  {
+    query: Options.text('query'),
+    limit: Options.integer('limit').pipe(Options.withDefault(20)),
+    format: formatOption,
+  },
+  (options) =>
+    Effect.gen(function* () {
+      const config = yield* loadConfig;
+      const supermemoryService = yield* SupermemoryServiceLive(config.apiKey);
+
+      const memories = yield* supermemoryService.searchMemories(options.query, options.limit);
+
+      if (options.format === 'json') {
+        yield* displayJson(memories);
+      } else {
+        if (memories.length === 0) {
+          const message =
+            createHeader('Search Results', `Query: "${options.query}"`) +
+            '\n' +
+            createError('No memories found matching your search.');
+          yield* Effect.sync(() => console.log(message));
+        } else {
+          const table = createMemoryTable(memories);
+          const header = createHeader(
+            'Search Results',
+            `Query: "${options.query}" - Found ${memories.length} result${memories.length > 1 ? 's' : ''}`,
+          );
+          yield* Effect.sync(() => console.log(header + '\n' + table));
+        }
+      }
+    }),
+);
+
+/**
  * Memories command group
  */
 export const memoriesCommand: any = Command.make(
@@ -101,7 +197,9 @@ export const memoriesCommand: any = Command.make(
   () => Effect.void,
 ).pipe(
   Command.withSubcommands([
-    memoriesList,
-    memoriesCount,
+    memoriesList.pipe(Command.withDescription('List memories with pagination')),
+    memoriesCount.pipe(Command.withDescription('Count total memories')),
+    memoriesAdd.pipe(Command.withDescription('Add a new memory')),
+    memoriesSearch.pipe(Command.withDescription('Search memories by query')),
   ]),
 );
