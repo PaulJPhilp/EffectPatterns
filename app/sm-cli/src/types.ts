@@ -69,3 +69,48 @@ export interface ProcessingQueue {
   documents: ProcessingDocument[];
   total: number;
 }
+
+// User Profile Types
+
+export interface UserProfile {
+  userId: string;
+  static: string[];      // Long-term, stable facts about the user
+  dynamic: string[];     // Recent context and temporary information
+  retrievedAt: string;   // ISO timestamp of when profile was retrieved
+}
+
+export interface SearchResult {
+  id: string;
+  content: string;
+  score: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface UserProfileWithSearch {
+  profile: UserProfile;
+  searchResults?: SearchResult[];
+  searchQuery?: string;
+  searchTiming?: number;  // milliseconds
+}
+
+export interface ProfileComparison {
+  user1: string;
+  user2: string;
+  commonStatic: string[];
+  uniqueStatic1: string[];
+  uniqueStatic2: string[];
+  commonDynamic: string[];
+  uniqueDynamic1: string[];
+  uniqueDynamic2: string[];
+}
+
+export interface ProfileStats {
+  container: string;
+  totalUsers: number;
+  avgStaticFacts: number;
+  avgDynamicFacts: number;
+  maxStaticFacts: number;
+  maxDynamicFacts: number;
+  commonTopics: Record<string, number>;
+  retrievedAt: string;
+}
