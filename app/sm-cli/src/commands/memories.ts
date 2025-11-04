@@ -7,6 +7,7 @@ import { Command, Options } from '@effect/cli';
 import { loadConfig, ConfigServiceLive } from '../services/config.js';
 import { SupermemoryServiceLive } from '../services/supermemory.js';
 import { displayOutput, displayJson, displayLines, displaySuccess, displayError } from '../services/ui.js';
+import { prompt, promptMultiline, promptChoice } from '../services/dialog.js';
 import {
   formatMemoriesHuman,
   formatMemoriesJson,
@@ -97,56 +98,65 @@ export const memoriesCount: any = Command.make(
 );
 
 /**
- * Add a new memory
+ * Add a new memory using interactive dialog
  */
 export const memoriesAdd: any = Command.make(
   'add',
-  {
-    content: Options.text('content'),
-    type: Options.optional(Options.text('type')),
-    title: Options.optional(Options.text('title')),
-    format: formatOption,
-  },
-  (options) =>
+  {},
+  () =>
     Effect.gen(function* () {
       const config = yield* loadConfig;
       const supermemoryService = yield* SupermemoryServiceLive(config.apiKey);
 
-      const typeValue = Option.match(options.type, {
-        onNone: () => 'memory',
-        onSome: (v) => v,
+      // Interactive dialog for memory creation
+      yield* Effect.sync(() => {
+        console.log('');
+        console.log('╔═══════════════════════════════╗');
+        console.log('║  Create New Memory             ║');
+        console.log('╚═══════════════════════════════╝');
+        console.log('');
       });
-      const titleValue = Option.match(options.title, {
-        onNone: () => 'Untitled',
-        onSome: (v) => v,
-      });
+
+      // Get title
+      const title = yield* prompt('Memory Title');
+
+      // Get memory type
+      const typeOptions = ['pattern_note', 'reference', 'learning', 'other'];
+      const type = yield* promptChoice('Memory Type', typeOptions);
+
+      // Get content - multiline input
+      const content = yield* promptMultiline('Memory Content');
+
+      // Validate inputs
+      if (!title.trim()) {
+        yield* displayError('Title cannot be empty');
+        return;
+      }
+
+      if (!content.trim()) {
+        yield* displayError('Content cannot be empty');
+        return;
+      }
 
       const metadata = {
-        type: typeValue,
-        title: titleValue,
+        type,
+        title,
       };
 
-      const memoryId = yield* supermemoryService.addMemory(options.content, metadata);
+      // Create the memory
+      const memoryId = yield* supermemoryService.addMemory(content, metadata);
 
-      if (options.format === 'json') {
-        yield* displayJson({
-          success: true,
-          id: memoryId,
-          type: metadata.type,
-          title: metadata.title,
+      // Show success message
+      const message =
+        createHeader('Memory Created', `ID: ${memoryId}`) +
+        '\n' +
+        createInfoCard({
+          'Memory ID': memoryId,
+          'Title': title,
+          'Type': type,
+          'Status': 'Created ✓',
         });
-      } else {
-        const message =
-          createHeader('Memory Added', `ID: ${memoryId}`) +
-          '\n' +
-          createInfoCard({
-            'Memory ID': memoryId,
-            'Type': metadata.type,
-            'Title': metadata.title,
-            'Status': 'Created ✓',
-          });
-        yield* Effect.sync(() => console.log(message));
-      }
+      yield* Effect.sync(() => console.log(message));
     }),
 );
 
