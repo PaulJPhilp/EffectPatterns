@@ -11,6 +11,7 @@ import { ConfigServiceLive } from './services/config.js';
 import { projectCommand } from './commands/project.js';
 import { memoriesCommand } from './commands/memories.js';
 import { patternsCommand } from './commands/patterns.js';
+import { queueCommand } from './commands/queue.js';
 
 /**
  * Main CLI application
@@ -25,6 +26,7 @@ const mainCommand = Command.make(
     projectCommand,
     memoriesCommand,
     patternsCommand,
+    queueCommand,
   ]),
 );
 
