@@ -1,0 +1,152 @@
+{
+  "timestamp": "2025-11-03T02:37:03.201Z",
+  "summary": {
+    "totalMemories": 639,
+    "patterns": 521,
+    "conversations": 9,
+    "other": 109
+  },
+  "patterns": {
+    "count": 521,
+    "sample": [
+      {
+        "id": "KbJcWVRBM1RrSzeGmet7ob",
+        "hasTimestamp": false,
+        "hasUserId": false,
+        "metadata": {
+          "connectionId": null,
+          "createdAt": "2025-11-03T00:58:43.062Z",
+          "customId": null,
+          "id": "KbJcWVRBM1RrSzeGmet7ob",
+          "metadata": {
+            "type": "effect_pattern",
+            "patternId": "write-tests-that-adapt-to-application-code",
+            "title": "Write Tests That Adapt to Application Code",
+            "skillLevel": "intermediate",
+            "tags": "testing,philosophy,best-practice,architecture",
+            "userId": "system:patterns",
+            "source": "pattern_seed",
+            "accessible": "public"
+          },
+          "status": "done",
+          "summary": "A best‑practice guide for testing that emphasizes keeping production code immutable and letting tests evolve to match real interfaces. The pattern warns against altering application code to satisfy tests, explaining that doing so introduces bugs and erodes confidence. It encourages writing tests that reflect the true behavior of the system, using example TypeScript code with Effect library to demonstrate how to provide mock services, handle errors, and fallback logic. Key concepts include the importance of the application as the source of truth, the anti‑pattern of forcing production changes for test convenience, and the value of decoupling tests from production implementations. Ideal for developers seeking robust, maintainable tests that respect architecture and promote reliable software quality.",
+          "title": "Write Tests That Adapt to Application Code",
+          "type": "text",
+          "updatedAt": "2025-11-03T00:58:43.062Z",
+          "parsed": null
+        }
+      },
+      {
+        "id": "5tkMmcpvNRvXqfHG7wFt4X",
+        "hasTimestamp": false,
+        "hasUserId": false,
+        "metadata": {
+          "connectionId": null,
+          "createdAt": "2025-11-03T00:58:42.143Z",
+          "customId": null,
+          "id": "5tkMmcpvNRvXqfHG7wFt4X",
+          "metadata": {
+            "type": "effect_pattern",
+            "patternId": "write-sequential-code-with-gen",
+            "title": "Write Sequential Code with Effect.gen",
+            "skillLevel": "beginner",
+            "tags": "generators,gen,sequential,async-await,readability",
+            "userId": "system:patterns",
+            "source": "pattern_seed",
+            "accessible": "public"
+          },
+          "status": "done",
+          "summary": "Use Effect.gen with generators to write sequential, asynchronous code that reads like async/await. The pattern replaces deeply nested flatMap calls, improving readability and maintainability. Examples illustrate fetching a user, their posts, and comments in top‑to‑bottom order, combining results, and handling errors with try/catch or catchAll. The guide compares the gen approach to traditional promise‑style chaining, highlights error handling patterns, and warns against flatMap nesting. This pattern is ideal for developers needing clear, linear async logic in the Effect ecosystem.",
+          "title": "Write Sequential Code with Effect.gen",
+          "type": "text",
+          "updatedAt": "2025-11-03T00:58:42.143Z",
+          "parsed": null
+        }
+      },
+      {
+        "id": "tuxUjMDwggq4viZVeVM3LV",
+        "hasTimestamp": false,
+        "hasUserId": false,
+        "metadata": {
+          "connectionId": null,
+          "createdAt": "2025-11-03T00:58:41.117Z",
+          "customId": null,
+          "id": "tuxUjMDwggq4viZVeVM3LV",
+          "metadata": {
+            "type": "effect_pattern",
+            "patternId": "wrap-synchronous-computations",
+            "title": "Wrap Synchronous Computations with sync and try",
+            "skillLevel": "beginner",
+            "tags": "sync,try,creation,error-handling,integration,exceptions",
+            "userId": "system:patterns",
+            "source": "pattern_seed",
+            "accessible": "public"
+          },
+          "status": "done",
+          "summary": "Use Effect.sync for non‑throwing synchronous code and Effect.try for synchronous code that may throw. The pattern demonstrates wrapping side‑effects such as Math.random, JSON.parse, division and string manipulation in thunk functions. Examples show successful and failed JSON parsing with error logging and recovery, safe division with error handling, and combining multiple sync operations. The guide explains the rationale—capturing exceptions into Effect’s error channel—, best practices, and the anti‑pattern of misusing Effect.sync on potentially throwing calls. It serves as a concise reference for beginner developers integrating synchronous libraries into the Effect system while ensuring robust error handling and maintainable code.",
+          "title": "Wrap Synchronous Computations with sync and try",
+          "type": "text",
+          "updatedAt": "2025-11-03T00:58:41.117Z",
+          "parsed": null
+        }
+      },
+      {
+        "id": "AWZZqAZYeAHTL3We4ufpwu",
+        "hasTimestamp": false,
+        "hasUserId": false,
+        "metadata": {
+          "connectionId": null,
+          "createdAt": "2025-11-03T00:58:40.173Z",
+          "customId": null,
+          "id": "AWZZqAZYeAHTL3We4ufpwu",
+          "metadata": {
+            "type": "effect_pattern",
+            "patternId": "wrap-asynchronous-computations",
+            "title": "Wrap Asynchronous Computations with tryPromise",
+            "skillLevel": "beginner",
+            "tags": "promise,async,integration,creation,try",
+            "userId": "system:patterns",
+            "source": "pattern_seed",
+            "accessible": "public"
+          },
+          "status": "done",
+          "summary": "Wrap Asynchronous Computations with tryPromise demonstrates how to safely convert Promise-returning functions (e.g., fetch) into Effect values using Effect.tryPromise, capturing rejections into the error channel. It covers defining custom error types, an HTTP client service, and a mock implementation, then shows three usage scenarios: a successful request, a failed request with fallback handling, and concurrent multiple requests. This pattern bridges the Promise-based async/await world into Effect, avoids manual .then/.catch handling, and ensures consistent error handling for beginners.",
+          "title": "Wrap Asynchronous Computations with tryPromise",
+          "type": "text",
+          "updatedAt": "2025-11-03T00:58:40.173Z",
+          "parsed": null
+        }
+      },
+      {
+        "id": "LqXLBDUm3ZA4rxe7FJ4yQr",
+        "hasTimestamp": false,
+        "hasUserId": false,
+        "metadata": {
+          "connectionId": null,
+          "createdAt": "2025-11-03T00:58:38.901Z",
+          "customId": null,
+          "id": "LqXLBDUm3ZA4rxe7FJ4yQr",
+          "metadata": {
+            "type": "effect_pattern",
+            "patternId": "validate-request-body",
+            "title": "Validate Request Body",
+            "skillLevel": "intermediate",
+            "tags": "http,server,schema,validation,api,post,body",
+            "userId": "system:patterns",
+            "source": "pattern_seed",
+            "accessible": "public"
+          },
+          "status": "queued",
+          "summary": null,
+          "title": "Validate Request Body",
+          "type": "text",
+          "updatedAt": "2025-11-03T00:58:38.901Z",
+          "parsed": null
+        }
+      }
+    ]
+  },
+  "searchTests": {
+    "error": 0
+  }
+}

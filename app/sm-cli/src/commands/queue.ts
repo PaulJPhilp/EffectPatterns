@@ -2,7 +2,7 @@
  * Queue Management Commands
  */
 
-import { Effect, Option } from 'effect';
+import { Effect } from 'effect';
 import { Command, Options } from '@effect/cli';
 import { loadConfig } from '../services/config.js';
 import { SupermemoryServiceLive } from '../services/supermemory.js';
@@ -10,10 +10,7 @@ import { displayError, displaySuccess } from '../services/ui.js';
 import {
   createHeader,
   createInfoCard,
-  createError,
   createSuccess,
-  createStatPanel,
-  createBadge,
 } from '../services/tui-formatter.js';
 import { prompt } from '../services/dialog.js';
 import chalk from 'chalk';

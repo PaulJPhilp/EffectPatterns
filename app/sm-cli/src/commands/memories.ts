@@ -22,6 +22,7 @@ import {
   createError,
   createBadge,
 } from '../services/tui-formatter.js';
+import type { DocumentSearchOptions } from '../types.js';
 
 const formatOption = Options.choice('format', ['human', 'json'] as const)
   .pipe(Options.withDefault('human' as const));
@@ -161,13 +162,29 @@ export const memoriesAdd: any = Command.make(
 );
 
 /**
- * Search memories
+ * Search memories with advanced options (v4/search)
+ *
+ * Uses Supermemory's v4/search endpoint optimized for conversational AI
+ * with support for similarity thresholds, reranking, and container filtering.
  */
 export const memoriesSearch: any = Command.make(
   'search',
   {
     query: Options.text('query'),
     limit: Options.integer('limit').pipe(Options.withDefault(20)),
+    threshold: Options.float('threshold').pipe(
+      Options.optional,
+      Options.withDescription('Similarity threshold (0.0-1.0): 0=broad, 1=precise'),
+    ),
+    rerank: Options.boolean('rerank').pipe(
+      Options.optional,
+      Options.withDefault(false),
+      Options.withDescription('Re-score results with different algorithm for higher accuracy'),
+    ),
+    container: Options.text('container').pipe(
+      Options.optional,
+      Options.withDescription('Filter by container tag (user/project identifier)'),
+    ),
     format: formatOption,
   },
   (options) =>
@@ -175,27 +192,209 @@ export const memoriesSearch: any = Command.make(
       const config = yield* loadConfig;
       const supermemoryService = yield* SupermemoryServiceLive(config.apiKey);
 
-      const memories = yield* supermemoryService.searchMemories(options.query, options.limit);
+      // Build search options for v4/search endpoint
+      const searchOptions = {
+        q: options.query,
+        limit: options.limit,
+        threshold: options.threshold ?? 0.5, // Default to balanced search
+        rerank: options.rerank,
+        containerTag: options.container,
+      };
+
+      // Call advanced search method using v4/search endpoint
+      const result = yield* supermemoryService.searchMemoriesAdvanced(searchOptions);
 
       if (options.format === 'json') {
-        yield* displayJson(memories);
+        yield* displayJson(result);
       } else {
-        if (memories.length === 0) {
+        if (result.results.length === 0) {
+          const filterInfo = options.threshold
+            ? ` (threshold: ${options.threshold})`
+            : '';
           const message =
-            createHeader('Search Results', `Query: "${options.query}"`) +
+            createHeader('Search Results', `Query: "${options.query}"${filterInfo}`) +
             '\n' +
             createError('No memories found matching your search.');
           yield* Effect.sync(() => console.log(message));
         } else {
-          const table = createMemoryTable(memories);
-          const header = createHeader(
-            'Search Results',
-            `Query: "${options.query}" - Found ${memories.length} result${memories.length > 1 ? 's' : ''}`,
-          );
-          yield* Effect.sync(() => console.log(header + '\n' + table));
+          // Format results table with similarity scores
+          const table = result.results
+            .map((item) => ({
+              id: item.id,
+              memory: item.memory,
+              similarity: (item.similarity * 100).toFixed(1) + '%',
+              updated: item.updatedAt,
+            }))
+            .map((row) =>
+              `  ${row.similarity.padStart(6)} | ${row.memory.substring(0, 50).padEnd(50)} | ${row.id.substring(0, 12)}`,
+            )
+            .join('\n');
+
+          const thresholdInfo = options.threshold ? ` | threshold: ${options.threshold}` : '';
+          const rerankInfo = options.rerank ? ' | rerank: on' : '';
+          const containerInfo = options.container ? ` | container: ${options.container}` : '';
+
+          const headerText =
+            createHeader(
+              'Search Results',
+              `Query: "${options.query}" - Found ${result.results.length} result${
+                result.results.length > 1 ? 's' : ''
+              }${thresholdInfo}${rerankInfo}${containerInfo}`,
+            ) +
+            '\n' +
+            '  Similarity | Memory                                             | ID\n' +
+            '  ' +
+            '─'.repeat(80) +
+            '\n' +
+            table;
+
+          if (result.timing) {
+            headerText.concat(`\n\n  Search completed in ${result.timing}ms`);
+          }
+
+          yield* Effect.sync(() => console.log(headerText));
         }
       }
     }),
+);
+
+/**
+ * Search documents with advanced options (v3/search)
+ *
+ * Uses Supermemory's v3/search endpoint optimized for document-centric search
+ * with support for document/chunk thresholds, reranking, query rewriting, and filtering.
+ */
+export const documentsSearch: any = Command.make(
+  'search',
+  {
+    query: Options.text('query'),
+    limit: Options.integer('limit').pipe(Options.withDefault(20)),
+    documentThreshold: Options.float('document-threshold').pipe(
+      Options.optional,
+      Options.withDescription('Document relevance threshold (0.0-1.0)'),
+    ),
+    chunkThreshold: Options.float('chunk-threshold').pipe(
+      Options.optional,
+      Options.withDescription('Chunk relevance threshold (0.0-1.0)'),
+    ),
+    rerank: Options.boolean('rerank').pipe(
+      Options.optional,
+      Options.withDefault(false),
+      Options.withDescription('Re-score results with different algorithm'),
+    ),
+    rewriteQuery: Options.boolean('rewrite-query').pipe(
+      Options.optional,
+      Options.withDefault(false),
+      Options.withDescription('Expand query for better coverage (+400ms latency)'),
+    ),
+    includeFullDocs: Options.boolean('include-full-docs').pipe(
+      Options.optional,
+      Options.withDefault(false),
+      Options.withDescription('Include full document context'),
+    ),
+    containers: Options.text('containers').pipe(
+      Options.optional,
+      Options.withDescription('Comma-separated container tags for filtering'),
+    ),
+    format: formatOption,
+  },
+  (options) =>
+    Effect.gen(function* () {
+      const config = yield* loadConfig;
+      const supermemoryService = yield* SupermemoryServiceLive(config.apiKey);
+
+      // Parse container tags if provided
+      const containerTags = options.containers
+        ? (typeof options.containers === 'string' ? options.containers : '')
+            .split(',')
+            .map((c) => c.trim())
+        : undefined;
+
+      // Build search options for v3/search endpoint
+      const searchOptions: DocumentSearchOptions = {
+        q: options.query,
+        limit: options.limit,
+        documentThreshold:
+          typeof options.documentThreshold === 'number' ? options.documentThreshold : 0.5,
+        chunkThreshold:
+          typeof options.chunkThreshold === 'number' ? options.chunkThreshold : 0.6,
+        rerank: typeof options.rerank === 'boolean' ? options.rerank : false,
+        rewriteQuery: typeof options.rewriteQuery === 'boolean' ? options.rewriteQuery : false,
+        includeFullDocs: typeof options.includeFullDocs === 'boolean' ? options.includeFullDocs : false,
+        containerTags,
+      };
+
+      // Call advanced search method using v3/search endpoint
+      const result = yield* supermemoryService.searchDocuments(searchOptions);
+
+      if (options.format === 'json') {
+        yield* displayJson(result);
+      } else {
+        if (result.results.length === 0) {
+          const message =
+            createHeader('Document Search Results', `Query: "${options.query}"`) +
+            '\n' +
+            createError('No documents found matching your search.');
+          yield* Effect.sync(() => console.log(message));
+        } else {
+          // Format results table with relevance scores
+          const table = result.results
+            .map((chunk) => ({
+              score: (chunk.score * 100).toFixed(1) + '%',
+              title: chunk.title,
+              docId: chunk.documentId.substring(0, 12),
+            }))
+            .map((row) =>
+              `  ${row.score.padStart(6)} | ${row.title.substring(0, 50).padEnd(50)} | ${row.docId}`,
+            )
+            .join('\n');
+
+          const thresholdInfo = options.documentThreshold
+            ? ` | doc-threshold: ${options.documentThreshold}`
+            : '';
+          const chunkThresholdInfo = options.chunkThreshold
+            ? ` | chunk-threshold: ${options.chunkThreshold}`
+            : '';
+          const rerankInfo = options.rerank ? ' | rerank: on' : '';
+          const queryRewriteInfo = options.rewriteQuery ? ' | query-rewrite: on' : '';
+
+          const headerText =
+            createHeader(
+              'Document Search Results',
+              `Query: "${options.query}" - Found ${result.results.length} result${
+                result.results.length > 1 ? 's' : ''
+              }${thresholdInfo}${chunkThresholdInfo}${rerankInfo}${queryRewriteInfo}`,
+            ) +
+            '\n' +
+            '  Relevance | Document Title                                         | Doc ID\n' +
+            '  ' +
+            '─'.repeat(80) +
+            '\n' +
+            table;
+
+          if (result.timing) {
+            headerText.concat(`\n\n  Search completed in ${result.timing}ms`);
+          }
+
+          yield* Effect.sync(() => console.log(headerText));
+        }
+      }
+    }),
+);
+
+/**
+ * Documents command group
+ */
+export const documentsCommand: any = Command.make(
+  'documents',
+  {},
+  () => Effect.void,
+).pipe(
+  Command.withSubcommands([
+    documentsSearch.pipe(
+      Command.withDescription('Search documents (PDFs, text, images, videos)'),
+    ),
+  ]),
 );
 
 /**

@@ -14,6 +14,10 @@ import type {
   UserProfileWithSearch,
   ProfileComparison,
   ProfileStats,
+  DocumentSearchOptions,
+  DocumentSearchResult,
+  MemorySearchOptions,
+  MemorySearchResult,
 } from '../types.js';
 
 class SupermemoryError extends Data.TaggedError('SupermemoryError')<{
@@ -43,6 +47,7 @@ export interface SupermemoryService {
     id: string,
     maxWaitMs?: number,
   ) => Effect.Effect<ProcessingDocument, SupermemoryError>;
+  // User Profiles
   readonly getUserProfile: (userId: string) => Effect.Effect<UserProfile, SupermemoryError>;
   readonly getUserProfileWithSearch: (
     userId: string,
@@ -53,6 +58,13 @@ export interface SupermemoryService {
     user2Id: string,
   ) => Effect.Effect<ProfileComparison, SupermemoryError>;
   readonly getProfileStats: (containerTag: string) => Effect.Effect<ProfileStats, SupermemoryError>;
+  // Advanced Search (v3 and v4 endpoints)
+  readonly searchDocuments: (
+    options: DocumentSearchOptions,
+  ) => Effect.Effect<DocumentSearchResult, SupermemoryError>;
+  readonly searchMemoriesAdvanced: (
+    options: MemorySearchOptions,
+  ) => Effect.Effect<MemorySearchResult, SupermemoryError>;
 }
 
 export const SupermemoryService = Context.GenericTag<SupermemoryService>(
@@ -262,6 +274,7 @@ export const SupermemoryServiceLive = (apiKey: string): Effect.Effect<Supermemor
           );
         });
 
+      // User Profile Methods
       const getUserProfile = (userId: string) =>
         Effect.gen(function* () {
           const response = yield* Effect.tryPromise({
@@ -421,6 +434,59 @@ export const SupermemoryServiceLive = (apiKey: string): Effect.Effect<Supermemor
           } as ProfileStats;
         });
 
+      // Advanced Search Methods
+      const searchDocuments = (options: DocumentSearchOptions) =>
+        Effect.gen(function* () {
+          const response = yield* Effect.tryPromise({
+            try: () =>
+              fetch('https://api.supermemory.ai/v3/search', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(options),
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to search documents: ${res.status}`);
+                }
+                return res.json();
+              }),
+            catch: (error) =>
+              new SupermemoryError({
+                message: `Failed to search documents: ${error}`,
+              }),
+          });
+
+          return response as DocumentSearchResult;
+        });
+
+      const searchMemoriesAdvanced = (options: MemorySearchOptions) =>
+        Effect.gen(function* () {
+          const response = yield* Effect.tryPromise({
+            try: () =>
+              fetch('https://api.supermemory.ai/v4/search', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(options),
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to search memories: ${res.status}`);
+                }
+                return res.json();
+              }),
+            catch: (error) =>
+              new SupermemoryError({
+                message: `Failed to search memories: ${error}`,
+              }),
+          });
+
+          return response as MemorySearchResult;
+        });
+
       return {
         listMemories,
         countMemories,
@@ -434,5 +500,7 @@ export const SupermemoryServiceLive = (apiKey: string): Effect.Effect<Supermemor
         getUserProfileWithSearch,
         compareUserProfiles,
         getProfileStats,
+        searchDocuments,
+        searchMemoriesAdvanced,
       };
     });
