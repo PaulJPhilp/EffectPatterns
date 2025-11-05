@@ -179,7 +179,6 @@ export function usePatternRetrieval(
      */
     const retryWithOptions = useCallback(
         async (customOptions: Partial<UsePatternRetrievalOptions>) => {
-            const updatedOptions = { ...options, ...customOptions };
             // Would need to update state with new options here
             // For now, just re-run retrieval
             await retrievePatterns();
