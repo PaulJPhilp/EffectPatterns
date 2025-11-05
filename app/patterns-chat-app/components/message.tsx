@@ -303,61 +303,69 @@ export const PreviewMessage = memo(
 );
 
 const CHRISTMAS_LIGHTS = [
-  "bg-red-500",
-  "bg-green-500",
-  "bg-yellow-300",
-  "bg-blue-500",
-  "bg-red-600",
-  "bg-emerald-500",
+  { color: "bg-red-500", shadow: "rgb(239, 68, 68)" },
+  { color: "bg-green-500", shadow: "rgb(34, 197, 94)" },
+  { color: "bg-yellow-300", shadow: "rgb(253, 224, 71)" },
+  { color: "bg-blue-500", shadow: "rgb(59, 130, 246)" },
+  { color: "bg-red-600", shadow: "rgb(220, 38, 38)" },
+  { color: "bg-emerald-500", shadow: "rgb(16, 185, 129)" },
+  { color: "bg-pink-500", shadow: "rgb(236, 72, 153)" },
+  { color: "bg-purple-500", shadow: "rgb(168, 85, 247)" },
 ];
 
-// Christmas light component with glow effect
+// Christmas light component with enhanced glow effect
 const ChristmasLight = ({
   color,
+  shadowColor,
   delay,
 }: {
   color: string;
+  shadowColor: string;
   delay: number;
 }) => (
   <motion.div
     animate={{
       y: [0, -4, 0],
+      scale: [1, 1.1, 1],
       boxShadow: [
-        `0 0 8px 0 currentColor`,
-        `0 0 16px 2px currentColor`,
-        `0 0 8px 0 currentColor`,
+        `0 0 4px 0px ${shadowColor}, inset 0 0 4px 0px ${shadowColor}`,
+        `0 0 16px 4px ${shadowColor}, inset 0 0 8px 2px ${shadowColor}`,
+        `0 0 4px 0px ${shadowColor}, inset 0 0 4px 0px ${shadowColor}`,
       ],
     }}
-    className={cn("size-2 rounded-full", color)}
-    style={{
-      textShadow: `0 0 10px currentColor`,
-    }}
+    className={cn("size-2.5 rounded-full", color)}
     transition={{
       duration: 0.6,
       repeat: Number.POSITIVE_INFINITY,
       delay,
+      ease: "easeInOut",
     }}
   />
 );
 
 export const ThinkingMessage = () => {
   const role = "assistant";
-  const [colors, setColors] = useState<string[]>([]);
+  const [lights, setLights] = useState<
+    Array<{ color: string; shadow: string }>
+  >([]);
 
-  // Initialize with random Christmas colors
+  // Initialize with random Christmas colors and rotate them
   useEffect(() => {
-    const initialColors = [
+    const initialLights = [
       CHRISTMAS_LIGHTS[Math.floor(Math.random() * CHRISTMAS_LIGHTS.length)],
       CHRISTMAS_LIGHTS[Math.floor(Math.random() * CHRISTMAS_LIGHTS.length)],
       CHRISTMAS_LIGHTS[Math.floor(Math.random() * CHRISTMAS_LIGHTS.length)],
     ];
-    setColors(initialColors);
+    setLights(initialLights);
 
     // Rotate colors every 0.6 seconds (matching animation duration)
     const interval = setInterval(() => {
-      setColors((prevColors) => {
+      setLights((prevLights) => {
         // Move colors: last color goes to first, others shift right
-        return [prevColors[prevColors.length - 1], ...prevColors.slice(0, -1)];
+        return [
+          prevLights[prevLights.length - 1],
+          ...prevLights.slice(0, -1),
+        ];
       });
     }, 600); // 600ms = 0.6s animation duration
 
@@ -376,9 +384,27 @@ export const ThinkingMessage = () => {
     >
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground">🎄 Thinking</span>
-        <ChristmasLight color={colors[0]} delay={0} />
-        <ChristmasLight color={colors[1]} delay={0.2} />
-        <ChristmasLight color={colors[2]} delay={0.4} />
+        {lights[0] && (
+          <ChristmasLight
+            color={lights[0].color}
+            shadowColor={lights[0].shadow}
+            delay={0}
+          />
+        )}
+        {lights[1] && (
+          <ChristmasLight
+            color={lights[1].color}
+            shadowColor={lights[1].shadow}
+            delay={0.2}
+          />
+        )}
+        {lights[2] && (
+          <ChristmasLight
+            color={lights[2].color}
+            shadowColor={lights[2].shadow}
+            delay={0.4}
+          />
+        )}
         <span className="text-xs">✨</span>
       </div>
     </motion.div>
