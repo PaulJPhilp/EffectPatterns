@@ -1,65 +1,65 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 import {
   generateCompactRules,
   generateFullRules,
   generateJsonRules,
-} from '../publish/rules.js';
+} from "../publish/rules.js";
 
-describe('Rules generation functions', () => {
-  it('should generate full rules content', () => {
+describe("Rules generation functions", () => {
+  it("should generate full rules content", async () => {
     const mockRules = [
       {
-        id: 'test-1',
-        title: 'Test Rule',
-        description: 'A test rule description',
-        skillLevel: 'Beginner',
-        useCases: ['Testing'],
+        id: "test-1",
+        title: "Test Rule",
+        description: "A test rule description",
+        skillLevel: "Beginner",
+        useCases: ["Testing"],
         example: "console.log('test');",
-        content: 'Full content here',
+        content: "Full content here",
       },
     ];
 
-    const result = generateFullRules(mockRules);
-    expect(result).toContain('# Effect Coding Rules for AI');
-    expect(result).toContain('Test Rule');
-    expect(result).toContain('A test rule description');
+    const result = await generateFullRules(mockRules);
+    expect(result).toContain("# Effect-TS Patterns - Complete Rules");
+    expect(result).toContain("Test Rule");
+    expect(result).toContain("A test rule description");
   });
 
-  it('should generate compact rules content', () => {
+  it("should generate compact rules content", async () => {
     const mockRules = [
       {
-        id: 'test-1',
-        title: 'Test Rule',
-        description: 'A test rule description',
-        skillLevel: 'Beginner',
-        useCases: ['Testing'],
+        id: "test-1",
+        title: "Test Rule",
+        description: "A test rule description",
+        skillLevel: "Beginner",
+        useCases: ["Testing"],
         example: "console.log('test');",
-        content: 'Full content here',
+        content: "Full content here",
       },
     ];
 
-    const result = generateCompactRules(mockRules);
-    expect(result).toContain('# Effect Coding Rules for AI (Compact)');
-    expect(result).toContain('Test Rule');
-    expect(result).toContain('A test rule description');
+    const result = await generateCompactRules(mockRules);
+    expect(result).toContain("# Effect-TS Patterns - Compact Rules");
+    expect(result).toContain("Test Rule");
+    expect(result).toContain("A test rule description");
   });
 
-  it('should generate JSON rules content', () => {
+  it("should generate JSON rules content", async () => {
     const mockRules = [
       {
-        id: 'test-1',
-        title: 'Test Rule',
-        description: 'A test rule description',
-        skillLevel: 'Beginner',
-        useCases: ['Testing'],
+        id: "test-1",
+        title: "Test Rule",
+        description: "A test rule description",
+        skillLevel: "Beginner",
+        useCases: ["Testing"],
         example: "console.log('test');",
-        content: 'Full content here',
+        content: "Full content here",
       },
     ];
 
-    const result = generateJsonRules(mockRules);
-    expect(result).toContain('test-1');
-    expect(result).toContain('Test Rule');
-    expect(result).toContain('A test rule description');
+    const result = await generateJsonRules(mockRules);
+    expect(result).toContain("test-1");
+    expect(result).toContain("Test Rule");
+    expect(result).toContain("A test rule description");
   });
 });
