@@ -4,9 +4,10 @@
  * Simplified rules generation that doesn't use effect-mdx
  */
 
-import matter from "gray-matter";
+
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import matter from "gray-matter";
 
 // --- CONFIGURATION ---
 const PUBLISHED_DIR = path.join(process.cwd(), "content/published");
@@ -14,6 +15,16 @@ const RULES_DIR = path.join(process.cwd(), "rules");
 const USE_CASE_DIR = path.join(RULES_DIR, "by-use-case");
 
 // --- TYPE DEFINITIONS ---
+interface PatternFrontmatter {
+  id: string;
+  title: string;
+  skillLevel?: string;
+  useCase?: string[];
+  rule?: {
+    description: string;
+  };
+}
+
 interface Rule {
   id: string;
   title: string;
@@ -39,8 +50,9 @@ async function extractRules(): Promise<Rule[]> {
     const filePath = path.join(PUBLISHED_DIR, file);
     const fileContent = await fs.readFile(filePath, "utf-8");
     const { data, content } = matter(fileContent);
+    const frontmatter = data as PatternFrontmatter;
 
-    if ((data as any).rule?.description) {
+    if (frontmatter.rule?.description) {
       // Extract example from Good Example section
       const contentLines = content.split("\n");
       let inExampleSection = false;
@@ -60,11 +72,11 @@ async function extractRules(): Promise<Rule[]> {
       }
 
       rules.push({
-        id: (data as any).id,
-        title: (data as any).title,
-        description: (data as any).rule.description,
-        skillLevel: (data as any).skillLevel,
-        useCases: (data as any).useCase,
+        id: frontmatter.id,
+        title: frontmatter.title,
+        description: frontmatter.rule.description,
+        skillLevel: frontmatter.skillLevel,
+        useCases: frontmatter.useCase,
         example:
           exampleLines.length > 0 ? exampleLines.join("\n").trim() : undefined,
         content: content.trim(),
