@@ -131,7 +131,7 @@ async function seedPatterns(): Promise<void> {
   console.log("📤 Phase 1: Adding patterns to queue...\n");
 
   for (let i = 0; i < patterns.length; i++) {
-    const { file, frontmatter, content } = patterns[i];
+    const { frontmatter, content } = patterns[i];
     const patternId = frontmatter.id;
 
     try {
