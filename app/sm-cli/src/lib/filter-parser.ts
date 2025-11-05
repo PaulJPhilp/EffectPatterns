@@ -11,7 +11,6 @@
  * - "date:2025-11-04"
  */
 
-import { Data } from 'effect';
 import type { FilterClause, FilterConditions } from '../types.js';
 
 
