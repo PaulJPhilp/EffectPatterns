@@ -2,7 +2,7 @@
  * Queue Management Commands
  */
 
-import { Effect, Option } from 'effect';
+import { Effect } from 'effect';
 import { Command, Options } from '@effect/cli';
 import { loadConfig } from '../services/config.js';
 import { SupermemoryServiceLive } from '../services/supermemory.js';
