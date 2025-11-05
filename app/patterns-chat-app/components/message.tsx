@@ -383,7 +383,7 @@ export const ThinkingMessage = () => {
       transition={{ duration: 0.2 }}
     >
       <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">🎄 Thinking</span>
+        <span className="text-xs">🎄</span>
         {lights[0] && (
           <ChristmasLight
             color={lights[0].color}
