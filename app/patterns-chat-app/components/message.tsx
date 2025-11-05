@@ -1,11 +1,11 @@
 "use client";
-import type { UseChatHelpers } from "@ai-sdk/react";
-import equal from "fast-deep-equal";
-import { motion } from "framer-motion";
-import { memo, useState, useEffect } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
+import type { UseChatHelpers } from "@ai-sdk/react";
+import equal from "fast-deep-equal";
+import { motion } from "framer-motion";
+import { memo, useEffect, useState } from "react";
 import { useDataStream } from "./data-stream-provider";
 import { DocumentToolResult } from "./document";
 import { DocumentPreview } from "./document-preview";
@@ -18,7 +18,6 @@ import {
   ToolInput,
   ToolOutput,
 } from "./elements/tool";
-import { ThreeDotsIcon } from "./icons";
 import { MessageActions } from "./message-actions";
 import { MessageEditor } from "./message-editor";
 import { MessageReasoning } from "./message-reasoning";
@@ -303,27 +302,54 @@ export const PreviewMessage = memo(
   }
 );
 
-const RAINBOW = [
+const CHRISTMAS_LIGHTS = [
   "bg-red-500",
-  "bg-orange-500",
-  "bg-yellow-500",
   "bg-green-500",
+  "bg-yellow-300",
   "bg-blue-500",
-  "bg-indigo-500",
-  "bg-purple-500",
+  "bg-red-600",
+  "bg-emerald-500",
 ];
+
+// Christmas light component with glow effect
+const ChristmasLight = ({
+  color,
+  delay,
+}: {
+  color: string;
+  delay: number;
+}) => (
+  <motion.div
+    animate={{
+      y: [0, -4, 0],
+      boxShadow: [
+        `0 0 8px 0 currentColor`,
+        `0 0 16px 2px currentColor`,
+        `0 0 8px 0 currentColor`,
+      ],
+    }}
+    className={cn("size-2 rounded-full", color)}
+    style={{
+      textShadow: `0 0 10px currentColor`,
+    }}
+    transition={{
+      duration: 0.6,
+      repeat: Number.POSITIVE_INFINITY,
+      delay,
+    }}
+  />
+);
 
 export const ThinkingMessage = () => {
   const role = "assistant";
   const [colors, setColors] = useState<string[]>([]);
 
-  // Initialize with random colors from rainbow and animate them
+  // Initialize with random Christmas colors
   useEffect(() => {
-    // Initialize colors
     const initialColors = [
-      RAINBOW[Math.floor(Math.random() * RAINBOW.length)],
-      RAINBOW[Math.floor(Math.random() * RAINBOW.length)],
-      RAINBOW[Math.floor(Math.random() * RAINBOW.length)],
+      CHRISTMAS_LIGHTS[Math.floor(Math.random() * CHRISTMAS_LIGHTS.length)],
+      CHRISTMAS_LIGHTS[Math.floor(Math.random() * CHRISTMAS_LIGHTS.length)],
+      CHRISTMAS_LIGHTS[Math.floor(Math.random() * CHRISTMAS_LIGHTS.length)],
     ];
     setColors(initialColors);
 
@@ -348,37 +374,12 @@ export const ThinkingMessage = () => {
       initial={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="flex items-center gap-1">
-        <motion.div
-          animate={{ y: [0, -4, 0] }}
-          transition={{
-            duration: 0.6,
-            repeat: Number.POSITIVE_INFINITY,
-            delay: 0,
-          }}
-        >
-          <div className={cn("size-1 rounded-full", colors[0])} />
-        </motion.div>
-        <motion.div
-          animate={{ y: [0, -4, 0] }}
-          transition={{
-            duration: 0.6,
-            repeat: Number.POSITIVE_INFINITY,
-            delay: 0.2,
-          }}
-        >
-          <div className={cn("size-1 rounded-full", colors[1])} />
-        </motion.div>
-        <motion.div
-          animate={{ y: [0, -4, 0] }}
-          transition={{
-            duration: 0.6,
-            repeat: Number.POSITIVE_INFINITY,
-            delay: 0.4,
-          }}
-        >
-          <div className={cn("size-1 rounded-full", colors[2])} />
-        </motion.div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">🎄 Thinking</span>
+        <ChristmasLight color={colors[0]} delay={0} />
+        <ChristmasLight color={colors[1]} delay={0.2} />
+        <ChristmasLight color={colors[2]} delay={0.4} />
+        <span className="text-xs">✨</span>
       </div>
     </motion.div>
   );
