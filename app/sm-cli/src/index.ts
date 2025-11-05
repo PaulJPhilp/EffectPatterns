@@ -12,6 +12,7 @@ import { projectCommand } from './commands/project.js';
 import { memoriesCommand } from './commands/memories.js';
 import { patternsCommand } from './commands/patterns.js';
 import { queueCommand } from './commands/queue.js';
+import { profilesCommand } from './commands/profiles.js';
 
 /**
  * Main CLI application
@@ -27,6 +28,7 @@ const mainCommand = Command.make(
     memoriesCommand,
     patternsCommand,
     queueCommand,
+    profilesCommand,
   ]),
 );
 
