@@ -10,10 +10,7 @@ import { displayError, displaySuccess } from '../services/ui.js';
 import {
   createHeader,
   createInfoCard,
-  createError,
   createSuccess,
-  createStatPanel,
-  createBadge,
 } from '../services/tui-formatter.js';
 import { prompt } from '../services/dialog.js';
 import chalk from 'chalk';
