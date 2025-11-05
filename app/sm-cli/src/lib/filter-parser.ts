@@ -14,11 +14,7 @@
 import { Data } from 'effect';
 import type { FilterClause, FilterConditions } from '../types.js';
 
-class FilterParseError extends Data.TaggedError('FilterParseError')<{
-  message: string;
-  expression: string;
-  position?: number;
-}> {}
+
 
 /**
  * Represents a parsed filter clause
