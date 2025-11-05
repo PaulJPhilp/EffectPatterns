@@ -1,0 +1,33 @@
+---
+# yamllint configuration for the Effect-Patterns repository
+# Extends the default config with custom rules
+
+extends: default
+
+rules:
+  # GitHub Actions workflows use context expressions that are valid at runtime
+  # but yamllint can't validate them at edit-time. This is expected behavior.
+  # See: https://docs.github.com/en/actions/learn-github-actions/contexts
+  
+  line-length:
+    max: 120
+    level: warning
+  
+  indentation:
+    spaces: 2
+  
+  comments:
+    min-spaces-from-content: 2
+  
+  trailing-spaces: enable
+  
+  document-start:
+    present: false
+  
+  key-duplicates:
+    forbid-duplicated-keys: true
+
+# Note: GitHub Actions context validation (e.g., ${{ secrets.* }}) is handled
+# by VS Code's extension, not yamllint. These are safe to ignore as they work
+# fine at runtime. Configure VS Code extension settings if needed.
+

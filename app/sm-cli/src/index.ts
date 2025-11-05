@@ -9,7 +9,7 @@ import { Command } from '@effect/cli';
 import { NodeContext, NodeRuntime } from '@effect/platform-node';
 import { ConfigServiceLive } from './services/config.js';
 import { projectCommand } from './commands/project.js';
-import { memoriesCommand } from './commands/memories.js';
+import { memoriesCommand, documentsCommand } from './commands/memories.js';
 import { patternsCommand } from './commands/patterns.js';
 import { queueCommand } from './commands/queue.js';
 import { profilesCommand } from './commands/profiles.js';
@@ -26,6 +26,7 @@ const mainCommand = Command.make(
   Command.withSubcommands([
     projectCommand,
     memoriesCommand,
+    documentsCommand,
     patternsCommand,
     queueCommand,
     profilesCommand,
