@@ -1,18 +1,24 @@
 "use client";
 
-import Link from "next/link";
+import { SidebarToggle } from "@/components/sidebar-toggle";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { UserPreferences } from "@/lib/memory";
+import { BookOpen, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { memo, useState } from "react";
 import { useWindowSize } from "usehooks-ts";
-import { BookOpen } from "lucide-react";
-import { SidebarToggle } from "@/components/sidebar-toggle";
-import { Button } from "@/components/ui/button";
 import { CustomInstructions } from "./custom-instructions";
-import { PlusIcon, VercelIcon } from "./icons";
+import { PlusIcon } from "./icons";
+import { MemoriesGuideDialog } from "./memories-guide";
 import { useSidebar } from "./ui/sidebar";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
-import { MemoriesGuideDialog } from "./memories-guide";
-import type { UserPreferences } from "@/lib/memory";
 
 function PureChatHeader({
   chatId,
@@ -32,66 +38,95 @@ function PureChatHeader({
   const router = useRouter();
   const { open } = useSidebar();
   const [showMemoriesGuide, setShowMemoriesGuide] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const { width: windowWidth } = useWindowSize();
 
+  const handleNewChat = () => {
+    router.push("/");
+    router.refresh();
+  };
+
   return (
-    <header className="sticky top-0 flex items-center gap-2 bg-background px-2 py-1.5 md:px-2">
+    <header className="sticky top-0 flex items-center gap-2 bg-background px-2 py-1.5 md:px-4 border-b">
       <SidebarToggle />
 
-      {(!open || windowWidth < 768) && (
-        <Button
-          className="order-2 ml-auto h-8 px-2 md:order-1 md:ml-0 md:h-fit md:px-2"
-          onClick={() => {
-            router.push("/");
-            router.refresh();
-          }}
-          variant="outline"
-        >
-          <PlusIcon />
-          <span className="md:sr-only">New Chat</span>
-        </Button>
-      )}
+      {/* Logo/Title */}
+      <span className="font-semibold text-lg">Patterns Chat</span>
 
-      {!isReadonly && (
-        <>
-          <VisibilitySelector
-            chatId={chatId}
-            className="order-1 md:order-2"
-            selectedVisibilityType={selectedVisibilityType}
-          />
-          <CustomInstructions
-            preferences={preferences}
-            onUpdate={onUpdatePreferences}
-            isLoading={isLoadingPreferences}
-          />
-        </>
-      )}
+      {/* Main Menu Bar */}
+      <nav className="ml-auto flex items-center gap-1">
+        {/* File Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              File
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleNewChat}>
+              <PlusIcon size={16} />
+              <span className="ml-2">New Chat</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      <Button
-        onClick={() => setShowMemoriesGuide(true)}
-        variant="outline"
-        size="sm"
-        className="order-2 md:order-3 md:ml-auto"
-        title="Learn about Memories"
-      >
-        <BookOpen className="h-4 w-4" />
-        <span className="hidden sm:inline ml-1">Memories</span>
-      </Button>
+        {/* View Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              View
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setShowMemoriesGuide(true)}>
+              <BookOpen className="mr-2 h-4 w-4" />
+              <span>Memories</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      <Button
-        asChild
-        className="order-3 hidden bg-zinc-900 px-2 text-zinc-50 hover:bg-zinc-800 md:ml-auto md:flex md:h-fit dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-      >
-        <Link
-          href={"https://vercel.com/templates/next.js/nextjs-ai-chatbot"}
-          rel="noreferrer"
-          target="_noblank"
-        >
-          <VercelIcon size={16} />
-          Deploy with Vercel
-        </Link>
-      </Button>
+        {/* Settings Menu */}
+        {!isReadonly && (
+          <DropdownMenu open={showSettings} onOpenChange={setShowSettings}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Settings className="h-4 w-4" />
+                <span className="ml-1">Settings</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuItem asChild>
+                <div
+                  className="flex items-center justify-between py-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="text-sm">Visibility</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5">
+                <VisibilitySelector
+                  chatId={chatId}
+                  selectedVisibilityType={selectedVisibilityType}
+                  className="w-full"
+                />
+              </div>
+              <DropdownMenuSeparator />
+              <div
+                className="px-2 py-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <CustomInstructions
+                  preferences={preferences}
+                  onUpdate={onUpdatePreferences}
+                  isLoading={isLoadingPreferences}
+                />
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </nav>
 
       <MemoriesGuideDialog open={showMemoriesGuide} onOpenChange={setShowMemoriesGuide} />
     </header>
