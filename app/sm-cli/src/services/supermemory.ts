@@ -4,7 +4,7 @@
 
 import { Effect, Context, Data, Layer } from 'effect';
 import Supermemory from 'supermemory';
-import type { Memory, MemoryMetadata, UploadResult } from '../types.js';
+import type { Memory, MemoryMetadata, UploadResult, ProcessingDocument, ProcessingQueue } from '../types.js';
 
 class SupermemoryError extends Data.TaggedError('SupermemoryError')<{
   message: string;
@@ -26,6 +26,13 @@ export interface SupermemoryService {
     query: string,
     limit: number,
   ) => Effect.Effect<Memory[], SupermemoryError>;
+  readonly getProcessingQueue: () => Effect.Effect<ProcessingQueue, SupermemoryError>;
+  readonly getDocumentStatus: (id: string) => Effect.Effect<ProcessingDocument, SupermemoryError>;
+  readonly deleteDocument: (id: string) => Effect.Effect<void, SupermemoryError>;
+  readonly pollDocumentStatus: (
+    id: string,
+    maxWaitMs?: number,
+  ) => Effect.Effect<ProcessingDocument, SupermemoryError>;
 }
 
 export const SupermemoryService = Context.GenericTag<SupermemoryService>(
@@ -140,10 +147,109 @@ export const SupermemoryServiceLive = (apiKey: string): Effect.Effect<Supermemor
           return (results as any).results as Memory[];
         });
 
+      const getProcessingQueue = () =>
+        Effect.gen(function* () {
+          const response = yield* Effect.tryPromise({
+            try: () =>
+              fetch('https://api.supermemory.ai/v3/documents/processing', {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                },
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to fetch processing queue: ${res.status}`);
+                }
+                return res.json();
+              }),
+            catch: (error) =>
+              new SupermemoryError({
+                message: `Failed to get processing queue: ${error}`,
+              }),
+          });
+
+          return response as ProcessingQueue;
+        });
+
+      const getDocumentStatus = (id: string) =>
+        Effect.gen(function* () {
+          const response = yield* Effect.tryPromise({
+            try: () =>
+              fetch(`https://api.supermemory.ai/v3/documents/${id}`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                },
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to fetch document: ${res.status}`);
+                }
+                return res.json();
+              }),
+            catch: (error) =>
+              new SupermemoryError({
+                message: `Failed to get document status: ${error}`,
+              }),
+          });
+
+          return response as ProcessingDocument;
+        });
+
+      const deleteDocument = (id: string) =>
+        Effect.gen(function* () {
+          yield* Effect.tryPromise({
+            try: () =>
+              fetch(`https://api.supermemory.ai/v3/documents/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${apiKey}`,
+                },
+              }).then((res) => {
+                if (!res.ok) {
+                  throw new Error(`Failed to delete document: ${res.status}`);
+                }
+              }),
+            catch: (error) =>
+              new SupermemoryError({
+                message: `Failed to delete document: ${error}`,
+              }),
+          });
+        });
+
+      const pollDocumentStatus = (id: string, maxWaitMs = 300000) =>
+        Effect.gen(function* () {
+          const startTime = Date.now();
+          const pollInterval = 2000; // 2 seconds
+
+          while (Date.now() - startTime < maxWaitMs) {
+            const doc = yield* getDocumentStatus(id);
+
+            if (doc.status === 'done' || doc.status === 'failed') {
+              return doc;
+            }
+
+            // Wait before polling again
+            yield* Effect.sync(() => {
+              const ms = pollInterval;
+              return new Promise<void>((resolve) => setTimeout(resolve, ms));
+            });
+          }
+
+          return yield* Effect.fail(
+            new SupermemoryError({
+              message: `Timeout waiting for document ${id} to complete processing`,
+            }),
+          );
+        });
+
       return {
         listMemories,
         countMemories,
         addMemory,
         searchMemories,
+        getProcessingQueue,
+        getDocumentStatus,
+        deleteDocument,
+        pollDocumentStatus,
       };
     });
