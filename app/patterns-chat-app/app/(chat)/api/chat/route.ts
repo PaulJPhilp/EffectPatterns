@@ -1,3 +1,43 @@
+import { auth, type UserType } from "@/app/(auth)/auth";
+import type { VisibilityType } from "@/components/visibility-selector";
+import { entitlementsByUserType } from "@/lib/ai/entitlements";
+import type { ChatModelId } from "@/lib/ai/models";
+import { systemPrompt, type RequestHints } from "@/lib/ai/prompts";
+import { myProvider } from "@/lib/ai/providers";
+import { createDocument } from "@/lib/ai/tools/create-document";
+import { getWeather } from "@/lib/ai/tools/get-weather";
+import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
+import {
+  getPatternByIdTool,
+  listPatternCategoriesTool,
+  searchPatternsTool,
+} from "@/lib/ai/tools/search-patterns";
+import { updateDocument } from "@/lib/ai/tools/update-document";
+import { isProductionEnvironment } from "@/lib/constants";
+import {
+  createStreamId,
+  deleteChatById,
+  getChatById,
+  getMessageCountByUserId,
+  getMessagesByChatId,
+  saveChat,
+  saveMessages,
+  updateChatLastContextById,
+} from "@/lib/db/queries";
+import { ChatSDKError } from "@/lib/errors";
+import {
+  autoTagConversation,
+  detectConversationOutcome,
+  getConversationContext,
+  getUserPreferences,
+  rememberModelChoice,
+  updateConversationContext,
+} from "@/lib/memory";
+import { generateEmbedding } from "@/lib/semantic-search";
+import { getSupermemoryStore } from "@/lib/semantic-search/supermemory-store";
+import type { ChatMessage } from "@/lib/types";
+import type { AppUsage } from "@/lib/usage";
+import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { geolocation } from "@vercel/functions";
 import {
   convertToModelMessages,
@@ -16,37 +56,8 @@ import {
 import type { ModelCatalog } from "tokenlens/core";
 import { fetchModels } from "tokenlens/fetch";
 import { getUsage } from "tokenlens/helpers";
-import { auth, type UserType } from "@/app/(auth)/auth";
-import type { VisibilityType } from "@/components/visibility-selector";
-import { entitlementsByUserType } from "@/lib/ai/entitlements";
-import type { ChatModel, ChatModelId } from "@/lib/ai/models";
-import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
-import { myProvider } from "@/lib/ai/providers";
-import { rememberModelChoice, getUserPreferences, getConversationContext, updateConversationContext, autoTagConversation, detectConversationOutcome } from "@/lib/memory";
-import { generateEmbedding } from "@/lib/semantic-search";
-import { getSupermemoryStore } from "@/lib/semantic-search/supermemory-store";
-import { createDocument } from "@/lib/ai/tools/create-document";
-import { getWeather } from "@/lib/ai/tools/get-weather";
-import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
-import { updateDocument } from "@/lib/ai/tools/update-document";
-import { searchPatternsTool, getPatternByIdTool, listPatternCategoriesTool } from "@/lib/ai/tools/search-patterns";
-import { isProductionEnvironment } from "@/lib/constants";
-import {
-  createStreamId,
-  deleteChatById,
-  getChatById,
-  getMessageCountByUserId,
-  getMessagesByChatId,
-  saveChat,
-  saveMessages,
-  updateChatLastContextById,
-} from "@/lib/db/queries";
-import { ChatSDKError } from "@/lib/errors";
-import type { ChatMessage } from "@/lib/types";
-import type { AppUsage } from "@/lib/usage";
-import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
-import { type PostRequestBody, postRequestBodySchema } from "./schema";
+import { postRequestBodySchema, type PostRequestBody } from "./schema";
 
 export const maxDuration = 60;
 
@@ -172,7 +183,10 @@ export async function POST(request: Request) {
     const customInstructions = userPreferences.customInstructions;
 
     // Fetch conversation context for better AI responses
-    const conversationContext = await getConversationContext(session.user.id, id);
+    const conversationContext = await getConversationContext(
+      session.user.id,
+      id
+    );
 
     await saveMessages({
       messages: [
@@ -196,7 +210,12 @@ export async function POST(request: Request) {
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints, customInstructions, conversationContext: conversationContext || undefined }),
+          system: systemPrompt({
+            selectedChatModel,
+            requestHints,
+            customInstructions,
+            conversationContext: conversationContext || undefined,
+          }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_activeTools:
@@ -359,8 +378,59 @@ export async function POST(request: Request) {
           }
         }
       },
-      onError: () => {
-        return "Oops, an error occurred!";
+      onError: (error) => {
+        // Categorize and log errors cleanly
+        if (error instanceof Error) {
+          const message = error.message;
+
+          // Known/expected API errors - log concisely with console.warn
+          if (
+            message?.includes("doesn't have any credits") ||
+            message?.includes("credit balance is too low") ||
+            message?.includes("Forbidden") ||
+            message?.includes("403")
+          ) {
+            console.warn(
+              `[Chat API] ${selectedChatModel}: Insufficient credits or access denied`
+            );
+            return "⚠️ Insufficient credits for this model";
+          }
+
+          if (message?.includes("rate limit") || message?.includes("429")) {
+            console.warn(
+              `[Chat API] ${selectedChatModel}: Rate limit exceeded`
+            );
+            return "⚠️ Rate limit exceeded";
+          }
+
+          if (
+            message?.includes("API key") ||
+            message?.includes("401") ||
+            message?.includes("Unauthorized")
+          ) {
+            console.warn(`[Chat API] ${selectedChatModel}: Invalid API key`);
+            return "⚠️ Invalid API key";
+          }
+
+          if (
+            message?.includes("network") ||
+            message?.includes("fetch failed")
+          ) {
+            console.warn(`[Chat API] ${selectedChatModel}: Network error`);
+            return "⚠️ Network error";
+          }
+
+          // Unknown/unexpected errors - log with more details
+          console.error(`[Chat API] ${selectedChatModel}: Unexpected error`, {
+            name: error.name,
+            message: error.message,
+          });
+          return "An error occurred";
+        }
+
+        // Non-Error objects
+        console.error(`[Chat API] ${selectedChatModel}: Unknown error`, error);
+        return "An error occurred";
       },
     });
 
@@ -376,48 +446,48 @@ export async function POST(request: Request) {
 
     return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
   } catch (error) {
-  const vercelId = request.headers.get("x-vercel-id");
+    const vercelId = request.headers.get("x-vercel-id");
 
-  if (error instanceof ChatSDKError) {
-  return error.toResponse();
-  }
-
-  // Check for Vercel AI Gateway credit card error
-  if (
-  error instanceof Error &&
-  error.message?.includes(
-  "AI Gateway requires a valid credit card on file to service requests"
-  )
-  ) {
-  return new ChatSDKError("bad_request:activate_gateway").toResponse();
-  }
-
-  // Check for Gemini API specific errors
-  if (
-    error instanceof Error &&
-    (error.message?.includes("gemini") ||
-     error.message?.includes("GoogleGenerativeAI") ||
-     error.message?.includes("INVALID_ARGUMENT") ||
-     error.message?.includes("RESOURCE_EXHAUSTED") ||
-     error.message?.includes("UNAVAILABLE") ||
-     error.message?.includes("fetch failed") ||
-     error.message?.includes("model_not_found") ||
-     error.message?.includes("PERMISSION_DENIED") ||
-     error.message?.includes("NOT_FOUND") ||
-     error.message?.includes("FAILED_PRECONDITION"))
-  ) {
-    console.error("Gemini API error:", error.message, error.stack, {
-      vercelId,
-      selectedChatModel: selectedChatModel || "unknown",
-      errorName: error.name,
-      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error))
-    });
-    return new ChatSDKError("bad_request:api").toResponse();
-  }
-
-      console.error("Unhandled error in chat API:", error, { vercelId });
-      return new ChatSDKError("offline:chat").toResponse();
+    if (error instanceof ChatSDKError) {
+      return error.toResponse();
     }
+
+    // Check for Vercel AI Gateway credit card error
+    if (
+      error instanceof Error &&
+      error.message?.includes(
+        "AI Gateway requires a valid credit card on file to service requests"
+      )
+    ) {
+      return new ChatSDKError("bad_request:activate_gateway").toResponse();
+    }
+
+    // Check for Gemini API specific errors
+    if (
+      error instanceof Error &&
+      (error.message?.includes("gemini") ||
+        error.message?.includes("GoogleGenerativeAI") ||
+        error.message?.includes("INVALID_ARGUMENT") ||
+        error.message?.includes("RESOURCE_EXHAUSTED") ||
+        error.message?.includes("UNAVAILABLE") ||
+        error.message?.includes("fetch failed") ||
+        error.message?.includes("model_not_found") ||
+        error.message?.includes("PERMISSION_DENIED") ||
+        error.message?.includes("NOT_FOUND") ||
+        error.message?.includes("FAILED_PRECONDITION"))
+    ) {
+      console.error("Gemini API error:", error.message, error.stack, {
+        vercelId,
+        selectedChatModel: selectedChatModel || "unknown",
+        errorName: error.name,
+        fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      });
+      return new ChatSDKError("bad_request:api").toResponse();
+    }
+
+    console.error("Unhandled error in chat API:", error, { vercelId });
+    return new ChatSDKError("offline:chat").toResponse();
+  }
 }
 
 export async function DELETE(request: Request) {

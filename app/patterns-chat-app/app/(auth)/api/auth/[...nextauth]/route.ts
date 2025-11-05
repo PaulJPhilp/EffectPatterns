@@ -6,12 +6,14 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ nextauth: string[] }> }
 ) {
-  return authGET(request);
+  // Type cast to work around next-auth bundling its own Next.js types
+  return authGET(request as any);
 }
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ nextauth: string[] }> }
 ) {
-  return authPOST(request);
+  // Type cast to work around next-auth bundling its own Next.js types
+  return authPOST(request as any);
 }

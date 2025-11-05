@@ -1,33 +1,30 @@
 "use client";
 
+import { SelectItem } from "@/components/ui/select";
+import type { ChatModelId } from "@/lib/ai/models";
+import { chatModels, supportsAttachments } from "@/lib/ai/models";
+import { myProvider } from "@/lib/ai/providers";
+import { MAX_MESSAGE_LENGTH } from "@/lib/constants";
+import type { Attachment, ChatMessage } from "@/lib/types";
+import type { AppUsage } from "@/lib/usage";
+import { cn } from "@/lib/utils";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { Trigger } from "@radix-ui/react-select";
 import type { UIMessage } from "ai";
 import equal from "fast-deep-equal";
 import {
-  type ChangeEvent,
-  type Dispatch,
   memo,
-  type SetStateAction,
-  startTransition,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
+  type ChangeEvent,
+  type Dispatch,
+  type SetStateAction,
 } from "react";
 import { toast } from "sonner";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
-import { saveChatModelAsCookie } from "@/app/(chat)/actions";
-import { SelectItem } from "@/components/ui/select";
-import { chatModels } from "@/lib/ai/models";
-import { myProvider } from "@/lib/ai/providers";
-import type { Attachment, ChatMessage } from "@/lib/types";
-import type { AppUsage } from "@/lib/usage";
-import { cn } from "@/lib/utils";
-import { MAX_MESSAGE_LENGTH } from "@/lib/constants";
-import { supportsAttachments } from "@/lib/ai/models";
-import type { ChatModelId } from "@/lib/ai/models";
 import { Context } from "./elements/context";
 import {
   PromptInput,
@@ -257,15 +254,18 @@ function PureMultimodalInput({
         const uploadPromises = files.map((file) => uploadFile(file));
         const uploadedAttachments = await Promise.all(uploadPromises);
         const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) => attachment !== undefined
+          (attachment): attachment is Attachment => attachment !== undefined
         );
 
-        setAttachments((currentAttachments) => [
-          ...currentAttachments,
-          ...successfullyUploadedAttachments,
-        ]);
+        if (successfullyUploadedAttachments.length > 0) {
+          setAttachments((currentAttachments) => [
+            ...currentAttachments,
+            ...successfullyUploadedAttachments,
+          ]);
+        }
       } catch (error) {
         console.error("Error uploading files!", error);
+        toast.error("Error uploading files!");
       } finally {
         setUploadQueue([]);
       }
@@ -350,7 +350,7 @@ function PureMultimodalInput({
           />{" "}
           <Context {...contextProps} />
         </div>
-        <PromptInputToolbar className="!border-top-0 border-t-0! p-0 shadow-none dark:border-0 dark:border-transparent!">
+        <PromptInputToolbar className="border-top-0! border-t-0! p-0 shadow-none dark:border-0 dark:border-transparent!">
           <PromptInputTools className="gap-0 sm:gap-0.5">
             <AttachmentsButton
               fileInputRef={fileInputRef}
@@ -451,14 +451,11 @@ function PureModelSelectorCompact({
 
   return (
     <PromptInputModelSelect
-      onValueChange={(modelName) => {
+      onValueChange={(modelName: string) => {
         const model = chatModels.find((m) => m.name === modelName);
         if (model) {
           setOptimisticModelId(model.id);
           onModelChange?.(model.id);
-          startTransition(() => {
-            saveChatModelAsCookie(model.id);
-          });
         }
       }}
       value={selectedModel?.name}

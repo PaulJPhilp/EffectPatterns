@@ -1,13 +1,5 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
-import type { DataUIPart } from "ai";
-import { DefaultChatTransport } from "ai";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import useSWR, { useSWRConfig } from "swr";
-import { unstable_serialize } from "swr/infinite";
-import type { ChatModelId } from "@/lib/ai/models";
 import { ChatHeader } from "@/components/chat-header";
 import {
   AlertDialog,
@@ -22,12 +14,20 @@ import {
 import { useArtifactSelector } from "@/hooks/use-artifact";
 import { useAutoResume } from "@/hooks/use-auto-resume";
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
-import { useUserPreferences } from "@/lib/hooks/use-user-preferences";
+import type { ChatModelId } from "@/lib/ai/models";
 import type { Vote } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
+import { useUserPreferences } from "@/lib/hooks/use-user-preferences";
 import type { Attachment, ChatMessage, CustomUIDataTypes } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
-import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
+import { fetchWithErrorHandlers, fetcher, generateUUID } from "@/lib/utils";
+import { useChat } from "@ai-sdk/react";
+import type { DataUIPart } from "ai";
+import { DefaultChatTransport } from "ai";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import useSWR, { useSWRConfig } from "swr";
+import { unstable_serialize } from "swr/infinite";
 import { Artifact } from "./artifact";
 import { useDataStream } from "./data-stream-provider";
 import { Messages } from "./messages";
@@ -67,12 +67,72 @@ export function Chat({
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
   const [currentModelId, setCurrentModelId] = useState<ChatModelId>(initialChatModel);
   const currentModelIdRef = useRef<ChatModelId>(currentModelId);
+  
+  // Manual override to force-allow sending messages after model change
+  const [forceReady, setForceReady] = useState(false);
 
   // If preferences are still loading, defer rendering until they're available
   const isInitializing = preferencesLoading;
 
+  // Add global error handler for unhandled promise rejections from streaming
+  useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      // Check if this is an error we've already handled
+      const reason = event.reason;
+      
+      // Handle Error objects
+      if (reason instanceof Error) {
+        const message = reason.message;
+        const errorName = reason.name;
+        
+        // If it matches one of our handled error patterns, prevent the default behavior
+        if (
+          message?.includes("doesn't have any credits") ||
+          message?.includes("credit balance is too low") ||
+          message?.includes("Forbidden") ||
+          message?.includes("403") ||
+          message?.includes("rate limit") ||
+          message?.includes("exceeded your maximum number") ||
+          message?.includes("429") ||
+          message?.includes("API key") ||
+          message?.includes("401") ||
+          message?.includes("Unauthorized") ||
+          errorName === "AI_APICallError"
+        ) {
+          // Prevent the error from showing in console/overlay
+          event.preventDefault();
+          // Silently handled - toast already shown
+          return;
+        }
+      }
+      
+      // Handle AI_APICallError objects that might not be instanceof Error
+      if (reason?.name === "AI_APICallError" || reason?.constructor?.name === "AI_APICallError") {
+        event.preventDefault();
+        return;
+      }
+    };
+
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    };
+  }, []);
+
+  // Store stop function ref so handleModelChange can access it
+  const stopRef = useRef<(() => void) | null>(null);
+  
   // Remember model choice in user preferences
   const handleModelChange = async (modelId: ChatModelId) => {
+    // Stop any ongoing generation when switching models
+    if (stopRef.current) {
+      stopRef.current();
+    }
+    
+    // Force the chat to be ready for new messages
+    setForceReady(true);
+    
     // Update ref first (synchronously) to ensure it's used in next message
     currentModelIdRef.current = modelId;
     // Then update state (asynchronously) for re-render
@@ -127,23 +187,108 @@ export function Chat({
     },
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));
+      // Clear the forceReady flag when a message finishes normally
+      setForceReady(false);
     },
     onError: (error) => {
+      // Clear the forceReady flag on error so user can try again
+      setForceReady(false);
+      
       if (error instanceof ChatSDKError) {
         // Check if it's a credit card error
         if (
           error.message?.includes("AI Gateway requires a valid credit card")
         ) {
           setShowCreditCardAlert(true);
-        } else {
-          toast({
-            type: "error",
-            description: error.message,
+          return;
+        }
+        
+        // Show toast for all other ChatSDKErrors (rate limit, auth, etc.)
+        toast({
+          type: "error",
+          description: error.message,
+        });
+        return;
+      }
+      
+      // Handle streaming errors (API errors that occur during generation)
+      if (error instanceof Error) {
+        let errorMessage = "An error occurred. Please try again.";
+        let isKnownError = false;
+        
+        // xAI credit/permission errors
+        if (error.message?.includes("doesn't have any credits") || 
+            error.message?.includes("credit balance is too low") ||
+            error.message?.includes("Forbidden")) {
+          errorMessage = "This model requires credits. Please check your API provider's billing and add credits.";
+          isKnownError = true;
+        }
+        // Anthropic credit errors
+        else if (error.message?.includes("credit balance is too low")) {
+          errorMessage = "Insufficient API credits. Please add credits to your Anthropic account.";
+          isKnownError = true;
+        }
+        // Rate limiting
+        else if (error.message?.includes("rate limit") || error.message?.includes("429")) {
+          errorMessage = "Rate limit exceeded. Please try again in a moment.";
+          isKnownError = true;
+        }
+        // Permission/auth errors
+        else if (error.message?.includes("permission") || error.message?.includes("403")) {
+          errorMessage = "API access denied. Please check your API key has the correct permissions.";
+          isKnownError = true;
+        }
+        // API key errors
+        else if (error.message?.includes("API key") || 
+                 error.message?.includes("401") ||
+                 error.message?.includes("Unauthorized")) {
+          errorMessage = "Invalid API key. Please check your environment configuration.";
+          isKnownError = true;
+        }
+        // Network errors
+        else if (error.message?.includes("fetch failed") || 
+                 error.message?.includes("network")) {
+          errorMessage = "Network error. Please check your connection and try again.";
+          isKnownError = true;
+        }
+        
+        // Only log unexpected errors
+        if (!isKnownError) {
+          console.error("[Chat Error]", {
+            message: error.message,
+            name: error.name,
           });
         }
+        
+        toast({
+          type: "error",
+          description: errorMessage,
+        });
+        return;
       }
+      
+      // Fallback for unknown errors
+      console.error("[Chat Error]", error);
+      toast({
+        type: "error",
+        description: "An unexpected error occurred. Please try again.",
+      });
     },
   });
+
+  // Store stop function so handleModelChange can access it
+  useEffect(() => {
+    stopRef.current = stop;
+  }, [stop]);
+  
+  // Compute effective status - override to "ready" if forceReady is true
+  const effectiveStatus = forceReady ? "ready" : status;
+  
+  // Wrap sendMessage to clear forceReady when a new message is sent
+  const wrappedSendMessage: typeof sendMessage = (...args) => {
+    setForceReady(false);
+    return sendMessage(...args);
+  };
 
   const searchParams = useSearchParams();
   const query = searchParams.get("query");
@@ -152,7 +297,7 @@ export function Chat({
 
   useEffect(() => {
     if (query && !hasAppendedQuery) {
-      sendMessage({
+      wrappedSendMessage({
         role: "user" as const,
         parts: [{ type: "text", text: query }],
       });
@@ -160,7 +305,7 @@ export function Chat({
       setHasAppendedQuery(true);
       window.history.replaceState({}, "", `/chat/${id}`);
     }
-  }, [query, sendMessage, hasAppendedQuery, id]);
+  }, [query, wrappedSendMessage, hasAppendedQuery, id]);
 
   const { data: votes } = useSWR<Vote[]>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,
@@ -211,7 +356,7 @@ export function Chat({
           regenerate={regenerate}
           selectedModelId={initialChatModel}
           setMessages={setMessages}
-          status={status}
+          status={effectiveStatus}
           votes={votes}
         />
 
@@ -225,11 +370,11 @@ export function Chat({
               onModelChange={handleModelChange}
               selectedModelId={currentModelId}
               selectedVisibilityType={visibilityType}
-              sendMessage={sendMessage}
+              sendMessage={wrappedSendMessage}
               setAttachments={setAttachments}
               setInput={setInput}
               setMessages={setMessages}
-              status={status}
+              status={effectiveStatus}
               stop={stop}
               usage={usage}
             />
@@ -246,11 +391,11 @@ export function Chat({
         regenerate={regenerate}
         selectedModelId={currentModelId}
         selectedVisibilityType={visibilityType}
-        sendMessage={sendMessage}
+        sendMessage={wrappedSendMessage}
         setAttachments={setAttachments}
         setInput={setInput}
         setMessages={setMessages}
-        status={status}
+        status={effectiveStatus}
         stop={stop}
         votes={votes}
       />
