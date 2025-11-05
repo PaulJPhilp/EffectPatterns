@@ -14,7 +14,6 @@ if (!apiKey) {
 }
 
 const client = new Supermemory({ apiKey });
-const SYSTEM_USER_ID = "system:patterns";
 
 async function checkMemories() {
   try {
