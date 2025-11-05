@@ -1,8 +1,5 @@
 "use client";
 
-import type { Session } from "next-auth";
-import { startTransition, useMemo, useOptimistic, useState } from "react";
-import { saveChatModelAsCookie } from "@/app/(chat)/actions";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,15 +10,19 @@ import {
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import { chatModels } from "@/lib/ai/models";
 import { cn } from "@/lib/utils";
+import type { Session } from "next-auth";
+import { useMemo, useOptimistic, useState } from "react";
 import { CheckCircleFillIcon, ChevronDownIcon } from "./icons";
 
 export function ModelSelector({
   session,
   selectedModelId,
   className,
+  onModelChange,
 }: {
   session: Session;
   selectedModelId: string;
+  onModelChange?: (modelId: string) => void;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
   const [optimisticModelId, setOptimisticModelId] =
@@ -75,11 +76,8 @@ export function ModelSelector({
               key={id}
               onSelect={() => {
                 setOpen(false);
-
-                startTransition(() => {
-                  setOptimisticModelId(id);
-                  saveChatModelAsCookie(id);
-                });
+                setOptimisticModelId(id);
+                onModelChange?.(id);
               }}
             >
               <button

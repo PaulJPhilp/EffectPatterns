@@ -21,6 +21,7 @@
     "@ai-sdk/anthropic": "^2.0.41",
     "@ai-sdk/gateway": "^1.0.41",
     "@ai-sdk/google": "^2.0.28",
+    "@ai-sdk/openai": "^2.0.63",
     "@ai-sdk/provider": "2.0.0",
     "@ai-sdk/react": "2.0.26",
     "@ai-sdk/xai": "2.0.13",
