@@ -114,3 +114,45 @@ export interface ProfileStats {
   commonTopics: Record<string, number>;
   retrievedAt: string;
 }
+
+// Search Types
+export interface FilterClause {
+  field: string;
+  operator: string;
+  value: string | number | boolean;
+}
+
+export interface FilterConditions {
+  clauses: FilterClause[];
+  logic: 'AND' | 'OR';
+}
+
+export interface DocumentSearchOptions {
+  q: string;
+  limit?: number;
+  threshold?: number;
+  rerank?: boolean;
+  container?: string;
+  filter?: FilterConditions;
+}
+
+export interface DocumentSearchResult {
+  results: SearchResult[];
+  totalCount: number;
+  timing?: number;
+}
+
+export interface MemorySearchOptions {
+  q: string;
+  limit?: number;
+  threshold?: number;
+  rerank?: boolean;
+  container?: string;
+  filter?: FilterConditions;
+}
+
+export interface MemorySearchResult {
+  results: Memory[];
+  totalCount: number;
+  timing?: number;
+}
