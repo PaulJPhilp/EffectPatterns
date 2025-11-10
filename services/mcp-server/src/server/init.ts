@@ -8,108 +8,100 @@
  * for running Effects in Next.js route handlers.
  */
 
-import {
+
+// biome-ignore assist/source/organizeImports: <>
+import  {
   loadPatternsFromJsonRunnable,
   type Pattern,
   type PatternsIndex,
 } from "@effect-patterns/toolkit";
-import { Context, Effect, Layer, Ref } from "effect";
+import { Effect, Layer, Ref } from "effect";
 import * as path from "node:path";
 import { TracingLayerLive, type TracingService } from "../tracing/otlpLayer";
 
 /**
- * Patterns service tag - provides in-memory pattern cache
+ * Config service - provides environment configuration
  */
-export class PatternsService extends Context.Tag("PatternsService")<
-  PatternsService,
+export class ConfigService extends Effect.Service<ConfigService>()(
+  "ConfigService",
   {
-    readonly patterns: Ref.Ref<readonly Pattern[]>;
-    readonly getAllPatterns: () => Effect.Effect<readonly Pattern[]>;
-    readonly getPatternById: (id: string) => Effect.Effect<Pattern | undefined>;
+    sync: () => ({
+      apiKey: process.env.PATTERN_API_KEY || "",
+      patternsPath:
+        process.env.PATTERNS_PATH ||
+        path.join(process.cwd(), "data", "patterns.json"),
+      nodeEnv: process.env.NODE_ENV || "development",
+    }),
   }
->() {}
+) {}
 
 /**
- * Config service tag - provides environment configuration
+ * Patterns service - provides in-memory pattern cache
  */
-export class ConfigService extends Context.Tag("ConfigService")<
-  ConfigService,
-  {
-    readonly apiKey: string;
-    readonly patternsPath: string;
-    readonly nodeEnv: string;
-  }
->() {}
+const makePatternsService = Effect.gen(function* () {
+  const config = yield* ConfigService;
 
-/**
- * Config Layer - Provides environment configuration
- */
-export const ConfigLayer = Layer.succeed(ConfigService, {
-  apiKey: process.env.PATTERN_API_KEY || "",
-  patternsPath:
-    process.env.PATTERNS_PATH ||
-    path.join(process.cwd(), "data", "patterns.json"),
-  nodeEnv: process.env.NODE_ENV || "development",
+  console.log(`[Patterns] Loading patterns from: ${config.patternsPath}`);
+
+  // Load patterns at cold start, with empty index fallback
+  const fallbackIndex: PatternsIndex = {
+    version: "0.0.0",
+    patterns: [],
+    lastUpdated: new Date().toISOString(),
+  };
+
+  const patternsIndex: PatternsIndex = yield* Effect.matchEffect(
+    loadPatternsFromJsonRunnable(
+      config.patternsPath
+    ) as unknown as Effect.Effect<PatternsIndex>,
+    {
+      onFailure: () => Effect.succeed(fallbackIndex),
+      onSuccess: (idx) => Effect.succeed(idx as PatternsIndex),
+    }
+  );
+
+  console.log(`[Patterns] Loaded ${patternsIndex.patterns.length} patterns`);
+
+  // Create Ref to hold patterns in memory
+  const patternsRef = yield* Ref.make<readonly Pattern[]>(
+    patternsIndex.patterns
+  );
+
+  // Create service methods
+  const getAllPatterns = () => Ref.get(patternsRef);
+
+  const getPatternById = (id: string): Effect.Effect<Pattern | undefined> =>
+    Effect.gen(function* () {
+      const patterns: readonly Pattern[] = yield* Ref.get(patternsRef);
+      return patterns.find((p: Pattern) => p.id === id);
+    });
+
+  return {
+    patterns: patternsRef,
+    getAllPatterns,
+    getPatternById,
+  };
 });
 
-/**
- * Patterns Layer - Loads patterns into memory at startup
- *
- * This layer depends on ConfigLayer to get the patterns file path.
- */
-export const PatternsLayer = Layer.scoped(
-  PatternsService,
-  Effect.gen(function* () {
-    const config = yield* ConfigService;
-
-    console.log(`[Patterns] Loading patterns from: ${config.patternsPath}`);
-
-    // Load patterns at cold start
-    const patternsIndex: PatternsIndex = yield* loadPatternsFromJsonRunnable(
-      config.patternsPath
-    ).pipe(
-      Effect.catchAll((_error) =>
-        Effect.succeed({
-          version: "0.0.0",
-          patterns: [],
-          lastUpdated: new Date().toISOString(),
-        } as PatternsIndex)
-      )
-    );
-
-    console.log(`[Patterns] Loaded ${patternsIndex.patterns.length} patterns`);
-
-    // Create Ref to hold patterns in memory
-    const patternsRef = yield* Ref.make<readonly Pattern[]>(
-      patternsIndex.patterns
-    );
-
-    // Create service methods
-    const getAllPatterns = () => Ref.get(patternsRef);
-
-    const getPatternById = (id: string) =>
-      Effect.gen(function* () {
-        const patterns = yield* Ref.get(patternsRef);
-        return patterns.find((pattern) => pattern.id === id);
-      });
-
-    return {
-      patterns: patternsRef,
-      getAllPatterns,
-      getPatternById,
-    };
-  })
-);
+export class PatternsService extends Effect.Service<PatternsService>()(
+  "PatternsService",
+  {
+    scoped: makePatternsService,
+    dependencies: [ConfigService.Default],
+  }
+) {}
 
 /**
  * App Layer - Full application layer composition
  *
  * Composes: Config -> Tracing -> Patterns
- * PatternsLayer depends on ConfigService, so we provide it.
+ * Services are self-managed via Effect.Service pattern
  */
-const BaseLayers = Layer.mergeAll(ConfigLayer, TracingLayerLive);
-const PatternsLayerWithDeps = PatternsLayer.pipe(Layer.provide(ConfigLayer));
-export const AppLayer = Layer.mergeAll(BaseLayers, PatternsLayerWithDeps);
+export const AppLayer = Layer.mergeAll(
+  ConfigService.Default,
+  PatternsService.Default,
+  TracingLayerLive
+);
 
 /**
  * Helper to run an Effect with the app runtime
@@ -120,4 +112,14 @@ export const AppLayer = Layer.mergeAll(BaseLayers, PatternsLayerWithDeps);
 export const runWithRuntime = <A, E>(
   effect: Effect.Effect<A, E, PatternsService | ConfigService | TracingService>
 ): Promise<A> =>
-  effect.pipe(Effect.provide(AppLayer), Effect.scoped, Effect.runPromise);
+  effect.pipe(
+    Effect.provide(AppLayer),
+    Effect.scoped,
+    Effect.runPromise as (
+      effect: Effect.Effect<
+        A,
+        E,
+        PatternsService | ConfigService | TracingService
+      >
+    ) => Promise<A>
+  );
