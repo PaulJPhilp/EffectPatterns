@@ -2,17 +2,17 @@
  * Queue Management Commands
  */
 
-import { Effect } from 'effect';
-import { Command, Options } from '@effect/cli';
-import { loadConfig } from '../services/config.js';
-import { SupermemoryServiceLive } from '../services/supermemory.js';
-import { displayError, displaySuccess } from '../services/ui.js';
+import { Effect } from "effect";
+import { Command, Options } from "@effect/cli";
+import { loadConfig, SupermemoryService } from "../services/index.js";
 import {
+  displayError,
+  displaySuccess,
   createHeader,
   createInfoCard,
   createSuccess,
-} from '../services/tui-formatter.js';
-import { prompt } from '../services/dialog.js';
+  prompt,
+} from "../helpers/index.js";
 import chalk from 'chalk';
 import Table from 'cli-table3';
 

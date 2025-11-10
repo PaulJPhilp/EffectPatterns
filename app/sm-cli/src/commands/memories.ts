@@ -2,17 +2,19 @@
  * Memories Management Commands
  */
 
-import { Effect, Option } from 'effect';
-import { Command, Options } from '@effect/cli';
-import { loadConfig, ConfigServiceLive } from '../services/config.js';
-import { SupermemoryServiceLive } from '../services/supermemory.js';
-import { displayOutput, displayJson, displayLines, displaySuccess, displayError } from '../services/ui.js';
-import { prompt, promptMultiline, promptChoice } from '../services/dialog.js';
+import { Effect, Option } from "effect";
+import { Command, Options } from "@effect/cli";
+import { ConfigService } from "../services/index.js";
+import { SupermemoryService } from "../services/index.js";
 import {
-  formatMemoriesHuman,
-  formatMemoriesJson,
-} from '../formatters/index.js';
-import {
+  displayOutput,
+  displayJson,
+  displayLines,
+  displaySuccess,
+  displayError,
+  prompt,
+  promptMultiline,
+  promptChoice,
   createMemoryTable,
   createHeader,
   createStatPanel,
@@ -21,7 +23,11 @@ import {
   createSuccess,
   createError,
   createBadge,
-} from '../services/tui-formatter.js';
+} from '../helpers/index.js';
+import {
+  formatMemoriesHuman,
+  formatMemoriesJson,
+} from '../formatters/index.js';
 import type { DocumentSearchOptions } from '../types.js';
 
 const formatOption = Options.choice('format', ['human', 'json'] as const)

@@ -2,16 +2,19 @@
  * Project Management Commands
  */
 
-import { Effect } from 'effect';
-import { Command, Options } from '@effect/cli';
-import { loadConfig, saveConfig } from '../services/config.js';
-import { displayOutput, displaySuccess, displayJson, displayLines } from '../services/ui.js';
+import { Effect } from "effect";
+import { Command, Options } from "@effect/cli";
+import { loadConfig, saveConfig } from "../services/index.js";
 import {
+  displayOutput,
+  displaySuccess,
+  displayJson,
+  displayLines,
   createHeader,
   createInfoCard,
   createSuccess,
   createBadge,
-} from '../services/tui-formatter.js';
+} from "../helpers/index.js";
 import type { OutputOptions } from '../types.js';
 
 const formatOption = Options.choice('format', ['human', 'json'] as const)

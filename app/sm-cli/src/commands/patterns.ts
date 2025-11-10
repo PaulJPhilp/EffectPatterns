@@ -2,13 +2,18 @@
  * Pattern Management Commands
  */
 
-import { Effect, Option } from 'effect';
-import { Command, Options, Args } from '@effect/cli';
-import * as fs from 'fs';
-import * as path from 'path';
-import { loadConfig, saveConfig, ConfigServiceLive } from '../services/config.js';
-import { SupermemoryServiceLive } from '../services/supermemory.js';
-import { displayOutput, displayJson, displayError, displaySuccess } from '../services/ui.js';
+import { Effect, Option } from "effect";
+import { Command, Options, Args } from "@effect/cli";
+import * as fs from "fs";
+import * as path from "path";
+import { loadConfig, saveConfig } from "../services/index.js";
+import { SupermemoryService } from "../services/index.js";
+import {
+  displayOutput,
+  displayJson,
+  displayError,
+  displaySuccess,
+} from "../helpers/index.js";
 import {
   formatUploadResultsHuman,
   formatUploadResultsJson,
