@@ -180,7 +180,7 @@
         "@effect/printer": "^0.34.8",
         "@effect/printer-ansi": "^0.34.8",
         "@effect/schema": "^0.70.4",
-        "@effect/typeclass": "^0.37.0",
+        "@effect/typeclass": "^0.38.0",
         "chalk": "^5.6.2",
         "cli-table3": "^0.6.5",
         "effect": "^3.19.2",
@@ -551,7 +551,7 @@
 
     "@effect/sql": ["@effect/sql@0.46.0", "", { "dependencies": { "uuid": "11.1.0" }, "peerDependencies": { "@effect/experimental": "0.54.6", "@effect/platform": "0.90.10", "effect": "3.18.4" } }, "sha512-nm9TuTTG7gLmJlIPkf71wA5lXArSvkpm1oYoIF+rhf01wef+1ujz9Mv1SfuzYbzsk7W9+OXUIRMxz/nSlKkiGQ=="],
 
-    "@effect/typeclass": ["@effect/typeclass@0.37.0", "", { "peerDependencies": { "effect": "^3.18.0" } }, "sha512-8PkVWx82gkavYYMDlRV80pM1Ss0dL84wabkho6JjaAuDr+gJKx87N0T6Z+UGroySslsfw1FW1dMibUPH1BXX1w=="],
+    "@effect/typeclass": ["@effect/typeclass@0.38.0", "", { "peerDependencies": { "effect": "^3.19.0" } }, "sha512-lMUcJTRtG8KXhXoczapZDxbLK5os7M6rn0zkvOgncJW++A0UyelZfMVMKdT5R+fgpZcsAU/1diaqw3uqLJwGxA=="],
 
     "@effect/workflow": ["@effect/workflow@0.11.5", "", { "peerDependencies": { "@effect/platform": "0.90.10", "@effect/rpc": "0.71.1", "effect": "3.18.4" } }, "sha512-kdv0amQ/F1xTFeK3g/merYZiy31E5kLEoAafz+JZQDsVzShaL3DlRqG+HOZTUFUCeCDX/kSrvsHBRWRBofaLQQ=="],
 
