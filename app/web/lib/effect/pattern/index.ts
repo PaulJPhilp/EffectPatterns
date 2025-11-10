@@ -12,12 +12,11 @@ export { PatternNotFound, PatternQueryError } from './errors.js';
 export {
   PageParamsSchema,
   PatternFilterSchema,
-  SkillLevelSchema,
+  SkillLevelSchema
 } from './schema.js';
 // Service
 export {
-  PatternRepositoryLive,
-  PatternRepositoryService,
+  PatternRepositoryService
 } from './service.js';
 // Types
 export type {
@@ -28,7 +27,7 @@ export type {
   PatternFilter,
   PatternID,
   PatternMeta,
-  SkillLevel,
+  SkillLevel
 } from './types.js';
 
 // Utils

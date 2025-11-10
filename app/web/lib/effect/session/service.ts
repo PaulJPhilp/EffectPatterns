@@ -7,14 +7,20 @@
 import { Effect } from "effect";
 
 /**
- * Session service implementation
+ * Session service implementation (stub - Phase 3)
  */
+const makeSessionService = () =>
+  Effect.gen(function* () {
+    return {
+      getSession: () => Effect.fail(new Error("SessionService not implemented")),
+      updateSession: () => Effect.fail(new Error("SessionService not implemented")),
+    };
+  });
+
 export class SessionService extends Effect.Service<SessionService>()(
   "SessionService",
   {
-    sync: () => {
-      throw new Error("SessionService not implemented");
-    },
+    scoped: makeSessionService,
   }
 ) {}
 
