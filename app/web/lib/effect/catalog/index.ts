@@ -3,16 +3,13 @@
  */
 
 // API
-export type { Catalog } from './api.js';
-export type { CatalogError } from './errors.js';
+export type { Catalog } from "./api.js";
+export type { CatalogError } from "./errors.js";
 
 // Errors
-export {
-  CatalogLoadError,
-  CatalogNotInitialized,
-} from './errors.js';
+export { CatalogLoadError, CatalogNotInitialized } from "./errors.js";
 // Service
-export { CatalogLive, CatalogService } from './service.js';
+export { CatalogService } from "./service.js";
 // Types
 export type {
   CatalogIndices,
@@ -20,4 +17,4 @@ export type {
   ModulePlacement,
   ModuleStageGroup,
   ModuleView,
-} from './types.js';
+} from "./types.js";
