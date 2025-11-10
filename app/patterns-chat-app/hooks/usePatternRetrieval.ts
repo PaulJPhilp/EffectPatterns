@@ -6,7 +6,7 @@
  * Handles pattern scoring, fetching, and state management for the chat interface.
  */
 
-import { Pattern } from '@/lib/services/patterns-service';
+import type { Pattern } from '@/src/services/patterns-service/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface UsePatternRetrievalState {
