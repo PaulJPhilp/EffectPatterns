@@ -1,5 +1,5 @@
-import * as fs from "fs";
 import { Effect } from "effect";
+import * as fs from "fs";
 import type { SupermemoryConfig } from "../../types.js";
 import type { ConfigServiceAPI } from "./api.js";
 import {
