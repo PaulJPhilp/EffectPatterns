@@ -83,7 +83,7 @@
     "radix-ui": "^1.4.3",
     "react": "19.0.0-rc-45804af1-20241021",
     "react-data-grid": "7.0.0-beta.47",
-    "react-dom": "19.0.0-rc-45804af1-20241021",
+    "react-dom": "19.2.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^2.1.9",
     "react-syntax-highlighter": "^15.6.6",
