@@ -1,5 +1,19 @@
+import { Data, Effect, Schema } from "effect";
 import Supermemory from "supermemory";
-import { Schema, Effect } from "effect";
+
+// Error types for memory operations
+class MemoryError extends Data.TaggedError("MemoryError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}
+
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  readonly message: string;
+}> {}
+
+class ParseError extends Data.TaggedError("ParseError")<{
+  readonly message: string;
+}> {}
 
 // User preferences types
 export interface UserPreferences {
@@ -61,7 +75,13 @@ export interface UserActivity {
 // Schema for type-safe JSON parsing
 const UserPreferencesSchema: Schema.Schema<UserPreferences> = Schema.Struct({
   selectedModel: Schema.optional(Schema.String),
-  theme: Schema.optional(Schema.Union(Schema.Literal("light"), Schema.Literal("dark"), Schema.Literal("system"))),
+  theme: Schema.optional(
+    Schema.Union(
+      Schema.Literal("light"),
+      Schema.Literal("dark"),
+      Schema.Literal("system")
+    )
+  ),
   sidebarCollapsed: Schema.optional(Schema.Boolean),
   messageCount: Schema.optional(Schema.Number),
   lastActivity: Schema.optional(Schema.String),
@@ -141,289 +161,382 @@ class UserMemoryService {
   }
 
   private getUserKey = (userId: string, key: string) => `user:${userId}:${key}`;
-  private getPreferencesKey = (userId: string) => this.getUserKey(userId, "preferences");
-  private getConversationKey = (userId: string, chatId: string) => this.getUserKey(userId, `chat:${chatId}`);
+  private getPreferencesKey = (userId: string) =>
+    this.getUserKey(userId, "preferences");
+  private getConversationKey = (userId: string, chatId: string) =>
+    this.getUserKey(userId, `chat:${chatId}`);
 
   // User preferences
   async getPreferences(userId: string): Promise<UserPreferences> {
-    try {
-      const key = this.getPreferencesKey(userId);
+    return Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const key = this.getPreferencesKey(userId);
 
-      const memories = await this.client.search.memories({
-        q: key,
-        limit: 1
-      });
+          const memories = await this.client.search.memories({
+            q: key,
+            limit: 1,
+          });
 
-      if (memories.results && memories.results.length > 0) {
-        const memory = memories.results[0];
-        
-        try {
-          // Try parsing as JSON
-          const jsonData = JSON.parse(memory.memory);
-          
-          // Validate with Schema
-          const result = await Effect.runPromise(
-            Schema.decodeUnknown(UserPreferencesSchema)(jsonData).pipe(
-              Effect.catchAll(() => Effect.succeed({} as UserPreferences))
-            )
-          );
-          return result;
-        } catch {
-          // Supermemory sometimes stores non-JSON text, silently return defaults
-          return {};
-        }
-      }
+          if (memories.results && memories.results.length > 0) {
+            const memory = memories.results[0];
 
-      return {};
-    } catch (error) {
-      console.warn("Failed to get user preferences:", error);
-      return {};
-    }
+            try {
+              const jsonData = JSON.parse(memory.memory);
+
+              const result = await Effect.runPromise(
+                Schema.decodeUnknown(UserPreferencesSchema)(jsonData).pipe(
+                  Effect.catchAll(() => Effect.succeed({} as UserPreferences))
+                )
+              );
+              return result;
+            } catch {
+              return {} as UserPreferences;
+            }
+          }
+
+          return {} as UserPreferences;
+        },
+        catch: (error) =>
+          new MemoryError({
+            message: "Failed to get user preferences",
+            cause: error,
+          }),
+      }).pipe(Effect.catchAll(() => Effect.succeed({} as UserPreferences)))
+    );
   }
 
-  async setPreferences(userId: string, preferences: Partial<UserPreferences>): Promise<void> {
-    try {
-      const key = this.getPreferencesKey(userId);
-      const existing = await this.getPreferences(userId);
-      const updated = { ...existing, ...preferences };
+  async setPreferences(
+    userId: string,
+    preferences: Partial<UserPreferences>
+  ): Promise<void> {
+    return Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const key = this.getPreferencesKey(userId);
+          const existing = await this.getPreferences(userId);
+          const updated = { ...existing, ...preferences };
 
-      await this.client.memories.add({
-        content: JSON.stringify(updated),
-        metadata: {
-          type: "user_preferences",
-          userId,
-          key,
-          timestamp: new Date().toISOString()
-        }
-      });
-    } catch (error) {
-      console.warn("Failed to set user preferences:", error);
-      throw error;
-    }
+          await this.client.memories.add({
+            content: JSON.stringify(updated),
+            metadata: {
+              type: "user_preferences",
+              userId,
+              key,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        },
+        catch: (error) =>
+          new MemoryError({
+            message: "Failed to set user preferences",
+            cause: error,
+          }),
+      }).pipe(
+        Effect.catchAll((error) =>
+          Effect.sync(() => {
+            console.warn("Failed to set user preferences:", error);
+          })
+        )
+      )
+    );
   }
 
   // Conversation memory
   async getConversationMemory(userId: string, chatId: string): Promise<any> {
-    try {
-      const key = this.getConversationKey(userId, chatId);
-      const memories = await this.client.search.memories({
-        q: key,
-        limit: 1
-      });
+    return Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const key = this.getConversationKey(userId, chatId);
+          const memories = await this.client.search.memories({
+            q: key,
+            limit: 1,
+          });
 
-      if (memories.results && memories.results.length > 0) {
-        const memory = memories.results[0];
-        try {
-          // Parse JSON string directly (any valid JSON structure)
-          const result = JSON.parse(memory.memory);
-          return result;
-        } catch (parseError) {
-          console.warn("Failed to parse conversation memory:", parseError);
+          if (memories.results && memories.results.length > 0) {
+            const memory = memories.results[0];
+            try {
+              return JSON.parse(memory.memory);
+            } catch {
+              return null;
+            }
+          }
+
           return null;
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.warn("Failed to get conversation memory:", error);
-      return null;
-    }
+        },
+        catch: (error) =>
+          new MemoryError({
+            message: "Failed to get conversation memory",
+            cause: error,
+          }),
+      }).pipe(Effect.catchAll(() => Effect.succeed(null)))
+    );
   }
 
-  async setConversationMemory(userId: string, chatId: string, memoryData: any): Promise<void> {
-    try {
-      const key = this.getConversationKey(userId, chatId);
+  async setConversationMemory(
+    userId: string,
+    chatId: string,
+    memoryData: any
+  ): Promise<void> {
+    return Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const key = this.getConversationKey(userId, chatId);
 
-      await this.client.memories.add({
-        content: JSON.stringify(memoryData),
-        metadata: {
-          type: "conversation_memory",
-          userId,
-          chatId,
-          key,
-          timestamp: new Date().toISOString()
-        }
-      });
-    } catch (error) {
-      console.warn("Failed to set conversation memory:", error);
-      throw error;
-    }
+          await this.client.memories.add({
+            content: JSON.stringify(memoryData),
+            metadata: {
+              type: "conversation_memory",
+              userId,
+              chatId,
+              key,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        },
+        catch: (error) =>
+          new MemoryError({
+            message: "Failed to set conversation memory",
+            cause: error,
+          }),
+      }).pipe(
+        Effect.catchAll((error) =>
+          Effect.sync(() => {
+            console.warn("Failed to set conversation memory:", error);
+          })
+        )
+      )
+    );
   }
 
   // Generic user data storage
   async getUserData(userId: string, key: string): Promise<any> {
-    try {
-      const fullKey = this.getUserKey(userId, key);
-      const memories = await this.client.search.memories({
-        q: fullKey,
-        limit: 1
-      });
+    return Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const fullKey = this.getUserKey(userId, key);
+          const memories = await this.client.search.memories({
+            q: fullKey,
+            limit: 1,
+          });
 
-      if (memories.results && memories.results.length > 0) {
-        const memory = memories.results[0];
-        
-        try {
-          // Parse as JSON, return null if not valid JSON
-          const result = JSON.parse(memory.memory);
-          return result;
-        } catch {
-          // Supermemory stores non-JSON text sometimes
+          if (memories.results && memories.results.length > 0) {
+            const memory = memories.results[0];
+
+            try {
+              return JSON.parse(memory.memory);
+            } catch {
+              return null;
+            }
+          }
+
           return null;
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.warn("Failed to get user data:", error);
-      return null;
-    }
+        },
+        catch: (error) =>
+          new MemoryError({
+            message: "Failed to get user data",
+            cause: error,
+          }),
+      }).pipe(Effect.catchAll(() => Effect.succeed(null)))
+    );
   }
 
   async setUserData(userId: string, key: string, data: any): Promise<void> {
-    try {
-      const fullKey = this.getUserKey(userId, key);
+    return Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const fullKey = this.getUserKey(userId, key);
 
-      await this.client.memories.add({
-        content: JSON.stringify(data),
-        metadata: {
-          type: "user_data",
-          userId,
-          key: fullKey,
-          timestamp: new Date().toISOString()
-        }
-      });
-    } catch (error) {
-      console.warn("Failed to set user data:", error);
-      throw error;
-    }
+          await this.client.memories.add({
+            content: JSON.stringify(data),
+            metadata: {
+              type: "user_data",
+              userId,
+              key: fullKey,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        },
+        catch: (error) =>
+          new MemoryError({
+            message: "Failed to set user data",
+            cause: error,
+          }),
+      }).pipe(
+        Effect.catchAll((error) =>
+          Effect.sync(() => {
+            console.warn("Failed to set user data:", error);
+          })
+        )
+      )
+    );
   }
 
   async deleteUserData(userId: string, key: string): Promise<boolean> {
-    try {
-      const fullKey = this.getUserKey(userId, key);
-      // Note: Supermemory doesn't have direct delete, but we can mark as deleted
-      console.warn("Delete not directly supported in Supermemory");
-      return false;
-    } catch (error) {
-      console.warn("Failed to delete user data:", error);
-      return false;
-    }
+    return Effect.runPromise(
+      Effect.sync(() => {
+        console.warn("Delete not directly supported in Supermemory");
+        return false;
+      })
+    );
   }
 
   async clearUserData(userId: string): Promise<void> {
-    try {
-      // Note: Supermemory doesn't have bulk delete
-      console.warn("Bulk clear not directly supported in Supermemory");
-    } catch (error) {
-      console.warn("Failed to clear user data:", error);
-      throw error;
-    }
+    return Effect.runPromise(
+      Effect.sync(() => {
+        console.warn("Bulk clear not directly supported in Supermemory");
+      })
+    );
   }
 
   // Conversation metadata
   private getConversationMetadataKey = (userId: string, chatId: string) =>
     this.getUserKey(userId, `metadata:${chatId}`);
 
-  async getConversationMetadata(userId: string, chatId: string): Promise<ConversationMetadata | null> {
-    try {
-      const key = this.getConversationMetadataKey(userId, chatId);
-      const memories = await this.client.search.memories({
-        q: key,
-        limit: 1
-      });
+  async getConversationMetadata(
+    userId: string,
+    chatId: string
+  ): Promise<ConversationMetadata | null> {
+    return Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const key = this.getConversationMetadataKey(userId, chatId);
+          const memories = await this.client.search.memories({
+            q: key,
+            limit: 1,
+          });
 
-      if (memories.results && memories.results.length > 0) {
-        const memory = memories.results[0];
-        
-        try {
-          const jsonData = JSON.parse(memory.memory);
-          const result = await Effect.runPromise(
-            Schema.decodeUnknown(ConversationMetadataSchema)(jsonData).pipe(
-              Effect.catchAll(() => Effect.succeed(null))
-            )
-          );
-          return result;
-        } catch {
+          if (memories.results && memories.results.length > 0) {
+            const memory = memories.results[0];
+
+            try {
+              const jsonData = JSON.parse(memory.memory);
+              const result = await Effect.runPromise(
+                Schema.decodeUnknown(ConversationMetadataSchema)(jsonData).pipe(
+                  Effect.catchAll(() => Effect.succeed(null))
+                )
+              );
+              return result;
+            } catch {
+              return null;
+            }
+          }
           return null;
-        }
-      }
-      return null;
-    } catch (error) {
-      console.warn("Failed to get conversation metadata:", error);
-      return null;
-    }
+        },
+        catch: (error) =>
+          new MemoryError({
+            message: "Failed to get conversation metadata",
+            cause: error,
+          }),
+      }).pipe(Effect.catchAll(() => Effect.succeed(null)))
+    );
   }
 
-  async setConversationMetadata(userId: string, chatId: string, metadata: ConversationMetadata): Promise<void> {
-    try {
-      const key = this.getConversationMetadataKey(userId, chatId);
+  async setConversationMetadata(
+    userId: string,
+    chatId: string,
+    metadata: ConversationMetadata
+  ): Promise<void> {
+    return Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const key = this.getConversationMetadataKey(userId, chatId);
 
-      await this.client.memories.add({
-        content: JSON.stringify(metadata),
-        metadata: {
-          type: "conversation_metadata",
-          userId,
-          chatId,
-          key,
-          timestamp: new Date().toISOString()
-        }
-      });
-    } catch (error) {
-      console.warn("Failed to set conversation metadata:", error);
-      throw error;
-    }
+          await this.client.memories.add({
+            content: JSON.stringify(metadata),
+            metadata: {
+              type: "conversation_metadata",
+              userId,
+              chatId,
+              key,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        },
+        catch: (error) =>
+          new MemoryError({
+            message: "Failed to set conversation metadata",
+            cause: error,
+          }),
+      }).pipe(
+        Effect.catchAll((error) =>
+          Effect.sync(() => {
+            console.warn("Failed to set conversation metadata:", error);
+          })
+        )
+      )
+    );
   }
 
   // User activity
-  private getUserActivityKey = (userId: string) => this.getUserKey(userId, "activity");
+  private getUserActivityKey = (userId: string) =>
+    this.getUserKey(userId, "activity");
 
   async getUserActivity(userId: string): Promise<UserActivity | null> {
-    try {
-      const key = this.getUserActivityKey(userId);
-      const memories = await this.client.search.memories({
-        q: key,
-        limit: 1
-      });
+    return Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const key = this.getUserActivityKey(userId);
+          const memories = await this.client.search.memories({
+            q: key,
+            limit: 1,
+          });
 
-      if (memories.results && memories.results.length > 0) {
-        const memory = memories.results[0];
-        
-        try {
-          const jsonData = JSON.parse(memory.memory);
-          const result = await Effect.runPromise(
-            Schema.decodeUnknown(UserActivitySchema)(jsonData).pipe(
-              Effect.catchAll(() => Effect.succeed(null))
-            )
-          );
-          return result;
-        } catch {
+          if (memories.results && memories.results.length > 0) {
+            const memory = memories.results[0];
+
+            try {
+              const jsonData = JSON.parse(memory.memory);
+              const result = await Effect.runPromise(
+                Schema.decodeUnknown(UserActivitySchema)(jsonData).pipe(
+                  Effect.catchAll(() => Effect.succeed(null))
+                )
+              );
+              return result;
+            } catch {
+              return null;
+            }
+          }
           return null;
-        }
-      }
-      return null;
-    } catch (error) {
-      console.warn("Failed to get user activity:", error);
-      return null;
-    }
+        },
+        catch: (error) =>
+          new MemoryError({
+            message: "Failed to get user activity",
+            cause: error,
+          }),
+      }).pipe(Effect.catchAll(() => Effect.succeed(null)))
+    );
   }
 
   async setUserActivity(userId: string, activity: UserActivity): Promise<void> {
-    try {
-      const key = this.getUserActivityKey(userId);
+    return Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const key = this.getUserActivityKey(userId);
 
-      await this.client.memories.add({
-        content: JSON.stringify(activity),
-        metadata: {
-          type: "user_activity",
-          userId,
-          key,
-          timestamp: new Date().toISOString()
-        }
-      });
-    } catch (error) {
-      console.warn("Failed to set user activity:", error);
-      throw error;
-    }
+          await this.client.memories.add({
+            content: JSON.stringify(activity),
+            metadata: {
+              type: "user_activity",
+              userId,
+              key,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        },
+        catch: (error) =>
+          new MemoryError({
+            message: "Failed to set user activity",
+            cause: error,
+          }),
+      }).pipe(
+        Effect.catchAll((error) =>
+          Effect.sync(() => {
+            console.warn("Failed to set user activity:", error);
+          })
+        )
+      )
+    );
   }
 }
 
@@ -434,47 +547,64 @@ export const userMemoryService = new UserMemoryService();
 export const getUserPreferences = (userId: string) =>
   userMemoryService.getPreferences(userId);
 
-export const setUserPreferences = (userId: string, preferences: Partial<UserPreferences>) =>
-  userMemoryService.setPreferences(userId, preferences);
+export const setUserPreferences = (
+  userId: string,
+  preferences: Partial<UserPreferences>
+) => userMemoryService.setPreferences(userId, preferences);
 
 export const rememberModelChoice = (userId: string, modelId: string) =>
   setUserPreferences(userId, {
     selectedModel: modelId,
-    lastActivity: new Date().toISOString()
+    lastActivity: new Date().toISOString(),
   });
 
 export const getLastModelChoice = (userId: string) =>
-  getUserPreferences(userId).then(prefs => prefs.selectedModel);
+  getUserPreferences(userId).then((prefs) => prefs.selectedModel);
 
 // Conversation context helpers
 export const getConversationContext = (userId: string, chatId: string) =>
   userMemoryService.getConversationMemory(userId, chatId);
 
-export const setConversationContext = (userId: string, chatId: string, context: ConversationContext) =>
-  userMemoryService.setConversationMemory(userId, chatId, context);
+export const setConversationContext = (
+  userId: string,
+  chatId: string,
+  context: ConversationContext
+) => userMemoryService.setConversationMemory(userId, chatId, context);
 
-export const extractConversationSummary = (messages: any[]): ConversationSummary => {
+export const extractConversationSummary = (
+  messages: any[]
+): ConversationSummary => {
   if (messages.length === 0) {
     return {};
   }
 
   // Extract key terms from recent messages
-  const recentMessages = messages.slice(-10).map((m: any) =>
-    typeof m.parts === 'string' ? m.parts : m.parts?.[0]?.text || ''
-  );
+  const recentMessages = messages
+    .slice(-10)
+    .map((m: any) =>
+      typeof m.parts === "string" ? m.parts : m.parts?.[0]?.text || ""
+    );
 
-  const allText = recentMessages.join(' ');
-  const words = allText.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+  const allText = recentMessages.join(" ");
+  const words = allText
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 4);
   const keyTerms = [...new Set(words)].slice(0, 10);
 
   // Extract main points from user messages (every few messages)
   const mainPoints: string[] = [];
-  for (let i = messages.length - 1; i >= Math.max(0, messages.length - 6); i--) {
+  for (
+    let i = messages.length - 1;
+    i >= Math.max(0, messages.length - 6);
+    i--
+  ) {
     const message = messages[i];
-    if (message.role === 'user' && message.parts) {
-      const text = typeof message.parts === 'string'
-        ? message.parts
-        : message.parts[0]?.text;
+    if (message.role === "user" && message.parts) {
+      const text =
+        typeof message.parts === "string"
+          ? message.parts
+          : message.parts[0]?.text;
       if (text && text.length > 10) {
         mainPoints.push(text.substring(0, 100));
       }
@@ -482,7 +612,8 @@ export const extractConversationSummary = (messages: any[]): ConversationSummary
   }
 
   // Infer user intent from recent messages
-  const lastUserMessage = messages.findLast((m: any) => m.role === 'user')?.parts?.[0]?.text || '';
+  const lastUserMessage =
+    messages.findLast((m: any) => m.role === "user")?.parts?.[0]?.text || "";
   const userIntent = lastUserMessage.substring(0, 50) || undefined;
 
   // Infer topic from overall conversation
@@ -518,8 +649,11 @@ export const updateConversationContext = async (
 export const getConversationMetadata = (userId: string, chatId: string) =>
   userMemoryService.getConversationMetadata(userId, chatId);
 
-export const setConversationMetadata = (userId: string, chatId: string, metadata: ConversationMetadata) =>
-  userMemoryService.setConversationMetadata(userId, chatId, metadata);
+export const setConversationMetadata = (
+  userId: string,
+  chatId: string,
+  metadata: ConversationMetadata
+) => userMemoryService.setConversationMetadata(userId, chatId, metadata);
 
 export const createConversationMetadata = (
   userId: string,
@@ -625,7 +759,9 @@ export const recordActivityHour = async (userId: string): Promise<void> => {
   const hour = now.getHours();
 
   // Track peak activity hours
-  const peakActivityHours = Array.from(new Set([...current.peakActivityHours, hour]));
+  const peakActivityHours = Array.from(
+    new Set([...current.peakActivityHours, hour])
+  );
 
   // Keep only top 5 peak hours
   if (peakActivityHours.length > 5) {
@@ -700,7 +836,9 @@ export const detectConversationOutcome = (
   }
 
   // Check for unsolved indicators
-  if (/\b(still stuck|not working|doesn't work|error|failed)\b/.test(lowerText)) {
+  if (
+    /\b(still stuck|not working|doesn't work|error|failed)\b/.test(lowerText)
+  ) {
     return "unsolved";
   }
 
