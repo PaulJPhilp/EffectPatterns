@@ -1,4 +1,5 @@
 import { Data, Effect, Schema } from "effect";
+import * as Json from "effect-json";
 import Supermemory from "supermemory";
 
 // Error types for memory operations
@@ -181,18 +182,14 @@ class UserMemoryService {
           if (memories.results && memories.results.length > 0) {
             const memory = memories.results[0];
 
-            try {
-              const jsonData = JSON.parse(memory.memory);
-
-              const result = await Effect.runPromise(
-                Schema.decodeUnknown(UserPreferencesSchema)(jsonData).pipe(
-                  Effect.catchAll(() => Effect.succeed({} as UserPreferences))
-                )
-              );
-              return result;
-            } catch {
-              return {} as UserPreferences;
-            }
+            return await Effect.runPromise(
+              (
+                Json.parse(UserPreferencesSchema as any, memory.memory) as any
+              ).pipe(
+                Effect.map((data: unknown) => data as UserPreferences),
+                Effect.catchAll(() => Effect.succeed({} as UserPreferences))
+              )
+            );
           }
 
           return {} as UserPreferences;
@@ -203,7 +200,7 @@ class UserMemoryService {
             cause: error,
           }),
       }).pipe(Effect.catchAll(() => Effect.succeed({} as UserPreferences)))
-    );
+    ) as Promise<UserPreferences>;
   }
 
   async setPreferences(
@@ -255,11 +252,11 @@ class UserMemoryService {
 
           if (memories.results && memories.results.length > 0) {
             const memory = memories.results[0];
-            try {
-              return JSON.parse(memory.memory);
-            } catch {
-              return null;
-            }
+            return await Effect.runPromise(
+              (Json.parse(Schema.Unknown as any, memory.memory) as any).pipe(
+                Effect.catchAll(() => Effect.succeed(null))
+              )
+            );
           }
 
           return null;
@@ -323,11 +320,11 @@ class UserMemoryService {
           if (memories.results && memories.results.length > 0) {
             const memory = memories.results[0];
 
-            try {
-              return JSON.parse(memory.memory);
-            } catch {
-              return null;
-            }
+            return await Effect.runPromise(
+              (Json.parse(Schema.Unknown as any, memory.memory) as any).pipe(
+                Effect.catchAll(() => Effect.succeed(null))
+              )
+            );
           }
 
           return null;
@@ -409,17 +406,19 @@ class UserMemoryService {
           if (memories.results && memories.results.length > 0) {
             const memory = memories.results[0];
 
-            try {
-              const jsonData = JSON.parse(memory.memory);
-              const result = await Effect.runPromise(
-                Schema.decodeUnknown(ConversationMetadataSchema)(jsonData).pipe(
-                  Effect.catchAll(() => Effect.succeed(null))
-                )
-              );
-              return result;
-            } catch {
-              return null;
-            }
+            return await Effect.runPromise(
+              (
+                Json.parse(
+                  ConversationMetadataSchema as any,
+                  memory.memory
+                ) as any
+              ).pipe(
+                Effect.map(
+                  (data: unknown) => data as ConversationMetadata | null
+                ),
+                Effect.catchAll(() => Effect.succeed(null))
+              )
+            );
           }
           return null;
         },
@@ -429,7 +428,7 @@ class UserMemoryService {
             cause: error,
           }),
       }).pipe(Effect.catchAll(() => Effect.succeed(null)))
-    );
+    ) as Promise<ConversationMetadata | null>;
   }
 
   async setConversationMetadata(
@@ -485,17 +484,14 @@ class UserMemoryService {
           if (memories.results && memories.results.length > 0) {
             const memory = memories.results[0];
 
-            try {
-              const jsonData = JSON.parse(memory.memory);
-              const result = await Effect.runPromise(
-                Schema.decodeUnknown(UserActivitySchema)(jsonData).pipe(
-                  Effect.catchAll(() => Effect.succeed(null))
-                )
-              );
-              return result;
-            } catch {
-              return null;
-            }
+            return await Effect.runPromise(
+              (
+                Json.parse(UserActivitySchema as any, memory.memory) as any
+              ).pipe(
+                Effect.map((data: unknown) => data as UserActivity | null),
+                Effect.catchAll(() => Effect.succeed(null))
+              )
+            );
           }
           return null;
         },
@@ -505,7 +501,7 @@ class UserMemoryService {
             cause: error,
           }),
       }).pipe(Effect.catchAll(() => Effect.succeed(null)))
-    );
+    ) as Promise<UserActivity | null>;
   }
 
   async setUserActivity(userId: string, activity: UserActivity): Promise<void> {
