@@ -177,10 +177,10 @@
         "@effect/cli": "^0.40.8",
         "@effect/platform": "^0.64.1",
         "@effect/platform-node": "^0.59.1",
-        "@effect/printer": "^0.34.8",
-        "@effect/printer-ansi": "^0.34.8",
+        "@effect/printer": "^0.47.0",
+        "@effect/printer-ansi": "^0.47.0",
         "@effect/schema": "^0.70.4",
-        "@effect/typeclass": "^0.37.0",
+        "@effect/typeclass": "^0.38.0",
         "chalk": "^5.6.2",
         "cli-table3": "^0.6.5",
         "effect": "^3.19.2",
@@ -541,9 +541,9 @@
 
     "@effect/platform-node-shared": ["@effect/platform-node-shared@0.51.6", "", { "dependencies": { "@parcel/watcher": "2.5.1", "multipasta": "0.2.7", "ws": "8.18.3" }, "peerDependencies": { "@effect/cluster": "0.50.6", "@effect/platform": "0.90.10", "@effect/rpc": "0.71.1", "@effect/sql": "0.46.0", "effect": "3.18.4" } }, "sha512-0Px0qpKR6vwoSuTbHPap9FOcUvt9MPLyYR6ZrskXJny4wZYHt9MfF0xR8a4MPbBaJ3UtGH9z74ijQw2cmzYxEg=="],
 
-    "@effect/printer": ["@effect/printer@0.34.8", "", { "peerDependencies": { "@effect/typeclass": "^0.25.8", "effect": "^3.6.8" } }, "sha512-y6tgSog55yK0f8VB9T8evE3Kw9JzjVeCSqJ6NZzP3FS91CFQLEPIBWgZqlzUg5kKyOb6KwLAt61yP9HC/B4VWg=="],
+    "@effect/printer": ["@effect/printer@0.47.0", "", { "peerDependencies": { "@effect/typeclass": "^0.38.0", "effect": "^3.19.0" } }, "sha512-VgR8e+YWWhMEAh9qFOjwiZ3OXluAbcVLIOtvp2S5di1nSrPOZxj78g8LE77JSvyfp5y5bS2gmFW+G7xD5uU+2Q=="],
 
-    "@effect/printer-ansi": ["@effect/printer-ansi@0.34.8", "", { "dependencies": { "@effect/printer": "^0.34.8" }, "peerDependencies": { "@effect/typeclass": "^0.25.8", "effect": "^3.6.8" } }, "sha512-zNClTidSAnrW16SmRZoh771FKCrjaatJig3olX7Cn+N3SGD8FVVYSDTdxadubOML+72CnRl54L2+vNoY8LUGtg=="],
+    "@effect/printer-ansi": ["@effect/printer-ansi@0.47.0", "", { "dependencies": { "@effect/printer": "^0.47.0" }, "peerDependencies": { "@effect/typeclass": "^0.38.0", "effect": "^3.19.0" } }, "sha512-tDEQ9XJpXDNYoWMQJHFRMxKGmEOu6z32x3Kb8YLOV5nkauEKnKmWNs7NBp8iio/pqoJbaSwqDwUg9jXVquxfWQ=="],
 
     "@effect/rpc": ["@effect/rpc@0.71.1", "", { "dependencies": { "msgpackr": "1.11.5" }, "peerDependencies": { "@effect/platform": "0.90.10", "effect": "3.18.4" } }, "sha512-WgASRYmLBbCHM+3xfAGACVM8nOl8DJb+46znAN80hURVOzbPDd7/xjepj59idpIZYBsErv4ixRKfVLLtrGGPyg=="],
 
@@ -551,7 +551,7 @@
 
     "@effect/sql": ["@effect/sql@0.46.0", "", { "dependencies": { "uuid": "11.1.0" }, "peerDependencies": { "@effect/experimental": "0.54.6", "@effect/platform": "0.90.10", "effect": "3.18.4" } }, "sha512-nm9TuTTG7gLmJlIPkf71wA5lXArSvkpm1oYoIF+rhf01wef+1ujz9Mv1SfuzYbzsk7W9+OXUIRMxz/nSlKkiGQ=="],
 
-    "@effect/typeclass": ["@effect/typeclass@0.37.0", "", { "peerDependencies": { "effect": "^3.18.0" } }, "sha512-8PkVWx82gkavYYMDlRV80pM1Ss0dL84wabkho6JjaAuDr+gJKx87N0T6Z+UGroySslsfw1FW1dMibUPH1BXX1w=="],
+    "@effect/typeclass": ["@effect/typeclass@0.38.0", "", { "peerDependencies": { "effect": "^3.19.0" } }, "sha512-lMUcJTRtG8KXhXoczapZDxbLK5os7M6rn0zkvOgncJW++A0UyelZfMVMKdT5R+fgpZcsAU/1diaqw3uqLJwGxA=="],
 
     "@effect/workflow": ["@effect/workflow@0.11.5", "", { "peerDependencies": { "@effect/platform": "0.90.10", "@effect/rpc": "0.71.1", "effect": "3.18.4" } }, "sha512-kdv0amQ/F1xTFeK3g/merYZiy31E5kLEoAafz+JZQDsVzShaL3DlRqG+HOZTUFUCeCDX/kSrvsHBRWRBofaLQQ=="],
 
