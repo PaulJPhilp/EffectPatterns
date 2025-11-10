@@ -112,7 +112,7 @@
     "@shikijs/types": "3.13.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.2",
+    "@biomejs/biome": "2.3.4",
     "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4.1.17",
     "@tailwindcss/typography": "^0.5.19",
@@ -131,7 +131,7 @@
     "tailwindcss": "^4.1.17",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "ultracite": "5.3.9",
+    "ultracite": "5.6.4",
     "vitest": "^4.0.7"
   }
 }
