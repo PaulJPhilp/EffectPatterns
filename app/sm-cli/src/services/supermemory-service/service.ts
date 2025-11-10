@@ -67,7 +67,7 @@ export function makeSupermemoryService(
 
           const filtered = type
             ? memories.filter(
-                (m) =>
+                (m: Memory) =>
                   (m as any)?.type === type ||
                   (m.metadata as any)?.type === type
               )
