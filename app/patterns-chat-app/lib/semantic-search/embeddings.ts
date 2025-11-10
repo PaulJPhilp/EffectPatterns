@@ -1,12 +1,13 @@
-import Anthropic from "@anthropic-ai/sdk";
-
 /**
  * Semantic Search - Embeddings Module
  *
  * Generates embeddings for conversations, queries, and text snippets.
- * Currently uses Claude API (when available) or falls back to OpenAI.
+ * Supports multiple embedding providers via fetch-based API calls.
  *
- * Future: Anthropic is expected to release embeddings API in 2025
+ * Currently implemented:
+ * - OpenAI (text-embedding-3-small): Primary provider
+ * - Voyage AI: Alternative high-quality provider
+ * - Anthropic: Placeholder for future embeddings API
  */
 
 export interface EmbeddingOptions {
