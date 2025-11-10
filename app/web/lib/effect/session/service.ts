@@ -12,8 +12,10 @@ import { Effect } from "effect";
 const makeSessionService = () =>
   Effect.gen(function* () {
     return {
-      getSession: () => Effect.fail(new Error("SessionService not implemented")),
-      updateSession: () => Effect.fail(new Error("SessionService not implemented")),
+      getSession: () =>
+        Effect.fail(new Error("SessionService not implemented")),
+      updateSession: () =>
+        Effect.fail(new Error("SessionService not implemented")),
     };
   });
 
