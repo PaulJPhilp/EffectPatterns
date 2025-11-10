@@ -6,8 +6,9 @@
 import { FileSystem } from '@effect/platform/FileSystem';
 import { layer as NodeFileSystemLayer } from '@effect/platform-node/NodeFileSystem';
 import { Schema as S } from '@effect/schema';
+import * as TreeFormatter from '@effect/schema/TreeFormatter';
 import { Effect } from 'effect';
-import { PatternsIndex } from './schemas/pattern.js';
+import { PatternsIndex as PatternsIndexSchema, } from './schemas/pattern.js';
 /**
  * Load and parse patterns from a JSON file
  *
@@ -16,16 +17,21 @@ import { PatternsIndex } from './schemas/pattern.js';
  */
 export const loadPatternsFromJson = (filePath) => Effect.gen(function* () {
     const fs = yield* FileSystem;
-    // Read file as UTF-8 string
-    const content = yield* fs.readFileString(filePath);
-    // Parse JSON
-    const json = JSON.parse(content);
-    // Validate and decode using Effect schema
-    const decoded = yield* S.decode(PatternsIndex)(json);
+    const content = yield* fs.readFileString(filePath).pipe(Effect.mapError((error) => new Error(String(error))));
+    const json = yield* Effect.try({
+        try: () => JSON.parse(content),
+        catch: (cause) => new Error(`Failed to parse patterns JSON: ${String(cause)}`),
+    });
+    const decodedEither = S.decodeUnknownEither(PatternsIndexSchema)(json);
+    if (decodedEither._tag === 'Left') {
+        const message = TreeFormatter.formatErrorSync(decodedEither.left);
+        return yield* Effect.fail(new Error(`Invalid patterns index: ${message}`));
+    }
+    const decoded = decodedEither.right;
     return decoded;
-}).pipe(Effect.catchAll((error) => Effect.fail(new Error(String(error)))));
+});
 /**
  * Runnable version with Node FileSystem layer
  */
-export const loadPatternsFromJsonRunnable = (filePath) => loadPatternsFromJson(filePath).pipe(Effect.provide(NodeFileSystemLayer));
+export const loadPatternsFromJsonRunnable = (filePath) => Effect.provide(loadPatternsFromJson(filePath), NodeFileSystemLayer);
 //# sourceMappingURL=io.js.map

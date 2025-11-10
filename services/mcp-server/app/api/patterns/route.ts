@@ -11,9 +11,9 @@ import { type NextRequest, NextResponse } from 'next/server';
 import {
   isAuthenticationError,
   validateApiKey,
-} from '../../../src/auth/apiKey.js';
-import { PatternsService, runWithRuntime } from '../../../src/server/init.js';
-import { TracingService } from '../../../src/tracing/otlpLayer.js';
+} from '../../../src/auth/apiKey';
+import { PatternsService, runWithRuntime } from '../../../src/server/init';
+import { TracingService } from '../../../src/tracing/otlpLayer';
 
 export async function GET(request: NextRequest) {
   const searchEffect = Effect.gen(function* () {

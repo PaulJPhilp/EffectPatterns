@@ -1,0 +1,11 @@
+# Exclude root vercel.json (Vercel reads this before Root Directory is applied)
+../../vercel.json
+../vercel.json
+../../../vercel.json
+
+# Exclude pnpm lockfiles
+pnpm-lock.yaml
+**/pnpm-lock.yaml
+../../pnpm-lock.yaml
+../../../pnpm-lock.yaml
+

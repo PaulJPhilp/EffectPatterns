@@ -7,6 +7,7 @@
 import type { FileSystem, Path } from '@effect/platform';
 import { NodeContext } from '@effect/platform-node';
 import { Effect } from 'effect';
+import { MdxConfigService, MdxService, type MdxServiceSchema } from 'effect-mdx';
 import { db } from '../db/client.js';
 import type { NewPattern, NewPatternModulePlacement } from '../db/schema.js';
 import { patternModulePlacements, patterns } from '../db/schema.js';
@@ -118,7 +119,11 @@ const insertPlacements = (
 export const runIngestion = (
   patternsDir: string,
   roadmapsDir: string
-): Effect.Effect<void, Error, FileSystem.FileSystem | Path.Path> =>
+): Effect.Effect<
+  void,
+  Error,
+  FileSystem.FileSystem | Path.Path | MdxServiceSchema
+> =>
   Effect.gen(function* () {
     yield* Effect.logInfo('Starting pattern ingestion pipeline...');
     yield* Effect.logInfo(`Patterns directory: ${patternsDir}`);
@@ -155,4 +160,8 @@ export const runDefaultIngestion = (): Effect.Effect<void, Error> =>
     const roadmapsDir = 'roadmap';
 
     yield* runIngestion(patternsDir, roadmapsDir);
-  }).pipe(Effect.provide(NodeContext.layer));
+  }).pipe(
+    Effect.provide(MdxService.Default),
+    Effect.provide(MdxConfigService.Default),
+    Effect.provide(NodeContext.layer)
+  );

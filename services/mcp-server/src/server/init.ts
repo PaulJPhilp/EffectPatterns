@@ -8,19 +8,19 @@
  * for running Effects in Next.js route handlers.
  */
 
-import * as path from 'node:path';
 import {
   loadPatternsFromJsonRunnable,
   type Pattern,
   type PatternsIndex,
-} from '@effect-patterns/toolkit';
-import { Context, Effect, Layer, Ref } from 'effect';
-import { TracingLayerLive, type TracingService } from '../tracing/otlpLayer.js';
+} from "@effect-patterns/toolkit";
+import { Context, Effect, Layer, Ref } from "effect";
+import * as path from "node:path";
+import { TracingLayerLive, type TracingService } from "../tracing/otlpLayer";
 
 /**
  * Patterns service tag - provides in-memory pattern cache
  */
-export class PatternsService extends Context.Tag('PatternsService')<
+export class PatternsService extends Context.Tag("PatternsService")<
   PatternsService,
   {
     readonly patterns: Ref.Ref<readonly Pattern[]>;
@@ -32,7 +32,7 @@ export class PatternsService extends Context.Tag('PatternsService')<
 /**
  * Config service tag - provides environment configuration
  */
-export class ConfigService extends Context.Tag('ConfigService')<
+export class ConfigService extends Context.Tag("ConfigService")<
   ConfigService,
   {
     readonly apiKey: string;
@@ -45,11 +45,11 @@ export class ConfigService extends Context.Tag('ConfigService')<
  * Config Layer - Provides environment configuration
  */
 export const ConfigLayer = Layer.succeed(ConfigService, {
-  apiKey: process.env.PATTERN_API_KEY || '',
+  apiKey: process.env.PATTERN_API_KEY || "",
   patternsPath:
     process.env.PATTERNS_PATH ||
-    path.join(process.cwd(), 'data', 'patterns.json'),
-  nodeEnv: process.env.NODE_ENV || 'development',
+    path.join(process.cwd(), "data", "patterns.json"),
+  nodeEnv: process.env.NODE_ENV || "development",
 });
 
 /**
@@ -65,24 +65,24 @@ export const PatternsLayer = Layer.scoped(
     console.log(`[Patterns] Loading patterns from: ${config.patternsPath}`);
 
     // Load patterns at cold start
-    const patternsIndex = yield* loadPatternsFromJsonRunnable(
-      config.patternsPath,
+    const patternsIndex: PatternsIndex = yield* loadPatternsFromJsonRunnable(
+      config.patternsPath
     ).pipe(
-      Effect.catchAll((error) => {
-        console.error('[Patterns] Failed to load patterns:', error);
-        // Fallback to empty patterns array
-        return Effect.succeed({
-          version: '0.0.0',
+      Effect.catchAll((_error) =>
+        Effect.succeed({
+          version: "0.0.0",
           patterns: [],
           lastUpdated: new Date().toISOString(),
-        } as PatternsIndex);
-      }),
+        } as PatternsIndex)
+      )
     );
 
     console.log(`[Patterns] Loaded ${patternsIndex.patterns.length} patterns`);
 
     // Create Ref to hold patterns in memory
-    const patternsRef = yield* Ref.make(patternsIndex.patterns);
+    const patternsRef = yield* Ref.make<readonly Pattern[]>(
+      patternsIndex.patterns
+    );
 
     // Create service methods
     const getAllPatterns = () => Ref.get(patternsRef);
@@ -90,7 +90,7 @@ export const PatternsLayer = Layer.scoped(
     const getPatternById = (id: string) =>
       Effect.gen(function* () {
         const patterns = yield* Ref.get(patternsRef);
-        return patterns.find((p) => p.id === id);
+        return patterns.find((pattern) => pattern.id === id);
       });
 
     return {
@@ -98,7 +98,7 @@ export const PatternsLayer = Layer.scoped(
       getAllPatterns,
       getPatternById,
     };
-  }),
+  })
 );
 
 /**
@@ -118,5 +118,6 @@ export const AppLayer = Layer.mergeAll(BaseLayers, PatternsLayerWithDeps);
  * This provides all layers to the effect before running it.
  */
 export const runWithRuntime = <A, E>(
-  effect: Effect.Effect<A, E, PatternsService | ConfigService | TracingService>,
-): Promise<A> => effect.pipe(Effect.provide(AppLayer), Effect.runPromise);
+  effect: Effect.Effect<A, E, PatternsService | ConfigService | TracingService>
+): Promise<A> =>
+  effect.pipe(Effect.provide(AppLayer), Effect.scoped, Effect.runPromise);

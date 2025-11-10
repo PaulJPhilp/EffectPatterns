@@ -8,8 +8,12 @@ import type { FileSystem as FileSystemService } from '@effect/platform/FileSyste
 import { FileSystem } from '@effect/platform/FileSystem';
 import { layer as NodeFileSystemLayer } from '@effect/platform-node/NodeFileSystem';
 import { Schema as S } from '@effect/schema';
+import * as TreeFormatter from '@effect/schema/TreeFormatter';
 import { Effect } from 'effect';
-import { PatternsIndex } from './schemas/pattern.js';
+import {
+  PatternsIndex as PatternsIndexSchema,
+  type PatternsIndex as PatternsIndexData,
+} from './schemas/pattern.js';
 
 /**
  * Load and parse patterns from a JSON file
@@ -19,24 +23,33 @@ import { PatternsIndex } from './schemas/pattern.js';
  */
 export const loadPatternsFromJson = (
   filePath: string,
-): Effect.Effect<typeof PatternsIndex.Type, Error, FileSystemService> =>
+): Effect.Effect<PatternsIndexData, Error, FileSystemService> =>
   Effect.gen(function* () {
     const fs = yield* FileSystem;
 
-    // Read file as UTF-8 string
-    const content = yield* fs.readFileString(filePath);
+    const content = yield* fs.readFileString(filePath).pipe(
+      Effect.mapError((error) => new Error(String(error))),
+    );
 
-    // Parse JSON
-    const json = JSON.parse(content);
+    const json = yield* Effect.try<unknown, Error>({
+      try: () => JSON.parse(content),
+      catch: (cause) => new Error(`Failed to parse patterns JSON: ${String(cause)}`),
+    });
 
-    // Validate and decode using Effect schema
-    const decoded = yield* S.decode(PatternsIndex)(json);
+    const decodedEither = S.decodeUnknownEither(PatternsIndexSchema)(json);
+
+    if (decodedEither._tag === 'Left') {
+      const message = TreeFormatter.formatErrorSync(decodedEither.left);
+      return yield* Effect.fail(new Error(`Invalid patterns index: ${message}`));
+    }
+
+    const decoded: PatternsIndexData = decodedEither.right;
 
     return decoded;
-  }).pipe(Effect.catchAll((error) => Effect.fail(new Error(String(error)))));
+  });
 
 /**
  * Runnable version with Node FileSystem layer
  */
 export const loadPatternsFromJsonRunnable = (filePath: string) =>
-  loadPatternsFromJson(filePath).pipe(Effect.provide(NodeFileSystemLayer));
+  Effect.provide(loadPatternsFromJson(filePath), NodeFileSystemLayer);

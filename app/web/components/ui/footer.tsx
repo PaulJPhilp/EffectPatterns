@@ -10,7 +10,7 @@ const INTERNAL_LINKS: ReadonlyArray<{ href: Route; label: string }> = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-background/60 backdrop-blur">
+    <footer className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-muted">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-2">
           <p className="text-sm font-semibold uppercase tracking-[0.4em] text-muted-foreground">
@@ -23,7 +23,7 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col gap-6 border-t border-border pt-6 md:flex-row md:items-center md:justify-between">
-          <div className="text-sm text-muted-foreground">© {YEAR} Effect Patterns Hub. All rights reserved.</div>
+          <div className="text-sm text-muted-foreground">© {YEAR} Paul Philp. All rights reserved.</div>
           <nav className="flex flex-wrap items-center gap-4 text-sm font-medium text-muted-foreground">
             {INTERNAL_LINKS.map((link) => (
               <Link key={link.href} href={link.href} className="transition-colors hover:text-primary">

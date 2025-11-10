@@ -13,6 +13,7 @@ import {
   searchPatternsTool,
 } from "@/lib/ai/tools/search-patterns";
 import { updateDocument } from "@/lib/ai/tools/update-document";
+import { visualizePatternTool } from "@/lib/ai/tools/visualize-pattern";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -24,6 +25,7 @@ import {
   saveMessages,
   updateChatLastContextById,
 } from "@/lib/db/queries";
+import type { DBMessage } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import {
   autoTagConversation,
@@ -105,7 +107,21 @@ export async function POST(request: Request) {
 
   try {
     const json = await request.json();
-    requestBody = postRequestBodySchema.parse(json);
+
+    // Check if this is a standard AI SDK request (from assistant-ui)
+    if ("messages" in json && !("message" in json)) {
+      // Convert AI SDK format to our format
+      const lastMessage = json.messages[json.messages.length - 1];
+      requestBody = {
+        id: json.id || generateUUID(),
+        message: lastMessage,
+        selectedChatModel: "chat-model",
+        selectedVisibilityType: "private",
+      };
+    } else {
+      // Use existing format
+      requestBody = postRequestBodySchema.parse(json);
+    }
   } catch (_) {
     return new ChatSDKError("bad_request:api").toResponse();
   }
@@ -147,26 +163,44 @@ export async function POST(request: Request) {
     // Remember user's model choice for future sessions
     await rememberModelChoice(session.user.id, selectedChatModel);
 
-    const chat = await getChatById({ id });
+    let chat;
+    try {
+      chat = await getChatById({ id });
+    } catch {
+      // If database error, treat as non-existent chat and create it
+      chat = null;
+    }
 
     if (chat) {
       if (chat.userId !== session.user.id) {
         return new ChatSDKError("forbidden:chat").toResponse();
       }
     } else {
-      const title = await generateTitleFromUserMessage({
-        message,
-      });
+      try {
+        const title = await generateTitleFromUserMessage({
+          message,
+        });
 
-      await saveChat({
-        id,
-        userId: session.user.id,
-        title,
-        visibility: selectedVisibilityType,
-      });
+        await saveChat({
+          id,
+          userId: session.user.id,
+          title,
+          visibility: selectedVisibilityType,
+        });
+      } catch (error) {
+        // Log error but continue - allow conversation even if chat metadata fails to save
+        console.error("[Chat API] Failed to save chat metadata:", error);
+        // Don't return error - let the conversation continue
+      }
     }
 
-    const messagesFromDb = await getMessagesByChatId({ id });
+    let messagesFromDb: DBMessage[];
+    try {
+      messagesFromDb = await getMessagesByChatId({ id });
+    } catch {
+      // If database error, treat as new chat with no messages
+      messagesFromDb = [];
+    }
     const uiMessages = [...convertToUIMessages(messagesFromDb), message];
 
     const { longitude, latitude, city, country } = geolocation(request);
@@ -229,6 +263,7 @@ export async function POST(request: Request) {
                   "searchPatterns",
                   "getPatternById",
                   "listPatternCategories",
+                  "visualizePattern",
                 ],
           experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
@@ -242,6 +277,7 @@ export async function POST(request: Request) {
             searchPatterns: searchPatternsTool,
             getPatternById: getPatternByIdTool,
             listPatternCategories: listPatternCategoriesTool,
+            visualizePattern: visualizePatternTool,
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
