@@ -5,6 +5,7 @@
 
 import { Effect } from "effect";
 import type { SupermemoryConfig } from "../types.js";
+import { ConfigService } from "./config-service/service.js";
 
 // ConfigService
 export type { ConfigServiceAPI } from "./config-service/api.js";
@@ -20,10 +21,12 @@ export type { SupermemoryConfig } from "./config-service/types.js";
 /**
  * Helper: Load configuration
  */
-export const loadConfig: Effect.Effect<SupermemoryConfig> = Effect.gen(function* () {
-  const service = yield* ConfigService;
-  return yield* service.load();
-});
+export const loadConfig: Effect.Effect<SupermemoryConfig> = Effect.gen(
+  function* () {
+    const service = yield* ConfigService;
+    return yield* service.load();
+  }
+) as any;
 
 /**
  * Helper: Save configuration
@@ -32,7 +35,7 @@ export const saveConfig = (config: SupermemoryConfig) =>
   Effect.gen(function* () {
     const service = yield* ConfigService;
     yield* service.save(config);
-  });
+  }) as any;
 
 // SupermemoryService
 export type { SupermemoryServiceAPI } from "./supermemory-service/api.js";
@@ -45,7 +48,10 @@ export {
   SupermemoryError,
   TimeoutError,
 } from "./supermemory-service/errors.js";
-export { SupermemoryService, makeSupermemoryService } from "./supermemory-service/service.js";
+export {
+  SupermemoryService,
+  makeSupermemoryService,
+} from "./supermemory-service/service.js";
 export type {
   DocumentSearchOptions,
   DocumentSearchResult,
@@ -53,10 +59,10 @@ export type {
   MemoryMetadata,
   MemorySearchOptions,
   MemorySearchResult,
-  ProfileComparison,
-  ProfileStats,
   ProcessingDocument,
   ProcessingQueue,
+  ProfileComparison,
+  ProfileStats,
   SupermemoryClientConfig,
   UserProfile,
   UserProfileWithSearch,
