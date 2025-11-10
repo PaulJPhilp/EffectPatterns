@@ -3,6 +3,7 @@ import Supermemory from "supermemory";
 import type {
   DocumentSearchOptions,
   DocumentSearchResult,
+  Memory,
   MemoryMetadata,
   MemorySearchOptions,
   MemorySearchResult,
