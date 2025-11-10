@@ -297,9 +297,7 @@ export const generateBatchEmbeddings = async (
 ): Promise<EmbeddingResult[]> => {
   // For now, just map over individual calls
   // In production, would use batch API endpoints
-  return Promise.all(
-    texts.map(text => generateEmbedding(text, options))
-  );
+  return Promise.all(texts.map((text) => generateEmbedding(text, options)));
 };
 
 /**
