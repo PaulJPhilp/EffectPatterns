@@ -27,7 +27,7 @@
     "@effect/printer": "^0.34.8",
     "@effect/printer-ansi": "^0.34.8",
     "@effect/schema": "^0.70.4",
-    "@effect/typeclass": "^0.37.0",
+    "@effect/typeclass": "^0.38.0",
     "chalk": "^5.6.2",
     "cli-table3": "^0.6.5",
     "effect": "^3.19.2",
