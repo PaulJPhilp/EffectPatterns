@@ -1,7 +1,10 @@
 /**
  * Centralized Service Exports
- * All services are exported from this single entry point
+ * All Effect.Service implementations are exported from this single entry point
  */
+
+import { Effect } from "effect";
+import type { SupermemoryConfig } from "../types.js";
 
 // ConfigService
 export type { ConfigServiceAPI } from "./config-service/api.js";
@@ -14,6 +17,23 @@ export {
 export { ConfigService } from "./config-service/service.js";
 export type { SupermemoryConfig } from "./config-service/types.js";
 
+/**
+ * Helper: Load configuration
+ */
+export const loadConfig: Effect.Effect<SupermemoryConfig> = Effect.gen(function* () {
+  const service = yield* ConfigService;
+  return yield* service.load();
+});
+
+/**
+ * Helper: Save configuration
+ */
+export const saveConfig = (config: SupermemoryConfig) =>
+  Effect.gen(function* () {
+    const service = yield* ConfigService;
+    yield* service.save(config);
+  });
+
 // SupermemoryService
 export type { SupermemoryServiceAPI } from "./supermemory-service/api.js";
 export {
@@ -25,10 +45,7 @@ export {
   SupermemoryError,
   TimeoutError,
 } from "./supermemory-service/errors.js";
-export {
-  SupermemoryService,
-  makeSupermemoryService,
-} from "./supermemory-service/service.js";
+export { SupermemoryService, makeSupermemoryService } from "./supermemory-service/service.js";
 export type {
   DocumentSearchOptions,
   DocumentSearchResult,
@@ -36,41 +53,11 @@ export type {
   MemoryMetadata,
   MemorySearchOptions,
   MemorySearchResult,
-  ProcessingDocument,
-  ProcessingQueue,
   ProfileComparison,
   ProfileStats,
+  ProcessingDocument,
+  ProcessingQueue,
   SupermemoryClientConfig,
   UserProfile,
   UserProfileWithSearch,
 } from "./supermemory-service/types.js";
-
-// UIService (to be refactored)
-export {
-  displayError,
-  displayJson,
-  displayLines,
-  displayOutput,
-  displaySuccess,
-} from "./ui.js";
-
-// DialogService (to be refactored)
-export {
-  prompt,
-  promptChoice,
-  promptConfirm,
-  promptMultiline,
-} from "./dialog.js";
-
-// TUIFormatterService (to be refactored)
-export {
-  createBadge,
-  createError,
-  createHeader,
-  createInfo,
-  createInfoCard,
-  createMemoryTable,
-  createStatPanel,
-  createSuccess,
-  wrapColumn,
-} from "./tui-formatter.js";

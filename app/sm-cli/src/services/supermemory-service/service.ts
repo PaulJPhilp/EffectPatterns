@@ -3,16 +3,15 @@ import Supermemory from "supermemory";
 import type {
   DocumentSearchOptions,
   DocumentSearchResult,
-  Memory,
   MemoryMetadata,
   MemorySearchOptions,
   MemorySearchResult,
   ProcessingDocument,
   ProcessingQueue,
-  UserProfile,
-  UserProfileWithSearch,
   ProfileComparison,
   ProfileStats,
+  UserProfile,
+  UserProfileWithSearch,
 } from "../../types.js";
 import type { SupermemoryServiceAPI } from "./api.js";
 import {
@@ -50,9 +49,7 @@ export function makeSupermemoryService(
             operation: "listMemories",
             cause: error,
           }),
-      }).pipe(
-        Effect.map((response) => (response as any)?.memories ?? [])
-      );
+      }).pipe(Effect.map((response) => (response as any)?.memories ?? []));
 
     const countMemories = (type?: string) =>
       Effect.gen(function* () {
@@ -125,9 +122,7 @@ export function makeSupermemoryService(
             query,
             cause: error,
           }),
-      }).pipe(
-        Effect.map((results) => (results as any)?.results ?? [])
-      );
+      }).pipe(Effect.map((results) => (results as any)?.results ?? []));
 
     const getProcessingQueue = () =>
       Effect.tryPromise({
@@ -368,16 +363,19 @@ export function makeSupermemoryService(
             cause: error,
           }),
       }).pipe(
-        Effect.map((response) => ({
-          container: containerTag,
-          totalUsers: (response as any)?.totalUsers || 0,
-          avgStaticFacts: (response as any)?.avgStaticFacts || 0,
-          avgDynamicFacts: (response as any)?.avgDynamicFacts || 0,
-          maxStaticFacts: (response as any)?.maxStaticFacts || 0,
-          maxDynamicFacts: (response as any)?.maxDynamicFacts || 0,
-          commonTopics: (response as any)?.commonTopics || {},
-          retrievedAt: new Date().toISOString(),
-        } as ProfileStats))
+        Effect.map(
+          (response) =>
+            ({
+              container: containerTag,
+              totalUsers: (response as any)?.totalUsers || 0,
+              avgStaticFacts: (response as any)?.avgStaticFacts || 0,
+              avgDynamicFacts: (response as any)?.avgDynamicFacts || 0,
+              maxStaticFacts: (response as any)?.maxStaticFacts || 0,
+              maxDynamicFacts: (response as any)?.maxDynamicFacts || 0,
+              commonTopics: (response as any)?.commonTopics || {},
+              retrievedAt: new Date().toISOString(),
+            } as ProfileStats)
+        )
       );
 
     const searchDocuments = (options: DocumentSearchOptions) =>

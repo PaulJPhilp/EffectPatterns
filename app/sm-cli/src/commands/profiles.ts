@@ -4,11 +4,11 @@
  * Commands for managing user profiles in Supermemory
  */
 
-import { Command, Options } from '@effect/cli';
-import { Effect } from 'effect';
-import Table from 'cli-table3';
-import chalk from 'chalk';
-import { SupermemoryService } from '../services/supermemory.js';
+import { Command, Options } from "@effect/cli";
+import { Effect } from "effect";
+import Table from "cli-table3";
+import chalk from "chalk";
+import { SupermemoryService } from "../services/index.js";
 import type { OutputOptions } from '../types.js';
 
 // Helper function to format timestamp
