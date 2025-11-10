@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import type { SupermemoryConfig } from "../../types.js";
 import type {
-  ConfigError,
   ConfigLoadError,
+  ConfigParseError,
   ConfigSaveError,
 } from "./errors.js";
 
@@ -15,17 +15,15 @@ export interface ConfigServiceAPI {
   /**
    * Load configuration from file
    */
-  load(): Effect.Effect<SupermemoryConfig, ConfigLoadError | ConfigError>;
+  load(): Effect.Effect<SupermemoryConfig, ConfigLoadError | ConfigParseError>;
 
   /**
    * Save configuration to file
    */
-  save(
-    config: SupermemoryConfig
-  ): Effect.Effect<void, ConfigSaveError | ConfigError>;
+  save(config: SupermemoryConfig): Effect.Effect<void, ConfigSaveError>;
 
   /**
    * Get configuration file path
    */
-  getConfigPath(): Effect.Effect<string, ConfigError>;
+  getConfigPath(): Effect.Effect<string>;
 }
