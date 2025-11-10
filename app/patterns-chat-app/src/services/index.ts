@@ -4,37 +4,36 @@
  */
 
 // PatternsService
-export { PatternsService } from "./patterns-service/service";
 export type { PatternsServiceAPI } from "./patterns-service/api";
-export type {
-  Pattern,
-  PatternSearchResult,
-  MemoryRouterRequest,
-  MemoryRouterResponse,
-  CacheEntry,
-  CacheStats,
-} from "./patterns-service/types";
 export {
-  PatternsServiceError,
+  CacheError,
+  MemoryRouterError,
   PatternNotFoundError,
   PatternSearchError,
-  MemoryRouterError,
-  CacheError,
+  PatternsServiceError,
 } from "./patterns-service/errors";
+export { PatternsService } from "./patterns-service/service";
+export type {
+  CacheEntry,
+  CacheStats,
+  MemoryRouterRequest,
+  MemoryRouterResponse,
+  Pattern,
+  PatternSearchResult,
+} from "./patterns-service/types";
 
 // PatternScorerService
-export { PatternScorerService } from "./pattern-scorer-service/service";
 export type { PatternScorerServiceAPI } from "./pattern-scorer-service/api";
-export type {
-  ScoringResult,
-  DetailedScoringResult,
-  PatternKeywords,
-  ScoringConfig,
-  KeywordMatch,
-} from "./pattern-scorer-service/types";
 export {
-  PatternScorerError,
   InvalidThresholdError,
+  PatternScorerError,
   QueryValidationError,
 } from "./pattern-scorer-service/errors";
-
+export { PatternScorerService } from "./pattern-scorer-service/service";
+export type {
+  DetailedScoringResult,
+  KeywordMatch,
+  PatternKeywords,
+  ScoringConfig,
+  ScoringResult,
+} from "./pattern-scorer-service/types";
