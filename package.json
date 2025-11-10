@@ -88,7 +88,6 @@
     "rollback:web": "vercel rollback --project web"
   },
   "dependencies": {
-    "@anthropic-ai/claude-code": "^2.0.36",
     "@effect/cli": "^0.69.2",
     "@effect/platform": "^0.90.10",
     "@effect/platform-node": "^0.98.4",
