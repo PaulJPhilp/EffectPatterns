@@ -4,13 +4,19 @@
  * TODO: Implement in Phase 3
  */
 
-import { Context, Effect } from 'effect';
-import type * as Api from './api.js';
+import { Effect } from "effect";
 
-export class SessionService extends Context.Tag('SessionService')<
-  SessionService,
-  Api.SessionService
->() {}
+/**
+ * Session service implementation
+ */
+export class SessionService extends Effect.Service<SessionService>()(
+  "SessionService",
+  {
+    sync: () => {
+      throw new Error("SessionService not implemented");
+    },
+  }
+) {}
 
 export const getSession = Effect.serviceFunction(
   SessionService,

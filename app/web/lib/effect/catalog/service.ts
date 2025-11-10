@@ -4,12 +4,11 @@
  * Loads patterns + placements into memory and provides fast indexed access.
  */
 
-import { Context, Effect, Layer, Ref } from 'effect';
+import { Effect, Ref } from 'effect';
 import { db } from '../../db/client.js';
 import { patternModulePlacements, patterns } from '../../db/schema.js';
 import type { DbPatternRow, SkillLevel } from '../pattern/types.js';
 import { toPatternMeta } from '../pattern/utils.js';
-import type { Catalog } from './api.js';
 import { CatalogLoadError, CatalogNotInitialized } from './errors.js';
 import type {
   CatalogIndices,
@@ -19,12 +18,20 @@ import type {
 } from './types.js';
 
 /**
- * Catalog service tag
+ * Catalog service implementation
  */
-export class CatalogService extends Context.Tag('Catalog')<
-  CatalogService,
-  Catalog
->() {}
+export class CatalogService extends Effect.Service<CatalogService>()(
+  'CatalogService',
+  {
+    scoped: () =>
+      Effect.gen(function* () {
+        const indicesRef = yield* Ref.make<CatalogIndices | null>(null);
+        const catalog = makeCatalog(indicesRef);
+        yield* catalog.refresh();
+        return catalog;
+      }),
+  }
+) {}
 
 /**
  * Build indices from enriched patterns
@@ -255,20 +262,6 @@ const makeCatalog = (indicesRef: Ref.Ref<CatalogIndices | null>) => {
 };
 
 /**
- * Catalog service layer (initializes on creation)
+ * Catalog service default layer
  */
-export const CatalogLive = Layer.effect(
-  CatalogService,
-  Effect.gen(function* () {
-    // Create ref to hold indices
-    const indicesRef = yield* Ref.make<CatalogIndices | null>(null);
-
-    // Create service
-    const catalog = makeCatalog(indicesRef);
-
-    // Initialize catalog on startup
-    yield* catalog.refresh();
-
-    return catalog;
-  })
-);
+export const CatalogLive = CatalogService.Default;
