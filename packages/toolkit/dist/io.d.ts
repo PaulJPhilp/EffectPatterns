@@ -5,14 +5,14 @@
  */
 import type { FileSystem as FileSystemService } from '@effect/platform/FileSystem';
 import { Effect } from 'effect';
-import { PatternsIndex } from './schemas/pattern.js';
+import { type PatternsIndex as PatternsIndexData } from './schemas/pattern.js';
 /**
  * Load and parse patterns from a JSON file
  *
  * @param filePath - Absolute path to patterns.json
  * @returns Effect that yields validated PatternsIndex
  */
-export declare const loadPatternsFromJson: (filePath: string) => Effect.Effect<typeof PatternsIndex.Type, Error, FileSystemService>;
+export declare const loadPatternsFromJson: (filePath: string) => Effect.Effect<PatternsIndexData, Error, FileSystemService>;
 /**
  * Runnable version with Node FileSystem layer
  */
@@ -37,5 +37,5 @@ export declare const loadPatternsFromJsonRunnable: (filePath: string) => Effect.
     }[];
     readonly version?: string | undefined;
     readonly lastUpdated?: string | undefined;
-}, Error, never>;
+}, Error, FileSystemService>;
 //# sourceMappingURL=io.d.ts.map

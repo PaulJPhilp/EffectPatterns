@@ -1,5 +1,4 @@
 import Supermemory from "supermemory";
-import * as Json from "effect-json";
 import { Schema, Effect } from "effect";
 
 // User preferences types
@@ -60,7 +59,7 @@ export interface UserActivity {
 }
 
 // Schema for type-safe JSON parsing
-const UserPreferencesSchema = Schema.Struct({
+const UserPreferencesSchema: Schema.Schema<UserPreferences> = Schema.Struct({
   selectedModel: Schema.optional(Schema.String),
   theme: Schema.optional(Schema.Union(Schema.Literal("light"), Schema.Literal("dark"), Schema.Literal("system"))),
   sidebarCollapsed: Schema.optional(Schema.Boolean),
@@ -68,7 +67,7 @@ const UserPreferencesSchema = Schema.Struct({
   lastActivity: Schema.optional(Schema.String),
   favoriteModels: Schema.optional(Schema.Array(Schema.String)),
   customInstructions: Schema.optional(Schema.String),
-});
+}) as Schema.Schema<UserPreferences>;
 
 const ConversationSummarySchema = Schema.Struct({
   topic: Schema.optional(Schema.String),
@@ -157,17 +156,20 @@ class UserMemoryService {
 
       if (memories.results && memories.results.length > 0) {
         const memory = memories.results[0];
+        
         try {
-          // Use effect-json for safe parsing with error handling
+          // Try parsing as JSON
+          const jsonData = JSON.parse(memory.memory);
+          
+          // Validate with Schema
           const result = await Effect.runPromise(
-            Json.parse(UserPreferencesSchema, memory.memory).pipe(
-              Effect.catchTag("ParseError", () => Effect.succeed({})),
-              Effect.catchTag("ValidationError", () => Effect.succeed({}))
+            Schema.decodeUnknown(UserPreferencesSchema)(jsonData).pipe(
+              Effect.catchAll(() => Effect.succeed({} as UserPreferences))
             )
           );
           return result;
-        } catch (parseError) {
-          console.warn("Failed to parse preference data:", parseError);
+        } catch {
+          // Supermemory sometimes stores non-JSON text, silently return defaults
           return {};
         }
       }
@@ -212,13 +214,8 @@ class UserMemoryService {
       if (memories.results && memories.results.length > 0) {
         const memory = memories.results[0];
         try {
-          // Use effect-json for safe parsing with error handling (using a lenient schema for any data)
-          const result = await Effect.runPromise(
-            Json.parse(Schema.Any, memory.memory).pipe(
-              Effect.catchTag("ParseError", () => Effect.succeed(null)),
-              Effect.catchTag("ValidationError", () => Effect.succeed(null))
-            )
-          );
+          // Parse JSON string directly (any valid JSON structure)
+          const result = JSON.parse(memory.memory);
           return result;
         } catch (parseError) {
           console.warn("Failed to parse conversation memory:", parseError);
@@ -264,17 +261,13 @@ class UserMemoryService {
 
       if (memories.results && memories.results.length > 0) {
         const memory = memories.results[0];
+        
         try {
-          // Use effect-json for safe parsing with error handling (using a lenient schema for any data)
-          const result = await Effect.runPromise(
-            Json.parse(Schema.Any, memory.memory).pipe(
-              Effect.catchTag("ParseError", () => Effect.succeed(null)),
-              Effect.catchTag("ValidationError", () => Effect.succeed(null))
-            )
-          );
+          // Parse as JSON, return null if not valid JSON
+          const result = JSON.parse(memory.memory);
           return result;
-        } catch (parseError) {
-          console.warn("Failed to parse user data:", parseError);
+        } catch {
+          // Supermemory stores non-JSON text sometimes
           return null;
         }
       }
@@ -341,16 +334,16 @@ class UserMemoryService {
 
       if (memories.results && memories.results.length > 0) {
         const memory = memories.results[0];
+        
         try {
+          const jsonData = JSON.parse(memory.memory);
           const result = await Effect.runPromise(
-            Json.parse(ConversationMetadataSchema, memory.memory).pipe(
-              Effect.catchTag("ParseError", () => Effect.succeed(null)),
-              Effect.catchTag("ValidationError", () => Effect.succeed(null))
+            Schema.decodeUnknown(ConversationMetadataSchema)(jsonData).pipe(
+              Effect.catchAll(() => Effect.succeed(null))
             )
           );
           return result;
-        } catch (parseError) {
-          console.warn("Failed to parse conversation metadata:", parseError);
+        } catch {
           return null;
         }
       }
@@ -394,16 +387,16 @@ class UserMemoryService {
 
       if (memories.results && memories.results.length > 0) {
         const memory = memories.results[0];
+        
         try {
+          const jsonData = JSON.parse(memory.memory);
           const result = await Effect.runPromise(
-            Json.parse(UserActivitySchema, memory.memory).pipe(
-              Effect.catchTag("ParseError", () => Effect.succeed(null)),
-              Effect.catchTag("ValidationError", () => Effect.succeed(null))
+            Schema.decodeUnknown(UserActivitySchema)(jsonData).pipe(
+              Effect.catchAll(() => Effect.succeed(null))
             )
           );
           return result;
-        } catch (parseError) {
-          console.warn("Failed to parse user activity:", parseError);
+        } catch {
           return null;
         }
       }

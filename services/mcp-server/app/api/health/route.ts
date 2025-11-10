@@ -5,10 +5,10 @@
  * Returns service health status and version
  */
 
-import { Effect } from 'effect';
-import { NextResponse } from 'next/server';
-import { runWithRuntime } from '../../../src/server/init.js';
-import { TracingService } from '../../../src/tracing/otlpLayer.js';
+import { Effect } from "effect";
+import { NextResponse } from "next/server";
+import { runWithRuntime } from "../../../src/server/init";
+import { TracingService } from "../../../src/tracing/otlpLayer";
 
 export async function GET() {
   const healthEffect = Effect.gen(function* () {
@@ -17,8 +17,8 @@ export async function GET() {
 
     return {
       ok: true,
-      version: '0.1.0',
-      service: 'effect-patterns-mcp-server',
+      version: "0.5.0",
+      service: "effect-patterns-mcp-server",
       timestamp: new Date().toISOString(),
       traceId,
     };
@@ -30,7 +30,7 @@ export async function GET() {
     return NextResponse.json(result, {
       status: 200,
       headers: {
-        'x-trace-id': result.traceId || '',
+        "x-trace-id": result.traceId || "",
       },
     });
   } catch (error) {
@@ -39,7 +39,7 @@ export async function GET() {
         ok: false,
         error: String(error),
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

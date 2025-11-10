@@ -9,18 +9,18 @@
  * as a direct Effect-to-OTLP binding may not be available.
  */
 
-import * as api from '@opentelemetry/api';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import * as api from "@opentelemetry/api";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import {
   defaultResource,
   resourceFromAttributes,
-} from '@opentelemetry/resources';
-import { NodeSDK } from '@opentelemetry/sdk-node';
+} from "@opentelemetry/resources";
+import { NodeSDK } from "@opentelemetry/sdk-node";
 import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
-} from '@opentelemetry/semantic-conventions';
-import { Context, Effect, Layer } from 'effect';
+} from "@opentelemetry/semantic-conventions";
+import { Context, Effect, Layer } from "effect";
 
 /**
  * Tracing configuration from environment variables
@@ -35,18 +35,18 @@ export interface TracingConfig {
 /**
  * Tracing service tag for Effect Context
  */
-export class TracingService extends Context.Tag('TracingService')<
+export class TracingService extends Context.Tag("TracingService")<
   TracingService,
   {
     readonly getTraceId: () => string | undefined;
     readonly startSpan: <A, E, R>(
       name: string,
-      attributes?: Record<string, string | number | boolean>,
+      attributes?: Record<string, string | number | boolean>
     ) => (effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>;
     readonly withSpan: <A, E, R>(
       name: string,
       fn: () => Effect.Effect<A, E, R>,
-      attributes?: Record<string, string | number | boolean>,
+      attributes?: Record<string, string | number | boolean>
     ) => Effect.Effect<A, E, R>;
   }
 >() {}
@@ -61,10 +61,10 @@ function parseOtlpHeaders(headersString: string): Record<string, string> {
   }
 
   const headers: Record<string, string> = {};
-  const pairs = headersString.split(',');
+  const pairs = headersString.split(",");
 
   for (const pair of pairs) {
-    const [key, value] = pair.split('=').map((s) => s.trim());
+    const [key, value] = pair.split("=").map((s) => s.trim());
     if (key && value) {
       headers[key] = value;
     }
@@ -78,10 +78,10 @@ function parseOtlpHeaders(headersString: string): Record<string, string> {
  */
 const loadTracingConfig = Effect.sync((): TracingConfig => {
   const otlpEndpoint =
-    process.env.OTLP_ENDPOINT || 'http://localhost:4318/v1/traces';
-  const otlpHeadersRaw = process.env.OTLP_HEADERS || '';
-  const serviceName = process.env.SERVICE_NAME || 'effect-patterns-mcp-server';
-  const serviceVersion = process.env.SERVICE_VERSION || '0.1.0';
+    process.env.OTLP_ENDPOINT || "http://localhost:4318/v1/traces";
+  const otlpHeadersRaw = process.env.OTLP_HEADERS || "";
+  const serviceName = process.env.SERVICE_NAME || "effect-patterns-mcp-server";
+  const serviceVersion = process.env.SERVICE_VERSION || "0.5.0";
 
   return {
     otlpEndpoint,
@@ -109,7 +109,7 @@ const initializeTracing = (config: TracingConfig): Effect.Effect<NodeSDK> =>
       resourceFromAttributes({
         [ATTR_SERVICE_NAME]: config.serviceName,
         [ATTR_SERVICE_VERSION]: config.serviceVersion,
-      }),
+      })
     );
 
     // Initialize SDK
@@ -121,7 +121,7 @@ const initializeTracing = (config: TracingConfig): Effect.Effect<NodeSDK> =>
     sdk.start();
 
     console.log(
-      `[Tracing] OTLP initialized: ${config.serviceName} -> ${config.otlpEndpoint}`,
+      `[Tracing] OTLP initialized: ${config.serviceName} -> ${config.otlpEndpoint}`
     );
 
     return sdk;
@@ -135,8 +135,8 @@ const initializeTracing = (config: TracingConfig): Effect.Effect<NodeSDK> =>
 const shutdownTracing = (sdk: NodeSDK): Effect.Effect<void> =>
   Effect.promise(() =>
     sdk.shutdown().then(() => {
-      console.log('[Tracing] OTLP SDK shutdown complete');
-    }),
+      console.log("[Tracing] OTLP SDK shutdown complete");
+    })
   );
 
 /**
@@ -162,7 +162,7 @@ const getTraceId = (): string | undefined => {
 const startSpan =
   <A, E, R>(
     _name: string,
-    _attributes?: Record<string, string | number | boolean>,
+    _attributes?: Record<string, string | number | boolean>
   ) =>
   (effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
     // For now, just pass through the effect without creating spans
@@ -177,7 +177,7 @@ const startSpan =
 const withSpan = <A, E, R>(
   _name: string,
   fn: () => Effect.Effect<A, E, R>,
-  _attributes?: Record<string, string | number | boolean>,
+  _attributes?: Record<string, string | number | boolean>
 ): Effect.Effect<A, E, R> => fn();
 
 /**
@@ -205,7 +205,7 @@ export const TracingLayer = Layer.scoped(
 
     // Return tracing service
     return yield* makeTracingService;
-  }),
+  })
 );
 
 /**

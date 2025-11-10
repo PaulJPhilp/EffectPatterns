@@ -4,6 +4,7 @@ import type { Route } from "next";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { cn } from "../../lib/utils";
 import { Button } from "./button";
 
@@ -15,18 +16,35 @@ const NAV_LINKS: ReadonlyArray<{ href: Route; label: string }> = [
 ] as const;
 
 function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === "dark";
+  const { resolvedTheme, theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const currentTheme = (resolvedTheme ?? theme) === "dark" ? "dark" : "light";
+  const toggleLabel = mounted
+    ? currentTheme === "dark"
+      ? "☀️ Light"
+      : "🌙 Dark"
+    : "🌓 Theme";
+
+  const handleToggle = () => {
+    if (!mounted) return;
+    setTheme(currentTheme === "dark" ? "light" : "dark");
+  };
 
   return (
     <Button
       size="sm"
       variant="ghost"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={handleToggle}
       aria-label="Toggle color theme"
       className="text-muted-foreground hover:text-foreground"
+      disabled={!mounted}
     >
-      {isDark ? "☀️ Light" : "🌙 Dark"}
+      {toggleLabel}
     </Button>
   );
 }
@@ -35,7 +53,7 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-(--z-header) border-b border-border bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/70">
+    <header className="sticky top-0 z-(--z-header) border-b border-border bg-muted">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
         <Link
           href="/"

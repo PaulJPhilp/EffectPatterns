@@ -26,7 +26,7 @@ export interface PatternMeta {
  * Module placement info (populated by Catalog service, not repository)
  */
 export interface ModulePlacement {
-  stage?: number;
+  stage?: number | null;
   position: number;
 }
 

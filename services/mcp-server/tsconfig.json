@@ -6,8 +6,8 @@
       "DOM",
       "DOM.Iterable"
     ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "strict": true,
     "noImplicitAny": true,
@@ -31,7 +31,9 @@
     "incremental": true,
     "isolatedModules": true,
     "types": [
-      "node"
+      "node",
+      "next",
+      "next/types/global"
     ],
     "paths": {
       "@/*": [
