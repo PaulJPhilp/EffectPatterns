@@ -20,6 +20,10 @@ const mockConsoleLog = vi.fn((message: string) => {
   capturedOutput.push(message)
 })
 
+function stripAnsiCodes(text: string): string {
+  return text.replace(/\u001b\[[0-9;]*m/g, '')
+}
+
 describe('Project Commands', () => {
   let tempDir: string
   let originalHome: string | undefined
