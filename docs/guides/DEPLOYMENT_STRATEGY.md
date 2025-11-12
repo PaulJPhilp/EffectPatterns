@@ -309,7 +309,7 @@ jobs:
           working-directory: services/mcp-server
           vercel-args: '--prod'
 
-  deploy-code-assistant:
+  deploy-patterns-chat-app:
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -318,8 +318,8 @@ jobs:
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_CODE_ASSISTANT_PROJECT_ID }}
-          working-directory: app/code-assistant
+          vercel-project-id: ${{ secrets.VERCEL_PATTERNS_CHAT_APP_PROJECT_ID }}
+          working-directory: app/patterns-chat-app
           vercel-args: '--prod'
 
   deploy-web:
@@ -336,13 +336,13 @@ jobs:
           vercel-args: '--prod'
 
   health-check:
-    needs: [deploy-mcp-server, deploy-code-assistant, deploy-web]
+    needs: [deploy-mcp-server, deploy-patterns-chat-app, deploy-web]
     runs-on: ubuntu-latest
     steps:
       - run: |
           # Health check all services
           curl -f https://effect-patterns-mcp.vercel.app/health
-          curl -f https://effect-patterns-code-assistant.vercel.app/api/health
+          curl -f https://effect-patterns-patterns-chat-app.vercel.app/api/health
           curl -f https://effect-patterns-web.vercel.app/
 
   notify:
