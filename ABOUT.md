@@ -105,14 +105,29 @@ bun run toolkit:build
 bun test
 ```
 
-### Install CLI Globally
+### Using the CLI
+
+The `ep` CLI can be run directly from the project repository. This is the recommended approach since it ensures you always have the latest version.
 
 ```bash
-# Install the ep CLI tool
-bun install -g .
+# Run the ep CLI from the project directory
+bun run ep --version
 
-# Verify installation
-ep --version
+# Examples
+bun run ep search "error handling"
+bun run ep list --skill-level intermediate
+bun run ep show handle-errors-with-catch
+bun run ep install add --tool cursor
+```
+
+**Note**: Global installation via `bun install -g .` is not supported for private packages. If you prefer to install the CLI globally, you can create a shell alias:
+
+```bash
+# Add to your ~/.bashrc or ~/.zshrc
+alias ep='bun run --cwd /path/to/Effect-Patterns ep'
+
+# Then reload your shell
+source ~/.bashrc  # or source ~/.zshrc
 ```
 
 ## Usage
