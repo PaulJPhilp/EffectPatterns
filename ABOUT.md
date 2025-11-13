@@ -107,27 +107,35 @@ bun test
 
 ### Using the CLI
 
-The `ep` CLI can be run directly from the project repository. This is the recommended approach since it ensures you always have the latest version.
+#### Option 1: Install CLI Package Globally (Recommended)
+
+The CLI is published as a standalone npm package:
 
 ```bash
-# Run the ep CLI from the project directory
-bun run ep --version
+# Install globally with bun
+bun install -g @effect-patterns/cli
 
-# Examples
-bun run ep search "error handling"
-bun run ep list --skill-level intermediate
-bun run ep show handle-errors-with-catch
-bun run ep install add --tool cursor
+# Or with npm
+npm install -g @effect-patterns/cli
+
+# Verify installation
+ep --version
+
+# Use anywhere
+ep search "error handling"
+ep list --skill-level intermediate
+ep show handle-errors-with-catch
+ep install add --tool cursor
 ```
 
-**Note**: Global installation via `bun install -g .` is not supported for private packages. If you prefer to install the CLI globally, you can create a shell alias:
+#### Option 2: Run from Project Directory
+
+If you prefer to run from the development repository:
 
 ```bash
-# Add to your ~/.bashrc or ~/.zshrc
-alias ep='bun run --cwd /path/to/Effect-Patterns ep'
-
-# Then reload your shell
-source ~/.bashrc  # or source ~/.zshrc
+# From the project root
+bun run ep --version
+bun run ep search "error handling"
 ```
 
 ## Usage
