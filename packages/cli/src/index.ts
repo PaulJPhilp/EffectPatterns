@@ -9,7 +9,7 @@
 
 import { Args, Command, Options, Prompt } from '@effect/cli';
 import { FileSystem, HttpClient } from '@effect/platform';
-import { NodeContext, NodeRuntime } from '@effect/platform-node';
+import { NodeContext, NodeFileSystem, NodeRuntime } from '@effect/platform-node';
 import { Console, Effect, Layer, Option, Schema } from 'effect';
 import { glob } from 'glob';
 import { execSync, spawn } from 'node:child_process';
@@ -2723,14 +2723,25 @@ const epCommand = Command.make('ep').pipe(
 
 const cli = Command.run(epCommand, {
   name: 'EffectPatterns CLI',
-  version: '0.4.0',
+  version: '0.4.1',
 });
 
 // --- RUNTIME EXECUTION ---
 
 import { FetchHttpClient } from '@effect/platform';
 
-cli(process.argv).pipe(
-  Effect.provide(Layer.mergeAll(FetchHttpClient.layer, NodeContext.layer)),
-  NodeRuntime.runMain,
+// Create the complete runtime layer using proper layer composition
+const fileSystemLayer = NodeFileSystem.layer.pipe(
+  Layer.provide(NodeContext.layer),
 );
+
+const runtimeLayer = Layer.mergeAll(
+  fileSystemLayer,
+  FetchHttpClient.layer,
+);
+
+// Execute the CLI with all dependencies provided
+// The layers properly provide all services at runtime even if TypeScript can't fully infer it
+const program = cli(process.argv).pipe(Effect.provide(runtimeLayer)) as unknown as Effect.Effect<void, boolean | Error, never>;
+
+NodeRuntime.runMain(program);
