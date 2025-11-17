@@ -33,13 +33,13 @@
   },
   "dependencies": {
     "@effect/platform": "^0.93.0",
-    "@effect/platform-node": "^0.94.2",
+    "@effect/platform-node": "^0.100.0",
     "@effect/schema": "^0.75.5",
     "effect": "^3.18.2"
   },
   "peerDependencies": {
     "@effect/platform": "^0.93.0",
-    "@effect/platform-node": "^0.94.2",
+    "@effect/platform-node": "^0.100.0",
     "@effect/schema": "^0.75.5",
     "effect": "^3.18.2"
   },
