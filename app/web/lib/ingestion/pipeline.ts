@@ -6,7 +6,7 @@
 
 import type { FileSystem, Path } from '@effect/platform';
 import { NodeContext } from '@effect/platform-node';
-import { Effect } from 'effect';
+import { Effect, Layer } from 'effect';
 import { MdxConfigService, MdxService, type MdxServiceSchema } from 'effect-mdx';
 import { db } from '../db/client.js';
 import type { NewPattern, NewPatternModulePlacement } from '../db/schema.js';
@@ -154,14 +154,16 @@ export const runIngestion = (
 /**
  * Run ingestion with default paths
  */
-export const runDefaultIngestion = (): Effect.Effect<void, Error> =>
+const ingestionLayer = Layer.mergeAll(
+  NodeContext.layer,
+  MdxConfigService.Default,
+  Layer.provide(MdxService.Default, NodeContext.layer)
+);
+
+export const runDefaultIngestion = () =>
   Effect.gen(function* () {
     const patternsDir = 'content/published';
     const roadmapsDir = 'roadmap';
 
     yield* runIngestion(patternsDir, roadmapsDir);
-  }).pipe(
-    Effect.provide(MdxService.Default),
-    Effect.provide(MdxConfigService.Default),
-    Effect.provide(NodeContext.layer)
-  );
+  }).pipe(Effect.provide(ingestionLayer));

@@ -1,0 +1,25 @@
+{
+	"name": "@effect-patterns/ep-cli",
+	"version": "0.1.0",
+	"description": "End-user CLI for Effect Patterns Hub",
+	"private": true,
+	"type": "module",
+	"bin": {
+		"ep": "./dist/index.js"
+	},
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsx src/index.ts",
+		"typecheck": "tsc --noEmit",
+		"prepublishOnly": "bun run build"
+	},
+	"dependencies": {
+		"@effect-patterns/cli-core": "workspace:*",
+		"effect": "^3.19.3",
+		"effect-cli-tui": "^2.0.0"
+	},
+	"devDependencies": {
+		"tsx": "^4.20.6",
+		"typescript": "5.9.3"
+	}
+}

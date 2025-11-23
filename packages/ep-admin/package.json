@@ -1,0 +1,21 @@
+{
+	"name": "@effect-patterns/ep-admin",
+	"version": "0.1.0",
+	"description": "Administrative CLI for Effect Patterns maintainers",
+	"type": "module",
+	"private": true,
+	"bin": {
+		"ep-admin": "./dist/index.js"
+	},
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsx src/index.ts",
+		"typecheck": "tsc --noEmit",
+		"prepublishOnly": "bun run build"
+	},
+	"dependencies": {
+		"@effect-patterns/cli-core": "workspace:*",
+		"effect": "^3.19.3",
+		"effect-cli-tui": "^2.0.0"
+	}
+}

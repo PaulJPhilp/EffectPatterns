@@ -1,12 +1,13 @@
 {
-    "name": "@effect-patterns/cli",
-    "version": "0.6.0",
+    "name": "@effect-patterns/cli-core",
+    "version": "0.4.2",
     "type": "module",
-    "description": "Command-line interface for Effect-TS patterns - search, discover, and install patterns",
+    "private": true,
+    "description": "Shared command definitions and helpers for the Effect Patterns CLIs",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
-    "bin": {
-        "ep": "./dist/index.js"
+    "exports": {
+        ".": "./dist/index.js"
     },
     "files": [
         "dist",
@@ -31,14 +32,14 @@
         "effect": "^3.19.3",
         "glob": "^11.0.3",
         "gray-matter": "^4.0.3",
-        "js-yaml": "^4.1.0",
+        "js-yaml": "^4.1.1",
         "liquidjs": "^10.24.0",
         "ora": "^9.0.0",
         "semver": "^7.7.3",
         "yaml": "^2.8.1"
     },
     "devDependencies": {
-        "@types/node": "^22.19.0",
+        "@types/node": "^22.19.1",
         "typescript": "5.9.3",
         "tsx": "^4.20.6"
     },
