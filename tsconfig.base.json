@@ -10,8 +10,12 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "lib": ["ES2020"],
-    "types": ["node"],
+    "lib": [
+      "ES2020"
+    ],
+    "types": [
+      "node"
+    ],
     "moduleDetection": "force",
     "allowSyntheticDefaultImports": true,
     "resolvePackageJsonExports": true,

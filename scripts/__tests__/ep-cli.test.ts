@@ -70,7 +70,7 @@ const runCommand = async (
     const finalArgs = needsServerUrl
       ? [...args, '--server-url', `http://localhost:${TEST_PORT}`]
       : args;
-    const proc = spawn('bun', ['run', 'scripts/ep.ts', ...finalArgs], {
+    const proc = spawn('bun', ['run', 'packages/ep-cli/src/index.ts', ...finalArgs], {
       stdio: 'pipe',
     });
 
@@ -101,6 +101,11 @@ const runCommand = async (
     });
   });
 };
+
+const runAdminCommand = (
+  args: string[],
+  options?: { timeout?: number },
+) => runCommand(args, options);
 
 // --- MAIN CLI TESTS ---
 
