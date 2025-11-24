@@ -67,7 +67,7 @@
     "lucide-react": "^0.553.0",
     "nanoid": "^5.1.6",
     "next": "^16.0.1",
-    "next-auth": "5.0.0-beta.25",
+    "next-auth": "5.0.0-beta.30",
     "next-themes": "^0.3.0",
     "orderedmap": "^2.1.1",
     "papaparse": "^5.5.3",
