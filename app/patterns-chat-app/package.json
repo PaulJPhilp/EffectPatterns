@@ -112,7 +112,7 @@
     "@shikijs/types": "3.13.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.4",
+    "@biomejs/biome": "2.3.7",
     "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4.1.17",
     "@tailwindcss/typography": "^0.5.19",
@@ -126,7 +126,7 @@
     "@types/react-dom": "^19.2.2",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitest/ui": "^4.0.7",
-    "drizzle-kit": "^0.25.0",
+    "drizzle-kit": "^0.31.7",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
     "tsx": "^4.20.6",
