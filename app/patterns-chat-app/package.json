@@ -82,7 +82,7 @@
     "prosemirror-view": "^1.41.3",
     "radix-ui": "^1.4.3",
     "react": "19.2.0",
-    "react-data-grid": "7.0.0-beta.47",
+    "react-data-grid": "7.0.0-beta.58",
     "react-dom": "19.2.0",
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^2.1.9",
