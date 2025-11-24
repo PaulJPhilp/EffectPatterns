@@ -92,7 +92,7 @@
     "rollback:web": "vercel rollback --project web"
   },
   "dependencies": {
-    "@effect/cli": "^0.69.2",
+    "@effect/cli": "^0.72.1",
     "@effect/platform": "^0.93.3",
     "@effect/platform-node": "^0.98.4",
     "@opentelemetry/api": "^1.9.0",

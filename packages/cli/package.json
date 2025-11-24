@@ -22,7 +22,7 @@
         "prepublishOnly": "bun run build"
     },
     "dependencies": {
-        "@effect/cli": "^0.69.2",
+        "@effect/cli": "^0.72.1",
         "@effect/platform": "^0.90.10",
         "@effect/platform-node": "^0.98.4",
         "@effect-patterns/toolkit": "workspace:*",
