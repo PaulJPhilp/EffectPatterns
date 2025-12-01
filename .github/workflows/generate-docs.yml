@@ -21,7 +21,7 @@ jobs:
     steps:
       # Step 6a: Checks out your repository's code onto the virtual machine.
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       # Step 6b: Sets up Bun runtime.
       - name: Setup Bun

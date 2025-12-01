@@ -22,12 +22,12 @@ jobs:
 
     steps:
       - name: Checkout current repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout EffectPatterns source repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: PaulJPhilp/EffectPatterns
           path: source-patterns
