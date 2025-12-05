@@ -1,4 +1,4 @@
-# Observability Patterns
+# observability Patterns
 
 ## Add Custom Metrics to Your Application
 
@@ -106,34 +106,40 @@ Use Effect.fn to wrap functions with effectful instrumentation, such as logging,
 ```typescript
 import { Effect } from "effect";
 
-// A simple function to instrument
-function add(a: number, b: number): number {
-  return a + b;
-}
-
-// Wrap the function with Effect.fn to add logging and tracking
-const addWithLogging = (a: number, b: number) =>
-  Effect.gen(function* () {
-    yield* Effect.logInfo(`Calling add with ${a} and ${b}`);
-    const result = add(a, b);
-    yield* Effect.logInfo(`Result: ${result}`);
-    return result;
+// Use Effect.fn to wrap a function with automatic span creation
+const fetchUser = Effect.fn("fetch-user")(function* (userId: string) {
+  // Annotate the span with contextual information
+  yield* Effect.annotateCurrentSpan({
+    userId,
   });
 
-// Use the instrumented function in an Effect workflow
-const program = addWithLogging(2, 3).pipe(
-  Effect.tap((sum) => Effect.logInfo(`Sum is ${sum}`))
-);
+  // Simulate async operation
+  const user = yield* Effect.tryPromise(() =>
+    Promise.resolve({ id: userId, name: "Alice" })
+  );
 
-// Run the program (commented to avoid runtime issues)
+  return user;
+});
+
+// Use the instrumented function in an Effect workflow
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("Fetching user");
+  const user = yield* fetchUser("user-123");
+  yield* Effect.logInfo(`Fetched user: ${user.name}`);
+  return user;
+});
+
+// Run the program with OpenTelemetry integration
 // Effect.runPromise(program);
 
 ```
 
-**Explanation:**  
-- `Effect.fn` wraps a function, returning a new function that produces an Effect.
-- You can add logging, metrics, tracing, or any effectful logic before/after the call.
-- Keeps instrumentation separate from business logic and fully composable.
+**Explanation:**
+- `Effect.fn("operation-name")(function*)` wraps a function and automatically creates OpenTelemetry spans with the given name.
+- No manual span wrapping needed—the Effect runtime handles span creation and lifecycle automatically.
+- Use `Effect.annotateCurrentSpan()` to add metadata and context to the span.
+- Integrates seamlessly with OpenTelemetry for distributed tracing, logging, and metrics.
+- Keeps instrumentation composable and type-safe without cluttering business logic.
 
 ---
 
@@ -214,6 +220,36 @@ const workflow = Effect.gen(function* () {
 - `Effect.log` logs a message at the default level.
 - `Effect.logInfo` and `Effect.logError` log at specific levels.
 - Logging is context-aware and can be used anywhere in your Effect workflows.
+
+---
+
+## Redact and Handle Sensitive Data
+
+Use Redacted to wrap sensitive values, preventing accidental exposure in logs or error messages.
+
+### Example
+
+```typescript
+import { Redacted } from "effect";
+
+// Wrap a sensitive value
+const secret = Redacted.make("super-secret-password");
+
+// Use the secret in your application logic
+function authenticate(user: string, password: Redacted.Redacted<string>) {
+  // ... authentication logic
+}
+
+// Logging or stringifying a Redacted value
+console.log(`Password: ${secret}`); // Output: Password: <redacted>
+console.log(String(secret)); // Output: <redacted>
+
+```
+
+**Explanation:**  
+- `Redacted.make(value)` wraps a sensitive value.
+- When logged or stringified, the value is replaced with `<redacted>`.
+- Prevents accidental exposure of secrets in logs or error messages.
 
 ---
 
@@ -345,6 +381,37 @@ Effect.runPromise(program);
 ```
 
 ---
+
+---
+
+## Use Chunk for High-Performance Collections
+
+Use Chunk to model immutable, high-performance collections for efficient data processing and transformation.
+
+### Example
+
+```typescript
+import { Chunk } from "effect";
+
+// Create a Chunk from an array
+const numbers = Chunk.fromIterable([1, 2, 3, 4]); // Chunk<number>
+
+// Map and filter over a Chunk
+const doubled = numbers.pipe(Chunk.map((n) => n * 2)); // Chunk<number>
+const evens = numbers.pipe(Chunk.filter((n) => n % 2 === 0)); // Chunk<number>
+
+// Concatenate Chunks
+const moreNumbers = Chunk.fromIterable([5, 6]);
+const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
+
+// Convert back to array
+const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
+```
+
+**Explanation:**  
+- `Chunk` is immutable and optimized for performance.
+- It supports efficient batch operations, concatenation, and transformation.
+- Use `Chunk` in data pipelines, streaming, and concurrent scenarios.
 
 ---
 

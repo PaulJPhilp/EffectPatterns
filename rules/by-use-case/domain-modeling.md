@@ -1,4 +1,4 @@
-# Domain Modeling Patterns
+# domain-modeling Patterns
 
 ## Accumulate Multiple Errors with Either
 
@@ -411,6 +411,80 @@ Effect.runPromise(
 
 ---
 
+## Handling Specific Errors with catchTag and catchTags
+
+Use catchTag and catchTags to handle specific tagged error types in the Effect failure channel, providing targeted recovery logic.
+
+### Example
+
+```typescript
+import { Effect, Data } from "effect";
+
+// Define tagged error types
+class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{ message: string }> {}
+
+type MyError = NotFoundError | ValidationError;
+
+// Effect: Handle only ValidationError, let others propagate
+const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as MyError).pipe(
+  Effect.catchTag("ValidationError", (err) =>
+    Effect.succeed(`Recovered from validation error: ${err.message}`)
+  )
+); // Effect<string>
+
+// Effect: Handle multiple error tags
+const effect2 = Effect.fail(new NotFoundError() as MyError).pipe(
+  Effect.catchTags({
+    NotFoundError: () => Effect.succeed("Handled not found!"),
+    ValidationError: (err) => Effect.succeed(`Handled validation: ${err.message}`),
+  })
+); // Effect<string>
+```
+
+**Explanation:**  
+- `catchTag` lets you recover from a specific tagged error type.
+- `catchTags` lets you handle multiple tagged error types in one place.
+- Unhandled errors continue to propagate, preserving error safety.
+
+---
+
+## Matching Tagged Unions with matchTag and matchTags
+
+Use matchTag and matchTags to handle specific cases of tagged unions or custom error types in a declarative, type-safe way.
+
+### Example
+
+```typescript
+import { Data, Effect } from "effect";
+
+// Define a tagged error type
+class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
+
+type MyError = NotFoundError | ValidationError;
+
+// Effect: Match on specific error tags
+const effect: Effect.Effect<string, never, never> = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
+  Effect.catchTags({
+    NotFoundError: () => Effect.succeed("Not found!"),
+    ValidationError: (err) =>
+      Effect.succeed(`Validation failed: ${err.message}`),
+  })
+); // Effect<string>
+
+```
+
+**Explanation:**  
+- `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
+- This is safer and more maintainable than using `instanceof` or manual property checks.
+
+---
+
 ## Model Optional Values Safely with Option
 
 Use Option to model values that may be present or absent, making absence explicit and type-safe.
@@ -766,6 +840,42 @@ const errorResult = Schema.decode(Email)("invalid-email"); // Fails
 ```
 
 ---
+
+---
+
+## Type Classes for Equality, Ordering, and Hashing with Data.Class
+
+Use Data.Class to define and derive type classes for your data types, supporting composable equality, ordering, and hashing.
+
+### Example
+
+```typescript
+import { Data, Equal, HashSet } from "effect";
+
+// Define custom data types with structural equality
+const user1 = Data.struct({ id: 1, name: "Alice" });
+const user2 = Data.struct({ id: 1, name: "Alice" });
+const user3 = Data.struct({ id: 2, name: "Bob" });
+
+// Data.struct provides automatic structural equality
+console.log(Equal.equals(user1, user2)); // true (same structure)
+console.log(Equal.equals(user1, user3)); // false (different values)
+
+// Use in a HashSet (works because Data.struct implements Equal)
+const set = HashSet.make(user1);
+console.log(HashSet.has(set, user2)); // true (structural equality)
+
+// Create an array and use structural equality
+const users = [user1, user3];
+console.log(users.some((u) => Equal.equals(u, user2))); // true
+
+```
+
+**Explanation:**  
+- `Data.Class.getEqual` derives an equality type class for your data type.
+- `Data.Class.getOrder` derives an ordering type class, useful for sorting.
+- `Data.Class.getHash` derives a hash function for use in sets and maps.
+- These type classes make your types fully compatible with Effect’s collections and algorithms.
 
 ---
 

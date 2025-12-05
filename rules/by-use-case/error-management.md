@@ -1,97 +1,44 @@
-# Error Management Patterns
+# error-management Patterns
 
-## Accumulate Multiple Errors with Either
+## Checking Option and Either Cases
 
-Use Either to accumulate multiple validation errors instead of failing on the first one.
+Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe conditional logic.
 
 ### Example
 
-Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
+```typescript
+import { Option, Either } from "effect";
 
-````typescript
-import { Effect, Schema, Data, Either } from "effect";
+// Option: Check if value is Some or None
+const option = Option.some(42);
 
-// Define validation error type
-class ValidationError extends Data.TaggedError("ValidationError")<{
-  readonly field: string;
-  readonly message: string;
-}> {}
+if (Option.isSome(option)) {
+  // option.value is available here
+  console.log("We have a value:", option.value);
+} else if (Option.isNone(option)) {
+  console.log("No value present");
+}
 
-// Define user type
-type User = {
-  name: string;
-  email: string;
-};
+// Either: Check if value is Right or Left
+const either = Either.left("error");
 
-// Define schema with custom validation
-const UserSchema = Schema.Struct({
-  name: Schema.String.pipe(
-    Schema.minLength(3),
-    Schema.filter((name) => /^[A-Za-z\s]+$/.test(name), {
-      message: () => "name must contain only letters and spaces"
-    })
-  ),
-  email: Schema.String.pipe(
-    Schema.pattern(/@/),
-    Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
-      message: () => "email must be a valid email address"
-    })
-  ),
-});
+if (Either.isRight(either)) {
+  // either.right is available here
+  console.log("Success:", either.right);
+} else if (Either.isLeft(either)) {
+  // either.left is available here
+  console.log("Failure:", either.left);
+}
 
-// Example inputs
-const invalidInputs: User[] = [
-  {
-    name: "Al", // Too short
-    email: "bob-no-at-sign.com", // Invalid pattern
-  },
-  {
-    name: "John123", // Contains numbers
-    email: "john@incomplete", // Invalid email
-  },
-  {
-    name: "Alice Smith", // Valid
-    email: "alice@example.com", // Valid
-  }
-];
+// Filtering a collection of Options
+const options = [Option.some(1), Option.none(), Option.some(3)];
+const presentValues = options.filter(Option.isSome).map((o) => o.value); // [1, 3]
+```
 
-// Validate a single user
-const validateUser = (input: User) =>
-  Effect.gen(function* () {
-    const result = yield* Schema.decode(UserSchema)(input, { errors: "all" });
-    return result;
-  });
-
-// Process multiple users and accumulate all errors
-const program = Effect.gen(function* () {
-  yield* Effect.log("Validating users...\n");
-  
-  for (const input of invalidInputs) {
-    const result = yield* Effect.either(validateUser(input));
-    
-    yield* Effect.log(`Validating user: ${input.name} <${input.email}>`);
-    
-    // Handle success and failure cases separately for clarity
-    // Using Either.match which is the idiomatic way to handle Either values
-    yield* Either.match(result, {
-      onLeft: (error) => Effect.gen(function* () {
-        yield* Effect.log("❌ Validation failed:");
-        yield* Effect.log(error.message);
-        yield* Effect.log(""); // Empty line for readability
-      }),
-      onRight: (user) => Effect.gen(function* () {
-        yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
-        yield* Effect.log(""); // Empty line for readability
-      })
-    })
-  }
-});
-
-// Run the program
-Effect.runSync(program);
-````
-
----
+**Explanation:**  
+- `Option.isSome` and `Option.isNone` let you check for presence or absence.
+- `Either.isRight` and `Either.isLeft` let you check for success or failure.
+- These are especially useful for filtering or quick conditional logic.
 
 ---
 
@@ -227,124 +174,27 @@ Effect.runPromise(program)
 
 ---
 
-## Define Type-Safe Errors with Data.TaggedError
+## Effectful Pattern Matching with matchEffect
 
-Define type-safe errors with Data.TaggedError.
+Use matchEffect to pattern match on the result of an Effect, running effectful logic for both success and failure cases.
 
 ### Example
 
 ```typescript
-import { Data, Effect } from "effect"
+import { Effect } from "effect";
 
-// Define our tagged error type
-class DatabaseError extends Data.TaggedError("DatabaseError")<{
-  readonly cause: unknown
-}> {}
-
-// Function that simulates a database error
-const findUser = (id: number): Effect.Effect<{ id: number; name: string }, DatabaseError> =>
-  Effect.gen(function* () {
-    if (id < 0) {
-      return yield* Effect.fail(new DatabaseError({ cause: "Invalid ID" }))
-    }
-    return { id, name: `User ${id}` }
+// Effect: Run different Effects on success or failure
+const effect = Effect.fail("Oops!").pipe(
+  Effect.matchEffect({
+    onFailure: (err) => Effect.logError(`Error: ${err}`),
+    onSuccess: (value) => Effect.log(`Success: ${value}`),
   })
-
-// Create a program that demonstrates error handling
-const program = Effect.gen(function* () {
-  // Try to find a valid user
-  yield* Effect.logInfo("Looking up user 1...")
-  yield* Effect.gen(function* () {
-    const user = yield* findUser(1)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
-  }).pipe(
-    Effect.catchAll((error) =>
-      Effect.logInfo(`Error finding user: ${error._tag} - ${error.cause}`)
-    )
-  )
-
-  // Try to find an invalid user
-  yield* Effect.logInfo("\nLooking up user -1...")
-  yield* Effect.gen(function* () {
-    const user = yield* findUser(-1)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
-  }).pipe(
-    Effect.catchTag("DatabaseError", (error) =>
-      Effect.logInfo(`Database error: ${error._tag} - ${error.cause}`)
-    )
-  )
-})
-
-// Run the program
-Effect.runPromise(program)
+); // Effect<void>
 ```
 
 **Explanation:**  
-Tagged errors allow you to handle errors in a type-safe, self-documenting way.
-
----
-
-## Distinguish 'Not Found' from Errors
-
-Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.
-
-### Example
-
-This function to find a user can fail if the database is down, or it can succeed but find no user. The return type ``Effect.Effect<Option.Option<User>, DatabaseError>`` makes this contract perfectly clear.
-
-````typescript
-import { Effect, Option, Data } from "effect"
-
-interface User {
-  id: number
-  name: string
-}
-class DatabaseError extends Data.TaggedError("DatabaseError") {}
-
-// This signature is extremely honest about its possible outcomes.
-const findUserInDb = (
-  id: number
-): Effect.Effect<Option.Option<User>, DatabaseError> =>
-  Effect.gen(function* () {
-    // This could fail with a DatabaseError
-    const dbResult = yield* Effect.try({
-      try: () => (id === 1 ? { id: 1, name: "Paul" } : null),
-      catch: () => new DatabaseError()
-    })
-
-    // We wrap the potentially null result in an Option
-    return Option.fromNullable(dbResult)
-  })
-
-// The caller can now handle all three cases explicitly.
-const program = (id: number) =>
-  findUserInDb(id).pipe(
-    Effect.flatMap((maybeUser) =>
-      Option.match(maybeUser, {
-        onNone: () =>
-          Effect.logInfo(`Result: User with ID ${id} was not found.`),
-        onSome: (user) =>
-          Effect.logInfo(`Result: Found user ${user.name}.`)
-      })
-    ),
-    Effect.catchAll((error) =>
-      Effect.logInfo("Error: Could not connect to the database.")
-    )
-  )
-
-// Run the program with different IDs
-Effect.runPromise(
-  Effect.gen(function* () {
-    // Try with existing user
-    yield* Effect.logInfo("Looking for user with ID 1...")
-    yield* program(1)
-
-    // Try with non-existent user
-    yield* Effect.logInfo("\nLooking for user with ID 2...")
-    yield* program(2)
-  })
-)
-````
+- `matchEffect` allows you to run an Effect for both the success and failure cases.
+- This is useful for logging, cleanup, retries, or any effectful side effect that depends on the outcome.
 
 ---
 
@@ -880,6 +730,87 @@ failures, logging or escalating as appropriate.
 
 ---
 
+## Handle Unexpected Errors by Inspecting the Cause
+
+Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions.
+
+### Example
+
+```typescript
+import { Cause, Effect } from "effect";
+
+// An Effect that may fail with an error or defect
+const program = Effect.try({
+  try: () => {
+    throw new Error("Unexpected failure!");
+  },
+  catch: (err) => err,
+});
+
+// Catch all causes and inspect them
+const handled = program.pipe(
+  Effect.catchAllCause((cause) =>
+    Effect.sync(() => {
+      if (Cause.isDie(cause)) {
+        console.error("Defect (die):", Cause.pretty(cause));
+      } else if (Cause.isFailure(cause)) {
+        console.error("Expected error:", Cause.pretty(cause));
+      } else if (Cause.isInterrupted(cause)) {
+        console.error("Interrupted:", Cause.pretty(cause));
+      }
+      // Handle or rethrow as needed
+    })
+  )
+);
+
+```
+
+**Explanation:**  
+- `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
+- Use `Cause.pretty` for human-readable error traces.
+- Enables advanced error handling and debugging.
+
+---
+
+## Handling Errors with catchAll, orElse, and match
+
+Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way.
+
+### Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Recover from any error
+const effect = Effect.fail("fail!").pipe(
+  Effect.catchAll((err) => Effect.succeed(`Recovered from: ${err}`))
+); // Effect<string>
+
+// Option: Provide a fallback if value is None
+const option = Option.none().pipe(
+  Option.orElse(() => Option.some("default"))
+); // Option<string>
+
+// Either: Provide a fallback if value is Left
+const either = Either.left("error").pipe(
+  Either.orElse(() => Either.right("fallback"))
+); // Either<never, string>
+
+// Effect: Pattern match on success or failure
+const matchEffect = Effect.fail("fail!").pipe(
+  Effect.match({
+    onFailure: (err) => `Error: ${err}`,
+    onSuccess: (value) => `Success: ${value}`,
+  })
+); // Effect<string>
+```
+
+**Explanation:**  
+These combinators let you handle errors, provide defaults, or transform error values in a way that is composable and type-safe.  
+You can recover from errors, provide alternative computations, or pattern match on success/failure.
+
+---
+
 ## Leverage Effect's Built-in Structured Logging
 
 Leverage Effect's built-in structured logging.
@@ -902,6 +833,32 @@ Effect.runSync(
 **Explanation:**  
 Using Effect's logging system ensures your logs are structured, filterable,
 and context-aware.
+
+---
+
+## Lifting Errors and Absence with fail, none, and left
+
+Use fail, none, and left to create Effect, Option, or Either that represent failure or absence.
+
+### Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Represent a failure with an error value
+const effect = Effect.fail("Something went wrong"); // Effect<string, never, never>
+
+// Option: Represent absence of a value
+const option = Option.none(); // Option<never>
+
+// Either: Represent a failure with a left value
+const either = Either.left("Invalid input"); // Either<string, never>
+```
+
+**Explanation:**  
+- `Effect.fail(error)` creates an effect that always fails with `error`.
+- `Option.none()` creates an option that is always absent.
+- `Either.left(error)` creates an either that always represents failure.
 
 ---
 
@@ -971,49 +928,74 @@ Effect.runPromise(program);
 
 ---
 
-## Model Optional Values Safely with Option
+## Matching on Success and Failure with match
 
-Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
+Use match to pattern match on the result of an Effect, Option, or Either, handling both success and failure cases declaratively.
 
 ### Example
 
-A function that looks for a user in a database is a classic use case. It might find a user, or it might not. Returning an `Option<User>` makes this contract explicit and safe.
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Handle both success and failure
+const effect = Effect.fail("Oops!").pipe(
+  Effect.match({
+    onFailure: (err) => `Error: ${err}`,
+    onSuccess: (value) => `Success: ${value}`,
+  })
+); // Effect<string>
+
+// Option: Handle Some and None cases
+const option = Option.some(42).pipe(
+  Option.match({
+    onNone: () => "No value",
+    onSome: (n) => `Value: ${n}`,
+  })
+); // string
+
+// Either: Handle Left and Right cases
+const either = Either.left("fail").pipe(
+  Either.match({
+    onLeft: (err) => `Error: ${err}`,
+    onRight: (value) => `Value: ${value}`,
+  })
+); // string
+```
+
+**Explanation:**  
+- `Effect.match` lets you handle both the error and success channels in one place.
+- `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
+
+---
+
+## Modeling Effect Results with Exit
+
+Use Exit to capture the outcome of an Effect, including success, failure, and defects, for robust error handling and coordination.
+
+### Example
 
 ```typescript
-import { Effect, Option } from "effect";
+import { Effect, Exit } from "effect";
 
-interface User {
-  id: number;
-  name: string;
-}
+// Run an Effect and capture its Exit value
+const program = Effect.succeed(42);
 
-const users: User[] = [
-  { id: 1, name: "Paul" },
-  { id: 2, name: "Alex" },
-];
+const runAndCapture = Effect.runPromiseExit(program); // Promise<Exit<never, number>>
 
-// This function safely returns an Option, not a User or null.
-const findUserById = (id: number): Option.Option<User> => {
-  const user = users.find((u) => u.id === id);
-  return Option.fromNullable(user); // A useful helper for existing APIs
-};
-
-// The caller MUST handle both cases.
-const greeting = (id: number): string =>
-  findUserById(id).pipe(
-    Option.match({
-      onNone: () => "User not found.",
-      onSome: (user) => `Welcome, ${user.name}!`,
-    }),
-  );
-
-const program = Effect.gen(function* () {
-  yield* Effect.log(greeting(1)); // "Welcome, Paul!"
-  yield* Effect.log(greeting(3)); // "User not found."
+// Pattern match on Exit
+runAndCapture.then((exit) => {
+  if (Exit.isSuccess(exit)) {
+    console.log("Success:", exit.value);
+  } else if (Exit.isFailure(exit)) {
+    console.error("Failure:", exit.cause);
+  }
 });
-
-Effect.runPromise(program);
 ```
+
+**Explanation:**  
+- `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
+- Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
+- Pattern matching on `Exit` lets you handle all possible outcomes.
 
 ---
 
@@ -1115,6 +1097,34 @@ Effect.runPromise(program.pipe(Effect.flatMap(() => demonstrateNotFound)));
 ```
 
 ---
+
+---
+
+## Wrapping Synchronous and Asynchronous Computations
+
+Use try and tryPromise to lift code that may throw or reject into Effect, capturing errors in the failure channel.
+
+### Example
+
+```typescript
+import { Effect } from "effect";
+
+// Synchronous: Wrap code that may throw
+const effectSync = Effect.try({
+  try: () => JSON.parse("{ invalid json }"),
+  catch: (error) => `Parse error: ${String(error)}`
+}); // Effect<string, never, never>
+
+// Asynchronous: Wrap a promise that may reject
+const effectAsync = Effect.tryPromise({
+  try: () => fetch("https://api.example.com/data").then(res => res.json()),
+  catch: (error) => `Network error: ${String(error)}`
+}); // Effect<string, any, never>
+```
+
+**Explanation:**  
+- `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
+- `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
 
 ---
 

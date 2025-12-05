@@ -1,4 +1,4 @@
-# Resource Management Patterns
+# resource-management Patterns
 
 ## Compose Resource Lifecycles with `Layer.merge`
 
@@ -182,131 +182,34 @@ The `Effect.Service` helper creates the `Database` class, which acts as both the
 
 ---
 
-## Implement Graceful Shutdown for Your Application
+## Creating from Collections
 
-Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
-
-### Example
-
-This example creates a server with a "scoped" database connection. It uses `runFork` to start the server and sets up a `SIGINT` handler to interrupt the server fiber, which in turn guarantees the database finalizer is called.
-
-```typescript
-import { Effect, Layer, Fiber, Context, Scope } from "effect";
-import * as http from "http";
-
-// 1. A service with a finalizer for cleanup
-class Database extends Effect.Service<Database>()("Database", {
-  effect: Effect.gen(function* () {
-    yield* Effect.log("Acquiring DB connection");
-    return {
-      query: () => Effect.succeed("data"),
-    };
-  }),
-}) {}
-
-// 2. The main server logic
-const server = Effect.gen(function* () {
-  const db = yield* Database;
-
-  // Create server with proper error handling
-  const httpServer = yield* Effect.sync(() => {
-    const server = http.createServer((_req, res) => {
-      Effect.runFork(
-        Effect.provide(
-          db.query().pipe(Effect.map((data) => res.end(data))),
-          Database.Default
-        )
-      );
-    });
-    return server;
-  });
-
-  // Add a finalizer to close the server
-  yield* Effect.addFinalizer(() =>
-    Effect.gen(function* () {
-      httpServer.close();
-      yield* Effect.log("Server closed");
-    })
-  );
-
-  // Start server with error handling
-  yield* Effect.async<void, Error>((resume) => {
-    httpServer.once('error', (err: Error) => {
-      resume(Effect.fail(new Error(`Failed to start server: ${err.message}`)));
-    });
-
-    httpServer.listen(3456, () => {
-      resume(Effect.succeed(void 0));
-    });
-  });
-
-  yield* Effect.log("Server started on port 3456. Press Ctrl+C to exit.");
-
-  // For testing purposes, we'll run for a short time instead of forever
-  yield* Effect.sleep("2 seconds");
-  yield* Effect.log("Shutting down gracefully...");
-});
-
-// 3. Provide the layer and launch with runFork
-const app = Effect.provide(server.pipe(Effect.scoped), Database.Default);
-
-// 4. Run the app and handle shutdown
-Effect.runPromise(app).catch((error) => {
-  Effect.runSync(Effect.logError("Application error: " + error));
-  process.exit(1);
-});
-
-```
-
----
-
----
-
-## Manage Resource Lifecycles with Scope
-
-Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
+Use fromIterable and fromArray to lift collections into Streams or Effects for batch or streaming processing.
 
 ### Example
 
-This example shows how to acquire a resource (like a file handle), use it, and have `Scope` guarantee its release.
-
 ```typescript
-import { Effect, Scope } from "effect";
+import { Stream, Effect } from "effect";
 
-// Simulate acquiring and releasing a resource
-const acquireFile = Effect.log("File opened").pipe(
-  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) }),
-);
-const releaseFile = Effect.log("File closed.");
+// Stream: Create a stream from an array
+const numbers = [1, 2, 3, 4];
+const numberStream = Stream.fromIterable(numbers); // Stream<number>
 
-// Create a "scoped" effect. This effect, when used, will acquire the
-// resource and register its release action with the current scope.
-const scopedFile = Effect.acquireRelease(acquireFile, () => releaseFile);
+// Stream: Create a stream from any iterable
+function* gen() {
+  yield "a";
+  yield "b";
+}
+const letterStream = Stream.fromIterable(gen()); // Stream<string>
 
-// The main program that uses the scoped resource
-const program = Effect.gen(function* () {
-  // Effect.scoped "uses" the resource. It runs the acquire effect,
-  // provides the resource to the inner effect, and ensures the
-  // release effect is run when this block completes.
-  const file = yield* Effect.scoped(scopedFile);
-
-  yield* file.write("hello");
-  yield* file.write("world");
-
-  // The file will be automatically closed here.
-});
-
-Effect.runPromise(program);
-/*
-Output:
-File opened
-Wrote: hello
-Wrote: world
-File closed
-*/
+// Effect: Create an effect from an array of effects (batch)
+const effects = [Effect.succeed(1), Effect.succeed(2)];
+const batchEffect = Effect.all(effects); // Effect<[1, 2]>
 ```
 
----
+**Explanation:**  
+- `Stream.fromIterable` creates a stream from any array or iterable, enabling streaming and batch operations.
+- `Effect.all` (covered elsewhere) can be used to process arrays of effects in batch.
 
 ---
 
