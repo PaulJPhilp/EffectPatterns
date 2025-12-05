@@ -3,101 +3,108 @@
 ## Services Overview
 
 ### PatternsService
+
 Query Effect-TS patterns from Supermemory.
 
 ```typescript
-import { getPatternsService } from '@/lib/services/patterns-service';
+import { getPatternsService } from "@/lib/services/patterns-service";
 
 const patternsService = getPatternsService();
 
 // Search for patterns
-const result = await patternsService.searchPatterns('error handling', {
+const result = await patternsService.searchPatterns("error handling", {
   limit: 5,
   threshold: 0.6,
-  rerank: true
+  rerank: true,
 });
 
-console.log(result.patterns);     // Array of Pattern objects
-console.log(result.totalCount);   // Total matches
-console.log(result.score);        // Relevance score
+console.log(result.patterns); // Array of Pattern objects
+console.log(result.totalCount); // Total matches
+console.log(result.score); // Relevance score
 ```
 
 **Pattern Object Structure:**
+
 ```typescript
 interface Pattern {
   id: string;
   title: string;
   description: string;
   content: string;
-  skillLevel: 'beginner' | 'intermediate' | 'advanced';
+  skillLevel: "beginner" | "intermediate" | "advanced";
   tags: string[];
   useCase?: string[];
   relevanceScore?: number;
-  source: 'supermemory';
+  source: "supermemory";
   url?: string;
 }
 ```
 
 **Available Methods:**
+
 ```typescript
 // Search patterns with options
-await patternsService.searchPatterns(query, options)
+await patternsService.searchPatterns(query, options);
 
 // Get patterns by skill level
-await patternsService.getPatternsBySkillLevel('intermediate', query)
+await patternsService.getPatternsBySkillLevel("intermediate", query);
 
 // Get patterns by use case
-await patternsService.getPatternsByUseCase('error-handling')
+await patternsService.getPatternsByUseCase("error-handling");
 
 // Clear cache (for testing)
-patternsService.clearCache()
+patternsService.clearCache();
 
 // Get cache statistics
-patternsService.getCacheStats()
+patternsService.getCacheStats();
 ```
 
 ---
 
 ### PatternScorer
+
 Evaluate if a query needs pattern guidance.
 
 ```typescript
-import { getPatternScorer } from '@/lib/services/pattern-scorer';
+import { getPatternScorer } from "@/lib/services/pattern-scorer";
 
 const scorer = getPatternScorer();
 
 // Score a query
-const result = scorer.scoreQuery('How do I handle errors in Effect?');
+const result = scorer.scoreQuery("How do I handle errors in Effect?");
 
-console.log(result.needsPatterns);      // true/false
-console.log(result.score);              // 0-1 (relevance score)
-console.log(result.reasons);            // Why patterns were suggested
-console.log(result.suggestedTopics);    // Recommended topics
+console.log(result.needsPatterns); // true/false
+console.log(result.score); // 0-1 (relevance score)
+console.log(result.reasons); // Why patterns were suggested
+console.log(result.suggestedTopics); // Recommended topics
 ```
 
 **Scoring Result Structure:**
+
 ```typescript
 interface ScoringResult {
-  needsPatterns: boolean;      // Should patterns be retrieved?
-  score: number;               // 0-1 relevance score
-  reasons: string[];           // Scoring explanation
-  suggestedTopics?: string[];  // Recommended pattern topics
+  needsPatterns: boolean; // Should patterns be retrieved?
+  score: number; // 0-1 relevance score
+  reasons: string[]; // Scoring explanation
+  suggestedTopics?: string[]; // Recommended pattern topics
 }
 ```
 
 **Available Methods:**
+
 ```typescript
 // Get scoring result
-scorer.scoreQuery(query)
+scorer.scoreQuery(query);
 
 // Get detailed breakdown (for debugging)
-scorer.getDetailedScore(query)
+scorer.getDetailedScore(query);
 
 // Adjust sensitivity
-scorer.setMinimumThreshold(0.6)  // Default: 0.5
+scorer.setMinimumThreshold(0.6); // Default: 0.5
 ```
 
 **Supported Topics:**
+
 - error-handling
 - dependency-injection
 - async-programming
@@ -112,6 +119,7 @@ scorer.setMinimumThreshold(0.6)  // Default: 0.5
 ## React Hooks
 
 ### usePatternRetrieval
+
 Main hook for RAG pattern retrieval.
 
 ```typescript
@@ -120,13 +128,13 @@ Main hook for RAG pattern retrieval.
 import { usePatternRetrieval } from '@/hooks/usePatternRetrieval';
 
 export function ChatComponent() {
-  const { 
-    patterns, 
-    isLoading, 
-    error, 
-    isRelevant, 
+  const {
+    patterns,
+    isLoading,
+    error,
+    isRelevant,
     relevanceScore,
-    clearCache 
+    clearCache
   } = usePatternRetrieval(userMessage, {
     enabled: true,
     minRelevanceScore: 0.5,
@@ -136,7 +144,7 @@ export function ChatComponent() {
 
   if (isLoading) return <div>Loading patterns...</div>;
   if (error) return <div>Error: {error.message}</div>;
-  
+
   return (
     <div>
       {isRelevant && (
@@ -156,27 +164,29 @@ export function ChatComponent() {
 ```
 
 **Hook Options:**
+
 ```typescript
 interface UsePatternRetrievalOptions {
-  enabled?: boolean;           // Enable/disable retrieval (default: true)
-  minRelevanceScore?: number;  // Threshold 0-1 (default: 0.5)
-  maxPatterns?: number;        // Max patterns to fetch (default: 3)
-  cacheEnabled?: boolean;      // Enable result caching (default: true)
+  enabled?: boolean; // Enable/disable retrieval (default: true)
+  minRelevanceScore?: number; // Threshold 0-1 (default: 0.5)
+  maxPatterns?: number; // Max patterns to fetch (default: 3)
+  cacheEnabled?: boolean; // Enable result caching (default: true)
 }
 ```
 
 ---
 
 ### usePatternContext
+
 Format patterns for inclusion in LLM prompt.
 
 ```typescript
-import { usePatternContext } from '@/hooks/usePatternRetrieval';
+import { usePatternContext } from "@/hooks/usePatternRetrieval";
 
 export function ChatComponent() {
   const { patterns } = usePatternRetrieval(query);
   const patternContext = usePatternContext(patterns);
-  
+
   // Use in system prompt
   const systemPrompt = `You are an Effect-TS expert.
   
@@ -187,6 +197,7 @@ Answer questions based on the patterns above.`;
 ```
 
 **Output Format:**
+
 ```
 ## Pattern Title (intermediate)
 Pattern description and key concepts
@@ -199,6 +210,7 @@ More details...
 ---
 
 ### usePatternDisplay
+
 Manage UI state for pattern display.
 
 ```typescript
@@ -242,11 +254,12 @@ export function PatternList({ patterns }) {
 ```
 
 **Display Options:**
+
 ```typescript
 interface PatternDisplayOptions {
-  showOnlyRelevant?: boolean;   // Hide low-relevance patterns
-  groupBySkillLevel?: boolean;  // Group by beginner/intermediate/advanced
-  sortBy?: 'relevance' | 'skillLevel' | 'title';
+  showOnlyRelevant?: boolean; // Hide low-relevance patterns
+  groupBySkillLevel?: boolean; // Group by beginner/intermediate/advanced
+  sortBy?: "relevance" | "skillLevel" | "title";
 }
 ```
 
@@ -255,9 +268,11 @@ interface PatternDisplayOptions {
 ## API Endpoints (To Implement)
 
 ### POST /api/patterns/score
+
 Score a query for pattern relevance.
 
 **Request:**
+
 ```json
 {
   "query": "How do I handle errors in Effect?"
@@ -265,6 +280,7 @@ Score a query for pattern relevance.
 ```
 
 **Response:**
+
 ```json
 {
   "needsPatterns": true,
@@ -279,9 +295,11 @@ Score a query for pattern relevance.
 ```
 
 ### POST /api/patterns/search
+
 Retrieve relevant patterns.
 
 **Request:**
+
 ```json
 {
   "query": "How do I handle errors in Effect?",
@@ -291,6 +309,7 @@ Retrieve relevant patterns.
 ```
 
 **Response:**
+
 ```json
 [
   {
@@ -312,6 +331,7 @@ Retrieve relevant patterns.
 ## Usage Patterns
 
 ### Basic Chat Integration
+
 ```typescript
 'use client';
 
@@ -325,9 +345,9 @@ export function ChatInterface() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const systemPrompt = `You are an Effect-TS expert.
-    
+
 ${patternContext}
 
 Provide helpful guidance based on the patterns above.`;
@@ -338,7 +358,7 @@ Provide helpful guidance based on the patterns above.`;
     }, {
       data: { systemPrompt }
     });
-    
+
     setInput('');
   };
 
@@ -351,11 +371,12 @@ Provide helpful guidance based on the patterns above.`;
 ```
 
 ### With Error Handling
+
 ```typescript
 const { patterns, error, isLoading } = usePatternRetrieval(query);
 
 if (error) {
-  console.error('Pattern retrieval failed:', error);
+  console.error("Pattern retrieval failed:", error);
   // Gracefully degrade - proceed with chat without patterns
 }
 
@@ -364,18 +385,19 @@ const systemPrompt = buildSystemPrompt(contextPatterns);
 ```
 
 ### With Debugging
+
 ```typescript
-import { getPatternScorer } from '@/lib/services/pattern-scorer';
+import { getPatternScorer } from "@/lib/services/pattern-scorer";
 
 const scorer = getPatternScorer();
 const detailed = scorer.getDetailedScore(query);
 
-console.log('Scoring breakdown:', {
+console.log("Scoring breakdown:", {
   total: detailed.score,
   effect: detailed.effectScore,
   topic: detailed.topicScore,
   guidance: detailed.guidanceScore,
-  threshold: detailed.threshold
+  threshold: detailed.threshold,
 });
 ```
 
@@ -384,41 +406,43 @@ console.log('Scoring breakdown:', {
 ## Testing
 
 ### Mock PatternsService
+
 ```typescript
-import { setPatternsService } from '@/lib/services/patterns-service';
+import { setPatternsService } from "@/lib/services/patterns-service";
 
 const mockService = {
   searchPatterns: jest.fn().mockResolvedValue({
     patterns: [
       {
-        id: 'test-1',
-        title: 'Test Pattern',
-        description: 'Test',
-        content: 'Test content',
-        skillLevel: 'beginner',
-        tags: ['test'],
-        relevanceScore: 0.9
-      }
+        id: "test-1",
+        title: "Test Pattern",
+        description: "Test",
+        content: "Test content",
+        skillLevel: "beginner",
+        tags: ["test"],
+        relevanceScore: 0.9,
+      },
     ],
     totalCount: 1,
-    query: 'test',
-    timestamp: Date.now()
-  })
+    query: "test",
+    timestamp: Date.now(),
+  }),
 };
 
 setPatternsService(mockService as any);
 ```
 
 ### Test PatternScorer
+
 ```typescript
-import { setPatternScorer } from '@/lib/services/pattern-scorer';
+import { setPatternScorer } from "@/lib/services/pattern-scorer";
 
 const scorer = new PatternScorer();
-const result = scorer.scoreQuery('How do I handle errors?');
+const result = scorer.scoreQuery("How do I handle errors?");
 
 expect(result.needsPatterns).toBe(true);
 expect(result.score).toBeGreaterThan(0.5);
-expect(result.suggestedTopics).toContain('error-handling');
+expect(result.suggestedTopics).toContain("error-handling");
 ```
 
 ---
@@ -443,18 +467,21 @@ NODE_ENV=development
 ## Common Issues & Solutions
 
 ### Patterns Not Appearing
+
 1. Check `SUPERMEMORY_API_KEY` is set correctly
 2. Verify patterns uploaded: `pnpm run dev -- memories list --type pattern`
 3. Check query score: Use `getDetailedScore()` for debugging
 4. Verify threshold: Default is 0.5, adjust if needed
 
 ### High API Latency
+
 1. Check cache is enabled (default: true)
 2. Look at memory router API status
 3. Consider increasing `minRelevanceScore` threshold
 4. Reduce `maxPatterns` limit
 
 ### Incorrect Pattern Matching
+
 1. Review scoring breakdown with `getDetailedScore()`
 2. Check keywords in PatternScorer for topic matching
 3. Adjust scoring weights if needed
@@ -467,4 +494,3 @@ NODE_ENV=development
 - Implementation Guide: `docs/patterns-chat-app/IMPLEMENTATION_GUIDE.md`
 - Supermemory API: https://supermemory.ai/docs
 - sm-cli README: `app/sm-cli/README.md`
-

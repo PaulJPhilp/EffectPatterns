@@ -15,18 +15,21 @@ It understands **meaning**, not just keywords.
 ### Complete Semantic Search System with 4 Modules
 
 **1. Embeddings Module** (`embeddings.ts` - 300 lines)
+
 - Converts text to numerical vectors
 - Supports OpenAI, Voyage AI, and local Ollama
 - Includes caching to reduce API costs
 - Error handling with retry logic
 
 **2. Vector Store Module** (`vector-store.ts` - 330 lines)
+
 - In-memory database for fast vector searches
 - Cosine similarity calculations
 - Supports filtering by user, chat, type, outcome
 - Statistics and monitoring
 
 **3. Search Module** (`search.ts` - 450 lines)
+
 - Hybrid search (keyword + semantic)
 - Intelligent ranking algorithm
 - 5 search functions:
@@ -37,6 +40,7 @@ It understands **meaning**, not just keywords.
   - `batchSearch()` - Search multiple queries
 
 **4. Public API** (`index.ts`)
+
 - Clean exports for easy imports
 - Type definitions included
 
@@ -74,15 +78,16 @@ AI Uses Similar Conversations for Better Responses
 
 ### ✅ Multiple Embedding Models
 
-| Model | Cost | Quality | Speed | Setup |
-|-------|------|---------|-------|-------|
-| OpenAI | $$ | ⭐⭐⭐⭐⭐ | Fast | API Key |
-| Voyage AI | $$ | ⭐⭐⭐⭐⭐ | Fast | API Key |
-| Ollama | FREE | ⭐⭐⭐ | Medium | Self-hosted |
+| Model     | Cost | Quality    | Speed  | Setup       |
+| --------- | ---- | ---------- | ------ | ----------- |
+| OpenAI    | $$   | ⭐⭐⭐⭐⭐ | Fast   | API Key     |
+| Voyage AI | $$   | ⭐⭐⭐⭐⭐ | Fast   | API Key     |
+| Ollama    | FREE | ⭐⭐⭐     | Medium | Self-hosted |
 
 ### ✅ Intelligent Ranking
 
 Combines 5 signals:
+
 - **Semantic similarity** (60%) - Meaning-based match
 - **Keyword relevance** (30%) - Exact word matches
 - **Recency boost** (7%) - Recent > old
@@ -92,6 +97,7 @@ Combines 5 signals:
 ### ✅ Smart Filtering
 
 Search within:
+
 - Tags (effect-ts, error-handling, etc.)
 - Outcome (solved, unsolved, partial, revisited)
 - Date ranges
@@ -128,11 +134,11 @@ const results = await semanticSearchConversations(
     filters: {
       outcome: "solved", // Only show solutions
       tags: ["effect-ts"], // Only Effect-related
-    }
+    },
   }
 );
 
-results.forEach(r => {
+results.forEach((r) => {
   console.log(`${r.metadata.chatId}: ${r.score.finalScore.toFixed(2)}`);
 });
 ```
@@ -143,11 +149,9 @@ results.forEach(r => {
 import { getRelatedConversations } from "@/lib/semantic-search";
 
 // Get conversations similar to current one
-const related = await getRelatedConversations(
-  "user-123",
-  "current-chat-id",
-  { limit: 3 }
-);
+const related = await getRelatedConversations("user-123", "current-chat-id", {
+  limit: 3,
+});
 ```
 
 ### Search by Topic
@@ -164,32 +168,38 @@ const results = await searchByTag("user-123", "effect-ts");
 ## Integration Points
 
 ### 1. Store Embeddings When Chat Ends
+
 **File:** `app/(chat)/api/chat/route.ts`
+
 ```typescript
 // In onFinish handler:
 const embedding = await generateEmbedding(conversationText);
 vectorStore.add({
   id: `conv_${id}`,
   embedding: embedding.vector,
-  metadata: { /* conversation info */ }
+  metadata: {
+    /* conversation info */
+  },
 });
 ```
 
 ### 2. Create Search API
+
 **File:** `app/(chat)/api/search/route.ts`
+
 ```typescript
 export async function GET(request: Request) {
-  const results = await semanticSearchConversations(
-    userId,
-    query,
-    { limit: 10 }
-  );
+  const results = await semanticSearchConversations(userId, query, {
+    limit: 10,
+  });
   return Response.json(results);
 }
 ```
 
 ### 3. Include Similar Conversations in AI Prompt
+
 **File:** `lib/ai/prompts.ts`
+
 ```typescript
 export const systemPrompt = ({
   // ... existing params ...
@@ -278,12 +288,12 @@ VOYAGE_API_KEY=pa-...            # Voyage AI embeddings
 
 ```typescript
 interface SemanticSearchOptions {
-  limit?: number;                    // Results to return (default: 10)
-  minSimilarity?: number;            // 0-1, default 0.3
-  keywordWeight?: number;            // 0-1 (default: 0.3)
-  semanticWeight?: number;           // 0-1 (default: 0.6)
-  recencyWeight?: number;            // 0-1 (default: 0.07)
-  satisfactionWeight?: number;       // 0-1 (default: 0.03)
+  limit?: number; // Results to return (default: 10)
+  minSimilarity?: number; // 0-1, default 0.3
+  keywordWeight?: number; // 0-1 (default: 0.3)
+  semanticWeight?: number; // 0-1 (default: 0.6)
+  recencyWeight?: number; // 0-1 (default: 0.07)
+  satisfactionWeight?: number; // 0-1 (default: 0.03)
   filters?: {
     tags?: string[];
     outcome?: "solved" | "unsolved" | "partial" | "revisited";
@@ -328,45 +338,51 @@ clearEmbeddingCache(); // Frees memory, will regenerate on next query
 ## Comparison to Alternatives
 
 ### vs. Keyword Search
-| Aspect | Keyword | Semantic |
-|--------|---------|----------|
-| "error" finds "exception" | ❌ | ✅ |
-| Typo tolerance | ⚠️ Poor | ✅ Good |
-| Concept matching | ❌ | ✅ |
-| Speed | ⚡ | 🐢 Medium |
+
+| Aspect                    | Keyword | Semantic  |
+| ------------------------- | ------- | --------- |
+| "error" finds "exception" | ❌      | ✅        |
+| Typo tolerance            | ⚠️ Poor | ✅ Good   |
+| Concept matching          | ❌      | ✅        |
+| Speed                     | ⚡      | 🐢 Medium |
 
 ### vs. Supermemory Built-in
-| Aspect | Semantic Search | Supermemory |
-|--------|---|---|
-| Customization | ✅ Full | ⚠️ Limited |
-| Cost | 💰 $$ | 💰 $$ |
-| Infrastructure | 🏠 Self-hosted | ☁️ Cloud |
-| Control | ✅ Full | ⚠️ Limited |
+
+| Aspect         | Semantic Search | Supermemory |
+| -------------- | --------------- | ----------- |
+| Customization  | ✅ Full         | ⚠️ Limited  |
+| Cost           | 💰 $$           | 💰 $$       |
+| Infrastructure | 🏠 Self-hosted  | ☁️ Cloud    |
+| Control        | ✅ Full         | ⚠️ Limited  |
 
 ### vs. PostgreSQL pgvector
-| Aspect | Semantic Search | pgvector |
-|--------|---|---|
-| Setup | ✅ Easy | ⚠️ Complex |
-| Scale | ⚠️ Up to 100k | ✅ Millions |
-| Performance | ✅ Fast | ✅ Very Fast |
-| Persistence | ⚠️ Manual | ✅ Automatic |
+
+| Aspect      | Semantic Search | pgvector     |
+| ----------- | --------------- | ------------ |
+| Setup       | ✅ Easy         | ⚠️ Complex   |
+| Scale       | ⚠️ Up to 100k   | ✅ Millions  |
+| Performance | ✅ Fast         | ✅ Very Fast |
+| Persistence | ⚠️ Manual       | ✅ Automatic |
 
 ---
 
 ## Future Enhancements
 
 ### Phase 2: External Vector Database
+
 - Migrate to Pinecone or Weaviate for scalability
 - Reduce memory footprint for large user bases
 - Add distributed search
 
 ### Phase 3: Advanced Features
+
 - Cross-user pattern discovery
 - Automatic tagging improvements
 - Conversation clustering
 - Anomaly detection
 
 ### Phase 4: Integration with Pattern Toolkit
+
 - Search across stored patterns
 - Link conversations to patterns
 - Pattern recommendation system
@@ -395,12 +411,14 @@ clearEmbeddingCache(); // Frees memory, will regenerate on next query
 ### Prerequisites
 
 1. **Environment Variable**
+
    ```bash
    # Add to Vercel environment variables
    OPENAI_API_KEY=sk-your-key
    ```
 
 2. **Storage Option** (choose one)
+
    - In-memory (default, < 50k conversations)
    - Local file (development)
    - Database (production scale)
@@ -427,19 +445,23 @@ clearEmbeddingCache(); // Frees memory, will regenerate on next query
 ### Common Issues
 
 **"OPENAI_API_KEY not set"**
+
 - Add to `.env.local`: `OPENAI_API_KEY=sk-...`
 
 **"Search returns empty results"**
+
 - Check vector store size: `getSearchStats()`
 - Lower minSimilarity threshold
 - Check filters aren't too restrictive
 
 **"Embeddings are slow"**
+
 - Enable caching: `generateEmbeddingWithCache()`
 - Consider local Ollama for faster inference
 - Batch multiple queries with `batchSearch()`
 
 **"Memory usage too high"**
+
 - Reduce vector store size
 - Clear old embeddings
 - Migrate to external vector DB
@@ -449,12 +471,14 @@ clearEmbeddingCache(); // Frees memory, will regenerate on next query
 ## Quick Start (3 Steps)
 
 ### 1. Add API Key
+
 ```bash
 # .env.local
 OPENAI_API_KEY=sk-your-key
 ```
 
 ### 2. Update Chat Route
+
 ```typescript
 // app/(chat)/api/chat/route.ts
 import { generateEmbedding, getVectorStore } from "@/lib/semantic-search";
@@ -465,6 +489,7 @@ vectorStore.add({ id, embedding: embedding.vector, metadata: {...} });
 ```
 
 ### 3. Create Search Endpoint
+
 ```typescript
 // app/(chat)/api/search/route.ts
 import { semanticSearchConversations } from "@/lib/semantic-search";
@@ -511,6 +536,7 @@ Total: ~28 KB of implementation code
 ## Questions?
 
 Refer to:
+
 - `SEMANTIC_SEARCH_GUIDE.md` - Deep architecture
 - `SEMANTIC_SEARCH_IMPLEMENTATION.md` - Step-by-step guide
 - Code comments in `lib/semantic-search/` - Implementation details

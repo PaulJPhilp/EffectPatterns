@@ -14,13 +14,13 @@ Successfully implemented comprehensive queue management capabilities for the Sup
 
 ### 5 New Queue Commands
 
-| Command | Purpose | Key Features |
-|---------|---------|--------------|
-| `queue list` | View all processing documents | Color-coded status, JSON export, pagination |
-| `queue status` | Check specific document | Detailed metadata, elapsed time, status |
-| `queue delete` | Remove document from queue | Confirmation prompts, force flag |
-| `queue clear` | Bulk delete by status | Filter: failed/queued/all, progress reporting |
-| `queue watch` | Real-time monitoring | Poll every 2s, customizable timeout |
+| Command        | Purpose                       | Key Features                                  |
+| -------------- | ----------------------------- | --------------------------------------------- |
+| `queue list`   | View all processing documents | Color-coded status, JSON export, pagination   |
+| `queue status` | Check specific document       | Detailed metadata, elapsed time, status       |
+| `queue delete` | Remove document from queue    | Confirmation prompts, force flag              |
+| `queue clear`  | Bulk delete by status         | Filter: failed/queued/all, progress reporting |
+| `queue watch`  | Real-time monitoring          | Poll every 2s, customizable timeout           |
 
 ### Processing Pipeline
 
@@ -36,7 +36,9 @@ Documents flow through 6 stages:
 ## Files Created
 
 ### New Files
+
 - **`app/sm-cli/src/commands/queue.ts`** (351 lines)
+
   - 5 queue subcommands with full CLI support
   - Beautiful output formatting with colors and tables
   - Real-time polling and batch operations
@@ -47,12 +49,15 @@ Documents flow through 6 stages:
   - Common workflows and troubleshooting
 
 ### Modified Files
+
 - **`app/sm-cli/src/types.ts`** (16 lines added)
+
   - `ProcessingStatus` type
   - `ProcessingDocument` interface
   - `ProcessingQueue` interface
 
 - **`app/sm-cli/src/services/supermemory.ts`** (108 lines added)
+
   - `getProcessingQueue()`
   - `getDocumentStatus(id)`
   - `deleteDocument(id)`
@@ -62,6 +67,7 @@ Documents flow through 6 stages:
   - Import and register queue command group
 
 ## Total Changes
+
 - **5 files modified/created**
 - **801 lines added**
 - **100% test coverage** (all commands verified working)
@@ -69,30 +75,35 @@ Documents flow through 6 stages:
 ## Usage Examples
 
 ### List Processing Queue
+
 ```bash
 bun run sm-cli queue list
 # Output: Colorful table showing all documents in processing
 ```
 
 ### Check Specific Document
+
 ```bash
 bun run sm-cli queue status --id doc_abc123
 # Output: Detailed status card with metadata and timing
 ```
 
 ### Watch Document Process
+
 ```bash
 bun run sm-cli queue watch --id doc_abc123
 # Output: Real-time polling updates until complete
 ```
 
 ### Clear Failed Documents
+
 ```bash
 bun run sm-cli queue clear --status failed --force
 # Output: Summary of deleted documents
 ```
 
 ### Export to JSON
+
 ```bash
 bun run sm-cli queue list --format json | jq '.documents[] | select(.status == "failed")'
 # Output: JSON array of failed documents for scripting
@@ -101,6 +112,7 @@ bun run sm-cli queue list --format json | jq '.documents[] | select(.status == "
 ## Architecture
 
 ### Command Layer
+
 ```
 User Input
     ↓
@@ -111,6 +123,7 @@ Error handling & confirmations
 ```
 
 ### Service Layer
+
 ```
 [supermemory.ts] - Queue service methods
     ↓
@@ -122,6 +135,7 @@ DELETE /v3/documents/{id}
 ```
 
 ### Type Safety
+
 ```
 [types.ts]
     ↓
@@ -133,26 +147,31 @@ ProcessingQueue (list response)
 ## Key Features
 
 ✨ **Beautiful Output**
+
 - Color-coded status indicators (yellow/blue/green/red)
 - Unicode status icons (⏳ 🟡 ⚙️ 🔵 ✅ 🟢 ❌ 🔴)
 - Professional table formatting
 
 🎯 **User-Friendly**
+
 - Safety confirmations before destructive operations
 - Force flag for automation
 - Clear error messages
 - Helpful status messages
 
 📊 **Flexible Formats**
+
 - Human format: Interactive, colored output
 - JSON format: Programmatic access
 
 ⚡ **Efficient**
+
 - 2-second polling interval for responsiveness
 - Timeout handling to prevent hanging
 - Batch operations for efficiency
 
 🛡️ **Robust**
+
 - Comprehensive error handling
 - API failure recovery
 - Type-safe implementation with Effect-TS
@@ -162,26 +181,31 @@ ProcessingQueue (list response)
 All commands tested and verified:
 
 ✅ `queue list`
+
 - Empty queue handling ✓
 - JSON output formatting ✓
 - Message clarity ✓
 
 ✅ `queue status`
+
 - Document lookup ✓
 - 404 error handling ✓
 - Status display ✓
 
 ✅ `queue delete`
+
 - Document deletion ✓
 - Confirmation prompts ✓
 - Error recovery ✓
 
 ✅ `queue clear`
+
 - Status filtering ✓
 - Bulk operations ✓
 - Progress reporting ✓
 
 ✅ `queue watch`
+
 - Polling mechanism ✓
 - Timeout handling ✓
 - Status updates ✓
@@ -201,6 +225,7 @@ bun run sm-cli memories list             # Verify after done
 ## Documentation
 
 ### User Guide
+
 - **Location**: `app/sm-cli/QUEUE_MANAGEMENT.md`
 - **Contents**:
   - Processing pipeline explanation
@@ -210,6 +235,7 @@ bun run sm-cli memories list             # Verify after done
   - Performance tips
 
 ### Implementation Details
+
 - **Location**: `QUEUE_IMPLEMENTATION_SUMMARY.md` (created during development)
 - **Contents**:
   - Architecture overview
@@ -219,22 +245,22 @@ bun run sm-cli memories list             # Verify after done
 
 ## Performance Characteristics
 
-| Metric | Value |
-|--------|-------|
-| Polling Interval | 2 seconds |
-| Default Timeout | 300 seconds (5 min) |
-| Typical Processing Time | 30-60 seconds |
-| API Response Time | < 500ms |
-| Command Startup | < 1 second |
+| Metric                  | Value               |
+| ----------------------- | ------------------- |
+| Polling Interval        | 2 seconds           |
+| Default Timeout         | 300 seconds (5 min) |
+| Typical Processing Time | 30-60 seconds       |
+| API Response Time       | < 500ms             |
+| Command Startup         | < 1 second          |
 
 ## Error Handling
 
-| Error | Handling | Message |
-|-------|----------|---------|
-| 401 Authentication | Retry with valid API key | "Invalid API key" |
-| 404 Not Found | Clear error message | "Document not found" |
-| Network Timeout | Graceful failure | "Connection timeout" |
-| Invalid ID | Validation before request | "Invalid document ID" |
+| Error              | Handling                  | Message               |
+| ------------------ | ------------------------- | --------------------- |
+| 401 Authentication | Retry with valid API key  | "Invalid API key"     |
+| 404 Not Found      | Clear error message       | "Document not found"  |
+| Network Timeout    | Graceful failure          | "Connection timeout"  |
+| Invalid ID         | Validation before request | "Invalid document ID" |
 
 ## Future Enhancements
 
@@ -252,6 +278,7 @@ Possible additions (not implemented):
 ✅ Ready for production
 
 The implementation:
+
 - Follows Effect-TS best practices
 - Uses existing CLI framework (@effect/cli)
 - Integrates with production Supermemory API
@@ -262,11 +289,13 @@ The implementation:
 ## Getting Started
 
 ### View All Commands
+
 ```bash
 bun run sm-cli queue --help
 ```
 
 ### Learn More
+
 ```bash
 # Command help
 bun run sm-cli queue list --help
@@ -280,6 +309,7 @@ cat app/sm-cli/QUEUE_MANAGEMENT.md
 ```
 
 ### First Use
+
 ```bash
 # 1. Create a memory
 bun run sm-cli memories add
@@ -296,11 +326,13 @@ bun run sm-cli queue watch --id <document-id>
 **Commit Hash**: `229e4f4`
 
 **Changes**:
+
 - 5 files changed
 - 801 insertions
 - Fully tested
 
 **Staged Files**:
+
 - app/sm-cli/src/index.ts
 - app/sm-cli/src/services/supermemory.ts
 - app/sm-cli/src/types.ts
@@ -312,6 +344,7 @@ bun run sm-cli queue watch --id <document-id>
 Queue management is now production-ready! Users have full visibility and control over the Supermemory document processing pipeline through an intuitive, beautiful CLI interface.
 
 The implementation:
+
 - ✅ Adds 5 new powerful commands
 - ✅ Provides real-time monitoring
 - ✅ Enables queue troubleshooting

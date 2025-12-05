@@ -4,7 +4,10 @@
  * Mock implementations for Supermemory and related services
  */
 
-import type { SupermemoryStoreOptions, SupermemorySearchResult } from "../supermemory-store";
+import type {
+  SupermemoryStoreOptions,
+  SupermemorySearchResult,
+} from "../supermemory-store";
 import type { VectorMetadata } from "../vector-store";
 
 /**
@@ -33,9 +36,12 @@ export class MockSupermemoryClient {
     const limit = params.limit || 10;
     // Simple keyword-based search mock
     const results = this.memories
-      .filter((m) =>
-        m.memory.toLowerCase().includes(params.q.toLowerCase()) ||
-        JSON.stringify(m.metadata).toLowerCase().includes(params.q.toLowerCase())
+      .filter(
+        (m) =>
+          m.memory.toLowerCase().includes(params.q.toLowerCase()) ||
+          JSON.stringify(m.metadata)
+            .toLowerCase()
+            .includes(params.q.toLowerCase())
       )
       .slice(0, limit)
       .map((m) => ({
@@ -62,7 +68,9 @@ export const testUserId = "test-user-123";
 export const testChatId = "test-chat-456";
 
 export const mockEmbedding = {
-  vector: Array(1536).fill(0).map((_, i) => Math.sin(i / 1000)),
+  vector: Array(1536)
+    .fill(0)
+    .map((_, i) => Math.sin(i / 1000)),
   model: "text-embedding-3-small",
   usage: { prompt_tokens: 100 },
 };
@@ -71,7 +79,8 @@ export const mockVectorMetadata: VectorMetadata = {
   chatId: testChatId,
   userId: testUserId,
   type: "conversation",
-  content: "How do I handle errors in Effect? The assistant explained try-catch patterns.",
+  content:
+    "How do I handle errors in Effect? The assistant explained try-catch patterns.",
   timestamp: new Date().toISOString(),
   outcome: "solved",
   tags: ["effect-ts", "error-handling"],

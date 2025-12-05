@@ -9,10 +9,12 @@ Enhanced validation with parallel execution, better error categorization, link c
 ### 1. Parallel Execution ⚡
 
 **Before:**
+
 - Sequential validation (one pattern at a time)
 - 88 patterns would take several seconds
 
 **After:**
+
 - Parallel execution with 10 workers
 - 88 patterns validated in **35ms**
 - Near-instant feedback
@@ -20,11 +22,13 @@ Enhanced validation with parallel execution, better error categorization, link c
 ### 2. Better Error Categorization 🏷️
 
 **Before:**
+
 - Generic error messages
 - Hard to identify pattern
 
 **After:**
 Issues categorized by type:
+
 - **frontmatter** - Missing or invalid metadata
 - **structure** - Missing required sections
 - **links** - Broken or placeholder links
@@ -37,6 +41,7 @@ Issues categorized by type:
 **New Validations:**
 
 #### Frontmatter Validation
+
 - Required fields: `id`, `title`, `skillLevel`, `useCase`, `summary`
 - ID matches filename
 - Valid skill levels: `beginner`, `intermediate`, `advanced`
@@ -44,17 +49,20 @@ Issues categorized by type:
 - Summary length (<200 chars)
 
 #### Structure Validation
+
 - Required sections: Good Example, Anti-Pattern, Explanation/Rationale
 - Matching code block delimiters
 - Empty code block detection
 
 #### Link Validation
+
 - Empty link text
 - Placeholder links (example.com, #, TODO)
 - Relative link warnings
 - Broken URL detection
 
 #### Content Validation
+
 - Minimum content length
 - TODO/FIXME warnings
 - Very long lines (>200 chars)
@@ -63,12 +71,14 @@ Issues categorized by type:
 ### 4. Enhanced Reporting 📊
 
 **Before:**
+
 ```
 Validating patterns...
 ✅ All patterns validated successfully!
 ```
 
 **After:**
+
 ```
 🔍 Enhanced Pattern Validation
 
@@ -102,6 +112,7 @@ Pipeline exits with code 1 only on errors, not warnings.
 ## Current Status
 
 ### Validation Results
+
 ```
 Total Patterns: 88
 Valid:          88 ✅
@@ -112,28 +123,34 @@ Warnings:       152
 ### Common Issues Found
 
 #### 1. UseCase Formatting (88 warnings)
+
 **Issue:** Frontmatter uses title case with spaces
+
 ```yaml
-useCase: "Error Management"  # ❌
+useCase: "Error Management" # ❌
 ```
 
 **Should be:** Kebab-case
+
 ```yaml
-useCase: "error-management"  # ✅
+useCase: "error-management" # ✅
 ```
 
 **Affected patterns:**
+
 - All patterns with multi-word use cases
 - Examples: "Error Management", "Core Concepts", "Building APIs"
 
 **Fix:** Update frontmatter to use kebab-case format
 
 #### 2. Long Lines (64 warnings)
+
 **Issue:** Lines over 200 characters (usually import statements or long URLs)
 
 **Example:**
+
 ```typescript
-import { Effect, Layer, Context, pipe } from "effect" // This line is over 200 characters and should be broken up for better readability
+import { Effect, Layer, Context, pipe } from "effect"; // This line is over 200 characters and should be broken up for better readability
 ```
 
 **Fix:** Not critical, mostly readability
@@ -156,8 +173,8 @@ bun run pipeline
 In `validate-improved.ts`:
 
 ```typescript
-const CONCURRENCY = 10;         // Number of parallel workers
-const SHOW_PROGRESS = true;     // Show progress bar
+const CONCURRENCY = 10; // Number of parallel workers
+const SHOW_PROGRESS = true; // Show progress bar
 
 // Valid skill levels
 const VALID_SKILL_LEVELS = ["beginner", "intermediate", "advanced"];
@@ -173,12 +190,12 @@ const VALID_USE_CASES = [
 
 ## Performance
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Validation time | ~1s | 35ms | **~28x faster** |
-| Error detail | Basic | Rich | Categories |
-| Checks | 3 types | 6 types | 2x coverage |
-| Reporting | Minimal | Comprehensive | Actionable |
+| Metric          | Before  | After         | Improvement     |
+| --------------- | ------- | ------------- | --------------- |
+| Validation time | ~1s     | 35ms          | **~28x faster** |
+| Error detail    | Basic   | Rich          | Categories      |
+| Checks          | 3 types | 6 types       | 2x coverage     |
+| Reporting       | Minimal | Comprehensive | Actionable      |
 
 ## Next Steps
 
@@ -204,14 +221,17 @@ const useCaseMap = {
 ### Add More Validators
 
 1. **Schema Validation**
+
    - Validate TypeScript imports match available packages
    - Check for deprecated Effect APIs
 
 2. **Link Checking**
+
    - Actually fetch URLs to verify they exist
    - Check internal links resolve
 
 3. **Code Block Syntax**
+
    - Parse TypeScript code blocks
    - Verify they compile
    - Check for common mistakes
@@ -254,6 +274,7 @@ The improved validation helps:
 5. **Actionable reports:** Specific warnings with solutions
 
 This is especially valuable for:
+
 - **Pre-release checks:** Ensure all patterns meet quality standards
 - **CI/CD integration:** Automated validation in pipelines
 - **Contributor feedback:** Clear guidance on what needs fixing
@@ -264,10 +285,10 @@ This is especially valuable for:
 
 ```typescript
 // Each validator is independent
-function validateFrontmatter(fm, file): Issue[]
-function validateStructure(content): Issue[]
-function validateLinks(content): Issue[]
-function validateContent(content): Issue[]
+function validateFrontmatter(fm, file): Issue[];
+function validateStructure(content): Issue[];
+function validateLinks(content): Issue[];
+function validateContent(content): Issue[];
 
 // Validation runs in parallel
 async function validatePattern(file): ValidationResult {
@@ -277,7 +298,7 @@ async function validatePattern(file): ValidationResult {
     ...validateLinks(),
     ...validateContent(),
   ];
-  
+
   return {
     valid: errors.length === 0,
     issues,
@@ -290,7 +311,13 @@ async function validatePattern(file): ValidationResult {
 ```typescript
 interface ValidationIssue {
   type: "error" | "warning";
-  category: "frontmatter" | "structure" | "links" | "code" | "content" | "files";
+  category:
+    | "frontmatter"
+    | "structure"
+    | "links"
+    | "code"
+    | "content"
+    | "files";
   message: string;
 }
 ```

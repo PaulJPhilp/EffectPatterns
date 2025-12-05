@@ -27,7 +27,9 @@ async function test() {
       console.log("\n🔍 Key Fields to Check:");
       console.log(`   - connectionId: ${memory.connectionId}`);
       console.log(`   - metadata.type: ${(memory.metadata as any)?.type}`);
-      console.log(`   - metadata.projectId: ${(memory.metadata as any)?.projectId}`);
+      console.log(
+        `   - metadata.projectId: ${(memory.metadata as any)?.projectId}`
+      );
       console.log(`   - metadata.userId: ${(memory.metadata as any)?.userId}`);
       console.log(`   - metadata.source: ${(memory.metadata as any)?.source}`);
       console.log(`   - title: ${memory.title}`);

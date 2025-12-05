@@ -5,9 +5,7 @@ import { Data } from "effect";
  * Tagged error types for the pattern scorer service
  */
 
-export class PatternScorerError extends Data.TaggedError(
-  "PatternScorerError"
-)<{
+export class PatternScorerError extends Data.TaggedError("PatternScorerError")<{
   readonly message: string;
   readonly cause?: unknown;
 }> {}
@@ -25,4 +23,3 @@ export class QueryValidationError extends Data.TaggedError(
   readonly query: string;
   readonly message: string;
 }> {}
-

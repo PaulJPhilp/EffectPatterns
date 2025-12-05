@@ -4,24 +4,24 @@
  * Loads patterns + placements into memory and provides fast indexed access.
  */
 
-import { Effect, Ref } from 'effect';
-import { db } from '../../db/client.js';
-import { patternModulePlacements, patterns } from '../../db/schema.js';
-import type { DbPatternRow, SkillLevel } from '../pattern/types.js';
-import { toPatternMeta } from '../pattern/utils.js';
-import { CatalogLoadError, CatalogNotInitialized } from './errors.js';
+import { Effect, Ref } from "effect";
+import { db } from "../../db/client.js";
+import { patternModulePlacements, patterns } from "../../db/schema.js";
+import type { DbPatternRow, SkillLevel } from "../pattern/types.js";
+import { toPatternMeta } from "../pattern/utils.js";
+import { CatalogLoadError, CatalogNotInitialized } from "./errors.js";
 import type {
   CatalogIndices,
   CatalogPattern,
   ModulePlacement,
   ModuleStageGroup,
-} from './types.js';
+} from "./types.js";
 
 /**
  * Catalog service implementation
  */
 export class CatalogService extends Effect.Service<CatalogService>()(
-  'CatalogService',
+  "CatalogService",
   {
     scoped: () =>
       Effect.gen(function* () {
@@ -68,7 +68,7 @@ const buildIndices = (enrichedPatterns: CatalogPattern[]): CatalogIndices => {
       }
       byModule.get(moduleId)!.add(pattern.id);
 
-      const stageKey = `${moduleId}:${placement.stage ?? 'null'}`;
+      const stageKey = `${moduleId}:${placement.stage ?? "null"}`;
       if (!byModuleStage.has(stageKey)) {
         byModuleStage.set(stageKey, new Set());
       }
@@ -89,7 +89,7 @@ const loadCatalog = () =>
       try: () => db.select().from(patterns),
       catch: (cause) =>
         new CatalogLoadError({
-          message: 'Failed to load patterns from database',
+          message: "Failed to load patterns from database",
           cause,
         }),
     });
@@ -99,7 +99,7 @@ const loadCatalog = () =>
       try: () => db.select().from(patternModulePlacements),
       catch: (cause) =>
         new CatalogLoadError({
-          message: 'Failed to load placements from database',
+          message: "Failed to load placements from database",
           cause,
         }),
     });
@@ -142,7 +142,7 @@ const makeCatalog = (indicesRef: Ref.Ref<CatalogIndices | null>) => {
     if (!indices) {
       return yield* Effect.fail(
         new CatalogNotInitialized({
-          message: 'Catalog not initialized. Call refresh() first.',
+          message: "Catalog not initialized. Call refresh() first.",
         })
       );
     }
@@ -236,7 +236,7 @@ const makeCatalog = (indicesRef: Ref.Ref<CatalogIndices | null>) => {
     getModuleStage: (moduleId: string, stage: number | null) =>
       Effect.gen(function* () {
         const indices = yield* getIndices;
-        const stageKey = `${moduleId}:${stage ?? 'null'}`;
+        const stageKey = `${moduleId}:${stage ?? "null"}`;
         const patternIds = indices.byModuleStage.get(stageKey) ?? new Set();
 
         const patterns = Array.from(patternIds)

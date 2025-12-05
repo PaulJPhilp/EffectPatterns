@@ -35,14 +35,13 @@ const requestDuration = Metric.histogram(
 // Record a request duration
 const recordDuration = (duration: number) =>
   Metric.update(requestDuration, duration);
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Metric.counter` tracks counts of events.
 - `Metric.gauge` tracks a value that can go up or down (e.g., active users).
 - `Metric.histogram` tracks distributions (e.g., request durations).
 - `Effect.updateMetric` updates the metric in your workflow.
 
 ---
-

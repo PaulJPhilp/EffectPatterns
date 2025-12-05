@@ -1,8 +1,8 @@
-import { defineWorkspace } from 'vitest/config';
+import { defineWorkspace } from "vitest/config";
 
 export default defineWorkspace([
-  'app/web/vitest.config.ts',
-  'packages/toolkit/vitest.config.ts',
-  'services/mcp-server/vitest.config.ts',
-  'packages/cli/vitest.config.ts',
+  "app/web/vitest.config.ts",
+  "packages/toolkit/vitest.config.ts",
+  "services/mcp-server/vitest.config.ts",
+  "packages/cli/vitest.config.ts",
 ]);

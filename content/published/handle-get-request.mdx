@@ -42,7 +42,7 @@ This approach has several advantages:
 This example defines two separate GET routes, one for the root path (`/`) and one for `/hello`. We create an empty router and add each route to it. The resulting `app` is then served. The router automatically handles sending a `404 Not Found` response for any path that doesn't match.
 
 ```typescript
-import { Data, Effect } from 'effect'
+import { Data, Effect } from "effect";
 
 // Define response types
 interface RouteResponse {
@@ -61,64 +61,65 @@ class RouteHandlerError extends Data.TaggedError("RouteHandlerError")<{
 }> {}
 
 // Define route service
-class RouteService extends Effect.Service<RouteService>()(
-  "RouteService",
-  {
-    sync: () => {
-      // Create instance methods
-      const handleRoute = (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`Processing request for path: ${path}`);
-          
-          try {
-            switch (path) {
-              case '/':
-                const home = 'Welcome to the home page!';
-                yield* Effect.logInfo(`Serving home page`);
-                return { status: 200, body: home };
+class RouteService extends Effect.Service<RouteService>()("RouteService", {
+  sync: () => {
+    // Create instance methods
+    const handleRoute = (
+      path: string
+    ): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`Processing request for path: ${path}`);
 
-              case '/hello':
-                const hello = 'Hello, Effect!';
-                yield* Effect.logInfo(`Serving hello page`);
-                return { status: 200, body: hello };
+        try {
+          switch (path) {
+            case "/":
+              const home = "Welcome to the home page!";
+              yield* Effect.logInfo(`Serving home page`);
+              return { status: 200, body: home };
 
-              default:
-                yield* Effect.logWarning(`Route not found: ${path}`);
-                return yield* Effect.fail(new RouteNotFoundError({ path }));
-            }
-          } catch (e) {
-            const error = e instanceof Error ? e.message : String(e);
-            yield* Effect.logError(`Error handling route ${path}: ${error}`);
-            return yield* Effect.fail(new RouteHandlerError({ path, error }));
+            case "/hello":
+              const hello = "Hello, Effect!";
+              yield* Effect.logInfo(`Serving hello page`);
+              return { status: 200, body: hello };
+
+            default:
+              yield* Effect.logWarning(`Route not found: ${path}`);
+              return yield* Effect.fail(new RouteNotFoundError({ path }));
           }
-        });
+        } catch (e) {
+          const error = e instanceof Error ? e.message : String(e);
+          yield* Effect.logError(`Error handling route ${path}: ${error}`);
+          return yield* Effect.fail(new RouteHandlerError({ path, error }));
+        }
+      });
 
-      // Return service implementation
-      return {
-        handleRoute,
-        // Simulate GET request
-        simulateGet: (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
-          Effect.gen(function* () {
-            yield* Effect.logInfo(`GET ${path}`);
-            const response = yield* handleRoute(path);
-            yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
-            return response;
-          })
-      };
-    }
-  }
-) {}
+    // Return service implementation
+    return {
+      handleRoute,
+      // Simulate GET request
+      simulateGet: (
+        path: string
+      ): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
+        Effect.gen(function* () {
+          yield* Effect.logInfo(`GET ${path}`);
+          const response = yield* handleRoute(path);
+          yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
+          return response;
+        }),
+    };
+  },
+}) {}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
   const router = yield* RouteService;
-  
+
   yield* Effect.logInfo("=== Starting Route Tests ===");
-  
+
   // Test different routes
-  for (const path of ['/', '/hello', '/other', '/error']) {
+  for (const path of ["/", "/hello", "/other", "/error"]) {
     yield* Effect.logInfo(`\n--- Testing ${path} ---`);
-    
+
     const result = yield* router.simulateGet(path).pipe(
       Effect.catchTags({
         RouteNotFoundError: (error) =>
@@ -129,23 +130,24 @@ const program = Effect.gen(function* () {
           }),
         RouteHandlerError: (error) =>
           Effect.gen(function* () {
-            const response = { status: 500, body: `Internal Error: ${error.error}` };
+            const response = {
+              status: 500,
+              body: `Internal Error: ${error.error}`,
+            };
             yield* Effect.logError(`${response.status} ${response.body}`);
             return response;
-          })
+          }),
       })
     );
-    
+
     yield* Effect.logInfo(`Final Response: ${JSON.stringify(result)}`);
   }
-  
+
   yield* Effect.logInfo("\n=== Route Tests Complete ===");
 });
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, RouteService.Default)
-);
+Effect.runPromise(Effect.provide(program, RouteService.Default));
 ```
 
 ## Anti-Pattern
@@ -153,25 +155,25 @@ Effect.runPromise(
 The anti-pattern is to create a single, monolithic handler that uses conditional logic to inspect the request URL. This imperative approach is difficult to maintain and scale.
 
 ```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
 // A single app that manually checks the URL
 const app = Http.request.ServerRequest.pipe(
   Effect.flatMap((req) => {
-    if (req.url === '/') {
-      return Effect.succeed(Http.response.text('Welcome to the home page!'));
-    } else if (req.url === '/hello') {
-      return Effect.succeed(Http.response.text('Hello, Effect!'));
+    if (req.url === "/") {
+      return Effect.succeed(Http.response.text("Welcome to the home page!"));
+    } else if (req.url === "/hello") {
+      return Effect.succeed(Http.response.text("Hello, Effect!"));
     } else {
       return Effect.succeed(Http.response.empty({ status: 404 }));
     }
   })
 );
 
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```

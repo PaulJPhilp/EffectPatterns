@@ -3,7 +3,7 @@ module.exports = function transformer(file, api) {
   const root = j(file.source);
 
   const headerImport = root.find(j.ImportDeclaration, {
-    source: { value: "next/headers" }
+    source: { value: "next/headers" },
   });
 
   if (headerImport.size() === 0) {
@@ -43,7 +43,7 @@ module.exports = function transformer(file, api) {
   asyncCalleeNames.forEach((name) => {
     root
       .find(j.CallExpression, {
-        callee: { type: "Identifier", name }
+        callee: { type: "Identifier", name },
       })
       .forEach((callPath) => {
         const parent = callPath.parent;
@@ -52,7 +52,9 @@ module.exports = function transformer(file, api) {
         }
 
         j(callPath).replaceWith(
-          j.awaitExpression(j.callExpression(callPath.value.callee, callPath.value.arguments))
+          j.awaitExpression(
+            j.callExpression(callPath.value.callee, callPath.value.arguments)
+          )
         );
         changed = true;
 

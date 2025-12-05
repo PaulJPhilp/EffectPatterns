@@ -15,9 +15,7 @@ const effect = Effect.succeed(2).pipe(
 ); // Effect<number>
 
 // Option: Chain two optional computations
-const option = Option.some(2).pipe(
-  Option.flatMap((n) => Option.some(n * 10))
-); // Option<number>
+const option = Option.some(2).pipe(Option.flatMap((n) => Option.some(n * 10))); // Option<number>
 
 // Either: Chain two computations that may fail
 const either = Either.right(2).pipe(
@@ -47,9 +45,7 @@ import { Effect, Stream, Option, Either } from "effect";
 // Effect: Combine two effects and get both results
 const effectA = Effect.succeed(1);
 const effectB = Effect.succeed("hello");
-const zippedEffect = effectA.pipe(
-  Effect.zip(effectB)
-); // Effect<[number, string]>
+const zippedEffect = effectA.pipe(Effect.zip(effectB)); // Effect<[number, string]>
 
 // Option: Combine two options, only Some if both are Some
 const optionA = Option.some(1);
@@ -64,9 +60,7 @@ const zippedEither = Either.all([eitherA, eitherB]); // Either<never, [number, s
 // Stream: Pair up values from two streams
 const streamA = Stream.fromIterable([1, 2, 3]);
 const streamB = Stream.fromIterable(["a", "b", "c"]);
-const zippedStream = streamA.pipe(
-  Stream.zip(streamB)
-); // Stream<[number, string]>
+const zippedStream = streamA.pipe(Stream.zip(streamB)); // Stream<[number, string]>
 ```
 
 **Explanation:**  
@@ -87,21 +81,17 @@ import { Effect, Stream, Option, Either } from "effect";
 // Effect: Branch based on a condition
 const effect = Effect.if(true, {
   onTrue: () => Effect.succeed("yes"),
-  onFalse: () => Effect.succeed("no")
+  onFalse: () => Effect.succeed("no"),
 }); // Effect<string>
 
 // Option: Conditionally create an Option
 const option = true ? Option.some("yes") : Option.none(); // Option<string> (Some("yes"))
 
 // Either: Conditionally create an Either
-const either = true
-  ? Either.right("yes")
-  : Either.left("error"); // Either<string, string> (Right("yes"))
+const either = true ? Either.right("yes") : Either.left("error"); // Either<string, string> (Right("yes"))
 
 // Stream: Conditionally emit a stream
-const stream = false
-  ? Stream.fromIterable([1, 2])
-  : Stream.empty; // Stream<number> (empty)
+const stream = false ? Stream.fromIterable([1, 2]) : Stream.empty; // Stream<number> (empty)
 ```
 
 **Explanation:**  
@@ -134,10 +124,8 @@ const option = Option.some(4).pipe(
 
 // Either: Use map and flatMap to filter
 const either = Either.right(4).pipe(
-  Either.flatMap((n) => 
-    n % 2 === 0
-      ? Either.right(n)
-      : Either.left("Number is not even")
+  Either.flatMap((n) =>
+    n % 2 === 0 ? Either.right(n) : Either.left("Number is not even")
   )
 ); // Either<string, number>
 
@@ -167,9 +155,7 @@ const effect = Effect.fail("fail!").pipe(
 ); // Effect<string>
 
 // Option: Provide a fallback if value is None
-const option = Option.none().pipe(
-  Option.orElse(() => Option.some("default"))
-); // Option<string>
+const option = Option.none().pipe(Option.orElse(() => Option.some("default"))); // Option<string>
 
 // Either: Provide a fallback if value is Left
 const either = Either.left("error").pipe(
@@ -222,7 +208,6 @@ const stream = Stream.fromIterable([
   [1, 2],
   [3, 4],
 ]).pipe(Stream.flatMap((arr) => Stream.fromIterable(arr))); // Stream<number>
-
 ```
 
 **Explanation:**  
@@ -268,7 +253,8 @@ const stream = Stream.fromIterable([1, 2, 3]).pipe(
 ); // Stream<number>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `andThen` is for sequencing when you don’t care about the first result.
 - `tap` is for running side effects (like logging) without changing the value.
 - `flatten` is for removing unnecessary nesting (e.g., `Option<Option<A>>` → `Option<A>`).
@@ -285,28 +271,19 @@ Use map to apply a pure function to the value inside an Effect, Stream, Option, 
 import { Effect, Stream, Option, Either } from "effect";
 
 // Effect: Transform the result of an effect
-const effect = Effect.succeed(2).pipe(
-  Effect.map((n) => n * 10)
-); // Effect<number>
+const effect = Effect.succeed(2).pipe(Effect.map((n) => n * 10)); // Effect<number>
 
 // Option: Transform an optional value
-const option = Option.some(2).pipe(
-  Option.map((n) => n * 10)
-); // Option<number>
+const option = Option.some(2).pipe(Option.map((n) => n * 10)); // Option<number>
 
 // Either: Transform a value that may be an error
-const either = Either.right(2).pipe(
-  Either.map((n) => n * 10)
-); // Either<never, number>
+const either = Either.right(2).pipe(Either.map((n) => n * 10)); // Either<never, number>
 
 // Stream: Transform every value in a stream
-const stream = Stream.fromIterable([1, 2, 3]).pipe(
-  Stream.map((n) => n * 10)
-); // Stream<number>
+const stream = Stream.fromIterable([1, 2, 3]).pipe(Stream.map((n) => n * 10)); // Stream<number>
 ```
 
 **Explanation:**  
 No matter which type you use, `map` lets you apply a function to the value inside, without changing the error or context.
 
 ---
-

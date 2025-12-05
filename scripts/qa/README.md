@@ -19,6 +19,7 @@ The bash script replicates the functionality of the original TypeScript script:
 ```
 
 This script will:
+
 1. Process all MDX files in `content/new/processed`
 2. Run QA validation against each pattern using the CLI
 3. Produce JSON output with metadata, pass/fail status, and metrics
@@ -62,7 +63,7 @@ The bash script implements the same functionality as the TypeScript version:
 - **Validation**: Ensures required directories exist
 - **Pattern Discovery**: Finds all MDX files in the patterns directory
 - **Metadata Extraction**: Extracts frontmatter from MDX files using awk and sed
-- **QA Validation**: 
+- **QA Validation**:
   - Creates QA prompt content for each pattern
   - Runs the CLI process-prompt command
   - Parses the JSON response

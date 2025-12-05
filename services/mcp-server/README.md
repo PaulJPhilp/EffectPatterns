@@ -73,6 +73,7 @@ curl http://localhost:3000/api/health
 ```
 
 **Response**:
+
 ```json
 {
   "ok": true,
@@ -99,6 +100,7 @@ curl -H "x-api-key: YOUR_API_KEY" \
 ```
 
 **Query Parameters**:
+
 - `q` - Text search across title, summary, content
 - `skillLevel` - Filter by `beginner`, `intermediate`, or `advanced`
 - `useCase` - Filter by use case category (e.g., "Error Management")
@@ -106,6 +108,7 @@ curl -H "x-api-key: YOUR_API_KEY" \
 - `limit` - Maximum number of results (default: 50)
 
 **Response**:
+
 ```json
 {
   "patterns": [
@@ -135,6 +138,7 @@ curl -H "x-api-key: YOUR_API_KEY" \
 ```
 
 **Response**:
+
 ```json
 {
   "id": "retry-with-backoff",
@@ -165,6 +169,7 @@ Content-Type: application/json
 ```
 
 **Response**:
+
 ```json
 {
   "explanation": "For your HTTP API, you can use Effect.retry with Schedule.exponential...",
@@ -189,6 +194,7 @@ Content-Type: application/json
 ```
 
 **Response**:
+
 ```json
 {
   "code": "import { Effect, Schedule } from 'effect'\n\nconst retryHttpRequest = ...",
@@ -209,6 +215,7 @@ curl -H "x-api-key: YOUR_API_KEY" \
 ```
 
 **Response**:
+
 ```json
 {
   "examples": [
@@ -241,6 +248,7 @@ curl "http://localhost:3000/api/patterns?key=YOUR_API_KEY"
 ### Error Responses
 
 **401 Unauthorized** - Missing or invalid API key:
+
 ```json
 {
   "error": "Unauthorized",
@@ -250,6 +258,7 @@ curl "http://localhost:3000/api/patterns?key=YOUR_API_KEY"
 ```
 
 **404 Not Found** - Pattern not found:
+
 ```json
 {
   "error": "Not Found",
@@ -259,6 +268,7 @@ curl "http://localhost:3000/api/patterns?key=YOUR_API_KEY"
 ```
 
 **500 Internal Server Error** - Server error:
+
 ```json
 {
   "error": "Internal Server Error",
@@ -386,6 +396,7 @@ bun run smoke-test https://your-deployment.vercel.app YOUR_API_KEY
 ```
 
 Comprehensive smoke tests cover:
+
 - Health check
 - Pattern search (with/without filters)
 - Pattern retrieval
@@ -430,11 +441,13 @@ docker run -p 3000:3000 \
 ### Environment-Specific Configuration
 
 **Staging**:
+
 - URL: `https://effect-patterns-staging.vercel.app`
 - Service Name: `effect-patterns-mcp-server-staging`
 - Separate API key for testing
 
 **Production**:
+
 - URL: `https://effect-patterns.vercel.app`
 - Service Name: `effect-patterns-mcp-server-production`
 - Separate API key for production use
@@ -455,6 +468,7 @@ SERVICE_NAME=effect-patterns-mcp-server
 ```
 
 **Trace Data**:
+
 - Service name and version
 - Request spans with timing
 - Error spans with details
@@ -476,6 +490,7 @@ docker logs -f container-name
 ### Metrics
 
 Available in Vercel Dashboard:
+
 - Request count
 - Response times
 - Error rates
@@ -494,6 +509,7 @@ Available in Vercel Dashboard:
 ### Security Audit
 
 Current status: ✅ **GOOD**
+
 - 0 critical/high vulnerabilities
 - API key authentication
 - Input sanitization
@@ -525,6 +541,7 @@ See [../../SECURITY.md](../../SECURITY.md) for vulnerability reporting.
 ### Common Issues
 
 **Server won't start**:
+
 ```bash
 # Check Node version
 node --version  # Should be 18+
@@ -538,6 +555,7 @@ cat .env
 ```
 
 **Authentication fails**:
+
 ```bash
 # Verify API key is set
 echo $PATTERN_API_KEY
@@ -547,6 +565,7 @@ curl -v -H "x-api-key: YOUR_KEY" http://localhost:3000/api/patterns
 ```
 
 **Traces not appearing**:
+
 ```bash
 # Verify OTLP endpoint is reachable
 curl -X POST $OTLP_ENDPOINT \

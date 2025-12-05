@@ -13,24 +13,24 @@
  *   bun scripts/publish/move-to-published.ts [--dry-run]
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 
 const PROJECT_ROOT = process.cwd();
-const NEW_PUBLISHED_DIR = path.join(PROJECT_ROOT, 'content/new/published');
-const TARGET_PUBLISHED_DIR = path.join(PROJECT_ROOT, 'content/published');
-const NEW_DIR = path.join(PROJECT_ROOT, 'content/new');
+const NEW_PUBLISHED_DIR = path.join(PROJECT_ROOT, "content/new/published");
+const TARGET_PUBLISHED_DIR = path.join(PROJECT_ROOT, "content/published");
+const NEW_DIR = path.join(PROJECT_ROOT, "content/new");
 
 // Directories to clean up after successful move
 const CLEANUP_DIRS = [
-  path.join(NEW_DIR, 'raw'),
-  path.join(NEW_DIR, 'src'),
-  path.join(NEW_DIR, 'processed'),
-  path.join(NEW_DIR, 'published'),
-  path.join(NEW_DIR, 'qa'),
+  path.join(NEW_DIR, "raw"),
+  path.join(NEW_DIR, "src"),
+  path.join(NEW_DIR, "processed"),
+  path.join(NEW_DIR, "published"),
+  path.join(NEW_DIR, "qa"),
 ];
 
-const isDryRun = process.argv.includes('--dry-run');
+const isDryRun = process.argv.includes("--dry-run");
 
 interface MoveResult {
   file: string;
@@ -56,7 +56,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 async function listFiles(dir: string): Promise<string[]> {
   try {
     const files = await fs.readdir(dir);
-    return files.filter((f) => f.endsWith('.mdx'));
+    return files.filter((f) => f.endsWith(".mdx"));
   } catch {
     return [];
   }
@@ -67,14 +67,14 @@ async function movePatternFiles(): Promise<MoveResult[]> {
 
   // Check if source directory exists and has files
   if (!(await fileExists(NEW_PUBLISHED_DIR))) {
-    console.log('⚠️  No content/new/published/ directory found');
+    console.log("⚠️  No content/new/published/ directory found");
     return results;
   }
 
   const files = await listFiles(NEW_PUBLISHED_DIR);
 
   if (files.length === 0) {
-    console.log('⚠️  No MDX files found in content/new/published/');
+    console.log("⚠️  No MDX files found in content/new/published/");
     return results;
   }
 
@@ -92,7 +92,7 @@ async function movePatternFiles(): Promise<MoveResult[]> {
         // Check if target already exists
         if (await fileExists(targetPath)) {
           console.log(
-            `  ⚠️  ${file} already exists in published/, overwriting...`,
+            `  ⚠️  ${file} already exists in published/, overwriting...`
           );
         }
 
@@ -118,13 +118,13 @@ async function movePatternFiles(): Promise<MoveResult[]> {
 async function cleanupWorkingDirectories(): Promise<string[]> {
   const cleaned: string[] = [];
 
-  console.log('\n🧹 Cleaning up working directories...');
+  console.log("\n🧹 Cleaning up working directories...");
 
   for (const dir of CLEANUP_DIRS) {
     try {
       if (!(await fileExists(dir))) {
         console.log(
-          `  ℹ️  ${path.relative(PROJECT_ROOT, dir)} does not exist, skipping`,
+          `  ℹ️  ${path.relative(PROJECT_ROOT, dir)} does not exist, skipping`
         );
         continue;
       }
@@ -133,7 +133,7 @@ async function cleanupWorkingDirectories(): Promise<string[]> {
 
       if (files.length === 0) {
         console.log(
-          `  ✅ ${path.relative(PROJECT_ROOT, dir)} is already empty`,
+          `  ✅ ${path.relative(PROJECT_ROOT, dir)} is already empty`
         );
         continue;
       }
@@ -142,7 +142,7 @@ async function cleanupWorkingDirectories(): Promise<string[]> {
         console.log(
           `  [DRY RUN] Would clean: ${path.relative(PROJECT_ROOT, dir)} (${
             files.length
-          } files)`,
+          } files)`
         );
         cleaned.push(dir);
       } else {
@@ -161,14 +161,14 @@ async function cleanupWorkingDirectories(): Promise<string[]> {
         console.log(
           `  ✅ Cleaned: ${path.relative(PROJECT_ROOT, dir)} (${
             files.length
-          } files removed)`,
+          } files removed)`
         );
         cleaned.push(dir);
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error(
-        `  ❌ Failed to clean ${path.relative(PROJECT_ROOT, dir)}: ${errorMsg}`,
+        `  ❌ Failed to clean ${path.relative(PROJECT_ROOT, dir)}: ${errorMsg}`
       );
     }
   }
@@ -179,7 +179,7 @@ async function cleanupWorkingDirectories(): Promise<string[]> {
 async function verifyCleanup(): Promise<string[]> {
   const errors: string[] = [];
 
-  console.log('\n🔍 Verifying cleanup...');
+  console.log("\n🔍 Verifying cleanup...");
 
   for (const dir of CLEANUP_DIRS) {
     try {
@@ -201,7 +201,7 @@ async function verifyCleanup(): Promise<string[]> {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error(
-        `  ⚠️  Could not verify ${path.relative(PROJECT_ROOT, dir)}: ${errorMsg}`,
+        `  ⚠️  Could not verify ${path.relative(PROJECT_ROOT, dir)}: ${errorMsg}`
       );
     }
   }
@@ -210,19 +210,19 @@ async function verifyCleanup(): Promise<string[]> {
 }
 
 function generateReport(report: MoveReport): void {
-  console.log(`\n${'='.repeat(60)}`);
-  console.log('📊 Move Report');
-  console.log('='.repeat(60));
+  console.log(`\n${"=".repeat(60)}`);
+  console.log("📊 Move Report");
+  console.log("=".repeat(60));
 
   const successCount = report.moved.filter((r) => r.success).length;
   const failureCount = report.moved.filter((r) => !r.success).length;
 
-  console.log('\nPatterns Moved:');
+  console.log("\nPatterns Moved:");
   console.log(`  ✅ Successfully moved: ${successCount}`);
   console.log(`  ❌ Failed: ${failureCount}`);
 
   if (failureCount > 0) {
-    console.log('\nFailed patterns:');
+    console.log("\nFailed patterns:");
     report.moved
       .filter((r) => !r.success)
       .forEach((r) => {
@@ -230,31 +230,31 @@ function generateReport(report: MoveReport): void {
       });
   }
 
-  console.log('\nDirectories Cleaned:');
+  console.log("\nDirectories Cleaned:");
   console.log(
     `  🧹 ${report.cleaned.length} director${
-      report.cleaned.length === 1 ? 'y' : 'ies'
-    } cleaned`,
+      report.cleaned.length === 1 ? "y" : "ies"
+    } cleaned`
   );
 
   if (report.errors.length > 0) {
-    console.log('\n⚠️  Verification Errors:');
+    console.log("\n⚠️  Verification Errors:");
     report.errors.forEach((err) => {
       console.log(`  - ${err}`);
     });
   }
 
-  console.log(`\n${'='.repeat(60)}`);
+  console.log(`\n${"=".repeat(60)}`);
 }
 
 async function main(): Promise<void> {
   if (isDryRun) {
-    console.log('🔍 DRY RUN MODE - No files will be moved or deleted');
-    console.log('='.repeat(60));
+    console.log("🔍 DRY RUN MODE - No files will be moved or deleted");
+    console.log("=".repeat(60));
   }
 
-  console.log('🚀 Moving patterns to published...');
-  console.log('='.repeat(60));
+  console.log("🚀 Moving patterns to published...");
+  console.log("=".repeat(60));
 
   const report: MoveReport = {
     moved: [],
@@ -284,22 +284,22 @@ async function main(): Promise<void> {
 
     if (hasFailures) {
       console.log(
-        '\n⚠️  Move completed with errors. Please review failed operations.',
+        "\n⚠️  Move completed with errors. Please review failed operations."
       );
       process.exit(1);
     }
 
     if (isDryRun) {
       console.log(
-        '\n✨ Dry run completed! Run without --dry-run to apply changes.',
+        "\n✨ Dry run completed! Run without --dry-run to apply changes."
       );
     } else {
-      console.log('\n✨ Move completed successfully!');
-      console.log('\nAll patterns are now in content/published/');
-      console.log('All working directories in content/new/ are empty');
+      console.log("\n✨ Move completed successfully!");
+      console.log("\nAll patterns are now in content/published/");
+      console.log("All working directories in content/new/ are empty");
     }
   } catch (error) {
-    console.error('\n💥 Move failed:', error);
+    console.error("\n💥 Move failed:", error);
     process.exit(1);
   }
 }

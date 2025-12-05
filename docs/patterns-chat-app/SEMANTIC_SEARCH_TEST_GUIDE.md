@@ -22,6 +22,7 @@ curl "http://localhost:3002/api/search?q=error%20handling&limit=5" \
 ```
 
 **Response:**
+
 ```json
 {
   "query": "error handling",
@@ -90,42 +91,49 @@ Open http://localhost:3002 in your browser.
 Have a conversation with the AI about these topics (to create test data):
 
 **Conversation 1: Error Handling**
+
 ```
 User: How do I handle errors in Effect?
 AI: [response]
 ```
 
 **Conversation 2: Async Patterns**
+
 ```
 User: Can you explain async/await with Effect?
 AI: [response]
 ```
 
 **Conversation 3: Type Safety**
+
 ```
 User: How does Effect improve type safety?
 AI: [response]
 ```
 
 **Conversation 4: Performance**
+
 ```
 User: What optimizations does Effect provide?
 AI: [response]
 ```
 
 **Conversation 5: Testing**
+
 ```
 User: How do I test Effect code?
 AI: [response]
 ```
 
 Each conversation will automatically:
+
 - Generate embeddings
 - Extract tags (effect-ts, error-handling, etc.)
 - Detect outcome (partial, solved)
 - Store in vector store
 
 **Monitor in console for:**
+
 ```
 [Semantic Search] Stored conversation embedding (3 tags, partial outcome)
 ```
@@ -163,6 +171,7 @@ curl "http://localhost:3002/api/search?q=error&limit=5" \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "query": "error",
@@ -255,13 +264,11 @@ curl "http://localhost:3002/api/search?q=error&minSimilarity=0.1&limit=10"
 
 // Test 1: Basic search
 async function testSearch() {
-  const response = await fetch(
-    '/api/search?q=error%20handling&limit=5'
-  );
+  const response = await fetch("/api/search?q=error%20handling&limit=5");
   const data = await response.json();
-  console.log('Search results:', data);
-  console.log('Count:', data.count);
-  console.log('First result:', data.results[0]);
+  console.log("Search results:", data);
+  console.log("Count:", data.count);
+  console.log("First result:", data.results[0]);
 }
 
 testSearch();
@@ -272,7 +279,7 @@ testSearch();
 Create `test-search.js`:
 
 ```javascript
-const api = 'http://localhost:3002';
+const api = "http://localhost:3002";
 
 async function testSearch(query, options = {}) {
   const params = new URLSearchParams({
@@ -290,42 +297,43 @@ async function testSearch(query, options = {}) {
     const response = await fetch(url, {
       headers: {
         // You may need to add auth headers
-        'Cookie': 'your-session-cookie',
+        Cookie: "your-session-cookie",
       },
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('❌ Error:', data);
+      console.error("❌ Error:", data);
       return;
     }
 
     console.log(`✅ Found ${data.count} results:`);
     data.results.forEach((result, idx) => {
       console.log(`\n  ${idx + 1}. ${result.metadata.chatId}`);
-      console.log(`     Tags: ${result.metadata.tags?.join(', ')}`);
+      console.log(`     Tags: ${result.metadata.tags?.join(", ")}`);
       console.log(`     Outcome: ${result.metadata.outcome}`);
       console.log(`     Score: ${result.score.final}`);
     });
   } catch (error) {
-    console.error('❌ Request failed:', error);
+    console.error("❌ Request failed:", error);
   }
 }
 
 // Run tests
 async function runTests() {
-  await testSearch('error handling');
-  await testSearch('async patterns');
-  await testSearch('type safety');
-  await testSearch('effect', { outcome: 'solved' });
-  await testSearch('test', { tag: 'effect-ts' });
+  await testSearch("error handling");
+  await testSearch("async patterns");
+  await testSearch("type safety");
+  await testSearch("effect", { outcome: "solved" });
+  await testSearch("test", { tag: "effect-ts" });
 }
 
 runTests();
 ```
 
 Run it:
+
 ```bash
 node test-search.js
 ```
@@ -337,6 +345,7 @@ node test-search.js
 ### Test with Real Workflow
 
 1. **Create conversation about Effect errors**
+
    ```
    User: I'm getting a type error with Effect. How do I debug it?
    AI: [response]
@@ -345,6 +354,7 @@ node test-search.js
 2. **Wait for embedding to store** (watch console for log)
 
 3. **Search for related issue in new chat**
+
    ```
    User: Help me fix this compilation error
    AI: [response, but should reference similar past solution!]
@@ -362,22 +372,22 @@ node test-search.js
 
 ```typescript
 async function measureSearchSpeed() {
-  console.time('First search');
-  const response1 = await fetch('/api/search?q=error');
+  console.time("First search");
+  const response1 = await fetch("/api/search?q=error");
   await response1.json();
-  console.timeEnd('First search');
+  console.timeEnd("First search");
   // Expected: 500-2000ms (includes embedding generation)
 
-  console.time('Second search (cached)');
-  const response2 = await fetch('/api/search?q=error');
+  console.time("Second search (cached)");
+  const response2 = await fetch("/api/search?q=error");
   await response2.json();
-  console.timeEnd('Second search (cached)');
+  console.timeEnd("Second search (cached)");
   // Expected: 50-200ms (cached embedding)
 
-  console.time('Similar search');
-  const response3 = await fetch('/api/search?q=exception');
+  console.time("Similar search");
+  const response3 = await fetch("/api/search?q=exception");
   await response3.json();
-  console.timeEnd('Similar search');
+  console.timeEnd("Similar search");
   // Expected: 500-2000ms (new embedding)
 }
 
@@ -391,7 +401,6 @@ measureSearchSpeed();
 async function checkMemory() {
   // In the network tab, search for the /api/search requests
   // Look at response size - should be small (few KB)
-
   // Or check server-side:
   // Vector store size = number of conversations × 6KB
   // 10 conversations ≈ 60KB
@@ -407,13 +416,16 @@ async function checkMemory() {
 ### Issue: "Search returns 0 results"
 
 **Check:**
+
 1. Are conversations actually being created?
+
    ```bash
    # Look in browser console for:
    # [Semantic Search] Stored conversation embedding
    ```
 
 2. Is API key set?
+
    ```bash
    # In terminal:
    echo $OPENAI_API_KEY
@@ -428,6 +440,7 @@ async function checkMemory() {
 ### Issue: "Embedding generation fails"
 
 **Check logs for:**
+
 ```
 [Semantic Search] Missing API key
 [Semantic Search] Rate limited
@@ -435,6 +448,7 @@ async function checkMemory() {
 ```
 
 **Solutions:**
+
 1. Add API key: `OPENAI_API_KEY=sk-...` in `.env.local`
 2. Wait if rate limited (exponential backoff)
 3. Try with local Ollama: `ollama pull nomic-embed-text`
@@ -442,9 +456,11 @@ async function checkMemory() {
 ### Issue: "Search is slow"
 
 **First query slow (500-2000ms)?**
+
 - Normal - includes embedding generation
 
 **All queries slow?**
+
 - Check network tab for API latency
 - May indicate OpenAI API issue
 - Try local Ollama for faster inference
@@ -452,6 +468,7 @@ async function checkMemory() {
 ### Issue: "Wrong results returned"
 
 **Debug scoring:**
+
 ```typescript
 // Look at the score breakdown:
 {
@@ -487,6 +504,7 @@ If vector score is low (< 0.3), search engine doesn't find it similar.
 ## Expected Behavior
 
 ### Embedding Storage
+
 ```
 User sends message
          ↓
@@ -502,6 +520,7 @@ Log: "[Semantic Search] Stored conversation embedding (3 tags, partial outcome)"
 ```
 
 ### Search Execution
+
 ```
 User queries /api/search?q=error
          ↓
@@ -520,14 +539,14 @@ Total: 520-870ms (first query), 15-30ms (cached)
 
 ## Quick Reference
 
-| Test | Command | Expected |
-|------|---------|----------|
-| Basic search | `q=error` | Find error-related chats |
-| Typo tolerance | `q=eroor` | Still finds "error" |
-| Tag filter | `tag=effect-ts` | Only Effect-related |
-| Outcome filter | `outcome=solved` | Only solved chats |
-| Min similarity | `minSimilarity=0.8` | Stricter results |
-| Limit | `limit=5` | Max 5 results |
+| Test           | Command             | Expected                 |
+| -------------- | ------------------- | ------------------------ |
+| Basic search   | `q=error`           | Find error-related chats |
+| Typo tolerance | `q=eroor`           | Still finds "error"      |
+| Tag filter     | `tag=effect-ts`     | Only Effect-related      |
+| Outcome filter | `outcome=solved`    | Only solved chats        |
+| Min similarity | `minSimilarity=0.8` | Stricter results         |
+| Limit          | `limit=5`           | Max 5 results            |
 
 ---
 

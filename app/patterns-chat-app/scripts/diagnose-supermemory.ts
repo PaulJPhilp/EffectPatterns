@@ -43,7 +43,9 @@ async function diagnoseSupermeory(): Promise<void> {
         allMemories = allMemories.concat(result.memories);
         page++;
 
-        console.log(`  ✓ Fetched page ${page} (${result.memories.length} items)`);
+        console.log(
+          `  ✓ Fetched page ${page} (${result.memories.length} items)`
+        );
 
         if (result.memories.length < 50) {
           hasMore = false;
@@ -75,11 +77,18 @@ async function diagnoseSupermeory(): Promise<void> {
         }
 
         // The type is in metadata for the new Supermemory API
-        const memoryType = parsed?.type || (memory.metadata as any)?.type || memory.type || "unknown";
+        const memoryType =
+          parsed?.type ||
+          (memory.metadata as any)?.type ||
+          memory.type ||
+          "unknown";
 
         if (memoryType === "effect_pattern") {
           patterns.push({ ...memory, parsed });
-        } else if (memoryType === "conversation_embedding" || memoryType === "conversation") {
+        } else if (
+          memoryType === "conversation_embedding" ||
+          memoryType === "conversation"
+        ) {
           conversations.push({ ...memory, parsed });
         } else {
           other.push({ ...memory, parsed });
@@ -124,7 +133,9 @@ async function diagnoseSupermeory(): Promise<void> {
       });
 
       if (searchResults.results && searchResults.results.length > 0) {
-        console.log(`✅ Found ${searchResults.results.length} results for 'error':\n`);
+        console.log(
+          `✅ Found ${searchResults.results.length} results for 'error':\n`
+        );
 
         for (let i = 0; i < searchResults.results.length; i++) {
           const r = searchResults.results[i] as any;
@@ -139,7 +150,9 @@ async function diagnoseSupermeory(): Promise<void> {
               console.log(`      Parsed Type: ${parsed.type}`);
               console.log(`      Pattern ID: ${parsed.patternId}`);
             } catch {
-              console.log(`      Memory Preview: ${r.memory.substring(0, 50)}...`);
+              console.log(
+                `      Memory Preview: ${r.memory.substring(0, 50)}...`
+              );
             }
           } else if (r.summary) {
             console.log(`      Summary: ${r.summary}`);
@@ -191,7 +204,9 @@ async function diagnoseSupermeory(): Promise<void> {
     console.log("📝 Summary:\n");
 
     if (patterns.length > 0) {
-      console.log(`✅ Patterns are stored in Supermemory (${patterns.length} found)`);
+      console.log(
+        `✅ Patterns are stored in Supermemory (${patterns.length} found)`
+      );
 
       const withTimestamp = patterns.filter((p) => p.parsed?.timestamp).length;
       const withUserId = patterns.filter(
@@ -215,15 +230,15 @@ async function diagnoseSupermeory(): Promise<void> {
     console.log(`\n✅ Conversations found: ${conversations.length}`);
 
     if (conversations.length > 0) {
-      const withChatId = conversations.filter(
-        (c) => c.parsed?.chatId
-      ).length;
+      const withChatId = conversations.filter((c) => c.parsed?.chatId).length;
       const withTimestamp = conversations.filter(
         (c) => c.parsed?.timestamp
       ).length;
 
       console.log(`   • With chatId: ${withChatId}/${conversations.length}`);
-      console.log(`   • With timestamp: ${withTimestamp}/${conversations.length}`);
+      console.log(
+        `   • With timestamp: ${withTimestamp}/${conversations.length}`
+      );
     }
 
     // Test 7: Direct API query for pattern list

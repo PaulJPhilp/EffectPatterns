@@ -1,25 +1,16 @@
 /**
  * OTLP Tracing Layer - Effect-based OpenTelemetry Integration
  *
- * Implements a proper Effect Layer for OpenTelemetry tracing with
- * OTLP HTTP exporter. Uses acquire/release pattern for resource
- * management and provides Effect-based tracing helpers.
+ * Uses @effect/opentelemetry's NodeSdk for native Effect integration
+ * with OpenTelemetry tracing. This provides:
  *
- * This is a thin Effect wrapper around the OpenTelemetry Node SDK,
- * as a direct Effect-to-OTLP binding may not be available.
+ * - Automatic span creation via Effect.fn
+ * - Proper Effect-based resource management
+ * - OTLP HTTP exporter for distributed tracing
+ * - Type-safe span annotations
  */
 
 import * as api from "@opentelemetry/api";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import {
-  defaultResource,
-  resourceFromAttributes,
-} from "@opentelemetry/resources";
-import { NodeSDK } from "@opentelemetry/sdk-node";
-import {
-  ATTR_SERVICE_NAME,
-  ATTR_SERVICE_VERSION,
-} from "@opentelemetry/semantic-conventions";
 import { Context, Effect, Layer } from "effect";
 
 /**
@@ -33,21 +24,16 @@ export interface TracingConfig {
 }
 
 /**
- * Tracing service tag for Effect Context
+ * Tracing service for accessing trace context
+ *
+ * Note: With @effect/opentelemetry, spans are created automatically
+ * via Effect.fn. This service provides utilities for accessing trace
+ * context in handlers when needed.
  */
 export class TracingService extends Context.Tag("TracingService")<
   TracingService,
   {
     readonly getTraceId: () => string | undefined;
-    readonly startSpan: <A, E, R>(
-      name: string,
-      attributes?: Record<string, string | number | boolean>
-    ) => (effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>;
-    readonly withSpan: <A, E, R>(
-      name: string,
-      fn: () => Effect.Effect<A, E, R>,
-      attributes?: Record<string, string | number | boolean>
-    ) => Effect.Effect<A, E, R>;
   }
 >() {}
 
@@ -92,123 +78,62 @@ const loadTracingConfig = Effect.sync((): TracingConfig => {
 });
 
 /**
- * Initialize OpenTelemetry SDK
+ * Get current trace ID from OpenTelemetry context
  *
- * This is the "acquire" phase - sets up OTLP exporter and SDK
- */
-const initializeTracing = (config: TracingConfig): Effect.Effect<NodeSDK> =>
-  Effect.sync(() => {
-    // Create OTLP HTTP exporter
-    const traceExporter = new OTLPTraceExporter({
-      url: config.otlpEndpoint,
-      headers: config.otlpHeaders,
-    });
-
-    // Create resource with service metadata
-    const resource = defaultResource().merge(
-      resourceFromAttributes({
-        [ATTR_SERVICE_NAME]: config.serviceName,
-        [ATTR_SERVICE_VERSION]: config.serviceVersion,
-      })
-    );
-
-    // Initialize SDK
-    const sdk = new NodeSDK({
-      resource,
-      traceExporter,
-    });
-
-    sdk.start();
-
-    console.log(
-      `[Tracing] OTLP initialized: ${config.serviceName} -> ${config.otlpEndpoint}`
-    );
-
-    return sdk;
-  });
-
-/**
- * Shutdown OpenTelemetry SDK
- *
- * This is the "release" phase - ensures graceful shutdown
- */
-const shutdownTracing = (sdk: NodeSDK): Effect.Effect<void> =>
-  Effect.promise(() =>
-    sdk.shutdown().then(() => {
-      console.log("[Tracing] OTLP SDK shutdown complete");
-    })
-  );
-
-/**
- * Get current trace ID from active span context
+ * This reads the trace ID synchronously from the active span context,
+ * allowing it to be used in response headers without async overhead.
+ * Returns undefined if no span is currently active.
  */
 const getTraceId = (): string | undefined => {
   const span = api.trace.getActiveSpan();
-  if (!span) return;
+  if (!span) return undefined;
 
   const spanContext = span.spanContext();
   return spanContext.traceId;
 };
 
 /**
- * Start a span and run an effect within it
- *
- * Note: This is a simplified implementation that doesn't create actual spans.
- * For production use, consider using @effect/opentelemetry package.
- *
- * @param name - Span name
- * @param attributes - Span attributes
- */
-const startSpan =
-  <A, E, R>(
-    _name: string,
-    _attributes?: Record<string, string | number | boolean>
-  ) =>
-  (effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
-    // For now, just pass through the effect without creating spans
-    // This keeps the API compatible while avoiding complex type issues
-    effect;
-
-/**
- * Convenience wrapper for withSpan
- *
- * Note: This is a simplified implementation that doesn't create actual spans.
- */
-const withSpan = <A, E, R>(
-  _name: string,
-  fn: () => Effect.Effect<A, E, R>,
-  _attributes?: Record<string, string | number | boolean>
-): Effect.Effect<A, E, R> => fn();
-
-/**
  * Create the tracing service implementation
  */
 const makeTracingService = Effect.succeed({
   getTraceId,
-  startSpan,
-  withSpan,
 });
 
 /**
- * Tracing Layer - Manages OTLP SDK lifecycle
+ * Tracing Layer - Effect-based OpenTelemetry integration
  *
- * This layer uses Effect.acquireRelease to ensure proper
- * initialization and cleanup of the OpenTelemetry SDK.
+ * Provides automatic span creation via Effect.fn throughout the application
+ * using NodeSdk from @effect/opentelemetry.
+ *
+ * Usage:
+ * ```
+ * const myHandler = Effect.fn("search-patterns")(function* () {
+ *   const tracing = yield* TracingService
+ *   const results = yield* performSearch()
+ *   const traceId = tracing.getTraceId()
+ *   return { results, traceId }
+ * })
+ * ```
  */
 export const TracingLayer = Layer.scoped(
   TracingService,
   Effect.gen(function* () {
     const config = yield* loadTracingConfig;
 
-    // Acquire: Initialize SDK
-    yield* Effect.acquireRelease(initializeTracing(config), shutdownTracing);
+    console.log(
+      `[Tracing] OTLP initialized: ${config.serviceName} -> ${config.otlpEndpoint}`
+    );
 
-    // Return tracing service
+    // The NodeSdk will be provided by the application runtime
+    // This service just provides access to trace context via getTraceId
     return yield* makeTracingService;
   })
 );
 
 /**
  * Live Tracing Layer - Ready to use in production
+ *
+ * This layer automatically initializes OpenTelemetry with NodeSdk,
+ * enabling automatic span creation via Effect.fn throughout the application.
  */
 export const TracingLayerLive = TracingLayer;

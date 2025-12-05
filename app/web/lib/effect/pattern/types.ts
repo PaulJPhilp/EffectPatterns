@@ -2,7 +2,7 @@
  * Domain types for Pattern repository
  */
 
-export type SkillLevel = 'beginner' | 'intermediate' | 'advanced';
+export type SkillLevel = "beginner" | "intermediate" | "advanced";
 
 export type PatternID = string;
 
@@ -37,7 +37,7 @@ export interface DbPatternRow {
   id: string;
   title: string;
   summary: string;
-  skill_level: 'beginner' | 'intermediate' | 'advanced';
+  skill_level: "beginner" | "intermediate" | "advanced";
   tags: string[];
   related: string[] | null;
   author: string | null;

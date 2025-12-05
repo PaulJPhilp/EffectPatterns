@@ -21,7 +21,7 @@ This lets you transform results without changing the structure or error-handling
 ## Rationale
 
 `map` is the most fundamental combinator in functional programming.  
-It allows you to focus on *what* you want to do with a value, not *how* to extract it.  
+It allows you to focus on _what_ you want to do with a value, not _how_ to extract it.  
 The same mental model applies across all major Effect types.
 
 ## Good Example
@@ -30,24 +30,16 @@ The same mental model applies across all major Effect types.
 import { Effect, Stream, Option, Either } from "effect";
 
 // Effect: Transform the result of an effect
-const effect = Effect.succeed(2).pipe(
-  Effect.map((n) => n * 10)
-); // Effect<number>
+const effect = Effect.succeed(2).pipe(Effect.map((n) => n * 10)); // Effect<number>
 
 // Option: Transform an optional value
-const option = Option.some(2).pipe(
-  Option.map((n) => n * 10)
-); // Option<number>
+const option = Option.some(2).pipe(Option.map((n) => n * 10)); // Option<number>
 
 // Either: Transform a value that may be an error
-const either = Either.right(2).pipe(
-  Either.map((n) => n * 10)
-); // Either<never, number>
+const either = Either.right(2).pipe(Either.map((n) => n * 10)); // Either<never, number>
 
 // Stream: Transform every value in a stream
-const stream = Stream.fromIterable([1, 2, 3]).pipe(
-  Stream.map((n) => n * 10)
-); // Stream<number>
+const stream = Stream.fromIterable([1, 2, 3]).pipe(Stream.map((n) => n * 10)); // Stream<number>
 ```
 
 **Explanation:**  

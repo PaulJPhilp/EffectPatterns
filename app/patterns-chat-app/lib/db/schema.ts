@@ -225,7 +225,9 @@ export const conversationEmbedding = pgTable(
   })
 );
 
-export type ConversationEmbedding = InferSelectModel<typeof conversationEmbedding>;
+export type ConversationEmbedding = InferSelectModel<
+  typeof conversationEmbedding
+>;
 
 export const conversationTag = pgTable(
   "ConversationTag",
@@ -240,7 +242,10 @@ export const conversationTag = pgTable(
   (table) => ({
     pk: primaryKey({ columns: [table.id] }),
     tagIdx: index("conversation_tag_tag_idx").on(table.tag),
-    chatTagIdx: index("conversation_tag_chat_tag_idx").on(table.chatId, table.tag),
+    chatTagIdx: index("conversation_tag_chat_tag_idx").on(
+      table.chatId,
+      table.tag
+    ),
     chatRef: foreignKey({
       columns: [table.chatId],
       foreignColumns: [chat.id],

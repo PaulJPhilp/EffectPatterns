@@ -11,6 +11,7 @@ Successfully implemented pre-loaded Effect Patterns in the Code Assistant's chat
 ### Code Changes (2 files)
 
 1. **`app/code-assistant/scripts/seed-patterns.ts`**
+
    - Added timestamp to pattern metadata during seeding
    - Ensures patterns have proper dates for display
 
@@ -21,13 +22,13 @@ Successfully implemented pre-loaded Effect Patterns in the Code Assistant's chat
 
 ### Why These Changes Matter
 
-| Before | After |
-|--------|-------|
-| Patterns show "Unknown date" | ✅ Show relative dates like "2m ago" |
-| Patterns show "Untitled" | ✅ Show pattern titles |
-| Patterns show "No preview available" | ✅ Show pattern summaries |
-| Broken links for patterns | ✅ No links for patterns |
-| Keyword scores 0.000 | ✅ Proper keyword scoring |
+| Before                               | After                                |
+| ------------------------------------ | ------------------------------------ |
+| Patterns show "Unknown date"         | ✅ Show relative dates like "2m ago" |
+| Patterns show "Untitled"             | ✅ Show pattern titles               |
+| Patterns show "No preview available" | ✅ Show pattern summaries            |
+| Broken links for patterns            | ✅ No links for patterns             |
+| Keyword scores 0.000                 | ✅ Proper keyword scoring            |
 
 ## How It Works
 
@@ -61,10 +62,10 @@ When you search, patterns appear as:
     "skillLevel": "intermediate"
   },
   "score": {
-    "semantic": 1.0,    // Meaning match
-    "keyword": 1.0,     // Word match
-    "recency": 1.0,     // Recently added
-    "final": 0.71       // Combined
+    "semantic": 1.0, // Meaning match
+    "keyword": 1.0, // Word match
+    "recency": 1.0, // Recently added
+    "final": 0.71 // Combined
   }
 }
 ```
@@ -72,23 +73,28 @@ When you search, patterns appear as:
 ## Quick Start
 
 ### 1. Seed Patterns (30 seconds)
+
 ```bash
 cd app/code-assistant
 npm run seed:patterns
 ```
 
 ### 2. Test Search (10 seconds)
+
 ```bash
 npm run test:patterns
 ```
 
 ### 3. Start Dev Server
+
 ```bash
 npm run dev
 ```
+
 Visit: `http://localhost:3002/chat`
 
 ### 4. Test Memory Browser
+
 - Click "Browse"
 - Search "error handling"
 - Verify patterns display with titles, summaries, and dates
@@ -126,6 +132,7 @@ userId: SYSTEM_USER_ID, // Ensure userId is in the JSON content
 ### Changes to memory-card.tsx
 
 **Preview extraction (lines 63-73):**
+
 ```typescript
 // Prefer summary for patterns, content for conversations
 const preview = (
@@ -135,6 +142,7 @@ const preview = (
 ```
 
 **Link rendering (lines 278-292):**
+
 ```typescript
 // Only show link if chatId exists
 {metadata.chatId && (
@@ -169,12 +177,14 @@ Each pattern is stored in Supermemory as:
 ## Search Scoring Formula
 
 Final Score =
+
 - (Semantic Similarity × 0.6)
-- + (Keyword Relevance × 0.3)
-- + (Recency Boost × 0.07)
-- + (Satisfaction × 0.03)
+- - (Keyword Relevance × 0.3)
+- - (Recency Boost × 0.07)
+- - (Satisfaction × 0.03)
 
 Example: "error handling" search on error patterns:
+
 - Semantic: 1.0 (strong match)
 - Keyword: 1.0 (all words match)
 - Recency: 1.0 (just seeded)
@@ -183,14 +193,14 @@ Example: "error handling" search on error patterns:
 
 ## Testing Matrix
 
-| Component | Status | Test Command |
-|-----------|--------|--------------|
-| Seeding | ✅ | `npm run seed:patterns` |
-| Search | ✅ | `npm run test:patterns` |
-| Display | ✅ | Manual browser test |
-| Pagination | ✅ | Scroll in memory browser |
-| Scoring | ✅ | Check Final Score column |
-| Links | ✅ | No broken navigation |
+| Component  | Status | Test Command             |
+| ---------- | ------ | ------------------------ |
+| Seeding    | ✅     | `npm run seed:patterns`  |
+| Search     | ✅     | `npm run test:patterns`  |
+| Display    | ✅     | Manual browser test      |
+| Pagination | ✅     | Scroll in memory browser |
+| Scoring    | ✅     | Check Final Score column |
+| Links      | ✅     | No broken navigation     |
 
 ## Performance Characteristics
 
@@ -210,6 +220,7 @@ Example: "error handling" search on error patterns:
 ## Backwards Compatibility
 
 ✅ **Fully backwards compatible**
+
 - Existing conversations unaffected
 - No database schema changes
 - No API breaking changes
@@ -234,11 +245,13 @@ After seeding, verify:
 ## Deployment Path
 
 1. **Local Testing** ← You are here
+
    - Run seed-patterns
    - Test patterns command
    - Manual browser testing
 
 2. **Staging Deployment**
+
    - Deploy code to staging
    - Run seed-patterns on staging
    - Full QA testing
@@ -251,6 +264,7 @@ After seeding, verify:
 ## Monitoring & Support
 
 After deployment, monitor:
+
 - Search latency (should be <100ms)
 - Pattern indexing status
 - User engagement with patterns
@@ -259,11 +273,13 @@ After deployment, monitor:
 ## Future Enhancements
 
 1. **AI Integration**
+
    - Recommend patterns in chat
    - Auto-link patterns in responses
    - Pattern-based code suggestions
 
 2. **Pattern Analytics**
+
    - Most helpful patterns
    - User satisfaction
    - Usage trends
@@ -276,6 +292,7 @@ After deployment, monitor:
 ## Getting Help
 
 Refer to documentation:
+
 - **"How do I seed patterns?"** → NEXT_STEPS_PRELOADED_PATTERNS.md
 - **"Why aren't patterns showing?"** → Troubleshooting section in NEXT_STEPS
 - **"How does search scoring work?"** → PRELOADED_PATTERNS_IMPLEMENTATION.md
@@ -283,13 +300,13 @@ Refer to documentation:
 
 ## Timeline
 
-| Phase | Time | Status |
-|-------|------|--------|
-| Code Implementation | ✅ Done | 2024-11-02 |
-| Pattern Seeding | ⏳ Next | 30 seconds |
-| Local Testing | ⏳ Next | 5-10 minutes |
-| Staging Deploy | ⏳ Future | 1 hour |
-| Production Deploy | ⏳ Future | 1-2 hours |
+| Phase               | Time      | Status       |
+| ------------------- | --------- | ------------ |
+| Code Implementation | ✅ Done   | 2024-11-02   |
+| Pattern Seeding     | ⏳ Next   | 30 seconds   |
+| Local Testing       | ⏳ Next   | 5-10 minutes |
+| Staging Deploy      | ⏳ Future | 1 hour       |
+| Production Deploy   | ⏳ Future | 1-2 hours    |
 
 ## Summary
 

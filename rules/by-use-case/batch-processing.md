@@ -25,7 +25,8 @@ const effects = [Effect.succeed(1), Effect.succeed(2)];
 const batchEffect = Effect.all(effects); // Effect<[1, 2]>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Stream.fromIterable` creates a stream from any array or iterable, enabling streaming and batch operations.
 - `Effect.all` (covered elsewhere) can be used to process arrays of effects in batch.
 
@@ -62,7 +63,6 @@ const stream = Stream.fromIterable([
   [1, 2],
   [3, 4],
 ]).pipe(Stream.flatMap((arr) => Stream.fromIterable(arr))); // Stream<number>
-
 ```
 
 **Explanation:**  
@@ -70,4 +70,3 @@ const stream = Stream.fromIterable([
 They handle errors and context automatically, and can be used for batch jobs, parallel requests, or data transformations.
 
 ---
-

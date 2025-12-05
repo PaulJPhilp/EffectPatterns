@@ -29,10 +29,10 @@ const e3 = Either.left("fail2");
 const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
 const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
 const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Either.right(value)` represents success.
 - `Either.left(error)` represents failure.
 - Pattern matching ensures all cases are handled.
@@ -58,7 +58,8 @@ const effect = Effect.fail("Oops!").pipe(
 ); // Effect<void>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchEffect` allows you to run an Effect for both the success and failure cases.
 - This is useful for logging, cleanup, retries, or any effectful side effect that depends on the outcome.
 
@@ -96,10 +97,10 @@ const handled = program.pipe(
     })
   )
 );
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
 - Use `Cause.pretty` for human-readable error traces.
 - Enables advanced error handling and debugging.
@@ -121,9 +122,7 @@ const effect = Effect.fail("fail!").pipe(
 ); // Effect<string>
 
 // Option: Provide a fallback if value is None
-const option = Option.none().pipe(
-  Option.orElse(() => Option.some("default"))
-); // Option<string>
+const option = Option.none().pipe(Option.orElse(() => Option.some("default"))); // Option<string>
 
 // Either: Provide a fallback if value is Left
 const either = Either.left("error").pipe(
@@ -156,12 +155,16 @@ import { Effect, Data } from "effect";
 
 // Define tagged error types
 class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
-class ValidationError extends Data.TaggedError("ValidationError")<{ message: string }> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
 
 type MyError = NotFoundError | ValidationError;
 
 // Effect: Handle only ValidationError, let others propagate
-const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as MyError).pipe(
+const effect = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
   Effect.catchTag("ValidationError", (err) =>
     Effect.succeed(`Recovered from validation error: ${err.message}`)
   )
@@ -171,12 +174,14 @@ const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as 
 const effect2 = Effect.fail(new NotFoundError() as MyError).pipe(
   Effect.catchTags({
     NotFoundError: () => Effect.succeed("Handled not found!"),
-    ValidationError: (err) => Effect.succeed(`Handled validation: ${err.message}`),
+    ValidationError: (err) =>
+      Effect.succeed(`Handled validation: ${err.message}`),
   })
 ); // Effect<string>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `catchTag` lets you recover from a specific tagged error type.
 - `catchTags` lets you handle multiple tagged error types in one place.
 - Unhandled errors continue to propagate, preserving error safety.
@@ -202,7 +207,8 @@ const option = Option.none(); // Option<never>
 const either = Either.left("Invalid input"); // Either<string, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fail(error)` creates an effect that always fails with `error`.
 - `Option.none()` creates an option that is always absent.
 - `Either.left(error)` creates an either that always represents failure.
@@ -243,7 +249,8 @@ const either = Either.left("fail").pipe(
 ); // string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.match` lets you handle both the error and success channels in one place.
 - `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
 
@@ -276,10 +283,10 @@ const effect: Effect.Effect<string, never, never> = Effect.fail(
       Effect.succeed(`Validation failed: ${err.message}`),
   })
 ); // Effect<string>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
 - This is safer and more maintainable than using `instanceof` or manual property checks.
 
@@ -309,7 +316,8 @@ runAndCapture.then((exit) => {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
 - Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
 - Pattern matching on `Exit` lets you handle all possible outcomes.
@@ -328,19 +336,19 @@ import { Effect } from "effect";
 // Synchronous: Wrap code that may throw
 const effectSync = Effect.try({
   try: () => JSON.parse("{ invalid json }"),
-  catch: (error) => `Parse error: ${String(error)}`
+  catch: (error) => `Parse error: ${String(error)}`,
 }); // Effect<string, never, never>
 
 // Asynchronous: Wrap a promise that may reject
 const effectAsync = Effect.tryPromise({
-  try: () => fetch("https://api.example.com/data").then(res => res.json()),
-  catch: (error) => `Network error: ${String(error)}`
+  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
+  catch: (error) => `Network error: ${String(error)}`,
 }); // Effect<string, any, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
 - `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
 
 ---
-

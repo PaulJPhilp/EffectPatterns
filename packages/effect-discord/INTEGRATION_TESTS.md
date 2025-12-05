@@ -28,6 +28,7 @@ chmod +x ./tools/DiscordChatExporter.Cli
 ```
 
 For other platforms:
+
 - **Windows**: Download `DiscordChatExporter.Cli.win-x64.zip`
 - **Linux**: Download `DiscordChatExporter.Cli.linux-x64.zip`
 
@@ -83,6 +84,7 @@ DISCORD_EXPORTER_PATH="./tools/DiscordChatExporter.Cli"
 ```
 
 **Important**:
+
 - Never commit your bot token to version control
 - The `.env` file should be in `.gitignore`
 
@@ -95,6 +97,7 @@ bun test packages/effect-discord/test/integration.test.ts
 ```
 
 If you have the environment variables configured, this will:
+
 - Run 3 integration tests against the real Discord API
 - Run 4 unit tests for error handling and data models
 
@@ -117,11 +120,13 @@ This will skip the 3 integration tests but still run the unit tests.
 ### Integration Tests (require Discord credentials)
 
 1. **Export Real Channel Messages**
+
    - Tests exporting messages from a real Discord channel
    - Verifies message structure and data integrity
    - Timeout: 30 seconds
 
 2. **Handle Invalid Channel ID**
+
    - Tests error handling for invalid channel IDs
    - Verifies proper DiscordExportError is thrown
    - Timeout: 30 seconds
@@ -134,14 +139,17 @@ This will skip the 3 integration tests but still run the unit tests.
 ### Unit Tests (always run)
 
 4. **Service Interface Validation**
+
    - Tests that the Discord service has the correct interface
    - No external dependencies required
 
 5. **Error Type Creation**
+
    - Tests DiscordExportError construction
    - Verifies tagged error structure
 
 6. **Error Reason Support**
+
    - Tests all supported error reasons
    - CommandFailed, FileNotFound, JsonParseError
 
@@ -153,6 +161,7 @@ This will skip the 3 integration tests but still run the unit tests.
 ### Tests Are Skipped
 
 If you see:
+
 ```
 ⚠️  Integration tests will be skipped because required environment variables are not set.
 ```
@@ -162,11 +171,13 @@ If you see:
 ### Bot Token Invalid
 
 If you see errors about authentication:
+
 ```
 Error: Unauthorized (401)
 ```
 
 **Solution**:
+
 1. Verify your bot token is correct
 2. Ensure the token hasn't been reset or regenerated
 3. Check that you copied the full token without spaces
@@ -174,11 +185,13 @@ Error: Unauthorized (401)
 ### Channel Not Found
 
 If you see errors about channel access:
+
 ```
 Error: Not Found (404)
 ```
 
 **Solution**:
+
 1. Verify the channel ID is correct
 2. Ensure your bot is in the server that contains the channel
 3. Check that the bot has "Read Messages" and "Read Message History" permissions
@@ -186,11 +199,13 @@ Error: Not Found (404)
 ### Tool Not Executable
 
 If you see:
+
 ```
 Permission denied: ./tools/DiscordChatExporter.Cli
 ```
 
 **Solution**:
+
 ```bash
 chmod +x ./tools/DiscordChatExporter.Cli
 ```
@@ -200,6 +215,7 @@ chmod +x ./tools/DiscordChatExporter.Cli
 For continuous integration, set `SKIP_INTEGRATION_TESTS=true` in your CI environment to avoid requiring Discord credentials.
 
 Example GitHub Actions:
+
 ```yaml
 - name: Run Tests
   env:

@@ -14,9 +14,7 @@ const makeCounter = Ref.make(0);
 
 // Increment the counter atomically
 const increment = makeCounter.pipe(
-  Effect.flatMap((counter) =>
-    Ref.update(counter, (n) => n + 1)
-  )
+  Effect.flatMap((counter) => Ref.update(counter, (n) => n + 1))
 );
 
 // Read the current value
@@ -33,10 +31,10 @@ const program = Effect.gen(function* () {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Ref` is an atomic, mutable reference for effectful and concurrent code.
 - All operations are safe, composable, and free of race conditions.
 - Use `Ref` for counters, caches, or any shared mutable state.
 
 ---
-

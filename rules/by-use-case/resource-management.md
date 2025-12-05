@@ -14,30 +14,24 @@ interface DatabaseOps {
   query: (sql: string) => Effect.Effect<string, never, never>;
 }
 
-class Database extends Effect.Service<DatabaseOps>()(
-  "Database",
-  {
-    sync: () => ({
-      query: (sql: string): Effect.Effect<string, never, never> =>
-        Effect.sync(() => `db says: ${sql}`)
-    })
-  }
-) {}
+class Database extends Effect.Service<DatabaseOps>()("Database", {
+  sync: () => ({
+    query: (sql: string): Effect.Effect<string, never, never> =>
+      Effect.sync(() => `db says: ${sql}`),
+  }),
+}) {}
 
 // --- Service 2: API Client ---
 interface ApiClientOps {
   fetch: (path: string) => Effect.Effect<string, never, never>;
 }
 
-class ApiClient extends Effect.Service<ApiClientOps>()(
-  "ApiClient",
-  {
-    sync: () => ({
-      fetch: (path: string): Effect.Effect<string, never, never> =>
-        Effect.sync(() => `api says: ${path}`)
-    })
-  }
-) {}
+class ApiClient extends Effect.Service<ApiClientOps>()("ApiClient", {
+  sync: () => ({
+    fetch: (path: string): Effect.Effect<string, never, never> =>
+      Effect.sync(() => `api says: ${path}`),
+  }),
+}) {}
 
 // --- Application Layer ---
 // We merge the two independent layers into one.
@@ -83,17 +77,14 @@ Create a managed runtime for scoped resources.
 ```typescript
 import { Effect, Layer } from "effect";
 
-class DatabasePool extends Effect.Service<DatabasePool>()(
-  "DbPool",
-  {
-    effect: Effect.gen(function* () {
-      yield* Effect.log("Acquiring pool");
-      return {
-        query: () => Effect.succeed("result")
-      };
-    })
-  }
-) {}
+class DatabasePool extends Effect.Service<DatabasePool>()("DbPool", {
+  effect: Effect.gen(function* () {
+    yield* Effect.log("Acquiring pool");
+    return {
+      query: () => Effect.succeed("result"),
+    };
+  }),
+}) {}
 
 // Create a program that uses the DatabasePool service
 const program = Effect.gen(function* () {
@@ -104,10 +95,7 @@ const program = Effect.gen(function* () {
 
 // Run the program with the service implementation
 Effect.runPromise(
-  program.pipe(
-    Effect.provide(DatabasePool.Default),
-    Effect.scoped
-  )
+  program.pipe(Effect.provide(DatabasePool.Default), Effect.scoped)
 );
 ```
 
@@ -128,32 +116,28 @@ import { Effect, Console } from "effect";
 
 // 1. Define the service interface
 interface DatabaseService {
-  readonly query: (sql: string) => Effect.Effect<string[], never, never>
+  readonly query: (sql: string) => Effect.Effect<string[], never, never>;
 }
 
 // 2. Define the service implementation with scoped resource management
-class Database extends Effect.Service<DatabaseService>()(
-  "Database",
-  {
-    // The scoped property manages the resource lifecycle
-    scoped: Effect.gen(function* () {
-      const id = Math.floor(Math.random() * 1000);
-      
-      // Acquire the connection
-      yield* Effect.log(`[Pool ${id}] Acquired`);
-      
-      // Setup cleanup to run when scope closes
-      yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
-      
-      // Return the service implementation
-      return {
-        query: (sql: string) => Effect.sync(() => 
-          [`Result for '${sql}' from pool ${id}`]
-        )
-      };
-    })
-  }
-) {}
+class Database extends Effect.Service<DatabaseService>()("Database", {
+  // The scoped property manages the resource lifecycle
+  scoped: Effect.gen(function* () {
+    const id = Math.floor(Math.random() * 1000);
+
+    // Acquire the connection
+    yield* Effect.log(`[Pool ${id}] Acquired`);
+
+    // Setup cleanup to run when scope closes
+    yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
+
+    // Return the service implementation
+    return {
+      query: (sql: string) =>
+        Effect.sync(() => [`Result for '${sql}' from pool ${id}`]),
+    };
+  }),
+}) {}
 
 // 3. Use the service in your program
 const program = Effect.gen(function* () {
@@ -164,9 +148,7 @@ const program = Effect.gen(function* () {
 
 // 4. Run the program with scoped resource management
 Effect.runPromise(
-  Effect.scoped(program).pipe(
-    Effect.provide(Database.Default)
-  )
+  Effect.scoped(program).pipe(Effect.provide(Database.Default))
 );
 
 /*
@@ -207,7 +189,8 @@ const effects = [Effect.succeed(1), Effect.succeed(2)];
 const batchEffect = Effect.all(effects); // Effect<[1, 2]>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Stream.fromIterable` creates a stream from any array or iterable, enabling streaming and batch operations.
 - `Effect.all` (covered elsewhere) can be used to process arrays of effects in batch.
 
@@ -225,11 +208,11 @@ import { Effect, Console } from "effect";
 // Mocking a complex file operation
 const openFile = (path: string) =>
   Effect.succeed({ path, handle: Math.random() }).pipe(
-    Effect.tap((f) => Effect.log(`Opened ${f.path}`)),
+    Effect.tap((f) => Effect.log(`Opened ${f.path}`))
   );
 const createTempFile = (path: string) =>
   Effect.succeed({ path: `${path}.tmp`, handle: Math.random() }).pipe(
-    Effect.tap((f) => Effect.log(`Created temp file ${f.path}`)),
+    Effect.tap((f) => Effect.log(`Created temp file ${f.path}`))
   );
 const closeFile = (file: { path: string }) =>
   Effect.sync(() => Effect.log(`Closed ${file.path}`));
@@ -239,9 +222,8 @@ const deleteFile = (file: { path: string }) =>
 // This program acquires two resources (a file and a temp file)
 // and ensures both are cleaned up correctly using acquireRelease.
 const program = Effect.gen(function* () {
-  const file = yield* Effect.acquireRelease(
-    openFile("data.csv"),
-    (f) => closeFile(f)
+  const file = yield* Effect.acquireRelease(openFile("data.csv"), (f) =>
+    closeFile(f)
   );
 
   const tempFile = yield* Effect.acquireRelease(
@@ -281,10 +263,12 @@ import { Effect, Console } from "effect";
 
 // A mock resource that needs to be managed
 const getDbConnection = Effect.sync(() => ({ id: Math.random() })).pipe(
-  Effect.tap(() => Effect.log("Connection Acquired")),
+  Effect.tap(() => Effect.log("Connection Acquired"))
 );
 
-const closeDbConnection = (conn: { id: number }): Effect.Effect<void, never, never> =>
+const closeDbConnection = (conn: {
+  id: number;
+}): Effect.Effect<void, never, never> =>
   Effect.log(`Connection ${conn.id} Released`);
 
 // The program that uses the resource
@@ -311,4 +295,3 @@ Connection 0.12345... Released
 By using `Effect.acquireRelease`, the `closeDbConnection` logic is guaranteed to run after the main logic completes. This creates a self-contained, leak-proof unit of work that can be safely composed into larger programs.
 
 ---
-

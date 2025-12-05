@@ -25,14 +25,13 @@ console.log(HashSet.has(set, user2)); // true (structural equality)
 // Create an array and use structural equality
 const users = [user1, user3];
 console.log(users.some((u) => Equal.equals(u, user2))); // true
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.Class.getEqual` derives an equality type class for your data type.
 - `Data.Class.getOrder` derives an ordering type class, useful for sorting.
 - `Data.Class.getHash` derives a hash function for use in sets and maps.
 - These type classes make your types fully compatible with Effect’s collections and algorithms.
 
 ---
-

@@ -5,8 +5,8 @@
  * Uses a multi-signal heuristic to identify related messages and keep them together.
  */
 
-import { Effect } from 'effect';
-import { ChunkingError, InvalidChunkSizeError } from './errors.js';
+import { Effect } from "effect";
+import { ChunkingError, InvalidChunkSizeError } from "./errors.js";
 
 // ============================================================================
 // Types
@@ -52,7 +52,7 @@ export type ChunkingResult = {
   readonly totalMessages: number;
   readonly chunkCount: number;
   readonly averageChunkSize: number;
-  readonly strategy: 'smart' | 'simple';
+  readonly strategy: "smart" | "simple";
 };
 
 const QUESTION_REGEX =
@@ -87,10 +87,10 @@ const analyzeMessage = (msg: Message): MessageWithMetadata => {
 
   return {
     message: msg,
-    isLikelyQuestion: content.includes('?') || QUESTION_REGEX.test(content),
+    isLikelyQuestion: content.includes("?") || QUESTION_REGEX.test(content),
     isLikelyAnswer:
       content.length > LONG_RESPONSE_THRESHOLD || // Longer responses
-      content.includes('```') || // Code examples
+      content.includes("```") || // Code examples
       ANSWER_REGEX.test(content),
     relationshipScore: 0,
   };
@@ -107,7 +107,7 @@ const analyzeMessage = (msg: Message): MessageWithMetadata => {
  */
 const calculateRelationshipScore = (
   current: MessageWithMetadata,
-  previous: MessageWithMetadata,
+  previous: MessageWithMetadata
 ): number => {
   let score = 0;
 
@@ -153,7 +153,7 @@ const calculateRelationshipScore = (
  */
 const smartChunk = (
   messages: Message[],
-  config: ChunkingConfig,
+  config: ChunkingConfig
 ): Message[][] => {
   if (messages.length === 0) {
     return [];
@@ -169,7 +169,7 @@ const smartChunk = (
   for (let i = 1; i < analyzed.length; i++) {
     const relationshipScore = calculateRelationshipScore(
       analyzed[i],
-      analyzed[i - 1],
+      analyzed[i - 1]
     );
 
     analyzed[i].relationshipScore = relationshipScore;
@@ -223,7 +223,7 @@ const simpleChunk = (messages: Message[], chunkSize: number): Message[][] => {
  */
 export const chunkMessages = (
   messages: Message[],
-  config: ChunkingConfig,
+  config: ChunkingConfig
 ): Effect.Effect<ChunkingResult, ChunkingError | InvalidChunkSizeError> =>
   Effect.gen(function* () {
     // Validate chunk size
@@ -236,7 +236,7 @@ export const chunkMessages = (
           size: config.targetSize,
           min: MIN_TARGET_CHUNK_SIZE,
           max: MAX_TARGET_CHUNK_SIZE,
-        }),
+        })
       );
     }
 
@@ -244,9 +244,9 @@ export const chunkMessages = (
     if (messages.length === 0) {
       return yield* Effect.fail(
         new ChunkingError({
-          reason: 'No messages to chunk',
+          reason: "No messages to chunk",
           messageCount: 0,
-        }),
+        })
       );
     }
 
@@ -261,12 +261,12 @@ export const chunkMessages = (
       totalMessages: messages.length,
       chunkCount: chunks.length,
       averageChunkSize: Math.round(messages.length / chunks.length),
-      strategy: config.useSmartChunking ? 'smart' : 'simple',
+      strategy: config.useSmartChunking ? "smart" : "simple",
     };
 
     // Log chunking results
     yield* Effect.log({
-      message: 'Chunking complete',
+      message: "Chunking complete",
       totalMessages: result.totalMessages,
       chunkCount: result.chunkCount,
       averageChunkSize: result.averageChunkSize,
@@ -281,7 +281,7 @@ export const chunkMessages = (
  * Convenience function: chunk messages with default configuration
  */
 export const chunkMessagesDefault = (
-  messages: Message[],
+  messages: Message[]
 ): Effect.Effect<ChunkingResult, ChunkingError | InvalidChunkSizeError> =>
   chunkMessages(messages, {
     targetSize: 50,
@@ -295,7 +295,7 @@ export const chunkMessagesDefault = (
  */
 export const chunkMessagesSimple = (
   messages: Message[],
-  chunkSize: number,
+  chunkSize: number
 ): Effect.Effect<ChunkingResult, ChunkingError | InvalidChunkSizeError> =>
   chunkMessages(messages, {
     targetSize: chunkSize,

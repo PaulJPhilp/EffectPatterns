@@ -32,10 +32,10 @@ const handled = program.pipe(
     })
   )
 );
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
 - Use `Cause.pretty` for human-readable error traces.
 - Enables advanced error handling and debugging.
@@ -66,10 +66,10 @@ runAndCapture.then((exit) => {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
 - Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
 - Pattern matching on `Exit` lets you handle all possible outcomes.
 
 ---
-

@@ -17,13 +17,17 @@ interface Token {
 }
 
 // This function is pure and testable because it depends on Clock
-const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock.Clock> =>
+const isTokenExpired = (
+  token: Token
+): Effect.Effect<boolean, never, Clock.Clock> =>
   Clock.currentTimeMillis.pipe(
     Effect.map((now) => now > token.expiresAt),
-    Effect.tap((expired) => 
+    Effect.tap((expired) =>
       Clock.currentTimeMillis.pipe(
-        Effect.flatMap((currentTime) => 
-          Effect.log(`Token expired? ${expired} (current time: ${new Date(currentTime).toISOString()})`)
+        Effect.flatMap((currentTime) =>
+          Effect.log(
+            `Token expired? ${expired} (current time: ${new Date(currentTime).toISOString()})`
+          )
         )
       )
     )
@@ -65,9 +69,7 @@ const program = Effect.gen(function* () {
 
 // Run the program with default clock
 Effect.runPromise(
-  program.pipe(
-    Effect.provideService(Clock.Clock, makeTestClock(Date.now()))
-  )
+  program.pipe(Effect.provideService(Clock.Clock, makeTestClock(Date.now())))
 );
 ```
 
@@ -88,36 +90,30 @@ import { Effect, Layer } from "effect";
 
 // --- The Services ---
 interface EmailClientService {
-  send: (address: string, body: string) => Effect.Effect<void>
+  send: (address: string, body: string) => Effect.Effect<void>;
 }
 
-class EmailClient extends Effect.Service<EmailClientService>()(
-  "EmailClient",
-  {
-    sync: () => ({
-      send: (address: string, body: string) => 
-        Effect.sync(() => Effect.log(`Sending email to ${address}: ${body}`))
-    })
-  }
-) {}
+class EmailClient extends Effect.Service<EmailClientService>()("EmailClient", {
+  sync: () => ({
+    send: (address: string, body: string) =>
+      Effect.sync(() => Effect.log(`Sending email to ${address}: ${body}`)),
+  }),
+}) {}
 
 interface NotifierService {
-  notifyUser: (userId: number, message: string) => Effect.Effect<void>
+  notifyUser: (userId: number, message: string) => Effect.Effect<void>;
 }
 
-class Notifier extends Effect.Service<NotifierService>()(
-  "Notifier",
-  {
-    effect: Effect.gen(function* () {
-      const emailClient = yield* EmailClient;
-      return {
-        notifyUser: (userId: number, message: string) =>
-          emailClient.send(`user-${userId}@example.com`, message)
-      };
-    }),
-    dependencies: [EmailClient.Default]
-  }
-) {}
+class Notifier extends Effect.Service<NotifierService>()("Notifier", {
+  effect: Effect.gen(function* () {
+    const emailClient = yield* EmailClient;
+    return {
+      notifyUser: (userId: number, message: string) =>
+        emailClient.send(`user-${userId}@example.com`, message),
+    };
+  }),
+  dependencies: [EmailClient.Default],
+}) {}
 
 // Create a program that uses the Notifier service
 const program = Effect.gen(function* () {
@@ -127,28 +123,21 @@ const program = Effect.gen(function* () {
 
   // Create mock EmailClient that logs differently
   yield* Effect.log("\nUsing mock EmailClient implementation...");
-  const mockEmailClient = Layer.succeed(
-    EmailClient,
-    {
-      send: (address: string, body: string) =>
-        // Directly return the Effect.log without nesting it in Effect.sync
-        Effect.log(`MOCK: Would send to ${address} with body: ${body}`)
-    } as EmailClientService
-  );
+  const mockEmailClient = Layer.succeed(EmailClient, {
+    send: (address: string, body: string) =>
+      // Directly return the Effect.log without nesting it in Effect.sync
+      Effect.log(`MOCK: Would send to ${address} with body: ${body}`),
+  } as EmailClientService);
 
   // Run the same notification with mock client
   yield* Effect.gen(function* () {
     const notifier = yield* Notifier;
     yield* notifier.notifyUser(123, "Your invoice is ready.");
-  }).pipe(
-    Effect.provide(mockEmailClient)
-  );
+  }).pipe(Effect.provide(mockEmailClient));
 });
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, Notifier.Default)
-);
+Effect.runPromise(Effect.provide(program, Notifier.Default));
 ```
 
 ---
@@ -169,14 +158,11 @@ This example shows a `BaseLayer` with a `Logger`, a `UserModule` that uses the `
 // src/core/Logger.ts
 import { Effect } from "effect";
 
-export class Logger extends Effect.Service<Logger>()(
-  "App/Core/Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.log(`[LOG] ${msg}`)
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("App/Core/Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.log(`[LOG] ${msg}`),
+  }),
+}) {}
 
 // src/features/User/UserRepository.ts
 export class UserRepository extends Effect.Service<UserRepository>()(
@@ -190,11 +176,11 @@ export class UserRepository extends Effect.Service<UserRepository>()(
           Effect.gen(function* () {
             yield* logger.log(`Finding user ${id}`);
             return { id, name: `User ${id}` };
-          })
+          }),
       };
     }),
     // Declare Logger dependency
-    dependencies: [Logger.Default]
+    dependencies: [Logger.Default],
   }
 ) {}
 
@@ -206,12 +192,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    UserRepository.Default
-  )
-);
+Effect.runPromise(Effect.provide(program, UserRepository.Default));
 
 const programWithLogging = Effect.gen(function* () {
   const result = yield* program;
@@ -228,14 +209,11 @@ Effect.runPromise(Effect.provide(programWithLogging, UserRepository.Default));
 // src/core/Logger.ts
 import { Effect } from "effect";
 
-export class Logger extends Effect.Service<Logger>()(
-  "App/Core/Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`))
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("App/Core/Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`)),
+  }),
+}) {}
 
 // src/features/User/UserRepository.ts
 export class UserRepository extends Effect.Service<UserRepository>()(
@@ -249,11 +227,11 @@ export class UserRepository extends Effect.Service<UserRepository>()(
           Effect.gen(function* () {
             yield* logger.log(`Finding user ${id}`);
             return { id, name: `User ${id}` };
-          })
+          }),
       };
     }),
     // Declare Logger dependency
-    dependencies: [Logger.Default]
+    dependencies: [Logger.Default],
   }
 ) {}
 
@@ -265,12 +243,9 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    UserRepository.Default
-  )
-).then(console.log);
+Effect.runPromise(Effect.provide(program, UserRepository.Default)).then(
+  console.log
+);
 ```
 
 ### 3. The Final Application Composition
@@ -302,33 +277,28 @@ Use the auto-generated .Default layer in tests.
 import { Effect } from "effect";
 
 // Define MyService using Effect.Service pattern
-class MyService extends Effect.Service<MyService>()(
-  "MyService",
-  {
-    sync: () => ({
-      doSomething: () => 
-        Effect.succeed("done").pipe(
-          Effect.tap(() => Effect.log("MyService did something!"))
-        )
-    })
-  }
-) {}
+class MyService extends Effect.Service<MyService>()("MyService", {
+  sync: () => ({
+    doSomething: () =>
+      Effect.succeed("done").pipe(
+        Effect.tap(() => Effect.log("MyService did something!"))
+      ),
+  }),
+}) {}
 
 // Create a program that uses MyService
 const program = Effect.gen(function* () {
   yield* Effect.log("Getting MyService...");
   const service = yield* MyService;
-  
+
   yield* Effect.log("Calling doSomething()...");
   const result = yield* service.doSomething();
-  
+
   yield* Effect.log(`Result: ${result}`);
 });
 
 // Run the program with default service implementation
-Effect.runPromise(
-  Effect.provide(program, MyService.Default)
-);
+Effect.runPromise(Effect.provide(program, MyService.Default));
 ```
 
 **Explanation:**  
@@ -436,7 +406,9 @@ const program = Effect.gen(function* () {
     try {
       return yield* db.getUserById(123);
     } catch (error) {
-      yield* Effect.logError(`Failed to get user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      yield* Effect.logError(
+        `Failed to get user: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       return { id: -1, name: "Error" };
     }
   });
@@ -454,7 +426,9 @@ const program = Effect.gen(function* () {
         );
         return { id: 404, name: "Not Found" };
       }
-      yield* Effect.logError(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      yield* Effect.logError(
+        `Unexpected error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       return { id: -1, name: "Error" };
     }
   });
@@ -478,7 +452,9 @@ const program = Effect.gen(function* () {
         try {
           return yield* testDb.getUserById(1);
         } catch (error) {
-          yield* Effect.logError(`Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          yield* Effect.logError(
+            `Test failed: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
           return { id: -1, name: "Test Error" };
         }
       });
@@ -490,7 +466,7 @@ const program = Effect.gen(function* () {
           return yield* testDb.getUserById(404);
         } catch (error) {
           yield* Effect.logInfo(
-            `✅ Test service properly threw NotFoundError: ${error instanceof Error ? error.message : 'Unknown error'}`
+            `✅ Test service properly threw NotFoundError: ${error instanceof Error ? error.message : "Unknown error"}`
           );
           return { id: 404, name: "Test Not Found" };
         }
@@ -510,13 +486,15 @@ const program = Effect.gen(function* () {
 
 // Run the program with the default database service
 Effect.runPromise(
-  Effect.provide(program, DatabaseService.Default) as Effect.Effect<void, never, never>
+  Effect.provide(program, DatabaseService.Default) as Effect.Effect<
+    void,
+    never,
+    never
+  >
 );
-
 ```
 
 **Explanation:**  
 Tests should reflect the real interface and behavior of your code, not force changes to it.
 
 ---
-

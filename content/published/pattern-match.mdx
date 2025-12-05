@@ -67,7 +67,8 @@ const either = Either.left("fail").pipe(
 ); // string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.match` lets you handle both the error and success channels in one place.
 - `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
 

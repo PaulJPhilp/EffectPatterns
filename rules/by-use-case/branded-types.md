@@ -22,10 +22,10 @@ const email = "user@example.com" as Email;
 
 sendWelcome(email); // OK
 // sendWelcome("not-an-email"); // Type error! (commented to allow compilation)
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Brand.Branded<T, Name>` creates a new type that is distinct from its base type.
 - Only values explicitly branded as `Email` can be used where an `Email` is required.
 - This prevents accidental mixing of domain types.
@@ -64,13 +64,12 @@ parseEmail("user@example.com").pipe(
     onFailure: (err) => console.error(err),
   })
 );
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Schema` is used to define validation logic for the branded type.
 - `Brand.schema<Email>()` attaches the brand to the schema, so only validated values can be constructed as `Email`.
 - This pattern ensures both compile-time and runtime safety.
 
 ---
-

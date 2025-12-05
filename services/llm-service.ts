@@ -1,5 +1,5 @@
-import * as Effect from 'effect/Effect';
-import { Data, Context, Layer } from 'effect';
+import * as Effect from "effect/Effect";
+import { Data, Context, Layer } from "effect";
 import {
   streamText,
   generateText,
@@ -7,7 +7,7 @@ import {
   type CoreMessage,
   type ToolSet,
   type UIMessage,
-} from 'ai';
+} from "ai";
 
 // --- TYPES ---
 
@@ -34,78 +34,84 @@ export interface LLMResponse {
 
 // --- ERRORS ---
 
-export class LLMError extends Data.TaggedError('LLMError')<{
+export class LLMError extends Data.TaggedError("LLMError")<{
   cause: unknown;
   message: string;
 }> {}
 
 // --- SERVICE DEFINITION ---
 
-export class LLMService extends Effect.Service<LLMService>()('LLMService', {
-effect: Effect.gen(function* () {
-  return {
+export class LLMService extends Effect.Service<LLMService>()("LLMService", {
+  effect: Effect.gen(function* () {
+    return {
       // Non-streaming text generation
-      generateText: (request: LLMRequest): Effect.Effect<LLMResponse, LLMError> =>
+      generateText: (
+        request: LLMRequest
+      ): Effect.Effect<LLMResponse, LLMError> =>
         Effect.gen(function* () {
           try {
             const result = yield* Effect.promise(() =>
               generateText({
                 model: request.model,
-              messages: request.messages,
-            system: request.system,
-            maxTokens: request.maxTokens,
-          temperature: request.temperature,
-      })
-);
-
-return {
-text: result.text,
-usage: result.usage,
-finishReason: result.finishReason,
-};
-} catch (error) {
-return yield* Effect.fail(
-  new LLMError({
-                cause: error,
-    message: `Failed to generate text: ${error instanceof Error ? error.message : String(error)}`,
-})
-);
-}
-}),
-
-// Streaming text generation
-streamText: (request: StreamingLLMRequest): Effect.Effect<any, LLMError> =>
-Effect.gen(function* () {
-try {
-const result = yield* Effect.promise(() =>
-  streamText({
-      model: request.model,
-        messages: request.messages,
+                messages: request.messages,
                 system: request.system,
-            tools: request.tools,
-            maxTokens: request.maxTokens,
-          temperature: request.temperature,
-        experimental_transform: request.experimental_transform,
-        experimental_activeTools: request.experimental_activeTools,
-        stopWhen: request.stopWhen,
-        onFinish: request.onFinish ? (result) => Effect.runPromise(request.onFinish!(result)) : undefined,
-      })
-    );
+                maxTokens: request.maxTokens,
+                temperature: request.temperature,
+              })
+            );
 
-    return result;
-  } catch (error) {
-    return yield* Effect.fail(
-      new LLMError({
-        cause: error,
-        message: `Failed to stream text: ${error instanceof Error ? error.message : String(error)}`,
-      })
-    );
+            return {
+              text: result.text,
+              usage: result.usage,
+              finishReason: result.finishReason,
+            };
+          } catch (error) {
+            return yield* Effect.fail(
+              new LLMError({
+                cause: error,
+                message: `Failed to generate text: ${error instanceof Error ? error.message : String(error)}`,
+              })
+            );
           }
-}),
-};
-}),
+        }),
 
-dependencies: [],
+      // Streaming text generation
+      streamText: (
+        request: StreamingLLMRequest
+      ): Effect.Effect<any, LLMError> =>
+        Effect.gen(function* () {
+          try {
+            const result = yield* Effect.promise(() =>
+              streamText({
+                model: request.model,
+                messages: request.messages,
+                system: request.system,
+                tools: request.tools,
+                maxTokens: request.maxTokens,
+                temperature: request.temperature,
+                experimental_transform: request.experimental_transform,
+                experimental_activeTools: request.experimental_activeTools,
+                stopWhen: request.stopWhen,
+                onFinish: request.onFinish
+                  ? (result) => Effect.runPromise(request.onFinish!(result))
+                  : undefined,
+              })
+            );
+
+            return result;
+          } catch (error) {
+            return yield* Effect.fail(
+              new LLMError({
+                cause: error,
+                message: `Failed to stream text: ${error instanceof Error ? error.message : String(error)}`,
+              })
+            );
+          }
+        }),
+    };
+  }),
+
+  dependencies: [],
 }) {}
 
 // --- LIVE IMPLEMENTATION ---

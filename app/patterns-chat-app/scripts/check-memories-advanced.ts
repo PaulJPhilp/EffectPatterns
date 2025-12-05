@@ -25,7 +25,9 @@ async function checkMemories() {
       q: "pattern",
       limit: 5,
     });
-    console.log(`Pattern search: ${patternSearch.results?.length || 0} results\n`);
+    console.log(
+      `Pattern search: ${patternSearch.results?.length || 0} results\n`
+    );
 
     // Test 2: Try searching by exact pattern ID
     console.log("Test 2: Search by pattern ID");
@@ -48,7 +50,9 @@ async function checkMemories() {
       q: "*",
       limit: 5,
     });
-    console.log(`System search (*): ${systemSearch.results?.length || 0} results`);
+    console.log(
+      `System search (*): ${systemSearch.results?.length || 0} results`
+    );
     console.log(`Total in response: ${systemSearch.total}\n`);
 
     // Test 4: Look for any Effect-related content
@@ -62,7 +66,9 @@ async function checkMemories() {
       effectSearch.results.forEach((r, i) => {
         try {
           const data = JSON.parse(r.memory);
-          console.log(`  ${i + 1}. Type: ${data.type}, Pattern: ${data.patternId || "N/A"}`);
+          console.log(
+            `  ${i + 1}. Type: ${data.type}, Pattern: ${data.patternId || "N/A"}`
+          );
         } catch (e) {
           console.log(`  ${i + 1}. [Unparseable]`);
         }
@@ -91,7 +97,6 @@ async function checkMemories() {
     console.log(`  - Timing: ${debugSearch.timing}ms\n`);
 
     console.log("✅ All checks completed!");
-
   } catch (error) {
     console.error("❌ Error:", error);
     process.exit(1);

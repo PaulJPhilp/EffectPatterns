@@ -4,9 +4,9 @@
  * TODO: Implement in Phase 3
  */
 
-import type { Effect } from 'effect';
-import type * as Errors from './errors.js';
-import type * as Types from './types.js';
+import type { Effect } from "effect";
+import type * as Errors from "./errors.js";
+import type * as Types from "./types.js";
 
 export interface SessionService {
   readonly getSession: (

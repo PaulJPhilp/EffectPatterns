@@ -13,7 +13,13 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { memoriesGuide, memoriesQuickTips } from "@/lib/memories-guide";
 
 interface MemoriesGuideDialogProps {
@@ -21,10 +27,16 @@ interface MemoriesGuideDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function PureMemoriesGuideDialog({ open, onOpenChange }: MemoriesGuideDialogProps) {
-  const [selectedSection, setSelectedSection] = useState<string>("what-are-memories");
+function PureMemoriesGuideDialog({
+  open,
+  onOpenChange,
+}: MemoriesGuideDialogProps) {
+  const [selectedSection, setSelectedSection] =
+    useState<string>("what-are-memories");
 
-  const activeSection = memoriesGuide.sections.find((s) => s.id === selectedSection);
+  const activeSection = memoriesGuide.sections.find(
+    (s) => s.id === selectedSection
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,7 +45,9 @@ function PureMemoriesGuideDialog({ open, onOpenChange }: MemoriesGuideDialogProp
           {/* Header */}
           <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 dark:from-blue-950 dark:to-indigo-950">
             <DialogHeader className="space-y-2">
-              <DialogTitle className="text-2xl">{memoriesGuide.title}</DialogTitle>
+              <DialogTitle className="text-2xl">
+                {memoriesGuide.title}
+              </DialogTitle>
               <DialogDescription className="text-base">
                 {memoriesGuide.description}
               </DialogDescription>
@@ -70,19 +84,23 @@ function PureMemoriesGuideDialog({ open, onOpenChange }: MemoriesGuideDialogProp
                     <div className="space-y-2">
                       <div className="flex items-center gap-3">
                         <span className="text-4xl">{activeSection.icon}</span>
-                        <h2 className="text-2xl font-bold">{activeSection.title}</h2>
+                        <h2 className="text-2xl font-bold">
+                          {activeSection.title}
+                        </h2>
                       </div>
                     </div>
 
                     <div className="prose prose-sm max-w-none dark:prose-invert">
-                      {activeSection.content.split("\n\n").map((paragraph, idx) => (
-                        <p
-                          key={idx}
-                          className="whitespace-pre-wrap text-gray-700 leading-relaxed dark:text-gray-300"
-                        >
-                          {paragraph}
-                        </p>
-                      ))}
+                      {activeSection.content
+                        .split("\n\n")
+                        .map((paragraph, idx) => (
+                          <p
+                            key={idx}
+                            className="whitespace-pre-wrap text-gray-700 leading-relaxed dark:text-gray-300"
+                          >
+                            {paragraph}
+                          </p>
+                        ))}
                     </div>
                   </>
                 )}
@@ -92,7 +110,11 @@ function PureMemoriesGuideDialog({ open, onOpenChange }: MemoriesGuideDialogProp
 
           {/* Footer */}
           <div className="border-t bg-gray-50 px-6 py-3 dark:bg-gray-900">
-            <Button onClick={() => onOpenChange(false)} variant="default" className="w-full">
+            <Button
+              onClick={() => onOpenChange(false)}
+              variant="default"
+              className="w-full"
+            >
               Got it! Close Guide
             </Button>
           </div>
@@ -115,7 +137,9 @@ interface MemoriesQuickTipsProps {
 function PureMemoriesQuickTips({ className }: MemoriesQuickTipsProps) {
   const [showMore, setShowMore] = useState(false);
 
-  const visibleTips = showMore ? memoriesQuickTips : memoriesQuickTips.slice(0, 3);
+  const visibleTips = showMore
+    ? memoriesQuickTips
+    : memoriesQuickTips.slice(0, 3);
 
   return (
     <Card className={className}>
@@ -123,7 +147,9 @@ function PureMemoriesQuickTips({ className }: MemoriesQuickTipsProps) {
         <CardTitle className="flex items-center gap-2">
           <span>💡</span> Memories Quick Tips
         </CardTitle>
-        <CardDescription>Learn how to get the most from your memory library</CardDescription>
+        <CardDescription>
+          Learn how to get the most from your memory library
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3">
@@ -132,8 +158,12 @@ function PureMemoriesQuickTips({ className }: MemoriesQuickTipsProps) {
               key={idx}
               className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950"
             >
-              <h4 className="font-semibold text-blue-900 dark:text-blue-50">{tip.title}</h4>
-              <p className="text-sm text-blue-800 dark:text-blue-200">{tip.description}</p>
+              <h4 className="font-semibold text-blue-900 dark:text-blue-50">
+                {tip.title}
+              </h4>
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                {tip.description}
+              </p>
             </div>
           ))}
         </div>
@@ -163,7 +193,9 @@ interface MemoriesFeatureHighlightProps {
   className?: string;
 }
 
-function PureMemoriesFeatureHighlight({ className }: MemoriesFeatureHighlightProps) {
+function PureMemoriesFeatureHighlight({
+  className,
+}: MemoriesFeatureHighlightProps) {
   const features = [
     {
       icon: "🔍",
@@ -190,11 +222,16 @@ function PureMemoriesFeatureHighlight({ className }: MemoriesFeatureHighlightPro
   return (
     <div className={`grid gap-4 ${className}`}>
       {features.map((feature, idx) => (
-        <div key={idx} className="flex gap-3 rounded-lg border p-3 hover:bg-blue-50 dark:hover:bg-blue-950">
+        <div
+          key={idx}
+          className="flex gap-3 rounded-lg border p-3 hover:bg-blue-50 dark:hover:bg-blue-950"
+        >
           <span className="text-2xl">{feature.icon}</span>
           <div>
             <h3 className="font-semibold">{feature.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{feature.description}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {feature.description}
+            </p>
           </div>
         </div>
       ))}
@@ -222,8 +259,8 @@ function PureMemoriesInfoBanner({ onLearnMore }: MemoriesInfoBannerProps) {
             Your conversations are automatically saved!
           </h3>
           <p className="text-sm text-blue-800 dark:text-blue-200">
-            This chat will be tagged, indexed, and made searchable. You can search past conversations
-            anytime to find similar solutions.
+            This chat will be tagged, indexed, and made searchable. You can
+            search past conversations anytime to find similar solutions.
           </p>
         </div>
         {onLearnMore && (

@@ -65,7 +65,7 @@ const greeting = (id: number): string =>
     Option.match({
       onNone: () => "User not found.",
       onSome: (user) => `Welcome, ${user.name}!`,
-    }),
+    })
   );
 
 const program = Effect.gen(function* () {
@@ -82,19 +82,19 @@ The anti-pattern is returning a nullable type (e.g., User | null or User | undef
 
 ```typescript
 interface User {
-	id: number;
-	name: string;
+  id: number;
+  name: string;
 }
 const users: User[] = [{ id: 1, name: "Paul" }];
-	
-	// ❌ WRONG: This function's return type is less safe.
-	const findUserUnsafely = (id: number): User | undefined => {
-	  return users.find((u) => u.id === id);
-	};
-	
-	const user = findUserUnsafely(3);
-	
-	// This will throw "TypeError: Cannot read properties of undefined (reading 'name')"
-	// because the caller forgot to check if the user exists.
-	console.log(`User's name is ${user.name}`)
+
+// ❌ WRONG: This function's return type is less safe.
+const findUserUnsafely = (id: number): User | undefined => {
+  return users.find((u) => u.id === id);
+};
+
+const user = findUserUnsafely(3);
+
+// This will throw "TypeError: Cannot read properties of undefined (reading 'name')"
+// because the caller forgot to check if the user exists.
+console.log(`User's name is ${user.name}`);
 ```

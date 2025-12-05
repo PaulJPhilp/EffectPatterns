@@ -5,22 +5,22 @@
  * representation and PatternSummary for list views.
  */
 
-import { Schema as S } from '@effect/schema';
+import { Schema as S } from "@effect/schema";
 
 /**
  * Pattern category enumeration
  */
 export const PatternCategory = S.Literal(
-  'error-handling',
-  'concurrency',
-  'data-transformation',
-  'testing',
-  'services',
-  'streams',
-  'caching',
-  'observability',
-  'scheduling',
-  'resource-management',
+  "error-handling",
+  "concurrency",
+  "data-transformation",
+  "testing",
+  "services",
+  "streams",
+  "caching",
+  "observability",
+  "scheduling",
+  "resource-management"
 );
 
 export type PatternCategory = S.Schema.Type<typeof PatternCategory>;
@@ -29,9 +29,9 @@ export type PatternCategory = S.Schema.Type<typeof PatternCategory>;
  * Pattern difficulty level
  */
 export const DifficultyLevel = S.Literal(
-  'beginner',
-  'intermediate',
-  'advanced',
+  "beginner",
+  "intermediate",
+  "advanced"
 );
 
 export type DifficultyLevel = S.Schema.Type<typeof DifficultyLevel>;

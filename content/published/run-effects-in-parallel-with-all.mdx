@@ -30,7 +30,7 @@ When you have multiple `Effect`s that do not depend on each other's results, run
 
 Running tasks sequentially when they could be done in parallel is a common source of performance bottlenecks. `Effect.all` is the solution. It's the direct equivalent of `Promise.all` in the Effect ecosystem.
 
-Instead of waiting for Task A to finish before starting Task B, `Effect.all` starts all tasks simultaneously. The total time to complete is determined by the duration of the *longest* running effect, not the sum of all durations. If any single effect in the collection fails, the entire `Effect.all` will fail immediately.
+Instead of waiting for Task A to finish before starting Task B, `Effect.all` starts all tasks simultaneously. The total time to complete is determined by the duration of the _longest_ running effect, not the sum of all durations. If any single effect in the collection fails, the entire `Effect.all` will fail immediately.
 
 ---
 
@@ -43,16 +43,18 @@ import { Effect } from "effect";
 
 // Simulate fetching a user, takes 1 second
 const fetchUser = Effect.succeed({ id: 1, name: "Paul" }).pipe(
-  Effect.delay("1 second"),
+  Effect.delay("1 second")
 );
 
 // Simulate fetching posts, takes 1.5 seconds
 const fetchPosts = Effect.succeed([{ title: "Effect is great" }]).pipe(
-  Effect.delay("1.5 seconds"),
+  Effect.delay("1.5 seconds")
 );
 
 // Run both effects concurrently - must specify concurrency option!
-const program = Effect.all([fetchUser, fetchPosts], { concurrency: "unbounded" });
+const program = Effect.all([fetchUser, fetchPosts], {
+  concurrency: "unbounded",
+});
 
 // The resulting effect will succeed with a tuple: [{id, name}, [{title}]]
 // Total execution time will be ~1.5 seconds (the duration of the longest task).

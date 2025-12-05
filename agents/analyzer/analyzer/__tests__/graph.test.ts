@@ -1,42 +1,42 @@
-import { FileSystem } from '@effect/platform/FileSystem';
-import { Path } from '@effect/platform/Path';
-import { Effect } from 'effect';
-import { describe, expect, it } from 'vitest';
-import { app, type GraphState } from '../graph.js';
-import { withLiveRuntime } from './runtime.js';
+import { FileSystem } from "@effect/platform/FileSystem";
+import { Path } from "@effect/platform/Path";
+import { Effect } from "effect";
+import { describe, expect, it } from "vitest";
+import { app, type GraphState } from "../graph.js";
+import { withLiveRuntime } from "./runtime.js";
 
 const describeLive = process.env.OPENAI_API_KEY ? describe : describe.skip;
 
 const EXPECTED_TOTAL_MESSAGES = 50;
 const REPORT_PREVIEW_LENGTH = 500;
 
-describeLive('Analyzer graph (live)', () => {
-  it('processes the mock export end to end', async () => {
+describeLive("Analyzer graph (live)", () => {
+  it("processes the mock export end to end", async () => {
     const { finalState, reportText } = await withLiveRuntime(
       Effect.gen(function* () {
         const fs = yield* FileSystem;
         const path = yield* Path;
         const fixturePath = path.resolve(
           process.cwd(),
-          'scripts',
-          'analyzer',
-          'test-data',
-          'mock-export.json',
+          "scripts",
+          "analyzer",
+          "test-data",
+          "mock-export.json"
         );
         const tempDir = yield* fs.makeTempDirectoryScoped();
-        const outputPath = path.join(tempDir, 'report.txt');
+        const outputPath = path.join(tempDir, "report.txt");
         const graphState = (yield* Effect.promise(() =>
           app.invoke({
             inputFile: fixturePath,
             outputFile: outputPath,
-          }),
+          })
         )) as GraphState;
         const reportContent = yield* fs.readFileString(outputPath);
         return {
           finalState: graphState,
           reportText: reportContent,
         };
-      }),
+      })
     );
 
     expect(finalState.chunks?.length ?? 0).toBeGreaterThan(0);
@@ -45,7 +45,7 @@ describeLive('Analyzer graph (live)', () => {
     expect(reportText.trim().length).toBeGreaterThan(0);
   });
 
-  it('processes real Discord Q&A data (discord-qna.json)', async () => {
+  it("processes real Discord Q&A data (discord-qna.json)", async () => {
     const { finalState, reportText, metadata } = await withLiveRuntime(
       Effect.gen(function* () {
         const fs = yield* FileSystem;
@@ -54,19 +54,19 @@ describeLive('Analyzer graph (live)', () => {
         // Path to real Discord Q&A data
         const fixturePath = path.resolve(
           process.cwd(),
-          'packages',
-          'data',
-          'discord-qna.json',
+          "packages",
+          "data",
+          "discord-qna.json"
         );
 
         const tempDir = yield* fs.makeTempDirectoryScoped();
-        const outputPath = path.join(tempDir, 'discord-analysis.txt');
+        const outputPath = path.join(tempDir, "discord-analysis.txt");
 
         const graphState = (yield* Effect.promise(() =>
           app.invoke({
             inputFile: fixturePath,
             outputFile: outputPath,
-          }),
+          })
         )) as GraphState;
 
         const reportContent = yield* fs.readFileString(outputPath);
@@ -80,7 +80,7 @@ describeLive('Analyzer graph (live)', () => {
             chunkingStrategy: graphState.chunkingStrategy,
           },
         };
-      }),
+      })
     );
 
     // ============================================================
@@ -110,20 +110,20 @@ describeLive('Analyzer graph (live)', () => {
 
     // Should mention Effect-TS core concepts
     const hasEffectConcepts =
-      reportLower.includes('effect') ||
-      reportLower.includes('service') ||
-      reportLower.includes('layer');
+      reportLower.includes("effect") ||
+      reportLower.includes("service") ||
+      reportLower.includes("layer");
     expect(hasEffectConcepts).toBe(true);
 
     // Should identify common patterns from the Q&A data
     const mentionsHttpApi =
-      reportLower.includes('httpapi') ||
-      reportLower.includes('http api') ||
-      reportLower.includes('httprouter');
+      reportLower.includes("httpapi") ||
+      reportLower.includes("http api") ||
+      reportLower.includes("httprouter");
     const mentionsErrors =
-      reportLower.includes('error') || reportLower.includes('fail');
-    const mentionsSchema = reportLower.includes('schema');
-    const mentionsRpc = reportLower.includes('rpc');
+      reportLower.includes("error") || reportLower.includes("fail");
+    const mentionsSchema = reportLower.includes("schema");
+    const mentionsRpc = reportLower.includes("rpc");
 
     // At least 2 of these core topics should be mentioned
     const topicsMentioned = [
@@ -139,11 +139,11 @@ describeLive('Analyzer graph (live)', () => {
     // ============================================================
     // Should have key sections (not all required, but should have some structure)
     const hasSectionHeaders =
-      reportText.includes('##') || // Markdown headers
-      reportText.includes('Questions') ||
-      reportText.includes('Patterns') ||
-      reportText.includes('Best Practices') ||
-      reportText.includes('Summary');
+      reportText.includes("##") || // Markdown headers
+      reportText.includes("Questions") ||
+      reportText.includes("Patterns") ||
+      reportText.includes("Best Practices") ||
+      reportText.includes("Summary");
     expect(hasSectionHeaders).toBe(true);
 
     // ============================================================
@@ -151,28 +151,28 @@ describeLive('Analyzer graph (live)', () => {
     // ============================================================
     // Should include code examples (markdown code fences or actual code snippets)
     const hasCodeExamples =
-      reportText.includes('```') || // Markdown code blocks
-      reportText.includes('Effect.gen') ||
-      reportText.includes('yield*');
+      reportText.includes("```") || // Markdown code blocks
+      reportText.includes("Effect.gen") ||
+      reportText.includes("yield*");
     expect(hasCodeExamples).toBe(true);
 
     // ============================================================
     // Log validation results for debugging
     // ============================================================
-    console.log('\n📊 Discord Q&A Analysis Test Results:');
+    console.log("\n📊 Discord Q&A Analysis Test Results:");
     console.log(`   Total Messages: ${metadata.totalMessages}`);
     console.log(`   Chunks Created: ${metadata.chunkCount}`);
     console.log(`   Chunking Strategy: ${metadata.chunkingStrategy}`);
     console.log(`   Report Length: ${reportText.length} characters`);
     console.log(
-      `   Topics Mentioned: ${topicsMentioned}/4 (HttpApi, Errors, Schema, RPC)`,
+      `   Topics Mentioned: ${topicsMentioned}/4 (HttpApi, Errors, Schema, RPC)`
     );
     console.log(`   Has Code Examples: ${hasCodeExamples}`);
     console.log(`   Has Section Headers: ${hasSectionHeaders}`);
 
     // Optional: Log a preview of the report for manual inspection
     if (process.env.VERBOSE) {
-      console.log('\n📄 Report Preview (first 500 chars):');
+      console.log("\n📄 Report Preview (first 500 chars):");
       console.log(`${reportText.slice(0, REPORT_PREVIEW_LENGTH)}...\n`);
     }
   });

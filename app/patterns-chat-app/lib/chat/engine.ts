@@ -123,12 +123,12 @@ export function processChat({
 
     const userType: UserType = session.user.type;
 
-    const messageCount = yield* (Effect.promise(() =>
+    const messageCount = yield* Effect.promise(() =>
       getMessageCountByUserId({
         id: session.user.id,
         differenceInHours: 24,
       })
-    ) as any);
+    ) as any;
 
     if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
       throw new ChatSDKError("rate_limit:chat");
@@ -139,7 +139,7 @@ export function processChat({
       rememberModelChoice(session.user.id, selectedChatModel)
     );
 
-    const chat = yield* (Effect.promise(() => getChatById({ id })) as any);
+    const chat = yield* Effect.promise(() => getChatById({ id })) as any;
 
     if (chat) {
       if (chat.userId !== session.user.id) {
@@ -169,9 +169,9 @@ export function processChat({
       );
     }
 
-    const messagesFromDb = yield* (Effect.promise(() =>
+    const messagesFromDb = yield* Effect.promise(() =>
       getMessagesByChatId({ id })
-    ) as any);
+    ) as any;
     const uiMessages = [...convertToUIMessages(messagesFromDb), message];
 
     const { longitude, latitude, city, country } = geolocation(request);

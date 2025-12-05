@@ -17,6 +17,7 @@ curl -H "x-api-key: demo-beta-2025" \
 ```
 
 **Key Changes:**
+
 - ✅ **Shared Demo API Key** - `demo-beta-2025` for instant access
 - ✅ **Production URL** - https://mcp-server-three-omega.vercel.app
 - ✅ **Zero Installation** - No cloning, no dependencies, just use!
@@ -34,6 +35,7 @@ All tests passing with proper separation:
 ```
 
 **Testing Improvements:**
+
 - Fixed broken node_modules symlinks
 - Separated unit and integration tests
 - Optimized Vitest configuration
@@ -42,6 +44,7 @@ All tests passing with proper separation:
 ### 📚 Revamped Documentation
 
 **New Guides:**
+
 - `MCP_SERVER_SETUP.md` - Production-focused complete guide
 - `QUICK_START.md` - 2-minute quick start
 - `TESTING.md` - Comprehensive testing guide
@@ -53,27 +56,29 @@ All tests passing with proper separation:
 ### 🔧 Technical Improvements
 
 **Fixed:**
+
 - Broken pnpm symlinks in mcp-server/node_modules
 - Integration tests timing out without server
 - Effect API deprecation (provideContext → provide)
 - Version consistency across all files
 
 **Changed:**
+
 - Test runner: `bun test` → `bunx vitest`
 - Focus: Local development → Production API
 - Onboarding: Clone & install → Copy & use
 
 ## 📊 Release Metrics
 
-| Metric | Value |
-|--------|-------|
-| **Version** | 0.5.0 (Beta) |
-| **Unit Tests** | 33 passing |
-| **Test Speed** | ~600ms |
-| **API Endpoints** | 5 |
-| **Patterns** | 150+ |
-| **Rate Limit** | 10 req/min (demo key) |
-| **Response Time** | <100ms (p95) |
+| Metric            | Value                 |
+| ----------------- | --------------------- |
+| **Version**       | 0.5.0 (Beta)          |
+| **Unit Tests**    | 33 passing            |
+| **Test Speed**    | ~600ms                |
+| **API Endpoints** | 5                     |
+| **Patterns**      | 150+                  |
+| **Rate Limit**    | 10 req/min (demo key) |
+| **Response Time** | <100ms (p95)          |
 
 ## 🚀 Quick Start
 
@@ -104,6 +109,7 @@ curl -X POST https://mcp-server-three-omega.vercel.app/api/generate \
 ### 3. Integrate with Your Tools
 
 Perfect for:
+
 - Claude Code
 - Cursor AI
 - GitHub Copilot
@@ -114,6 +120,7 @@ Perfect for:
 ## 🗺️ Roadmap
 
 ### v0.5.0 (Current - Beta) ✅
+
 - Core API endpoints
 - Shared demo API key
 - Production deployment
@@ -121,6 +128,7 @@ Perfect for:
 - Complete documentation
 
 ### v1.0 (Planned - Q1 2026) 🎯
+
 - **Self-service API key generation** (web portal)
 - **Personal rate limits** (100 req/min per key)
 - **Usage analytics dashboard**
@@ -129,6 +137,7 @@ Perfect for:
 - Advanced search features
 
 ### v1.1 (Future) 🔮
+
 - WebSocket support
 - Pattern contributions via API
 - Pattern voting/ratings
@@ -147,6 +156,7 @@ Perfect for:
 **For Existing Users:**
 
 1. Replace your API key:
+
 ```bash
 # Old (v0.1.0)
 x-api-key: your-old-key
@@ -156,6 +166,7 @@ x-api-key: demo-beta-2025
 ```
 
 2. Update base URL (if different):
+
 ```bash
 https://mcp-server-three-omega.vercel.app
 ```
@@ -170,6 +181,7 @@ Just start using - no migration needed!
 ### Beta Security Model
 
 **Current (v0.5.0):**
+
 - Public shared demo key
 - Rate-limited (10 req/min)
 - HTTPS enforced
@@ -177,6 +189,7 @@ Just start using - no migration needed!
 - Not for production use
 
 **Coming (v1.0):**
+
 - Personal API keys
 - Higher rate limits (100 req/min per key)
 - Key rotation and management
@@ -186,12 +199,14 @@ Just start using - no migration needed!
 ### Best Practices
 
 ✅ **DO:**
+
 - Use environment variables for keys
 - Implement request throttling
 - Handle rate limit errors (429)
 - Test with demo key first
 
 ❌ **DON'T:**
+
 - Use demo key in production
 - Commit keys to version control
 - Embed keys in client-side code
@@ -200,12 +215,14 @@ Just start using - no migration needed!
 ## 📖 Documentation
 
 **Main Guides:**
+
 - [MCP Server Setup Guide](./MCP_SERVER_SETUP.md)
 - [Quick Start (2 minutes)](./services/mcp-server/QUICK_START.md)
 - [Testing Guide](./services/mcp-server/TESTING.md)
 - [Test Status](./services/mcp-server/TEST_STATUS.md)
 
 **Reference:**
+
 - [Changelog](./services/mcp-server/CHANGELOG.md)
 - [Roadmap](./ROADMAP.md)
 - [Security Policy](./SECURITY.md)
@@ -214,6 +231,7 @@ Just start using - no migration needed!
 ## 🙏 Acknowledgments
 
 Thanks to:
+
 - The Effect-TS team for the amazing framework
 - Early beta testers for valuable feedback
 - Contributors who helped shape this release
@@ -247,4 +265,3 @@ See [CHANGELOG.md](./services/mcp-server/CHANGELOG.md) for complete details.
 **Effect Patterns Hub v0.5.0** - Production API · Zero Installation · Instant Access
 
 Released with ❤️ by the Effect Patterns team
-

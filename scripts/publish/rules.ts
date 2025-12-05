@@ -4,7 +4,6 @@
  * Simplified rules generation that doesn't use effect-mdx
  */
 
-
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import matter from "gray-matter";

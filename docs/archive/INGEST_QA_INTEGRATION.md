@@ -23,6 +23,7 @@ The QA stage provides **automated quality checking** for patterns before they ar
 **Purpose:** Fast, automated checks for basic quality
 
 **Implementation:**
+
 ```typescript
 async function qaPattern(result: ValidationResult): Promise<void> {
   // Copy pattern to QA directory
@@ -32,14 +33,15 @@ async function qaPattern(result: ValidationResult): Promise<void> {
 
   // Lightweight placeholder scoring
   result.qaPassed = true;
-  result.qaScore = 0.85;  // Would be calculated
-  result.qaIssues = [];   // Would be populated
+  result.qaScore = 0.85; // Would be calculated
+  result.qaIssues = []; // Would be populated
 }
 ```
 
 **Speed:** ~5 seconds for 40 patterns
 
 **Output:**
+
 - Patterns copied to `content/new/qa/`
 - Basic QA score (0-100%)
 - Pass/fail status
@@ -53,6 +55,7 @@ async function qaPattern(result: ValidationResult): Promise<void> {
 **Purpose:** Deep, AI-powered analysis
 
 **Implementation:** Uses existing `scripts/qa/` infrastructure:
+
 - `qa-process.sh` - Runs AI validation on each pattern
 - `qa-report.ts` - Generates comprehensive QA reports
 - `qa-status.ts` - Shows current QA status
@@ -60,6 +63,7 @@ async function qaPattern(result: ValidationResult): Promise<void> {
 **Speed:** ~10-20 minutes for full AI analysis
 
 **Output:**
+
 - Detailed AI feedback per pattern
 - Quality scores and suggestions
 - Comprehensive JSON/Markdown reports
@@ -67,6 +71,7 @@ async function qaPattern(result: ValidationResult): Promise<void> {
 ## Workflow
 
 ### Standard Ingest (Fast)
+
 ```bash
 # Run ingest with lightweight QA
 bun run ingest
@@ -79,6 +84,7 @@ bun run ingest
 ```
 
 ### Deep QA Analysis (Thorough)
+
 ```bash
 # After ingest, run full QA on new patterns
 cd content/new/qa
@@ -106,12 +112,14 @@ content/new/
 ## QA Criteria
 
 ### Lightweight QA Checks (Ingest Pipeline)
+
 - ✅ Pattern has all required sections
 - ✅ Code examples are present
 - ✅ Frontmatter is complete
 - ✅ Basic structural integrity
 
 ### Full AI QA Checks (Separate Process)
+
 - 🤖 Content clarity and readability
 - 🤖 Example quality and correctness
 - 🤖 Documentation accuracy
@@ -123,11 +131,13 @@ content/new/
 ## Integration Points
 
 ### Ingest Pipeline → QA
+
 1. Stage 3 copies patterns to `content/new/qa/`
 2. Lightweight scoring applied
 3. Results stored in `ValidationResult.qaScore`
 
 ### QA Scripts → Reports
+
 1. `qa-process.sh` reads from `content/new/qa/`
 2. Runs AI validation via CLI
 3. Saves results to `content/new/qa/results/`
@@ -136,6 +146,7 @@ content/new/
 ## Example Output
 
 ### Ingest Pipeline QA Output
+
 ```
 🔍 Stage 3: QA Review
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -150,6 +161,7 @@ QA passed: 38/40 patterns
 ```
 
 ### Full QA Report Output
+
 ```bash
 $ bun run qa:report
 
@@ -169,11 +181,13 @@ Failures by Category:
 ## Benefits
 
 ### For Rapid Iteration
+
 - ✅ Fast ingest pipeline (~67 seconds total)
 - ✅ Basic quality gate in place
 - ✅ Patterns immediately available after migration
 
 ### For Quality Assurance
+
 - ✅ Deep AI analysis available when needed
 - ✅ Detailed feedback for improvements
 - ✅ Comprehensive quality metrics
@@ -182,17 +196,21 @@ Failures by Category:
 ## Future Enhancements
 
 ### Potential Improvements
+
 1. **Progressive Enhancement**
+
    - Start with lightweight QA in ingest
    - Automatically trigger full QA in background
    - Update scores asynchronously
 
 2. **Smart Scoring**
+
    - Use AI embeddings for similarity scoring
    - Check against known good patterns
    - Detect outliers automatically
 
 3. **Interactive QA**
+
    - Allow manual review in pipeline
    - Pause for confirmation on low scores
    - Skip QA for trusted authors
@@ -233,6 +251,7 @@ FULL_QA=true bun run ingest
 ## Conclusion
 
 The QA integration provides **flexible quality assurance**:
+
 - **Fast** lightweight checks during ingest
 - **Deep** AI-powered analysis when needed
 - **Leverages** existing QA infrastructure

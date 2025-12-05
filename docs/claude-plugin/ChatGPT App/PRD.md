@@ -21,7 +21,7 @@ Goals:
 Primary:
 
 - TypeScript engineers using Effect, who use ChatGPT to speed development.
-Secondary:
+  Secondary:
 - Platform/DevTools teams who want to expose org-curated patterns inside ChatGPT.
 
 ## 3. Key user problems

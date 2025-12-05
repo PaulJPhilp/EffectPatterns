@@ -35,10 +35,10 @@ const requestDuration = Metric.histogram(
 // Record a request duration
 const recordDuration = (duration: number) =>
   Metric.update(requestDuration, duration);
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Metric.counter` tracks counts of events.
 - `Metric.gauge` tracks a value that can go up or down (e.g., active users).
 - `Metric.histogram` tracks distributions (e.g., request durations).
@@ -81,10 +81,10 @@ const program = Effect.gen(function* () {
     Effect.withSpan("workflow.end")
   );
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.withSpan` creates a tracing span around an operation.
 - Spans can be named and annotated with attributes for richer context.
 - Tracing enables distributed observability and performance analysis.
@@ -115,10 +115,10 @@ const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
 const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Chunk` is immutable and optimized for performance.
 - It supports efficient batch operations, concatenation, and transformation.
 - Use `Chunk` in data pipelines, streaming, and concurrent scenarios.
 
 ---
-

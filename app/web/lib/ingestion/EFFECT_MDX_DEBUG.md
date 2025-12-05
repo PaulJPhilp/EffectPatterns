@@ -16,18 +16,18 @@ The `effect-mdx` package is not resolving its service dependencies correctly whe
 
 ```typescript
 // In pattern-parser.ts
-import { MdxService } from 'effect-mdx';
+import { MdxService } from "effect-mdx";
 
 export const parsePatternFile = (
   filePath: string
 ): Effect.Effect<
   NewPattern,
   Error,
-  FileSystem.FileSystem | Path.Path | MdxService  // ← Dependency
+  FileSystem.FileSystem | Path.Path | MdxService // ← Dependency
 > =>
   Effect.gen(function* () {
-    const mdx = yield* MdxService;  // ← Access service
-    const parsed = yield* mdx.parseMdxFile(content);  // ← Use method
+    const mdx = yield* MdxService; // ← Access service
+    const parsed = yield* mdx.parseMdxFile(content); // ← Use method
     // ...
   });
 ```
@@ -35,7 +35,7 @@ export const parsePatternFile = (
 ### Current Layer Provision (pipeline.ts)
 
 ```typescript
-import { MdxServiceLive, defaultMdxConfigLayer } from 'effect-mdx';
+import { MdxServiceLive, defaultMdxConfigLayer } from "effect-mdx";
 
 export const runDefaultIngestion = (): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
@@ -43,9 +43,9 @@ export const runDefaultIngestion = (): Effect.Effect<void, Error> =>
   }).pipe(
     Effect.provide(
       Layer.mergeAll(
-        NodeContext.layer,        // Provides FileSystem, Path, etc.
-        defaultMdxConfigLayer,    // Provides MdxConfigServiceSchema
-        MdxServiceLive            // Provides MdxService
+        NodeContext.layer, // Provides FileSystem, Path, etc.
+        defaultMdxConfigLayer, // Provides MdxConfigServiceSchema
+        MdxServiceLive // Provides MdxService
       )
     )
   );
@@ -64,6 +64,7 @@ Type 'FileSystem | Path | MdxServiceSchema' is not assignable to type 'FileSyste
 ```
 
 **Analysis:**
+
 - TypeScript is seeing `MdxServiceSchema` (the interface) instead of `MdxService` (the service tag)
 - This suggests the service isn't being properly constructed or exported
 - The `_tag` property is part of Effect's service identification system
@@ -77,6 +78,7 @@ Type 'Effect<void, Error, FileSystem | MdxConfigServiceSchema>' is not assignabl
 ```
 
 **Analysis:**
+
 - The layer composition isn't fully satisfying the dependencies
 - Either `FileSystem` or `MdxConfigServiceSchema` is still required but not provided
 - This suggests `MdxServiceLive` might not be consuming the config layer correctly
@@ -112,6 +114,7 @@ export declare const MdxServiceLive: Layer.Layer<
 ```
 
 **Key Observations:**
+
 1. `MdxService` is an Effect.Service.Class
 2. `MdxServiceLive` is a Layer that provides `MdxServiceSchema`
 3. `MdxServiceLive` **requires** `MdxConfigServiceSchema | FileSystem.FileSystem`
@@ -146,7 +149,8 @@ export declare const defaultMdxConfigLayer: Layer.Layer<
 ### Theory 1: Service Tag vs Interface Confusion
 
 The type system is confusing:
-- `MdxService` (the service class/tag) 
+
+- `MdxService` (the service class/tag)
 - `MdxServiceSchema` (the interface)
 
 When we write `yield* MdxService`, we should be accessing the service by its tag, but TypeScript might be resolving to the interface instead.
@@ -158,16 +162,16 @@ The order of `Layer.mergeAll` might matter:
 ```typescript
 // Current (might be wrong)
 Layer.mergeAll(
-  NodeContext.layer,        // Provides FileSystem
-  defaultMdxConfigLayer,    // Provides MdxConfigServiceSchema
-  MdxServiceLive            // Requires both above
-)
+  NodeContext.layer, // Provides FileSystem
+  defaultMdxConfigLayer, // Provides MdxConfigServiceSchema
+  MdxServiceLive // Requires both above
+);
 
 // Possible fix: Explicit composition
 Layer.provide(
   MdxServiceLive,
   Layer.mergeAll(NodeContext.layer, defaultMdxConfigLayer)
-)
+);
 ```
 
 ### Theory 3: Service Access Pattern
@@ -176,13 +180,13 @@ Maybe we need to access the service differently:
 
 ```typescript
 // Current
-const mdx = yield* MdxService;
+const mdx = yield * MdxService;
 
 // Alternative 1: Direct method access
-const parsed = yield* MdxService.parseMdxFile(content);
+const parsed = yield * MdxService.parseMdxFile(content);
 
 // Alternative 2: Use the schema interface
-const mdx = yield* Effect.service(MdxService);
+const mdx = yield * Effect.service(MdxService);
 ```
 
 ## Debugging Steps
@@ -210,28 +214,24 @@ Create a test file to isolate the issue:
 
 ```typescript
 // app/web/lib/ingestion/test-mdx.ts
-import { Effect, Layer } from 'effect';
-import { NodeContext } from '@effect/platform-node';
-import { FileSystem } from '@effect/platform';
-import { MdxService, MdxServiceLive, defaultMdxConfigLayer } from 'effect-mdx';
+import { Effect, Layer } from "effect";
+import { NodeContext } from "@effect/platform-node";
+import { FileSystem } from "@effect/platform";
+import { MdxService, MdxServiceLive, defaultMdxConfigLayer } from "effect-mdx";
 
 const testProgram = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const mdx = yield* MdxService;
-  
-  const content = yield* fs.readFileString('test.mdx');
+
+  const content = yield* fs.readFileString("test.mdx");
   const parsed = yield* mdx.parseMdxFile(content);
-  
+
   console.log(parsed);
 });
 
 const runTest = testProgram.pipe(
   Effect.provide(
-    Layer.mergeAll(
-      NodeContext.layer,
-      defaultMdxConfigLayer,
-      MdxServiceLive
-    )
+    Layer.mergeAll(NodeContext.layer, defaultMdxConfigLayer, MdxServiceLive)
   )
 );
 
@@ -269,19 +269,19 @@ Verify the service is exported correctly:
 ```typescript
 // Check what MdxService actually is
 console.log(MdxService);
-console.log(MdxService.key);  // Should be "MdxService"
+console.log(MdxService.key); // Should be "MdxService"
 console.log(typeof MdxService);
 ```
 
 ### Step 6: Try Using Context.Tag Directly
 
 ```typescript
-import { Context } from 'effect';
+import { Context } from "effect";
 
 // Maybe we need to create our own tag?
-const MdxServiceTag = Context.GenericTag<MdxServiceSchema>('MdxService');
+const MdxServiceTag = Context.GenericTag<MdxServiceSchema>("MdxService");
 
-const mdx = yield* MdxServiceTag;
+const mdx = yield * MdxServiceTag;
 ```
 
 ## Potential Solutions
@@ -313,14 +313,12 @@ export const parsePatternFile = (
 
 ```typescript
 // Instead of storing in variable
-const mdx = yield* MdxService;
-const parsed = yield* mdx.parseMdxFile(content);
+const mdx = yield * MdxService;
+const parsed = yield * mdx.parseMdxFile(content);
 
 // Access directly
-const parsed = yield* Effect.flatMap(
-  MdxService,
-  (mdx) => mdx.parseMdxFile(content)
-);
+const parsed =
+  yield * Effect.flatMap(MdxService, (mdx) => mdx.parseMdxFile(content));
 ```
 
 ### Solution 4: Provide Layer at Call Site
@@ -328,10 +326,14 @@ const parsed = yield* Effect.flatMap(
 Instead of providing at the top level, provide where needed:
 
 ```typescript
-const parsed = yield* mdx.parseMdxFile(content).pipe(
-  Effect.provide(MdxServiceLive),
-  Effect.provide(defaultMdxConfigLayer)
-);
+const parsed =
+  yield *
+  mdx
+    .parseMdxFile(content)
+    .pipe(
+      Effect.provide(MdxServiceLive),
+      Effect.provide(defaultMdxConfigLayer)
+    );
 ```
 
 ## Expected Behavior
@@ -339,7 +341,7 @@ const parsed = yield* mdx.parseMdxFile(content).pipe(
 Once fixed, this should work:
 
 ```typescript
-const parsed = yield* mdx.parseMdxFile(content);
+const parsed = yield * mdx.parseMdxFile(content);
 // parsed.attributes = { title: "...", id: "...", ... }
 // parsed.body = "# Pattern content..."
 ```
@@ -355,6 +357,7 @@ const parsed = yield* mdx.parseMdxFile(content);
 ## Success Criteria
 
 When fixed, you should be able to:
+
 1. ✅ No TypeScript errors in the three parser files
 2. ✅ Run `bun run ingest:patterns` without runtime errors
 3. ✅ Parse MDX frontmatter successfully
@@ -373,7 +376,7 @@ When fixed, you should be able to:
 Fall back to gray-matter:
 
 ```typescript
-import matter from 'gray-matter';
+import matter from "gray-matter";
 
 const parsed = matter(content);
 // parsed.data = frontmatter object

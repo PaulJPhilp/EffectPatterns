@@ -7,6 +7,7 @@ This document describes the recommended branch protection rules for the `main` b
 The following CI jobs must pass before merging to `main`:
 
 ### Core Checks
+
 - **lint** - Prettier and Biome code formatting/linting
 - **typecheck** - TypeScript type checking
 - **test-toolkit** - Unit tests for toolkit package
@@ -20,6 +21,7 @@ The following CI jobs must pass before merging to `main`:
 To configure branch protection rules via GitHub UI:
 
 1. **Navigate to Settings**:
+
    - Go to repository settings
    - Click "Branches" in left sidebar
    - Click "Add branch protection rule" or edit existing rule
@@ -29,11 +31,13 @@ To configure branch protection rules via GitHub UI:
 3. **Required settings**:
 
    ✅ **Require a pull request before merging**
+
    - Require approvals: 1 (recommended)
    - Dismiss stale pull request approvals when new commits are pushed
    - Require review from Code Owners (optional)
 
    ✅ **Require status checks to pass before merging**
+
    - Require branches to be up to date before merging
    - Status checks that are required:
      ```
@@ -53,9 +57,11 @@ To configure branch protection rules via GitHub UI:
 4. **Optional (recommended) settings**:
 
    ☑️ **Require linear history**
+
    - Prevents merge commits, requires rebase or squash
 
    ☑️ **Require deployments to succeed before merging**
+
    - If you have deployment previews
 
 ## Programmatic Configuration (GitHub API)
@@ -116,6 +122,7 @@ resource "github_branch_protection" "main" {
 ## Bypass Permissions
 
 Repository administrators can bypass these rules if absolutely necessary, but this should be:
+
 - Done sparingly and only in emergencies
 - Documented in commit messages
 - Followed up with a PR to fix any issues
@@ -158,16 +165,19 @@ bun --filter @effect-patterns/mcp-server run test:integration
 ## Troubleshooting
 
 **Status check not showing up?**
+
 - Ensure the job name in `.github/workflows/ci.yml` matches exactly
 - Check that the workflow has run at least once on the branch
 - Status check names are case-sensitive
 
 **CI failing on PRs but passing locally?**
+
 - Check for environment-specific issues
 - Ensure all dependencies are in `package.json` (not just global installs)
 - Review CI logs for detailed error messages
 
 **Need to merge urgently?**
+
 - Contact a repository administrator
 - Document the reason in the PR
 - Create a follow-up issue to fix properly

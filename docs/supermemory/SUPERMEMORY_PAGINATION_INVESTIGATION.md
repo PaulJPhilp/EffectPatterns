@@ -2,6 +2,7 @@
 # Supermemory Pagination Investigation
 
 ## Question
+
 Does Supermemory have native pagination support that we should use instead of our in-memory pagination?
 
 Reference: https://supermemory.ai/docs/ai-sdk/infinite-chat
@@ -9,6 +10,7 @@ Reference: https://supermemory.ai/docs/ai-sdk/infinite-chat
 ## Findings
 
 ### What is "Infinite Chat"?
+
 - **Purpose**: Automatic context management for chat applications
 - **Use Case**: Proxy layer for LLM API calls (OpenAI, Anthropic, etc.)
 - **NOT**: UI-level pagination or infinite scroll
@@ -21,11 +23,12 @@ In `lib/semantic-search/supermemory-store.ts`, we call:
 ```typescript
 const results = await this.client.search.memories({
   q: queryText,
-  limit: limit * 3,  // Only limit parameter used
+  limit: limit * 3, // Only limit parameter used
 });
 ```
 
 **Current Parameters Supported:**
+
 - ✅ `q` (query text)
 - ✅ `limit` (max results to return)
 - ❓ `offset`, `skip`, `page`, `cursor` (unknown)
@@ -33,6 +36,7 @@ const results = await this.client.search.memories({
 ### Our Implementation
 
 We built **application-layer pagination**:
+
 1. Fetch more results from Supermemory (limit × 5)
 2. Parse, filter by userId, outcome, tags
 3. Score results with hybrid algorithm
@@ -40,12 +44,14 @@ We built **application-layer pagination**:
 5. **Paginate locally in-memory**: `results.slice(offset, offset + limit)`
 
 **Pros:**
+
 - ✅ Full control over ranking
 - ✅ Complex filtering works perfectly
 - ✅ Works immediately (no API changes needed)
 - ✅ Deterministic results (no double-counting across pages)
 
 **Cons:**
+
 - ❌ Loads all results into memory before paginating
 - ❌ Not scalable for millions of results
 - ❌ May not use Supermemory's native capabilities
@@ -55,21 +61,25 @@ We built **application-layer pagination**:
 To determine if we should optimize, we need to know:
 
 1. **Does Supermemory support offset-based pagination?**
+
 ```typescript
-await client.search.memories({ q, limit, offset: 10 })
+await client.search.memories({ q, limit, offset: 10 });
 ```
 
 2. **Does it support skip parameter?**
+
 ```typescript
-await client.search.memories({ q, limit, skip: 10 })
+await client.search.memories({ q, limit, skip: 10 });
 ```
 
 3. **Does it support cursor-based pagination?**
+
 ```typescript
-await client.search.memories({ q, limit, cursor: "..." })
+await client.search.memories({ q, limit, cursor: "..." });
 ```
 
 4. **Does it return pagination metadata?**
+
 ```typescript
 {
   results: [...],
@@ -84,16 +94,19 @@ await client.search.memories({ q, limit, cursor: "..." })
 **File**: `test-supermemory-pagination.ts`
 
 **Usage**:
+
 ```bash
 npm run build && npx ts-node test-supermemory-pagination.ts
 ```
 
 Or with env var:
+
 ```bash
 SUPERMEMORY_API_KEY=xxx npx ts-node test-supermemory-pagination.ts
 ```
 
 **What it tests:**
+
 1. Basic search (baseline)
 2. Search with `offset` parameter
 3. Search with `skip` parameter
@@ -105,12 +118,12 @@ SUPERMEMORY_API_KEY=xxx npx ts-node test-supermemory-pagination.ts
 
 ## Decision Matrix
 
-| Scenario | Recommendation |
-|----------|---|
-| Supermemory supports offset | Enhance supermemory-store.ts to pass through pagination parameters |
-| Supermemory supports cursor | Implement cursor-based pagination (more efficient) |
-| Supermemory has no pagination | Keep current implementation (optimal given constraints) |
-| Supermemory has pagination but returns inconsistent results | Keep current implementation for consistency |
+| Scenario                                                    | Recommendation                                                     |
+| ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| Supermemory supports offset                                 | Enhance supermemory-store.ts to pass through pagination parameters |
+| Supermemory supports cursor                                 | Implement cursor-based pagination (more efficient)                 |
+| Supermemory has no pagination                               | Keep current implementation (optimal given constraints)            |
+| Supermemory has pagination but returns inconsistent results | Keep current implementation for consistency                        |
 
 ## Recommendation
 
@@ -122,6 +135,7 @@ SUPERMEMORY_API_KEY=xxx npx ts-node test-supermemory-pagination.ts
 4. **It's maintainable** - Clear logic flow
 
 **If Supermemory has native pagination:**
+
 - We can optimize in a future update
 - Switch to passing offset/cursor through
 - Remove in-memory slicing for large datasets
@@ -146,5 +160,4 @@ SUPERMEMORY_API_KEY=xxx npx ts-node test-supermemory-pagination.ts
 ## Timeline
 
 This investigation is **optional for Phase 2 to proceed**. We can run the test while working on frontend components. If optimization is possible, we can enhance Phase 1 incrementally.
-
 ````

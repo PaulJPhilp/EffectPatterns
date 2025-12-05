@@ -2,12 +2,12 @@
  * Effect schemas for Pattern repository
  */
 
-import * as S from '@effect/schema/Schema';
+import * as S from "@effect/schema/Schema";
 
 export const SkillLevelSchema = S.Union(
-  S.Literal('beginner'),
-  S.Literal('intermediate'),
-  S.Literal('advanced')
+  S.Literal("beginner"),
+  S.Literal("intermediate"),
+  S.Literal("advanced")
 );
 
 export const PatternFilterSchema = S.Struct({

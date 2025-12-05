@@ -13,24 +13,25 @@ import {
   createSuccess,
   prompt,
 } from "../helpers/index.js";
-import chalk from 'chalk';
-import Table from 'cli-table3';
+import chalk from "chalk";
+import Table from "cli-table3";
 
-const formatOption = Options.choice('format', ['human', 'json'] as const)
-  .pipe(Options.withDefault('human' as const));
+const formatOption = Options.choice("format", ["human", "json"] as const).pipe(
+  Options.withDefault("human" as const)
+);
 
-const getStatusColor = (status: string): (text: string) => string => {
+const getStatusColor = (status: string): ((text: string) => string) => {
   switch (status) {
-    case 'queued':
+    case "queued":
       return chalk.yellow;
-    case 'extracting':
-    case 'chunking':
-    case 'embedding':
-    case 'indexing':
+    case "extracting":
+    case "chunking":
+    case "embedding":
+    case "indexing":
       return chalk.blue;
-    case 'done':
+    case "done":
       return chalk.green;
-    case 'failed':
+    case "failed":
       return chalk.red;
     default:
       return chalk.gray;
@@ -39,19 +40,19 @@ const getStatusColor = (status: string): (text: string) => string => {
 
 const getStatusIcon = (status: string): string => {
   switch (status) {
-    case 'queued':
-      return '⏳';
-    case 'extracting':
-    case 'chunking':
-    case 'embedding':
-    case 'indexing':
-      return '⚙️ ';
-    case 'done':
-      return '✅';
-    case 'failed':
-      return '❌';
+    case "queued":
+      return "⏳";
+    case "extracting":
+    case "chunking":
+    case "embedding":
+    case "indexing":
+      return "⚙️ ";
+    case "done":
+      return "✅";
+    case "failed":
+      return "❌";
     default:
-      return '❓';
+      return "❓";
   }
 };
 
@@ -59,7 +60,7 @@ const getStatusIcon = (status: string): string => {
  * List all documents in processing queue
  */
 export const queueList: any = Command.make(
-  'list',
+  "list",
   {
     format: formatOption,
   },
@@ -70,20 +71,24 @@ export const queueList: any = Command.make(
 
       const queue = yield* supermemoryService.getProcessingQueue();
 
-      if (options.format === 'json') {
+      if (options.format === "json") {
         yield* Effect.sync(() => console.log(JSON.stringify(queue, null, 2)));
       } else {
         if (queue.documents.length === 0) {
           const message =
-            createHeader('Processing Queue', 'No documents being processed') +
-            '\n' +
-            createSuccess('Queue is empty! All documents have completed processing.');
+            createHeader("Processing Queue", "No documents being processed") +
+            "\n" +
+            createSuccess(
+              "Queue is empty! All documents have completed processing."
+            );
           yield* Effect.sync(() => console.log(message));
         } else {
           // Create table
           const table = new Table({
-            head: ['ID', 'Status', 'Created', 'Updated', 'Tags'].map((h) => chalk.cyan(h)),
-            style: { head: [], border: ['grey'] },
+            head: ["ID", "Status", "Created", "Updated", "Tags"].map((h) =>
+              chalk.cyan(h)
+            ),
+            style: { head: [], border: ["grey"] },
             wordWrap: true,
             colWidths: [25, 15, 12, 12, 20],
           });
@@ -95,31 +100,39 @@ export const queueList: any = Command.make(
             const statusIcon = getStatusIcon(doc.status);
 
             table.push([
-              chalk.gray(doc.id.substring(0, 22) + '...'),
+              chalk.gray(doc.id.substring(0, 22) + "..."),
               statusColor(`${statusIcon} ${doc.status}`),
-              createdDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-              updatedDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-              chalk.gray(doc.container_tags.join(', ') || '(none)'),
+              createdDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              }),
+              updatedDate.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              chalk.gray(doc.container_tags.join(", ") || "(none)"),
             ]);
           });
 
           const header = createHeader(
-            'Processing Queue',
-            `${queue.total} document${queue.total > 1 ? 's' : ''} in queue`,
+            "Processing Queue",
+            `${queue.total} document${queue.total > 1 ? "s" : ""} in queue`
           );
-          yield* Effect.sync(() => console.log(header + '\n' + table.toString()));
+          yield* Effect.sync(() =>
+            console.log(header + "\n" + table.toString())
+          );
         }
       }
-    }),
+    })
 );
 
 /**
  * Check status of a specific document
  */
 export const queueStatus: any = Command.make(
-  'status',
+  "status",
   {
-    id: Options.text('id'),
+    id: Options.text("id"),
     format: formatOption,
   },
   (options) =>
@@ -129,7 +142,7 @@ export const queueStatus: any = Command.make(
 
       const doc = yield* supermemoryService.getDocumentStatus(options.id);
 
-      if (options.format === 'json') {
+      if (options.format === "json") {
         yield* Effect.sync(() => console.log(JSON.stringify(doc, null, 2)));
       } else {
         const statusColor = getStatusColor(doc.status);
@@ -141,36 +154,39 @@ export const queueStatus: any = Command.make(
         const elapsedMs = updatedDate.getTime() - createdDate.getTime();
         const elapsedSec = Math.floor(elapsedMs / 1000);
         const elapsedMin = Math.floor(elapsedSec / 60);
-        let timeStr = '';
+        let timeStr = "";
         if (elapsedMin > 0) {
           timeStr = `${elapsedMin}m ${elapsedSec % 60}s`;
         } else {
           timeStr = `${elapsedSec}s`;
         }
 
-        const header = createHeader('Document Status', options.id.substring(0, 30));
+        const header = createHeader(
+          "Document Status",
+          options.id.substring(0, 30)
+        );
         const details = createInfoCard({
-          'Status': statusColor(`${statusIcon} ${doc.status}`),
-          'Created': createdDate.toLocaleString('en-US'),
-          'Updated': updatedDate.toLocaleString('en-US'),
-          'Elapsed Time': timeStr,
-          'Container Tags': doc.container_tags.join(', ') || '(none)',
-          'Metadata': JSON.stringify(doc.metadata || {}),
+          Status: statusColor(`${statusIcon} ${doc.status}`),
+          Created: createdDate.toLocaleString("en-US"),
+          Updated: updatedDate.toLocaleString("en-US"),
+          "Elapsed Time": timeStr,
+          "Container Tags": doc.container_tags.join(", ") || "(none)",
+          Metadata: JSON.stringify(doc.metadata || {}),
         });
 
-        yield* Effect.sync(() => console.log(header + '\n' + details));
+        yield* Effect.sync(() => console.log(header + "\n" + details));
       }
-    }),
+    })
 );
 
 /**
  * Delete a document from the queue (retry)
  */
 export const queueDelete: any = Command.make(
-  'delete',
+  "delete",
   {
-    id: Options.text('id'),
-    force: Options.boolean('force').pipe(Options.withDefault(false)),
+    id: Options.text("id"),
+    force: Options.boolean("force").pipe(Options.withDefault(false)),
   },
   (options) =>
     Effect.gen(function* () {
@@ -180,14 +196,18 @@ export const queueDelete: any = Command.make(
       // Confirm deletion unless force flag is set
       if (!options.force) {
         yield* Effect.sync(() => {
-          console.log('');
-          console.log(chalk.yellow('⚠️  Warning: This will delete the document from the queue.'));
-          console.log('');
+          console.log("");
+          console.log(
+            chalk.yellow(
+              "⚠️  Warning: This will delete the document from the queue."
+            )
+          );
+          console.log("");
         });
 
-        const confirm = yield* prompt('Continue? (yes/no)');
-        if (confirm.toLowerCase() !== 'yes' && confirm.toLowerCase() !== 'y') {
-          yield* displayError('Deletion cancelled');
+        const confirm = yield* prompt("Continue? (yes/no)");
+        if (confirm.toLowerCase() !== "yes" && confirm.toLowerCase() !== "y") {
+          yield* displayError("Deletion cancelled");
           return;
         }
       }
@@ -195,23 +215,23 @@ export const queueDelete: any = Command.make(
       yield* supermemoryService.deleteDocument(options.id);
 
       const message =
-        createHeader('Document Deleted', `ID: ${options.id}`) +
-        '\n' +
-        createSuccess('Document removed from queue');
+        createHeader("Document Deleted", `ID: ${options.id}`) +
+        "\n" +
+        createSuccess("Document removed from queue");
       yield* Effect.sync(() => console.log(message));
-    }),
+    })
 );
 
 /**
  * Clear all failed documents from the queue
  */
 export const queueClear: any = Command.make(
-  'clear',
+  "clear",
   {
     statusFilter: Options.optional(
-      Options.choice('status', ['failed', 'queued', 'all'] as const),
+      Options.choice("status", ["failed", "queued", "all"] as const)
     ),
-    force: Options.boolean('force').pipe(Options.withDefault(false)),
+    force: Options.boolean("force").pipe(Options.withDefault(false)),
   },
   (options) =>
     Effect.gen(function* () {
@@ -222,22 +242,25 @@ export const queueClear: any = Command.make(
 
       // Get filter value
       const filterValue = options.statusFilter
-        ? typeof options.statusFilter === 'string'
+        ? typeof options.statusFilter === "string"
           ? options.statusFilter
-          : 'failed'
-        : 'failed';
+          : "failed"
+        : "failed";
 
       // Filter documents
       let toDelete = queue.documents;
-      if (filterValue !== 'all') {
+      if (filterValue !== "all") {
         toDelete = queue.documents.filter((doc) => doc.status === filterValue);
       }
 
       if (toDelete.length === 0) {
         const message =
-          createHeader('Queue Clear', `No documents with status "${filterValue}"`) +
-          '\n' +
-          createSuccess('Nothing to delete');
+          createHeader(
+            "Queue Clear",
+            `No documents with status "${filterValue}"`
+          ) +
+          "\n" +
+          createSuccess("Nothing to delete");
         yield* Effect.sync(() => console.log(message));
         return;
       }
@@ -245,16 +268,18 @@ export const queueClear: any = Command.make(
       // Confirm deletion unless force flag is set
       if (!options.force) {
         yield* Effect.sync(() => {
-          console.log('');
+          console.log("");
           console.log(
-            chalk.yellow(`⚠️  Warning: This will delete ${toDelete.length} document(s) from the queue.`),
+            chalk.yellow(
+              `⚠️  Warning: This will delete ${toDelete.length} document(s) from the queue.`
+            )
           );
-          console.log('');
+          console.log("");
         });
 
-        const confirm = yield* prompt('Continue? (yes/no)');
-        if (confirm.toLowerCase() !== 'yes' && confirm.toLowerCase() !== 'y') {
-          yield* displayError('Clear cancelled');
+        const confirm = yield* prompt("Continue? (yes/no)");
+        if (confirm.toLowerCase() !== "yes" && confirm.toLowerCase() !== "y") {
+          yield* displayError("Clear cancelled");
           return;
         }
       }
@@ -264,8 +289,10 @@ export const queueClear: any = Command.make(
       let failed = 0;
 
       for (const doc of toDelete) {
-        const result = yield* Effect.either(supermemoryService.deleteDocument(doc.id));
-        if (result._tag === 'Right') {
+        const result = yield* Effect.either(
+          supermemoryService.deleteDocument(doc.id)
+        );
+        if (result._tag === "Right") {
           deleted++;
         } else {
           failed++;
@@ -274,28 +301,28 @@ export const queueClear: any = Command.make(
 
       const message =
         createHeader(
-          'Queue Cleared',
-          `Processed ${toDelete.length} document${toDelete.length > 1 ? 's' : ''}`,
+          "Queue Cleared",
+          `Processed ${toDelete.length} document${toDelete.length > 1 ? "s" : ""}`
         ) +
-        '\n' +
+        "\n" +
         createInfoCard({
-          'Deleted': chalk.green(deleted.toString()),
-          'Failed': failed > 0 ? chalk.red(failed.toString()) : chalk.green('0'),
-          'Total': toDelete.length.toString(),
+          Deleted: chalk.green(deleted.toString()),
+          Failed: failed > 0 ? chalk.red(failed.toString()) : chalk.green("0"),
+          Total: toDelete.length.toString(),
         });
 
       yield* Effect.sync(() => console.log(message));
-    }),
+    })
 );
 
 /**
  * Watch a document's processing status in real-time
  */
 export const queueWatch: any = Command.make(
-  'watch',
+  "watch",
   {
-    id: Options.text('id'),
-    maxWait: Options.integer('max-wait').pipe(Options.withDefault(300)),
+    id: Options.text("id"),
+    maxWait: Options.integer("max-wait").pipe(Options.withDefault(300)),
   },
   (options) =>
     Effect.gen(function* () {
@@ -303,46 +330,59 @@ export const queueWatch: any = Command.make(
       const supermemoryService = yield* SupermemoryServiceLive(config.apiKey);
 
       yield* Effect.sync(() => {
-        console.log('');
-        console.log(chalk.cyan('👀 Watching document processing...'));
+        console.log("");
+        console.log(chalk.cyan("👀 Watching document processing..."));
         console.log(chalk.gray(`ID: ${options.id}`));
         console.log(chalk.gray(`Max wait: ${options.maxWait} seconds`));
-        console.log('');
+        console.log("");
       });
 
       const doc = yield* supermemoryService.pollDocumentStatus(
         options.id,
-        options.maxWait * 1000,
+        options.maxWait * 1000
       );
 
       const statusColor = getStatusColor(doc.status);
       const statusIcon = getStatusIcon(doc.status);
       const finalMessage =
-        createHeader('Processing Complete', `Status: ${statusColor(doc.status)}`) +
-        '\n' +
+        createHeader(
+          "Processing Complete",
+          `Status: ${statusColor(doc.status)}`
+        ) +
+        "\n" +
         createInfoCard({
-          'Status': statusColor(`${statusIcon} ${doc.status}`),
-          'Document ID': doc.id,
-          'Completed At': new Date(doc.updated_at).toLocaleString('en-US'),
+          Status: statusColor(`${statusIcon} ${doc.status}`),
+          "Document ID": doc.id,
+          "Completed At": new Date(doc.updated_at).toLocaleString("en-US"),
         });
 
       yield* Effect.sync(() => console.log(finalMessage));
-    }),
+    })
 );
 
 /**
  * Queue command group
  */
 export const queueCommand: any = Command.make(
-  'queue',
+  "queue",
   {},
-  () => Effect.void,
+  () => Effect.void
 ).pipe(
   Command.withSubcommands([
-    queueList.pipe(Command.withDescription('List all documents in processing queue')),
-    queueStatus.pipe(Command.withDescription('Check status of a specific document')),
-    queueDelete.pipe(Command.withDescription('Delete a document from the queue')),
-    queueClear.pipe(Command.withDescription('Clear failed or stuck documents from queue')),
-    queueWatch.pipe(Command.withDescription('Watch a document process in real-time')),
-  ]),
+    queueList.pipe(
+      Command.withDescription("List all documents in processing queue")
+    ),
+    queueStatus.pipe(
+      Command.withDescription("Check status of a specific document")
+    ),
+    queueDelete.pipe(
+      Command.withDescription("Delete a document from the queue")
+    ),
+    queueClear.pipe(
+      Command.withDescription("Clear failed or stuck documents from queue")
+    ),
+    queueWatch.pipe(
+      Command.withDescription("Watch a document process in real-time")
+    ),
+  ])
 );

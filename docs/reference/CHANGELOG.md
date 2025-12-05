@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Made code examples more declarative using `pipe` composition
   - Updated all text references from `Effect.filter` to `Effect.filterOrFail`
   - Fixed guideline text to show correct API signature: `Effect.filterOrFail(predicate, onFailure)`
-  - Updated 8 files: rules files (cursor/windsurf .mdc, rules.md, rules.json, by-use-case/*.md) and content files (published/archived .mdx)
+  - Updated 8 files: rules files (cursor/windsurf .mdc, rules.md, rules.json, by-use-case/\*.md) and content files (published/archived .mdx)
 
 ## [0.3.0] - 2025-09-30
 

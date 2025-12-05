@@ -9,7 +9,7 @@ Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for mo
 This example creates a counter to track how many times a user is created and a histogram to track the duration of the database operation.
 
 ```typescript
-import { Effect, Metric, Duration } from "effect";  // We don't need MetricBoundaries anymore
+import { Effect, Metric, Duration } from "effect"; // We don't need MetricBoundaries anymore
 
 // 1. Define your metrics
 const userRegisteredCounter = Metric.counter("users_registered_total", {
@@ -23,7 +23,7 @@ const dbDurationTimer = Metric.timer(
 
 // 2. Simulated database call
 const saveUserToDb = Effect.succeed("user saved").pipe(
-  Effect.delay(Duration.millis(Math.random() * 100)),
+  Effect.delay(Duration.millis(Math.random() * 100))
 );
 
 // 3. Instrument the business logic
@@ -86,10 +86,10 @@ const requestDuration = Metric.histogram(
 // Record a request duration
 const recordDuration = (duration: number) =>
   Metric.update(requestDuration, duration);
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Metric.counter` tracks counts of events.
 - `Metric.gauge` tracks a value that can go up or down (e.g., active users).
 - `Metric.histogram` tracks distributions (e.g., request durations).
@@ -131,10 +131,10 @@ const program = Effect.gen(function* () {
 
 // Run the program with OpenTelemetry integration
 // Effect.runPromise(program);
-
 ```
 
 **Explanation:**
+
 - `Effect.fn("operation-name")(function*)` wraps a function and automatically creates OpenTelemetry spans with the given name.
 - No manual span wrapping needed—the Effect runtime handles span creation and lifecycle automatically.
 - Use `Effect.annotateCurrentSpan()` to add metadata and context to the span.
@@ -155,7 +155,10 @@ import { Effect } from "effect";
 import { trace, context, SpanStatusCode } from "@opentelemetry/api";
 
 // Wrap an Effect.withSpan to export to OpenTelemetry
-function withOtelSpan<T>(name: string, effect: Effect.Effect<unknown, T, unknown>) {
+function withOtelSpan<T>(
+  name: string,
+  effect: Effect.Effect<unknown, T, unknown>
+) {
   return Effect.gen(function* () {
     const otelSpan = trace.getTracer("default").startSpan(name);
     try {
@@ -172,13 +175,17 @@ function withOtelSpan<T>(name: string, effect: Effect.Effect<unknown, T, unknown
 }
 
 // Usage
-const program = withOtelSpan("fetchUser", Effect.sync(() => {
-  // ...fetch user logic
-  return { id: 1, name: "Alice" };
-}));
+const program = withOtelSpan(
+  "fetchUser",
+  Effect.sync(() => {
+    // ...fetch user logic
+    return { id: 1, name: "Alice" };
+  })
+);
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - Start an OpenTelemetry span when entering an Effectful operation.
 - Set status and attributes as needed.
 - End the span when the operation completes or fails.
@@ -216,7 +223,8 @@ const workflow = Effect.gen(function* () {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.log` logs a message at the default level.
 - `Effect.logInfo` and `Effect.logError` log at specific levels.
 - Logging is context-aware and can be used anywhere in your Effect workflows.
@@ -243,10 +251,10 @@ function authenticate(user: string, password: Redacted.Redacted<string>) {
 // Logging or stringifying a Redacted value
 console.log(`Password: ${secret}`); // Output: Password: <redacted>
 console.log(String(secret)); // Output: <redacted>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Redacted.make(value)` wraps a sensitive value.
 - When logged or stringified, the value is replaced with `<redacted>`.
 - Prevents accidental exposure of secrets in logs or error messages.
@@ -288,10 +296,10 @@ const program = Effect.gen(function* () {
     Effect.withSpan("workflow.end")
   );
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.withSpan` creates a tracing span around an operation.
 - Spans can be named and annotated with attributes for richer context.
 - Tracing enables distributed observability and performance analysis.
@@ -377,7 +385,6 @@ const program = Effect.gen(function* () {
 // When run with a tracing SDK, this will produce traces with root spans
 // "createUserOperation" and child spans: "validateInput" and "saveToDatabase".
 Effect.runPromise(program);
-
 ```
 
 ---
@@ -408,10 +415,10 @@ const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
 const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Chunk` is immutable and optimized for performance.
 - It supports efficient batch operations, concatenation, and transformation.
 - Use `Chunk` in data pipelines, streaming, and concurrent scenarios.
 
 ---
-

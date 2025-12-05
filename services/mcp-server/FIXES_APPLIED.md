@@ -12,6 +12,7 @@
 **Root Cause:** The workspace was configured for Bun but had remnants of pnpm symlinks.
 
 **Fix:**
+
 ```bash
 cd services/mcp-server
 rm -rf node_modules
@@ -31,18 +32,19 @@ bun install
 **Fix:**
 
 **vitest.config.ts:**
+
 ```typescript
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
+    environment: "node",
     // Only run unit tests in src/ directory
-    include: ['src/**/*.test.ts'],
+    include: ["src/**/*.test.ts"],
     exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/.next/**',
-      '**/tests/**',  // Exclude integration tests
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.next/**",
+      "**/tests/**", // Exclude integration tests
     ],
     testTimeout: 10_000,
   },
@@ -50,6 +52,7 @@ export default defineConfig({
 ```
 
 **package.json:**
+
 ```json
 {
   "scripts": {
@@ -77,6 +80,7 @@ export default defineConfig({
 ## Test Results
 
 ### Before Fixes
+
 ```
 ❌ 16 passing
 ❌ 5 failing (authentication/integration tests)
@@ -84,6 +88,7 @@ export default defineConfig({
 ```
 
 ### After Fixes
+
 ```
 ✅ 33 passing (all unit tests)
 ✅ 10 skipped (optional AI SDK tests)
@@ -102,6 +107,7 @@ export default defineConfig({
 ## Testing Strategy
 
 ### Unit Tests (Default)
+
 ```bash
 bun test
 # or
@@ -113,6 +119,7 @@ bun run test:unit
 - Time: ~600ms
 
 ### Integration Tests (Manual)
+
 ```bash
 # Terminal 1
 bun run dev
@@ -129,6 +136,7 @@ bun run test:integration
 ## Verification
 
 ### Unit Tests
+
 ```bash
 $ bun test
 
@@ -141,6 +149,7 @@ Test Files  2 passed (2)
 ```
 
 ### Production Deployment
+
 ```bash
 $ curl https://mcp-server-three-omega.vercel.app/api/health
 
@@ -156,6 +165,7 @@ $ curl https://mcp-server-three-omega.vercel.app/api/health
 ## CI/CD Recommendations
 
 ### Recommended: Unit Tests Only
+
 ```yaml
 - name: Test
   run: bun test
@@ -164,6 +174,7 @@ $ curl https://mcp-server-three-omega.vercel.app/api/health
 Fast, reliable, no external dependencies.
 
 ### Optional: Full Integration Tests
+
 ```yaml
 - name: Build and Start
   run: |
@@ -184,11 +195,13 @@ Comprehensive but slower and more complex.
 ### When Adding New Tests
 
 **Unit Tests:**
+
 - Place in `src/` directory
 - Name: `*.test.ts`
 - Will run automatically with `bun test`
 
 **Integration Tests:**
+
 - Place in `tests/integration/` directory
 - Name: `*.test.ts`
 - Requires explicit `bun run test:integration`
@@ -196,6 +209,7 @@ Comprehensive but slower and more complex.
 ### Troubleshooting
 
 **"ENOENT reading node_modules/X"**
+
 ```bash
 cd services/mcp-server
 rm -rf node_modules
@@ -203,10 +217,12 @@ bun install
 ```
 
 **"Test timed out after 5000ms"**
+
 - Integration tests are running
 - Either start server (`bun run dev`) or check vitest.config.ts
 
 **"command not found: vitest"**
+
 - Use `bunx vitest` instead of `vitest`
 - Or install globally: `bun install -g vitest`
 
@@ -228,4 +244,3 @@ All testing issues have been resolved:
 ✅ CI/CD recommendations provided
 
 The MCP server is production-ready with comprehensive test coverage.
-

@@ -31,24 +31,24 @@ Integrating configuration as a `Layer` plugs it directly into Effect's dependenc
 
 ## Good Example
 
-````typescript
+```typescript
 import { Effect, Layer } from "effect";
 
-class ServerConfig extends Effect.Service<ServerConfig>()(
-  "ServerConfig",
-  {
-    sync: () => ({
-      port: process.env.PORT ? parseInt(process.env.PORT) : 8080
-    })
-  }
-) {}
+class ServerConfig extends Effect.Service<ServerConfig>()("ServerConfig", {
+  sync: () => ({
+    port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
+  }),
+}) {}
 
 const program = Effect.gen(function* () {
   const config = yield* ServerConfig;
   yield* Effect.log(`Starting application on port ${config.port}...`);
 });
 
-const programWithErrorHandling = Effect.provide(program, ServerConfig.Default).pipe(
+const programWithErrorHandling = Effect.provide(
+  program,
+  ServerConfig.Default
+).pipe(
   Effect.catchAll((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Program error: ${error}`);
@@ -58,7 +58,7 @@ const programWithErrorHandling = Effect.provide(program, ServerConfig.Default).p
 );
 
 Effect.runPromise(programWithErrorHandling);
-````
+```
 
 **Explanation:**  
 This approach makes configuration available contextually, supporting better testing and modularity.

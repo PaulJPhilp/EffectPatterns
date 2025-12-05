@@ -30,13 +30,12 @@ const program = addWithLogging(2, 3).pipe(
 
 // Run the program (commented to avoid runtime issues)
 // Effect.runPromise(program);
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fn` wraps a function, returning a new function that produces an Effect.
 - You can add logging, metrics, tracing, or any effectful logic before/after the call.
 - Keeps instrumentation separate from business logic and fully composable.
 
 ---
-

@@ -30,7 +30,7 @@ import { Option } from "effect";
 
 // Create an Option from a value
 const someValue = Option.some(42); // Option<number>
-const noValue = Option.none();     // Option<never>
+const noValue = Option.none(); // Option<never>
 
 // Safely convert a nullable value to Option
 const fromNullable = Option.fromNullable(Math.random() > 0.5 ? "hello" : null); // Option<string>
@@ -49,7 +49,8 @@ function findUser(id: number): Option<{ id: number; name: string }> {
 }
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Option.some(value)` represents a present value.
 - `Option.none()` represents absence.
 - `Option.fromNullable` safely lifts nullable values into Option.

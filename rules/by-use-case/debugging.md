@@ -32,10 +32,10 @@ const handled = program.pipe(
     })
   )
 );
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
 - Use `Cause.pretty` for human-readable error traces.
 - Enables advanced error handling and debugging.
@@ -72,10 +72,10 @@ const program = addWithLogging(2, 3).pipe(
 
 // Run the program (commented to avoid runtime issues)
 // Effect.runPromise(program);
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fn` wraps a function, returning a new function that produces an Effect.
 - You can add logging, metrics, tracing, or any effectful logic before/after the call.
 - Keeps instrumentation separate from business logic and fully composable.
@@ -112,7 +112,8 @@ const workflow = Effect.gen(function* () {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.log` logs a message at the default level.
 - `Effect.logInfo` and `Effect.logError` log at specific levels.
 - Logging is context-aware and can be used anywhere in your Effect workflows.
@@ -154,13 +155,12 @@ const program = Effect.gen(function* () {
     Effect.withSpan("workflow.end")
   );
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.withSpan` creates a tracing span around an operation.
 - Spans can be named and annotated with attributes for richer context.
 - Tracing enables distributed observability and performance analysis.
 
 ---
-

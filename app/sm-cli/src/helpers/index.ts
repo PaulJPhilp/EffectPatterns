@@ -13,7 +13,12 @@ export {
 } from "./ui.js";
 
 // Dialog Helpers
-export { prompt, promptChoice, promptConfirm, promptMultiline } from "./dialog.js";
+export {
+  prompt,
+  promptChoice,
+  promptConfirm,
+  promptMultiline,
+} from "./dialog.js";
 
 // TUI Formatter Helpers
 export {
@@ -30,4 +35,3 @@ export {
   createWarning,
   wrapColumn,
 } from "./tui-formatter.js";
-

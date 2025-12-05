@@ -25,7 +25,7 @@ author: PaulJPhilp
 
 ## Guideline
 
-Define a service using `class MyService extends Effect.Service(...)`.   Implement the service using the `scoped` property of the service class. This property should be a scoped `Effect` (typically from `Effect.acquireRelease`) that builds and releases the underlying resource.
+Define a service using `class MyService extends Effect.Service(...)`. Implement the service using the `scoped` property of the service class. This property should be a scoped `Effect` (typically from `Effect.acquireRelease`) that builds and releases the underlying resource.
 
 ## Rationale
 
@@ -38,32 +38,28 @@ import { Effect, Console } from "effect";
 
 // 1. Define the service interface
 interface DatabaseService {
-  readonly query: (sql: string) => Effect.Effect<string[], never, never>
+  readonly query: (sql: string) => Effect.Effect<string[], never, never>;
 }
 
 // 2. Define the service implementation with scoped resource management
-class Database extends Effect.Service<DatabaseService>()(
-  "Database",
-  {
-    // The scoped property manages the resource lifecycle
-    scoped: Effect.gen(function* () {
-      const id = Math.floor(Math.random() * 1000);
-      
-      // Acquire the connection
-      yield* Effect.log(`[Pool ${id}] Acquired`);
-      
-      // Setup cleanup to run when scope closes
-      yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
-      
-      // Return the service implementation
-      return {
-        query: (sql: string) => Effect.sync(() => 
-          [`Result for '${sql}' from pool ${id}`]
-        )
-      };
-    })
-  }
-) {}
+class Database extends Effect.Service<DatabaseService>()("Database", {
+  // The scoped property manages the resource lifecycle
+  scoped: Effect.gen(function* () {
+    const id = Math.floor(Math.random() * 1000);
+
+    // Acquire the connection
+    yield* Effect.log(`[Pool ${id}] Acquired`);
+
+    // Setup cleanup to run when scope closes
+    yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
+
+    // Return the service implementation
+    return {
+      query: (sql: string) =>
+        Effect.sync(() => [`Result for '${sql}' from pool ${id}`]),
+    };
+  }),
+}) {}
 
 // 3. Use the service in your program
 const program = Effect.gen(function* () {
@@ -74,9 +70,7 @@ const program = Effect.gen(function* () {
 
 // 4. Run the program with scoped resource management
 Effect.runPromise(
-  Effect.scoped(program).pipe(
-    Effect.provide(Database.Default)
-  )
+  Effect.scoped(program).pipe(Effect.provide(Database.Default))
 );
 
 /*

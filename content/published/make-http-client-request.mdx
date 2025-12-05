@@ -52,7 +52,7 @@ import { Console, Data, Duration, Effect, Fiber, Layer } from "effect";
 
 class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   id: string;
-}> { }
+}> {}
 
 export class Database extends Effect.Service<Database>()("Database", {
   sync: () => ({
@@ -61,7 +61,7 @@ export class Database extends Effect.Service<Database>()("Database", {
         ? Effect.succeed({ name: "Paul" })
         : Effect.fail(new UserNotFoundError({ id })),
   }),
-}) { }
+}) {}
 
 const userHandler = Effect.flatMap(HttpRouter.params, (p) =>
   Effect.flatMap(Database, (db) => db.getUser(p["userId"] ?? "")).pipe(
@@ -101,9 +101,11 @@ const program = Effect.gen(function* () {
 });
 
 NodeRuntime.runMain(
-  Effect.provide(program, Layer.provide(serverLayer, Layer.merge(Database.Default, server))) as Effect.Effect<void, unknown, never>
+  Effect.provide(
+    program,
+    Layer.provide(serverLayer, Layer.merge(Database.Default, server))
+  ) as Effect.Effect<void, unknown, never>
 );
-
 ```
 
 ## Anti-Pattern
@@ -111,35 +113,41 @@ NodeRuntime.runMain(
 The anti-pattern is to use `fetch` inside a route handler, wrapped in `Effect.tryPromise`. This approach requires manual error handling and loses the benefits of the Effect ecosystem.
 
 ```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
 const proxyRoute = Http.router.get(
-  '/proxy/posts/:id',
+  "/proxy/posts/:id",
   Effect.flatMap(Http.request.ServerRequest, (req) =>
     // Manually wrap fetch in an Effect
     Effect.tryPromise({
-      try: () => fetch(`https://jsonplaceholder.typicode.com/posts/${req.params.id}`),
-      catch: () => 'FetchError', // Untyped error
+      try: () =>
+        fetch(`https://jsonplaceholder.typicode.com/posts/${req.params.id}`),
+      catch: () => "FetchError", // Untyped error
     }).pipe(
       Effect.flatMap((res) =>
         // Manually check status and parse JSON, each with its own error case
         res.ok
-          ? Effect.tryPromise({ try: () => res.json(), catch: () => 'JsonError' })
-          : Effect.fail('BadStatusError')
+          ? Effect.tryPromise({
+              try: () => res.json(),
+              catch: () => "JsonError",
+            })
+          : Effect.fail("BadStatusError")
       ),
       Effect.map(Http.response.json),
       // A generic catch-all because we can't easily distinguish error types
-      Effect.catchAll(() => Http.response.text('An unknown error occurred', { status: 500 }))
+      Effect.catchAll(() =>
+        Http.response.text("An unknown error occurred", { status: 500 })
+      )
     )
   )
 );
 
 const app = Http.router.empty.pipe(Http.router.addRoute(proxyRoute));
 
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```

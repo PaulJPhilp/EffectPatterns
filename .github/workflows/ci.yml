@@ -214,7 +214,15 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test-toolkit, build-toolkit, build-mcp-server, test-integration]
+    needs:
+      [
+        lint,
+        typecheck,
+        test-toolkit,
+        build-toolkit,
+        build-mcp-server,
+        test-integration,
+      ]
     if: always()
     steps:
       - name: Check all jobs status

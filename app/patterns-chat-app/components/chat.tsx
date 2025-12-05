@@ -60,14 +60,19 @@ export function Chat({
 
   const { mutate } = useSWRConfig();
   const { setDataStream } = useDataStream();
-  const { preferences, loading: preferencesLoading, updatePreference } = useUserPreferences();
+  const {
+    preferences,
+    loading: preferencesLoading,
+    updatePreference,
+  } = useUserPreferences();
 
   const [input, setInput] = useState<string>("");
   const [usage, setUsage] = useState<AppUsage | undefined>(initialLastContext);
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
-  const [currentModelId, setCurrentModelId] = useState<ChatModelId>(initialChatModel);
+  const [currentModelId, setCurrentModelId] =
+    useState<ChatModelId>(initialChatModel);
   const currentModelIdRef = useRef<ChatModelId>(currentModelId);
-  
+
   // Manual override to force-allow sending messages after model change
   const [forceReady, setForceReady] = useState(false);
 
@@ -79,12 +84,12 @@ export function Chat({
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       // Check if this is an error we've already handled
       const reason = event.reason;
-      
+
       // Handle Error objects
       if (reason instanceof Error) {
         const message = reason.message;
         const errorName = reason.name;
-        
+
         // If it matches one of our handled error patterns, prevent the default behavior
         if (
           message?.includes("doesn't have any credits") ||
@@ -105,34 +110,40 @@ export function Chat({
           return;
         }
       }
-      
+
       // Handle AI_APICallError objects that might not be instanceof Error
-      if (reason?.name === "AI_APICallError" || reason?.constructor?.name === "AI_APICallError") {
+      if (
+        reason?.name === "AI_APICallError" ||
+        reason?.constructor?.name === "AI_APICallError"
+      ) {
         event.preventDefault();
         return;
       }
     };
 
     window.addEventListener("unhandledrejection", handleUnhandledRejection);
-    
+
     return () => {
-      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+      window.removeEventListener(
+        "unhandledrejection",
+        handleUnhandledRejection
+      );
     };
   }, []);
 
   // Store stop function ref so handleModelChange can access it
   const stopRef = useRef<(() => void) | null>(null);
-  
+
   // Remember model choice in user preferences
   const handleModelChange = async (modelId: ChatModelId) => {
     // Stop any ongoing generation when switching models
     if (stopRef.current) {
       stopRef.current();
     }
-    
+
     // Force the chat to be ready for new messages
     setForceReady(true);
-    
+
     // Update ref first (synchronously) to ensure it's used in next message
     currentModelIdRef.current = modelId;
     // Then update state (asynchronously) for re-render
@@ -193,7 +204,7 @@ export function Chat({
     onError: (error) => {
       // Clear the forceReady flag on error so user can try again
       setForceReady(false);
-      
+
       if (error instanceof ChatSDKError) {
         // Check if it's a credit card error
         if (
@@ -202,7 +213,7 @@ export function Chat({
           setShowCreditCardAlert(true);
           return;
         }
-        
+
         // Show toast for all other ChatSDKErrors (rate limit, auth, etc.)
         toast({
           type: "error",
@@ -210,48 +221,65 @@ export function Chat({
         });
         return;
       }
-      
+
       // Handle streaming errors (API errors that occur during generation)
       if (error instanceof Error) {
         let errorMessage = "An error occurred. Please try again.";
         let isKnownError = false;
-        
+
         // xAI credit/permission errors
-        if (error.message?.includes("doesn't have any credits") || 
-            error.message?.includes("credit balance is too low") ||
-            error.message?.includes("Forbidden")) {
-          errorMessage = "This model requires credits. Please check your API provider's billing and add credits.";
+        if (
+          error.message?.includes("doesn't have any credits") ||
+          error.message?.includes("credit balance is too low") ||
+          error.message?.includes("Forbidden")
+        ) {
+          errorMessage =
+            "This model requires credits. Please check your API provider's billing and add credits.";
           isKnownError = true;
         }
         // Anthropic credit errors
         else if (error.message?.includes("credit balance is too low")) {
-          errorMessage = "Insufficient API credits. Please add credits to your Anthropic account.";
+          errorMessage =
+            "Insufficient API credits. Please add credits to your Anthropic account.";
           isKnownError = true;
         }
         // Rate limiting
-        else if (error.message?.includes("rate limit") || error.message?.includes("429")) {
+        else if (
+          error.message?.includes("rate limit") ||
+          error.message?.includes("429")
+        ) {
           errorMessage = "Rate limit exceeded. Please try again in a moment.";
           isKnownError = true;
         }
         // Permission/auth errors
-        else if (error.message?.includes("permission") || error.message?.includes("403")) {
-          errorMessage = "API access denied. Please check your API key has the correct permissions.";
+        else if (
+          error.message?.includes("permission") ||
+          error.message?.includes("403")
+        ) {
+          errorMessage =
+            "API access denied. Please check your API key has the correct permissions.";
           isKnownError = true;
         }
         // API key errors
-        else if (error.message?.includes("API key") || 
-                 error.message?.includes("401") ||
-                 error.message?.includes("Unauthorized")) {
-          errorMessage = "Invalid API key. Please check your environment configuration.";
+        else if (
+          error.message?.includes("API key") ||
+          error.message?.includes("401") ||
+          error.message?.includes("Unauthorized")
+        ) {
+          errorMessage =
+            "Invalid API key. Please check your environment configuration.";
           isKnownError = true;
         }
         // Network errors
-        else if (error.message?.includes("fetch failed") || 
-                 error.message?.includes("network")) {
-          errorMessage = "Network error. Please check your connection and try again.";
+        else if (
+          error.message?.includes("fetch failed") ||
+          error.message?.includes("network")
+        ) {
+          errorMessage =
+            "Network error. Please check your connection and try again.";
           isKnownError = true;
         }
-        
+
         // Only log unexpected errors
         if (!isKnownError) {
           console.error("[Chat Error]", {
@@ -259,14 +287,14 @@ export function Chat({
             name: error.name,
           });
         }
-        
+
         toast({
           type: "error",
           description: errorMessage,
         });
         return;
       }
-      
+
       // Fallback for unknown errors
       console.error("[Chat Error]", error);
       toast({
@@ -280,10 +308,10 @@ export function Chat({
   useEffect(() => {
     stopRef.current = stop;
   }, [stop]);
-  
+
   // Compute effective status - override to "ready" if forceReady is true
   const effectiveStatus = forceReady ? "ready" : status;
-  
+
   // Wrap sendMessage to clear forceReady when a new message is sent
   const wrappedSendMessage: typeof sendMessage = (...args) => {
     setForceReady(false);
@@ -328,7 +356,9 @@ export function Chat({
       <div className="overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col bg-background items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground">Loading preferences...</p>
+          <p className="text-sm text-muted-foreground">
+            Loading preferences...
+          </p>
         </div>
       </div>
     );

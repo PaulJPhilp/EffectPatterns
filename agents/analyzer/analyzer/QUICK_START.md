@@ -8,11 +8,13 @@ Goal: Prepare the analyzer agent to process the Effect-TS Discord Q&A data in
 ## Current Status
 
 ### ✅ What Works
+
 - Basic LangGraph workflow with Effect-TS
 - OpenAI GPT-4 integration
 - Mock data test (53 messages)
 
 ### ❌ What Needs Work
+
 - No schema validation for messages
 - Generic prompts (not Effect-TS specific)
 - Fixed chunk size (200) doesn't match real data (50 messages)

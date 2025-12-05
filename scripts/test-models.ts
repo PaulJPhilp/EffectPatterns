@@ -33,7 +33,9 @@ async function testModel(modelId: string) {
     const duration = endTime - startTime;
 
     console.log(`✅ ${modelId} (${duration}ms)`);
-    console.log(`📝 Response: ${fullResponse.slice(0, 200)}${fullResponse.length > 200 ? '...' : ''}`);
+    console.log(
+      `📝 Response: ${fullResponse.slice(0, 200)}${fullResponse.length > 200 ? "..." : ""}`
+    );
 
     return {
       success: true,
@@ -41,13 +43,14 @@ async function testModel(modelId: string) {
       response: fullResponse,
       duration,
     };
-
   } catch (error) {
     const endTime = Date.now();
     const duration = endTime - startTime;
 
     console.log(`❌ ${modelId} (${duration}ms)`);
-    console.log(`🚨 Error: ${error instanceof Error ? error.message : String(error)}`);
+    console.log(
+      `🚨 Error: ${error instanceof Error ? error.message : String(error)}`
+    );
 
     return {
       success: false,
@@ -70,28 +73,28 @@ async function testAllModels() {
     results.push(result);
 
     // Small delay between requests to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 
   console.log("\n📊 SUMMARY");
   console.log("=".repeat(50));
 
-  const successful = results.filter(r => r.success);
-  const failed = results.filter(r => !r.success);
+  const successful = results.filter((r) => r.success);
+  const failed = results.filter((r) => !r.success);
 
   console.log(`✅ Successful: ${successful.length}`);
   console.log(`❌ Failed: ${failed.length}`);
 
   if (successful.length > 0) {
     console.log("\n🎯 Successful models:");
-    successful.forEach(result => {
+    successful.forEach((result) => {
       console.log(`  • ${result.modelId} (${result.duration}ms)`);
     });
   }
 
   if (failed.length > 0) {
     console.log("\n💥 Failed models:");
-    failed.forEach(result => {
+    failed.forEach((result) => {
       console.log(`  • ${result.modelId}: ${result.error}`);
     });
   }

@@ -41,6 +41,7 @@ pnpm build
 ```
 
 **Expected Output:**
+
 ```
 ✓ Compiled successfully
 ✓ TypeScript (no errors)
@@ -95,6 +96,7 @@ pnpm db:migrate
 ```
 
 **Expected Output:**
+
 ```
 ✅ Migrations completed in XXms
 ```
@@ -106,6 +108,7 @@ pnpm dev
 ```
 
 **Expected Output:**
+
 ```
   ▲ Next.js 16.0.0
   - Local:        http://localhost:3002
@@ -121,6 +124,7 @@ Open browser to the URL shown (usually `http://localhost:3002`)
 Navigate to the chat interface and create at least 3 conversations:
 
 **Conversation 1: Error Handling**
+
 ```
 You: "How do I handle errors in Effect-TS?"
 AI: [Response about error handling with examples]
@@ -129,6 +133,7 @@ AI: [Closing message]
 ```
 
 **Conversation 2: Async Patterns**
+
 ```
 You: "What are best practices for async operations?"
 AI: [Response about async patterns]
@@ -136,12 +141,14 @@ You: "Perfect, I understand now"
 ```
 
 **Conversation 3: Performance**
+
 ```
 You: "How can I optimize performance?"
 AI: [Response about optimization]
 ```
 
 **Important:** Have actual back-and-forth conversations so the system can:
+
 - Extract meaningful topics
 - Assign tags
 - Calculate satisfaction
@@ -154,6 +161,7 @@ URL: http://localhost:3002/memories
 ```
 
 **What you should see:**
+
 - Header: "💾 Memories"
 - Two tabs: "📚 Guide" | "🔍 Browse"
 - Guide tab active by default with educational content
@@ -163,6 +171,7 @@ URL: http://localhost:3002/memories
 Click "🔍 Browse" tab
 
 **You should see:**
+
 - Search input with placeholder: "Search memories..."
 - Outcome dropdown (All Outcomes)
 - Tag filter pills (effect-ts, error-handling, async, etc.)
@@ -181,6 +190,7 @@ Click "🔍 Browse" tab
 ```
 
 **Verify:**
+
 - ✅ Results display
 - ✅ Card shows title, timestamp, outcome, tags
 - ✅ Count shows: "Showing X of Y memories"
@@ -194,6 +204,7 @@ Click "🔍 Browse" tab
 ```
 
 **Verify:**
+
 - ✅ Tag badge changes style (darker)
 - ✅ Results update
 - ✅ Active filters banner shows the tag
@@ -208,6 +219,7 @@ Click "🔍 Browse" tab
 ```
 
 **Verify:**
+
 - ✅ Dropdown opens
 - ✅ Selection works
 - ✅ Results filter correctly
@@ -222,6 +234,7 @@ Click "🔍 Browse" tab
 ```
 
 **Verify:**
+
 - ✅ Loading indicator appears
 - ✅ Spinner animates
 - ✅ New results append (not replace)
@@ -237,6 +250,7 @@ Click "🔍 Browse" tab
 ```
 
 **Verify:**
+
 - ✅ Layout stacks vertically
 - ✅ Search input is full-width
 - ✅ Tags wrap appropriately
@@ -274,12 +288,14 @@ pnpm db:generate
 ### Problem: No search results
 
 **Possible causes:**
+
 1. No conversations created yet → Create test conversations
 2. Conversations too recent → Give system time to process
 3. Search terms don't match → Try broader searches
 4. Database issue → Check `pnpm db:push`
 
 **Solution:**
+
 ```bash
 # Verify database has data
 # Check in DB admin console or run:
@@ -310,6 +326,7 @@ pnpm typecheck
 ## Key Files to Know
 
 ### Components
+
 ```
 components/
 ├── memories-browser.tsx    ← Main browsing component
@@ -320,6 +337,7 @@ components/
 ```
 
 ### Pages
+
 ```
 app/(chat)/
 ├── memories/
@@ -330,6 +348,7 @@ app/(chat)/
 ```
 
 ### Backend
+
 ```
 lib/semantic-search/
 └── search.ts               ← Search logic & pagination
@@ -342,6 +361,7 @@ lib/semantic-search/
 **GET** `/api/search?q=query&limit=20&offset=0`
 
 **Parameters:**
+
 - `q` - Search query (required)
 - `limit` - Results per page (default: 20, max: 100)
 - `offset` - Pagination offset (default: 0)
@@ -349,6 +369,7 @@ lib/semantic-search/
 - `outcome` - Filter by outcome (optional)
 
 **Response:**
+
 ```json
 {
   "query": "error",
@@ -363,6 +384,7 @@ lib/semantic-search/
 ```
 
 **Examples:**
+
 ```bash
 # Basic search
 curl "http://localhost:3002/api/search?q=error"
@@ -378,15 +400,16 @@ curl "http://localhost:3002/api/search?q=error&tag=error-handling&outcome=solved
 
 These are expected metrics for good performance:
 
-| Operation | Target | Status |
-|-----------|--------|--------|
-| Page load | <2s | ✅ |
-| First search | <500ms | ✅ |
-| Pagination | <300ms | ✅ |
-| Tab switch | <50ms | ✅ |
-| Infinite scroll | Smooth 60fps | ✅ |
+| Operation       | Target       | Status |
+| --------------- | ------------ | ------ |
+| Page load       | <2s          | ✅     |
+| First search    | <500ms       | ✅     |
+| Pagination      | <300ms       | ✅     |
+| Tab switch      | <50ms        | ✅     |
+| Infinite scroll | Smooth 60fps | ✅     |
 
 **Check in DevTools:**
+
 1. Open Network tab
 2. Perform search
 3. Check request duration
@@ -395,13 +418,15 @@ These are expected metrics for good performance:
 ## Browser Console Tips
 
 **Check if component mounted:**
+
 ```javascript
 // In DevTools console
-console.log("Checking React DevTools...")
+console.log("Checking React DevTools...");
 // Should show React component tree
 ```
 
 **Verify API responses:**
+
 ```javascript
 // In DevTools Network tab
 // Click on /api/search request
@@ -410,9 +435,10 @@ console.log("Checking React DevTools...")
 ```
 
 **Check localStorage (if used):**
+
 ```javascript
 // In DevTools console
-localStorage.getItem('memories-state')
+localStorage.getItem("memories-state");
 ```
 
 ## Debugging Checklist
@@ -433,25 +459,30 @@ localStorage.getItem('memories-state')
 ✅ **You'll know it's working when:**
 
 1. **Navigation works**
+
    - Click tabs → they switch
    - Click back/forward → works
 
 2. **Search works**
+
    - Enter query → Results display
    - Results show memory cards
    - Count updates correctly
 
 3. **Filtering works**
+
    - Click tag → Results filter
    - Click outcome → Results filter
    - Multiple filters AND together
 
 4. **Infinite scroll works**
+
    - Scroll down → Loading indicator
    - More results load automatically
    - "Loading more..." appears then disappears
 
 5. **UI is responsive**
+
    - Desktop: Optimal layout
    - Mobile: Stacked layout
    - No broken elements
@@ -464,12 +495,14 @@ localStorage.getItem('memories-state')
 ## Next Steps After Testing
 
 ### If Everything Works ✅
+
 1. Create PR with changes
 2. Deploy to staging
 3. Full QA testing
 4. Deploy to production
 
 ### If Issues Found 🔧
+
 1. Check error messages
 2. Verify database data
 3. Check component props
@@ -479,12 +512,14 @@ localStorage.getItem('memories-state')
 ## Additional Resources
 
 **Documentation:**
+
 - `MEMORIES_BROWSER_COMPONENT.md` - Component API
 - `MEMORY_CARD_COMPONENT.md` - Card details
 - `MEMORY_SEARCH_COMPONENT.md` - Search details
 - `TESTING_MEMORIES_GUIDE.md` - Comprehensive testing
 
 **Related:**
+
 - `/memories` page route
 - `/api/search` endpoint
 - Supermemory integration

@@ -4,7 +4,8 @@ id: "combinator-filter"
 skillLevel: "beginner"
 useCase: ["Combinators", "Composition", "Conditional Logic"]
 summary: "Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either."
-tags: ["filter", "combinator", "predicate", "effect", "stream", "option", "either"]
+tags:
+  ["filter", "combinator", "predicate", "effect", "stream", "option", "either"]
 rule:
   description: "Use filter to declaratively express conditional logic, keeping only values that satisfy a predicate."
 related: ["combinator-map", "combinator-flatmap", "combinator-conditional"]
@@ -43,10 +44,8 @@ const option = Option.some(4).pipe(
 
 // Either: Use map and flatMap to filter
 const either = Either.right(4).pipe(
-  Either.flatMap((n) => 
-    n % 2 === 0
-      ? Either.right(n)
-      : Either.left("Number is not even")
+  Either.flatMap((n) =>
+    n % 2 === 0 ? Either.right(n) : Either.left("Number is not even")
   )
 ); // Either<string, number>
 

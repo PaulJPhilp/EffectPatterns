@@ -48,7 +48,7 @@ import { Effect, Schedule, Duration } from "effect";
 
 // The main task that takes a long time to complete
 const longRunningJob = Effect.log("Data processing complete!").pipe(
-  Effect.delay(Duration.seconds(10)),
+  Effect.delay(Duration.seconds(10))
 );
 
 // The polling task that checks the status

@@ -19,6 +19,7 @@ vercel link
 ```
 
 When prompted:
+
 - **Set up and deploy?** → Yes
 - **Which scope?** → Select your account
 - **Link to existing project?** → No (first time)
@@ -54,6 +55,7 @@ vercel
 ```
 
 This will:
+
 1. Build the toolkit package
 2. Build the Next.js server
 3. Deploy to Vercel
@@ -92,22 +94,26 @@ Your deployment is successful when:
 ### Build Fails
 
 Check the build logs:
+
 ```bash
 vercel logs --follow
 ```
 
 Common issues:
+
 - **Toolkit not found**: The build command should handle this automatically
 - **TypeScript errors**: Run `bun run typecheck` locally first
 
 ### Environment Variables Not Working
 
 List current variables:
+
 ```bash
 vercel env ls
 ```
 
 Pull them locally to verify:
+
 ```bash
 vercel env pull .env.vercel
 cat .env.vercel
@@ -122,11 +128,13 @@ Wait 30 seconds for cold start, then try again. Serverless functions can be slow
 After deployment:
 
 1. **View Logs**:
+
    ```bash
    vercel logs --follow
    ```
 
 2. **Check Vercel Dashboard**:
+
    - Go to https://vercel.com/dashboard
    - Select your project
    - View Analytics, Logs, and Deployments
@@ -140,12 +148,14 @@ After deployment:
 Once staging is verified:
 
 1. **Set up production environment variables**:
+
    ```bash
    vercel env add PATTERN_API_KEY production
    # Use a different, more secure key for production
    ```
 
 2. **Deploy to production**:
+
    ```bash
    vercel --prod
    ```

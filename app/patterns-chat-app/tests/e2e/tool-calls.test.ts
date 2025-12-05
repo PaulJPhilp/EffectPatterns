@@ -60,9 +60,9 @@ test.describe("Tool Calls", () => {
 
         // Weather responses typically mention temperature, conditions, etc.
         // At minimum, they should acknowledge the location
-        expect(
-          assistantMessage.content.toLowerCase()
-        ).toMatch(/san francisco|weather|temperature|forecast|cloud/i);
+        expect(assistantMessage.content.toLowerCase()).toMatch(
+          /san francisco|weather|temperature|forecast|cloud/i
+        );
       });
     });
   });
@@ -82,8 +82,7 @@ test.describe("Tool Calls", () => {
         }
 
         // Send pattern search query
-        const searchPrompt =
-          "Show me error handling patterns in Effect-TS";
+        const searchPrompt = "Show me error handling patterns in Effect-TS";
         await chatPage.multimodalInput.click();
         await chatPage.multimodalInput.fill(searchPrompt);
         await chatPage.sendButton.click();
@@ -97,9 +96,9 @@ test.describe("Tool Calls", () => {
         expect(assistantMessage.content.length).toBeGreaterThan(0);
 
         // Response should mention patterns or error handling
-        expect(
-          assistantMessage.content.toLowerCase()
-        ).toMatch(/pattern|error|handling|try|catch|effect/i);
+        expect(assistantMessage.content.toLowerCase()).toMatch(
+          /pattern|error|handling|try|catch|effect/i
+        );
       });
     });
   });
@@ -183,9 +182,9 @@ test.describe("Tool Calls", () => {
         expect(assistantMessage.content).toBeTruthy();
 
         // Should mention creation or artifact
-        expect(
-          assistantMessage.content.toLowerCase()
-        ).toMatch(/creat|wrote|file|code|typescript|api/i);
+        expect(assistantMessage.content.toLowerCase()).toMatch(
+          /creat|wrote|file|code|typescript|api/i
+        );
       });
     });
   });
@@ -207,9 +206,7 @@ test.describe("Tool Calls", () => {
         const modelSelector = page.locator('[data-testid="model-selector"]');
         if (modelSelector) {
           await modelSelector.click();
-          const modelOption = page.locator(
-            `button:has-text("${model.name}")`
-          );
+          const modelOption = page.locator(`button:has-text("${model.name}")`);
           await modelOption.click();
         }
 
@@ -226,15 +223,15 @@ test.describe("Tool Calls", () => {
         const assistantMessage = await chatPage.getRecentAssistantMessage();
         const hasWeatherInfo =
           assistantMessage.content &&
-          assistantMessage.content.toLowerCase().match(/new york|weather|temp/i);
+          assistantMessage.content
+            .toLowerCase()
+            .match(/new york|weather|temp/i);
 
         testResults[model.name] = !!hasWeatherInfo;
       }
 
       // All models should have attempted to answer
-      const successCount = Object.values(testResults).filter(
-        (v) => v
-      ).length;
+      const successCount = Object.values(testResults).filter((v) => v).length;
       expect(successCount).toBeGreaterThan(0);
     });
   });
@@ -361,7 +358,8 @@ Finally, based on what you've learned, can you create a TypeScript example that 
 
         // VERIFICATION 2: Check for real pattern information (not generic fallback)
         // Should mention specific patterns or Effect-TS concepts
-        const hasPatternInfo = responseContent.includes("pattern") ||
+        const hasPatternInfo =
+          responseContent.includes("pattern") ||
           responseContent.includes("retry") ||
           responseContent.includes("effect") ||
           responseContent.includes("backoff");

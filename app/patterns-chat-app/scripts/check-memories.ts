@@ -65,7 +65,6 @@ async function checkMemories() {
       });
       console.log(`Search "${term}": ${results.results?.length || 0} results`);
     }
-
   } catch (error) {
     console.error("❌ Error:", error);
     process.exit(1);

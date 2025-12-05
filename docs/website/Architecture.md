@@ -3,10 +3,12 @@ Here’s the Tech Stack / Architecture document, aligned with everything we agre
 TECH STACK / ARCHITECTURE
 
 Overview
+
 - Goal: Build the Effect Patterns Hub as a real-time, interactive learning platform that showcases Effect best practices while remaining pragmatic for MVP delivery.
 - Approach: Hybrid architecture using Convex for real-time state and actions, Postgres for durable pattern storage and future vector search, Next.js for the web app, Clerk for auth, Polar for billing, and Effect for core services and orchestration. For MVP, Convex functions call SDKs directly; Effect services are used in Next.js for business logic and are expanded over time.
 
 Primary Technologies
+
 - UI and App
   - Next.js 14 (App Router), TypeScript
   - Tailwind CSS + Shadcn/ui (in packages/components) with your blog’s design language
@@ -32,6 +34,7 @@ Primary Technologies
   - Request correlation IDs, user tags at service boundaries
 
 Monorepo Structure
+
 - apps/
   - web/ (Next.js site; primary product)
   - openai-app/ (future)
@@ -46,7 +49,8 @@ Monorepo Structure
 
 Runtime Architecture
 
-1) Frontend (Next.js)
+1. Frontend (Next.js)
+
 - Server Components for:
   - Module index pages
   - Pattern lists/search pages
@@ -62,13 +66,15 @@ Runtime Architecture
   - MDX renderer wraps Good Example blocks with a “Run in Playground” button
   - Button links to effect.website/play/?code={base64(code)}
 
-2) Auth (Clerk)
+2. Auth (Clerk)
+
 - ClerkProvider at app root
 - middleware.ts to protect /dashboard and API routes
 - Convex uses Clerk auth integration for server-side identity
 - Future extraction into packages/effect-clerk as Effect services/layers
 
-3) Real-time Backend (Convex)
+3. Real-time Backend (Convex)
+
 - Entities:
   - sessions: user session and current learning context
   - plans_rt: active plan state, completed pattern IDs
@@ -81,7 +87,8 @@ Runtime Architecture
   - MVP calls SDKs directly in Convex functions (Clerk, Polar)
   - Post-MVP: extract to effect-convex wrapper package (optional)
 
-4) Persistent Data (Postgres + Drizzle)
+4. Persistent Data (Postgres + Drizzle)
+
 - Purpose
   - Durable storage of patterns and metadata (including MDX mapping)
   - Durable user profile and learning plans (mirror of Convex state as needed)
@@ -108,7 +115,8 @@ Runtime Architecture
   - Build-time script parses MDX frontmatter → inserts/updates Postgres
   - Stores content mapping and metadata; MDX content remains in repo for rendering (fast SSR via file access) or optional caching in Postgres
 
-5) Payments (Polar)
+5. Payments (Polar)
+
 - Flow
   - Frontend → Convex action to create checkout or customer portal
   - Polar webhooks → Convex endpoint → update user tier in Convex + Postgres
@@ -117,7 +125,8 @@ Runtime Architecture
   - Middleware checks tier on protected routes
 - MVP: integrate Polar in app/web via Convex actions; extract to effect-polar later
 
-6) AI (Learning Plans)
+6. AI (Learning Plans)
+
 - Service
   - LearningPlanService (Effect) wraps Vercel AI SDK calls
   - Inputs: user goal, catalog of patterns (title, id, module, skill, prerequisites if defined)
@@ -129,7 +138,8 @@ Runtime Architecture
   - Store plan in Postgres (jsonb) and set plans_rt in Convex for real-time UI
   - Respect free tier limits (1 plan total or per month)
 
-7) Observability and Diagnostics
+7. Observability and Diagnostics
+
 - Effect.withSpan around:
   - Repo calls (Postgres)
   - Convex sync calls
@@ -142,7 +152,8 @@ Runtime Architecture
   - Route handlers map domain errors to HTTP
   - Convex functions return typed results (ok/error shape)
 
-8) Security and Compliance
+8. Security and Compliance
+
 - AuthN via Clerk; AuthZ via entitlements and ownership checks
 - Polar MoR handles taxes and compliance
 - Input validation via @effect/schema (for API inputs and plan generation parameters)
@@ -152,28 +163,33 @@ Runtime Architecture
 
 Data Flows
 
-1) Anonymous browse (public)
+1. Anonymous browse (public)
+
 - User visits homepage → Next SSR renders modules
 - User searches patterns → Next RSC queries Postgres (PatternRepository)
 - User opens a pattern → MDX rendered, Good Example shows playground button
 
-2) Sign up and generate learning plan
+2. Sign up and generate learning plan
+
 - User signs in via Clerk
 - Submits goal → Next API route calls LearningPlanService (Effect) → Vercel AI SDK
 - Service builds plan, writes to Postgres (learning_plans), updates Convex plans_rt
 - Dashboard subscribes to plans_rt for live view
 
-3) Mark pattern as completed
+3. Mark pattern as completed
+
 - Client calls Convex mutation to set pattern status completed
 - Convex updates plans_rt and sessions
 - Optional: background sync to Postgres pattern_progress (durability), via Convex action/cron
 
-4) Upgrade to Pro
+4. Upgrade to Pro
+
 - Client triggers Convex action to create Polar checkout
 - On webhook: Convex verifies signature, updates user tier in sessions and Postgres
 - Middleware and UI conditionally unlock features
 
 Deployment and Environments
+
 - Vercel for app/web hosting
 - Convex hosted backend (managed)
 - Postgres (Vercel Postgres or managed Postgres)
@@ -181,6 +197,7 @@ Deployment and Environments
 - Build pipeline (Turborepo) builds packages/components, app/web
 
 Roadmap for Post-MVP Architecture Evolution
+
 - Extract effect-convex: Effect Layer/Service for Convex queries/mutations/actions; unify error handling; typed responses with Schema
 - Extract effect-polar: type-safe Effect wrapper for Polar SDK and webhook utilities
 - Enable pgvector and embeddings pipeline; semantic search in SearchService with RAG for tutor/chat
@@ -191,6 +208,7 @@ Roadmap for Post-MVP Architecture Evolution
 - Multi-app distribution (apps/openai-app, apps/gemini-app) using shared components and services
 
 Design System Integration
+
 - Use packages/components for:
   - Typography scale and spacing matching your blog
   - CodeBlock component with Copy + Run in Playground
@@ -200,6 +218,7 @@ Design System Integration
 - Tailwind theme tokens align with paulphilp.com palette (neutral, spacious, content-first)
 
 Open Items to Finalize
+
 - Free tier limits: 1 plan total vs 1 plan/month
 - Domain and SEO checklist (title/meta/og tags, sitemap, canonical URLs)
 - Exact tagging of Good Example blocks in MDX (frontmatter key or code fence annotation)

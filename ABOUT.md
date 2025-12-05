@@ -16,11 +16,13 @@ Effect Patterns Hub is a comprehensive resource for developers learning and mast
 ### Pattern Library
 
 Browse 150+ patterns organized by:
+
 - **Skill Level**: Beginner → Intermediate → Advanced
 - **Use Case**: Error Handling, Concurrency, Data Modeling, HTTP APIs, etc.
 - **Tags**: Searchable, categorized concepts
 
 Each pattern includes:
+
 - Clear use case description
 - Working TypeScript example
 - Good practices vs. anti-patterns
@@ -54,24 +56,29 @@ import {
   searchPatterns,
   getPatternById,
   buildSnippet,
-} from "@effect-patterns/toolkit"
+} from "@effect-patterns/toolkit";
 
 // Search patterns
-const results = yield* searchPatterns({
-  query: "error handling",
-  skillLevel: "intermediate",
-})
+const results =
+  yield *
+  searchPatterns({
+    query: "error handling",
+    skillLevel: "intermediate",
+  });
 
 // Generate code snippet
-const snippet = yield* buildSnippet({
-  patternId: "retry-with-backoff",
-  customName: "retryRequest",
-})
+const snippet =
+  yield *
+  buildSnippet({
+    patternId: "retry-with-backoff",
+    customName: "retryRequest",
+  });
 ```
 
 ### AI Coding Rules
 
 Auto-generated coding rules for AI tools:
+
 - Claude Code (377KB, 11,308 lines)
 - Cursor
 - Windsurf
@@ -269,6 +276,7 @@ See [CONTRIBUTING.md](./docs/guides/CONTRIBUTING.md) for detailed guidelines.
 ### Pattern Requirements
 
 All patterns must include:
+
 - ✅ Valid YAML frontmatter
 - ✅ Unique `id` (kebab-case)
 - ✅ `skillLevel`: beginner, intermediate, or advanced
@@ -284,29 +292,29 @@ All patterns must include:
 
 ```typescript
 // ✅ Effect-first - use Effect primitives
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 const fetchUser = (id: string) =>
   Effect.gen(function* () {
-    const response = yield* Effect.tryPromise(() => fetch(`/users/${id}`))
-    const user = yield* Effect.tryPromise(() => response.json())
-    return user
-  })
+    const response = yield* Effect.tryPromise(() => fetch(`/users/${id}`));
+    const user = yield* Effect.tryPromise(() => response.json());
+    return user;
+  });
 
 // ❌ Don't use raw Promise
 async function fetchUser(id: string) {
-  const response = await fetch(`/users/${id}`)
-  return response.json()
+  const response = await fetch(`/users/${id}`);
+  return response.json();
 }
 ```
 
 ### Error Handling
 
 ```typescript
-import { Data } from "effect"
+import { Data } from "effect";
 
 class NetworkError extends Data.TaggedError("NetworkError")<{
-  cause: unknown
+  cause: unknown;
 }> {}
 
 // Use tagged errors for type-safe error handling
@@ -316,14 +324,14 @@ const program = Effect.gen(function* () {
   Effect.catchTag("NetworkError", (error) => {
     // Handle specific error type
   })
-)
+);
 ```
 
 ## Testing
 
 ```typescript
-import { Effect, Layer } from "effect"
-import { describe, it, expect } from "vitest"
+import { Effect, Layer } from "effect";
+import { describe, it, expect } from "vitest";
 
 describe("MyService", () => {
   const TestLayer = Layer.succeed(
@@ -331,16 +339,16 @@ describe("MyService", () => {
     MyService.of({
       // Mock implementation
     })
-  )
+  );
 
   it("should do something", async () => {
     const result = await Effect.runPromise(
       myFunction().pipe(Effect.provide(TestLayer))
-    )
+    );
 
-    expect(result).toBe("expected")
-  })
-})
+    expect(result).toBe("expected");
+  });
+});
 ```
 
 ## Documentation
@@ -357,6 +365,7 @@ describe("MyService", () => {
 ## Roadmap
 
 ### Current Focus (v0.4.0)
+
 - ✅ 150+ curated patterns
 - ✅ CLI tool with search and installation
 - ✅ Effect Patterns Toolkit
@@ -364,6 +373,7 @@ describe("MyService", () => {
 - ✅ Comprehensive test coverage (80%+)
 
 ### Next 3 Months
+
 - [ ] Package manager support (npm, pnpm)
 - [ ] Re-enable Effect-TS linter
 - [ ] Interactive rule selection in CLI

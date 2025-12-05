@@ -11,15 +11,15 @@
  * Tests TypeScript files in content/new/src/
  */
 
-import { exec } from 'node:child_process';
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import { promisify } from 'node:util';
+import { exec } from "node:child_process";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import { promisify } from "node:util";
 
 const execAsync = promisify(exec);
 
 // --- CONFIGURATION ---
-const NEW_SRC_DIR = path.join(process.cwd(), 'content/new/src');
+const NEW_SRC_DIR = path.join(process.cwd(), "content/new/src");
 // Exclude content/new/src/** from runtime tests (typecheck still runs)
 const EXCLUDE_NEW_SRC_RUNTIME = true;
 const CONCURRENCY = 10; // Run 10 tests in parallel
@@ -28,8 +28,8 @@ const SHOW_PROGRESS = true;
 
 // List of patterns that are expected to throw errors as part of their example
 const EXPECTED_ERRORS = new Map<string, string[]>([
-  ['write-tests-that-adapt-to-application-code', ['NotFoundError']],
-  ['control-repetition-with-schedule', ['Transient error']],
+  ["write-tests-that-adapt-to-application-code", ["NotFoundError"]],
+  ["control-repetition-with-schedule", ["Transient error"]],
 ]);
 
 // --- TYPES ---
@@ -43,14 +43,14 @@ interface TestResult {
 
 // --- COLORS ---
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m',
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  dim: "\x1b[2m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  cyan: "\x1b[36m",
 };
 
 function colorize(text: string, color: keyof typeof colors): string {
@@ -65,56 +65,56 @@ function updateProgress() {
   if (!SHOW_PROGRESS) return;
   const percent = Math.round((completedTests / totalTests) * 100);
   const bar =
-    '█'.repeat(Math.floor(percent / 2)) +
-    '░'.repeat(50 - Math.floor(percent / 2));
+    "█".repeat(Math.floor(percent / 2)) +
+    "░".repeat(50 - Math.floor(percent / 2));
   process.stdout.write(
-    `\r${bar} ${percent}% (${completedTests}/${totalTests})`,
+    `\r${bar} ${percent}% (${completedTests}/${totalTests})`
   );
 }
 
 // --- TYPE CHECKING ---
 async function runTypeCheck(): Promise<boolean> {
-  console.log(colorize('\n📝 Step 1: Type Checking', 'cyan'));
-  console.log(colorize('Running TypeScript compiler...\n', 'dim'));
+  console.log(colorize("\n📝 Step 1: Type Checking", "cyan"));
+  console.log(colorize("Running TypeScript compiler...\n", "dim"));
 
   const startTime = Date.now();
 
   try {
-    await execAsync('tsc --noEmit', {
+    await execAsync("tsc --noEmit", {
       cwd: process.cwd(),
       maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs
     });
 
     const duration = Date.now() - startTime;
-    console.log(colorize(`✅ Type check passed in ${duration}ms\n`, 'green'));
+    console.log(colorize(`✅ Type check passed in ${duration}ms\n`, "green"));
     return true;
   } catch (error: any) {
     const duration = Date.now() - startTime;
-    console.log(colorize(`❌ Type check failed in ${duration}ms\n`, 'red'));
+    console.log(colorize(`❌ Type check failed in ${duration}ms\n`, "red"));
 
     // Parse and display type errors
-    const output = error.stdout || error.stderr || '';
-    const lines = output.split('\n').filter((line: string) => line.trim());
+    const output = error.stdout || error.stderr || "";
+    const lines = output.split("\n").filter((line: string) => line.trim());
 
     // Count errors
     const errorCount = lines.filter((line: string) =>
-      line.includes('error TS'),
+      line.includes("error TS")
     ).length;
 
-    console.log(colorize(`Found ${errorCount} type errors:\n`, 'red'));
+    console.log(colorize(`Found ${errorCount} type errors:\n`, "red"));
 
     // Show first 20 errors
     const errorLines = lines.slice(0, 40);
     errorLines.forEach((line: string) => {
-      if (line.includes('error TS')) {
-        console.log(colorize(line, 'red'));
+      if (line.includes("error TS")) {
+        console.log(colorize(line, "red"));
       } else {
-        console.log(colorize(line, 'dim'));
+        console.log(colorize(line, "dim"));
       }
     });
 
     if (lines.length > 40) {
-      console.log(colorize(`\n... and ${lines.length - 40} more lines`, 'dim'));
+      console.log(colorize(`\n... and ${lines.length - 40} more lines`, "dim"));
     }
 
     return false;
@@ -124,7 +124,7 @@ async function runTypeCheck(): Promise<boolean> {
 // --- RUNTIME TESTING ---
 async function runTypeScriptFile(filePath: string): Promise<TestResult> {
   const startTime = Date.now();
-  const fileName = path.basename(filePath, '.ts');
+  const fileName = path.basename(filePath, ".ts");
   const expectedErrors = EXPECTED_ERRORS.get(fileName) || [];
 
   try {
@@ -143,7 +143,7 @@ async function runTypeScriptFile(filePath: string): Promise<TestResult> {
     const duration = Date.now() - startTime;
     const errorMessage = error.message || String(error);
     const isExpectedError = expectedErrors.some((expected) =>
-      errorMessage.includes(expected),
+      errorMessage.includes(expected)
     );
 
     if (isExpectedError) {
@@ -191,25 +191,25 @@ async function runTestsInParallel(files: string[]): Promise<TestResult[]> {
 
 // --- REPORTING ---
 function printResults(results: TestResult[]) {
-  console.log(colorize('\n\n📊 Test Results Summary', 'cyan'));
-  console.log('═'.repeat(60));
+  console.log(colorize("\n\n📊 Test Results Summary", "cyan"));
+  console.log("═".repeat(60));
 
   const successful = results.filter((r) => r.success);
   const failed = results.filter((r) => !r.success);
   const expectedErrors = results.filter((r) => r.expectedError);
 
   // Summary stats
-  console.log(`${colorize('Total:', 'bright')}     ${results.length} tests`);
-  console.log(`${colorize('Passed:', 'green')}    ${successful.length} tests`);
+  console.log(`${colorize("Total:", "bright")}     ${results.length} tests`);
+  console.log(`${colorize("Passed:", "green")}    ${successful.length} tests`);
   if (expectedErrors.length > 0) {
     console.log(
-      `${colorize('Expected:', 'yellow')}  ${
+      `${colorize("Expected:", "yellow")}  ${
         expectedErrors.length
-      } tests (expected to error)`,
+      } tests (expected to error)`
     );
   }
   if (failed.length > 0) {
-    console.log(`${colorize('Failed:', 'red')}    ${failed.length} tests`);
+    console.log(`${colorize("Failed:", "red")}    ${failed.length} tests`);
   }
 
   // Timing
@@ -218,7 +218,7 @@ function printResults(results: TestResult[]) {
   const maxDuration = Math.max(...results.map((r) => r.duration));
   const minDuration = Math.min(...results.map((r) => r.duration));
 
-  console.log(`\n${colorize('Timing:', 'bright')}`);
+  console.log(`\n${colorize("Timing:", "bright")}`);
   console.log(`  Total:   ${totalDuration}ms`);
   console.log(`  Average: ${avgDuration}ms`);
   console.log(`  Min:     ${minDuration}ms`);
@@ -226,17 +226,17 @@ function printResults(results: TestResult[]) {
 
   // Failed tests details
   if (failed.length > 0) {
-    console.log(`\n${colorize('Failed Tests:', 'red')}`);
-    console.log('─'.repeat(60));
+    console.log(`\n${colorize("Failed Tests:", "red")}`);
+    console.log("─".repeat(60));
 
     failed.forEach((result, index) => {
-      console.log(`\n${index + 1}. ${colorize(`${result.file}.ts`, 'bright')}`);
+      console.log(`\n${index + 1}. ${colorize(`${result.file}.ts`, "bright")}`);
       if (result.error) {
         // Extract relevant error info
-        const errorLines = result.error.split('\n').slice(0, 10);
+        const errorLines = result.error.split("\n").slice(0, 10);
         errorLines.forEach((line) => {
           if (line.trim()) {
-            console.log(colorize(`   ${line}`, 'dim'));
+            console.log(colorize(`   ${line}`, "dim"));
           }
         });
       }
@@ -249,28 +249,28 @@ function printResults(results: TestResult[]) {
     .slice(0, 5);
 
   if (slowTests.length > 0) {
-    console.log(`\n${colorize('Slowest Tests:', 'yellow')}`);
-    console.log('─'.repeat(60));
+    console.log(`\n${colorize("Slowest Tests:", "yellow")}`);
+    console.log("─".repeat(60));
     slowTests.forEach((result, index) => {
-      const status = result.success ? '✅' : '❌';
+      const status = result.success ? "✅" : "❌";
       console.log(
         `${index + 1}. ${status} ${result.file}.ts - ${colorize(
           `${result.duration}ms`,
-          'yellow',
-        )}`,
+          "yellow"
+        )}`
       );
     });
   }
 
-  console.log(`\n${'═'.repeat(60)}`);
+  console.log(`\n${"═".repeat(60)}`);
 }
 
 // --- MAIN ---
 async function main() {
   const overallStart = Date.now();
 
-  console.log(colorize('\n🧪 Enhanced TypeScript Testing', 'bright'));
-  console.log(colorize('Testing Effect patterns examples\n', 'dim'));
+  console.log(colorize("\n🧪 Enhanced TypeScript Testing", "bright"));
+  console.log(colorize("Testing Effect patterns examples\n", "dim"));
 
   // Step 1: Type checking
   if (ENABLE_TYPE_CHECK) {
@@ -278,26 +278,26 @@ async function main() {
     if (!typeCheckPassed) {
       console.log(
         colorize(
-          '\n⚠️  Type check failed, but continuing with runtime tests...\n',
-          'yellow',
-        ),
+          "\n⚠️  Type check failed, but continuing with runtime tests...\n",
+          "yellow"
+        )
       );
     }
   }
 
   // Step 2: Runtime tests
-  console.log(colorize('🏃 Step 2: Runtime Testing', 'cyan'));
-  console.log(colorize(`Using concurrency: ${CONCURRENCY}\n`, 'dim'));
+  console.log(colorize("🏃 Step 2: Runtime Testing", "cyan"));
+  console.log(colorize(`Using concurrency: ${CONCURRENCY}\n`, "dim"));
 
   // Get all TypeScript files
   const files = await fs.readdir(NEW_SRC_DIR);
   let tsFiles = files
-    .filter((file) => file.endsWith('.ts'))
+    .filter((file) => file.endsWith(".ts"))
     .map((file) => path.join(NEW_SRC_DIR, file));
 
   if (EXCLUDE_NEW_SRC_RUNTIME) {
     console.log(
-      colorize('Skipping runtime tests for content/new/src/**\n', 'yellow'),
+      colorize("Skipping runtime tests for content/new/src/**\n", "yellow")
     );
     tsFiles = [];
   }
@@ -305,7 +305,7 @@ async function main() {
   totalTests = tsFiles.length;
   completedTests = 0;
 
-  console.log(colorize(`Found ${tsFiles.length} test files\n`, 'bright'));
+  console.log(colorize(`Found ${tsFiles.length} test files\n`, "bright"));
 
   // Run tests in parallel
   const startTime = Date.now();
@@ -322,19 +322,19 @@ async function main() {
     console.log(
       colorize(
         `\n❌ Testing completed in ${overallDuration}ms with ${failed.length} failures\n`,
-        'red',
-      ),
+        "red"
+      )
     );
     process.exit(1);
   } else {
     console.log(
-      colorize(`\n✨ All tests passed in ${overallDuration}ms!\n`, 'green'),
+      colorize(`\n✨ All tests passed in ${overallDuration}ms!\n`, "green")
     );
   }
 }
 
 main().catch((error) => {
-  console.error(colorize('\n💥 Fatal error:', 'red'));
+  console.error(colorize("\n💥 Fatal error:", "red"));
   console.error(error);
   process.exit(1);
 });

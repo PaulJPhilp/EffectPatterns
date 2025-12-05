@@ -27,8 +27,9 @@ author: effect_website
 ## Guideline
 
 To enable communication between independent, concurrent fibers, use one of Effect's specialized data structures:
--   **``Queue<A>``**: For distributing work items. Each item put on the queue is taken and processed by only **one** consumer.
--   **``PubSub<A>``**: For broadcasting events. Each message published is delivered to **every** subscriber.
+
+- **`Queue<A>`**: For distributing work items. Each item put on the queue is taken and processed by only **one** consumer.
+- **`PubSub<A>`**: For broadcasting events. Each message published is delivered to **every** subscriber.
 
 ---
 
@@ -128,7 +129,6 @@ const program = Effect.gen(function* () {
 // - Backpressure prevents resource exhaustion
 // - Interruption allows for graceful shutdown
 Effect.runPromise(program);
-
 ```
 
 ## Good Example 2: `PubSub` for Event Broadcasting
@@ -149,9 +149,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`AUDIT: Received event: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Subscriber 2: The "Notifier" service
@@ -162,9 +162,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`NOTIFIER: Sending notification for: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Give subscribers time to start
@@ -193,11 +193,12 @@ const program = Effect.gen(function* () {
 
   // Consumer has to constantly poll the array to see if it's empty.
   const consumer = Ref.get(queueRef).pipe(
-    Effect.flatMap((q) =>
-      q.length > 0
-        ? Ref.set(queueRef, q.slice(1)).pipe(Effect.as(q[0]))
-        : Effect.sleep("1 second").pipe(Effect.flatMap(() => consumer)), // Inefficient polling
-    ),
+    Effect.flatMap(
+      (q) =>
+        q.length > 0
+          ? Ref.set(queueRef, q.slice(1)).pipe(Effect.as(q[0]))
+          : Effect.sleep("1 second").pipe(Effect.flatMap(() => consumer)) // Inefficient polling
+    )
   );
 });
 ```

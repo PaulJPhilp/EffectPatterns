@@ -30,11 +30,12 @@ To gain visibility into the performance and flow of your application, wrap logic
 
 ## Rationale
 
-While logs tell you *what* happened, traces tell you *why it was slow*. In a complex application, a single user request might trigger calls to multiple services (authentication, database, external APIs). Tracing allows you to visualize this entire chain of events as a single, hierarchical "trace."
+While logs tell you _what_ happened, traces tell you _why it was slow_. In a complex application, a single user request might trigger calls to multiple services (authentication, database, external APIs). Tracing allows you to visualize this entire chain of events as a single, hierarchical "trace."
 
 Each piece of work in that trace is a `span`. `Effect.withSpan` allows you to create your own custom spans. This is invaluable for answering questions like:
--   "For this API request, did we spend most of our time in the database or calling the external payment gateway?"
--   "Which part of our user creation logic is the bottleneck?"
+
+- "For this API request, did we spend most of our time in the database or calling the external payment gateway?"
+- "Which part of our user creation logic is the bottleneck?"
 
 Effect's tracing is built on OpenTelemetry, the industry standard, so it integrates seamlessly with tools like Jaeger, Zipkin, and Datadog.
 
@@ -115,13 +116,12 @@ const program = Effect.gen(function* () {
 // When run with a tracing SDK, this will produce traces with root spans
 // "createUserOperation" and child spans: "validateInput" and "saveToDatabase".
 Effect.runPromise(program);
-
 ```
 
 ---
 
 ## Anti-Pattern
 
-Not adding custom spans to your business logic. 
-Without them, your traces will only show high-level information from your framework (e.g., "HTTP POST /users"). 
-You will have no visibility into the performance of the individual steps *inside* your request handler, making it very difficult to pinpoint bottlenecks. Your application's logic remains a "black box" in your traces.
+Not adding custom spans to your business logic.
+Without them, your traces will only show high-level information from your framework (e.g., "HTTP POST /users").
+You will have no visibility into the performance of the individual steps _inside_ your request handler, making it very difficult to pinpoint bottlenecks. Your application's logic remains a "black box" in your traces.

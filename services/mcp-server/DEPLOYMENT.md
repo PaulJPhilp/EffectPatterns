@@ -8,19 +8,19 @@ The following environment variables must be configured in Vercel:
 
 ### Required Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `PATTERN_API_KEY` | API key for authenticating requests | `staging-key-abc123` |
-| `OTLP_ENDPOINT` | OpenTelemetry collector HTTP endpoint | `https://api.honeycomb.io/v1/traces` |
-| `OTLP_HEADERS` | Headers for OTLP exporter (JSON string) | `{"x-honeycomb-team":"your-key"}` |
-| `SERVICE_NAME` | Service name for traces | `effect-patterns-mcp-server-staging` |
+| Variable          | Description                             | Example                              |
+| ----------------- | --------------------------------------- | ------------------------------------ |
+| `PATTERN_API_KEY` | API key for authenticating requests     | `staging-key-abc123`                 |
+| `OTLP_ENDPOINT`   | OpenTelemetry collector HTTP endpoint   | `https://api.honeycomb.io/v1/traces` |
+| `OTLP_HEADERS`    | Headers for OTLP exporter (JSON string) | `{"x-honeycomb-team":"your-key"}`    |
+| `SERVICE_NAME`    | Service name for traces                 | `effect-patterns-mcp-server-staging` |
 
 ### Optional Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NODE_ENV` | Node environment | `production` |
-| `NEXT_TELEMETRY_DISABLED` | Disable Next.js telemetry | `1` |
+| Variable                  | Description               | Default      |
+| ------------------------- | ------------------------- | ------------ |
+| `NODE_ENV`                | Node environment          | `production` |
+| `NEXT_TELEMETRY_DISABLED` | Disable Next.js telemetry | `1`          |
 
 ## Vercel Setup
 
@@ -46,6 +46,7 @@ vercel link
 ```
 
 Follow the prompts to:
+
 - Select your Vercel team
 - Link to existing project or create new one
 - Set the project name: `effect-patterns-mcp-server`
@@ -102,6 +103,7 @@ SERVICE_NAME=effect-patterns-mcp-server-staging
 ```
 
 Then pull to Vercel:
+
 ```bash
 vercel env pull .env.staging
 ```
@@ -166,6 +168,7 @@ vercel logs [deployment-url]
 ### View Traces
 
 Traces are sent to your OTLP endpoint. View them in:
+
 - Honeycomb: https://ui.honeycomb.io
 - Jaeger: http://localhost:16686 (local)
 - Your configured observability platform
@@ -173,6 +176,7 @@ Traces are sent to your OTLP endpoint. View them in:
 ### Metrics
 
 Check Vercel dashboard for:
+
 - Request count
 - Error rate
 - Response time
@@ -209,6 +213,7 @@ jobs:
 ```
 
 Required secrets:
+
 - `VERCEL_TOKEN`: Get from https://vercel.com/account/tokens
 - `VERCEL_ORG_ID`: Found in project settings
 - `VERCEL_PROJECT_ID`: Found in project settings
@@ -243,12 +248,14 @@ vercel --prod
 
 **Issue**: 500 errors on API routes
 **Solution**:
+
 1. Check Vercel logs: `vercel logs --follow`
 2. Verify environment variables are set correctly
 3. Check for missing dependencies
 
 **Issue**: OTLP traces not appearing
 **Solution**:
+
 1. Verify `OTLP_ENDPOINT` is correct
 2. Check `OTLP_HEADERS` JSON is valid
 3. Ensure network allows outbound HTTPS to collector
@@ -257,6 +264,7 @@ vercel --prod
 
 **Issue**: Slow cold starts
 **Solution**:
+
 1. Increase function memory in `vercel.json`
 2. Use Edge Functions for faster cold starts
 3. Implement caching for pattern data

@@ -29,11 +29,21 @@ async function test() {
 
           console.log("\n🔍 Key Fields:");
           console.log(`   - metadata.type: ${(memory.metadata as any)?.type}`);
-          console.log(`   - metadata.projectId: ${(memory.metadata as any)?.projectId}`);
-          console.log(`   - metadata.userId: ${(memory.metadata as any)?.userId}`);
-          console.log(`   - metadata.source: ${(memory.metadata as any)?.source}`);
-          console.log(`   - metadata.patternId: ${(memory.metadata as any)?.patternId}`);
-          console.log(`   - metadata.title: ${(memory.metadata as any)?.title}`);
+          console.log(
+            `   - metadata.projectId: ${(memory.metadata as any)?.projectId}`
+          );
+          console.log(
+            `   - metadata.userId: ${(memory.metadata as any)?.userId}`
+          );
+          console.log(
+            `   - metadata.source: ${(memory.metadata as any)?.source}`
+          );
+          console.log(
+            `   - metadata.patternId: ${(memory.metadata as any)?.patternId}`
+          );
+          console.log(
+            `   - metadata.title: ${(memory.metadata as any)?.title}`
+          );
 
           patternFound = true;
           break;

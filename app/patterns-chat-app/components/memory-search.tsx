@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export type OutcomeFilter = "solved" | "unsolved" | "partial" | "revisited" | null;
+export type OutcomeFilter =
+  | "solved"
+  | "unsolved"
+  | "partial"
+  | "revisited"
+  | null;
 
 export interface MemorySearchFilters {
   query: string;
@@ -62,17 +67,16 @@ export function MemorySearch({
   }, []);
 
   // Update filters whenever any filter changes
-  const updateFilters = useCallback((
-    newQuery: string,
-    newTags: string[],
-    newOutcome: OutcomeFilter
-  ) => {
-    onFiltersChange({
-      query: newQuery,
-      tags: newTags,
-      outcome: newOutcome,
-    });
-  }, [onFiltersChange]);
+  const updateFilters = useCallback(
+    (newQuery: string, newTags: string[], newOutcome: OutcomeFilter) => {
+      onFiltersChange({
+        query: newQuery,
+        tags: newTags,
+        outcome: newOutcome,
+      });
+    },
+    [onFiltersChange]
+  );
 
   // Handle query submission
   const handleQuerySubmit = () => {
@@ -105,7 +109,8 @@ export function MemorySearch({
   };
 
   // Determine if any filters are active
-  const hasActiveFilters = query.length > 0 || selectedTags.length > 0 || selectedOutcome !== null;
+  const hasActiveFilters =
+    query.length > 0 || selectedTags.length > 0 || selectedOutcome !== null;
 
   // Get outcome label and styling
   const getOutcomeLabel = (outcome: OutcomeFilter) => {
@@ -115,16 +120,28 @@ export function MemorySearch({
       case "unsolved":
         return { label: "Unsolved", color: "text-red-600 dark:text-red-400" };
       case "partial":
-        return { label: "Partially Solved", color: "text-yellow-600 dark:text-yellow-400" };
+        return {
+          label: "Partially Solved",
+          color: "text-yellow-600 dark:text-yellow-400",
+        };
       case "revisited":
-        return { label: "Revisited", color: "text-blue-600 dark:text-blue-400" };
+        return {
+          label: "Revisited",
+          color: "text-blue-600 dark:text-blue-400",
+        };
       default:
         return { label: "All Outcomes", color: "text-muted-foreground" };
     }
   };
 
   const outcomeLabel = getOutcomeLabel(selectedOutcome);
-  const outcomeOptions: (OutcomeFilter)[] = [null, "solved", "unsolved", "partial", "revisited"];
+  const outcomeOptions: OutcomeFilter[] = [
+    null,
+    "solved",
+    "unsolved",
+    "partial",
+    "revisited",
+  ];
 
   return (
     <div className="space-y-4">
@@ -228,7 +245,9 @@ export function MemorySearch({
 
         {/* Tag Filter Pills */}
         <div className="space-y-2">
-          <div className="text-sm font-medium text-muted-foreground">Filter by Tags</div>
+          <div className="text-sm font-medium text-muted-foreground">
+            Filter by Tags
+          </div>
           <div className="flex flex-wrap gap-2">
             {availableTags.map((tag) => (
               <button
@@ -241,9 +260,14 @@ export function MemorySearch({
                   variant={selectedTags.includes(tag) ? "default" : "outline"}
                   className={cn(
                     "cursor-pointer transition-all",
-                    selectedTags.includes(tag) && "ring-1 ring-offset-1 ring-primary"
+                    selectedTags.includes(tag) &&
+                      "ring-1 ring-offset-1 ring-primary"
                   )}
-                  title={selectedTags.includes(tag) ? "Remove tag filter" : "Add tag filter"}
+                  title={
+                    selectedTags.includes(tag)
+                      ? "Remove tag filter"
+                      : "Add tag filter"
+                  }
                 >
                   {tag}
                 </Badge>
@@ -260,10 +284,14 @@ export function MemorySearch({
             {query && <span className="font-medium">Query: "{query}"</span>}
             {query && (selectedTags.length > 0 || selectedOutcome) && " • "}
             {selectedTags.length > 0 && (
-              <span className="font-medium">{selectedTags.length} tag{selectedTags.length > 1 ? "s" : ""}</span>
+              <span className="font-medium">
+                {selectedTags.length} tag{selectedTags.length > 1 ? "s" : ""}
+              </span>
             )}
             {selectedTags.length > 0 && selectedOutcome && " • "}
-            {selectedOutcome && <span className="font-medium">Outcome: {outcomeLabel.label}</span>}
+            {selectedOutcome && (
+              <span className="font-medium">Outcome: {outcomeLabel.label}</span>
+            )}
           </div>
           <Button
             variant="ghost"
@@ -279,9 +307,14 @@ export function MemorySearch({
 
       {/* Helpful Tips */}
       <div className="text-xs text-muted-foreground space-y-1 bg-muted/50 p-3 rounded-lg">
-        <p>💡 <strong>Tips:</strong></p>
+        <p>
+          💡 <strong>Tips:</strong>
+        </p>
         <ul className="list-disc list-inside space-y-0.5">
-          <li>Use specific keywords for better results (e.g., "async error handling")</li>
+          <li>
+            Use specific keywords for better results (e.g., "async error
+            handling")
+          </li>
           <li>Combine tags and outcomes to narrow results</li>
           <li>Select tags to filter by multiple categories</li>
           <li>Use "Solved" filter to find conversations with good outcomes</li>

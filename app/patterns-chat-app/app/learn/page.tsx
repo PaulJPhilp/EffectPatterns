@@ -2,10 +2,10 @@
 
 import { generateUUID } from "@/lib/utils";
 import {
-    AssistantRuntimeProvider,
-    ComposerPrimitive,
-    ThreadPrimitive,
-    useMessage,
+  AssistantRuntimeProvider,
+  ComposerPrimitive,
+  ThreadPrimitive,
+  useMessage,
 } from "@assistant-ui/react";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import ReactMarkdown from "react-markdown";
@@ -40,7 +40,9 @@ function Message() {
               : "bg-muted/50 max-w-full"
           }`}
         >
-          <div className={`prose prose-sm max-w-none ${isUser ? "prose-invert" : "dark:prose-invert"}`}>
+          <div
+            className={`prose prose-sm max-w-none ${isUser ? "prose-invert" : "dark:prose-invert"}`}
+          >
             {message.content.map((part, i) => {
               // Render text content
               if (part.type === "text") {
@@ -72,7 +74,7 @@ function Message() {
                   </ReactMarkdown>
                 );
               }
-              
+
               // Render tool calls - type is always "tool-call"
               if (part.type === "tool-call") {
                 const toolCall = part as any;
@@ -81,11 +83,11 @@ function Message() {
                   args: toolCall.args,
                   result: toolCall.result,
                 });
-                
+
                 // Check if this is the visualizePattern tool
                 if (toolCall.toolName === "visualizePattern") {
                   const result = toolCall.result;
-                  
+
                   if (result?.success && result?.visualization) {
                     const viz = result.visualization;
                     return (
@@ -106,7 +108,7 @@ function Message() {
                     );
                   }
                 }
-                
+
                 // Generic tool result display for debugging other tools
                 return (
                   <div
@@ -117,7 +119,7 @@ function Message() {
                   </div>
                 );
               }
-              
+
               return null;
             })}
           </div>
@@ -207,10 +209,10 @@ export default function LearnPage() {
                     </div>
                   </div>
                 </ThreadPrimitive.Empty>
-                
+
                 {/* Messages */}
                 <ThreadPrimitive.Messages components={{ Message }} />
-                
+
                 {/* Loading indicator - shows while AI is generating */}
                 <ThreadPrimitive.If running>
                   <LoadingIndicator />
@@ -239,4 +241,3 @@ export default function LearnPage() {
     </AssistantRuntimeProvider>
   );
 }
-

@@ -15,9 +15,7 @@ const effect = Effect.succeed(2).pipe(
 ); // Effect<number>
 
 // Option: Chain two optional computations
-const option = Option.some(2).pipe(
-  Option.flatMap((n) => Option.some(n * 10))
-); // Option<number>
+const option = Option.some(2).pipe(Option.flatMap((n) => Option.some(n * 10))); // Option<number>
 
 // Either: Chain two computations that may fail
 const either = Either.right(2).pipe(
@@ -72,10 +70,10 @@ const stream = Stream.fromIterable([1, 2, 3]).pipe(
 ); // Stream<number>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `andThen` is for sequencing when you don’t care about the first result.
 - `tap` is for running side effects (like logging) without changing the value.
 - `flatten` is for removing unnecessary nesting (e.g., `Option<Option<A>>` → `Option<A>`).
 
 ---
-

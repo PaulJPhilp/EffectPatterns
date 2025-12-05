@@ -1,11 +1,18 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MemorySearch, MemorySearchFilters, type OutcomeFilter } from "@/components/memory-search";
+import {
+  MemorySearch,
+  MemorySearchFilters,
+  type OutcomeFilter,
+} from "@/components/memory-search";
 import { MemoryCard, MemoryCardSkeleton } from "@/components/memory-card";
 import { AlertCircle, Inbox } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { PaginatedSearchResults, SemanticSearchResult } from "@/lib/semantic-search/search";
+import type {
+  PaginatedSearchResults,
+  SemanticSearchResult,
+} from "@/lib/semantic-search/search";
 
 export interface MemoriesBrowserProps {
   initialQuery?: string;
@@ -47,7 +54,9 @@ export function MemoriesBrowser({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMemories, setSelectedMemories] = useState<Set<string>>(new Set());
+  const [selectedMemories, setSelectedMemories] = useState<Set<string>>(
+    new Set()
+  );
 
   // Refs
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -107,7 +116,8 @@ export function MemoriesBrowser({
         setOffset(data.nextOffset ?? data.offset + data.limit);
         lastQueryRef.current = filters.query;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error occurred";
         setError(errorMessage);
         console.error("[MemoriesBrowser] Search error:", err);
       } finally {
@@ -160,7 +170,12 @@ export function MemoriesBrowser({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !isLoading &&
+          !isLoadingMore
+        ) {
           fetchMemories(true);
         }
       },
@@ -270,7 +285,9 @@ export function MemoriesBrowser({
                 {isLoadingMore && (
                   <>
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                    <span className="ml-3 text-muted-foreground">Loading more...</span>
+                    <span className="ml-3 text-muted-foreground">
+                      Loading more...
+                    </span>
                   </>
                 )}
               </div>
@@ -279,7 +296,9 @@ export function MemoriesBrowser({
             {/* End of results */}
             {!hasMore && results.length > 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">✨ You've reached the end of your memories</p>
+                <p className="text-sm">
+                  ✨ You've reached the end of your memories
+                </p>
                 <p className="text-xs mt-1">Loaded {total} total memories</p>
               </div>
             )}
@@ -287,35 +306,45 @@ export function MemoriesBrowser({
         )}
 
         {/* Empty State */}
-        {!isLoading && results.length === 0 && !error && filters.query.trim() !== "" && (
-          <div className="text-center py-12">
-            <Inbox className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold text-muted-foreground">No memories found</h3>
-            <p className="text-muted-foreground mt-1">
-              Try adjusting your search or filters
-            </p>
-            <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-              <p>💡 Tips:</p>
-              <ul className="space-y-1">
-                <li>• Use different keywords or phrases</li>
-                <li>• Remove tag filters to broaden search</li>
-                <li>• Check spelling and syntax</li>
-                <li>• Try searching for related topics</li>
-              </ul>
+        {!isLoading &&
+          results.length === 0 &&
+          !error &&
+          filters.query.trim() !== "" && (
+            <div className="text-center py-12">
+              <Inbox className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold text-muted-foreground">
+                No memories found
+              </h3>
+              <p className="text-muted-foreground mt-1">
+                Try adjusting your search or filters
+              </p>
+              <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                <p>💡 Tips:</p>
+                <ul className="space-y-1">
+                  <li>• Use different keywords or phrases</li>
+                  <li>• Remove tag filters to broaden search</li>
+                  <li>• Check spelling and syntax</li>
+                  <li>• Try searching for related topics</li>
+                </ul>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Initial State */}
-        {!isLoading && results.length === 0 && !error && filters.query.trim() === "" && (
-          <div className="text-center py-12">
-            <Inbox className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold text-muted-foreground">Start searching</h3>
-            <p className="text-muted-foreground mt-1">
-              Enter a query or apply filters to browse your memories
-            </p>
-          </div>
-        )}
+        {!isLoading &&
+          results.length === 0 &&
+          !error &&
+          filters.query.trim() === "" && (
+            <div className="text-center py-12">
+              <Inbox className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold text-muted-foreground">
+                Start searching
+              </h3>
+              <p className="text-muted-foreground mt-1">
+                Enter a query or apply filters to browse your memories
+              </p>
+            </div>
+          )}
       </div>
 
       {/* Selection Summary (if selectable) */}
@@ -323,7 +352,8 @@ export function MemoriesBrowser({
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 shadow-lg">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <p className="text-sm font-medium">
-              {selectedMemories.size} memory{selectedMemories.size > 1 ? "ies" : ""} selected
+              {selectedMemories.size} memory
+              {selectedMemories.size > 1 ? "ies" : ""} selected
             </p>
             <div className="space-x-2">
               <button

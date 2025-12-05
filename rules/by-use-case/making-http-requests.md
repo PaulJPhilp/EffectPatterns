@@ -9,29 +9,29 @@ Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP 
 This example creates a simple server with a `Greeter` service. The server starts, creates a runtime containing the `Greeter`, and then uses that runtime to handle requests.
 
 ```typescript
-import { HttpServer, HttpServerResponse } from "@effect/platform"
-import { NodeHttpServer } from "@effect/platform-node"
-import { Duration, Effect, Fiber, Layer } from "effect"
-import { createServer } from "node:http"
+import { HttpServer, HttpServerResponse } from "@effect/platform";
+import { NodeHttpServer } from "@effect/platform-node";
+import { Duration, Effect, Fiber, Layer } from "effect";
+import { createServer } from "node:http";
 
 // Create a server layer using Node's built-in HTTP server
-const ServerLive = NodeHttpServer.layer(() => createServer(), { port: 3001 })
+const ServerLive = NodeHttpServer.layer(() => createServer(), { port: 3001 });
 
 // Define your HTTP app (here responding "Hello World" to every request)
 const app = Effect.gen(function* () {
-  yield* Effect.logInfo("Received HTTP request")
-  return yield* HttpServerResponse.text("Hello World")
-})
+  yield* Effect.logInfo("Received HTTP request");
+  return yield* HttpServerResponse.text("Hello World");
+});
 
 const serverLayer = HttpServer.serve(app).pipe(Layer.provide(ServerLive));
 
 const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Server starting on http://localhost:3001")
-  const fiber = yield* Layer.launch(serverLayer).pipe(Effect.fork)
-  yield* Effect.sleep(Duration.seconds(2))
-  yield* Fiber.interrupt(fiber)
-  yield* Effect.logInfo("Server shutdown complete")
-})
+  yield* Effect.logInfo("Server starting on http://localhost:3001");
+  const fiber = yield* Layer.launch(serverLayer).pipe(Effect.fork);
+  yield* Effect.sleep(Duration.seconds(2));
+  yield* Fiber.interrupt(fiber);
+  yield* Effect.logInfo("Server shutdown complete");
+});
 
 Effect.runPromise(program as unknown as Effect.Effect<void, unknown, never>);
 ```
@@ -67,9 +67,7 @@ class HttpClient extends Effect.Service<HttpClientType>()("HttpClient", {
     get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
       Effect.tryPromise<T>(() =>
         fetch(url).then((res) => res.json() as T)
-      ).pipe(
-        Effect.catchAll((error) => Effect.fail(HttpError({ error })))
-      ),
+      ).pipe(Effect.catchAll((error) => Effect.fail(HttpError({ error })))),
   }),
 }) {}
 
@@ -93,58 +91,54 @@ const program = Effect.gen(function* () {
 
 // Run with test implementation
 Effect.runPromise(Effect.provide(program, TestLayer));
-
 ```
 
 ### 2. Create the Live Implementation
 
 ```typescript
-import { Effect, Data, Layer } from "effect"
+import { Effect, Data, Layer } from "effect";
 
 interface HttpErrorType {
-  readonly _tag: "HttpError"
-  readonly error: unknown
+  readonly _tag: "HttpError";
+  readonly error: unknown;
 }
 
-const HttpError = Data.tagged<HttpErrorType>("HttpError")
+const HttpError = Data.tagged<HttpErrorType>("HttpError");
 
 interface HttpClientType {
-  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>
+  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>;
 }
 
-class HttpClient extends Effect.Service<HttpClientType>()(
-  "HttpClient",
-  {
-    sync: () => ({
-      get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
-        Effect.tryPromise({
-          try: () => fetch(url).then((res) => res.json()),
-          catch: (error) => HttpError({ error })
-        })
-    })
-  }
-) {}
+class HttpClient extends Effect.Service<HttpClientType>()("HttpClient", {
+  sync: () => ({
+    get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
+      Effect.tryPromise({
+        try: () => fetch(url).then((res) => res.json()),
+        catch: (error) => HttpError({ error }),
+      }),
+  }),
+}) {}
 
 // Test implementation
 const TestLayer = Layer.succeed(
   HttpClient,
   HttpClient.of({
-    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T)
+    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T),
   })
-)
+);
 
 // Example usage
 const program = Effect.gen(function* () {
-  const client = yield* HttpClient
-  yield* Effect.logInfo("Fetching data...")
-  const data = yield* client.get<{ title: string }>("https://api.example.com/data")
-  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`)
-})
+  const client = yield* HttpClient;
+  yield* Effect.logInfo("Fetching data...");
+  const data = yield* client.get<{ title: string }>(
+    "https://api.example.com/data"
+  );
+  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`);
+});
 
 // Run with test implementation
-Effect.runPromise(
-  Effect.provide(program, TestLayer)
-)
+Effect.runPromise(Effect.provide(program, TestLayer));
 ```
 
 ### 3. Create the Test Implementation
@@ -158,7 +152,7 @@ export const HttpClientTest = Layer.succeed(
   HttpClient,
   HttpClient.of({
     get: (url) => Effect.succeed({ mock: "data", url }),
-  }),
+  })
 );
 ```
 
@@ -194,15 +188,12 @@ Model dependencies as services.
 import { Effect } from "effect";
 
 // Define Random service with production implementation as default
-export class Random extends Effect.Service<Random>()(
-  "Random",
-  {
-    // Default production implementation
-    sync: () => ({
-      next: Effect.sync(() => Math.random())
-    })
-  }
-) {}
+export class Random extends Effect.Service<Random>()("Random", {
+  // Default production implementation
+  sync: () => ({
+    next: Effect.sync(() => Math.random()),
+  }),
+}) {}
 
 // Example usage
 const program = Effect.gen(function* () {
@@ -225,4 +216,3 @@ Effect.runPromise(programWithLogging);
 By modeling dependencies as services, you can easily substitute mocked or deterministic implementations for testing, leading to more reliable and predictable tests.
 
 ---
-

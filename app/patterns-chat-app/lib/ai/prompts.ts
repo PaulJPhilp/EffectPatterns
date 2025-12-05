@@ -73,7 +73,8 @@ export const systemPrompt = ({
   // Build conversation context section if provided
   let conversationContextSection = "";
   if (conversationContext?.summary) {
-    const { topic, mainPoints, keyTerms, userIntent } = conversationContext.summary;
+    const { topic, mainPoints, keyTerms, userIntent } =
+      conversationContext.summary;
     conversationContextSection = "\n\n## Conversation Context";
 
     if (topic) {
@@ -85,7 +86,7 @@ export const systemPrompt = ({
     }
 
     if (mainPoints && mainPoints.length > 0) {
-      conversationContextSection += `\nMain Points:\n${mainPoints.map(p => `- ${p}`).join("\n")}`;
+      conversationContextSection += `\nMain Points:\n${mainPoints.map((p) => `- ${p}`).join("\n")}`;
     }
 
     if (keyTerms && keyTerms.length > 0) {

@@ -12,7 +12,10 @@ import { Effect } from "effect";
 import { trace, context, SpanStatusCode } from "@opentelemetry/api";
 
 // Wrap an Effect.withSpan to export to OpenTelemetry
-function withOtelSpan<T>(name: string, effect: Effect.Effect<unknown, T, unknown>) {
+function withOtelSpan<T>(
+  name: string,
+  effect: Effect.Effect<unknown, T, unknown>
+) {
   return Effect.gen(function* () {
     const otelSpan = trace.getTracer("default").startSpan(name);
     try {
@@ -29,13 +32,17 @@ function withOtelSpan<T>(name: string, effect: Effect.Effect<unknown, T, unknown
 }
 
 // Usage
-const program = withOtelSpan("fetchUser", Effect.sync(() => {
-  // ...fetch user logic
-  return { id: 1, name: "Alice" };
-}));
+const program = withOtelSpan(
+  "fetchUser",
+  Effect.sync(() => {
+    // ...fetch user logic
+    return { id: 1, name: "Alice" };
+  })
+);
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - Start an OpenTelemetry span when entering an Effectful operation.
 - Set status and attributes as needed.
 - End the span when the operation completes or fails.
@@ -78,13 +85,12 @@ const program = Effect.gen(function* () {
     Effect.withSpan("workflow.end")
   );
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.withSpan` creates a tracing span around an operation.
 - Spans can be named and annotated with attributes for richer context.
 - Tracing enables distributed observability and performance analysis.
 
 ---
-

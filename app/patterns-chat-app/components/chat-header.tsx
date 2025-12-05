@@ -113,10 +113,7 @@ function PureChatHeader({
                 />
               </div>
               <DropdownMenuSeparator />
-              <div
-                className="px-2 py-2"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
                 <CustomInstructions
                   preferences={preferences}
                   onUpdate={onUpdatePreferences}
@@ -128,7 +125,10 @@ function PureChatHeader({
         )}
       </nav>
 
-      <MemoriesGuideDialog open={showMemoriesGuide} onOpenChange={setShowMemoriesGuide} />
+      <MemoriesGuideDialog
+        open={showMemoriesGuide}
+        onOpenChange={setShowMemoriesGuide}
+      />
     </header>
   );
 }

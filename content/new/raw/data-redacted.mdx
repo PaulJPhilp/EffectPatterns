@@ -4,7 +4,8 @@ id: "data-redacted"
 skillLevel: "intermediate"
 useCase: ["Data Types", "Security", "Sensitive Data", "Logging"]
 summary: "Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed."
-tags: ["Redacted", "security", "sensitive-data", "logging", "data-type", "effect"]
+tags:
+  ["Redacted", "security", "sensitive-data", "logging", "data-type", "effect"]
 rule:
   description: "Use Redacted to wrap sensitive values, preventing accidental exposure in logs or error messages."
 related: ["data-struct", "observability-structured-logging"]
@@ -38,10 +39,11 @@ function authenticate(user: string, password: Redacted<string>) {
 
 // Logging or stringifying a Redacted value
 console.log(`Password: ${secret}`); // Output: Password: <redacted>
-console.log(String(secret));        // Output: <redacted>
+console.log(String(secret)); // Output: <redacted>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Redacted.make(value)` wraps a sensitive value.
 - When logged or stringified, the value is replaced with `<redacted>`.
 - Prevents accidental exposure of secrets in logs or error messages.

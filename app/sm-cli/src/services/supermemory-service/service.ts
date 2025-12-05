@@ -375,7 +375,7 @@ export function makeSupermemoryService(
               maxDynamicFacts: (response as any)?.maxDynamicFacts || 0,
               commonTopics: (response as any)?.commonTopics || {},
               retrievedAt: new Date().toISOString(),
-            } as ProfileStats)
+            }) as ProfileStats
         )
       );
 

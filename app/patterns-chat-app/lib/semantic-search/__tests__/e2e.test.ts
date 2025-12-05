@@ -5,7 +5,12 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { MockSupermemoryClient, testUserId, createMockSearchMemory, createMockConversationEmbedding } from "./mocks";
+import {
+  MockSupermemoryClient,
+  testUserId,
+  createMockSearchMemory,
+  createMockConversationEmbedding,
+} from "./mocks";
 
 describe("End-to-End Semantic Search Workflow", () => {
   let mockClient: MockSupermemoryClient;
@@ -30,7 +35,10 @@ describe("End-to-End Semantic Search Workflow", () => {
 
       await mockClient.add({
         content: JSON.stringify(
-          createMockConversationEmbedding(chatId, testUserId, ["effect-ts", "error-handling"])
+          createMockConversationEmbedding(chatId, testUserId, [
+            "effect-ts",
+            "error-handling",
+          ])
         ),
         metadata: {
           type: "conversation",
@@ -96,7 +104,9 @@ describe("End-to-End Semantic Search Workflow", () => {
 
       // User 1 stores 2 conversations
       await mockClient.add({
-        content: JSON.stringify(createMockConversationEmbedding("chat-1a", user1, ["secret"])),
+        content: JSON.stringify(
+          createMockConversationEmbedding("chat-1a", user1, ["secret"])
+        ),
         metadata: {
           type: "conversation",
           chatId: "chat-1a",
@@ -107,7 +117,9 @@ describe("End-to-End Semantic Search Workflow", () => {
       });
 
       await mockClient.add({
-        content: JSON.stringify(createMockConversationEmbedding("chat-1b", user1, ["secret"])),
+        content: JSON.stringify(
+          createMockConversationEmbedding("chat-1b", user1, ["secret"])
+        ),
         metadata: {
           type: "conversation",
           chatId: "chat-1b",
@@ -119,7 +131,9 @@ describe("End-to-End Semantic Search Workflow", () => {
 
       // User 2 stores 1 conversation
       await mockClient.add({
-        content: JSON.stringify(createMockConversationEmbedding("chat-2a", user2, ["public"])),
+        content: JSON.stringify(
+          createMockConversationEmbedding("chat-2a", user2, ["public"])
+        ),
         metadata: {
           type: "conversation",
           chatId: "chat-2a",
@@ -187,9 +201,9 @@ describe("End-to-End Semantic Search Workflow", () => {
       ];
 
       for (const conv of conversations) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(conv.id, testUserId, conv.tags, 0.85)
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(conv.id, testUserId, conv.tags, 0.85));
       }
 
       // Search for error handling
@@ -219,15 +233,36 @@ describe("End-to-End Semantic Search Workflow", () => {
 
     it("should retrieve by similarity score", async () => {
       // Store conversations with different relevance
-      mockClient.getMemories().push(
-        createMockSearchMemory("highly-relevant", testUserId, ["effect", "error"], 0.95)
-      );
-      mockClient.getMemories().push(
-        createMockSearchMemory("somewhat-relevant", testUserId, ["effect"], 0.65)
-      );
-      mockClient.getMemories().push(
-        createMockSearchMemory("slightly-relevant", testUserId, ["error"], 0.35)
-      );
+      mockClient
+        .getMemories()
+        .push(
+          createMockSearchMemory(
+            "highly-relevant",
+            testUserId,
+            ["effect", "error"],
+            0.95
+          )
+        );
+      mockClient
+        .getMemories()
+        .push(
+          createMockSearchMemory(
+            "somewhat-relevant",
+            testUserId,
+            ["effect"],
+            0.65
+          )
+        );
+      mockClient
+        .getMemories()
+        .push(
+          createMockSearchMemory(
+            "slightly-relevant",
+            testUserId,
+            ["error"],
+            0.35
+          )
+        );
 
       // Search and apply minimum similarity threshold
       const minSimilarity = 0.5;
@@ -252,7 +287,12 @@ describe("End-to-End Semantic Search Workflow", () => {
       for (const outcome of outcomes) {
         await mockClient.add({
           content: JSON.stringify(
-            createMockConversationEmbedding(`chat-${outcome}`, testUserId, ["test"], outcome)
+            createMockConversationEmbedding(
+              `chat-${outcome}`,
+              testUserId,
+              ["test"],
+              outcome
+            )
           ),
           metadata: {
             type: "conversation",
@@ -282,9 +322,9 @@ describe("End-to-End Semantic Search Workflow", () => {
       // Store conversations with different outcomes
       const outcomes = ["solved", "solved", "unsolved", "partial"];
       for (let i = 0; i < outcomes.length; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, ["test"])
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, ["test"]));
       }
 
       // Filter to solved conversations
@@ -319,9 +359,9 @@ describe("End-to-End Semantic Search Workflow", () => {
       ];
 
       for (const conv of taggedConversations) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(conv.id, testUserId, conv.tags)
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(conv.id, testUserId, conv.tags));
       }
 
       // Find all error-handling resources
@@ -355,7 +395,12 @@ describe("End-to-End Semantic Search Workflow", () => {
       // 1. User starts learning Effect-TS
       await mockClient.add({
         content: JSON.stringify(
-          createMockConversationEmbedding("intro-1", testUserId, ["effect-ts", "beginner"], "solved")
+          createMockConversationEmbedding(
+            "intro-1",
+            testUserId,
+            ["effect-ts", "beginner"],
+            "solved"
+          )
         ),
         metadata: {
           type: "conversation",
@@ -369,7 +414,12 @@ describe("End-to-End Semantic Search Workflow", () => {
       // 2. User explores error handling
       await mockClient.add({
         content: JSON.stringify(
-          createMockConversationEmbedding("error-learn", testUserId, ["effect-ts", "error-handling"], "solved")
+          createMockConversationEmbedding(
+            "error-learn",
+            testUserId,
+            ["effect-ts", "error-handling"],
+            "solved"
+          )
         ),
         metadata: {
           type: "conversation",
@@ -383,7 +433,12 @@ describe("End-to-End Semantic Search Workflow", () => {
       // 3. User encounters an issue
       await mockClient.add({
         content: JSON.stringify(
-          createMockConversationEmbedding("issue-1", testUserId, ["effect-ts", "error-handling"], "partial")
+          createMockConversationEmbedding(
+            "issue-1",
+            testUserId,
+            ["effect-ts", "error-handling"],
+            "partial"
+          )
         ),
         metadata: {
           type: "conversation",
@@ -403,7 +458,12 @@ describe("End-to-End Semantic Search Workflow", () => {
       // 5. User finds and applies solution, revisits conversation
       await mockClient.add({
         content: JSON.stringify(
-          createMockConversationEmbedding("issue-1-revisited", testUserId, ["effect-ts", "error-handling"], "revisited")
+          createMockConversationEmbedding(
+            "issue-1-revisited",
+            testUserId,
+            ["effect-ts", "error-handling"],
+            "revisited"
+          )
         ),
         metadata: {
           type: "conversation",
@@ -448,9 +508,14 @@ describe("End-to-End Semantic Search Workflow", () => {
       const startTime = performance.now();
 
       for (let i = 0; i < 100; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, ["effect-ts", "learning"])
-        );
+        mockClient
+          .getMemories()
+          .push(
+            createMockSearchMemory(`chat-${i}`, testUserId, [
+              "effect-ts",
+              "learning",
+            ])
+          );
       }
 
       const endTime = performance.now();
@@ -463,9 +528,9 @@ describe("End-to-End Semantic Search Workflow", () => {
     it("should search efficiently across large datasets", async () => {
       // Setup 500 conversations
       for (let i = 0; i < 100; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, ["effect-ts"])
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, ["effect-ts"]));
       }
 
       // Perform multiple searches
@@ -492,7 +557,9 @@ describe("End-to-End Semantic Search Workflow", () => {
       // Add and retrieve
       await mockClient.add({
         content: JSON.stringify(
-          createMockConversationEmbedding("consistency-test", testUserId, ["test"])
+          createMockConversationEmbedding("consistency-test", testUserId, [
+            "test",
+          ])
         ),
         metadata: {
           type: "conversation",
@@ -523,7 +590,9 @@ describe("End-to-End Semantic Search Workflow", () => {
         operations.push(
           mockClient.add({
             content: JSON.stringify(
-              createMockConversationEmbedding(`concurrent-${i}`, testUserId, ["test"])
+              createMockConversationEmbedding(`concurrent-${i}`, testUserId, [
+                "test",
+              ])
             ),
             metadata: {
               type: "conversation",

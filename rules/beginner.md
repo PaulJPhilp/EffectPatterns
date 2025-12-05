@@ -1,13 +1,15 @@
 # Beginner Level Rules
 
 ## Collect All Results into a List
+
 **Rule:** Use Stream.runCollect to execute a stream and collect all its emitted values into a Chunk.
 
 ### Example
+
 This example creates a stream of numbers, filters for only the even ones, transforms them into strings, and then uses `runCollect` to gather the final results into a `Chunk`.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 const program = Stream.range(1, 10).pipe(
   // Find all the even numbers
@@ -19,7 +21,7 @@ const program = Stream.range(1, 10).pipe(
 );
 
 Effect.runPromise(program).then((results) => {
-  console.log('Collected results:', Chunk.toArray(results));
+  console.log("Collected results:", Chunk.toArray(results));
 });
 /*
 Output:
@@ -34,9 +36,11 @@ Collected results: [
 ```
 
 ## Comparing Data by Value with Structural Equality
+
 **Rule:** Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
 
 ### Example
+
 We define two points using `Data.struct`. Even though `p1` and `p2` are different instances in memory, `Equal.equals` correctly reports them as equal because their contents match.
 
 ```typescript
@@ -80,9 +84,11 @@ Effect.runPromise(program);
 ---
 
 ## Create a Basic HTTP Server
+
 **Rule:** Use Http.server.serve with a platform-specific layer to run an HTTP application.
 
 ### Example
+
 This example creates a minimal server that responds to all requests with "Hello, World!". The application logic is a simple `Effect` that returns an `Http.response`. We use `NodeRuntime.runMain` to execute the server effect, which is the standard way to launch a long-running application.
 
 ```typescript
@@ -160,17 +166,18 @@ To test:
 3. Proper cleanup on shutdown
 4. Demonstrates server lifecycle: start -> run -> shutdown
 */
-
 ```
 
 ## Create a Stream from a List
+
 **Rule:** Use Stream.fromIterable to begin a pipeline from an in-memory collection.
 
 ### Example
+
 This example takes a simple array of numbers, creates a stream from it, performs a transformation on each number, and then runs the stream to collect the results.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 const numbers = [1, 2, 3, 4, 5];
 
@@ -192,11 +199,13 @@ Output:
 ```
 
 ## Create Pre-resolved Effects with succeed and fail
+
 **Rule:** Create pre-resolved effects with succeed and fail.
 
 ### Example
+
 ```typescript
-import { Effect, Data } from "effect"
+import { Effect, Data } from "effect";
 
 // Create a custom error type
 class MyError extends Data.TaggedError("MyError") {}
@@ -204,25 +213,25 @@ class MyError extends Data.TaggedError("MyError") {}
 // Create a program that demonstrates pre-resolved effects
 const program = Effect.gen(function* () {
   // Success effect
-  yield* Effect.logInfo("Running success effect...")
+  yield* Effect.logInfo("Running success effect...");
   yield* Effect.gen(function* () {
-    const value = yield* Effect.succeed(42)
-    yield* Effect.logInfo(`Success value: ${value}`)
-  })
+    const value = yield* Effect.succeed(42);
+    yield* Effect.logInfo(`Success value: ${value}`);
+  });
 
   // Failure effect
-  yield* Effect.logInfo("\nRunning failure effect...")
+  yield* Effect.logInfo("\nRunning failure effect...");
   yield* Effect.gen(function* () {
-    yield* Effect.fail(new MyError())
+    yield* Effect.fail(new MyError());
   }).pipe(
     Effect.catchTag("MyError", (error) =>
       Effect.logInfo(`Error occurred: ${error._tag}`)
     )
-  )
-})
+  );
+});
 
 // Run the program
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 **Explanation:**  
@@ -230,15 +239,15 @@ Use `Effect.succeed` for values you already have, and `Effect.fail` for
 immediate, known errors.
 
 ## Execute Asynchronous Effects with Effect.runPromise
+
 **Rule:** Execute asynchronous effects with Effect.runPromise.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
-const program = Effect.succeed("Hello, World!").pipe(
-  Effect.delay("1 second"),
-);
+const program = Effect.succeed("Hello, World!").pipe(Effect.delay("1 second"));
 
 const promise = Effect.runPromise(program);
 
@@ -250,63 +259,63 @@ promise.then(console.log); // Logs "Hello, World!" after 1 second.
 easy to integrate with existing JavaScript async workflows.
 
 ## Execute Synchronous Effects with Effect.runSync
+
 **Rule:** Execute synchronous effects with Effect.runSync.
 
 ### Example
+
 ```typescript
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 // Simple synchronous program
 const program1 = Effect.sync(() => {
-  const n = 10
-  const result = n * 2
-  console.log(`Simple program result: ${result}`)
-  return result
-})
+  const n = 10;
+  const result = n * 2;
+  console.log(`Simple program result: ${result}`);
+  return result;
+});
 
 // Run simple program
-Effect.runSync(program1)
+Effect.runSync(program1);
 
 // Program with logging
 const program2 = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting calculation...")
-  const n = yield* Effect.sync(() => 10)
-  yield* Effect.logInfo(`Got number: ${n}`)
-  const result = yield* Effect.sync(() => n * 2)
-  yield* Effect.logInfo(`Result: ${result}`)
-  return result
-})
+  yield* Effect.logInfo("Starting calculation...");
+  const n = yield* Effect.sync(() => 10);
+  yield* Effect.logInfo(`Got number: ${n}`);
+  const result = yield* Effect.sync(() => n * 2);
+  yield* Effect.logInfo(`Result: ${result}`);
+  return result;
+});
 
 // Run with logging
-Effect.runSync(program2)
+Effect.runSync(program2);
 
 // Program with error handling
 const program3 = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting division...")
-  const n = yield* Effect.sync(() => 10)
-  const divisor = yield* Effect.sync(() => 0)
-  
-  yield* Effect.logInfo(`Attempting to divide ${n} by ${divisor}...`)
+  yield* Effect.logInfo("Starting division...");
+  const n = yield* Effect.sync(() => 10);
+  const divisor = yield* Effect.sync(() => 0);
+
+  yield* Effect.logInfo(`Attempting to divide ${n} by ${divisor}...`);
   return yield* Effect.try({
     try: () => {
-      if (divisor === 0) throw new Error("Cannot divide by zero")
-      return n / divisor
+      if (divisor === 0) throw new Error("Cannot divide by zero");
+      return n / divisor;
     },
     catch: (error) => {
       if (error instanceof Error) {
-        return error
+        return error;
       }
-      return new Error("Unknown error occurred")
-    }
-  })
+      return new Error("Unknown error occurred");
+    },
+  });
 }).pipe(
-  Effect.catchAll((error) =>
-    Effect.logInfo(`Error occurred: ${error.message}`)
-  )
-)
+  Effect.catchAll((error) => Effect.logInfo(`Error occurred: ${error.message}`))
+);
 
 // Run with error handling
-Effect.runSync(program3)
+Effect.runSync(program3);
 ```
 
 **Explanation:**  
@@ -314,103 +323,108 @@ Use `runSync` only for Effects that are fully synchronous. If the Effect
 contains async code, use `runPromise` instead.
 
 ## Extract Path Parameters
+
 **Rule:** Define routes with colon-prefixed parameters (e.g., /users/:id) and access their values within the handler.
 
 ### Example
+
 This example defines a route that captures a `userId`. The handler for this route accesses the parsed parameters and uses the `userId` to construct a personalized greeting. The router automatically makes the parameters available to the handler.
 
 ```typescript
-import { Data, Effect } from 'effect'
+import { Data, Effect } from "effect";
 
 // Define tagged error for invalid paths
 interface InvalidPathErrorSchema {
-  readonly _tag: "InvalidPathError"
-  readonly path: string
+  readonly _tag: "InvalidPathError";
+  readonly path: string;
 }
 
 const makeInvalidPathError = (path: string): InvalidPathErrorSchema => ({
   _tag: "InvalidPathError",
-  path
-})
+  path,
+});
 
 // Define service interface
 interface PathOps {
-  readonly extractUserId: (path: string) => Effect.Effect<string, InvalidPathErrorSchema>
-  readonly greetUser: (userId: string) => Effect.Effect<string>
+  readonly extractUserId: (
+    path: string
+  ) => Effect.Effect<string, InvalidPathErrorSchema>;
+  readonly greetUser: (userId: string) => Effect.Effect<string>;
 }
 
 // Create service
-class PathService extends Effect.Service<PathService>()(
-  "PathService",
-  {
-    sync: () => ({
-      extractUserId: (path: string) =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`Attempting to extract user ID from path: ${path}`)
-          
-          const match = path.match(/\/users\/([^/]+)/);
-          if (!match) {
-            yield* Effect.logInfo(`No user ID found in path: ${path}`)
-            return yield* Effect.fail(makeInvalidPathError(path))
-          }
-          
-          const userId = match[1];
-          yield* Effect.logInfo(`Successfully extracted user ID: ${userId}`)
-          return userId
-        }),
+class PathService extends Effect.Service<PathService>()("PathService", {
+  sync: () => ({
+    extractUserId: (path: string) =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(
+          `Attempting to extract user ID from path: ${path}`
+        );
 
-      greetUser: (userId: string) =>
-        Effect.gen(function* () {
-          const greeting = `Hello, user ${userId}!`
-          yield* Effect.logInfo(greeting)
-          return greeting
-        })
-    })
-  }
-) {}
+        const match = path.match(/\/users\/([^/]+)/);
+        if (!match) {
+          yield* Effect.logInfo(`No user ID found in path: ${path}`);
+          return yield* Effect.fail(makeInvalidPathError(path));
+        }
+
+        const userId = match[1];
+        yield* Effect.logInfo(`Successfully extracted user ID: ${userId}`);
+        return userId;
+      }),
+
+    greetUser: (userId: string) =>
+      Effect.gen(function* () {
+        const greeting = `Hello, user ${userId}!`;
+        yield* Effect.logInfo(greeting);
+        return greeting;
+      }),
+  }),
+}) {}
 
 // Compose the functions with proper error handling
-const processPath = (path: string): Effect.Effect<string, InvalidPathErrorSchema, PathService> =>
+const processPath = (
+  path: string
+): Effect.Effect<string, InvalidPathErrorSchema, PathService> =>
   Effect.gen(function* () {
-    const pathService = yield* PathService
-    yield* Effect.logInfo(`Processing path: ${path}`)
-    const userId = yield* pathService.extractUserId(path)
-    return yield* pathService.greetUser(userId)
-  })
+    const pathService = yield* PathService;
+    yield* Effect.logInfo(`Processing path: ${path}`);
+    const userId = yield* pathService.extractUserId(path);
+    return yield* pathService.greetUser(userId);
+  });
 
 // Run examples with proper error handling
 const program = Effect.gen(function* () {
   // Test valid paths
-  yield* Effect.logInfo("=== Testing valid paths ===")
-  const result1 = yield* processPath('/users/123')
-  yield* Effect.logInfo(`Result 1: ${result1}`)
-  
-  const result2 = yield* processPath('/users/abc')
-  yield* Effect.logInfo(`Result 2: ${result2}`)
-  
+  yield* Effect.logInfo("=== Testing valid paths ===");
+  const result1 = yield* processPath("/users/123");
+  yield* Effect.logInfo(`Result 1: ${result1}`);
+
+  const result2 = yield* processPath("/users/abc");
+  yield* Effect.logInfo(`Result 2: ${result2}`);
+
   // Test invalid path
-  yield* Effect.logInfo("\n=== Testing invalid path ===")
-  const result3 = yield* processPath('/invalid/path').pipe(
+  yield* Effect.logInfo("\n=== Testing invalid path ===");
+  const result3 = yield* processPath("/invalid/path").pipe(
     Effect.catchTag("InvalidPathError", (error) =>
       Effect.succeed(`Error: Invalid path ${error.path}`)
     )
-  )
-  yield* Effect.logInfo(result3)
-})
+  );
+  yield* Effect.logInfo(result3);
+});
 
-Effect.runPromise(
-  Effect.provide(program, PathService.Default)
-)
+Effect.runPromise(Effect.provide(program, PathService.Default));
 ```
 
 ## Handle a GET Request
+
 **Rule:** Use Http.router.get to associate a URL path with a specific response Effect.
 
 ### Example
+
 This example defines two separate GET routes, one for the root path (`/`) and one for `/hello`. We create an empty router and add each route to it. The resulting `app` is then served. The router automatically handles sending a `404 Not Found` response for any path that doesn't match.
 
 ```typescript
-import { Data, Effect } from 'effect'
+import { Data, Effect } from "effect";
 
 // Define response types
 interface RouteResponse {
@@ -429,64 +443,65 @@ class RouteHandlerError extends Data.TaggedError("RouteHandlerError")<{
 }> {}
 
 // Define route service
-class RouteService extends Effect.Service<RouteService>()(
-  "RouteService",
-  {
-    sync: () => {
-      // Create instance methods
-      const handleRoute = (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`Processing request for path: ${path}`);
-          
-          try {
-            switch (path) {
-              case '/':
-                const home = 'Welcome to the home page!';
-                yield* Effect.logInfo(`Serving home page`);
-                return { status: 200, body: home };
+class RouteService extends Effect.Service<RouteService>()("RouteService", {
+  sync: () => {
+    // Create instance methods
+    const handleRoute = (
+      path: string
+    ): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`Processing request for path: ${path}`);
 
-              case '/hello':
-                const hello = 'Hello, Effect!';
-                yield* Effect.logInfo(`Serving hello page`);
-                return { status: 200, body: hello };
+        try {
+          switch (path) {
+            case "/":
+              const home = "Welcome to the home page!";
+              yield* Effect.logInfo(`Serving home page`);
+              return { status: 200, body: home };
 
-              default:
-                yield* Effect.logWarning(`Route not found: ${path}`);
-                return yield* Effect.fail(new RouteNotFoundError({ path }));
-            }
-          } catch (e) {
-            const error = e instanceof Error ? e.message : String(e);
-            yield* Effect.logError(`Error handling route ${path}: ${error}`);
-            return yield* Effect.fail(new RouteHandlerError({ path, error }));
+            case "/hello":
+              const hello = "Hello, Effect!";
+              yield* Effect.logInfo(`Serving hello page`);
+              return { status: 200, body: hello };
+
+            default:
+              yield* Effect.logWarning(`Route not found: ${path}`);
+              return yield* Effect.fail(new RouteNotFoundError({ path }));
           }
-        });
+        } catch (e) {
+          const error = e instanceof Error ? e.message : String(e);
+          yield* Effect.logError(`Error handling route ${path}: ${error}`);
+          return yield* Effect.fail(new RouteHandlerError({ path, error }));
+        }
+      });
 
-      // Return service implementation
-      return {
-        handleRoute,
-        // Simulate GET request
-        simulateGet: (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
-          Effect.gen(function* () {
-            yield* Effect.logInfo(`GET ${path}`);
-            const response = yield* handleRoute(path);
-            yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
-            return response;
-          })
-      };
-    }
-  }
-) {}
+    // Return service implementation
+    return {
+      handleRoute,
+      // Simulate GET request
+      simulateGet: (
+        path: string
+      ): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
+        Effect.gen(function* () {
+          yield* Effect.logInfo(`GET ${path}`);
+          const response = yield* handleRoute(path);
+          yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
+          return response;
+        }),
+    };
+  },
+}) {}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
   const router = yield* RouteService;
-  
+
   yield* Effect.logInfo("=== Starting Route Tests ===");
-  
+
   // Test different routes
-  for (const path of ['/', '/hello', '/other', '/error']) {
+  for (const path of ["/", "/hello", "/other", "/error"]) {
     yield* Effect.logInfo(`\n--- Testing ${path} ---`);
-    
+
     const result = yield* router.simulateGet(path).pipe(
       Effect.catchTags({
         RouteNotFoundError: (error) =>
@@ -497,35 +512,38 @@ const program = Effect.gen(function* () {
           }),
         RouteHandlerError: (error) =>
           Effect.gen(function* () {
-            const response = { status: 500, body: `Internal Error: ${error.error}` };
+            const response = {
+              status: 500,
+              body: `Internal Error: ${error.error}`,
+            };
             yield* Effect.logError(`${response.status} ${response.body}`);
             return response;
-          })
+          }),
       })
     );
-    
+
     yield* Effect.logInfo(`Final Response: ${JSON.stringify(result)}`);
   }
-  
+
   yield* Effect.logInfo("\n=== Route Tests Complete ===");
 });
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, RouteService.Default)
-);
+Effect.runPromise(Effect.provide(program, RouteService.Default));
 ```
 
 ## Run a Pipeline for its Side Effects
+
 **Rule:** Use Stream.runDrain to execute a stream for its side effects when you don't need the final values.
 
 ### Example
+
 This example creates a stream of tasks. For each task, it performs a side effect (logging it as "complete"). `Stream.runDrain` executes the pipeline, ensuring all logs are written, but without collecting the `void` results of each logging operation.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 
-const tasks = ['task 1', 'task 2', 'task 3'];
+const tasks = ["task 1", "task 2", "task 3"];
 
 // A function that performs a side effect for a task
 const completeTask = (task: string): Effect.Effect<void, never> =>
@@ -539,7 +557,7 @@ const program = Stream.fromIterable(tasks).pipe(
 );
 
 Effect.runPromise(program).then(() => {
-  console.log('\nAll tasks have been processed.');
+  console.log("\nAll tasks have been processed.");
 });
 /*
 Output:
@@ -552,18 +570,22 @@ All tasks have been processed.
 ```
 
 ## Safely Bracket Resource Usage with `acquireRelease`
+
 **Rule:** Bracket the use of a resource between an `acquire` and a `release` effect.
 
 ### Example
+
 ```typescript
 import { Effect, Console } from "effect";
 
 // A mock resource that needs to be managed
 const getDbConnection = Effect.sync(() => ({ id: Math.random() })).pipe(
-  Effect.tap(() => Console.log("Connection Acquired")),
+  Effect.tap(() => Console.log("Connection Acquired"))
 );
 
-const closeDbConnection = (conn: { id: number }): Effect.Effect<void, never, never> =>
+const closeDbConnection = (conn: {
+  id: number;
+}): Effect.Effect<void, never, never> =>
   Effect.sync(() => console.log(`Connection ${conn.id} Released`));
 
 // The program that uses the resource
@@ -590,9 +612,11 @@ Connection 0.12345... Released
 By using `Effect.acquireRelease`, the `closeDbConnection` logic is guaranteed to run after the main logic completes. This creates a self-contained, leak-proof unit of work that can be safely composed into larger programs.
 
 ## Send a JSON Response
+
 **Rule:** Use Http.response.json to automatically serialize data structures into a JSON response.
 
 ### Example
+
 This example defines a route that fetches a user object and returns it as a JSON response. The `Http.response.json` function handles all the necessary serialization and header configuration.
 
 ```typescript
@@ -677,13 +701,14 @@ const program = Effect.gen(function* () {
 
 // Run the program
 Effect.runPromise(program);
-
 ```
 
 ## Set Up a New Effect Project
+
 **Rule:** Set up a new Effect project.
 
 ### Example
+
 ```typescript
 // 1. Init project (e.g., `npm init -y`)
 // 2. Install deps (e.g., `npm install effect`, `npm install -D typescript tsx`)
@@ -703,9 +728,11 @@ This setup ensures you have TypeScript and Effect ready to go, with strict
 type-checking for maximum safety and correctness.
 
 ## Solve Promise Problems with Effect
+
 **Rule:** Recognize that Effect solves the core limitations of Promises: untyped errors, no dependency injection, and no cancellation.
 
 ### Example
+
 This code is type-safe, testable, and cancellable. The signature `Effect.Effect<User, DbError, HttpClient>` tells us everything we need to know.
 
 ```typescript
@@ -788,15 +815,16 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(Effect.provide(program, HttpClient.Default));
-
 ```
 
 ---
 
 ## Transform Effect Values with map and flatMap
+
 **Rule:** Transform Effect values with map and flatMap.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -855,7 +883,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -863,9 +890,11 @@ Use `flatMap` to chain effects that depend on each other, and `map` for
 simple value transformations.
 
 ## Understand that Effects are Lazy Blueprints
+
 **Rule:** Understand that effects are lazy blueprints.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -886,34 +915,37 @@ Defining an `Effect` does not execute any code inside it. Only when you call
 `Effect.runSync(program)` does the computation actually happen.
 
 ## Understand the Three Effect Channels (A, E, R)
+
 **Rule:** Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
 
 ### Example
+
 This function signature is a self-documenting contract. It clearly states that to get a `User`, you must provide a `Database` service, and the operation might fail with a `UserNotFoundError`.
 
 ```typescript
 import { Effect, Data } from "effect";
 
 // Define the types for our channels
-interface User { readonly name: string; } // The 'A' type
+interface User {
+  readonly name: string;
+} // The 'A' type
 class UserNotFoundError extends Data.TaggedError("UserNotFoundError") {} // The 'E' type
 
 // Define the Database service using Effect.Service
-export class Database extends Effect.Service<Database>()(
-  "Database",
-  {
-    // Provide a default implementation
-    sync: () => ({
-      findUser: (id: number) =>
-        id === 1
-          ? Effect.succeed({ name: "Paul" })
-          : Effect.fail(new UserNotFoundError())
-    })
-  }
-) {}
+export class Database extends Effect.Service<Database>()("Database", {
+  // Provide a default implementation
+  sync: () => ({
+    findUser: (id: number) =>
+      id === 1
+        ? Effect.succeed({ name: "Paul" })
+        : Effect.fail(new UserNotFoundError()),
+  }),
+}) {}
 
 // This function's signature shows all three channels
-const getUser = (id: number): Effect.Effect<User, UserNotFoundError, Database> =>
+const getUser = (
+  id: number
+): Effect.Effect<User, UserNotFoundError, Database> =>
   Effect.gen(function* () {
     const db = yield* Database;
     return yield* db.findUser(id);
@@ -923,20 +955,17 @@ const getUser = (id: number): Effect.Effect<User, UserNotFoundError, Database> =
 const program = getUser(1);
 
 // Run the program with the default implementation
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Database.Default
-  )
-).then(console.log); // { name: 'Paul' }
+Effect.runPromise(Effect.provide(program, Database.Default)).then(console.log); // { name: 'Paul' }
 ```
 
 ---
 
 ## Use .pipe for Composition
+
 **Rule:** Use .pipe for composition.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -1008,7 +1037,6 @@ const demo = Effect.gen(function* () {
 });
 
 Effect.runPromise(demo);
-
 ```
 
 **Explanation:**  
@@ -1016,9 +1044,11 @@ Using `.pipe()` allows you to compose operations in a top-to-bottom style,
 improving readability and maintainability.
 
 ## Wrap Asynchronous Computations with tryPromise
+
 **Rule:** Wrap asynchronous computations with tryPromise.
 
 ### Example
+
 ```typescript
 import { Effect, Data } from "effect";
 
@@ -1129,7 +1159,6 @@ const program = Effect.gen(function* () {
 
 // Run with mock implementation
 Effect.runPromise(Effect.provide(program, MockHttpClient.Default));
-
 ```
 
 **Explanation:**  
@@ -1137,9 +1166,11 @@ Effect.runPromise(Effect.provide(program, MockHttpClient.Default));
 rejections, moving errors into the Effect's error channel.
 
 ## Wrap Synchronous Computations with sync and try
+
 **Rule:** Wrap synchronous computations with sync and try.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -1244,7 +1275,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -1252,9 +1282,11 @@ Use `Effect.sync` for safe synchronous code, and `Effect.try` to safely
 handle exceptions from potentially unsafe code.
 
 ## Write Sequential Code with Effect.gen
+
 **Rule:** Write sequential code with Effect.gen.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -1414,7 +1446,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  

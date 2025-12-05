@@ -208,4 +208,3 @@ export function scoreGuidance(query: string): number {
 
   return Math.min(1, indicatorCount * 0.3);
 }
-

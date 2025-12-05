@@ -9,19 +9,14 @@ Create a reusable runtime from layers.
 ```typescript
 import { Effect, Layer, Runtime } from "effect";
 
-class GreeterService extends Effect.Service<GreeterService>()(
-  "Greeter",
-  {
-    sync: () => ({
-      greet: (name: string) => Effect.sync(() => `Hello ${name}`)
-    })
-  }
-) {}
+class GreeterService extends Effect.Service<GreeterService>()("Greeter", {
+  sync: () => ({
+    greet: (name: string) => Effect.sync(() => `Hello ${name}`),
+  }),
+}) {}
 
 const runtime = Effect.runSync(
-  Layer.toRuntime(GreeterService.Default).pipe(
-    Effect.scoped
-  )
+  Layer.toRuntime(GreeterService.Default).pipe(Effect.scoped)
 );
 
 // In a server, you would reuse `run` for every request.
@@ -43,9 +38,7 @@ Execute asynchronous effects with Effect.runPromise.
 ```typescript
 import { Effect } from "effect";
 
-const program = Effect.succeed("Hello, World!").pipe(
-  Effect.delay("1 second"),
-);
+const program = Effect.succeed("Hello, World!").pipe(Effect.delay("1 second"));
 
 const promise = Effect.runPromise(program);
 
@@ -71,59 +64,57 @@ Execute synchronous effects with Effect.runSync.
 ### Example
 
 ```typescript
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 // Simple synchronous program
 const program1 = Effect.gen(function* () {
-  const n = 10
-  const result = n * 2
-  yield* Effect.log(`Simple program result: ${result}`)
-  return result
-})
+  const n = 10;
+  const result = n * 2;
+  yield* Effect.log(`Simple program result: ${result}`);
+  return result;
+});
 
 // Run simple program
-Effect.runSync(program1)
+Effect.runSync(program1);
 
 // Program with logging
 const program2 = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting calculation...")
-  const n = yield* Effect.sync(() => 10)
-  yield* Effect.logInfo(`Got number: ${n}`)
-  const result = yield* Effect.sync(() => n * 2)
-  yield* Effect.logInfo(`Result: ${result}`)
-  return result
-})
+  yield* Effect.logInfo("Starting calculation...");
+  const n = yield* Effect.sync(() => 10);
+  yield* Effect.logInfo(`Got number: ${n}`);
+  const result = yield* Effect.sync(() => n * 2);
+  yield* Effect.logInfo(`Result: ${result}`);
+  return result;
+});
 
 // Run with logging
-Effect.runSync(program2)
+Effect.runSync(program2);
 
 // Program with error handling
 const program3 = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting division...")
-  const n = yield* Effect.sync(() => 10)
-  const divisor = yield* Effect.sync(() => 0)
-  
-  yield* Effect.logInfo(`Attempting to divide ${n} by ${divisor}...`)
+  yield* Effect.logInfo("Starting division...");
+  const n = yield* Effect.sync(() => 10);
+  const divisor = yield* Effect.sync(() => 0);
+
+  yield* Effect.logInfo(`Attempting to divide ${n} by ${divisor}...`);
   return yield* Effect.try({
     try: () => {
-      if (divisor === 0) throw new Error("Cannot divide by zero")
-      return n / divisor
+      if (divisor === 0) throw new Error("Cannot divide by zero");
+      return n / divisor;
     },
     catch: (error) => {
       if (error instanceof Error) {
-        return error
+        return error;
       }
-      return new Error("Unknown error occurred")
-    }
-  })
+      return new Error("Unknown error occurred");
+    },
+  });
 }).pipe(
-  Effect.catchAll((error) =>
-    Effect.logInfo(`Error occurred: ${error.message}`)
-  )
-)
+  Effect.catchAll((error) => Effect.logInfo(`Error occurred: ${error.message}`))
+);
 
 // Run with error handling
-Effect.runSync(program3)
+Effect.runSync(program3);
 ```
 
 **Explanation:**  
@@ -157,4 +148,3 @@ This setup ensures you have TypeScript and Effect ready to go, with strict
 type-checking for maximum safety and correctness.
 
 ---
-

@@ -5,9 +5,11 @@
 ## 🎉 Major Features
 
 ### Standalone CLI Package
+
 The `ep` CLI is now available as a standalone npm package (`@effect-patterns/cli`), allowing users to install it globally without cloning the repository.
 
 **Installation:**
+
 ```bash
 bun install -g @effect-patterns/cli
 # or
@@ -15,6 +17,7 @@ npm install -g @effect-patterns/cli
 ```
 
 **Usage from anywhere:**
+
 ```bash
 ep search "error handling"
 ep install add --tool cursor
@@ -22,6 +25,7 @@ ep list --skill-level intermediate
 ```
 
 ### Automatic Project Root Resolution
+
 The CLI now automatically detects the Effect-Patterns project root, enabling seamless usage from any directory.
 
 ## 🐛 Bug Fixes
@@ -63,6 +67,7 @@ The CLI now automatically detects the Effect-Patterns project root, enabling sea
 If you have the repository cloned and were using `bun run ep`, you can now:
 
 1. Install globally:
+
    ```bash
    bun install -g @effect-patterns/cli
    ```
@@ -75,6 +80,7 @@ If you have the repository cloned and were using `bun run ep`, you can now:
 ### For Developers
 
 Local development mode still works:
+
 ```bash
 bun run ep search "patterns"
 ```

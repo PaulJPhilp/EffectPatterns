@@ -21,6 +21,7 @@
 ## What We Know
 
 ### ✅ Confirmed Working
+
 - Seeding script queued 130 patterns (Phase 1: 100%)
 - Memory card display code is correct
 - Timestamps added to patterns
@@ -29,6 +30,7 @@
 - Search API endpoint working
 
 ### ❌ Confirmed Not Working
+
 - Supermemory `memories.list()` returns 500 error
 - Pattern search returns 0 results
 - Patterns not visible in list/fetch operations
@@ -39,16 +41,19 @@
 ## Issue: Supermemory List API 500 Error
 
 **Error Message**:
+
 ```
 500 {"details":"Internal server error","error":"INTERNAL_SERVER_ERROR"}
 ```
 
 **Where It Happens**:
+
 - File: `lib/semantic-search/supermemory-store.ts:82`
 - Function: `fetchAllMemories()`
 - Call: `await (this.client.memories as any).list({ page, limit: 100 })`
 
 **Impact**:
+
 - Cannot retrieve list of stored memories
 - Pattern search falls back to 0 results
 - Memory browser shows no patterns
@@ -100,6 +105,7 @@ npm run dev
 If patterns still not appearing after 60 minutes:
 
 **Report Details**:
+
 - Issue: `memories.list()` API returns 500 error
 - Status: Bulk seeded 130 patterns
 - Expected: Patterns should be searchable after ~15 min
@@ -179,11 +185,11 @@ Store patterns in PostgreSQL after seeding:
 // In seed-patterns.ts, after successfully queuing pattern:
 await db.insert(patterns).values({
   id: `pattern_${patternId}`,
-  type: 'effect_pattern',
+  type: "effect_pattern",
   title: frontmatter.title,
   summary: frontmatter.summary,
   content: JSON.stringify(memoryData),
-  userId: 'system:patterns',
+  userId: "system:patterns",
   createdAt: new Date(),
 });
 ```
@@ -235,6 +241,7 @@ npm run test:patterns
 ## Long-Term Solutions
 
 ### 1. Monitor Supermemory Status
+
 Add periodic health checks:
 
 ```typescript
@@ -249,14 +256,17 @@ async function checkSupermemoryHealth() {
 ```
 
 ### 2. Implement Caching Strategy
+
 Cache list results for 5 minutes to reduce API calls
 
 ### 3. Add Error Recovery
+
 - Log all 500 errors
 - Alert if list API fails
 - Provide fallback UI for search failures
 
 ### 4. Consider Hybrid Storage
+
 - Keep patterns in both Supermemory (for search) and PostgreSQL (for reliability)
 - Query both in parallel
 - Merge and deduplicate results
@@ -287,31 +297,34 @@ A: Detailed technical analysis of the issue. Read if you want full context.
 
 ## Key Files to Know
 
-| File | Purpose | Status |
-|------|---------|--------|
-| `scripts/seed-patterns.ts` | Seeds patterns to Supermemory | ✅ Works |
-| `scripts/test-patterns.ts` | Tests if patterns are searchable | ❌ Returns 0 results |
-| `scripts/diagnose-supermemory.ts` | Diagnostic tool | 🔍 Reveals 500 error |
-| `lib/semantic-search/supermemory-store.ts` | List/search API calls | ❌ List API fails |
-| `components/memory-card.tsx` | Display patterns | ✅ Code is correct |
-| `INDEXING_INVESTIGATION.md` | Detailed technical analysis | 📊 Full findings |
+| File                                       | Purpose                          | Status               |
+| ------------------------------------------ | -------------------------------- | -------------------- |
+| `scripts/seed-patterns.ts`                 | Seeds patterns to Supermemory    | ✅ Works             |
+| `scripts/test-patterns.ts`                 | Tests if patterns are searchable | ❌ Returns 0 results |
+| `scripts/diagnose-supermemory.ts`          | Diagnostic tool                  | 🔍 Reveals 500 error |
+| `lib/semantic-search/supermemory-store.ts` | List/search API calls            | ❌ List API fails    |
+| `components/memory-card.tsx`               | Display patterns                 | ✅ Code is correct   |
+| `INDEXING_INVESTIGATION.md`                | Detailed technical analysis      | 📊 Full findings     |
 
 ---
 
 ## Next Steps
 
 ### If You're a User:
+
 1. Wait 30-60 minutes for Supermemory to process
 2. Try searching again: `npm run test:patterns`
 3. If still not working, contact Supermemory support with the details above
 
 ### If You're a Developer:
+
 1. Read `INDEXING_INVESTIGATION.md` for full context
 2. Implement Option A (retry logic) - lowest risk, quick win
 3. Test with `npm run test:patterns`
 4. Monitor Supermemory status going forward
 
 ### If You're a DevOps/Maintainer:
+
 1. Check Supermemory service status
 2. Contact Supermemory support
 3. Monitor for resolution

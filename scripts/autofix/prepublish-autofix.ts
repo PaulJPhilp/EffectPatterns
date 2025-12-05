@@ -26,11 +26,11 @@
  * Note: This is a scaffold. No file mutations are performed yet.
  */
 
-import { exec as _exec } from 'node:child_process';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { promisify } from 'node:util';
-import dotenv from 'dotenv';
+import { exec as _exec } from "node:child_process";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { promisify } from "node:util";
+import dotenv from "dotenv";
 
 // Style gate uses Biome via bunx
 
@@ -38,7 +38,7 @@ const exec = promisify(_exec);
 
 const CWD = process.cwd();
 // Load environment variables from .env at repo root
-dotenv.config({ path: path.resolve(CWD, '.env') });
+dotenv.config({ path: path.resolve(CWD, ".env") });
 
 type Result = {
   file: string;
@@ -66,13 +66,13 @@ function hasFlag(name: string): boolean {
 }
 
 function parseOnly(): Set<string> | undefined {
-  const raw = argValue('--only');
+  const raw = argValue("--only");
   if (!raw) return;
   const set = new Set(
     raw
-      .split(',')
+      .split(",")
       .map((s) => s.trim())
-      .filter(Boolean),
+      .filter(Boolean)
   );
   return set;
 }
@@ -86,7 +86,7 @@ function normMsg(line: string): { code?: string; message?: string } {
 
 async function readReport(file: string): Promise<PrepublishReport> {
   const p = path.resolve(CWD, file);
-  const txt = await fs.readFile(p, 'utf8');
+  const txt = await fs.readFile(p, "utf8");
   return JSON.parse(txt);
 }
 
@@ -95,11 +95,11 @@ function summarize(
   opts: {
     only?: Set<string>;
     limit?: number;
-  },
+  }
 ) {
   const { results } = report;
   const limited =
-    typeof opts.limit === 'number' && opts.limit > 0
+    typeof opts.limit === "number" && opts.limit > 0
       ? results.slice(0, opts.limit)
       : results;
 
@@ -132,7 +132,7 @@ function summarize(
 
   const freqArr = [...freq.entries()].sort((a, b) => b[1] - a[1]);
   const byCodeArr = [...byCode.entries()].sort(
-    (a, b) => b[1].count - a[1].count,
+    (a, b) => b[1].count - a[1].count
   );
 
   return { freqArr, byCodeArr, failsCount: fails.length };
@@ -141,41 +141,41 @@ function summarize(
 async function maybeWriteSummary(outPath: string | undefined, data: unknown) {
   if (!outPath) return;
   const abs = path.resolve(CWD, outPath);
-  await fs.writeFile(abs, JSON.stringify(data, null, 2), 'utf8');
-  console.log('Summary written:', abs);
+  await fs.writeFile(abs, JSON.stringify(data, null, 2), "utf8");
+  console.log("Summary written:", abs);
 }
 
 async function main() {
-  const inReport = argValue('--report') ?? 'prepublish-report.json';
+  const inReport = argValue("--report") ?? "prepublish-report.json";
   const only = parseOnly();
-  const limitArg = argValue('--limit');
+  const limitArg = argValue("--limit");
   const limit = limitArg ? Number(limitArg) : undefined;
-  const dryRun = !hasFlag('--write');
-  const out = argValue('--out');
-  const ai = hasFlag('--ai');
-  const aiLimitArg = argValue('--ai-limit');
+  const dryRun = !hasFlag("--write");
+  const out = argValue("--out");
+  const ai = hasFlag("--ai");
+  const aiLimitArg = argValue("--ai-limit");
   const aiLimit = aiLimitArg ? Number(aiLimitArg) : undefined;
-  const aiCall = hasFlag('--ai-call');
-  const provider = argValue('--provider') ?? 'google';
-  const model = argValue('--model') ?? 'gemini-2.5-flash';
-  const attemptsArg = argValue('--attempts');
+  const aiCall = hasFlag("--ai-call");
+  const provider = argValue("--provider") ?? "google";
+  const model = argValue("--model") ?? "gemini-2.5-flash";
+  const attemptsArg = argValue("--attempts");
   const attempts = attemptsArg ? Math.max(1, Number(attemptsArg)) : 1;
-  const styleGate = hasFlag('--style-gate');
+  const styleGate = hasFlag("--style-gate");
 
   // Idiom guide (optional)
-  const idiomArg = argValue('--idiom');
-  const idiomPath = idiomArg ?? path.join(CWD, 'IdiomaticEffect.mdx');
+  const idiomArg = argValue("--idiom");
+  const idiomPath = idiomArg ?? path.join(CWD, "IdiomaticEffect.mdx");
   let idiomText: string | undefined;
   try {
-    const text = await fs.readFile(idiomPath, 'utf8');
+    const text = await fs.readFile(idiomPath, "utf8");
     if (text && text.trim().length > 0) {
       idiomText = text;
-      console.log('Idiom guide loaded:', path.relative(CWD, idiomPath));
+      console.log("Idiom guide loaded:", path.relative(CWD, idiomPath));
     }
   } catch {
     // If default is missing and no explicit --idiom was provided, ignore silently
     if (idiomArg) {
-      console.warn('Could not read idiom guide at:', idiomPath);
+      console.warn("Could not read idiom guide at:", idiomPath);
     }
     idiomText = undefined;
   }
@@ -186,23 +186,23 @@ async function main() {
     limit,
   });
 
-  console.log('Prepublish Autofix Summary (scaffold)');
-  console.log('Report:', path.resolve(CWD, inReport));
-  console.log('Files failing:', failsCount);
-  if (only) console.log('Only codes:', [...only].join(','));
-  if (limit) console.log('Limit:', limit);
+  console.log("Prepublish Autofix Summary (scaffold)");
+  console.log("Report:", path.resolve(CWD, inReport));
+  console.log("Files failing:", failsCount);
+  if (only) console.log("Only codes:", [...only].join(","));
+  if (limit) console.log("Limit:", limit);
   if (aiCall) {
     console.log(`AI: provider=${provider} model=${model} attempts=${attempts}`);
-    if (styleGate) console.log('Style gate: enabled (Biome + 80 cols)');
-    if (idiomText) console.log('AI will use idiomatic guide content in prompt');
+    if (styleGate) console.log("Style gate: enabled (Biome + 80 cols)");
+    if (idiomText) console.log("AI will use idiomatic guide content in prompt");
   }
 
-  console.log('\nTop error messages by frequency:');
+  console.log("\nTop error messages by frequency:");
   for (const [msg, count] of freqArr.slice(0, 50)) {
-    console.log(String(count).padStart(3), 'x', msg);
+    console.log(String(count).padStart(3), "x", msg);
   }
 
-  console.log('\nTotals by TS code:');
+  console.log("\nTotals by TS code:");
   for (const [code, info] of byCodeArr) {
     console.log(`${code} -> ${info.count} issues, ${info.files.size} files`);
   }
@@ -223,19 +223,19 @@ async function main() {
 
   if (!dryRun) {
     console.log(
-      '\n--write provided, but no codemods implemented yet. ' +
-        'This scaffold only summarizes errors.',
+      "\n--write provided, but no codemods implemented yet. " +
+        "This scaffold only summarizes errors."
     );
   }
 
   if (ai) {
     // Produce AI prompt packs for failing files
-    const aiDir = path.resolve(CWD, 'scripts/autofix/ai');
+    const aiDir = path.resolve(CWD, "scripts/autofix/ai");
     await fs.mkdir(aiDir, { recursive: true });
 
     const fails = report.results.filter((r) => !r.ok);
     const selected =
-      typeof aiLimit === 'number' && aiLimit > 0
+      typeof aiLimit === "number" && aiLimit > 0
         ? fails.slice(0, aiLimit)
         : fails;
 
@@ -244,36 +244,36 @@ async function main() {
       // infer TS file from output by reading the first ts path in errors
       const m = r.output.match(/(content\/new\/src\/[^\s:]+\.ts)/);
       const tsPath = m ? m[1] : undefined;
-      let tsContent = '';
+      let tsContent = "";
       if (tsPath) {
         try {
-          tsContent = await fs.readFile(path.resolve(CWD, tsPath), 'utf8');
+          tsContent = await fs.readFile(path.resolve(CWD, tsPath), "utf8");
         } catch {
           // ignore
         }
       }
       const data = {
         instruction:
-          'You are fixing TypeScript examples for Effect Patterns. ' +
-          'Make minimal changes to pass tsc while keeping semantics and ' +
-          'teaching intent. Keep lines <= 80 chars. Explain changes briefly.',
+          "You are fixing TypeScript examples for Effect Patterns. " +
+          "Make minimal changes to pass tsc while keeping semantics and " +
+          "teaching intent. Keep lines <= 80 chars. Explain changes briefly.",
         mdx: path.relative(
           CWD,
-          r.file.replace(/src\//, 'processed/').replace(/\.ts$/, '.mdx'),
+          r.file.replace(/src\//, "processed/").replace(/\.ts$/, ".mdx")
         ),
         tsFile: tsPath,
         errorOutput: r.output,
         tsContent,
       };
       const base = path
-        .basename(tsPath || path.basename(r.file).replace(/\.mdx$/, '.ts'))
-        .replace(/\.ts$/, '');
+        .basename(tsPath || path.basename(r.file).replace(/\.mdx$/, ".ts"))
+        .replace(/\.ts$/, "");
       const promptFile = path.join(aiDir, `${base}.prompt.json`);
-      await fs.writeFile(promptFile, JSON.stringify(data, null, 2), 'utf8');
+      await fs.writeFile(promptFile, JSON.stringify(data, null, 2), "utf8");
       packs.push({ file: r.file, promptPath: promptFile });
     }
 
-    const consolidated = path.join(aiDir, 'batch.prompts.json');
+    const consolidated = path.join(aiDir, "batch.prompts.json");
     await fs.writeFile(
       consolidated,
       JSON.stringify(
@@ -283,18 +283,18 @@ async function main() {
           timestamp: new Date().toISOString(),
         },
         null,
-        2,
+        2
       ),
-      'utf8',
+      "utf8"
     );
-    console.log('\nAI prompt packs written to:', aiDir);
-    console.log('Consolidated:', consolidated);
+    console.log("\nAI prompt packs written to:", aiDir);
+    console.log("Consolidated:", consolidated);
   }
 
   if (aiCall) {
-    if (provider !== 'google') {
+    if (provider !== "google") {
       throw new Error(
-        `Only provider=google supported in this scaffold (got ${provider})`,
+        `Only provider=google supported in this scaffold (got ${provider})`
       );
     }
 
@@ -303,10 +303,10 @@ async function main() {
 
     const fails = report.results.filter((r) => !r.ok);
     const selected =
-      typeof limit === 'number' && limit > 0 ? fails.slice(0, limit) : fails;
+      typeof limit === "number" && limit > 0 ? fails.slice(0, limit) : fails;
 
-    const aiDir = path.resolve(CWD, 'scripts/autofix/ai');
-    const suggDir = path.join(aiDir, 'suggestions');
+    const aiDir = path.resolve(CWD, "scripts/autofix/ai");
+    const suggDir = path.join(aiDir, "suggestions");
     await fs.mkdir(suggDir, { recursive: true });
 
     const apiKey =
@@ -315,16 +315,16 @@ async function main() {
       process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error(
-        'GOOGLE_API_KEY env var is required for --ai-call provider=google',
+        "GOOGLE_API_KEY env var is required for --ai-call provider=google"
       );
     }
     const usedKeyName = process.env.GOOGLE_API_KEY
-      ? 'GOOGLE_API_KEY'
+      ? "GOOGLE_API_KEY"
       : process.env.GOOGLE_AI_API_KEY
-        ? 'GOOGLE_AI_API_KEY'
+        ? "GOOGLE_AI_API_KEY"
         : process.env.GEMINI_API_KEY
-          ? 'GEMINI_API_KEY'
-          : '(none)';
+          ? "GEMINI_API_KEY"
+          : "(none)";
     console.log(`Using API key from ${usedKeyName}`);
 
     for (const r of selected) {
@@ -332,22 +332,22 @@ async function main() {
       const tsMatch = r.output.match(/(content\/new\/src\/[^\s:]+\.ts)/);
       const tsPath = tsMatch ? path.resolve(CWD, tsMatch[1]) : undefined;
       if (!tsPath) {
-        console.log('Skipping (no TS path found):', r.file);
+        console.log("Skipping (no TS path found):", r.file);
         continue;
       }
 
-      let tsContent = '';
+      let tsContent = "";
       try {
-        tsContent = await fs.readFile(tsPath, 'utf8');
+        tsContent = await fs.readFile(tsPath, "utf8");
       } catch {
-        console.log('Skipping (TS file missing):', tsPath);
+        console.log("Skipping (TS file missing):", tsPath);
         continue;
       }
 
-      console.log('\n▶ AI fixing:', path.relative(CWD, tsPath));
+      console.log("\n▶ AI fixing:", path.relative(CWD, tsPath));
       let attempt = 0;
       let fixed = false;
-      let _lastProposal = '';
+      let _lastProposal = "";
       while (attempt < attempts && !fixed) {
         attempt++;
         const proposal = await callGeminiFix({
@@ -369,9 +369,9 @@ async function main() {
           (styleGate && !(await passesStyleGate(extracted)))
         ) {
           console.log(
-            'Suggestion failed gate (banned/missing/format/lint).' +
-              (banned.length ? ` Banned: ${banned.join(', ')}.` : '') +
-              ' Retrying with stricter guidance...',
+            "Suggestion failed gate (banned/missing/format/lint)." +
+              (banned.length ? ` Banned: ${banned.join(", ")}.` : "") +
+              " Retrying with stricter guidance..."
           );
           const retry = await callGeminiFix({
             apiKey,
@@ -390,33 +390,33 @@ async function main() {
         }
         if (styleGate && !(await passesStyleGate(extracted))) {
           console.log(
-            'Suggestion still fails style gate; saving anyway for review.',
+            "Suggestion still fails style gate; saving anyway for review."
           );
         }
         const outFile = path.join(
           suggDir,
-          path.basename(tsPath).replace(/\.ts$/, `.attempt${attempt}.ts`),
+          path.basename(tsPath).replace(/\.ts$/, `.attempt${attempt}.ts`)
         );
         // Save formatted when style gate enabled
         const toSave = styleGate ? await formatWithBiome(extracted) : extracted;
-        await fs.writeFile(outFile, toSave, 'utf8');
-        console.log('AI suggestion saved:', path.relative(CWD, outFile));
+        await fs.writeFile(outFile, toSave, "utf8");
+        console.log("AI suggestion saved:", path.relative(CWD, outFile));
 
         if (!dryRun) {
           await fs.writeFile(
             tsPath,
             styleGate ? await formatWithBiome(extracted) : extracted,
-            'utf8',
+            "utf8"
           );
           // Re-check the single file
           const ok = await prepublishCheckOne({ mdxPath, srcdir });
-          console.log(ok ? '✅ Re-check passed' : '❌ Re-check failed');
+          console.log(ok ? "✅ Re-check passed" : "❌ Re-check failed");
           if (ok) fixed = true;
         }
       }
 
       if (!(fixed || dryRun)) {
-        console.log('Still failing after attempts:', attempts);
+        console.log("Still failing after attempts:", attempts);
       }
     }
   }
@@ -454,51 +454,51 @@ async function callGeminiFix(args: {
       ? `Idiomatic Effect-TS Guide (verbatim):\n\n${args.idiom}`
       : undefined,
     "You are an expert Effect v3 engineer. Produce a single TypeScript code block fenced with ```ts that fully replaces the user's file to fix the reported errors.",
-    'Follow these strict rules:',
+    "Follow these strict rules:",
     "- Use ONLY Effect v3 canonical APIs from 'effect'.",
-    '- Preserve teaching intent; make MINIMAL edits.',
-    '- Lines must be <= 80 chars.',
-    '- Return ONLY the corrected file as a fenced ```ts block.',
-    'Banlist (do NOT use):',
-    '- Option.cond, Either.cond, Stream.if, Effect.matchTag',
-    '- Schema.string (use Schema.String), Brand.schema',
-    '- Chunk.fromArray, Chunk.concat (static)',
-    '- DateTime.fromISOString, DateTime.toISOString, DateTime.plus/minus/before',
-    '- Duration.add, Duration.toISOString',
-  ].join('\n');
+    "- Preserve teaching intent; make MINIMAL edits.",
+    "- Lines must be <= 80 chars.",
+    "- Return ONLY the corrected file as a fenced ```ts block.",
+    "Banlist (do NOT use):",
+    "- Option.cond, Either.cond, Stream.if, Effect.matchTag",
+    "- Schema.string (use Schema.String), Brand.schema",
+    "- Chunk.fromArray, Chunk.concat (static)",
+    "- DateTime.fromISOString, DateTime.toISOString, DateTime.plus/minus/before",
+    "- Duration.add, Duration.toISOString",
+  ].join("\n");
 
   const rules = [
-    'Rules:',
-    '- For optional values: Option.some/none, Option.isSome narrowing.',
-    '- For Either: use Either.right/left constructors, and isRight/isLeft',
-    '  for narrowing before accessing .right/.left.',
-    '- For Stream: use map/flatMap/filter; do not invent methods.',
-    '- For collections: Effect.all([...]) to combine effects.',
-    '- For Chunk: use Chunk.make(...) or fromIterable(...).',
-    '- No namespace types (e.g., Option as a type) — use concrete types.',
+    "Rules:",
+    "- For optional values: Option.some/none, Option.isSome narrowing.",
+    "- For Either: use Either.right/left constructors, and isRight/isLeft",
+    "  for narrowing before accessing .right/.left.",
+    "- For Stream: use map/flatMap/filter; do not invent methods.",
+    "- For collections: Effect.all([...]) to combine effects.",
+    "- For Chunk: use Chunk.make(...) or fromIterable(...).",
+    "- No namespace types (e.g., Option as a type) — use concrete types.",
     "- Import only from 'effect' barrel; no deep imports.",
-    '- Output should be Biome-format clean and pass lint.',
-  ].join('\n');
+    "- Output should be Biome-format clean and pass lint.",
+  ].join("\n");
 
   const user = [
-    'File:',
+    "File:",
     args.tsPath,
     `\nErrors:\n${args.errorOutput}`,
     `\nCurrent content:\n\`\`\`ts\n${args.tsContent}\n\`\`\``,
-    args.guidance ? `\nGuidance:\n${args.guidance}` : '',
-    '\nOutput: corrected file as ```ts fenced block only.',
-  ].join('\n');
+    args.guidance ? `\nGuidance:\n${args.guidance}` : "",
+    "\nOutput: corrected file as ```ts fenced block only.",
+  ].join("\n");
 
   const url =
-    'https://generativelanguage.googleapis.com/v1beta/models/' +
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
     `${encodeURIComponent(args.model)}:generateContent?key=${encodeURIComponent(
-      args.apiKey,
+      args.apiKey
     )}`;
 
   const body = {
     contents: [
       {
-        role: 'user',
+        role: "user",
         parts: [{ text: `${system}\n\n${rules}\n\n${user}` }],
       },
     ],
@@ -508,8 +508,8 @@ async function callGeminiFix(args: {
   };
 
   const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -522,13 +522,13 @@ async function callGeminiFix(args: {
     args.model,
     system,
     user,
-    args.guidance,
+    args.guidance
   );
   if (!text?.trim()) {
     console.warn(
-      'Gemini response missing text; returning empty string to allow retry.',
+      "Gemini response missing text; returning empty string to allow retry."
     );
-    return '';
+    return "";
   }
   return text;
 }
@@ -538,37 +538,37 @@ async function extractGeminiText(
   model: string,
   system: string,
   user: string,
-  _guidance?: string,
+  _guidance?: string
 ): Promise<string> {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
     {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: `${system}\n\n${user}` }] }],
+        contents: [{ role: "user", parts: [{ text: `${system}\n\n${user}` }] }],
         generationConfig: {
           temperature: 0.2,
         },
       }),
-    },
+    }
   );
   const json: any = await response.json();
   const text: string | undefined =
     json?.candidates?.[0]?.content?.parts?.[0]?.text;
-  return text ?? '';
+  return text ?? "";
 }
 
 // --- Banlist & style helpers ---
 function buildCorrectiveGuidance(banned: string[], styleGate: boolean): string {
-  const items = banned.length ? `Banned used: ${banned.join(', ')}. ` : '';
+  const items = banned.length ? `Banned used: ${banned.join(", ")}. ` : "";
   const style = styleGate
-    ? 'Also ensure <= 80 cols, idiomatic Effect v3, and Biome-clean output. '
-    : '';
+    ? "Also ensure <= 80 cols, idiomatic Effect v3, and Biome-clean output. "
+    : "";
   return (
     items +
     style +
-    'Rewrite using ONLY allowed Effect v3 APIs per the constraints.'
+    "Rewrite using ONLY allowed Effect v3 APIs per the constraints."
   );
 }
 
@@ -598,15 +598,15 @@ function findBanned(text: string): string[] {
 }
 
 async function formatWithBiome(code: string): Promise<string> {
-  const tmpDir = path.join(CWD, 'scripts/autofix/ai/tmp');
+  const tmpDir = path.join(CWD, "scripts/autofix/ai/tmp");
   await fs.mkdir(tmpDir, { recursive: true });
   const tmpFile = path.join(tmpDir, `fmt-${Date.now()}-${Math.random()}.ts`);
-  await fs.writeFile(tmpFile, code, 'utf8');
+  await fs.writeFile(tmpFile, code, "utf8");
   try {
     await exec(`bunx biome format --write ${JSON.stringify(tmpFile)}`, {
       cwd: CWD,
     });
-    const formatted = await fs.readFile(tmpFile, 'utf8');
+    const formatted = await fs.readFile(tmpFile, "utf8");
     return formatted;
   } catch {
     return code;
@@ -619,19 +619,19 @@ async function formatWithBiome(code: string): Promise<string> {
 
 async function passesStyleGate(code: string): Promise<boolean> {
   // 1) Line length gate
-  const lines = code.split('\n');
+  const lines = code.split("\n");
   const tooLong = lines.find((l) => l.length > 80);
   if (tooLong) return false;
 
   // 2) Biome lint gate (best-effort).
-  const tmpDir = path.join(CWD, 'scripts/autofix/ai/tmp');
+  const tmpDir = path.join(CWD, "scripts/autofix/ai/tmp");
   await fs.mkdir(tmpDir, { recursive: true });
   const tmpFile = path.join(tmpDir, `lint-${Date.now()}-${Math.random()}.ts`);
-  await fs.writeFile(tmpFile, code, 'utf8');
+  await fs.writeFile(tmpFile, code, "utf8");
   try {
     const { stdout } = await exec(
       `bunx biome lint --reporter json ${JSON.stringify(tmpFile)}`,
-      { cwd: CWD },
+      { cwd: CWD }
     );
     // Parse Biome JSON and check for errors
     try {
@@ -640,7 +640,7 @@ async function passesStyleGate(code: string): Promise<boolean> {
         ? report.files.some(
             (f: any) =>
               Array.isArray(f.diagnostics) &&
-              f.diagnostics.some((d: any) => d.severity === 'error'),
+              f.diagnostics.some((d: any) => d.severity === "error")
           )
         : false;
       if (hasErrors) return false;
@@ -662,7 +662,7 @@ async function prepublishCheckOne(args: {
 }): Promise<boolean> {
   try {
     const cmd =
-      'bunx tsx scripts/publish/prepublish-check-one.ts ' +
+      "bunx tsx scripts/publish/prepublish-check-one.ts " +
       `--mdx ${JSON.stringify(path.relative(CWD, args.mdxPath))} ` +
       `--srcdir ${JSON.stringify(path.relative(CWD, args.srcdir))}`;
     const { stdout, stderr } = await exec(cmd, { cwd: CWD });

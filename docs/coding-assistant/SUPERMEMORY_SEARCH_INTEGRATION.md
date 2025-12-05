@@ -17,12 +17,14 @@ Supermemory provides two complementary search endpoints optimized for different 
 **Returns**: Document chunks with context
 
 **Use Cases:**
+
 - Legal/finance document search
 - Chat with documentation
 - Document discovery
 - Knowledge base search
 
 **Key Parameters:**
+
 ```typescript
 {
   q: string;                          // Search query
@@ -47,12 +49,14 @@ Supermemory provides two complementary search endpoints optimized for different 
 **Returns**: Memories with similarity scores
 
 **Use Cases:**
+
 - Personalized chatbots
 - Understanding user preferences
 - Auto-selection based on user context
 - User preference discovery
 
 **Key Parameters:**
+
 ```typescript
 {
   q: string;              // Search query
@@ -72,23 +76,24 @@ Supermemory provides two complementary search endpoints optimized for different 
 **Range**: 0.0 (least sensitive) to 1.0 (most sensitive)
 
 **Strategies**:
+
 ```typescript
 // Broad search - cast wide net
 const broadSearch = {
-  documentThreshold: 0.2,   // Many documents
-  chunkThreshold: 0.2        // Many chunks per document
+  documentThreshold: 0.2, // Many documents
+  chunkThreshold: 0.2, // Many chunks per document
 };
 
 // Balanced search - good tradeoff
 const balancedSearch = {
   documentThreshold: 0.5,
-  chunkThreshold: 0.5
+  chunkThreshold: 0.5,
 };
 
 // Precise search - high quality only
 const preciseSearch = {
   documentThreshold: 0.8,
-  chunkThreshold: 0.8
+  chunkThreshold: 0.8,
 };
 ```
 
@@ -97,6 +102,7 @@ const preciseSearch = {
 **What it does**: Expands queries to find more relevant results
 
 **Example**:
+
 - Input: "ML"
 - Rewritten: "machine learning artificial intelligence deep learning"
 
@@ -108,6 +114,7 @@ const preciseSearch = {
 **What it does**: Re-scores results using a different algorithm
 
 **Benefits**:
+
 - More accurate relevance scoring
 - Better semantic understanding
 - Catches results standard ranking misses
@@ -118,12 +125,14 @@ const preciseSearch = {
 ### 4. Container Tags vs Metadata Filters
 
 **Container Tags**:
+
 - Organizational grouping (exact matching)
 - Forms user understanding graph
 - Use for user/project segmentation
 - Example: containerTags: ["user_123", "research"]
 
 **Metadata Filters**:
+
 - SQL-like conditions on document metadata
 - Flexible range queries and comparisons
 - Use for date ranges, categories, authors
@@ -140,20 +149,24 @@ interface SupermemoryService {
   // ... existing methods ...
 
   // Documents search with full control
-  readonly searchDocuments: (options: DocumentSearchOptions)
-    => Effect.Effect<DocumentSearchResult, SupermemoryError>;
+  readonly searchDocuments: (
+    options: DocumentSearchOptions
+  ) => Effect.Effect<DocumentSearchResult, SupermemoryError>;
 
   // Memories search (conversational optimized)
-  readonly searchMemories: (options: MemorySearchOptions)
-    => Effect.Effect<MemorySearchResult, SupermemoryError>;
+  readonly searchMemories: (
+    options: MemorySearchOptions
+  ) => Effect.Effect<MemorySearchResult, SupermemoryError>;
 
   // Metadata-aware document search
-  readonly searchDocumentsWithMetadata: (options: MetadataSearchOptions)
-    => Effect.Effect<DocumentSearchResult, SupermemoryError>;
+  readonly searchDocumentsWithMetadata: (
+    options: MetadataSearchOptions
+  ) => Effect.Effect<DocumentSearchResult, SupermemoryError>;
 
   // Container-based memory queries
-  readonly searchByContainer: (options: ContainerSearchOptions)
-    => Effect.Effect<MemorySearchResult, SupermemoryError>;
+  readonly searchByContainer: (
+    options: ContainerSearchOptions
+  ) => Effect.Effect<MemorySearchResult, SupermemoryError>;
 }
 ```
 
@@ -208,8 +221,8 @@ interface FilterClause {
 {
   AND: [
     { key: "category", value: "ai", negate: false },
-    { key: "difficulty", value: "beginner", negate: false }
-  ]
+    { key: "difficulty", value: "beginner", negate: false },
+  ];
 }
 ```
 
@@ -308,14 +321,14 @@ const searchDocuments = (options: DocumentSearchOptions) =>
   Effect.gen(function* () {
     const response = yield* Effect.tryPromise({
       try: () =>
-        fetch('https://api.supermemory.ai/v3/search', {
-          method: 'POST',
+        fetch("https://api.supermemory.ai/v3/search", {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(options),
-        }).then(res => {
+        }).then((res) => {
           if (!res.ok) throw new Error(`Search failed: ${res.status}`);
           return res.json();
         }),
@@ -332,14 +345,14 @@ const searchMemories = (options: MemorySearchOptions) =>
   Effect.gen(function* () {
     const response = yield* Effect.tryPromise({
       try: () =>
-        fetch('https://api.supermemory.ai/v4/search', {
-          method: 'POST',
+        fetch("https://api.supermemory.ai/v4/search", {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(options),
-        }).then(res => {
+        }).then((res) => {
           if (!res.ok) throw new Error(`Search failed: ${res.status}`);
           return res.json();
         }),
@@ -398,13 +411,13 @@ export const filterToQuery = (conditions: FilterConditions): string => {
 
 ## Performance Characteristics
 
-| Operation | Typical Time | Notes |
-|-----------|-------------|-------|
-| Simple search (v4) | 100-200ms | Memory search, single query |
-| Document search (v3) | 150-300ms | Without reranking |
-| With reranking | +100-200ms | More accurate results |
-| Query rewriting | +400ms | Expands query for coverage |
-| Metadata filtering | <50ms | Client-side filtering |
+| Operation            | Typical Time | Notes                       |
+| -------------------- | ------------ | --------------------------- |
+| Simple search (v4)   | 100-200ms    | Memory search, single query |
+| Document search (v3) | 150-300ms    | Without reranking           |
+| With reranking       | +100-200ms   | More accurate results       |
+| Query rewriting      | +400ms       | Expands query for coverage  |
+| Metadata filtering   | <50ms        | Client-side filtering       |
 
 ## Success Criteria
 

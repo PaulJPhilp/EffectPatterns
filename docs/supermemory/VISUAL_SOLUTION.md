@@ -201,7 +201,7 @@ for (const memory of allMemories) {
   if (memoryType === "effect_pattern") {
     // ✅ Also check project
     if (projectId !== this.effectPatternsProjectId) {
-      continue;  // Skip wrong project
+      continue; // Skip wrong project
     }
   }
 }

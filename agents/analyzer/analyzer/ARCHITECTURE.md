@@ -109,6 +109,7 @@
 ## Data Flow
 
 ### Input: discord-qna.json
+
 ```json
 {
   "messages": [
@@ -118,7 +119,7 @@
       "content": "How do I use HttpApi?",
       "author": { "id": "user1", "name": "alice" },
       "timestamp": "2025-10-11T15:00:00.000Z"
-    },
+    }
     // ... 49 more messages
   ]
 }
@@ -127,12 +128,14 @@
 ### Processing Steps
 
 1. **Validation** (NEW)
+
    ```
    Raw JSON → MessageCollectionSchema → Validated Messages
    └─ Catches: Invalid JSON, missing fields, wrong types
    ```
 
 2. **Chunking** (IMPROVED)
+
    ```
    50 messages → Smart Chunking → [Chunk1, Chunk2, ...]
    └─ Keeps Q&A pairs together
@@ -140,6 +143,7 @@
    ```
 
 3. **Analysis** (IMPROVED)
+
    ```
    Each Chunk → LLM Analysis → Partial Analysis
    └─ Effect-TS specific prompts
@@ -155,6 +159,7 @@
    ```
 
 ### Output: analysis.txt
+
 ```
 # Effect-TS Discord Q&A Analysis
 
@@ -243,10 +248,10 @@ AnalyzerConfig
 ```typescript
 const AnalyzerLayers = Layer.mergeAll(
   NodeContext.layer,
-  AnalyzerConfigLive,      // NEW
-  DataValidationLive,      // NEW
-  ChunkingServiceLive,     // NEW
-  LLMServiceLive,
+  AnalyzerConfigLive, // NEW
+  DataValidationLive, // NEW
+  ChunkingServiceLive, // NEW
+  LLMServiceLive
 );
 
 const program = Effect.gen(function* () {
@@ -257,17 +262,20 @@ const program = Effect.gen(function* () {
 ## Testing Strategy
 
 ### Unit Tests
+
 - Schema validation (valid/invalid messages)
 - Chunking logic (various sizes, Q&A pairing)
 - Error handling (each error type)
 
 ### Integration Tests
+
 - Mock data test (existing)
 - Real data test (NEW)
   - Input: packages/data/discord-qna.json
   - Verify: Output structure and content
 
 ### Manual Testing
+
 - Run with various chunk sizes
 - Test with missing API key
 - Test with malformed JSON
@@ -276,10 +284,12 @@ const program = Effect.gen(function* () {
 ## Performance Considerations
 
 ### Current
+
 - 50 messages → ~1 chunk → 1 LLM call → ~5-10s
 - No batching or parallel processing
 
 ### Future Optimizations
+
 - Parallel chunk processing (if multiple chunks)
 - Streaming responses for large reports
 - Caching LLM responses for repeated runs

@@ -107,7 +107,10 @@ export const semanticSearchConversations = async (
 
   // Process results with scoring
   let scoredResults: SemanticSearchResult[] = vectorResults.map((result) => {
-    const keywordScore = calculateKeywordRelevance(query, result.metadata.content);
+    const keywordScore = calculateKeywordRelevance(
+      query,
+      result.metadata.content
+    );
     const recencyScore = calculateRecencyBoost(result.metadata.timestamp);
     const satisfactionScore = calculateSatisfactionBoost(
       result.metadata.satisfactionScore
@@ -159,21 +162,26 @@ export const searchByTag = async (
   options: { limit?: number } = {}
 ): Promise<SemanticSearchResult[]> => {
   const supermemoryStore = getSupermemoryStore();
-  const items = await supermemoryStore.searchByTag(userId, tag, options.limit || 100);
+  const items = await supermemoryStore.searchByTag(
+    userId,
+    tag,
+    options.limit || 100
+  );
 
-  const results = items.map((item) => ({
-    id: item.id,
-    metadata: item.metadata,
-    score: {
-      vectorSimilarity: 1.0,
-      keywordRelevance: 1.0,
-      recencyBoost: calculateRecencyBoost(item.metadata.timestamp),
-      satisfactionBoost: calculateSatisfactionBoost(
-        item.metadata.satisfactionScore
-      ),
-      finalScore: 1.0,
-    },
-  }))
+  const results = items
+    .map((item) => ({
+      id: item.id,
+      metadata: item.metadata,
+      score: {
+        vectorSimilarity: 1.0,
+        keywordRelevance: 1.0,
+        recencyBoost: calculateRecencyBoost(item.metadata.timestamp),
+        satisfactionBoost: calculateSatisfactionBoost(
+          item.metadata.satisfactionScore
+        ),
+        finalScore: 1.0,
+      },
+    }))
     .slice(0, options.limit || 20);
 
   return results as SemanticSearchResult[];
@@ -207,12 +215,14 @@ const calculateKeywordRelevance = (query: string, content: string): number => {
   const queryWords = query
     .toLowerCase()
     .split(/\s+/)
-    .filter(w => w.length > 3);
+    .filter((w) => w.length > 3);
   const contentLower = content.toLowerCase();
 
   if (queryWords.length === 0) return 0;
 
-  const matches = queryWords.filter(word => contentLower.includes(word)).length;
+  const matches = queryWords.filter((word) =>
+    contentLower.includes(word)
+  ).length;
   return matches / queryWords.length;
 };
 
@@ -247,9 +257,7 @@ const calculateRecencyBoost = (timestamp: string): number => {
  * - Score 1: 0.2
  * - No score: 0.5 (neutral)
  */
-const calculateSatisfactionBoost = (
-  satisfactionScore?: number
-): number => {
+const calculateSatisfactionBoost = (satisfactionScore?: number): number => {
   if (!satisfactionScore) return 0.5;
   return Math.max(0, Math.min(1, satisfactionScore / 5));
 };
@@ -257,7 +265,9 @@ const calculateSatisfactionBoost = (
 /**
  * Get search statistics for debugging/optimization
  */
-export const getSearchStats = async (userId: string): Promise<{
+export const getSearchStats = async (
+  userId: string
+): Promise<{
   vectorStoreSize: number;
   embeddingDimension: number;
   utilizationPercent: number;

@@ -15,12 +15,14 @@
 ## 🚀 Release in 5 Steps
 
 ### Step 1: Commit Changes
+
 ```bash
 git add .
 git commit -m "docs: prepare CLI for release"
 ```
 
 ### Step 2: Create Tag
+
 ```bash
 # For v0.3.1 (current version)
 git tag -a v0.3.1 -m "Release v0.3.1 - CLI ready for production"
@@ -31,12 +33,14 @@ git tag -a v0.3.1 -m "Release v0.3.1 - CLI ready for production"
 ```
 
 ### Step 3: Push to GitHub
+
 ```bash
 git push origin main
 git push origin v0.3.1  # or v0.4.0
 ```
 
 ### Step 4: Create GitHub Release
+
 1. Go to: https://github.com/patrady/effect-patterns/releases/new
 2. Select tag: `v0.3.1` (or `v0.4.0`)
 3. Release title: `Effect Patterns Hub CLI v0.3.1`
@@ -45,6 +49,7 @@ git push origin v0.3.1  # or v0.4.0
 6. Click "Publish release"
 
 ### Step 5: Announce
+
 Share on social media, Discord, etc. (optional)
 
 ---
@@ -52,10 +57,12 @@ Share on social media, Discord, etc. (optional)
 ## 📋 What Was Done
 
 ### Fixed
+
 - ✅ 2 failing tests (server unavailable handling)
 - ✅ Version mismatch (CLI now shows 0.3.1)
 
 ### Created
+
 - ✅ CLI section in README.md
 - ✅ RELEASE-ANNOUNCEMENT.md
 - ✅ RELEASE-CHECKLIST.md
@@ -63,6 +70,7 @@ Share on social media, Discord, etc. (optional)
 - ✅ This quick guide
 
 ### Verified
+
 - ✅ All 73 tests pass
 - ✅ `ep --version` shows 0.3.1
 - ✅ `ep --help` works
@@ -74,11 +82,13 @@ Share on social media, Discord, etc. (optional)
 ## 🎯 Recommended Version
 
 **Option A: Release as v0.3.1** (Current)
+
 - Maintains version continuity
 - Quick to release
 - No additional changes needed
 
 **Option B: Bump to v0.4.0** (Recommended)
+
 - Marks this as significant CLI milestone
 - Better reflects the comprehensive CLI features
 - Requires updating 2 files:
@@ -109,12 +119,14 @@ ep admin validate
 ## 🔍 Post-Release Monitoring
 
 After release, watch for:
+
 - GitHub issues (bug reports)
 - Installation problems
 - Feature requests
 - Community feedback
 
 Respond within:
+
 - 24 hours for bugs
 - 48 hours for features
 - 24 hours for questions
@@ -124,6 +136,7 @@ Respond within:
 ## 📚 Reference Documents
 
 All prepared and ready:
+
 - `RELEASE-ANNOUNCEMENT.md` - Copy/paste for GitHub release
 - `RELEASE-CHECKLIST.md` - Detailed checklist
 - `RELEASE-SUMMARY.md` - Complete summary

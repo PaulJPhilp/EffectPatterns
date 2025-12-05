@@ -169,16 +169,16 @@ A comprehensive quality assurance system that catches bugs before they reach pro
 
 ### Coverage Matrix
 
-| Bug Type | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
-|----------|---------|---------|---------|---------|
-| Memory/Streaming | ✅ | ❌ | ✅ | ✅ |
-| Concurrency | ✅ | ✅ | ✅ | ✅ |
-| Effect Idioms | ❌ | ✅ | ✅ | ✅ |
-| Deprecated APIs | ❌ | ✅ | ✅ | ❌ |
-| Documentation | ❌ | ❌ | ✅ | ❌ |
-| Real I/O | ❌ | ❌ | ❌ | ✅ |
-| Error Handling | ❌ | ❌ | ❌ | ✅ |
-| Resource Cleanup | ❌ | ❌ | ❌ | ✅ |
+| Bug Type         | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
+| ---------------- | ------- | ------- | ------- | ------- |
+| Memory/Streaming | ✅      | ❌      | ✅      | ✅      |
+| Concurrency      | ✅      | ✅      | ✅      | ✅      |
+| Effect Idioms    | ❌      | ✅      | ✅      | ✅      |
+| Deprecated APIs  | ❌      | ✅      | ✅      | ❌      |
+| Documentation    | ❌      | ❌      | ✅      | ❌      |
+| Real I/O         | ❌      | ❌      | ❌      | ✅      |
+| Error Handling   | ❌      | ❌      | ❌      | ✅      |
+| Resource Cleanup | ❌      | ❌      | ❌      | ✅      |
 
 **Result:** 4-layer defense catches everything! ✅
 
@@ -224,14 +224,14 @@ A comprehensive quality assurance system that catches bugs before they reach pro
 
 ## 📊 Statistics
 
-| Metric | Before | After | Change |
-|--------|--------|-------|--------|
-| **Total Patterns** | 88 | 130 | +42 (+48%) |
-| **QA Layers** | 1 | 4 | +3 (+300%) |
-| **Files Changed** | - | 1,095 | - |
-| **Lines Added** | - | +77,424 | - |
-| **Lines Removed** | - | -2,035 | - |
-| **TypeScript Errors** | 89 | 0 | -89 (-100%) |
+| Metric                | Before | After   | Change      |
+| --------------------- | ------ | ------- | ----------- |
+| **Total Patterns**    | 88     | 130     | +42 (+48%)  |
+| **QA Layers**         | 1      | 4       | +3 (+300%)  |
+| **Files Changed**     | -      | 1,095   | -           |
+| **Lines Added**       | -      | +77,424 | -           |
+| **Lines Removed**     | -      | -2,035  | -           |
+| **TypeScript Errors** | 89     | 0       | -89 (-100%) |
 
 ---
 

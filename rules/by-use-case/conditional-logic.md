@@ -12,21 +12,17 @@ import { Effect, Stream, Option, Either } from "effect";
 // Effect: Branch based on a condition
 const effect = Effect.if(true, {
   onTrue: () => Effect.succeed("yes"),
-  onFalse: () => Effect.succeed("no")
+  onFalse: () => Effect.succeed("no"),
 }); // Effect<string>
 
 // Option: Conditionally create an Option
 const option = true ? Option.some("yes") : Option.none(); // Option<string> (Some("yes"))
 
 // Either: Conditionally create an Either
-const either = true
-  ? Either.right("yes")
-  : Either.left("error"); // Either<string, string> (Right("yes"))
+const either = true ? Either.right("yes") : Either.left("error"); // Either<string, string> (Right("yes"))
 
 // Stream: Conditionally emit a stream
-const stream = false
-  ? Stream.fromIterable([1, 2])
-  : Stream.empty; // Stream<number> (empty)
+const stream = false ? Stream.fromIterable([1, 2]) : Stream.empty; // Stream<number> (empty)
 ```
 
 **Explanation:**  
@@ -59,10 +55,8 @@ const option = Option.some(4).pipe(
 
 // Either: Use map and flatMap to filter
 const either = Either.right(4).pipe(
-  Either.flatMap((n) => 
-    n % 2 === 0
-      ? Either.right(n)
-      : Either.left("Number is not even")
+  Either.flatMap((n) =>
+    n % 2 === 0 ? Either.right(n) : Either.left("Number is not even")
   )
 ); // Either<string, number>
 
@@ -76,4 +70,3 @@ const stream = Stream.fromIterable([1, 2, 3, 4]).pipe(
 `filter` applies a predicate to the value(s) inside the structure. If the predicate fails, the result is a failure (`Effect.fail`, `Either.left`), `Option.none`, or an empty stream.
 
 ---
-

@@ -2,7 +2,7 @@
  * Utility functions for Pattern repository
  */
 
-import type { DbPatternRow, PatternMeta, SkillLevel } from './types.js';
+import type { DbPatternRow, PatternMeta, SkillLevel } from "./types.js";
 
 /**
  * Map database row to PatternMeta domain type

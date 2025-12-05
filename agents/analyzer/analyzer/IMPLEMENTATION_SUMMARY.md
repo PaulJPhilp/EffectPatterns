@@ -9,6 +9,7 @@ Successfully prepared the Discord Q&A analyzer to process Effect-TS conversation
 ### ✅ Phase 1: Foundation (COMPLETED)
 
 #### 1.1 schemas.ts ✅
+
 - **Created:** Effect.Schema definitions for all data structures
 - **Key Features:**
   - `MessageSchema` with seqId, id, content, author, timestamp
@@ -19,6 +20,7 @@ Successfully prepared the Discord Q&A analyzer to process Effect-TS conversation
 - **Location:** `scripts/analyzer/schemas.ts`
 
 #### 1.2 errors.ts ✅
+
 - **Created:** Comprehensive tagged error types
 - **Error Categories:**
   - File System: `FileNotFoundError`, `FileReadError`, `FileWriteError`
@@ -33,6 +35,7 @@ Successfully prepared the Discord Q&A analyzer to process Effect-TS conversation
 - **Location:** `scripts/analyzer/errors.ts`
 
 #### 1.3 validation-service.ts ✅
+
 - **Created:** Fail-fast validation service
 - **Key Features:**
   - `DataValidationService` with Effect.Service pattern
@@ -44,6 +47,7 @@ Successfully prepared the Discord Q&A analyzer to process Effect-TS conversation
 - **Location:** `scripts/analyzer/validation-service.ts`
 
 #### 1.4 config-service.ts ✅
+
 - **Created:** Environment-based configuration service
 - **Configuration Options:**
   - `OPENAI_API_KEY` - API authentication
@@ -58,6 +62,7 @@ Successfully prepared the Discord Q&A analyzer to process Effect-TS conversation
 - **Location:** `scripts/analyzer/config-service.ts`
 
 #### 1.5 services.ts Updates ✅
+
 - **Updated:** LLM service with retry logic and Effect-TS prompts
 - **Key Improvements:**
   - **Error Mapping:** OpenAI errors → Tagged errors
@@ -75,6 +80,7 @@ Successfully prepared the Discord Q&A analyzer to process Effect-TS conversation
 ### ✅ Phase 2: Optimization (COMPLETED)
 
 #### 2.1 chunking-service.ts ✅
+
 - **Created:** Smart chunking with Q&A awareness
 - **Multi-Signal Heuristic:**
   - Sequential seqId: +100 pts (consecutive), +50 pts (+2 gap)
@@ -94,6 +100,7 @@ Successfully prepared the Discord Q&A analyzer to process Effect-TS conversation
 - **Location:** `scripts/analyzer/chunking-service.ts`
 
 #### 2.3 graph.ts Integration ✅
+
 - **Updated:** LangGraph workflow to use all new services
 - **Key Updates:**
   1. **Type Safety:** Replaced `z.any()` with typed Message interfaces
@@ -106,7 +113,7 @@ Successfully prepared the Discord Q&A analyzer to process Effect-TS conversation
   const AnalysisLayer = Layer.mergeAll(
     LLMServiceLive,
     DataValidationService.Live,
-    NodeContext.layer,
+    NodeContext.layer
   );
   ```
 - **Three-Step Workflow:**
@@ -126,16 +133,19 @@ Successfully prepared the Discord Q&A analyzer to process Effect-TS conversation
 ### 🚧 Phase 3: Testing & Documentation (IN PROGRESS)
 
 #### 3.1 Real Data Test ⏳
+
 - **Status:** Not started
 - **Goal:** Test with `packages/data/discord-qna.json` (50 messages)
 - **Location:** `scripts/analyzer/__tests__/graph.test.ts`
 
 #### 3.2 README Documentation ⏳
+
 - **Status:** Not started
 - **Goal:** Comprehensive setup and usage guide
 - **Location:** `scripts/analyzer/README.md`
 
 #### 3.3 Runnable Example ⏳
+
 - **Status:** Not started
 - **Goal:** Demo script with error handling
 - **Location:** `scripts/analyzer/examples/run-discord-analysis.ts`
@@ -191,16 +201,19 @@ Successfully prepared the Discord Q&A analyzer to process Effect-TS conversation
 ## 🎨 Design Decisions
 
 ### 1. Fail-Fast Validation
+
 - **Decision:** Stop processing immediately on validation errors
 - **Rationale:** Prevents wasted LLM API calls on invalid data
 - **Implementation:** `Effect.catchAll` with error logging and exit
 
 ### 2. Smart Chunking Heuristic
+
 - **Decision:** Multi-signal scoring system (seqId + author + time + content)
 - **Rationale:** Keep Q&A pairs together for better context
 - **Configuration:** Adjustable via `minRelationshipScore` and `maxChunkOverflow`
 
 ### 3. Structured LLM Output
+
 - **Decision:** Define schemas for analysis output
 - **Rationale:** Type-safe processing of LLM responses
 - **Future:** Can use OpenAI tool calling for guaranteed structure
@@ -228,7 +241,7 @@ import { app } from "./graph.js";
 
 const result = await app.invoke({
   inputFile: "../../packages/data/discord-qna.json",
-  outputFile: "./output/analysis.txt"
+  outputFile: "./output/analysis.txt",
 });
 
 console.log(result.finalReport);
@@ -237,6 +250,7 @@ console.log(result.finalReport);
 ## 🔍 Key Files Changed
 
 ### New Files Created (7)
+
 1. `scripts/analyzer/schemas.ts` - Schema definitions
 2. `scripts/analyzer/errors.ts` - Error types
 3. `scripts/analyzer/validation-service.ts` - Validation logic
@@ -246,6 +260,7 @@ console.log(result.finalReport);
 7. `scripts/analyzer/IMPLEMENTATION_SUMMARY.md` - This file
 
 ### Files Modified (2)
+
 1. `scripts/analyzer/services.ts` - Added retry logic and Effect-TS prompts
 2. `scripts/analyzer/graph.ts` - Integrated all services
 
@@ -262,6 +277,7 @@ console.log(result.finalReport);
 ## 🐛 Known Issues
 
 1. **langgraph Module Not Found**
+
    - **Error:** `Cannot find module 'langgraph'`
    - **Status:** Expected - package may not be installed
    - **Solution:** Add to package.json or verify langgraph installation
@@ -274,11 +290,13 @@ console.log(result.finalReport);
 ## 📚 Next Steps
 
 ### Immediate (Phase 3)
+
 1. Add test case for real discord-qna.json data
 2. Create README.md with setup instructions
 3. Create example script for demonstration
 
 ### Future Enhancements
+
 1. Add telemetry/metrics collection
 2. Implement structured LLM output with tool calling
 3. Add caching for repeated analyses
@@ -288,6 +306,7 @@ console.log(result.finalReport);
 ## 🙏 Acknowledgments
 
 Built following Effect-TS best practices from `.github/copilot-instructions.md`:
+
 - Modern `Effect.Service` pattern
 - Layer-based dependency injection
 - Tagged errors for type-safe error handling

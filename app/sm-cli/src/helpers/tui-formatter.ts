@@ -62,9 +62,7 @@ export const createInfoCard = (
   });
 
   let output =
-    chalk.cyan("┌") +
-    "─".repeat(maxInteriorWidth) +
-    chalk.cyan("┐\n");
+    chalk.cyan("┌") + "─".repeat(maxInteriorWidth) + chalk.cyan("┐\n");
 
   entries.forEach(([key, value]) => {
     const paddedKey = key.padEnd(maxKeyLength);
@@ -80,16 +78,12 @@ export const createInfoCard = (
     const paddingNeeded = maxInteriorWidth - contentWidth - 1;
 
     output += chalk.cyan("│");
-    output +=
-      " " + chalk.bold.blue(paddedKey) + " → " + chalk.white(valueStr);
+    output += " " + chalk.bold.blue(paddedKey) + " → " + chalk.white(valueStr);
     output += " ".repeat(paddingNeeded);
     output += chalk.cyan(" │\n");
   });
 
-  output +=
-    chalk.cyan("└") +
-    "─".repeat(maxInteriorWidth) +
-    chalk.cyan("┘\n");
+  output += chalk.cyan("└") + "─".repeat(maxInteriorWidth) + chalk.cyan("┘\n");
   return output;
 };
 
@@ -198,7 +192,10 @@ export const createInfo = (message: string): string => {
 /**
  * Create a divider line
  */
-export const createDivider = (char: string = "─", width: number = 40): string => {
+export const createDivider = (
+  char: string = "─",
+  width: number = 40
+): string => {
   return chalk.cyan(char.repeat(width) + "\n");
 };
 
@@ -263,4 +260,3 @@ export const wrapColumn = (text: string, width: number): string => {
 
   return lines.join("\n");
 };
-

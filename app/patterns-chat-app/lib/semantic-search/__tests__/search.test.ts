@@ -11,7 +11,13 @@ import {
   getSearchStats,
   findProblems,
 } from "../search";
-import { MockSupermemoryClient, testUserId, testChatId, mockTags, createMockSearchMemory } from "./mocks";
+import {
+  MockSupermemoryClient,
+  testUserId,
+  testChatId,
+  mockTags,
+  createMockSearchMemory,
+} from "./mocks";
 
 // Mock the supermemory store
 vi.mock("../supermemory-store", () => ({
@@ -49,7 +55,9 @@ describe("Semantic Search Functions", () => {
         .split(/\s+/)
         .filter((w) => w.length > 3);
       const contentLower = content.toLowerCase();
-      const matches = queryWords.filter((word) => contentLower.includes(word)).length;
+      const matches = queryWords.filter((word) =>
+        contentLower.includes(word)
+      ).length;
       const score = matches / queryWords.length;
 
       expect(queryWords).toHaveLength(3); // "error", "handling", "typescript"
@@ -88,27 +96,39 @@ describe("Semantic Search Functions", () => {
   describe("calculateRecencyBoost", () => {
     it("should give full boost for recent timestamps", () => {
       const now = new Date();
-      const recentTimestamp = new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString(); // 12 hours ago
+      const recentTimestamp = new Date(
+        now.getTime() - 12 * 60 * 60 * 1000
+      ).toISOString(); // 12 hours ago
 
-      const daysDiff = (new Date().getTime() - new Date(recentTimestamp).getTime()) / (1000 * 60 * 60 * 24);
+      const daysDiff =
+        (new Date().getTime() - new Date(recentTimestamp).getTime()) /
+        (1000 * 60 * 60 * 24);
       const boost = daysDiff <= 1 ? 1.0 : 0.5;
 
       expect(boost).toBe(1.0);
     });
 
     it("should give medium boost for week-old timestamps", () => {
-      const weekAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+      const weekAgo = new Date(
+        Date.now() - 5 * 24 * 60 * 60 * 1000
+      ).toISOString();
 
-      const daysDiff = (new Date().getTime() - new Date(weekAgo).getTime()) / (1000 * 60 * 60 * 24);
+      const daysDiff =
+        (new Date().getTime() - new Date(weekAgo).getTime()) /
+        (1000 * 60 * 60 * 24);
       const boost = daysDiff <= 1 ? 1.0 : daysDiff <= 7 ? 0.5 : 0.1;
 
       expect(boost).toBe(0.5);
     });
 
     it("should give low boost for old timestamps", () => {
-      const monthAgo = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
+      const monthAgo = new Date(
+        Date.now() - 45 * 24 * 60 * 60 * 1000
+      ).toISOString();
 
-      const daysDiff = (new Date().getTime() - new Date(monthAgo).getTime()) / (1000 * 60 * 60 * 24);
+      const daysDiff =
+        (new Date().getTime() - new Date(monthAgo).getTime()) /
+        (1000 * 60 * 60 * 24);
       const boost = daysDiff <= 30 ? 0.1 : 0.01;
 
       expect(boost).toBe(0.01);
@@ -118,7 +138,9 @@ describe("Semantic Search Functions", () => {
   describe("calculateSatisfactionBoost", () => {
     it("should normalize satisfaction score", () => {
       const scores = [1, 2, 3, 4, 5, undefined];
-      const boosts = scores.map((s) => (s ? Math.max(0, Math.min(1, s / 5)) : 0.5));
+      const boosts = scores.map((s) =>
+        s ? Math.max(0, Math.min(1, s / 5)) : 0.5
+      );
 
       expect(boosts).toEqual([0.2, 0.4, 0.6, 0.8, 1.0, 0.5]);
     });
@@ -131,9 +153,17 @@ describe("Semantic Search Functions", () => {
 
   describe("searchByTag", () => {
     it("should filter conversations by tag", async () => {
-      const memory1 = createMockSearchMemory("chat-1", testUserId, ["effect-ts", "error-handling"]);
-      const memory2 = createMockSearchMemory("chat-2", testUserId, ["effect-ts", "async"]);
-      const memory3 = createMockSearchMemory("chat-3", testUserId, ["javascript"]);
+      const memory1 = createMockSearchMemory("chat-1", testUserId, [
+        "effect-ts",
+        "error-handling",
+      ]);
+      const memory2 = createMockSearchMemory("chat-2", testUserId, [
+        "effect-ts",
+        "async",
+      ]);
+      const memory3 = createMockSearchMemory("chat-3", testUserId, [
+        "javascript",
+      ]);
 
       mockClient.getMemories().push(memory1);
       mockClient.getMemories().push(memory2);
@@ -156,9 +186,9 @@ describe("Semantic Search Functions", () => {
 
     it("should respect limit parameter", async () => {
       for (let i = 0; i < 10; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, ["test-tag"])
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, ["test-tag"]));
       }
 
       const results = mockClient.getMemories().slice(0, 3);
@@ -167,9 +197,9 @@ describe("Semantic Search Functions", () => {
     });
 
     it("should return empty array for non-existent tag", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory(testChatId, testUserId, ["effect-ts"])
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory(testChatId, testUserId, ["effect-ts"]));
 
       const results = mockClient.getMemories().filter((m) => {
         try {
@@ -187,15 +217,18 @@ describe("Semantic Search Functions", () => {
   describe("getSearchStats", () => {
     it("should return stats object with required fields", async () => {
       for (let i = 0; i < 5; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, mockTags)
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, mockTags));
       }
 
       const stats = {
         vectorStoreSize: mockClient.getMemories().length,
         embeddingDimension: 1536,
-        utilizationPercent: Math.min(100, (mockClient.getMemories().length / 100000) * 100),
+        utilizationPercent: Math.min(
+          100,
+          (mockClient.getMemories().length / 100000) * 100
+        ),
       };
 
       expect(stats).toHaveProperty("vectorStoreSize", 5);
@@ -231,7 +264,10 @@ describe("Semantic Search Functions", () => {
         "database",
         "performance",
       ]);
-      const memory2 = createMockSearchMemory("chat-2", testUserId, ["memory", "leak"]);
+      const memory2 = createMockSearchMemory("chat-2", testUserId, [
+        "memory",
+        "leak",
+      ]);
       const memory3 = createMockSearchMemory("chat-3", testUserId, [
         "database",
         "query",
@@ -258,21 +294,22 @@ describe("Semantic Search Functions", () => {
     });
 
     it("should return empty array for non-matching keywords", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory(testChatId, testUserId, ["effect-ts"])
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory(testChatId, testUserId, ["effect-ts"]));
 
       const problemKeywords: string[] = [];
-      const filtered = problemKeywords.length === 0 ? [] : mockClient.getMemories();
+      const filtered =
+        problemKeywords.length === 0 ? [] : mockClient.getMemories();
 
       expect(filtered).toHaveLength(0);
     });
 
     it("should respect limit parameter", async () => {
       for (let i = 0; i < 10; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, ["test"])
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, ["test"]));
       }
 
       const filtered = mockClient.getMemories().slice(0, 5);
@@ -312,24 +349,20 @@ describe("Semantic Search Functions", () => {
 
     it("should handle extreme scores", () => {
       // Perfect match across all signals
-      const perfectFinalScore =
-        1.0 * 0.6 + 1.0 * 0.3 + 1.0 * 0.07 + 1.0 * 0.03;
+      const perfectFinalScore = 1.0 * 0.6 + 1.0 * 0.3 + 1.0 * 0.07 + 1.0 * 0.03;
       expect(perfectFinalScore).toBe(1.0);
 
       // Poor match across all signals
-      const poorFinalScore =
-        0.0 * 0.6 + 0.0 * 0.3 + 0.0 * 0.07 + 0.0 * 0.03;
+      const poorFinalScore = 0.0 * 0.6 + 0.0 * 0.3 + 0.0 * 0.07 + 0.0 * 0.03;
       expect(poorFinalScore).toBe(0);
     });
 
     it("should balance semantic with keyword relevance", () => {
       // Semantically similar but keyword mismatch
-      const semanticScore =
-        0.9 * 0.6 + 0.1 * 0.3 + 0.5 * 0.07 + 0.5 * 0.03;
+      const semanticScore = 0.9 * 0.6 + 0.1 * 0.3 + 0.5 * 0.07 + 0.5 * 0.03;
 
       // Both matches
-      const balancedScore =
-        0.8 * 0.6 + 0.8 * 0.3 + 0.5 * 0.07 + 0.5 * 0.03;
+      const balancedScore = 0.8 * 0.6 + 0.8 * 0.3 + 0.5 * 0.07 + 0.5 * 0.03;
 
       expect(semanticScore).toBeGreaterThan(0);
       expect(balancedScore).toBeGreaterThan(semanticScore);
@@ -374,8 +407,12 @@ describe("Semantic Search Functions", () => {
 
     it("should respect date range filter", () => {
       const now = new Date();
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const weekAgo = new Date(
+        now.getTime() - 7 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      const monthAgo = new Date(
+        now.getTime() - 30 * 24 * 60 * 60 * 1000
+      ).toISOString();
 
       const startDate = weekAgo;
       const endDate = now.toISOString();
@@ -408,7 +445,11 @@ describe("Semantic Search Functions", () => {
       const memories = [
         {
           id: "good",
-          memory: JSON.stringify({ type: "conversation_embedding", chatId: "1", userId: testUserId }),
+          memory: JSON.stringify({
+            type: "conversation_embedding",
+            chatId: "1",
+            userId: testUserId,
+          }),
           metadata: {},
         },
         {
@@ -418,7 +459,11 @@ describe("Semantic Search Functions", () => {
         },
         {
           id: "good2",
-          memory: JSON.stringify({ type: "conversation_embedding", chatId: "2", userId: testUserId }),
+          memory: JSON.stringify({
+            type: "conversation_embedding",
+            chatId: "2",
+            userId: testUserId,
+          }),
           metadata: {},
         },
       ];
@@ -438,7 +483,9 @@ describe("Semantic Search Functions", () => {
     it("should handle empty search results", () => {
       const results: any[] = [];
 
-      const filtered = results.sort((a, b) => (b.score?.finalScore || 0) - (a.score?.finalScore || 0));
+      const filtered = results.sort(
+        (a, b) => (b.score?.finalScore || 0) - (a.score?.finalScore || 0)
+      );
 
       expect(filtered).toHaveLength(0);
     });

@@ -10,6 +10,7 @@ Generated: 2025-10-26
 ## Test Coverage by Area
 
 ### ✅ Core CLI (`scripts/`)
+
 - **ep-cli.test.ts** - Full CLI command suite
   - Pattern management commands
   - Install/rules commands
@@ -22,48 +23,57 @@ Generated: 2025-10-26
 - **integration.test.ts** - End-to-end workflows
 
 ### ✅ Publishing Pipeline (`scripts/publish/`)
+
 - **publish-scripts.test.ts** - Publishing workflow
 - **publish.test.ts** - Pattern publication
 - **rules.test.ts** - Rule generation
 
 ### ✅ Ingestion Pipeline (`scripts/ingest/`)
+
 - **ingest-scripts.test.ts** - Pattern ingestion
   - File processing
   - Validation
   - Metadata extraction
 
 ### ✅ Toolkit Package (`packages/toolkit/`)
+
 - **io.test.ts** - File I/O operations
 - **schemas.test.ts** - Schema validation
 - **search.test.ts** - Pattern search functionality
 - **split-sections.test.ts** - Content parsing
 
 ### ✅ Effect Discord (`packages/effect-discord/`)
+
 - **integration.test.ts** - Discord integration
 - **parse.test.ts** - Message parsing
 
 ### ✅ Pattern Server (`server/`)
+
 - **server.test.ts** - API endpoints
   - Pattern retrieval
   - Search functionality
   - Health checks
 
 ### ✅ MCP Server (`services/mcp-server/`)
+
 - **api.test.ts** - Integration tests
   - Pattern endpoints
   - Category filtering
   - Difficulty filtering
 
 ### ✅ MCP Server STDIO (`services/mcp-server-stdio/`)
+
 - **server.test.ts** - STDIO protocol tests
 
 ### ✅ Web Application (`app/web/`)
+
 - **catalog.test.ts** - Pattern catalog
 - **learning-plan.service.test.ts** - Learning plan generation
 - **search.service.test.ts** - Search service
 - **user-progress.service.test.ts** - User progress tracking
 
 ### ✅ Analyzer (`agents/analyzer/`)
+
 - **graph.test.ts** - Graph analysis
 - **runtime.ts** - Runtime tests
 
@@ -108,6 +118,7 @@ The following areas have limited or no automated tests but are acceptable:
 ### Current State: COMPLETE ✅
 
 The test suite is comprehensive and covers all critical paths:
+
 - Pattern ingestion and validation
 - Publishing pipeline
 - CLI commands
@@ -127,6 +138,7 @@ The test suite is comprehensive and covers all critical paths:
 **Status:** ✅ **Test suites are complete and comprehensive**
 
 All production code paths are tested. The test suite provides:
+
 - Confidence in refactoring
 - Regression detection
 - Documentation of expected behavior

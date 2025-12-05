@@ -14,7 +14,10 @@ async function testPatterns() {
 
   try {
     // Load patterns data
-    const patternsPath = path.join(process.cwd(), "../data/patterns-index.json");
+    const patternsPath = path.join(
+      process.cwd(),
+      "../data/patterns-index.json"
+    );
     console.log("📂 Loading patterns from:", patternsPath);
 
     const patternsData = loadPatternsFromJson(patternsPath);
@@ -41,7 +44,9 @@ async function testPatterns() {
       limit: 5,
     });
 
-    console.log(`✅ Found ${errorHandlingResults.length} error-handling patterns`);
+    console.log(
+      `✅ Found ${errorHandlingResults.length} error-handling patterns`
+    );
 
     // Test combined search
     const advancedResults = searchPatterns({
@@ -52,25 +57,41 @@ async function testPatterns() {
       limit: 2,
     });
 
-    console.log(`✅ Found ${advancedResults.length} intermediate concurrency patterns`);
+    console.log(
+      `✅ Found ${advancedResults.length} intermediate concurrency patterns`
+    );
     if (advancedResults.length > 0) {
-      console.log("📝 Results:", advancedResults.map(p => p.title));
+      console.log(
+        "📝 Results:",
+        advancedResults.map((p) => p.title)
+      );
     }
 
     // Test pattern categories
-    const categories = ["error-handling", "concurrency", "data-access", "resource-management"];
+    const categories = [
+      "error-handling",
+      "concurrency",
+      "data-access",
+      "resource-management",
+    ];
     console.log("\n📂 Pattern categories available:");
-    categories.forEach(category => {
-      const count = patternsData.patterns.filter(p => p.category === category).length;
+    categories.forEach((category) => {
+      const count = patternsData.patterns.filter(
+        (p) => p.category === category
+      ).length;
       console.log(`  • ${category}: ${count} patterns`);
     });
 
-    console.log("\n🎉 Effect Patterns integration test completed successfully!");
+    console.log(
+      "\n🎉 Effect Patterns integration test completed successfully!"
+    );
     console.log("🚀 Chat assistant can now help users find Effect patterns!");
-
   } catch (error) {
     console.error("❌ Patterns test failed:");
-    console.error("Error:", error instanceof Error ? error.message : String(error));
+    console.error(
+      "Error:",
+      error instanceof Error ? error.message : String(error)
+    );
     process.exit(1);
   }
 }

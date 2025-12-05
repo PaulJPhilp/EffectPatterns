@@ -32,6 +32,7 @@ All 8 models should support tool calls (except reasoning model which disables to
 ### Category 1: Tool Invocation
 
 **Test 1.1: Weather Tool**
+
 - Prompt: "What's the weather in San Francisco?"
 - Expected: Tool call to getWeather with city parameter
 - Validation:
@@ -40,6 +41,7 @@ All 8 models should support tool calls (except reasoning model which disables to
   - No errors in tool execution
 
 **Test 1.2: Pattern Search Tool**
+
 - Prompt: "Show me error handling patterns in Effect"
 - Expected: Tool call to searchPatternsTool
 - Validation:
@@ -48,6 +50,7 @@ All 8 models should support tool calls (except reasoning model which disables to
   - Results are relevant to query
 
 **Test 1.3: List Categories Tool**
+
 - Prompt: "What are the available pattern categories?"
 - Expected: Tool call to listPatternCategoriesTool
 - Validation:
@@ -56,6 +59,7 @@ All 8 models should support tool calls (except reasoning model which disables to
   - Categories are valid
 
 **Test 1.4: Get Pattern Details**
+
 - Prompt: "Tell me about the retry pattern"
 - Expected: Tool call to getPatternByIdTool (after search identifies ID)
 - Validation:
@@ -66,6 +70,7 @@ All 8 models should support tool calls (except reasoning model which disables to
 ### Category 2: Document Tools (Artifacts)
 
 **Test 2.1: Create Document**
+
 - Prompt: "Create a TypeScript file for a REST API"
 - Expected: Tool call to createDocument
 - Validation:
@@ -74,6 +79,7 @@ All 8 models should support tool calls (except reasoning model which disables to
   - Document kind is correct
 
 **Test 2.2: Update Document**
+
 - Prompt: "Add error handling to the API"
 - Expected: Tool call to updateDocument (after createDocument)
 - Validation:
@@ -82,6 +88,7 @@ All 8 models should support tool calls (except reasoning model which disables to
   - No data loss
 
 **Test 2.3: Request Suggestions**
+
 - Prompt: "Can you suggest improvements?"
 - Expected: Tool call to requestSuggestions
 - Validation:
@@ -92,6 +99,7 @@ All 8 models should support tool calls (except reasoning model which disables to
 ### Category 3: Multi-Tool Sequences
 
 **Test 3.1: Search → Details**
+
 - Prompt: "Find a retry pattern and explain it"
 - Expected: searchPatternsTool → getPatternByIdTool chain
 - Validation:
@@ -100,6 +108,7 @@ All 8 models should support tool calls (except reasoning model which disables to
   - User gets comprehensive answer
 
 **Test 3.2: Weather + Context**
+
 - Prompt: "What's the weather and should I plan outdoor activities?"
 - Expected: getWeather tool + natural language reasoning
 - Validation:
@@ -110,6 +119,7 @@ All 8 models should support tool calls (except reasoning model which disables to
 ### Category 4: Tool Error Handling
 
 **Test 4.1: Invalid Location**
+
 - Prompt: "Weather in XYZ123InvalidPlace"
 - Expected: Tool handles gracefully, fallback response
 - Validation:
@@ -118,6 +128,7 @@ All 8 models should support tool calls (except reasoning model which disables to
   - Chat continues normally
 
 **Test 4.2: Non-existent Pattern**
+
 - Prompt: "Show me the foobar-xyz-pattern"
 - Expected: Tool returns not found, assistant responds appropriately
 - Validation:
@@ -128,6 +139,7 @@ All 8 models should support tool calls (except reasoning model which disables to
 ### Category 5: Cross-Model Validation
 
 **Test 5.1: Tool Call Consistency**
+
 - Run identical prompt on all 7 tool-enabled models
 - Expected: All models invoke same tool for same prompt
 - Validation:
@@ -136,6 +148,7 @@ All 8 models should support tool calls (except reasoning model which disables to
   - Results are consistent in quality
 
 **Test 5.2: Response Quality**
+
 - Compare tool + response quality across models
 - Expected: All models produce valid responses
 - Validation:
@@ -146,12 +159,14 @@ All 8 models should support tool calls (except reasoning model which disables to
 ## Test Execution Plan
 
 ### Phase 1: Manual Testing (This Sprint)
+
 1. Test each tool individually with each model
 2. Document any issues or unexpected behavior
 3. Validate UI updates and streaming work correctly
 4. Test error cases
 
 ### Phase 2: Automated Tests (Future)
+
 1. Create parametrized E2E tests for all model × tool combinations
 2. Add assertions for tool invocation, parameters, and results
 3. Test streaming data updates

@@ -3,7 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { ChevronRight, Copy, Check, Tag, CheckCircle, AlertCircle, HelpCircle } from "lucide-react";
+import {
+  ChevronRight,
+  Copy,
+  Check,
+  Tag,
+  CheckCircle,
+  AlertCircle,
+  HelpCircle,
+} from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,18 +58,14 @@ export function MemoryCard({
   }) as any;
 
   // Extract title - for patterns use title field, for conversations use content
-  const title = (
+  const title =
     (metadata as any).title || // Pattern title
-    metadata.content
-      ?.split("\n")[0]
-      ?.substring(0, 100)
-      ?.trim() ||
+    metadata.content?.split("\n")[0]?.substring(0, 100)?.trim() ||
     (metadata as any).patternId ||
-    "Untitled"
-  );
+    "Untitled";
 
   // Extract preview - prefer summary for patterns, content for conversations
-  const preview = (
+  const preview =
     (metadata as any).summary || // Pattern summary
     (metadata.content || "")
       .split("\n")
@@ -69,8 +73,7 @@ export function MemoryCard({
       .join(" ")
       .substring(0, 150)
       .trim() ||
-    "No preview available"
-  );
+    "No preview available";
 
   // Format date - handle invalid timestamps
   let relativeDate = "Unknown date";
@@ -93,7 +96,8 @@ export function MemoryCard({
           variant: "default" as const,
           icon: CheckCircle,
           label: "Solved",
-          color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
+          color:
+            "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
         };
       case "unsolved":
         return {
@@ -107,21 +111,24 @@ export function MemoryCard({
           variant: "secondary" as const,
           icon: HelpCircle,
           label: "Partially Solved",
-          color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100",
+          color:
+            "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100",
         };
       case "revisited":
         return {
           variant: "outline" as const,
           icon: Tag,
           label: "Revisited",
-          color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
+          color:
+            "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
         };
       default:
         return {
           variant: "secondary" as const,
           icon: HelpCircle,
           label: "Unknown",
-          color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100",
+          color:
+            "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100",
         };
     }
   };
@@ -156,9 +163,7 @@ export function MemoryCard({
             <h3 className="font-semibold text-lg leading-tight line-clamp-2 text-foreground">
               {title}
             </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {relativeDate}
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">{relativeDate}</p>
           </div>
 
           {/* Outcome badge */}
@@ -183,7 +188,7 @@ export function MemoryCard({
         )}
 
         {/* Tags */}
-        {metadata.tags && (
+        {metadata.tags &&
           (() => {
             // Handle both string and array formats for tags
             const tags = metadata.tags as any;
@@ -210,8 +215,7 @@ export function MemoryCard({
                 </div>
               )
             );
-          })()
-        )}
+          })()}
 
         {/* Satisfaction Score */}
         {satisfactionScore > 0 && (
@@ -285,9 +289,7 @@ export function MemoryCard({
             ) : (
               <Copy className="w-4 h-4" />
             )}
-            <span className="sr-only">
-              {copied ? "Copied" : "Copy"}
-            </span>
+            <span className="sr-only">{copied ? "Copied" : "Copy"}</span>
           </Button>
 
           {/* View conversation/pattern link - only show if chatId exists */}

@@ -71,7 +71,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
   sync: () => ({
     validateUser: (data: unknown) => S.decodeUnknown(UserSchema)(data),
   }),
-}) { }
+}) {}
 
 // Define HTTP server service interface
 interface HttpServerInterface {
@@ -172,7 +172,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
   }),
   // Specify dependencies
   dependencies: [UserService.Default],
-}) { }
+}) {}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
@@ -203,7 +203,6 @@ To test:
 - POST http://localhost:3456/users with body {"name": "Paul"}
   -> Returns 400 Bad Request with error message about missing email field
 */
-
 ```
 
 ## Anti-Pattern
@@ -211,28 +210,28 @@ To test:
 The anti-pattern is to manually parse the JSON and then write imperative validation checks. This approach is verbose, error-prone, and not type-safe.
 
 ```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
 const createUserRoute = Http.router.post(
-  '/users',
+  "/users",
   Http.request.json.pipe(
     // Http.request.json returns Effect<unknown, ...>
     Effect.flatMap((body) => {
       // Manually check the type and properties of the body.
       if (
-        typeof body === 'object' &&
+        typeof body === "object" &&
         body !== null &&
-        'name' in body &&
-        typeof body.name === 'string' &&
-        'email' in body &&
-        typeof body.email === 'string'
+        "name" in body &&
+        typeof body.name === "string" &&
+        "email" in body &&
+        typeof body.email === "string"
       ) {
         // The type is still not safely inferred here without casting.
         return Http.response.text(`Successfully created user: ${body.name}`);
       } else {
         // Manually create and return a generic error response.
-        return Http.response.text('Invalid request body', { status: 400 });
+        return Http.response.text("Invalid request body", { status: 400 });
       }
     })
   )
@@ -240,9 +239,9 @@ const createUserRoute = Http.router.post(
 
 const app = Http.router.empty.pipe(Http.router.addRoute(createUserRoute));
 
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```

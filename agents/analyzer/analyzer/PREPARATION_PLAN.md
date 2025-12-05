@@ -7,6 +7,7 @@ This plan outlines the steps needed to prepare the analyzer agent in `scripts/an
 ## Current State Analysis
 
 ### Analyzer Agent Architecture
+
 - **Location**: `scripts/analyzer/`
 - **Framework**: LangGraph + Effect-TS
 - **LLM**: OpenAI GPT-4o
@@ -19,11 +20,13 @@ This plan outlines the steps needed to prepare the analyzer agent in `scripts/an
 ### Data Sources
 
 #### Test Data (`scripts/analyzer/test-data/mock-export.json`)
+
 - 53 simple messages
 - Basic structure: id, content, author, timestamp
 - Works with current implementation
 
 #### Real Data (`packages/data/discord-qna.json`)
+
 - **50 messages** of Effect-TS Q&A
 - **Richer schema**: includes `seqId`, detailed author info
 - Technical discussions about Effect patterns
@@ -47,10 +50,12 @@ This plan outlines the steps needed to prepare the analyzer agent in `scripts/an
 **Goal**: Replace `z.any()` with proper Effect.Schema validation
 
 **Files to Create/Modify**:
+
 - Create `scripts/analyzer/schemas.ts`
 - Update `graph.ts` to use typed schemas
 
 **Schema Structure**:
+
 ```typescript
 // Author schema
 const AuthorSchema = Schema.Struct({
@@ -74,6 +79,7 @@ const MessageCollectionSchema = Schema.Struct({
 ```
 
 **Benefits**:
+
 - Type-safe message handling
 - Runtime validation of input data
 - Better error messages for malformed data
@@ -83,10 +89,12 @@ const MessageCollectionSchema = Schema.Struct({
 **Goal**: Validate input JSON before processing
 
 **Files to Create/Modify**:
+
 - Create `scripts/analyzer/validation-service.ts`
 - Add to layer composition in `graph.ts`
 
 **Features**:
+
 ```typescript
 export class DataValidationService extends Effect.Service<DataValidationService>()(
   "DataValidationService",
@@ -98,7 +106,9 @@ export class DataValidationService extends Effect.Service<DataValidationService>
         validateMessageCount: (messages: Message[], min: number) =>
           messages.length >= min
             ? Effect.succeed(messages)
-            : Effect.fail(new InsufficientDataError({ count: messages.length, min })),
+            : Effect.fail(
+                new InsufficientDataError({ count: messages.length, min })
+              ),
       };
     }),
   }
@@ -106,6 +116,7 @@ export class DataValidationService extends Effect.Service<DataValidationService>
 ```
 
 **Error Types**:
+
 - `InvalidJSONError`
 - `SchemaValidationError`
 - `InsufficientDataError`
@@ -115,11 +126,13 @@ export class DataValidationService extends Effect.Service<DataValidationService>
 **Goal**: Make analysis specific to Effect-TS technical Q&A
 
 **Files to Modify**:
+
 - `scripts/analyzer/services.ts` - Update prompts
 
 **New Prompts**:
 
 **For Chunk Analysis**:
+
 ```typescript
 const CHUNK_ANALYSIS_PROMPT = `
 Analyze this chunk of Effect-TS Discord Q&A messages and identify:
@@ -138,6 +151,7 @@ ${JSON.stringify(chunk, null, 2)}
 ```
 
 **For Aggregation**:
+
 ```typescript
 const AGGREGATION_PROMPT = `
 You have received partial analyses of Effect-TS Q&A discussions.
@@ -179,23 +193,25 @@ ${JSON.stringify(analyses, null, 2)}
 **Goal**: Adaptive chunking that respects Q&A context
 
 **Files to Modify**:
+
 - Create `scripts/analyzer/chunking-service.ts`
 - Update `graph.ts` to use new service
 
 **Features**:
+
 ```typescript
 export class ChunkingService extends Effect.Service<ChunkingService>()(
   "ChunkingService",
   {
     effect: Effect.gen(function* () {
       const config = yield* ConfigService;
-      
+
       return {
         chunkMessages: (messages: Message[]) =>
           Effect.gen(function* () {
             const chunkSize = yield* config.getChunkSize();
             const smartChunking = yield* config.getSmartChunking();
-            
+
             if (smartChunking) {
               // Keep Q&A pairs together based on seqId proximity
               return yield* smartChunk(messages, chunkSize);
@@ -210,6 +226,7 @@ export class ChunkingService extends Effect.Service<ChunkingService>()(
 ```
 
 **Smart Chunking Logic**:
+
 - Try to keep related messages (sequential seqIds) together
 - Avoid splitting obvious Q&A pairs
 - Adjust size based on total message count
@@ -219,10 +236,12 @@ export class ChunkingService extends Effect.Service<ChunkingService>()(
 **Goal**: Comprehensive error handling with retries
 
 **Files to Create/Modify**:
+
 - Update `scripts/analyzer/services.ts`
 - Create `scripts/analyzer/errors.ts`
 
 **Error Types**:
+
 ```typescript
 export class FileNotFoundError extends Data.TaggedError("FileNotFoundError")<{
   path: string;
@@ -233,7 +252,9 @@ export class InvalidJSONError extends Data.TaggedError("InvalidJSONError")<{
   cause: unknown;
 }> {}
 
-export class SchemaValidationError extends Data.TaggedError("SchemaValidationError")<{
+export class SchemaValidationError extends Data.TaggedError(
+  "SchemaValidationError"
+)<{
   errors: Array<string>;
 }> {}
 
@@ -247,6 +268,7 @@ export class LLMRateLimitError extends Data.TaggedError("LLMRateLimitError")<{
 ```
 
 **Retry Strategy**:
+
 ```typescript
 const analyzeWithRetry = (chunk: Message[]) =>
   llm.analyzeChunk(chunk).pipe(
@@ -255,7 +277,7 @@ const analyzeWithRetry = (chunk: Message[]) =>
         Schedule.union(Schedule.recurs(3))
       ),
     }),
-    Effect.timeout("30 seconds"),
+    Effect.timeout("30 seconds")
   );
 ```
 
@@ -264,9 +286,11 @@ const analyzeWithRetry = (chunk: Message[]) =>
 **Goal**: Environment-based configuration
 
 **Files to Create**:
+
 - `scripts/analyzer/config-service.ts`
 
 **Configuration Schema**:
+
 ```typescript
 export class AnalyzerConfig extends Effect.Service<AnalyzerConfig>()(
   "AnalyzerConfig",
@@ -285,7 +309,7 @@ export class AnalyzerConfig extends Effect.Service<AnalyzerConfig>()(
       const smartChunking = yield* Config.boolean("SMART_CHUNKING").pipe(
         Config.withDefault(true)
       );
-      
+
       return {
         getOpenAIKey: () => Effect.succeed(openaiKey),
         getChunkSize: () => Effect.succeed(chunkSize),
@@ -303,32 +327,37 @@ export class AnalyzerConfig extends Effect.Service<AnalyzerConfig>()(
 **Goal**: Better visibility into analysis process
 
 **Files to Modify**:
+
 - Update all service files with structured logging
 
 **Logging Strategy**:
+
 ```typescript
 // In loadAndChunkData
-yield* Effect.log({
-  level: "info",
-  message: "Loading data",
-  context: {
-    inputFile: state.inputFile,
-    timestamp: new Date().toISOString(),
-  },
-});
+yield *
+  Effect.log({
+    level: "info",
+    message: "Loading data",
+    context: {
+      inputFile: state.inputFile,
+      timestamp: new Date().toISOString(),
+    },
+  });
 
-yield* Effect.log({
-  level: "info",
-  message: "Data loaded and chunked",
-  context: {
-    totalMessages: messages.length,
-    chunkCount: chunks.length,
-    averageChunkSize: messages.length / chunks.length,
-  },
-});
+yield *
+  Effect.log({
+    level: "info",
+    message: "Data loaded and chunked",
+    context: {
+      totalMessages: messages.length,
+      chunkCount: chunks.length,
+      averageChunkSize: messages.length / chunks.length,
+    },
+  });
 ```
 
 **Metrics to Track**:
+
 - Total messages processed
 - Number of chunks created
 - Processing time per chunk
@@ -340,9 +369,11 @@ yield* Effect.log({
 **Goal**: Verify analyzer works with discord-qna.json
 
 **Files to Create/Modify**:
+
 - Update `scripts/analyzer/__tests__/graph.test.ts`
 
 **Test Case**:
+
 ```typescript
 describeLive("Discord Q&A Analysis", () => {
   it("analyzes real discord-qna.json data", async () => {
@@ -350,33 +381,33 @@ describeLive("Discord Q&A Analysis", () => {
       Effect.gen(function* () {
         const fs = yield* FileSystem;
         const path = yield* Path;
-        
+
         const inputPath = path.resolve(
           process.cwd(),
           "packages",
           "data",
           "discord-qna.json"
         );
-        
+
         const tempDir = yield* fs.makeTempDirectoryScoped();
         const outputPath = path.join(tempDir, "discord-analysis.txt");
-        
+
         const graphState = (yield* Effect.promise(() =>
           app.invoke({
             inputFile: inputPath,
             outputFile: outputPath,
           })
         )) as GraphState;
-        
+
         const reportText = yield* fs.readFileString(outputPath);
-        
+
         return {
           finalState: graphState,
           reportText,
         };
       })
     );
-    
+
     // Assertions
     expect(finalState.chunks?.length).toBeGreaterThan(0);
     expect(finalState.partialAnalyses?.length).toBeGreaterThan(0);
@@ -392,9 +423,11 @@ describeLive("Discord Q&A Analysis", () => {
 **Goal**: Comprehensive README for using the analyzer
 
 **Files to Create**:
+
 - `scripts/analyzer/README.md`
 
 **Sections**:
+
 - Overview and purpose
 - Prerequisites (Node, Bun, OpenAI API key)
 - Installation and setup
@@ -409,9 +442,11 @@ describeLive("Discord Q&A Analysis", () => {
 **Goal**: Easy-to-run example for testing
 
 **Files to Create**:
+
 - `scripts/analyzer/examples/run-discord-analysis.ts`
 
 **Example Script**:
+
 ```typescript
 import { NodeContext, NodeRuntime } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
@@ -427,14 +462,14 @@ const MainLayer = Layer.mergeAll(
 
 const runAnalysis = Effect.gen(function* () {
   yield* Effect.log("Starting Discord Q&A analysis...");
-  
+
   const result = yield* Effect.tryPromise(() =>
     app.invoke({
       inputFile: "./packages/data/discord-qna.json",
       outputFile: "./output/discord-analysis.txt",
     })
   );
-  
+
   yield* Effect.log("Analysis complete!");
   yield* Effect.log(`Report saved to: ${result.outputFile}`);
 }).pipe(
@@ -454,17 +489,20 @@ NodeRuntime.runMain(runAnalysis);
 ## Implementation Order
 
 ### Phase 1: Foundation (High Priority)
+
 1. ✅ Define proper data schemas
 2. ✅ Add data validation service
 3. ✅ Add configuration layer
 4. ✅ Enhance error handling
 
 ### Phase 2: Optimization (Medium Priority)
+
 5. ✅ Improve LLM prompts
 6. ✅ Make chunking configurable
 7. ✅ Improve logging
 
 ### Phase 3: Testing & Documentation (Medium Priority)
+
 8. ✅ Create test with real data
 9. ✅ Add analyzer README
 10. ✅ Create runnable example
@@ -482,6 +520,7 @@ NodeRuntime.runMain(runAnalysis);
 ## Environment Setup
 
 ### Required Environment Variables
+
 ```bash
 # Required
 OPENAI_API_KEY=sk-... # Your OpenAI API key
@@ -494,18 +533,21 @@ SMART_CHUNKING=true
 ```
 
 ### Installation
+
 ```bash
 cd scripts/analyzer
 bun install
 ```
 
 ### Running Tests
+
 ```bash
 # Requires OPENAI_API_KEY
 bun test
 ```
 
 ### Running Analysis
+
 ```bash
 bun run analyzer \
   --input ../../packages/data/discord-qna.json \

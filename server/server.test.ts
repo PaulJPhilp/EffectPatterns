@@ -8,10 +8,10 @@ import {
   FetchHttpClient,
   HttpClient,
   type HttpClientResponse,
-} from '@effect/platform';
-import { Effect, Schema } from 'effect';
-import { type ChildProcess, spawn } from 'node:child_process';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+} from "@effect/platform";
+import { Effect, Schema } from "effect";
+import { type ChildProcess, spawn } from "node:child_process";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 // --- SCHEMAS ---
 
@@ -44,7 +44,7 @@ let BASE_URL = `http://localhost:${TEST_PORT}`;
 const makeRequest = (path: string) =>
   Effect.gen(function* () {
     const client = (yield* HttpClient.HttpClient).pipe(
-      HttpClient.filterStatusOk,
+      HttpClient.filterStatusOk
     );
     return yield* client.get(`${BASE_URL}${path}`);
   });
@@ -71,8 +71,8 @@ beforeAll(async () => {
   process.env.PORT = String(TEST_PORT);
 
   // Start the server
-  serverProcess = spawn('bun', ['run', 'server/index.ts'], {
-    stdio: 'pipe',
+  serverProcess = spawn("bun", ["run", "server/index.ts"], {
+    stdio: "pipe",
     env: {
       ...process.env,
       PORT: String(TEST_PORT),
@@ -114,17 +114,17 @@ afterAll(async () => {
 
 // --- TESTS ---
 
-describe('Pattern Server', { sequential: true }, () => {
-  describe('GET /health', () => {
-    it('should return 200 OK with status', async () => {
+describe("Pattern Server", { sequential: true }, () => {
+  describe("GET /health", () => {
+    it("should return 200 OK with status", async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest('/health');
+        const response = yield* makeRequest("/health");
         const json = yield* getJson(response);
 
         // Health endpoint returns wrapped response with status in data
         expect(json.success).toBe(true);
-        expect(json).toHaveProperty('data');
-        expect(json.data).toHaveProperty('status');
+        expect(json).toHaveProperty("data");
+        expect(json.data).toHaveProperty("status");
         expect(response.status).toBe(200);
       });
 
@@ -132,10 +132,10 @@ describe('Pattern Server', { sequential: true }, () => {
     });
   });
 
-  describe('GET /api/v1/rules', () => {
-    it('should return array of rules', async () => {
+  describe("GET /api/v1/rules", () => {
+    it("should return array of rules", async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest('/api/v1/rules');
+        const response = yield* makeRequest("/api/v1/rules");
         const json = yield* getJson(response);
 
         // Rules endpoint returns wrapped response
@@ -148,9 +148,9 @@ describe('Pattern Server', { sequential: true }, () => {
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
     });
 
-    it('should return rules with correct schema', async () => {
+    it("should return rules with correct schema", async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest('/api/v1/rules');
+        const response = yield* makeRequest("/api/v1/rules");
         const json = yield* getJson(response);
 
         // Unwrap the response and validate the data array against schema
@@ -161,25 +161,25 @@ describe('Pattern Server', { sequential: true }, () => {
 
         // Check first rule has required fields
         const firstRule = validated[0];
-        expect(firstRule).toHaveProperty('id');
-        expect(firstRule).toHaveProperty('title');
-        expect(firstRule).toHaveProperty('description');
-        expect(firstRule).toHaveProperty('content');
+        expect(firstRule).toHaveProperty("id");
+        expect(firstRule).toHaveProperty("title");
+        expect(firstRule).toHaveProperty("description");
+        expect(firstRule).toHaveProperty("content");
       });
 
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
     });
 
-    it('should return valid rule IDs', async () => {
+    it("should return valid rule IDs", async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest('/api/v1/rules');
+        const response = yield* makeRequest("/api/v1/rules");
         const json = yield* getJson(response);
         const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(json);
         const validated = parsed.data;
 
         validated.forEach((rule: Rule) => {
           expect(rule.id).toBeTruthy();
-          expect(typeof rule.id).toBe('string');
+          expect(typeof rule.id).toBe("string");
           expect(rule.id.length).toBeGreaterThan(0);
         });
       });
@@ -187,9 +187,9 @@ describe('Pattern Server', { sequential: true }, () => {
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
     });
 
-    it('should return rules with content', async () => {
+    it("should return rules with content", async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest('/api/v1/rules');
+        const response = yield* makeRequest("/api/v1/rules");
         const json = yield* getJson(response);
         const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(json);
         const validated = parsed.data;
@@ -204,11 +204,11 @@ describe('Pattern Server', { sequential: true }, () => {
     });
   });
 
-  describe('GET /api/v1/rules/:id', () => {
-    it('should return a single rule by ID', async () => {
+  describe("GET /api/v1/rules/:id", () => {
+    it("should return a single rule by ID", async () => {
       const program = Effect.gen(function* () {
         const response = yield* makeRequest(
-          '/api/v1/rules/use-effect-gen-for-business-logic',
+          "/api/v1/rules/use-effect-gen-for-business-logic"
         );
         const json = yield* getJson(response);
 
@@ -221,7 +221,7 @@ describe('Pattern Server', { sequential: true }, () => {
         const parsed = yield* Schema.decodeUnknown(singleRuleSchema)(json);
         const validated = parsed.data;
 
-        expect(validated.id).toBe('use-effect-gen-for-business-logic');
+        expect(validated.id).toBe("use-effect-gen-for-business-logic");
         expect(validated.title).toBeTruthy();
         expect(validated.content).toBeTruthy();
       });
@@ -229,15 +229,15 @@ describe('Pattern Server', { sequential: true }, () => {
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
     });
 
-    it('should return 404 for non-existent rule', async () => {
+    it("should return 404 for non-existent rule", async () => {
       const program = Effect.gen(function* () {
         const client = yield* HttpClient.HttpClient;
 
         const result = yield* Effect.either(
-          client.get(`${BASE_URL}/api/v1/rules/non-existent-rule-id`),
+          client.get(`${BASE_URL}/api/v1/rules/non-existent-rule-id`)
         );
 
-        if (result._tag === 'Left') {
+        if (result._tag === "Left") {
           // Should fail with status error
           expect(result.left).toBeDefined();
         } else {
@@ -245,22 +245,22 @@ describe('Pattern Server', { sequential: true }, () => {
           expect(response.status).toBe(404);
 
           const json = yield* getJson(response);
-          expect(json).toHaveProperty('success');
+          expect(json).toHaveProperty("success");
           expect(json.success).toBe(false);
-          expect(json).toHaveProperty('error');
+          expect(json).toHaveProperty("error");
           // Error is now an object with message and code
-          expect(json.error).toHaveProperty('message');
-          expect(json.error.message).toContain('not found');
+          expect(json.error).toHaveProperty("message");
+          expect(json.error.message).toContain("not found");
         }
       });
 
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
     });
 
-    it('should return valid schema for existing rules', async () => {
+    it("should return valid schema for existing rules", async () => {
       const program = Effect.gen(function* () {
         // First get all rules to find a valid ID
-        const listResponse = yield* makeRequest('/api/v1/rules');
+        const listResponse = yield* makeRequest("/api/v1/rules");
         const listJson = yield* getJson(listResponse);
         const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(listJson);
         const rules = parsed.data;
@@ -276,7 +276,8 @@ describe('Pattern Server', { sequential: true }, () => {
           data: RuleSchema,
           meta: Schema.optional(Schema.Any),
         });
-        const singleParsed = yield* Schema.decodeUnknown(singleRuleSchema)(json);
+        const singleParsed =
+          yield* Schema.decodeUnknown(singleRuleSchema)(json);
         const validated = singleParsed.data;
 
         expect(validated.id).toBe(randomRule.id);
@@ -287,12 +288,12 @@ describe('Pattern Server', { sequential: true }, () => {
     });
   });
 
-  describe('Server Logging', () => {
-    it('should log requests', async () => {
+  describe("Server Logging", () => {
+    it("should log requests", async () => {
       // This test verifies the server logs requests
       // In a real implementation, you might capture stdout
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest('/health');
+        const response = yield* makeRequest("/health");
         expect(response.status).toBe(200);
       });
 
@@ -300,13 +301,13 @@ describe('Pattern Server', { sequential: true }, () => {
     });
   });
 
-  describe('CORS and Headers', () => {
-    it('should return correct content-type', async () => {
+  describe("CORS and Headers", () => {
+    it("should return correct content-type", async () => {
       const program = Effect.gen(function* () {
-        const response = yield* makeRequest('/api/v1/rules');
+        const response = yield* makeRequest("/api/v1/rules");
 
-        const contentType = response.headers['content-type'];
-        expect(contentType).toContain('application/json');
+        const contentType = response.headers["content-type"];
+        expect(contentType).toContain("application/json");
       });
 
       await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));

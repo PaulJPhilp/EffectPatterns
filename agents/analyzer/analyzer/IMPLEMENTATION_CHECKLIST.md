@@ -19,6 +19,7 @@
 - [ ] Add JSDoc comments
 
 **Validation**:
+
 ```bash
 # Should compile without errors
 bun run tsc --noEmit schemas.ts
@@ -36,6 +37,7 @@ bun run tsc --noEmit schemas.ts
 - [ ] Export all error types
 
 **Validation**:
+
 ```bash
 # Should compile and show no errors
 bun run tsc --noEmit errors.ts
@@ -52,9 +54,10 @@ bun run tsc --noEmit errors.ts
 - [ ] Add comprehensive error handling
 
 **Validation**:
+
 ```typescript
 // Test in a scratch file
-const result = yield* DataValidationService.validateMessages(testData);
+const result = yield * DataValidationService.validateMessages(testData);
 ```
 
 ### 1.4 Create Configuration Service
@@ -67,6 +70,7 @@ const result = yield* DataValidationService.validateMessages(testData);
 - [ ] Create `AnalyzerConfigLive` layer
 
 **Validation**:
+
 ```bash
 # Test config loading
 CHUNK_SIZE=25 bun run test-config.ts
@@ -82,6 +86,7 @@ CHUNK_SIZE=25 bun run test-config.ts
 - [ ] Add structured logging
 
 **Validation**:
+
 ```bash
 # Existing tests should still pass
 bun test
@@ -99,6 +104,7 @@ bun test
 - [ ] Replace inline prompts with constants
 
 **Validation**:
+
 ```bash
 # Run with verbose logging to see prompts
 DEBUG=* bun run analyzer --input test-data/mock-export.json --output /tmp/test.txt
@@ -115,9 +121,10 @@ DEBUG=* bun run analyzer --input test-data/mock-export.json --output /tmp/test.t
 - [ ] Add logging for chunk statistics
 
 **Validation**:
+
 ```typescript
 // Test chunking logic
-const chunks = yield* ChunkingService.chunkMessages(messages);
+const chunks = yield * ChunkingService.chunkMessages(messages);
 console.log(`Created ${chunks.length} chunks`);
 ```
 
@@ -130,6 +137,7 @@ console.log(`Created ${chunks.length} chunks`);
 - [ ] Include metrics: message count, chunk count, processing time
 
 **Validation**:
+
 ```bash
 # Should see detailed logs
 bun run analyzer --input test-data/mock-export.json --output /tmp/test.txt 2>&1 | grep "chunk"
@@ -146,6 +154,7 @@ bun run analyzer --input test-data/mock-export.json --output /tmp/test.txt 2>&1 
 - [ ] Replace `z.any()` with proper types from schemas
 
 **Validation**:
+
 ```bash
 # Full integration test
 bun test
@@ -162,6 +171,7 @@ bun test
 - [ ] Check for Effect-TS specific terms in output
 
 **Validation**:
+
 ```bash
 # Run the new test
 OPENAI_API_KEY=sk-... bun test --filter "real discord"
@@ -179,6 +189,7 @@ OPENAI_API_KEY=sk-... bun test --filter "real discord"
 - [ ] Add troubleshooting section
 
 **Validation**:
+
 - [ ] Have someone else read it and try to run the analyzer
 
 ### 3.3 Create Runnable Example
@@ -191,6 +202,7 @@ OPENAI_API_KEY=sk-... bun test --filter "real discord"
 - [ ] Make paths configurable
 
 **Validation**:
+
 ```bash
 # Should run successfully
 OPENAI_API_KEY=sk-... bun run examples/run-discord-analysis.ts

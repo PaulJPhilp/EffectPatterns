@@ -5,12 +5,12 @@
  * validation and response format.
  */
 
-import { Schema as S } from '@effect/schema';
+import { Schema as S } from "@effect/schema";
 
 /**
  * Module type for generated code
  */
-export const ModuleType = S.Literal('esm', 'cjs');
+export const ModuleType = S.Literal("esm", "cjs");
 
 export type ModuleType = S.Schema.Type<typeof ModuleType>;
 
@@ -65,7 +65,7 @@ export const SearchPatternsResponse = S.Struct({
       category: S.String,
       difficulty: S.String,
       tags: S.Array(S.String),
-    }),
+    })
   ),
   traceId: S.optional(S.String),
 });

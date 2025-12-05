@@ -252,11 +252,13 @@ Happy coding with Effect! 💙
 ## Notes on Posting
 
 ### Recommended Approach:
+
 1. **Start with Short Version** - Post this first to gauge interest
 2. **Follow up with Medium Version** if there's engagement
 3. **Save Long Version** for if people ask for more details
 
 ### Discord Formatting Tips:
+
 - Use `**bold**` for emphasis
 - Use `• bullet points` for lists
 - Use \`inline code\` for code terms
@@ -265,14 +267,15 @@ Happy coding with Effect! 💙
 - Emojis are good for Discord! 🎉
 
 ### Good Channels:
+
 - `#announcements` (if you have access)
 - `#showcase` (for showing off projects)
 - `#general` (for discussion)
 - `#help` (if asking for feedback)
 
 ### Engagement Tips:
+
 - Tag relevant people if appropriate (@ToliaGuy if they're on Discord)
 - Ask for feedback at the end
 - Respond to comments and questions
 - Consider posting updates as replies if people engage
-

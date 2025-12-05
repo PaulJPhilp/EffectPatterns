@@ -18,6 +18,7 @@ Successfully implemented a working search system for the Code Assistant that use
   - All patterns successfully stored with status `done`
 
 **Running the seeding**:
+
 ```bash
 pnpm seed:patterns
 ```
@@ -27,6 +28,7 @@ pnpm seed:patterns
 **Status**: Complete - Working workaround implemented
 
 **Problem Discovered**:
+
 - Supermemory's `client.search.memories()` API returns 0 results for ALL queries
 - The API appears to be broken or severely limited
 - Works around this by using the working `client.memories.list()` API
@@ -88,6 +90,7 @@ The memories browser component (`components/memories-browser.tsx`) is fully inte
 - Shows results with relevance scores
 
 **Entry Points**:
+
 - `/memories` - Dedicated memories page
 - Main chat interface integration (when enabled)
 
@@ -114,21 +117,25 @@ Return top K results with scores
 ### Files Modified
 
 1. **lib/semantic-search/supermemory-store.ts**
+
    - Added `fetchAllMemories()` method
    - Added `searchByList()` method
    - Added caching with 5-minute TTL
 
 2. **lib/semantic-search/search.ts**
+
    - Updated `semanticSearchConversations()` to use `searchByList()`
    - Removed embedding generation call
    - Maintains same interface
 
 3. **scripts/seed-patterns.ts** (created)
+
    - Loads 130 patterns from content/published/
    - Seeds to Supermemory
    - Two-phase queue polling
 
 4. **components/memories-browser.tsx** (earlier fix)
+
    - Fixed scrolling with flex layout
 
 5. **package.json**
@@ -162,21 +169,25 @@ Return top K results with scores
 ### How to Test the Search
 
 1. **Start the dev server**:
+
    ```bash
    pnpm dev
    ```
 
 2. **Access memories page**:
+
    - Go to http://localhost:3000/memories
    - Or use memories browser in chat interface
 
 3. **Try searches**:
+
    - "retry" → finds all retry-related patterns
    - "error handling" → finds error handling patterns
    - "effect" → finds Effect-TS fundamental patterns
    - "async" → finds async/concurrency patterns
 
 4. **Try filters**:
+
    - Filter by tags (e.g., "effect-ts", "error-handling")
    - Filter by outcome
    - Combine multiple filters
@@ -190,11 +201,13 @@ Return top K results with scores
 ### Search Returns No Results
 
 **Causes**:
+
 1. Invalid user ID (use `system:patterns` for system patterns)
 2. minSimilarity threshold too high
 3. Supermemory API key not set
 
 **Fix**:
+
 ```bash
 # Check API key in .env.local
 grep SUPERMEMORY_API_KEY .env.local
@@ -208,6 +221,7 @@ pnpm seed:patterns
 **Likely Cause**: Cache expired or first request
 
 **Fix**:
+
 1. Subsequent searches use cache (5 min TTL)
 2. Consider increasing TTL in `supermemory-store.ts` if needed
 3. Cache is per-instance, not shared across processes
@@ -215,6 +229,7 @@ pnpm seed:patterns
 ### Patterns Not Showing Up
 
 **Check**:
+
 1. Are patterns seeded? Run: `pnpm seed:patterns`
 2. Check that patterns are in `content/published/`
 3. Verify API key is valid
@@ -224,20 +239,24 @@ pnpm seed:patterns
 ### Potential Enhancements
 
 1. **Distributed Caching**
+
    - Use Redis for cache sharing across server instances
    - Reduces API calls in production
 
 2. **Better Relevance Scoring**
+
    - Implement TF-IDF (term frequency-inverse document frequency)
    - Weight title/tags more heavily than content
    - Semantic similarity once Supermemory search is fixed
 
 3. **Search Improvements**
+
    - Fuzzy matching for typos
    - Synonym expansion (e.g., "error" = "exception")
    - Phrase search support
 
 4. **Performance Optimization**
+
    - Paginate memory list API (already implemented)
    - Batch search requests
    - Pre-filter on API server before returning
@@ -252,6 +271,7 @@ pnpm seed:patterns
 ### Supermemory Search API
 
 The Supermemory `client.search.memories()` API appears to be broken:
+
 - Returns 0 results for any query
 - Returns 0 results for wildcard searches
 - The `client.memories.list()` API works perfectly
@@ -259,6 +279,7 @@ The Supermemory `client.search.memories()` API appears to be broken:
 This is why we implemented the workaround using list + client-side filtering.
 
 **Recommended Action**:
+
 - Contact Supermemory support to debug search API
 - Continue using list-based approach as fallback
 
@@ -322,6 +343,7 @@ Response Format:
 All systems are in place. The search functionality is working with the workaround for the broken Supermemory search API. All 130 patterns are indexed and ready to search.
 
 **Next Steps**:
+
 1. Test searches in the memories browser
 2. Monitor search performance and user feedback
 3. Plan for enhanced relevance scoring once Supermemory API is fixed

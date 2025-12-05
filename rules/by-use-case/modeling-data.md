@@ -25,7 +25,8 @@ const asString = BigDecimal.format(BigDecimal.normalize(sum)); // "0.3"
 const asNumber = BigDecimal.unsafeToNumber(sum); // 0.3
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `BigDecimal` is immutable and supports precise decimal arithmetic.
 - Use it for domains where rounding errors are unacceptable (e.g., finance, billing, scientific data).
 - Avoids the pitfalls of floating-point math in JavaScript.
@@ -49,16 +50,17 @@ const setB = HashSet.fromIterable([3, 4, 5]);
 const hasTwo = HashSet.has(setA, 2); // true
 
 // Union, intersection, difference
-const union = HashSet.union(setA, setB);         // HashSet {1, 2, 3, 4, 5}
+const union = HashSet.union(setA, setB); // HashSet {1, 2, 3, 4, 5}
 const intersection = HashSet.intersection(setA, setB); // HashSet {3}
-const difference = HashSet.difference(setA, setB);     // HashSet {1, 2}
+const difference = HashSet.difference(setA, setB); // HashSet {1, 2}
 
 // Add and remove elements
-const withSix = HashSet.add(setA, 6);    // HashSet {1, 2, 3, 6}
+const withSix = HashSet.add(setA, 6); // HashSet {1, 2, 3, 6}
 const withoutOne = HashSet.remove(setA, 1); // HashSet {2, 3}
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `HashSet` is immutable and supports efficient set operations.
 - Use it for membership checks, set algebra, and modeling unique collections.
 - Safe for concurrent and functional workflows.
@@ -90,10 +92,10 @@ console.log(HashSet.has(set, arr2)); // true
 const doubled = arr1.map((n) => n * 2); // Data.array([2, 4, 6])
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.array` creates immutable arrays with value-based equality.
 - Useful for modeling ordered collections in a safe, functional way.
 - Supports all standard array operations, but with immutability and structural equality.
 
 ---
-

@@ -13,7 +13,7 @@ tags:
   - atomic
   - mutable-state
 rule:
-  description: 'Use Ref to manage shared, mutable state concurrently, ensuring atomicity.'
+  description: "Use Ref to manage shared, mutable state concurrently, ensuring atomicity."
 related:
   - write-sequential-code-with-gen
 author: effect_website
@@ -65,7 +65,6 @@ const programWithLogging = Effect.gen(function* () {
 });
 
 Effect.runPromise(programWithLogging);
-
 ```
 
 ---

@@ -14,7 +14,7 @@ Added new pagination types:
 // Updated SemanticSearchOptions to include offset
 export interface SemanticSearchOptions {
   limit?: number;
-  offset?: number;  // NEW
+  offset?: number; // NEW
   // ... other options
 }
 
@@ -23,9 +23,9 @@ export interface PaginatedSearchResults {
   results: SemanticSearchResult[];
   offset: number;
   limit: number;
-  total: number;        // Total available results
-  hasMore: boolean;     // Are there more results to fetch?
-  nextOffset?: number;  // Helper for client: what offset to use next
+  total: number; // Total available results
+  hasMore: boolean; // Are there more results to fetch?
+  nextOffset?: number; // Helper for client: what offset to use next
 }
 ```
 
@@ -37,6 +37,7 @@ export interface PaginatedSearchResults {
 **After:** Returns `PaginatedSearchResults`
 
 Changes:
+
 - Added `offset` parameter support
 - Changed default `limit` from 10 to 20 (better for infinite scroll)
 - Fetch more results (limit × 5) before filtering/scoring
@@ -48,7 +49,7 @@ Changes:
 const result = await semanticSearchConversations(userId, "error handling", {
   limit: 20,
   offset: 0,
-})
+});
 // Returns: { results: [...], offset: 0, limit: 20, total: 47, hasMore: true, nextOffset: 20 }
 ```
 
@@ -58,6 +59,7 @@ const result = await semanticSearchConversations(userId, "error handling", {
 **After:** Returns `PaginatedSearchResults`
 
 Changes:
+
 - Added `offset` parameter support
 - Sort results by recency (most recent first) for tag search
 - Fetch more results for better filtering
@@ -68,7 +70,7 @@ Changes:
 const result = await searchByTag(userId, "effect-ts", {
   limit: 20,
   offset: 40,
-})
+});
 // Returns: { results: [...], offset: 40, limit: 20, total: 156, hasMore: true, nextOffset: 60 }
 ```
 
@@ -82,6 +84,7 @@ const result = await searchByTag(userId, "effect-ts", {
 Enhanced `/api/search` endpoint with pagination:
 
 **Query Parameters:**
+
 - `q` (required) - Search query
 - `limit` (optional, default: 20, max: 100) - Results per page
 - `offset` (optional, default: 0) - Pagination offset
@@ -135,6 +138,7 @@ GET /api/search?q=async&outcome=solved&limit=20&offset=0
 ## Build Status
 
 ✅ **BUILD SUCCESSFUL**
+
 - No TypeScript errors
 - All 18 routes compile correctly
 - Ready for Phase 2 (Frontend)
@@ -192,12 +196,14 @@ Before proceeding to Phase 2, test these scenarios:
 ### Backend API Tests
 
 1. **First Page Request**
+
    ```bash
    curl "http://localhost:3000/api/search?q=error&limit=20&offset=0"
    # Verify: results.length ≤ 20, hasMore is boolean, nextOffset exists if hasMore
    ```
 
 2. **Pagination Flow**
+
    ```bash
    # Page 1
    curl "http://localhost:3000/api/search?q=error&limit=20&offset=0"
@@ -207,6 +213,7 @@ Before proceeding to Phase 2, test these scenarios:
    ```
 
 3. **With Filters**
+
    ```bash
    curl "http://localhost:3000/api/search?q=async&tag=effect-ts&limit=20&offset=0"
    # Verify: results have the tag
@@ -221,6 +228,7 @@ Before proceeding to Phase 2, test these scenarios:
 ### Type Safety
 
 All functions are fully typed:
+
 - ✅ SemanticSearchOptions includes offset
 - ✅ PaginatedSearchResults properly typed
 - ✅ API response matches types
@@ -231,17 +239,20 @@ All functions are fully typed:
 Ready to implement frontend components:
 
 1. **Create `components/memories-browser.tsx`**
+
    - Search input with debouncing
    - Filter controls (tags, outcomes)
    - Results list
    - Infinite scroll with IntersectionObserver
 
 2. **Create `components/memory-card.tsx`**
+
    - Display individual memory
    - Show metadata (tags, outcome, score)
    - Link to full conversation
 
 3. **Create `components/memory-search.tsx`**
+
    - Search/filter UI
    - Tag pills
    - Outcome filter dropdown
@@ -256,6 +267,7 @@ Estimated Phase 2 time: 2-3 hours
 ## Commit Ready
 
 All changes tested and ready for commit:
+
 - ✅ Pagination types added
 - ✅ Search functions updated
 - ✅ API endpoint enhanced

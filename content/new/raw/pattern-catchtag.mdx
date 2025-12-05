@@ -4,7 +4,15 @@ id: "pattern-catchtag"
 skillLevel: "intermediate"
 useCase: ["Pattern Matching", "Error Handling", "Tagged Unions"]
 summary: "Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery."
-tags: ["catchTag", "catchTags", "pattern-matching", "effect", "error-handling", "tagged-union"]
+tags:
+  [
+    "catchTag",
+    "catchTags",
+    "pattern-matching",
+    "effect",
+    "error-handling",
+    "tagged-union",
+  ]
 rule:
   description: "Use catchTag and catchTags to handle specific tagged error types in the Effect failure channel, providing targeted recovery logic."
 related: ["pattern-matchtag", "pattern-match", "pattern-matcheffect"]
@@ -30,12 +38,16 @@ import { Effect, Data } from "effect";
 
 // Define tagged error types
 class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
-class ValidationError extends Data.TaggedError("ValidationError")<{ message: string }> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
 
 type MyError = NotFoundError | ValidationError;
 
 // Effect: Handle only ValidationError, let others propagate
-const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as MyError).pipe(
+const effect = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
   Effect.catchTag("ValidationError", (err) =>
     Effect.succeed(`Recovered from validation error: ${err.message}`)
   )
@@ -45,12 +57,14 @@ const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as 
 const effect2 = Effect.fail(new NotFoundError() as MyError).pipe(
   Effect.catchTags({
     NotFoundError: () => Effect.succeed("Handled not found!"),
-    ValidationError: (err) => Effect.succeed(`Handled validation: ${err.message}`),
+    ValidationError: (err) =>
+      Effect.succeed(`Handled validation: ${err.message}`),
   })
 ); // Effect<string>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `catchTag` lets you recover from a specific tagged error type.
 - `catchTags` lets you handle multiple tagged error types in one place.
 - Unhandled errors continue to propagate, preserving error safety.

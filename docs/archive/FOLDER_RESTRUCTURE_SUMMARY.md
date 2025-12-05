@@ -3,6 +3,7 @@
 ## Date: September 29, 2025
 
 ## Overview
+
 Simplified the content structure from a complex multi-folder setup to a clean two-folder system: `published` (source of truth) and `new` (work-in-progress).
 
 ## New Directory Structure
@@ -22,6 +23,7 @@ content/
 ## Migration Completed
 
 ### 1. Consolidated Existing Content
+
 - ✅ Migrated 88 patterns from `content/raw/` + `content/src/` → `content/published/`
 - ✅ Embedded TypeScript code directly into MDX files
 - ✅ Moved QA results from `content/qa/results/` → `content/qa/`
@@ -31,28 +33,34 @@ content/
 ### 2. Updated Scripts
 
 #### Publish Scripts
+
 - `scripts/publish/publish.ts` - Now reads from `content/new/processed/` + `content/new/src/`, writes to `content/new/published/`
 - `scripts/publish/publish-simple.ts` - Same updates as above
 
 #### Validate Scripts
+
 - `scripts/publish/validate.ts` - Now validates `content/new/published/` and checks `content/new/src/`
 - `scripts/publish/validate-simple.ts` - Same updates as above
 - `scripts/publish/validate-improved.ts` - Same updates with enhanced features
 
 #### Test Scripts
+
 - `scripts/publish/test.ts` - Now tests TypeScript files in `content/new/src/`
 - `scripts/publish/test-improved.ts` - Same updates with parallel execution
 
 #### Ingest Pipeline
+
 - `scripts/ingest/ingest-pipeline-improved.ts` - Now outputs to `content/new/published/` with embedded code
 
 #### QA Scripts
+
 - `scripts/qa/qa-report.ts` - Added `--new` flag to report on new patterns
 - `scripts/qa/qa-status.ts` - Added `--new` flag to check status of new patterns
 
 ### 3. New Scripts Created
 
 #### Move to Published Script
+
 - `scripts/publish/move-to-published.ts` - Final step to move patterns from `content/new/published/` → `content/published/`
 - Includes `--dry-run` flag for safe testing
 - Cleans up all working directories after successful move

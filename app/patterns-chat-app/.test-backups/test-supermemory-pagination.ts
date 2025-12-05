@@ -27,7 +27,9 @@ async function testSupermemoryPagination() {
       q: "conversation_embedding",
       limit: 10,
     });
-    console.log(`   ✅ Works! Got ${basicSearch.results?.length || 0} results\n`);
+    console.log(
+      `   ✅ Works! Got ${basicSearch.results?.length || 0} results\n`
+    );
 
     // Test 2: Search with offset
     console.log("2️⃣  Test: Search with offset parameter");
@@ -37,7 +39,9 @@ async function testSupermemoryPagination() {
         limit: 10,
         offset: 10,
       });
-      console.log(`   ✅ offset parameter works! Got ${offsetSearch.results?.length || 0} results\n`);
+      console.log(
+        `   ✅ offset parameter works! Got ${offsetSearch.results?.length || 0} results\n`
+      );
     } catch (e: any) {
       console.log(`   ❌ offset parameter not supported: ${e.message}\n`);
     }
@@ -50,7 +54,9 @@ async function testSupermemoryPagination() {
         limit: 10,
         skip: 10,
       });
-      console.log(`   ✅ skip parameter works! Got ${skipSearch.results?.length || 0} results\n`);
+      console.log(
+        `   ✅ skip parameter works! Got ${skipSearch.results?.length || 0} results\n`
+      );
     } catch (e: any) {
       console.log(`   ❌ skip parameter not supported: ${e.message}\n`);
     }
@@ -63,7 +69,9 @@ async function testSupermemoryPagination() {
         limit: 10,
         page: 1,
       });
-      console.log(`   ✅ page parameter works! Got ${pageSearch.results?.length || 0} results\n`);
+      console.log(
+        `   ✅ page parameter works! Got ${pageSearch.results?.length || 0} results\n`
+      );
     } catch (e: any) {
       console.log(`   ❌ page parameter not supported: ${e.message}\n`);
     }
@@ -76,7 +84,9 @@ async function testSupermemoryPagination() {
         limit: 10,
         cursor: "0",
       });
-      console.log(`   ✅ cursor parameter works! Got ${cursorSearch.results?.length || 0} results\n`);
+      console.log(
+        `   ✅ cursor parameter works! Got ${cursorSearch.results?.length || 0} results\n`
+      );
     } catch (e: any) {
       console.log(`   ❌ cursor parameter not supported: ${e.message}\n`);
     }
@@ -95,10 +105,11 @@ async function testSupermemoryPagination() {
 
     console.log("✅ Supermemory Pagination Test Complete!");
     console.log("\nSummary:");
-    console.log("- If offset/skip/page/cursor work, we should update supermemory-store.ts");
+    console.log(
+      "- If offset/skip/page/cursor work, we should update supermemory-store.ts"
+    );
     console.log("- If only limit works, our current implementation is optimal");
     console.log("- Check the results above to determine next steps");
-
   } catch (error) {
     console.error("❌ Test failed:", error);
     process.exit(1);

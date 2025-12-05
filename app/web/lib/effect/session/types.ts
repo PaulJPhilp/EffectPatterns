@@ -13,7 +13,7 @@ export interface Session {
   readonly currentModule?: string;
   readonly currentPattern?: string;
   readonly currentPhase?: number;
-  readonly subscriptionTier: 'free' | 'pro' | 'enterprise';
+  readonly subscriptionTier: "free" | "pro" | "enterprise";
   readonly updatedAt: Date;
 }
 

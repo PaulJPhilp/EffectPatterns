@@ -46,10 +46,10 @@ const e3 = Either.left("fail2");
 const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
 const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
 const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Either.right(value)` represents success.
 - `Either.left(error)` represents failure.
 - Pattern matching ensures all cases are handled.
@@ -83,9 +83,7 @@ const effect = Effect.succeed(2).pipe(
 ); // Effect<number>
 
 // Option: Chain two optional computations
-const option = Option.some(2).pipe(
-  Option.flatMap((n) => Option.some(n * 10))
-); // Option<number>
+const option = Option.some(2).pipe(Option.flatMap((n) => Option.some(n * 10))); // Option<number>
 
 // Either: Chain two computations that may fail
 const either = Either.right(2).pipe(
@@ -149,7 +147,8 @@ const options = [Option.some(1), Option.none(), Option.some(3)];
 const presentValues = options.filter(Option.isSome).map((o) => o.value); // [1, 3]
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Option.isSome` and `Option.isNone` let you check for presence or absence.
 - `Either.isRight` and `Either.isLeft` let you check for success or failure.
 - These are especially useful for filtering or quick conditional logic.
@@ -185,7 +184,7 @@ The result of `Stream.runCollect` is an `Effect` that, when executed, yields a `
 This example creates a stream of numbers, filters for only the even ones, transforms them into strings, and then uses `runCollect` to gather the final results into a `Chunk`.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 const program = Stream.range(1, 10).pipe(
   // Find all the even numbers
@@ -198,7 +197,9 @@ const program = Stream.range(1, 10).pipe(
 
 const programWithLogging = Effect.gen(function* () {
   const results = yield* program;
-  yield* Effect.log(`Collected results: ${JSON.stringify(Chunk.toArray(results))}`);
+  yield* Effect.log(
+    `Collected results: ${JSON.stringify(Chunk.toArray(results))}`
+  );
   return results;
 });
 
@@ -220,7 +221,7 @@ Collected results: [
 The anti-pattern is using `Stream.runCollect` on a stream that produces an unbounded or extremely large number of items. This will inevitably lead to an out-of-memory error.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 
 // An infinite stream of numbers
 const infiniteStream = Stream.range(1, Infinity);
@@ -234,7 +235,7 @@ const program = infiniteStream.pipe(
 // by consuming all available memory.
 // Effect.runPromise(program);
 console.log(
-  'This code is commented out because it would cause an out-of-memory crash.'
+  "This code is commented out because it would cause an out-of-memory crash."
 );
 ```
 
@@ -261,9 +262,7 @@ import { Effect, Stream, Option, Either } from "effect";
 // Effect: Combine two effects and get both results
 const effectA = Effect.succeed(1);
 const effectB = Effect.succeed("hello");
-const zippedEffect = effectA.pipe(
-  Effect.zip(effectB)
-); // Effect<[number, string]>
+const zippedEffect = effectA.pipe(Effect.zip(effectB)); // Effect<[number, string]>
 
 // Option: Combine two options, only Some if both are Some
 const optionA = Option.some(1);
@@ -278,9 +277,7 @@ const zippedEither = Either.all([eitherA, eitherB]); // Either<never, [number, s
 // Stream: Pair up values from two streams
 const streamA = Stream.fromIterable([1, 2, 3]);
 const streamB = Stream.fromIterable(["a", "b", "c"]);
-const zippedStream = streamA.pipe(
-  Stream.zip(streamB)
-); // Stream<[number, string]>
+const zippedStream = streamA.pipe(Stream.zip(streamB)); // Stream<[number, string]>
 ```
 
 **Explanation:**  
@@ -323,7 +320,8 @@ const set = HashSet.make(user1);
 console.log(HashSet.has(set, user2)); // true
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.struct` creates immutable objects with value-based equality.
 - Use for domain entities, value objects, and when storing objects in sets or as map keys.
 - Avoids bugs from reference-based comparison.
@@ -342,7 +340,7 @@ Using plain JavaScript objects for value-based logic, which compares by referenc
 
 **Why:**
 
-In JavaScript, comparing two non-primitive values with `===` checks for *referential equality*. It only returns `true` if they are the exact same instance in memory. This means two objects with identical contents are not considered equal, which is a common source of bugs.
+In JavaScript, comparing two non-primitive values with `===` checks for _referential equality_. It only returns `true` if they are the exact same instance in memory. This means two objects with identical contents are not considered equal, which is a common source of bugs.
 
 ```typescript
 { a: 1 } === { a: 1 } // false!
@@ -439,21 +437,17 @@ import { Effect, Stream, Option, Either } from "effect";
 // Effect: Branch based on a condition
 const effect = Effect.if(true, {
   onTrue: () => Effect.succeed("yes"),
-  onFalse: () => Effect.succeed("no")
+  onFalse: () => Effect.succeed("no"),
 }); // Effect<string>
 
 // Option: Conditionally create an Option
 const option = true ? Option.some("yes") : Option.none(); // Option<string> (Some("yes"))
 
 // Either: Conditionally create an Either
-const either = true
-  ? Either.right("yes")
-  : Either.left("error"); // Either<string, string> (Right("yes"))
+const either = true ? Either.right("yes") : Either.left("error"); // Either<string, string> (Right("yes"))
 
 // Stream: Conditionally emit a stream
-const stream = false
-  ? Stream.fromIterable([1, 2])
-  : Stream.empty; // Stream<number> (empty)
+const stream = false ? Stream.fromIterable([1, 2]) : Stream.empty; // Stream<number> (empty)
 ```
 
 **Explanation:**  
@@ -489,18 +483,19 @@ const option = Option.fromNullable(nullableValue); // Option<string>
 const someValue = Option.some(42);
 const effectFromOption = Option.match(someValue, {
   onNone: () => Effect.fail("No value"),
-  onSome: (value) => Effect.succeed(value)
+  onSome: (value) => Effect.succeed(value),
 }); // Effect<number, string, never>
 
 // Effect: Convert an Either to an Effect
 const either = Either.right("success");
 const effectFromEither = Either.match(either, {
   onLeft: (error) => Effect.fail(error),
-  onRight: (value) => Effect.succeed(value)
+  onRight: (value) => Effect.succeed(value),
 }); // Effect<string, never, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fromNullable` lifts a nullable value into an Effect, failing if the value is `null` or `undefined`.
 - `Effect.fromOption` lifts an Option into an Effect, failing if the Option is `none`.
 - `Effect.fromEither` lifts an Either into an Effect, failing if the Either is `left`.
@@ -596,7 +591,10 @@ const program = Effect.gen(function* () {
 );
 
 // Run the server with proper error handling
-const programWithErrorHandling = Effect.provide(program, HttpServer.Default).pipe(
+const programWithErrorHandling = Effect.provide(
+  program,
+  HttpServer.Default
+).pipe(
   Effect.catchAll((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Program failed: ${error}`);
@@ -616,7 +614,6 @@ To test:
 3. Proper cleanup on shutdown
 4. Demonstrates server lifecycle: start -> run -> shutdown
 */
-
 ```
 
 **Anti-Pattern:**
@@ -624,12 +621,12 @@ To test:
 The common anti-pattern is to use the raw Node.js `http` module directly, outside of the Effect runtime. This approach creates a disconnect between your application logic and the server's lifecycle.
 
 ```typescript
-import * as http from 'http';
+import * as http from "http";
 
 // Manually create a server using the Node.js built-in module.
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Hello, World!');
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Hello, World!");
 });
 
 // Manually start the server and log the port.
@@ -666,7 +663,7 @@ This pattern is fundamental for several reasons:
 This example takes a simple array of numbers, creates a stream from it, performs a transformation on each number, and then runs the stream to collect the results.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 const numbers = [1, 2, 3, 4, 5];
 
@@ -680,7 +677,9 @@ const program = Stream.fromIterable(numbers).pipe(
 
 const programWithLogging = Effect.gen(function* () {
   const processedItems = yield* program;
-  yield* Effect.log(`Processed items: ${JSON.stringify(Chunk.toArray(processedItems))}`);
+  yield* Effect.log(
+    `Processed items: ${JSON.stringify(Chunk.toArray(processedItems))}`
+  );
   return processedItems;
 });
 
@@ -693,7 +692,7 @@ Output:
 
 **Anti-Pattern:**
 
-The common alternative is to use standard array methods like `.map()` or a `for...of` loop. While perfectly fine for simple, synchronous tasks, this approach is an anti-pattern when building a *pipeline*.
+The common alternative is to use standard array methods like `.map()` or a `for...of` loop. While perfectly fine for simple, synchronous tasks, this approach is an anti-pattern when building a _pipeline_.
 
 ```typescript
 const numbers = [1, 2, 3, 4, 5];
@@ -725,7 +724,7 @@ values within functions that must return an `Effect`.
 **Good Example:**
 
 ```typescript
-import { Effect, Data } from "effect"
+import { Effect, Data } from "effect";
 
 // Create a custom error type
 class MyError extends Data.TaggedError("MyError") {}
@@ -733,26 +732,26 @@ class MyError extends Data.TaggedError("MyError") {}
 // Create a program that demonstrates pre-resolved effects
 const program = Effect.gen(function* () {
   // Success effect
-  yield* Effect.logInfo("Running success effect...")
+  yield* Effect.logInfo("Running success effect...");
   yield* Effect.gen(function* () {
-    const value = yield* Effect.succeed(42)
-    yield* Effect.logInfo(`Success value: ${value}`)
-  })
+    const value = yield* Effect.succeed(42);
+    yield* Effect.logInfo(`Success value: ${value}`);
+  });
 
   // Failure effect
-  yield* Effect.logInfo("\nRunning failure effect...")
+  yield* Effect.logInfo("\nRunning failure effect...");
   yield* Effect.gen(function* () {
     // Use return yield* for effects that never succeed
-    return yield* Effect.fail(new MyError())
+    return yield* Effect.fail(new MyError());
   }).pipe(
     Effect.catchTag("MyError", (error) =>
       Effect.logInfo(`Error occurred: ${error._tag}`)
     )
-  )
-})
+  );
+});
 
 // Run the program
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 **Explanation:**  
@@ -798,7 +797,8 @@ const effects = [Effect.succeed(1), Effect.succeed(2)];
 const batchEffect = Effect.all(effects); // Effect<[1, 2]>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Stream.fromIterable` creates a stream from any array or iterable, enabling streaming and batch operations.
 - `Effect.all` (covered elsewhere) can be used to process arrays of effects in batch.
 
@@ -841,10 +841,10 @@ const effectAsync = Effect.async<string, Error>((resume) => {
     else if (data) resume(Effect.succeed(data));
   });
 }); // Effect<string, Error, never>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.sync` is for synchronous computations that are guaranteed not to throw.
 - `Effect.async` is for integrating callback-based APIs, converting them into Effects.
 
@@ -871,9 +871,7 @@ if it fails, the Promise rejects.
 ```typescript
 import { Effect } from "effect";
 
-const program = Effect.succeed("Hello, World!").pipe(
-  Effect.delay("1 second"),
-);
+const program = Effect.succeed("Hello, World!").pipe(Effect.delay("1 second"));
 
 const promise = Effect.runPromise(program);
 
@@ -893,7 +891,7 @@ easy to integrate with existing JavaScript async workflows.
 **Anti-Pattern:**
 
 Never call `runPromise` inside another `Effect` composition. Effects are
-meant to be composed together *before* being run once at the end.
+meant to be composed together _before_ being run once at the end.
 
 ---
 
@@ -912,59 +910,57 @@ asynchronous operations. If the Effect contains any async operations,
 **Good Example:**
 
 ```typescript
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 // Simple synchronous program
 const program1 = Effect.gen(function* () {
-  const n = 10
-  const result = n * 2
-  yield* Effect.log(`Simple program result: ${result}`)
-  return result
-})
+  const n = 10;
+  const result = n * 2;
+  yield* Effect.log(`Simple program result: ${result}`);
+  return result;
+});
 
 // Run simple program
-Effect.runSync(program1)
+Effect.runSync(program1);
 
 // Program with logging
 const program2 = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting calculation...")
-  const n = yield* Effect.sync(() => 10)
-  yield* Effect.logInfo(`Got number: ${n}`)
-  const result = yield* Effect.sync(() => n * 2)
-  yield* Effect.logInfo(`Result: ${result}`)
-  return result
-})
+  yield* Effect.logInfo("Starting calculation...");
+  const n = yield* Effect.sync(() => 10);
+  yield* Effect.logInfo(`Got number: ${n}`);
+  const result = yield* Effect.sync(() => n * 2);
+  yield* Effect.logInfo(`Result: ${result}`);
+  return result;
+});
 
 // Run with logging
-Effect.runSync(program2)
+Effect.runSync(program2);
 
 // Program with error handling
 const program3 = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting division...")
-  const n = yield* Effect.sync(() => 10)
-  const divisor = yield* Effect.sync(() => 0)
-  
-  yield* Effect.logInfo(`Attempting to divide ${n} by ${divisor}...`)
+  yield* Effect.logInfo("Starting division...");
+  const n = yield* Effect.sync(() => 10);
+  const divisor = yield* Effect.sync(() => 0);
+
+  yield* Effect.logInfo(`Attempting to divide ${n} by ${divisor}...`);
   return yield* Effect.try({
     try: () => {
-      if (divisor === 0) throw new Error("Cannot divide by zero")
-      return n / divisor
+      if (divisor === 0) throw new Error("Cannot divide by zero");
+      return n / divisor;
     },
     catch: (error) => {
       if (error instanceof Error) {
-        return error
+        return error;
       }
-      return new Error("Unknown error occurred")
-    }
-  })
+      return new Error("Unknown error occurred");
+    },
+  });
 }).pipe(
-  Effect.catchAll((error) =>
-    Effect.logInfo(`Error occurred: ${error.message}`)
-  )
-)
+  Effect.catchAll((error) => Effect.logInfo(`Error occurred: ${error.message}`))
+);
 
 // Run with error handling
-Effect.runSync(program3)
+Effect.runSync(program3);
 ```
 
 **Explanation:**  
@@ -1002,87 +998,88 @@ By defining parameters directly in the path string, you gain several benefits:
 This example defines a route that captures a `userId`. The handler for this route accesses the parsed parameters and uses the `userId` to construct a personalized greeting. The router automatically makes the parameters available to the handler.
 
 ```typescript
-import { Data, Effect } from 'effect'
+import { Data, Effect } from "effect";
 
 // Define tagged error for invalid paths
 interface InvalidPathErrorSchema {
-  readonly _tag: "InvalidPathError"
-  readonly path: string
+  readonly _tag: "InvalidPathError";
+  readonly path: string;
 }
 
 const makeInvalidPathError = (path: string): InvalidPathErrorSchema => ({
   _tag: "InvalidPathError",
-  path
-})
+  path,
+});
 
 // Define service interface
 interface PathOps {
-  readonly extractUserId: (path: string) => Effect.Effect<string, InvalidPathErrorSchema>
-  readonly greetUser: (userId: string) => Effect.Effect<string>
+  readonly extractUserId: (
+    path: string
+  ) => Effect.Effect<string, InvalidPathErrorSchema>;
+  readonly greetUser: (userId: string) => Effect.Effect<string>;
 }
 
 // Create service
-class PathService extends Effect.Service<PathService>()(
-  "PathService",
-  {
-    sync: () => ({
-      extractUserId: (path: string) =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`Attempting to extract user ID from path: ${path}`)
-          
-          const match = path.match(/\/users\/([^/]+)/);
-          if (!match) {
-            yield* Effect.logInfo(`No user ID found in path: ${path}`)
-            return yield* Effect.fail(makeInvalidPathError(path))
-          }
-          
-          const userId = match[1];
-          yield* Effect.logInfo(`Successfully extracted user ID: ${userId}`)
-          return userId
-        }),
+class PathService extends Effect.Service<PathService>()("PathService", {
+  sync: () => ({
+    extractUserId: (path: string) =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(
+          `Attempting to extract user ID from path: ${path}`
+        );
 
-      greetUser: (userId: string) =>
-        Effect.gen(function* () {
-          const greeting = `Hello, user ${userId}!`
-          yield* Effect.logInfo(greeting)
-          return greeting
-        })
-    })
-  }
-) {}
+        const match = path.match(/\/users\/([^/]+)/);
+        if (!match) {
+          yield* Effect.logInfo(`No user ID found in path: ${path}`);
+          return yield* Effect.fail(makeInvalidPathError(path));
+        }
+
+        const userId = match[1];
+        yield* Effect.logInfo(`Successfully extracted user ID: ${userId}`);
+        return userId;
+      }),
+
+    greetUser: (userId: string) =>
+      Effect.gen(function* () {
+        const greeting = `Hello, user ${userId}!`;
+        yield* Effect.logInfo(greeting);
+        return greeting;
+      }),
+  }),
+}) {}
 
 // Compose the functions with proper error handling
-const processPath = (path: string): Effect.Effect<string, InvalidPathErrorSchema, PathService> =>
+const processPath = (
+  path: string
+): Effect.Effect<string, InvalidPathErrorSchema, PathService> =>
   Effect.gen(function* () {
-    const pathService = yield* PathService
-    yield* Effect.logInfo(`Processing path: ${path}`)
-    const userId = yield* pathService.extractUserId(path)
-    return yield* pathService.greetUser(userId)
-  })
+    const pathService = yield* PathService;
+    yield* Effect.logInfo(`Processing path: ${path}`);
+    const userId = yield* pathService.extractUserId(path);
+    return yield* pathService.greetUser(userId);
+  });
 
 // Run examples with proper error handling
 const program = Effect.gen(function* () {
   // Test valid paths
-  yield* Effect.logInfo("=== Testing valid paths ===")
-  const result1 = yield* processPath('/users/123')
-  yield* Effect.logInfo(`Result 1: ${result1}`)
-  
-  const result2 = yield* processPath('/users/abc')
-  yield* Effect.logInfo(`Result 2: ${result2}`)
-  
+  yield* Effect.logInfo("=== Testing valid paths ===");
+  const result1 = yield* processPath("/users/123");
+  yield* Effect.logInfo(`Result 1: ${result1}`);
+
+  const result2 = yield* processPath("/users/abc");
+  yield* Effect.logInfo(`Result 2: ${result2}`);
+
   // Test invalid path
-  yield* Effect.logInfo("\n=== Testing invalid path ===")
-  const result3 = yield* processPath('/invalid/path').pipe(
+  yield* Effect.logInfo("\n=== Testing invalid path ===");
+  const result3 = yield* processPath("/invalid/path").pipe(
     Effect.catchTag("InvalidPathError", (error) =>
       Effect.succeed(`Error: Invalid path ${error.path}`)
     )
-  )
-  yield* Effect.logInfo(result3)
-})
+  );
+  yield* Effect.logInfo(result3);
+});
 
-Effect.runPromise(
-  Effect.provide(program, PathService.Default)
-)
+Effect.runPromise(Effect.provide(program, PathService.Default));
 ```
 
 **Anti-Pattern:**
@@ -1090,16 +1087,16 @@ Effect.runPromise(
 The anti-pattern is to manually parse the URL string inside the handler. This approach is brittle, imperative, and mixes concerns.
 
 ```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
 // This route matches any sub-path of /users/, forcing manual parsing.
 const app = Http.router.get(
-  '/users/*', // Using a wildcard
+  "/users/*", // Using a wildcard
   Http.request.ServerRequest.pipe(
     Effect.flatMap((req) => {
       // Manually split the URL to find the ID.
-      const parts = req.url.split('/'); // e.g., ['', 'users', '123']
+      const parts = req.url.split("/"); // e.g., ['', 'users', '123']
       if (parts.length === 3 && parts[2]) {
         const userId = parts[2];
         return Http.response.text(`Hello, user ${userId}!`);
@@ -1110,9 +1107,9 @@ const app = Http.router.get(
   )
 );
 
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```
@@ -1152,10 +1149,8 @@ const option = Option.some(4).pipe(
 
 // Either: Use map and flatMap to filter
 const either = Either.right(4).pipe(
-  Either.flatMap((n) => 
-    n % 2 === 0
-      ? Either.right(n)
-      : Either.left("Number is not even")
+  Either.flatMap((n) =>
+    n % 2 === 0 ? Either.right(n) : Either.left("Number is not even")
   )
 ); // Either<string, number>
 
@@ -1199,7 +1194,7 @@ This approach has several advantages:
 This example defines two separate GET routes, one for the root path (`/`) and one for `/hello`. We create an empty router and add each route to it. The resulting `app` is then served. The router automatically handles sending a `404 Not Found` response for any path that doesn't match.
 
 ```typescript
-import { Data, Effect } from 'effect'
+import { Data, Effect } from "effect";
 
 // Define response types
 interface RouteResponse {
@@ -1218,64 +1213,65 @@ class RouteHandlerError extends Data.TaggedError("RouteHandlerError")<{
 }> {}
 
 // Define route service
-class RouteService extends Effect.Service<RouteService>()(
-  "RouteService",
-  {
-    sync: () => {
-      // Create instance methods
-      const handleRoute = (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`Processing request for path: ${path}`);
-          
-          try {
-            switch (path) {
-              case '/':
-                const home = 'Welcome to the home page!';
-                yield* Effect.logInfo(`Serving home page`);
-                return { status: 200, body: home };
+class RouteService extends Effect.Service<RouteService>()("RouteService", {
+  sync: () => {
+    // Create instance methods
+    const handleRoute = (
+      path: string
+    ): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`Processing request for path: ${path}`);
 
-              case '/hello':
-                const hello = 'Hello, Effect!';
-                yield* Effect.logInfo(`Serving hello page`);
-                return { status: 200, body: hello };
+        try {
+          switch (path) {
+            case "/":
+              const home = "Welcome to the home page!";
+              yield* Effect.logInfo(`Serving home page`);
+              return { status: 200, body: home };
 
-              default:
-                yield* Effect.logWarning(`Route not found: ${path}`);
-                return yield* Effect.fail(new RouteNotFoundError({ path }));
-            }
-          } catch (e) {
-            const error = e instanceof Error ? e.message : String(e);
-            yield* Effect.logError(`Error handling route ${path}: ${error}`);
-            return yield* Effect.fail(new RouteHandlerError({ path, error }));
+            case "/hello":
+              const hello = "Hello, Effect!";
+              yield* Effect.logInfo(`Serving hello page`);
+              return { status: 200, body: hello };
+
+            default:
+              yield* Effect.logWarning(`Route not found: ${path}`);
+              return yield* Effect.fail(new RouteNotFoundError({ path }));
           }
-        });
+        } catch (e) {
+          const error = e instanceof Error ? e.message : String(e);
+          yield* Effect.logError(`Error handling route ${path}: ${error}`);
+          return yield* Effect.fail(new RouteHandlerError({ path, error }));
+        }
+      });
 
-      // Return service implementation
-      return {
-        handleRoute,
-        // Simulate GET request
-        simulateGet: (path: string): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
-          Effect.gen(function* () {
-            yield* Effect.logInfo(`GET ${path}`);
-            const response = yield* handleRoute(path);
-            yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
-            return response;
-          })
-      };
-    }
-  }
-) {}
+    // Return service implementation
+    return {
+      handleRoute,
+      // Simulate GET request
+      simulateGet: (
+        path: string
+      ): Effect.Effect<RouteResponse, RouteNotFoundError | RouteHandlerError> =>
+        Effect.gen(function* () {
+          yield* Effect.logInfo(`GET ${path}`);
+          const response = yield* handleRoute(path);
+          yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
+          return response;
+        }),
+    };
+  },
+}) {}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
   const router = yield* RouteService;
-  
+
   yield* Effect.logInfo("=== Starting Route Tests ===");
-  
+
   // Test different routes
-  for (const path of ['/', '/hello', '/other', '/error']) {
+  for (const path of ["/", "/hello", "/other", "/error"]) {
     yield* Effect.logInfo(`\n--- Testing ${path} ---`);
-    
+
     const result = yield* router.simulateGet(path).pipe(
       Effect.catchTags({
         RouteNotFoundError: (error) =>
@@ -1286,23 +1282,24 @@ const program = Effect.gen(function* () {
           }),
         RouteHandlerError: (error) =>
           Effect.gen(function* () {
-            const response = { status: 500, body: `Internal Error: ${error.error}` };
+            const response = {
+              status: 500,
+              body: `Internal Error: ${error.error}`,
+            };
             yield* Effect.logError(`${response.status} ${response.body}`);
             return response;
-          })
+          }),
       })
     );
-    
+
     yield* Effect.logInfo(`Final Response: ${JSON.stringify(result)}`);
   }
-  
+
   yield* Effect.logInfo("\n=== Route Tests Complete ===");
 });
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, RouteService.Default)
-);
+Effect.runPromise(Effect.provide(program, RouteService.Default));
 ```
 
 **Anti-Pattern:**
@@ -1310,25 +1307,25 @@ Effect.runPromise(
 The anti-pattern is to create a single, monolithic handler that uses conditional logic to inspect the request URL. This imperative approach is difficult to maintain and scale.
 
 ```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
 // A single app that manually checks the URL
 const app = Http.request.ServerRequest.pipe(
   Effect.flatMap((req) => {
-    if (req.url === '/') {
-      return Effect.succeed(Http.response.text('Welcome to the home page!'));
-    } else if (req.url === '/hello') {
-      return Effect.succeed(Http.response.text('Hello, Effect!'));
+    if (req.url === "/") {
+      return Effect.succeed(Http.response.text("Welcome to the home page!"));
+    } else if (req.url === "/hello") {
+      return Effect.succeed(Http.response.text("Hello, Effect!"));
     } else {
       return Effect.succeed(Http.response.empty({ status: 404 }));
     }
   })
 );
 
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```
@@ -1363,7 +1360,8 @@ const option = Option.none(); // Option<never>
 const either = Either.left("Invalid input"); // Either<string, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fail(error)` creates an effect that always fails with `error`.
 - `Option.none()` creates an option that is always absent.
 - `Either.left(error)` creates an either that always represents failure.
@@ -1400,7 +1398,8 @@ const option = Option.some("hello"); // Option<string>
 const either = Either.right({ id: 1 }); // Either<never, { id: number }>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.succeed(value)` creates an effect that always succeeds with `value`.
 - `Option.some(value)` creates an option that is always present.
 - `Either.right(value)` creates an either that always represents success.
@@ -1453,7 +1452,8 @@ const either = Either.left("fail").pipe(
 ); // string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.match` lets you handle both the error and success channels in one place.
 - `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
 
@@ -1498,10 +1498,10 @@ const result = someValue.pipe(
 function findUser(id: number): Option.Option<{ id: number; name: string }> {
   return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
 }
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Option.some(value)` represents a present value.
 - `Option.none()` represents absence.
 - `Option.fromNullable` safely lifts nullable values into Option.
@@ -1536,9 +1536,9 @@ Not all pipelines are designed to produce a final list of values. Often, the goa
 This example creates a stream of tasks. For each task, it performs a side effect (logging it as "complete"). `Stream.runDrain` executes the pipeline, ensuring all logs are written, but without collecting the `void` results of each logging operation.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 
-const tasks = ['task 1', 'task 2', 'task 3'];
+const tasks = ["task 1", "task 2", "task 3"];
 
 // A function that performs a side effect for a task
 const completeTask = (task: string): Effect.Effect<void, never> =>
@@ -1553,7 +1553,7 @@ const program = Stream.fromIterable(tasks).pipe(
 
 const programWithLogging = Effect.gen(function* () {
   yield* program;
-  yield* Effect.log('\nAll tasks have been processed.');
+  yield* Effect.log("\nAll tasks have been processed.");
 });
 
 Effect.runPromise(programWithLogging);
@@ -1572,7 +1572,7 @@ All tasks have been processed.
 The anti-pattern is using `Stream.runCollect` when you only care about the side effects. This needlessly consumes memory and can lead to crashes.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 // ... same tasks and completeTask function ...
 
 const program = Stream.fromIterable(tasks).pipe(
@@ -1611,10 +1611,12 @@ import { Effect, Console } from "effect";
 
 // A mock resource that needs to be managed
 const getDbConnection = Effect.sync(() => ({ id: Math.random() })).pipe(
-  Effect.tap(() => Effect.log("Connection Acquired")),
+  Effect.tap(() => Effect.log("Connection Acquired"))
 );
 
-const closeDbConnection = (conn: { id: number }): Effect.Effect<void, never, never> =>
+const closeDbConnection = (conn: {
+  id: number;
+}): Effect.Effect<void, never, never> =>
   Effect.log(`Connection ${conn.id} Released`);
 
 // The program that uses the resource
@@ -1723,7 +1725,7 @@ const program = Effect.gen(function* () {
         yield* Effect.logError(`Request error: ${error.message}`);
       }
     });
-    
+
     Effect.runPromise(requestHandler);
   });
 
@@ -1759,19 +1761,17 @@ const program = Effect.gen(function* () {
     })
   ),
   // Merge layers and provide them in a single call to ensure proper lifecycle management
-  Effect.provide(Layer.merge(
-    JsonServer.Default,
-    NodeContext.layer
-  ))
+  Effect.provide(Layer.merge(JsonServer.Default, NodeContext.layer))
 );
 
 // Run the program
 // Use Effect.runFork for server applications that shouldn't resolve the promise
-Effect.runPromise(program.pipe(
-  // Ensure the Effect has no remaining context requirements for runPromise
-  Effect.map(() => undefined)
-));
-
+Effect.runPromise(
+  program.pipe(
+    // Ensure the Effect has no remaining context requirements for runPromise
+    Effect.map(() => undefined)
+  )
+);
 ```
 
 **Anti-Pattern:**
@@ -1779,12 +1779,12 @@ Effect.runPromise(program.pipe(
 The anti-pattern is to manually serialize the data to a string and set the headers yourself. This is verbose and introduces opportunities for error.
 
 ```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
 const getUserRoute = Http.router.get(
-  '/users/1',
-  Effect.succeed({ id: 1, name: 'Paul', team: 'Effect' }).pipe(
+  "/users/1",
+  Effect.succeed({ id: 1, name: "Paul", team: "Effect" }).pipe(
     Effect.flatMap((user) => {
       // Manually serialize the object to a JSON string.
       const jsonString = JSON.stringify(user);
@@ -1794,8 +1794,8 @@ const getUserRoute = Http.router.get(
       return Effect.succeed(
         Http.response.setHeader(
           response,
-          'Content-Type',
-          'application/json; charset=utf-8'
+          "Content-Type",
+          "application/json; charset=utf-8"
         )
       );
     })
@@ -1804,9 +1804,9 @@ const getUserRoute = Http.router.get(
 
 const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
 
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```
@@ -1864,9 +1864,9 @@ that make Effect so powerful.
 
 While `async/await` is great for simple cases, building large, robust applications with `Promise`s reveals these critical gaps. Effect addresses each one directly:
 
--   **Typed Errors:** The `E` channel in `Effect<A, E, R>` forces you to handle specific, known error types, eliminating an entire class of runtime bugs.
--   **Dependency Injection:** The `R` channel provides a powerful, built-in system for declaring and providing dependencies (`Layer`s), making your code modular and testable.
--   **Cancellation (Interruption):** Effect's structured concurrency and `Fiber` model provide robust, built-in cancellation. When an effect is interrupted, Effect guarantees that its cleanup logic (finalizers) will be run.
+- **Typed Errors:** The `E` channel in `Effect<A, E, R>` forces you to handle specific, known error types, eliminating an entire class of runtime bugs.
+- **Dependency Injection:** The `R` channel provides a powerful, built-in system for declaring and providing dependencies (`Layer`s), making your code modular and testable.
+- **Cancellation (Interruption):** Effect's structured concurrency and `Fiber` model provide robust, built-in cancellation. When an effect is interrupted, Effect guarantees that its cleanup logic (finalizers) will be run.
 
 Understanding that Effect was built specifically to solve these problems is key to appreciating its design and power.
 
@@ -1956,7 +1956,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(Effect.provide(program, HttpClient.Default));
-
 ```
 
 ---
@@ -1964,9 +1963,10 @@ Effect.runPromise(Effect.provide(program, HttpClient.Default));
 **Anti-Pattern:**
 
 This `Promise`-based function has several hidden problems that Effect solves:
--   What happens if `db.findUser` rejects? The error is untyped (`any`).
--   Where does `db` come from? It's a hidden dependency, making this function hard to test.
--   If the operation is slow, how do we cancel it? We can't.
+
+- What happens if `db.findUser` rejects? The error is untyped (`any`).
+- Where does `db` come from? It's a hidden dependency, making this function hard to test.
+- If the operation is slow, how do we cancel it? We can't.
 
 ```typescript
 // ❌ This function has hidden dependencies and untyped errors.
@@ -2054,7 +2054,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -2077,7 +2076,7 @@ Using `map` when you should be using `flatMap`. This results in a nested
 **Why:**
 
 `map` is the most fundamental combinator in functional programming.  
-It allows you to focus on *what* you want to do with a value, not *how* to extract it.  
+It allows you to focus on _what_ you want to do with a value, not _how_ to extract it.  
 The same mental model applies across all major Effect types.
 
 **Good Example:**
@@ -2086,24 +2085,16 @@ The same mental model applies across all major Effect types.
 import { Effect, Stream, Option, Either } from "effect";
 
 // Effect: Transform the result of an effect
-const effect = Effect.succeed(2).pipe(
-  Effect.map((n) => n * 10)
-); // Effect<number>
+const effect = Effect.succeed(2).pipe(Effect.map((n) => n * 10)); // Effect<number>
 
 // Option: Transform an optional value
-const option = Option.some(2).pipe(
-  Option.map((n) => n * 10)
-); // Option<number>
+const option = Option.some(2).pipe(Option.map((n) => n * 10)); // Option<number>
 
 // Either: Transform a value that may be an error
-const either = Either.right(2).pipe(
-  Either.map((n) => n * 10)
-); // Either<never, number>
+const either = Either.right(2).pipe(Either.map((n) => n * 10)); // Either<never, number>
 
 // Stream: Transform every value in a stream
-const stream = Stream.fromIterable([1, 2, 3]).pipe(
-  Stream.map((n) => n * 10)
-); // Stream<number>
+const stream = Stream.fromIterable([1, 2, 3]).pipe(Stream.map((n) => n * 10)); // Stream<number>
 ```
 
 **Explanation:**  
@@ -2141,7 +2132,9 @@ const program = Effect.gen(function* () {
 });
 
 const demonstrationProgram = Effect.gen(function* () {
-  yield* Effect.log("2. The blueprint has been defined. No work has been done yet.");
+  yield* Effect.log(
+    "2. The blueprint has been defined. No work has been done yet."
+  );
   yield* program;
 });
 
@@ -2168,7 +2161,8 @@ defining an `Effect`.
 
 **Why:**
 
-This three-channel signature is what makes Effect so expressive and safe. Unlike a ``Promise<A>`` which can only describe its success type, an ``Effect``'s signature tells you everything you need to know about a computation before you run it:
+This three-channel signature is what makes Effect so expressive and safe. Unlike a `Promise<A>` which can only describe its success type, an `Effect`'s signature tells you everything you need to know about a computation before you run it:
+
 1.  **What it produces (`A`):** The data you get on the "happy path."
 2.  **How it can fail (`E`):** The specific, known errors you need to handle. This makes error handling type-safe and explicit, unlike throwing generic `Error`s.
 3.  **What it needs (`R`):** The "ingredients" or dependencies required to run the effect. This is the foundation of Effect's powerful dependency injection system. An `Effect` can only be executed when its `R` channel is `never`, meaning all its dependencies have been provided.
@@ -2185,25 +2179,26 @@ This function signature is a self-documenting contract. It clearly states that t
 import { Effect, Data } from "effect";
 
 // Define the types for our channels
-interface User { readonly name: string; } // The 'A' type
+interface User {
+  readonly name: string;
+} // The 'A' type
 class UserNotFoundError extends Data.TaggedError("UserNotFoundError") {} // The 'E' type
 
 // Define the Database service using Effect.Service
-export class Database extends Effect.Service<Database>()(
-  "Database",
-  {
-    // Provide a default implementation
-    sync: () => ({
-      findUser: (id: number) =>
-        id === 1
-          ? Effect.succeed({ name: "Paul" })
-          : Effect.fail(new UserNotFoundError())
-    })
-  }
-) {}
+export class Database extends Effect.Service<Database>()("Database", {
+  // Provide a default implementation
+  sync: () => ({
+    findUser: (id: number) =>
+      id === 1
+        ? Effect.succeed({ name: "Paul" })
+        : Effect.fail(new UserNotFoundError()),
+  }),
+}) {}
 
 // This function's signature shows all three channels
-const getUser = (id: number): Effect.Effect<User, UserNotFoundError, Database> =>
+const getUser = (
+  id: number
+): Effect.Effect<User, UserNotFoundError, Database> =>
   Effect.gen(function* () {
     const db = yield* Database;
     return yield* db.findUser(id);
@@ -2328,7 +2323,6 @@ const demo = Effect.gen(function* () {
 });
 
 Effect.runPromise(demo);
-
 ```
 
 **Explanation:**  
@@ -2374,7 +2368,8 @@ console.log(HashSet.has(set, arr2)); // true
 const doubled = arr1.map((n) => n * 2); // Data.array([2, 4, 6])
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.array` creates immutable arrays with value-based equality.
 - Useful for modeling ordered collections in a safe, functional way.
 - Supports all standard array operations, but with immutability and structural equality.
@@ -2417,7 +2412,8 @@ console.log(HashSet.has(set, t2)); // true
 const [id, name] = t1; // id: number, name: string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.tuple` creates immutable tuples with value-based equality.
 - Useful for modeling pairs, coordinates, or any fixed-size, heterogeneous data.
 - Supports safe pattern matching and collection operations.
@@ -2551,7 +2547,6 @@ const program = Effect.gen(function* () {
 
 // Run with mock implementation
 Effect.runPromise(Effect.provide(program, MockHttpClient.Default));
-
 ```
 
 **Explanation:**  
@@ -2615,7 +2610,9 @@ const program = Effect.gen(function* () {
   yield* Effect.log("\n1. Basic sync computation (random number):");
   const random1 = yield* randomNumber;
   const random2 = yield* randomNumber;
-  yield* Effect.log(`Random numbers: ${random1.toFixed(4)}, ${random2.toFixed(4)}`);
+  yield* Effect.log(
+    `Random numbers: ${random1.toFixed(4)}, ${random2.toFixed(4)}`
+  );
 
   // Example 2: Successful JSON parsing
   yield* Effect.log("\n2. Successful JSON parsing:");
@@ -2663,7 +2660,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -2696,17 +2692,18 @@ import { Effect } from "effect";
 // Synchronous: Wrap code that may throw
 const effectSync = Effect.try({
   try: () => JSON.parse("{ invalid json }"),
-  catch: (error) => `Parse error: ${String(error)}`
+  catch: (error) => `Parse error: ${String(error)}`,
 }); // Effect<string, never, never>
 
 // Asynchronous: Wrap a promise that may reject
 const effectAsync = Effect.tryPromise({
-  try: () => fetch("https://api.example.com/data").then(res => res.json()),
-  catch: (error) => `Network error: ${String(error)}`
+  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
+  catch: (error) => `Network error: ${String(error)}`,
 }); // Effect<string, any, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
 - `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
 
@@ -2889,7 +2886,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -2913,7 +2909,7 @@ the equivalent `Effect.gen` block.
 
 **Why:**
 
-This allows your business logic to declaratively state its dependency on a piece of configuration. The logic is clean, type-safe, and completely decoupled from *how* the configuration is provided.
+This allows your business logic to declaratively state its dependency on a piece of configuration. The logic is clean, type-safe, and completely decoupled from _how_ the configuration is provided.
 
 **Good Example:**
 
@@ -2921,15 +2917,12 @@ This allows your business logic to declaratively state its dependency on a piece
 import { Config, Effect, Layer } from "effect";
 
 // Define config service
-class AppConfig extends Effect.Service<AppConfig>()(
-  "AppConfig",
-  {
-    sync: () => ({
-      host: "localhost",
-      port: 3000
-    })
-  }
-) {}
+class AppConfig extends Effect.Service<AppConfig>()("AppConfig", {
+  sync: () => ({
+    host: "localhost",
+    port: 3000,
+  }),
+}) {}
 
 // Create program that uses config
 const program = Effect.gen(function* () {
@@ -2938,9 +2931,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with default config
-Effect.runPromise(
-  Effect.provide(program, AppConfig.Default)
-);
+Effect.runPromise(Effect.provide(program, AppConfig.Default));
 ```
 
 **Explanation:**  
@@ -2963,8 +2954,9 @@ Passing configuration values down through multiple function arguments ("prop-dri
 Directly calling `Date.now()` makes your code impure and tightly coupled to the system clock. This makes testing difficult and unreliable, as the output of your function will change every time it's run.
 
 The `Clock` service is Effect's solution to this problem. It's an abstraction for "the current time."
--   In **production**, the default `Live` `Clock` implementation uses the real system time.
--   In **tests**, you can provide the `TestClock` layer. This gives you a virtual clock that you can manually control, allowing you to set the time to a specific value or advance it by a specific duration.
+
+- In **production**, the default `Live` `Clock` implementation uses the real system time.
+- In **tests**, you can provide the `TestClock` layer. This gives you a virtual clock that you can manually control, allowing you to set the time to a specific value or advance it by a specific duration.
 
 This makes any time-dependent logic pure, deterministic, and easy to test with perfect precision.
 
@@ -2983,13 +2975,17 @@ interface Token {
 }
 
 // This function is pure and testable because it depends on Clock
-const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock.Clock> =>
+const isTokenExpired = (
+  token: Token
+): Effect.Effect<boolean, never, Clock.Clock> =>
   Clock.currentTimeMillis.pipe(
     Effect.map((now) => now > token.expiresAt),
-    Effect.tap((expired) => 
+    Effect.tap((expired) =>
       Clock.currentTimeMillis.pipe(
-        Effect.flatMap((currentTime) => 
-          Effect.log(`Token expired? ${expired} (current time: ${new Date(currentTime).toISOString()})`)
+        Effect.flatMap((currentTime) =>
+          Effect.log(
+            `Token expired? ${expired} (current time: ${new Date(currentTime).toISOString()})`
+          )
         )
       )
     )
@@ -3031,9 +3027,7 @@ const program = Effect.gen(function* () {
 
 // Run the program with default clock
 Effect.runPromise(
-  program.pipe(
-    Effect.provideService(Clock.Clock, makeTestClock(Date.now()))
-  )
+  program.pipe(Effect.provideService(Clock.Clock, makeTestClock(Date.now())))
 );
 ```
 
@@ -3046,7 +3040,9 @@ Directly calling `Date.now()` inside your business logic. This creates an impure
 ```typescript
 import { Effect } from "effect";
 
-interface Token { readonly expiresAt: number; }
+interface Token {
+  readonly expiresAt: number;
+}
 
 // ❌ WRONG: This function's behavior changes every millisecond.
 const isTokenExpiredUnsafely = (token: Token): Effect.Effect<boolean> =>
@@ -3078,7 +3074,7 @@ However, for tasks like validating a user's input, this is poor user experience.
 
 Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
 
-````typescript
+```typescript
 import { Effect, Schema, Data, Either } from "effect";
 
 // Define validation error type
@@ -3098,13 +3094,13 @@ const UserSchema = Schema.Struct({
   name: Schema.String.pipe(
     Schema.minLength(3),
     Schema.filter((name) => /^[A-Za-z\s]+$/.test(name), {
-      message: () => "name must contain only letters and spaces"
+      message: () => "name must contain only letters and spaces",
     })
   ),
   email: Schema.String.pipe(
     Schema.pattern(/@/),
     Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
-      message: () => "email must be a valid email address"
+      message: () => "email must be a valid email address",
     })
   ),
 });
@@ -3122,7 +3118,7 @@ const invalidInputs: User[] = [
   {
     name: "Alice Smith", // Valid
     email: "alice@example.com", // Valid
-  }
+  },
 ];
 
 // Validate a single user
@@ -3135,31 +3131,33 @@ const validateUser = (input: User) =>
 // Process multiple users and accumulate all errors
 const program = Effect.gen(function* () {
   yield* Effect.log("Validating users...\n");
-  
+
   for (const input of invalidInputs) {
     const result = yield* Effect.either(validateUser(input));
-    
+
     yield* Effect.log(`Validating user: ${input.name} <${input.email}>`);
-    
+
     // Handle success and failure cases separately for clarity
     // Using Either.match which is the idiomatic way to handle Either values
     yield* Either.match(result, {
-      onLeft: (error) => Effect.gen(function* () {
-        yield* Effect.log("❌ Validation failed:");
-        yield* Effect.log(error.message);
-        yield* Effect.log(""); // Empty line for readability
-      }),
-      onRight: (user) => Effect.gen(function* () {
-        yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
-        yield* Effect.log(""); // Empty line for readability
-      })
-    })
+      onLeft: (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log("❌ Validation failed:");
+          yield* Effect.log(error.message);
+          yield* Effect.log(""); // Empty line for readability
+        }),
+      onRight: (user) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
+          yield* Effect.log(""); // Empty line for readability
+        }),
+    });
   }
 });
 
 // Run the program
 Effect.runSync(program);
-````
+```
 
 ---
 
@@ -3167,7 +3165,7 @@ Effect.runSync(program);
 
 Using `Effect`'s error channel for validation that requires multiple error messages. The code below will only ever report the first error it finds, because `Effect.fail` short-circuits the entire `Effect.gen` block.
 
-````typescript
+```typescript
 import { Effect } from "effect";
 
 const validateWithEffect = (input: { name: string; email: string }) =>
@@ -3181,7 +3179,7 @@ const validateWithEffect = (input: { name: string; email: string }) =>
     }
     return yield* Effect.succeed(input);
   });
-````
+```
 
 ---
 
@@ -3198,9 +3196,10 @@ While logs are for events and traces are for requests, metrics are for aggregati
 Effect's `Metric` module provides a simple, declarative way to add this instrumentation. By defining your metrics upfront, you can then use operators like `Metric.increment` or `Effect.timed` to update them. This is fully integrated with Effect's context system, allowing you to provide different metric backends (like Prometheus or StatsD) via a `Layer`.
 
 This allows you to answer questions like:
--   "What is our user sign-up rate over the last 24 hours?"
--   "Are we approaching our maximum number of database connections?"
--   "What is the 95th percentile latency for our API requests?"
+
+- "What is our user sign-up rate over the last 24 hours?"
+- "Are we approaching our maximum number of database connections?"
+- "What is the 95th percentile latency for our API requests?"
 
 ---
 
@@ -3209,7 +3208,7 @@ This allows you to answer questions like:
 This example creates a counter to track how many times a user is created and a histogram to track the duration of the database operation.
 
 ```typescript
-import { Effect, Metric, Duration } from "effect";  // We don't need MetricBoundaries anymore
+import { Effect, Metric, Duration } from "effect"; // We don't need MetricBoundaries anymore
 
 // 1. Define your metrics
 const userRegisteredCounter = Metric.counter("users_registered_total", {
@@ -3223,7 +3222,7 @@ const dbDurationTimer = Metric.timer(
 
 // 2. Simulated database call
 const saveUserToDb = Effect.succeed("user saved").pipe(
-  Effect.delay(Duration.millis(Math.random() * 100)),
+  Effect.delay(Duration.millis(Math.random() * 100))
 );
 
 // 3. Instrument the business logic
@@ -3251,7 +3250,7 @@ Effect.runPromise(programWithLogging);
 
 **Anti-Pattern:**
 
-Not adding any metrics to your application. Without metrics, you are flying blind. You have no high-level overview of your application's health, performance, or business KPIs. You can't build dashboards, you can't set up alerts for abnormal behavior (e.g., "error rate is too high"), and you are forced to rely on digging through logs to 
+Not adding any metrics to your application. Without metrics, you are flying blind. You have no high-level overview of your application's health, performance, or business KPIs. You can't build dashboards, you can't set up alerts for abnormal behavior (e.g., "error rate is too high"), and you are forced to rely on digging through logs to
 understand the state of your system.
 
 ---
@@ -3298,10 +3297,10 @@ const requestDuration = Metric.histogram(
 // Record a request duration
 const recordDuration = (duration: number) =>
   Metric.update(requestDuration, duration);
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Metric.counter` tracks counts of events.
 - `Metric.gauge` tracks a value that can go up or down (e.g., active users).
 - `Metric.histogram` tracks distributions (e.g., request durations).
@@ -3325,7 +3324,7 @@ Real-world systems are unreliable. Network connections drop, APIs return tempora
 
 The `retry` operator, combined with the `Schedule` module, provides a powerful and declarative way to build this resilience:
 
-1.  **Declarative Resilience**: Instead of writing complex `try/catch` loops with manual delay logic, you declaratively state *how* the pipeline should retry. For example, "retry 3 times, with an exponential backoff starting at 100ms."
+1.  **Declarative Resilience**: Instead of writing complex `try/catch` loops with manual delay logic, you declaratively state _how_ the pipeline should retry. For example, "retry 3 times, with an exponential backoff starting at 100ms."
 2.  **Separation of Concerns**: Your core pipeline logic remains focused on the "happy path." The retry strategy is a separate, composable concern that you apply to the entire stream.
 3.  **Rich Scheduling Policies**: `Schedule` is incredibly powerful. You can create schedules based on a fixed number of retries, exponential backoff, jitter (to avoid thundering herd problems), or even combinations of these.
 4.  **Prevents Cascading Failures**: By handling temporary issues at the source, you prevent a small, transient glitch from causing a complete failure of your entire application.
@@ -3336,7 +3335,7 @@ The `retry` operator, combined with the `Schedule` module, provides a powerful a
 
 This example simulates an API that fails the first two times it's called. The stream processes a list of IDs, and the `retry` operator ensures that the failing operation for `id: 2` is automatically retried until it succeeds.
 
-````typescript
+```typescript
 import { Effect, Stream, Schedule } from "effect";
 
 // A mock function that simulates a flaky API call
@@ -3391,8 +3390,8 @@ const program = Effect.gen(function* () {
 
   yield* Effect.log("=== Results ===");
   for (let index = 0; index < results.length; index++) {
-  yield* Effect.log(`Item ${ids[index]}: ${results[index]}`);
-}
+    yield* Effect.log(`Item ${ids[index]}: ${results[index]}`);
+  }
 
   yield* Effect.log("✅ Stream processing completed");
 });
@@ -3410,15 +3409,14 @@ Output:
 ... level=INFO msg="Attempting to process item 2..."
 ... level=INFO msg="Attempting to process item 3..."
 */
-
-````
+```
 
 **Anti-Pattern:**
 
 The anti-pattern is to either have no retry logic at all, or to write manual, imperative retry loops inside your processing function.
 
-````typescript
-import { Effect, Stream } from 'effect';
+```typescript
+import { Effect, Stream } from "effect";
 // ... same mock processItem function ...
 
 const ids = [1, 2, 3];
@@ -3430,7 +3428,7 @@ const program = Stream.fromIterable(ids).pipe(
 );
 
 Effect.runPromise(program).catch((error) => {
-  console.error('Pipeline failed:', error);
+  console.error("Pipeline failed:", error);
 });
 /*
 Output:
@@ -3439,7 +3437,7 @@ Output:
 ... level=INFO msg="Item 2 failed, attempt 1."
 Pipeline failed: Error: API is temporarily down
 */
-````
+```
 
 This "fail-fast" approach is brittle. A single, temporary network blip would cause the entire pipeline to terminate, even if subsequent items could have been processed successfully. While manual retry logic inside `processItem` is possible, it pollutes the core logic with concerns about timing and attempt counting, and is far less composable and reusable than a `Schedule`.
 
@@ -3463,13 +3461,11 @@ import { Effect } from "effect";
 
 // Define our steps with logging
 const step1 = (): Effect.Effect<number> =>
-  Effect.succeed(42).pipe(
-    Effect.tap(n => Effect.log(`Step 1: ${n}`))
-  );
+  Effect.succeed(42).pipe(Effect.tap((n) => Effect.log(`Step 1: ${n}`)));
 
 const step2 = (a: number): Effect.Effect<string> =>
   Effect.succeed(`Result: ${a * 2}`).pipe(
-    Effect.tap(s => Effect.log(`Step 2: ${s}`))
+    Effect.tap((s) => Effect.log(`Step 2: ${s}`))
   );
 
 // Using Effect.gen for better readability
@@ -3518,8 +3514,9 @@ hard-to-read code.
 JavaScript's native `Date` object is a common source of bugs. It is mutable, its behavior can be inconsistent across different JavaScript environments (especially with timezones), and its reliance on the system clock makes time-dependent logic difficult to test.
 
 Effect's approach solves these problems:
--   The **`Clock` service** abstracts away the concept of "now." In production, the `Live` clock uses the system time. In tests, you can provide a `TestClock` that gives you complete, deterministic control over the passage of time.
--   Using **primitive `number` or `string`** for timestamps ensures immutability and makes your data easy to serialize, store, and transfer.
+
+- The **`Clock` service** abstracts away the concept of "now." In production, the `Live` clock uses the system time. In tests, you can provide a `TestClock` that gives you complete, deterministic control over the passage of time.
+- Using **primitive `number` or `string`** for timestamps ensures immutability and makes your data easy to serialize, store, and transfer.
 
 This makes your time-based logic pure, predictable, and easy to test.
 
@@ -3539,7 +3536,9 @@ interface Event {
 }
 
 // This function is pure and testable because it depends on Clock
-const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> =>
+const createEvent = (
+  message: string
+): Effect.Effect<Event, never, Types.Clock> =>
   Effect.gen(function* () {
     const timestamp = yield* Clock.currentTimeMillis;
     return { message, timestamp };
@@ -3601,6 +3600,7 @@ const createEventUnsafely = (message: string): Effect.Effect<any> =>
 This pattern is the ultimate payoff for defining services with `Layer`. It allows for true modularity. Each service can be defined in its own file, declaring its own resource requirements in its `Live` layer, completely unaware of other services.
 
 When you assemble the final application layer, Effect analyzes the dependencies:
+
 1.  **Acquisition Order:** It ensures resources are acquired in the correct order. For example, a `Logger` layer might be initialized before a `Database` layer that uses it for logging.
 2.  **Release Order:** It guarantees that resources are released in the **exact reverse order** of their acquisition. This is critical for preventing shutdown errors, such as a `UserRepository` trying to log a final message after the `Logger` has already been shut down.
 
@@ -3616,30 +3616,24 @@ interface DatabaseOps {
   query: (sql: string) => Effect.Effect<string, never, never>;
 }
 
-class Database extends Effect.Service<DatabaseOps>()(
-  "Database",
-  {
-    sync: () => ({
-      query: (sql: string): Effect.Effect<string, never, never> =>
-        Effect.sync(() => `db says: ${sql}`)
-    })
-  }
-) {}
+class Database extends Effect.Service<DatabaseOps>()("Database", {
+  sync: () => ({
+    query: (sql: string): Effect.Effect<string, never, never> =>
+      Effect.sync(() => `db says: ${sql}`),
+  }),
+}) {}
 
 // --- Service 2: API Client ---
 interface ApiClientOps {
   fetch: (path: string) => Effect.Effect<string, never, never>;
 }
 
-class ApiClient extends Effect.Service<ApiClientOps>()(
-  "ApiClient",
-  {
-    sync: () => ({
-      fetch: (path: string): Effect.Effect<string, never, never> =>
-        Effect.sync(() => `api says: ${path}`)
-    })
-  }
-) {}
+class ApiClient extends Effect.Service<ApiClientOps>()("ApiClient", {
+  sync: () => ({
+    fetch: (path: string): Effect.Effect<string, never, never> =>
+      Effect.sync(() => `api says: ${path}`),
+  }),
+}) {}
 
 // --- Application Layer ---
 // We merge the two independent layers into one.
@@ -3732,24 +3726,16 @@ const findUser = (id: number): Effect.Effect<User, "DbError"> =>
   Effect.succeed({ id, status: "active", roles: ["admin"] });
 
 // Reusable, testable predicates that document business rules.
-const isActive = (user: User): boolean =>
-  user.status === "active";
+const isActive = (user: User): boolean => user.status === "active";
 
-const isAdmin = (user: User): boolean =>
-  user.roles.includes("admin");
+const isAdmin = (user: User): boolean => user.roles.includes("admin");
 
 const program = (id: number): Effect.Effect<string, UserError> =>
   findUser(id).pipe(
     // Validate user is active using Effect.filterOrFail
-    Effect.filterOrFail(
-      isActive,
-      () => "UserIsInactive" as const
-    ),
+    Effect.filterOrFail(isActive, () => "UserIsInactive" as const),
     // Validate user is admin using Effect.filterOrFail
-    Effect.filterOrFail(
-      isAdmin,
-      () => "UserIsNotAdmin" as const
-    ),
+    Effect.filterOrFail(isAdmin, () => "UserIsNotAdmin" as const),
     // Success case
     Effect.map((user) => `Welcome, admin user #${user.id}!`)
   );
@@ -3769,7 +3755,7 @@ const handled = program(123).pipe(
           return `Unknown error: ${error}`;
       }
     },
-    onSuccess: (result) => result
+    onSuccess: (result) => result,
   })
 );
 
@@ -3806,7 +3792,7 @@ const program = (id: number) =>
       // The resulting type is Effect<User | void, "DbError">, which is problematic.
     }),
     // This `map` will now have a type error because `u` could be `void`.
-    Effect.map((u) => `Welcome, ${u.name}!`),
+    Effect.map((u) => `Welcome, ${u.name}!`)
   );
 
 // `Effect.filterOrFail` avoids this problem entirely by forcing a failure,
@@ -3815,9 +3801,9 @@ const program = (id: number) =>
 
 ### Why This is Better
 
-*   **It's a Real Bug:** This isn't just a style issue; it's a legitimate logical error that leads to incorrect types and broken code.
-*   **It's a Common Mistake:** Developers new to functional pipelines often forget that every path must return a value.
-*   **It Reinforces the "Why":** It perfectly demonstrates *why* `Effect.filterOrFail` is superior: `filterOrFail` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
+- **It's a Real Bug:** This isn't just a style issue; it's a legitimate logical error that leads to incorrect types and broken code.
+- **It's a Common Mistake:** Developers new to functional pipelines often forget that every path must return a value.
+- **It Reinforces the "Why":** It perfectly demonstrates _why_ `Effect.filterOrFail` is superior: `filterOrFail` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
 
 ---
 
@@ -3835,27 +3821,35 @@ These combinators allow you to embed conditional logic directly into your
 **Good Example:**
 
 ```typescript
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 const attemptAdminAction = (user: { isAdmin: boolean }) =>
   Effect.if(user.isAdmin, {
     onTrue: () => Effect.succeed("Admin action completed."),
-    onFalse: () => Effect.fail("Permission denied.")
-  })
+    onFalse: () => Effect.fail("Permission denied."),
+  });
 
 const program = Effect.gen(function* () {
   // Try with admin user
-  yield* Effect.logInfo("\nTrying with admin user...")
-  const adminResult = yield* Effect.either(attemptAdminAction({ isAdmin: true }))
-  yield* Effect.logInfo(`Admin result: ${adminResult._tag === 'Right' ? adminResult.right : adminResult.left}`)
+  yield* Effect.logInfo("\nTrying with admin user...");
+  const adminResult = yield* Effect.either(
+    attemptAdminAction({ isAdmin: true })
+  );
+  yield* Effect.logInfo(
+    `Admin result: ${adminResult._tag === "Right" ? adminResult.right : adminResult.left}`
+  );
 
   // Try with non-admin user
-  yield* Effect.logInfo("\nTrying with non-admin user...")
-  const userResult = yield* Effect.either(attemptAdminAction({ isAdmin: false }))
-  yield* Effect.logInfo(`User result: ${userResult._tag === 'Right' ? userResult.right : userResult.left}`)
-})
+  yield* Effect.logInfo("\nTrying with non-admin user...");
+  const userResult = yield* Effect.either(
+    attemptAdminAction({ isAdmin: false })
+  );
+  yield* Effect.logInfo(
+    `User result: ${userResult._tag === "Right" ? userResult.right : userResult.left}`
+  );
+});
 
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 **Explanation:**  
@@ -3879,9 +3873,9 @@ than necessary. For simple branching, `Effect.if` is often more concise.
 
 While you could write manual loops or recursive functions, `Schedule` provides a much more powerful, declarative, and composable way to manage repetition. The key benefits are:
 
--   **Declarative:** You separate the *what* (the effect to run) from the *how* and *when* (the schedule it runs on).
--   **Composable:** You can build complex schedules from simple, primitive ones. For example, you can create a schedule that runs "up to 5 times, with an exponential backoff, plus some random jitter" by composing `Schedule.recurs`, `Schedule.exponential`, and `Schedule.jittered`.
--   **Stateful:** A `Schedule` keeps track of its own state (like the number of repetitions), making it easy to create policies that depend on the execution history.
+- **Declarative:** You separate the _what_ (the effect to run) from the _how_ and _when_ (the schedule it runs on).
+- **Composable:** You can build complex schedules from simple, primitive ones. For example, you can create a schedule that runs "up to 5 times, with an exponential backoff, plus some random jitter" by composing `Schedule.recurs`, `Schedule.exponential`, and `Schedule.jittered`.
+- **Stateful:** A `Schedule` keeps track of its own state (like the number of repetitions), making it easy to create policies that depend on the execution history.
 
 ---
 
@@ -3890,45 +3884,42 @@ While you could write manual loops or recursive functions, `Schedule` provides a
 This example demonstrates composition by creating a common, robust retry policy: exponential backoff with jitter, limited to 5 attempts.
 
 ```typescript
-import { Effect, Schedule, Duration } from "effect"
+import { Effect, Schedule, Duration } from "effect";
 
 // A simple effect that can fail
 const flakyEffect = Effect.try({
   try: () => {
     if (Math.random() > 0.2) {
-      throw new Error("Transient error")
+      throw new Error("Transient error");
     }
-    return "Operation succeeded!"
+    return "Operation succeeded!";
   },
   catch: (error: unknown) => {
-    Effect.logInfo("Operation failed, retrying...")
-    return error
-  }
-})
+    Effect.logInfo("Operation failed, retrying...");
+    return error;
+  },
+});
 
 // --- Building a Composable Schedule ---
 
 // 1. Start with a base exponential backoff (100ms, 200ms, 400ms...)
-const exponentialBackoff = Schedule.exponential("100 millis")
+const exponentialBackoff = Schedule.exponential("100 millis");
 
 // 2. Add random jitter to avoid thundering herd problems
-const withJitter = Schedule.jittered(exponentialBackoff)
+const withJitter = Schedule.jittered(exponentialBackoff);
 
 // 3. Limit the schedule to a maximum of 5 repetitions
-const limitedWithJitter = Schedule.compose(
-  withJitter,
-  Schedule.recurs(5)
-)
+const limitedWithJitter = Schedule.compose(withJitter, Schedule.recurs(5));
 
 // --- Using the Schedule ---
 const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting operation...")
-  const result = yield* Effect.retry(flakyEffect, limitedWithJitter)
-  yield* Effect.logInfo(`Final result: ${result}`)
-})
+  yield* Effect.logInfo("Starting operation...");
+  const result = yield* Effect.retry(flakyEffect, limitedWithJitter);
+  yield* Effect.logInfo(`Final result: ${result}`);
+});
 
 // Run the program
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 ---
@@ -3945,17 +3936,17 @@ import { flakyEffect } from "./somewhere";
 function manualRetry(
   effect: typeof flakyEffect,
   retriesLeft: number,
-  delay: number,
+  delay: number
 ): Effect.Effect<string, "ApiError"> {
   return effect.pipe(
     Effect.catchTag("ApiError", () => {
       if (retriesLeft > 0) {
         return Effect.sleep(delay).pipe(
-          Effect.flatMap(() => manualRetry(effect, retriesLeft - 1, delay * 2)),
+          Effect.flatMap(() => manualRetry(effect, retriesLeft - 1, delay * 2))
         );
       }
       return Effect.fail("ApiError" as const);
-    }),
+    })
   );
 }
 
@@ -3981,32 +3972,28 @@ import { Effect, Console } from "effect";
 
 // 1. Define the service interface
 interface DatabaseService {
-  readonly query: (sql: string) => Effect.Effect<string[], never, never>
+  readonly query: (sql: string) => Effect.Effect<string[], never, never>;
 }
 
 // 2. Define the service implementation with scoped resource management
-class Database extends Effect.Service<DatabaseService>()(
-  "Database",
-  {
-    // The scoped property manages the resource lifecycle
-    scoped: Effect.gen(function* () {
-      const id = Math.floor(Math.random() * 1000);
-      
-      // Acquire the connection
-      yield* Effect.log(`[Pool ${id}] Acquired`);
-      
-      // Setup cleanup to run when scope closes
-      yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
-      
-      // Return the service implementation
-      return {
-        query: (sql: string) => Effect.sync(() => 
-          [`Result for '${sql}' from pool ${id}`]
-        )
-      };
-    })
-  }
-) {}
+class Database extends Effect.Service<DatabaseService>()("Database", {
+  // The scoped property manages the resource lifecycle
+  scoped: Effect.gen(function* () {
+    const id = Math.floor(Math.random() * 1000);
+
+    // Acquire the connection
+    yield* Effect.log(`[Pool ${id}] Acquired`);
+
+    // Setup cleanup to run when scope closes
+    yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
+
+    // Return the service implementation
+    return {
+      query: (sql: string) =>
+        Effect.sync(() => [`Result for '${sql}' from pool ${id}`]),
+    };
+  }),
+}) {}
 
 // 3. Use the service in your program
 const program = Effect.gen(function* () {
@@ -4017,9 +4004,7 @@ const program = Effect.gen(function* () {
 
 // 4. Run the program with scoped resource management
 Effect.runPromise(
-  Effect.scoped(program).pipe(
-    Effect.provide(Database.Default)
-  )
+  Effect.scoped(program).pipe(Effect.provide(Database.Default))
 );
 
 /*
@@ -4086,9 +4071,7 @@ class HttpClient extends Effect.Service<HttpClientType>()("HttpClient", {
     get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
       Effect.tryPromise<T>(() =>
         fetch(url).then((res) => res.json() as T)
-      ).pipe(
-        Effect.catchAll((error) => Effect.fail(HttpError({ error })))
-      ),
+      ).pipe(Effect.catchAll((error) => Effect.fail(HttpError({ error })))),
   }),
 }) {}
 
@@ -4112,58 +4095,54 @@ const program = Effect.gen(function* () {
 
 // Run with test implementation
 Effect.runPromise(Effect.provide(program, TestLayer));
-
 ```
 
 ### 2. Create the Live Implementation
 
 ```typescript
-import { Effect, Data, Layer } from "effect"
+import { Effect, Data, Layer } from "effect";
 
 interface HttpErrorType {
-  readonly _tag: "HttpError"
-  readonly error: unknown
+  readonly _tag: "HttpError";
+  readonly error: unknown;
 }
 
-const HttpError = Data.tagged<HttpErrorType>("HttpError")
+const HttpError = Data.tagged<HttpErrorType>("HttpError");
 
 interface HttpClientType {
-  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>
+  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>;
 }
 
-class HttpClient extends Effect.Service<HttpClientType>()(
-  "HttpClient",
-  {
-    sync: () => ({
-      get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
-        Effect.tryPromise({
-          try: () => fetch(url).then((res) => res.json()),
-          catch: (error) => HttpError({ error })
-        })
-    })
-  }
-) {}
+class HttpClient extends Effect.Service<HttpClientType>()("HttpClient", {
+  sync: () => ({
+    get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
+      Effect.tryPromise({
+        try: () => fetch(url).then((res) => res.json()),
+        catch: (error) => HttpError({ error }),
+      }),
+  }),
+}) {}
 
 // Test implementation
 const TestLayer = Layer.succeed(
   HttpClient,
   HttpClient.of({
-    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T)
+    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T),
   })
-)
+);
 
 // Example usage
 const program = Effect.gen(function* () {
-  const client = yield* HttpClient
-  yield* Effect.logInfo("Fetching data...")
-  const data = yield* client.get<{ title: string }>("https://api.example.com/data")
-  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`)
-})
+  const client = yield* HttpClient;
+  yield* Effect.logInfo("Fetching data...");
+  const data = yield* client.get<{ title: string }>(
+    "https://api.example.com/data"
+  );
+  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`);
+});
 
 // Run with test implementation
-Effect.runPromise(
-  Effect.provide(program, TestLayer)
-)
+Effect.runPromise(Effect.provide(program, TestLayer));
 ```
 
 ### 3. Create the Test Implementation
@@ -4177,7 +4156,7 @@ export const HttpClientTest = Layer.succeed(
   HttpClient,
   HttpClient.of({
     get: (url) => Effect.succeed({ mock: "data", url }),
-  }),
+  })
 );
 ```
 
@@ -4211,7 +4190,8 @@ import { Effect } from "effect";
 // ❌ WRONG: This function is not easily testable.
 export const getUserDirectly = (id: number) =>
   Effect.tryPromise({
-    try: () => fetch(`https://api.example.com/users/${id}`).then((res) => res.json()),
+    try: () =>
+      fetch(`https://api.example.com/users/${id}`).then((res) => res.json()),
     catch: () => "ApiError" as const,
   });
 ```
@@ -4231,36 +4211,31 @@ This creates a single, type-safe source of truth for your configuration, elimina
 **Good Example:**
 
 ```typescript
-import { Config, Effect, ConfigProvider, Layer } from "effect"
+import { Config, Effect, ConfigProvider, Layer } from "effect";
 
 const ServerConfig = Config.nested("SERVER")(
   Config.all({
     host: Config.string("HOST"),
     port: Config.number("PORT"),
   })
-)
+);
 
 // Example program that uses the config
 const program = Effect.gen(function* () {
-  const config = yield* ServerConfig
-  yield* Effect.logInfo(`Server config loaded: ${JSON.stringify(config)}`)
-})
+  const config = yield* ServerConfig;
+  yield* Effect.logInfo(`Server config loaded: ${JSON.stringify(config)}`);
+});
 
 // Create a config provider with test values
 const TestConfig = ConfigProvider.fromMap(
   new Map([
     ["SERVER.HOST", "localhost"],
-    ["SERVER.PORT", "3000"]
+    ["SERVER.PORT", "3000"],
   ])
-)
+);
 
 // Run with test config
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Layer.setConfigProvider(TestConfig)
-  )
-)
+Effect.runPromise(Effect.provide(program, Layer.setConfigProvider(TestConfig)));
 ```
 
 **Explanation:**  
@@ -4287,75 +4262,70 @@ compile-time static types and runtime validation.
 **Good Example:**
 
 ```typescript
-import { Schema, Effect, Data } from "effect"
+import { Schema, Effect, Data } from "effect";
 
 // Define User schema and type
 const UserSchema = Schema.Struct({
   id: Schema.Number,
-  name: Schema.String
-})
+  name: Schema.String,
+});
 
-type User = Schema.Schema.Type<typeof UserSchema>
+type User = Schema.Schema.Type<typeof UserSchema>;
 
 // Define error type
 class UserNotFound extends Data.TaggedError("UserNotFound")<{
-  readonly id: number
+  readonly id: number;
 }> {}
 
 // Create database service implementation
-export class Database extends Effect.Service<Database>()(
-  "Database",
-  {
-    sync: () => ({
-      getUser: (id: number) =>
-        id === 1
-          ? Effect.succeed({ id: 1, name: "John" })
-          : Effect.fail(new UserNotFound({ id }))
-    })
-  }
-) {}
+export class Database extends Effect.Service<Database>()("Database", {
+  sync: () => ({
+    getUser: (id: number) =>
+      id === 1
+        ? Effect.succeed({ id: 1, name: "John" })
+        : Effect.fail(new UserNotFound({ id })),
+  }),
+}) {}
 
 // Create a program that demonstrates schema and error handling
 const program = Effect.gen(function* () {
-  const db = yield* Database
-  
+  const db = yield* Database;
+
   // Try to get an existing user
-  yield* Effect.logInfo("Looking up user 1...")
-  const user1 = yield* db.getUser(1)
-  yield* Effect.logInfo(`Found user: ${JSON.stringify(user1)}`)
-  
+  yield* Effect.logInfo("Looking up user 1...");
+  const user1 = yield* db.getUser(1);
+  yield* Effect.logInfo(`Found user: ${JSON.stringify(user1)}`);
+
   // Try to get a non-existent user
-  yield* Effect.logInfo("\nLooking up user 999...")
-  yield* Effect.logInfo("Attempting to get user 999...")
+  yield* Effect.logInfo("\nLooking up user 999...");
+  yield* Effect.logInfo("Attempting to get user 999...");
   yield* Effect.gen(function* () {
-    const user = yield* db.getUser(999)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
+    const user = yield* db.getUser(999);
+    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchAll((error) => {
       if (error instanceof UserNotFound) {
-        return Effect.logInfo(`Error: User with id ${error.id} not found`)
+        return Effect.logInfo(`Error: User with id ${error.id} not found`);
       }
-      return Effect.logInfo(`Unexpected error: ${error}`)
+      return Effect.logInfo(`Unexpected error: ${error}`);
     })
-  )
+  );
 
   // Try to decode invalid data
-  yield* Effect.logInfo("\nTrying to decode invalid user data...")
-  const invalidUser = { id: "not-a-number", name: 123 } as any
+  yield* Effect.logInfo("\nTrying to decode invalid user data...");
+  const invalidUser = { id: "not-a-number", name: 123 } as any;
   yield* Effect.gen(function* () {
-    const user = yield* Schema.decode(UserSchema)(invalidUser)
-    yield* Effect.logInfo(`Decoded user: ${JSON.stringify(user)}`)
+    const user = yield* Schema.decode(UserSchema)(invalidUser);
+    yield* Effect.logInfo(`Decoded user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logInfo(`Validation failed:\n${JSON.stringify(error, null, 2)}`)
     )
-  )
-})
+  );
+});
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, Database.Default)
-)
+Effect.runPromise(Effect.provide(program, Database.Default));
 ```
 
 **Explanation:**  
@@ -4384,49 +4354,51 @@ type-safe.
 **Good Example:**
 
 ```typescript
-import { Data, Effect } from "effect"
+import { Data, Effect } from "effect";
 
 // Define our tagged error type
 class DatabaseError extends Data.TaggedError("DatabaseError")<{
-  readonly cause: unknown
+  readonly cause: unknown;
 }> {}
 
 // Function that simulates a database error
-const findUser = (id: number): Effect.Effect<{ id: number; name: string }, DatabaseError> =>
+const findUser = (
+  id: number
+): Effect.Effect<{ id: number; name: string }, DatabaseError> =>
   Effect.gen(function* () {
     if (id < 0) {
-      return yield* Effect.fail(new DatabaseError({ cause: "Invalid ID" }))
+      return yield* Effect.fail(new DatabaseError({ cause: "Invalid ID" }));
     }
-    return { id, name: `User ${id}` }
-  })
+    return { id, name: `User ${id}` };
+  });
 
 // Create a program that demonstrates error handling
 const program = Effect.gen(function* () {
   // Try to find a valid user
-  yield* Effect.logInfo("Looking up user 1...")
+  yield* Effect.logInfo("Looking up user 1...");
   yield* Effect.gen(function* () {
-    const user = yield* findUser(1)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
+    const user = yield* findUser(1);
+    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logInfo(`Error finding user: ${error._tag} - ${error.cause}`)
     )
-  )
+  );
 
   // Try to find an invalid user
-  yield* Effect.logInfo("\nLooking up user -1...")
+  yield* Effect.logInfo("\nLooking up user -1...");
   yield* Effect.gen(function* () {
-    const user = yield* findUser(-1)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
+    const user = yield* findUser(-1);
+    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchTag("DatabaseError", (error) =>
       Effect.logInfo(`Database error: ${error._tag} - ${error.cause}`)
     )
-  )
-})
+  );
+});
 
 // Run the program
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 **Explanation:**  
@@ -4460,14 +4432,14 @@ By using `Option` inside the success channel of an `Effect`, you keep the error 
 
 **Good Example:**
 
-This function to find a user can fail if the database is down, or it can succeed but find no user. The return type ``Effect.Effect<Option.Option<User>, DatabaseError>`` makes this contract perfectly clear.
+This function to find a user can fail if the database is down, or it can succeed but find no user. The return type `Effect.Effect<Option.Option<User>, DatabaseError>` makes this contract perfectly clear.
 
-````typescript
-import { Effect, Option, Data } from "effect"
+```typescript
+import { Effect, Option, Data } from "effect";
 
 interface User {
-  id: number
-  name: string
+  id: number;
+  name: string;
 }
 class DatabaseError extends Data.TaggedError("DatabaseError") {}
 
@@ -4479,12 +4451,12 @@ const findUserInDb = (
     // This could fail with a DatabaseError
     const dbResult = yield* Effect.try({
       try: () => (id === 1 ? { id: 1, name: "Paul" } : null),
-      catch: () => new DatabaseError()
-    })
+      catch: () => new DatabaseError(),
+    });
 
     // We wrap the potentially null result in an Option
-    return Option.fromNullable(dbResult)
-  })
+    return Option.fromNullable(dbResult);
+  });
 
 // The caller can now handle all three cases explicitly.
 const program = (id: number) =>
@@ -4493,48 +4465,47 @@ const program = (id: number) =>
       Option.match(maybeUser, {
         onNone: () =>
           Effect.logInfo(`Result: User with ID ${id} was not found.`),
-        onSome: (user) =>
-          Effect.logInfo(`Result: Found user ${user.name}.`)
+        onSome: (user) => Effect.logInfo(`Result: Found user ${user.name}.`),
       })
     ),
     Effect.catchAll((error) =>
       Effect.logInfo("Error: Could not connect to the database.")
     )
-  )
+  );
 
 // Run the program with different IDs
 Effect.runPromise(
   Effect.gen(function* () {
     // Try with existing user
-    yield* Effect.logInfo("Looking for user with ID 1...")
-    yield* program(1)
+    yield* Effect.logInfo("Looking for user with ID 1...");
+    yield* program(1);
 
     // Try with non-existent user
-    yield* Effect.logInfo("\nLooking for user with ID 2...")
-    yield* program(2)
+    yield* Effect.logInfo("\nLooking for user with ID 2...");
+    yield* program(2);
   })
-)
-````
+);
+```
 
 **Anti-Pattern:**
 
 A common alternative is to create a specific NotFoundError and put it in the error channel alongside other errors.
 
-````typescript
+```typescript
 class NotFoundError extends Data.TaggedError("NotFoundError") {}
-	
-	// ❌ This signature conflates two different kinds of failure.
-	const findUserUnsafely = (
-	  id: number,
-	): Effect.Effect<User, DatabaseError | NotFoundError> => {
-	  // ...
-	  return Effect.fail(new NotFoundError());
-	};
-````
 
-While this works, it can be less expressive. It treats a "not found" result—which might be a normal part of your application's flow—the same as a catastrophic DatabaseError. 
+// ❌ This signature conflates two different kinds of failure.
+const findUserUnsafely = (
+  id: number
+): Effect.Effect<User, DatabaseError | NotFoundError> => {
+  // ...
+  return Effect.fail(new NotFoundError());
+};
+```
 
-Using ````Effect<Option<A>>```` often leads to clearer and more precise business logic.
+While this works, it can be less expressive. It treats a "not found" result—which might be a normal part of your application's flow—the same as a catastrophic DatabaseError.
+
+Using `Effect<Option<A>>` often leads to clearer and more precise business logic.
 
 ---
 
@@ -4563,7 +4534,8 @@ const effect = Effect.fail("Oops!").pipe(
 ); // Effect<void>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchEffect` allows you to run an Effect for both the success and failure cases.
 - This is useful for logging, cleanup, retries, or any effectful side effect that depends on the outcome.
 
@@ -4581,7 +4553,7 @@ Using `match` to return values and then wrapping them in Effects, or duplicating
 
 **Why:**
 
-By default, any unhandled failure in an Effect route handler results in a generic `500 Internal Server Error`. This is a safe default, but it's not helpful for API clients who need to know *why* their request failed. Was it a client-side error (like a non-existent resource, `404`) or a true server-side problem (`500`)?
+By default, any unhandled failure in an Effect route handler results in a generic `500 Internal Server Error`. This is a safe default, but it's not helpful for API clients who need to know _why_ their request failed. Was it a client-side error (like a non-existent resource, `404`) or a true server-side problem (`500`)?
 
 Centralizing error handling at the server level provides a clean separation of concerns:
 
@@ -4597,34 +4569,34 @@ Centralizing error handling at the server level provides a clean separation of c
 This example defines two custom error types, `UserNotFoundError` and `InvalidIdError`. The route logic can fail with either. The `unhandledErrorResponse` function inspects the error and returns a `404` or `400` response accordingly, with a generic `500` for any other unexpected errors.
 
 ```typescript
-import { Cause, Data, Effect } from 'effect';
+import { Cause, Data, Effect } from "effect";
 
 // Define our domain types
 export interface User {
   readonly id: string;
   readonly name: string;
   readonly email: string;
-  readonly role: 'admin' | 'user';
+  readonly role: "admin" | "user";
 }
 
 // Define specific, typed errors for our domain
-export class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{
+export class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   readonly id: string;
-}> { }
+}> {}
 
-export class InvalidIdError extends Data.TaggedError('InvalidIdError')<{
+export class InvalidIdError extends Data.TaggedError("InvalidIdError")<{
   readonly id: string;
   readonly reason: string;
-}> { }
+}> {}
 
-export class UnauthorizedError extends Data.TaggedError('UnauthorizedError')<{
+export class UnauthorizedError extends Data.TaggedError("UnauthorizedError")<{
   readonly action: string;
   readonly role: string;
-}> { }
+}> {}
 
 // Define error handler service
 export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
-  'ErrorHandlerService',
+  "ErrorHandlerService",
   {
     sync: () => ({
       // Handle API errors with proper logging
@@ -4633,61 +4605,94 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
           yield* Effect.logError(`API Error: ${JSON.stringify(error)}`);
 
           if (error instanceof UserNotFoundError) {
-            return { error: 'Not Found', message: `User ${error.id} not found` };
+            return {
+              error: "Not Found",
+              message: `User ${error.id} not found`,
+            };
           }
           if (error instanceof InvalidIdError) {
-            return { error: 'Bad Request', message: error.reason };
+            return { error: "Bad Request", message: error.reason };
           }
           if (error instanceof UnauthorizedError) {
-            return { error: 'Unauthorized', message: `${error.role} cannot ${error.action}` };
+            return {
+              error: "Unauthorized",
+              message: `${error.role} cannot ${error.action}`,
+            };
           }
 
-          return { error: 'Internal Server Error', message: 'An unexpected error occurred' };
+          return {
+            error: "Internal Server Error",
+            message: "An unexpected error occurred",
+          };
         }),
 
       // Handle unexpected errors
-      handleUnexpectedError: (cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
+      handleUnexpectedError: (
+        cause: Cause.Cause<unknown>
+      ): Effect.Effect<void, never, never> =>
         Effect.gen(function* () {
-          yield* Effect.logError('Unexpected error occurred');
+          yield* Effect.logError("Unexpected error occurred");
 
           if (Cause.isDie(cause)) {
             const defect = Cause.failureOption(cause);
-            if (defect._tag === 'Some') {
+            if (defect._tag === "Some") {
               const error = defect.value as Error;
               yield* Effect.logError(`Defect: ${error.message}`);
-              yield* Effect.logError(`Stack: ${error.stack?.split('\n')[1]?.trim() ?? 'N/A'}`);
+              yield* Effect.logError(
+                `Stack: ${error.stack?.split("\n")[1]?.trim() ?? "N/A"}`
+              );
             }
           }
 
           return Effect.succeed(void 0);
-        })
-    })
+        }),
+    }),
   }
-) { }
+) {}
 
 // Define UserRepository service
 export class UserRepository extends Effect.Service<UserRepository>()(
-  'UserRepository',
+  "UserRepository",
   {
     sync: () => {
       const users = new Map<string, User>([
-        ['user_123', { id: 'user_123', name: 'Paul', email: 'paul@example.com', role: 'admin' }],
-        ['user_456', { id: 'user_456', name: 'Alice', email: 'alice@example.com', role: 'user' }]
+        [
+          "user_123",
+          {
+            id: "user_123",
+            name: "Paul",
+            email: "paul@example.com",
+            role: "admin",
+          },
+        ],
+        [
+          "user_456",
+          {
+            id: "user_456",
+            name: "Alice",
+            email: "alice@example.com",
+            role: "user",
+          },
+        ],
       ]);
 
       return {
         // Get user by ID with proper error handling
-        getUser: (id: string): Effect.Effect<User, UserNotFoundError | InvalidIdError> =>
+        getUser: (
+          id: string
+        ): Effect.Effect<User, UserNotFoundError | InvalidIdError> =>
           Effect.gen(function* () {
             yield* Effect.logInfo(`Attempting to get user with id: ${id}`);
 
             // Validate ID format
             if (!id.match(/^user_\d+$/)) {
               yield* Effect.logWarning(`Invalid user ID format: ${id}`);
-              return yield* Effect.fail(new InvalidIdError({
-                id,
-                reason: 'ID must be in format user_<number>'
-              }));
+              return yield* Effect.fail(
+                new InvalidIdError({
+                  id,
+                  reason: "ID must be in format user_<number>",
+                })
+              );
             }
 
             const user = users.get(id);
@@ -4701,25 +4706,36 @@ export class UserRepository extends Effect.Service<UserRepository>()(
           }),
 
         // Check if user has required role
-        checkRole: (user: User, requiredRole: 'admin' | 'user'): Effect.Effect<void, UnauthorizedError> =>
+        checkRole: (
+          user: User,
+          requiredRole: "admin" | "user"
+        ): Effect.Effect<void, UnauthorizedError> =>
           Effect.gen(function* () {
-            yield* Effect.logInfo(`Checking if user ${user.id} has role: ${requiredRole}`);
+            yield* Effect.logInfo(
+              `Checking if user ${user.id} has role: ${requiredRole}`
+            );
 
-            if (user.role !== requiredRole && user.role !== 'admin') {
-              yield* Effect.logWarning(`User ${user.id} with role ${user.role} cannot access ${requiredRole} resources`);
-              return yield* Effect.fail(new UnauthorizedError({
-                action: 'access_user',
-                role: user.role
-              }));
+            if (user.role !== requiredRole && user.role !== "admin") {
+              yield* Effect.logWarning(
+                `User ${user.id} with role ${user.role} cannot access ${requiredRole} resources`
+              );
+              return yield* Effect.fail(
+                new UnauthorizedError({
+                  action: "access_user",
+                  role: user.role,
+                })
+              );
             }
 
-            yield* Effect.logInfo(`User ${user.id} has required role: ${user.role}`);
+            yield* Effect.logInfo(
+              `User ${user.id} has required role: ${user.role}`
+            );
             return Effect.succeed(void 0);
-          })
+          }),
       };
-    }
+    },
   }
-) { }
+) {}
 
 interface ApiResponse {
   readonly error?: string;
@@ -4728,55 +4744,53 @@ interface ApiResponse {
 }
 
 // Create routes with proper error handling
-const createRoutes = () => Effect.gen(function* () {
-  const repo = yield* UserRepository;
-  const errorHandler = yield* ErrorHandlerService;
+const createRoutes = () =>
+  Effect.gen(function* () {
+    const repo = yield* UserRepository;
+    const errorHandler = yield* ErrorHandlerService;
 
-  yield* Effect.logInfo('=== Processing API request ===');
+    yield* Effect.logInfo("=== Processing API request ===");
 
-  // Test different scenarios
-  for (const userId of ['user_123', 'user_456', 'invalid_id', 'user_789']) {
-    yield* Effect.logInfo(`\n--- Testing user ID: ${userId} ---`);
+    // Test different scenarios
+    for (const userId of ["user_123", "user_456", "invalid_id", "user_789"]) {
+      yield* Effect.logInfo(`\n--- Testing user ID: ${userId} ---`);
 
-    const response = yield* repo.getUser(userId).pipe(
-      Effect.map(user => ({
-        data: {
-          ...user,
-          email: user.role === 'admin' ? user.email : '[hidden]'
-        }
-      })),
-      Effect.catchAll(error => errorHandler.handleApiError(error))
+      const response = yield* repo.getUser(userId).pipe(
+        Effect.map((user) => ({
+          data: {
+            ...user,
+            email: user.role === "admin" ? user.email : "[hidden]",
+          },
+        })),
+        Effect.catchAll((error) => errorHandler.handleApiError(error))
+      );
+
+      yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
+    }
+
+    // Test role checking
+    const adminUser = yield* repo.getUser("user_123");
+    const regularUser = yield* repo.getUser("user_456");
+
+    yield* Effect.logInfo("\n=== Testing role checks ===");
+
+    yield* repo.checkRole(adminUser, "admin").pipe(
+      Effect.tap(() => Effect.logInfo("Admin access successful")),
+      Effect.catchAll((error) => errorHandler.handleApiError(error))
     );
 
-    yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
-  }
+    yield* repo.checkRole(regularUser, "admin").pipe(
+      Effect.tap(() => Effect.logInfo("User admin access successful")),
+      Effect.catchAll((error) => errorHandler.handleApiError(error))
+    );
 
-  // Test role checking
-  const adminUser = yield* repo.getUser('user_123');
-  const regularUser = yield* repo.getUser('user_456');
-
-  yield* Effect.logInfo('\n=== Testing role checks ===');
-
-  yield* repo.checkRole(adminUser, 'admin').pipe(
-    Effect.tap(() => Effect.logInfo('Admin access successful')),
-    Effect.catchAll(error => errorHandler.handleApiError(error))
-  );
-
-  yield* repo.checkRole(regularUser, 'admin').pipe(
-    Effect.tap(() => Effect.logInfo('User admin access successful')),
-    Effect.catchAll(error => errorHandler.handleApiError(error))
-  );
-
-  return { message: 'Tests completed successfully' };
-});
+    return { message: "Tests completed successfully" };
+  });
 
 // Run the program with all services
 Effect.runPromise(
   Effect.provide(
-    Effect.provide(
-      createRoutes(),
-      ErrorHandlerService.Default
-    ),
+    Effect.provide(createRoutes(), ErrorHandlerService.Default),
     UserRepository.Default
   )
 );
@@ -4787,21 +4801,25 @@ Effect.runPromise(
 The anti-pattern is to handle HTTP-specific error logic inside each route handler using functions like `Effect.catchTag`.
 
 ```typescript
-import { Effect, Data } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect, Data } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
-class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{ id: string }> {}
+class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
+  id: string;
+}> {}
 // ... same getUser function and error classes
 
 const userRoute = Http.router.get(
-  '/users/:userId',
-  Effect.flatMap(Http.request.ServerRequest, (req) => getUser(req.params.userId)).pipe(
+  "/users/:userId",
+  Effect.flatMap(Http.request.ServerRequest, (req) =>
+    getUser(req.params.userId)
+  ).pipe(
     Effect.map(Http.response.json),
     // Manually catching errors inside the route logic
-    Effect.catchTag('UserNotFoundError', (e) =>
+    Effect.catchTag("UserNotFoundError", (e) =>
       Http.response.text(`User ${e.id} not found`, { status: 404 })
     ),
-    Effect.catchTag('InvalidIdError', (e) =>
+    Effect.catchTag("InvalidIdError", (e) =>
       Http.response.text(`ID ${e.id} is not a valid format`, { status: 400 })
     )
   )
@@ -4810,9 +4828,9 @@ const userRoute = Http.router.get(
 const app = Http.router.empty.pipe(Http.router.addRoute(userRoute));
 
 // No centralized error handling
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```
@@ -4848,16 +4866,16 @@ interface User {
 class NetworkError extends Data.TaggedError("NetworkError")<{
   readonly url: string;
   readonly code: number;
-}> { }
+}> {}
 
 class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly field: string;
   readonly message: string;
-}> { }
+}> {}
 
 class NotFoundError extends Data.TaggedError("NotFoundError")<{
   readonly id: string;
-}> { }
+}> {}
 
 // Define UserService
 class UserService extends Effect.Service<UserService>()("UserService", {
@@ -4904,7 +4922,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
         return message;
       }),
   }),
-}) { }
+}) {}
 
 // Compose operations with error handling using catchTags
 const processUser = (
@@ -4957,7 +4975,6 @@ const runTests = Effect.gen(function* () {
 
 // Run the program
 Effect.runPromise(Effect.provide(runTests, UserService.Default));
-
 ```
 
 **Explanation:**  
@@ -4980,9 +4997,9 @@ declarative flow and bypasses Effect's powerful, type-safe error channels.
 
 In distributed systems, failure is normal. APIs can fail intermittently, and network latency can spike. Hard-coding your application to try an operation only once makes it brittle.
 
--   **Retries:** The `Effect.retry` operator, combined with a `Schedule` policy, provides a powerful, declarative way to handle transient failures. Instead of writing complex `try/catch` loops, you can simply define a policy like "retry 3 times, with an exponential backoff delay between attempts."
+- **Retries:** The `Effect.retry` operator, combined with a `Schedule` policy, provides a powerful, declarative way to handle transient failures. Instead of writing complex `try/catch` loops, you can simply define a policy like "retry 3 times, with an exponential backoff delay between attempts."
 
--   **Timeouts:** An operation might not fail, but instead hang indefinitely. `Effect.timeout` prevents this by racing your effect against a timer. If your effect doesn't complete within the specified duration, it is automatically interrupted, preventing your application from getting stuck.
+- **Timeouts:** An operation might not fail, but instead hang indefinitely. `Effect.timeout` prevents this by racing your effect against a timer. If your effect doesn't complete within the specified duration, it is automatically interrupted, preventing your application from getting stuck.
 
 Combining these two patterns is a best practice for any interaction with an external service.
 
@@ -5004,50 +5021,55 @@ interface ApiResponse {
 class ApiError extends Data.TaggedError("ApiError")<{
   readonly message: string;
   readonly attempt: number;
-}> { }
+}> {}
 
 class TimeoutError extends Data.TaggedError("TimeoutError")<{
   readonly duration: string;
   readonly attempt: number;
-}> { }
+}> {}
 
 // Define API service
-class ApiService extends Effect.Service<ApiService>()(
-  "ApiService",
-  {
-    sync: () => ({
-      // Flaky API call that might fail or be slow
-      fetchData: (): Effect.Effect<ApiResponse, ApiError | TimeoutError> =>
-        Effect.gen(function* () {
-          const attempt = Math.floor(Math.random() * 5) + 1;
-          yield* Effect.logInfo(`Attempt ${attempt}: Making API call...`);
+class ApiService extends Effect.Service<ApiService>()("ApiService", {
+  sync: () => ({
+    // Flaky API call that might fail or be slow
+    fetchData: (): Effect.Effect<ApiResponse, ApiError | TimeoutError> =>
+      Effect.gen(function* () {
+        const attempt = Math.floor(Math.random() * 5) + 1;
+        yield* Effect.logInfo(`Attempt ${attempt}: Making API call...`);
 
-          if (Math.random() > 0.3) {
-            yield* Effect.logWarning(`Attempt ${attempt}: API call failed`);
-            return yield* Effect.fail(new ApiError({
+        if (Math.random() > 0.3) {
+          yield* Effect.logWarning(`Attempt ${attempt}: API call failed`);
+          return yield* Effect.fail(
+            new ApiError({
               message: "API Error",
-              attempt
-            }));
-          }
+              attempt,
+            })
+          );
+        }
 
-          const delay = Math.random() * 3000;
-          yield* Effect.logInfo(`Attempt ${attempt}: API call will take ${delay.toFixed(0)}ms`);
+        const delay = Math.random() * 3000;
+        yield* Effect.logInfo(
+          `Attempt ${attempt}: API call will take ${delay.toFixed(0)}ms`
+        );
 
-          yield* Effect.sleep(Duration.millis(delay));
+        yield* Effect.sleep(Duration.millis(delay));
 
-          const response = { data: "some important data" };
-          yield* Effect.logInfo(`Attempt ${attempt}: API call succeeded with data: ${JSON.stringify(response)}`);
-          return response;
-        })
-    })
-  }
-) { }
+        const response = { data: "some important data" };
+        yield* Effect.logInfo(
+          `Attempt ${attempt}: API call succeeded with data: ${JSON.stringify(response)}`
+        );
+        return response;
+      }),
+  }),
+}) {}
 
 // Define retry policy: exponential backoff, up to 3 retries
 const retryPolicy = Schedule.exponential(Duration.millis(100)).pipe(
   Schedule.compose(Schedule.recurs(3)),
   Schedule.tapInput((error: ApiError | TimeoutError) =>
-    Effect.logWarning(`Retrying after error: ${error._tag} (Attempt ${error.attempt})`)
+    Effect.logWarning(
+      `Retrying after error: ${error._tag} (Attempt ${error.attempt})`
+    )
   )
 );
 
@@ -5070,14 +5092,18 @@ const program = Effect.gen(function* () {
       Effect.catchTags({
         ApiError: (error) =>
           Effect.gen(function* () {
-            yield* Effect.logError(`All retries failed: ${error.message} (Last attempt: ${error.attempt})`);
+            yield* Effect.logError(
+              `All retries failed: ${error.message} (Last attempt: ${error.attempt})`
+            );
             return { data: "fallback data due to API error" } as ApiResponse;
           }),
         TimeoutError: (error) =>
           Effect.gen(function* () {
-            yield* Effect.logError(`All retries timed out after ${error.duration} (Last attempt: ${error.attempt})`);
+            yield* Effect.logError(
+              `All retries timed out after ${error.duration} (Last attempt: ${error.attempt})`
+            );
             return { data: "fallback data due to timeout" } as ApiResponse;
-          })
+          }),
       })
     );
 
@@ -5088,9 +5114,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, ApiService.Default)
-);
+Effect.runPromise(Effect.provide(program, ApiService.Default));
 ```
 
 ---
@@ -5143,9 +5167,7 @@ const effect = Effect.fail("fail!").pipe(
 ); // Effect<string>
 
 // Option: Provide a fallback if value is None
-const option = Option.none().pipe(
-  Option.orElse(() => Option.some("default"))
-); // Option<string>
+const option = Option.none().pipe(Option.orElse(() => Option.some("default"))); // Option<string>
 
 // Either: Provide a fallback if value is Left
 const either = Either.left("error").pipe(
@@ -5190,12 +5212,16 @@ import { Effect, Data } from "effect";
 
 // Define tagged error types
 class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
-class ValidationError extends Data.TaggedError("ValidationError")<{ message: string }> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
 
 type MyError = NotFoundError | ValidationError;
 
 // Effect: Handle only ValidationError, let others propagate
-const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as MyError).pipe(
+const effect = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
   Effect.catchTag("ValidationError", (err) =>
     Effect.succeed(`Recovered from validation error: ${err.message}`)
   )
@@ -5205,12 +5231,14 @@ const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as 
 const effect2 = Effect.fail(new NotFoundError() as MyError).pipe(
   Effect.catchTags({
     NotFoundError: () => Effect.succeed("Handled not found!"),
-    ValidationError: (err) => Effect.succeed(`Handled validation: ${err.message}`),
+    ValidationError: (err) =>
+      Effect.succeed(`Handled validation: ${err.message}`),
   })
 ); // Effect<string>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `catchTag` lets you recover from a specific tagged error type.
 - `catchTags` lets you handle multiple tagged error types in one place.
 - Unhandled errors continue to propagate, preserving error safety.
@@ -5262,10 +5290,10 @@ const program = Effect.gen(function* () {
 
 // Run the program with OpenTelemetry integration
 // Effect.runPromise(program);
-
 ```
 
 **Explanation:**
+
 - `Effect.fn("operation-name")(function*)` wraps a function and automatically creates OpenTelemetry spans with the given name.
 - No manual span wrapping needed—the Effect runtime handles span creation and lifecycle automatically.
 - Use `Effect.annotateCurrentSpan()` to add metadata and context to the span.
@@ -5315,7 +5343,8 @@ const workflow = Effect.gen(function* () {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.log` logs a message at the default level.
 - `Effect.logInfo` and `Effect.logError` log at specific levels.
 - Logging is context-aware and can be used anywhere in your Effect workflows.
@@ -5347,9 +5376,7 @@ const program = Effect.logDebug("Processing user", { userId: 123 });
 
 // Run the program with debug logging enabled
 Effect.runSync(
-  program.pipe(
-    Effect.tap(() => Effect.log("Debug logging enabled"))
-  )
+  program.pipe(Effect.tap(() => Effect.log("Debug logging enabled")))
 );
 ```
 
@@ -5394,7 +5421,7 @@ import { Console, Data, Duration, Effect, Fiber, Layer } from "effect";
 
 class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   id: string;
-}> { }
+}> {}
 
 export class Database extends Effect.Service<Database>()("Database", {
   sync: () => ({
@@ -5403,7 +5430,7 @@ export class Database extends Effect.Service<Database>()("Database", {
         ? Effect.succeed({ name: "Paul" })
         : Effect.fail(new UserNotFoundError({ id })),
   }),
-}) { }
+}) {}
 
 const userHandler = Effect.flatMap(HttpRouter.params, (p) =>
   Effect.flatMap(Database, (db) => db.getUser(p["userId"] ?? "")).pipe(
@@ -5443,9 +5470,11 @@ const program = Effect.gen(function* () {
 });
 
 NodeRuntime.runMain(
-  Effect.provide(program, Layer.provide(serverLayer, Layer.merge(Database.Default, server))) as Effect.Effect<void, unknown, never>
+  Effect.provide(
+    program,
+    Layer.provide(serverLayer, Layer.merge(Database.Default, server))
+  ) as Effect.Effect<void, unknown, never>
 );
-
 ```
 
 **Anti-Pattern:**
@@ -5453,35 +5482,41 @@ NodeRuntime.runMain(
 The anti-pattern is to use `fetch` inside a route handler, wrapped in `Effect.tryPromise`. This approach requires manual error handling and loses the benefits of the Effect ecosystem.
 
 ```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
 const proxyRoute = Http.router.get(
-  '/proxy/posts/:id',
+  "/proxy/posts/:id",
   Effect.flatMap(Http.request.ServerRequest, (req) =>
     // Manually wrap fetch in an Effect
     Effect.tryPromise({
-      try: () => fetch(`https://jsonplaceholder.typicode.com/posts/${req.params.id}`),
-      catch: () => 'FetchError', // Untyped error
+      try: () =>
+        fetch(`https://jsonplaceholder.typicode.com/posts/${req.params.id}`),
+      catch: () => "FetchError", // Untyped error
     }).pipe(
       Effect.flatMap((res) =>
         // Manually check status and parse JSON, each with its own error case
         res.ok
-          ? Effect.tryPromise({ try: () => res.json(), catch: () => 'JsonError' })
-          : Effect.fail('BadStatusError')
+          ? Effect.tryPromise({
+              try: () => res.json(),
+              catch: () => "JsonError",
+            })
+          : Effect.fail("BadStatusError")
       ),
       Effect.map(Http.response.json),
       // A generic catch-all because we can't easily distinguish error types
-      Effect.catchAll(() => Http.response.text('An unknown error occurred', { status: 500 }))
+      Effect.catchAll(() =>
+        Http.response.text("An unknown error occurred", { status: 500 })
+      )
     )
   )
 );
 
 const app = Http.router.empty.pipe(Http.router.addRoute(proxyRoute));
 
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```
@@ -5536,7 +5571,6 @@ const programWithLogging = Effect.gen(function* () {
 });
 
 Effect.runPromise(programWithLogging);
-
 ```
 
 ---
@@ -5593,9 +5627,7 @@ const makeCounter = Ref.make(0);
 
 // Increment the counter atomically
 const increment = makeCounter.pipe(
-  Effect.flatMap((counter) =>
-    Ref.update(counter, (n) => n + 1)
-  )
+  Effect.flatMap((counter) => Ref.update(counter, (n) => n + 1))
 );
 
 // Read the current value
@@ -5612,7 +5644,8 @@ const program = Effect.gen(function* () {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Ref` is an atomic, mutable reference for effectful and concurrent code.
 - All operations are safe, composable, and free of race conditions.
 - Use `Ref` for counters, caches, or any shared mutable state.
@@ -5661,7 +5694,6 @@ const stream = Stream.fromIterable([
   [1, 2],
   [3, 4],
 ]).pipe(Stream.flatMap((arr) => Stream.fromIterable(arr))); // Stream<number>
-
 ```
 
 **Explanation:**  
@@ -5684,7 +5716,7 @@ Using manual loops (`for`, `forEach`, etc.) with side effects, or collecting res
 
 This pattern is essential for creating clean architectural boundaries and preventing "leaky abstractions." An outer layer of your application (e.g., a `UserService`) should not expose the internal failure details of the layers it depends on (e.g., a `Database` that can fail with `ConnectionError` or `QueryError`).
 
-By using `Effect.mapError`, the outer layer can define its own, more abstract error type (like `RepositoryError`) and map all the specific, low-level errors into it. This decouples the layers. If you later swap your database implementation, you only need to update the mapping logic within the repository layer; none of the code that *uses* the repository needs to change.
+By using `Effect.mapError`, the outer layer can define its own, more abstract error type (like `RepositoryError`) and map all the specific, low-level errors into it. This decouples the layers. If you later swap your database implementation, you only need to update the mapping logic within the repository layer; none of the code that _uses_ the repository needs to change.
 
 ---
 
@@ -5732,7 +5764,10 @@ const program = Effect.gen(function* () {
     Effect.gen(function* () {
       if (error instanceof RepositoryError) {
         yield* Effect.logInfo(`Repository error occurred: ${error._tag}`);
-        if (error.cause instanceof ConnectionError || error.cause instanceof QueryError) {
+        if (
+          error.cause instanceof ConnectionError ||
+          error.cause instanceof QueryError
+        ) {
           yield* Effect.logInfo(`Original cause: ${error.cause._tag}`);
         }
       } else {
@@ -5743,7 +5778,6 @@ const program = Effect.gen(function* () {
 );
 
 Effect.runPromise(program);
-
 ```
 
 ---
@@ -5807,10 +5841,10 @@ const effect: Effect.Effect<string, never, never> = Effect.fail(
       Effect.succeed(`Validation failed: ${err.message}`),
   })
 ); // Effect<string>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
 - This is safer and more maintainable than using `instanceof` or manual property checks.
 
@@ -5831,10 +5865,11 @@ Using `instanceof`, manual property checks, or switch statements to distinguish 
 The primary goal of a unit test is to verify the logic of a single unit of code, independent of its external dependencies. Effect's dependency injection system is designed to make this easy and type-safe.
 
 By providing a mock `Layer` in your test, you replace a real dependency (like an `HttpClient` that makes network calls) with a fake one that returns predictable data. This provides several key benefits:
--   **Determinism:** Your tests always produce the same result, free from the flakiness of network or database connections.
--   **Speed:** Tests run instantly without waiting for slow I/O operations.
--   **Type Safety:** The TypeScript compiler ensures your mock implementation perfectly matches the real service's interface, preventing your tests from becoming outdated.
--   **Explicitness:** The test setup clearly documents all the dependencies required for the code to run.
+
+- **Determinism:** Your tests always produce the same result, free from the flakiness of network or database connections.
+- **Speed:** Tests run instantly without waiting for slow I/O operations.
+- **Type Safety:** The TypeScript compiler ensures your mock implementation perfectly matches the real service's interface, preventing your tests from becoming outdated.
+- **Explicitness:** The test setup clearly documents all the dependencies required for the code to run.
 
 ---
 
@@ -5847,36 +5882,30 @@ import { Effect, Layer } from "effect";
 
 // --- The Services ---
 interface EmailClientService {
-  send: (address: string, body: string) => Effect.Effect<void>
+  send: (address: string, body: string) => Effect.Effect<void>;
 }
 
-class EmailClient extends Effect.Service<EmailClientService>()(
-  "EmailClient",
-  {
-    sync: () => ({
-      send: (address: string, body: string) => 
-        Effect.sync(() => Effect.log(`Sending email to ${address}: ${body}`))
-    })
-  }
-) {}
+class EmailClient extends Effect.Service<EmailClientService>()("EmailClient", {
+  sync: () => ({
+    send: (address: string, body: string) =>
+      Effect.sync(() => Effect.log(`Sending email to ${address}: ${body}`)),
+  }),
+}) {}
 
 interface NotifierService {
-  notifyUser: (userId: number, message: string) => Effect.Effect<void>
+  notifyUser: (userId: number, message: string) => Effect.Effect<void>;
 }
 
-class Notifier extends Effect.Service<NotifierService>()(
-  "Notifier",
-  {
-    effect: Effect.gen(function* () {
-      const emailClient = yield* EmailClient;
-      return {
-        notifyUser: (userId: number, message: string) =>
-          emailClient.send(`user-${userId}@example.com`, message)
-      };
-    }),
-    dependencies: [EmailClient.Default]
-  }
-) {}
+class Notifier extends Effect.Service<NotifierService>()("Notifier", {
+  effect: Effect.gen(function* () {
+    const emailClient = yield* EmailClient;
+    return {
+      notifyUser: (userId: number, message: string) =>
+        emailClient.send(`user-${userId}@example.com`, message),
+    };
+  }),
+  dependencies: [EmailClient.Default],
+}) {}
 
 // Create a program that uses the Notifier service
 const program = Effect.gen(function* () {
@@ -5886,28 +5915,21 @@ const program = Effect.gen(function* () {
 
   // Create mock EmailClient that logs differently
   yield* Effect.log("\nUsing mock EmailClient implementation...");
-  const mockEmailClient = Layer.succeed(
-    EmailClient,
-    {
-      send: (address: string, body: string) =>
-        // Directly return the Effect.log without nesting it in Effect.sync
-        Effect.log(`MOCK: Would send to ${address} with body: ${body}`)
-    } as EmailClientService
-  );
+  const mockEmailClient = Layer.succeed(EmailClient, {
+    send: (address: string, body: string) =>
+      // Directly return the Effect.log without nesting it in Effect.sync
+      Effect.log(`MOCK: Would send to ${address} with body: ${body}`),
+  } as EmailClientService);
 
   // Run the same notification with mock client
   yield* Effect.gen(function* () {
     const notifier = yield* Notifier;
     yield* notifier.notifyUser(123, "Your invoice is ready.");
-  }).pipe(
-    Effect.provide(mockEmailClient)
-  );
+  }).pipe(Effect.provide(mockEmailClient));
 });
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, Notifier.Default)
-);
+Effect.runPromise(Effect.provide(program, Notifier.Default));
 ```
 
 ---
@@ -5929,7 +5951,7 @@ it("sends a real email", () =>
   }).pipe(
     Effect.provide(NotifierLive),
     Effect.provide(EmailClientLive), // Using the live layer makes this an integration test
-    Effect.runPromise,
+    Effect.runPromise
   ));
 ```
 
@@ -5951,15 +5973,12 @@ This pattern is the key to testability. It allows you to provide a `Live` implem
 import { Effect } from "effect";
 
 // Define Random service with production implementation as default
-export class Random extends Effect.Service<Random>()(
-  "Random",
-  {
-    // Default production implementation
-    sync: () => ({
-      next: Effect.sync(() => Math.random())
-    })
-  }
-) {}
+export class Random extends Effect.Service<Random>()("Random", {
+  // Default production implementation
+  sync: () => ({
+    next: Effect.sync(() => Math.random()),
+  }),
+}) {}
 
 // Example usage
 const program = Effect.gen(function* () {
@@ -6030,7 +6049,7 @@ const greeting = (id: number): string =>
     Option.match({
       onNone: () => "User not found.",
       onSome: (user) => `Welcome, ${user.name}!`,
-    }),
+    })
   );
 
 const program = Effect.gen(function* () {
@@ -6047,21 +6066,21 @@ The anti-pattern is returning a nullable type (e.g., User | null or User | undef
 
 ```typescript
 interface User {
-	id: number;
-	name: string;
+  id: number;
+  name: string;
 }
 const users: User[] = [{ id: 1, name: "Paul" }];
-	
-	// ❌ WRONG: This function's return type is less safe.
-	const findUserUnsafely = (id: number): User | undefined => {
-	  return users.find((u) => u.id === id);
-	};
-	
-	const user = findUserUnsafely(3);
-	
-	// This will throw "TypeError: Cannot read properties of undefined (reading 'name')"
-	// because the caller forgot to check if the user exists.
-	console.log(`User's name is ${user.name}`)
+
+// ❌ WRONG: This function's return type is less safe.
+const findUserUnsafely = (id: number): User | undefined => {
+  return users.find((u) => u.id === id);
+};
+
+const user = findUserUnsafely(3);
+
+// This will throw "TypeError: Cannot read properties of undefined (reading 'name')"
+// because the caller forgot to check if the user exists.
+console.log(`User's name is ${user.name}`);
 ```
 
 ---
@@ -6089,7 +6108,9 @@ const makeEmail = (s: string): Option.Option<Email> =>
   s.includes("@") ? Option.some(s as Email) : Option.none();
 
 // A function can now trust that its input is a valid email.
-const sendEmail = (email: Email, body: string) => { /* ... */ };
+const sendEmail = (email: Email, body: string) => {
+  /* ... */
+};
 ```
 
 **Explanation:**  
@@ -6112,7 +6133,7 @@ error-prone.
 
 **Why:**
 
-When running or supervising effects, you often need to know not just if they succeeded or failed, but *how* they failed (e.g., error vs. defect).  
+When running or supervising effects, you often need to know not just if they succeeded or failed, but _how_ they failed (e.g., error vs. defect).  
 `Exit` provides a complete, type-safe summary of an effect's outcome.
 
 **Good Example:**
@@ -6135,7 +6156,8 @@ runAndCapture.then((exit) => {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
 - Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
 - Pattern matching on `Exit` lets you handle all possible outcomes.
@@ -6164,16 +6186,16 @@ import { Data } from "effect";
 
 // Define a tagged union for a simple state machine
 type State = Data.TaggedEnum<{
-  Loading: {}
-  Success: { data: string }
-  Failure: { error: string }
-}>
-const { Loading, Success, Failure } = Data.taggedEnum<State>()
+  Loading: {};
+  Success: { data: string };
+  Failure: { error: string };
+}>;
+const { Loading, Success, Failure } = Data.taggedEnum<State>();
 
 // Create instances
-const state1: State = Loading()
-const state2: State = Success({ data: "Hello" })
-const state3: State = Failure({ error: "Oops" })
+const state1: State = Loading();
+const state2: State = Success({ data: "Hello" });
+const state3: State = Failure({ error: "Oops" });
 
 // Pattern match on the state
 function handleState(state: State): string {
@@ -6188,7 +6210,8 @@ function handleState(state: State): string {
 }
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.case` creates tagged constructors for each state.
 - The `_tag` property enables exhaustive pattern matching.
 - Use for domain modeling, state machines, and error types.
@@ -6228,10 +6251,10 @@ const email = "user@example.com" as Email;
 
 sendWelcome(email); // OK
 // sendWelcome("not-an-email"); // Type error! (commented to allow compilation)
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Brand.Branded<T, Name>` creates a new type that is distinct from its base type.
 - Only values explicitly branded as `Email` can be used where an `Email` is required.
 - This prevents accidental mixing of domain types.
@@ -6294,7 +6317,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -6362,7 +6384,6 @@ const program = Effect.gen(function* () {
 // The result will be an array of all user objects.
 // The total time will be much less than running them sequentially.
 Effect.runPromise(program);
-
 ```
 
 ---
@@ -6405,11 +6426,11 @@ The `Stream.fromReadable` constructor provides a bridge from Node.js's built-in 
 This example demonstrates reading a text file, splitting it into individual lines, and processing each line. The combination of `Stream.fromReadable`, `Stream.decodeText`, and `Stream.splitLines` is a powerful and common pattern for handling text-based files.
 
 ```typescript
-import { FileSystem } from '@effect/platform';
-import { NodeFileSystem } from '@effect/platform-node';
-import type { PlatformError } from '@effect/platform/Error';
-import { Effect, Stream } from 'effect';
-import * as path from 'node:path';
+import { FileSystem } from "@effect/platform";
+import { NodeFileSystem } from "@effect/platform-node";
+import type { PlatformError } from "@effect/platform/Error";
+import { Effect, Stream } from "effect";
+import * as path from "node:path";
 
 const processFile = (
   filePath: string,
@@ -6422,15 +6443,14 @@ const processFile = (
     yield* fs.writeFileString(filePath, content);
 
     // Create a STREAMING pipeline - reads file in chunks, not all at once
-    const fileStream = fs.readFile(filePath)
-      .pipe(
-        // Decode bytes to text
-        Stream.decodeText('utf-8'),
-        // Split into lines
-        Stream.splitLines,
-        // Process each line
-        Stream.tap((line) => Effect.log(`Processing: ${line}`))
-      );
+    const fileStream = fs.readFile(filePath).pipe(
+      // Decode bytes to text
+      Stream.decodeText("utf-8"),
+      // Split into lines
+      Stream.splitLines,
+      // Process each line
+      Stream.tap((line) => Effect.log(`Processing: ${line}`))
+    );
 
     // Run the stream to completion
     yield* Stream.runDrain(fileStream);
@@ -6440,24 +6460,18 @@ const processFile = (
   });
 
 const program = Effect.gen(function* () {
-  const filePath = path.join(__dirname, 'large-file.txt');
+  const filePath = path.join(__dirname, "large-file.txt");
 
-  yield* processFile(
-    filePath,
-    'line 1\nline 2\nline 3'
-  ).pipe(
+  yield* processFile(filePath, "line 1\nline 2\nline 3").pipe(
     Effect.catchAll((error: PlatformError) =>
       Effect.logError(`Error processing file: ${error.message}`)
     )
   );
 });
 
-Effect.runPromise(
-  program.pipe(
-    Effect.provide(NodeFileSystem.layer)
-  ))
+Effect.runPromise(program.pipe(Effect.provide(NodeFileSystem.layer)));
 
-  /*
+/*
 Output:
 ... level=INFO msg="Processing: line 1"
 ... level=INFO msg="Processing: line 2"
@@ -6470,23 +6484,23 @@ Output:
 The anti-pattern is to use synchronous, memory-intensive functions like `fs.readFileSync`. This approach is simple for tiny files but fails catastrophically for large ones.
 
 ```typescript
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import * as fs from "node:fs";
+import * as path from "node:path";
 
-const filePath = path.join(__dirname, 'large-file.txt');
+const filePath = path.join(__dirname, "large-file.txt");
 // Create a dummy file for the example
-fs.writeFileSync(filePath, 'line 1\nline 2\nline 3');
+fs.writeFileSync(filePath, "line 1\nline 2\nline 3");
 
 try {
   // Anti-pattern: This loads the ENTIRE file into memory as a single buffer.
-  const fileContent = fs.readFileSync(filePath, 'utf-8');
-  const lines = fileContent.split('\n');
+  const fileContent = fs.readFileSync(filePath, "utf-8");
+  const lines = fileContent.split("\n");
 
   for (const line of lines) {
     console.log(`Processing: ${line}`);
   }
 } catch (err) {
-  console.error('Failed to read file:', err);
+  console.error("Failed to read file:", err);
 } finally {
   // Clean up the dummy file
   fs.unlinkSync(filePath);
@@ -6525,12 +6539,14 @@ The primary benefits of using `Stream` are:
 This example processes a list of IDs by fetching user data for each one. `Stream.mapEffect` is used to apply an effectful function (`getUserById`) to each element, with concurrency limited to 2 simultaneous requests.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 // A mock function that simulates fetching a user from a database
-const getUserById = (id: number): Effect.Effect<{ id: number; name: string }, Error> =>
+const getUserById = (
+  id: number
+): Effect.Effect<{ id: number; name: string }, Error> =>
   Effect.succeed({ id, name: `User ${id}` }).pipe(
-    Effect.delay('100 millis'),
+    Effect.delay("100 millis"),
     Effect.tap(() => Effect.log(`Fetched user ${id}`))
   );
 
@@ -6544,7 +6560,9 @@ const program = Stream.fromIterable([1, 2, 3, 4, 5]).pipe(
 
 const programWithLogging = Effect.gen(function* () {
   const users = yield* program;
-  yield* Effect.log(`All users fetched: ${JSON.stringify(Chunk.toArray(users))}`);
+  yield* Effect.log(
+    `All users fetched: ${JSON.stringify(Chunk.toArray(users))}`
+  );
   return users;
 });
 
@@ -6557,7 +6575,9 @@ A common but flawed approach is to use `Promise.all` to handle multiple asynchro
 
 ```typescript
 // A mock function that returns a Promise
-const getUserByIdAsPromise = (id: number): Promise<{ id: number; name: string }> =>
+const getUserByIdAsPromise = (
+  id: number
+): Promise<{ id: number; name: string }> =>
   new Promise((resolve) => {
     setTimeout(() => {
       console.log(`Fetched user ${id}`);
@@ -6570,7 +6590,7 @@ const ids = [1, 2, 3, 4, 5];
 const promises = ids.map(getUserByIdAsPromise);
 
 Promise.all(promises).then((users) => {
-  console.log('All users fetched:', users);
+  console.log("All users fetched:", users);
 });
 ```
 
@@ -6591,7 +6611,7 @@ For many data pipelines, the most time-consuming step is performing an I/O-bound
 `Stream.mapEffect`'s `concurrency` option is the solution. It provides a simple, declarative way to introduce controlled parallelism into your pipeline.
 
 1.  **Performance Boost**: It allows the stream to work on multiple items at once, drastically reducing the total execution time for I/O-bound tasks.
-2.  **Controlled Parallelism**: Unlike `Promise.all` which runs everything at once, you specify the *exact* number of concurrent operations. This is crucial for stability, as it prevents your application from overwhelming downstream services or exhausting its own resources (like file handles or network sockets).
+2.  **Controlled Parallelism**: Unlike `Promise.all` which runs everything at once, you specify the _exact_ number of concurrent operations. This is crucial for stability, as it prevents your application from overwhelming downstream services or exhausting its own resources (like file handles or network sockets).
 3.  **Automatic Backpressure**: The stream will not pull new items from the source faster than the concurrent slots can process them. This backpressure is handled automatically, preventing memory issues.
 4.  **Structured Concurrency**: It's fully integrated with Effect's runtime. If any concurrent operation fails, all other in-flight operations for that stream are immediately and reliably interrupted, preventing wasted work and ensuring clean shutdowns.
 
@@ -6602,12 +6622,12 @@ For many data pipelines, the most time-consuming step is performing an I/O-bound
 This example processes four items, each taking one second. By setting `concurrency: 2`, the total runtime is approximately two seconds instead of four, because items are processed in parallel pairs.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 
 // A mock function that simulates a slow I/O operation
 const processItem = (id: number): Effect.Effect<string, Error> =>
   Effect.log(`Starting item ${id}...`).pipe(
-    Effect.delay('1 second'),
+    Effect.delay("1 second"),
     Effect.map(() => `Finished item ${id}`),
     Effect.tap(Effect.log)
   );
@@ -6658,7 +6678,7 @@ Total time: 2 seconds
 The anti-pattern is to process I/O-bound tasks sequentially. This is the default behavior of `Stream.mapEffect` if you don't specify a concurrency level, and it leads to poor performance.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 // ... same processItem function ...
 
 const ids = [1, 2, 3, 4];
@@ -6714,7 +6734,7 @@ When interacting with external systems like databases or APIs, making one reques
 This example processes 10 users. By using `Stream.grouped(5)`, it transforms the stream of 10 individual users into a stream of two chunks (each a batch of 5). The `saveUsersInBulk` function is then called only twice, once for each batch.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 // A mock function that simulates a bulk database insert
 const saveUsersInBulk = (
@@ -6723,7 +6743,7 @@ const saveUsersInBulk = (
   Effect.log(
     `Saving batch of ${userBatch.length} users: ${Chunk.toArray(userBatch)
       .map((u) => u.id)
-      .join(', ')}`
+      .join(", ")}`
   );
 
 const userIds = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
@@ -6749,7 +6769,7 @@ Output:
 The anti-pattern is to process items one by one when a more efficient bulk operation is available. This is a common performance bottleneck.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 
 // A mock function that saves one user at a time
 const saveUser = (user: { id: number }): Effect.Effect<void, Error> =>
@@ -6772,7 +6792,7 @@ Output:
 */
 ```
 
-This individual processing approach is an anti-pattern because it creates unnecessary overhead. If each `saveUser` call took 50ms of network latency, the total time would be over 500ms. The batched approach might only take 100ms (2 batches * 50ms), resulting in a 5x performance improvement.
+This individual processing approach is an anti-pattern because it creates unnecessary overhead. If each `saveUser` call took 50ms of network latency, the total time would be over 500ms. The batched approach might only take 100ms (2 batches \* 50ms), resulting in a 5x performance improvement.
 
 ---
 
@@ -6785,9 +6805,10 @@ This individual processing approach is an anti-pattern because it creates unnece
 **Why:**
 
 Some data sources don't fit the one-shot request/response model of `Effect`. For example:
--   Reading a multi-gigabyte file from disk.
--   Receiving messages from a WebSocket.
--   Fetching results from a paginated API.
+
+- Reading a multi-gigabyte file from disk.
+- Receiving messages from a WebSocket.
+- Fetching results from a paginated API.
 
 Loading all this data into memory at once would be inefficient or impossible. `Stream` solves this by allowing you to process the data in chunks as it arrives. It provides a rich API of composable operators (`map`, `filter`, `run`, etc.) that mirror those on `Effect` and `Array`, but are designed for streaming data. This allows you to build efficient, constant-memory data processing pipelines.
 
@@ -6811,7 +6832,7 @@ interface PaginatedResponse {
 
 // A mock API call that returns a page of users
 const fetchUserPage = (
-  page: number,
+  page: number
 ): Effect.Effect<PaginatedResponse, "ApiError"> =>
   Effect.succeed(
     page < 3
@@ -6822,26 +6843,28 @@ const fetchUserPage = (
           ],
           nextPage: page + 1,
         }
-      : { users: [], nextPage: null },
+      : { users: [], nextPage: null }
   ).pipe(Effect.delay("50 millis"));
 
 // Stream.paginateEffect creates a stream from a paginated source
-const userStream: Stream.Stream<User, "ApiError"> = Stream.paginateEffect(0, (page) =>
-  fetchUserPage(page).pipe(
-    Effect.map((response) => [
-      response.users,
-      Option.fromNullable(response.nextPage)
-    ] as const),
-  ),
+const userStream: Stream.Stream<User, "ApiError"> = Stream.paginateEffect(
+  0,
+  (page) =>
+    fetchUserPage(page).pipe(
+      Effect.map(
+        (response) =>
+          [response.users, Option.fromNullable(response.nextPage)] as const
+      )
+    )
 ).pipe(
   // Flatten the stream of user arrays into a stream of individual users
-  Stream.flatMap((users) => Stream.fromIterable(users)),
+  Stream.flatMap((users) => Stream.fromIterable(users))
 );
 
 // We can now process the stream of users.
 // Stream.runForEach will pull from the stream until it's exhausted.
 const program = Stream.runForEach(userStream, (user: User) =>
-  Effect.log(`Processing user: ${user.name}`),
+  Effect.log(`Processing user: ${user.name}`)
 );
 
 const programWithErrorHandling = program.pipe(
@@ -6869,7 +6892,7 @@ import { fetchUserPage } from "./somewhere"; // From previous example
 // ❌ WRONG: Manual, stateful, and inefficient recursion.
 const fetchAllUsers = (
   page: number,
-  acc: any[],
+  acc: any[]
 ): Effect.Effect<any[], "ApiError"> =>
   fetchUserPage(page).pipe(
     Effect.flatMap((response) => {
@@ -6878,7 +6901,7 @@ const fetchAllUsers = (
         return fetchAllUsers(response.nextPage, allUsers);
       }
       return Effect.succeed(allUsers);
-    }),
+    })
   );
 
 // This holds all users in memory at once.
@@ -6899,24 +6922,24 @@ Integrating configuration as a `Layer` plugs it directly into Effect's dependenc
 
 **Good Example:**
 
-````typescript
+```typescript
 import { Effect, Layer } from "effect";
 
-class ServerConfig extends Effect.Service<ServerConfig>()(
-  "ServerConfig",
-  {
-    sync: () => ({
-      port: process.env.PORT ? parseInt(process.env.PORT) : 8080
-    })
-  }
-) {}
+class ServerConfig extends Effect.Service<ServerConfig>()("ServerConfig", {
+  sync: () => ({
+    port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
+  }),
+}) {}
 
 const program = Effect.gen(function* () {
   const config = yield* ServerConfig;
   yield* Effect.log(`Starting application on port ${config.port}...`);
 });
 
-const programWithErrorHandling = Effect.provide(program, ServerConfig.Default).pipe(
+const programWithErrorHandling = Effect.provide(
+  program,
+  ServerConfig.Default
+).pipe(
   Effect.catchAll((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Program error: ${error}`);
@@ -6926,7 +6949,7 @@ const programWithErrorHandling = Effect.provide(program, ServerConfig.Default).p
 );
 
 Effect.runPromise(programWithErrorHandling);
-````
+```
 
 **Explanation:**  
 This approach makes configuration available contextually, supporting better testing and modularity.
@@ -6951,7 +6974,7 @@ Effect's dependency injection system (`Service` and `Layer`) solves this by deco
 
 1.  **Modern and Simple**: `Effect.Service` is the modern, idiomatic way to define services. It combines the service's definition and its access tag into a single, clean class structure, reducing boilerplate.
 2.  **Testability**: By depending on a service interface, you can easily provide a mock implementation in your tests (e.g., `Database.Test`) instead of the real one (`Database.Live`), allowing for fast, isolated unit tests of your route logic.
-3.  **Decoupling**: Route handlers don't know or care *how* the database connection is created or managed. They simply ask for the `Database` service from the context, and the runtime provides the configured implementation.
+3.  **Decoupling**: Route handlers don't know or care _how_ the database connection is created or managed. They simply ask for the `Database` service from the context, and the runtime provides the configured implementation.
 4.  **Composability**: `Layer`s are composable. You can build complex dependency graphs (e.g., a `Database` layer that itself requires a `Config` layer) that Effect will automatically construct and wire up for you.
 
 ---
@@ -6998,10 +7021,9 @@ const app = HttpRouter.empty.pipe(
 const serverEffect = HttpServer.serveEffect(app).pipe(
   Effect.provide(Database.Default),
   Effect.provide(
-    NodeHttpServer.layer(
-      () => require("node:http").createServer(),
-      { port: 3458 }
-    )
+    NodeHttpServer.layer(() => require("node:http").createServer(), {
+      port: 3458,
+    })
   )
 );
 
@@ -7025,7 +7047,6 @@ const program = Effect.gen(function* () {
 
 // Run the program
 NodeRuntime.runMain(program);
-
 ```
 
 **Anti-Pattern:**
@@ -7033,23 +7054,23 @@ NodeRuntime.runMain(program);
 The anti-pattern is to manually instantiate and pass dependencies through function arguments. This creates tight coupling and makes testing difficult.
 
 ```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
 // Manual implementation of a database client
 class LiveDatabase {
   getUser(id: string) {
-    if (id === '123') {
-      return Effect.succeed({ name: 'Paul' });
+    if (id === "123") {
+      return Effect.succeed({ name: "Paul" });
     }
-    return Effect.fail('User not found'); // Untyped error
+    return Effect.fail("User not found"); // Untyped error
   }
 }
 
 // The dependency must be passed explicitly to the route definition
 const createGetUserRoute = (db: LiveDatabase) =>
   Http.router.get(
-    '/users/:userId',
+    "/users/:userId",
     Effect.flatMap(Http.request.ServerRequest, (req) =>
       db.getUser(req.params.userId)
     ).pipe(
@@ -7064,9 +7085,9 @@ const getUserRoute = createGetUserRoute(db);
 
 const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
 
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```
@@ -7083,11 +7104,12 @@ This approach is flawed because the route handler is now aware of the concrete `
 
 **Why:**
 
-`Effect.race` is a powerful concurrency primitive for performance and resilience. It starts all provided effects in parallel. The moment one of them succeeds, `Effect.race` immediately interrupts all the other "losing" effects and returns the winning result. If one of the effects fails before any have succeeded, the race is not over; the remaining effects continue to run. The entire race only fails if *all* participating effects fail.
+`Effect.race` is a powerful concurrency primitive for performance and resilience. It starts all provided effects in parallel. The moment one of them succeeds, `Effect.race` immediately interrupts all the other "losing" effects and returns the winning result. If one of the effects fails before any have succeeded, the race is not over; the remaining effects continue to run. The entire race only fails if _all_ participating effects fail.
 
 This is commonly used for:
--   **Performance:** Querying multiple redundant data sources (e.g., two API replicas) and taking the response from whichever is faster.
--   **Implementing Timeouts:** Racing a primary effect against a delayed `Effect.fail`, effectively creating a timeout mechanism.
+
+- **Performance:** Querying multiple redundant data sources (e.g., two API replicas) and taking the response from whichever is faster.
+- **Implementing Timeouts:** Racing a primary effect against a delayed `Effect.fail`, effectively creating a timeout mechanism.
 
 ---
 
@@ -7170,14 +7192,13 @@ const programWithLogging = Effect.gen(function* () {
 );
 
 Effect.runPromise(programWithLogging);
-
 ```
 
 ---
 
 **Anti-Pattern:**
 
-Don't use `Effect.race` if you need the results of *all* the effects. That is the job of `Effect.all`. Using `race` in this scenario will cause you to lose data, as all but one of the effects will be interrupted and their results discarded.
+Don't use `Effect.race` if you need the results of _all_ the effects. That is the job of `Effect.all`. Using `race` in this scenario will cause you to lose data, as all but one of the effects will be interrupted and their results discarded.
 
 ```typescript
 import { Effect } from "effect";
@@ -7222,10 +7243,10 @@ function authenticate(user: string, password: Redacted.Redacted<string>) {
 // Logging or stringifying a Redacted value
 console.log(`Password: ${secret}`); // Output: Password: <redacted>
 console.log(String(secret)); // Output: <redacted>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Redacted.make(value)` wraps a sensitive value.
 - When logged or stringified, the value is replaced with `<redacted>`.
 - Prevents accidental exposure of secrets in logs or error messages.
@@ -7264,10 +7285,10 @@ const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
 // Convert to milliseconds or human-readable format
 const ms = Duration.toMillis(fiveMinutes); // 300000
 const readable = Duration.format(oneSecond); // "1s"
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Duration` is immutable and type-safe.
 - Use helpers for common intervals and arithmetic for composition.
 - Prefer `Duration` over raw numbers for all time-based logic.
@@ -7343,7 +7364,6 @@ const demonstration = Effect.gen(function* () {
 });
 
 Effect.runPromise(demonstration);
-
 ```
 
 ---
@@ -7373,7 +7393,7 @@ const program = Effect.log("Waiting...").pipe(Effect.delay(2000));
 
 **Why:**
 
-Not all errors are created equal. Retrying on a permanent error like "permission denied" or "not found" is pointless and can hide underlying issues. You only want to retry on *transient*, recoverable errors, such as network timeouts or "server busy" responses.
+Not all errors are created equal. Retrying on a permanent error like "permission denied" or "not found" is pointless and can hide underlying issues. You only want to retry on _transient_, recoverable errors, such as network timeouts or "server busy" responses.
 
 By adding a predicate to your retry schedule, you gain fine-grained control over the retry logic. This allows you to build much more intelligent and efficient error handling systems that react appropriately to different failure modes. This is a common requirement for building robust clients for external APIs.
 
@@ -7381,7 +7401,7 @@ By adding a predicate to your retry schedule, you gain fine-grained control over
 
 **Good Example:**
 
-This example simulates an API client that can fail with different, specific error types. The retry policy is configured to *only* retry on `ServerBusyError` and give up immediately on `NotFoundError`.
+This example simulates an API client that can fail with different, specific error types. The retry policy is configured to _only_ retry on `ServerBusyError` and give up immediately on `NotFoundError`.
 
 ```typescript
 import { Data, Effect, Schedule } from "effect";
@@ -7469,7 +7489,6 @@ const demonstrateNotFound = Effect.gen(function* () {
 });
 
 Effect.runPromise(program.pipe(Effect.flatMap(() => demonstrateNotFound)));
-
 ```
 
 ---
@@ -7501,7 +7520,7 @@ const program = flakyApiCall.pipe(Effect.retry(blindRetryPolicy));
 
 Running tasks sequentially when they could be done in parallel is a common source of performance bottlenecks. `Effect.all` is the solution. It's the direct equivalent of `Promise.all` in the Effect ecosystem.
 
-Instead of waiting for Task A to finish before starting Task B, `Effect.all` starts all tasks simultaneously. The total time to complete is determined by the duration of the *longest* running effect, not the sum of all durations. If any single effect in the collection fails, the entire `Effect.all` will fail immediately.
+Instead of waiting for Task A to finish before starting Task B, `Effect.all` starts all tasks simultaneously. The total time to complete is determined by the duration of the _longest_ running effect, not the sum of all durations. If any single effect in the collection fails, the entire `Effect.all` will fail immediately.
 
 ---
 
@@ -7514,16 +7533,18 @@ import { Effect } from "effect";
 
 // Simulate fetching a user, takes 1 second
 const fetchUser = Effect.succeed({ id: 1, name: "Paul" }).pipe(
-  Effect.delay("1 second"),
+  Effect.delay("1 second")
 );
 
 // Simulate fetching posts, takes 1.5 seconds
 const fetchPosts = Effect.succeed([{ title: "Effect is great" }]).pipe(
-  Effect.delay("1.5 seconds"),
+  Effect.delay("1.5 seconds")
 );
 
 // Run both effects concurrently - must specify concurrency option!
-const program = Effect.all([fetchUser, fetchPosts], { concurrency: "unbounded" });
+const program = Effect.all([fetchUser, fetchPosts], {
+  concurrency: "unbounded",
+});
 
 // The resulting effect will succeed with a tuple: [{id, name}, [{title}]]
 // Total execution time will be ~1.5 seconds (the duration of the longest task).
@@ -7572,6 +7593,7 @@ Effect.runPromise(program).then(console.log);
 
 Sequencing is fundamental for expressing workflows.  
 These combinators let you:
+
 - Run computations in order (`andThen`)
 - Attach logging, metrics, or other side effects (`tap`)
 - Simplify nested structures (`flatten`)
@@ -7611,7 +7633,8 @@ const stream = Stream.fromIterable([1, 2, 3]).pipe(
 ); // Stream<number>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `andThen` is for sequencing when you don’t care about the first result.
 - `tap` is for running side effects (like logging) without changing the value.
 - `flatten` is for removing unnecessary nesting (e.g., `Option<Option<A>>` → `Option<A>`).
@@ -7633,9 +7656,10 @@ Using `flatMap` with a function that ignores its argument, or manually unwrappin
 Effect's type system is incredibly powerful, but TypeScript's default language server doesn't always display the rich information contained within the `A`, `E`, and `R` channels in the most intuitive way.
 
 The Effect LSP is a specialized tool that understands the semantics of Effect. It hooks into your editor to provide a superior experience:
--   **Rich Inline Types:** It displays the full `Effect<A, E, R>` signature directly in your code as you work, so you always know exactly what an effect produces, how it can fail, and what it requires.
--   **Clear Error Messages:** It provides more specific and helpful error messages tailored to Effect's APIs.
--   **Enhanced Autocompletion:** It can offer more context-aware suggestions.
+
+- **Rich Inline Types:** It displays the full `Effect<A, E, R>` signature directly in your code as you work, so you always know exactly what an effect produces, how it can fail, and what it requires.
+- **Clear Error Messages:** It provides more specific and helpful error messages tailored to Effect's APIs.
+- **Enhanced Autocompletion:** It can offer more context-aware suggestions.
 
 This tool essentially makes the compiler's knowledge visible at a glance, reducing the mental overhead of tracking complex types and allowing you to catch errors before you even save the file.
 
@@ -7649,14 +7673,11 @@ Imagine you have the following code. Without the LSP, hovering over `program` mi
 import { Effect } from "effect";
 
 // Define Logger service using Effect.Service pattern
-class Logger extends Effect.Service<Logger>()(
-  "Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.log(`LOG: ${msg}`)
-    })
-  }
-) {}
+class Logger extends Effect.Service<Logger>()("Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.log(`LOG: ${msg}`),
+  }),
+}) {}
 
 const program = Effect.succeed(42).pipe(
   Effect.map((n) => n.toString()),
@@ -7727,10 +7748,10 @@ const program = Effect.gen(function* () {
     Effect.withSpan("workflow.end")
   );
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.withSpan` creates a tracing span around an operation.
 - Spans can be named and annotated with attributes for richer context.
 - Tracing enables distributed observability and performance analysis.
@@ -7749,11 +7770,12 @@ Relying only on logs or metrics for performance analysis, or lacking visibility 
 
 **Why:**
 
-While logs tell you *what* happened, traces tell you *why it was slow*. In a complex application, a single user request might trigger calls to multiple services (authentication, database, external APIs). Tracing allows you to visualize this entire chain of events as a single, hierarchical "trace."
+While logs tell you _what_ happened, traces tell you _why it was slow_. In a complex application, a single user request might trigger calls to multiple services (authentication, database, external APIs). Tracing allows you to visualize this entire chain of events as a single, hierarchical "trace."
 
 Each piece of work in that trace is a `span`. `Effect.withSpan` allows you to create your own custom spans. This is invaluable for answering questions like:
--   "For this API request, did we spend most of our time in the database or calling the external payment gateway?"
--   "Which part of our user creation logic is the bottleneck?"
+
+- "For this API request, did we spend most of our time in the database or calling the external payment gateway?"
+- "Which part of our user creation logic is the bottleneck?"
 
 Effect's tracing is built on OpenTelemetry, the industry standard, so it integrates seamlessly with tools like Jaeger, Zipkin, and Datadog.
 
@@ -7834,16 +7856,15 @@ const program = Effect.gen(function* () {
 // When run with a tracing SDK, this will produce traces with root spans
 // "createUserOperation" and child spans: "validateInput" and "saveToDatabase".
 Effect.runPromise(program);
-
 ```
 
 ---
 
 **Anti-Pattern:**
 
-Not adding custom spans to your business logic. 
-Without them, your traces will only show high-level information from your framework (e.g., "HTTP POST /users"). 
-You will have no visibility into the performance of the individual steps *inside* your request handler, making it very difficult to pinpoint bottlenecks. Your application's logic remains a "black box" in your traces.
+Not adding custom spans to your business logic.
+Without them, your traces will only show high-level information from your framework (e.g., "HTTP POST /users").
+You will have no visibility into the performance of the individual steps _inside_ your request handler, making it very difficult to pinpoint bottlenecks. Your application's logic remains a "black box" in your traces.
 
 ---
 
@@ -7884,13 +7905,13 @@ type ParsedEvent = {
 // Define the schema for our event
 const ApiEventSchema = Schema.Struct({
   name: Schema.String,
-  timestamp: Schema.String
+  timestamp: Schema.String,
 });
 
 // Example input
 const rawInput: RawEvent = {
   name: "User Login",
-  timestamp: "2025-06-22T20:08:42.000Z"
+  timestamp: "2025-06-22T20:08:42.000Z",
 };
 
 // Parse and transform
@@ -7898,7 +7919,7 @@ const program = Effect.gen(function* () {
   const parsed = yield* Schema.decode(ApiEventSchema)(rawInput);
   return {
     name: parsed.name,
-    timestamp: new Date(parsed.timestamp)
+    timestamp: new Date(parsed.timestamp),
   } as ParsedEvent;
 });
 
@@ -7924,7 +7945,6 @@ const programWithLogging = Effect.gen(function* () {
 Effect.runPromise(programWithLogging);
 ```
 
-
 `transformOrFail` is perfect for creating branded types, as the validation can fail.
 
 ```typescript
@@ -7938,8 +7958,8 @@ const Email = Schema.string.pipe(
       s.includes("@")
         ? Either.right(s as Email)
         : Either.left(Schema.ParseError.create(ast, "Invalid email format")),
-    (email) => Either.right(email),
-  ),
+    (email) => Either.right(email)
+  )
 );
 
 const result = Schema.decode(Email)("paul@example.com"); // Succeeds
@@ -7968,7 +7988,7 @@ const program = Schema.decode(RawApiEventSchema)(rawInput).pipe(
   Effect.map((rawEvent) => ({
     ...rawEvent,
     timestamp: new Date(rawEvent.timestamp), // Manual transformation after parsing.
-  })),
+  }))
 );
 ```
 
@@ -7997,7 +8017,7 @@ Calling paginated APIs is a classic programming challenge. It often involves wri
 This example simulates fetching users from a paginated API. The `fetchUsersPage` function gets one page of data and returns the next page number. `Stream.paginateEffect` uses this function to create a single stream of all users across all pages.
 
 ```typescript
-import { Effect, Stream, Chunk, Option } from 'effect';
+import { Effect, Stream, Chunk, Option } from "effect";
 
 // --- Mock Paginated API ---
 interface User {
@@ -8007,7 +8027,7 @@ interface User {
 
 // Define FetchError as a class with a literal type tag
 class FetchError {
-  readonly _tag = 'FetchError' as const;
+  readonly _tag = "FetchError" as const;
   constructor(readonly message: string) {}
 }
 
@@ -8029,7 +8049,7 @@ const fetchUsersPage = (
 
     // Simulate potential API errors
     if (page < 1) {
-      return yield* Effect.fail(fetchError('Invalid page number'));
+      return yield* Effect.fail(fetchError("Invalid page number"));
     }
 
     const users = Chunk.fromIterable(allUsers.slice(offset, offset + pageSize));
@@ -8050,10 +8070,8 @@ const userStream = Stream.paginateEffect(1, fetchUsersPage);
 const program = userStream.pipe(
   Stream.runCollect,
   Effect.map((users) => users.length),
-  Effect.tap((totalUsers) => 
-    Effect.log(`Total users fetched: ${totalUsers}`)
-  ),
-  Effect.catchTag('FetchError', (error) => 
+  Effect.tap((totalUsers) => Effect.log(`Total users fetched: ${totalUsers}`)),
+  Effect.catchTag("FetchError", (error) =>
     Effect.succeed(`Error fetching users: ${error.message}`)
   )
 );
@@ -8082,7 +8100,7 @@ Output:
 The anti-pattern is to write manual, imperative logic to handle the pagination loop. This code is stateful, harder to read, and not composable.
 
 ```typescript
-import { Effect, Chunk, Option } from 'effect';
+import { Effect, Chunk, Option } from "effect";
 // ... same mock API setup ...
 
 const fetchAllUsersManually = (): Effect.Effect<Chunk.Chunk<User>, Error> =>
@@ -8146,10 +8164,10 @@ console.log(HashSet.has(set, user2)); // true (structural equality)
 // Create an array and use structural equality
 const users = [user1, user3];
 console.log(users.some((u) => Equal.equals(u, user2))); // true
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.Class.getEqual` derives an equality type class for your data type.
 - `Data.Class.getOrder` derives an ordering type class, useful for sorting.
 - `Data.Class.getHash` derives a hash function for use in sets and maps.
@@ -8169,12 +8187,13 @@ Relying on reference equality, ad-hoc comparison functions, or not providing typ
 
 **Why:**
 
-In Effect, you don't create service instances directly. Instead, you define `Layer`s that describe *how* to create them. This separation of declaration from implementation is the core of Effect's powerful dependency injection (DI) system.
+In Effect, you don't create service instances directly. Instead, you define `Layer`s that describe _how_ to create them. This separation of declaration from implementation is the core of Effect's powerful dependency injection (DI) system.
 
 This approach has several key benefits:
--   **Composability:** You can combine small, focused layers into a complete application layer (`Layer.merge`, `Layer.provide`).
--   **Declarative Dependencies:** A layer's type signature explicitly documents its own dependencies, making your application's architecture clear and self-documenting.
--   **Testability:** For testing, you can easily swap a "live" layer (e.g., one that connects to a real database) with a "test" layer (one that provides mock data) without changing any of your business logic.
+
+- **Composability:** You can combine small, focused layers into a complete application layer (`Layer.merge`, `Layer.provide`).
+- **Declarative Dependencies:** A layer's type signature explicitly documents its own dependencies, making your application's architecture clear and self-documenting.
+- **Testability:** For testing, you can easily swap a "live" layer (e.g., one that connects to a real database) with a "test" layer (one that provides mock data) without changing any of your business logic.
 
 ---
 
@@ -8186,31 +8205,25 @@ Here, we define a `Notifier` service that requires a `Logger` to be built. The `
 import { Effect } from "effect";
 
 // Define the Logger service with a default implementation
-export class Logger extends Effect.Service<Logger>()(
-  "Logger",
-  {
-    // Provide a synchronous implementation
-    sync: () => ({
-      log: (msg: string) => Effect.log(`LOG: ${msg}`)
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("Logger", {
+  // Provide a synchronous implementation
+  sync: () => ({
+    log: (msg: string) => Effect.log(`LOG: ${msg}`),
+  }),
+}) {}
 
 // Define the Notifier service that depends on Logger
-export class Notifier extends Effect.Service<Notifier>()(
-  "Notifier",
-  {
-    // Provide an implementation that requires Logger
-    effect: Effect.gen(function* () {
-      const logger = yield* Logger;
-      return {
-        notify: (msg: string) => logger.log(`Notifying: ${msg}`)
-      };
-    }),
-    // Specify dependencies
-    dependencies: [Logger.Default]
-  }
-) {}
+export class Notifier extends Effect.Service<Notifier>()("Notifier", {
+  // Provide an implementation that requires Logger
+  effect: Effect.gen(function* () {
+    const logger = yield* Logger;
+    return {
+      notify: (msg: string) => logger.log(`Notifying: ${msg}`),
+    };
+  }),
+  // Specify dependencies
+  dependencies: [Logger.Default],
+}) {}
 
 // Create a program that uses both services
 const program = Effect.gen(function* () {
@@ -8219,12 +8232,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with the default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Notifier.Default
-  )
-);
+Effect.runPromise(Effect.provide(program, Notifier.Default));
 ```
 
 ---
@@ -8236,12 +8244,16 @@ Manually creating and passing service instances around. This is the "poor man's 
 ```typescript
 // ❌ WRONG: Manual instantiation and prop-drilling.
 class LoggerImpl {
-  log(msg: string) { console.log(msg); }
+  log(msg: string) {
+    console.log(msg);
+  }
 }
 
 class NotifierImpl {
   constructor(private logger: LoggerImpl) {}
-  notify(msg: string) { this.logger.log(msg); }
+  notify(msg: string) {
+    this.logger.log(msg);
+  }
 }
 
 // Dependencies must be created and passed in manually.
@@ -8285,7 +8297,8 @@ const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
 const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Chunk` is immutable and optimized for performance.
 - It supports efficient batch operations, concatenation, and transformation.
 - Use `Chunk` in data pipelines, streaming, and concurrent scenarios.
@@ -8355,16 +8368,18 @@ function* largeDataSource() {
 // ❌ DANGEROUS: `Chunk.fromIterable` will try to pull all 1,000,000 items
 // from the generator and load them into memory at once before the stream
 // even starts. This can lead to high memory usage or a crash.
-const programWithChunk = Stream.fromChunk(Chunk.fromIterable(largeDataSource())).pipe(
+const programWithChunk = Stream.fromChunk(
+  Chunk.fromIterable(largeDataSource())
+).pipe(
   Stream.map((n) => n * 2),
-  Stream.runDrain,
+  Stream.runDrain
 );
 
 // ✅ CORRECT: `Stream.fromIterable` pulls items from the data source lazily,
 // one at a time (or in small batches), maintaining constant memory usage.
 const programWithIterable = Stream.fromIterable(largeDataSource()).pipe(
   Stream.map((n) => n * 2),
-  Stream.runDrain,
+  Stream.runDrain
 );
 ```
 
@@ -8477,7 +8492,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -8507,33 +8521,28 @@ The `.Default` layer is the canonical way to provide a service in a test environ
 import { Effect } from "effect";
 
 // Define MyService using Effect.Service pattern
-class MyService extends Effect.Service<MyService>()(
-  "MyService",
-  {
-    sync: () => ({
-      doSomething: () => 
-        Effect.succeed("done").pipe(
-          Effect.tap(() => Effect.log("MyService did something!"))
-        )
-    })
-  }
-) {}
+class MyService extends Effect.Service<MyService>()("MyService", {
+  sync: () => ({
+    doSomething: () =>
+      Effect.succeed("done").pipe(
+        Effect.tap(() => Effect.log("MyService did something!"))
+      ),
+  }),
+}) {}
 
 // Create a program that uses MyService
 const program = Effect.gen(function* () {
   yield* Effect.log("Getting MyService...");
   const service = yield* MyService;
-  
+
   yield* Effect.log("Calling doSomething()...");
   const result = yield* service.doSomething();
-  
+
   yield* Effect.log(`Result: ${result}`);
 });
 
 // Run the program with default service implementation
-Effect.runPromise(
-  Effect.provide(program, MyService.Default)
-);
+Effect.runPromise(Effect.provide(program, MyService.Default));
 ```
 
 **Explanation:**  
@@ -8590,7 +8599,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
   sync: () => ({
     validateUser: (data: unknown) => S.decodeUnknown(UserSchema)(data),
   }),
-}) { }
+}) {}
 
 // Define HTTP server service interface
 interface HttpServerInterface {
@@ -8691,7 +8700,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
   }),
   // Specify dependencies
   dependencies: [UserService.Default],
-}) { }
+}) {}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
@@ -8722,7 +8731,6 @@ To test:
 - POST http://localhost:3456/users with body {"name": "Paul"}
   -> Returns 400 Bad Request with error message about missing email field
 */
-
 ```
 
 **Anti-Pattern:**
@@ -8730,28 +8738,28 @@ To test:
 The anti-pattern is to manually parse the JSON and then write imperative validation checks. This approach is verbose, error-prone, and not type-safe.
 
 ```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
 const createUserRoute = Http.router.post(
-  '/users',
+  "/users",
   Http.request.json.pipe(
     // Http.request.json returns Effect<unknown, ...>
     Effect.flatMap((body) => {
       // Manually check the type and properties of the body.
       if (
-        typeof body === 'object' &&
+        typeof body === "object" &&
         body !== null &&
-        'name' in body &&
-        typeof body.name === 'string' &&
-        'email' in body &&
-        typeof body.email === 'string'
+        "name" in body &&
+        typeof body.name === "string" &&
+        "email" in body &&
+        typeof body.email === "string"
       ) {
         // The type is still not safely inferred here without casting.
         return Http.response.text(`Successfully created user: ${body.name}`);
       } else {
         // Manually create and return a generic error response.
-        return Http.response.text('Invalid request body', { status: 400 });
+        return Http.response.text("Invalid request body", { status: 400 });
       }
     })
   )
@@ -8759,9 +8767,9 @@ const createUserRoute = Http.router.post(
 
 const app = Http.router.empty.pipe(Http.router.addRoute(createUserRoute));
 
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```
@@ -8808,10 +8816,10 @@ parseEmail("user@example.com").pipe(
     onFailure: (err) => console.error(err),
   })
 );
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Schema` is used to define validation logic for the branded type.
 - `Brand.schema<Email>()` attaches the brand to the schema, so only validated values can be constructed as `Email`.
 - This pattern ensures both compile-time and runtime safety.
@@ -8854,7 +8862,8 @@ const asString = BigDecimal.format(BigDecimal.normalize(sum)); // "0.3"
 const asNumber = BigDecimal.unsafeToNumber(sum); // 0.3
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `BigDecimal` is immutable and supports precise decimal arithmetic.
 - Use it for domains where rounding errors are unacceptable (e.g., finance, billing, scientific data).
 - Avoids the pitfalls of floating-point math in JavaScript.
@@ -8902,10 +8911,10 @@ const program = Effect.gen(function* () {
 
   return { now, inOneHour, oneHourAgo, iso, isBefore };
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `DateTime` is immutable and time-zone-aware.
 - Supports parsing, formatting, arithmetic, and comparison.
 - Use for all date/time logic to avoid bugs with native `Date`.
@@ -8940,16 +8949,17 @@ const setB = HashSet.fromIterable([3, 4, 5]);
 const hasTwo = HashSet.has(setA, 2); // true
 
 // Union, intersection, difference
-const union = HashSet.union(setA, setB);         // HashSet {1, 2, 3, 4, 5}
+const union = HashSet.union(setA, setB); // HashSet {1, 2, 3, 4, 5}
 const intersection = HashSet.intersection(setA, setB); // HashSet {3}
-const difference = HashSet.difference(setA, setB);     // HashSet {1, 2}
+const difference = HashSet.difference(setA, setB); // HashSet {1, 2}
 
 // Add and remove elements
-const withSix = HashSet.add(setA, 6);    // HashSet {1, 2, 3, 6}
+const withSix = HashSet.add(setA, 6); // HashSet {1, 2, 3, 6}
 const withoutOne = HashSet.remove(setA, 1); // HashSet {2, 3}
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `HashSet` is immutable and supports efficient set operations.
 - Use it for membership checks, set algebra, and modeling unique collections.
 - Safe for concurrent and functional workflows.
@@ -9066,7 +9076,9 @@ const program = Effect.gen(function* () {
     try {
       return yield* db.getUserById(123);
     } catch (error) {
-      yield* Effect.logError(`Failed to get user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      yield* Effect.logError(
+        `Failed to get user: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       return { id: -1, name: "Error" };
     }
   });
@@ -9084,7 +9096,9 @@ const program = Effect.gen(function* () {
         );
         return { id: 404, name: "Not Found" };
       }
-      yield* Effect.logError(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      yield* Effect.logError(
+        `Unexpected error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       return { id: -1, name: "Error" };
     }
   });
@@ -9108,7 +9122,9 @@ const program = Effect.gen(function* () {
         try {
           return yield* testDb.getUserById(1);
         } catch (error) {
-          yield* Effect.logError(`Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          yield* Effect.logError(
+            `Test failed: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
           return { id: -1, name: "Test Error" };
         }
       });
@@ -9120,7 +9136,7 @@ const program = Effect.gen(function* () {
           return yield* testDb.getUserById(404);
         } catch (error) {
           yield* Effect.logInfo(
-            `✅ Test service properly threw NotFoundError: ${error instanceof Error ? error.message : 'Unknown error'}`
+            `✅ Test service properly threw NotFoundError: ${error instanceof Error ? error.message : "Unknown error"}`
           );
           return { id: 404, name: "Test Not Found" };
         }
@@ -9140,9 +9156,12 @@ const program = Effect.gen(function* () {
 
 // Run the program with the default database service
 Effect.runPromise(
-  Effect.provide(program, DatabaseService.Default) as Effect.Effect<void, never, never>
+  Effect.provide(program, DatabaseService.Default) as Effect.Effect<
+    void,
+    never,
+    never
+  >
 );
-
 ```
 
 **Explanation:**  
@@ -9166,12 +9185,13 @@ Any action where the test dictates a change to the application code. Do not modi
 
 You often want to add functionality like caching, logging, or metrics to a service without polluting its core business logic. The wrapper layer pattern is a clean way to achieve this.
 
-By creating a layer that *requires* the original service, you can get an instance of it from the context, and then provide a *new* implementation of that same service that calls the original.
+By creating a layer that _requires_ the original service, you can get an instance of it from the context, and then provide a _new_ implementation of that same service that calls the original.
 
 This approach is powerful because:
--   **It's Non-Invasive:** The original service (`DatabaseLive`) remains completely unchanged.
--   **It's Composable:** You can apply multiple wrappers. You could wrap a database layer with a caching layer, then wrap that with a metrics layer.
--   **It's Explicit:** The composition is clearly defined at the application's top level where you build your final `AppLayer`.
+
+- **It's Non-Invasive:** The original service (`DatabaseLive`) remains completely unchanged.
+- **It's Composable:** You can apply multiple wrappers. You could wrap a database layer with a caching layer, then wrap that with a metrics layer.
+- **It's Explicit:** The composition is clearly defined at the application's top level where you build your final `AppLayer`.
 
 ---
 
@@ -9245,7 +9265,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(Effect.provide(program, AppLayer));
-
 ```
 
 ---
@@ -9266,7 +9285,7 @@ const WeatherServiceWithInlineCache = Layer.effect(
         return Effect.succeed("...");
       },
     });
-  }),
+  })
 );
 ```
 
@@ -9281,8 +9300,9 @@ const WeatherServiceWithInlineCache = Layer.effect(
 **Why:**
 
 This pattern demonstrates the complete lifecycle of a long-running Effect application.
+
 1.  **Setup Phase:** You define all your application's dependencies (database connections, clients, config) in `Layer`s and compose them into a single `AppLayer`.
-2.  **Runtime Creation:** You use `Layer.toRuntime(AppLayer)` to create a highly-optimized `Runtime` object. This is done *once* when the server starts.
+2.  **Runtime Creation:** You use `Layer.toRuntime(AppLayer)` to create a highly-optimized `Runtime` object. This is done _once_ when the server starts.
 3.  **Request Handling:** For each incoming request, you create an `Effect` that describes the work to be done (e.g., parse request, call services, create response).
 4.  **Execution:** You use the `Runtime` you created in the setup phase to execute the request-handling `Effect` using `Runtime.runPromise`.
 
@@ -9295,29 +9315,29 @@ This architecture ensures that your request handling logic is fully testable, be
 This example creates a simple server with a `Greeter` service. The server starts, creates a runtime containing the `Greeter`, and then uses that runtime to handle requests.
 
 ```typescript
-import { HttpServer, HttpServerResponse } from "@effect/platform"
-import { NodeHttpServer } from "@effect/platform-node"
-import { Duration, Effect, Fiber, Layer } from "effect"
-import { createServer } from "node:http"
+import { HttpServer, HttpServerResponse } from "@effect/platform";
+import { NodeHttpServer } from "@effect/platform-node";
+import { Duration, Effect, Fiber, Layer } from "effect";
+import { createServer } from "node:http";
 
 // Create a server layer using Node's built-in HTTP server
-const ServerLive = NodeHttpServer.layer(() => createServer(), { port: 3001 })
+const ServerLive = NodeHttpServer.layer(() => createServer(), { port: 3001 });
 
 // Define your HTTP app (here responding "Hello World" to every request)
 const app = Effect.gen(function* () {
-  yield* Effect.logInfo("Received HTTP request")
-  return yield* HttpServerResponse.text("Hello World")
-})
+  yield* Effect.logInfo("Received HTTP request");
+  return yield* HttpServerResponse.text("Hello World");
+});
 
 const serverLayer = HttpServer.serve(app).pipe(Layer.provide(ServerLive));
 
 const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Server starting on http://localhost:3001")
-  const fiber = yield* Layer.launch(serverLayer).pipe(Effect.fork)
-  yield* Effect.sleep(Duration.seconds(2))
-  yield* Fiber.interrupt(fiber)
-  yield* Effect.logInfo("Server shutdown complete")
-})
+  yield* Effect.logInfo("Server starting on http://localhost:3001");
+  const fiber = yield* Layer.launch(serverLayer).pipe(Effect.fork);
+  yield* Effect.sleep(Duration.seconds(2));
+  yield* Fiber.interrupt(fiber);
+  yield* Effect.logInfo("Server shutdown complete");
+});
 
 Effect.runPromise(program as unknown as Effect.Effect<void, unknown, never>);
 ```
@@ -9336,7 +9356,7 @@ import { GreeterLive } from "./somewhere";
 // ❌ WRONG: This rebuilds the GreeterLive layer on every request.
 const server = http.createServer((_req, res) => {
   const requestEffect = Effect.succeed("Hello!").pipe(
-    Effect.provide(GreeterLive), // Providing the layer here is inefficient
+    Effect.provide(GreeterLive) // Providing the layer here is inefficient
   );
   Effect.runPromise(requestEffect).then((msg) => res.end(msg));
 });
@@ -9361,17 +9381,14 @@ finalizers are executed upon completion or interruption.
 ```typescript
 import { Effect, Layer } from "effect";
 
-class DatabasePool extends Effect.Service<DatabasePool>()(
-  "DbPool",
-  {
-    effect: Effect.gen(function* () {
-      yield* Effect.log("Acquiring pool");
-      return {
-        query: () => Effect.succeed("result")
-      };
-    })
-  }
-) {}
+class DatabasePool extends Effect.Service<DatabasePool>()("DbPool", {
+  effect: Effect.gen(function* () {
+    yield* Effect.log("Acquiring pool");
+    return {
+      query: () => Effect.succeed("result"),
+    };
+  }),
+}) {}
 
 // Create a program that uses the DatabasePool service
 const program = Effect.gen(function* () {
@@ -9382,10 +9399,7 @@ const program = Effect.gen(function* () {
 
 // Run the program with the service implementation
 Effect.runPromise(
-  program.pipe(
-    Effect.provide(DatabasePool.Default),
-    Effect.scoped
-  )
+  program.pipe(Effect.provide(DatabasePool.Default), Effect.scoped)
 );
 ```
 
@@ -9418,19 +9432,14 @@ long-running applications.
 ```typescript
 import { Effect, Layer, Runtime } from "effect";
 
-class GreeterService extends Effect.Service<GreeterService>()(
-  "Greeter",
-  {
-    sync: () => ({
-      greet: (name: string) => Effect.sync(() => `Hello ${name}`)
-    })
-  }
-) {}
+class GreeterService extends Effect.Service<GreeterService>()("Greeter", {
+  sync: () => ({
+    greet: (name: string) => Effect.sync(() => `Hello ${name}`),
+  }),
+}) {}
 
 const runtime = Effect.runSync(
-  Layer.toRuntime(GreeterService.Default).pipe(
-    Effect.scoped
-  )
+  Layer.toRuntime(GreeterService.Default).pipe(Effect.scoped)
 );
 
 // In a server, you would reuse `run` for every request.
@@ -9551,9 +9560,7 @@ const program = Effect.gen(function* () {
 // - Backpressure prevents resource exhaustion
 // - Interruption allows for graceful shutdown
 Effect.runPromise(program);
-
 ```
-
 
 A publisher sends an event, and multiple subscribers react to it independently.
 
@@ -9571,9 +9578,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`AUDIT: Received event: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Subscriber 2: The "Notifier" service
@@ -9584,9 +9591,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`NOTIFIER: Sending notification for: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Give subscribers time to start
@@ -9615,11 +9622,12 @@ const program = Effect.gen(function* () {
 
   // Consumer has to constantly poll the array to see if it's empty.
   const consumer = Ref.get(queueRef).pipe(
-    Effect.flatMap((q) =>
-      q.length > 0
-        ? Ref.set(queueRef, q.slice(1)).pipe(Effect.as(q[0]))
-        : Effect.sleep("1 second").pipe(Effect.flatMap(() => consumer)), // Inefficient polling
-    ),
+    Effect.flatMap(
+      (q) =>
+        q.length > 0
+          ? Ref.set(queueRef, q.slice(1)).pipe(Effect.as(q[0]))
+          : Effect.sleep("1 second").pipe(Effect.flatMap(() => consumer)) // Inefficient polling
+    )
   );
 });
 ```
@@ -9650,7 +9658,7 @@ import { Effect, Fiber } from "effect";
 // A server that listens for requests forever
 const server = Effect.log("Server received a request.").pipe(
   Effect.delay("1 second"),
-  Effect.forever,
+  Effect.forever
 );
 
 Effect.runSync(Effect.log("Starting server..."));
@@ -9682,7 +9690,10 @@ import { Effect, Fiber } from "effect";
 const someEffect = Effect.succeed(42);
 
 // ❌ WRONG: This is just a complicated way to write `Effect.runPromise(someEffect)`
-const resultPromise = Effect.runFork(someEffect).pipe(Fiber.join, Effect.runPromise);
+const resultPromise = Effect.runFork(someEffect).pipe(
+  Fiber.join,
+  Effect.runPromise
+);
 ```
 
 ---
@@ -9695,7 +9706,7 @@ const resultPromise = Effect.runFork(someEffect).pipe(Fiber.join, Effect.runProm
 
 **Why:**
 
-The `Cause` object explains *why* an effect failed. A `Fail` is an expected
+The `Cause` object explains _why_ an effect failed. A `Fail` is an expected
 error (e.g., `ValidationError`). A `Die` is an unexpected defect (e.g., a
 thrown exception). They should be handled differently.
 
@@ -9735,19 +9746,21 @@ class DatabaseService extends Effect.Service<DatabaseService>()(
   {
     sync: () => ({
       // Connect to database with proper error handling
-      connect: (config: DatabaseConfig): Effect.Effect<DatabaseConnection, DatabaseError> =>
+      connect: (
+        config: DatabaseConfig
+      ): Effect.Effect<DatabaseConnection, DatabaseError> =>
         Effect.gen(function* () {
           yield* Effect.logInfo(`Connecting to database: ${config.url}`);
-          
+
           if (!config.url) {
             const error = new DatabaseError({
               operation: "connect",
-              details: "Missing URL"
+              details: "Missing URL",
             });
             yield* Effect.logError(`Database error: ${JSON.stringify(error)}`);
             return yield* Effect.fail(error);
           }
-          
+
           // Simulate unexpected errors
           if (config.url === "invalid") {
             yield* Effect.logError("Invalid connection string");
@@ -9755,136 +9768,145 @@ class DatabaseService extends Effect.Service<DatabaseService>()(
               throw new Error("Failed to parse connection string");
             });
           }
-          
+
           if (config.url === "timeout") {
             yield* Effect.logError("Connection timeout");
             return yield* Effect.sync(() => {
               throw new Error("Connection timed out");
             });
           }
-          
+
           yield* Effect.logInfo("Database connection successful");
           return { success: true };
-        })
-    })
+        }),
+    }),
   }
 ) {}
 
 // Define user service
-class UserService extends Effect.Service<UserService>()(
-  "UserService",
-  {
-    sync: () => ({
-      // Parse user data with validation
-      parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`Parsing user data: ${JSON.stringify(input)}`);
-          
-          try {
-            if (typeof input !== "object" || !input) {
-              const error = new ValidationError({
-                field: "input",
-                message: "Invalid input type"
-              });
-              yield* Effect.logWarning(`Validation error: ${JSON.stringify(error)}`);
-              throw error;
-            }
-            
-            const data = input as Record<string, unknown>;
-            
-            if (typeof data.id !== "string" || typeof data.name !== "string") {
-              const error = new ValidationError({
-                field: "input",
-                message: "Missing required fields"
-              });
-              yield* Effect.logWarning(`Validation error: ${JSON.stringify(error)}`);
-              throw error;
-            }
-            
-            const user = { id: data.id, name: data.name };
-            yield* Effect.logInfo(`Successfully parsed user: ${JSON.stringify(user)}`);
-            return user;
-          } catch (e) {
-            if (e instanceof ValidationError) {
-              return yield* Effect.fail(e);
-            }
-            yield* Effect.logError(`Unexpected error: ${e instanceof Error ? e.message : String(e)}`);
-            throw e;
+class UserService extends Effect.Service<UserService>()("UserService", {
+  sync: () => ({
+    // Parse user data with validation
+    parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`Parsing user data: ${JSON.stringify(input)}`);
+
+        try {
+          if (typeof input !== "object" || !input) {
+            const error = new ValidationError({
+              field: "input",
+              message: "Invalid input type",
+            });
+            yield* Effect.logWarning(
+              `Validation error: ${JSON.stringify(error)}`
+            );
+            throw error;
           }
-        })
-    })
-  }
-) {}
+
+          const data = input as Record<string, unknown>;
+
+          if (typeof data.id !== "string" || typeof data.name !== "string") {
+            const error = new ValidationError({
+              field: "input",
+              message: "Missing required fields",
+            });
+            yield* Effect.logWarning(
+              `Validation error: ${JSON.stringify(error)}`
+            );
+            throw error;
+          }
+
+          const user = { id: data.id, name: data.name };
+          yield* Effect.logInfo(
+            `Successfully parsed user: ${JSON.stringify(user)}`
+          );
+          return user;
+        } catch (e) {
+          if (e instanceof ValidationError) {
+            return yield* Effect.fail(e);
+          }
+          yield* Effect.logError(
+            `Unexpected error: ${e instanceof Error ? e.message : String(e)}`
+          );
+          throw e;
+        }
+      }),
+  }),
+}) {}
 
 // Define test service
-class TestService extends Effect.Service<TestService>()(
-  "TestService",
-  {
-    sync: () => {
-      // Create instance methods
-      const printCause = (prefix: string, cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`\n=== ${prefix} ===`);
-          
-          if (Cause.isDie(cause)) {
-            const defect = Cause.failureOption(cause);
-            if (defect._tag === "Some") {
-              const error = defect.value as Error;
-              yield* Effect.logError("Defect (unexpected error)");
-              yield* Effect.logError(`Message: ${error.message}`);
-              yield* Effect.logError(`Stack: ${error.stack?.split('\n')[1]?.trim() ?? 'N/A'}`);
-            }
-          } else if (Cause.isFailure(cause)) {
-            const error = Cause.failureOption(cause);
-            yield* Effect.logWarning("Expected failure");
-            yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
+class TestService extends Effect.Service<TestService>()("TestService", {
+  sync: () => {
+    // Create instance methods
+    const printCause = (
+      prefix: string,
+      cause: Cause.Cause<unknown>
+    ): Effect.Effect<void, never, never> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`\n=== ${prefix} ===`);
+
+        if (Cause.isDie(cause)) {
+          const defect = Cause.failureOption(cause);
+          if (defect._tag === "Some") {
+            const error = defect.value as Error;
+            yield* Effect.logError("Defect (unexpected error)");
+            yield* Effect.logError(`Message: ${error.message}`);
+            yield* Effect.logError(
+              `Stack: ${error.stack?.split("\n")[1]?.trim() ?? "N/A"}`
+            );
           }
+        } else if (Cause.isFailure(cause)) {
+          const error = Cause.failureOption(cause);
+          yield* Effect.logWarning("Expected failure");
+          yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
+        }
 
-          // Don't return an Effect inside Effect.gen, just return the value directly
-          return void 0;
-        });
+        // Don't return an Effect inside Effect.gen, just return the value directly
+        return void 0;
+      });
 
-      const runScenario = <E, A extends { [key: string]: any }>(
-        name: string,
-        program: Effect.Effect<A, E>
-      ): Effect.Effect<void, never, never> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`\n=== Testing: ${name} ===`);
-          
-          type TestError = { readonly _tag: "error"; readonly cause: Cause.Cause<E> };
-          
-          const result = yield* Effect.catchAllCause(
-            program,
-            (cause) => Effect.succeed({ _tag: "error" as const, cause } as TestError)
-          );
-          
-          if ("cause" in result) {
-            yield* printCause("Error details", result.cause);
-          } else {
-            yield* Effect.logInfo(`Success: ${JSON.stringify(result)}`);
-          }
+    const runScenario = <E, A extends { [key: string]: any }>(
+      name: string,
+      program: Effect.Effect<A, E>
+    ): Effect.Effect<void, never, never> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`\n=== Testing: ${name} ===`);
 
-          // Don't return an Effect inside Effect.gen, just return the value directly
-          return void 0;
-        });
+        type TestError = {
+          readonly _tag: "error";
+          readonly cause: Cause.Cause<E>;
+        };
 
-      // Return bound methods
-      return {
-        printCause,
-        runScenario
-      };
-    }
-  }
-) {}
+        const result = yield* Effect.catchAllCause(program, (cause) =>
+          Effect.succeed({ _tag: "error" as const, cause } as TestError)
+        );
+
+        if ("cause" in result) {
+          yield* printCause("Error details", result.cause);
+        } else {
+          yield* Effect.logInfo(`Success: ${JSON.stringify(result)}`);
+        }
+
+        // Don't return an Effect inside Effect.gen, just return the value directly
+        return void 0;
+      });
+
+    // Return bound methods
+    return {
+      printCause,
+      runScenario,
+    };
+  },
+}) {}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
   const db = yield* DatabaseService;
   const users = yield* UserService;
   const test = yield* TestService;
-  
+
   yield* Effect.logInfo("=== Starting Error Handling Tests ===");
-  
+
   // Test expected database errors
   yield* test.runScenario(
     "Expected database error",
@@ -9899,7 +9921,7 @@ const program = Effect.gen(function* () {
       return result;
     })
   );
-  
+
   // Test unexpected connection errors
   yield* test.runScenario(
     "Unexpected connection error",
@@ -9908,7 +9930,7 @@ const program = Effect.gen(function* () {
         db.connect({ url: "invalid" }),
         Schedule.recurs(3)
       ).pipe(
-        Effect.catchAllCause(cause =>
+        Effect.catchAllCause((cause) =>
           Effect.gen(function* () {
             yield* Effect.logError("Failed after 3 retries");
             yield* Effect.logError(Cause.pretty(cause));
@@ -9919,38 +9941,45 @@ const program = Effect.gen(function* () {
       return result;
     })
   );
-  
+
   // Test user validation with recovery
   yield* test.runScenario(
     "Valid user data",
     Effect.gen(function* () {
-      const result = yield* users.parseUser({ id: "1", name: "John" }).pipe(
-        Effect.orElse(() => 
-          Effect.succeed({ id: "default", name: "Default User" })
-        )
-      );
+      const result = yield* users
+        .parseUser({ id: "1", name: "John" })
+        .pipe(
+          Effect.orElse(() =>
+            Effect.succeed({ id: "default", name: "Default User" })
+          )
+        );
       return result;
     })
   );
-  
+
   // Test concurrent error handling with timeout
   yield* test.runScenario(
     "Concurrent operations",
     Effect.gen(function* () {
-      const results = yield* Effect.all([
-        db.connect({ url: "" }).pipe(
-          Effect.timeout(Duration.seconds(1)),
-          Effect.catchAll(() => Effect.succeed({ success: true }))
-        ),
-        users.parseUser({ id: "invalid" }).pipe(
-          Effect.timeout(Duration.seconds(1)),
-          Effect.catchAll(() => Effect.succeed({ id: "timeout", name: "Timeout" }))
-        )
-      ], { concurrency: 2 });
+      const results = yield* Effect.all(
+        [
+          db.connect({ url: "" }).pipe(
+            Effect.timeout(Duration.seconds(1)),
+            Effect.catchAll(() => Effect.succeed({ success: true }))
+          ),
+          users.parseUser({ id: "invalid" }).pipe(
+            Effect.timeout(Duration.seconds(1)),
+            Effect.catchAll(() =>
+              Effect.succeed({ id: "timeout", name: "Timeout" })
+            )
+          ),
+        ],
+        { concurrency: 2 }
+      );
       return results;
     })
   );
-  
+
   yield* Effect.logInfo("\n=== Error Handling Tests Complete ===");
 
   // Don't return an Effect inside Effect.gen, just return the value directly
@@ -9961,10 +9990,7 @@ const program = Effect.gen(function* () {
 Effect.runPromise(
   Effect.provide(
     Effect.provide(
-      Effect.provide(
-        program,
-        TestService.Default
-      ),
+      Effect.provide(program, TestService.Default),
       DatabaseService.Default
     ),
     UserService.Default
@@ -9991,7 +10017,7 @@ unexpected defects, masking critical bugs as recoverable errors.
 
 **Why:**
 
-Traditional error handling often loses information about *why* a failure occurred.  
+Traditional error handling often loses information about _why_ a failure occurred.  
 `Cause` preserves the full error context, enabling advanced debugging, error reporting, and robust recovery strategies.
 
 **Good Example:**
@@ -10022,10 +10048,10 @@ const handled = program.pipe(
     })
   )
 );
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
 - Use `Cause.pretty` for human-readable error traces.
 - Enables advanced error handling and debugging.
@@ -10097,7 +10123,7 @@ const server = Effect.gen(function* () {
 
   // Start server with error handling
   yield* Effect.async<void, Error>((resume) => {
-    httpServer.once('error', (err: Error) => {
+    httpServer.once("error", (err: Error) => {
       resume(Effect.fail(new Error(`Failed to start server: ${err.message}`)));
     });
 
@@ -10121,7 +10147,6 @@ Effect.runPromise(app).catch((error) => {
   Effect.runSync(Effect.logError("Application error: " + error));
   process.exit(1);
 });
-
 ```
 
 ---
@@ -10160,7 +10185,10 @@ import { Effect } from "effect";
 import { trace, context, SpanStatusCode } from "@opentelemetry/api";
 
 // Wrap an Effect.withSpan to export to OpenTelemetry
-function withOtelSpan<T>(name: string, effect: Effect.Effect<unknown, T, unknown>) {
+function withOtelSpan<T>(
+  name: string,
+  effect: Effect.Effect<unknown, T, unknown>
+) {
   return Effect.gen(function* () {
     const otelSpan = trace.getTracer("default").startSpan(name);
     try {
@@ -10177,13 +10205,17 @@ function withOtelSpan<T>(name: string, effect: Effect.Effect<unknown, T, unknown
 }
 
 // Usage
-const program = withOtelSpan("fetchUser", Effect.sync(() => {
-  // ...fetch user logic
-  return { id: 1, name: "Alice" };
-}));
+const program = withOtelSpan(
+  "fetchUser",
+  Effect.sync(() => {
+    // ...fetch user logic
+    return { id: 1, name: "Alice" };
+  })
+);
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - Start an OpenTelemetry span when entering an Effectful operation.
 - Set status and attributes as needed.
 - End the span when the operation completes or fails.
@@ -10220,7 +10252,7 @@ import { Effect, Scope } from "effect";
 
 // Simulate acquiring and releasing a resource
 const acquireFile = Effect.log("File opened").pipe(
-  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) }),
+  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) })
 );
 const releaseFile = Effect.log("File closed.");
 
@@ -10287,7 +10319,7 @@ What happens if a pipeline processing a file fails halfway through? In a naive i
 
 `Stream.acquireRelease` is Effect's robust solution to this problem. It's built on `Scope`, Effect's fundamental resource-management tool.
 
-1.  **Guaranteed Cleanup**: You provide an `acquire` effect to open the resource and a `release` effect to close it. Effect guarantees that the `release` effect will be called when the stream terminates, for *any* reason: successful completion, a processing failure, or even external interruption.
+1.  **Guaranteed Cleanup**: You provide an `acquire` effect to open the resource and a `release` effect to close it. Effect guarantees that the `release` effect will be called when the stream terminates, for _any_ reason: successful completion, a processing failure, or even external interruption.
 2.  **Declarative and Co-located**: The logic for a resource's entire lifecycle—acquisition, usage (the stream itself), and release—is defined in one place. This makes the code easier to understand and reason about compared to manual `try/finally` blocks.
 3.  **Prevents Resource Leaks**: It is the idiomatic way to build truly resilient pipelines that do not leak resources, which is essential for long-running, production-grade applications.
 4.  **Composability**: The resulting stream is just a normal `Stream`, which can be composed with any other stream operators.
@@ -10366,7 +10398,9 @@ const program = Effect.gen(function* () {
         );
       }
 
-      yield* Effect.log("✅ Processing completed with proper resource management");
+      yield* Effect.log(
+        "✅ Processing completed with proper resource management"
+      );
     })
   );
 });
@@ -10377,7 +10411,6 @@ Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
     Effect.runSync(Effect.logError("Unexpected error: " + error));
   }
 );
-
 ```
 
 **Anti-Pattern:**
@@ -10385,25 +10418,25 @@ Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
 The anti-pattern is to manage resources manually outside the stream's context. This is brittle and almost always leads to resource leaks when errors occur.
 
 ```typescript
-import { Effect, Stream } from 'effect';
-import { NodeFileSystem } from '@effect/platform-node';
-import * as path from 'node:path';
+import { Effect, Stream } from "effect";
+import { NodeFileSystem } from "@effect/platform-node";
+import * as path from "node:path";
 
 const program = Effect.gen(function* () {
   const fs = yield* NodeFileSystem;
-  const filePath = path.join(__dirname, 'temp-resource-bad.txt');
+  const filePath = path.join(__dirname, "temp-resource-bad.txt");
 
   // 1. Resource acquired manually before the stream
-  yield* fs.writeFileString(filePath, 'data 1\ndata 2');
+  yield* fs.writeFileString(filePath, "data 1\ndata 2");
   const readable = fs.createReadStream(filePath);
-  yield* Effect.log('Resource acquired manually.');
+  yield* Effect.log("Resource acquired manually.");
 
   const stream = Stream.fromReadable(() => readable).pipe(
-    Stream.decodeText('utf-8'),
+    Stream.decodeText("utf-8"),
     Stream.splitLines,
     // This stream will fail, causing the run to reject.
     Stream.map(() => {
-      throw new Error('Something went wrong!');
+      throw new Error("Something went wrong!");
     })
   );
 
@@ -10412,12 +10445,12 @@ const program = Effect.gen(function* () {
 
   // 3. This release logic is NEVER reached if the stream fails.
   yield* fs.remove(filePath);
-  yield* Effect.log('Resource released manually. (This will not be logged)');
+  yield* Effect.log("Resource released manually. (This will not be logged)");
 });
 
 Effect.runPromiseExit(program).then((exit) => {
-  if (exit._tag === 'Failure') {
-    console.log('\nPipeline failed. The temp file was NOT deleted.');
+  if (exit._tag === "Failure") {
+    console.log("\nPipeline failed. The temp file was NOT deleted.");
   }
 });
 ```
@@ -10435,6 +10468,7 @@ In this anti-pattern, the `fs.remove` call is unreachable because the `Stream.ru
 **Why:**
 
 While `Effect.acquireRelease` and `Layer.scoped` are sufficient for most use cases, sometimes you need more control. This pattern is essential when:
+
 1.  A single logical operation acquires multiple resources that need independent cleanup.
 2.  You are building a custom, complex `Layer` that orchestrates several dependent resources.
 3.  You need to understand the fundamental mechanism that powers all of Effect's resource management.
@@ -10449,11 +10483,11 @@ import { Effect, Console } from "effect";
 // Mocking a complex file operation
 const openFile = (path: string) =>
   Effect.succeed({ path, handle: Math.random() }).pipe(
-    Effect.tap((f) => Effect.log(`Opened ${f.path}`)),
+    Effect.tap((f) => Effect.log(`Opened ${f.path}`))
   );
 const createTempFile = (path: string) =>
   Effect.succeed({ path: `${path}.tmp`, handle: Math.random() }).pipe(
-    Effect.tap((f) => Effect.log(`Created temp file ${f.path}`)),
+    Effect.tap((f) => Effect.log(`Created temp file ${f.path}`))
   );
 const closeFile = (file: { path: string }) =>
   Effect.sync(() => Effect.log(`Closed ${file.path}`));
@@ -10463,9 +10497,8 @@ const deleteFile = (file: { path: string }) =>
 // This program acquires two resources (a file and a temp file)
 // and ensures both are cleaned up correctly using acquireRelease.
 const program = Effect.gen(function* () {
-  const file = yield* Effect.acquireRelease(
-    openFile("data.csv"),
-    (f) => closeFile(f)
+  const file = yield* Effect.acquireRelease(openFile("data.csv"), (f) =>
+    closeFile(f)
   );
 
   const tempFile = yield* Effect.acquireRelease(
@@ -10541,14 +10574,11 @@ This example shows a `BaseLayer` with a `Logger`, a `UserModule` that uses the `
 // src/core/Logger.ts
 import { Effect } from "effect";
 
-export class Logger extends Effect.Service<Logger>()(
-  "App/Core/Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.log(`[LOG] ${msg}`)
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("App/Core/Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.log(`[LOG] ${msg}`),
+  }),
+}) {}
 
 // src/features/User/UserRepository.ts
 export class UserRepository extends Effect.Service<UserRepository>()(
@@ -10562,11 +10592,11 @@ export class UserRepository extends Effect.Service<UserRepository>()(
           Effect.gen(function* () {
             yield* logger.log(`Finding user ${id}`);
             return { id, name: `User ${id}` };
-          })
+          }),
       };
     }),
     // Declare Logger dependency
-    dependencies: [Logger.Default]
+    dependencies: [Logger.Default],
   }
 ) {}
 
@@ -10578,12 +10608,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    UserRepository.Default
-  )
-);
+Effect.runPromise(Effect.provide(program, UserRepository.Default));
 
 const programWithLogging = Effect.gen(function* () {
   const result = yield* program;
@@ -10600,14 +10625,11 @@ Effect.runPromise(Effect.provide(programWithLogging, UserRepository.Default));
 // src/core/Logger.ts
 import { Effect } from "effect";
 
-export class Logger extends Effect.Service<Logger>()(
-  "App/Core/Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`))
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("App/Core/Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`)),
+  }),
+}) {}
 
 // src/features/User/UserRepository.ts
 export class UserRepository extends Effect.Service<UserRepository>()(
@@ -10621,11 +10643,11 @@ export class UserRepository extends Effect.Service<UserRepository>()(
           Effect.gen(function* () {
             yield* logger.log(`Finding user ${id}`);
             return { id, name: `User ${id}` };
-          })
+          }),
       };
     }),
     // Declare Logger dependency
-    dependencies: [Logger.Default]
+    dependencies: [Logger.Default],
   }
 ) {}
 
@@ -10637,12 +10659,9 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    UserRepository.Default
-  )
-).then(console.log);
+Effect.runPromise(Effect.provide(program, UserRepository.Default)).then(
+  console.log
+);
 ```
 
 ### 3. The Final Application Composition
@@ -10677,7 +10696,7 @@ const AppLayer = Layer.mergeAll(
   UserRepositoryLive,
   ProductServiceLive,
   ProductRepositoryLive,
-  BillingServiceLive,
+  BillingServiceLive
   // ...and 50 other services
 );
 ```
@@ -10709,7 +10728,7 @@ import { Effect, Schedule, Duration } from "effect";
 
 // The main task that takes a long time to complete
 const longRunningJob = Effect.log("Data processing complete!").pipe(
-  Effect.delay(Duration.seconds(10)),
+  Effect.delay(Duration.seconds(10))
 );
 
 // The polling task that checks the status
@@ -10776,9 +10795,10 @@ const program = Effect.gen(function* () {
 Unlike `Effect.all` or a direct `yield*`, which wait for the computation to complete, `Effect.fork` is a "fire and forget" operation. It starts the effect on a new, concurrent fiber and immediately returns control to the parent fiber.
 
 This is essential for managing long-running background tasks like:
--   A web server listener.
--   A message queue consumer.
--   A periodic cache cleanup job.
+
+- A web server listener.
+- A message queue consumer.
+- A periodic cache cleanup job.
 
 The returned `Fiber` object is your remote control for the background task. You can use `Fiber.interrupt` to safely stop it (ensuring all its finalizers are run) or `Fiber.join` to wait for it to complete at some later point.
 
@@ -10796,37 +10816,37 @@ import { Effect, Fiber } from "effect";
 // This simulates a background service like a health check or monitoring task
 const tickingClock = Effect.log("tick").pipe(
   Effect.delay("1 second"), // Wait 1 second between ticks
-  Effect.forever, // Repeat indefinitely - this creates an infinite effect
+  Effect.forever // Repeat indefinitely - this creates an infinite effect
 );
 
 const program = Effect.gen(function* () {
   yield* Effect.log("Forking the ticking clock into the background.");
-  
+
   // Start the clock, but don't wait for it.
   // Effect.fork creates a new fiber that runs concurrently with the main program
   // The main fiber continues immediately without waiting for the background task
   // This is essential for non-blocking background operations
   const clockFiber = yield* Effect.fork(tickingClock);
-  
+
   // At this point, we have two fibers running:
   // 1. The main fiber (this program)
   // 2. The background clock fiber (ticking every second)
 
   yield* Effect.log("Main process is now doing other work for 5 seconds...");
-  
+
   // Simulate the main application doing work
   // While this sleep happens, the background clock continues ticking
   // This demonstrates true concurrency - both fibers run simultaneously
   yield* Effect.sleep("5 seconds");
 
   yield* Effect.log("Main process is done. Interrupting the clock fiber.");
-  
+
   // Stop the background process.
   // Fiber.interrupt sends an interruption signal to the fiber
   // This allows the fiber to perform cleanup operations before terminating
   // Without this, the background task would continue running indefinitely
   yield* Fiber.interrupt(clockFiber);
-  
+
   // Important: Always clean up background fibers to prevent resource leaks
   // In a real application, you might want to:
   // 1. Use Fiber.join instead of interrupt to wait for graceful completion
@@ -10834,7 +10854,7 @@ const program = Effect.gen(function* () {
   // 3. Implement proper shutdown procedures
 
   yield* Effect.log("Program finished.");
-  
+
   // Key concepts demonstrated:
   // 1. Fork creates concurrent fibers without blocking
   // 2. Background tasks run independently of the main program
@@ -10891,11 +10911,12 @@ AI coding agents are powerful, but they often lack the deep, structural understa
 The MCP server solves this problem. It's a specialized server that runs alongside your application during development. It inspects your `AppLayer` and creates a real-time, queryable model of your entire application architecture.
 
 An AI agent can then connect to this MCP server to ask specific questions before generating code, such as:
--   "What services are available in the current context?"
--   "What is the full API of the `UserService`?"
--   "What errors can `UserRepository.findById` fail with?"
 
-By providing this live, ground-truth context, you transform your AI from a generic coding assistant into a specialized expert on *your* specific codebase, resulting in far more accurate and useful code generation and refactoring.
+- "What services are available in the current context?"
+- "What is the full API of the `UserService`?"
+- "What errors can `UserRepository.findById` fail with?"
+
+By providing this live, ground-truth context, you transform your AI from a generic coding assistant into a specialized expert on _your_ specific codebase, resulting in far more accurate and useful code generation and refactoring.
 
 ---
 
@@ -10904,6 +10925,7 @@ By providing this live, ground-truth context, you transform your AI from a gener
 The "Good Example" is the workflow this pattern enables.
 
 1.  **You run the MCP server** in your terminal, pointing it at your main `AppLayer`.
+
     ```bash
     npx @effect/mcp-server --layer src/layers.ts:AppLayer
     ```
@@ -10911,11 +10933,13 @@ The "Good Example" is the workflow this pattern enables.
 2.  **You configure your AI agent** (e.g., Cursor) to use the MCP server's endpoint (`http://localhost:3333`).
 
 3.  **You ask the AI a question** that requires deep context about your app:
+
     > "Refactor this code to use the `UserService` to fetch a user by ID and log the result with the `Logger`."
 
 4.  **The AI, in the background, queries the MCP server:**
-    -   It discovers that `UserService` and `Logger` are available in the `AppLayer`.
-    -   It retrieves the exact method signature for `UserService.getUser` and `Logger.log`.
+
+    - It discovers that `UserService` and `Logger` are available in the `AppLayer`.
+    - It retrieves the exact method signature for `UserService.getUser` and `Logger.log`.
 
 5.  **The AI generates correct, context-aware code** because it's not guessing; it's using the live architectural information provided by the MCP server.
 
@@ -10929,7 +10953,6 @@ const program = Effect.gen(function* () {
   const user = yield* userService.getUser("123");
   yield* Effect.log(`Found user: ${user.name}`);
 });
-
 ```
 
 ---
@@ -11008,7 +11031,6 @@ const program = Effect.gen(function* () {
 // Try running this with OS threads - you'd likely hit system limits around 1000-10000 threads
 // With fibers, 100k+ concurrent operations are easily achievable
 Effect.runPromise(program);
-
 ```
 
 ---
@@ -11017,12 +11039,10 @@ Effect.runPromise(program);
 
 The anti-pattern is thinking that a `Fiber` is the same as an OS thread. This can lead to incorrect assumptions about performance and behavior.
 
--   **Don't assume parallelism on CPU-bound tasks:** In a standard Node.js environment, all fibers run on a single OS thread. If you run 10 CPU-intensive tasks on 10 fibers, they will not run in parallel on 10 different CPU cores. They will share time on the single main thread. Fibers provide massive concurrency for I/O-bound tasks (like network requests), not CPU-bound parallelism.
--   **Don't worry about blocking:** A `Fiber` that is "sleeping" or waiting for I/O (like `Effect.sleep` or a `fetch` request) does not block the underlying OS thread. The Effect runtime simply puts it aside and uses the thread to run other ready fibers.
+- **Don't assume parallelism on CPU-bound tasks:** In a standard Node.js environment, all fibers run on a single OS thread. If you run 10 CPU-intensive tasks on 10 fibers, they will not run in parallel on 10 different CPU cores. They will share time on the single main thread. Fibers provide massive concurrency for I/O-bound tasks (like network requests), not CPU-bound parallelism.
+- **Don't worry about blocking:** A `Fiber` that is "sleeping" or waiting for I/O (like `Effect.sleep` or a `fetch` request) does not block the underlying OS thread. The Effect runtime simply puts it aside and uses the thread to run other ready fibers.
 
 ---
-
-
 
 ---
 
@@ -11052,6 +11072,7 @@ bun run ep search "effect"     # Test CLI
 ```
 
 See "Common Commands" below for your specific task, or jump to the relevant section:
+
 - **Adding a pattern?** → "Pattern Development Cycle"
 - **Working on the CLI?** → "Working with the CLI"
 - **Running the Code Assistant?** → "Code Assistant (NEW - Phase 1 Complete)"
@@ -11188,6 +11209,7 @@ Effect-Patterns/
 The project uses Bun workspaces (configured in `package.json`):
 
 - **Root workspace** - Core patterns, CLI, toolkit, MCP server, and scripts
+
   - `packages/` - Shared libraries (toolkit, effect-discord)
   - `services/mcp-server/` - REST API server
   - `scripts/` - Build and automation scripts
@@ -11297,18 +11319,20 @@ bun run pipeline
 #### 2. Pattern File Structure
 
 **TypeScript Example (`content/new/src/my-pattern.ts`):**
+
 ```typescript
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 // Demonstrate the pattern with clear, runnable code
 const example = Effect.gen(function* () {
   // Pattern implementation
-})
+});
 
-Effect.runPromise(example)
+Effect.runPromise(example);
 ```
 
 **MDX Documentation (`content/new/my-pattern.mdx`):**
+
 ```markdown
 ---
 id: my-pattern
@@ -11324,22 +11348,27 @@ rule:
 ---
 
 ## Use Case
+
 When to use this pattern...
 
 ## Good Example
+
 \`\`\`typescript
 // Well-implemented example
 \`\`\`
 
 ## Anti-Pattern
+
 \`\`\`typescript
 // What NOT to do
 \`\`\`
 
 ## Rationale
+
 Why this pattern works...
 
 ## Trade-offs
+
 - Pros: ...
 - Cons: ...
 ```
@@ -11347,6 +11376,7 @@ Why this pattern works...
 #### 3. Validation Requirements
 
 Patterns must include:
+
 - ✅ Valid YAML frontmatter
 - ✅ Unique `id` (kebab-case)
 - ✅ `skillLevel`: `beginner`, `intermediate`, or `advanced`
@@ -11361,6 +11391,7 @@ Patterns must include:
 The `ep` CLI is the main interface for pattern discovery and installation. Recent restructuring (v0.6.0) moved the CLI into dedicated packages.
 
 **CLI Structure:**
+
 ```
 ep
 ├── search <query>              # Search patterns
@@ -11377,6 +11408,7 @@ ep
 ```
 
 **CLI Implementation:**
+
 - Main entry point: `packages/ep-cli/src/index.ts`
 - Admin tool: `packages/ep-admin/src/index.ts`
 - Uses `@effect/cli` for command parsing
@@ -11417,11 +11449,13 @@ GET /api/health
 ```
 
 **Authentication:**
+
 - API key required: `x-api-key` header or `?key=` query param
 - Set via `PATTERN_API_KEY` environment variable
 - Separate keys for staging/production
 
 **Deployment:**
+
 - Production: `https://effect-patterns.vercel.app`
 - Staging: `https://effect-patterns-staging.vercel.app`
 
@@ -11432,6 +11466,7 @@ The `@effect-patterns/effect-discord` package provides an Effect-native service 
 **Purpose**: Export Discord channel data for pattern discovery and curation (e.g., common questions from the Effect-TS Discord community).
 
 **Key Features:**
+
 - Effect.Service pattern with Layer.effect
 - Wraps DiscordChatExporter.Cli tool
 - Secure token handling with Effect.Secret
@@ -11440,8 +11475,13 @@ The `@effect-patterns/effect-discord` package provides an Effect-native service 
 - Comprehensive integration tests with real Discord API
 
 **Usage Example:**
+
 ```typescript
-import { Discord, DiscordLive, DiscordConfig } from "@effect-patterns/effect-discord";
+import {
+  Discord,
+  DiscordLive,
+  DiscordConfig,
+} from "@effect-patterns/effect-discord";
 import { Effect, Layer, Secret } from "effect";
 import { NodeContext } from "@effect/platform-node";
 
@@ -11461,12 +11501,13 @@ await Effect.runPromise(
   program.pipe(
     Effect.provide(DiscordLive),
     Effect.provide(ConfigLive),
-    Effect.provide(NodeContext.layer),
+    Effect.provide(NodeContext.layer)
   )
 );
 ```
 
 **Testing:**
+
 ```bash
 # Run integration tests (requires Discord bot setup)
 bun test packages/effect-discord/test/integration.test.ts
@@ -11476,6 +11517,7 @@ SKIP_INTEGRATION_TESTS=true bun test packages/effect-discord/test/integration.te
 ```
 
 See:
+
 - [packages/effect-discord/README.md](./packages/effect-discord/README.md) - User documentation
 - [packages/effect-discord/CLAUDE.md](./packages/effect-discord/CLAUDE.md) - Development guide
 - [packages/effect-discord/INTEGRATION_TESTS.md](./packages/effect-discord/INTEGRATION_TESTS.md) - Test setup
@@ -11486,6 +11528,7 @@ See:
 The Data Analysis Engine combines Discord data export with AI-powered thematic analysis to identify community patterns and guide content strategy.
 
 **Architecture:**
+
 - **Discord Exporter** (`@effect-patterns/effect-discord`) - Effect-native service for exporting Discord channel data
 - **Analysis Agent** (`scripts/analyzer/`) - LangGraph workflow for thematic analysis using Effect services
 - **LLM Service** (`scripts/analyzer/services/llm.ts`) - Effect service wrapping Anthropic Claude for analysis
@@ -11494,6 +11537,7 @@ The Data Analysis Engine combines Discord data export with AI-powered thematic a
 **Workflow:**
 
 1. **Data Ingestion** (`bun run ingest:discord`):
+
    - Exports Discord channel messages using DiscordChatExporter.Cli
    - Anonymizes user data (replaces usernames/IDs with hashes)
    - Saves to `/tmp/discord-exports/` directory
@@ -11531,30 +11575,30 @@ bun run analyze
 ```typescript
 // scripts/analyzer/graph.ts - Main workflow orchestration
 const workflow = new StateGraph<AnalysisState>()
-  .addNode("chunk", chunkNode)      // Split data into chunks
-  .addNode("analyze", analyzeNode)  // Analyze each chunk
+  .addNode("chunk", chunkNode) // Split data into chunks
+  .addNode("analyze", analyzeNode) // Analyze each chunk
   .addNode("aggregate", aggregateNode) // Combine results
   .addEdge(START, "chunk")
   .addEdge("chunk", "analyze")
   .addEdge("analyze", "aggregate")
-  .addEdge("aggregate", END)
+  .addEdge("aggregate", END);
 
 // Effect services provide dependencies
 const program = Effect.gen(function* () {
-  const llm = yield* LLMService
-  const file = yield* FileService
+  const llm = yield* LLMService;
+  const file = yield* FileService;
 
   // Run LangGraph workflow
   const result = await workflow.invoke({
     messages: exportedData.messages,
     chunks: [],
     analyses: [],
-    finalReport: null
-  })
+    finalReport: null,
+  });
 
   // Save report
-  yield* file.writeReport(result.finalReport)
-})
+  yield* file.writeReport(result.finalReport);
+});
 ```
 
 **Key Features:**
@@ -11582,12 +11626,14 @@ SKIP_INTEGRATION_TESTS=true bun test scripts/analyzer/
 **Configuration:**
 
 Environment variables:
+
 - `DISCORD_BOT_TOKEN` - Discord bot authentication
 - `ANTHROPIC_API_KEY` - Claude API key for analysis
 - `ANALYSIS_OUTPUT_DIR` - Output directory (default: `data/analysis/`)
 - `DISCORD_EXPORT_DIR` - Export directory (default: `/tmp/discord-exports/`)
 
 See:
+
 - [scripts/analyzer/README.md](./scripts/analyzer/README.md) - Detailed architecture
 - [scripts/analyzer/graph.ts](./scripts/analyzer/graph.ts) - Workflow implementation
 - [scripts/analyzer/services/](./scripts/analyzer/services/) - Effect services
@@ -11605,27 +11651,32 @@ import {
   getPatternById,
   buildSnippet,
   validateGenerateRequest,
-} from "@effect-patterns/toolkit"
+} from "@effect-patterns/toolkit";
 
 // Search patterns
-const results = yield* searchPatterns({
-  query: "error handling",
-  skillLevel: "intermediate",
-  useCase: ["Error Management"],
-})
+const results =
+  yield *
+  searchPatterns({
+    query: "error handling",
+    skillLevel: "intermediate",
+    useCase: ["Error Management"],
+  });
 
 // Get pattern details
-const pattern = yield* getPatternById("handle-errors-with-catch")
+const pattern = yield * getPatternById("handle-errors-with-catch");
 
 // Generate code snippet
-const snippet = yield* buildSnippet({
-  patternId: "retry-with-backoff",
-  customName: "retryRequest",
-  moduleType: "esm",
-})
+const snippet =
+  yield *
+  buildSnippet({
+    patternId: "retry-with-backoff",
+    customName: "retryRequest",
+    moduleType: "esm",
+  });
 ```
 
 **Schemas:**
+
 - Located in `packages/toolkit/src/schemas/`
 - Uses `@effect/schema` for runtime validation
 - Generates JSON Schema for OpenAPI
@@ -11643,23 +11694,25 @@ const snippet = yield* buildSnippet({
 - **NEVER use `Context.Tag`** - Always use `Effect.Service` pattern with class syntax instead
 
 **Good Example:**
+
 ```typescript
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 const fetchUser = (id: string) =>
   Effect.gen(function* () {
-    const response = yield* Effect.tryPromise(() => fetch(`/users/${id}`))
-    const user = yield* Effect.tryPromise(() => response.json())
-    return user
-  })
+    const response = yield* Effect.tryPromise(() => fetch(`/users/${id}`));
+    const user = yield* Effect.tryPromise(() => response.json());
+    return user;
+  });
 ```
 
 **Anti-Pattern:**
+
 ```typescript
 // ❌ Don't use raw Promise
 async function fetchUser(id: string) {
-  const response = await fetch(`/users/${id}`)
-  return response.json()
+  const response = await fetch(`/users/${id}`);
+  return response.json();
 }
 ```
 
@@ -11671,31 +11724,34 @@ async function fetchUser(id: string) {
 - **mapError** to transform errors at boundaries
 
 **Example:**
+
 ```typescript
-import { Data } from "effect"
+import { Data } from "effect";
 
 class NetworkError extends Data.TaggedError("NetworkError")<{
-  cause: unknown
+  cause: unknown;
 }> {}
 
 class ParseError extends Data.TaggedError("ParseError")<{
-  message: string
+  message: string;
 }> {}
 
-const fetchData = (url: string): Effect.Effect<Data, NetworkError | ParseError> =>
+const fetchData = (
+  url: string
+): Effect.Effect<Data, NetworkError | ParseError> =>
   Effect.gen(function* () {
     const response = yield* Effect.tryPromise({
       try: () => fetch(url),
       catch: (cause) => new NetworkError({ cause }),
-    })
+    });
 
     const data = yield* Effect.tryPromise({
       try: () => response.json(),
       catch: () => new ParseError({ message: "Invalid JSON" }),
-    })
+    });
 
-    return data
-  })
+    return data;
+  });
 ```
 
 ### Testing
@@ -11706,9 +11762,10 @@ const fetchData = (url: string): Effect.Effect<Data, NetworkError | ParseError> 
 - **Test files** colocated with source or in `__tests__/`
 
 **Test Structure:**
+
 ```typescript
-import { Effect, Layer } from "effect"
-import { describe, it, expect } from "vitest"
+import { Effect, Layer } from "effect";
+import { describe, it, expect } from "vitest";
 
 describe("MyService", () => {
   const TestLayer = Layer.succeed(
@@ -11716,16 +11773,16 @@ describe("MyService", () => {
     MyService.of({
       // Mock implementation
     })
-  )
+  );
 
   it("should do something", async () => {
     const result = await Effect.runPromise(
       myFunction().pipe(Effect.provide(TestLayer))
-    )
+    );
 
-    expect(result).toBe("expected")
-  })
-})
+    expect(result).toBe("expected");
+  });
+});
 ```
 
 ### Naming Conventions
@@ -11741,52 +11798,52 @@ describe("MyService", () => {
 
 ### Configuration
 
-| File | Purpose |
-|------|---------|
-| `package.json` | Root package, workspaces, scripts |
-| `tsconfig.json` | TypeScript configuration |
-| `biome.json` | Linter/formatter config |
-| `vercel.json` | Vercel deployment settings |
-| `.env` | Environment variables (gitignored) |
+| File            | Purpose                            |
+| --------------- | ---------------------------------- |
+| `package.json`  | Root package, workspaces, scripts  |
+| `tsconfig.json` | TypeScript configuration           |
+| `biome.json`    | Linter/formatter config            |
+| `vercel.json`   | Vercel deployment settings         |
+| `.env`          | Environment variables (gitignored) |
 
 ### Pattern Data
 
-| Location | Contents |
-|----------|----------|
+| Location                  | Contents                  |
+| ------------------------- | ------------------------- |
 | `content/published/*.mdx` | Published patterns (150+) |
-| `content/new/*.mdx` | Patterns in development |
-| `content/src/*.ts` | TypeScript examples |
-| `data/patterns.json` | Generated pattern index |
+| `content/new/*.mdx`       | Patterns in development   |
+| `content/src/*.ts`        | TypeScript examples       |
+| `data/patterns.json`      | Generated pattern index   |
 
 ### Scripts
 
-| Script | Purpose |
-|--------|---------|
-| `packages/ep-cli/src/index.ts` | Main CLI entry point (v0.6.0+) |
-| `packages/ep-admin/src/index.ts` | Admin CLI tool (v0.6.0+) |
-| `scripts/ep.ts` | Legacy CLI entry point (maintained for compatibility) |
-| `scripts/publish/pipeline.ts` | Main pipeline orchestrator |
-| `scripts/publish/validate-improved.ts` | Advanced pattern validation |
-| `scripts/publish/publish.ts` | Pattern publishing |
-| `scripts/publish/rules-improved.ts` | Advanced AI rules generation |
-| `scripts/publish/generate-claude-rules.ts` | Claude-specific rules |
-| `scripts/ingest/ingest-pipeline-improved.ts` | Advanced pattern ingestion |
-| `scripts/ingest-discord.ts` | Discord data export and anonymization |
-| `agents/analyzer.ts` | LangGraph analysis agent entry point |
-| `scripts/analyzer/graph.ts` | LangGraph workflow orchestration |
+| Script                                       | Purpose                                               |
+| -------------------------------------------- | ----------------------------------------------------- |
+| `packages/ep-cli/src/index.ts`               | Main CLI entry point (v0.6.0+)                        |
+| `packages/ep-admin/src/index.ts`             | Admin CLI tool (v0.6.0+)                              |
+| `scripts/ep.ts`                              | Legacy CLI entry point (maintained for compatibility) |
+| `scripts/publish/pipeline.ts`                | Main pipeline orchestrator                            |
+| `scripts/publish/validate-improved.ts`       | Advanced pattern validation                           |
+| `scripts/publish/publish.ts`                 | Pattern publishing                                    |
+| `scripts/publish/rules-improved.ts`          | Advanced AI rules generation                          |
+| `scripts/publish/generate-claude-rules.ts`   | Claude-specific rules                                 |
+| `scripts/ingest/ingest-pipeline-improved.ts` | Advanced pattern ingestion                            |
+| `scripts/ingest-discord.ts`                  | Discord data export and anonymization                 |
+| `agents/analyzer.ts`                         | LangGraph analysis agent entry point                  |
+| `scripts/analyzer/graph.ts`                  | LangGraph workflow orchestration                      |
 
 ### Documentation
 
-| File | Purpose |
-|------|---------|
-| `README.md` | Main project README |
-| `SETUP.md` | Setup and installation guide |
-| `TESTING.md` | Testing documentation |
-| `SECURITY.md` | Security policy and best practices |
-| `ROADMAP.md` | Future features and plans |
-| `CHANGELOG-CLI.md` | CLI version history |
-| `docs/guides/CONTRIBUTING.md` | Contribution guidelines |
-| `docs/implementation/` | Technical implementation docs |
+| File                          | Purpose                            |
+| ----------------------------- | ---------------------------------- |
+| `README.md`                   | Main project README                |
+| `SETUP.md`                    | Setup and installation guide       |
+| `TESTING.md`                  | Testing documentation              |
+| `SECURITY.md`                 | Security policy and best practices |
+| `ROADMAP.md`                  | Future features and plans          |
+| `CHANGELOG-CLI.md`            | CLI version history                |
+| `docs/guides/CONTRIBUTING.md` | Contribution guidelines            |
+| `docs/implementation/`        | Technical implementation docs      |
 
 ## Dependencies
 
@@ -11826,6 +11883,7 @@ describe("MyService", () => {
 ### GitHub Actions
 
 **Workflows:**
+
 - `.github/workflows/ci.yml` - Main CI pipeline
   - Runs tests
   - Type checking
@@ -11841,6 +11899,7 @@ describe("MyService", () => {
 ### Deployment
 
 **Vercel:**
+
 - Automatic deployments on push to main
 - Preview deployments for PRs
 - Environment variables:
@@ -11884,6 +11943,7 @@ bun run rules:claude
 ```
 
 **Output:**
+
 - `rules/generated/rules-for-claude.md` (377KB, 11,308 lines)
 - `rules/generated/rules-for-cursor.md`
 - `rules/generated/rules-for-windsurf.md`
@@ -11891,6 +11951,7 @@ bun run rules:claude
 
 **Rule Structure:**
 Each pattern is converted to a rule with:
+
 - Rule description
 - Use cases
 - Rationale
@@ -11901,6 +11962,7 @@ Each pattern is converted to a rule with:
 ### Claude Code Integration
 
 Claude Code can access these rules for context-aware assistance:
+
 - Pattern recommendations
 - Code generation
 - Error detection
@@ -11913,10 +11975,12 @@ Claude Code can access these rules for context-aware assistance:
 The Code Assistant is a production-ready AI-powered coding platform built on Vercel's coding-agent-template with:
 
 - **Dual-Mode Architecture**:
+
   - **Chat Mode** (`/chat`) - Conversational AI with Supermemory for user preferences
   - **Task Mode** (`/tasks`) - Full coding agent with sandbox execution and Git integration
 
 - **Tech Stack**:
+
   - Next.js 16 + React 19
   - Vercel Sandbox for isolated code execution
   - Neon PostgreSQL (via Vercel)
@@ -11946,12 +12010,14 @@ bun run dev
 ### Key Features (Phase 1)
 
 **Chat Mode** (✅ Complete):
+
 - Conversational AI powered by Claude
 - Supermemory integration for user preferences
 - Effect Patterns search (ready to enable)
 - No sandbox execution - pure conversational
 
 **Task Mode** (✅ Complete):
+
 - Full coding agent with sandbox execution
 - Automatic Git branch creation and commits
 - File browser and diff viewer
@@ -11963,17 +12029,20 @@ bun run dev
 See `app/code-assistant/.env.local` for environment variables:
 
 **Required**:
+
 - `POSTGRES_URL` - Neon database connection
 - `ANTHROPIC_API_KEY` - For Claude agent
 - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` - OAuth
 - `JWE_SECRET` / `ENCRYPTION_KEY` - Security keys
 
 **Optional** (for Task mode):
+
 - `SANDBOX_VERCEL_TEAM_ID` - Vercel sandbox credentials
 - `SANDBOX_VERCEL_PROJECT_ID`
 - `SANDBOX_VERCEL_TOKEN`
 
 **Optional** (for features):
+
 - `SUPERMEMORY_API_KEY` - Memory features
 - `OPENAI_API_KEY`, `GEMINI_API_KEY`, etc. - Other agents
 
@@ -12007,6 +12076,7 @@ See `app/code-assistant/.env.local` for environment variables:
 ### Update the README
 
 After adding patterns:
+
 ```bash
 bun run pipeline
 # README.md is automatically updated with new patterns
@@ -12015,6 +12085,7 @@ bun run pipeline
 ### Regenerate AI Rules
 
 After pattern changes:
+
 ```bash
 bun run rules:claude
 # Or for all tools:
@@ -12067,30 +12138,35 @@ vercel --prod
 ### Common Issues
 
 **Pattern validation fails:**
+
 - Check frontmatter YAML syntax
 - Ensure all required fields present
 - Verify `id` is unique and kebab-case
 - Check `skillLevel` is valid: beginner, intermediate, or advanced
 
 **TypeScript examples don't run:**
+
 - Ensure imports are correct
 - Check Effect version compatibility
 - Verify no syntax errors
 - Run `bun run typecheck`
 
 **Tests fail:**
+
 - Clear `node_modules` and reinstall: `rm -rf node_modules && bun install`
 - Check test file imports
 - Verify test data is valid
 - Run with verbose: `bun test --reporter=verbose`
 
 **CLI doesn't work:**
+
 - Reinstall globally: `bun install -g .`
 - Check `ep` is in PATH
 - Try with `bun run ep` instead
 - Verify permissions on `scripts/ep.ts`
 
 **MCP server errors:**
+
 - Check `PATTERN_API_KEY` is set
 - Verify `data/patterns.json` exists
 - Run `bun run toolkit:build` first

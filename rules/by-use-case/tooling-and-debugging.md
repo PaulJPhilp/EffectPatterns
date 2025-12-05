@@ -12,14 +12,11 @@ Imagine you have the following code. Without the LSP, hovering over `program` mi
 import { Effect } from "effect";
 
 // Define Logger service using Effect.Service pattern
-class Logger extends Effect.Service<Logger>()(
-  "Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.log(`LOG: ${msg}`)
-    })
-  }
-) {}
+class Logger extends Effect.Service<Logger>()("Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.log(`LOG: ${msg}`),
+  }),
+}) {}
 
 const program = Effect.succeed(42).pipe(
   Effect.map((n) => n.toString()),
@@ -53,6 +50,7 @@ Use the MCP server to provide live application context to AI coding agents, enab
 The "Good Example" is the workflow this pattern enables.
 
 1.  **You run the MCP server** in your terminal, pointing it at your main `AppLayer`.
+
     ```bash
     npx @effect/mcp-server --layer src/layers.ts:AppLayer
     ```
@@ -60,11 +58,13 @@ The "Good Example" is the workflow this pattern enables.
 2.  **You configure your AI agent** (e.g., Cursor) to use the MCP server's endpoint (`http://localhost:3333`).
 
 3.  **You ask the AI a question** that requires deep context about your app:
+
     > "Refactor this code to use the `UserService` to fetch a user by ID and log the result with the `Logger`."
 
 4.  **The AI, in the background, queries the MCP server:**
-    -   It discovers that `UserService` and `Logger` are available in the `AppLayer`.
-    -   It retrieves the exact method signature for `UserService.getUser` and `Logger.log`.
+
+    - It discovers that `UserService` and `Logger` are available in the `AppLayer`.
+    - It retrieves the exact method signature for `UserService.getUser` and `Logger.log`.
 
 5.  **The AI generates correct, context-aware code** because it's not guessing; it's using the live architectural information provided by the MCP server.
 
@@ -78,10 +78,8 @@ const program = Effect.gen(function* () {
   const user = yield* userService.getUser("123");
   yield* Effect.log(`Found user: ${user.name}`);
 });
-
 ```
 
 ---
 
 ---
-

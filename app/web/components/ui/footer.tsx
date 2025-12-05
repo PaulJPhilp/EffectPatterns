@@ -16,17 +16,26 @@ export function Footer() {
           <p className="text-sm font-semibold uppercase tracking-[0.4em] text-muted-foreground">
             Effect Patterns Hub
           </p>
-          <h2 className="text-2xl font-bold text-foreground">Build resilient Effect applications faster.</h2>
+          <h2 className="text-2xl font-bold text-foreground">
+            Build resilient Effect applications faster.
+          </h2>
           <p className="max-w-2xl text-sm text-muted-foreground">
-            Curated learning paths, production-ready patterns, and AI-first workflows designed for the Effect community.
+            Curated learning paths, production-ready patterns, and AI-first
+            workflows designed for the Effect community.
           </p>
         </div>
 
         <div className="flex flex-col gap-6 border-t border-border pt-6 md:flex-row md:items-center md:justify-between">
-          <div className="text-sm text-muted-foreground">© {YEAR} Paul Philp. All rights reserved.</div>
+          <div className="text-sm text-muted-foreground">
+            © {YEAR} Paul Philp. All rights reserved.
+          </div>
           <nav className="flex flex-wrap items-center gap-4 text-sm font-medium text-muted-foreground">
             {INTERNAL_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className="transition-colors hover:text-primary">
+              <Link
+                key={link.href}
+                href={link.href}
+                className="transition-colors hover:text-primary"
+              >
                 {link.label}
               </Link>
             ))}
@@ -44,5 +53,3 @@ export function Footer() {
     </footer>
   );
 }
-
-

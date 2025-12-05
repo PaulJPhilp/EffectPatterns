@@ -28,6 +28,7 @@ author: effect_website
 ## Guideline
 
 To enable graceful shutdown for a long-running application:
+
 1.  Define services with cleanup logic in `scoped` `Layer`s using `Effect.addFinalizer` or `Effect.acquireRelease`.
 2.  Launch your main application `Effect` using `Effect.runFork` to get a `Fiber` handle to the running process.
 3.  Set up listeners for process signals like `SIGINT` (Ctrl+C) and `SIGTERM`.
@@ -90,7 +91,7 @@ const server = Effect.gen(function* () {
 
   // Start server with error handling
   yield* Effect.async<void, Error>((resume) => {
-    httpServer.once('error', (err: Error) => {
+    httpServer.once("error", (err: Error) => {
       resume(Effect.fail(new Error(`Failed to start server: ${err.message}`)));
     });
 
@@ -114,7 +115,6 @@ Effect.runPromise(app).catch((error) => {
   Effect.runSync(Effect.logError("Application error: " + error));
   process.exit(1);
 });
-
 ```
 
 ---

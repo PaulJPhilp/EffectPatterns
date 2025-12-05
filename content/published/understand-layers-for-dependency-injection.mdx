@@ -26,20 +26,22 @@ author: effect_website
 ## Guideline
 
 Think of a `Layer<R, E, A>` as a recipe for building a service. It's a declarative blueprint that specifies:
--   **`A` (Output)**: The service it provides (e.g., `HttpClient`).
--   **`R` (Requirements)**: The other services it needs to be built (e.g., `ConfigService`).
--   **`E` (Error)**: The errors that could occur during its construction (e.g., `ConfigError`).
+
+- **`A` (Output)**: The service it provides (e.g., `HttpClient`).
+- **`R` (Requirements)**: The other services it needs to be built (e.g., `ConfigService`).
+- **`E` (Error)**: The errors that could occur during its construction (e.g., `ConfigError`).
 
 ---
 
 ## Rationale
 
-In Effect, you don't create service instances directly. Instead, you define `Layer`s that describe *how* to create them. This separation of declaration from implementation is the core of Effect's powerful dependency injection (DI) system.
+In Effect, you don't create service instances directly. Instead, you define `Layer`s that describe _how_ to create them. This separation of declaration from implementation is the core of Effect's powerful dependency injection (DI) system.
 
 This approach has several key benefits:
--   **Composability:** You can combine small, focused layers into a complete application layer (`Layer.merge`, `Layer.provide`).
--   **Declarative Dependencies:** A layer's type signature explicitly documents its own dependencies, making your application's architecture clear and self-documenting.
--   **Testability:** For testing, you can easily swap a "live" layer (e.g., one that connects to a real database) with a "test" layer (one that provides mock data) without changing any of your business logic.
+
+- **Composability:** You can combine small, focused layers into a complete application layer (`Layer.merge`, `Layer.provide`).
+- **Declarative Dependencies:** A layer's type signature explicitly documents its own dependencies, making your application's architecture clear and self-documenting.
+- **Testability:** For testing, you can easily swap a "live" layer (e.g., one that connects to a real database) with a "test" layer (one that provides mock data) without changing any of your business logic.
 
 ---
 
@@ -51,31 +53,25 @@ Here, we define a `Notifier` service that requires a `Logger` to be built. The `
 import { Effect } from "effect";
 
 // Define the Logger service with a default implementation
-export class Logger extends Effect.Service<Logger>()(
-  "Logger",
-  {
-    // Provide a synchronous implementation
-    sync: () => ({
-      log: (msg: string) => Effect.log(`LOG: ${msg}`)
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("Logger", {
+  // Provide a synchronous implementation
+  sync: () => ({
+    log: (msg: string) => Effect.log(`LOG: ${msg}`),
+  }),
+}) {}
 
 // Define the Notifier service that depends on Logger
-export class Notifier extends Effect.Service<Notifier>()(
-  "Notifier",
-  {
-    // Provide an implementation that requires Logger
-    effect: Effect.gen(function* () {
-      const logger = yield* Logger;
-      return {
-        notify: (msg: string) => logger.log(`Notifying: ${msg}`)
-      };
-    }),
-    // Specify dependencies
-    dependencies: [Logger.Default]
-  }
-) {}
+export class Notifier extends Effect.Service<Notifier>()("Notifier", {
+  // Provide an implementation that requires Logger
+  effect: Effect.gen(function* () {
+    const logger = yield* Logger;
+    return {
+      notify: (msg: string) => logger.log(`Notifying: ${msg}`),
+    };
+  }),
+  // Specify dependencies
+  dependencies: [Logger.Default],
+}) {}
 
 // Create a program that uses both services
 const program = Effect.gen(function* () {
@@ -84,12 +80,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with the default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Notifier.Default
-  )
-);
+Effect.runPromise(Effect.provide(program, Notifier.Default));
 ```
 
 ---
@@ -101,12 +92,16 @@ Manually creating and passing service instances around. This is the "poor man's 
 ```typescript
 // ❌ WRONG: Manual instantiation and prop-drilling.
 class LoggerImpl {
-  log(msg: string) { console.log(msg); }
+  log(msg: string) {
+    console.log(msg);
+  }
 }
 
 class NotifierImpl {
   constructor(private logger: LoggerImpl) {}
-  notify(msg: string) { this.logger.log(msg); }
+  notify(msg: string) {
+    this.logger.log(msg);
+  }
 }
 
 // Dependencies must be created and passed in manually.

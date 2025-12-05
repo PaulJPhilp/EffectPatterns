@@ -1,5 +1,3 @@
 export default function DashboardPage() {
-  return (
-    <main className="min-h-screen p-8" />
-  );
+  return <main className="min-h-screen p-8" />;
 }

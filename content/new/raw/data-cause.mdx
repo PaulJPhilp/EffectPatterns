@@ -20,7 +20,7 @@ Use the `Cause<E>` data type to get rich, structured information about errors an
 
 ## Rationale
 
-Traditional error handling often loses information about *why* a failure occurred.  
+Traditional error handling often loses information about _why_ a failure occurred.  
 `Cause` preserves the full error context, enabling advanced debugging, error reporting, and robust recovery strategies.
 
 ## Good Example
@@ -33,7 +33,7 @@ const program = Effect.try({
   try: () => {
     throw new Error("Unexpected failure!");
   },
-  catch: (err) => err
+  catch: (err) => err,
 });
 
 // Catch all causes and inspect them
@@ -53,7 +53,8 @@ const handled = program.pipe(
 );
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
 - Use `Cause.pretty` for human-readable error traces.
 - Enables advanced error handling and debugging.

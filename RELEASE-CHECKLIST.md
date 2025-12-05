@@ -59,6 +59,7 @@ Complete checklist for preparing and announcing the Effect Patterns Hub CLI rele
 - [ ] Push tags
 
 ### GitHub Release
+
 - [ ] Create GitHub release
 - [ ] Use version tag (e.g., v0.4.0)
 - [ ] Copy release notes from CHANGELOG-CLI.md
@@ -69,6 +70,7 @@ Complete checklist for preparing and announcing the Effect Patterns Hub CLI rele
 ## Post-Release
 
 ### Verification
+
 - [ ] Clone fresh repository
 - [ ] Run `bun install`
 - [ ] Run `bun link`
@@ -140,11 +142,13 @@ git push origin v0.4.0
 Follow [Semantic Versioning](https://semver.org/):
 
 - **Major (x.0.0)**: Breaking changes
+
   - Command structure changes
   - Removed features
   - Incompatible API changes
 
 - **Minor (0.x.0)**: New features
+
   - New commands
   - New options
   - New supported tools
@@ -179,11 +183,13 @@ BREAKING CHANGE: renamed 'rules' command to 'install'
 If issues are discovered after release:
 
 1. **Document the issue**
+
    - Create GitHub issue
    - Note affected versions
    - Describe the problem
 
 2. **Quick fix if possible**
+
    - Create hotfix branch
    - Fix the issue
    - Test thoroughly
@@ -203,18 +209,22 @@ If issues are discovered after release:
 ## 🎉 Release v0.4.0
 
 ### ✨ New Features
+
 - Feature 1
 - Feature 2
 
 ### 🐛 Bug Fixes
+
 - Fix 1
 - Fix 2
 
 ### 📚 Documentation
+
 - Documentation update 1
 - Documentation update 2
 
 ### 🔧 Improvements
+
 - Improvement 1
 - Improvement 2
 

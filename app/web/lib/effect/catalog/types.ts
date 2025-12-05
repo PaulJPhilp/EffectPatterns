@@ -5,7 +5,7 @@
  * and provides fast in-memory indices for lookups.
  */
 
-import type { PatternMeta, SkillLevel } from '../pattern/types.js';
+import type { PatternMeta, SkillLevel } from "../pattern/types.js";
 
 /**
  * Enriched pattern with full module placement data

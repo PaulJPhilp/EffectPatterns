@@ -30,7 +30,8 @@ export default async function Page() {
 
   // Validate and parse the model ID: preferences > cookie > default
   let initialModel = DEFAULT_CHAT_MODEL;
-  const candidateModel = userPreferences.selectedModel || modelIdFromCookie?.value;
+  const candidateModel =
+    userPreferences.selectedModel || modelIdFromCookie?.value;
   if (candidateModel) {
     const parseResult = chatModelIdSchema.safeParse(candidateModel);
     if (parseResult.success) {

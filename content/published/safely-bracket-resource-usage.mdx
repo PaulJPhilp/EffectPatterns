@@ -39,10 +39,12 @@ import { Effect, Console } from "effect";
 
 // A mock resource that needs to be managed
 const getDbConnection = Effect.sync(() => ({ id: Math.random() })).pipe(
-  Effect.tap(() => Effect.log("Connection Acquired")),
+  Effect.tap(() => Effect.log("Connection Acquired"))
 );
 
-const closeDbConnection = (conn: { id: number }): Effect.Effect<void, never, never> =>
+const closeDbConnection = (conn: {
+  id: number;
+}): Effect.Effect<void, never, never> =>
   Effect.log(`Connection ${conn.id} Released`);
 
 // The program that uses the resource

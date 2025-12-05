@@ -16,41 +16,41 @@
  * ```
  */
 
-import { exec } from 'node:child_process';
-import * as path from 'node:path';
-import { promisify } from 'node:util';
+import { exec } from "node:child_process";
+import * as path from "node:path";
+import { promisify } from "node:util";
 
 const execAsync = promisify(exec);
 
 // --- CONFIGURATION ---
-const SCRIPTS_DIR = path.join(process.cwd(), 'scripts', 'publish');
+const SCRIPTS_DIR = path.join(process.cwd(), "scripts", "publish");
 
 // --- PIPELINE STEPS ---
 const STEPS = [
   {
-    name: 'Test TypeScript Examples',
-    script: 'test-improved.ts',
-    description: 'Running and validating all TypeScript examples...',
+    name: "Test TypeScript Examples",
+    script: "test-improved.ts",
+    description: "Running and validating all TypeScript examples...",
   },
   {
-    name: 'Publish MDX Files',
-    script: 'publish.ts',
-    description: 'Converting raw MDX to published MDX...',
+    name: "Publish MDX Files",
+    script: "publish.ts",
+    description: "Converting raw MDX to published MDX...",
   },
   {
-    name: 'Validate Published Files',
-    script: 'validate-improved.ts',
-    description: 'Validating published MDX files...',
+    name: "Validate Published Files",
+    script: "validate-improved.ts",
+    description: "Validating published MDX files...",
   },
   {
-    name: 'Generate README',
-    script: 'generate.ts',
-    description: 'Generating README.md...',
+    name: "Generate README",
+    script: "generate.ts",
+    description: "Generating README.md...",
   },
   {
-    name: 'Generate Rules',
-    script: 'rules-improved.ts',
-    description: 'Generating AI coding rules...',
+    name: "Generate Rules",
+    script: "rules-improved.ts",
+    description: "Generating AI coding rules...",
   },
 ];
 
@@ -80,7 +80,7 @@ async function runStep(step: (typeof STEPS)[0]) {
 
 // --- MAIN EXECUTION ---
 async function main() {
-  console.log('Starting Effect Patterns publishing pipeline...\n');
+  console.log("Starting Effect Patterns publishing pipeline...\n");
   const startTime = Date.now();
 
   try {

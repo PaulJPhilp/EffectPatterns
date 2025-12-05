@@ -4,10 +4,16 @@ id: "constructor-try-trypromise"
 skillLevel: "beginner"
 useCase: ["Constructors", "Error Handling", "Async", "Interop"]
 summary: "Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world."
-tags: ["try", "tryPromise", "constructor", "effect", "error", "async", "interop"]
+tags:
+  ["try", "tryPromise", "constructor", "effect", "error", "async", "interop"]
 rule:
   description: "Use try and tryPromise to lift code that may throw or reject into Effect, capturing errors in the failure channel."
-related: ["constructor-succeed-some-right", "constructor-fail-none-left", "constructor-sync-async"]
+related:
+  [
+    "constructor-succeed-some-right",
+    "constructor-fail-none-left",
+    "constructor-sync-async",
+  ]
 author: "PaulJPhilp"
 ---
 
@@ -31,17 +37,18 @@ import { Effect } from "effect";
 // Synchronous: Wrap code that may throw
 const effectSync = Effect.try({
   try: () => JSON.parse("{ invalid json }"),
-  catch: (error) => `Parse error: ${String(error)}`
+  catch: (error) => `Parse error: ${String(error)}`,
 }); // Effect<string, never, never>
 
 // Asynchronous: Wrap a promise that may reject
 const effectAsync = Effect.tryPromise({
-  try: () => fetch("https://api.example.com/data").then(res => res.json()),
-  catch: (error) => `Network error: ${String(error)}`
+  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
+  catch: (error) => `Network error: ${String(error)}`,
 }); // Effect<string, any, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
 - `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
 

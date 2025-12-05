@@ -9,11 +9,7 @@ import dotenv from "dotenv";
 // Load .env.local
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
 
-const PATTERNS_DIR = path.join(
-  __dirname,
-  "../../..",
-  "content/published"
-);
+const PATTERNS_DIR = path.join(__dirname, "../../..", "content/published");
 
 const SYSTEM_USER_ID = "system:patterns";
 
@@ -43,9 +39,7 @@ async function testSinglePattern() {
   console.log("🧪 Testing single pattern seed...\n");
 
   // Load first pattern
-  const files = fs
-    .readdirSync(PATTERNS_DIR)
-    .filter((f) => f.endsWith(".mdx"));
+  const files = fs.readdirSync(PATTERNS_DIR).filter((f) => f.endsWith(".mdx"));
 
   if (files.length === 0) {
     console.error("❌ No pattern files found");
@@ -119,7 +113,6 @@ async function testSinglePattern() {
     } else {
       console.log("\n❌ Pattern NOT found in search!");
     }
-
   } catch (error) {
     console.error("❌ Error:", error);
     if (error instanceof Error) {

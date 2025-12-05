@@ -36,7 +36,7 @@ What happens if a pipeline processing a file fails halfway through? In a naive i
 
 `Stream.acquireRelease` is Effect's robust solution to this problem. It's built on `Scope`, Effect's fundamental resource-management tool.
 
-1.  **Guaranteed Cleanup**: You provide an `acquire` effect to open the resource and a `release` effect to close it. Effect guarantees that the `release` effect will be called when the stream terminates, for *any* reason: successful completion, a processing failure, or even external interruption.
+1.  **Guaranteed Cleanup**: You provide an `acquire` effect to open the resource and a `release` effect to close it. Effect guarantees that the `release` effect will be called when the stream terminates, for _any_ reason: successful completion, a processing failure, or even external interruption.
 2.  **Declarative and Co-located**: The logic for a resource's entire lifecycle—acquisition, usage (the stream itself), and release—is defined in one place. This makes the code easier to understand and reason about compared to manual `try/finally` blocks.
 3.  **Prevents Resource Leaks**: It is the idiomatic way to build truly resilient pipelines that do not leak resources, which is essential for long-running, production-grade applications.
 4.  **Composability**: The resulting stream is just a normal `Stream`, which can be composed with any other stream operators.
@@ -115,7 +115,9 @@ const program = Effect.gen(function* () {
         );
       }
 
-      yield* Effect.log("✅ Processing completed with proper resource management");
+      yield* Effect.log(
+        "✅ Processing completed with proper resource management"
+      );
     })
   );
 });
@@ -126,7 +128,6 @@ Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
     Effect.runSync(Effect.logError("Unexpected error: " + error));
   }
 );
-
 ```
 
 ## Anti-Pattern
@@ -134,25 +135,25 @@ Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
 The anti-pattern is to manage resources manually outside the stream's context. This is brittle and almost always leads to resource leaks when errors occur.
 
 ```typescript
-import { Effect, Stream } from 'effect';
-import { NodeFileSystem } from '@effect/platform-node';
-import * as path from 'node:path';
+import { Effect, Stream } from "effect";
+import { NodeFileSystem } from "@effect/platform-node";
+import * as path from "node:path";
 
 const program = Effect.gen(function* () {
   const fs = yield* NodeFileSystem;
-  const filePath = path.join(__dirname, 'temp-resource-bad.txt');
+  const filePath = path.join(__dirname, "temp-resource-bad.txt");
 
   // 1. Resource acquired manually before the stream
-  yield* fs.writeFileString(filePath, 'data 1\ndata 2');
+  yield* fs.writeFileString(filePath, "data 1\ndata 2");
   const readable = fs.createReadStream(filePath);
-  yield* Effect.log('Resource acquired manually.');
+  yield* Effect.log("Resource acquired manually.");
 
   const stream = Stream.fromReadable(() => readable).pipe(
-    Stream.decodeText('utf-8'),
+    Stream.decodeText("utf-8"),
     Stream.splitLines,
     // This stream will fail, causing the run to reject.
     Stream.map(() => {
-      throw new Error('Something went wrong!');
+      throw new Error("Something went wrong!");
     })
   );
 
@@ -161,12 +162,12 @@ const program = Effect.gen(function* () {
 
   // 3. This release logic is NEVER reached if the stream fails.
   yield* fs.remove(filePath);
-  yield* Effect.log('Resource released manually. (This will not be logged)');
+  yield* Effect.log("Resource released manually. (This will not be logged)");
 });
 
 Effect.runPromiseExit(program).then((exit) => {
-  if (exit._tag === 'Failure') {
-    console.log('\nPipeline failed. The temp file was NOT deleted.');
+  if (exit._tag === "Failure") {
+    console.log("\nPipeline failed. The temp file was NOT deleted.");
   }
 });
 ```

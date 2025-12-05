@@ -36,14 +36,15 @@ export const MemoryRouterResponseSchema = Schema.Struct({
     Schema.Struct({
       id: Schema.String,
       content: Schema.String,
-      metadata: Schema.optional(Schema.Record({
-        key: Schema.String,
-        value: Schema.Unknown,
-      })),
+      metadata: Schema.optional(
+        Schema.Record({
+          key: Schema.String,
+          value: Schema.Unknown,
+        })
+      ),
       relevanceScore: Schema.optional(Schema.Number),
     })
   ),
   totalCount: Schema.Number,
   processedAt: Schema.String,
 });
-

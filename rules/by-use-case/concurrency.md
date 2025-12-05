@@ -74,7 +74,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(Effect.provide(program, AppLayer));
-
 ```
 
 ---
@@ -107,10 +106,10 @@ const effectAsync = Effect.async<string, Error>((resume) => {
     else if (data) resume(Effect.succeed(data));
   });
 }); // Effect<string, Error, never>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.sync` is for synchronous computations that are guaranteed not to throw.
 - `Effect.async` is for integrating callback-based APIs, converting them into Effects.
 
@@ -206,9 +205,7 @@ const program = Effect.gen(function* () {
 // - Backpressure prevents resource exhaustion
 // - Interruption allows for graceful shutdown
 Effect.runPromise(program);
-
 ```
-
 
 A publisher sends an event, and multiple subscribers react to it independently.
 
@@ -226,9 +223,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`AUDIT: Received event: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Subscriber 2: The "Notifier" service
@@ -239,9 +236,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`NOTIFIER: Sending notification for: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Give subscribers time to start
@@ -270,7 +267,7 @@ import { Effect, Fiber } from "effect";
 // A server that listens for requests forever
 const server = Effect.log("Server received a request.").pipe(
   Effect.delay("1 second"),
-  Effect.forever,
+  Effect.forever
 );
 
 Effect.runSync(Effect.log("Starting server..."));
@@ -343,7 +340,7 @@ const server = Effect.gen(function* () {
 
   // Start server with error handling
   yield* Effect.async<void, Error>((resume) => {
-    httpServer.once('error', (err: Error) => {
+    httpServer.once("error", (err: Error) => {
       resume(Effect.fail(new Error(`Failed to start server: ${err.message}`)));
     });
 
@@ -367,7 +364,6 @@ Effect.runPromise(app).catch((error) => {
   Effect.runSync(Effect.logError("Application error: " + error));
   process.exit(1);
 });
-
 ```
 
 ---
@@ -387,7 +383,7 @@ import { Effect, Scope } from "effect";
 
 // Simulate acquiring and releasing a resource
 const acquireFile = Effect.log("File opened").pipe(
-  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) }),
+  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) })
 );
 const releaseFile = Effect.log("File closed.");
 
@@ -458,7 +454,6 @@ const programWithLogging = Effect.gen(function* () {
 });
 
 Effect.runPromise(programWithLogging);
-
 ```
 
 ---
@@ -479,9 +474,7 @@ const makeCounter = Ref.make(0);
 
 // Increment the counter atomically
 const increment = makeCounter.pipe(
-  Effect.flatMap((counter) =>
-    Ref.update(counter, (n) => n + 1)
-  )
+  Effect.flatMap((counter) => Ref.update(counter, (n) => n + 1))
 );
 
 // Read the current value
@@ -498,7 +491,8 @@ const program = Effect.gen(function* () {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Ref` is an atomic, mutable reference for effectful and concurrent code.
 - All operations are safe, composable, and free of race conditions.
 - Use `Ref` for counters, caches, or any shared mutable state.
@@ -536,7 +530,6 @@ const stream = Stream.fromIterable([
   [1, 2],
   [3, 4],
 ]).pipe(Stream.flatMap((arr) => Stream.fromIterable(arr))); // Stream<number>
-
 ```
 
 **Explanation:**  
@@ -558,7 +551,7 @@ import { Effect, Schedule, Duration } from "effect";
 
 // The main task that takes a long time to complete
 const longRunningJob = Effect.log("Data processing complete!").pipe(
-  Effect.delay(Duration.seconds(10)),
+  Effect.delay(Duration.seconds(10))
 );
 
 // The polling task that checks the status
@@ -634,7 +627,6 @@ const program = Effect.gen(function* () {
 // The result will be an array of all user objects.
 // The total time will be much less than running them sequentially.
 Effect.runPromise(program);
-
 ```
 
 ---
@@ -724,7 +716,6 @@ const programWithLogging = Effect.gen(function* () {
 );
 
 Effect.runPromise(programWithLogging);
-
 ```
 
 ---
@@ -747,37 +738,37 @@ import { Effect, Fiber } from "effect";
 // This simulates a background service like a health check or monitoring task
 const tickingClock = Effect.log("tick").pipe(
   Effect.delay("1 second"), // Wait 1 second between ticks
-  Effect.forever, // Repeat indefinitely - this creates an infinite effect
+  Effect.forever // Repeat indefinitely - this creates an infinite effect
 );
 
 const program = Effect.gen(function* () {
   yield* Effect.log("Forking the ticking clock into the background.");
-  
+
   // Start the clock, but don't wait for it.
   // Effect.fork creates a new fiber that runs concurrently with the main program
   // The main fiber continues immediately without waiting for the background task
   // This is essential for non-blocking background operations
   const clockFiber = yield* Effect.fork(tickingClock);
-  
+
   // At this point, we have two fibers running:
   // 1. The main fiber (this program)
   // 2. The background clock fiber (ticking every second)
 
   yield* Effect.log("Main process is now doing other work for 5 seconds...");
-  
+
   // Simulate the main application doing work
   // While this sleep happens, the background clock continues ticking
   // This demonstrates true concurrency - both fibers run simultaneously
   yield* Effect.sleep("5 seconds");
 
   yield* Effect.log("Main process is done. Interrupting the clock fiber.");
-  
+
   // Stop the background process.
   // Fiber.interrupt sends an interruption signal to the fiber
   // This allows the fiber to perform cleanup operations before terminating
   // Without this, the background task would continue running indefinitely
   yield* Fiber.interrupt(clockFiber);
-  
+
   // Important: Always clean up background fibers to prevent resource leaks
   // In a real application, you might want to:
   // 1. Use Fiber.join instead of interrupt to wait for graceful completion
@@ -785,7 +776,7 @@ const program = Effect.gen(function* () {
   // 3. Implement proper shutdown procedures
 
   yield* Effect.log("Program finished.");
-  
+
   // Key concepts demonstrated:
   // 1. Fork creates concurrent fibers without blocking
   // 2. Background tasks run independently of the main program
@@ -818,16 +809,18 @@ import { Effect } from "effect";
 
 // Simulate fetching a user, takes 1 second
 const fetchUser = Effect.succeed({ id: 1, name: "Paul" }).pipe(
-  Effect.delay("1 second"),
+  Effect.delay("1 second")
 );
 
 // Simulate fetching posts, takes 1.5 seconds
 const fetchPosts = Effect.succeed([{ title: "Effect is great" }]).pipe(
-  Effect.delay("1.5 seconds"),
+  Effect.delay("1.5 seconds")
 );
 
 // Run both effects concurrently - must specify concurrency option!
-const program = Effect.all([fetchUser, fetchPosts], { concurrency: "unbounded" });
+const program = Effect.all([fetchUser, fetchPosts], {
+  concurrency: "unbounded",
+});
 
 // The resulting effect will succeed with a tuple: [{id, name}, [{title}]]
 // Total execution time will be ~1.5 seconds (the duration of the longest task).
@@ -881,7 +874,8 @@ const stream = Stream.fromIterable([1, 2, 3]).pipe(
 ); // Stream<number>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `andThen` is for sequencing when you don’t care about the first result.
 - `tap` is for running side effects (like logging) without changing the value.
 - `flatten` is for removing unnecessary nesting (e.g., `Option<Option<A>>` → `Option<A>`).
@@ -942,10 +936,8 @@ const program = Effect.gen(function* () {
 // Try running this with OS threads - you'd likely hit system limits around 1000-10000 threads
 // With fibers, 100k+ concurrent operations are easily achievable
 Effect.runPromise(program);
-
 ```
 
 ---
 
 ---
-

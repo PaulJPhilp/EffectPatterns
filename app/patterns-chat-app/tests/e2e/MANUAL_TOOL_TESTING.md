@@ -5,10 +5,12 @@ This guide walks you through manually testing tool calls in the Chat Assistant.
 ## Prerequisites
 
 1. **Start the dev server**:
+
    ```bash
    cd app/code-assistant
    bun run dev
    ```
+
    The app will be available at `http://localhost:3000` (or next available port)
 
 2. **Ensure environment is configured**:
@@ -36,12 +38,14 @@ This guide walks you through manually testing tool calls in the Chat Assistant.
 **Prompt**: "What's the weather in San Francisco?"
 
 **Expected**:
+
 - ✅ Assistant calls getWeather tool
 - ✅ Response mentions current weather conditions
 - ✅ May include temperature, conditions, forecast
 - ⏱️ Takes 2-5 seconds (calls Open-Meteo API)
 
 **If it fails**:
+
 - Check internet connection
 - Verify Open-Meteo API is accessible
 - Try different city name
@@ -53,12 +57,14 @@ This guide walks you through manually testing tool calls in the Chat Assistant.
 **Prompt**: "Show me error handling patterns in Effect"
 
 **Expected**:
+
 - ✅ Assistant calls searchPatternsTool
 - ✅ Response lists available patterns
 - ✅ May mention specific pattern names
 - ⏱️ Takes 1-2 seconds (local search)
 
 **If it fails**:
+
 - Verify `/data/patterns-index.json` exists
 - Check patterns are loaded correctly
 - Try simpler search terms
@@ -70,12 +76,14 @@ This guide walks you through manually testing tool calls in the Chat Assistant.
 **Prompt**: "Tell me about the retry-with-backoff pattern"
 
 **Expected**:
+
 - ✅ Assistant calls getPatternByIdTool
 - ✅ Response includes pattern details
 - ✅ May include code examples
 - ⏱️ Takes 1-2 seconds
 
 **If it fails**:
+
 - Pattern ID might be different (use search first)
 - Check patterns are indexed correctly
 
@@ -86,6 +94,7 @@ This guide walks you through manually testing tool calls in the Chat Assistant.
 **Prompt**: "What categories of Effect patterns are available?"
 
 **Expected**:
+
 - ✅ Assistant calls listPatternCategoriesTool
 - ✅ Response lists 8 categories:
   - error-handling
@@ -99,6 +108,7 @@ This guide walks you through manually testing tool calls in the Chat Assistant.
 - ⏱️ Takes 1-2 seconds
 
 **If it fails**:
+
 - Check tool is defined in chat API
 - Verify categories are returned
 
@@ -109,12 +119,14 @@ This guide walks you through manually testing tool calls in the Chat Assistant.
 **Prompt**: "Create a TypeScript file for a REST API"
 
 **Expected**:
+
 - ✅ Assistant calls createDocument tool
 - ✅ Artifact panel appears on right side
 - ✅ Shows generated code
 - ⏱️ Takes 3-10 seconds (LLM generation)
 
 **If it fails**:
+
 - Check you're authenticated (user session required)
 - Verify database connection
 - Check artifact-model is configured
@@ -128,12 +140,14 @@ This guide walks you through manually testing tool calls in the Chat Assistant.
 **Prompt**: "Add error handling to the API"
 
 **Expected**:
+
 - ✅ Assistant calls updateDocument tool
 - ✅ Artifact updates with new content
 - ✅ Changes visible in artifact panel
 - ⏱️ Takes 3-10 seconds
 
 **If it fails**:
+
 - May not recognize previous document (context issue)
 - Try asking explicitly: "Can you update that document?"
 - Verify document ID is passed correctly
@@ -147,12 +161,14 @@ This guide walks you through manually testing tool calls in the Chat Assistant.
 **Prompt**: "Can you suggest improvements?"
 
 **Expected**:
+
 - ✅ Assistant calls requestSuggestions tool
 - ✅ Suggestions appear in artifact panel
 - ✅ Shows original vs suggested changes
 - ⏱️ Takes 5-15 seconds (LLM processing)
 
 **If it fails**:
+
 - Document may not be selected
 - Try refreshing and creating new document
 - Check suggestions schema matches expected format
@@ -163,18 +179,19 @@ This guide walks you through manually testing tool calls in the Chat Assistant.
 
 Follow this checklist:
 
-| Model | Weather | Search | Categories | Create Doc | Update Doc | Suggestions | Notes |
-|-------|---------|--------|------------|-----------|-----------|-------------|-------|
-| chat-model | ○ | ○ | ○ | ○ | ○ | ○ | Claude default |
-| chat-model-reasoning | ⊗ | ⊗ | ⊗ | ⊗ | ⊗ | ⊗ | Tools disabled |
-| gpt-5 | ○ | ○ | ○ | ○ | ○ | ○ | OpenAI |
-| gemini-2.0-flash | ○ | ○ | ○ | ○ | ○ | ○ | Google |
-| gemini-2.5-flash | ○ | ○ | ○ | ○ | ○ | ○ | Google fallback |
-| gpt-4.1 | ○ | ○ | ○ | ○ | ○ | ○ | OpenAI fallback |
-| gpt-5-mini | ○ | ○ | ○ | ○ | ○ | ○ | OpenAI mini |
-| claude-4.5-haiku | ○ | ○ | ○ | ○ | ○ | ○ | Anthropic |
+| Model                | Weather | Search | Categories | Create Doc | Update Doc | Suggestions | Notes           |
+| -------------------- | ------- | ------ | ---------- | ---------- | ---------- | ----------- | --------------- |
+| chat-model           | ○       | ○      | ○          | ○          | ○          | ○           | Claude default  |
+| chat-model-reasoning | ⊗       | ⊗      | ⊗          | ⊗          | ⊗          | ⊗           | Tools disabled  |
+| gpt-5                | ○       | ○      | ○          | ○          | ○          | ○           | OpenAI          |
+| gemini-2.0-flash     | ○       | ○      | ○          | ○          | ○          | ○           | Google          |
+| gemini-2.5-flash     | ○       | ○      | ○          | ○          | ○          | ○           | Google fallback |
+| gpt-4.1              | ○       | ○      | ○          | ○          | ○          | ○           | OpenAI fallback |
+| gpt-5-mini           | ○       | ○      | ○          | ○          | ○          | ○           | OpenAI mini     |
+| claude-4.5-haiku     | ○       | ○      | ○          | ○          | ○          | ○           | Anthropic       |
 
 **Legend:**
+
 - ○ = Should work / Test it
 - ⊗ = Known to not work (by design)
 - ✅ = Confirmed working
@@ -210,6 +227,7 @@ Follow this checklist:
 - Pattern tools: ~1-2 seconds (local search)
 
 If slower, check:
+
 - Network latency
 - LLM provider response time
 - Database query performance
@@ -223,6 +241,7 @@ bun run test tool-calls.test.ts
 ```
 
 This will:
+
 1. Test each tool on all 7 models
 2. Validate tool invocation and parameters
 3. Check response quality
@@ -233,19 +252,23 @@ Expected runtime: ~15-30 minutes (Playwright tests are slow)
 ## Common Issues
 
 ### "Tool not found" error
+
 - Verify tool is registered in `/api/chat/route.ts`
 - Check tool export from `lib/ai/tools/`
 
 ### "Model not found" error
+
 - Verify model ID exists in `CHAT_MODEL_IDS`
 - Check model is mapped in `lib/ai/providers.ts`
 
 ### Streaming stops
+
 - Check connection hasn't dropped
 - Verify API key hasn't expired
 - Try refreshing page
 
 ### Document not appearing
+
 - May need to scroll artifact panel
 - Try creating new document
 - Check browser DevTools for JS errors

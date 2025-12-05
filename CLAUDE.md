@@ -22,6 +22,7 @@ bun run ep search "effect"     # Test CLI
 ```
 
 See "Common Commands" below for your specific task, or jump to the relevant section:
+
 - **Adding a pattern?** → "Pattern Development Cycle"
 - **Working on the CLI?** → "Working with the CLI"
 - **Running the Code Assistant?** → "Code Assistant (NEW - Phase 1 Complete)"
@@ -158,6 +159,7 @@ Effect-Patterns/
 The project uses Bun workspaces (configured in `package.json`):
 
 - **Root workspace** - Core patterns, CLI, toolkit, MCP server, and scripts
+
   - `packages/` - Shared libraries (toolkit, effect-discord)
   - `services/mcp-server/` - REST API server
   - `scripts/` - Build and automation scripts
@@ -267,18 +269,20 @@ bun run pipeline
 #### 2. Pattern File Structure
 
 **TypeScript Example (`content/new/src/my-pattern.ts`):**
+
 ```typescript
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 // Demonstrate the pattern with clear, runnable code
 const example = Effect.gen(function* () {
   // Pattern implementation
-})
+});
 
-Effect.runPromise(example)
+Effect.runPromise(example);
 ```
 
 **MDX Documentation (`content/new/my-pattern.mdx`):**
+
 ```markdown
 ---
 id: my-pattern
@@ -294,22 +298,27 @@ rule:
 ---
 
 ## Use Case
+
 When to use this pattern...
 
 ## Good Example
+
 \`\`\`typescript
 // Well-implemented example
 \`\`\`
 
 ## Anti-Pattern
+
 \`\`\`typescript
 // What NOT to do
 \`\`\`
 
 ## Rationale
+
 Why this pattern works...
 
 ## Trade-offs
+
 - Pros: ...
 - Cons: ...
 ```
@@ -317,6 +326,7 @@ Why this pattern works...
 #### 3. Validation Requirements
 
 Patterns must include:
+
 - ✅ Valid YAML frontmatter
 - ✅ Unique `id` (kebab-case)
 - ✅ `skillLevel`: `beginner`, `intermediate`, or `advanced`
@@ -331,6 +341,7 @@ Patterns must include:
 The `ep` CLI is the main interface for pattern discovery and installation. Recent restructuring (v0.6.0) moved the CLI into dedicated packages.
 
 **CLI Structure:**
+
 ```
 ep
 ├── search <query>              # Search patterns
@@ -347,6 +358,7 @@ ep
 ```
 
 **CLI Implementation:**
+
 - Main entry point: `packages/ep-cli/src/index.ts`
 - Admin tool: `packages/ep-admin/src/index.ts`
 - Uses `@effect/cli` for command parsing
@@ -387,11 +399,13 @@ GET /api/health
 ```
 
 **Authentication:**
+
 - API key required: `x-api-key` header or `?key=` query param
 - Set via `PATTERN_API_KEY` environment variable
 - Separate keys for staging/production
 
 **Deployment:**
+
 - Production: `https://effect-patterns.vercel.app`
 - Staging: `https://effect-patterns-staging.vercel.app`
 
@@ -402,6 +416,7 @@ The `@effect-patterns/effect-discord` package provides an Effect-native service 
 **Purpose**: Export Discord channel data for pattern discovery and curation (e.g., common questions from the Effect-TS Discord community).
 
 **Key Features:**
+
 - Effect.Service pattern with Layer.effect
 - Wraps DiscordChatExporter.Cli tool
 - Secure token handling with Effect.Secret
@@ -410,8 +425,13 @@ The `@effect-patterns/effect-discord` package provides an Effect-native service 
 - Comprehensive integration tests with real Discord API
 
 **Usage Example:**
+
 ```typescript
-import { Discord, DiscordLive, DiscordConfig } from "@effect-patterns/effect-discord";
+import {
+  Discord,
+  DiscordLive,
+  DiscordConfig,
+} from "@effect-patterns/effect-discord";
 import { Effect, Layer, Secret } from "effect";
 import { NodeContext } from "@effect/platform-node";
 
@@ -431,12 +451,13 @@ await Effect.runPromise(
   program.pipe(
     Effect.provide(DiscordLive),
     Effect.provide(ConfigLive),
-    Effect.provide(NodeContext.layer),
+    Effect.provide(NodeContext.layer)
   )
 );
 ```
 
 **Testing:**
+
 ```bash
 # Run integration tests (requires Discord bot setup)
 bun test packages/effect-discord/test/integration.test.ts
@@ -446,6 +467,7 @@ SKIP_INTEGRATION_TESTS=true bun test packages/effect-discord/test/integration.te
 ```
 
 See:
+
 - [packages/effect-discord/README.md](./packages/effect-discord/README.md) - User documentation
 - [packages/effect-discord/CLAUDE.md](./packages/effect-discord/CLAUDE.md) - Development guide
 - [packages/effect-discord/INTEGRATION_TESTS.md](./packages/effect-discord/INTEGRATION_TESTS.md) - Test setup
@@ -456,6 +478,7 @@ See:
 The Data Analysis Engine combines Discord data export with AI-powered thematic analysis to identify community patterns and guide content strategy.
 
 **Architecture:**
+
 - **Discord Exporter** (`@effect-patterns/effect-discord`) - Effect-native service for exporting Discord channel data
 - **Analysis Agent** (`scripts/analyzer/`) - LangGraph workflow for thematic analysis using Effect services
 - **LLM Service** (`scripts/analyzer/services/llm.ts`) - Effect service wrapping Anthropic Claude for analysis
@@ -464,6 +487,7 @@ The Data Analysis Engine combines Discord data export with AI-powered thematic a
 **Workflow:**
 
 1. **Data Ingestion** (`bun run ingest:discord`):
+
    - Exports Discord channel messages using DiscordChatExporter.Cli
    - Anonymizes user data (replaces usernames/IDs with hashes)
    - Saves to `/tmp/discord-exports/` directory
@@ -501,30 +525,30 @@ bun run analyze
 ```typescript
 // scripts/analyzer/graph.ts - Main workflow orchestration
 const workflow = new StateGraph<AnalysisState>()
-  .addNode("chunk", chunkNode)      // Split data into chunks
-  .addNode("analyze", analyzeNode)  // Analyze each chunk
+  .addNode("chunk", chunkNode) // Split data into chunks
+  .addNode("analyze", analyzeNode) // Analyze each chunk
   .addNode("aggregate", aggregateNode) // Combine results
   .addEdge(START, "chunk")
   .addEdge("chunk", "analyze")
   .addEdge("analyze", "aggregate")
-  .addEdge("aggregate", END)
+  .addEdge("aggregate", END);
 
 // Effect services provide dependencies
 const program = Effect.gen(function* () {
-  const llm = yield* LLMService
-  const file = yield* FileService
+  const llm = yield* LLMService;
+  const file = yield* FileService;
 
   // Run LangGraph workflow
   const result = await workflow.invoke({
     messages: exportedData.messages,
     chunks: [],
     analyses: [],
-    finalReport: null
-  })
+    finalReport: null,
+  });
 
   // Save report
-  yield* file.writeReport(result.finalReport)
-})
+  yield* file.writeReport(result.finalReport);
+});
 ```
 
 **Key Features:**
@@ -552,12 +576,14 @@ SKIP_INTEGRATION_TESTS=true bun test scripts/analyzer/
 **Configuration:**
 
 Environment variables:
+
 - `DISCORD_BOT_TOKEN` - Discord bot authentication
 - `ANTHROPIC_API_KEY` - Claude API key for analysis
 - `ANALYSIS_OUTPUT_DIR` - Output directory (default: `data/analysis/`)
 - `DISCORD_EXPORT_DIR` - Export directory (default: `/tmp/discord-exports/`)
 
 See:
+
 - [scripts/analyzer/README.md](./scripts/analyzer/README.md) - Detailed architecture
 - [scripts/analyzer/graph.ts](./scripts/analyzer/graph.ts) - Workflow implementation
 - [scripts/analyzer/services/](./scripts/analyzer/services/) - Effect services
@@ -575,27 +601,32 @@ import {
   getPatternById,
   buildSnippet,
   validateGenerateRequest,
-} from "@effect-patterns/toolkit"
+} from "@effect-patterns/toolkit";
 
 // Search patterns
-const results = yield* searchPatterns({
-  query: "error handling",
-  skillLevel: "intermediate",
-  useCase: ["Error Management"],
-})
+const results =
+  yield *
+  searchPatterns({
+    query: "error handling",
+    skillLevel: "intermediate",
+    useCase: ["Error Management"],
+  });
 
 // Get pattern details
-const pattern = yield* getPatternById("handle-errors-with-catch")
+const pattern = yield * getPatternById("handle-errors-with-catch");
 
 // Generate code snippet
-const snippet = yield* buildSnippet({
-  patternId: "retry-with-backoff",
-  customName: "retryRequest",
-  moduleType: "esm",
-})
+const snippet =
+  yield *
+  buildSnippet({
+    patternId: "retry-with-backoff",
+    customName: "retryRequest",
+    moduleType: "esm",
+  });
 ```
 
 **Schemas:**
+
 - Located in `packages/toolkit/src/schemas/`
 - Uses `@effect/schema` for runtime validation
 - Generates JSON Schema for OpenAPI
@@ -613,23 +644,25 @@ const snippet = yield* buildSnippet({
 - **NEVER use `Context.Tag`** - Always use `Effect.Service` pattern with class syntax instead
 
 **Good Example:**
+
 ```typescript
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 const fetchUser = (id: string) =>
   Effect.gen(function* () {
-    const response = yield* Effect.tryPromise(() => fetch(`/users/${id}`))
-    const user = yield* Effect.tryPromise(() => response.json())
-    return user
-  })
+    const response = yield* Effect.tryPromise(() => fetch(`/users/${id}`));
+    const user = yield* Effect.tryPromise(() => response.json());
+    return user;
+  });
 ```
 
 **Anti-Pattern:**
+
 ```typescript
 // ❌ Don't use raw Promise
 async function fetchUser(id: string) {
-  const response = await fetch(`/users/${id}`)
-  return response.json()
+  const response = await fetch(`/users/${id}`);
+  return response.json();
 }
 ```
 
@@ -641,31 +674,34 @@ async function fetchUser(id: string) {
 - **mapError** to transform errors at boundaries
 
 **Example:**
+
 ```typescript
-import { Data } from "effect"
+import { Data } from "effect";
 
 class NetworkError extends Data.TaggedError("NetworkError")<{
-  cause: unknown
+  cause: unknown;
 }> {}
 
 class ParseError extends Data.TaggedError("ParseError")<{
-  message: string
+  message: string;
 }> {}
 
-const fetchData = (url: string): Effect.Effect<Data, NetworkError | ParseError> =>
+const fetchData = (
+  url: string
+): Effect.Effect<Data, NetworkError | ParseError> =>
   Effect.gen(function* () {
     const response = yield* Effect.tryPromise({
       try: () => fetch(url),
       catch: (cause) => new NetworkError({ cause }),
-    })
+    });
 
     const data = yield* Effect.tryPromise({
       try: () => response.json(),
       catch: () => new ParseError({ message: "Invalid JSON" }),
-    })
+    });
 
-    return data
-  })
+    return data;
+  });
 ```
 
 ### Testing
@@ -676,9 +712,10 @@ const fetchData = (url: string): Effect.Effect<Data, NetworkError | ParseError> 
 - **Test files** colocated with source or in `__tests__/`
 
 **Test Structure:**
+
 ```typescript
-import { Effect, Layer } from "effect"
-import { describe, it, expect } from "vitest"
+import { Effect, Layer } from "effect";
+import { describe, it, expect } from "vitest";
 
 describe("MyService", () => {
   const TestLayer = Layer.succeed(
@@ -686,16 +723,16 @@ describe("MyService", () => {
     MyService.of({
       // Mock implementation
     })
-  )
+  );
 
   it("should do something", async () => {
     const result = await Effect.runPromise(
       myFunction().pipe(Effect.provide(TestLayer))
-    )
+    );
 
-    expect(result).toBe("expected")
-  })
-})
+    expect(result).toBe("expected");
+  });
+});
 ```
 
 ### Naming Conventions
@@ -711,52 +748,52 @@ describe("MyService", () => {
 
 ### Configuration
 
-| File | Purpose |
-|------|---------|
-| `package.json` | Root package, workspaces, scripts |
-| `tsconfig.json` | TypeScript configuration |
-| `biome.json` | Linter/formatter config |
-| `vercel.json` | Vercel deployment settings |
-| `.env` | Environment variables (gitignored) |
+| File            | Purpose                            |
+| --------------- | ---------------------------------- |
+| `package.json`  | Root package, workspaces, scripts  |
+| `tsconfig.json` | TypeScript configuration           |
+| `biome.json`    | Linter/formatter config            |
+| `vercel.json`   | Vercel deployment settings         |
+| `.env`          | Environment variables (gitignored) |
 
 ### Pattern Data
 
-| Location | Contents |
-|----------|----------|
+| Location                  | Contents                  |
+| ------------------------- | ------------------------- |
 | `content/published/*.mdx` | Published patterns (150+) |
-| `content/new/*.mdx` | Patterns in development |
-| `content/src/*.ts` | TypeScript examples |
-| `data/patterns.json` | Generated pattern index |
+| `content/new/*.mdx`       | Patterns in development   |
+| `content/src/*.ts`        | TypeScript examples       |
+| `data/patterns.json`      | Generated pattern index   |
 
 ### Scripts
 
-| Script | Purpose |
-|--------|---------|
-| `packages/ep-cli/src/index.ts` | Main CLI entry point (v0.6.0+) |
-| `packages/ep-admin/src/index.ts` | Admin CLI tool (v0.6.0+) |
-| `scripts/ep.ts` | Legacy CLI entry point (maintained for compatibility) |
-| `scripts/publish/pipeline.ts` | Main pipeline orchestrator |
-| `scripts/publish/validate-improved.ts` | Advanced pattern validation |
-| `scripts/publish/publish.ts` | Pattern publishing |
-| `scripts/publish/rules-improved.ts` | Advanced AI rules generation |
-| `scripts/publish/generate-claude-rules.ts` | Claude-specific rules |
-| `scripts/ingest/ingest-pipeline-improved.ts` | Advanced pattern ingestion |
-| `scripts/ingest-discord.ts` | Discord data export and anonymization |
-| `agents/analyzer.ts` | LangGraph analysis agent entry point |
-| `scripts/analyzer/graph.ts` | LangGraph workflow orchestration |
+| Script                                       | Purpose                                               |
+| -------------------------------------------- | ----------------------------------------------------- |
+| `packages/ep-cli/src/index.ts`               | Main CLI entry point (v0.6.0+)                        |
+| `packages/ep-admin/src/index.ts`             | Admin CLI tool (v0.6.0+)                              |
+| `scripts/ep.ts`                              | Legacy CLI entry point (maintained for compatibility) |
+| `scripts/publish/pipeline.ts`                | Main pipeline orchestrator                            |
+| `scripts/publish/validate-improved.ts`       | Advanced pattern validation                           |
+| `scripts/publish/publish.ts`                 | Pattern publishing                                    |
+| `scripts/publish/rules-improved.ts`          | Advanced AI rules generation                          |
+| `scripts/publish/generate-claude-rules.ts`   | Claude-specific rules                                 |
+| `scripts/ingest/ingest-pipeline-improved.ts` | Advanced pattern ingestion                            |
+| `scripts/ingest-discord.ts`                  | Discord data export and anonymization                 |
+| `agents/analyzer.ts`                         | LangGraph analysis agent entry point                  |
+| `scripts/analyzer/graph.ts`                  | LangGraph workflow orchestration                      |
 
 ### Documentation
 
-| File | Purpose |
-|------|---------|
-| `README.md` | Main project README |
-| `SETUP.md` | Setup and installation guide |
-| `TESTING.md` | Testing documentation |
-| `SECURITY.md` | Security policy and best practices |
-| `ROADMAP.md` | Future features and plans |
-| `CHANGELOG-CLI.md` | CLI version history |
-| `docs/guides/CONTRIBUTING.md` | Contribution guidelines |
-| `docs/implementation/` | Technical implementation docs |
+| File                          | Purpose                            |
+| ----------------------------- | ---------------------------------- |
+| `README.md`                   | Main project README                |
+| `SETUP.md`                    | Setup and installation guide       |
+| `TESTING.md`                  | Testing documentation              |
+| `SECURITY.md`                 | Security policy and best practices |
+| `ROADMAP.md`                  | Future features and plans          |
+| `CHANGELOG-CLI.md`            | CLI version history                |
+| `docs/guides/CONTRIBUTING.md` | Contribution guidelines            |
+| `docs/implementation/`        | Technical implementation docs      |
 
 ## Dependencies
 
@@ -796,6 +833,7 @@ describe("MyService", () => {
 ### GitHub Actions
 
 **Workflows:**
+
 - `.github/workflows/ci.yml` - Main CI pipeline
   - Runs tests
   - Type checking
@@ -811,6 +849,7 @@ describe("MyService", () => {
 ### Deployment
 
 **Vercel:**
+
 - Automatic deployments on push to main
 - Preview deployments for PRs
 - Environment variables:
@@ -854,6 +893,7 @@ bun run rules:claude
 ```
 
 **Output:**
+
 - `rules/generated/rules-for-claude.md` (377KB, 11,308 lines)
 - `rules/generated/rules-for-cursor.md`
 - `rules/generated/rules-for-windsurf.md`
@@ -861,6 +901,7 @@ bun run rules:claude
 
 **Rule Structure:**
 Each pattern is converted to a rule with:
+
 - Rule description
 - Use cases
 - Rationale
@@ -871,6 +912,7 @@ Each pattern is converted to a rule with:
 ### Claude Code Integration
 
 Claude Code can access these rules for context-aware assistance:
+
 - Pattern recommendations
 - Code generation
 - Error detection
@@ -883,10 +925,12 @@ Claude Code can access these rules for context-aware assistance:
 The Code Assistant is a production-ready AI-powered coding platform built on Vercel's coding-agent-template with:
 
 - **Dual-Mode Architecture**:
+
   - **Chat Mode** (`/chat`) - Conversational AI with Supermemory for user preferences
   - **Task Mode** (`/tasks`) - Full coding agent with sandbox execution and Git integration
 
 - **Tech Stack**:
+
   - Next.js 16 + React 19
   - Vercel Sandbox for isolated code execution
   - Neon PostgreSQL (via Vercel)
@@ -916,12 +960,14 @@ bun run dev
 ### Key Features (Phase 1)
 
 **Chat Mode** (✅ Complete):
+
 - Conversational AI powered by Claude
 - Supermemory integration for user preferences
 - Effect Patterns search (ready to enable)
 - No sandbox execution - pure conversational
 
 **Task Mode** (✅ Complete):
+
 - Full coding agent with sandbox execution
 - Automatic Git branch creation and commits
 - File browser and diff viewer
@@ -933,17 +979,20 @@ bun run dev
 See `app/code-assistant/.env.local` for environment variables:
 
 **Required**:
+
 - `POSTGRES_URL` - Neon database connection
 - `ANTHROPIC_API_KEY` - For Claude agent
 - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` - OAuth
 - `JWE_SECRET` / `ENCRYPTION_KEY` - Security keys
 
 **Optional** (for Task mode):
+
 - `SANDBOX_VERCEL_TEAM_ID` - Vercel sandbox credentials
 - `SANDBOX_VERCEL_PROJECT_ID`
 - `SANDBOX_VERCEL_TOKEN`
 
 **Optional** (for features):
+
 - `SUPERMEMORY_API_KEY` - Memory features
 - `OPENAI_API_KEY`, `GEMINI_API_KEY`, etc. - Other agents
 
@@ -977,6 +1026,7 @@ See `app/code-assistant/.env.local` for environment variables:
 ### Update the README
 
 After adding patterns:
+
 ```bash
 bun run pipeline
 # README.md is automatically updated with new patterns
@@ -985,6 +1035,7 @@ bun run pipeline
 ### Regenerate AI Rules
 
 After pattern changes:
+
 ```bash
 bun run rules:claude
 # Or for all tools:
@@ -1037,30 +1088,35 @@ vercel --prod
 ### Common Issues
 
 **Pattern validation fails:**
+
 - Check frontmatter YAML syntax
 - Ensure all required fields present
 - Verify `id` is unique and kebab-case
 - Check `skillLevel` is valid: beginner, intermediate, or advanced
 
 **TypeScript examples don't run:**
+
 - Ensure imports are correct
 - Check Effect version compatibility
 - Verify no syntax errors
 - Run `bun run typecheck`
 
 **Tests fail:**
+
 - Clear `node_modules` and reinstall: `rm -rf node_modules && bun install`
 - Check test file imports
 - Verify test data is valid
 - Run with verbose: `bun test --reporter=verbose`
 
 **CLI doesn't work:**
+
 - Reinstall globally: `bun install -g .`
 - Check `ep` is in PATH
 - Try with `bun run ep` instead
 - Verify permissions on `scripts/ep.ts`
 
 **MCP server errors:**
+
 - Check `PATTERN_API_KEY` is set
 - Verify `data/patterns.json` exists
 - Run `bun run toolkit:build` first

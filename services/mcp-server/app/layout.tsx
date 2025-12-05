@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'Effect Patterns MCP Server',
-  description: 'API server for Effect Patterns Claude Code Plugin',
+  title: "Effect Patterns MCP Server",
+  description: "API server for Effect Patterns Claude Code Plugin",
 };
 
 export default function RootLayout({

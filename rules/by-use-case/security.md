@@ -20,13 +20,12 @@ function authenticate(user: string, password: Redacted.Redacted<string>) {
 // Logging or stringifying a Redacted value
 console.log(`Password: ${secret}`); // Output: Password: <redacted>
 console.log(String(secret)); // Output: <redacted>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Redacted.make(value)` wraps a sensitive value.
 - When logged or stringified, the value is replaced with `<redacted>`.
 - Prevents accidental exposure of secrets in logs or error messages.
 
 ---
-

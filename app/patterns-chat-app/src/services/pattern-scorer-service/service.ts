@@ -1,10 +1,11 @@
 import { Data, Effect, Ref } from "effect";
-import type { ScoringResult, DetailedScoringResult, ScoringConfig } from "./types";
+import type {
+  ScoringResult,
+  DetailedScoringResult,
+  ScoringConfig,
+} from "./types";
 import type { PatternScorerServiceAPI } from "./api";
-import {
-  InvalidThresholdError,
-  QueryValidationError,
-} from "./errors";
+import { InvalidThresholdError, QueryValidationError } from "./errors";
 import {
   hasNegation,
   scoreEffectSpecificity,
@@ -37,7 +38,9 @@ const makePatternScorerService = Effect.gen(function* () {
   /**
    * Score a user query for pattern relevance
    */
-  const scoreQuery = (query: string): Effect.Effect<ScoringResult, QueryValidationError> =>
+  const scoreQuery = (
+    query: string
+  ): Effect.Effect<ScoringResult, QueryValidationError> =>
     Effect.gen(function* () {
       if (!query || query.trim().length === 0) {
         return yield* Effect.fail(
@@ -68,7 +71,9 @@ const makePatternScorerService = Effect.gen(function* () {
       const effectScore = scoreEffectSpecificity(normalizedQuery);
       if (effectScore > 0) {
         score += effectScore * cfg.effectKeywordWeight;
-        reasons.push(`Effect-TS specificity: ${(effectScore * 100).toFixed(0)}%`);
+        reasons.push(
+          `Effect-TS specificity: ${(effectScore * 100).toFixed(0)}%`
+        );
       }
 
       // 3. Topic matching (strong signal)
@@ -186,4 +191,3 @@ export class PatternScorerService extends Effect.Service<PatternScorerService>()
     scoped: makePatternScorerService,
   }
 ) {}
-

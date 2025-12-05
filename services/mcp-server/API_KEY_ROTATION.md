@@ -5,6 +5,7 @@ Secure API key generation, rotation, and management procedures for the Effect Pa
 ## Overview
 
 This guide covers:
+
 - Generating secure API keys
 - Rotating keys without downtime
 - Automated rotation workflows
@@ -16,6 +17,7 @@ This guide covers:
 ### Generate Secure Keys
 
 **Recommended Method** (Cryptographically secure):
+
 ```bash
 # Generate 256-bit (32 byte) key
 openssl rand -hex 32
@@ -31,6 +33,7 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 **Key Format**:
+
 - Length: 64 characters (256 bits)
 - Character set: Hexadecimal (0-9, a-f)
 - Entropy: 256 bits minimum
@@ -55,6 +58,7 @@ staging-local-dev-20250110
 ### Staging Environment
 
 **Current Key** (as of 2025-01-10):
+
 ```
 Environment: Vercel Preview/Staging
 Key Name: PATTERN_API_KEY
@@ -63,6 +67,7 @@ Next Rotation: 2025-04-10
 ```
 
 **Generate New Staging Key**:
+
 ```bash
 # Generate new key
 NEW_KEY=$(openssl rand -hex 32)
@@ -75,6 +80,7 @@ echo "$NEW_KEY" | pbcopy  # macOS - copies to clipboard
 ### Production Environment
 
 **Current Key** (not yet deployed):
+
 ```
 Environment: Vercel Production
 Key Name: PATTERN_API_KEY
@@ -161,7 +167,9 @@ const SECONDARY_KEY = process.env.PATTERN_API_KEY_NEW; // Optional during rotati
 
 const VALID_KEYS = [PRIMARY_KEY, SECONDARY_KEY].filter(Boolean);
 
-export function validateApiKey(request: NextRequest): Effect.Effect<void, Error> {
+export function validateApiKey(
+  request: NextRequest
+): Effect.Effect<void, Error> {
   return Effect.gen(function* () {
     // Try header first
     const headerKey = request.headers.get("x-api-key");
@@ -179,7 +187,9 @@ export function validateApiKey(request: NextRequest): Effect.Effect<void, Error>
     // Log attempted key (first 8 chars only) for audit
     const attemptedKey = headerKey || queryKey;
     if (attemptedKey) {
-      console.warn(`Invalid API key attempt: ${attemptedKey.substring(0, 8)}...`);
+      console.warn(
+        `Invalid API key attempt: ${attemptedKey.substring(0, 8)}...`
+      );
     }
 
     yield* Effect.fail(new Error("Unauthorized: Invalid or missing API key"));
@@ -211,7 +221,9 @@ const validateApiKeys = Effect.sync(() => {
     throw new Error("PATTERN_API_KEY_NEW must be 64 hexadecimal characters");
   }
 
-  console.log(`API Keys loaded: Primary (${primaryKey.substring(0, 8)}...)${secondaryKey ? `, Secondary (${secondaryKey.substring(0, 8)}...)` : ""}`);
+  console.log(
+    `API Keys loaded: Primary (${primaryKey.substring(0, 8)}...)${secondaryKey ? `, Secondary (${secondaryKey.substring(0, 8)}...)` : ""}`
+  );
 });
 ```
 
@@ -227,11 +239,11 @@ name: Rotate API Keys
 on:
   schedule:
     # Run quarterly (every 90 days) - Jan 1, Apr 1, Jul 1, Oct 1
-    - cron: '0 0 1 1,4,7,10 *'
+    - cron: "0 0 1 1,4,7,10 *"
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to rotate keys for'
+        description: "Environment to rotate keys for"
         required: true
         type: choice
         options:
@@ -352,6 +364,7 @@ echo "🚨 EMERGENCY: API key revoked and rotated"
 ## Key Storage Best Practices
 
 ### DO:
+
 - ✅ Store keys in Vercel environment variables
 - ✅ Use GitHub encrypted secrets for CI/CD
 - ✅ Use password managers (1Password, LastPass) for team access
@@ -362,6 +375,7 @@ echo "🚨 EMERGENCY: API key revoked and rotated"
 - ✅ Rotate keys regularly (90 days)
 
 ### DON'T:
+
 - ❌ Commit keys to Git (check with `git log -S "PATTERN_API_KEY"`)
 - ❌ Share keys via email or Slack
 - ❌ Use same key across environments
@@ -381,17 +395,17 @@ Maintain a log of all key rotations:
 
 ## Staging Environment
 
-| Date       | Action  | Key ID (first 8 chars) | Rotated By | Reason       |
-|------------|---------|------------------------|------------|--------------|
-| 2025-01-10 | Created | a1b2c3d4               | Claude     | Initial      |
-| 2025-04-10 | Rotated | e5f6g7h8               | Auto       | Scheduled    |
-| 2025-07-10 | Rotated | i9j0k1l2               | Auto       | Scheduled    |
+| Date       | Action  | Key ID (first 8 chars) | Rotated By | Reason    |
+| ---------- | ------- | ---------------------- | ---------- | --------- |
+| 2025-01-10 | Created | a1b2c3d4               | Claude     | Initial   |
+| 2025-04-10 | Rotated | e5f6g7h8               | Auto       | Scheduled |
+| 2025-07-10 | Rotated | i9j0k1l2               | Auto       | Scheduled |
 
 ## Production Environment
 
-| Date       | Action  | Key ID (first 8 chars) | Rotated By | Reason       |
-|------------|---------|------------------------|------------|--------------|
-| 2025-01-15 | Created | m3n4o5p6               | Admin      | Launch       |
+| Date       | Action  | Key ID (first 8 chars) | Rotated By | Reason |
+| ---------- | ------- | ---------------------- | ---------- | ------ |
+| 2025-01-15 | Created | m3n4o5p6               | Admin      | Launch |
 ```
 
 ### Access Monitoring
@@ -401,31 +415,36 @@ Monitor API key usage:
 ```typescript
 // Add to authentication middleware
 const logApiKeyUsage = (keyPrefix: string, request: NextRequest) => {
-  console.log(JSON.stringify({
-    timestamp: new Date().toISOString(),
-    event: 'api_key_used',
-    key_prefix: keyPrefix.substring(0, 8), // First 8 chars only
-    endpoint: request.url,
-    ip: request.headers.get('x-forwarded-for'),
-    user_agent: request.headers.get('user-agent'),
-  }));
+  console.log(
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      event: "api_key_used",
+      key_prefix: keyPrefix.substring(0, 8), // First 8 chars only
+      endpoint: request.url,
+      ip: request.headers.get("x-forwarded-for"),
+      user_agent: request.headers.get("user-agent"),
+    })
+  );
 };
 ```
 
 ## Compliance
 
 ### SOC 2 Requirements
+
 - ✅ Keys rotated every 90 days
 - ✅ Access logged and monitored
 - ✅ Keys encrypted in transit and at rest
 - ✅ Separation of duties (different keys per environment)
 
 ### PCI DSS Requirements
+
 - ✅ Strong cryptography (256-bit keys)
 - ✅ Regular rotation schedule
 - ✅ No shared accounts (individual API keys for services)
 
 ### GDPR Requirements
+
 - ✅ Data access controlled via API keys
 - ✅ Access audit trail maintained
 - ✅ Keys can be revoked on demand
@@ -435,12 +454,14 @@ const logApiKeyUsage = (keyPrefix: string, request: NextRequest) => {
 Use this checklist every 90 days:
 
 ### Pre-Rotation
+
 - [ ] Review access logs for anomalies
 - [ ] Verify all current clients and services
 - [ ] Schedule maintenance window (if needed)
 - [ ] Notify team of upcoming rotation
 
 ### Rotation
+
 - [ ] Generate new key using `openssl rand -hex 32`
 - [ ] Add new key as `PATTERN_API_KEY_NEW` to Vercel
 - [ ] Deploy application with dual-key support
@@ -449,6 +470,7 @@ Use this checklist every 90 days:
 - [ ] Verify smoke tests pass
 
 ### Post-Rotation (7-day migration period)
+
 - [ ] Update GitHub Actions secrets
 - [ ] Update team member .env files
 - [ ] Update documentation

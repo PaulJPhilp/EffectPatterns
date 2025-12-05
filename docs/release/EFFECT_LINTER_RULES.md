@@ -24,24 +24,26 @@ bun run lint:all
 **Detects**: Using `Effect.catchAll` with `Effect.gen` just for logging
 
 **Problem**:
+
 ```typescript
 // ❌ Verbose and not idiomatic
 parseJson(json).pipe(
-	Effect.catchAll((error) =>
-		Effect.gen(function* () {
-			yield* Effect.log(`Error: ${error.message}`)
-		})
-	)
-)
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.log(`Error: ${error.message}`);
+    })
+  )
+);
 ```
 
 **Solution**:
+
 ```typescript
 // ✅ Use tapError for side-effect logging
 parseJson(json).pipe(
-	Effect.tapError((error) => Effect.log(`Error: ${error.message}`)),
-	Effect.catchAll(() => Effect.succeed(defaultValue))
-)
+  Effect.tapError((error) => Effect.log(`Error: ${error.message}`)),
+  Effect.catchAll(() => Effect.succeed(defaultValue))
+);
 ```
 
 **Why**: `Effect.tapError` is designed for side-effect logging. Reserve `Effect.catchAll` for actual error recovery.
@@ -53,26 +55,29 @@ parseJson(json).pipe(
 **Detects**: `Effect.all` without explicit `concurrency` option
 
 **Problem**:
+
 ```typescript
 // ❌ Runs sequentially by default!
-const results = yield* Effect.all(effects)
+const results = yield * Effect.all(effects);
 ```
 
 **Solution**:
+
 ```typescript
 // ✅ Explicitly parallel
-const results = yield* Effect.all(effects, { concurrency: "unbounded" })
+const results = yield * Effect.all(effects, { concurrency: "unbounded" });
 
 // ✅ Or explicitly sequential
-const results = yield* Effect.all(effects, { concurrency: 1 })
+const results = yield * Effect.all(effects, { concurrency: 1 });
 
 // ✅ Or bounded parallelism
-const results = yield* Effect.all(effects, { concurrency: 5 })
+const results = yield * Effect.all(effects, { concurrency: 5 });
 ```
 
 **Why**: `Effect.all` is sequential by default, which is often surprising. Being explicit about concurrency prevents performance bugs.
 
 **Severity**:
+
 - **Error** in files with "parallel" or "concurrent" in the name
 - **Warning** in other files
 
@@ -82,26 +87,27 @@ const results = yield* Effect.all(effects, { concurrency: 5 })
 
 **Detects**: Usage of deprecated Effect APIs
 
-| Deprecated | Replacement |
-|------------|-------------|
+| Deprecated          | Replacement                                        |
+| ------------------- | -------------------------------------------------- |
 | `Effect.fromOption` | `Option.match` with `Effect.succeed`/`Effect.fail` |
 | `Effect.fromEither` | `Either.match` with `Effect.succeed`/`Effect.fail` |
-| `Option.zip` | `Option.all` |
-| `Either.zip` | `Either.all` |
-| `Option.cond` | Ternary with `Option.some`/`Option.none` |
-| `Either.cond` | Ternary with `Either.right`/`Either.left` |
-| `Effect.matchTag` | `Effect.catchTags` |
+| `Option.zip`        | `Option.all`                                       |
+| `Either.zip`        | `Either.all`                                       |
+| `Option.cond`       | Ternary with `Option.some`/`Option.none`           |
+| `Either.cond`       | Ternary with `Either.right`/`Either.left`          |
+| `Effect.matchTag`   | `Effect.catchTags`                                 |
 
 **Example**:
+
 ```typescript
 // ❌ Deprecated
-const effect = Effect.fromOption(option, () => new Error("None"))
+const effect = Effect.fromOption(option, () => new Error("None"));
 
 // ✅ Modern API
 const effect = Option.match(option, {
-	onNone: () => Effect.fail(new Error("None")),
-	onSome: (value) => Effect.succeed(value)
-})
+  onNone: () => Effect.fail(new Error("None")),
+  onSome: (value) => Effect.succeed(value),
+});
 ```
 
 ---
@@ -111,21 +117,27 @@ const effect = Option.match(option, {
 **Detects**: Long method chains (>3 calls)
 
 **Problem**:
+
 ```typescript
 // 🤔 Hard to read
-const result = value.map(x => x * 2).filter(x => x > 5).reduce((a, b) => a + b).toString()
+const result = value
+  .map((x) => x * 2)
+  .filter((x) => x > 5)
+  .reduce((a, b) => a + b)
+  .toString();
 ```
 
 **Solution**:
+
 ```typescript
 // ✅ More readable with pipe
 const result = pipe(
-	value,
-	Array.map(x => x * 2),
-	Array.filter(x => x > 5),
-	Array.reduce((a, b) => a + b),
-	String
-)
+  value,
+  Array.map((x) => x * 2),
+  Array.filter((x) => x > 5),
+  Array.reduce((a, b) => a + b),
+  String
+);
 ```
 
 **Why**: Pipe-based composition is more readable for long chains and follows Effect conventions.
@@ -137,24 +149,26 @@ const result = pipe(
 **Detects**: Non-streaming operations in stream patterns
 
 **Problem**:
+
 ```typescript
 // ❌ Loads entire file into memory!
-const content = yield* fs.readFileString(filePath)
-const stream = Stream.fromIterable(content.split('\n'))
+const content = yield * fs.readFileString(filePath);
+const stream = Stream.fromIterable(content.split("\n"));
 ```
 
 **Solution**:
+
 ```typescript
 // ✅ True streaming with constant memory
-const stream = fs.readFile(filePath).pipe(
-	Stream.decodeText('utf-8'),
-	Stream.splitLines
-)
+const stream = fs
+  .readFile(filePath)
+  .pipe(Stream.decodeText("utf-8"), Stream.splitLines);
 ```
 
 **Why**: Streaming patterns should use constant memory, not load entire datasets into memory first.
 
 **Also Detects**:
+
 - `Stream.runCollect` (loads entire stream into memory)
 - Suggest: Use `Stream.run` or other streaming combinators
 
@@ -165,6 +179,7 @@ const stream = fs.readFile(filePath).pipe(
 **Detects**: Generic `Error` instead of typed errors
 
 **Problem**:
+
 ```typescript
 // 🤔 Generic error type
 const effect: Effect<string, Error, never> = ...
@@ -172,6 +187,7 @@ Effect.fail(new Error("Something went wrong"))
 ```
 
 **Solution**:
+
 ```typescript
 // ✅ Typed error
 class ParseError extends Data.TaggedError("ParseError")<{
@@ -183,6 +199,7 @@ Effect.fail(new ParseError({ message: "Invalid JSON" }))
 ```
 
 **Why**: Typed errors enable:
+
 - Better error handling with `Effect.catchTag`
 - Type-safe error recovery
 - Clear error contracts
@@ -192,6 +209,7 @@ Effect.fail(new ParseError({ message: "Invalid JSON" }))
 ## Configuration
 
 The linter checks:
+
 - `content/new/src/*.ts` (new patterns)
 - `content/src/*.ts` (published patterns)
 
@@ -223,10 +241,10 @@ You can create a task in `.vscode/tasks.json`:
 
 ```json
 {
-	"label": "Lint Effect Patterns",
-	"type": "shell",
-	"command": "bun run lint:effect",
-	"group": "test"
+  "label": "Lint Effect Patterns",
+  "type": "shell",
+  "command": "bun run lint:effect",
+  "group": "test"
 }
 ```
 
@@ -246,7 +264,7 @@ To disable a rule for a specific line, add a comment:
 
 ```typescript
 // effect-lint-disable-next-line effect-explicit-concurrency
-const results = yield* Effect.all(effects)
+const results = yield * Effect.all(effects);
 ```
 
 To disable for an entire file:
@@ -259,15 +277,15 @@ To disable for an entire file:
 
 ## Comparison with Biome
 
-| Feature | Biome | Effect Linter |
-|---------|-------|---------------|
-| General TypeScript | ✅ | ❌ |
-| Formatting | ✅ | ❌ |
-| Effect Idioms | ❌ | ✅ |
-| Deprecated APIs | ❌ | ✅ |
-| Concurrency Checks | ❌ | ✅ |
-| Streaming Validation | ❌ | ✅ |
-| Speed | Very Fast | Fast |
+| Feature              | Biome     | Effect Linter |
+| -------------------- | --------- | ------------- |
+| General TypeScript   | ✅        | ❌            |
+| Formatting           | ✅        | ❌            |
+| Effect Idioms        | ❌        | ✅            |
+| Deprecated APIs      | ❌        | ✅            |
+| Concurrency Checks   | ❌        | ✅            |
+| Streaming Validation | ❌        | ✅            |
+| Speed                | Very Fast | Fast          |
 
 **Use both**: Biome for general linting, Effect Linter for Effect-specific patterns.
 
@@ -301,4 +319,3 @@ To add a new rule:
 - [QA_GAP_ANALYSIS.md](./QA_GAP_ANALYSIS.md) - Why we need semantic validation
 - [Biome Configuration](./biome.json) - General linting rules
 - [Behavioral Tests](./scripts/publish/test-behavioral.ts) - Runtime validation
-

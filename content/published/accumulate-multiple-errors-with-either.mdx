@@ -24,7 +24,7 @@ author: effect_website
 
 ## Guideline
 
-When you need to perform multiple validation checks and collect all failures, use the ``Either<E, A>`` data type. ``Either`` represents a value that can be one of two possibilities: a ``Left<E>`` (typically for failure) or a ``Right<A>`` (typically for success).
+When you need to perform multiple validation checks and collect all failures, use the `Either<E, A>` data type. `Either` represents a value that can be one of two possibilities: a `Left<E>` (typically for failure) or a `Right<A>` (typically for success).
 
 ---
 
@@ -42,7 +42,7 @@ However, for tasks like validating a user's input, this is poor user experience.
 
 Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
 
-````typescript
+```typescript
 import { Effect, Schema, Data, Either } from "effect";
 
 // Define validation error type
@@ -62,13 +62,13 @@ const UserSchema = Schema.Struct({
   name: Schema.String.pipe(
     Schema.minLength(3),
     Schema.filter((name) => /^[A-Za-z\s]+$/.test(name), {
-      message: () => "name must contain only letters and spaces"
+      message: () => "name must contain only letters and spaces",
     })
   ),
   email: Schema.String.pipe(
     Schema.pattern(/@/),
     Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
-      message: () => "email must be a valid email address"
+      message: () => "email must be a valid email address",
     })
   ),
 });
@@ -86,7 +86,7 @@ const invalidInputs: User[] = [
   {
     name: "Alice Smith", // Valid
     email: "alice@example.com", // Valid
-  }
+  },
 ];
 
 // Validate a single user
@@ -99,31 +99,33 @@ const validateUser = (input: User) =>
 // Process multiple users and accumulate all errors
 const program = Effect.gen(function* () {
   yield* Effect.log("Validating users...\n");
-  
+
   for (const input of invalidInputs) {
     const result = yield* Effect.either(validateUser(input));
-    
+
     yield* Effect.log(`Validating user: ${input.name} <${input.email}>`);
-    
+
     // Handle success and failure cases separately for clarity
     // Using Either.match which is the idiomatic way to handle Either values
     yield* Either.match(result, {
-      onLeft: (error) => Effect.gen(function* () {
-        yield* Effect.log("❌ Validation failed:");
-        yield* Effect.log(error.message);
-        yield* Effect.log(""); // Empty line for readability
-      }),
-      onRight: (user) => Effect.gen(function* () {
-        yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
-        yield* Effect.log(""); // Empty line for readability
-      })
-    })
+      onLeft: (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log("❌ Validation failed:");
+          yield* Effect.log(error.message);
+          yield* Effect.log(""); // Empty line for readability
+        }),
+      onRight: (user) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
+          yield* Effect.log(""); // Empty line for readability
+        }),
+    });
   }
 });
 
 // Run the program
 Effect.runSync(program);
-````
+```
 
 ---
 
@@ -131,7 +133,7 @@ Effect.runSync(program);
 
 Using `Effect`'s error channel for validation that requires multiple error messages. The code below will only ever report the first error it finds, because `Effect.fail` short-circuits the entire `Effect.gen` block.
 
-````typescript
+```typescript
 import { Effect } from "effect";
 
 const validateWithEffect = (input: { name: string; email: string }) =>
@@ -145,4 +147,4 @@ const validateWithEffect = (input: { name: string; email: string }) =>
     }
     return yield* Effect.succeed(input);
   });
-````
+```

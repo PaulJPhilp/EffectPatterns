@@ -11,9 +11,7 @@
  * - "date:2025-11-04"
  */
 
-import type { FilterClause, FilterConditions } from '../types.js';
-
-
+import type { FilterClause, FilterConditions } from "../types.js";
 
 /**
  * Represents a parsed filter clause
@@ -63,14 +61,14 @@ export const parseFilterExpression = (expression: string): FilterConditions => {
  */
 export const validateFilterClause = (clause: FilterClause): boolean => {
   if (!clause) return false;
-  if (typeof clause.key !== 'string' || !clause.key) return false;
+  if (typeof clause.key !== "string" || !clause.key) return false;
 
   const valueType = typeof clause.value;
-  if (!['string', 'number', 'boolean'].includes(valueType)) {
+  if (!["string", "number", "boolean"].includes(valueType)) {
     return false;
   }
 
-  if (clause.negate !== undefined && typeof clause.negate !== 'boolean') {
+  if (clause.negate !== undefined && typeof clause.negate !== "boolean") {
     return false;
   }
 
@@ -86,24 +84,27 @@ export const validateFilterClause = (clause: FilterClause): boolean => {
  * @returns Human-readable filter string
  */
 export const filterToString = (conditions: FilterConditions): string => {
-  if (!conditions || ((!conditions.AND || conditions.AND.length === 0) &&
-                     (!conditions.OR || conditions.OR.length === 0))) {
-    return 'No filters';
+  if (
+    !conditions ||
+    ((!conditions.AND || conditions.AND.length === 0) &&
+      (!conditions.OR || conditions.OR.length === 0))
+  ) {
+    return "No filters";
   }
 
   const parts: string[] = [];
 
   if (conditions.AND && conditions.AND.length > 0) {
-    const andParts = conditions.AND.map(clause => clauseToString(clause));
-    parts.push(`AND: ${andParts.join(', ')}`);
+    const andParts = conditions.AND.map((clause) => clauseToString(clause));
+    parts.push(`AND: ${andParts.join(", ")}`);
   }
 
   if (conditions.OR && conditions.OR.length > 0) {
-    const orParts = conditions.OR.map(clause => clauseToString(clause));
-    parts.push(`OR: ${orParts.join(', ')}`);
+    const orParts = conditions.OR.map((clause) => clauseToString(clause));
+    parts.push(`OR: ${orParts.join(", ")}`);
   }
 
-  return parts.join('; ');
+  return parts.join("; ");
 };
 
 /**
@@ -115,7 +116,7 @@ export const filterToString = (conditions: FilterConditions): string => {
  */
 export const createFilterConditions = (
   filters: Record<string, string | number | boolean>,
-  operator: 'AND' | 'OR' = 'AND',
+  operator: "AND" | "OR" = "AND"
 ): FilterConditions => {
   const clauses = Object.entries(filters).map(([key, value]) => ({
     key,
@@ -123,7 +124,7 @@ export const createFilterConditions = (
     negate: false,
   }));
 
-  return operator === 'AND' ? { AND: clauses } : { OR: clauses };
+  return operator === "AND" ? { AND: clauses } : { OR: clauses };
 };
 
 /**
@@ -135,7 +136,7 @@ export const createFilterConditions = (
  */
 export const mergeFilterConditions = (
   conditions: FilterConditions[],
-  operator: 'AND' | 'OR' = 'AND',
+  operator: "AND" | "OR" = "AND"
 ): FilterConditions => {
   const allClauses: FilterClause[] = [];
 
@@ -144,7 +145,7 @@ export const mergeFilterConditions = (
     if (cond.OR) allClauses.push(...cond.OR);
   }
 
-  return operator === 'AND' ? { AND: allClauses } : { OR: allClauses };
+  return operator === "AND" ? { AND: allClauses } : { OR: allClauses };
 };
 
 /**
@@ -164,11 +165,11 @@ export const getFilterKeys = (conditions: FilterConditions): string[] => {
   const keys = new Set<string>();
 
   if (conditions.AND) {
-    conditions.AND.forEach(clause => keys.add(clause.key));
+    conditions.AND.forEach((clause) => keys.add(clause.key));
   }
 
   if (conditions.OR) {
-    conditions.OR.forEach(clause => keys.add(clause.key));
+    conditions.OR.forEach((clause) => keys.add(clause.key));
   }
 
   return Array.from(keys);
@@ -180,12 +181,12 @@ export const getFilterKeys = (conditions: FilterConditions): string[] => {
 export const updateFilterKey = (
   conditions: FilterConditions,
   key: string,
-  newValue: string | number | boolean,
+  newValue: string | number | boolean
 ): FilterConditions => {
   const result = JSON.parse(JSON.stringify(conditions)) as FilterConditions;
 
   if (result.AND) {
-    const existing = result.AND.find(c => c.key === key);
+    const existing = result.AND.find((c) => c.key === key);
     if (existing) {
       existing.value = newValue;
     } else {
@@ -203,17 +204,17 @@ export const updateFilterKey = (
  */
 export const removeFilterKey = (
   conditions: FilterConditions,
-  key: string,
+  key: string
 ): FilterConditions => {
   const result = JSON.parse(JSON.stringify(conditions)) as FilterConditions;
 
   if (result.AND) {
-    result.AND = result.AND.filter(c => c.key !== key);
+    result.AND = result.AND.filter((c) => c.key !== key);
     if (result.AND.length === 0) delete result.AND;
   }
 
   if (result.OR) {
-    result.OR = result.OR.filter(c => c.key !== key);
+    result.OR = result.OR.filter((c) => c.key !== key);
     if (result.OR.length === 0) delete result.OR;
   }
 
@@ -231,7 +232,7 @@ type Token = { type: string; value: string };
  */
 function tokenize(expression: string): Token[] {
   const tokens: Token[] = [];
-  let current = '';
+  let current = "";
   let i = 0;
 
   while (i < expression.length) {
@@ -242,53 +243,53 @@ function tokenize(expression: string): Token[] {
     // Handle whitespace
     if (/\s/.test(char)) {
       if (current) {
-        tokens.push({ type: 'value', value: current });
-        current = '';
+        tokens.push({ type: "value", value: current });
+        current = "";
       }
       i++;
       continue;
     }
 
     // Handle AND operator
-    if (remaining.startsWith('AND')) {
+    if (remaining.startsWith("AND")) {
       if (current) {
-        tokens.push({ type: 'value', value: current });
-        current = '';
+        tokens.push({ type: "value", value: current });
+        current = "";
       }
-      tokens.push({ type: 'operator', value: 'AND' });
+      tokens.push({ type: "operator", value: "AND" });
       i += 3;
       continue;
     }
 
     // Handle OR operator
-    if (remaining.startsWith('OR')) {
+    if (remaining.startsWith("OR")) {
       if (current) {
-        tokens.push({ type: 'value', value: current });
-        current = '';
+        tokens.push({ type: "value", value: current });
+        current = "";
       }
-      tokens.push({ type: 'operator', value: 'OR' });
+      tokens.push({ type: "operator", value: "OR" });
       i += 2;
       continue;
     }
 
     // Handle NOT operator
-    if (remaining.startsWith('NOT')) {
+    if (remaining.startsWith("NOT")) {
       if (current) {
-        tokens.push({ type: 'value', value: current });
-        current = '';
+        tokens.push({ type: "value", value: current });
+        current = "";
       }
-      tokens.push({ type: 'operator', value: 'NOT' });
+      tokens.push({ type: "operator", value: "NOT" });
       i += 3;
       continue;
     }
 
     // Handle parentheses
-    if (char === '(' || char === ')') {
+    if (char === "(" || char === ")") {
       if (current) {
-        tokens.push({ type: 'value', value: current });
-        current = '';
+        tokens.push({ type: "value", value: current });
+        current = "";
       }
-      tokens.push({ type: 'paren', value: char });
+      tokens.push({ type: "paren", value: char });
       i++;
       continue;
     }
@@ -299,7 +300,7 @@ function tokenize(expression: string): Token[] {
   }
 
   if (current) {
-    tokens.push({ type: 'value', value: current });
+    tokens.push({ type: "value", value: current });
   }
 
   return tokens;
@@ -311,19 +312,19 @@ function tokenize(expression: string): Token[] {
 function parseTokens(tokens: Token[]): FilterConditions {
   const result: FilterConditions = {};
   let i = 0;
-  let currentOperator: 'AND' | 'OR' = 'AND';
+  let currentOperator: "AND" | "OR" = "AND";
   let clauses: FilterClause[] = [];
 
   while (i < tokens.length) {
     const token = tokens[i];
 
-    if (token.type === 'operator') {
-      if (token.value === 'AND' || token.value === 'OR') {
+    if (token.type === "operator") {
+      if (token.value === "AND" || token.value === "OR") {
         currentOperator = token.value;
-      } else if (token.value === 'NOT') {
+      } else if (token.value === "NOT") {
         // Next clause should be negated
         i++;
-        if (i < tokens.length && tokens[i].type === 'value') {
+        if (i < tokens.length && tokens[i].type === "value") {
           const clause = parseClause(tokens[i].value);
           if (clause) {
             clause.negate = true;
@@ -333,7 +334,7 @@ function parseTokens(tokens: Token[]): FilterConditions {
         i++;
         continue;
       }
-    } else if (token.type === 'value') {
+    } else if (token.type === "value") {
       const clause = parseClause(token.value);
       if (clause) {
         clauses.push(clause);
@@ -344,7 +345,7 @@ function parseTokens(tokens: Token[]): FilterConditions {
   }
 
   if (clauses.length > 0) {
-    if (currentOperator === 'AND') {
+    if (currentOperator === "AND") {
       result.AND = clauses;
     } else {
       result.OR = clauses;
@@ -359,12 +360,12 @@ function parseTokens(tokens: Token[]): FilterConditions {
  */
 function parseClause(clauseStr: string): FilterClause | null {
   const trimmed = clauseStr.trim();
-  if (!trimmed.includes(':')) {
+  if (!trimmed.includes(":")) {
     return null;
   }
 
-  const [key, ...valueParts] = trimmed.split(':');
-  const value = valueParts.join(':');
+  const [key, ...valueParts] = trimmed.split(":");
+  const value = valueParts.join(":");
 
   if (!key || !value) {
     return null;
@@ -384,8 +385,8 @@ function parseValue(value: string): string | number | boolean {
   const trimmed = value.trim();
 
   // Check for boolean
-  if (trimmed.toLowerCase() === 'true') return true;
-  if (trimmed.toLowerCase() === 'false') return false;
+  if (trimmed.toLowerCase() === "true") return true;
+  if (trimmed.toLowerCase() === "false") return false;
 
   // Check for number
   if (/^\d+$/.test(trimmed)) {
@@ -404,6 +405,6 @@ function parseValue(value: string): string | number | boolean {
  * Convert a clause to human-readable string
  */
 function clauseToString(clause: FilterClause): string {
-  const negation = clause.negate ? 'NOT ' : '';
+  const negation = clause.negate ? "NOT " : "";
   return `${negation}${clause.key}:${clause.value}`;
 }

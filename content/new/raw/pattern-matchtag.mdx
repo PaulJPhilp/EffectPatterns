@@ -4,7 +4,16 @@ id: "pattern-matchtag"
 skillLevel: "intermediate"
 useCase: ["Pattern Matching", "Tagged Unions", "Error Handling", "Branching"]
 summary: "Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching."
-tags: ["matchTag", "matchTags", "pattern-matching", "tagged-union", "effect", "error-handling", "branching"]
+tags:
+  [
+    "matchTag",
+    "matchTags",
+    "pattern-matching",
+    "tagged-union",
+    "effect",
+    "error-handling",
+    "branching",
+  ]
 rule:
   description: "Use matchTag and matchTags to handle specific cases of tagged unions or custom error types in a declarative, type-safe way."
 related: ["pattern-match", "pattern-catchtag", "pattern-matcheffect"]
@@ -30,12 +39,16 @@ import { Effect, Data } from "effect";
 
 // Define a tagged error type
 class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
-class ValidationError extends Data.TaggedError("ValidationError")<{ message: string }> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
 
 type MyError = NotFoundError | ValidationError;
 
 // Effect: Match on specific error tags
-const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as MyError).pipe(
+const effect = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
   Effect.matchTag({
     NotFoundError: () => "Not found!",
     ValidationError: (err) => `Validation failed: ${err.message}`,
@@ -43,7 +56,8 @@ const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as 
 ); // Effect<string>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
 - This is safer and more maintainable than using `instanceof` or manual property checks.
 

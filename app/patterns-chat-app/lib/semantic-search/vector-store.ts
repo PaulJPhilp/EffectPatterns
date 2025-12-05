@@ -68,10 +68,12 @@ export class VectorStore {
     }
 
     // Validate metadata
-    if (!item.metadata.chatId || !item.metadata.userId || !item.metadata.content) {
-      throw new Error(
-        "Missing required metadata: chatId, userId, content"
-      );
+    if (
+      !item.metadata.chatId ||
+      !item.metadata.userId ||
+      !item.metadata.content
+    ) {
+      throw new Error("Missing required metadata: chatId, userId, content");
     }
 
     // Check capacity
@@ -117,11 +119,7 @@ export class VectorStore {
       };
     } = {}
   ): SearchResult[] {
-    const {
-      limit = 10,
-      minSimilarity = 0.0,
-      filters = {},
-    } = options;
+    const { limit = 10, minSimilarity = 0.0, filters = {} } = options;
 
     if (queryVector.length !== this.dimension) {
       throw new Error(
@@ -137,7 +135,8 @@ export class VectorStore {
       if (filters.userId && item.metadata.userId !== filters.userId) continue;
       if (filters.chatId && item.metadata.chatId !== filters.chatId) continue;
       if (filters.type && item.metadata.type !== filters.type) continue;
-      if (filters.outcome && item.metadata.outcome !== filters.outcome) continue;
+      if (filters.outcome && item.metadata.outcome !== filters.outcome)
+        continue;
 
       // Calculate cosine similarity
       const similarity = cosineSimilarity(queryVector, item.embedding);
@@ -153,9 +152,7 @@ export class VectorStore {
     }
 
     // Sort by similarity descending and return top K
-    return results
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, limit);
+    return results.sort((a, b) => b.similarity - a.similarity).slice(0, limit);
   }
 
   /**
@@ -344,7 +341,7 @@ export const normalizeVector = (vector: number[]): number[] => {
     return vector;
   }
 
-  return vector.map(v => v / magnitude);
+  return vector.map((v) => v / magnitude);
 };
 
 /**

@@ -14,6 +14,7 @@ Complete and enhance search and filtering capabilities across SM-CLI commands to
 ### Existing Commands
 
 **memories search**
+
 - ✅ Basic text search
 - ❌ No advanced filtering (by type, date, tags)
 - ❌ No sorting options
@@ -21,6 +22,7 @@ Complete and enhance search and filtering capabilities across SM-CLI commands to
 - ❌ Limited pagination options
 
 **memories list**
+
 - ✅ Pagination (page, limit)
 - ✅ Type filtering
 - ❌ No date range filtering
@@ -28,14 +30,17 @@ Complete and enhance search and filtering capabilities across SM-CLI commands to
 - ❌ No sorting
 
 **profiles search**
+
 - ✅ Query with profile context
 - ✅ Search results included
 - ❌ No advanced filtering
 
 **patterns search** (if exists)
+
 - Need to verify current state
 
 **queue list**
+
 - ✅ Status display
 - ❌ No status filtering
 - ❌ No date filtering
@@ -46,11 +51,13 @@ Complete and enhance search and filtering capabilities across SM-CLI commands to
 ### Two Search Endpoints
 
 **1. Documents Search (`POST /v3/search`)**
+
 - Search through ingested documents (PDFs, text, images, etc.)
 - Returns matching document chunks with full context
 - **Use cases**: Legal/finance documents, documentation search, chat with files
 
 **Key Parameters:**
+
 - `q` - Search query
 - `limit` - Results per request (default: 10)
 - `documentThreshold` - Document relevance threshold (0.0-1.0)
@@ -64,6 +71,7 @@ Complete and enhance search and filtering capabilities across SM-CLI commands to
 - `filters` - Metadata filters (SQL-like conditions)
 
 **Example:**
+
 ```typescript
 const results = await client.search.documents({
   q: "machine learning accuracy",
@@ -73,17 +81,19 @@ const results = await client.search.documents({
   rerank: true,
   containerTags: ["research"],
   filters: {
-    AND: [{ key: "category", value: "ai", negate: false }]
-  }
+    AND: [{ key: "category", value: "ai", negate: false }],
+  },
 });
 ```
 
 **2. Memories Search (`POST /v4/search`)**
+
 - Search through user memories and preferences
 - Optimized for conversational AI and personalization
 - **Use cases**: Personalized chatbots, understanding user context, auto-selection
 
 **Key Parameters:**
+
 - `q` - Search query
 - `limit` - Results per request (default: 5)
 - `containerTag` - User/container identifier
@@ -91,35 +101,40 @@ const results = await client.search.documents({
 - `rerank` - Enable reranking
 
 **Example:**
+
 ```typescript
 const results = await client.search.memories({
   q: "machine learning accuracy",
   limit: 5,
   containerTag: "research",
   threshold: 0.7,
-  rerank: true
+  rerank: true,
 });
 ```
 
 ### Key Search Concepts
 
 **Thresholds** (Control sensitivity):
+
 - 0.0 = Least sensitive (more results, lower quality)
 - 1.0 = Most sensitive (fewer results, higher quality)
 - Use lower thresholds for broad searches
 - Use higher thresholds for precise searches
 
 **Container Tags vs Metadata Filters:**
+
 - **Container Tags**: Organizational grouping, exact matching, forms user understanding graph
 - **Metadata Filters**: Flexible conditions (SQL-like), useful for date/author/category filtering
 
 **Query Rewriting:**
+
 - Expands queries to find more relevant results
 - "ML" becomes "machine learning artificial intelligence"
 - Adds ~400ms latency
 - Useful for abbreviations and domain-specific terms
 
 **Reranking:**
+
 - Re-scores results with a different algorithm
 - More accurate but slower
 - Recommended for critical searches
@@ -141,8 +156,8 @@ interface SearchFilters {
     from: Date;
     to: Date;
   };
-  sortBy?: 'recent' | 'oldest' | 'relevance' | 'alphabetical';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "recent" | "oldest" | "relevance" | "alphabetical";
+  sortOrder?: "asc" | "desc";
 }
 
 interface SearchOptions {
@@ -163,6 +178,7 @@ interface SearchResult<T> {
 ```
 
 **Files to Create:**
+
 - `app/sm-cli/src/lib/search-filters.ts` - Filter definitions
 - `app/sm-cli/src/lib/search-parser.ts` - Parse filter strings
 
@@ -171,6 +187,7 @@ interface SearchResult<T> {
 Enhance the existing memories commands:
 
 #### 2.1 memories search - Advanced Search
+
 ```bash
 # Basic search
 bun run sm-cli memories search "query"
@@ -192,6 +209,7 @@ bun run sm-cli memories search \
 ```
 
 **Features:**
+
 - Multi-type filtering
 - Tag filtering
 - Date range filtering
@@ -200,6 +218,7 @@ bun run sm-cli memories search \
 - Execution time display
 
 #### 2.2 memories list - Enhanced Listing
+
 ```bash
 # Filter by type with sorting
 bun run sm-cli memories list \
@@ -221,6 +240,7 @@ bun run sm-cli memories list \
 ```
 
 **Features:**
+
 - Advanced date filtering
 - Multiple type selection
 - Tag filtering
@@ -232,6 +252,7 @@ bun run sm-cli memories list \
 Enhance profile search and filtering:
 
 #### 3.1 profiles search - Advanced Search
+
 ```bash
 # Search by skill level
 bun run sm-cli profiles search --user alice_123 \
@@ -246,6 +267,7 @@ bun run sm-cli profiles search --user alice_123 \
 ```
 
 #### 3.2 profiles list - Container Filtering
+
 ```bash
 # List with topic filters
 bun run sm-cli profiles list --container team_backend \
@@ -263,6 +285,7 @@ bun run sm-cli profiles search --query "kubernetes" \
 Add filtering to queue management:
 
 #### 4.1 queue list - Status Filtering
+
 ```bash
 # Filter by status
 bun run sm-cli queue list --status failed
@@ -281,6 +304,7 @@ bun run sm-cli queue list \
 ```
 
 **Features:**
+
 - Multi-status filtering
 - Date/time filtering
 - Sorting by created/updated time
@@ -308,14 +332,14 @@ bun run sm-cli patterns search \
 
 ```typescript
 type FilterType =
-  | 'query'
-  | 'type'
-  | 'status'
-  | 'tags'
-  | 'date-range'
-  | 'skill-level'
-  | 'use-case'
-  | 'metadata';
+  | "query"
+  | "type"
+  | "status"
+  | "tags"
+  | "date-range"
+  | "skill-level"
+  | "use-case"
+  | "metadata";
 
 interface FilterDefinition {
   name: string;
@@ -333,47 +357,47 @@ Consistent option naming across commands:
 
 ```typescript
 // All search commands support:
---query / -q          // Search query
---limit / -l          // Result limit
---offset / -o         // Pagination offset
---sort / -s           // Sort field
---order               // asc/desc
---format / -f         // human/json
---highlight           // Highlight matches
+--query / -q; // Search query
+--limit / -l; // Result limit
+--offset / -o; // Pagination offset
+--sort / -s; // Sort field
+--order; // asc/desc
+--format / -f; // human/json
+--highlight; // Highlight matches
 
 // Filtering options:
---filter              // Complex filter string
---type               // Type filtering
---status             // Status filtering
---tags               // Tag filtering
---from               // Date range start
---to                 // Date range end
+--filter; // Complex filter string
+--type; // Type filtering
+--status; // Status filtering
+--tags; // Tag filtering
+--from; // Date range start
+--to; // Date range end
 ```
 
 ### CLI Option Architecture
 
 ```typescript
 // Reusable option definitions
-const queryOption = Options.text('query').pipe(
-  Options.withDescription('Search query'),
+const queryOption = Options.text("query").pipe(
+  Options.withDescription("Search query")
 );
 
-const limitOption = Options.integer('limit').pipe(
+const limitOption = Options.integer("limit").pipe(
   Options.optional,
   Options.withDefault(50),
-  Options.withDescription('Result limit'),
+  Options.withDescription("Result limit")
 );
 
-const sortOption = Options.choice('sort',
-  ['recent', 'oldest', 'relevance', 'alphabetical']
-).pipe(
-  Options.optional,
-  Options.withDefault('relevance'),
-);
+const sortOption = Options.choice("sort", [
+  "recent",
+  "oldest",
+  "relevance",
+  "alphabetical",
+]).pipe(Options.optional, Options.withDefault("relevance"));
 
 const dateRangeOptions = {
-  from: Options.text('from').pipe(Options.optional),
-  to: Options.text('to').pipe(Options.optional),
+  from: Options.text("from").pipe(Options.optional),
+  to: Options.text("to").pipe(Options.optional),
 };
 ```
 
@@ -443,8 +467,8 @@ interface FilterClause {
 const filters = {
   AND: [
     { key: "category", value: "ai", negate: false },
-    { key: "difficulty", value: "beginner", negate: false }
-  ]
+    { key: "difficulty", value: "beginner", negate: false },
+  ],
 };
 ```
 
@@ -492,21 +516,25 @@ Title: Kubernetes deployment automation
 ### User Guide Sections
 
 1. **Basic Searching**
+
    - Simple text search
    - Search syntax
    - Result interpretation
 
 2. **Advanced Filtering**
+
    - Filter types
    - Complex queries
    - Filter combinations
 
 3. **Sorting and Pagination**
+
    - Sort options
    - Sort order
    - Pagination examples
 
 4. **Command Reference**
+
    - All filter options
    - Examples for each
    - Common use cases
@@ -519,24 +547,28 @@ Title: Kubernetes deployment automation
 ## Implementation Roadmap
 
 ### Week 1: Core Infrastructure
+
 - [ ] Create search filters library
 - [ ] Create search parser
 - [ ] Add filter type definitions
 - [ ] Create reusable CLI options
 
 ### Week 2: memories Commands
+
 - [ ] Enhance memories search
 - [ ] Enhance memories list
 - [ ] Add advanced filtering
 - [ ] Add sorting options
 
 ### Week 3: profiles and queue
+
 - [ ] Enhance profiles search
 - [ ] Enhance profiles list
 - [ ] Add queue filtering
 - [ ] Add queue sorting
 
 ### Week 4: Documentation & Testing
+
 - [ ] Write comprehensive guides
 - [ ] Create examples
 - [ ] Interactive testing
@@ -556,12 +588,14 @@ Title: Kubernetes deployment automation
 ## Files to Create/Modify
 
 ### New Files
+
 - `app/sm-cli/src/lib/search-filters.ts`
 - `app/sm-cli/src/lib/search-parser.ts`
 - `app/sm-cli/src/lib/date-parser.ts`
 - `app/sm-cli/SEARCH_FILTERING_GUIDE.md`
 
 ### Modified Files
+
 - `app/sm-cli/src/commands/memories.ts` - Search/list enhancements
 - `app/sm-cli/src/commands/profiles.ts` - Search enhancements (if needed)
 - `app/sm-cli/src/commands/queue.ts` - Filter additions
@@ -570,12 +604,12 @@ Title: Kubernetes deployment automation
 
 ## Performance Considerations
 
-| Operation | Target | Notes |
-|-----------|--------|-------|
-| Simple search | < 200ms | Single API call |
-| Advanced filter | < 500ms | Client-side filtering |
-| Large result set | < 1s | 1000+ results |
-| Date range query | < 300ms | Optimized query |
+| Operation        | Target  | Notes                 |
+| ---------------- | ------- | --------------------- |
+| Simple search    | < 200ms | Single API call       |
+| Advanced filter  | < 500ms | Client-side filtering |
+| Large result set | < 1s    | 1000+ results         |
+| Date range query | < 300ms | Optimized query       |
 
 ## Related Features
 
@@ -597,18 +631,21 @@ Title: Kubernetes deployment automation
 ## Testing Strategy
 
 ### Unit Tests
+
 - Filter parsing logic
 - Date range calculations
 - Sort option handling
 - Filter validation
 
 ### Integration Tests
+
 - End-to-end search workflows
 - Multi-filter combinations
 - Result accuracy
 - Performance benchmarks
 
 ### Manual Testing
+
 - Interactive command testing
 - Filter combination testing
 - Edge case handling
@@ -628,4 +665,3 @@ Title: Kubernetes deployment automation
 8. Complete documentation
 9. Performance testing
 10. Create PR and merge
-

@@ -6,6 +6,7 @@ This folder contains tiered, runnable scripts that exercise the
 ## Usage
 
 - Default: run safe, non-network tiers
+
   ```bash
   bash scripts/cli-tests/00-basics.sh
   bash scripts/cli-tests/01-auth.sh
@@ -16,6 +17,7 @@ This folder contains tiered, runnable scripts that exercise the
   ```
 
 - Run everything (including network/provider calls):
+
   ```bash
   RUN_NETWORK=1 bash scripts/cli-tests/02-health.sh
   RUN_NETWORK=1 bash scripts/cli-tests/03-generate.sh

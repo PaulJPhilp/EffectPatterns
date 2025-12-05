@@ -10,12 +10,14 @@ The Patterns Chat App has been successfully renamed and refactored from `code-as
 ## Completed Tasks
 
 ### ✅ 1. Application Rename
+
 - **Renamed**: `app/code-assistant` → `app/patterns-chat-app`
 - **Git History**: Preserved using `git mv`
 - **Package Name**: Updated to `patterns-chat-app` in `package.json`
 - **Workspace**: Automatically recognized via `app/*` glob in root `package.json`
 
 ### ✅ 2. CI/CD & Deployment Updates
+
 - **Updated**: `.github/workflows/deploy.yml`
   - Job name: `deploy-code-assistant` → `deploy-patterns-chat-app`
   - Working directory: `app/code-assistant` → `app/patterns-chat-app`
@@ -24,13 +26,13 @@ The Patterns Chat App has been successfully renamed and refactored from `code-as
   - Dependencies updated in `health-check` job
 
 ### ✅ 3. Documentation Updates
+
 - **README.md**: Completely rewritten with Pattern Chat App focus
   - Architecture section explaining RAG workflow
   - Pattern loading instructions using `sm-cli`
   - Environment setup guide
   - Development workflow
   - Deployment instructions
-  
 - **.env.example**: Refined for pattern-specific requirements
   - Added `SUPERMEMORY_API_KEY` (required)
   - Added `SUPERMEMORY_PROJECT_ID` (defaults to "effect-patterns")
@@ -39,9 +41,11 @@ The Patterns Chat App has been successfully renamed and refactored from `code-as
   - Removed unnecessary AI model keys
 
 ### ✅ 4. PatternsService (Backend Integration)
+
 **File**: `app/patterns-chat-app/lib/services/patterns-service.ts`
 
 Core features:
+
 - **Memory Router API Integration**: Queries Supermemory's `https://api.supermemory.ai/v1/memory-router` endpoint
 - **Pattern Search**: Semantic search with configurable thresholds and reranking
 - **Metadata Parsing**: Converts Supermemory memories into typed `Pattern` objects
@@ -49,23 +53,27 @@ Core features:
 - **Error Handling**: Comprehensive error messages and logging
 
 Key methods:
+
 ```typescript
-searchPatterns(query, options)           // Main search entry point
-getPatternsBySkillLevel(level, query)    // Filter by difficulty
-getPatternsByUseCase(useCase)            // Filter by use case
-clearCache()                              // Testing/refresh support
-getCacheStats()                           // Debug cache status
+searchPatterns(query, options); // Main search entry point
+getPatternsBySkillLevel(level, query); // Filter by difficulty
+getPatternsByUseCase(useCase); // Filter by use case
+clearCache(); // Testing/refresh support
+getCacheStats(); // Debug cache status
 ```
 
 ### ✅ 5. PatternScorer (Relevance Detection)
+
 **File**: `app/patterns-chat-app/lib/services/pattern-scorer.ts`
 
 Implements intelligent query scoring with three factors:
+
 - **Effect-TS Specificity** (40% weight): Keywords like "effect", "layer", "service"
 - **Topic Matching** (35% weight): Keywords for specific topics (error-handling, dependency-injection, etc.)
 - **Learning Indicators** (25% weight): Phrases like "how to", "best practice", "help"
 
 Supported topics:
+
 - error-handling
 - dependency-injection
 - async-programming
@@ -76,35 +84,41 @@ Supported topics:
 - context-propagation
 
 Key methods:
+
 ```typescript
-scoreQuery(query)              // Main scoring method (returns 0-1 score + decision)
-getDetailedScore(query)        // Debug-friendly detailed breakdown
-setMinimumThreshold(threshold) // Tune sensitivity
+scoreQuery(query); // Main scoring method (returns 0-1 score + decision)
+getDetailedScore(query); // Debug-friendly detailed breakdown
+setMinimumThreshold(threshold); // Tune sensitivity
 ```
 
 Default threshold: `0.5` (only queries scoring ≥50% trigger pattern retrieval)
 
 ### ✅ 6. React Hook for Pattern Retrieval
+
 **File**: `app/patterns-chat-app/hooks/usePatternRetrieval.ts`
 
 Three complementary hooks:
 
 **usePatternRetrieval(query, options)**
+
 - Main hook for RAG implementation
 - Auto-scores queries and fetches relevant patterns
 - Built-in caching with abort signal support
 - Options: `enabled`, `minRelevanceScore`, `maxPatterns`, `cacheEnabled`
 
 **usePatternContext(patterns)**
+
 - Formats patterns into markdown string for system prompt
 - Useful for LLM context enrichment
 
 **usePatternDisplay(patterns, options)**
+
 - UI helper for displaying patterns
 - Filtering, sorting, and grouping capabilities
 - Expandable pattern cards state management
 
 API Endpoints (to be implemented):
+
 - `POST /api/patterns/score` - Returns scoring result
 - `POST /api/patterns/search` - Returns retrieved patterns
 
@@ -136,15 +150,18 @@ LLM Response (enhanced with pattern knowledge)
 ## Next Steps (Task 5 & Beyond)
 
 ### Immediate (Task 5)
+
 **Update Chat Interface** - Integrate pattern retrieval into the chat component:
 
 1. **API Routes to Create**:
+
    ```
    app/patterns-chat-app/app/api/patterns/score/route.ts
    app/patterns-chat-app/app/api/patterns/search/route.ts
    ```
 
 2. **Chat Component Updates**:
+
    - Import `usePatternRetrieval` hook
    - Import `usePatternContext` for system prompt enrichment
    - Import `usePatternDisplay` for UI state
@@ -159,18 +176,22 @@ LLM Response (enhanced with pattern knowledge)
 ### Future Improvements
 
 1. **Streaming Pattern Retrieval**
+
    - Fetch patterns in parallel with LLM response
    - Display patterns as they arrive
 
 2. **User Feedback Loop**
+
    - Track which patterns users find helpful
    - Use feedback to improve scoring
 
 3. **Pattern Analytics**
+
    - Log pattern usage for insights
    - Identify most-used patterns by topic
 
 4. **Advanced RAG**
+
    - Multi-stage retrieval (semantic + keyword)
    - Query expansion for better coverage
    - Reranking with LLM scorer
@@ -222,6 +243,7 @@ app/patterns-chat-app/
 ## Testing the Implementation
 
 ### Unit Testing
+
 ```bash
 # Create test files in __tests__ directories
 app/patterns-chat-app/lib/services/__tests__/patterns-service.test.ts
@@ -230,6 +252,7 @@ app/patterns-chat-app/hooks/__tests__/usePatternRetrieval.test.ts
 ```
 
 ### Integration Testing
+
 ```bash
 # Test pattern loading workflow
 cd app/sm-cli
@@ -241,6 +264,7 @@ pnpm test
 ```
 
 ### Manual Testing
+
 1. Start app: `pnpm dev`
 2. Open chat interface
 3. Send Effect-related query (e.g., "How do I handle errors in Effect?")

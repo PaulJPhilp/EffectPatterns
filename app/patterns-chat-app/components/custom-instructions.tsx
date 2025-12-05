@@ -44,7 +44,10 @@ export function CustomInstructions({
       toast({ type: "success", description: "Custom instructions saved!" });
       setIsOpen(false);
     } catch (error) {
-      toast({ type: "error", description: "Failed to save custom instructions" });
+      toast({
+        type: "error",
+        description: "Failed to save custom instructions",
+      });
       console.error("Error saving custom instructions:", error);
     } finally {
       setIsSaving(false);
@@ -70,7 +73,8 @@ export function CustomInstructions({
           <SheetTitle>Custom Instructions</SheetTitle>
           <SheetDescription>
             Add custom instructions that will be included in every AI response.
-            These instructions will help shape how the AI responds to your queries.
+            These instructions will help shape how the AI responds to your
+            queries.
           </SheetDescription>
         </SheetHeader>
         <div className="grid gap-4 py-4">

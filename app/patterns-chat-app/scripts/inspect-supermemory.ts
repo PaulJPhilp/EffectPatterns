@@ -41,7 +41,9 @@ async function inspectSupermemory() {
         console.log(`  Results: ${result.results?.length || 0}`);
 
         if (result.results && result.results.length > 0) {
-          console.log(`  First result: ${result.results[0].memory.substring(0, 60)}...`);
+          console.log(
+            `  First result: ${result.results[0].memory.substring(0, 60)}...`
+          );
         }
         console.log();
       } catch (e) {
@@ -58,7 +60,10 @@ async function inspectSupermemory() {
     console.log(`  client.memories: ${typeof (client as any).memories}`);
 
     // Try to list memories if the method exists
-    if ((client as any).memories && typeof (client as any).memories.list === "function") {
+    if (
+      (client as any).memories &&
+      typeof (client as any).memories.list === "function"
+    ) {
       console.log("\n  Trying memories.list()...");
       try {
         const list = await (client as any).memories.list();
@@ -69,7 +74,6 @@ async function inspectSupermemory() {
     }
 
     console.log("\n✅ Inspection completed!");
-
   } catch (error) {
     console.error("❌ Error:", error);
     process.exit(1);

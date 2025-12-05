@@ -47,7 +47,11 @@ bun install
 ## Usage
 
 ```typescript
-import { Discord, DiscordLive, DiscordConfig } from "@effect-patterns/effect-discord";
+import {
+  Discord,
+  DiscordLive,
+  DiscordConfig,
+} from "@effect-patterns/effect-discord";
 import { Effect, Layer, Secret } from "effect";
 import { NodeContext } from "@effect/platform-node";
 
@@ -58,10 +62,9 @@ const ConfigLive = Layer.succeed(DiscordConfig, {
 });
 
 // 2. Compose all required layers
-const AppLayer = Layer.mergeAll(
-  ConfigLive,
-  DiscordLive,
-).pipe(Layer.provide(NodeContext.layer));
+const AppLayer = Layer.mergeAll(ConfigLive, DiscordLive).pipe(
+  Layer.provide(NodeContext.layer)
+);
 
 // 3. Use the Discord service
 const program = Effect.gen(function* () {
@@ -82,7 +85,9 @@ Effect.runPromise(runnable);
 
 ```typescript
 interface Discord {
-  exportChannel(channelId: string): Effect.Effect<ChannelExport, DiscordExportError>
+  exportChannel(
+    channelId: string
+  ): Effect.Effect<ChannelExport, DiscordExportError>;
 }
 ```
 
@@ -117,6 +122,7 @@ class DiscordExportError extends Data.TaggedError("DiscordExportError")<{
 ### Prerequisites
 
 1. **Download DiscordChatExporter.Cli** (v2.46.0+):
+
    ```bash
    # macOS
    curl -L -o /tmp/DiscordChatExporter.Cli.osx-x64.zip \
@@ -149,6 +155,7 @@ SKIP_INTEGRATION_TESTS=true bun test packages/effect-discord/test/integration.te
 ```
 
 **Test Coverage:**
+
 - ✅ Export messages from real Discord channel
 - ✅ Handle invalid channel IDs gracefully
 - ✅ Verify message data structure
@@ -196,6 +203,7 @@ Uses `Effect.ensuring` to guarantee temp file cleanup, even if the export fails.
 ## Example: Discord Data Ingestion Script
 
 See [scripts/ingest-discord.ts](../../scripts/ingest-discord.ts) for a complete example of:
+
 - Configuring the Discord service with environment variables
 - Exporting channel messages
 - Anonymizing user data for privacy

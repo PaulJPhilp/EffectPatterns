@@ -5,11 +5,13 @@ Future enhancements and planned features for the Effect Patterns Hub CLI and inf
 ## High Priority
 
 ### Package Manager Support
+
 **Status:** Planned
 **Priority:** High
 **Description:** Add support for npm and pnpm in addition to Bun
 
 **Tasks:**
+
 - [ ] Add npm/pnpm installation instructions
 - [ ] Test CLI with `npm link` and `pnpm link`
 - [ ] Update shebang to support node runtime
@@ -19,17 +21,20 @@ Future enhancements and planned features for the Effect Patterns Hub CLI and inf
 - [ ] Add CI/CD tests for npm and pnpm
 
 **Considerations:**
+
 - Keep Bun as recommended/default
 - Ensure all Effect-TS code works with Node.js
 - May need different lock files (package-lock.json, pnpm-lock.yaml)
 - Performance differences between runtimes
 
 ### Re-enable Effect-TS Linter
+
 **Status:** In Progress (Disabled)
 **Priority:** High
 **Description:** Re-enable the custom Effect-TS linting commands
 
 **Tasks:**
+
 - [ ] Review and update linter rules
 - [ ] Test linter with current patterns
 - [ ] Update documentation
@@ -37,6 +42,7 @@ Future enhancements and planned features for the Effect Patterns Hub CLI and inf
 - [ ] Add linter to CI/CD pipeline
 
 **Linter Rules:**
+
 1. `effect-use-taperror` - Use Effect.tapError for logging
 2. `effect-explicit-concurrency` - Require concurrency option
 3. `effect-deprecated-api` - Detect deprecated APIs
@@ -47,11 +53,13 @@ Future enhancements and planned features for the Effect Patterns Hub CLI and inf
 ## Medium Priority
 
 ### Interactive Rule Selection
+
 **Status:** Planned
 **Priority:** Medium
 **Description:** Add interactive checkbox UI for selecting specific rules to install
 
 **Tasks:**
+
 - [ ] Add `@inquirer/prompts` or similar library
 - [ ] Create interactive mode for `install add`
 - [ ] Show rules with categories and descriptions
@@ -60,6 +68,7 @@ Future enhancements and planned features for the Effect Patterns Hub CLI and inf
 - [ ] Add `--interactive` flag
 
 **Example:**
+
 ```bash
 ep install add --tool cursor --interactive
 
@@ -70,11 +79,13 @@ ep install add --tool cursor --interactive
 ```
 
 ### Additional AI Tool Support
+
 **Status:** Planned
 **Priority:** Medium
 **Description:** Add support for more AI development tools
 
 **Tools to Add:**
+
 - [ ] Codeium
 - [ ] Tabnine
 - [ ] GitHub Copilot (if configuration file support exists)
@@ -82,11 +93,13 @@ ep install add --tool cursor --interactive
 - [ ] Pieces
 
 ### Rule Update Notifications
+
 **Status:** Planned
 **Priority:** Medium
 **Description:** Notify users when new rules are available
 
 **Tasks:**
+
 - [ ] Add version tracking to installed rules
 - [ ] Create `ep install check` command to check for updates
 - [ ] Show diff of changes when updating
@@ -94,11 +107,13 @@ ep install add --tool cursor --interactive
 - [ ] Optional: Add auto-update flag
 
 ### Rule Management Commands
+
 **Status:** Planned
 **Priority:** Medium
 **Description:** Better management of installed rules
 
 **New Commands:**
+
 - [ ] `ep install remove --tool <name>` - Remove installed rules
 - [ ] `ep install status` - Show which tools have rules installed
 - [ ] `ep install diff --tool <name>` - Show what would change
@@ -108,22 +123,26 @@ ep install add --tool cursor --interactive
 ## Low Priority
 
 ### Pattern Templates
+
 **Status:** Planned
 **Priority:** Low
 **Description:** Add templates for common pattern types
 
 **Tasks:**
+
 - [ ] Create template system
 - [ ] Add templates for common patterns
 - [ ] `ep pattern new --template <name>`
 - [ ] Templates: beginner, error-handling, resource, concurrency, testing
 
 ### Pattern Validation Improvements
+
 **Status:** Planned
 **Priority:** Low
 **Description:** More comprehensive pattern validation
 
 **Tasks:**
+
 - [ ] Validate code examples actually demonstrate the pattern
 - [ ] Check for broken Effect-TS API usage
 - [ ] Validate frontmatter against schema
@@ -131,22 +150,26 @@ ep install add --tool cursor --interactive
 - [ ] Check for common anti-patterns
 
 ### Documentation Generator
+
 **Status:** Planned
 **Priority:** Low
 **Description:** Generate better documentation from patterns
 
 **Tasks:**
+
 - [ ] Generate API reference from patterns
 - [ ] Create searchable pattern index
 - [ ] Generate pattern dependency graph
 - [ ] Create learning paths (beginner → advanced)
 
 ### Analytics and Metrics
+
 **Status:** Planned
 **Priority:** Low
 **Description:** Track pattern usage and popularity
 
 **Tasks:**
+
 - [ ] Add optional analytics to installed rules
 - [ ] Track which patterns are most commonly installed
 - [ ] Show popular patterns in `ep install list`
@@ -155,40 +178,48 @@ ep install add --tool cursor --interactive
 ## Ideas / Research
 
 ### Web UI
+
 **Status:** Research
 **Description:** Web interface for browsing patterns
 
 **Considerations:**
+
 - Pattern browsing with search
 - Interactive examples
 - Visual pattern relationships
 - Integration with existing docs site
 
 ### VS Code Extension
+
 **Status:** Research
 **Description:** Native VS Code extension for patterns
 
 **Features:**
+
 - Inline pattern suggestions
 - Quick access to pattern docs
 - One-click pattern installation
 - Pattern usage analytics
 
 ### Pattern Marketplace
+
 **Status:** Research
 **Description:** Community-contributed patterns
 
 **Considerations:**
+
 - Pattern submission workflow
 - Review process
 - Quality standards
 - Versioning and updates
 
 ### AI-Powered Pattern Suggestions
+
 **Status:** Research
 **Description:** Suggest patterns based on code context
 
 **Features:**
+
 - Analyze user code
 - Suggest relevant patterns
 - Auto-apply pattern transformations
@@ -197,6 +228,7 @@ ep install add --tool cursor --interactive
 ## Completed
 
 ### ✅ CLI Release (v0.2.0)
+
 - [x] Command structure reorganization
 - [x] Install command with filtering
 - [x] Support for 10 AI tools

@@ -5,7 +5,13 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { MockSupermemoryClient, testUserId, testChatId, mockTags, createMockSearchMemory } from "./mocks";
+import {
+  MockSupermemoryClient,
+  testUserId,
+  testChatId,
+  mockTags,
+  createMockSearchMemory,
+} from "./mocks";
 
 describe("Search API Endpoint Integration", () => {
   let mockClient: MockSupermemoryClient;
@@ -19,9 +25,9 @@ describe("Search API Endpoint Integration", () => {
     it("should return search results with query", async () => {
       // Setup test data
       for (let i = 0; i < 5; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, mockTags, 0.8)
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, mockTags, 0.8));
       }
 
       // Simulate search query
@@ -37,9 +43,9 @@ describe("Search API Endpoint Integration", () => {
     });
 
     it("should include pagination info", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory(testChatId, testUserId, mockTags)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory(testChatId, testUserId, mockTags));
 
       const results = await mockClient.search({
         q: "test",
@@ -62,9 +68,9 @@ describe("Search API Endpoint Integration", () => {
 
     it("should support limit parameter", async () => {
       for (let i = 0; i < 20; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, mockTags)
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, mockTags));
       }
 
       const limit5 = await mockClient.search({ q: "test", limit: 5 });
@@ -72,13 +78,15 @@ describe("Search API Endpoint Integration", () => {
 
       expect(limit5.results.length).toBeLessThanOrEqual(5);
       expect(limit10.results.length).toBeLessThanOrEqual(10);
-      expect(limit10.results.length).toBeGreaterThanOrEqual(limit5.results.length);
+      expect(limit10.results.length).toBeGreaterThanOrEqual(
+        limit5.results.length
+      );
     });
 
     it("should handle empty query string", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory(testChatId, testUserId, mockTags)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory(testChatId, testUserId, mockTags));
 
       const results = await mockClient.search({
         q: "",
@@ -90,12 +98,19 @@ describe("Search API Endpoint Integration", () => {
     });
 
     it("should filter by tags when provided", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-1", testUserId, ["effect-ts", "error-handling"])
-      );
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-2", testUserId, ["typescript", "async"])
-      );
+      mockClient
+        .getMemories()
+        .push(
+          createMockSearchMemory("chat-1", testUserId, [
+            "effect-ts",
+            "error-handling",
+          ])
+        );
+      mockClient
+        .getMemories()
+        .push(
+          createMockSearchMemory("chat-2", testUserId, ["typescript", "async"])
+        );
 
       // Simulate tag filtering
       const results = mockClient.getMemories().filter((m) => {
@@ -111,9 +126,9 @@ describe("Search API Endpoint Integration", () => {
     });
 
     it("should filter by outcome when provided", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-1", testUserId, mockTags)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("chat-1", testUserId, mockTags));
 
       // Simulate outcome filtering
       const results = mockClient.getMemories().filter((m) => {
@@ -129,9 +144,9 @@ describe("Search API Endpoint Integration", () => {
     });
 
     it("should return similarity scores with results", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory(testChatId, testUserId, mockTags, 0.85)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory(testChatId, testUserId, mockTags, 0.85));
 
       const results = await mockClient.search({
         q: "test",
@@ -147,9 +162,9 @@ describe("Search API Endpoint Integration", () => {
     });
 
     it("should include metadata in results", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory(testChatId, testUserId, mockTags)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory(testChatId, testUserId, mockTags));
 
       const results = await mockClient.search({
         q: "test",
@@ -170,9 +185,9 @@ describe("Search API Endpoint Integration", () => {
   describe("GET /api/search/stats", () => {
     it("should return statistics", async () => {
       for (let i = 0; i < 10; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, mockTags)
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, mockTags));
       }
 
       const stats = {
@@ -252,9 +267,9 @@ describe("Search API Endpoint Integration", () => {
 
   describe("response formatting", () => {
     it("should format results correctly", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory(testChatId, testUserId, mockTags)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory(testChatId, testUserId, mockTags));
 
       const results = await mockClient.search({
         q: "test",
@@ -283,9 +298,9 @@ describe("Search API Endpoint Integration", () => {
     });
 
     it("should include all required metadata fields", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory(testChatId, testUserId, mockTags)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory(testChatId, testUserId, mockTags));
 
       const results = await mockClient.search({
         q: "test",
@@ -294,13 +309,7 @@ describe("Search API Endpoint Integration", () => {
 
       if (results.results.length > 0) {
         const result = results.results[0];
-        const requiredFields = [
-          "chatId",
-          "userId",
-          "type",
-          "tags",
-          "outcome",
-        ];
+        const requiredFields = ["chatId", "userId", "type", "tags", "outcome"];
 
         requiredFields.forEach((field) => {
           expect(result.metadata).toHaveProperty(field);
@@ -365,15 +374,15 @@ describe("Search API Endpoint Integration", () => {
 
   describe("search optimization", () => {
     it("should return sorted results by relevance", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-1", testUserId, mockTags, 0.95)
-      );
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-2", testUserId, mockTags, 0.75)
-      );
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-3", testUserId, mockTags, 0.85)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("chat-1", testUserId, mockTags, 0.95));
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("chat-2", testUserId, mockTags, 0.75));
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("chat-3", testUserId, mockTags, 0.85));
 
       const results = await mockClient.search({
         q: "test",
@@ -396,9 +405,9 @@ describe("Search API Endpoint Integration", () => {
     it("should handle large result sets efficiently", async () => {
       // Add 100 results
       for (let i = 0; i < 100; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, mockTags)
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, mockTags));
       }
 
       const startTime = performance.now();
@@ -415,9 +424,9 @@ describe("Search API Endpoint Integration", () => {
     });
 
     it("should cache repeated searches", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory(testChatId, testUserId, mockTags)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory(testChatId, testUserId, mockTags));
 
       const search1 = await mockClient.search({ q: "test", limit: 10 });
       const search2 = await mockClient.search({ q: "test", limit: 10 });
@@ -435,9 +444,9 @@ describe("Search API Endpoint Integration", () => {
   describe("cross-user search isolation", () => {
     it("should not return other users' data", async () => {
       // User 1 data
-      mockClient.getMemories().push(
-        createMockSearchMemory("user1-chat", "user-1", mockTags)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("user1-chat", "user-1", mockTags));
 
       // User 2 search
       const user2Results = mockClient.getMemories().filter((m) => {
@@ -453,15 +462,15 @@ describe("Search API Endpoint Integration", () => {
     });
 
     it("should filter by userId at application level", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-1", "user-1", mockTags)
-      );
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-2", "user-2", mockTags)
-      );
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-3", "user-1", mockTags)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("chat-1", "user-1", mockTags));
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("chat-2", "user-2", mockTags));
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("chat-3", "user-1", mockTags));
 
       const user1Memories = mockClient.getMemories().filter((m) => {
         try {

@@ -20,7 +20,7 @@ Use the `Exit<E, A>` data type to represent the result of running an `Effect`, c
 
 ## Rationale
 
-When running or supervising effects, you often need to know not just if they succeeded or failed, but *how* they failed (e.g., error vs. defect).  
+When running or supervising effects, you often need to know not just if they succeeded or failed, but _how_ they failed (e.g., error vs. defect).  
 `Exit` provides a complete, type-safe summary of an effect's outcome.
 
 ## Good Example
@@ -43,7 +43,8 @@ runAndCapture.then((exit) => {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
 - Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
 - Pattern matching on `Exit` lets you handle all possible outcomes.

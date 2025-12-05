@@ -11,7 +11,16 @@ const nextConfig = {
   },
   // Turbopack configuration for Next.js 16
   turbopack: {
-    resolveExtensions: [".ts", ".tsx", ".js", ".jsx", ".mts", ".mjs", ".cts", ".cjs"],
+    resolveExtensions: [
+      ".ts",
+      ".tsx",
+      ".js",
+      ".jsx",
+      ".mts",
+      ".mjs",
+      ".cts",
+      ".cjs",
+    ],
   },
 };
 

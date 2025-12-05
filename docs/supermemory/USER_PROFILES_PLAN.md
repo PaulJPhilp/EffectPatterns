@@ -12,10 +12,12 @@ Implement comprehensive user profile management commands in SM-CLI to leverage S
 **Endpoint**: `POST /v4/profile`
 
 **Parameters**:
+
 - `containerTag` (string, required) - User ID or container tag
 - `q` (string, optional) - Search query to combine with profile
 
 **Response**:
+
 ```json
 {
   "profile": {
@@ -33,9 +35,11 @@ Implement comprehensive user profile management commands in SM-CLI to leverage S
 ## Planned Commands
 
 ### 1. profiles show
+
 Show user profile for a specific user or container tag.
 
 **Usage**:
+
 ```bash
 bun run sm-cli profiles show --user user_123
 bun run sm-cli profiles show --user user_123 --format json
@@ -44,44 +48,53 @@ bun run sm-cli profiles show --user user_123 --section dynamic
 ```
 
 **Options**:
+
 - `--user` (text, required) - User ID or container tag
 - `--section` (static | dynamic | both) - Which profile section to show (default: both)
 - `--format` (human | json) - Output format (default: human)
 
 **Output**:
+
 - Formatted display of static and dynamic profile facts
 - JSON export option for integration
 - Section filtering to focus on specific profile parts
 
 ### 2. profiles search
+
 Get user profile combined with search results.
 
 **Usage**:
+
 ```bash
 bun run sm-cli profiles search --user user_123 --query "deployment errors"
 bun run sm-cli profiles search --user user_123 --query "current projects" --format json
 ```
 
 **Options**:
+
 - `--user` (text, required) - User ID or container tag
 - `--query` (text, required) - Search query to combine with profile
 - `--format` (human | json) - Output format (default: human)
 
 **Output**:
+
 - User profile (static + dynamic)
 - Search results matching the query
 - Combined context for LLM usage
 
 ### 3. profiles export
+
 Export user profile data for use in system prompts or external systems.
 
 **Usage**:
+
 ```bash
 bun run sm-cli profiles export --user user_123 --output profile.json
 bun run sm-cli profiles export --user user_123 --format prompt
 ```
 
 **Options**:
+
 - `--user` (text, required) - User ID or container tag
 - `--output` (text, optional) - Output file path (default: stdout)
 - `--format` (json | prompt | text) - Export format (default: json)
@@ -90,62 +103,75 @@ bun run sm-cli profiles export --user user_123 --format prompt
   - `text` - Plain text with sections
 
 **Output**:
+
 - Save to file or display formatted output
 - System prompt format for easy LLM integration
 
 ### 4. profiles list
+
 List profiles for multiple users or a user segment.
 
 **Usage**:
+
 ```bash
 bun run sm-cli profiles list --container default
 bun run sm-cli profiles list --container project_alpha --limit 10
 ```
 
 **Options**:
+
 - `--container` (text, required) - Container tag to query
 - `--limit` (integer) - Maximum profiles to show (default: 20)
 - `--format` (human | json) - Output format (default: human)
 
 **Output**:
+
 - Summary table of users and their profile sizes
 - Count of static and dynamic facts per user
 - JSON export for analysis
 
 ### 5. profiles compare
+
 Compare profiles between two users to identify similarities/differences.
 
 **Usage**:
+
 ```bash
 bun run sm-cli profiles compare --user1 user_123 --user2 user_456
 bun run sm-cli profiles compare --user1 user_123 --user2 user_456 --show differences
 ```
 
 **Options**:
+
 - `--user1` (text, required) - First user ID
 - `--user2` (text, required) - Second user ID
 - `--show` (all | similarities | differences) - What to compare (default: all)
 - `--format` (human | json) - Output format (default: human)
 
 **Output**:
+
 - Venn diagram-style display of common vs unique facts
 - Side-by-side profile comparison
 - Differences highlighted
 
 ### 6. profiles stats
+
 Show statistics about user profiles in a container.
 
 **Usage**:
+
 ```bash
 bun run sm-cli profiles stats --container default
 bun run sm-cli profiles stats --container project_alpha --format json
 ```
 
 **Options**:
+
 - `--container` (text, required) - Container tag to analyze
 - `--format` (human | json) - Output format (default: human)
 
 **Output**:
+
 - Total users with profiles
 - Average static/dynamic facts per user
 - Most common profile topics
@@ -154,16 +180,18 @@ bun run sm-cli profiles stats --container project_alpha --format json
 ## Type Definitions
 
 ### UserProfile
+
 ```typescript
 interface UserProfile {
   userId: string;
-  static: string[];      // Long-term stable facts
-  dynamic: string[];     // Recent context & temporary info
-  retrievedAt: string;   // Timestamp of profile retrieval
+  static: string[]; // Long-term stable facts
+  dynamic: string[]; // Recent context & temporary info
+  retrievedAt: string; // Timestamp of profile retrieval
 }
 ```
 
 ### UserProfileWithSearch
+
 ```typescript
 interface UserProfileWithSearch {
   profile: UserProfile;
@@ -174,6 +202,7 @@ interface UserProfileWithSearch {
 ```
 
 ### ProfileComparison
+
 ```typescript
 interface ProfileComparison {
   user1: string;
@@ -188,6 +217,7 @@ interface ProfileComparison {
 ```
 
 ### ProfileStats
+
 ```typescript
 interface ProfileStats {
   container: string;
@@ -230,12 +260,14 @@ getProfileStats(
 ## Implementation Details
 
 ### Service Layer (supermemory.ts)
+
 - Add 4 new service methods for profile operations
 - Use Supermemory API `/v4/profile` endpoint
 - Handle error cases (404, authorization, etc.)
 - Type-safe request/response handling
 
 ### Commands Layer (profiles.ts)
+
 - 6 new subcommands with full option parsing
 - Beautiful colored output with tables and formatting
 - Interactive mode for selecting users (future enhancement)
@@ -244,6 +276,7 @@ getProfileStats(
 - System prompt format export
 
 ### Types Layer (types.ts)
+
 - Add 4 new interface definitions
 - Extend existing user types as needed
 - Full type safety for profile operations
@@ -251,6 +284,7 @@ getProfileStats(
 ## UI/UX Features
 
 ### Output Formatting
+
 - **Static Facts Section**: Displayed with icon 📋 in one color
 - **Dynamic Context Section**: Displayed with icon 🔄 in another color
 - **Search Results**: Integrated below profile with icon 🔍
@@ -258,6 +292,7 @@ getProfileStats(
 - **Statistics**: Charts and distribution metrics
 
 ### Status Indicators
+
 - 📋 Static profile (stable information)
 - 🔄 Dynamic profile (recent context)
 - 🔍 Search results
@@ -267,6 +302,7 @@ getProfileStats(
 ### Export Formats
 
 **JSON Format**:
+
 ```json
 {
   "userId": "user_123",
@@ -277,6 +313,7 @@ getProfileStats(
 ```
 
 **Prompt Format**:
+
 ```
 ABOUT THE USER:
 - Fact 1
@@ -290,6 +327,7 @@ CURRENT CONTEXT:
 ```
 
 **Text Format**:
+
 ```
 User Profile for user_123
 Retrieved: 2025-11-04T...
@@ -326,6 +364,7 @@ bun run sm-cli profiles export --user user_123 --format prompt
 ## Testing Strategy
 
 ### Unit Tests
+
 - Profile retrieval with valid user ID
 - Profile retrieval with invalid user ID (404)
 - Profile with search results
@@ -334,6 +373,7 @@ bun run sm-cli profiles export --user user_123 --format prompt
 - Error handling
 
 ### Integration Tests
+
 - Full workflow: create memories → build profile → query profile
 - Multiple users in same container
 - Profile updates over time
@@ -341,6 +381,7 @@ bun run sm-cli profiles export --user user_123 --format prompt
 - Export formats validation
 
 ### Manual Testing
+
 - Interactive command testing
 - Format output verification
 - Error message clarity
@@ -348,12 +389,12 @@ bun run sm-cli profiles export --user user_123 --format prompt
 
 ## Performance Considerations
 
-| Operation | Typical Time | Notes |
-|-----------|-------------|-------|
-| Get profile | 50-100ms | Single API call |
-| Profile + search | 100-200ms | Parallel or sequential |
-| Compare profiles | 150-300ms | 2 profile calls + comparison |
-| Container stats | 200-500ms | May require multiple calls |
+| Operation        | Typical Time | Notes                        |
+| ---------------- | ------------ | ---------------------------- |
+| Get profile      | 50-100ms     | Single API call              |
+| Profile + search | 100-200ms    | Parallel or sequential       |
+| Compare profiles | 150-300ms    | 2 profile calls + comparison |
+| Container stats  | 200-500ms    | May require multiple calls   |
 
 ## Security Considerations
 
@@ -365,10 +406,12 @@ bun run sm-cli profiles export --user user_123 --format prompt
 ## Files to Create/Modify
 
 ### New Files
+
 - `app/sm-cli/src/commands/profiles.ts` - Profile commands (estimated 400+ lines)
 - `app/sm-cli/PROFILES_GUIDE.md` - User documentation (estimated 300+ lines)
 
 ### Modified Files
+
 - `app/sm-cli/src/types.ts` - Add profile interfaces
 - `app/sm-cli/src/services/supermemory.ts` - Add profile service methods
 - `app/sm-cli/src/index.ts` - Register profiles command group

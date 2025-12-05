@@ -9,6 +9,7 @@
 ## Features
 
 ### 🔍 Search Input
+
 - Text search with placeholder guidance
 - Real-time input handling
 - Clear button (X icon) to reset query
@@ -17,6 +18,7 @@
 - Search icon indicator
 
 ### 🏷️ Tag Filtering
+
 - Multi-select tag pills
 - 10 predefined tags (customizable)
 - Visual feedback for selected tags
@@ -25,6 +27,7 @@
 - Keyboard accessible
 
 **Default Tags:**
+
 - effect-ts
 - error-handling
 - async
@@ -37,6 +40,7 @@
 - types
 
 ### 📊 Outcome Filtering
+
 - Dropdown filter for conversation outcomes
 - Options: All, Solved, Unsolved, Partially Solved, Revisited
 - Color-coded options
@@ -45,12 +49,14 @@
 - Click-outside to close dropdown
 
 ### 🎯 Filter Management
+
 - **Active Filters Summary** - Shows current filters with badge styling
 - **Clear All Button** - Resets all filters at once
 - **Filter Status** - Text summary of applied filters
 - Responsive layout that stacks on mobile
 
 ### 💡 Helpful Tips
+
 - Built-in tips section with search best practices
 - 4 actionable tips for better search results
 - Always visible to guide users
@@ -62,10 +68,10 @@
 
 ```typescript
 export interface MemorySearchProps {
-  onFiltersChange: (filters: MemorySearchFilters) => void;  // Required
-  onSearch: (query: string) => void;                         // Required
-  availableTags?: string[];                                  // Optional (default: 10 tags)
-  isLoading?: boolean;                                       // Optional (default: false)
+  onFiltersChange: (filters: MemorySearchFilters) => void; // Required
+  onSearch: (query: string) => void; // Required
+  availableTags?: string[]; // Optional (default: 10 tags)
+  isLoading?: boolean; // Optional (default: false)
 }
 ```
 
@@ -73,8 +79,8 @@ export interface MemorySearchProps {
 
 ```typescript
 export interface MemorySearchFilters {
-  query: string;                                   // Search text
-  tags: string[];                                  // Selected tags
+  query: string; // Search text
+  tags: string[]; // Selected tags
   outcome: "solved" | "unsolved" | "partial" | "revisited" | null;
 }
 ```
@@ -82,6 +88,7 @@ export interface MemorySearchFilters {
 ### Event Callbacks
 
 1. **onFiltersChange**
+
    - Called whenever any filter changes
    - Passes complete filters object
    - Use for updating displayed results in real-time
@@ -252,6 +259,7 @@ export function MemoriesPage() {
 ## UI/UX Features
 
 ### 🎨 Visual Feedback
+
 - **Active Filters** - Different badge styling for selected vs unselected tags
 - **Loading State** - Search button text changes to "Searching..."
 - **Disabled State** - All inputs disabled while loading
@@ -259,12 +267,14 @@ export function MemoriesPage() {
 - **Summary Banner** - Shows all active filters at once
 
 ### ⌨️ Keyboard Navigation
+
 - **Enter Key** - Submits search from input field
 - **Tab Navigation** - Full keyboard support through all controls
 - **Focus States** - Visible focus rings on all interactive elements
 - **Escape Key** - Closes outcome dropdown (via blur)
 
 ### 📱 Responsive Design
+
 - **Mobile** - Stacked layout, full-width inputs
 - **Tablet** - Tag pills wrap appropriately
 - **Desktop** - Optimal spacing and alignment
@@ -273,12 +283,14 @@ export function MemoriesPage() {
 ## Color & Styling
 
 ### Outcome Colors
+
 - **Solved** - Green (`text-green-600 dark:text-green-400`)
 - **Unsolved** - Red (`text-red-600 dark:text-red-400`)
 - **Partial** - Yellow (`text-yellow-600 dark:text-yellow-400`)
 - **Revisited** - Blue (`text-blue-600 dark:text-blue-400`)
 
 ### Badge Variants
+
 - **Selected Tags** - `variant="default"` (primary color)
 - **Unselected Tags** - `variant="outline"` (border only)
 - **Hover State** - Shadow and scale effects
@@ -296,6 +308,7 @@ export function MemoriesPage() {
 ## Customization Examples
 
 ### Dark Tags
+
 ```tsx
 const customTags = [
   "dark-mode",
@@ -308,16 +321,18 @@ const customTags = [
   availableTags={customTags}
   onFiltersChange={handleFiltersChange}
   onSearch={handleSearch}
-/>
+/>;
 ```
 
 ### Hide Tips
+
 ```tsx
 // Remove the tips section from the component if needed
 // Or conditionally render with a prop (can add in future)
 ```
 
 ### Custom Placeholder
+
 ```tsx
 // Modify the Input placeholder text by editing the component
 // Current: "Search memories... (e.g., 'error handling', 'async patterns')"
@@ -326,20 +341,27 @@ const customTags = [
 ## Integration Points
 
 ### With MemoryCard
+
 ```tsx
 import { MemoryCard } from "@/components/memory-card";
 import { MemorySearch } from "@/components/memory-search";
 
 export function MemoriesList() {
   const [results, setResults] = useState([]);
-  const [filters, setFilters] = useState({ query: "", tags: [], outcome: null });
+  const [filters, setFilters] = useState({
+    query: "",
+    tags: [],
+    outcome: null,
+  });
 
   return (
     <div className="space-y-6">
       <MemorySearch
         onFiltersChange={setFilters}
         onSearch={async (q) => {
-          const res = await fetch(`/api/search?q=${q}&tags=${filters.tags.join(",")}`);
+          const res = await fetch(
+            `/api/search?q=${q}&tags=${filters.tags.join(",")}`
+          );
           const data = await res.json();
           setResults(data.results);
         }}
@@ -355,6 +377,7 @@ export function MemoriesList() {
 ```
 
 ### With MemoriesBrowser (Coming Next)
+
 ```tsx
 // MemoriesBrowser will combine:
 // 1. MemorySearch (this component)
@@ -374,6 +397,7 @@ export function MemoriesList() {
 ## Testing Strategy
 
 ### Unit Tests
+
 ```typescript
 describe("MemorySearch", () => {
   it("calls onFiltersChange when tag is toggled", () => {
@@ -430,12 +454,14 @@ describe("MemorySearch", () => {
 ## State Management
 
 **Local State:**
+
 - `query` - Search text input
 - `selectedTags` - Array of selected tag strings
 - `selectedOutcome` - Current outcome filter
 - `showOutcomeDropdown` - Dropdown visibility
 
 **Props-based:**
+
 - Filter changes passed to parent via callbacks
 - Parent manages actual search results and loading state
 
@@ -454,6 +480,7 @@ describe("MemorySearch", () => {
 ## Build Status
 
 ✅ **BUILDS SUCCESSFULLY**
+
 - No TypeScript errors
 - All dependencies present
 - Component compiles and renders
@@ -493,6 +520,7 @@ components/
 **Phase 2c: MemoriesBrowser Component**
 
 Will combine:
+
 1. MemorySearch (search/filter UI)
 2. MemoryCard (result display)
 3. Infinite scroll with IntersectionObserver

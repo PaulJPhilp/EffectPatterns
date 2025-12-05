@@ -32,6 +32,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 ### 1. Technical Correctness ⚙️
 
 **Code Quality:**
+
 - Code examples compile and run without errors
 - Imports are correct and complete
 - Exports are properly defined
@@ -39,6 +40,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 - Effect patterns are implemented correctly
 
 **API Usage:**
+
 - Uses modern Effect APIs (no deprecated APIs)
 - Correct Effect version compatibility
 - Proper error types (no generic `Error`)
@@ -47,6 +49,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 ### 2. Documentation Quality 📚
 
 **Clarity:**
+
 - Clear explanations of concepts
 - Complete coverage of the pattern
 - Accurate descriptions
@@ -54,8 +57,9 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 - Appropriate examples
 
 **Structure:**
+
 - Has "Good Example" section
-- Has "Anti-Pattern" section  
+- Has "Anti-Pattern" section
 - Has "Explanation" or "Rationale" section
 - Code examples are complete and runnable
 - Examples show real-world usage
@@ -63,6 +67,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 ### 3. Pattern Adherence 🎯
 
 **Effect Best Practices:**
+
 - Follows Effect.TS conventions
 - Uses modern Effect patterns
 - Avoids anti-patterns
@@ -70,6 +75,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 - Correct dependency injection
 
 **Code Style:**
+
 - Idiomatic Effect code
 - Prefer `pipe` for composition
 - Use `Effect.gen` for sequential logic
@@ -79,6 +85,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 ### 4. Examples Quality 💡
 
 **Completeness:**
+
 - Code is runnable as-is
 - Demonstrates the pattern effectively
 - Has clear "before" and "after" comparisons
@@ -86,6 +93,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 - Includes expected outputs or behavior
 
 **Clarity:**
+
 - Examples are easy to understand
 - Variable names are descriptive
 - Comments explain non-obvious parts (sparingly)
@@ -94,6 +102,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 ### 5. Metadata ℹ️
 
 **Frontmatter:**
+
 - ID is unique and descriptive (kebab-case)
 - Title is clear and accurate
 - Skill level is appropriate (beginner/intermediate/advanced)
@@ -109,11 +118,14 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 **For streaming patterns** (filename contains "stream", title mentions "streaming"):
 
 **CRITICAL CHECKS:**
+
 1. Does the code actually stream, or does it load everything into memory first?
+
    - ❌ BAD: `fs.readFileString(path)` then `Stream.fromIterable(content.split('\n'))`
    - ✅ GOOD: `fs.readFile(path).pipe(Stream.decodeText('utf-8'), Stream.splitLines)`
 
 2. Does it use `Stream.runCollect` which loads the entire stream?
+
    - ⚠️ WARNING: Only acceptable if the dataset is known to be small
    - ✅ BETTER: Use `Stream.run` or process in chunks
 
@@ -122,6 +134,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
    - ❌ FAIL: Claims streaming but loads everything first
 
 **Set `semantic_checks.memory_behavior` to:**
+
 - `"pass"` - Truly streams with constant memory
 - `"fail"` - Claims streaming but loads into memory
 - `"unknown"` - Not a streaming pattern
@@ -133,12 +146,15 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 **For parallel/concurrent patterns** (filename contains "parallel", "concurrent", "all", title mentions these):
 
 **CRITICAL CHECKS:**
+
 1. Does `Effect.all` have an explicit `concurrency` option?
+
    - ❌ FAIL: `Effect.all(effects)` - sequential by default!
    - ✅ PASS: `Effect.all(effects, { concurrency: "unbounded" })`
    - ✅ PASS: `Effect.all(effects, { concurrency: 5 })`
 
 2. Does the description claim "parallel" or "concurrent"?
+
    - ✅ VERIFY: Code actually runs in parallel
    - ❌ FAIL: Claims parallel but is sequential
 
@@ -148,6 +164,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
    - Parallel: delays overlap (3 x 500ms = ~500ms)
 
 **Set `semantic_checks.concurrency_claims` to:**
+
 - `"pass"` - Correctly parallel with explicit concurrency
 - `"fail"` - Claims parallel but sequential, or missing concurrency option
 - `"unknown"` - Not a concurrency pattern
@@ -159,13 +176,15 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 **Check for non-idiomatic Effect code:**
 
 **ANTI-PATTERNS TO FLAG:**
+
 1. Using `Effect.catchAll + Effect.gen` just for logging:
+
    ```typescript
    // ❌ BAD
    .pipe(Effect.catchAll((e) => Effect.gen(function* () {
      yield* Effect.log(`Error: ${e}`)
    })))
-   
+
    // ✅ GOOD
    .pipe(
      Effect.tapError((e) => Effect.log(`Error: ${e}`)),
@@ -174,6 +193,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
    ```
 
 2. Using deprecated APIs:
+
    - `Effect.fromOption` → Use `Option.match`
    - `Effect.fromEither` → Use `Either.match`
    - `Option.zip` → Use `Option.all`
@@ -181,11 +201,12 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
    - `Effect.matchTag` → Use `Effect.catchTags`
 
 3. Generic `Error` instead of typed errors:
+
    ```typescript
    // ❌ BAD
    Effect<string, Error>
    Effect.fail(new Error("Failed"))
-   
+
    // ✅ GOOD
    class ParseError extends Data.TaggedError("ParseError")<{...}> {}
    Effect<string, ParseError>
@@ -193,15 +214,17 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
    ```
 
 4. Long method chains without `pipe`:
+
    ```typescript
    // ❌ BAD
-   value.map(f1).map(f2).map(f3).map(f4)
-   
+   value.map(f1).map(f2).map(f3).map(f4);
+
    // ✅ GOOD
-   pipe(value, map(f1), map(f2), map(f3), map(f4))
+   pipe(value, map(f1), map(f2), map(f3), map(f4));
    ```
 
 **Set `semantic_checks.effect_idioms` to:**
+
 - `"pass"` - Uses idiomatic Effect patterns
 - `"fail"` - Uses anti-patterns or non-idiomatic code
 - `"unknown"` - Unable to determine
@@ -213,6 +236,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 **Check for outdated or deprecated API usage:**
 
 **DEPRECATED APIS (flag as errors):**
+
 - `Effect.fromOption` (use `Option.match` with `Effect.succeed`/`fail`)
 - `Effect.fromEither` (use `Either.match` with `Effect.succeed`/`fail`)
 - `Option.zip` (use `Option.all`)
@@ -225,6 +249,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 - `Brand.schema()` (use `Schema.brand()`)
 
 **MODERN PATTERNS (encourage):**
+
 - Use `Effect.Service` for services (not `Context.Tag`)
 - Use `pipe` for composition
 - Use `Effect.gen` for sequential logic
@@ -232,6 +257,7 @@ This prompt defines the JSON schema for validating Effect patterns with enhanced
 - Use `Layer` for dependency injection
 
 **Set `semantic_checks.api_modernization` to:**
+
 - `"pass"` - Uses modern APIs throughout
 - `"fail"` - Uses deprecated APIs
 - `"unknown"` - Unable to determine
@@ -280,18 +306,21 @@ When analyzing a pattern, provide specific feedback:
 ## Validation Priority
 
 **Priority 1 - Must Pass (errors):**
+
 1. Code compiles and runs
 2. No deprecated APIs
 3. Concurrency claims match implementation
 4. Streaming patterns actually stream
 
 **Priority 2 - Should Pass (warnings):**
+
 1. Uses idiomatic Effect patterns
 2. Typed errors instead of generic Error
 3. Clear and complete examples
 4. Accurate descriptions
 
 **Priority 3 - Nice to Have (suggestions):**
+
 1. More comprehensive examples
 2. Performance considerations
 3. Edge case handling
@@ -308,4 +337,3 @@ When analyzing a pattern, provide specific feedback:
 5. **Be constructive**: Provide actionable feedback with specific suggestions
 
 Remember: The goal is to catch bugs that would slip through syntax checking and runtime tests. Focus on semantic correctness, behavior, and idioms.
-

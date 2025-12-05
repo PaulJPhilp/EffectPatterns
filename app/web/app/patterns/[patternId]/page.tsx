@@ -3,7 +3,5 @@ export default function PatternPage({
 }: {
   params: { patternId: string };
 }) {
-  return (
-    <main className="min-h-screen p-8" />
-  );
+  return <main className="min-h-screen p-8" />;
 }

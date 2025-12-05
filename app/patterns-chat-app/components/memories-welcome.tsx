@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { memoriesQuickTips } from "@/lib/memories-guide";
 
 export function MemoriesWelcomeBanner() {
@@ -58,8 +64,12 @@ export function MemoriesWelcomeBanner() {
         <div className="grid gap-2">
           {selectedTips.map((tip, idx) => (
             <div key={idx} className="text-sm">
-              <p className="font-semibold text-gray-900 dark:text-gray-50">{tip.title}</p>
-              <p className="text-gray-700 dark:text-gray-300">{tip.description}</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-50">
+                {tip.title}
+              </p>
+              <p className="text-gray-700 dark:text-gray-300">
+                {tip.description}
+              </p>
             </div>
           ))}
         </div>
@@ -82,7 +92,8 @@ export function MemoriesWelcomeBanner() {
 
         {/* Info Text */}
         <p className="text-xs text-gray-600 dark:text-gray-400 pt-2">
-          💡 Tip: Every conversation is automatically tagged and made searchable. No setup needed!
+          💡 Tip: Every conversation is automatically tagged and made
+          searchable. No setup needed!
         </p>
       </CardContent>
     </Card>

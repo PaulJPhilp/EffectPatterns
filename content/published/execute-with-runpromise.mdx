@@ -39,9 +39,7 @@ if it fails, the Promise rejects.
 ```typescript
 import { Effect } from "effect";
 
-const program = Effect.succeed("Hello, World!").pipe(
-  Effect.delay("1 second"),
-);
+const program = Effect.succeed("Hello, World!").pipe(Effect.delay("1 second"));
 
 const promise = Effect.runPromise(program);
 
@@ -61,4 +59,4 @@ easy to integrate with existing JavaScript async workflows.
 ## Anti-Pattern
 
 Never call `runPromise` inside another `Effect` composition. Effects are
-meant to be composed together *before* being run once at the end.
+meant to be composed together _before_ being run once at the end.

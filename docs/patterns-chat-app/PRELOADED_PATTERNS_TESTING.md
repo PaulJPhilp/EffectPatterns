@@ -9,16 +9,19 @@ The system has been updated to support pre-loaded Effect Patterns that are store
 ### Changes Made
 
 1. **Pattern Seeding** (`scripts/seed-patterns.ts`)
+
    - Now adds `timestamp` to each pattern for proper date display
    - Ensures `userId: "system:patterns"` is stored in pattern metadata
    - Patterns are stored with type `"effect_pattern"` in Supermemory
 
 2. **Supermemory Store** (`lib/semantic-search/supermemory-store.ts`)
+
    - Already correctly extracts pattern metadata including title, summary, skillLevel
    - Filters to show both user conversations and system patterns
    - Handles pattern-specific fields separately from conversations
 
 3. **Memory Card Display** (`components/memory-card.tsx`)
+
    - Now correctly displays pattern titles (from `metadata.title`)
    - Uses pattern summaries for preview text (from `metadata.summary`)
    - Shows correct relative dates (now that patterns have timestamps)
@@ -40,12 +43,14 @@ npm run seed:patterns
 ```
 
 This will:
+
 1. Load all patterns from `content/published/`
 2. Add them to Supermemory with type `effect_pattern`
 3. Wait for them to be indexed
 4. Show progress and final statistics
 
 Expected output:
+
 ```
 🌱 Seeding 150+ patterns into Supermemory...
 ✅ [100%] Queued: pattern-name
@@ -64,12 +69,14 @@ npm run test:patterns
 ```
 
 This will search for patterns with keywords like:
+
 - "error handling"
 - "retry"
 - "async"
 - "Layer"
 
 Expected output:
+
 ```
 🔍 Testing pattern search in Supermemory...
 
@@ -96,6 +103,7 @@ Visit `http://localhost:3002/chat` in your browser.
 
 1. **Navigate to Memories Browse** - Click "Browse" in the sidebar
 2. **Search for a pattern** - Try searching for "error handling"
+
    - Verify you see pattern cards with:
      - ✅ Pattern title (e.g., "Error Handling with Catch")
      - ✅ Summary/preview text visible
@@ -106,12 +114,14 @@ Visit `http://localhost:3002/chat` in your browser.
      - ❌ "View conversation" link NOT present (patterns have no chatId)
 
 3. **Verify scoring** - Check the score breakdown:
+
    - Semantic score should be high (~1.0) for "error handling" on error patterns
    - Keyword score should be high (~1.0) if keywords match title/summary
    - Recency should be high (1.0) since patterns were just seeded
    - Final score should combine all factors
 
 4. **Try different searches**:
+
    - Search "retry" - should find retry-related patterns
    - Search "async" - should find async/concurrency patterns
    - Search "Layer" - should find dependency injection patterns
@@ -126,15 +136,15 @@ Visit `http://localhost:3002/chat` in your browser.
 
 For each pattern card, verify:
 
-| Field | Expected | Status |
-|-------|----------|--------|
-| Title | Pattern name from MDX frontmatter | ✅ |
-| Preview | Pattern summary text | ✅ |
-| Date | Relative date like "less than a minute ago" | ✅ |
-| Tags | Skill-level tags like "effect-ts", "error-handling" | ✅ |
-| Memory ID | Format: `pattern_{patternId}` | ✅ |
-| Outcome Badge | Not shown for patterns | ✅ |
-| Link | No "View" link (pattern has empty chatId) | ✅ |
+| Field         | Expected                                            | Status |
+| ------------- | --------------------------------------------------- | ------ |
+| Title         | Pattern name from MDX frontmatter                   | ✅     |
+| Preview       | Pattern summary text                                | ✅     |
+| Date          | Relative date like "less than a minute ago"         | ✅     |
+| Tags          | Skill-level tags like "effect-ts", "error-handling" | ✅     |
+| Memory ID     | Format: `pattern_{patternId}`                       | ✅     |
+| Outcome Badge | Not shown for patterns                              | ✅     |
+| Link          | No "View" link (pattern has empty chatId)           | ✅     |
 
 ### Step 6: Test Edge Cases
 
@@ -158,6 +168,7 @@ GET /api/search?q=error%20handling&limit=5
 ```
 
 Verify:
+
 - ✅ Semantic similarity is high for similar patterns
 - ✅ Keyword matching works for pattern titles
 - ✅ Final scores properly combine semantic + keyword + recency
@@ -169,6 +180,7 @@ Verify:
 **Problem**: Search returns 0 results
 
 **Solutions**:
+
 1. Verify patterns were seeded: Check Supermemory dashboard
 2. Check API key: Ensure `SUPERMEMORY_API_KEY` is set in `.env.local`
 3. Run test script: `npm run test:patterns` to verify search works
@@ -179,6 +191,7 @@ Verify:
 **Problem**: All patterns show "Unknown date" instead of relative date
 
 **Solutions**:
+
 1. Re-seed patterns: `npm run seed:patterns`
 2. Verify timestamp is being added: Check seed-patterns.ts line 150
 3. Clear Supermemory cache (if available)
@@ -188,6 +201,7 @@ Verify:
 **Problem**: Cards don't show title or summary
 
 **Solutions**:
+
 1. Verify pattern metadata was extracted correctly
 2. Check memory-card.tsx lines 54 and 65 handle pattern fields
 3. Review Supermemory store extraction (supermemory-store.ts lines 250-255)
@@ -197,6 +211,7 @@ Verify:
 **Problem**: Link appears but goes to broken page
 
 **Solutions**:
+
 1. Verify fix in memory-card.tsx line 279 checks for `metadata.chatId`
 2. Re-deploy application
 3. Check browser console for errors

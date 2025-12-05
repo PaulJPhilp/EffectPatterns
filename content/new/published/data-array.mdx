@@ -4,7 +4,15 @@ id: "data-array"
 skillLevel: "beginner"
 useCase: ["Data Types", "Arrays", "Structural Equality", "Collections"]
 summary: "Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations."
-tags: ["Data.array", "array", "structural-equality", "immutable", "data-type", "effect"]
+tags:
+  [
+    "Data.array",
+    "array",
+    "structural-equality",
+    "immutable",
+    "data-type",
+    "effect",
+  ]
 rule:
   description: "Use Data.array to define arrays whose equality is based on their contents, enabling safe, predictable comparisons and functional operations."
 related: ["data-chunk", "data-struct", "data-tuple"]
@@ -44,7 +52,8 @@ console.log(HashSet.has(set, arr2)); // true
 const doubled = arr1.map((n) => n * 2); // Data.array([2, 4, 6])
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.array` creates immutable arrays with value-based equality.
 - Useful for modeling ordered collections in a safe, functional way.
 - Supports all standard array operations, but with immutability and structural equality.
