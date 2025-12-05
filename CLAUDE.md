@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Effect Patterns Hub - Claude Code Context
 
-**Version:** 0.6.0
+**Version:** 0.7.0
 **Last Updated:** 2025-12-05
 
 This document provides comprehensive context for Claude Code when working on the Effect Patterns Hub project.
