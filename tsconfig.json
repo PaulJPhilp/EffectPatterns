@@ -44,6 +44,14 @@
     "archive/**",
     "content/backups/**",
     "content-backup-*/**",
-    "scripts/autofix/ai/suggestions/**"
+    "scripts/autofix/ai/suggestions/**",
+    "scripts/mock-db.ts",
+    "scripts/test-chat-app-core.ts",
+    "scripts/test-harness.ts",
+    "scripts/test-harness-cli.ts",
+    "scripts/test-llm-service.ts",
+    "scripts/test-models.ts",
+    "scripts/test-patterns.ts",
+    "scripts/test-supermemory.ts"
   ]
 }
