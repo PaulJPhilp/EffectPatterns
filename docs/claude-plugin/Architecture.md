@@ -1,11 +1,13 @@
 ```markdown
 # Architecture Document
+
 Product: Effect Patterns Claude Code Plugin (EP-Plugin)  
 Owner: Paul J Philp  
 Version: 0.1.0  
 Last updated: 2025-10-09
 
 Table of contents
+
 1. Goals & constraints
 2. High-level architecture
 3. Component descriptions
@@ -24,7 +26,8 @@ Table of contents
 
 ---
 
-1) Goals & constraints
+1. Goals & constraints
+
 - All server-side code (MCP server / API handlers) must be written using the Effect ecosystem (Effect primitives, schemas, Layers).
 - Canonical domain schemas use Effect schema tooling. Zod is used only for tool-call boundaries (small edge surface).
 - Deterministic snippet/template generation by default (no LLM calls unless opt-in).
@@ -33,7 +36,8 @@ Table of contents
 
 ---
 
-2) High-level architecture
+2. High-level architecture
+
 - Clients:
   - Claude Code plugin (slash commands, agents) installed by users.
   - Human developers (browser/CLI) for testing & admin.
@@ -51,17 +55,18 @@ Table of contents
 
 ASCII diagram (logical)
 Client (Claude Code)
-  -> /plugin calls -> MCP Server (Next.js/App Router route handlers implemented with Effect)
-     -> uses Toolkit (Effect schemas + snippet builder)
-     -> writes logs & exports spans -> OTLP Collector
-     -> returns JSON (includes traceId)
+-> /plugin calls -> MCP Server (Next.js/App Router route handlers implemented with Effect)
+-> uses Toolkit (Effect schemas + snippet builder)
+-> writes logs & exports spans -> OTLP Collector
+-> returns JSON (includes traceId)
 GitHub Actions -> generates data/patterns.json -> checked into MCP repo (or pulled at runtime)
 
 ---
 
-3) Component descriptions
+3. Component descriptions
 
 A. Effect Patterns Toolkit (canonical domain package)
+
 - Responsibilities:
   - Domain types (Effect schemas): Pattern, PatternSummary, GenerateRequest, GenerateResponse.
   - Pure algorithms: search, ranking, getById, sanitizer, deterministic template builder.
@@ -79,6 +84,7 @@ A. Effect Patterns Toolkit (canonical domain package)
   - Keeps deterministic logic out of server; easy to reuse in tests, agents, or other services.
 
 B. MCP Server (Effect-native)
+
 - Responsibilities:
   - HTTP API endpoints:
     - GET /api/patterns?q=
@@ -89,35 +95,39 @@ B. MCP Server (Effect-native)
   - Auth (API key), rate-limiting, request tracing, logging, input validation (Effect schemas).
   - Uses Toolkit for domain logic.
 - Implementation choices:
-  - Preferred: Next.js App Router (app/api/* route.ts) with handlers that call Effect.runPromise on the core Effect workflow. Keep resource init (OTLP exporter) as a singleton Layer (initialized at cold start).
+  - Preferred: Next.js App Router (app/api/\* route.ts) with handlers that call Effect.runPromise on the core Effect workflow. Keep resource init (OTLP exporter) as a singleton Layer (initialized at cold start).
   - Alternative: small standalone server using an Effect-compatible HTTP abstraction (e.g., @effect/http or Fastify with an Effect wrapper) for lower friction in the server lifecycle.
 - Key modules:
   - tracing/otlpLayer.ts — Effect Layer to init OTLP exporter and provide startSpan API.
-  - http/handlers/* — route handlers implemented as Effects.
+  - http/handlers/\* — route handlers implemented as Effects.
   - auth/apiKey.ts — Effect middleware that checks x-api-key or ?key.
   - adapters/toolkitAdapter.ts — glue between HTTP event and toolkit functions.
   - rateLimiter.ts — simple token-bucket or sliding window stub (configurable).
 
 C. Ingestion & CI
+
 - GitHub Action: .github/workflows/generate-patterns.yml
   - Periodic / on-push: clone https://github.com/PaulJPhilp/EffectPatterns, parse MD/README or pattern files to produce data/patterns.json, commit/update repo or publish artifact.
   - Fallback behavior: if remote repo unavailable, keep sample patterns.json in repo.
 
 D. Observability & tracing
+
 - Tracing Layer uses @effect/opentelemetry (preferred) or a thin Effect Layer that wraps Node OTel SDK.
 - OTLP exporter read from env vars OTLP_ENDPOINT and OTLP_HEADERS.
 - Structured logging includes traceId and request id.
 
 E. Claude plugin manifests
+
 - .claude-plugin/marketplace.json and plugin manifest JSON (listing slash commands, agent definitions, and MCP server URL).
 - Tool schemas (JSON Schema files) emitted from the toolkit used as the function parameter for LLM tool-call registration.
 
 ---
 
-4) Data flows & sequence diagrams
+4. Data flows & sequence diagrams
 
 Flow A — Search
 User types: /pattern search retry
+
 1. Claude plugin calls MCP: GET /api/patterns?q=retry (includes x-api-key).
 2. MCP auth middleware verifies API key.
 3. Tracing Layer: start root span "GET /api/patterns".
@@ -128,6 +138,7 @@ User types: /pattern search retry
 
 Flow B — Generate
 User requests: /pattern generate retry-with-backoff --module esm --effect 0.54.0
+
 1. Claude plugin POST /api/generate with body (patternId, moduleType, effectVersion) and x-api-key.
 2. Auth check; Tracing Layer starts root span.
 3. Handler decode body using Effect schema (GenerateRequest).
@@ -145,7 +156,8 @@ MCP -> OTLP Collector: export spans
 
 ---
 
-5) Runtime & Effect patterns
+5. Runtime & Effect patterns
+
 - Effect Layers:
   - TracingLayer: initializes OTLP exporter, exposes tracing client functions (startSpan, addAttributes, endSpan).
   - ConfigLayer: provides env vars typed through Effect schema decoding.
@@ -160,14 +172,16 @@ MCP -> OTLP Collector: export spans
   - Validate incoming requests with Effect schemas inside Effects; return HTTP 400 on decode failure with structured error object.
 
 Implementation detail: Next.js integration pattern
+
 - Initialize singleton Layers during module cold-start:
-  - In app/api/_init.ts or a top-level module import, create and memoize the composed Layer (Tracing + Config + Patterns).
+  - In app/api/\_init.ts or a top-level module import, create and memoize the composed Layer (Tracing + Config + Patterns).
   - Each route handler imports the singleton runtime and calls runtime.runPromise(handlerEffect).
 - Rationale: Vercel cold-starts require Layers to be initialized cheaply; treating Layers as singletons avoids re-init per request.
 
 ---
 
-6) Tracing & observability
+6. Tracing & observability
+
 - Tracing responsibilities:
   - Start a root span per incoming request (resource, route name).
   - Attach attributes: service.name, route, method, patternId, client.ip (if available), claude.request.id (if provided).
@@ -188,7 +202,8 @@ Implementation detail: Next.js integration pattern
 
 ---
 
-7) Security, secrets & governance
+7. Security, secrets & governance
+
 - Authentication:
   - PATTERN_API_KEY is required for all API endpoints; accepted via x-api-key or ?key (for simple testing).
   - Keys stored in Vercel as masked env vars; document rotation steps.
@@ -207,15 +222,17 @@ Implementation detail: Next.js integration pattern
 
 ---
 
-8) API contracts (summary)
-(Full contracts in PRD; canonical types are Effect schemas.)
+8. API contracts (summary)
+   (Full contracts in PRD; canonical types are Effect schemas.)
 
 Headers:
+
 - x-api-key: string
 - optional: x-request-id, forward headers for client IP
 - responses include header x-trace-id
 
 Endpoints:
+
 - GET /api/patterns?q=...
   - Response: { count: number, patterns: PatternSummary[] }
 - GET /api/patterns/:id
@@ -229,6 +246,7 @@ Endpoints:
   - Response: { ok: true, version: "0.x.y" }
 
 Errors:
+
 - 401 Unauthorized: { error: { code: "unauthorized", message } }
 - 400 Bad Request (schema decode): { error: { code: "invalid_request", message, details } }
 - 404 Not found: { error: { code: "not_found", message } }
@@ -237,7 +255,8 @@ Errors:
 
 ---
 
-9) Storage, caching & scaling
+9. Storage, caching & scaling
+
 - Patterns index:
   - Generated by GH Action into data/patterns.json checked into repo (fast deploy).
   - At runtime: patterns.json loaded at cold start into an in-memory read-only data structure (Effect Ref). This gives fastest search latency.
@@ -252,7 +271,8 @@ Errors:
 
 ---
 
-10) Testing, CI/CD & release
+10. Testing, CI/CD & release
+
 - Unit tests (Toolkit): Vitest or Jest; high coverage for search & snippet builder.
 - Integration tests (Server):
   - Start server in test harness (Effect runtime) -> mock OTLP collector -> call endpoints (with test API key) -> assert responses and that mock OTLP received spans.
@@ -268,7 +288,8 @@ Errors:
 
 ---
 
-11) Deployment topology (Vercel)
+11. Deployment topology (Vercel)
+
 - Vercel serverless functions (Next.js App Router) hosting app/api route handlers.
 - Environment variables (Vercel project settings):
   - PATTERN_API_KEY (masked)
@@ -282,8 +303,9 @@ Errors:
 
 ---
 
-12) Operational runbook (summary)
-Common ops tasks:
+12. Operational runbook (summary)
+    Common ops tasks:
+
 - Revoke/rotate API key:
   1. Create new PATTERN_API_KEY in Vercel.
   2. Update plugin consumers (orgs) with new key (or rotate via API).
@@ -299,8 +321,9 @@ Common ops tasks:
 
 ---
 
-13) File layout / repo scaffold (recommended)
-root/
+13. File layout / repo scaffold (recommended)
+    root/
+
 - README.md
 - MRD.md PRD.md ARCHITECTURE.md IMPLEMENTATION_PLAN.md
 - packages/
@@ -355,23 +378,27 @@ root/
 
 ---
 
-14) Extensibility & roadmap
-Short-term extensions
+14. Extensibility & roadmap
+    Short-term extensions
+
 - Optional LLM-assisted codegen behind an opt-in flag with rate limits, audit logging, and cache.
 - Private org marketplaces with per-org API keys and signing.
 - tRPC or SDK for orgs to call MCP endpoints from internal tools.
 
 Medium-term
+
 - Fine-grained permissions for plugin operations (who can generate, who can install).
 - Persisted audit logs & UI for admins to review generated snippets and their traces.
 - Support for more snippet formats (Rust/other languages) if patterns expand.
 
 Long-term
+
 - Marketplace ranking, community-contributed patterns, signing and verification, vulnerability scanning of templates.
 
 ---
 
-15) Risks, trade-offs & alternatives
+15. Risks, trade-offs & alternatives
+
 - Using Next.js App Router vs standalone server:
   - App Router: easy Vercel deploy, but route handlers must bridge Effect runtime -> route function. Trade-off: require careful singleton Layer management.
   - Standalone: pure control over lifecycle; may require container infra. Trade-off: more infra ops.
@@ -386,6 +413,7 @@ Long-term
 ---
 
 Appendix: Quick checklist for implementers
+
 - [ ] Implement toolkit with Effect schemas + emit JSON Schema for tool calls.
 - [ ] Implement TracingLayer that initializes OTLP exporter and exposes startSpan API.
 - [ ] Implement app/api route handlers: patterns, pattern id, generate, trace-wiring, health.
@@ -397,3 +425,4 @@ Appendix: Quick checklist for implementers
 - [ ] CI: lint, test, emit schemas, and deploy flow.
 
 ---
+```

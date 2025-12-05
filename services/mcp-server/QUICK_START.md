@@ -58,17 +58,18 @@ curl -H "x-api-key: demo-beta-2025" \
 
 ## API Endpoints
 
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/health` | GET | No | Server status |
-| `/api/patterns` | GET | Yes | Search patterns |
-| `/api/patterns/:id` | GET | Yes | Get pattern details |
-| `/api/generate` | POST | Yes | Generate code snippet |
-| `/api/trace-wiring` | GET | Yes | Tracing examples |
+| Endpoint            | Method | Auth | Description           |
+| ------------------- | ------ | ---- | --------------------- |
+| `/api/health`       | GET    | No   | Server status         |
+| `/api/patterns`     | GET    | Yes  | Search patterns       |
+| `/api/patterns/:id` | GET    | Yes  | Get pattern details   |
+| `/api/generate`     | POST   | Yes  | Generate code snippet |
+| `/api/trace-wiring` | GET    | Yes  | Tracing examples      |
 
 ## Query Parameters
 
 **Search Patterns:**
+
 ```bash
 # By query
 ?q=retry
@@ -91,11 +92,13 @@ curl -H "x-api-key: demo-beta-2025" \
 Two methods supported:
 
 **1. Header (Recommended):**
+
 ```bash
 curl -H "x-api-key: YOUR_KEY" https://mcp-server-three-omega.vercel.app/api/patterns
 ```
 
 **2. Query Parameter:**
+
 ```bash
 curl "https://mcp-server-three-omega.vercel.app/api/patterns?key=YOUR_KEY"
 ```
@@ -103,10 +106,12 @@ curl "https://mcp-server-three-omega.vercel.app/api/patterns?key=YOUR_KEY"
 ## Rate Limits (Beta)
 
 **Demo Key:**
+
 - **Limit:** 10 requests per minute
 - **Shared:** All beta users share this limit
 
 **Production (Coming Soon):**
+
 - **Limit:** 100 requests per minute per API key
 - **Self-service:** Generate your own keys
 - **Response:** `429 Too Many Requests` when exceeded
@@ -115,14 +120,17 @@ curl "https://mcp-server-three-omega.vercel.app/api/patterns?key=YOUR_KEY"
 ## Common Issues
 
 **401 Unauthorized:**
+
 - Check your API key is correct
 - Verify header format: `x-api-key: YOUR_KEY`
 
 **404 Not Found:**
+
 - Pattern ID doesn't exist
 - Use search endpoint to find valid IDs
 
 **429 Too Many Requests:**
+
 - You've exceeded the rate limit
 - Wait 60 seconds or implement request throttling
 
@@ -135,4 +143,3 @@ curl "https://mcp-server-three-omega.vercel.app/api/patterns?key=YOUR_KEY"
 ---
 
 **Questions?** Open an issue on GitHub
-

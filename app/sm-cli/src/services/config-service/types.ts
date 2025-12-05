@@ -1,4 +1,4 @@
-import type { SupermemoryConfig } from '../../types.js';
+import type { SupermemoryConfig } from "../../types.js";
 
 /**
  * ConfigService Types
@@ -23,4 +23,3 @@ export interface ConfigServiceAPI {
    */
   readonly getConfigPath: () => string;
 }
-

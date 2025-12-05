@@ -5,6 +5,7 @@
 ## Summary
 
 ✅ **All critical tests passing**
+
 - 33 unit tests passing
 - 10 tests appropriately skipped
 - 0 failing unit tests
@@ -12,34 +13,34 @@
 
 ## Test Breakdown
 
-### Unit Tests (src/*.test.ts) ✅
+### Unit Tests (src/\*.test.ts) ✅
 
-| Test Suite | Tests | Status |
-|------------|-------|--------|
-| MCPConfigService | 2 | ✅ Passing |
-| MCPLoggerService | 3 | ✅ Passing |
-| MCPCacheService | 5 | ✅ Passing |
-| MCPValidationService | 6 | ✅ Passing |
-| MCRateLimitService | 4 | ✅ Passing |
-| MCPMetricsService | 8 | ✅ Passing |
-| Error Types | 3 | ✅ Passing |
-| Service Integration | 1 | ✅ Passing |
-| E2E AI SDK Tests | 10 | ⏭️ Skipped (optional) |
-| **Total** | **33 passing, 10 skipped** | ✅ |
+| Test Suite           | Tests                      | Status                |
+| -------------------- | -------------------------- | --------------------- |
+| MCPConfigService     | 2                          | ✅ Passing            |
+| MCPLoggerService     | 3                          | ✅ Passing            |
+| MCPCacheService      | 5                          | ✅ Passing            |
+| MCPValidationService | 6                          | ✅ Passing            |
+| MCRateLimitService   | 4                          | ✅ Passing            |
+| MCPMetricsService    | 8                          | ✅ Passing            |
+| Error Types          | 3                          | ✅ Passing            |
+| Service Integration  | 1                          | ✅ Passing            |
+| E2E AI SDK Tests     | 10                         | ⏭️ Skipped (optional) |
+| **Total**            | **33 passing, 10 skipped** | ✅                    |
 
-### Integration Tests (tests/integration/*.test.ts) ⏭️
+### Integration Tests (tests/integration/\*.test.ts) ⏭️
 
-| Test Suite | Tests | Status | Notes |
-|------------|-------|--------|-------|
-| Health Endpoint | 4 | ⏭️ Not run | Requires server |
-| Pattern Search | 10 | ⏭️ Not run | Requires server + auth |
-| Pattern Retrieval | 4 | ⏭️ Not run | Requires server + auth |
-| Code Generation | 7 | ⏭️ Not run | Requires server + auth |
-| Trace Wiring | 5 | ⏭️ Not run | Requires server + auth |
-| Authentication | 5 | ⏭️ Not run | Requires server + auth |
-| OTLP Tracing | 3 | ⏭️ Not run | Requires server + collector |
-| Error Handling | 1 | ⏭️ Not run | Requires server |
-| **Total** | **39 tests** | ⏭️ **Skipped by default** |
+| Test Suite        | Tests        | Status                    | Notes                       |
+| ----------------- | ------------ | ------------------------- | --------------------------- |
+| Health Endpoint   | 4            | ⏭️ Not run                | Requires server             |
+| Pattern Search    | 10           | ⏭️ Not run                | Requires server + auth      |
+| Pattern Retrieval | 4            | ⏭️ Not run                | Requires server + auth      |
+| Code Generation   | 7            | ⏭️ Not run                | Requires server + auth      |
+| Trace Wiring      | 5            | ⏭️ Not run                | Requires server + auth      |
+| Authentication    | 5            | ⏭️ Not run                | Requires server + auth      |
+| OTLP Tracing      | 3            | ⏭️ Not run                | Requires server + collector |
+| Error Handling    | 1            | ⏭️ Not run                | Requires server             |
+| **Total**         | **39 tests** | ⏭️ **Skipped by default** |
 
 ## Configuration
 
@@ -120,12 +121,12 @@ curl -H "x-api-key: your-key" \
 
 ## Test Files
 
-| File | Purpose | Count |
-|------|---------|-------|
-| `src/services.test.ts` | Unit tests for all services | 33 tests |
-| `src/e2e-ai-sdk.test.ts` | AI SDK integration tests | 10 tests (skipped) |
-| `tests/integration/api.test.ts` | Full API integration tests | 39 tests |
-| **Total** | | **82 tests** |
+| File                            | Purpose                     | Count              |
+| ------------------------------- | --------------------------- | ------------------ |
+| `src/services.test.ts`          | Unit tests for all services | 33 tests           |
+| `src/e2e-ai-sdk.test.ts`        | AI SDK integration tests    | 10 tests (skipped) |
+| `tests/integration/api.test.ts` | Full API integration tests  | 39 tests           |
+| **Total**                       |                             | **82 tests**       |
 
 ## Recent Fixes
 
@@ -164,4 +165,3 @@ The MCP server is in excellent shape:
 - ✅ Comprehensive documentation
 
 The "failing" integration tests are expected - they require a running server and are appropriately excluded from the default test run.
-

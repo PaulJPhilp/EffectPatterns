@@ -3,11 +3,13 @@
 ## How to Access
 
 ### 1. Navigate to Memories Page
+
 ```
 URL: /memories
 ```
 
 ### 2. You'll See Two Tabs
+
 ```
 📚 Guide  |  🔍 Browse
 ```
@@ -15,6 +17,7 @@ URL: /memories
 ## Guide Tab (Educational)
 
 Learn about how memories work:
+
 - What are memories?
 - Key features (6 highlights)
 - How the system works (6 steps)
@@ -30,11 +33,13 @@ Learn about how memories work:
 ### Search for Memories
 
 1. **Enter Search Query**
+
    - Example: "How do I handle async errors?"
    - Or: "error handling"
    - Or: "retry patterns"
 
 2. **Click Search Button**
+
    - Or press Enter
 
 3. **View Results**
@@ -49,7 +54,9 @@ Learn about how memories work:
 ### Filter Results
 
 #### By Tags
+
 Click any tag pill to filter:
+
 - effect-ts
 - error-handling
 - async
@@ -64,7 +71,9 @@ Click any tag pill to filter:
 Multiple tags: Click multiple pills (AND operation)
 
 #### By Outcome
+
 Click the filter dropdown:
+
 - All Outcomes (default)
 - Solved (🟢)
 - Unsolved (🔴)
@@ -72,19 +81,23 @@ Click the filter dropdown:
 - Revisited (🔵)
 
 #### Clear Filters
+
 Click "Clear All" button to reset everything
 
 ### Browse with Infinite Scroll
 
 1. **View First Page**
+
    - See 20 results
    - Message: "Showing 20 of 47 memories"
 
 2. **Scroll Down**
+
    - IntersectionObserver detects when near bottom
    - "Loading more..." indicator appears
 
 3. **Next Page Loads**
+
    - 20 more results appended
    - Updated count: "Showing 40 of 47 memories"
 
@@ -117,6 +130,7 @@ Each memory card shows:
 ### Find Answers
 
 **Example 1: Find Solved Issues**
+
 ```
 1. Filter: Outcome = "Solved"
 2. Enter search: "error handling"
@@ -125,6 +139,7 @@ Each memory card shows:
 ```
 
 **Example 2: Browse by Topic**
+
 ```
 1. Click tag: "async"
 2. Results narrow to async-related conversations
@@ -134,6 +149,7 @@ Each memory card shows:
 ```
 
 **Example 3: Semantic Search**
+
 ```
 1. Search: "How do I retry a failed request?"
 2. System finds similar conversations even if wording differs
@@ -144,18 +160,21 @@ Each memory card shows:
 ## Tips for Better Searches
 
 ### Do This ✅
+
 - "How do I handle async errors in Effect?"
 - "retry with backoff"
 - "error recovery patterns"
 - "async timeout handling"
 
 ### Avoid This ❌
+
 - "async"
 - "error"
 - "help"
 - Too generic words
 
 ### Combine Filters ✅
+
 - Search for "effect-ts" + Filter outcome to "Solved"
 - Search for "error" + Tag filter "error-handling" + "async"
 - Try different tags to find related conversations
@@ -164,31 +183,32 @@ Each memory card shows:
 
 Each memory card includes:
 
-| Field | Example | Meaning |
-|-------|---------|---------|
-| Title | "Error Handling Pattern" | First line of conversation |
-| Timestamp | "2h ago" | When conversation saved |
-| Outcome | 🟢 Solved | Did it get solved? |
-| Tags | error-handling, async | Auto-assigned topics |
-| Satisfaction | ████░ (4.2/5) | How satisfied was outcome? |
-| Semantic Score | 85% | Meaning-based relevance |
-| Keyword Score | 72% | Keyword match |
-| Recency Score | 90% | How recent? |
-| Final Score | 81% | Combined relevance |
+| Field          | Example                  | Meaning                    |
+| -------------- | ------------------------ | -------------------------- |
+| Title          | "Error Handling Pattern" | First line of conversation |
+| Timestamp      | "2h ago"                 | When conversation saved    |
+| Outcome        | 🟢 Solved                | Did it get solved?         |
+| Tags           | error-handling, async    | Auto-assigned topics       |
+| Satisfaction   | ████░ (4.2/5)            | How satisfied was outcome? |
+| Semantic Score | 85%                      | Meaning-based relevance    |
+| Keyword Score  | 72%                      | Keyword match              |
+| Recency Score  | 90%                      | How recent?                |
+| Final Score    | 81%                      | Combined relevance         |
 
 ## Keyboard Navigation
 
-| Key | Action |
-|-----|--------|
-| Tab | Navigate between elements |
-| Enter | Submit search, activate buttons |
-| Space | Toggle tags, activate buttons |
-| Arrow Keys | Navigate dropdown menu |
-| Escape | Close dropdown |
+| Key        | Action                          |
+| ---------- | ------------------------------- |
+| Tab        | Navigate between elements       |
+| Enter      | Submit search, activate buttons |
+| Space      | Toggle tags, activate buttons   |
+| Arrow Keys | Navigate dropdown menu          |
+| Escape     | Close dropdown                  |
 
 ## Mobile View
 
 All features work on mobile:
+
 - Search input adapts to screen width
 - Tags wrap appropriately
 - Results scroll smoothly
@@ -198,6 +218,7 @@ All features work on mobile:
 ## Batch Operations (Coming Soon)
 
 Enable "Batch Selection" mode to:
+
 - Select multiple memories
 - Perform bulk actions (export, tag, organize)
 - Sticky footer shows count
@@ -213,6 +234,7 @@ Enable "Batch Selection" mode to:
 ## Troubleshooting
 
 ### No Results Found
+
 - ❓ Query too specific?
   → Try broader keywords
 - ❓ No memories saved yet?
@@ -221,6 +243,7 @@ Enable "Batch Selection" mode to:
   → Click "Clear All" to reset
 
 ### Search Too Slow
+
 - ❓ Too many results?
   → Add tag filters to narrow down
 - ❓ Old browser?
@@ -229,6 +252,7 @@ Enable "Batch Selection" mode to:
   → Check network speed
 
 ### Infinite Scroll Not Working
+
 - ❓ Reached end of results?
   → See "You've reached the end" message
 - ❓ Still loading?
@@ -239,6 +263,7 @@ Enable "Batch Selection" mode to:
 ## Learn More
 
 For detailed information, see:
+
 - `MEMORIES_BROWSER_COMPONENT.md` - Full component documentation
 - `MEMORY_CARD_COMPONENT.md` - Card component details
 - `MEMORY_SEARCH_COMPONENT.md` - Search component details

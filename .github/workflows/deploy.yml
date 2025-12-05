@@ -26,7 +26,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_MCP_SERVER_PROJECT_ID }}
           working-directory: services/mcp-server
-          vercel-args: '--prod'
+          vercel-args: "--prod"
 
   deploy-patterns-chat-app:
     needs: test
@@ -39,7 +39,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PATTERNS_CHAT_APP_PROJECT_ID }}
           working-directory: app/patterns-chat-app
-          vercel-args: '--prod'
+          vercel-args: "--prod"
 
   deploy-web:
     needs: test
@@ -52,7 +52,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
           working-directory: app/web
-          vercel-args: '--prod'
+          vercel-args: "--prod"
 
   health-check:
     needs: [deploy-mcp-server, deploy-patterns-chat-app, deploy-web]

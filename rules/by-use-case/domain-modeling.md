@@ -29,10 +29,10 @@ const e3 = Either.left("fail2");
 const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
 const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
 const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Either.right(value)` represents success.
 - `Either.left(error)` represents failure.
 - Pattern matching ensures all cases are handled.
@@ -48,7 +48,7 @@ Use Either to accumulate multiple validation errors instead of failing on the fi
 
 Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
 
-````typescript
+```typescript
 import { Effect, Schema, Data, Either } from "effect";
 
 // Define validation error type
@@ -68,13 +68,13 @@ const UserSchema = Schema.Struct({
   name: Schema.String.pipe(
     Schema.minLength(3),
     Schema.filter((name) => /^[A-Za-z\s]+$/.test(name), {
-      message: () => "name must contain only letters and spaces"
+      message: () => "name must contain only letters and spaces",
     })
   ),
   email: Schema.String.pipe(
     Schema.pattern(/@/),
     Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
-      message: () => "email must be a valid email address"
+      message: () => "email must be a valid email address",
     })
   ),
 });
@@ -92,7 +92,7 @@ const invalidInputs: User[] = [
   {
     name: "Alice Smith", // Valid
     email: "alice@example.com", // Valid
-  }
+  },
 ];
 
 // Validate a single user
@@ -105,31 +105,33 @@ const validateUser = (input: User) =>
 // Process multiple users and accumulate all errors
 const program = Effect.gen(function* () {
   yield* Effect.log("Validating users...\n");
-  
+
   for (const input of invalidInputs) {
     const result = yield* Effect.either(validateUser(input));
-    
+
     yield* Effect.log(`Validating user: ${input.name} <${input.email}>`);
-    
+
     // Handle success and failure cases separately for clarity
     // Using Either.match which is the idiomatic way to handle Either values
     yield* Either.match(result, {
-      onLeft: (error) => Effect.gen(function* () {
-        yield* Effect.log("❌ Validation failed:");
-        yield* Effect.log(error.message);
-        yield* Effect.log(""); // Empty line for readability
-      }),
-      onRight: (user) => Effect.gen(function* () {
-        yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
-        yield* Effect.log(""); // Empty line for readability
-      })
-    })
+      onLeft: (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log("❌ Validation failed:");
+          yield* Effect.log(error.message);
+          yield* Effect.log(""); // Empty line for readability
+        }),
+      onRight: (user) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
+          yield* Effect.log(""); // Empty line for readability
+        }),
+    });
   }
 });
 
 // Run the program
 Effect.runSync(program);
-````
+```
 
 ---
 
@@ -146,13 +148,11 @@ import { Effect } from "effect";
 
 // Define our steps with logging
 const step1 = (): Effect.Effect<number> =>
-  Effect.succeed(42).pipe(
-    Effect.tap(n => Effect.log(`Step 1: ${n}`))
-  );
+  Effect.succeed(42).pipe(Effect.tap((n) => Effect.log(`Step 1: ${n}`)));
 
 const step2 = (a: number): Effect.Effect<string> =>
   Effect.succeed(`Result: ${a * 2}`).pipe(
-    Effect.tap(s => Effect.log(`Step 2: ${s}`))
+    Effect.tap((s) => Effect.log(`Step 2: ${s}`))
   );
 
 // Using Effect.gen for better readability
@@ -199,7 +199,8 @@ const set = HashSet.make(user1);
 console.log(HashSet.has(set, user2)); // true
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.struct` creates immutable objects with value-based equality.
 - Use for domain entities, value objects, and when storing objects in sets or as map keys.
 - Avoids bugs from reference-based comparison.
@@ -213,75 +214,70 @@ Define contracts upfront with schema.
 ### Example
 
 ```typescript
-import { Schema, Effect, Data } from "effect"
+import { Schema, Effect, Data } from "effect";
 
 // Define User schema and type
 const UserSchema = Schema.Struct({
   id: Schema.Number,
-  name: Schema.String
-})
+  name: Schema.String,
+});
 
-type User = Schema.Schema.Type<typeof UserSchema>
+type User = Schema.Schema.Type<typeof UserSchema>;
 
 // Define error type
 class UserNotFound extends Data.TaggedError("UserNotFound")<{
-  readonly id: number
+  readonly id: number;
 }> {}
 
 // Create database service implementation
-export class Database extends Effect.Service<Database>()(
-  "Database",
-  {
-    sync: () => ({
-      getUser: (id: number) =>
-        id === 1
-          ? Effect.succeed({ id: 1, name: "John" })
-          : Effect.fail(new UserNotFound({ id }))
-    })
-  }
-) {}
+export class Database extends Effect.Service<Database>()("Database", {
+  sync: () => ({
+    getUser: (id: number) =>
+      id === 1
+        ? Effect.succeed({ id: 1, name: "John" })
+        : Effect.fail(new UserNotFound({ id })),
+  }),
+}) {}
 
 // Create a program that demonstrates schema and error handling
 const program = Effect.gen(function* () {
-  const db = yield* Database
-  
+  const db = yield* Database;
+
   // Try to get an existing user
-  yield* Effect.logInfo("Looking up user 1...")
-  const user1 = yield* db.getUser(1)
-  yield* Effect.logInfo(`Found user: ${JSON.stringify(user1)}`)
-  
+  yield* Effect.logInfo("Looking up user 1...");
+  const user1 = yield* db.getUser(1);
+  yield* Effect.logInfo(`Found user: ${JSON.stringify(user1)}`);
+
   // Try to get a non-existent user
-  yield* Effect.logInfo("\nLooking up user 999...")
-  yield* Effect.logInfo("Attempting to get user 999...")
+  yield* Effect.logInfo("\nLooking up user 999...");
+  yield* Effect.logInfo("Attempting to get user 999...");
   yield* Effect.gen(function* () {
-    const user = yield* db.getUser(999)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
+    const user = yield* db.getUser(999);
+    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchAll((error) => {
       if (error instanceof UserNotFound) {
-        return Effect.logInfo(`Error: User with id ${error.id} not found`)
+        return Effect.logInfo(`Error: User with id ${error.id} not found`);
       }
-      return Effect.logInfo(`Unexpected error: ${error}`)
+      return Effect.logInfo(`Unexpected error: ${error}`);
     })
-  )
+  );
 
   // Try to decode invalid data
-  yield* Effect.logInfo("\nTrying to decode invalid user data...")
-  const invalidUser = { id: "not-a-number", name: 123 } as any
+  yield* Effect.logInfo("\nTrying to decode invalid user data...");
+  const invalidUser = { id: "not-a-number", name: 123 } as any;
   yield* Effect.gen(function* () {
-    const user = yield* Schema.decode(UserSchema)(invalidUser)
-    yield* Effect.logInfo(`Decoded user: ${JSON.stringify(user)}`)
+    const user = yield* Schema.decode(UserSchema)(invalidUser);
+    yield* Effect.logInfo(`Decoded user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logInfo(`Validation failed:\n${JSON.stringify(error, null, 2)}`)
     )
-  )
-})
+  );
+});
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, Database.Default)
-)
+Effect.runPromise(Effect.provide(program, Database.Default));
 ```
 
 **Explanation:**  
@@ -297,49 +293,51 @@ Define type-safe errors with Data.TaggedError.
 ### Example
 
 ```typescript
-import { Data, Effect } from "effect"
+import { Data, Effect } from "effect";
 
 // Define our tagged error type
 class DatabaseError extends Data.TaggedError("DatabaseError")<{
-  readonly cause: unknown
+  readonly cause: unknown;
 }> {}
 
 // Function that simulates a database error
-const findUser = (id: number): Effect.Effect<{ id: number; name: string }, DatabaseError> =>
+const findUser = (
+  id: number
+): Effect.Effect<{ id: number; name: string }, DatabaseError> =>
   Effect.gen(function* () {
     if (id < 0) {
-      return yield* Effect.fail(new DatabaseError({ cause: "Invalid ID" }))
+      return yield* Effect.fail(new DatabaseError({ cause: "Invalid ID" }));
     }
-    return { id, name: `User ${id}` }
-  })
+    return { id, name: `User ${id}` };
+  });
 
 // Create a program that demonstrates error handling
 const program = Effect.gen(function* () {
   // Try to find a valid user
-  yield* Effect.logInfo("Looking up user 1...")
+  yield* Effect.logInfo("Looking up user 1...");
   yield* Effect.gen(function* () {
-    const user = yield* findUser(1)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
+    const user = yield* findUser(1);
+    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logInfo(`Error finding user: ${error._tag} - ${error.cause}`)
     )
-  )
+  );
 
   // Try to find an invalid user
-  yield* Effect.logInfo("\nLooking up user -1...")
+  yield* Effect.logInfo("\nLooking up user -1...");
   yield* Effect.gen(function* () {
-    const user = yield* findUser(-1)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
+    const user = yield* findUser(-1);
+    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchTag("DatabaseError", (error) =>
       Effect.logInfo(`Database error: ${error._tag} - ${error.cause}`)
     )
-  )
-})
+  );
+});
 
 // Run the program
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 **Explanation:**  
@@ -353,14 +351,14 @@ Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and a
 
 ### Example
 
-This function to find a user can fail if the database is down, or it can succeed but find no user. The return type ``Effect.Effect<Option.Option<User>, DatabaseError>`` makes this contract perfectly clear.
+This function to find a user can fail if the database is down, or it can succeed but find no user. The return type `Effect.Effect<Option.Option<User>, DatabaseError>` makes this contract perfectly clear.
 
-````typescript
-import { Effect, Option, Data } from "effect"
+```typescript
+import { Effect, Option, Data } from "effect";
 
 interface User {
-  id: number
-  name: string
+  id: number;
+  name: string;
 }
 class DatabaseError extends Data.TaggedError("DatabaseError") {}
 
@@ -372,12 +370,12 @@ const findUserInDb = (
     // This could fail with a DatabaseError
     const dbResult = yield* Effect.try({
       try: () => (id === 1 ? { id: 1, name: "Paul" } : null),
-      catch: () => new DatabaseError()
-    })
+      catch: () => new DatabaseError(),
+    });
 
     // We wrap the potentially null result in an Option
-    return Option.fromNullable(dbResult)
-  })
+    return Option.fromNullable(dbResult);
+  });
 
 // The caller can now handle all three cases explicitly.
 const program = (id: number) =>
@@ -386,28 +384,27 @@ const program = (id: number) =>
       Option.match(maybeUser, {
         onNone: () =>
           Effect.logInfo(`Result: User with ID ${id} was not found.`),
-        onSome: (user) =>
-          Effect.logInfo(`Result: Found user ${user.name}.`)
+        onSome: (user) => Effect.logInfo(`Result: Found user ${user.name}.`),
       })
     ),
     Effect.catchAll((error) =>
       Effect.logInfo("Error: Could not connect to the database.")
     )
-  )
+  );
 
 // Run the program with different IDs
 Effect.runPromise(
   Effect.gen(function* () {
     // Try with existing user
-    yield* Effect.logInfo("Looking for user with ID 1...")
-    yield* program(1)
+    yield* Effect.logInfo("Looking for user with ID 1...");
+    yield* program(1);
 
     // Try with non-existent user
-    yield* Effect.logInfo("\nLooking for user with ID 2...")
-    yield* program(2)
+    yield* Effect.logInfo("\nLooking for user with ID 2...");
+    yield* program(2);
   })
-)
-````
+);
+```
 
 ---
 
@@ -422,12 +419,16 @@ import { Effect, Data } from "effect";
 
 // Define tagged error types
 class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
-class ValidationError extends Data.TaggedError("ValidationError")<{ message: string }> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
 
 type MyError = NotFoundError | ValidationError;
 
 // Effect: Handle only ValidationError, let others propagate
-const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as MyError).pipe(
+const effect = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
   Effect.catchTag("ValidationError", (err) =>
     Effect.succeed(`Recovered from validation error: ${err.message}`)
   )
@@ -437,12 +438,14 @@ const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as 
 const effect2 = Effect.fail(new NotFoundError() as MyError).pipe(
   Effect.catchTags({
     NotFoundError: () => Effect.succeed("Handled not found!"),
-    ValidationError: (err) => Effect.succeed(`Handled validation: ${err.message}`),
+    ValidationError: (err) =>
+      Effect.succeed(`Handled validation: ${err.message}`),
   })
 ); // Effect<string>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `catchTag` lets you recover from a specific tagged error type.
 - `catchTags` lets you handle multiple tagged error types in one place.
 - Unhandled errors continue to propagate, preserving error safety.
@@ -476,10 +479,10 @@ const effect: Effect.Effect<string, never, never> = Effect.fail(
       Effect.succeed(`Validation failed: ${err.message}`),
   })
 ); // Effect<string>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
 - This is safer and more maintainable than using `instanceof` or manual property checks.
 
@@ -513,10 +516,10 @@ const result = someValue.pipe(
 function findUser(id: number): Option.Option<{ id: number; name: string }> {
   return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
 }
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Option.some(value)` represents a present value.
 - `Option.none()` represents absence.
 - `Option.fromNullable` safely lifts nullable values into Option.
@@ -557,7 +560,7 @@ const greeting = (id: number): string =>
     Option.match({
       onNone: () => "User not found.",
       onSome: (user) => `Welcome, ${user.name}!`,
-    }),
+    })
   );
 
 const program = Effect.gen(function* () {
@@ -585,7 +588,9 @@ const makeEmail = (s: string): Option.Option<Email> =>
   s.includes("@") ? Option.some(s as Email) : Option.none();
 
 // A function can now trust that its input is a valid email.
-const sendEmail = (email: Email, body: string) => { /* ... */ };
+const sendEmail = (email: Email, body: string) => {
+  /* ... */
+};
 ```
 
 **Explanation:**  
@@ -605,16 +610,16 @@ import { Data } from "effect";
 
 // Define a tagged union for a simple state machine
 type State = Data.TaggedEnum<{
-  Loading: {}
-  Success: { data: string }
-  Failure: { error: string }
-}>
-const { Loading, Success, Failure } = Data.taggedEnum<State>()
+  Loading: {};
+  Success: { data: string };
+  Failure: { error: string };
+}>;
+const { Loading, Success, Failure } = Data.taggedEnum<State>();
 
 // Create instances
-const state1: State = Loading()
-const state2: State = Success({ data: "Hello" })
-const state3: State = Failure({ error: "Oops" })
+const state1: State = Loading();
+const state2: State = Success({ data: "Hello" });
+const state3: State = Failure({ error: "Oops" });
 
 // Pattern match on the state
 function handleState(state: State): string {
@@ -629,7 +634,8 @@ function handleState(state: State): string {
 }
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.case` creates tagged constructors for each state.
 - The `_tag` property enables exhaustive pattern matching.
 - Use for domain modeling, state machines, and error types.
@@ -658,10 +664,10 @@ const email = "user@example.com" as Email;
 
 sendWelcome(email); // OK
 // sendWelcome("not-an-email"); // Type error! (commented to allow compilation)
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Brand.Branded<T, Name>` creates a new type that is distinct from its base type.
 - Only values explicitly branded as `Email` can be used where an `Email` is required.
 - This prevents accidental mixing of domain types.
@@ -712,7 +718,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -742,10 +747,10 @@ const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
 // Convert to milliseconds or human-readable format
 const ms = Duration.toMillis(fiveMinutes); // 300000
 const readable = Duration.format(oneSecond); // "1s"
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Duration` is immutable and type-safe.
 - Use helpers for common intervals and arithmetic for composition.
 - Prefer `Duration` over raw numbers for all time-based logic.
@@ -777,13 +782,13 @@ type ParsedEvent = {
 // Define the schema for our event
 const ApiEventSchema = Schema.Struct({
   name: Schema.String,
-  timestamp: Schema.String
+  timestamp: Schema.String,
 });
 
 // Example input
 const rawInput: RawEvent = {
   name: "User Login",
-  timestamp: "2025-06-22T20:08:42.000Z"
+  timestamp: "2025-06-22T20:08:42.000Z",
 };
 
 // Parse and transform
@@ -791,7 +796,7 @@ const program = Effect.gen(function* () {
   const parsed = yield* Schema.decode(ApiEventSchema)(rawInput);
   return {
     name: parsed.name,
-    timestamp: new Date(parsed.timestamp)
+    timestamp: new Date(parsed.timestamp),
   } as ParsedEvent;
 });
 
@@ -817,7 +822,6 @@ const programWithLogging = Effect.gen(function* () {
 Effect.runPromise(programWithLogging);
 ```
 
-
 `transformOrFail` is perfect for creating branded types, as the validation can fail.
 
 ```typescript
@@ -831,8 +835,8 @@ const Email = Schema.string.pipe(
       s.includes("@")
         ? Either.right(s as Email)
         : Either.left(Schema.ParseError.create(ast, "Invalid email format")),
-    (email) => Either.right(email),
-  ),
+    (email) => Either.right(email)
+  )
 );
 
 const result = Schema.decode(Email)("paul@example.com"); // Succeeds
@@ -868,10 +872,10 @@ console.log(HashSet.has(set, user2)); // true (structural equality)
 // Create an array and use structural equality
 const users = [user1, user3];
 console.log(users.some((u) => Equal.equals(u, user2))); // true
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.Class.getEqual` derives an equality type class for your data type.
 - `Data.Class.getOrder` derives an ordering type class, useful for sorting.
 - `Data.Class.getHash` derives a hash function for use in sets and maps.
@@ -978,7 +982,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -1019,10 +1022,10 @@ parseEmail("user@example.com").pipe(
     onFailure: (err) => console.error(err),
   })
 );
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Schema` is used to define validation logic for the branded type.
 - `Brand.schema<Email>()` attaches the brand to the schema, so only validated values can be constructed as `Email`.
 - This pattern ensures both compile-time and runtime safety.
@@ -1059,10 +1062,10 @@ const program = Effect.gen(function* () {
 
   return { now, inOneHour, oneHourAgo, iso, isBefore };
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `DateTime` is immutable and time-zone-aware.
 - Supports parsing, formatting, arithmetic, and comparison.
 - Use for all date/time logic to avoid bugs with native `Date`.
@@ -1094,10 +1097,10 @@ console.log(HashSet.has(set, t2)); // true
 const [id, name] = t1; // id: number, name: string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.tuple` creates immutable tuples with value-based equality.
 - Useful for modeling pairs, coordinates, or any fixed-size, heterogeneous data.
 - Supports safe pattern matching and collection operations.
 
 ---
-

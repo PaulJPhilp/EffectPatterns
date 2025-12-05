@@ -21,9 +21,7 @@ export const Greeting = () => {
 
         {/* Greeting Text */}
         <div>
-          <div className="font-semibold text-xl md:text-2xl">
-            Hello there!
-          </div>
+          <div className="font-semibold text-xl md:text-2xl">Hello there!</div>
           <div className="text-xl text-zinc-500 md:text-2xl">
             How can I help you today?
           </div>

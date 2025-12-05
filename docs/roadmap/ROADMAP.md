@@ -1,9 +1,9 @@
 graph TD
-    subgraph "Step 2: Build Your Applications"
-        A7["<strong>Layer 7: Your Application</strong><br/>(The final product you build)"]
-        A6["<strong>Layer 6: Application SDKs</strong><br/>(Effect/AI, Effect/cli)"]
-        A5["<strong>Layer 5: The Platform</strong><br/>(@effect/platform)"]
-    end
+subgraph "Step 2: Build Your Applications"
+A7["<strong>Layer 7: Your Application</strong><br/>(The final product you build)"]
+A6["<strong>Layer 6: Application SDKs</strong><br/>(Effect/AI, Effect/cli)"]
+A5["<strong>Layer 5: The Platform</strong><br/>(@effect/platform)"]
+end
 
     subgraph "Step 1: Build Your Services"
         subgraph "Layer 4: Service Architecture"

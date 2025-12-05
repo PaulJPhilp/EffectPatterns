@@ -5,18 +5,18 @@
  * Implements fail-fast validation strategy as per design decisions.
  */
 
-import { Context, Effect, Layer, Schema } from 'effect';
+import { Context, Effect, Layer, Schema } from "effect";
 import {
   InsufficientDataError,
   InvalidDataFormatError,
   SchemaValidationError,
-} from './errors.js';
+} from "./errors.js";
 import {
   type Message,
   type MessageCollection,
   MessageCollectionSchema,
   MessageSchema,
-} from './schemas.js';
+} from "./schemas.js";
 
 // ============================================================================
 // Service Definition
@@ -30,7 +30,7 @@ import {
  * - Minimum message count requirements
  * - Individual message structures
  */
-export class DataValidationService extends Context.Tag('DataValidationService')<
+export class DataValidationService extends Context.Tag("DataValidationService")<
   DataValidationService,
   {
     /**
@@ -38,7 +38,7 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
      * Fails fast if data doesn't match expected structure
      */
     readonly validateMessages: (
-      data: unknown,
+      data: unknown
     ) => Effect.Effect<MessageCollection, SchemaValidationError>;
 
     /**
@@ -47,21 +47,21 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
      */
     readonly validateMessageCount: (
       messages: readonly Message[],
-      min: number,
+      min: number
     ) => Effect.Effect<readonly Message[], InsufficientDataError>;
 
     /**
      * Validate a single message against schema
      */
     readonly validateMessage: (
-      data: unknown,
+      data: unknown
     ) => Effect.Effect<Message, SchemaValidationError>;
 
     /**
      * Validate data structure (top-level check)
      */
     readonly validateStructure: (
-      data: unknown,
+      data: unknown
     ) => Effect.Effect<void, InvalidDataFormatError>;
   }
 >() {
@@ -73,33 +73,33 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
     DataValidationService.of({
       validateMessages: (data: unknown) =>
         Effect.gen(function* () {
-          yield* Effect.logDebug('Validating message collection structure');
+          yield* Effect.logDebug("Validating message collection structure");
 
           // Decode using Effect.Schema
           const decodedCollection = yield* Schema.decodeUnknown(
-            MessageCollectionSchema,
+            MessageCollectionSchema
           )(data).pipe(
             Effect.mapError(
               (parseError) =>
                 new SchemaValidationError({
                   errors: extractValidationErrors(parseError),
-                }),
+                })
             ),
             Effect.tapError((error) =>
               Effect.gen(function* () {
                 yield* Effect.logError(
-                  `Schema validation failed: ${error.errors.length} error(s)`,
+                  `Schema validation failed: ${error.errors.length} error(s)`
                 );
                 for (const err of error.errors) {
                   yield* Effect.logError(`  - ${err}`);
                 }
-              }),
+              })
             ),
             Effect.tap((collection) =>
               Effect.logDebug(
-                `Validated ${collection.messages.length} messages successfully`,
-              ),
-            ),
+                `Validated ${collection.messages.length} messages successfully`
+              )
+            )
           );
 
           return decodedCollection;
@@ -110,12 +110,12 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
           const count = messages.length;
 
           yield* Effect.logDebug(
-            `Checking message count: ${count} messages (minimum: ${min})`,
+            `Checking message count: ${count} messages (minimum: ${min})`
           );
 
           if (count < min) {
             yield* Effect.logError(
-              `Insufficient messages: found ${count}, need at least ${min}`,
+              `Insufficient messages: found ${count}, need at least ${min}`
             );
 
             return yield* Effect.fail(
@@ -123,11 +123,11 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
                 count,
                 min,
                 message: `Found ${count} messages, but at least ${min} required`,
-              }),
+              })
             );
           }
 
-          yield* Effect.logDebug('Message count validation passed');
+          yield* Effect.logDebug("Message count validation passed");
           return messages;
         }),
 
@@ -136,31 +136,31 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
           Effect.mapError((parseError) => {
             const errors = extractValidationErrors(parseError);
             return new SchemaValidationError({ errors });
-          }),
+          })
         ),
 
       validateStructure: (data: unknown) =>
         Effect.gen(function* () {
-          yield* Effect.logDebug('Validating data structure');
+          yield* Effect.logDebug("Validating data structure");
 
           // Check if data is an object
-          if (typeof data !== 'object' || data === null) {
+          if (typeof data !== "object" || data === null) {
             return yield* Effect.fail(
               new InvalidDataFormatError({
                 expected: "object with 'messages' array",
                 received: typeof data,
-              }),
+              })
             );
           }
 
           // Check if messages property exists
           const dataObj = data as Record<string, unknown>;
-          if (!('messages' in dataObj)) {
+          if (!("messages" in dataObj)) {
             return yield* Effect.fail(
               new InvalidDataFormatError({
                 expected: "object with 'messages' property",
-                received: `object with keys: ${Object.keys(dataObj).join(', ')}`,
-              }),
+                received: `object with keys: ${Object.keys(dataObj).join(", ")}`,
+              })
             );
           }
 
@@ -170,13 +170,13 @@ export class DataValidationService extends Context.Tag('DataValidationService')<
               new InvalidDataFormatError({
                 expected: "'messages' to be an array",
                 received: typeof dataObj.messages,
-              }),
+              })
             );
           }
 
-          yield* Effect.logDebug('Data structure validation passed');
+          yield* Effect.logDebug("Data structure validation passed");
         }),
-    }),
+    })
   );
 }
 
@@ -206,14 +206,14 @@ const extractValidationErrors = (parseError: unknown): readonly string[] => {
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
+  typeof value === "object" && value !== null;
 
 const collectTopLevelMessage = (
   errorObj: Record<string, unknown>,
-  errors: string[],
+  errors: string[]
 ) => {
   const message = errorObj.message;
-  if (typeof message === 'string') {
+  if (typeof message === "string") {
     errors.push(message);
   }
 };
@@ -230,13 +230,13 @@ const collectIssueErrors = (issues: unknown, errors: string[]) => {
 
     const issueMessage = issue.message;
     const issuePath = issue.path;
-    if (typeof issueMessage !== 'string') {
+    if (typeof issueMessage !== "string") {
       continue;
     }
 
     const pathString = Array.isArray(issuePath)
-      ? issuePath.map(String).join('.')
-      : 'unknown';
+      ? issuePath.map(String).join(".")
+      : "unknown";
 
     errors.push(`${pathString}: ${issueMessage}`);
   }
@@ -248,7 +248,7 @@ const collectNestedErrors = (nested: unknown, errors: string[]) => {
   }
 
   for (const entry of nested) {
-    if (typeof entry === 'string') {
+    if (typeof entry === "string") {
       errors.push(entry);
       continue;
     }
@@ -258,7 +258,7 @@ const collectNestedErrors = (nested: unknown, errors: string[]) => {
     }
 
     const nestedMessage = entry.message;
-    if (typeof nestedMessage === 'string') {
+    if (typeof nestedMessage === "string") {
       errors.push(nestedMessage);
     }
   }

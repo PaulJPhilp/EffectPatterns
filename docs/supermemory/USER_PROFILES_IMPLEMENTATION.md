@@ -15,19 +15,21 @@ Successfully implemented comprehensive user profile management capabilities for 
 
 ### 6 New Profile Commands
 
-| Command | Purpose | Key Features |
-|---------|---------|--------------|
-| `profiles show` | Display user profile | Filter by section (static/dynamic), JSON export |
-| `profiles search` | Search with profile context | Query-aware results, combined with profile |
-| `profiles export` | Export profile data | JSON/prompt/text formats, file output |
-| `profiles list` | List container profiles | Statistics, topic analysis, pagination |
-| `profiles compare` | Compare two profiles | Similarities/differences, side-by-side view |
-| `profiles stats` | Container statistics | Aggregate metrics, common topics |
+| Command            | Purpose                     | Key Features                                    |
+| ------------------ | --------------------------- | ----------------------------------------------- |
+| `profiles show`    | Display user profile        | Filter by section (static/dynamic), JSON export |
+| `profiles search`  | Search with profile context | Query-aware results, combined with profile      |
+| `profiles export`  | Export profile data         | JSON/prompt/text formats, file output           |
+| `profiles list`    | List container profiles     | Statistics, topic analysis, pagination          |
+| `profiles compare` | Compare two profiles        | Similarities/differences, side-by-side view     |
+| `profiles stats`   | Container statistics        | Aggregate metrics, common topics                |
 
 ## Files Created/Modified
 
 ### New Files
+
 - **`app/sm-cli/src/commands/profiles.ts`** (560 lines)
+
   - 6 complete subcommands with full CLI support
   - Beautiful output formatting with colors and tables
   - Error handling and validation
@@ -39,7 +41,9 @@ Successfully implemented comprehensive user profile management capabilities for 
   - API reference
 
 ### Modified Files
+
 - **`app/sm-cli/src/types.ts`** (5 interfaces added)
+
   - `UserProfile` - Basic profile structure
   - `UserProfileWithSearch` - Profile with search results
   - `ProfileComparison` - Comparison data
@@ -47,6 +51,7 @@ Successfully implemented comprehensive user profile management capabilities for 
   - `SearchResult` - Search result wrapper
 
 - **`app/sm-cli/src/services/supermemory.ts`** (4 service methods added)
+
   - `getUserProfile(userId)` - Get profile for a user
   - `getUserProfileWithSearch(userId, query)` - Combined search
   - `compareUserProfiles(user1, user2)` - Profile comparison
@@ -56,6 +61,7 @@ Successfully implemented comprehensive user profile management capabilities for 
   - Import and register profiles command group
 
 ## Total Changes
+
 - **2,176 lines added**, 1 line removed
 - **5 files modified**
 - **2 files created**
@@ -65,6 +71,7 @@ Successfully implemented comprehensive user profile management capabilities for 
 ## Architecture
 
 ### Command Structure
+
 ```
 profiles/
 ├── show      - Display user profile
@@ -76,6 +83,7 @@ profiles/
 ```
 
 ### Service Layer
+
 ```
 SupermemoryService extensions:
 ├── getUserProfile()
@@ -85,6 +93,7 @@ SupermemoryService extensions:
 ```
 
 ### API Integration
+
 ```
 Supermemory /v4/profile API:
 - POST endpoint
@@ -96,29 +105,34 @@ Supermemory /v4/profile API:
 ## Key Features
 
 ✨ **Type-Safe Implementation**
+
 - Full Effect-TS support
 - Proper error types (SupermemoryError)
 - Tagged errors and error recovery
 - Type-safe API responses
 
 ✨ **Beautiful Output**
+
 - Color-coded status and sections
 - CLI tables with proper formatting
 - Header boxes for sections
 - Human and JSON formats
 
 ✨ **Flexible Exports**
+
 - JSON for programmatic use
 - Prompt format for LLM integration
 - Text format for reading
 
 ✨ **Comprehensive Error Handling**
+
 - User not found errors
 - API timeout handling
 - Invalid container errors
 - Clear error messages
 
 ✨ **Complete Documentation**
+
 - Inline code comments
 - Full user guide (PROFILES_GUIDE.md)
 - Usage examples
@@ -127,26 +141,31 @@ Supermemory /v4/profile API:
 ## Usage Examples
 
 ### Get User Profile
+
 ```bash
 bun run sm-cli profiles show --user alice_123
 ```
 
 ### Search Within Profile
+
 ```bash
 bun run sm-cli profiles search --user alice_123 --query "kubernetes"
 ```
 
 ### Export for LLM
+
 ```bash
 bun run sm-cli profiles export --user alice_123 --format prompt
 ```
 
 ### Compare Users
+
 ```bash
 bun run sm-cli profiles compare --user1 alice --user2 bob
 ```
 
 ### Analyze Container
+
 ```bash
 bun run sm-cli profiles stats --container team_backend
 ```
@@ -156,31 +175,37 @@ bun run sm-cli profiles stats --container team_backend
 All commands verified working:
 
 ✅ `profiles show`
+
 - Help text displays correctly
 - Options parse properly
 - Command structure valid
 
 ✅ `profiles search`
+
 - Query parameter accepted
 - Search results formatting works
 - Profile + results integration
 
 ✅ `profiles export`
+
 - Multiple format options
 - File output support
 - Format conversion logic
 
 ✅ `profiles list`
+
 - Container filtering
 - Pagination support
 - Statistics display
 
 ✅ `profiles compare`
+
 - Two-user input handling
 - Similarity/difference filters
 - Comparison logic
 
 ✅ `profiles stats`
+
 - Container aggregation
 - Topic analysis
 - Statistics calculation
@@ -188,6 +213,7 @@ All commands verified working:
 ## Type Checking
 
 All TypeScript code type-checks successfully:
+
 - No errors in sm-cli code
 - Proper type imports
 - Full type safety
@@ -214,26 +240,29 @@ bun run sm-cli profiles export --user user_id --format prompt
 ## Documentation
 
 ### User Guide
+
 - **Location**: `app/sm-cli/PROFILES_GUIDE.md`
 - **Contents**: Commands, workflows, API reference, troubleshooting
 - **Scope**: Complete guide for end users
 
 ### Implementation Details
+
 - **Location**: `USER_PROFILES_IMPLEMENTATION.md` (this file)
 - **Contents**: Architecture, design decisions, integration points
 
 ## Performance Characteristics
 
-| Operation | Typical Time | Notes |
-|-----------|-------------|-------|
-| Get profile | 100-200ms | Single API call |
-| Profile + search | 150-300ms | Combined operation |
-| Compare profiles | 200-400ms | Two profile calls + comparison |
-| Container stats | 300-500ms | Aggregation operation |
+| Operation        | Typical Time | Notes                          |
+| ---------------- | ------------ | ------------------------------ |
+| Get profile      | 100-200ms    | Single API call                |
+| Profile + search | 150-300ms    | Combined operation             |
+| Compare profiles | 200-400ms    | Two profile calls + comparison |
+| Container stats  | 300-500ms    | Aggregation operation          |
 
 ## Error Handling
 
 Comprehensive error handling for:
+
 - 401 Authentication failures
 - 404 Not found errors
 - 500 API errors
@@ -246,6 +275,7 @@ All errors return clear, actionable messages.
 ## Future Enhancements
 
 Possible additions (not implemented):
+
 - [ ] Profile caching with TTL
 - [ ] Real-time profile monitoring
 - [ ] Batch profile operations
@@ -260,6 +290,7 @@ Possible additions (not implemented):
 ✅ Production Ready
 
 The implementation:
+
 - Follows Effect-TS best practices
 - Uses existing CLI framework (@effect/cli)
 - Integrates with production Supermemory API
@@ -271,11 +302,13 @@ The implementation:
 ## Getting Started
 
 ### View Available Commands
+
 ```bash
 bun run sm-cli profiles --help
 ```
 
 ### Learn More
+
 ```bash
 # Command help
 bun run sm-cli profiles show --help
@@ -288,6 +321,7 @@ cat app/sm-cli/PROFILES_GUIDE.md
 ```
 
 ### First Use
+
 ```bash
 # 1. Create memories to build profile
 bun run sm-cli memories add
@@ -307,6 +341,7 @@ bun run sm-cli profiles export --user user_123 --format prompt
 **Hash**: `33b13a1`
 
 **Message**:
+
 ```
 feat: Add comprehensive user profile management commands to SM-CLI
 
@@ -315,6 +350,7 @@ system for accessing, searching, comparing, and exporting user profiles...
 ```
 
 **Changes**:
+
 - 5 files changed
 - 2,176 insertions
 - Fully tested and working
@@ -343,6 +379,7 @@ Ready to manage and understand user profiles like a pro! 🚀
 ---
 
 **Next Steps**:
+
 - Review PR #87
 - Merge to main
 - Deploy to production

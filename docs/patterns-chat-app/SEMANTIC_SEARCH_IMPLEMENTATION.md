@@ -140,17 +140,13 @@ export async function GET(request: Request) {
       return new ChatSDKError("unauthorized:api").toResponse();
     }
 
-    const results = await semanticSearchConversations(
-      session.user.id,
-      query,
-      {
-        limit,
-        filters: {
-          tags: tag ? [tag] : undefined,
-          outcome: outcome as any,
-        },
-      }
-    );
+    const results = await semanticSearchConversations(session.user.id, query, {
+      limit,
+      filters: {
+        tags: tag ? [tag] : undefined,
+        outcome: outcome as any,
+      },
+    });
 
     return Response.json(results);
   } catch (error: any) {
@@ -275,7 +271,7 @@ const results = await semanticSearchConversations(
   }
 );
 
-results.forEach(result => {
+results.forEach((result) => {
   console.log(`Match: ${result.score.finalScore.toFixed(2)}`);
   console.log(`Tags: ${result.metadata.tags?.join(", ")}`);
   console.log(`Snippet: ${result.metadata.content.substring(0, 100)}`);
@@ -307,11 +303,9 @@ const related = await getRelatedConversations(
 ```typescript
 import { findProblems } from "@/lib/semantic-search";
 
-const results = await findProblems(
-  "user-123",
-  ["error", "bug", "crash"],
-  { limit: 10 }
-);
+const results = await findProblems("user-123", ["error", "bug", "crash"], {
+  limit: 10,
+});
 ```
 
 ---
@@ -326,11 +320,11 @@ const results = await findProblems(
 
 ### Cost (Monthly, typical usage)
 
-| Usage | OpenAI | Voyage | Local |
-|-------|--------|--------|-------|
-| 100 conversations | $0.20 | $0.20 | FREE |
-| 1,000 conversations | $2.00 | $2.00 | FREE |
-| 10,000 conversations | $20.00 | $20.00 | FREE |
+| Usage                | OpenAI | Voyage | Local |
+| -------------------- | ------ | ------ | ----- |
+| 100 conversations    | $0.20  | $0.20  | FREE  |
+| 1,000 conversations  | $2.00  | $2.00  | FREE  |
+| 10,000 conversations | $20.00 | $20.00 | FREE  |
 
 ### Memory Usage
 
@@ -363,6 +357,7 @@ OPENAI_API_KEY=sk-your-key-here
 **Fix:** Vector dimension mismatch. Ensure all embeddings use same model.
 
 Solution: Clear cache and regenerate:
+
 ```typescript
 import { clearEmbeddingCache } from "@/lib/semantic-search";
 clearEmbeddingCache();
@@ -371,11 +366,13 @@ clearEmbeddingCache();
 ### Search returns no results
 
 **Possible causes:**
+
 1. No conversations stored yet
 2. Similarity threshold too high
 3. Filters too restrictive
 
 **Debug:**
+
 ```typescript
 import { getSearchStats } from "@/lib/semantic-search";
 const stats = getSearchStats();
@@ -389,6 +386,7 @@ console.log(stats); // Check store size
 ### 1. Batch Processing
 
 For multiple queries at once:
+
 ```typescript
 import { batchSearch } from "@/lib/semantic-search";
 
@@ -404,6 +402,7 @@ results.forEach((query, queryResults) => {
 ### 2. Caching Embeddings
 
 Automatically cache results:
+
 ```typescript
 import { generateEmbeddingWithCache } from "@/lib/semantic-search";
 
@@ -414,6 +413,7 @@ const embedding = await generateEmbeddingWithCache(text, { cache: true });
 ### 3. Persistence
 
 Save vector store to disk:
+
 ```typescript
 import { getVectorStore } from "@/lib/semantic-search";
 
@@ -425,6 +425,7 @@ fs.writeFileSync("vector-store.json", JSON.stringify(exported));
 ### 4. Scheduled Cleanup
 
 Remove old embeddings periodically:
+
 ```typescript
 // Every day, remove conversations older than 90 days
 const cutoffDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);

@@ -2,22 +2,22 @@
  * Output Formatters - Human Readable and JSON
  */
 
-import type { Memory, OutputOptions, UploadResult } from '../types.js';
+import type { Memory, OutputOptions, UploadResult } from "../types.js";
 
 /**
  * Format memories for human-readable output
  */
 export function formatMemoriesHuman(memories: Memory[]): string {
   if (memories.length === 0) {
-    return 'No memories found';
+    return "No memories found";
   }
 
   const rows = memories.map((m) => {
     const type = (m.metadata as any)?.type || m.type;
-    const patternId = (m.metadata as any)?.patternId || '';
+    const patternId = (m.metadata as any)?.patternId || "";
     return {
       ID: m.id.substring(0, 8),
-      Title: m.title || m.summary?.substring(0, 50) || 'Untitled',
+      Title: m.title || m.summary?.substring(0, 50) || "Untitled",
       Type: type,
       Status: m.status,
       Created: new Date(m.createdAt).toLocaleDateString(),
@@ -38,16 +38,16 @@ export function formatMemoriesJson(memories: Memory[]): string {
  * Format upload results
  */
 export function formatUploadResultsHuman(results: UploadResult[]): string {
-  const successful = results.filter((r) => r.status === 'success').length;
-  const failed = results.filter((r) => r.status === 'error').length;
+  const successful = results.filter((r) => r.status === "success").length;
+  const failed = results.filter((r) => r.status === "error").length;
 
   let output = `Upload Results: ${successful} successful, ${failed} failed\n\n`;
 
   const rows = results.map((r) => ({
-    'Pattern ID': r.patternId.substring(0, 30),
-    'Memory ID': r.memoryId.substring(0, 8),
-    Status: r.status === 'success' ? '✓' : '✗',
-    Message: r.message || '',
+    "Pattern ID": r.patternId.substring(0, 30),
+    "Memory ID": r.memoryId.substring(0, 8),
+    Status: r.status === "success" ? "✓" : "✗",
+    Message: r.message || "",
   }));
 
   output += formatTable(rows);
@@ -64,36 +64,32 @@ export function formatUploadResultsJson(results: UploadResult[]): string {
 /**
  * Simple table formatter
  */
-function formatTable(
-  rows: Array<{ [key: string]: string | number }>,
-): string {
+function formatTable(rows: Array<{ [key: string]: string | number }>): string {
   if (rows.length === 0) {
-    return 'No data';
+    return "No data";
   }
 
   const headers = Object.keys(rows[0]);
   const columnWidths = headers.map((header) => {
     const maxRowWidth = Math.max(
-      ...rows.map((row) => String(row[header] || '').length),
+      ...rows.map((row) => String(row[header] || "").length)
     );
     return Math.max(header.length, maxRowWidth);
   });
 
   // Create header
-  let output = '';
-  output += headers
-    .map((h, i) => h.padEnd(columnWidths[i]))
-    .join(' | ');
-  output += '\n';
-  output += columnWidths.map((w) => '-'.repeat(w)).join('-+-');
-  output += '\n';
+  let output = "";
+  output += headers.map((h, i) => h.padEnd(columnWidths[i])).join(" | ");
+  output += "\n";
+  output += columnWidths.map((w) => "-".repeat(w)).join("-+-");
+  output += "\n";
 
   // Create rows
   for (const row of rows) {
     output += headers
-      .map((h, i) => String(row[h] || '').padEnd(columnWidths[i]))
-      .join(' | ');
-    output += '\n';
+      .map((h, i) => String(row[h] || "").padEnd(columnWidths[i]))
+      .join(" | ");
+    output += "\n";
   }
 
   return output;
@@ -112,7 +108,7 @@ export function formatStatusHuman(info: {
 Supermemory CLI Status
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Active Project:  ${info.activeProject || '(not set)'}
+Active Project:  ${info.activeProject || "(not set)"}
 Total Memories:  ${info.totalMemories}
 Patterns:        ${info.patterns}
 Conversations:   ${info.conversations}
@@ -137,9 +133,9 @@ export function formatStatusJson(info: {
 export function format<T>(
   data: T,
   formatter: { human: (data: T) => string; json: (data: T) => string },
-  options: OutputOptions,
+  options: OutputOptions
 ): string {
-  if (options.format === 'json') {
+  if (options.format === "json") {
     return formatter.json(data);
   }
   return formatter.human(data);

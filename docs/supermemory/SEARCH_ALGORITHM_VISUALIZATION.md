@@ -135,7 +135,7 @@ PATTERN FILTERED OUT ✗
 ## Early Return Problem
 
 ```
-Pattern: { 
+Pattern: {
   title: "Retry with Backoff",
   description: "...",
   tags: ["retry", "backoff", "resilience"],
@@ -151,7 +151,7 @@ FIELD CHECKING ORDER (with early returns):
    fuzzyScore("retry", "retry with backoff")
    → 'r','e','t','r','y' all found → Score = 1.0
    → RETURN IMMEDIATELY with score 1.0
-   
+
    ✗ Never checks tags (which have exact "retry" match)
    ✗ Never checks category
    ✗ Never checks other fields
@@ -221,6 +221,7 @@ Fuzzy matcher: "error handling" ≠ "error-handling"
 ## Testing the Issue
 
 ### Test 1: Direct Fuzzy Score Test
+
 ```javascript
 Input: fuzzyScore("error handling", "error-handling")
 Process:
@@ -233,6 +234,7 @@ Output: 0 (NO MATCH)
 ```
 
 ### Test 2: Working Query
+
 ```javascript
 Input: fuzzyScore("error handling", "error handling")
 Process:
@@ -245,6 +247,7 @@ Output: 1.0 (PERFECT MATCH)
 ```
 
 ### Test 3: Full Pattern Search
+
 ```
 Query: "error handling"
 
@@ -291,6 +294,7 @@ Analysis:
 ## Fix Implementation Location
 
 To fix this issue, you need to modify the `fuzzyScore` function in:
+
 1. `/Users/paul/Projects/Published/Effect-Patterns/packages/toolkit/src/search.ts` (Lines 20-46)
 2. `/Users/paul/Projects/Published/Effect-Patterns/packages/toolkit/src/services/search.ts` (Lines 284-310)
 
@@ -299,8 +303,8 @@ The fix should normalize separators (hyphens, underscores) to spaces before matc
 ```typescript
 function fuzzyScore(query: string, target: string): number {
   // Normalize separators: convert hyphens and underscores to spaces
-  const normalize = (str: string) => str.replace(/[-_]/g, ' ');
-  
+  const normalize = (str: string) => str.replace(/[-_]/g, " ");
+
   const normalizedQuery = normalize(query);
   const normalizedTarget = normalize(target);
 

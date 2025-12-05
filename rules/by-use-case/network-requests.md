@@ -11,10 +11,12 @@ import { Effect, Console } from "effect";
 
 // A mock resource that needs to be managed
 const getDbConnection = Effect.sync(() => ({ id: Math.random() })).pipe(
-  Effect.tap(() => Effect.log("Connection Acquired")),
+  Effect.tap(() => Effect.log("Connection Acquired"))
 );
 
-const closeDbConnection = (conn: { id: number }): Effect.Effect<void, never, never> =>
+const closeDbConnection = (conn: {
+  id: number;
+}): Effect.Effect<void, never, never> =>
   Effect.log(`Connection ${conn.id} Released`);
 
 // The program that uses the resource
@@ -41,4 +43,3 @@ Connection 0.12345... Released
 By using `Effect.acquireRelease`, the `closeDbConnection` logic is guaranteed to run after the main logic completes. This creates a self-contained, leak-proof unit of work that can be safely composed into larger programs.
 
 ---
-

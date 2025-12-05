@@ -5,7 +5,7 @@
  * Each error extends Data.TaggedError for type-safe error handling with Effect.
  */
 
-import { Data } from 'effect';
+import { Data } from "effect";
 
 const RETRY_DELAY_SECONDS_TO_MS = 1000;
 const RETRY_DELAY_RATE_LIMIT_DEFAULT = 5000;
@@ -19,7 +19,7 @@ const RETRY_DELAY_FILE_IO = 1000;
 /**
  * Error thrown when an input file cannot be found
  */
-export class FileNotFoundError extends Data.TaggedError('FileNotFoundError')<{
+export class FileNotFoundError extends Data.TaggedError("FileNotFoundError")<{
   readonly path: string;
   readonly cause?: unknown;
 }> {}
@@ -27,7 +27,7 @@ export class FileNotFoundError extends Data.TaggedError('FileNotFoundError')<{
 /**
  * Error thrown when a file cannot be read
  */
-export class FileReadError extends Data.TaggedError('FileReadError')<{
+export class FileReadError extends Data.TaggedError("FileReadError")<{
   readonly path: string;
   readonly cause: unknown;
 }> {}
@@ -35,7 +35,7 @@ export class FileReadError extends Data.TaggedError('FileReadError')<{
 /**
  * Error thrown when a file cannot be written
  */
-export class FileWriteError extends Data.TaggedError('FileWriteError')<{
+export class FileWriteError extends Data.TaggedError("FileWriteError")<{
   readonly path: string;
   readonly cause: unknown;
 }> {}
@@ -47,7 +47,7 @@ export class FileWriteError extends Data.TaggedError('FileWriteError')<{
 /**
  * Error thrown when JSON parsing fails
  */
-export class InvalidJSONError extends Data.TaggedError('InvalidJSONError')<{
+export class InvalidJSONError extends Data.TaggedError("InvalidJSONError")<{
   readonly path: string;
   readonly cause: unknown;
 }> {}
@@ -56,7 +56,7 @@ export class InvalidJSONError extends Data.TaggedError('InvalidJSONError')<{
  * Error thrown when data fails schema validation
  */
 export class SchemaValidationError extends Data.TaggedError(
-  'SchemaValidationError',
+  "SchemaValidationError"
 )<{
   readonly errors: readonly string[];
   readonly path?: string;
@@ -66,7 +66,7 @@ export class SchemaValidationError extends Data.TaggedError(
  * Error thrown when insufficient data is provided
  */
 export class InsufficientDataError extends Data.TaggedError(
-  'InsufficientDataError',
+  "InsufficientDataError"
 )<{
   readonly count: number;
   readonly min: number;
@@ -77,7 +77,7 @@ export class InsufficientDataError extends Data.TaggedError(
  * Error thrown when data format is invalid
  */
 export class InvalidDataFormatError extends Data.TaggedError(
-  'InvalidDataFormatError',
+  "InvalidDataFormatError"
 )<{
   readonly expected: string;
   readonly received: string;
@@ -91,7 +91,7 @@ export class InvalidDataFormatError extends Data.TaggedError(
 /**
  * Generic LLM error (base error for LLM operations)
  */
-export class LLMError extends Data.TaggedError('LLMError')<{
+export class LLMError extends Data.TaggedError("LLMError")<{
   readonly message?: string;
   readonly cause?: unknown;
 }> {}
@@ -99,7 +99,7 @@ export class LLMError extends Data.TaggedError('LLMError')<{
 /**
  * Error thrown when LLM request times out
  */
-export class LLMTimeoutError extends Data.TaggedError('LLMTimeoutError')<{
+export class LLMTimeoutError extends Data.TaggedError("LLMTimeoutError")<{
   readonly duration: number;
   readonly operation: string;
 }> {}
@@ -107,7 +107,7 @@ export class LLMTimeoutError extends Data.TaggedError('LLMTimeoutError')<{
 /**
  * Error thrown when LLM rate limit is exceeded
  */
-export class LLMRateLimitError extends Data.TaggedError('LLMRateLimitError')<{
+export class LLMRateLimitError extends Data.TaggedError("LLMRateLimitError")<{
   readonly retryAfter?: number;
   readonly message?: string;
 }> {}
@@ -116,7 +116,7 @@ export class LLMRateLimitError extends Data.TaggedError('LLMRateLimitError')<{
  * Error thrown when LLM returns invalid response
  */
 export class LLMInvalidResponseError extends Data.TaggedError(
-  'LLMInvalidResponseError',
+  "LLMInvalidResponseError"
 )<{
   readonly response: unknown;
   readonly expectedFormat: string;
@@ -126,7 +126,7 @@ export class LLMInvalidResponseError extends Data.TaggedError(
  * Error thrown when LLM API authentication fails
  */
 export class LLMAuthenticationError extends Data.TaggedError(
-  'LLMAuthenticationError',
+  "LLMAuthenticationError"
 )<{
   readonly message: string;
 }> {}
@@ -138,7 +138,7 @@ export class LLMAuthenticationError extends Data.TaggedError(
 /**
  * Error thrown when required configuration is missing
  */
-export class ConfigurationError extends Data.TaggedError('ConfigurationError')<{
+export class ConfigurationError extends Data.TaggedError("ConfigurationError")<{
   readonly key: string;
   readonly message: string;
 }> {}
@@ -147,7 +147,7 @@ export class ConfigurationError extends Data.TaggedError('ConfigurationError')<{
  * Error thrown when configuration value is invalid
  */
 export class InvalidConfigurationError extends Data.TaggedError(
-  'InvalidConfigurationError',
+  "InvalidConfigurationError"
 )<{
   readonly key: string;
   readonly value: unknown;
@@ -161,7 +161,7 @@ export class InvalidConfigurationError extends Data.TaggedError(
 /**
  * Error thrown when chunking fails
  */
-export class ChunkingError extends Data.TaggedError('ChunkingError')<{
+export class ChunkingError extends Data.TaggedError("ChunkingError")<{
   readonly reason: string;
   readonly messageCount: number;
 }> {}
@@ -170,7 +170,7 @@ export class ChunkingError extends Data.TaggedError('ChunkingError')<{
  * Error thrown when chunk size is invalid
  */
 export class InvalidChunkSizeError extends Data.TaggedError(
-  'InvalidChunkSizeError',
+  "InvalidChunkSizeError"
 )<{
   readonly size: number;
   readonly min: number;
@@ -184,7 +184,7 @@ export class InvalidChunkSizeError extends Data.TaggedError(
 /**
  * Error thrown when analysis fails
  */
-export class AnalysisError extends Data.TaggedError('AnalysisError')<{
+export class AnalysisError extends Data.TaggedError("AnalysisError")<{
   readonly stage: string;
   readonly message: string;
   readonly cause?: unknown;
@@ -193,7 +193,7 @@ export class AnalysisError extends Data.TaggedError('AnalysisError')<{
 /**
  * Error thrown when aggregation fails
  */
-export class AggregationError extends Data.TaggedError('AggregationError')<{
+export class AggregationError extends Data.TaggedError("AggregationError")<{
   readonly analysisCount: number;
   readonly message: string;
   readonly cause?: unknown;
@@ -262,10 +262,10 @@ export type AnalyzerError =
  */
 export const isRetryableError = (error: AnalyzerError): boolean => {
   switch (error._tag) {
-    case 'LLMTimeoutError':
-    case 'LLMRateLimitError':
-    case 'FileReadError':
-    case 'FileWriteError':
+    case "LLMTimeoutError":
+    case "LLMRateLimitError":
+    case "FileReadError":
+    case "FileWriteError":
       return true;
     default:
       return false;
@@ -277,14 +277,14 @@ export const isRetryableError = (error: AnalyzerError): boolean => {
  */
 export const getRetryDelay = (error: AnalyzerError): number => {
   switch (error._tag) {
-    case 'LLMRateLimitError':
+    case "LLMRateLimitError":
       return error.retryAfter
         ? error.retryAfter * RETRY_DELAY_SECONDS_TO_MS
         : RETRY_DELAY_RATE_LIMIT_DEFAULT;
-    case 'LLMTimeoutError':
+    case "LLMTimeoutError":
       return RETRY_DELAY_TIMEOUT;
-    case 'FileReadError':
-    case 'FileWriteError':
+    case "FileReadError":
+    case "FileWriteError":
       return RETRY_DELAY_FILE_IO;
     default:
       return 0;
@@ -296,67 +296,67 @@ export const getRetryDelay = (error: AnalyzerError): number => {
  */
 export const formatError = (error: AnalyzerError): string => {
   switch (error._tag) {
-    case 'FileNotFoundError':
+    case "FileNotFoundError":
       return `File not found: ${error.path}`;
 
-    case 'FileReadError':
+    case "FileReadError":
       return `Failed to read file: ${error.path}`;
 
-    case 'FileWriteError':
+    case "FileWriteError":
       return `Failed to write file: ${error.path}`;
 
-    case 'InvalidJSONError':
+    case "InvalidJSONError":
       return `Invalid JSON in file: ${error.path}`;
 
-    case 'SchemaValidationError':
-      return `Schema validation failed:\n${error.errors.join('\n')}`;
+    case "SchemaValidationError":
+      return `Schema validation failed:\n${error.errors.join("\n")}`;
 
-    case 'InsufficientDataError':
+    case "InsufficientDataError":
       return (
         error.message ||
         `Insufficient data: found ${error.count} messages, need at least ${error.min}`
       );
 
-    case 'InvalidDataFormatError':
+    case "InvalidDataFormatError":
       return `Invalid data format: expected ${error.expected}, received ${error.received}`;
 
-    case 'LLMError':
-      return error.message || 'LLM operation failed';
+    case "LLMError":
+      return error.message || "LLM operation failed";
 
-    case 'LLMTimeoutError':
+    case "LLMTimeoutError":
       return `LLM request timed out after ${error.duration}ms (operation: ${error.operation})`;
 
-    case 'LLMRateLimitError':
+    case "LLMRateLimitError":
       return (
         error.message ||
-        `Rate limit exceeded${error.retryAfter ? `. Retry after ${error.retryAfter}s` : ''}`
+        `Rate limit exceeded${error.retryAfter ? `. Retry after ${error.retryAfter}s` : ""}`
       );
 
-    case 'LLMInvalidResponseError':
+    case "LLMInvalidResponseError":
       return `LLM returned invalid response. Expected: ${error.expectedFormat}`;
 
-    case 'LLMAuthenticationError':
+    case "LLMAuthenticationError":
       return `LLM authentication failed: ${error.message}`;
 
-    case 'ConfigurationError':
+    case "ConfigurationError":
       return `Missing configuration: ${error.key} - ${error.message}`;
 
-    case 'InvalidConfigurationError':
+    case "InvalidConfigurationError":
       return `Invalid configuration for ${error.key}: ${error.reason}`;
 
-    case 'ChunkingError':
+    case "ChunkingError":
       return `Chunking failed: ${error.reason} (${error.messageCount} messages)`;
 
-    case 'InvalidChunkSizeError':
+    case "InvalidChunkSizeError":
       return `Invalid chunk size: ${error.size} (must be between ${error.min} and ${error.max})`;
 
-    case 'AnalysisError':
+    case "AnalysisError":
       return `Analysis failed at stage "${error.stage}": ${error.message}`;
 
-    case 'AggregationError':
+    case "AggregationError":
       return `Failed to aggregate ${error.analysisCount} analyses: ${error.message}`;
 
     default:
-      return 'Unknown error occurred';
+      return "Unknown error occurred";
   }
 };

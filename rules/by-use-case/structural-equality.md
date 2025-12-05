@@ -22,7 +22,8 @@ const set = HashSet.make(user1);
 console.log(HashSet.has(set, user2)); // true
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.struct` creates immutable objects with value-based equality.
 - Use for domain entities, value objects, and when storing objects in sets or as map keys.
 - Avoids bugs from reference-based comparison.
@@ -54,7 +55,8 @@ console.log(HashSet.has(set, arr2)); // true
 const doubled = arr1.map((n) => n * 2); // Data.array([2, 4, 6])
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.array` creates immutable arrays with value-based equality.
 - Useful for modeling ordered collections in a safe, functional way.
 - Supports all standard array operations, but with immutability and structural equality.
@@ -86,10 +88,10 @@ console.log(HashSet.has(set, t2)); // true
 const [id, name] = t1; // id: number, name: string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.tuple` creates immutable tuples with value-based equality.
 - Useful for modeling pairs, coordinates, or any fixed-size, heterogeneous data.
 - Supports safe pattern matching and collection operations.
 
 ---
-

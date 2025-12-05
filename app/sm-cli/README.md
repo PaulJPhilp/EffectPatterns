@@ -5,16 +5,19 @@ A TypeScript CLI tool for managing Supermemory patterns using Effect-TS.
 ## Setup
 
 1. **Install dependencies:**
+
    ```bash
    npm install --legacy-peer-deps
    ```
 
 2. **Set the environment variable:**
+
    ```bash
    export SUPERMEMORY_API_KEY="your-api-key-here"
    ```
 
    Or create a `.env.local` file in the project root:
+
    ```
    SUPERMEMORY_API_KEY=your-api-key-here
    ```
@@ -22,17 +25,20 @@ A TypeScript CLI tool for managing Supermemory patterns using Effect-TS.
 ## Running the CLI
 
 ### Development Mode (with TypeScript)
+
 ```bash
 npm run dev -- <command>
 ```
 
 ### Production Mode (compiled)
+
 ```bash
 npm run build
 node dist/index.js <command>
 ```
 
 ### Using npm script
+
 ```bash
 npm run cli -- <command>
 ```
@@ -42,18 +48,21 @@ npm run cli -- <command>
 ### Project Management
 
 **Set active project:**
+
 ```bash
 npm run dev -- project set <project-name>
 npm run dev -- project set <project-name> --format json
 ```
 
 **List available projects:**
+
 ```bash
 npm run dev -- project list
 npm run dev -- project list --format json
 ```
 
 **Show project information:**
+
 ```bash
 npm run dev -- project info
 npm run dev -- project info --format json
@@ -62,6 +71,7 @@ npm run dev -- project info --format json
 ### Memory Management
 
 **List memories (with pagination):**
+
 ```bash
 npm run dev -- memories list
 npm run dev -- memories list --page 2 --limit 50
@@ -69,6 +79,7 @@ npm run dev -- memories list --type pattern --page 1 --format json
 ```
 
 **Count memories:**
+
 ```bash
 npm run dev -- memories count
 npm run dev -- memories count --type pattern
@@ -78,11 +89,13 @@ npm run dev -- memories count --format json
 ### Pattern Management
 
 **Upload a single pattern:**
+
 ```bash
 npm run dev -- patterns upload <pattern-file.mdx>
 ```
 
 **Upload all patterns:**
+
 ```bash
 npm run dev -- patterns upload --all
 ```
@@ -148,13 +161,13 @@ Example:
 
 ```typescript
 export const newCommand = Command.make(
-  'new-command',
+  "new-command",
   {
-    myOption: Options.text('myOption'),
+    myOption: Options.text("myOption"),
   },
   (options) =>
     Effect.gen(function* () {
       // Implementation here
-    }),
+    })
 );
 ```

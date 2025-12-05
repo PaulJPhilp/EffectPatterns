@@ -27,6 +27,7 @@
 ## Before vs After
 
 ### BEFORE Implementation ❌
+
 ```
 Memory Card:
 ┌────────────────────────────┐
@@ -46,6 +47,7 @@ Memory Card:
 ```
 
 ### AFTER Implementation ✅
+
 ```
 Memory Card:
 ┌──────────────────────────────────────┐
@@ -69,6 +71,7 @@ Memory Card:
 ## Code Changes
 
 ### Change 1: Add Timestamp
+
 ```diff
 File: app/code-assistant/scripts/seed-patterns.ts
 
@@ -83,6 +86,7 @@ File: app/code-assistant/scripts/seed-patterns.ts
 ```
 
 ### Change 2: Fix Display
+
 ```diff
 File: app/code-assistant/components/memory-card.tsx
 
@@ -95,6 +99,7 @@ File: app/code-assistant/components/memory-card.tsx
 ```
 
 ### Change 3: Hide Broken Link
+
 ```diff
 File: app/code-assistant/components/memory-card.tsx
 

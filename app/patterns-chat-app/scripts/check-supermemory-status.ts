@@ -48,13 +48,19 @@ async function checkStatus() {
         // Try parsing the memory field first (old API)
         if (typeof (memory as any).memory === "string") {
           parsed = JSON.parse((memory as any).memory);
-        } else if ((memory as any).memory && typeof (memory as any).memory === "object") {
+        } else if (
+          (memory as any).memory &&
+          typeof (memory as any).memory === "object"
+        ) {
           parsed = (memory as any).memory;
         } else {
           // New API: use top-level fields and metadata
-          const metadata = memory.metadata as any || {};
+          const metadata = (memory.metadata as any) || {};
           parsed = {
-            type: typeof metadata.type === "string" ? metadata.type : (memory as any).type,
+            type:
+              typeof metadata.type === "string"
+                ? metadata.type
+                : (memory as any).type,
             title: (memory as any).title,
             summary: (memory as any).summary,
             patternId: metadata.patternId,
@@ -63,11 +69,15 @@ async function checkStatus() {
           };
         }
 
-        const type = parsed?.type || (memory.metadata as any)?.type || "unknown";
+        const type =
+          parsed?.type || (memory.metadata as any)?.type || "unknown";
 
         if (type === "effect_pattern") {
           patterns.push({ id: memory.id, ...parsed });
-        } else if (type === "conversation_embedding" || type === "conversation") {
+        } else if (
+          type === "conversation_embedding" ||
+          type === "conversation"
+        ) {
           conversations.push({ id: memory.id, ...parsed });
         } else {
           other.push({ id: memory.id, type, parsed });
@@ -111,11 +121,14 @@ async function checkStatus() {
     });
 
     if (searchResults.results && searchResults.results.length > 0) {
-      console.log(`✅ Search works! Found ${searchResults.results.length} results\n`);
+      console.log(
+        `✅ Search works! Found ${searchResults.results.length} results\n`
+      );
 
       const patternResults = searchResults.results.filter((r: any) => {
         try {
-          const parsed = typeof r.memory === "string" ? JSON.parse(r.memory) : r.memory;
+          const parsed =
+            typeof r.memory === "string" ? JSON.parse(r.memory) : r.memory;
           return parsed?.type === "effect_pattern";
         } catch {
           return false;
@@ -143,7 +156,6 @@ async function checkStatus() {
     if (conversations.length > 0) {
       console.log(`\n💬 Found ${conversations.length} conversation embeddings`);
     }
-
   } catch (error) {
     console.error("❌ Error:", error);
     if (error instanceof Error) {

@@ -23,9 +23,7 @@ async function test() {
       console.log("📊 Results:");
       results.slice(0, 5).forEach((r, i) => {
         console.log(`[${i + 1}] ${r.title || r.id}`);
-        console.log(
-          `    ID: ${r.id}, Type: ${(r.metadata as any)?.type}`
-        );
+        console.log(`    ID: ${r.id}, Type: ${(r.metadata as any)?.type}`);
         console.log(`    Score: ${r.similarity || r.vectorSimilarity}`);
       });
     } else {

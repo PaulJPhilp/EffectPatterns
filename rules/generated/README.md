@@ -9,6 +9,7 @@ This directory contains auto-generated coding rules specifically formatted for C
 A comprehensive markdown file containing:
 
 1. **Part 1: Effect-TS Pattern Rules** - Auto-generated from all published patterns in `content/published/`
+
    - 130+ patterns organized by skill level (Beginner, Intermediate, Advanced)
    - Each pattern includes:
      - Rule description
@@ -41,6 +42,7 @@ bun run scripts/publish/generate-claude-rules.ts
 ## Usage
 
 This file is designed to be provided to Claude Code AI assistant to give it comprehensive knowledge about:
+
 - Effect-TS best practices and patterns
 - This repository's structure and conventions
 - Common development workflows
@@ -48,6 +50,7 @@ This file is designed to be provided to Claude Code AI assistant to give it comp
 ## Updates
 
 The file should be regenerated whenever:
+
 - New patterns are added to `content/published/`
 - CLAUDE.md is updated
 - Pattern rules are modified

@@ -362,10 +362,7 @@ export const ThinkingMessage = () => {
     const interval = setInterval(() => {
       setLights((prevLights) => {
         // Move colors: last color goes to first, others shift right
-        return [
-          prevLights[prevLights.length - 1],
-          ...prevLights.slice(0, -1),
-        ];
+        return [prevLights[prevLights.length - 1], ...prevLights.slice(0, -1)];
       });
     }, 600); // 600ms = 0.6s animation duration
 
@@ -410,4 +407,3 @@ export const ThinkingMessage = () => {
     </motion.div>
   );
 };
-

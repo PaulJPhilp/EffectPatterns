@@ -1,46 +1,46 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   buildSnippet,
   getPatternById,
   type Pattern,
   searchPatterns,
-} from '@effect-patterns/toolkit';
-import { describe, expect, it } from 'vitest';
+} from "@effect-patterns/toolkit";
+import { describe, expect, it } from "vitest";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-describe('MCP Server Integration', () => {
+describe("MCP Server Integration", () => {
   let patterns: Pattern[];
 
-  it('should load patterns from JSON file', () => {
+  it("should load patterns from JSON file", () => {
     const patternsPath = join(
       __dirname,
-      '../../../../data/patterns-index.json',
+      "../../../../data/patterns-index.json"
     );
-    const data = readFileSync(patternsPath, 'utf-8');
+    const data = readFileSync(patternsPath, "utf-8");
     const parsed = JSON.parse(data);
     patterns = parsed.patterns || [];
 
     expect(patterns.length).toBeGreaterThan(0);
-    expect(patterns[0]).toHaveProperty('id');
-    expect(patterns[0]).toHaveProperty('title');
+    expect(patterns[0]).toHaveProperty("id");
+    expect(patterns[0]).toHaveProperty("title");
   });
 
-  it('should search patterns successfully', () => {
+  it("should search patterns successfully", () => {
     const patternsPath = join(
       __dirname,
-      '../../../../data/patterns-index.json',
+      "../../../../data/patterns-index.json"
     );
-    const data = readFileSync(patternsPath, 'utf-8');
+    const data = readFileSync(patternsPath, "utf-8");
     const parsed = JSON.parse(data);
     patterns = parsed.patterns || [];
 
     const results = searchPatterns({
       patterns,
-      query: 'effect',
+      query: "effect",
       limit: 5,
     });
 
@@ -48,12 +48,12 @@ describe('MCP Server Integration', () => {
     expect(Array.isArray(results)).toBe(true);
   });
 
-  it('should get pattern by ID', () => {
+  it("should get pattern by ID", () => {
     const patternsPath = join(
       __dirname,
-      '../../../../data/patterns-index.json',
+      "../../../../data/patterns-index.json"
     );
-    const data = readFileSync(patternsPath, 'utf-8');
+    const data = readFileSync(patternsPath, "utf-8");
     const parsed = JSON.parse(data);
     patterns = parsed.patterns || [];
 
@@ -66,39 +66,39 @@ describe('MCP Server Integration', () => {
     }
   });
 
-  it('should generate code snippet', () => {
+  it("should generate code snippet", () => {
     const patternsPath = join(
       __dirname,
-      '../../../../data/patterns-index.json',
+      "../../../../data/patterns-index.json"
     );
-    const data = readFileSync(patternsPath, 'utf-8');
+    const data = readFileSync(patternsPath, "utf-8");
     const parsed = JSON.parse(data);
     patterns = parsed.patterns || [];
 
     if (patterns.length > 0) {
       const snippet = buildSnippet({
         pattern: patterns[0],
-        customName: 'testExample',
-        moduleType: 'esm',
+        customName: "testExample",
+        moduleType: "esm",
       });
 
       expect(snippet).toBeDefined();
-      expect(typeof snippet).toBe('string');
+      expect(typeof snippet).toBe("string");
       expect(snippet.length).toBeGreaterThan(0);
-      expect(snippet).toContain('import');
+      expect(snippet).toContain("import");
     }
   });
 
-  it('should handle missing pattern gracefully', () => {
+  it("should handle missing pattern gracefully", () => {
     const patternsPath = join(
       __dirname,
-      '../../../../data/patterns-index.json',
+      "../../../../data/patterns-index.json"
     );
-    const data = readFileSync(patternsPath, 'utf-8');
+    const data = readFileSync(patternsPath, "utf-8");
     const parsed = JSON.parse(data);
     patterns = parsed.patterns || [];
 
-    const result = getPatternById(patterns, 'non-existent-pattern');
+    const result = getPatternById(patterns, "non-existent-pattern");
     expect(result).toBeUndefined();
   });
 });

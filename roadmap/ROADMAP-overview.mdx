@@ -1,7 +1,7 @@
 # Effect Learning Roadmap Overview
 
-A comprehensive guide to mastering Effect-TS through structured learning 
-modules. This roadmap takes you from fundamental concepts to building 
+A comprehensive guide to mastering Effect-TS through structured learning
+modules. This roadmap takes you from fundamental concepts to building
 production-ready applications.
 
 ---
@@ -10,16 +10,16 @@ production-ready applications.
 
 The Effect learning roadmap follows a **progressive mastery approach**:
 
-1. **Foundation First**: Understand why Effect exists and what problems it 
+1. **Foundation First**: Understand why Effect exists and what problems it
    solves
-2. **Building Blocks**: Learn to compose small, reliable pieces into complex 
+2. **Building Blocks**: Learn to compose small, reliable pieces into complex
    programs
-3. **Real-World Applications**: Apply patterns to build production-ready 
+3. **Real-World Applications**: Apply patterns to build production-ready
    systems
-4. **Advanced Techniques**: Master sophisticated patterns for enterprise 
+4. **Advanced Techniques**: Master sophisticated patterns for enterprise
    applications
 
-Each module builds on previous knowledge, introducing new concepts only when 
+Each module builds on previous knowledge, introducing new concepts only when
 you have the foundation to understand them.
 
 ---
@@ -27,11 +27,13 @@ you have the foundation to understand them.
 ## 📚 Module Overview
 
 ### Module 1: The Foundation - Core Concepts
+
 **Status**: Complete  
 **Level**: Beginner to Intermediate  
 **Focus**: Understanding Effect's fundamental concepts and building blocks
 
 **What You'll Learn**:
+
 - Why Effect exists and what problems it solves vs Promises
 - Effect's lazy evaluation model and three-channel type system (A, E, R)
 - Creating and executing Effects
@@ -48,11 +50,13 @@ you have the foundation to understand them.
 ---
 
 ### Module 2: Building a Web Server / Full API
+
 **Status**: In Development  
 **Level**: Intermediate  
 **Focus**: Building production-ready HTTP APIs with Effect
 
 **What You'll Learn**:
+
 - Launching an Effect-native HTTP server
 - Handling GET requests and routing
 - Extracting path parameters and query strings
@@ -67,11 +71,13 @@ you have the foundation to understand them.
 ---
 
 ### Module 3: Building Data Pipelines
+
 **Status**: In Development  
 **Level**: Intermediate to Advanced  
 **Focus**: Processing large datasets and building resilient data pipelines
 
 **What You'll Learn**:
+
 - Creating streams from various sources (arrays, files, paginated APIs)
 - Processing items concurrently with controlled concurrency
 - Automatic retry logic for failed operations
@@ -84,11 +90,13 @@ you have the foundation to understand them.
 ---
 
 ### Module 4: Managing Resources with Scope and Layer
+
 **Status**: In Development  
 **Level**: Intermediate to Advanced  
 **Focus**: Safe resource lifecycle management
 
 **What You'll Learn**:
+
 - Understanding resource lifecycles (acquire, use, release)
 - The `acquireRelease` bracket pattern
 - Creating scoped service layers
@@ -101,11 +109,13 @@ you have the foundation to understand them.
 ---
 
 ### Module 5: Composing with Combinators
+
 **Status**: In Development  
 **Level**: Intermediate  
 **Focus**: Mastering functional composition patterns
 
 **What You'll Learn**:
+
 - Transforming values with `map`
 - Chaining computations with `flatMap`
 - Filtering results with `filter`
@@ -115,17 +125,19 @@ you have the foundation to understand them.
 - Combining values with `zip`
 - Sequencing with `andThen`, `tap`, and `flatten`
 
-**Key Insight**: The same combinators work across `Effect`, `Stream`, 
+**Key Insight**: The same combinators work across `Effect`, `Stream`,
 `Option`, and `Either`
 
 ---
 
 ### Module 6: Creating with Constructors
+
 **Status**: In Development  
 **Level**: Beginner to Intermediate  
 **Focus**: Entry points into the Effect ecosystem
 
 **What You'll Learn**:
+
 - Lifting values with `succeed`, `some`, and `right`
 - Lifting errors with `fail`, `none`, and `left`
 - Wrapping computations with `try` and `tryPromise`
@@ -138,11 +150,13 @@ you have the foundation to understand them.
 ---
 
 ### Module 7: Pattern Matching
+
 **Status**: In Development  
 **Level**: Intermediate  
 **Focus**: Type-safe, declarative branching and error handling
 
 **What You'll Learn**:
+
 - Matching on success and failure with `match`
 - Matching tagged unions with `matchTag` and `matchTags`
 - Effectful pattern matching with `matchEffect`
@@ -150,33 +164,37 @@ you have the foundation to understand them.
 - Pattern matching on `Option` and `Either`
 - Simple case checks with predicates
 
-**Key Benefit**: Replace nested if/else and switch statements with 
+**Key Benefit**: Replace nested if/else and switch statements with
 declarative, type-safe pattern matching
 
 ---
 
 ### Module 8: Branded Types
+
 **Status**: In Development  
 **Level**: Intermediate  
 **Focus**: Domain-specific type safety
 
 **What You'll Learn**:
+
 - Creating branded types from primitives
 - Validating and parsing branded types at runtime
 - Making illegal states unrepresentable
 - Preventing accidental misuse of values
 
-**Key Pattern**: Using `Brand` and `Schema` together for validated domain 
+**Key Pattern**: Using `Brand` and `Schema` together for validated domain
 types
 
 ---
 
 ### Module 9: Observability
+
 **Status**: In Development  
 **Level**: Intermediate to Advanced  
 **Focus**: Production monitoring and debugging
 
 **What You'll Learn**:
+
 - Structured, context-aware logging with `Effect.log`
 - Custom metrics with counters, gauges, and histograms
 - Distributed tracing with `withSpan`
@@ -188,11 +206,13 @@ types
 ---
 
 ### Module 10: Data Types
+
 **Status**: In Development  
 **Level**: Beginner to Advanced  
 **Focus**: Effect's immutable, type-safe data structures
 
 **What You'll Learn**:
+
 - Optional values with `Option`
 - Error accumulation with `Either`
 - High-performance collections with `Chunk` and `HashSet`
@@ -212,8 +232,8 @@ types
 
 ## 🚀 Beyond the Modules: Real-World Recipes
 
-After completing the core modules, you'll be ready to build complete 
-applications. The **Recipes** section (in active development) will provide 
+After completing the core modules, you'll be ready to build complete
+applications. The **Recipes** section (in active development) will provide
 comprehensive guides for:
 
 - **Building a Web Server / Full API**: Complete REST API with authentication
@@ -229,13 +249,15 @@ comprehensive guides for:
 ## 🎓 How to Use This Roadmap
 
 ### For Beginners
+
 1. Start with **Module 1** and work through all 8 stages sequentially
 2. Complete each pattern before moving to the next
 3. Build small projects to practice each concept
-4. Don't skip the foundational patterns—they're essential for everything 
+4. Don't skip the foundational patterns—they're essential for everything
    that follows
 
 ### For Intermediate Developers
+
 1. Review **Module 1** to ensure you understand the fundamentals
 2. Jump to modules that match your current projects:
    - Building APIs? → **Module 2**
@@ -244,6 +266,7 @@ comprehensive guides for:
 3. Use modules as reference material while building
 
 ### For Advanced Developers
+
 1. Use modules as a comprehensive reference
 2. Focus on advanced patterns in **Modules 4, 9, and 10**
 3. Contribute to the **Recipes** section with your own patterns
@@ -267,7 +290,7 @@ Each pattern in the roadmap follows a consistent structure:
 
 ## 🤝 Contributing
 
-This roadmap is a living document that grows with the Effect community. 
+This roadmap is a living document that grows with the Effect community.
 Contributions are welcome:
 
 - **Suggest new patterns**: Open an issue with your pattern idea
@@ -288,19 +311,19 @@ Contributions are welcome:
 
 ## 🗺️ Roadmap Status
 
-| Module | Status | Patterns | Level |
-|--------|--------|----------|-------|
-| Module 1: Foundation | ✅ Complete | 27 | Beginner-Intermediate |
-| Module 2: Web Server | 🚧 In Development | 8 | Intermediate |
-| Module 3: Data Pipelines | 🚧 In Development | 9 | Intermediate-Advanced |
-| Module 4: Resources | 🚧 In Development | 4 | Intermediate-Advanced |
-| Module 5: Combinators | 🚧 In Development | 8 | Intermediate |
-| Module 6: Constructors | 🚧 In Development | 6 | Beginner-Intermediate |
-| Module 7: Pattern Matching | 🚧 In Development | 6 | Intermediate |
-| Module 8: Branded Types | 🚧 In Development | 2 | Intermediate |
-| Module 9: Observability | 🚧 In Development | 5 | Intermediate-Advanced |
-| Module 10: Data Types | 🚧 In Development | 16 | Beginner-Advanced |
-| Recipes | 📋 Planned | TBD | Advanced |
+| Module                     | Status            | Patterns | Level                 |
+| -------------------------- | ----------------- | -------- | --------------------- |
+| Module 1: Foundation       | ✅ Complete       | 27       | Beginner-Intermediate |
+| Module 2: Web Server       | 🚧 In Development | 8        | Intermediate          |
+| Module 3: Data Pipelines   | 🚧 In Development | 9        | Intermediate-Advanced |
+| Module 4: Resources        | 🚧 In Development | 4        | Intermediate-Advanced |
+| Module 5: Combinators      | 🚧 In Development | 8        | Intermediate          |
+| Module 6: Constructors     | 🚧 In Development | 6        | Beginner-Intermediate |
+| Module 7: Pattern Matching | 🚧 In Development | 6        | Intermediate          |
+| Module 8: Branded Types    | 🚧 In Development | 2        | Intermediate          |
+| Module 9: Observability    | 🚧 In Development | 5        | Intermediate-Advanced |
+| Module 10: Data Types      | 🚧 In Development | 16       | Beginner-Advanced     |
+| Recipes                    | 📋 Planned        | TBD      | Advanced              |
 
 ---
 
@@ -308,16 +331,16 @@ Contributions are welcome:
 
 By completing this roadmap, you will:
 
-1. **Understand Effect's Philosophy**: Why lazy evaluation, type-safe errors, 
+1. **Understand Effect's Philosophy**: Why lazy evaluation, type-safe errors,
    and dependency injection matter
-2. **Write Production Code**: Build robust, maintainable applications with 
+2. **Write Production Code**: Build robust, maintainable applications with
    confidence
-3. **Master Functional Patterns**: Apply functional programming principles 
+3. **Master Functional Patterns**: Apply functional programming principles
    practically
 4. **Handle Complexity**: Compose simple patterns into sophisticated systems
-5. **Debug Effectively**: Use Effect's observability tools to understand 
+5. **Debug Effectively**: Use Effect's observability tools to understand
    production behavior
-6. **Build Resilient Systems**: Handle errors, manage resources, and recover 
+6. **Build Resilient Systems**: Handle errors, manage resources, and recover
    from failures gracefully
 
 ---

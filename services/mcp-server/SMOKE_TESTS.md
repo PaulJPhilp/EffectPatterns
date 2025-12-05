@@ -19,12 +19,14 @@ The smoke test suite verifies that all API endpoints are functioning correctly i
 We provide two implementations:
 
 ### 1. **TypeScript Version** (`smoke-test.ts`)
+
 - Uses Node.js native `fetch` API
 - Type-safe with full TypeScript support
 - Colorized console output
 - Detailed assertion messages
 
 **Usage:**
+
 ```bash
 bun run smoke-test <BASE_URL> <API_KEY>
 
@@ -38,12 +40,14 @@ bun run smoke-test https://your-deployment.vercel.app your-api-key
 ```
 
 ### 2. **Bash Version** (`smoke-test.sh`)
+
 - Uses `curl` and `jq` for HTTP requests
 - No dependencies beyond standard Unix tools
 - Portable across all Unix-like systems
 - Ideal for CI/CD pipelines
 
 **Usage:**
+
 ```bash
 ./smoke-test.sh <BASE_URL> <API_KEY>
 
@@ -58,20 +62,24 @@ bun run smoke-test:bash https://your-deployment.vercel.app your-api-key
 ## Prerequisites
 
 ### TypeScript Version
+
 - Bun or Node.js 18+
 - No additional dependencies (uses native fetch)
 
 ### Bash Version
+
 - `curl` - HTTP client
 - `jq` - JSON parser
 - Standard Unix tools (`bash`, `grep`, `sed`)
 
 Install on macOS:
+
 ```bash
 brew install jq
 ```
 
 Install on Ubuntu/Debian:
+
 ```bash
 sudo apt-get install jq curl
 ```
@@ -79,6 +87,7 @@ sudo apt-get install jq curl
 ## Test Coverage
 
 ### Authentication Tests
+
 - ✅ Endpoints that require authentication return 401 without API key
 - ✅ Endpoints reject invalid API keys
 - ✅ Endpoints accept valid API key in header (`x-api-key`)
@@ -86,6 +95,7 @@ sudo apt-get install jq curl
 - ✅ Health check endpoint does not require authentication
 
 ### Pattern Search Tests
+
 - ✅ GET `/api/patterns` returns all patterns
 - ✅ Search by query: `/api/patterns?q=retry`
 - ✅ Filter by category: `/api/patterns?category=error-handling`
@@ -94,11 +104,13 @@ sudo apt-get install jq curl
 - ✅ Returns pattern summaries (not full patterns)
 
 ### Pattern Retrieval Tests
+
 - ✅ GET `/api/patterns/:id` returns full pattern with examples
 - ✅ Returns 404 for non-existent pattern
 - ✅ Includes trace ID in response
 
 ### Snippet Generation Tests
+
 - ✅ POST `/api/generate` generates code snippet
 - ✅ Supports custom name parameter
 - ✅ Supports custom input parameter
@@ -107,12 +119,14 @@ sudo apt-get install jq curl
 - ✅ Returns 404 for non-existent pattern
 
 ### Trace Wiring Tests
+
 - ✅ GET `/api/trace-wiring` returns tracing examples
 - ✅ Includes Effect.js examples
 - ✅ Includes Python examples
 - ✅ Contains OpenTelemetry integration code
 
 ### System Tests
+
 - ✅ Health check returns service metadata
 - ✅ Trace IDs in response body
 - ✅ Trace IDs in response headers (`x-trace-id`)
@@ -120,6 +134,7 @@ sudo apt-get install jq curl
 - ✅ Response time < 3 seconds (TypeScript) / < 2 seconds (Bash)
 
 ### Error Handling Tests
+
 - ✅ 401 for missing/invalid authentication
 - ✅ 404 for non-existent resources
 - ✅ 400 for invalid request bodies
@@ -235,11 +250,13 @@ Failed: 2
 ### Tests Failing Locally But Passing in CI
 
 **Possible Causes:**
+
 - Environment variables not set locally
 - Using different API key
 - Local cache or stale dependencies
 
 **Solution:**
+
 ```bash
 # Set environment variables
 export PATTERN_API_KEY=test-api-key
@@ -256,11 +273,13 @@ bun run dev
 ### Timeout Errors
 
 **Possible Causes:**
+
 - Slow network connection
 - Cold start (first request to serverless function)
 - Server not responding
 
 **Solution:**
+
 - Increase timeout threshold in smoke tests
 - Run tests again (cold start only affects first request)
 - Check server logs: `vercel logs --follow`
@@ -268,11 +287,13 @@ bun run dev
 ### Authentication Errors
 
 **Possible Causes:**
+
 - Wrong API key
 - API key not set in Vercel environment variables
 - API key environment variable name mismatch
 
 **Solution:**
+
 ```bash
 # Verify Vercel env vars
 vercel env ls
@@ -284,11 +305,13 @@ vercel env add PATTERN_API_KEY staging
 ### OTLP Trace Errors
 
 **Possible Causes:**
+
 - Invalid OTLP endpoint
 - Invalid OTLP headers JSON
 - Network blocked to collector
 
 **Solution:**
+
 ```bash
 # Test OTLP endpoint manually
 curl -X POST \

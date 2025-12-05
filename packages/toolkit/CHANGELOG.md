@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Core Features
+
 - Pattern loading from JSON files with `loadPatternsFromJson` and `loadPatternsFromJsonRunnable`
 - Type-safe pattern search with `searchPatterns` supporting query, skill level, use case, and tag filters
 - Pattern retrieval by ID with `getPatternById`
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Usage example generation with `generateUsageExample`
 
 #### Schema Definitions
+
 - `Pattern` schema for full pattern data with validation
 - `PatternSummary` schema for lightweight pattern lists
 - `PatternsIndex` schema for pattern collection metadata
@@ -26,17 +28,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ModuleType` schema for ESM/CommonJS module selection
 
 #### Utilities
+
 - `splitSections` - Parse pattern MDX content into semantic sections (Use Case, Good Example, Anti-Pattern, Rationale, Trade-offs)
 - `sanitizeInput` - Security utility for input sanitization
 - `toPatternSummary` - Convert full patterns to summaries for efficient lists
 
 #### Type Safety
+
 - Explicit `Effect` return types with error channels
 - Runtime validation using `@effect/schema`
 - No implicit `any` types
 - Full TypeScript 5.8+ compatibility
 
 #### Documentation
+
 - Comprehensive README with usage examples
 - API reference documentation
 - Contributing guidelines
@@ -45,18 +50,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Technical Details
 
 #### Dependencies
+
 - `effect` ^3.18.2 - Core Effect framework
 - `@effect/schema` ^0.75.5 - Runtime validation
 - `@effect/platform` ^0.90.10 - Platform abstractions
 - `@effect/platform-node` ^0.94.2 - Node.js integration
 
 #### Architecture
+
 - Pure functional architecture with Effect-TS
 - Zero runtime dependencies beyond Effect ecosystem
 - Effect-native error handling with tagged errors
 - Layer-based dependency injection support
 
 #### Testing
+
 - 148 passing unit tests
 - Coverage across all core functions
 - Vitest test framework
@@ -65,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features by Category
 
 #### Pattern Discovery
+
 - Full-text search across title, summary, and content
 - Filter by skill level (beginner, intermediate, advanced)
 - Filter by use case categories (Error Management, Concurrency, etc.)
@@ -73,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Case-insensitive search
 
 #### Code Generation
+
 - Template-based snippet generation
 - Custom function name substitution
 - Custom input code injection
@@ -81,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type-safe template rendering
 
 #### Data Validation
+
 - Schema-based validation for all inputs
 - Runtime type checking
 - Graceful error handling for invalid data
@@ -88,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File system error handling
 
 ### Security
+
 - Input sanitization for XSS prevention
 - No code execution (templates only)
 - Safe JSON parsing
@@ -95,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No dependency vulnerabilities
 
 ### Performance
+
 - In-memory pattern caching via Effect.Ref
 - Efficient search algorithms
 - Lazy evaluation with Effect
@@ -134,6 +147,7 @@ See [ROADMAP.md](../../ROADMAP.md) for planned features.
 ### [0.2.0] - Planned
 
 Potential features:
+
 - Pattern caching with TTL
 - Fuzzy search support
 - Pattern similarity matching
@@ -145,6 +159,7 @@ Potential features:
 ### [1.0.0] - Planned
 
 Breaking changes for stable API:
+
 - Finalize schema definitions
 - Lock API surface
 - Comprehensive documentation

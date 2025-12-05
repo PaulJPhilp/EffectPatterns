@@ -14,30 +14,24 @@ interface DatabaseOps {
   query: (sql: string) => Effect.Effect<string, never, never>;
 }
 
-class Database extends Effect.Service<DatabaseOps>()(
-  "Database",
-  {
-    sync: () => ({
-      query: (sql: string): Effect.Effect<string, never, never> =>
-        Effect.sync(() => `db says: ${sql}`)
-    })
-  }
-) {}
+class Database extends Effect.Service<DatabaseOps>()("Database", {
+  sync: () => ({
+    query: (sql: string): Effect.Effect<string, never, never> =>
+      Effect.sync(() => `db says: ${sql}`),
+  }),
+}) {}
 
 // --- Service 2: API Client ---
 interface ApiClientOps {
   fetch: (path: string) => Effect.Effect<string, never, never>;
 }
 
-class ApiClient extends Effect.Service<ApiClientOps>()(
-  "ApiClient",
-  {
-    sync: () => ({
-      fetch: (path: string): Effect.Effect<string, never, never> =>
-        Effect.sync(() => `api says: ${path}`)
-    })
-  }
-) {}
+class ApiClient extends Effect.Service<ApiClientOps>()("ApiClient", {
+  sync: () => ({
+    fetch: (path: string): Effect.Effect<string, never, never> =>
+      Effect.sync(() => `api says: ${path}`),
+  }),
+}) {}
 
 // --- Application Layer ---
 // We merge the two independent layers into one.
@@ -85,32 +79,28 @@ import { Effect, Console } from "effect";
 
 // 1. Define the service interface
 interface DatabaseService {
-  readonly query: (sql: string) => Effect.Effect<string[], never, never>
+  readonly query: (sql: string) => Effect.Effect<string[], never, never>;
 }
 
 // 2. Define the service implementation with scoped resource management
-class Database extends Effect.Service<DatabaseService>()(
-  "Database",
-  {
-    // The scoped property manages the resource lifecycle
-    scoped: Effect.gen(function* () {
-      const id = Math.floor(Math.random() * 1000);
-      
-      // Acquire the connection
-      yield* Effect.log(`[Pool ${id}] Acquired`);
-      
-      // Setup cleanup to run when scope closes
-      yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
-      
-      // Return the service implementation
-      return {
-        query: (sql: string) => Effect.sync(() => 
-          [`Result for '${sql}' from pool ${id}`]
-        )
-      };
-    })
-  }
-) {}
+class Database extends Effect.Service<DatabaseService>()("Database", {
+  // The scoped property manages the resource lifecycle
+  scoped: Effect.gen(function* () {
+    const id = Math.floor(Math.random() * 1000);
+
+    // Acquire the connection
+    yield* Effect.log(`[Pool ${id}] Acquired`);
+
+    // Setup cleanup to run when scope closes
+    yield* Effect.addFinalizer(() => Effect.log(`[Pool ${id}] Released`));
+
+    // Return the service implementation
+    return {
+      query: (sql: string) =>
+        Effect.sync(() => [`Result for '${sql}' from pool ${id}`]),
+    };
+  }),
+}) {}
 
 // 3. Use the service in your program
 const program = Effect.gen(function* () {
@@ -121,9 +111,7 @@ const program = Effect.gen(function* () {
 
 // 4. Run the program with scoped resource management
 Effect.runPromise(
-  Effect.scoped(program).pipe(
-    Effect.provide(Database.Default)
-  )
+  Effect.scoped(program).pipe(Effect.provide(Database.Default))
 );
 
 /*
@@ -138,4 +126,3 @@ Query successful: Result for 'SELECT * FROM users' from pool 458
 The `Effect.Service` helper creates the `Database` class, which acts as both the service definition and its context key (Tag). The `Database.Live` layer connects this service to a concrete, lifecycle-managed implementation. When `program` asks for the `Database` service, the Effect runtime uses the `Live` layer to run the `acquire` effect once, caches the resulting `DbPool`, and injects it. The `release` effect is automatically run when the program completes.
 
 ---
-

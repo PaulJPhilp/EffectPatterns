@@ -1,8 +1,8 @@
-import fsSync from 'node:fs';
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import fsSync from "node:fs";
+import fs from "node:fs/promises";
+import path from "node:path";
 
-type Skill = 'beginner' | 'intro' | 'intermediate' | 'advanced';
+type Skill = "beginner" | "intro" | "intermediate" | "advanced";
 interface Frontmatter {
   title?: string;
   id?: string;
@@ -17,7 +17,7 @@ interface PatternMeta {
   readonly relPath: string;
   readonly title: string;
   readonly id: string;
-  readonly skillLevel: 'intro' | 'intermediate' | 'advanced';
+  readonly skillLevel: "intro" | "intermediate" | "advanced";
   readonly useCase: ReadonlyArray<string>;
   readonly summary?: string;
   readonly tags?: ReadonlyArray<string>;
@@ -31,14 +31,14 @@ const skillOrder: Readonly<Record<string, number>> = {
 } as const;
 
 const normalizeSkill = (
-  s: Frontmatter['skillLevel'] | undefined,
-): PatternMeta['skillLevel'] => {
-  if (!s) return 'intermediate';
-  return s === 'beginner' ? 'intro' : (s as any);
+  s: Frontmatter["skillLevel"] | undefined
+): PatternMeta["skillLevel"] => {
+  if (!s) return "intermediate";
+  return s === "beginner" ? "intro" : (s as any);
 };
 
 const primaryUseCase = (values: ReadonlyArray<string> | undefined): string => {
-  if (!values || values.length === 0) return 'Uncategorized';
+  if (!values || values.length === 0) return "Uncategorized";
   return values[0];
 };
 
@@ -51,7 +51,7 @@ const listMdxFiles = async (root: string): Promise<string[]> => {
       const full = path.join(dir, e.name);
       if (e.isDirectory()) {
         await walk(full);
-      } else if (e.name.toLowerCase().endsWith('.mdx')) {
+      } else if (e.name.toLowerCase().endsWith(".mdx")) {
         results.push(full);
       }
     }
@@ -65,43 +65,43 @@ const parseArray = (raw: string | undefined): string[] => {
   if (!raw) return [];
   // extract quoted strings within [ ... ]
   const matches = raw.match(/"([^"]+)"|'([^']+)'/g) ?? [];
-  return matches.map((m) => m.replace(/^['"]|['"]$/g, ''));
+  return matches.map((m) => m.replace(/^['"]|['"]$/g, ""));
 };
 
 const readFrontmatter = async (
   file: string,
-  root: string,
+  root: string
 ): Promise<PatternMeta> => {
-  const content = await fs.readFile(file, 'utf8');
+  const content = await fs.readFile(file, "utf8");
   // Grab leading frontmatter between --- ... ---
   const fmBlockMatch = content.match(/^---[\s\S]*?---/);
-  const fmBlock = fmBlockMatch ? fmBlockMatch[0] : '';
+  const fmBlock = fmBlockMatch ? fmBlockMatch[0] : "";
 
   const get = (key: string) => {
-    const m = fmBlock.match(new RegExp(`^${key}\\s*:\\s*(.*)$`, 'm'));
+    const m = fmBlock.match(new RegExp(`^${key}\\s*:\\s*(.*)$`, "m"));
     return m ? m[1].trim() : undefined;
   };
 
-  const titleRaw = get('title');
-  const idRaw = get('id');
-  const skillRaw = get('skillLevel') as Skill | undefined;
-  const useCaseRaw = get('useCase');
-  const summaryRaw = get('summary');
-  const tagsRaw = get('tags');
+  const titleRaw = get("title");
+  const idRaw = get("id");
+  const skillRaw = get("skillLevel") as Skill | undefined;
+  const useCaseRaw = get("useCase");
+  const summaryRaw = get("summary");
+  const tagsRaw = get("tags");
 
   const title = (
-    titleRaw ? titleRaw.replace(/^"|"$/g, '') : path.basename(file)
+    titleRaw ? titleRaw.replace(/^"|"$/g, "") : path.basename(file)
   ).trim();
   const id = (
-    idRaw ? idRaw.replace(/^"|"$/g, '') : path.basename(file, '.mdx')
+    idRaw ? idRaw.replace(/^"|"$/g, "") : path.basename(file, ".mdx")
   ).trim();
   const skill = normalizeSkill(
     skillRaw
-      ? ((skillRaw as string).replace(/^['"]|['"]$/g, '') as Skill)
-      : undefined,
+      ? ((skillRaw as string).replace(/^['"]|['"]$/g, "") as Skill)
+      : undefined
   );
   const uc = parseArray(useCaseRaw);
-  const summary = summaryRaw ? summaryRaw.replace(/^"|"$/g, '') : undefined;
+  const summary = summaryRaw ? summaryRaw.replace(/^"|"$/g, "") : undefined;
   const tags = parseArray(tagsRaw);
 
   return {
@@ -128,7 +128,7 @@ const render = (items: ReadonlyArray<PatternMeta>, root: string): string => {
     bySkill.set(key, list);
   }
 
-  const ordSkills = ['intro', 'intermediate', 'advanced'] as const;
+  const ordSkills = ["intro", "intermediate", "advanced"] as const;
 
   const sectionFor = (skill: (typeof ordSkills)[number]): string => {
     const list = (bySkill.get(skill) ?? []).slice();
@@ -148,41 +148,41 @@ const render = (items: ReadonlyArray<PatternMeta>, root: string): string => {
         group.sort(byTitle);
         const lines: string[] = [];
         lines.push(`### ${uc} (${group.length})`);
-        lines.push('');
+        lines.push("");
         for (const it of group) {
           const others = (it.useCase ?? []).slice(1);
           const badges =
             others.length > 0
-              ? `  - badges: ${others.map((x) => `\`${x}\``).join(', ')}`
-              : '';
+              ? `  - badges: ${others.map((x) => `\`${x}\``).join(", ")}`
+              : "";
           const tagBadges =
             it.tags && it.tags.length > 0
-              ? `${badges ? '\n' : '  '}- tags: ${it.tags
+              ? `${badges ? "\n" : "  "}- tags: ${it.tags
                   .map((x) => `\`${x}\``)
-                  .join(', ')}`
-              : '';
-          const summary = it.summary ? `\n  - summary: ${it.summary}` : '';
+                  .join(", ")}`
+              : "";
+          const summary = it.summary ? `\n  - summary: ${it.summary}` : "";
           lines.push(
-            `- [${it.title}](./${it.relPath})${badges}${tagBadges}${summary}`,
+            `- [${it.title}](./${it.relPath})${badges}${tagBadges}${summary}`
           );
         }
-        lines.push('');
-        return lines.join('\n');
+        lines.push("");
+        return lines.join("\n");
       })
-      .join('\n');
+      .join("\n");
 
     const header = `## ${skill.charAt(0).toUpperCase()}${skill.slice(1)}`;
-    return [header, '', ucSections].join('\n');
+    return [header, "", ucSections].join("\n");
   };
 
   const startHere = (() => {
-    const intros = (bySkill.get('intro') ?? []).slice();
+    const intros = (bySkill.get("intro") ?? []).slice();
     intros.sort(byTitle);
     let pick = intros.slice(0, 10);
     // try curated list if present
     try {
-      const cfgPath = path.join(root, '_start_here.json');
-      const raw = fsSync.readFileSync(cfgPath, 'utf8');
+      const cfgPath = path.join(root, "_start_here.json");
+      const raw = fsSync.readFileSync(cfgPath, "utf8");
       const parsed = JSON.parse(raw) as { ids?: string[] } | string[];
       const ids = Array.isArray(parsed) ? parsed : (parsed.ids ?? []);
       if (ids.length > 0) {
@@ -194,56 +194,56 @@ const render = (items: ReadonlyArray<PatternMeta>, root: string): string => {
       }
     } catch {}
     const lines: string[] = [];
-    lines.push('## Start Here');
-    lines.push('');
+    lines.push("## Start Here");
+    lines.push("");
     for (const it of pick) {
       lines.push(`- [${it.title}](./${it.relPath})`);
     }
-    lines.push('');
-    return lines.join('\n');
+    lines.push("");
+    return lines.join("\n");
   })();
 
   const toc = [
-    '## Table of Contents',
-    '',
-    '- [Start Here](#start-here)',
-    '- [Intro](#intro)',
-    '- [Intermediate](#intermediate)',
-    '- [Advanced](#advanced)',
-    '',
-  ].join('\n');
+    "## Table of Contents",
+    "",
+    "- [Start Here](#start-here)",
+    "- [Intro](#intro)",
+    "- [Intermediate](#intermediate)",
+    "- [Advanced](#advanced)",
+    "",
+  ].join("\n");
 
-  const body = ordSkills.map(sectionFor).join('\n\n---\n\n');
+  const body = ordSkills.map(sectionFor).join("\n\n---\n\n");
 
   return [
-    '# Effect Patterns Index (Review)',
-    '',
-    'Grouped by skillLevel (intro → intermediate → advanced) then by the ',
-    'primary useCase (first element). Remaining useCase values appear as ',
-    'badges. Tie-breaker within groups is title (A–Z).',
-    '',
+    "# Effect Patterns Index (Review)",
+    "",
+    "Grouped by skillLevel (intro → intermediate → advanced) then by the ",
+    "primary useCase (first element). Remaining useCase values appear as ",
+    "badges. Tie-breaker within groups is title (A–Z).",
+    "",
     toc,
-    '---',
-    '',
+    "---",
+    "",
     startHere,
-    '---',
-    '',
+    "---",
+    "",
     body,
-    '',
-    '---',
-    '',
-    'Notes:',
-    '',
-    '- Primary useCase is the first element in the useCase array.',
-    '- Remaining useCase values appear as badges under each item.',
-    '- Ordering within each bucket is title A–Z.',
-    '',
-  ].join('\n');
+    "",
+    "---",
+    "",
+    "Notes:",
+    "",
+    "- Primary useCase is the first element in the useCase array.",
+    "- Remaining useCase values appear as badges under each item.",
+    "- Ordering within each bucket is title A–Z.",
+    "",
+  ].join("\n");
 };
 
 async function main() {
-  const root = path.resolve('content/published');
-  const out = path.join(root, '_README.review.md');
+  const root = path.resolve("content/published");
+  const out = path.join(root, "_README.review.md");
 
   const files = await listMdxFiles(root);
   // eslint-disable-next-line no-console
@@ -257,9 +257,9 @@ async function main() {
 
   // eslint-disable-next-line no-console
   console.log(
-    `[generate-readme] Buckets: intro=${normalized.filter((m) => m.skillLevel === 'intro').length}, ` +
-      `intermediate=${normalized.filter((m) => m.skillLevel === 'intermediate').length}, ` +
-      `advanced=${normalized.filter((m) => m.skillLevel === 'advanced').length}`,
+    `[generate-readme] Buckets: intro=${normalized.filter((m) => m.skillLevel === "intro").length}, ` +
+      `intermediate=${normalized.filter((m) => m.skillLevel === "intermediate").length}, ` +
+      `advanced=${normalized.filter((m) => m.skillLevel === "advanced").length}`
   );
 
   normalized.sort((a, b) => {
@@ -274,7 +274,7 @@ async function main() {
   });
 
   const markdown = render(normalized, root);
-  await fs.writeFile(out, markdown, 'utf8');
+  await fs.writeFile(out, markdown, "utf8");
   // eslint-disable-next-line no-console
   console.log(`Generated: ${out}`);
 }

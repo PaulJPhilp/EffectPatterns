@@ -12,7 +12,13 @@ const authFormSchema = z.object({
 });
 
 export type LoginActionState = {
-  status: "idle" | "pending" | "in_progress" | "success" | "failed" | "invalid_data";
+  status:
+    | "idle"
+    | "pending"
+    | "in_progress"
+    | "success"
+    | "failed"
+    | "invalid_data";
 };
 
 export const login = async (

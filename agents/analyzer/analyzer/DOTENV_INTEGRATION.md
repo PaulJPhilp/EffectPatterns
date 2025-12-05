@@ -7,34 +7,41 @@ Replaced manual environment variable export with automated `.env` file loading u
 ## Files Created
 
 ### 1. `.env.example` (Template)
+
 **Purpose**: Template for environment configuration  
 **Location**: `scripts/analyzer/.env.example`
 
 Contains all configurable environment variables with descriptions:
+
 - `OPENAI_API_KEY` (required)
 - `CHUNK_SIZE`, `SMART_CHUNKING`, `MIN_RELATIONSHIP_SCORE` (chunking)
 - `MODEL_NAME`, `TEMPERATURE`, `MAX_RETRIES`, `REQUEST_TIMEOUT` (LLM)
 - `OUTPUT_FORMAT` (output)
 
 ### 2. `.gitignore`
+
 **Purpose**: Prevent committing sensitive data  
 **Location**: `scripts/analyzer/.gitignore`
 
 Excludes:
+
 - `.env` and `.env.local` files (API keys)
 - `output/` directory (generated reports)
 - Other artifacts (logs, tmp files, build directories)
 
 ### 3. `env-loader.ts`
+
 **Purpose**: Load and validate environment variables  
 **Location**: `scripts/analyzer/env-loader.ts`
 
 **Functions**:
+
 - `loadEnvironment()` - Loads from `.env.local` or `.env` files
 - `validateEnvironment(required)` - Validates required variables are set
 - `setupEnvironment(required)` - Combined loader and validator
 
 **Features**:
+
 - Searches for `.env.local` first (local overrides), then `.env`
 - Provides helpful error messages if .env file is missing
 - Dynamic import of `dotenv` package
@@ -43,7 +50,9 @@ Excludes:
 ## Files Modified
 
 ### 1. `examples/run-discord-analysis.ts`
+
 **Changes**:
+
 - Removed manual `process.env.OPENAI_API_KEY` check
 - Added `import { setupEnvironment } from "../env-loader.js"`
 - Replaced Step 1 with `yield* setupEnvironment(["OPENAI_API_KEY"])`
@@ -54,21 +63,24 @@ Excludes:
 ```typescript
 const apiKey = process.env.OPENAI_API_KEY;
 if (!apiKey) {
-  yield* Effect.fail(
-    new Error("Please set your OpenAI API key:\nexport OPENAI_API_KEY=...")
-  );
+  yield *
+    Effect.fail(
+      new Error("Please set your OpenAI API key:\nexport OPENAI_API_KEY=...")
+    );
 }
 ```
 
 **After**:
 
 ```typescript
-yield* setupEnvironment(["OPENAI_API_KEY"]);
+yield * setupEnvironment(["OPENAI_API_KEY"]);
 // Automatically loads from .env and validates
 ```
 
 ### 2. `README.md`
+
 **Changes**:
+
 - Updated setup instructions (step 4: create .env file)
 - Changed test instructions (no need to export manually)
 - Updated all command examples to use `.env` instead of `export`
@@ -89,13 +101,17 @@ bun test  # Automatically loads from .env
 ```
 
 ### 3. `QUICK_START.md`
+
 **Changes**:
+
 - Updated Quick Commands section
 - Added `.env` setup step
 - Removed `export` command
 
 ### 4. `PHASE_3_COMPLETE.md`
+
 **Changes**:
+
 - Updated all three usage options (tests, example, direct)
 - Added `.env` setup instructions
 - Removed manual export commands
@@ -111,6 +127,7 @@ bun test
 ```
 
 Problems:
+
 - Must export manually in every terminal session
 - Easy to forget
 - API key visible in shell history
@@ -126,6 +143,7 @@ bun test  # Works automatically
 ```
 
 Benefits:
+
 - ✅ Set once, use everywhere
 - ✅ API key not in shell history
 - ✅ .gitignore prevents committing secrets
@@ -138,6 +156,7 @@ Benefits:
 ### Environment Loading Order
 
 The `env-loader` searches in this order:
+
 1. `.env.local` (highest priority, for local dev overrides)
 2. `.env` (main configuration file)
 3. System environment variables (fallback)
@@ -221,6 +240,7 @@ For users upgrading from manual export:
 ## Future Enhancements
 
 Potential improvements:
+
 - [ ] Add `.env.development` and `.env.production` support
 - [ ] Validate env var formats (e.g., API key pattern)
 - [ ] Auto-generate `.env` from user prompts
@@ -233,6 +253,6 @@ Potential improvements:
 ✅ **After**: Automatic loading from `.env` file  
 ✅ **Benefits**: Secure, convenient, portable, documented  
 ✅ **Files**: 3 created, 4 modified  
-✅ **Pattern**: Effect-TS native with proper error handling  
+✅ **Pattern**: Effect-TS native with proper error handling
 
 The analyzer now follows best practices for environment variable management with dotenv integration!

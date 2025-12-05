@@ -5,7 +5,7 @@
  * matching and filtering by category/difficulty.
  */
 
-import type { Pattern, PatternSummary } from './schemas/pattern.js';
+import type { Pattern, PatternSummary } from "./schemas/pattern.js";
 
 /**
  * Normalize separators in a string to spaces
@@ -14,7 +14,7 @@ import type { Pattern, PatternSummary } from './schemas/pattern.js';
  * @returns Normalized string
  */
 function normalizeSeparators(str: string): string {
-  return str.replace(/[-_]+/g, ' ');
+  return str.replace(/[-_]+/g, " ");
 }
 
 /**
@@ -43,7 +43,10 @@ function fuzzyScore(query: string, target: string): number {
   let matches = 0;
   let consecutiveMatches = 0;
 
-  while (queryIndex < normalizedQuery.length && targetIndex < normalizedTarget.length) {
+  while (
+    queryIndex < normalizedQuery.length &&
+    targetIndex < normalizedTarget.length
+  ) {
     if (normalizedQuery[queryIndex] === normalizedTarget[targetIndex]) {
       matches++;
       consecutiveMatches++;
@@ -88,10 +91,10 @@ function calculateRelevance(pattern: Pattern, query: string): number {
   // Apply weights and find the highest score
   // This ensures tags and categories can match even if title doesn't
   const scores = [
-    titleScore * 1.0,      // Title: highest weight
-    descScore * 0.7,       // Description: medium weight
-    bestTagScore * 0.5,    // Tags: lower weight
-    categoryScore * 0.4,   // Category: lowest weight
+    titleScore * 1.0, // Title: highest weight
+    descScore * 0.7, // Description: medium weight
+    bestTagScore * 0.5, // Tags: lower weight
+    categoryScore * 0.4, // Category: lowest weight
   ];
 
   return Math.max(...scores);
@@ -135,14 +138,14 @@ export function searchPatterns(params: SearchPatternsParams): Pattern[] {
   // Apply category filter
   if (category) {
     results = results.filter(
-      (p) => p.category.toLowerCase() === category.toLowerCase(),
+      (p) => p.category.toLowerCase() === category.toLowerCase()
     );
   }
 
   // Apply difficulty filter
   if (difficulty) {
     results = results.filter(
-      (p) => p.difficulty.toLowerCase() === difficulty.toLowerCase(),
+      (p) => p.difficulty.toLowerCase() === difficulty.toLowerCase()
     );
   }
 
@@ -176,7 +179,7 @@ export function searchPatterns(params: SearchPatternsParams): Pattern[] {
  */
 export function getPatternById(
   patterns: Pattern[],
-  id: string,
+  id: string
 ): Pattern | undefined {
   return patterns.find((p) => p.id === id);
 }

@@ -35,7 +35,8 @@ const options = [Option.some(1), Option.none(), Option.some(3)];
 const presentValues = options.filter(Option.isSome).map((o) => o.value); // [1, 3]
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Option.isSome` and `Option.isNone` let you check for presence or absence.
 - `Either.isRight` and `Either.isLeft` let you check for success or failure.
 - These are especially useful for filtering or quick conditional logic.
@@ -76,7 +77,8 @@ const either = Either.left("fail").pipe(
 ); // string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.match` lets you handle both the error and success channels in one place.
 - `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
 
@@ -109,12 +111,11 @@ const effect: Effect.Effect<string, never, never> = Effect.fail(
       Effect.succeed(`Validation failed: ${err.message}`),
   })
 ); // Effect<string>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
 - This is safer and more maintainable than using `instanceof` or manual property checks.
 
 ---
-

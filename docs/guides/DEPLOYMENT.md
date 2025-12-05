@@ -86,6 +86,7 @@ If you need to rollback to a previous deployment:
 ### Monitoring
 
 View logs and analytics in the Vercel dashboard:
+
 - https://vercel.com/dashboard
 - Select your project
 - Go to "Deployments" or "Analytics"

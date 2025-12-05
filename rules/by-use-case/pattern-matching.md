@@ -35,7 +35,8 @@ const options = [Option.some(1), Option.none(), Option.some(3)];
 const presentValues = options.filter(Option.isSome).map((o) => o.value); // [1, 3]
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Option.isSome` and `Option.isNone` let you check for presence or absence.
 - `Either.isRight` and `Either.isLeft` let you check for success or failure.
 - These are especially useful for filtering or quick conditional logic.
@@ -60,7 +61,8 @@ const effect = Effect.fail("Oops!").pipe(
 ); // Effect<void>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchEffect` allows you to run an Effect for both the success and failure cases.
 - This is useful for logging, cleanup, retries, or any effectful side effect that depends on the outcome.
 
@@ -77,12 +79,16 @@ import { Effect, Data } from "effect";
 
 // Define tagged error types
 class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
-class ValidationError extends Data.TaggedError("ValidationError")<{ message: string }> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
 
 type MyError = NotFoundError | ValidationError;
 
 // Effect: Handle only ValidationError, let others propagate
-const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as MyError).pipe(
+const effect = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
   Effect.catchTag("ValidationError", (err) =>
     Effect.succeed(`Recovered from validation error: ${err.message}`)
   )
@@ -92,12 +98,14 @@ const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as 
 const effect2 = Effect.fail(new NotFoundError() as MyError).pipe(
   Effect.catchTags({
     NotFoundError: () => Effect.succeed("Handled not found!"),
-    ValidationError: (err) => Effect.succeed(`Handled validation: ${err.message}`),
+    ValidationError: (err) =>
+      Effect.succeed(`Handled validation: ${err.message}`),
   })
 ); // Effect<string>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `catchTag` lets you recover from a specific tagged error type.
 - `catchTags` lets you handle multiple tagged error types in one place.
 - Unhandled errors continue to propagate, preserving error safety.
@@ -138,7 +146,8 @@ const either = Either.left("fail").pipe(
 ); // string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.match` lets you handle both the error and success channels in one place.
 - `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
 
@@ -171,12 +180,11 @@ const effect: Effect.Effect<string, never, never> = Effect.fail(
       Effect.succeed(`Validation failed: ${err.message}`),
   })
 ); // Effect<string>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
 - This is safer and more maintainable than using `instanceof` or manual property checks.
 
 ---
-

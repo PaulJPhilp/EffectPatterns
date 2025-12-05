@@ -26,10 +26,10 @@ const effectAsync = Effect.async<string, Error>((resume) => {
     else if (data) resume(Effect.succeed(data));
   });
 }); // Effect<string, Error, never>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.sync` is for synchronous computations that are guaranteed not to throw.
 - `Effect.async` is for integrating callback-based APIs, converting them into Effects.
 
@@ -47,19 +47,19 @@ import { Effect } from "effect";
 // Synchronous: Wrap code that may throw
 const effectSync = Effect.try({
   try: () => JSON.parse("{ invalid json }"),
-  catch: (error) => `Parse error: ${String(error)}`
+  catch: (error) => `Parse error: ${String(error)}`,
 }); // Effect<string, never, never>
 
 // Asynchronous: Wrap a promise that may reject
 const effectAsync = Effect.tryPromise({
-  try: () => fetch("https://api.example.com/data").then(res => res.json()),
-  catch: (error) => `Network error: ${String(error)}`
+  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
+  catch: (error) => `Network error: ${String(error)}`,
 }); // Effect<string, any, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
 - `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
 
 ---
-

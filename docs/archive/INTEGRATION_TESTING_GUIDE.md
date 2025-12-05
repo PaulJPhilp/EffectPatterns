@@ -11,12 +11,14 @@ Phase 4 of the QA improvements adds **end-to-end integration tests** that run pa
 **Test**: Process a 90MB+ file line-by-line
 
 **Validates**:
+
 - Constant memory usage (<100MB growth)
 - File streaming vs loading into memory
 - Throughput performance (MB/s)
 - Real file I/O operations
 
 **Success Criteria**:
+
 ```
 ✓ Processes 89.54MB file
 ✓ Uses only 0.84MB memory (constant!)
@@ -25,6 +27,7 @@ Phase 4 of the QA improvements adds **end-to-end integration tests** that run pa
 ```
 
 **What This Catches**:
+
 - Memory leaks in streaming patterns
 - Loading entire files into memory
 - Inefficient I/O operations
@@ -36,12 +39,14 @@ Phase 4 of the QA improvements adds **end-to-end integration tests** that run pa
 **Test**: Run 5 tasks with 500ms delays
 
 **Validates**:
+
 - Actual parallel execution
 - Timing improvements vs sequential
 - Concurrency correctness
 - Effect.all behavior
 
 **Success Criteria**:
+
 ```
 ✓ Parallel: ~600ms (tasks overlap)
 ✓ Sequential: ~2500ms (tasks add up)
@@ -49,6 +54,7 @@ Phase 4 of the QA improvements adds **end-to-end integration tests** that run pa
 ```
 
 **What This Catches**:
+
 - Sequential execution claiming to be parallel
 - Missing concurrency options
 - Timing discrepancies
@@ -60,12 +66,14 @@ Phase 4 of the QA improvements adds **end-to-end integration tests** that run pa
 **Test**: Multiple error scenarios
 
 **Validates**:
+
 - Error recovery
 - Error logging with tapError
 - Multiple error handlers
 - Success path correctness
 
 **Success Criteria**:
+
 ```
 ✓ Simple error recovery
 ✓ Side-effect logging with tapError
@@ -74,6 +82,7 @@ Phase 4 of the QA improvements adds **end-to-end integration tests** that run pa
 ```
 
 **What This Catches**:
+
 - Broken error handling
 - Non-functional error recovery
 - Side-effect issues in error handling
@@ -85,12 +94,14 @@ Phase 4 of the QA improvements adds **end-to-end integration tests** that run pa
 **Test**: Resource acquisition and cleanup
 
 **Validates**:
+
 - Resources properly acquired
 - Resources properly released
 - No resource leaks
 - Cleanup on error
 
 **Success Criteria**:
+
 ```
 ✓ 5 resources acquired
 ✓ 5 resources released (all!)
@@ -99,6 +110,7 @@ Phase 4 of the QA improvements adds **end-to-end integration tests** that run pa
 ```
 
 **What This Catches**:
+
 - Resource leaks
 - Failed cleanup on error
 - Improper resource management
@@ -194,19 +206,19 @@ test-data/               # Created during tests
 1. Setup
    ↓
    Create test data (files, scripts)
-   
+
 2. Execute
    ↓
    Run test scripts with monitoring
    ↓
    Collect metrics (memory, timing, etc.)
-   
+
 3. Validate
    ↓
    Check metrics against thresholds
    ↓
    Report pass/fail with details
-   
+
 4. Cleanup
    ↓
    Remove test data
@@ -219,37 +231,45 @@ test-data/               # Created during tests
 ## Metrics Collected
 
 ### Streaming Test
+
 - **File size**: Size of test file (MB)
 - **Duration**: Processing time (ms)
 - **Memory delta**: Memory growth during processing (MB)
 - **Throughput**: Processing speed (MB/s)
 
 **Thresholds**:
+
 - Memory delta < 100MB
 - Throughput > 50MB/s
 
 ### Parallel Test
+
 - **Parallel time**: Time with concurrent execution (ms)
 - **Sequential time**: Time with sequential execution (ms)
 - **Speedup**: Sequential / Parallel ratio
 
 **Thresholds**:
+
 - Speedup > 2x
 - Parallel time < 800ms (for 5 x 500ms tasks)
 
 ### Error Handling Test
+
 - **Total tests**: Number of error scenarios
 - **Passed tests**: Number that passed
 - **Error rate**: Failed / Total
 
 **Thresholds**:
+
 - Error rate = 0 (all must pass)
 
 ### Resource Management Test
+
 - **Acquired**: Number of resources acquired
 - **Released**: Number of resources released
 
 **Thresholds**:
+
 - Acquired === Released (no leaks)
 
 ---
@@ -260,13 +280,13 @@ test-data/               # Created during tests
 
 ```typescript
 async function testMyPattern(): Promise<IntegrationTestResult> {
-  const pattern = "my-pattern"
-  const issues: string[] = []
-  
+  const pattern = "my-pattern";
+  const issues: string[] = [];
+
   try {
     // 1. Setup test environment
-    const testFile = await createTestData()
-    
+    const testFile = await createTestData();
+
     // 2. Create test script
     const testScript = `
       import { Effect } from "effect"
@@ -277,20 +297,20 @@ async function testMyPattern(): Promise<IntegrationTestResult> {
       })
       
       Effect.runPromise(program)
-    `
-    
+    `;
+
     // 3. Run test with monitoring
-    const scriptPath = path.join(TEST_DATA_DIR, "my-test.ts")
-    await fs.writeFile(scriptPath, testScript)
-    
-    const result = await execAsync(`bun run ${scriptPath}`)
-    const output = JSON.parse(result.stdout.trim())
-    
+    const scriptPath = path.join(TEST_DATA_DIR, "my-test.ts");
+    await fs.writeFile(scriptPath, testScript);
+
+    const result = await execAsync(`bun run ${scriptPath}`);
+    const output = JSON.parse(result.stdout.trim());
+
     // 4. Validate results
     if (output.result !== "success") {
-      issues.push("Test failed")
+      issues.push("Test failed");
     }
-    
+
     return {
       pattern,
       testType: "my-category",
@@ -298,7 +318,7 @@ async function testMyPattern(): Promise<IntegrationTestResult> {
       metrics: {},
       issues,
       details: "Test description",
-    }
+    };
   } catch (error: any) {
     return {
       pattern,
@@ -307,7 +327,7 @@ async function testMyPattern(): Promise<IntegrationTestResult> {
       metrics: {},
       issues: [`Test failed: ${error.message}`],
       details: error.message,
-    }
+    };
   }
 }
 ```
@@ -316,17 +336,17 @@ async function testMyPattern(): Promise<IntegrationTestResult> {
 
 ```typescript
 async function runIntegrationTests(): Promise<IntegrationTestResult[]> {
-  const results: IntegrationTestResult[] = []
-  
+  const results: IntegrationTestResult[] = [];
+
   // ... existing tests
-  
+
   // Your new test
-  console.log("5/5 Testing my pattern...")
-  const myResult = await testMyPattern()
-  results.push(myResult)
-  console.log(myResult.passed ? "  ✓ Passed" : "  ✗ Failed")
-  
-  return results
+  console.log("5/5 Testing my pattern...");
+  const myResult = await testMyPattern();
+  results.push(myResult);
+  console.log(myResult.passed ? "  ✓ Passed" : "  ✗ Failed");
+
+  return results;
 }
 ```
 
@@ -334,12 +354,12 @@ async function runIntegrationTests(): Promise<IntegrationTestResult[]> {
 
 ## Comparison: All 4 Phases
 
-| Phase | What It Tests | Speed | Coverage | Type |
-|-------|--------------|-------|----------|------|
-| **1: Behavioral** | Memory, timing | ~1s | Runtime behavior | Automated |
-| **2: Linter** | Idioms, APIs | ~30ms | Syntax patterns | Automated |
-| **3: LLM QA** | Semantics | ~5-10s | Code + docs | Automated |
-| **4: Integration** | Real scenarios | ~5s | End-to-end | Automated |
+| Phase              | What It Tests  | Speed  | Coverage         | Type      |
+| ------------------ | -------------- | ------ | ---------------- | --------- |
+| **1: Behavioral**  | Memory, timing | ~1s    | Runtime behavior | Automated |
+| **2: Linter**      | Idioms, APIs   | ~30ms  | Syntax patterns  | Automated |
+| **3: LLM QA**      | Semantics      | ~5-10s | Code + docs      | Automated |
+| **4: Integration** | Real scenarios | ~5s    | End-to-end       | Automated |
 
 ### Combined Coverage
 
@@ -393,7 +413,8 @@ async function runIntegrationTests(): Promise<IntegrationTestResult[]> {
 
 **Issue**: Test exceeds timeout (60s)
 
-**Solution**: 
+**Solution**:
+
 - Check for infinite loops
 - Verify file sizes aren't too large
 - Ensure proper cleanup
@@ -403,6 +424,7 @@ async function runIntegrationTests(): Promise<IntegrationTestResult[]> {
 **Issue**: Streaming test fails memory check
 
 **Solution**:
+
 - Verify actual streaming (not loading)
 - Check for buffer accumulation
 - Profile memory usage
@@ -412,6 +434,7 @@ async function runIntegrationTests(): Promise<IntegrationTestResult[]> {
 **Issue**: Parallel test doesn't show speedup
 
 **Solution**:
+
 - Check concurrency option
 - Verify tasks actually run in parallel
 - Adjust delay times if needed
@@ -436,4 +459,3 @@ Planned additions:
 - [test-behavioral.ts](./scripts/publish/test-behavioral.ts) - Phase 1
 - [lint-effect-patterns.ts](./scripts/publish/lint-effect-patterns.ts) - Phase 2
 - [qa-schema-enhanced.mdx](./scripts/qa/prompts/qa-schema-enhanced.mdx) - Phase 3
-

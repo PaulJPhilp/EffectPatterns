@@ -11,7 +11,14 @@ Successfully implemented comprehensive queue management commands for the SM-CLI 
 Added new type definitions:
 
 ```typescript
-export type ProcessingStatus = 'queued' | 'extracting' | 'chunking' | 'embedding' | 'indexing' | 'done' | 'failed';
+export type ProcessingStatus =
+  | "queued"
+  | "extracting"
+  | "chunking"
+  | "embedding"
+  | "indexing"
+  | "done"
+  | "failed";
 
 export interface ProcessingDocument {
   id: string;
@@ -33,14 +40,17 @@ export interface ProcessingQueue {
 Extended `SupermemoryService` interface with four new queue management methods:
 
 - **`getProcessingQueue()`** - Fetch all documents currently being processed
+
   - Calls `GET /v3/documents/processing`
   - Returns: `ProcessingQueue`
 
 - **`getDocumentStatus(id)`** - Get status of a specific document
+
   - Calls `GET /v3/documents/{id}`
   - Returns: `ProcessingDocument`
 
 - **`deleteDocument(id)`** - Delete a document from the queue
+
   - Calls `DELETE /v3/documents/{id}`
   - Returns: `void`
 
@@ -54,59 +64,71 @@ Extended `SupermemoryService` interface with four new queue management methods:
 Implemented five queue management subcommands:
 
 #### `queue list`
+
 Lists all documents currently in the processing queue.
 
 **Features:**
+
 - Beautiful table display with status colors
 - JSON output option for scripting
 - Shows document ID, status, creation date, update time, and container tags
 - Status icons: ⏳ (queued), ⚙️ (processing), ✅ (done), ❌ (failed)
 
 **Usage:**
+
 ```bash
 bun run sm-cli queue list
 bun run sm-cli queue list --format json
 ```
 
 #### `queue status`
+
 Shows detailed status for a specific document.
 
 **Features:**
+
 - Display document metadata, timestamps, tags
 - Calculate elapsed processing time
 - Color-coded status with icons
 - JSON output support
 
 **Usage:**
+
 ```bash
 bun run sm-cli queue status --id <document-id>
 bun run sm-cli queue status --id <document-id> --format json
 ```
 
 #### `queue delete`
+
 Delete a specific document from the queue.
 
 **Features:**
+
 - Confirmation prompt (can skip with `--force`)
 - Remove stuck or failed documents
 - Useful for cleaning up before retry
 
 **Usage:**
+
 ```bash
 bun run sm-cli queue delete --id <document-id>
 bun run sm-cli queue delete --id <document-id> --force
 ```
 
 #### `queue clear`
+
 Bulk delete documents by status.
 
 **Features:**
+
 - Filter by status: `failed`, `queued`, or `all`
 - Confirmation prompt before deletion
 - Bulk operation reporting
 - Force flag to skip confirmation
 
 **Usage:**
+
 ```bash
 bun run sm-cli queue clear --status failed
 bun run sm-cli queue clear --status queued --force
@@ -114,15 +136,18 @@ bun run sm-cli queue clear --status all
 ```
 
 #### `queue watch`
+
 Monitor a document's processing progress in real-time.
 
 **Features:**
+
 - Poll document status every 2 seconds
 - Configurable max wait time
 - Display final processing result
 - Exit when done or failed
 
 **Usage:**
+
 ```bash
 bun run sm-cli queue watch --id <document-id>
 bun run sm-cli queue watch --id <document-id> --max-wait 600
@@ -137,13 +162,14 @@ Command.withSubcommands([
   projectCommand,
   memoriesCommand,
   patternsCommand,
-  queueCommand,  // NEW
-])
+  queueCommand, // NEW
+]);
 ```
 
 ### 5. Documentation (`app/sm-cli/QUEUE_MANAGEMENT.md`)
 
 Comprehensive user guide covering:
+
 - Processing pipeline stages explanation
 - All commands with examples
 - Common workflows
@@ -199,26 +225,31 @@ Plus failure state: **Failed** (when processing fails)
 ## Key Features
 
 ### 1. Beautiful Output
+
 - Color-coded statuses using chalk
 - Unicode tables with cli-table3
 - Status icons for quick visual identification
 - Human-readable timestamps
 
 ### 2. Flexible Output Formats
+
 - **Human Format** (default): Colorful, interactive display
 - **JSON Format**: Structured data for scripting and integration
 
 ### 3. Real-time Monitoring
+
 - `queue watch` polls document status every 2 seconds
 - Customizable max wait time
 - Exit on completion or failure
 
 ### 4. Bulk Operations
+
 - `queue clear` can delete multiple documents at once
 - Filter by status (failed, queued, all)
 - Progress reporting
 
 ### 5. Safety Features
+
 - Confirmation prompts before destructive operations
 - `--force` flag to bypass confirmations
 - Clear error messages
@@ -226,26 +257,31 @@ Plus failure state: **Failed** (when processing fails)
 ## Usage Examples
 
 ### Monitor Current Queue
+
 ```bash
 bun run sm-cli queue list
 ```
 
 ### Check Specific Document
+
 ```bash
 bun run sm-cli queue status --id doc_abc123
 ```
 
 ### Watch Document Processing
+
 ```bash
 bun run sm-cli queue watch --id doc_abc123
 ```
 
 ### Clear Failed Documents
+
 ```bash
 bun run sm-cli queue clear --status failed --force
 ```
 
 ### Programmatic Access
+
 ```bash
 # Get JSON for scripting
 bun run sm-cli queue list --format json | jq '.documents[] | select(.status == "failed")'
@@ -265,10 +301,12 @@ All commands tested and verified working:
 ## Files Created/Modified
 
 ### Created:
+
 - `app/sm-cli/src/commands/queue.ts` - Queue command implementations
 - `app/sm-cli/QUEUE_MANAGEMENT.md` - User documentation
 
 ### Modified:
+
 - `app/sm-cli/src/types.ts` - Added ProcessingStatus, ProcessingDocument, ProcessingQueue types
 - `app/sm-cli/src/services/supermemory.ts` - Added queue service methods
 - `app/sm-cli/src/index.ts` - Integrated queue commands into CLI
@@ -276,6 +314,7 @@ All commands tested and verified working:
 ## Dependencies
 
 Uses existing dependencies:
+
 - `effect` - Effect-TS framework for command composition
 - `@effect/cli` - CLI command framework
 - `cli-table3` - Table formatting (already in use)
@@ -319,6 +358,7 @@ bun run sm-cli memories search "query"
 ## Error Handling
 
 Comprehensive error handling for:
+
 - Authentication errors (401)
 - Not found errors (404)
 - Network timeouts

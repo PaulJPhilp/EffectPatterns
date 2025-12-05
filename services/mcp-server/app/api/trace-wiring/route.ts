@@ -5,14 +5,14 @@
  * Returns example code for integrating trace IDs across platforms
  */
 
-import { Effect } from 'effect';
-import { type NextRequest, NextResponse } from 'next/server';
+import { Effect } from "effect";
+import { type NextRequest, NextResponse } from "next/server";
 import {
   isAuthenticationError,
   validateApiKey,
-} from '../../../src/auth/apiKey';
-import { runWithRuntime } from '../../../src/server/init';
-import { TracingService } from '../../../src/tracing/otlpLayer';
+} from "../../../src/auth/apiKey";
+import { runWithRuntime } from "../../../src/server/init";
+import { TracingService } from "../../../src/tracing/otlpLayer";
 
 const EFFECT_NODE_SDK_EXAMPLE = `
 // Effect + OpenTelemetry Node SDK Example
@@ -98,31 +98,39 @@ Trace Wiring Best Practices:
    when errors occur.
 `.trim();
 
-export async function GET(request: NextRequest) {
-  const traceWiringEffect = Effect.gen(function* () {
-    const tracing = yield* TracingService;
+// Handler implementation with automatic span creation via Effect.fn
+const handleTraceWiring = Effect.fn("trace-wiring")(function* (
+  request: NextRequest
+) {
+  const tracing = yield* TracingService;
 
-    // Validate API key
-    yield* validateApiKey(request);
+  // Validate API key
+  yield* validateApiKey(request);
 
-    const traceId = tracing.getTraceId();
-
-    return {
-      effectNodeSdk: EFFECT_NODE_SDK_EXAMPLE,
-      effectWithSpan: EFFECT_WITH_SPAN_EXAMPLE,
-      langgraphPython: LANGGRAPH_PYTHON_EXAMPLE,
-      notes: NOTES,
-      traceId,
-    };
+  // Annotate span with endpoint info
+  yield* Effect.annotateCurrentSpan({
+    endpoint: "trace-wiring",
   });
 
+  const traceId = tracing.getTraceId();
+
+  return {
+    effectNodeSdk: EFFECT_NODE_SDK_EXAMPLE,
+    effectWithSpan: EFFECT_WITH_SPAN_EXAMPLE,
+    langgraphPython: LANGGRAPH_PYTHON_EXAMPLE,
+    notes: NOTES,
+    traceId,
+  };
+});
+
+export async function GET(request: NextRequest) {
   try {
-    const result = await runWithRuntime(traceWiringEffect);
+    const result = await runWithRuntime(handleTraceWiring(request));
 
     return NextResponse.json(result, {
       status: 200,
       headers: {
-        'x-trace-id': result.traceId || '',
+        "x-trace-id": result.traceId || "",
       },
     });
   } catch (error) {
@@ -134,7 +142,7 @@ export async function GET(request: NextRequest) {
       {
         error: String(error),
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

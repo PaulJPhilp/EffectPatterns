@@ -7,6 +7,7 @@ Summary of all changes made to the Effect Patterns Hub CLI.
 ### 🐛 Bug Fixes
 
 **Pattern Documentation**
+
 - Fixed `observability-effect-fn.mdx` pattern to correctly demonstrate `Effect.fn` usage
   - The code example was using `Effect.gen` instead of `Effect.fn`
   - Updated to properly show function instrumentation with observability integration
@@ -27,6 +28,7 @@ Summary of all changes made to the Effect Patterns Hub CLI.
 ### ♻️ Refactoring
 
 **CLI Package Structure**
+
 - Extracted CLI into dedicated `@effect-patterns/ep-cli` package
 - Added `@effect-patterns/ep-admin` admin tool package
 - Improved package organization with cli utilities and design-system packages
@@ -49,12 +51,14 @@ The Effect Patterns Hub CLI is now production-ready with comprehensive testing, 
 ### ✨ Improvements
 
 **Testing**
+
 - All 73 automated tests passing (100% pass rate)
 - Fixed server unavailable test handling
 - Improved error message assertions
 - Full integration test coverage
 
 **Documentation**
+
 - Added CLI section to main README.md
 - Created RELEASE-ANNOUNCEMENT.md
 - Created RELEASE-CHECKLIST.md
@@ -63,6 +67,7 @@ The Effect Patterns Hub CLI is now production-ready with comprehensive testing, 
 - All documentation verified and up-to-date
 
 **Version Management**
+
 - Synced CLI version with package.json
 - Consistent version reporting across all commands
 
@@ -77,6 +82,7 @@ The Effect Patterns Hub CLI is now production-ready with comprehensive testing, 
 ### 🚀 Ready for Production
 
 This release marks the CLI as production-ready with:
+
 - Comprehensive test coverage
 - Complete documentation
 - Stable command structure
@@ -90,6 +96,7 @@ This release marks the CLI as production-ready with:
 ### 🎉 Major Changes
 
 #### Command Structure Reorganization
+
 - Renamed `rules` command to `install` for clarity
 - Grouped administrative commands under `admin` namespace
 - New top-level structure:
@@ -100,6 +107,7 @@ This release marks the CLI as production-ready with:
 #### New Features
 
 **1. Install Command with Filtering**
+
 - `ep install add --tool <name>` - Install rules into AI tool configurations
 - `ep install list` - List all supported tools and their file paths
 - New filtering options:
@@ -108,6 +116,7 @@ This release marks the CLI as production-ready with:
 - Filters can be combined for precise rule selection
 
 **2. Supported AI Tools (10 total)**
+
 - Cursor IDE (`.cursor/rules.md`)
 - Windsurf IDE (`.windsurf/rules.md`)
 - VS Code / Continue.dev (`.vscode/rules.md`)
@@ -120,11 +129,13 @@ This release marks the CLI as production-ready with:
 - Claude AI (`CLAUDE.md`)
 
 **3. Global CLI Installation**
+
 - Added `bin` entry in package.json
 - Users can now run `ep` directly after `bun link`
 - No need for `bun run` prefix
 
 **4. Enhanced UX**
+
 - Progress indicators with `ora` library
 - TTY-aware spinners (auto-disable in CI/CD)
 - `--verbose` flags on all long-running commands
@@ -133,6 +144,7 @@ This release marks the CLI as production-ready with:
 - Helpful examples in error messages
 
 **5. Comprehensive Test Suite**
+
 - 60 automated tests covering all CLI functionality
 - Integration tests with Pattern Server
 - Command structure validation
@@ -165,6 +177,7 @@ ep admin release create                                   # Create release
 ### 🔄 Command Changes
 
 **Before:**
+
 ```bash
 bun run ep rules add --tool cursor
 bun run ep validate
@@ -173,6 +186,7 @@ bun run ep generate
 ```
 
 **After:**
+
 ```bash
 ep install add --tool cursor
 ep admin validate
@@ -183,6 +197,7 @@ ep admin generate
 ### 🗑️ Temporarily Disabled
 
 The following commands are temporarily disabled but preserved for future re-enablement:
+
 - `ep lint` - Effect-TS pattern linting
 - `ep lint rules` - Show linting rules
 - `ep init` - Initialize configuration
@@ -190,12 +205,14 @@ The following commands are temporarily disabled but preserved for future re-enab
 ### 📚 Documentation
 
 **New Documentation:**
+
 - `SETUP.md` - Complete setup and usage guide
 - `TESTING.md` - Comprehensive testing documentation
 - Updated `README.md` - Quick start guide
 - Command help text on all commands
 
 **Key Documentation Sections:**
+
 - Installation instructions with `bun link`
 - Filtering rules by skill level and use case
 - All 10 supported tools with file paths
@@ -206,6 +223,7 @@ The following commands are temporarily disabled but preserved for future re-enab
 ### 🧪 Testing
 
 **Test Coverage:**
+
 - Help and version commands (4 tests)
 - Error handling (2 tests)
 - Install commands (29 tests)
@@ -218,6 +236,7 @@ The following commands are temporarily disabled but preserved for future re-enab
 **Total: 60 tests, 100% passing**
 
 Run tests with:
+
 ```bash
 bun run test:cli
 ```
@@ -225,9 +244,11 @@ bun run test:cli
 ### 🛠️ Technical Improvements
 
 **Dependencies Added:**
+
 - `ora@9.0.0` - Terminal spinners and progress indicators
 
 **Code Quality:**
+
 - Type-safe command definitions with `@effect/cli`
 - Effect-TS patterns throughout
 - Proper error handling with typed errors
@@ -236,6 +257,7 @@ bun run test:cli
 - File system safety checks
 
 **Error Handling:**
+
 - Proactive server health checks
 - Detailed error messages with fix instructions
 - Server URL configuration support
@@ -244,9 +266,11 @@ bun run test:cli
 ### 📋 Breaking Changes
 
 1. **Command Rename:** `rules add` → `install add`
+
    - Update any scripts using the old command
 
 2. **Command Reorganization:** Admin commands now under `admin` namespace
+
    - `ep validate` → `ep admin validate`
    - `ep test` → `ep admin test`
    - `ep generate` → `ep admin generate`
@@ -259,6 +283,7 @@ bun run test:cli
 ### 🔮 Future Enhancements
 
 Planned for future releases:
+
 - **npm/pnpm support** - Allow users to install and run with npm/pnpm in addition to Bun
 - Re-enable Effect-TS linter commands
 - Interactive rule selection with checkboxes
@@ -278,6 +303,7 @@ Planned for future releases:
 ### 🙏 Migration Guide
 
 **For Users:**
+
 ```bash
 # 1. Pull latest changes
 git pull
@@ -297,6 +323,7 @@ ep --help
 ```
 
 **For CI/CD:**
+
 ```yaml
 # Update your workflows
 - name: Validate patterns
@@ -312,6 +339,7 @@ ep --help
 ### 📝 Examples
 
 **Basic Installation:**
+
 ```bash
 # Install all rules to Cursor
 ep install add --tool cursor
@@ -327,6 +355,7 @@ ep install add --tool goose --skill-level intermediate --use-case concurrency
 ```
 
 **Development Workflow:**
+
 ```bash
 # Create new pattern
 ep pattern new
@@ -361,6 +390,7 @@ After upgrading to this version:
 ---
 
 For detailed information, see:
+
 - [SETUP.md](./SETUP.md) - Complete setup guide
 - [TESTING.md](./TESTING.md) - Testing documentation
 - [README.md](./README.md) - Quick start guide

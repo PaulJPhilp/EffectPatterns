@@ -22,11 +22,13 @@
 ## Features
 
 - **Retrieval-Augmented Generation (RAG)**
+
   - Intelligent pattern retrieval using Supermemory's memory router API
   - Query scoring to determine when patterns are relevant
   - Seamless integration of Effect-TS patterns into chat responses
 
 - **Effect-TS Pattern Knowledge**
+
   - Pre-loaded patterns covering beginner to advanced topics
   - Semantic search across pattern content
   - Educational guidance based on user queries
@@ -34,12 +36,11 @@
 - [Next.js](https://nextjs.org) 14 App Router
   - Advanced routing for seamless navigation and performance
   - React Server Components (RSCs) and Server Actions
-  
 - [AI SDK](https://ai-sdk.dev/docs/introduction)
   - Unified API for generating text with LLMs
   - Support for multiple model providers
-  
 - [shadcn/ui](https://ui.shadcn.com)
+
   - Styling with [Tailwind CSS](https://tailwindcss.com)
   - Accessible component primitives from [Radix UI](https://radix-ui.com)
 
@@ -52,11 +53,13 @@
 ### Pattern Loading Workflow
 
 1. **Pattern Ingestion** (Release Time)
+
    - Patterns are prepared and uploaded to Supermemory via `sm-cli`
    - Stored in the `effect-patterns` project in Supermemory
    - Static data - patterns don't change at runtime
 
 2. **Runtime Pattern Retrieval**
+
    - When user sends a message, a scoring system evaluates relevance
    - If patterns are needed, the app queries Supermemory's memory router
    - Relevant patterns are embedded in the system context
@@ -84,26 +87,28 @@
 ### Installation
 
 1. **Install dependencies:**
+
    ```bash
    pnpm install
    ```
 
 2. **Set up environment variables:**
    Create a `.env.local` file (or use Vercel Environment Variables):
+
    ```env
    # Supermemory Configuration
    SUPERMEMORY_API_KEY=your-api-key-here
    SUPERMEMORY_PROJECT_ID=effect-patterns
-   
+
    # AI Model Configuration
    AI_GATEWAY_API_KEY=your-ai-gateway-key-or-leave-for-vercel-oidc
-   
+
    # Database (Neon Postgres)
    DATABASE_URL=postgresql://...
-   
+
    # Storage (Vercel Blob)
    BLOB_READ_WRITE_TOKEN=your-token-here
-   
+
    # Node Environment
    NODE_ENV=development
    ```
@@ -207,6 +212,7 @@ vercel --prod
 ### Environment Variables for Production
 
 Ensure these are set in Vercel dashboard:
+
 - `SUPERMEMORY_API_KEY`
 - `SUPERMEMORY_PROJECT_ID`
 - `DATABASE_URL`
@@ -216,6 +222,7 @@ Ensure these are set in Vercel dashboard:
 ### Health Check
 
 After deployment, verify the service is running:
+
 ```bash
 curl https://effect-patterns-patterns-chat-app.vercel.app/api/health
 ```
@@ -225,6 +232,7 @@ curl https://effect-patterns-patterns-chat-app.vercel.app/api/health
 ### Auth.js Migration
 
 Auth.js will be replaced with a custom authentication solution soon. Current implementation provides:
+
 - User session management
 - Chat history persistence
 - Rate limiting per user
@@ -232,6 +240,7 @@ Auth.js will be replaced with a custom authentication solution soon. Current imp
 ### Memory Router Integration
 
 This app uses Supermemory's memory-router API to query patterns:
+
 - Endpoint: `https://api.supermemory.ai/v1/memory-router`
 - Project: `effect-patterns`
 - Search type: Semantic + keyword hybrid

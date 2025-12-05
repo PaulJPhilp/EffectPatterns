@@ -7,6 +7,7 @@
 ## Overview
 
 This package provides an Effect-TS service for interacting with Discord via the DiscordChatExporter.Cli tool. It demonstrates best practices for:
+
 - Building Effect services with proper dependency injection
 - Handling external CLI tools within Effect programs
 - Managing secrets securely with `Effect.Secret`
@@ -34,13 +35,13 @@ export const DiscordLive = Layer.effect(
         // 3. Inner Effects must receive services via Effect.provideService
         const content = yield* fs.readFileString(tempFile).pipe(
           Effect.provideService(FileSystem, fs), // Critical!
-          Effect.mapError(/* ... */),
+          Effect.mapError(/* ... */)
         );
       });
 
     // 4. Return the service implementation
     return Discord.of({ exportChannel });
-  }),
+  })
 );
 ```
 
@@ -70,18 +71,27 @@ The package wraps DiscordChatExporter.Cli using Effect's `Command` API:
 ```typescript
 const command = Command.make(
   config.exporterPath,
-  "export",              // Subcommand
-  "-t", botToken,        // Arguments
-  "-c", channelId,
-  "-o", tempFile,
-  "-f", "Json",
-  "--media", "False",
+  "export", // Subcommand
+  "-t",
+  botToken, // Arguments
+  "-c",
+  channelId,
+  "-o",
+  tempFile,
+  "-f",
+  "Json",
+  "--media",
+  "False"
 );
 
-const exitCode = yield* Command.exitCode(command).pipe(
-  Effect.provideService(CommandExecutor, executor),
-  Effect.mapError(cause => new DiscordExportError({ reason: "CommandFailed", cause })),
-);
+const exitCode =
+  yield *
+  Command.exitCode(command).pipe(
+    Effect.provideService(CommandExecutor, executor),
+    Effect.mapError(
+      (cause) => new DiscordExportError({ reason: "CommandFailed", cause })
+    )
+  );
 ```
 
 **Important**: DiscordChatExporter uses subcommands (`export`, `guilds`, etc.), not top-level flags.
@@ -94,7 +104,7 @@ Bot tokens are wrapped in `Effect.Secret` to prevent accidental logging:
 export class DiscordConfig extends Context.Tag("DiscordConfig")<
   DiscordConfig,
   {
-    readonly botToken: Secret.Secret;  // Not string!
+    readonly botToken: Secret.Secret; // Not string!
     readonly exporterPath: string;
   }
 >() {}
@@ -104,7 +114,7 @@ const command = Command.make(
   config.exporterPath,
   "export",
   "-t",
-  Secret.value(config.botToken),  // Unwrap only when needed
+  Secret.value(config.botToken) // Unwrap only when needed
   // ...
 );
 ```
@@ -119,12 +129,15 @@ const logic = Effect.gen(function* () {
   return channelExport;
 });
 
-return yield* Effect.ensuring(
-  logic,
-  fs.remove(tempFile).pipe(
-    Effect.provideService(FileSystem, fs),
-    Effect.ignore,  // Don't fail if cleanup fails
-  ),
+return (
+  yield *
+  Effect.ensuring(
+    logic,
+    fs.remove(tempFile).pipe(
+      Effect.provideService(FileSystem, fs),
+      Effect.ignore // Don't fail if cleanup fails
+    )
+  )
 );
 ```
 
@@ -139,11 +152,12 @@ export class DiscordExportError extends Data.TaggedError("DiscordExportError")<{
 }> {}
 
 // Usage
-yield* Command.exitCode(command).pipe(
-  Effect.mapError(cause =>
-    new DiscordExportError({ reason: "CommandFailed", cause })
-  ),
-);
+yield *
+  Command.exitCode(command).pipe(
+    Effect.mapError(
+      (cause) => new DiscordExportError({ reason: "CommandFailed", cause })
+    )
+  );
 ```
 
 ## Testing Strategy
@@ -154,21 +168,25 @@ The package includes comprehensive integration tests that connect to the real Di
 
 ```typescript
 describe("Discord Integration Tests", () => {
-  test.skipIf(shouldSkip)("should export messages from real channel", async () => {
-    const program = Effect.gen(function* () {
-      const discord = yield* Discord;
-      return yield* discord.exportChannel(TEST_CHANNEL_ID!);
-    });
+  test.skipIf(shouldSkip)(
+    "should export messages from real channel",
+    async () => {
+      const program = Effect.gen(function* () {
+        const discord = yield* Discord;
+        return yield* discord.exportChannel(TEST_CHANNEL_ID!);
+      });
 
-    const result = await Effect.runPromise(
-      program.pipe(
-        Effect.provide(TestLayer),
-        Effect.provide(NodeContext.layer),
-      )
-    );
+      const result = await Effect.runPromise(
+        program.pipe(
+          Effect.provide(TestLayer),
+          Effect.provide(NodeContext.layer)
+        )
+      );
 
-    expect(result.messages.length).toBeGreaterThan(0);
-  }, 30000);
+      expect(result.messages.length).toBeGreaterThan(0);
+    },
+    30000
+  );
 });
 ```
 
@@ -200,12 +218,14 @@ See [INTEGRATION_TESTS.md](./INTEGRATION_TESTS.md) for complete setup guide.
 **Solution**: Services captured during layer construction must be provided to inner Effects:
 
 ```typescript
-const fs = yield* FileSystem;  // Capture during construction
+const fs = yield * FileSystem; // Capture during construction
 
 // Later, in service method:
-const content = yield* fs.readFileString(path).pipe(
-  Effect.provideService(FileSystem, fs),  // Must provide!
-);
+const content =
+  yield *
+  fs.readFileString(path).pipe(
+    Effect.provideService(FileSystem, fs) // Must provide!
+  );
 ```
 
 ### Issue 2: "Message Content Intent Not Enabled"
@@ -213,6 +233,7 @@ const content = yield* fs.readFileString(path).pipe(
 **Problem**: DiscordChatExporter fails with intent error.
 
 **Solution**: Enable in Discord Developer Portal:
+
 - Bot → Privileged Gateway Intents → MESSAGE CONTENT INTENT ✅
 
 ### Issue 3: "Request Failed: Forbidden"
@@ -220,6 +241,7 @@ const content = yield* fs.readFileString(path).pipe(
 **Problem**: Bot can't access channel.
 
 **Solution**:
+
 1. Invite bot to server with OAuth2 URL generator
 2. Ensure bot has "Read Messages" and "Read Message History" permissions
 3. Check channel-specific permission overrides
@@ -229,6 +251,7 @@ const content = yield* fs.readFileString(path).pipe(
 **Problem**: DiscordChatExporter.Cli fails silently.
 
 **Solution**: Run command directly to see error:
+
 ```bash
 ./tools/DiscordChatExporter.Cli export -t "token" -c "channel-id" -o /tmp/test.json -f Json --media False
 ```
@@ -238,7 +261,11 @@ const content = yield* fs.readFileString(path).pipe(
 ### Basic Export
 
 ```typescript
-import { Discord, DiscordLive, DiscordConfig } from "@effect-patterns/effect-discord";
+import {
+  Discord,
+  DiscordLive,
+  DiscordConfig,
+} from "@effect-patterns/effect-discord";
 import { Effect, Layer, Secret } from "effect";
 import { NodeContext } from "@effect/platform-node";
 
@@ -257,7 +284,7 @@ const program = Effect.gen(function* () {
 const runnable = program.pipe(
   Effect.provide(DiscordLive),
   Effect.provide(ConfigLive),
-  Effect.provide(NodeContext.layer),
+  Effect.provide(NodeContext.layer)
 );
 
 await Effect.runPromise(runnable);
@@ -274,12 +301,12 @@ const DiscordConfigLive = Layer.effect(
     const botToken = yield* Config.secret("DISCORD_BOT_TOKEN");
     const exporterPath = yield* Config.string("DISCORD_EXPORTER_PATH");
     return DiscordConfig.of({ botToken, exporterPath });
-  }),
+  })
 );
 
 const MainLayer = DiscordLive.pipe(
   Layer.provide(DiscordConfigLive),
-  Layer.provide(NodeContext.layer),
+  Layer.provide(NodeContext.layer)
 );
 ```
 
@@ -328,7 +355,7 @@ bun run typecheck
 ```typescript
 const MainLayer = DiscordLive.pipe(
   Layer.provide(DiscordConfigLive),
-  Layer.provide(NodeContext.layer),
+  Layer.provide(NodeContext.layer)
 );
 ```
 
@@ -337,19 +364,20 @@ const MainLayer = DiscordLive.pipe(
 ```typescript
 const program = Effect.gen(function* () {
   const discord = yield* Discord;
-  const fs = yield* FileSystem;  // Program can use other services too
+  const fs = yield* FileSystem; // Program can use other services too
   // ...
 });
 
 const runnable = program.pipe(
-  Effect.provide(MainLayer),      // Provides Discord service
-  Effect.provide(NodeContext.layer),  // Provides FileSystem for program
+  Effect.provide(MainLayer), // Provides Discord service
+  Effect.provide(NodeContext.layer) // Provides FileSystem for program
 );
 ```
 
 ## Real-World Example
 
 See [scripts/ingest-discord.ts](../../scripts/ingest-discord.ts) for a production example that:
+
 1. Reads configuration from environment
 2. Exports Discord channel
 3. Anonymizes user data (maps user IDs to pseudonyms)
@@ -367,16 +395,19 @@ See [scripts/ingest-discord.ts](../../scripts/ingest-discord.ts) for a productio
 ## Next Steps / Future Enhancements
 
 1. **Additional Operations**:
+
    - List channels in a guild
    - Export multiple channels in parallel
    - Export threads and forum posts
    - User lookup and profile export
 
 2. **Enhanced Error Handling**:
+
    - Retry logic for transient failures (rate limits, network errors)
    - More granular error types (RateLimited, NetworkError, etc.)
 
 3. **Data Model Enhancements**:
+
    - Full DiscordMessage with all fields (attachments, embeds, reactions, etc.)
    - Thread message support
    - Structured user roles and permissions

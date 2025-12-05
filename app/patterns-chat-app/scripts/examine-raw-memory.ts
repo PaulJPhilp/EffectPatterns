@@ -128,7 +128,6 @@ async function examineRawMemory() {
     if (!foundPattern) {
       console.log("⚠️  No effect_pattern type found in first 150 memories");
     }
-
   } catch (error) {
     console.error("❌ Error:", error);
     if (error instanceof Error) {

@@ -1,8 +1,6 @@
 {
-    "framework": "nextjs",
-    "buildCommand": "pnpm build",
-    "installCommand": "pnpm install",
-    "regions": [
-        "iad1"
-    ]
+  "framework": "nextjs",
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install",
+  "regions": ["iad1"]
 }

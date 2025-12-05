@@ -28,7 +28,7 @@ Inside an `Effect.gen` block, use `yield*` on your `Config` object to access the
 
 ## Rationale
 
-This allows your business logic to declaratively state its dependency on a piece of configuration. The logic is clean, type-safe, and completely decoupled from *how* the configuration is provided.
+This allows your business logic to declaratively state its dependency on a piece of configuration. The logic is clean, type-safe, and completely decoupled from _how_ the configuration is provided.
 
 ## Good Example
 
@@ -36,15 +36,12 @@ This allows your business logic to declaratively state its dependency on a piece
 import { Config, Effect, Layer } from "effect";
 
 // Define config service
-class AppConfig extends Effect.Service<AppConfig>()(
-  "AppConfig",
-  {
-    sync: () => ({
-      host: "localhost",
-      port: 3000
-    })
-  }
-) {}
+class AppConfig extends Effect.Service<AppConfig>()("AppConfig", {
+  sync: () => ({
+    host: "localhost",
+    port: 3000,
+  }),
+}) {}
 
 // Create program that uses config
 const program = Effect.gen(function* () {
@@ -53,9 +50,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with default config
-Effect.runPromise(
-  Effect.provide(program, AppConfig.Default)
-);
+Effect.runPromise(Effect.provide(program, AppConfig.Default));
 ```
 
 **Explanation:**  

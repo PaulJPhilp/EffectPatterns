@@ -11,12 +11,14 @@ The "Guide to Memories" is a comprehensive educational system that teaches users
 The foundational guide containing all educational content.
 
 **Features:**
+
 - 11 comprehensive sections covering all aspects of memories
 - 6 quick tips for quick learning
 - Exportable functions for accessing sections
 - Structured, easy-to-navigate content
 
 **Sections:**
+
 1. What Are Memories?
 2. How Memories Are Stored
 3. Auto-Tagging
@@ -34,7 +36,9 @@ The foundational guide containing all educational content.
 Three reusable UI components for displaying guide content:
 
 #### a) **MemoriesGuideDialog**
+
 Full-featured modal dialog with:
+
 - Split-pane layout (sidebar navigation + content area)
 - Gradient header with title and description
 - Scrollable content areas
@@ -42,44 +46,54 @@ Full-featured modal dialog with:
 - Call-to-action footer button
 
 Usage:
+
 ```tsx
 const [open, setOpen] = useState(false);
 
-<MemoriesGuideDialog open={open} onOpenChange={setOpen} />
+<MemoriesGuideDialog open={open} onOpenChange={setOpen} />;
 ```
 
 #### b) **MemoriesQuickTips**
+
 Card component displaying key memory features:
+
 - Displays up to 3 tips by default
 - "Show More" button for expanded view
 - Colored card design with icons
 - Responsive layout
 
 Usage:
+
 ```tsx
 <MemoriesQuickTips className="mb-4" />
 ```
 
 #### c) **MemoriesFeatureHighlight**
+
 Grid layout highlighting core features:
+
 - 4-column feature cards
 - Icon + title + description layout
 - Hover effects
 - Mobile responsive
 
 Usage:
+
 ```tsx
 <MemoriesFeatureHighlight className="grid-cols-1 sm:grid-cols-2" />
 ```
 
 #### d) **MemoriesInfoBanner**
+
 Lightweight inline notification banner:
+
 - Attention-grabbing design with emoji icon
 - Optional "Learn More" button
 - Dismissible
 - Useful for contextual information
 
 Usage:
+
 ```tsx
 <MemoriesInfoBanner onLearnMore={() => setShowGuide(true)} />
 ```
@@ -87,6 +101,7 @@ Usage:
 ### 3. **Welcome Banner** (`components/memories-welcome.tsx`)
 
 Auto-dismissable welcome component shown to new users:
+
 - Stores dismissal state in localStorage
 - Shows 3 key tips
 - Prominent CTA buttons
@@ -94,6 +109,7 @@ Auto-dismissable welcome component shown to new users:
 - One-time display per user
 
 Features:
+
 - Automatically detects first-time users
 - Persistent dismissal state
 - Professional design
@@ -102,12 +118,14 @@ Features:
 ### 4. **UI Component Library**
 
 New UI components added:
+
 - `components/ui/dialog.tsx` - Radix UI Dialog component
 - `components/ui/tabs.tsx` - Radix UI Tabs component
 
 ### 5. **Dedicated Guide Page** (`app/(chat)/memories/page.tsx`)
 
 Full-page guide with:
+
 - Professional gradient header
 - Comprehensive sections with cards
 - Feature highlights
@@ -118,11 +136,13 @@ Full-page guide with:
 - Call-to-action buttons
 
 Routes:
+
 - `/memories` - Full memories guide page
 
 ### 6. **Chat Header Integration** (`components/chat-header.tsx`)
 
 Integrated memories guide button:
+
 - Book icon + "Memories" label
 - Always accessible from chat header
 - Opens modal guide on click
@@ -176,6 +196,7 @@ Integrated memories guide button:
 ## Integration Points
 
 ### In Chat Header
+
 ```tsx
 <Button
   onClick={() => setShowMemoriesGuide(true)}
@@ -190,11 +211,13 @@ Integrated memories guide button:
 ```
 
 ### In Greeting (First Visit)
+
 ```tsx
 <MemoriesWelcomeBanner />
 ```
 
 ### Dedicated Route
+
 ```
 /memories
 ```
@@ -202,11 +225,13 @@ Integrated memories guide button:
 ## Styling
 
 ### Color Scheme
+
 - **Primary**: Blue (#3B82F6) and Indigo (#4F46E5)
 - **Success**: Green for positive information
 - **Neutral**: Gray for secondary information
 
 ### Responsive Design
+
 - Mobile: Icon-only buttons, stacked layout
 - Tablet: Mixed layout, readable typography
 - Desktop: Full features, optimal spacing
@@ -214,6 +239,7 @@ Integrated memories guide button:
 ## Accessibility
 
 All components include:
+
 - Proper semantic HTML
 - ARIA labels where needed
 - Keyboard navigation support
@@ -235,6 +261,7 @@ lib/memories-guide.ts (Content)
 ## Key Features
 
 ### Content Organization
+
 - ✅ 11 comprehensive sections
 - ✅ Logical progression from basics to advanced
 - ✅ Real-world examples
@@ -242,6 +269,7 @@ lib/memories-guide.ts (Content)
 - ✅ Privacy assurances
 
 ### Educational Value
+
 - ✅ Explains "what" (what are memories?)
 - ✅ Explains "how" (how do they work?)
 - ✅ Explains "why" (why should you use them?)
@@ -249,6 +277,7 @@ lib/memories-guide.ts (Content)
 - ✅ Best practices guide
 
 ### User Experience
+
 - ✅ Multiple entry points (button, welcome, page)
 - ✅ Mobile-friendly design
 - ✅ Fast access (one click from chat)
@@ -256,6 +285,7 @@ lib/memories-guide.ts (Content)
 - ✅ Dismissible welcome banner
 
 ### Privacy Transparency
+
 - ✅ Dedicated security section
 - ✅ Clear data handling explanations
 - ✅ Reassurance about user data
@@ -264,6 +294,7 @@ lib/memories-guide.ts (Content)
 ## Future Enhancements
 
 Potential additions:
+
 1. **Video tutorials** - Short animated guides
 2. **Interactive demo** - Try semantic search
 3. **Analytics** - Show user's memory statistics
@@ -275,6 +306,7 @@ Potential additions:
 ## Testing
 
 ### Components to Test
+
 - [ ] MemoriesGuideDialog opens/closes correctly
 - [ ] Sidebar navigation updates content
 - [ ] Welcome banner dismissal persists
@@ -284,6 +316,7 @@ Potential additions:
 - [ ] All links function correctly
 
 ### User Testing
+
 - [ ] First-time user understanding
 - [ ] Navigation between sections
 - [ ] Information clarity and usefulness
@@ -293,6 +326,7 @@ Potential additions:
 ## Documentation
 
 Files included:
+
 - `MEMORIES_GUIDE_INTEGRATION.md` (this file) - Integration guide
 - `lib/memories-guide.ts` - Guide content
 - `components/memories-guide.tsx` - UI components
@@ -304,11 +338,13 @@ Files included:
 ## Dependencies
 
 ### New Packages Added
+
 - `@radix-ui/react-dialog` - Dialog primitives
 - `@radix-ui/react-tabs` - Tabs primitives
 - `lucide-react` - Icons (already installed)
 
 ### Existing Dependencies Used
+
 - `framer-motion` - Animations
 - `next/link` - Routing
 - `next/navigation` - Navigation hooks

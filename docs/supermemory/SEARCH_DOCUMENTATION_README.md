@@ -5,12 +5,15 @@ This directory contains comprehensive documentation about the search implementat
 ## Start Here
 
 **New to the codebase?** Start with:
+
 - **[SEARCH_FILES_INDEX.md](./SEARCH_FILES_INDEX.md)** - Quick navigation to all search files (350+ lines)
 
 **Want deep technical details?** Read:
+
 - **[SEARCH_IMPLEMENTATION_FINDINGS.md](./SEARCH_IMPLEMENTATION_FINDINGS.md)** - Complete architecture analysis (480+ lines)
 
 **Troubleshooting or fixing search?** Consult:
+
 - **[SEARCH_ALGORITHM_ANALYSIS.md](./SEARCH_ALGORITHM_ANALYSIS.md)** - Algorithm breakdown and known issues (349 lines)
 
 ---
@@ -18,6 +21,7 @@ This directory contains comprehensive documentation about the search implementat
 ## Documentation Files Overview
 
 ### SEARCH_FILES_INDEX.md (9.4 KB, 317 lines)
+
 **Quick navigation reference for all search files**
 
 - File locations with line numbers
@@ -32,39 +36,47 @@ This directory contains comprehensive documentation about the search implementat
 ---
 
 ### SEARCH_IMPLEMENTATION_FINDINGS.md (13 KB, 480 lines)
+
 **Comprehensive search implementation overview**
 
 1. **Current Search Implementations (3 layers)**
+
    - Pure function search (packages/toolkit/src/search.ts)
    - Effect service wrapper (packages/toolkit/src/services/search.ts)
    - AI tool integration (app/code-assistant/lib/ai/tools/search-patterns.ts)
 
 2. **Supermemory API Usage**
+
    - UserMemoryService (app/code-assistant/lib/memory.ts)
    - Search API calls: `client.search.memories()`
    - Write API calls: `client.memories.add()`
    - Stored data types and limitations
 
 3. **Pattern Search Data Flow**
+
    - Chat mode flow diagram
    - Data loading mechanism
    - Complete pipeline visualization
 
 4. **Search Algorithm Details**
+
    - Fuzzy matching algorithm
    - Relevance calculation
    - Main search pipeline steps
 
 5. **No Vector/Embedding Implementation**
+
    - Search type classification
    - File evidence
    - What's currently NOT implemented
 
 6. **Memory/Preferences Architecture**
+
    - User preferences hook
    - Supermemory integration patterns
 
 7. **Current Limitations Summary**
+
    - Character-by-character matching issues
    - Early returns in relevance scoring
    - No semantic understanding
@@ -81,30 +93,36 @@ This directory contains comprehensive documentation about the search implementat
 ---
 
 ### SEARCH_ALGORITHM_ANALYSIS.md (11 KB, 349 lines)
+
 **Detailed analysis of search algorithm limitations**
 
 1. **The Problem: Why "error handling" returns empty results**
+
    - Test cases showing failures
    - Character-by-character matching explanation
    - Multi-word query issues
 
 2. **Algorithm Components**
+
    - Fuzzy score calculation
    - Relevance scoring
    - Main search function
 
 3. **Issues Identified**
+
    - Substring matching vs. word matching
    - Early return in calculateRelevance
    - Case sensitivity handling
    - Space handling problems
 
 4. **Real-World Impact**
+
    - Patterns affected
    - Why users see empty results
    - Error examples
 
 5. **Code Locations**
+
    - Implementation files with line numbers
    - Schema definitions
    - Data loading layer
@@ -122,12 +140,15 @@ This directory contains comprehensive documentation about the search implementat
 ### Other Documentation Files
 
 #### SEARCH_ALGORITHM_QUICK_REFERENCE.md (6.0 KB, 190 lines)
+
 Quick lookup guide for algorithm functions and their behavior.
 
 #### SEARCH_ALGORITHM_VISUALIZATION.md (13 KB, 315 lines)
+
 Visual diagrams and flowcharts of the search algorithm.
 
 #### SEARCH_ANALYSIS_INDEX.md (8.1 KB, 264 lines)
+
 Index of analysis topics and problem breakdown.
 
 ---
@@ -188,29 +209,34 @@ Reason: Space character doesn't match hyphen
 ## Navigation by Use Case
 
 ### I want to understand the search architecture
+
 1. Read: SEARCH_IMPLEMENTATION_FINDINGS.md (sections 1-7)
 2. Reference: SEARCH_FILES_INDEX.md (dependency graph section)
 3. Visual: SEARCH_ALGORITHM_VISUALIZATION.md
 
 ### I need to fix the fuzzy matching bug
+
 1. Read: SEARCH_ALGORITHM_ANALYSIS.md (problem description)
 2. Navigate to: packages/toolkit/src/search.ts (line 33-63)
 3. Reference: SEARCH_FILES_INDEX.md (quick edit guide)
 4. Review: Recommended solutions section
 
 ### I want to improve search results
+
 1. Read: SEARCH_IMPLEMENTATION_FINDINGS.md (section 10)
 2. Understand: Current limitations (section 9)
 3. Plan: Enhancement opportunities with roadmap
 4. Implement: According to difficulty level
 
 ### I need to add Supermemory features
+
 1. Navigate: SEARCH_FILES_INDEX.md (Supermemory section)
 2. Reference: app/code-assistant/lib/memory.ts (code examples)
 3. Study: API patterns (search.memories, memories.add)
 4. Implement: Following existing patterns
 
 ### I want to integrate vector search
+
 1. Read: SEARCH_IMPLEMENTATION_FINDINGS.md (section 10, vector search)
 2. Reference: packages/toolkit/src/services/search.ts (service pattern)
 3. Plan: Hybrid approach (fuzzy + vector)
@@ -220,36 +246,41 @@ Reason: Space character doesn't match hyphen
 
 ## File Statistics
 
-| File | Size | Lines | Purpose |
-|------|------|-------|---------|
-| SEARCH_IMPLEMENTATION_FINDINGS.md | 13 KB | 480 | Main architecture overview |
-| SEARCH_FILES_INDEX.md | 9.4 KB | 317 | Quick navigation reference |
-| SEARCH_ALGORITHM_ANALYSIS.md | 11 KB | 349 | Algorithm limitations |
-| SEARCH_ALGORITHM_VISUALIZATION.md | 13 KB | 315 | Visual diagrams |
-| SEARCH_ALGORITHM_QUICK_REFERENCE.md | 6.0 KB | 190 | Quick lookup guide |
-| SEARCH_ANALYSIS_INDEX.md | 8.1 KB | 264 | Topic index |
-| **TOTAL** | **60 KB** | **1,915** | Complete search documentation |
+| File                                | Size      | Lines     | Purpose                       |
+| ----------------------------------- | --------- | --------- | ----------------------------- |
+| SEARCH_IMPLEMENTATION_FINDINGS.md   | 13 KB     | 480       | Main architecture overview    |
+| SEARCH_FILES_INDEX.md               | 9.4 KB    | 317       | Quick navigation reference    |
+| SEARCH_ALGORITHM_ANALYSIS.md        | 11 KB     | 349       | Algorithm limitations         |
+| SEARCH_ALGORITHM_VISUALIZATION.md   | 13 KB     | 315       | Visual diagrams               |
+| SEARCH_ALGORITHM_QUICK_REFERENCE.md | 6.0 KB    | 190       | Quick lookup guide            |
+| SEARCH_ANALYSIS_INDEX.md            | 8.1 KB    | 264       | Topic index                   |
+| **TOTAL**                           | **60 KB** | **1,915** | Complete search documentation |
 
 ---
 
 ## Code Locations Quick Reference
 
 ### Search Algorithms
+
 - Pure functions: `packages/toolkit/src/search.ts`
 - Effect service: `packages/toolkit/src/services/search.ts`
 
 ### Supermemory Integration
+
 - Memory service: `app/code-assistant/lib/memory.ts`
 - Preferences hook: `app/code-assistant/lib/hooks/use-user-preferences.ts`
 
 ### AI Tools
+
 - Search tools: `app/code-assistant/lib/ai/tools/search-patterns.ts`
 
 ### API Endpoints
+
 - Chat API: `app/code-assistant/app/(chat)/api/chat/route.ts`
 - Preferences API: `app/code-assistant/app/(chat)/api/user/preferences/route.ts`
 
 ### Data
+
 - Pattern index: `data/patterns-index.json`
 - Pattern source: `content/published/`
 
@@ -276,6 +307,7 @@ Reason: Space character doesn't match hyphen
 ---
 
 **Questions?** Refer to the specific document:
+
 - Architecture questions → SEARCH_IMPLEMENTATION_FINDINGS.md
 - Navigation questions → SEARCH_FILES_INDEX.md
 - Bug fix questions → SEARCH_ALGORITHM_ANALYSIS.md

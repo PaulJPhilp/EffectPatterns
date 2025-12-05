@@ -10,14 +10,14 @@ This module will teach you the most important pattern matching techniques in the
 
 ## Pattern Matching Quick Reference
 
-| Pattern Matching Tool         | Purpose / Mental Model                                 | Pattern Link                                 |
-|------------------------------|-------------------------------------------------------|----------------------------------------------|
-| `match`                      | Handle both success and failure cases in one place     | [Matching on Success and Failure with match](./patterns/pattern-match) |
-| `matchTag`, `matchTags`      | Match on specific tagged union cases                   | [Matching Tagged Unions with matchTag and matchTags](./patterns/pattern-matchtag) |
-| `matchEffect`                | Pattern match with effectful branches                  | [Effectful Pattern Matching with matchEffect](./patterns/pattern-matcheffect) |
-| `catchTag`, `catchTags`      | Handle specific error types in the failure channel     | [Handling Specific Errors with catchTag and catchTags](./patterns/pattern-catchtag) |
-| `Option.match`, `Either.match` | Handle Option/Either cases declaratively             | [Pattern Matching on Option and Either](./patterns/pattern-option-either-match) |
-| `isSome`, `isNone`, `isLeft`, `isRight` | Simple case checks for Option/Either         | [Checking Option and Either Cases](./patterns/pattern-option-either-checks) |
+| Pattern Matching Tool                   | Purpose / Mental Model                             | Pattern Link                                                                        |
+| --------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `match`                                 | Handle both success and failure cases in one place | [Matching on Success and Failure with match](./patterns/pattern-match)              |
+| `matchTag`, `matchTags`                 | Match on specific tagged union cases               | [Matching Tagged Unions with matchTag and matchTags](./patterns/pattern-matchtag)   |
+| `matchEffect`                           | Pattern match with effectful branches              | [Effectful Pattern Matching with matchEffect](./patterns/pattern-matcheffect)       |
+| `catchTag`, `catchTags`                 | Handle specific error types in the failure channel | [Handling Specific Errors with catchTag and catchTags](./patterns/pattern-catchtag) |
+| `Option.match`, `Either.match`          | Handle Option/Either cases declaratively           | [Pattern Matching on Option and Either](./patterns/pattern-option-either-match)     |
+| `isSome`, `isNone`, `isLeft`, `isRight` | Simple case checks for Option/Either               | [Checking Option and Either Cases](./patterns/pattern-option-either-checks)         |
 
 ---
 
@@ -26,18 +26,23 @@ This module will teach you the most important pattern matching techniques in the
 Follow these patterns in order to build a comprehensive understanding of pattern matching, from the basics to more advanced scenarios.
 
 1.  #### [Matching on Success and Failure with match](./patterns/pattern-match)
+
     **Goal**: Learn how to handle both success and failure cases in a single, declarative place.
 
 2.  #### [Matching Tagged Unions with matchTag and matchTags](./patterns/pattern-matchtag)
+
     **Goal**: Match on specific tagged union cases for precise, type-safe branching.
 
 3.  #### [Effectful Pattern Matching with matchEffect](./patterns/pattern-matcheffect)
+
     **Goal**: Use effectful branches in your pattern matches for richer workflows.
 
 4.  #### [Handling Specific Errors with catchTag and catchTags](./patterns/pattern-catchtag)
+
     **Goal**: Recover from or handle specific error types in the Effect failure channel.
 
 5.  #### [Pattern Matching on Option and Either](./patterns/pattern-option-either-match)
+
     **Goal**: Handle Option and Either cases declaratively, without manual checks.
 
 6.  #### [Checking Option and Either Cases](./patterns/pattern-option-either-checks)
@@ -46,6 +51,7 @@ Follow these patterns in order to build a comprehensive understanding of pattern
 ---
 
 **By the end of this module, you’ll be able to:**
+
 - Write robust, readable code that handles all possible cases for your data and errors.
 - Avoid nested if/else and switch statements in favor of declarative, type-safe pattern matching.
 - Leverage the full power of Effect’s pattern matching combinators for business logic, error handling, and more.

@@ -19,7 +19,8 @@ const option = Option.none(); // Option<never>
 const either = Either.left("Invalid input"); // Either<string, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fail(error)` creates an effect that always fails with `error`.
 - `Option.none()` creates an option that is always absent.
 - `Either.left(error)` creates an either that always represents failure.
@@ -45,10 +46,10 @@ const option = Option.some("hello"); // Option<string>
 const either = Either.right({ id: 1 }); // Either<never, { id: number }>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.succeed(value)` creates an effect that always succeeds with `value`.
 - `Option.some(value)` creates an option that is always present.
 - `Either.right(value)` creates an either that always represents success.
 
 ---
-

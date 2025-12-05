@@ -16,6 +16,7 @@
 The Supermemory API structure is different from what the code expects:
 
 **What the code expects:**
+
 ```javascript
 {
   id: "...",
@@ -25,6 +26,7 @@ The Supermemory API structure is different from what the code expects:
 ```
 
 **What the API actually returns:**
+
 ```javascript
 {
   id: "...",
@@ -51,25 +53,27 @@ The Supermemory API structure is different from what the code expects:
 
 ### 2. Pattern Storage Statistics
 
-| Metric | Count | Notes |
-|--------|-------|-------|
-| Total patterns | 521 | Across 13 pages |
-| With userId | 391 | userId: "system:patterns" |
-| Without userId | 130 | Missing system ID |
-| With projectId | 0 | ❌ None have projectId set |
-| With patternId in metadata | 521 | ✅ All have this |
-| With title in metadata | 521 | ✅ All have this |
-| Searchable via API | ~0 | ❌ Search returns no results |
+| Metric                     | Count | Notes                        |
+| -------------------------- | ----- | ---------------------------- |
+| Total patterns             | 521   | Across 13 pages              |
+| With userId                | 391   | userId: "system:patterns"    |
+| Without userId             | 130   | Missing system ID            |
+| With projectId             | 0     | ❌ None have projectId set   |
+| With patternId in metadata | 521   | ✅ All have this             |
+| With title in metadata     | 521   | ✅ All have this             |
+| Searchable via API         | ~0    | ❌ Search returns no results |
 
 ### 3. Search API Issues
 
 Testing search for common terms:
+
 - "retry": 0 results (0 patterns)
 - "error": 0 results (0 patterns)
 - "effect": 1 result (0 patterns - was a test memory)
 - "layer": 0 results (0 patterns)
 
 **Why search doesn't work:**
+
 1. The `SupermemoryStore` code looks for `memory` field (which is undefined)
 2. It tries to parse `memory` as JSON (fails)
 3. It filters by `projectId: "effect-patterns"` (none exist)
@@ -85,25 +89,26 @@ Location: `/Users/paul/Projects/Published/Effect-Patterns/app/code-assistant/lib
 // Parse the memory content
 let data: any;
 try {
-  data = JSON.parse(memory.memory || "{}");  // ❌ memory.memory is undefined
+  data = JSON.parse(memory.memory || "{}"); // ❌ memory.memory is undefined
 } catch {
   data = {};
 }
 ```
 
 **Fix needed:** Use top-level fields instead:
+
 ```typescript
 // Use metadata and top-level fields instead
 const data = {
   type: memory.metadata?.type,
   patternId: memory.metadata?.patternId,
-  title: memory.title,  // ✅ Top-level field
-  summary: memory.summary,  // ✅ Top-level field
+  title: memory.title, // ✅ Top-level field
+  summary: memory.summary, // ✅ Top-level field
   skillLevel: memory.metadata?.skillLevel,
-  tags: memory.metadata?.tags ? memory.metadata.tags.split(',') : [],
+  tags: memory.metadata?.tags ? memory.metadata.tags.split(",") : [],
   userId: memory.metadata?.userId,
-  content: memory.summary || "",  // ✅ Use summary as content
-  timestamp: memory.createdAt,  // ✅ Top-level field
+  content: memory.summary || "", // ✅ Use summary as content
+  timestamp: memory.createdAt, // ✅ Top-level field
 };
 ```
 
@@ -126,6 +131,7 @@ metadata: {
 ```
 
 **Investigation needed:**
+
 - Is `projectId` a supported metadata field in Supermemory v3.4.0?
 - Should we use a different approach to "projects"?
 - Does Supermemory have a concept of workspaces or spaces?
@@ -138,7 +144,8 @@ Location: `/Users/paul/Projects/Published/Effect-Patterns/app/code-assistant/lib
 // For patterns, verify they're in the effect-patterns project
 if (memoryType === "effect_pattern") {
   const projectId = memory.metadata?.projectId;
-  if (projectId !== this.effectPatternsProjectId) {  // ❌ Always fails (projectId is undefined)
+  if (projectId !== this.effectPatternsProjectId) {
+    // ❌ Always fails (projectId is undefined)
     console.log(
       `[SupermemoryStore] Skipping pattern with different project: ${projectId} (expected: ${this.effectPatternsProjectId})`
     );
@@ -149,6 +156,7 @@ if (memoryType === "effect_pattern") {
 ```
 
 **Fix needed:** Remove projectId filter or use a different identifier:
+
 ```typescript
 // Accept all patterns with type === "effect_pattern"
 if (memoryType === "effect_pattern") {
@@ -160,25 +168,27 @@ if (memoryType === "effect_pattern") {
 
 Based on the investigation:
 
-| Question | Answer |
-|----------|--------|
-| Does "effect-patterns" project exist? | ❌ No |
-| Are patterns organized by project? | ❌ No - no projectId on any memory |
-| How are patterns identified? | ✅ By `metadata.type === "effect_pattern"` |
-| Are patterns associated with users? | ✅ Yes - `metadata.userId === "system:patterns"` |
-| Can we search patterns? | ❌ No - search API returns no results |
-| Can we list patterns? | ✅ Yes - via `client.memories.list()` |
+| Question                              | Answer                                           |
+| ------------------------------------- | ------------------------------------------------ |
+| Does "effect-patterns" project exist? | ❌ No                                            |
+| Are patterns organized by project?    | ❌ No - no projectId on any memory               |
+| How are patterns identified?          | ✅ By `metadata.type === "effect_pattern"`       |
+| Are patterns associated with users?   | ✅ Yes - `metadata.userId === "system:patterns"` |
+| Can we search patterns?               | ❌ No - search API returns no results            |
+| Can we list patterns?                 | ✅ Yes - via `client.memories.list()`            |
 
 ## Supermemory API Capabilities
 
 Based on the Supermemory SDK v3.4.0:
 
 ### Client Methods Available:
+
 - `client.memories.list({ page, limit })` - ✅ Works
 - `client.memories.add({ content, metadata })` - ✅ Works
 - `client.search.memories({ q, limit })` - ⚠️ Works but returns different structure
 
 ### Metadata Fields (Confirmed):
+
 - `type` - ✅ Stored and retrievable
 - `patternId` - ✅ Stored and retrievable
 - `title` - ✅ Stored and retrievable (also in top-level)
@@ -190,6 +200,7 @@ Based on the Supermemory SDK v3.4.0:
 - `projectId` - ❌ NOT found in any memory (may not be supported)
 
 ### Search Behavior:
+
 - Returns memories based on semantic similarity to query
 - Uses embeddings internally (handled by Supermemory)
 - Result structure includes `title`, `summary`, `type`, but NOT `memory` field
@@ -248,12 +259,14 @@ Based on the Supermemory SDK v3.4.0:
 ## Code Files to Update
 
 1. `/Users/paul/Projects/Published/Effect-Patterns/app/code-assistant/lib/semantic-search/supermemory-store.ts`
+
    - Update `searchByList()` method (lines 198-204)
    - Remove projectId filter (lines 186-195)
    - Update `search()` method (lines 386-390)
    - Update `searchByTag()` method (similar changes)
 
 2. `/Users/paul/Projects/Published/Effect-Patterns/app/code-assistant/scripts/seed-patterns.ts`
+
    - Update metadata structure (line 169)
    - Consider removing projectId or using it differently
 

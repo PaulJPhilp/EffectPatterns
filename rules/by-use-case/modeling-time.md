@@ -17,13 +17,17 @@ interface Token {
 }
 
 // This function is pure and testable because it depends on Clock
-const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock.Clock> =>
+const isTokenExpired = (
+  token: Token
+): Effect.Effect<boolean, never, Clock.Clock> =>
   Clock.currentTimeMillis.pipe(
     Effect.map((now) => now > token.expiresAt),
-    Effect.tap((expired) => 
+    Effect.tap((expired) =>
       Clock.currentTimeMillis.pipe(
-        Effect.flatMap((currentTime) => 
-          Effect.log(`Token expired? ${expired} (current time: ${new Date(currentTime).toISOString()})`)
+        Effect.flatMap((currentTime) =>
+          Effect.log(
+            `Token expired? ${expired} (current time: ${new Date(currentTime).toISOString()})`
+          )
         )
       )
     )
@@ -65,9 +69,7 @@ const program = Effect.gen(function* () {
 
 // Run the program with default clock
 Effect.runPromise(
-  program.pipe(
-    Effect.provideService(Clock.Clock, makeTestClock(Date.now()))
-  )
+  program.pipe(Effect.provideService(Clock.Clock, makeTestClock(Date.now())))
 );
 ```
 
@@ -93,7 +95,9 @@ interface Event {
 }
 
 // This function is pure and testable because it depends on Clock
-const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> =>
+const createEvent = (
+  message: string
+): Effect.Effect<Event, never, Types.Clock> =>
   Effect.gen(function* () {
     const timestamp = yield* Clock.currentTimeMillis;
     return { message, timestamp };
@@ -181,10 +185,8 @@ const demonstration = Effect.gen(function* () {
 });
 
 Effect.runPromise(demonstration);
-
 ```
 
 ---
 
 ---
-

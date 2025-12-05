@@ -1,6 +1,7 @@
 # Fixed Duplicate Model Key Error ✅
 
 ## Summary
+
 Resolved React error about duplicate keys in the model selector dropdown caused by two entries with the same display name "Gemini 2.5 Flash".
 
 **Status**: ✅ **Fixed - Build Passes**
@@ -10,17 +11,18 @@ Resolved React error about duplicate keys in the model selector dropdown caused 
 ## The Problem
 
 React console error:
+
 ```
-Encountered two children with the same key, `Gemini 2.5 Flash`. 
+Encountered two children with the same key, `Gemini 2.5 Flash`.
 Keys should be unique so that components maintain their identity across updates.
 ```
 
 ### Root Cause
+
 In `lib/ai/models.ts`, we had two model entries with identical display names:
 
 1. **DEFAULT model** (id: `chat-model`)
    - Name: "Gemini 2.5 Flash"
-   
 2. **GEMINI_2_5_FLASH model** (id: `gemini-2.5-flash`)
    - Name: "Gemini 2.5 Flash"
 
@@ -33,6 +35,7 @@ The UI component was using the display name as the React key, causing a duplicat
 Renamed the explicit Gemini 2.5 Flash entry to clarify it's a separate option:
 
 **Before**:
+
 ```typescript
 {
   id: CHAT_MODEL_IDS.GEMINI_2_5_FLASH,
@@ -42,6 +45,7 @@ Renamed the explicit Gemini 2.5 Flash entry to clarify it's a separate option:
 ```
 
 **After**:
+
 ```typescript
 {
   id: CHAT_MODEL_IDS.GEMINI_2_5_FLASH,
@@ -55,6 +59,7 @@ Renamed the explicit Gemini 2.5 Flash entry to clarify it's a separate option:
 ## Model Selector Display
 
 Now shows unique names:
+
 ```
 Gemini 2.5 Flash (default)              ← Selected by default
 ├─ Grok Reasoning
@@ -67,10 +72,12 @@ Gemini 2.5 Flash (default)              ← Selected by default
 ```
 
 ### Why Both 2.5 Entries?
+
 - **DEFAULT**: Users who don't specify - gets Gemini 2.5
 - **Explicit**: Users who explicitly want to ensure they're using 2.5 (vs 2.0)
 
 Both point to the same underlying model (`gemini-2.5-flash-001`), but having the explicit option is useful for:
+
 - Model selection preferences that might be saved per-chat
 - Users who want to explicitly state their model choice
 - Fallback if we add new defaults in the future
@@ -80,6 +87,7 @@ Both point to the same underlying model (`gemini-2.5-flash-001`), but having the
 ## Build Status
 
 ✅ **Build Successful**
+
 ```
 ✓ Compiled successfully in 29.4s
 ✓ Generating static pages (18/18) in 797.8ms
@@ -91,10 +99,12 @@ Running TypeScript ... ✓
 ## Testing
 
 ### Console Errors
+
 - ✅ No more duplicate key warnings
 - ✅ Model selector renders without React warnings
 
 ### Model Selection
+
 - ✅ Default model still uses Gemini 2.5
 - ✅ Can select "Gemini 2.5 Flash (Explicit)" explicitly
 - ✅ All other models work as before
@@ -103,8 +113,8 @@ Running TypeScript ... ✓
 
 ## Files Modified
 
-| File | Change |
-|------|--------|
+| File               | Change                                                               |
+| ------------------ | -------------------------------------------------------------------- |
 | `lib/ai/models.ts` | Renamed GEMINI_2_5_FLASH display name to include "(Explicit)" suffix |
 
 **Lines Changed**: 2 (name and description)
@@ -114,6 +124,7 @@ Running TypeScript ... ✓
 ## Backward Compatibility
 
 ✅ **Fully compatible**
+
 - Model IDs unchanged (still `gemini-2.5-flash`)
 - API contracts unaffected
 - Chat history preserved

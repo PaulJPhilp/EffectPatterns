@@ -29,10 +29,10 @@ const e3 = Either.left("fail2");
 const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
 const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
 const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Either.right(value)` represents success.
 - `Either.left(error)` represents failure.
 - Pattern matching ensures all cases are handled.
@@ -62,7 +62,8 @@ const set = HashSet.make(user1);
 console.log(HashSet.has(set, user2)); // true
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.struct` creates immutable objects with value-based equality.
 - Use for domain entities, value objects, and when storing objects in sets or as map keys.
 - Avoids bugs from reference-based comparison.
@@ -101,10 +102,10 @@ const handled = program.pipe(
     })
   )
 );
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
 - Use `Cause.pretty` for human-readable error traces.
 - Enables advanced error handling and debugging.
@@ -125,9 +126,7 @@ const makeCounter = Ref.make(0);
 
 // Increment the counter atomically
 const increment = makeCounter.pipe(
-  Effect.flatMap((counter) =>
-    Ref.update(counter, (n) => n + 1)
-  )
+  Effect.flatMap((counter) => Ref.update(counter, (n) => n + 1))
 );
 
 // Read the current value
@@ -144,7 +143,8 @@ const program = Effect.gen(function* () {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Ref` is an atomic, mutable reference for effectful and concurrent code.
 - All operations are safe, composable, and free of race conditions.
 - Use `Ref` for counters, caches, or any shared mutable state.
@@ -179,10 +179,10 @@ const result = someValue.pipe(
 function findUser(id: number): Option.Option<{ id: number; name: string }> {
   return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
 }
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Option.some(value)` represents a present value.
 - `Option.none()` represents absence.
 - `Option.fromNullable` safely lifts nullable values into Option.
@@ -214,7 +214,8 @@ runAndCapture.then((exit) => {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
 - Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
 - Pattern matching on `Exit` lets you handle all possible outcomes.
@@ -232,16 +233,16 @@ import { Data } from "effect";
 
 // Define a tagged union for a simple state machine
 type State = Data.TaggedEnum<{
-  Loading: {}
-  Success: { data: string }
-  Failure: { error: string }
-}>
-const { Loading, Success, Failure } = Data.taggedEnum<State>()
+  Loading: {};
+  Success: { data: string };
+  Failure: { error: string };
+}>;
+const { Loading, Success, Failure } = Data.taggedEnum<State>();
 
 // Create instances
-const state1: State = Loading()
-const state2: State = Success({ data: "Hello" })
-const state3: State = Failure({ error: "Oops" })
+const state1: State = Loading();
+const state2: State = Success({ data: "Hello" });
+const state3: State = Failure({ error: "Oops" });
 
 // Pattern match on the state
 function handleState(state: State): string {
@@ -256,7 +257,8 @@ function handleState(state: State): string {
 }
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.case` creates tagged constructors for each state.
 - The `_tag` property enables exhaustive pattern matching.
 - Use for domain modeling, state machines, and error types.
@@ -283,10 +285,10 @@ function authenticate(user: string, password: Redacted.Redacted<string>) {
 // Logging or stringifying a Redacted value
 console.log(`Password: ${secret}`); // Output: Password: <redacted>
 console.log(String(secret)); // Output: <redacted>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Redacted.make(value)` wraps a sensitive value.
 - When logged or stringified, the value is replaced with `<redacted>`.
 - Prevents accidental exposure of secrets in logs or error messages.
@@ -314,10 +316,10 @@ const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
 // Convert to milliseconds or human-readable format
 const ms = Duration.toMillis(fiveMinutes); // 300000
 const readable = Duration.format(oneSecond); // "1s"
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Duration` is immutable and type-safe.
 - Use helpers for common intervals and arithmetic for composition.
 - Prefer `Duration` over raw numbers for all time-based logic.
@@ -349,10 +351,10 @@ console.log(HashSet.has(set, user2)); // true (structural equality)
 // Create an array and use structural equality
 const users = [user1, user3];
 console.log(users.some((u) => Equal.equals(u, user2))); // true
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.Class.getEqual` derives an equality type class for your data type.
 - `Data.Class.getOrder` derives an ordering type class, useful for sorting.
 - `Data.Class.getHash` derives a hash function for use in sets and maps.
@@ -384,7 +386,8 @@ const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
 const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Chunk` is immutable and optimized for performance.
 - It supports efficient batch operations, concatenation, and transformation.
 - Use `Chunk` in data pipelines, streaming, and concurrent scenarios.
@@ -416,7 +419,8 @@ const asString = BigDecimal.format(BigDecimal.normalize(sum)); // "0.3"
 const asNumber = BigDecimal.unsafeToNumber(sum); // 0.3
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `BigDecimal` is immutable and supports precise decimal arithmetic.
 - Use it for domains where rounding errors are unacceptable (e.g., finance, billing, scientific data).
 - Avoids the pitfalls of floating-point math in JavaScript.
@@ -453,10 +457,10 @@ const program = Effect.gen(function* () {
 
   return { now, inOneHour, oneHourAgo, iso, isBefore };
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `DateTime` is immutable and time-zone-aware.
 - Supports parsing, formatting, arithmetic, and comparison.
 - Use for all date/time logic to avoid bugs with native `Date`.
@@ -480,16 +484,17 @@ const setB = HashSet.fromIterable([3, 4, 5]);
 const hasTwo = HashSet.has(setA, 2); // true
 
 // Union, intersection, difference
-const union = HashSet.union(setA, setB);         // HashSet {1, 2, 3, 4, 5}
+const union = HashSet.union(setA, setB); // HashSet {1, 2, 3, 4, 5}
 const intersection = HashSet.intersection(setA, setB); // HashSet {3}
-const difference = HashSet.difference(setA, setB);     // HashSet {1, 2}
+const difference = HashSet.difference(setA, setB); // HashSet {1, 2}
 
 // Add and remove elements
-const withSix = HashSet.add(setA, 6);    // HashSet {1, 2, 3, 6}
+const withSix = HashSet.add(setA, 6); // HashSet {1, 2, 3, 6}
 const withoutOne = HashSet.remove(setA, 1); // HashSet {2, 3}
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `HashSet` is immutable and supports efficient set operations.
 - Use it for membership checks, set algebra, and modeling unique collections.
 - Safe for concurrent and functional workflows.
@@ -521,7 +526,8 @@ console.log(HashSet.has(set, arr2)); // true
 const doubled = arr1.map((n) => n * 2); // Data.array([2, 4, 6])
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.array` creates immutable arrays with value-based equality.
 - Useful for modeling ordered collections in a safe, functional way.
 - Supports all standard array operations, but with immutability and structural equality.
@@ -553,10 +559,10 @@ console.log(HashSet.has(set, t2)); // true
 const [id, name] = t1; // id: number, name: string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.tuple` creates immutable tuples with value-based equality.
 - Useful for modeling pairs, coordinates, or any fixed-size, heterogeneous data.
 - Supports safe pattern matching and collection operations.
 
 ---
-

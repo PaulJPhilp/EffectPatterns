@@ -7,7 +7,7 @@ on:
     branches: [main]
   schedule:
     # Run weekly on Mondays at 9:00 UTC
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
   workflow_dispatch:
 
 # Cancel in-progress runs for the same workflow + branch/PR
@@ -80,7 +80,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0  # Full history for comprehensive scan
+          fetch-depth: 0 # Full history for comprehensive scan
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
@@ -99,7 +99,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['javascript', 'typescript']
+        language: ["javascript", "typescript"]
 
     steps:
       - name: Checkout code
@@ -195,15 +195,15 @@ jobs:
         if: steps.check-dockerfile.outputs.exists == 'true'
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'effect-patterns-mcp-server:test'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          image-ref: "effect-patterns-mcp-server:test"
+          format: "sarif"
+          output: "trivy-results.sarif"
 
       - name: Upload Trivy results to GitHub Security
         if: steps.check-dockerfile.outputs.exists == 'true'
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: "trivy-results.sarif"
 
   sbom-generation:
     name: Generate Software Bill of Materials

@@ -31,7 +31,6 @@ const stream = Stream.fromIterable([
   [1, 2],
   [3, 4],
 ]).pipe(Stream.flatMap((arr) => Stream.fromIterable(arr))); // Stream<number>
-
 ```
 
 **Explanation:**  
@@ -39,4 +38,3 @@ const stream = Stream.fromIterable([
 They handle errors and context automatically, and can be used for batch jobs, parallel requests, or data transformations.
 
 ---
-

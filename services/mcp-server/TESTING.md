@@ -11,6 +11,7 @@ The MCP server has two types of tests:
 **Status:** ✅ All passing (33 tests)
 
 Unit tests verify individual services and components in isolation:
+
 - Configuration service
 - Logger service
 - Cache service
@@ -28,6 +29,7 @@ These tests run quickly and don't require any external dependencies.
 **Status:** ⏭️ Skipped by default (require running server)
 
 Integration tests verify the full API endpoints end-to-end:
+
 - Authentication flow
 - Pattern search and retrieval
 - Code generation
@@ -36,6 +38,7 @@ Integration tests verify the full API endpoints end-to-end:
 - Error handling
 
 **Requirements:**
+
 - Running Next.js dev server (`bun run dev`) or production server
 - Set `TEST_BASE_URL` env var (default: `http://localhost:3000`)
 - Set `PATTERN_API_KEY` env var for authentication tests
@@ -153,12 +156,12 @@ This provides full coverage but takes longer and requires deployment.
 ### Unit Test Example
 
 ```typescript
-import { Effect } from 'effect';
-import { describe, it, expect } from 'vitest';
-import { MCPConfigService, MCPConfigServiceLive } from './services/config.js';
+import { Effect } from "effect";
+import { describe, it, expect } from "vitest";
+import { MCPConfigService, MCPConfigServiceLive } from "./services/config.js";
 
-describe('MCPConfigService', () => {
-  it('should provide configuration values', async () => {
+describe("MCPConfigService", () => {
+  it("should provide configuration values", async () => {
     const result = await Effect.runPromise(
       Effect.gen(function* () {
         const config = yield* MCPConfigService;
@@ -167,7 +170,7 @@ describe('MCPConfigService', () => {
       }).pipe(Effect.provide(MCPConfigServiceLive))
     );
 
-    expect(result).toBe('test-api-key');
+    expect(result).toBe("test-api-key");
   });
 });
 ```
@@ -175,15 +178,15 @@ describe('MCPConfigService', () => {
 ### Integration Test Example
 
 ```typescript
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
-const API_KEY = process.env.PATTERN_API_KEY || 'test-api-key';
+const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:3000";
+const API_KEY = process.env.PATTERN_API_KEY || "test-api-key";
 
-describe('API Integration', () => {
-  it('should search patterns', async () => {
+describe("API Integration", () => {
+  it("should search patterns", async () => {
     const response = await fetch(`${BASE_URL}/api/patterns`, {
-      headers: { 'x-api-key': API_KEY },
+      headers: { "x-api-key": API_KEY },
     });
 
     expect(response.status).toBe(200);
@@ -195,11 +198,11 @@ describe('API Integration', () => {
 
 ## Test Results Summary
 
-| Test Suite | Tests | Status |
-|------------|-------|--------|
-| Unit Tests | 33 | ✅ All passing |
-| Integration Tests | 39 | ⏭️ Skipped (require server) |
-| **Total** | **72** | **33 passing, 39 skipped** |
+| Test Suite        | Tests  | Status                      |
+| ----------------- | ------ | --------------------------- |
+| Unit Tests        | 33     | ✅ All passing              |
+| Integration Tests | 39     | ⏭️ Skipped (require server) |
+| **Total**         | **72** | **33 passing, 39 skipped**  |
 
 ## Troubleshooting
 
@@ -215,6 +218,7 @@ bun install
 ### "Test timed out after 5000ms"
 
 Integration tests are running but no server is available. Either:
+
 1. Start a local server: `bun run dev`
 2. Skip integration tests: Use `bun test` instead of `bun run test:integration`
 
@@ -240,4 +244,3 @@ When adding new features:
 - [Vitest Documentation](https://vitest.dev/)
 - [Effect Testing Guide](https://effect.website/docs/guides/testing)
 - [Next.js Testing](https://nextjs.org/docs/app/building-your-application/testing)
-

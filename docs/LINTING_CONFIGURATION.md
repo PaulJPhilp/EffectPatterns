@@ -11,6 +11,7 @@ This document explains the linting configuration for the Effect-Patterns reposit
 ### The Issue
 
 When editing `.github/workflows/*.yml` files with the GitHub Actions extension installed, you may see warnings like:
+
 ```
 Context access might be invalid: VERCEL_TOKEN
 Context access might be invalid: VERCEL_ORG_ID
@@ -22,6 +23,7 @@ These appear **50+ times** in the deploy.yml file and can be noisy.
 ### Why This Happens
 
 These warnings come from **VS Code's GitHub Actions validator extension**, not from yamllint. The extension can't validate that:
+
 - GitHub repository secrets exist (requires API access)
 - Dynamic context expressions are correct at runtime
 
@@ -36,6 +38,7 @@ However, these are **safe and expected**. Secrets configured in your GitHub repo
 3. Select the option
 
 This:
+
 - ✅ Removes all ~50 false positive warnings
 - ✅ Keeps YAML syntax highlighting
 - ✅ Keeps file associations for `.yml` files
@@ -59,6 +62,7 @@ See `.vscode/GITHUB_ACTIONS_CONFIG.md` for detailed instructions.
 ### YAML Formatting
 
 Our YAML follows these standards:
+
 - 2-space indentation
 - No document start markers (`---`) in workflows
 - Max 120 character lines
@@ -67,6 +71,7 @@ Our YAML follows these standards:
 ## Common Linting Tasks
 
 ### Check YAML files
+
 ```bash
 # Using yamllint directly
 yamllint .github/workflows/
@@ -76,6 +81,7 @@ yamllint .github/workflows/
 ```
 
 ### Format YAML files
+
 ```bash
 # Using prettier
 npx prettier --write ".github/workflows/*.yml"
@@ -87,6 +93,7 @@ npx prettier --write ".github/workflows/*.yml"
 ## GitHub Actions Best Practices
 
 ### Using Secrets
+
 ```yaml
 # ✅ This is valid at runtime (don't worry about the linter warning)
 with:
@@ -97,6 +104,7 @@ with:
 **Secret validation happens at GitHub runtime**, not in the editor.
 
 ### Using Contexts
+
 ```yaml
 # ✅ All valid GitHub Actions contexts
 - run: echo ${{ github.event_name }}

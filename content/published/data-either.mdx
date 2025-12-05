@@ -59,10 +59,10 @@ const e3 = Either.left("fail2");
 const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
 const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
 const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Either.right(value)` represents success.
 - `Either.left(error)` represents failure.
 - Pattern matching ensures all cases are handled.

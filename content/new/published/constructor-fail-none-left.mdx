@@ -4,7 +4,18 @@ id: "constructor-fail-none-left"
 skillLevel: "beginner"
 useCase: ["Constructors", "Lifting", "Error Handling", "Absence"]
 summary: "Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe."
-tags: ["fail", "none", "left", "constructor", "effect", "option", "either", "error", "absence"]
+tags:
+  [
+    "fail",
+    "none",
+    "left",
+    "constructor",
+    "effect",
+    "option",
+    "either",
+    "error",
+    "absence",
+  ]
 rule:
   description: "Use fail, none, and left to create Effect, Option, or Either that represent failure or absence."
 related: ["constructor-succeed-some-right", "constructor-try-trypromise"]
@@ -38,7 +49,8 @@ const option = Option.none(); // Option<never>
 const either = Either.left("Invalid input"); // Either<string, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fail(error)` creates an effect that always fails with `error`.
 - `Option.none()` creates an option that is always absent.
 - `Either.left(error)` creates an either that always represents failure.

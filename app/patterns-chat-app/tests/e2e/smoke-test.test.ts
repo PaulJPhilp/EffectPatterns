@@ -29,9 +29,7 @@ test.describe("Smoke Tests", () => {
         const modelSelector = page.locator('[data-testid="model-selector"]');
         if (modelSelector) {
           await modelSelector.click();
-          const modelOption = page.locator(
-            `button:has-text("${model.name}")`
-          );
+          const modelOption = page.locator(`button:has-text("${model.name}")`);
           await modelOption.click();
         }
 

@@ -8,14 +8,14 @@ Comprehensive test coverage for the Supermemory-backed semantic search system in
 
 ### Test Files
 
-| File | Tests | Coverage |
-|------|-------|----------|
-| `mocks.ts` | - | Mock utilities and fixtures |
-| `supermemory-store.test.ts` | 25 | Unit tests for Supermemory Store |
-| `search.test.ts` | 26 | Unit tests for semantic search functions |
-| `chat-integration.test.ts` | 18 | Integration tests for chat route |
-| `api-integration.test.ts` | 26 | Integration tests for search API |
-| `e2e.test.ts` | 13 | End-to-end workflow tests |
+| File                        | Tests | Coverage                                 |
+| --------------------------- | ----- | ---------------------------------------- |
+| `mocks.ts`                  | -     | Mock utilities and fixtures              |
+| `supermemory-store.test.ts` | 25    | Unit tests for Supermemory Store         |
+| `search.test.ts`            | 26    | Unit tests for semantic search functions |
+| `chat-integration.test.ts`  | 18    | Integration tests for chat route         |
+| `api-integration.test.ts`   | 26    | Integration tests for search API         |
+| `e2e.test.ts`               | 13    | End-to-end workflow tests                |
 
 ## Test Suites
 
@@ -24,12 +24,14 @@ Comprehensive test coverage for the Supermemory-backed semantic search system in
 Located in: `supermemory-store.test.ts`
 
 #### add() method tests
+
 - ✓ Store conversation embedding with metadata
 - ✓ Validate embedding dimension (1536 required)
 - ✓ Handle valid 1536-dimensional embeddings
 - ✓ Truncate large content to 5000 characters
 
 #### search() method tests
+
 - ✓ Search conversations with query text
 - ✓ Filter results by userId
 - ✓ Filter results by outcome type
@@ -38,27 +40,32 @@ Located in: `supermemory-store.test.ts`
 - ✓ Estimate similarity scores
 
 #### searchByTag() method tests
+
 - ✓ Find conversations by tag
 - ✓ Filter by multiple tags
 - ✓ Respect limit for tag search
 
 #### getStats() method tests
+
 - ✓ Return correct statistics for user
 - ✓ Count only user's conversations
 - ✓ Return valid utilization percentage (0-100)
 
 #### Error handling tests
+
 - ✓ Handle malformed JSON in memories
 - ✓ Handle missing API key gracefully
 - ✓ Return empty results on search error
 
 #### Metadata validation tests
+
 - ✓ Include all required metadata fields
 - ✓ Preserve outcome values (solved/unsolved/partial/revisited)
 - ✓ Preserve tags array
 - ✓ Preserve satisfaction score
 
 #### Concurrent operations tests
+
 - ✓ Handle multiple simultaneous adds
 - ✓ Handle multiple simultaneous searches
 
@@ -67,45 +74,54 @@ Located in: `supermemory-store.test.ts`
 Located in: `search.test.ts`
 
 #### Keyword relevance scoring
+
 - ✓ Score based on keyword matches
 - ✓ Handle empty query gracefully
 - ✓ Handle very short keywords
 
 #### Recency boost calculation
+
 - ✓ Give full boost for recent timestamps (≤1 day)
 - ✓ Give medium boost for week-old timestamps (1-7 days)
 - ✓ Give low boost for old timestamps (>30 days)
 
 #### Satisfaction boost normalization
+
 - ✓ Normalize satisfaction scores to 0-1 range
 - ✓ Handle edge cases (0 and >5)
 
 #### Tag-based search
+
 - ✓ Filter conversations by tag
 - ✓ Respect limit parameter
 - ✓ Return empty array for non-existent tags
 
 #### Statistics retrieval
+
 - ✓ Return stats object with required fields
 - ✓ Handle empty store
 - ✓ Calculate utilization percentage correctly
 
 #### Problem finding
+
 - ✓ Find conversations matching problem keywords
 - ✓ Return empty array for non-matching keywords
 - ✓ Respect limit parameter
 
 #### Hybrid ranking algorithm
+
 - ✓ Combine multiple scoring signals (60% semantic, 30% keyword, 7% recency, 3% satisfaction)
 - ✓ Handle extreme scores (0 and 1)
 - ✓ Balance semantic with keyword relevance
 
 #### Search result filtering
+
 - ✓ Filter by outcome type
 - ✓ Apply minimum similarity threshold
 - ✓ Respect date range filter
 
 #### Error handling
+
 - ✓ Handle missing data gracefully
 - ✓ Skip results with parsing errors
 - ✓ Handle empty search results
@@ -115,32 +131,38 @@ Located in: `search.test.ts`
 Located in: `chat-integration.test.ts`
 
 #### Conversation storage
+
 - ✓ Store conversation after completion
 - ✓ Include all conversation metadata
 - ✓ Truncate content to 5000 characters
 - ✓ Handle multiple concurrent chat saves
 
 #### Auto-tagging
+
 - ✓ Auto-tag conversations based on content
 - ✓ Handle conversations with no matching tags
 
 #### Outcome detection
+
 - ✓ Detect solved conversations
 - ✓ Detect unsolved conversations
 - ✓ Detect partial solutions
 - ✓ Detect revisited conversations
 
 #### User isolation
+
 - ✓ Store separate embeddings per user
 - ✓ Not leak user data between searches
 
 #### Error handling
+
 - ✓ Not fail chat when embedding fails
 - ✓ Handle rate limiting gracefully
 - ✓ Handle auth errors gracefully
 - ✓ Handle network errors gracefully
 
 #### Performance
+
 - ✓ Handle large conversations efficiently
 - ✓ Batch multiple chats efficiently
 
@@ -149,6 +171,7 @@ Located in: `chat-integration.test.ts`
 Located in: `api-integration.test.ts`
 
 #### GET /api/search endpoint
+
 - ✓ Return search results with query
 - ✓ Include pagination info
 - ✓ Support limit parameter
@@ -159,32 +182,38 @@ Located in: `api-integration.test.ts`
 - ✓ Include metadata in results
 
 #### GET /api/search/stats endpoint
+
 - ✓ Return statistics object
 - ✓ Calculate correct utilization percentage
 
 #### Request validation
+
 - ✓ Validate query parameter
 - ✓ Validate limit parameter
 - ✓ Validate tag parameter
 - ✓ Handle missing required parameters
 
 #### Response formatting
+
 - ✓ Format results correctly
 - ✓ Include all required metadata fields
 - ✓ Handle null/undefined values gracefully
 
 #### Error handling
+
 - ✓ Handle invalid query gracefully
 - ✓ Handle missing authentication
 - ✓ Handle database errors gracefully
 - ✓ Handle timeout errors
 
 #### Search optimization
+
 - ✓ Return sorted results by relevance
 - ✓ Handle large result sets efficiently
 - ✓ Cache repeated searches
 
 #### Cross-user isolation
+
 - ✓ Not return other users' data
 - ✓ Filter by userId at application level
 
@@ -193,31 +222,39 @@ Located in: `api-integration.test.ts`
 Located in: `e2e.test.ts`
 
 #### Complete conversation flow
+
 - ✓ Store and retrieve conversation
 - ✓ Track user's conversation history
 
 #### Multi-user isolation
+
 - ✓ Keep user data separate
 
 #### Search and retrieval workflow
+
 - ✓ Retrieve relevant conversations
 - ✓ Retrieve by similarity score
 
 #### Outcome tracking
+
 - ✓ Track conversation outcomes
 - ✓ Retrieve conversations by outcome filter
 
 #### Tag-based discovery
+
 - ✓ Enable tag-based content discovery
 
 #### Full user journey
+
 - ✓ Support complete user learning journey
 
 #### Performance at scale
+
 - ✓ Handle large conversation histories
 - ✓ Search efficiently across large datasets
 
 #### Data consistency
+
 - ✓ Maintain data consistency across operations
 - ✓ Handle concurrent operations safely
 
@@ -305,6 +342,7 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 ## Test Coverage Areas
 
 ### Core Functionality
+
 - ✓ Embedding storage and retrieval
 - ✓ Semantic search with ranking
 - ✓ Tag-based filtering
@@ -312,18 +350,21 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 - ✓ User isolation
 
 ### Data Quality
+
 - ✓ Metadata validation
 - ✓ Content truncation
 - ✓ Dimension validation
 - ✓ Type safety
 
 ### Performance
+
 - ✓ Large dataset handling
 - ✓ Concurrent operations
 - ✓ Search efficiency
 - ✓ Batch operations
 
 ### Error Handling
+
 - ✓ Missing API keys
 - ✓ Malformed JSON
 - ✓ Network errors
@@ -331,6 +372,7 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 - ✓ Authentication failures
 
 ### Security
+
 - ✓ User data isolation
 - ✓ Cross-user search prevention
 - ✓ Metadata filtering
@@ -339,6 +381,7 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 ## Test Architecture
 
 ### Unit Tests (75 tests)
+
 - Test individual functions in isolation
 - Use mocked dependencies
 - Fast execution
@@ -346,6 +389,7 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 - Located in `*-store.test.ts` and `search.test.ts`
 
 ### Integration Tests (44 tests)
+
 - Test component interactions
 - Use mock clients
 - Test API contracts
@@ -353,6 +397,7 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 - Located in `chat-integration.test.ts`, `api-integration.test.ts`
 
 ### End-to-End Tests (13 tests)
+
 - Test complete workflows
 - Simulate real user journeys
 - Verify data consistency
@@ -362,6 +407,7 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 ## Key Test Scenarios
 
 ### Scenario 1: User Learning Journey
+
 1. User learns Effect-TS basics → conversation stored as "solved"
 2. User explores error handling → new conversation stored
 3. User encounters issue → stores "partial" outcome
@@ -371,6 +417,7 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 **Tests**: Chat integration, E2E full user journey
 
 ### Scenario 2: Multi-User Data Isolation
+
 1. User 1 stores 3 secret conversations
 2. User 2 stores 1 conversation
 3. User 2 searches → only sees own data
@@ -379,6 +426,7 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 **Tests**: User isolation, cross-user search isolation
 
 ### Scenario 3: Semantic Search Ranking
+
 1. Store 5 conversations with varying relevance
 2. Search for "error handling effect-ts"
 3. Results ranked by hybrid score:
@@ -390,6 +438,7 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 **Tests**: Hybrid ranking algorithm, search result filtering
 
 ### Scenario 4: Scale Performance
+
 1. Store 100 conversations
 2. Perform 3 concurrent searches
 3. Each search completes in <1 second
@@ -400,6 +449,7 @@ pnpm exec vitest run lib/semantic-search/__tests__/supermemory-store.test.ts -t 
 ## Continuous Integration
 
 All tests run on:
+
 - Every commit (via pre-commit hooks if configured)
 - Pull requests (recommended)
 - Before deployment

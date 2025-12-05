@@ -11,16 +11,19 @@
 ### ✅ Display Elements
 
 1. **Title/Summary**
+
    - Extracted from first line of conversation content
    - Truncated to 100 characters
    - Fallback to "Untitled Conversation" if empty
 
 2. **Timestamp**
+
    - Relative date (e.g., "2 hours ago", "3 days ago")
    - Uses `date-fns` `formatDistanceToNow()` for natural language
    - Precise datetime available in tooltip
 
 3. **Outcome Badge**
+
    - **Solved** - Green, checkmark icon
    - **Unsolved** - Red, alert icon
    - **Partially Solved** - Yellow, help icon
@@ -28,17 +31,20 @@
    - Fully typed and color-coded
 
 4. **Tags**
+
    - Displays up to 5 tags as badge pills
    - Shows "+N" for additional tags
    - Outline variant for secondary styling
 
 5. **Satisfaction Score**
+
    - Progress bar visualization (0-5 scale)
    - Gradient color (yellow → green)
    - Percentage display
    - Only shown if score > 0
 
 6. **Relevance Scores**
+
    - 4-column grid showing scoring breakdown
    - **Semantic** - Vector similarity (meaning-based match)
    - **Keyword** - Keyword relevance (text match)
@@ -47,6 +53,7 @@
    - Each shows as percentage
 
 7. **Preview Text**
+
    - 150-character excerpt from next 2 lines
    - Line-clamped to 2 lines
    - Gray text for secondary importance
@@ -59,16 +66,19 @@
 ### ✨ Interactive Features
 
 - **Hover Effects**
+
   - Enhanced shadow on hover
   - Optional ring effect when selectable
   - Smooth transitions (200ms)
 
 - **Selection Mode**
+
   - Optional `isSelectable` prop for batch operations
   - Visual ring indicator when selected
   - `onSelect` callback for handling selection
 
 - **Copy to Clipboard**
+
   - Click copy button to copy memory ID
   - Shows success feedback (Check icon)
   - Auto-resets after 2 seconds
@@ -84,10 +94,10 @@
 
 ```typescript
 export interface MemoryCardProps {
-  result: SemanticSearchResult;           // Required: Search result data
-  onSelect?: (result: SemanticSearchResult) => void;  // Selection callback
-  isSelectable?: boolean;                 // Enable selection mode
-  isSelected?: boolean;                   // Current selection state
+  result: SemanticSearchResult; // Required: Search result data
+  onSelect?: (result: SemanticSearchResult) => void; // Selection callback
+  isSelectable?: boolean; // Enable selection mode
+  isSelected?: boolean; // Current selection state
 }
 ```
 
@@ -274,6 +284,7 @@ formatDistanceToNow(new Date("2024-11-01 10:00"), { addSuffix: true })
 ```
 
 **Supported formats:**
+
 - "a few seconds ago"
 - "30 seconds ago"
 - "2 minutes ago"
@@ -286,27 +297,32 @@ formatDistanceToNow(new Date("2024-11-01 10:00"), { addSuffix: true })
 ## Score Interpretation
 
 ### Semantic Score (60% weight)
+
 - **0.0-0.3**: Low relevance (not similar)
 - **0.3-0.6**: Moderate relevance
 - **0.6-0.8**: High relevance (similar meaning)
 - **0.8-1.0**: Very high relevance (very similar)
 
 ### Keyword Score (30% weight)
+
 - **0-0.33**: Few keywords match
 - **0.33-0.66**: Some keywords match
 - **0.66-1.0**: Most/all keywords match
 
 ### Recency Score (7% weight)
+
 - **1.0**: Within 1 day
 - **0.5**: 1-7 days old
 - **0.1**: 7-30 days old
 - **0.01**: 30+ days old
 
 ### Satisfaction Score (3% weight)
+
 - Maps user satisfaction 1-5 to 0-1 scale
 - Higher scores boost final relevance
 
 ### Final Score
+
 Weighted combination of all factors used for ranking.
 
 ## Outcome Badges Styling
@@ -411,6 +427,7 @@ describe("MemoryCard", () => {
 ## Build Status
 
 ✅ **BUILDS SUCCESSFULLY**
+
 - No TypeScript errors
 - All dependencies installed
 - Component compiles and renders
@@ -431,6 +448,7 @@ components/
 ## Next Component: MemorySearch
 
 The MemorySearch component will provide:
+
 - Search input with debouncing
 - Tag filter pills
 - Outcome filter dropdown

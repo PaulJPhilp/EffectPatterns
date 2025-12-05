@@ -4,11 +4,11 @@
  * Parses pattern MDX files and extracts frontmatter metadata.
  */
 
-import { FileSystem, Path } from '@effect/platform';
-import { Schema } from '@effect/schema';
-import { Effect } from 'effect';
-import { MdxService, type MdxServiceSchema } from 'effect-mdx';
-import type { NewPattern } from '../db/schema.js';
+import { FileSystem, Path } from "@effect/platform";
+import { Schema } from "@effect/schema";
+import { Effect } from "effect";
+import { MdxService, type MdxServiceSchema } from "effect-mdx";
+import type { NewPattern } from "../db/schema.js";
 
 /**
  * Pattern frontmatter schema
@@ -16,12 +16,12 @@ import type { NewPattern } from '../db/schema.js';
  * Based on analysis of /content/published/ files
  */
 export class PatternFrontmatterSchema extends Schema.Class<PatternFrontmatterSchema>(
-  'PatternFrontmatter'
+  "PatternFrontmatter"
 )({
   id: Schema.String,
   title: Schema.String,
   summary: Schema.String,
-  skillLevel: Schema.Literal('beginner', 'intermediate', 'advanced'),
+  skillLevel: Schema.Literal("beginner", "intermediate", "advanced"),
   tags: Schema.Array(Schema.String),
   useCase: Schema.optional(Schema.Array(Schema.String)),
   related: Schema.optional(Schema.Array(Schema.String)),
@@ -60,7 +60,7 @@ export const parsePatternFile = (
 
     // Extract filename for slug
     const filename = path.basename(filePath);
-    const mdxSlug = filename.replace(/\.mdx$/, '');
+    const mdxSlug = filename.replace(/\.mdx$/, "");
 
     // Build pattern record
     const pattern: NewPattern = {
@@ -97,7 +97,7 @@ export const parseAllPatterns = (
     const files = yield* fs.readDirectory(directory);
 
     // Filter MDX files
-    const mdxFiles = files.filter((file) => file.endsWith('.mdx'));
+    const mdxFiles = files.filter((file) => file.endsWith(".mdx"));
 
     // Parse each file
     const patterns: NewPattern[] = [];
@@ -106,7 +106,7 @@ export const parseAllPatterns = (
 
       const result = yield* parsePatternFile(filePath).pipe(Effect.either);
 
-      if (result._tag === 'Right') {
+      if (result._tag === "Right") {
         patterns.push(result.right);
         yield* Effect.logInfo(`Parsed pattern: ${result.right.id}`);
       } else {

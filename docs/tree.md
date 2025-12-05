@@ -1,5 +1,5 @@
-```markdown
-[Oct 10 2025]  docs/ (proposed reorganization)
+````markdown
+[Oct 10 2025] docs/ (proposed reorganization)
 
 Overview: to improve discoverability we'll group documents into focused subfolders
 while preserving the original files. The reorg is staged using lightweight
@@ -8,30 +8,31 @@ is approved.
 
 docs/
 ├── guides/
-│   ├── CONTRIBUTING.md                # Contributor guide (placeholder)
-│   ├── DEPLOYMENT.md                  # Deployment guide (placeholder)
-│   └── patterns-guide.md              # Patterns guide (placeholder)
+│ ├── CONTRIBUTING.md # Contributor guide (placeholder)
+│ ├── DEPLOYMENT.md # Deployment guide (placeholder)
+│ └── patterns-guide.md # Patterns guide (placeholder)
 ├── reference/
-│   └── CHANGELOG.md                   # Changelog (placeholder)
+│ └── CHANGELOG.md # Changelog (placeholder)
 ├── implementation/
-│   └── STEP_1_SERVER_BOILERPLATE.md   # Server boilerplate (placeholder)
+│ └── STEP_1_SERVER_BOILERPLATE.md # Server boilerplate (placeholder)
 ├── release/
-│   └── EFFECT_LINTER_RULES.md         # Linter rules (placeholder)
-├── claude-plugin/                     # Plugin docs (kept together)
-├── archive/                           # Historical artifacts (unchanged)
-├── IdiomaticEffect.mdx                # Remains at top-level (MDX guide)
-├── SERVER_IMPLEMENTATION_COMPLETE.md  # Implementation summary
-├── SERVICE_PATTERNS.md                # Service patterns reference
-├── STEP_2_RULES_ENDPOINT.md           # Endpoint implementation guide
-└── tree.md                            # This file
+│ └── EFFECT_LINTER_RULES.md # Linter rules (placeholder)
+├── claude-plugin/ # Plugin docs (kept together)
+├── archive/ # Historical artifacts (unchanged)
+├── IdiomaticEffect.mdx # Remains at top-level (MDX guide)
+├── SERVER_IMPLEMENTATION_COMPLETE.md # Implementation summary
+├── SERVICE_PATTERNS.md # Service patterns reference
+├── STEP_2_RULES_ENDPOINT.md # Endpoint implementation guide
+└── tree.md # This file
 
 Notes:
+
 - Placeholders in the new folders point to the existing top-level files so
   links and references remain valid during the staged reorg.
 - Next steps: finalize the moves by replacing placeholders with the full
   documents and updating internal links. See the todo list for remaining steps.
 
-``` [Oct  9 23:32]  .
+```[Oct 9 23:32]  .
 ├── [Oct  5 22:03]  archive
 │   ├── [Sep 30 17:13]  CURRENT_STATUS.md
 │   ├── [Sep 30 17:38]  DISCORD_ANNOUNCEMENT.md
@@ -84,3 +85,5 @@ Notes:
 └── [Oct  9 23:32]  tree.md
 
 5 directories, 46 files
+```
+````

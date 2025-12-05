@@ -108,8 +108,13 @@ export class SupermemoryStore {
     queryText: string,
     options: SupermemoryStoreOptions
   ): Promise<SupermemorySearchResult[]> {
-    const { userId, limit = 10, minSimilarity = 0.3, outcome, tags = [] } =
-      options;
+    const {
+      userId,
+      limit = 10,
+      minSimilarity = 0.3,
+      outcome,
+      tags = [],
+    } = options;
 
     // Validate dimension
     if (queryVector.length !== this.dimension) {
@@ -149,9 +154,7 @@ export class SupermemoryStore {
           // Filter by tags if specified
           if (tags.length > 0) {
             const memoryTags = data.tags || [];
-            const hasAllTags = tags.every((tag) =>
-              memoryTags.includes(tag)
-            );
+            const hasAllTags = tags.every((tag) => memoryTags.includes(tag));
             if (!hasAllTags) continue;
           }
 
@@ -241,7 +244,10 @@ export class SupermemoryStore {
             },
           });
         } catch (parseError) {
-          console.warn("[Supermemory] Failed to parse tag search result:", parseError);
+          console.warn(
+            "[Supermemory] Failed to parse tag search result:",
+            parseError
+          );
           continue;
         }
       }
@@ -270,7 +276,10 @@ export class SupermemoryStore {
         for (const memory of results.results) {
           try {
             const data = JSON.parse(memory.memory);
-            if (data.userId === userId && data.type === "conversation_embedding") {
+            if (
+              data.userId === userId &&
+              data.type === "conversation_embedding"
+            ) {
               count++;
             }
           } catch {

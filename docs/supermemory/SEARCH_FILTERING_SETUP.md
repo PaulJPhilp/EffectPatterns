@@ -9,6 +9,7 @@
 ✅ Feature branch `feat/search-filtering` created and pushed to remote
 
 ### Branch Details
+
 - **Base**: main branch (229e4f4 - queue management)
 - **Remote**: origin/feat/search-filtering
 - **Status**: Ready for development
@@ -34,6 +35,7 @@ Comprehensive search and filtering enhancements across the SM-CLI:
 ### Service Layer
 
 Extend SupermemoryService with:
+
 - `searchMemoriesAdvanced()` - Advanced search with filters
 - `getMemoriesByType()` - Get by type with filtering
 - `getMemoriesByDateRange()` - Date range queries
@@ -41,23 +43,27 @@ Extend SupermemoryService with:
 ## Implementation Roadmap
 
 ### Phase 1: Core Infrastructure (Current Sprint)
+
 - [ ] Create search filters library
 - [ ] Create search parser
 - [ ] Add date parser utility
 - [ ] Define filter types in types.ts
 
 ### Phase 2: memories Commands (Next Sprint)
+
 - [ ] Enhance memories search with filters
 - [ ] Enhance memories list with date/tag filtering
 - [ ] Add sorting options
 - [ ] Improve result display
 
 ### Phase 3: Profiles & Queue (Following Sprint)
+
 - [ ] Add queue filtering
 - [ ] Enhance profiles search
 - [ ] Add status filtering
 
 ### Phase 4: Documentation & Testing
+
 - [ ] Write SEARCH_FILTERING_GUIDE.md
 - [ ] Create comprehensive tests
 - [ ] Performance validation
@@ -66,6 +72,7 @@ Extend SupermemoryService with:
 ## Current Todo List
 
 14 tasks planned:
+
 1. ✅ Research current search/filtering capabilities
 2. ✅ Create comprehensive search/filtering plan
 3. ⏳ Create search filters library
@@ -130,15 +137,18 @@ bun run sm-cli memories search \
 ## Files Reference
 
 ### Plan Document
+
 - `SEARCH_FILTERING_PLAN.md` - Comprehensive implementation plan
 
 ### To Be Created
+
 - `app/sm-cli/src/lib/search-filters.ts`
 - `app/sm-cli/src/lib/search-parser.ts`
 - `app/sm-cli/src/lib/date-parser.ts`
 - `app/sm-cli/SEARCH_FILTERING_GUIDE.md`
 
 ### To Be Modified
+
 - `app/sm-cli/src/types.ts` - Filter type definitions
 - `app/sm-cli/src/services/supermemory.ts` - Advanced search methods
 - `app/sm-cli/src/commands/memories.ts` - Search enhancements
@@ -205,6 +215,7 @@ bun run sm-cli memories search \
 Start implementing Phase 1: Core Infrastructure
 
 Begin with:
+
 1. Create `app/sm-cli/src/lib/search-filters.ts`
 2. Create `app/sm-cli/src/lib/search-parser.ts`
 3. Create `app/sm-cli/src/lib/date-parser.ts`

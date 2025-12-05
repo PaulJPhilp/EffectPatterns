@@ -4,15 +4,19 @@
  * Parses MDX patterns and roadmaps, validates data, and inserts into Postgres.
  */
 
-import type { FileSystem, Path } from '@effect/platform';
-import { NodeContext } from '@effect/platform-node';
-import { Effect, Layer } from 'effect';
-import { MdxConfigService, MdxService, type MdxServiceSchema } from 'effect-mdx';
-import { db } from '../db/client.js';
-import type { NewPattern, NewPatternModulePlacement } from '../db/schema.js';
-import { patternModulePlacements, patterns } from '../db/schema.js';
-import { parseAllPatterns } from './pattern-parser.js';
-import { parseAllRoadmaps } from './roadmap-parser.js';
+import type { FileSystem, Path } from "@effect/platform";
+import { NodeContext } from "@effect/platform-node";
+import { Effect, Layer } from "effect";
+import {
+  MdxConfigService,
+  MdxService,
+  type MdxServiceSchema,
+} from "effect-mdx";
+import { db } from "../db/client.js";
+import type { NewPattern, NewPatternModulePlacement } from "../db/schema.js";
+import { patternModulePlacements, patterns } from "../db/schema.js";
+import { parseAllPatterns } from "./pattern-parser.js";
+import { parseAllRoadmaps } from "./roadmap-parser.js";
 
 /**
  * Validate referential integrity
@@ -62,17 +66,17 @@ const validateData = (
 
     // Log results
     if (warnings.length > 0) {
-      yield* Effect.logWarning(`Validation warnings:\n${warnings.join('\n')}`);
+      yield* Effect.logWarning(`Validation warnings:\n${warnings.join("\n")}`);
     }
 
     if (errors.length > 0) {
-      yield* Effect.logError(`Validation errors:\n${errors.join('\n')}`);
+      yield* Effect.logError(`Validation errors:\n${errors.join("\n")}`);
       return yield* Effect.fail(
         new Error(`Validation failed with ${errors.length} errors`)
       );
     }
 
-    yield* Effect.logInfo('Validation passed');
+    yield* Effect.logInfo("Validation passed");
   });
 
 /**
@@ -82,7 +86,7 @@ const insertPatterns = (
   parsedPatterns: NewPattern[]
 ): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
-    yield* Effect.logInfo('Inserting patterns into database...');
+    yield* Effect.logInfo("Inserting patterns into database...");
 
     // Delete existing patterns (cascade will delete placements)
     yield* Effect.promise(() => db.delete(patterns));
@@ -100,7 +104,7 @@ const insertPlacements = (
   parsedPlacements: NewPatternModulePlacement[]
 ): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
-    yield* Effect.logInfo('Inserting placements into database...');
+    yield* Effect.logInfo("Inserting placements into database...");
 
     // Delete existing placements
     yield* Effect.promise(() => db.delete(patternModulePlacements));
@@ -125,28 +129,28 @@ export const runIngestion = (
   FileSystem.FileSystem | Path.Path | MdxServiceSchema
 > =>
   Effect.gen(function* () {
-    yield* Effect.logInfo('Starting pattern ingestion pipeline...');
+    yield* Effect.logInfo("Starting pattern ingestion pipeline...");
     yield* Effect.logInfo(`Patterns directory: ${patternsDir}`);
     yield* Effect.logInfo(`Roadmaps directory: ${roadmapsDir}`);
 
     // Parse patterns
-    yield* Effect.logInfo('\n=== Parsing Patterns ===');
+    yield* Effect.logInfo("\n=== Parsing Patterns ===");
     const parsedPatterns = yield* parseAllPatterns(patternsDir);
 
     // Parse roadmaps
-    yield* Effect.logInfo('\n=== Parsing Roadmaps ===');
+    yield* Effect.logInfo("\n=== Parsing Roadmaps ===");
     const parsedPlacements = yield* parseAllRoadmaps(roadmapsDir);
 
     // Validate
-    yield* Effect.logInfo('\n=== Validating Data ===');
+    yield* Effect.logInfo("\n=== Validating Data ===");
     yield* validateData(parsedPatterns, parsedPlacements);
 
     // Insert into database
-    yield* Effect.logInfo('\n=== Inserting into Database ===');
+    yield* Effect.logInfo("\n=== Inserting into Database ===");
     yield* insertPatterns(parsedPatterns);
     yield* insertPlacements(parsedPlacements);
 
-    yield* Effect.logInfo('\n✅ Ingestion complete!');
+    yield* Effect.logInfo("\n✅ Ingestion complete!");
     yield* Effect.logInfo(`Total patterns: ${parsedPatterns.length}`);
     yield* Effect.logInfo(`Total placements: ${parsedPlacements.length}`);
   });
@@ -162,8 +166,8 @@ const ingestionLayer = Layer.mergeAll(
 
 export const runDefaultIngestion = () =>
   Effect.gen(function* () {
-    const patternsDir = 'content/published';
-    const roadmapsDir = 'roadmap';
+    const patternsDir = "content/published";
+    const roadmapsDir = "roadmap";
 
     yield* runIngestion(patternsDir, roadmapsDir);
   }).pipe(Effect.provide(ingestionLayer));

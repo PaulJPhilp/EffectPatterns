@@ -25,6 +25,7 @@ bun install
 ```
 
 This will install all required dependencies including:
+
 - Effect-TS core libraries
 - CLI framework (@effect/cli)
 - Pattern validation tools
@@ -67,18 +68,18 @@ The Effect Patterns Hub can inject coding rules directly into your AI developmen
 
 ### Supported Tools
 
-| Tool | Command | File Path |
-|------|---------|-----------|
-| Cursor IDE | `ep install add --tool cursor` | `.cursor/rules.md` |
-| AGENTS.md | `ep install add --tool agents` | `AGENTS.md` |
+| Tool         | Command                          | File Path            |
+| ------------ | -------------------------------- | -------------------- |
+| Cursor IDE   | `ep install add --tool cursor`   | `.cursor/rules.md`   |
+| AGENTS.md    | `ep install add --tool agents`   | `AGENTS.md`          |
 | Windsurf IDE | `ep install add --tool windsurf` | `.windsurf/rules.md` |
-| Gemini AI | `ep install add --tool gemini` | `GEMINI.md` |
-| Claude AI | `ep install add --tool claude` | `CLAUDE.md` |
-| VS Code | `ep install add --tool vscode` | `.vscode/rules.md` |
-| Kilo IDE | `ep install add --tool kilo` | `.kilo/rules.md` |
-| Kira IDE | `ep install add --tool kira` | `.kira/rules.md` |
-| Trae IDE | `ep install add --tool trae` | `.trae/rules.md` |
-| Goose AI | `ep install add --tool goose` | `.goosehints` |
+| Gemini AI    | `ep install add --tool gemini`   | `GEMINI.md`          |
+| Claude AI    | `ep install add --tool claude`   | `CLAUDE.md`          |
+| VS Code      | `ep install add --tool vscode`   | `.vscode/rules.md`   |
+| Kilo IDE     | `ep install add --tool kilo`     | `.kilo/rules.md`     |
+| Kira IDE     | `ep install add --tool kira`     | `.kira/rules.md`     |
+| Trae IDE     | `ep install add --tool trae`     | `.trae/rules.md`     |
+| Goose AI     | `ep install add --tool goose`    | `.goosehints`        |
 
 ### Installation Examples
 
@@ -101,11 +102,13 @@ ep install add --tool goose --skill-level beginner --use-case error-management
 You can filter which rules to install using:
 
 **Skill Level:**
+
 - `--skill-level beginner` - Basic patterns for getting started
 - `--skill-level intermediate` - Patterns for common use cases
 - `--skill-level advanced` - Complex patterns and edge cases
 
 **Use Case:**
+
 - `--use-case core-concepts` - Fundamental Effect-TS concepts
 - `--use-case error-management` - Error handling patterns
 - `--use-case resource-management` - Resource and lifecycle management
@@ -141,6 +144,7 @@ ep pattern new
 ```
 
 This launches an interactive wizard that will:
+
 1. Ask for pattern metadata (title, skill level, use case, etc.)
 2. Create an MDX documentation file
 3. Create a TypeScript example file
@@ -151,13 +155,14 @@ This launches an interactive wizard that will:
 If you prefer to create patterns manually:
 
 1. Create `content/new/raw/{pattern-name}.mdx` with frontmatter:
+
    ```yaml
    ---
    id: pattern-name
-   title: 'Pattern Title'
+   title: "Pattern Title"
    skillLevel: beginner | intermediate | advanced
    useCase: core-concepts | error-management | ...
-   summary: 'Brief description'
+   summary: "Brief description"
    ---
    ```
 
@@ -204,6 +209,7 @@ ep admin pipeline --verbose
 ```
 
 This runs:
+
 1. **Test** - Validates all TypeScript examples execute correctly
 2. **Publish** - Converts raw patterns to published format
 3. **Validate** - Checks all published patterns
@@ -229,6 +235,7 @@ ep admin release preview
 ```
 
 This analyzes commits since the last tag and shows:
+
 - Recommended version bump (major/minor/patch)
 - Draft changelog
 - Commits included in the release
@@ -240,6 +247,7 @@ ep admin release create
 ```
 
 This will:
+
 1. Determine version bump from conventional commits
 2. Generate changelog
 3. Update `package.json` and `docs/reference/CHANGELOG.md`
@@ -271,6 +279,7 @@ demonstrating memory-efficient data processing.
 **Error**: "Cannot connect to Pattern Server"
 
 **Solution**: Start the server in a separate terminal:
+
 ```bash
 bun run server:dev
 ```
@@ -280,11 +289,13 @@ bun run server:dev
 **Error**: "Pattern validation failed"
 
 **Solution**: Run with verbose flag to see details:
+
 ```bash
 ep admin validate --verbose
 ```
 
 Common issues:
+
 - Missing `.ts` file for `.mdx` pattern
 - Invalid frontmatter fields
 - TypeScript example doesn't execute
@@ -295,7 +306,9 @@ Common issues:
 **Error**: "Tests failed with errors"
 
 **Solution**:
+
 1. Check if TypeScript file runs directly:
+
    ```bash
    bun run content/new/src/{pattern-name}.ts
    ```
@@ -312,6 +325,7 @@ Common issues:
 **Error**: "Permission denied" when running `ep`
 
 **Solution**: Make the script executable:
+
 ```bash
 chmod +x scripts/ep.ts
 ```
@@ -408,6 +422,7 @@ ep admin release create                   # Create release
 ## Next Steps
 
 1. **Install rules into your AI tool**:
+
    ```bash
    ep install add --tool cursor
    ```
@@ -415,6 +430,7 @@ ep admin release create                   # Create release
 2. **Explore existing patterns** in `content/new/published/`
 
 3. **Create your first pattern**:
+
    ```bash
    ep pattern new
    ```
@@ -428,5 +444,6 @@ See the main [README.md](./README.md) for contribution guidelines.
 ## Support
 
 For issues and questions:
+
 - **GitHub Issues**: https://github.com/patrady/effect-patterns/issues
 - **Discussions**: https://github.com/patrady/effect-patterns/discussions

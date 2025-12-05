@@ -9,6 +9,7 @@ Successfully implemented a comprehensive rules generation system for Claude Code
 ### 1. Script: `scripts/publish/generate-claude-rules.ts`
 
 A TypeScript script that:
+
 - Extracts rules from all 130 published patterns in `content/published/`
 - Organizes them by skill level (Beginner, Intermediate, Advanced)
 - Formats each pattern with:
@@ -23,6 +24,7 @@ A TypeScript script that:
 ### 2. Output File: `rules/generated/rules-for-claude.md`
 
 **Structure:**
+
 ```
 Part 1: Effect-TS Pattern Rules
   - 🟢 Beginner Patterns (organized alphabetically)
@@ -37,6 +39,7 @@ Part 2: Repository-Specific Guidance
 ```
 
 **Statistics:**
+
 - Size: 377 KB
 - Lines: 11,308
 - Pattern rules: 130
@@ -45,6 +48,7 @@ Part 2: Repository-Specific Guidance
 ### 3. Documentation
 
 Created:
+
 - `CLAUDE.md` - Repository-specific guidance for Claude Code
 - `rules/generated/README.md` - Explains the generated rules directory
 - Updated `package.json` with `rules:claude` script
@@ -65,6 +69,7 @@ bun run scripts/publish/generate-claude-rules.ts
 ### When to Regenerate
 
 The rules file should be regenerated whenever:
+
 1. New patterns are added to `content/published/`
 2. Existing patterns are updated
 3. `CLAUDE.md` is modified
@@ -86,6 +91,7 @@ bun run rules:claude  # Regenerate Claude rules
 ### Pattern Extraction
 
 The script reads MDX files from `content/published/` and extracts:
+
 - **Frontmatter**: Uses `gray-matter` to parse YAML metadata
 - **Rule description**: From `data.rule.description`
 - **Sections**: Extracts "Good Example", "Anti-Pattern", and "Rationale" sections
@@ -94,9 +100,11 @@ The script reads MDX files from `content/published/` and extracts:
 ### Section Extraction
 
 Uses regex-based section parsing:
+
 ```typescript
-function extractSection(content: string, ...sectionNames: string[]): string
+function extractSection(content: string, ...sectionNames: string[]): string;
 ```
+
 - Finds section headers (## Section Name)
 - Extracts content until next section
 - Returns cleaned markdown content
@@ -104,6 +112,7 @@ function extractSection(content: string, ...sectionNames: string[]): string
 ### Output Format
 
 Organized hierarchically:
+
 1. Header with description
 2. Pattern rules grouped by skill level
 3. Each pattern formatted consistently
@@ -136,13 +145,13 @@ Organized hierarchically:
 
 ## File Locations
 
-| File | Purpose | Size |
-|------|---------|------|
-| `scripts/publish/generate-claude-rules.ts` | Generator script | ~8 KB |
-| `rules/generated/rules-for-claude.md` | Output file | 377 KB |
-| `rules/generated/README.md` | Documentation | ~2 KB |
-| `CLAUDE.md` | Repository guidance | ~11 KB |
-| `CLAUDE_RULES_IMPLEMENTATION.md` | This document | ~4 KB |
+| File                                       | Purpose             | Size   |
+| ------------------------------------------ | ------------------- | ------ |
+| `scripts/publish/generate-claude-rules.ts` | Generator script    | ~8 KB  |
+| `rules/generated/rules-for-claude.md`      | Output file         | 377 KB |
+| `rules/generated/README.md`                | Documentation       | ~2 KB  |
+| `CLAUDE.md`                                | Repository guidance | ~11 KB |
+| `CLAUDE_RULES_IMPLEMENTATION.md`           | This document       | ~4 KB  |
 
 ## Next Steps
 
@@ -197,6 +206,7 @@ The implementation has been tested and verified:
 ## Impact
 
 This implementation provides Claude Code AI assistant with:
+
 - **130 Effect-TS pattern rules** from published content
 - **Complete repository guidance** from CLAUDE.md
 - **11,308 lines** of comprehensive coding guidance

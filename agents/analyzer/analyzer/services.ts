@@ -1,22 +1,22 @@
-import { ChatOpenAI } from '@langchain/openai';
-import { Context, Effect, Layer, Schedule } from 'effect';
+import { ChatOpenAI } from "@langchain/openai";
+import { Context, Effect, Layer, Schedule } from "effect";
 import {
   AnalysisError,
   LLMAuthenticationError,
   LLMRateLimitError,
   type LLMServiceError,
   LLMTimeoutError,
-} from './errors.js';
-import type { Message } from './schemas.js';
+} from "./errors.js";
+import type { Message } from "./schemas.js";
 
-export class LLMService extends Context.Tag('LLMService')<
+export class LLMService extends Context.Tag("LLMService")<
   LLMService,
   {
     readonly analyzeChunk: (
-      chunk: Message[],
+      chunk: Message[]
     ) => Effect.Effect<string, LLMServiceError | AnalysisError>;
     readonly aggregateAnalyses: (
-      analyses: string[],
+      analyses: string[]
     ) => Effect.Effect<string, LLMServiceError | AnalysisError>;
   }
 >() {}
@@ -27,10 +27,10 @@ export const LLMServiceLive = Layer.effect(
   LLMService,
   Effect.gen(function* () {
     const llm = yield* Effect.try({
-      try: () => new ChatOpenAI({ model: 'gpt-4o', temperature: 0 }),
+      try: () => new ChatOpenAI({ model: "gpt-4o", temperature: 0 }),
       catch: (_cause) =>
         new LLMAuthenticationError({
-          message: 'Failed to initialize OpenAI client',
+          message: "Failed to initialize OpenAI client",
         }),
     });
 
@@ -38,17 +38,17 @@ export const LLMServiceLive = Layer.effect(
     const mapLLMError = (error: unknown): LLMServiceError | AnalysisError => {
       const errorMsg = error instanceof Error ? error.message : String(error);
 
-      if (errorMsg.includes('timeout') || errorMsg.includes('ETIMEDOUT')) {
+      if (errorMsg.includes("timeout") || errorMsg.includes("ETIMEDOUT")) {
         return new LLMTimeoutError({
           duration: 30_000,
-          operation: 'OpenAI API call',
+          operation: "OpenAI API call",
         });
       }
 
       if (
-        errorMsg.includes('rate limit') ||
-        errorMsg.includes('429') ||
-        errorMsg.includes('quota')
+        errorMsg.includes("rate limit") ||
+        errorMsg.includes("429") ||
+        errorMsg.includes("quota")
       ) {
         // Try to extract retry-after from error message
         const retryMatch = errorMsg.match(RETRY_AFTER_REGEX);
@@ -58,35 +58,34 @@ export const LLMServiceLive = Layer.effect(
 
         return new LLMRateLimitError({
           retryAfter,
-          message: 'OpenAI rate limit exceeded',
+          message: "OpenAI rate limit exceeded",
         });
       }
 
       if (
-        errorMsg.includes('auth') ||
-        errorMsg.includes('401') ||
-        errorMsg.includes('API key')
+        errorMsg.includes("auth") ||
+        errorMsg.includes("401") ||
+        errorMsg.includes("API key")
       ) {
         return new LLMAuthenticationError({
-          message: 'OpenAI authentication failed - check API key',
+          message: "OpenAI authentication failed - check API key",
         });
       }
 
       return new AnalysisError({
-        stage: 'llm_invocation',
+        stage: "llm_invocation",
         message: `LLM invocation failed: ${errorMsg}`,
         cause: error,
       });
     };
 
     // Retry policy: exponential backoff with max 3 attempts for retryable errors
-    const retryPolicy = Schedule.exponential('1 second').pipe(
+    const retryPolicy = Schedule.exponential("1 second").pipe(
       Schedule.intersect(Schedule.recurs(2)), // Max 3 total attempts (original + 2 retries)
       Schedule.whileInput(
         (error: LLMServiceError | AnalysisError) =>
-          error._tag === 'LLMTimeoutError' ||
-          error._tag === 'LLMRateLimitError',
-      ),
+          error._tag === "LLMTimeoutError" || error._tag === "LLMRateLimitError"
+      )
     );
 
     return LLMService.of({
@@ -120,10 +119,10 @@ Return your analysis in JSON format with these fields:
           Effect.tapError((error) =>
             Effect.logError(
               `Chunk analysis failed after retries: ${error._tag} - ${
-                'message' in error ? error.message : 'Unknown error'
-              }`,
-            ),
-          ),
+                "message" in error ? error.message : "Unknown error"
+              }`
+            )
+          )
         );
       },
 
@@ -169,12 +168,12 @@ Format the output as well-structured Markdown.`;
           Effect.tapError((error) =>
             Effect.logError(
               `Analysis aggregation failed after retries: ${error._tag} - ${
-                'message' in error ? error.message : 'Unknown error'
-              }`,
-            ),
-          ),
+                "message" in error ? error.message : "Unknown error"
+              }`
+            )
+          )
         );
       },
     });
-  }),
+  })
 );

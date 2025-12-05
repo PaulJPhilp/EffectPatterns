@@ -1,6 +1,7 @@
 # Fixed Pattern Loading Path Error ✅
 
 ## Summary
+
 Resolved pattern data loading failure by correcting the file path from `data/patterns-index.json` (app-relative) to `../../../data/patterns-index.json` (project-root-relative).
 
 **Status**: ✅ **Fixed - Patterns Path Corrected**
@@ -23,12 +24,14 @@ The pattern search tool couldn't find the patterns index file, so it failed sile
 ## Root Cause
 
 **File Location**:
+
 ```
 /Users/paul/Projects/Published/Effect-Patterns/data/patterns-index.json
                                        ↑ ACTUAL LOCATION
 ```
 
 **Code was looking for**:
+
 ```
 /Users/paul/Projects/Published/Effect-Patterns/app/patterns-chat-app/data/patterns-index.json
                                                                          ↑ WRONG LOCATION
@@ -36,18 +39,20 @@ The pattern search tool couldn't find the patterns index file, so it failed sile
 
 The path calculation was incorrect for the monorepo structure:
 
-| Directory | Level |
-|-----------|-------|
-| `/data/patterns-index.json` | Project root |
-| `/app/` | Level 1 (from root) |
-| `/app/patterns-chat-app/` | Level 2 (from root) |
-| Current working directory | patterns-chat-app directory |
+| Directory                   | Level                       |
+| --------------------------- | --------------------------- |
+| `/data/patterns-index.json` | Project root                |
+| `/app/`                     | Level 1 (from root)         |
+| `/app/patterns-chat-app/`   | Level 2 (from root)         |
+| Current working directory   | patterns-chat-app directory |
 
 **Old code**: `process.cwd() + "data/patterns-index.json"`
+
 - Assumed patterns-index.json was in patterns-chat-app directory
 - **Result**: NOT FOUND ❌
 
 **New code**: `process.cwd() + "../../../data/patterns-index.json"`
+
 - Goes up 3 levels: patterns-chat-app → app → Effect-Patterns → data
 - **Result**: FOUND ✅
 
@@ -62,10 +67,14 @@ Updated `lib/ai/tools/search-patterns.ts`:
 const patternsPath = path.join(process.cwd(), "data/patterns-index.json");
 
 // After ✅
-const patternsPath = path.join(process.cwd(), "../../../data/patterns-index.json");
+const patternsPath = path.join(
+  process.cwd(),
+  "../../../data/patterns-index.json"
+);
 ```
 
 With updated comment explaining the path structure:
+
 ```typescript
 // Path from patterns-chat-app to project root:
 // patterns-chat-app -> app -> Effect-Patterns -> data
@@ -76,12 +85,12 @@ With updated comment explaining the path structure:
 
 ## Changes Made
 
-| Item | Details |
-|------|---------|
-| File | `lib/ai/tools/search-patterns.ts` |
-| Function | `loadPatterns()` |
-| Lines Changed | 2 (path string + comment) |
-| Impact | Pattern search now works with Effect-TS queries |
+| Item          | Details                                         |
+| ------------- | ----------------------------------------------- |
+| File          | `lib/ai/tools/search-patterns.ts`               |
+| Function      | `loadPatterns()`                                |
+| Lines Changed | 2 (path string + comment)                       |
+| Impact        | Pattern search now works with Effect-TS queries |
 
 ---
 
@@ -107,7 +116,7 @@ Effect-Patterns/                                    ← Project Root
 From the `lib/ai/tools/search-patterns.ts` file:
 
 ```
-process.cwd() 
+process.cwd()
   = /Users/paul/Projects/Published/Effect-Patterns/app/patterns-chat-app
 
 ../../../data/patterns-index.json
@@ -132,6 +141,7 @@ bun run dev
 ```
 
 This ensures:
+
 - ✅ Old cached bytecode is purged
 - ✅ TypeScript files recompiled with new path
 - ✅ Fresh Node.js module loading
@@ -141,6 +151,7 @@ This ensures:
 ## What Now Works
 
 ### Pattern Queries
+
 Users can now ask Effect-TS questions and get pattern results:
 
 ```
@@ -156,6 +167,7 @@ Model responds with pattern guidance
 ```
 
 ### Query Examples That Now Work
+
 - "How do I handle errors in Effect?"
 - "What's the best way to do retries?"
 - "How do I structure Effect code?"
@@ -203,6 +215,7 @@ catch (error) {
 ```
 
 This means:
+
 - ✅ Chat doesn't crash if patterns file missing
 - ✅ Falls back to regular AI response
 - ✅ Error logged for debugging

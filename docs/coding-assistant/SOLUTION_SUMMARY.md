@@ -53,6 +53,7 @@ Supermemory Account
 #### 1. Seeding Script (`scripts/seed-patterns.ts`)
 
 **Before**:
+
 ```typescript
 const result = await client.memories.add({
   content: memoryContent,
@@ -65,6 +66,7 @@ const result = await client.memories.add({
 ```
 
 **After**:
+
 ```typescript
 const PROJECT_ID = "effect-patterns"; // ← NEW
 
@@ -73,7 +75,7 @@ const result = await client.memories.add({
   metadata: {
     type: "effect_pattern",
     patternId,
-    projectId: PROJECT_ID,  // ← NEW: Organize by project
+    projectId: PROJECT_ID, // ← NEW: Organize by project
     // ... other fields
   },
 });
@@ -82,6 +84,7 @@ const result = await client.memories.add({
 #### 2. Search Logic (`lib/semantic-search/supermemory-store.ts`)
 
 **Before**:
+
 ```typescript
 // Fetch all memories (from any project)
 const allMemories = await this.fetchAllMemories();
@@ -89,6 +92,7 @@ const allMemories = await this.fetchAllMemories();
 ```
 
 **After**:
+
 ```typescript
 private effectPatternsProjectId: string = "effect-patterns";
 
@@ -109,10 +113,10 @@ for (const memory of allMemories) {
 
 ### Files Modified
 
-| File | Lines Changed | Change Type |
-|------|---------------|------------|
-| `scripts/seed-patterns.ts` | 2 | Add PROJECT_ID constant and metadata field |
-| `lib/semantic-search/supermemory-store.ts` | 15 | Add project property and filtering logic |
+| File                                       | Lines Changed | Change Type                                |
+| ------------------------------------------ | ------------- | ------------------------------------------ |
+| `scripts/seed-patterns.ts`                 | 2             | Add PROJECT_ID constant and metadata field |
+| `lib/semantic-search/supermemory-store.ts` | 15            | Add project property and filtering logic   |
 
 **Total**: 17 lines changed across 2 files
 
@@ -240,6 +244,7 @@ npm run seed:patterns
 ```
 
 Script now:
+
 - Queues each pattern with `projectId: "effect-patterns"`
 - Supermemory organizes them in that project
 - Patterns become searchable within the project
@@ -251,6 +256,7 @@ npm run test:patterns
 ```
 
 Search now:
+
 - Looks for memories with `projectId: "effect-patterns"`
 - Returns only patterns from that project
 - User sees organized results
@@ -264,6 +270,7 @@ Search now:
 Switch to `effect-patterns` project → See 130 pattern memories
 
 Each memory shows:
+
 ```json
 {
   "id": "abc123...",
@@ -293,6 +300,7 @@ npm run test:patterns
 http://localhost:3001 → Browse → Search "error"
 
 Results show:
+
 - ✅ Pattern titles display
 - ✅ Summaries show
 - ✅ Dates display correctly
@@ -407,6 +415,7 @@ metadata: {
 ```
 
 This metadata is:
+
 - Searchable via API
 - Filterable in queries
 - Visible in console
@@ -419,11 +428,12 @@ Client-side filtering happens in `supermemoryStore.searchByList()`:
 ```typescript
 // Ensure pattern is in correct project
 if (memory.metadata?.projectId !== this.effectPatternsProjectId) {
-  skip();  // Don't include in results
+  skip(); // Don't include in results
 }
 ```
 
 This is:
+
 - Fast (memory comparison)
 - Reliable (no dependency on API change)
 - Future-proof (easy to extend)

@@ -3,6 +3,7 @@
 ## Current Status
 
 ### Source Patterns
+
 - **Location:** `content/new/raw/`
 - **Count:** 42 MDX files ✅
 - **TypeScript:** Will be extracted automatically
@@ -42,7 +43,7 @@ Step 8: Report
 bun run ingest
 
 # Expected runtime: ~67 seconds (8 stages)
-# Expected output: 
+# Expected output:
 #   - TypeScript files extracted: 42
 #   - Validated patterns: ~38-40
 #   - Tests passed: ~36-38
@@ -54,6 +55,7 @@ bun run ingest
 ## What Gets Created
 
 ### During Ingest
+
 ```
 content/new/
 ├── src/                              # Created by Stage 1
@@ -66,6 +68,7 @@ content/new/
 ```
 
 ### After Migration
+
 ```
 content/
 ├── raw/                              # Updated
@@ -79,6 +82,7 @@ content/
 ```
 
 ### Regenerated Files
+
 ```
 README.md                             # Updated with new patterns
 rules/
@@ -92,17 +96,20 @@ rules/
 Based on the 42 patterns in `content/new/raw/`:
 
 ### ✅ Likely Success
+
 - **Patterns with good structure:** ~36-38
 - **Tests passing:** ~34-36
 - **Successfully migrated:** ~34-36
 
 ### ⚠️ Likely Issues
+
 - **Missing TypeScript code:** ~2-4 patterns
 - **Validation errors:** ~2-4 patterns
 - **Test failures:** ~2-4 patterns
 - **Duplicates:** ~2-4 patterns (if any overlap)
 
 ### 📈 Final Count
+
 ```
 Before: 89 patterns
 New:    +34 patterns (estimate)
@@ -112,12 +119,14 @@ After:  ~123 patterns total
 ## Safety Features
 
 ### Won't Break Existing Patterns
+
 - ✅ No modification of existing content/raw/
 - ✅ No modification of existing content/src/
 - ✅ Duplicate detection prevents conflicts
 - ✅ Full validation before migration
 
 ### Rollback if Needed
+
 ```bash
 # If something goes wrong, restore from git
 git checkout content/raw/
@@ -129,6 +138,7 @@ git checkout content/src/
 Watch for these markers in the output:
 
 ### Stage 1: Discovery & Extraction
+
 ```
 ✅ brand-model-domain-type (extracted TypeScript)
 ✅ combinator-filter (extracted TypeScript)
@@ -136,24 +146,28 @@ Watch for these markers in the output:
 ```
 
 ### Stage 2: Validation
+
 ```
 ✅ pattern-id
 ❌ incomplete-pattern (2 errors)
 ```
 
 ### Stage 3: Testing
+
 ```
 ✅ pattern-id (245ms)
 ❌ failing-test (timeout)
 ```
 
 ### Stage 4: Comparison
+
 ```
 ✅ new-pattern - NEW
 ⚠️  existing-pattern - DUPLICATE
 ```
 
 ### Stage 5: Migration
+
 ```
 ✅ migrated-pattern
 ```
@@ -161,6 +175,7 @@ Watch for these markers in the output:
 ## After Running
 
 ### 1. Check Reports
+
 ```bash
 # View the markdown report
 cat content/new/ingest-reports/ingest-report-*.md
@@ -170,11 +185,12 @@ cat content/new/ingest-reports/ingest-report-*.json | jq
 ```
 
 ### 2. Verify Counts
+
 ```bash
 # Count raw patterns
 ls content/raw/*.mdx | wc -l    # Should be ~123
 
-# Count TypeScript files  
+# Count TypeScript files
 ls content/src/*.ts | wc -l     # Should be ~123
 
 # Count published patterns
@@ -182,6 +198,7 @@ ls content/published/*.mdx | wc -l  # Should be ~123
 ```
 
 ### 3. Test Everything
+
 ```bash
 # Run tests on all patterns
 bun run test
@@ -190,6 +207,7 @@ bun run test
 ```
 
 ### 4. Check Generated Files
+
 ```bash
 # View updated README
 head -50 README.md
@@ -204,22 +222,27 @@ ls rules/windsurf/*.mdc | wc -l # Should be ~123
 ## Troubleshooting
 
 ### "No TypeScript code found"
+
 **Issue:** MDX file doesn't have a Good Example code block
 
 **Solution:** Pattern will be marked with warnings but won't fail completely
 
 ### "Test failed"
+
 **Issue:** TypeScript code doesn't execute
 
-**Solution:** 
+**Solution:**
+
 1. Check the error in the report
 2. Fix the TypeScript code in content/new/src/
 3. Re-run ingest
 
 ### "Duplicate detected"
+
 **Issue:** Pattern already exists
 
 **Solution:**
+
 1. Review the existing pattern
 2. Decide if you want to replace it
 3. If yes, delete the old one first
@@ -236,9 +259,10 @@ bun run ingest
 
 **Estimated time:** 60 seconds  
 **Expected new patterns:** ~34-36  
-**Final total:** ~123 patterns  
+**Final total:** ~123 patterns
 
 The pipeline will:
+
 - ✅ Extract TypeScript code automatically
 - ✅ Validate everything
 - ✅ Test all code

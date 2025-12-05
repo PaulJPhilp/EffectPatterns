@@ -16,6 +16,7 @@ npm run seed:patterns
 ```
 
 Expected output:
+
 ```
 🌱 Seeding 150+ patterns into Supermemory...
 ✅ [100%] Queued: pattern-name
@@ -30,6 +31,7 @@ npm run test:patterns
 ```
 
 Expected output:
+
 ```
 🔍 Testing pattern search in Supermemory...
 Test 1: Search for 'error handling'
@@ -61,12 +63,12 @@ Your pre-loaded patterns are now fully functional.
 
 ## Quick Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| No patterns found | Check SUPERMEMORY_API_KEY in .env.local |
-| "Unknown date" | Re-run `npm run seed:patterns` |
-| Broken links | Verify memory-card.tsx line 279 has conditional |
-| No search results | Run `npm run test:patterns` to debug |
+| Issue             | Solution                                        |
+| ----------------- | ----------------------------------------------- |
+| No patterns found | Check SUPERMEMORY_API_KEY in .env.local         |
+| "Unknown date"    | Re-run `npm run seed:patterns`                  |
+| Broken links      | Verify memory-card.tsx line 279 has conditional |
+| No search results | Run `npm run test:patterns` to debug            |
 
 ## What Changed
 

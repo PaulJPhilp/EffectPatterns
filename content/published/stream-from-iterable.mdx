@@ -43,7 +43,7 @@ This pattern is fundamental for several reasons:
 This example takes a simple array of numbers, creates a stream from it, performs a transformation on each number, and then runs the stream to collect the results.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 const numbers = [1, 2, 3, 4, 5];
 
@@ -57,7 +57,9 @@ const program = Stream.fromIterable(numbers).pipe(
 
 const programWithLogging = Effect.gen(function* () {
   const processedItems = yield* program;
-  yield* Effect.log(`Processed items: ${JSON.stringify(Chunk.toArray(processedItems))}`);
+  yield* Effect.log(
+    `Processed items: ${JSON.stringify(Chunk.toArray(processedItems))}`
+  );
   return processedItems;
 });
 
@@ -70,7 +72,7 @@ Output:
 
 ## Anti-Pattern
 
-The common alternative is to use standard array methods like `.map()` or a `for...of` loop. While perfectly fine for simple, synchronous tasks, this approach is an anti-pattern when building a *pipeline*.
+The common alternative is to use standard array methods like `.map()` or a `for...of` loop. While perfectly fine for simple, synchronous tasks, this approach is an anti-pattern when building a _pipeline_.
 
 ```typescript
 const numbers = [1, 2, 3, 4, 5];

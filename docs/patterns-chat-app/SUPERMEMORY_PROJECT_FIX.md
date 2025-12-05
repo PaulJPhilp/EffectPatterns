@@ -27,6 +27,7 @@ The seeding script has been updated to use the `effect-patterns` project:
 **File**: `scripts/seed-patterns.ts`
 
 **Changes Made**:
+
 ```typescript
 // Project ID for organizing patterns in Supermemory
 const PROJECT_ID = "effect-patterns";
@@ -36,7 +37,7 @@ const result = await client.memories.add({
   content: memoryContent,
   metadata: {
     // ... other fields ...
-    projectId: PROJECT_ID,  // ← NEW: Specifies which project
+    projectId: PROJECT_ID, // ← NEW: Specifies which project
   },
 });
 ```
@@ -48,6 +49,7 @@ The search logic has been updated to look for patterns in the right project:
 **File**: `lib/semantic-search/supermemory-store.ts`
 
 **Changes Made**:
+
 ```typescript
 private effectPatternsProjectId: string = "effect-patterns";
 
@@ -138,6 +140,7 @@ Supermemory Workspace
 ## Code Changes Summary
 
 ### 1. seed-patterns.ts (Line 22, 169)
+
 ```diff
 + const PROJECT_ID = "effect-patterns";
 
@@ -153,6 +156,7 @@ Supermemory Workspace
 ```
 
 ### 2. supermemory-store.ts (Line 41, 186-195)
+
 ```diff
 + private effectPatternsProjectId: string = "effect-patterns";
 
@@ -171,10 +175,10 @@ Supermemory Workspace
 
 ## Files Modified
 
-| File | Changes | Impact |
-|------|---------|--------|
-| `scripts/seed-patterns.ts` | Add PROJECT_ID constant, include in metadata | Patterns seeded to correct project |
-| `lib/semantic-search/supermemory-store.ts` | Add project filtering logic | Patterns retrieved from correct project |
+| File                                       | Changes                                      | Impact                                  |
+| ------------------------------------------ | -------------------------------------------- | --------------------------------------- |
+| `scripts/seed-patterns.ts`                 | Add PROJECT_ID constant, include in metadata | Patterns seeded to correct project      |
+| `lib/semantic-search/supermemory-store.ts` | Add project filtering logic                  | Patterns retrieved from correct project |
 
 ---
 
@@ -246,6 +250,7 @@ Only memories from matching project returned
 ```
 
 By setting `projectId: "effect-patterns"` when seeding and filtering for it when searching, we ensure:
+
 - Patterns go to the right place
 - Search finds them in the right place
 - User sees correct results in memory browser

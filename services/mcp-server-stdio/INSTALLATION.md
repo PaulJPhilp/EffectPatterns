@@ -47,6 +47,7 @@ Close and reopen Claude Desktop completely. The MCP server will start automatica
 ### 4. Verify Installation
 
 In Claude Desktop, you should see the Effect Patterns tools available:
+
 - 🔍 `search_patterns` - Search for Effect patterns
 - 📖 `get_pattern` - Get detailed pattern information
 - 💻 `generate_snippet` - Generate code snippets
@@ -72,6 +73,7 @@ Can you search for Effect patterns related to error handling?
 ```
 
 Claude will use the `search_patterns` tool:
+
 ```json
 {
   "query": "error handling",
@@ -87,6 +89,7 @@ Show me details about the retry-with-backoff pattern
 ```
 
 Claude will use the `get_pattern` tool:
+
 ```json
 {
   "patternId": "retry-with-backoff"
@@ -100,6 +103,7 @@ Generate a code snippet for the retry pattern with custom name "retryApiCall"
 ```
 
 Claude will use the `generate_snippet` tool:
+
 ```json
 {
   "patternId": "retry-with-backoff",
@@ -130,6 +134,7 @@ bun run build
 ### Pattern Data Not Loading
 
 Ensure `data/patterns-index.json` exists in the project root:
+
 ```bash
 ls -la /Users/paul/Projects/Effect-Patterns/data/patterns-index.json
 ```
@@ -141,7 +146,7 @@ ls -la /Users/paul/Projects/Effect-Patterns/data/patterns-index.json
 You can modify the patterns path in `src/index.ts`:
 
 ```typescript
-const patternsPath = join(__dirname, '../../../data/patterns-index.json');
+const patternsPath = join(__dirname, "../../../data/patterns-index.json");
 ```
 
 ### Environment Variables
@@ -195,6 +200,7 @@ bun run build
 ## Support
 
 For issues or questions:
+
 - Check the logs in Claude Desktop
 - Review the README.md for API documentation
 - Test the server independently with `test-mcp.ts`

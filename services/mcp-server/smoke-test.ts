@@ -10,19 +10,19 @@
  *   bun run smoke-test.ts https://effect-patterns-mcp-server.vercel.app staging-key
  */
 
-const BASE_URL = process.argv[2] || 'http://localhost:3000';
-const API_KEY = process.argv[3] || 'test-api-key';
+const BASE_URL = process.argv[2] || "http://localhost:3000";
+const API_KEY = process.argv[3] || "test-api-key";
 
 // Remove trailing slash
-const baseUrl = BASE_URL.replace(/\/$/, '');
+const baseUrl = BASE_URL.replace(/\/$/, "");
 
 // ANSI color codes
 const colors = {
-  reset: '\x1b[0m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
+  reset: "\x1b[0m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
 };
 
 // Test results
@@ -32,9 +32,9 @@ let testsFailed = 0;
 
 // Helper functions
 function printHeader(text: string) {
-  console.log(`\n${colors.blue}${'='.repeat(50)}${colors.reset}`);
+  console.log(`\n${colors.blue}${"=".repeat(50)}${colors.reset}`);
   console.log(`${colors.blue}${text}${colors.reset}`);
-  console.log(`${colors.blue}${'='.repeat(50)}${colors.reset}\n`);
+  console.log(`${colors.blue}${"=".repeat(50)}${colors.reset}\n`);
 }
 
 function printTest(text: string) {
@@ -56,18 +56,18 @@ function printInfo(text: string) {
 // Test runner
 async function runTest(
   name: string,
-  testFn: () => Promise<void>,
+  testFn: () => Promise<void>
 ): Promise<void> {
   testsRun++;
   printTest(name);
 
   try {
     await testFn();
-    printSuccess('Passed');
+    printSuccess("Passed");
     testsPassed++;
   } catch (error) {
     printError(
-      `Failed: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed: ${error instanceof Error ? error.message : String(error)}`
     );
     testsFailed++;
   }
@@ -94,85 +94,85 @@ function assertContains(haystack: string, needle: string, message?: string) {
 
 function assertNotNull<T>(
   value: T | null | undefined,
-  message?: string,
+  message?: string
 ): asserts value is T {
   if (value == null) {
-    throw new Error(message || 'Expected value to not be null or undefined');
+    throw new Error(message || "Expected value to not be null or undefined");
   }
 }
 
 // Main test suite
 async function runSmokeTests() {
-  printHeader('Effect Patterns MCP Server - Smoke Tests');
+  printHeader("Effect Patterns MCP Server - Smoke Tests");
   printInfo(`Base URL: ${baseUrl}`);
   printInfo(`API Key: ${API_KEY.substring(0, 10)}...`);
 
   // Test 1: Health Check (No Auth)
-  await runTest('Health check endpoint (no auth required)', async () => {
+  await runTest("Health check endpoint (no auth required)", async () => {
     const response = await fetch(`${baseUrl}/api/health`);
     assertEquals(response.status, 200);
 
     const data = await response.json();
     assertEquals(data.ok, true);
-    assertEquals(data.service, 'effect-patterns-mcp-server');
+    assertEquals(data.service, "effect-patterns-mcp-server");
     assertNotNull(data.version);
     assertNotNull(data.traceId);
   });
 
   // Test 2: Health Check Trace ID in Header
-  await runTest('Health check includes trace ID in header', async () => {
+  await runTest("Health check includes trace ID in header", async () => {
     const response = await fetch(`${baseUrl}/api/health`);
-    const traceId = response.headers.get('x-trace-id');
+    const traceId = response.headers.get("x-trace-id");
     assertNotNull(traceId);
-    assert(traceId.length > 0, 'Trace ID should not be empty');
+    assert(traceId.length > 0, "Trace ID should not be empty");
   });
 
   // Test 3: Patterns Requires Auth
-  await runTest('Patterns endpoint requires authentication', async () => {
+  await runTest("Patterns endpoint requires authentication", async () => {
     const response = await fetch(`${baseUrl}/api/patterns`);
     assertEquals(response.status, 401);
   });
 
   // Test 4: Patterns Rejects Invalid Key
-  await runTest('Patterns endpoint rejects invalid API key', async () => {
+  await runTest("Patterns endpoint rejects invalid API key", async () => {
     const response = await fetch(`${baseUrl}/api/patterns`, {
-      headers: { 'x-api-key': 'invalid-key' },
+      headers: { "x-api-key": "invalid-key" },
     });
     assertEquals(response.status, 401);
   });
 
   // Test 5: Patterns with Valid Key (Header)
   await runTest(
-    'Patterns endpoint accepts valid API key (header)',
+    "Patterns endpoint accepts valid API key (header)",
     async () => {
       const response = await fetch(`${baseUrl}/api/patterns`, {
-        headers: { 'x-api-key': API_KEY },
+        headers: { "x-api-key": API_KEY },
       });
       assertEquals(response.status, 200);
 
       const data = await response.json();
       assertNotNull(data.patterns);
-      assert(Array.isArray(data.patterns), 'Patterns should be an array');
-      assert(data.patterns.length > 0, 'Should return at least one pattern');
+      assert(Array.isArray(data.patterns), "Patterns should be an array");
+      assert(data.patterns.length > 0, "Should return at least one pattern");
       assertNotNull(data.count);
       assertNotNull(data.traceId);
-    },
+    }
   );
 
   // Test 6: Patterns with Valid Key (Query)
-  await runTest('Patterns endpoint accepts valid API key (query)', async () => {
+  await runTest("Patterns endpoint accepts valid API key (query)", async () => {
     const response = await fetch(`${baseUrl}/api/patterns?key=${API_KEY}`);
     assertEquals(response.status, 200);
 
     const data = await response.json();
     assertNotNull(data.patterns);
-    assert(data.count > 0, 'Count should be greater than 0');
+    assert(data.count > 0, "Count should be greater than 0");
   });
 
   // Test 7: Patterns Search Query
-  await runTest('Patterns endpoint supports search query', async () => {
+  await runTest("Patterns endpoint supports search query", async () => {
     const response = await fetch(`${baseUrl}/api/patterns?q=retry`, {
-      headers: { 'x-api-key': API_KEY },
+      headers: { "x-api-key": API_KEY },
     });
     assertEquals(response.status, 200);
 
@@ -181,12 +181,12 @@ async function runSmokeTests() {
   });
 
   // Test 8: Patterns Category Filter
-  await runTest('Patterns endpoint supports category filter', async () => {
+  await runTest("Patterns endpoint supports category filter", async () => {
     const response = await fetch(
       `${baseUrl}/api/patterns?category=error-handling`,
       {
-        headers: { 'x-api-key': API_KEY },
-      },
+        headers: { "x-api-key": API_KEY },
+      }
     );
     assertEquals(response.status, 200);
 
@@ -198,37 +198,37 @@ async function runSmokeTests() {
       for (const pattern of data.patterns) {
         assertEquals(
           pattern.category,
-          'error-handling',
-          'All patterns should match category filter',
+          "error-handling",
+          "All patterns should match category filter"
         );
       }
     }
   });
 
   // Test 9: Patterns Limit
-  await runTest('Patterns endpoint respects limit parameter', async () => {
+  await runTest("Patterns endpoint respects limit parameter", async () => {
     const response = await fetch(`${baseUrl}/api/patterns?limit=1`, {
-      headers: { 'x-api-key': API_KEY },
+      headers: { "x-api-key": API_KEY },
     });
     assertEquals(response.status, 200);
 
     const data = await response.json();
-    assert(data.patterns.length <= 1, 'Should return at most 1 pattern');
+    assert(data.patterns.length <= 1, "Should return at most 1 pattern");
   });
 
   // Test 10: Get Pattern by ID Requires Auth
-  await runTest('Get pattern by ID requires authentication', async () => {
+  await runTest("Get pattern by ID requires authentication", async () => {
     const response = await fetch(`${baseUrl}/api/patterns/retry-with-backoff`);
     assertEquals(response.status, 401);
   });
 
   // Test 11: Get Non-existent Pattern
-  await runTest('Get non-existent pattern returns 404', async () => {
+  await runTest("Get non-existent pattern returns 404", async () => {
     const response = await fetch(
       `${baseUrl}/api/patterns/nonexistent-pattern-id`,
       {
-        headers: { 'x-api-key': API_KEY },
-      },
+        headers: { "x-api-key": API_KEY },
+      }
     );
     assertEquals(response.status, 404);
 
@@ -237,93 +237,93 @@ async function runSmokeTests() {
   });
 
   // Test 12: Generate Requires Auth
-  await runTest('Generate endpoint requires authentication', async () => {
+  await runTest("Generate endpoint requires authentication", async () => {
     const response = await fetch(`${baseUrl}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ patternId: 'retry-with-backoff' }),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patternId: "retry-with-backoff" }),
     });
     assertEquals(response.status, 401);
   });
 
   // Test 13: Generate Snippet
-  await runTest('Generate snippet from pattern', async () => {
+  await runTest("Generate snippet from pattern", async () => {
     const response = await fetch(`${baseUrl}/api/generate`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'x-api-key': API_KEY,
-        'Content-Type': 'application/json',
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ patternId: 'retry-with-backoff' }),
+      body: JSON.stringify({ patternId: "retry-with-backoff" }),
     });
 
     // Accept either 200 (pattern exists) or 404 (pattern doesn't exist)
     assert(
       response.status === 200 || response.status === 404,
-      `Expected 200 or 404, got ${response.status}`,
+      `Expected 200 or 404, got ${response.status}`
     );
 
     if (response.status === 200) {
       const data = await response.json();
       assertNotNull(data.snippet);
       assertNotNull(data.traceId);
-      assertEquals(data.patternId, 'retry-with-backoff');
+      assertEquals(data.patternId, "retry-with-backoff");
     }
   });
 
   // Test 14: Generate with Custom Name
-  await runTest('Generate snippet with custom name', async () => {
+  await runTest("Generate snippet with custom name", async () => {
     const response = await fetch(`${baseUrl}/api/generate`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'x-api-key': API_KEY,
-        'Content-Type': 'application/json',
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        patternId: 'retry-with-backoff',
-        name: 'myRetry',
+        patternId: "retry-with-backoff",
+        name: "myRetry",
       }),
     });
 
     if (response.status === 200) {
       const data = await response.json();
-      assertContains(data.snippet, 'myRetry');
+      assertContains(data.snippet, "myRetry");
     } else {
       assertEquals(response.status, 404); // Pattern doesn't exist
     }
   });
 
   // Test 15: Generate with CJS Module Type
-  await runTest('Generate snippet with CJS module type', async () => {
+  await runTest("Generate snippet with CJS module type", async () => {
     const response = await fetch(`${baseUrl}/api/generate`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'x-api-key': API_KEY,
-        'Content-Type': 'application/json',
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        patternId: 'retry-with-backoff',
-        moduleType: 'cjs',
+        patternId: "retry-with-backoff",
+        moduleType: "cjs",
       }),
     });
 
     if (response.status === 200) {
       const data = await response.json();
-      assertContains(data.snippet, 'require');
+      assertContains(data.snippet, "require");
     } else {
       assertEquals(response.status, 404);
     }
   });
 
   // Test 16: Generate Invalid Request
-  await runTest('Generate endpoint validates request body', async () => {
+  await runTest("Generate endpoint validates request body", async () => {
     const response = await fetch(`${baseUrl}/api/generate`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'x-api-key': API_KEY,
-        'Content-Type': 'application/json',
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name: 'test' }), // Missing patternId
+      body: JSON.stringify({ name: "test" }), // Missing patternId
     });
     assertEquals(response.status, 400);
 
@@ -332,15 +332,15 @@ async function runSmokeTests() {
   });
 
   // Test 17: Trace Wiring Requires Auth
-  await runTest('Trace wiring endpoint requires authentication', async () => {
+  await runTest("Trace wiring endpoint requires authentication", async () => {
     const response = await fetch(`${baseUrl}/api/trace-wiring`);
     assertEquals(response.status, 401);
   });
 
   // Test 18: Trace Wiring Returns Examples
-  await runTest('Trace wiring endpoint returns examples', async () => {
+  await runTest("Trace wiring endpoint returns examples", async () => {
     const response = await fetch(`${baseUrl}/api/trace-wiring`, {
-      headers: { 'x-api-key': API_KEY },
+      headers: { "x-api-key": API_KEY },
     });
     assertEquals(response.status, 200);
 
@@ -353,48 +353,48 @@ async function runSmokeTests() {
   });
 
   // Test 19: Trace Wiring Contains Effect Example
-  await runTest('Trace wiring includes Effect.js example', async () => {
+  await runTest("Trace wiring includes Effect.js example", async () => {
     const response = await fetch(`${baseUrl}/api/trace-wiring`, {
-      headers: { 'x-api-key': API_KEY },
+      headers: { "x-api-key": API_KEY },
     });
     const data = await response.json();
-    assertContains(data.effectNodeSdk, 'Effect');
-    assertContains(data.effectNodeSdk, '@opentelemetry/api');
+    assertContains(data.effectNodeSdk, "Effect");
+    assertContains(data.effectNodeSdk, "@opentelemetry/api");
   });
 
   // Test 20: Response Time Check
-  await runTest('Response time check (< 3 seconds)', async () => {
+  await runTest("Response time check (< 3 seconds)", async () => {
     const startTime = Date.now();
     await fetch(`${baseUrl}/api/patterns`, {
-      headers: { 'x-api-key': API_KEY },
+      headers: { "x-api-key": API_KEY },
     });
     const endTime = Date.now();
     const responseTime = (endTime - startTime) / 1000;
 
     assert(
       responseTime < 3,
-      `Response time too slow: ${responseTime.toFixed(2)}s`,
+      `Response time too slow: ${responseTime.toFixed(2)}s`
     );
     printInfo(`Response time: ${responseTime.toFixed(2)}s`);
   });
 
   // Test 21: Trace ID Consistency
-  await runTest('Trace ID in body matches header', async () => {
+  await runTest("Trace ID in body matches header", async () => {
     const response = await fetch(`${baseUrl}/api/patterns`, {
-      headers: { 'x-api-key': API_KEY },
+      headers: { "x-api-key": API_KEY },
     });
     const data = await response.json();
-    const headerTraceId = response.headers.get('x-trace-id');
+    const headerTraceId = response.headers.get("x-trace-id");
 
     assertEquals(
       data.traceId,
       headerTraceId,
-      'Trace ID in body should match header',
+      "Trace ID in body should match header"
     );
   });
 
   // Print summary
-  printHeader('Test Summary');
+  printHeader("Test Summary");
   console.log(`Total Tests: ${testsRun}`);
   console.log(`${colors.green}Passed: ${testsPassed}${colors.reset}`);
   console.log(`${colors.red}Failed: ${testsFailed}${colors.reset}`);

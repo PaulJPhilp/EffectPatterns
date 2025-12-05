@@ -1,13 +1,15 @@
-import * as Effect from 'effect/Effect'
-import { TUIHandler } from 'effect-cli-tui'
-import { processChat } from '../app/code-assistant/lib/chat/engine';
-import { MockDbServiceLive } from './mock-db';
+import * as Effect from "effect/Effect";
+import { TUIHandler } from "effect-cli-tui";
+import { processChat } from "../app/code-assistant/lib/chat/engine";
+import { MockDbServiceLive } from "./mock-db";
 
 const program = Effect.gen(function* (_) {
   const args = process.argv.slice(2);
 
   if (args.length < 2) {
-    console.log("Usage: bun run scripts/test-harness.ts <prompt_message> <model_id>");
+    console.log(
+      "Usage: bun run scripts/test-harness.ts <prompt_message> <model_id>"
+    );
     return;
   }
 
@@ -47,22 +49,27 @@ const program = Effect.gen(function* (_) {
   };
 
   try {
-    const stream = yield* _(Effect.promise(() => processChat({ requestBody: mockRequestBody, request: mockRequest })));
+    const stream = yield* _(
+      Effect.promise(() =>
+        processChat({ requestBody: mockRequestBody, request: mockRequest })
+      )
+    );
 
     // Read the stream and print the content
-    const fullResponse = yield* _(Effect.promise(async () => {
-      const reader = stream.getReader();
-      let result;
-      let responseText = "";
-      while (!(result = await reader.read()).done) {
-        responseText += new TextDecoder().decode(result.value);
-      }
-      return responseText;
-    }));
+    const fullResponse = yield* _(
+      Effect.promise(async () => {
+        const reader = stream.getReader();
+        let result;
+        let responseText = "";
+        while (!(result = await reader.read()).done) {
+          responseText += new TextDecoder().decode(result.value);
+        }
+        return responseText;
+      })
+    );
 
     console.log("Model Response:");
     console.log(fullResponse);
-
   } catch (error) {
     console.error("Error during chat processing:", error);
   }

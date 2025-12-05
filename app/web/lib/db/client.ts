@@ -2,9 +2,9 @@
  * Drizzle database client
  */
 
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema.js';
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "./schema.js";
 
 /**
  * Get database connection string from environment
@@ -13,8 +13,8 @@ const getDatabaseUrl = (): string => {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
-      'DATABASE_URL environment variable is not set. ' +
-        'See .env.sample for setup instructions.'
+      "DATABASE_URL environment variable is not set. " +
+        "See .env.sample for setup instructions."
     );
   }
   return url;

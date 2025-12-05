@@ -139,17 +139,17 @@ OUTPUT_FORMAT=markdown           # Report format (markdown or json)
 
 ### Configuration Details
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OPENAI_API_KEY` | **required** | Your OpenAI API key with GPT-4o access |
-| `CHUNK_SIZE` | `50` | Target number of messages per chunk |
-| `SMART_CHUNKING` | `true` | Keep Q&A pairs together using relationship scoring |
-| `MIN_RELATIONSHIP_SCORE` | `75` | Minimum score (0-100) to keep messages together |
-| `MODEL_NAME` | `gpt-4o` | OpenAI model (supports tool calling) |
-| `TEMPERATURE` | `0` | LLM temperature (0 = consistent, 1 = creative) |
-| `MAX_RETRIES` | `3` | Maximum retry attempts for failed LLM calls |
-| `REQUEST_TIMEOUT` | `60000` | Timeout per request (ms) |
-| `OUTPUT_FORMAT` | `markdown` | Output format (markdown/json) |
+| Variable                 | Default      | Description                                        |
+| ------------------------ | ------------ | -------------------------------------------------- |
+| `OPENAI_API_KEY`         | **required** | Your OpenAI API key with GPT-4o access             |
+| `CHUNK_SIZE`             | `50`         | Target number of messages per chunk                |
+| `SMART_CHUNKING`         | `true`       | Keep Q&A pairs together using relationship scoring |
+| `MIN_RELATIONSHIP_SCORE` | `75`         | Minimum score (0-100) to keep messages together    |
+| `MODEL_NAME`             | `gpt-4o`     | OpenAI model (supports tool calling)               |
+| `TEMPERATURE`            | `0`          | LLM temperature (0 = consistent, 1 = creative)     |
+| `MAX_RETRIES`            | `3`          | Maximum retry attempts for failed LLM calls        |
+| `REQUEST_TIMEOUT`        | `60000`      | Timeout per request (ms)                           |
+| `OUTPUT_FORMAT`          | `markdown`   | Output format (markdown/json)                      |
 
 ### Smart Chunking Algorithm
 
@@ -187,11 +187,11 @@ const program = Effect.gen(function* () {
       outputFile: "/path/to/output/report.txt",
     })
   );
-  
+
   console.log(`Processed ${result.totalMessages} messages`);
   console.log(`Created ${result.chunkCount} chunks`);
   console.log(`Generated ${result.partialAnalyses?.length} analyses`);
-  
+
   return result;
 });
 
@@ -230,51 +230,59 @@ The analyzer generates a comprehensive markdown report:
 # Effect-TS Discord Q&A Analysis
 
 ## Executive Summary
+
 High-level findings and key insights...
 
 ## Common Questions
+
 1. How to choose between HttpApi, HttpRouter, and effect/rpc?
 2. How to handle multiple error types in Effect?
-...
+   ...
 
 ## Effect-TS Patterns
 
 ### Services
+
 - Pattern 1: Effect.Service with accessors
 - Pattern 2: Layer-based dependency injection
-...
+  ...
 
 ### Error Handling
+
 - Tagged errors with Data.TaggedError
 - Error unions for multiple error types
-...
+  ...
 
 ## Pain Points
+
 1. Confusion around HttpApi vs HttpRouter
 2. Type inference with Schema.Type
-...
+   ...
 
 ## Best Practices
+
 1. Use HttpRouter for low-level control
 2. Use HttpApi for spec-driven REST APIs
-...
+   ...
 
 ## Code Examples
 
 ### Example 1: Service Definition
+
 \`\`\`typescript
 export class MyService extends Effect.Service<MyService>()(
-  "MyService",
-  { effect: ... }
+"MyService",
+{ effect: ... }
 ) {}
 \`\`\`
 
 ...
 
 ## Recommendations
+
 1. Add decision tree for HTTP API options
 2. Expand error handling documentation
-...
+   ...
 ```
 
 ### Output Metadata
@@ -283,13 +291,13 @@ The `GraphState` includes metadata about the analysis:
 
 ```typescript
 interface GraphState {
-  messages: Message[];           // Validated messages
-  chunks?: Message[][];          // Message chunks
-  totalMessages?: number;        // Total message count
-  chunkCount?: number;           // Number of chunks created
-  chunkingStrategy?: string;     // "smart" or "simple"
-  partialAnalyses?: PartialAnalysis[];  // Per-chunk analyses
-  finalReport?: string;          // Final aggregated report
+  messages: Message[]; // Validated messages
+  chunks?: Message[][]; // Message chunks
+  totalMessages?: number; // Total message count
+  chunkCount?: number; // Number of chunks created
+  chunkingStrategy?: string; // "smart" or "simple"
+  partialAnalyses?: PartialAnalysis[]; // Per-chunk analyses
+  finalReport?: string; // Final aggregated report
 }
 ```
 
@@ -328,7 +336,7 @@ The test suite validates:
 ✅ **Chunking**: Smart chunking algorithm, relationship scoring  
 ✅ **LLM Integration**: OpenAI API calls, retry logic, error handling  
 ✅ **Output Generation**: Report structure, content quality, file writing  
-✅ **Effect-TS Patterns**: Service layers, error handling, Effect composition  
+✅ **Effect-TS Patterns**: Service layers, error handling, Effect composition
 
 ### Example Test
 
@@ -342,14 +350,14 @@ it("processes real Discord Q&A data", async () => {
           outputFile: "./output/test-report.txt",
         })
       );
-      
+
       return { finalState: result, reportText: "...", metadata: { ... } };
     })
   );
-  
+
   // Validate metadata
   expect(metadata.totalMessages).toBe(50);
-  
+
   // Validate content
   expect(reportText).toContain("HttpApi");
   expect(reportText).toContain("error");
@@ -434,9 +442,7 @@ Enable detailed logging:
 Effect.gen(function* () {
   // Your code
 }).pipe(
-  Effect.tapError(error => 
-    Effect.sync(() => console.error("Debug:", error))
-  )
+  Effect.tapError((error) => Effect.sync(() => console.error("Debug:", error)))
 );
 ```
 
@@ -509,10 +515,7 @@ scripts/analyzer/
 4. **Update Graph**: Integrate in `graph.ts`
 
    ```typescript
-   const layer = Layer.mergeAll(
-     ExistingServices,
-     MyService.Default
-   );
+   const layer = Layer.mergeAll(ExistingServices, MyService.Default);
    ```
 
 ### Code Style

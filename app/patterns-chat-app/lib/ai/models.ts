@@ -48,7 +48,8 @@ export const chatModels: ChatModel[] = [
   {
     id: CHAT_MODEL_IDS.DEFAULT,
     name: "Gemini 2.5 Flash",
-    description: "Google's next-generation fast and efficient multimodal model (default)",
+    description:
+      "Google's next-generation fast and efficient multimodal model (default)",
   },
   {
     id: CHAT_MODEL_IDS.REASONING,

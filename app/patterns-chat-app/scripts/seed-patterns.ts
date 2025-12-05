@@ -9,11 +9,7 @@ import dotenv from "dotenv";
 // Load .env.local
 dotenv.config({ path: path.join(__dirname, "..", ".env.local") });
 
-const PATTERNS_DIR = path.join(
-  __dirname,
-  "../../..",
-  "content/published"
-);
+const PATTERNS_DIR = path.join(__dirname, "../../..", "content/published");
 
 // System user ID for seeded patterns
 const SYSTEM_USER_ID = "system:patterns";
@@ -51,9 +47,7 @@ async function loadPatterns(): Promise<
 > {
   console.log(`📚 Loading patterns from: ${PATTERNS_DIR}`);
 
-  const files = fs
-    .readdirSync(PATTERNS_DIR)
-    .filter((f) => f.endsWith(".mdx"));
+  const files = fs.readdirSync(PATTERNS_DIR).filter((f) => f.endsWith(".mdx"));
 
   console.log(`✅ Found ${files.length} pattern files`);
 
@@ -109,9 +103,7 @@ async function waitForMemorySearchable(
 async function seedPatterns(): Promise<void> {
   const apiKey = process.env.SUPERMEMORY_API_KEY;
   if (!apiKey) {
-    console.error(
-      "❌ SUPERMEMORY_API_KEY not set. Set it in .env.local"
-    );
+    console.error("❌ SUPERMEMORY_API_KEY not set. Set it in .env.local");
     process.exit(1);
   }
 
@@ -184,7 +176,7 @@ async function seedPatterns(): Promise<void> {
       });
 
       queuedCount++;
-      const progress = ((i + 1) / patterns.length * 100).toFixed(1);
+      const progress = (((i + 1) / patterns.length) * 100).toFixed(1);
       process.stdout.write(
         `\r✅ [${progress}%] Queued: ${patternId.substring(0, 40)}`
       );
@@ -208,7 +200,9 @@ async function seedPatterns(): Promise<void> {
   console.log(`\n\n✅ Queued ${queuedCount}/${patterns.length} patterns`);
 
   // Phase 2: Wait for queued memories to be processed
-  console.log(`\n⏳ Phase 2: Waiting for queue processing (timeout: ${QUEUE_POLL_TIMEOUT / 1000}s per pattern)...\n`);
+  console.log(
+    `\n⏳ Phase 2: Waiting for queue processing (timeout: ${QUEUE_POLL_TIMEOUT / 1000}s per pattern)...\n`
+  );
 
   let indexedCount = 0;
   const failedToIndex: string[] = [];
@@ -229,15 +223,25 @@ async function seedPatterns(): Promise<void> {
 
     if (isIndexed) {
       indexedCount++;
-      process.stdout.write("\r✅ Indexed:  " + patternId.substring(0, 40) + "                    \n");
+      process.stdout.write(
+        "\r✅ Indexed:  " +
+          patternId.substring(0, 40) +
+          "                    \n"
+      );
     } else {
       failedToIndex.push(patternId);
-      process.stdout.write("\r❌ Timeout:  " + patternId.substring(0, 40) + "                    \n");
+      process.stdout.write(
+        "\r❌ Timeout:  " +
+          patternId.substring(0, 40) +
+          "                    \n"
+      );
     }
   }
 
   console.log(`\n📊 Seeding Complete!`);
-  console.log(`   ✅ Successfully indexed: ${indexedCount}/${queuedMemories.length}`);
+  console.log(
+    `   ✅ Successfully indexed: ${indexedCount}/${queuedMemories.length}`
+  );
 
   if (errorCount > 0) {
     console.log(`   ❌ Failed to queue: ${errorCount}`);

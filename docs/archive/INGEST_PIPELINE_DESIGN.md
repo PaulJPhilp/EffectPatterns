@@ -26,9 +26,11 @@ The ingest pipeline processes new Effect patterns from backups, validates them, 
 ### Stage Details
 
 #### Stage 1: Discovery & Extraction 📖
+
 **Purpose:** Find patterns and extract TypeScript code from MDX files
 
 **Actions:**
+
 - Scan `content/new/raw/` directory for MDX files
 - Extract frontmatter metadata
 - Extract TypeScript code from `## Good Example` sections
@@ -36,6 +38,7 @@ The ingest pipeline processes new Effect patterns from backups, validates them, 
 - Build pattern inventory
 
 **Output:**
+
 ```typescript
 interface Pattern {
   id: string;
@@ -49,6 +52,7 @@ interface Pattern {
 ```
 
 **Example:**
+
 ```
 📖 Stage 1: Pattern Discovery
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -62,27 +66,31 @@ Found 42 MDX files in backup
 ---
 
 #### Stage 2: Validation 🔍
+
 **Purpose:** Validate frontmatter, structure, and content
 
 **Checks:**
+
 - **Frontmatter:** Required fields (id, title, skillLevel, useCase, summary)
 - **Structure:** Required sections (Good Example, Anti-Pattern)
 - **Files:** TypeScript file existence
 - **Content:** Basic quality checks
 
 **Output:**
+
 ```typescript
 interface ValidationResult {
   pattern: Pattern;
   valid: boolean;
   issues: ValidationIssue[];
-  qaScore?: number;       // Added for QA stage
-  qaPassed?: boolean;     // Added for QA stage
-  qaIssues?: string[];    // Added for QA stage
+  qaScore?: number; // Added for QA stage
+  qaPassed?: boolean; // Added for QA stage
+  qaIssues?: string[]; // Added for QA stage
 }
 ```
 
 **Example:**
+
 ```
 🔍 Stage 2: Validation
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -96,9 +104,11 @@ Validated: 38/42 patterns
 ---
 
 #### Stage 3: QA Review 🔍
+
 **Purpose:** AI-based quality assurance checking
 
 **Actions:**
+
 - Copies valid patterns to `content/new/qa/` directory
 - Runs automated quality checks (lightweight placeholder)
 - Scores patterns on quality metrics (0-100%)
@@ -106,23 +116,26 @@ Validated: 38/42 patterns
 - Compatible with existing `bun run qa:process` workflow
 
 **Quality Checks:**
+
 - Content clarity and completeness
-- Example quality and relevance  
+- Example quality and relevance
 - Documentation accuracy
 - Best practices compliance
 - Consistency with other patterns
 
 **Output:**
+
 ```typescript
 interface QAResult {
   patternId: string;
   qaPassed: boolean;
-  qaScore: number;        // 0.0 - 1.0
-  qaIssues: string[];     // Quality concerns
+  qaScore: number; // 0.0 - 1.0
+  qaIssues: string[]; // Quality concerns
 }
 ```
 
 **Example:**
+
 ```
 🔍 Stage 3: QA Review
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -136,6 +149,7 @@ QA passed: 36/38 patterns
 ```
 
 **Notes:**
+
 - Lightweight placeholder in ingest pipeline (for speed)
 - Full AI-powered QA available via `bun run qa:process`
 - Results saved to `content/new/qa/` directory
@@ -144,15 +158,18 @@ QA passed: 36/38 patterns
 ---
 
 #### Stage 4: Testing 🧪
+
 **Purpose:** Execute TypeScript examples to ensure they work
 
 **Actions:**
+
 - Run `bun run` on each TypeScript file
 - Catch runtime errors
 - Track execution time
 - Mark tests as passed/failed
 
 **Output:**
+
 ```typescript
 interface ValidationResult {
   // ... previous fields
@@ -161,6 +178,7 @@ interface ValidationResult {
 ```
 
 **Example:**
+
 ```
 🧪 Stage 4: Testing
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -176,15 +194,18 @@ Tests passed: 36/38
 ---
 
 #### Stage 5: Comparison 🔎
+
 **Purpose:** Detect duplicate patterns already in main content
 
 **Actions:**
+
 - Load existing pattern IDs from `content/raw/`
 - Compare with incoming patterns
 - Flag duplicates
 - Identify truly new patterns
 
 **Output:**
+
 ```typescript
 interface ValidationResult {
   // ... previous fields
@@ -194,6 +215,7 @@ interface ValidationResult {
 ```
 
 **Example:**
+
 ```
 🔎 Stage 5: Duplicate Detection
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -207,20 +229,24 @@ New patterns: 34, Duplicates: 2
 ---
 
 #### Stage 6: Migration 📦
+
 **Purpose:** Move validated, tested, non-duplicate patterns to main content
 
 **Actions:**
+
 - Copy MDX file to `content/raw/`
 - Copy TypeScript file to `content/src/`
 - Preserve file metadata
 - Track migration success
 
 **Criteria:**
+
 - ✅ Valid (no errors)
 - ✅ Test passed
 - ✅ Not a duplicate
 
 **Example:**
+
 ```
 📦 Stage 6: Migration
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -236,9 +262,11 @@ Migrated: 34/34
 ---
 
 #### Stage 7: Integration 🔄
+
 **Purpose:** Regenerate all outputs with new patterns included
 
 **Actions:**
+
 - Run the publishing pipeline
   - Test all patterns (including new ones)
   - Publish MDX files
@@ -248,6 +276,7 @@ Migrated: 34/34
 - Verify integration success
 
 **Example:**
+
 ```
 🔄 Stage 7: Integration
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -268,19 +297,23 @@ Running publish pipeline...
 ---
 
 #### Stage 8: Reporting 📊
+
 **Purpose:** Generate comprehensive reports of the ingest process
 
 **Outputs:**
+
 1. **JSON Report** - Machine-readable data
 2. **Markdown Report** - Human-readable summary
 
 **Report Contents:**
+
 - Summary statistics
 - Successfully migrated patterns
 - Duplicate patterns
 - Failed patterns with error details
 
 **Example JSON:**
+
 ```json
 {
   "timestamp": "2025-09-29T10:30:00.000Z",
@@ -295,6 +328,7 @@ Running publish pipeline...
 ```
 
 **Example Markdown:**
+
 ```markdown
 # Ingest Pipeline Report
 
@@ -313,7 +347,7 @@ Generated: 9/29/2025, 10:30:00 AM
 
 - brand-model-domain-type - Modeling Validated Domain Types with Brand
 - combinator-filter - Filter with Combinators
-...
+  ...
 ```
 
 ---
@@ -370,18 +404,21 @@ bun run ingest
 ### Advanced Usage
 
 #### Dry Run Mode
+
 ```bash
 # Preview what would happen without making changes
 DRY_RUN=true bun run ingest
 ```
 
 #### Filter by Pattern
+
 ```bash
 # Only process specific patterns
 PATTERN_FILTER="brand-*" bun run ingest
 ```
 
 #### Skip Integration
+
 ```bash
 # Migrate but don't run pipeline
 SKIP_INTEGRATION=true bun run ingest
@@ -393,10 +430,10 @@ SKIP_INTEGRATION=true bun run ingest
 
 ```typescript
 const NEW_DIR = "content/new";
-const NEW_RAW = "content/new/raw";        // Source patterns
-const NEW_SRC = "content/new/src";        // Source TypeScript
-const TARGET_RAW = "content/raw";         // Target for MDX
-const TARGET_SRC = "content/src";         // Target for TypeScript
+const NEW_RAW = "content/new/raw"; // Source patterns
+const NEW_SRC = "content/new/src"; // Source TypeScript
+const TARGET_RAW = "content/raw"; // Target for MDX
+const TARGET_SRC = "content/src"; // Target for TypeScript
 const REPORT_DIR = "content/new/ingest-reports";
 ```
 
@@ -404,27 +441,17 @@ const REPORT_DIR = "content/new/ingest-reports";
 
 ```typescript
 // Required frontmatter fields
-const REQUIRED_FIELDS = [
-  "id",
-  "title",
-  "skillLevel",
-  "useCase",
-  "summary"
-];
+const REQUIRED_FIELDS = ["id", "title", "skillLevel", "useCase", "summary"];
 
 // Valid skill levels
-const VALID_SKILL_LEVELS = [
-  "beginner",
-  "intermediate",
-  "advanced"
-];
+const VALID_SKILL_LEVELS = ["beginner", "intermediate", "advanced"];
 ```
 
 ### Testing Configuration
 
 ```typescript
-const TEST_TIMEOUT = 10000;  // 10 seconds per test
-const MAX_BUFFER = 1024 * 1024;  // 1MB output buffer
+const TEST_TIMEOUT = 10000; // 10 seconds per test
+const MAX_BUFFER = 1024 * 1024; // 1MB output buffer
 ```
 
 ## Error Handling
@@ -432,16 +459,19 @@ const MAX_BUFFER = 1024 * 1024;  // 1MB output buffer
 ### Validation Errors
 
 **Missing Frontmatter:**
+
 ```
 ❌ [frontmatter] Missing required field: title
 ```
 
 **Missing Sections:**
+
 ```
 ❌ [structure] Missing 'Good Example' section
 ```
 
 **File Not Found:**
+
 ```
 ❌ [files] TypeScript file not found
 ```
@@ -449,12 +479,14 @@ const MAX_BUFFER = 1024 * 1024;  // 1MB output buffer
 ### Test Failures
 
 **Runtime Error:**
+
 ```
 ❌ [testing] TypeScript execution failed
    Error: Cannot find module 'effect'
 ```
 
 **Timeout:**
+
 ```
 ❌ [testing] Test timed out after 10000ms
 ```
@@ -462,11 +494,13 @@ const MAX_BUFFER = 1024 * 1024;  // 1MB output buffer
 ### Migration Failures
 
 **Permission Error:**
+
 ```
 ❌ [migration] Failed to copy file: Permission denied
 ```
 
 **Disk Space:**
+
 ```
 ❌ [migration] Failed to write file: No space left on device
 ```
@@ -485,6 +519,7 @@ content/backups/ingest-reports/
 ### Report Structure
 
 #### Success Metrics
+
 - Total patterns found
 - Validation pass rate
 - Test pass rate
@@ -492,12 +527,14 @@ content/backups/ingest-reports/
 - Migration success rate
 
 #### Failure Details
+
 - Pattern ID
 - Issue category
 - Error message
 - Stack trace (if applicable)
 
 #### Recommendations
+
 - Patterns needing attention
 - Suggested fixes
 - Next steps
@@ -518,16 +555,16 @@ After migration, the main pipeline runs:
 
 ### Expected Timings
 
-| Stage | Duration | Notes |
-|-------|----------|-------|
-| Discovery | <1s | Fast file system scan |
-| Validation | 1-2s | Depends on pattern count |
-| Testing | 30-60s | Parallel execution (10 workers) |
-| Comparison | <1s | Simple set lookup |
-| Migration | 1-2s | File system copies |
-| Integration | 25-30s | Full pipeline run |
-| Reporting | <1s | JSON + Markdown generation |
-| **Total** | **~60s** | For 42 patterns |
+| Stage       | Duration | Notes                           |
+| ----------- | -------- | ------------------------------- |
+| Discovery   | <1s      | Fast file system scan           |
+| Validation  | 1-2s     | Depends on pattern count        |
+| Testing     | 30-60s   | Parallel execution (10 workers) |
+| Comparison  | <1s      | Simple set lookup               |
+| Migration   | 1-2s     | File system copies              |
+| Integration | 25-30s   | Full pipeline run               |
+| Reporting   | <1s      | JSON + Markdown generation      |
+| **Total**   | **~60s** | For 42 patterns                 |
 
 ### Scalability
 
@@ -541,11 +578,13 @@ After migration, the main pipeline runs:
 ### Before Running Ingest
 
 1. **Backup current content**
+
    ```bash
    cp -r content content-backup-$(date +%Y%m%d)
    ```
 
 2. **Check backup directory**
+
    ```bash
    ls -la content/backups/new-20250811-171541/
    ```
@@ -564,17 +603,20 @@ After migration, the main pipeline runs:
 ### After Ingest
 
 1. **Review reports**
+
    ```bash
    cat content/backups/ingest-reports/ingest-report-*.md
    ```
 
 2. **Verify patterns**
+
    ```bash
    ls content/raw/ | wc -l  # Should increase
    ls content/src/ | wc -l  # Should increase
    ```
 
 3. **Test manually**
+
    ```bash
    bun run test
    bun run validate
@@ -593,6 +635,7 @@ After migration, the main pipeline runs:
 **Problem:** Backup directory empty or wrong path
 
 **Solution:**
+
 ```bash
 # Check backup location
 ls -la content/backups/new-20250811-171541/raw/
@@ -603,6 +646,7 @@ ls -la content/backups/new-20250811-171541/raw/
 **Problem:** Missing corresponding .ts file
 
 **Solution:**
+
 1. Check if file exists in `backup/src/`
 2. Verify filename matches pattern ID
 3. Extract code manually if needed
@@ -612,6 +656,7 @@ ls -la content/backups/new-20250811-171541/raw/
 **Problem:** TypeScript code doesn't execute
 
 **Solution:**
+
 1. Run test manually: `bun run content/backups/.../src/pattern.ts`
 2. Check for outdated Effect APIs
 3. Update code to current Effect version
@@ -622,6 +667,7 @@ ls -la content/backups/new-20250811-171541/raw/
 **Problem:** Pattern already exists in main content
 
 **Solution:**
+
 1. Review existing pattern
 2. Decide: skip, replace, or merge
 3. Manually handle duplicates after ingest
@@ -631,6 +677,7 @@ ls -la content/backups/new-20250811-171541/raw/
 **Problem:** Integration step encountered errors
 
 **Solution:**
+
 1. Check pipeline output
 2. Run pipeline manually: `bun run pipeline`
 3. Fix any pattern-specific issues
@@ -639,24 +686,28 @@ ls -la content/backups/new-20250811-171541/raw/
 ## Future Enhancements
 
 ### Phase 1: Automation
+
 - [ ] Automatic backup scanning
 - [ ] Scheduled ingest runs
 - [ ] Email/Slack notifications
 - [ ] Web dashboard
 
 ### Phase 2: Intelligence
+
 - [ ] AI-powered validation
 - [ ] Auto-fix common issues
 - [ ] Similarity detection
 - [ ] Quality scoring
 
 ### Phase 3: Collaboration
+
 - [ ] Multi-user review workflow
 - [ ] Pattern approval process
 - [ ] Contributor tracking
 - [ ] Version control integration
 
 ### Phase 4: Analytics
+
 - [ ] Pattern usage metrics
 - [ ] Quality trends
 - [ ] Performance tracking

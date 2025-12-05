@@ -5,21 +5,22 @@ The SM-CLI now includes comprehensive queue management commands to monitor and m
 ## Overview
 
 When you create memories (documents) in Supermemory, they go through a processing pipeline:
+
 - **Queued** → **Extracting** → **Chunking** → **Embedding** → **Indexing** → **Done**
 
 The queue management commands allow you to inspect, monitor, and manage this pipeline from the CLI.
 
 ## Processing Pipeline Stages
 
-| Stage | Description | Typical Duration |
-|-------|-------------|------------------|
-| `queued` | Document waiting to be processed | < 5 seconds |
-| `extracting` | Content being extracted from source | 5-30 seconds |
-| `chunking` | Breaking into searchable pieces | 5-15 seconds |
-| `embedding` | Creating vector representations | 10-30 seconds |
-| `indexing` | Adding to search index | 5-10 seconds |
-| `done` | Fully processed and searchable | - |
-| `failed` | Processing failed | - |
+| Stage        | Description                         | Typical Duration |
+| ------------ | ----------------------------------- | ---------------- |
+| `queued`     | Document waiting to be processed    | < 5 seconds      |
+| `extracting` | Content being extracted from source | 5-30 seconds     |
+| `chunking`   | Breaking into searchable pieces     | 5-15 seconds     |
+| `embedding`  | Creating vector representations     | 10-30 seconds    |
+| `indexing`   | Adding to search index              | 5-10 seconds     |
+| `done`       | Fully processed and searchable      | -                |
+| `failed`     | Processing failed                   | -                |
 
 ## Commands
 
@@ -28,15 +29,18 @@ The queue management commands allow you to inspect, monitor, and manage this pip
 List all documents currently being processed in the queue.
 
 **Usage:**
+
 ```bash
 bun run sm-cli queue list
 bun run sm-cli queue list --format json
 ```
 
 **Options:**
+
 - `--format` (human | json): Output format (default: human)
 
 **Example Output:**
+
 ```
 ╔══════════════════════════════════════════════════════════════════╗
 ║ Processing Queue                                                 ║
@@ -57,16 +61,19 @@ bun run sm-cli queue list --format json
 Check the detailed status of a specific document.
 
 **Usage:**
+
 ```bash
 bun run sm-cli queue status --id <document-id>
 bun run sm-cli queue status --id <document-id> --format json
 ```
 
 **Options:**
+
 - `--id` (text, required): Document ID to check
 - `--format` (human | json): Output format (default: human)
 
 **Example Output:**
+
 ```
 ╔════════════════════════════════════════════════════════════════════╗
 ║ Document Status                                                    ║
@@ -88,16 +95,19 @@ bun run sm-cli queue status --id <document-id> --format json
 Delete a document from the queue (useful for removing stuck or failed documents).
 
 **Usage:**
+
 ```bash
 bun run sm-cli queue delete --id <document-id>
 bun run sm-cli queue delete --id <document-id> --force
 ```
 
 **Options:**
+
 - `--id` (text, required): Document ID to delete
 - `--force` (boolean): Skip confirmation prompt (default: false)
 
 **Example Output:**
+
 ```
 ╔════════════════════════════════════════════════════════════════════╗
 ║ Document Deleted                                                   ║
@@ -112,6 +122,7 @@ bun run sm-cli queue delete --id <document-id> --force
 Clear multiple failed or stuck documents from the queue in one operation.
 
 **Usage:**
+
 ```bash
 # Clear only failed documents (default)
 bun run sm-cli queue clear
@@ -127,10 +138,12 @@ bun run sm-cli queue clear --status failed --force
 ```
 
 **Options:**
+
 - `--status` (failed | queued | all): Which documents to clear (default: failed)
 - `--force` (boolean): Skip confirmation prompt (default: false)
 
 **Example Output:**
+
 ```
 ⚠️  Warning: This will delete 5 document(s) from the queue.
 
@@ -153,16 +166,19 @@ Continue? (yes/no): yes
 Watch a document's processing progress in real-time with polling.
 
 **Usage:**
+
 ```bash
 bun run sm-cli queue watch --id <document-id>
 bun run sm-cli queue watch --id <document-id> --max-wait 600
 ```
 
 **Options:**
+
 - `--id` (text, required): Document ID to watch
 - `--max-wait` (integer): Maximum wait time in seconds (default: 300)
 
 **Example Output:**
+
 ```
 👀 Watching document processing...
 ID: doc_abc123def456ghi789jkl...
@@ -247,6 +263,7 @@ bun run sm-cli memories list
 ### Human Format (Default)
 
 Beautiful, formatted output with colors and tables using cli-table3 and chalk:
+
 - 🟡 Yellow: `queued` status
 - 🔵 Blue: Processing statuses (`extracting`, `chunking`, etc.)
 - 🟢 Green: `done` status
@@ -261,6 +278,7 @@ bun run sm-cli queue list --format json
 ```
 
 Returns:
+
 ```json
 {
   "documents": [
@@ -270,7 +288,7 @@ Returns:
       "created_at": "2025-11-04T20:45:22Z",
       "updated_at": "2025-11-04T20:45:28Z",
       "container_tags": ["ai-research"],
-      "metadata": {"source": "upload"}
+      "metadata": { "source": "upload" }
     }
   ],
   "total": 1

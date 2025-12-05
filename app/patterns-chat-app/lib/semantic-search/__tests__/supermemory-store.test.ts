@@ -36,7 +36,9 @@ describe("SupermemoryStore", () => {
       const addSpy = vi.spyOn(mockClient, "add");
 
       await mockClient.add({
-        content: JSON.stringify(createMockConversationEmbedding(testChatId, testUserId)),
+        content: JSON.stringify(
+          createMockConversationEmbedding(testChatId, testUserId)
+        ),
         metadata: {
           type: "conversation",
           chatId: testChatId,
@@ -62,7 +64,13 @@ describe("SupermemoryStore", () => {
       const invalidEmbedding = Array(100).fill(0);
 
       await expect(
-        store.add(testChatId, testUserId, invalidEmbedding, mockVectorMetadata, mockTags)
+        store.add(
+          testChatId,
+          testUserId,
+          invalidEmbedding,
+          mockVectorMetadata,
+          mockTags
+        )
       ).rejects.toThrow("Embedding dimension");
     });
 
@@ -115,7 +123,11 @@ describe("SupermemoryStore", () => {
 
   describe("search", () => {
     it("should search conversations with query text", async () => {
-      const searchMemory = createMockSearchMemory(testChatId, testUserId, mockTags);
+      const searchMemory = createMockSearchMemory(
+        testChatId,
+        testUserId,
+        mockTags
+      );
       mockClient.getMemories().push(searchMemory);
 
       const searchSpy = vi.spyOn(mockClient, "search");
@@ -138,8 +150,16 @@ describe("SupermemoryStore", () => {
     });
 
     it("should filter results by userId", async () => {
-      const ownMemory = createMockSearchMemory(testChatId, testUserId, mockTags);
-      const otherUserMemory = createMockSearchMemory("other-chat", "other-user", mockTags);
+      const ownMemory = createMockSearchMemory(
+        testChatId,
+        testUserId,
+        mockTags
+      );
+      const otherUserMemory = createMockSearchMemory(
+        "other-chat",
+        "other-user",
+        mockTags
+      );
 
       mockClient.getMemories().push(ownMemory);
       mockClient.getMemories().push(otherUserMemory);
@@ -154,7 +174,11 @@ describe("SupermemoryStore", () => {
     });
 
     it("should filter results by outcome when specified", async () => {
-      const solvedMemory = createMockSearchMemory(testChatId, testUserId, mockTags);
+      const solvedMemory = createMockSearchMemory(
+        testChatId,
+        testUserId,
+        mockTags
+      );
       mockClient.getMemories().push(solvedMemory);
 
       const results = await mockClient.search({
@@ -167,9 +191,16 @@ describe("SupermemoryStore", () => {
 
     it("should respect the limit parameter", async () => {
       for (let i = 0; i < 20; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, mockTags, 0.8 + (i % 10) * 0.01)
-        );
+        mockClient
+          .getMemories()
+          .push(
+            createMockSearchMemory(
+              `chat-${i}`,
+              testUserId,
+              mockTags,
+              0.8 + (i % 10) * 0.01
+            )
+          );
       }
 
       const results = await mockClient.search({
@@ -192,7 +223,12 @@ describe("SupermemoryStore", () => {
     });
 
     it("should estimate similarity scores", async () => {
-      const memory = createMockSearchMemory(testChatId, testUserId, mockTags, 0.9);
+      const memory = createMockSearchMemory(
+        testChatId,
+        testUserId,
+        mockTags,
+        0.9
+      );
       mockClient.getMemories().push(memory);
 
       const results = await mockClient.search({
@@ -210,7 +246,10 @@ describe("SupermemoryStore", () => {
 
   describe("searchByTag", () => {
     it("should find conversations by tag", async () => {
-      const memory = createMockSearchMemory(testChatId, testUserId, ["effect-ts", "error-handling"]);
+      const memory = createMockSearchMemory(testChatId, testUserId, [
+        "effect-ts",
+        "error-handling",
+      ]);
       mockClient.getMemories().push(memory);
 
       const results = await mockClient.search({
@@ -222,9 +261,17 @@ describe("SupermemoryStore", () => {
     });
 
     it("should filter by multiple tags", async () => {
-      const memory1 = createMockSearchMemory("chat-1", testUserId, ["effect-ts", "error-handling"]);
-      const memory2 = createMockSearchMemory("chat-2", testUserId, ["effect-ts", "async"]);
-      const memory3 = createMockSearchMemory("chat-3", testUserId, ["javascript"]);
+      const memory1 = createMockSearchMemory("chat-1", testUserId, [
+        "effect-ts",
+        "error-handling",
+      ]);
+      const memory2 = createMockSearchMemory("chat-2", testUserId, [
+        "effect-ts",
+        "async",
+      ]);
+      const memory3 = createMockSearchMemory("chat-3", testUserId, [
+        "javascript",
+      ]);
 
       mockClient.getMemories().push(memory1);
       mockClient.getMemories().push(memory2);
@@ -240,9 +287,9 @@ describe("SupermemoryStore", () => {
 
     it("should respect limit for tag search", async () => {
       for (let i = 0; i < 15; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, ["effect-ts"])
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, ["effect-ts"]));
       }
 
       const results = await mockClient.search({
@@ -257,9 +304,9 @@ describe("SupermemoryStore", () => {
   describe("getStats", () => {
     it("should return correct stats for user", async () => {
       for (let i = 0; i < 5; i++) {
-        mockClient.getMemories().push(
-          createMockSearchMemory(`chat-${i}`, testUserId, mockTags)
-        );
+        mockClient
+          .getMemories()
+          .push(createMockSearchMemory(`chat-${i}`, testUserId, mockTags));
       }
 
       // Stats would be calculated from the mock client
@@ -267,15 +314,15 @@ describe("SupermemoryStore", () => {
     });
 
     it("should count only user's conversations", async () => {
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-1", testUserId, mockTags)
-      );
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-2", "other-user", mockTags)
-      );
-      mockClient.getMemories().push(
-        createMockSearchMemory("chat-3", testUserId, mockTags)
-      );
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("chat-1", testUserId, mockTags));
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("chat-2", "other-user", mockTags));
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory("chat-3", testUserId, mockTags));
 
       expect(mockClient.getMemories().length).toBe(3);
     });
@@ -357,7 +404,11 @@ describe("SupermemoryStore", () => {
 
     it("should preserve tags array", () => {
       const tags = ["effect-ts", "error-handling", "typescript", "async"];
-      const memory = createMockConversationEmbedding(testChatId, testUserId, tags);
+      const memory = createMockConversationEmbedding(
+        testChatId,
+        testUserId,
+        tags
+      );
 
       expect(memory.tags).toEqual(tags);
     });
@@ -397,7 +448,9 @@ describe("SupermemoryStore", () => {
     });
 
     it("should handle multiple simultaneous searches", async () => {
-      mockClient.getMemories().push(createMockSearchMemory(testChatId, testUserId));
+      mockClient
+        .getMemories()
+        .push(createMockSearchMemory(testChatId, testUserId));
 
       const searches = Array(5)
         .fill(0)

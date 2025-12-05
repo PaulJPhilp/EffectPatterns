@@ -98,7 +98,7 @@ export async function GET(request: Request) {
       minSimilarity,
       outcome: outcome || null,
       count: results.length,
-      results: results.map(result => ({
+      results: results.map((result) => ({
         id: result.id,
         metadata: result.metadata,
         score: {

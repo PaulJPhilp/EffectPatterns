@@ -26,12 +26,16 @@ async function checkProjects() {
 
   // Check memories methods
   console.log("📋 Client.memories methods:");
-  console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(client.memories)).sort());
+  console.log(
+    Object.getOwnPropertyNames(Object.getPrototypeOf(client.memories)).sort()
+  );
   console.log("");
 
   // Check search methods
   console.log("📋 Client.search methods:");
-  console.log(Object.getOwnPropertyNames(Object.getPrototypeOf(client.search)).sort());
+  console.log(
+    Object.getOwnPropertyNames(Object.getPrototypeOf(client.search)).sort()
+  );
   console.log("");
 
   // Try to list projects (if available)
@@ -41,14 +45,23 @@ async function checkProjects() {
     // Try different possible ways to access projects
     const methods = [
       { name: "client.projects", fn: () => (client as any).projects },
-      { name: "client.projects.list()", fn: async () => (client as any).projects?.list() },
-      { name: "client.listProjects()", fn: async () => (client as any).listProjects?.() },
-      { name: "client.memories.listProjects()", fn: async () => (client as any).memories.listProjects?.() },
+      {
+        name: "client.projects.list()",
+        fn: async () => (client as any).projects?.list(),
+      },
+      {
+        name: "client.listProjects()",
+        fn: async () => (client as any).listProjects?.(),
+      },
+      {
+        name: "client.memories.listProjects()",
+        fn: async () => (client as any).memories.listProjects?.(),
+      },
     ];
 
     for (const method of methods) {
       try {
-        if (typeof method.fn === 'function') {
+        if (typeof method.fn === "function") {
           const result = await method.fn();
           if (result) {
             console.log(`✅ ${method.name}:`);
@@ -83,7 +96,9 @@ async function checkProjects() {
 
     // Check Supermemory API documentation hints
     console.log("📚 Supermemory SDK Version: 3.4.0");
-    console.log("\n🔗 Check Supermemory docs at: https://github.com/supermemory-ai/supermemory");
+    console.log(
+      "\n🔗 Check Supermemory docs at: https://github.com/supermemory-ai/supermemory"
+    );
     console.log("🔗 Or API docs: https://docs.supermemory.ai\n");
 
     // Try to get current workspace/project info
@@ -91,8 +106,9 @@ async function checkProjects() {
 
     // Look at client constructor options
     console.log("Client is initialized with apiKey");
-    console.log("Checking if there's a workspaceId or projectId parameter...\n");
-
+    console.log(
+      "Checking if there's a workspaceId or projectId parameter...\n"
+    );
   } catch (error) {
     const err = error instanceof Error ? error.message : String(error);
     console.error(`❌ Error: ${err}`);

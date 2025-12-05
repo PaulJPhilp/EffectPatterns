@@ -8,7 +8,8 @@ The 36 TypeScript errors are in test/experimental files, NOT in the actual patte
 
 ## 📊 Error Breakdown
 
-### ✅ Pattern Files (content/src/*.ts)
+### ✅ Pattern Files (content/src/\*.ts)
+
 - **Files:** 89
 - **Errors:** 0
 - **Tests Passing:** 89/89 (100%)
@@ -17,7 +18,9 @@ The 36 TypeScript errors are in test/experimental files, NOT in the actual patte
 ### ❌ Non-Pattern Files
 
 #### 1. Test Files (8 errors)
+
 Files referencing `effect-mdx/service` or old CLI paths:
+
 - `scripts/__tests__/ingest-scripts.test.ts`
 - `scripts/__tests__/publish-scripts.test.ts`
 - `scripts/__tests__/publish.test.ts`
@@ -26,7 +29,9 @@ Files referencing `effect-mdx/service` or old CLI paths:
 **Status:** Waiting for effect-mdx v0.2.0
 
 #### 2. Test MDX Service Files (6 errors)
+
 Files referencing old CLI service paths:
+
 - `scripts/test-mdx-service.ts`
 - `scripts/test-mdx-service-errors.ts`
 - `scripts/test-mdx-service-integration.ts`
@@ -34,7 +39,9 @@ Files referencing old CLI service paths:
 **Status:** Old test files, can be archived
 
 #### 3. Ingest Scripts (2 errors)
+
 Files referencing `effect-mdx/service`:
+
 - `scripts/ingest/run.ts`
 - `scripts/ingest/test-publish.ts`
 - `scripts/ingest/populate-expectations.ts`
@@ -42,7 +49,9 @@ Files referencing `effect-mdx/service`:
 **Status:** Waiting for effect-mdx v0.2.0
 
 #### 4. Autofix Suggestions (20 errors)
+
 Experimental files with old Effect APIs:
+
 - `brand-validate-parse.attempt1.ts` & `attempt2.ts` (6 errors)
 - `combinator-conditional.attempt1.ts` & `attempt2.ts` (2 errors)
 - `combinator-filter.attempt1.ts` & `attempt2.ts` (4 errors)
@@ -54,10 +63,12 @@ Experimental files with old Effect APIs:
 ## 🛠️ Options
 
 ### Option A: Keep As Is
+
 - **Pros:** Keep files for when effect-mdx v0.2.0 is ready
 - **Cons:** 36 TypeScript errors showing in IDE
 
 ### Option B: Archive Files ⭐ Recommended
+
 Archive test/experimental files until effect-mdx v0.2.0:
 
 ```bash
@@ -69,11 +80,13 @@ bun run scripts/cleanup-typescript-errors.ts
 Files moved to: `scripts/archived-awaiting-effect-mdx-v0.2/`
 
 **To restore later:**
+
 ```bash
 cp scripts/archived-awaiting-effect-mdx-v0.2/* scripts/
 ```
 
 ### Option C: Delete Files
+
 Permanently delete test/experimental files:
 
 ```bash
@@ -90,6 +103,7 @@ rm scripts/autofix/ai/suggestions/*.ts
 ## 📈 Impact Analysis
 
 ### Current State
+
 ```
 Total TypeScript errors: 36
 - Pattern files:         0 ✅
@@ -99,6 +113,7 @@ Total TypeScript errors: 36
 ```
 
 ### After Archiving (Option B)
+
 ```
 Total TypeScript errors: 0 ✅
 - Pattern files:         0 ✅
@@ -110,11 +125,14 @@ Total TypeScript errors: 0 ✅
 ## 🎓 Key Insights
 
 ### Why Errors Exist
+
 1. **effect-mdx v0.2.0 not released yet**
+
    - Test files reference `effect-mdx/service` module
    - Will be fixed when you publish v0.2.0
 
 2. **Old CLI paths**
+
    - Some test files reference `../../cli/src/services/mdx-service/service.js`
    - Path doesn't exist in current project structure
 
@@ -123,6 +141,7 @@ Total TypeScript errors: 0 ✅
    - APIs changed with Effect v3.17.14 update
 
 ### What Works
+
 - ✅ All 89 patterns execute correctly
 - ✅ Publishing pipeline works (test, validate, rules)
 - ✅ README generation works
@@ -130,6 +149,7 @@ Total TypeScript errors: 0 ✅
 - ✅ CI/CD pipeline would pass
 
 ### What Doesn't Work
+
 - ❌ Old test files for effect-mdx integration
 - ❌ Old test files for CLI service
 - ❌ Experimental autofix suggestions
@@ -144,12 +164,14 @@ bun run scripts/cleanup-typescript-errors.ts
 ```
 
 This will:
+
 1. Move files to `scripts/archived-awaiting-effect-mdx-v0.2/`
 2. Create README in archive with restoration instructions
 3. Result in 0 TypeScript errors
 4. Keep all files for later restoration
 
 **Then verify:**
+
 ```bash
 tsc --noEmit
 # Should show 0 errors
@@ -163,20 +185,23 @@ bun run test
 When you publish effect-mdx v0.2.0:
 
 1. **Restore archived files:**
+
    ```bash
    cp scripts/archived-awaiting-effect-mdx-v0.2/*.ts scripts/
    ```
 
 2. **Update imports:**
+
    ```typescript
    // Old
    import { MdxService } from "effect-mdx/service";
-   
+
    // New (based on your fix)
    import { MdxService } from "effect-mdx";
    ```
 
 3. **Fix API calls:**
+
    - Update `MdxConfigService.scoped` to `MdxConfigService`
    - Other API updates as documented
 
@@ -189,13 +214,13 @@ When you publish effect-mdx v0.2.0:
 
 ## 🎯 Summary
 
-| Item | Status |
-|------|--------|
-| **Patterns** | ✅ 89/89 working |
-| **Tests** | ✅ 89/89 passing |
-| **Pipeline** | ✅ Fully functional |
-| **Rules** | ✅ 201 files generated |
-| **TypeScript Errors** | ⚠️ 36 (in non-pattern files) |
+| Item                   | Status                          |
+| ---------------------- | ------------------------------- |
+| **Patterns**           | ✅ 89/89 working                |
+| **Tests**              | ✅ 89/89 passing                |
+| **Pipeline**           | ✅ Fully functional             |
+| **Rules**              | ✅ 201 files generated          |
+| **TypeScript Errors**  | ⚠️ 36 (in non-pattern files)    |
 | **Recommended Action** | Archive test/experimental files |
 
 **Bottom line:** Your project is production-ready! The TypeScript errors are in test/experimental files that depend on effect-mdx v0.2.0, which you're currently working on.

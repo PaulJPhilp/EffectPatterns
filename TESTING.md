@@ -9,6 +9,7 @@ Comprehensive testing documentation for the Effect Patterns CLI.
 Complete integration and unit tests for all CLI commands.
 
 **Coverage:**
+
 - Help and version commands
 - Error handling
 - `install` command (list and add)
@@ -18,6 +19,7 @@ Complete integration and unit tests for all CLI commands.
 - Integration workflows
 
 **Run:**
+
 ```bash
 bun run test:cli
 ```
@@ -27,6 +29,7 @@ bun run test:cli
 Detailed tests for the `install add` command with server integration.
 
 **Coverage:**
+
 - Tool validation
 - API integration with Pattern Server
 - File operations (.cursor, AGENTS.md, etc.)
@@ -35,6 +38,7 @@ Detailed tests for the `install add` command with server integration.
 - Output messages
 
 **Run:**
+
 ```bash
 vitest run scripts/ep-rules-add.test.ts
 ```
@@ -48,6 +52,7 @@ bun run test:cli
 ```
 
 This runs both:
+
 - Full CLI test suite
 - Install add command tests
 
@@ -207,6 +212,7 @@ expect(result.stdout).toContain("Successfully added");
 ```
 
 **Returns:**
+
 ```typescript
 {
   stdout: string;
@@ -383,10 +389,12 @@ bun run server:dev
 ### GitHub Actions
 
 Tests run automatically on:
+
 - Push to `main`
 - Pull requests
 
 **CI Configuration:**
+
 ```yaml
 - name: Run CLI tests
   run: bun run test:cli
@@ -421,6 +429,7 @@ Current test coverage includes:
 ### Coverage Gaps
 
 Areas not yet covered (future work):
+
 - Interactive wizard for `pattern new` (requires stdin mocking)
 - `admin release create` (would create actual releases)
 - Git operations in `release` commands
@@ -433,6 +442,7 @@ Areas not yet covered (future work):
 **Cause**: Pattern Server not stopping properly
 
 **Solution**:
+
 ```bash
 pkill -f "bun.*server"
 bun run test:cli
@@ -443,6 +453,7 @@ bun run test:cli
 **Cause**: Previous server instance still running
 
 **Solution**:
+
 ```bash
 lsof -ti:3001 | xargs kill -9
 ```
@@ -452,6 +463,7 @@ lsof -ti:3001 | xargs kill -9
 **Cause**: Test artifacts not cleaned up
 
 **Solution**:
+
 ```bash
 chmod -R 755 .cursor .windsurf .vscode .kilo .kira .trae .goose
 rm -rf .cursor .windsurf .vscode .kilo .kira .trae .goose
@@ -463,6 +475,7 @@ rm -f AGENTS.md GEMINI.md CLAUDE.md .goosehints
 **Cause**: Commands taking longer than expected
 
 **Solution**: Increase timeout in test:
+
 ```typescript
 const result = await runCommand(
   ["command"],
@@ -473,6 +486,7 @@ const result = await runCommand(
 ## Best Practices
 
 1. **Use sequential tests** when tests interact with shared resources:
+
    ```typescript
    describe.sequential("tests with shared state", () => {
      // tests
@@ -480,6 +494,7 @@ const result = await runCommand(
    ```
 
 2. **Clean up after tests**:
+
    ```typescript
    afterEach(async () => {
      await fs.rm(".cursor", { recursive: true }).catch(() => {});
@@ -487,11 +502,13 @@ const result = await runCommand(
    ```
 
 3. **Test exit codes flexibly** for commands that may legitimately fail:
+
    ```typescript
    expect([0, 1]).toContain(result.exitCode);
    ```
 
 4. **Use timeouts** for long-running commands:
+
    ```typescript
    await runCommand(["admin", "pipeline"], { timeout: 180000 });
    ```

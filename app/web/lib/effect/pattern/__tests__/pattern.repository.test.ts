@@ -2,11 +2,11 @@
  * Unit tests for PatternRepository
  */
 
-import { Effect } from 'effect';
-import { describe, expect, it } from 'vitest';
-import type { PatternRepository } from '../api.js';
-import { PatternNotFound } from '../errors.js';
-import type { PatternMeta } from '../types.js';
+import { Effect } from "effect";
+import { describe, expect, it } from "vitest";
+import type { PatternRepository } from "../api.js";
+import { PatternNotFound } from "../errors.js";
+import type { PatternMeta } from "../types.js";
 
 /**
  * Mock PatternRepository for testing
@@ -61,60 +61,60 @@ const createMockRepository = (
     Effect.succeed(mockData.byModule?.[moduleId] ?? []),
 });
 
-describe('PatternRepository', () => {
+describe("PatternRepository", () => {
   const mockPatterns: PatternMeta[] = [
     {
-      id: 'error-handling',
-      title: 'Error Handling',
-      summary: 'Handle errors with Effect',
-      skillLevel: 'intermediate',
-      tags: ['error', 'effect'],
+      id: "error-handling",
+      title: "Error Handling",
+      summary: "Handle errors with Effect",
+      skillLevel: "intermediate",
+      tags: ["error", "effect"],
       modules: {},
     },
     {
-      id: 'retry-pattern',
-      title: 'Retry Pattern',
-      summary: 'Retry failed operations',
-      skillLevel: 'advanced',
-      tags: ['retry', 'effect'],
+      id: "retry-pattern",
+      title: "Retry Pattern",
+      summary: "Retry failed operations",
+      skillLevel: "advanced",
+      tags: ["retry", "effect"],
       modules: {},
     },
     {
-      id: 'effect-basics',
-      title: 'Effect Basics',
-      summary: 'Introduction to Effect',
-      skillLevel: 'beginner',
-      tags: ['basics', 'effect'],
+      id: "effect-basics",
+      title: "Effect Basics",
+      summary: "Introduction to Effect",
+      skillLevel: "beginner",
+      tags: ["basics", "effect"],
       modules: {},
     },
   ];
 
   const mockRepo = createMockRepository({ patterns: mockPatterns });
 
-  describe('findById', () => {
-    it('should return pattern when found', async () => {
+  describe("findById", () => {
+    it("should return pattern when found", async () => {
       const result = await Effect.runPromise(
-        mockRepo.findById('error-handling')
+        mockRepo.findById("error-handling")
       );
 
-      expect(result.id).toBe('error-handling');
-      expect(result.title).toBe('Error Handling');
+      expect(result.id).toBe("error-handling");
+      expect(result.title).toBe("Error Handling");
     });
 
-    it('should fail with PatternNotFound when not found', async () => {
+    it("should fail with PatternNotFound when not found", async () => {
       const result = await Effect.runPromise(
-        mockRepo.findById('non-existent').pipe(Effect.flip)
+        mockRepo.findById("non-existent").pipe(Effect.flip)
       );
 
       expect(result).toBeInstanceOf(PatternNotFound);
-      if (result._tag === 'PatternNotFound') {
-        expect(result.id).toBe('non-existent');
+      if (result._tag === "PatternNotFound") {
+        expect(result.id).toBe("non-existent");
       }
     });
   });
 
-  describe('findAll', () => {
-    it('should return all patterns', async () => {
+  describe("findAll", () => {
+    it("should return all patterns", async () => {
       const result = await Effect.runPromise(mockRepo.findAll());
 
       expect(result.items).toHaveLength(3);
@@ -123,7 +123,7 @@ describe('PatternRepository', () => {
       expect(result.offset).toBe(0);
     });
 
-    it('should respect pagination params', async () => {
+    it("should respect pagination params", async () => {
       const result = await Effect.runPromise(
         mockRepo.findAll({ limit: 2, offset: 1 })
       );
@@ -133,86 +133,86 @@ describe('PatternRepository', () => {
     });
   });
 
-  describe('findByTag', () => {
-    it('should return patterns with matching tag', async () => {
-      const result = await Effect.runPromise(mockRepo.findByTag('retry'));
+  describe("findByTag", () => {
+    it("should return patterns with matching tag", async () => {
+      const result = await Effect.runPromise(mockRepo.findByTag("retry"));
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].id).toBe('retry-pattern');
+      expect(result.items[0].id).toBe("retry-pattern");
     });
 
     it('should return all patterns with "effect" tag', async () => {
-      const result = await Effect.runPromise(mockRepo.findByTag('effect'));
+      const result = await Effect.runPromise(mockRepo.findByTag("effect"));
 
       expect(result.items).toHaveLength(3);
     });
 
-    it('should return empty result for non-existent tag', async () => {
+    it("should return empty result for non-existent tag", async () => {
       const result = await Effect.runPromise(
-        mockRepo.findByTag('non-existent')
+        mockRepo.findByTag("non-existent")
       );
 
       expect(result.items).toHaveLength(0);
     });
   });
 
-  describe('search', () => {
-    it('should search by title query', async () => {
+  describe("search", () => {
+    it("should search by title query", async () => {
       const result = await Effect.runPromise(
-        mockRepo.search({ query: 'Error' })
+        mockRepo.search({ query: "Error" })
       );
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].title).toBe('Error Handling');
+      expect(result.items[0].title).toBe("Error Handling");
     });
 
-    it('should filter by skill level', async () => {
+    it("should filter by skill level", async () => {
       const result = await Effect.runPromise(
-        mockRepo.search({ skillLevel: 'beginner' })
+        mockRepo.search({ skillLevel: "beginner" })
       );
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].skillLevel).toBe('beginner');
+      expect(result.items[0].skillLevel).toBe("beginner");
     });
 
-    it('should filter by tags', async () => {
+    it("should filter by tags", async () => {
       const result = await Effect.runPromise(
-        mockRepo.search({ tags: ['retry'] })
+        mockRepo.search({ tags: ["retry"] })
       );
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].id).toBe('retry-pattern');
+      expect(result.items[0].id).toBe("retry-pattern");
     });
 
-    it('should combine multiple filters', async () => {
+    it("should combine multiple filters", async () => {
       const result = await Effect.runPromise(
         mockRepo.search({
-          skillLevel: 'intermediate',
-          tags: ['error'],
+          skillLevel: "intermediate",
+          tags: ["error"],
         })
       );
 
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].id).toBe('error-handling');
+      expect(result.items[0].id).toBe("error-handling");
     });
   });
 
-  describe('listByModule', () => {
+  describe("listByModule", () => {
     const modulePatterns = [
       {
-        id: 'pattern-1',
-        title: 'Pattern 1',
-        summary: 'First pattern',
-        skillLevel: 'beginner' as const,
-        tags: ['test'],
+        id: "pattern-1",
+        title: "Pattern 1",
+        summary: "First pattern",
+        skillLevel: "beginner" as const,
+        tags: ["test"],
         modules: {},
       },
       {
-        id: 'pattern-2',
-        title: 'Pattern 2',
-        summary: 'Second pattern',
-        skillLevel: 'intermediate' as const,
-        tags: ['test'],
+        id: "pattern-2",
+        title: "Pattern 2",
+        summary: "Second pattern",
+        skillLevel: "intermediate" as const,
+        tags: ["test"],
         modules: {},
       },
     ];
@@ -220,23 +220,23 @@ describe('PatternRepository', () => {
     const repoWithModules = createMockRepository({
       patterns: modulePatterns,
       byModule: {
-        'module-1-foundations': modulePatterns,
+        "module-1-foundations": modulePatterns,
       },
     });
 
-    it('should return patterns for a module ordered by stage and position', async () => {
+    it("should return patterns for a module ordered by stage and position", async () => {
       const result = await Effect.runPromise(
-        repoWithModules.listByModule('module-1-foundations')
+        repoWithModules.listByModule("module-1-foundations")
       );
 
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('pattern-1');
-      expect(result[1].id).toBe('pattern-2');
+      expect(result[0].id).toBe("pattern-1");
+      expect(result[1].id).toBe("pattern-2");
     });
 
-    it('should return empty array for module with no patterns', async () => {
+    it("should return empty array for module with no patterns", async () => {
       const result = await Effect.runPromise(
-        repoWithModules.listByModule('empty-module')
+        repoWithModules.listByModule("empty-module")
       );
 
       expect(result).toHaveLength(0);

@@ -1,9 +1,11 @@
 # Advanced Level Rules
 
 ## Add Caching by Wrapping a Layer
+
 **Rule:** Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
 
 ### Example
+
 We have a `WeatherService` that makes slow API calls. We create a `WeatherService.cached` wrapper layer that adds an in-memory cache using a `Ref` and a `Map`.
 
 ```typescript
@@ -72,41 +74,42 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(Effect.provide(program, AppLayer));
-
 ```
 
 ---
 
 ## Build a Basic HTTP Server
+
 **Rule:** Use a managed Runtime created from a Layer to handle requests in a Node.js HTTP server.
 
 ### Example
+
 This example creates a simple server with a `Greeter` service. The server starts, creates a runtime containing the `Greeter`, and then uses that runtime to handle requests.
 
 ```typescript
-import { HttpServer, HttpServerResponse } from "@effect/platform"
-import { NodeHttpServer } from "@effect/platform-node"
-import { Duration, Effect, Fiber, Layer } from "effect"
-import { createServer } from "node:http"
+import { HttpServer, HttpServerResponse } from "@effect/platform";
+import { NodeHttpServer } from "@effect/platform-node";
+import { Duration, Effect, Fiber, Layer } from "effect";
+import { createServer } from "node:http";
 
 // Create a server layer using Node's built-in HTTP server
-const ServerLive = NodeHttpServer.layer(() => createServer(), { port: 3001 })
+const ServerLive = NodeHttpServer.layer(() => createServer(), { port: 3001 });
 
 // Define your HTTP app (here responding "Hello World" to every request)
 const app = Effect.gen(function* () {
-  yield* Effect.logInfo("Received HTTP request")
-  return yield* HttpServerResponse.text("Hello World")
-})
+  yield* Effect.logInfo("Received HTTP request");
+  return yield* HttpServerResponse.text("Hello World");
+});
 
 const serverLayer = HttpServer.serve(app).pipe(Layer.provide(ServerLive));
 
 const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Server starting on http://localhost:3001")
-  const fiber = yield* Layer.launch(serverLayer).pipe(Effect.fork)
-  yield* Effect.sleep(Duration.seconds(2))
-  yield* Fiber.interrupt(fiber)
-  yield* Effect.logInfo("Server shutdown complete")
-})
+  yield* Effect.logInfo("Server starting on http://localhost:3001");
+  const fiber = yield* Layer.launch(serverLayer).pipe(Effect.fork);
+  yield* Effect.sleep(Duration.seconds(2));
+  yield* Fiber.interrupt(fiber);
+  yield* Effect.logInfo("Server shutdown complete");
+});
 
 Effect.runPromise(program as unknown as Effect.Effect<void, unknown, never>);
 ```
@@ -114,23 +117,22 @@ Effect.runPromise(program as unknown as Effect.Effect<void, unknown, never>);
 ---
 
 ## Create a Managed Runtime for Scoped Resources
+
 **Rule:** Create a managed runtime for scoped resources.
 
 ### Example
+
 ```typescript
 import { Effect, Layer } from "effect";
 
-class DatabasePool extends Effect.Service<DatabasePool>()(
-  "DbPool",
-  {
-    effect: Effect.gen(function* () {
-      yield* Effect.log("Acquiring pool");
-      return {
-        query: () => Effect.succeed("result")
-      };
-    })
-  }
-) {}
+class DatabasePool extends Effect.Service<DatabasePool>()("DbPool", {
+  effect: Effect.gen(function* () {
+    yield* Effect.log("Acquiring pool");
+    return {
+      query: () => Effect.succeed("result"),
+    };
+  }),
+}) {}
 
 // Create a program that uses the DatabasePool service
 const program = Effect.gen(function* () {
@@ -141,10 +143,7 @@ const program = Effect.gen(function* () {
 
 // Run the program with the service implementation
 Effect.runPromise(
-  program.pipe(
-    Effect.provide(DatabasePool.Default),
-    Effect.scoped
-  )
+  program.pipe(Effect.provide(DatabasePool.Default), Effect.scoped)
 );
 ```
 
@@ -153,25 +152,22 @@ Effect.runPromise(
 in the event of errors or interruptions.
 
 ## Create a Reusable Runtime from Layers
+
 **Rule:** Create a reusable runtime from layers.
 
 ### Example
+
 ```typescript
 import { Effect, Layer, Runtime } from "effect";
 
-class GreeterService extends Effect.Service<GreeterService>()(
-  "Greeter",
-  {
-    sync: () => ({
-      greet: (name: string) => Effect.sync(() => `Hello ${name}`)
-    })
-  }
-) {}
+class GreeterService extends Effect.Service<GreeterService>()("Greeter", {
+  sync: () => ({
+    greet: (name: string) => Effect.sync(() => `Hello ${name}`),
+  }),
+}) {}
 
 const runtime = Effect.runSync(
-  Layer.toRuntime(GreeterService.Default).pipe(
-    Effect.scoped
-  )
+  Layer.toRuntime(GreeterService.Default).pipe(Effect.scoped)
 );
 
 // In a server, you would reuse `run` for every request.
@@ -183,9 +179,11 @@ By compiling your layers into a Runtime once, you avoid rebuilding the
 dependency graph for every effect execution.
 
 ## Decouple Fibers with Queues and PubSub
+
 **Rule:** Use Queue for point-to-point work distribution and PubSub for broadcast messaging between fibers.
 
 ### Example
+
 A producer fiber adds jobs to a `Queue`, and a worker fiber takes jobs off the queue to process them.
 
 ```typescript
@@ -270,9 +268,7 @@ const program = Effect.gen(function* () {
 // - Backpressure prevents resource exhaustion
 // - Interruption allows for graceful shutdown
 Effect.runPromise(program);
-
 ```
-
 
 A publisher sends an event, and multiple subscribers react to it independently.
 
@@ -290,9 +286,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`AUDIT: Received event: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Subscriber 2: The "Notifier" service
@@ -303,9 +299,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`NOTIFIER: Sending notification for: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Give subscribers time to start
@@ -319,9 +315,11 @@ const program = Effect.gen(function* () {
 ---
 
 ## Execute Long-Running Apps with Effect.runFork
+
 **Rule:** Use Effect.runFork to launch a long-running application as a manageable, detached fiber.
 
 ### Example
+
 This example starts a simple "server" that runs forever. We use `runFork` to launch it and then use the returned `Fiber` to shut it down gracefully after 5 seconds.
 
 ```typescript
@@ -330,7 +328,7 @@ import { Effect, Fiber } from "effect";
 // A server that listens for requests forever
 const server = Effect.log("Server received a request.").pipe(
   Effect.delay("1 second"),
-  Effect.forever,
+  Effect.forever
 );
 
 console.log("Starting server...");
@@ -350,9 +348,11 @@ setTimeout(() => {
 ---
 
 ## Handle Unexpected Errors by Inspecting the Cause
+
 **Rule:** Handle unexpected errors by inspecting the cause.
 
 ### Example
+
 ```typescript
 import { Cause, Effect, Data, Schedule, Duration } from "effect";
 
@@ -387,19 +387,21 @@ class DatabaseService extends Effect.Service<DatabaseService>()(
   {
     sync: () => ({
       // Connect to database with proper error handling
-      connect: (config: DatabaseConfig): Effect.Effect<DatabaseConnection, DatabaseError> =>
+      connect: (
+        config: DatabaseConfig
+      ): Effect.Effect<DatabaseConnection, DatabaseError> =>
         Effect.gen(function* () {
           yield* Effect.logInfo(`Connecting to database: ${config.url}`);
-          
+
           if (!config.url) {
             const error = new DatabaseError({
               operation: "connect",
-              details: "Missing URL"
+              details: "Missing URL",
             });
             yield* Effect.logError(`Database error: ${JSON.stringify(error)}`);
             return yield* Effect.fail(error);
           }
-          
+
           // Simulate unexpected errors
           if (config.url === "invalid") {
             yield* Effect.logError("Invalid connection string");
@@ -407,134 +409,143 @@ class DatabaseService extends Effect.Service<DatabaseService>()(
               throw new Error("Failed to parse connection string");
             });
           }
-          
+
           if (config.url === "timeout") {
             yield* Effect.logError("Connection timeout");
             return yield* Effect.sync(() => {
               throw new Error("Connection timed out");
             });
           }
-          
+
           yield* Effect.logInfo("Database connection successful");
           return { success: true };
-        })
-    })
+        }),
+    }),
   }
 ) {}
 
 // Define user service
-class UserService extends Effect.Service<UserService>()(
-  "UserService",
-  {
-    sync: () => ({
-      // Parse user data with validation
-      parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`Parsing user data: ${JSON.stringify(input)}`);
-          
-          try {
-            if (typeof input !== "object" || !input) {
-              const error = new ValidationError({
-                field: "input",
-                message: "Invalid input type"
-              });
-              yield* Effect.logWarning(`Validation error: ${JSON.stringify(error)}`);
-              throw error;
-            }
-            
-            const data = input as Record<string, unknown>;
-            
-            if (typeof data.id !== "string" || typeof data.name !== "string") {
-              const error = new ValidationError({
-                field: "input",
-                message: "Missing required fields"
-              });
-              yield* Effect.logWarning(`Validation error: ${JSON.stringify(error)}`);
-              throw error;
-            }
-            
-            const user = { id: data.id, name: data.name };
-            yield* Effect.logInfo(`Successfully parsed user: ${JSON.stringify(user)}`);
-            return user;
-          } catch (e) {
-            if (e instanceof ValidationError) {
-              return yield* Effect.fail(e);
-            }
-            yield* Effect.logError(`Unexpected error: ${e instanceof Error ? e.message : String(e)}`);
-            throw e;
+class UserService extends Effect.Service<UserService>()("UserService", {
+  sync: () => ({
+    // Parse user data with validation
+    parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`Parsing user data: ${JSON.stringify(input)}`);
+
+        try {
+          if (typeof input !== "object" || !input) {
+            const error = new ValidationError({
+              field: "input",
+              message: "Invalid input type",
+            });
+            yield* Effect.logWarning(
+              `Validation error: ${JSON.stringify(error)}`
+            );
+            throw error;
           }
-        })
-    })
-  }
-) {}
+
+          const data = input as Record<string, unknown>;
+
+          if (typeof data.id !== "string" || typeof data.name !== "string") {
+            const error = new ValidationError({
+              field: "input",
+              message: "Missing required fields",
+            });
+            yield* Effect.logWarning(
+              `Validation error: ${JSON.stringify(error)}`
+            );
+            throw error;
+          }
+
+          const user = { id: data.id, name: data.name };
+          yield* Effect.logInfo(
+            `Successfully parsed user: ${JSON.stringify(user)}`
+          );
+          return user;
+        } catch (e) {
+          if (e instanceof ValidationError) {
+            return yield* Effect.fail(e);
+          }
+          yield* Effect.logError(
+            `Unexpected error: ${e instanceof Error ? e.message : String(e)}`
+          );
+          throw e;
+        }
+      }),
+  }),
+}) {}
 
 // Define test service
-class TestService extends Effect.Service<TestService>()(
-  "TestService",
-  {
-    sync: () => {
-      // Create instance methods
-      const printCause = (prefix: string, cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`\n=== ${prefix} ===`);
-          
-          if (Cause.isDie(cause)) {
-            const defect = Cause.failureOption(cause);
-            if (defect._tag === "Some") {
-              const error = defect.value as Error;
-              yield* Effect.logError("Defect (unexpected error)");
-              yield* Effect.logError(`Message: ${error.message}`);
-              yield* Effect.logError(`Stack: ${error.stack?.split('\n')[1]?.trim() ?? 'N/A'}`);
-            }
-          } else if (Cause.isFailure(cause)) {
-            const error = Cause.failureOption(cause);
-            yield* Effect.logWarning("Expected failure");
-            yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
+class TestService extends Effect.Service<TestService>()("TestService", {
+  sync: () => {
+    // Create instance methods
+    const printCause = (
+      prefix: string,
+      cause: Cause.Cause<unknown>
+    ): Effect.Effect<void, never, never> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`\n=== ${prefix} ===`);
+
+        if (Cause.isDie(cause)) {
+          const defect = Cause.failureOption(cause);
+          if (defect._tag === "Some") {
+            const error = defect.value as Error;
+            yield* Effect.logError("Defect (unexpected error)");
+            yield* Effect.logError(`Message: ${error.message}`);
+            yield* Effect.logError(
+              `Stack: ${error.stack?.split("\n")[1]?.trim() ?? "N/A"}`
+            );
           }
+        } else if (Cause.isFailure(cause)) {
+          const error = Cause.failureOption(cause);
+          yield* Effect.logWarning("Expected failure");
+          yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
+        }
 
-          return Effect.succeed(void 0);
-        });
+        return Effect.succeed(void 0);
+      });
 
-      const runScenario = <E, A extends { [key: string]: any }>(
-        name: string,
-        program: Effect.Effect<A, E>
-      ): Effect.Effect<void, never, never> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`\n=== Testing: ${name} ===`);
-          
-          type TestError = { readonly _tag: "error"; readonly cause: Cause.Cause<E> };
-          
-          const result = yield* Effect.catchAllCause(
-            program,
-            (cause) => Effect.succeed({ _tag: "error" as const, cause } as TestError)
-          );
-          
-          if ("cause" in result) {
-            yield* printCause("Error details", result.cause);
-          } else {
-            yield* Effect.logInfo(`Success: ${JSON.stringify(result)}`);
-          }
+    const runScenario = <E, A extends { [key: string]: any }>(
+      name: string,
+      program: Effect.Effect<A, E>
+    ): Effect.Effect<void, never, never> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`\n=== Testing: ${name} ===`);
 
-          return Effect.succeed(void 0);
-        });
+        type TestError = {
+          readonly _tag: "error";
+          readonly cause: Cause.Cause<E>;
+        };
 
-      // Return bound methods
-      return {
-        printCause,
-        runScenario
-      };
-    }
-  }
-) {}
+        const result = yield* Effect.catchAllCause(program, (cause) =>
+          Effect.succeed({ _tag: "error" as const, cause } as TestError)
+        );
+
+        if ("cause" in result) {
+          yield* printCause("Error details", result.cause);
+        } else {
+          yield* Effect.logInfo(`Success: ${JSON.stringify(result)}`);
+        }
+
+        return Effect.succeed(void 0);
+      });
+
+    // Return bound methods
+    return {
+      printCause,
+      runScenario,
+    };
+  },
+}) {}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
   const db = yield* DatabaseService;
   const users = yield* UserService;
   const test = yield* TestService;
-  
+
   yield* Effect.logInfo("=== Starting Error Handling Tests ===");
-  
+
   // Test expected database errors
   yield* test.runScenario(
     "Expected database error",
@@ -549,7 +560,7 @@ const program = Effect.gen(function* () {
       return result;
     })
   );
-  
+
   // Test unexpected connection errors
   yield* test.runScenario(
     "Unexpected connection error",
@@ -558,7 +569,7 @@ const program = Effect.gen(function* () {
         db.connect({ url: "invalid" }),
         Schedule.recurs(3)
       ).pipe(
-        Effect.catchAllCause(cause =>
+        Effect.catchAllCause((cause) =>
           Effect.gen(function* () {
             yield* Effect.logError("Failed after 3 retries");
             yield* Effect.logError(Cause.pretty(cause));
@@ -569,38 +580,45 @@ const program = Effect.gen(function* () {
       return result;
     })
   );
-  
+
   // Test user validation with recovery
   yield* test.runScenario(
     "Valid user data",
     Effect.gen(function* () {
-      const result = yield* users.parseUser({ id: "1", name: "John" }).pipe(
-        Effect.orElse(() => 
-          Effect.succeed({ id: "default", name: "Default User" })
-        )
-      );
+      const result = yield* users
+        .parseUser({ id: "1", name: "John" })
+        .pipe(
+          Effect.orElse(() =>
+            Effect.succeed({ id: "default", name: "Default User" })
+          )
+        );
       return result;
     })
   );
-  
+
   // Test concurrent error handling with timeout
   yield* test.runScenario(
     "Concurrent operations",
     Effect.gen(function* () {
-      const results = yield* Effect.all([
-        db.connect({ url: "" }).pipe(
-          Effect.timeout(Duration.seconds(1)),
-          Effect.catchAll(() => Effect.succeed({ success: true }))
-        ),
-        users.parseUser({ id: "invalid" }).pipe(
-          Effect.timeout(Duration.seconds(1)),
-          Effect.catchAll(() => Effect.succeed({ id: "timeout", name: "Timeout" }))
-        )
-      ], { concurrency: 2 });
+      const results = yield* Effect.all(
+        [
+          db.connect({ url: "" }).pipe(
+            Effect.timeout(Duration.seconds(1)),
+            Effect.catchAll(() => Effect.succeed({ success: true }))
+          ),
+          users.parseUser({ id: "invalid" }).pipe(
+            Effect.timeout(Duration.seconds(1)),
+            Effect.catchAll(() =>
+              Effect.succeed({ id: "timeout", name: "Timeout" })
+            )
+          ),
+        ],
+        { concurrency: 2 }
+      );
       return results;
     })
   );
-  
+
   yield* Effect.logInfo("\n=== Error Handling Tests Complete ===");
 
   return Effect.succeed(void 0);
@@ -610,10 +628,7 @@ const program = Effect.gen(function* () {
 Effect.runPromise(
   Effect.provide(
     Effect.provide(
-      Effect.provide(
-        program,
-        TestService.Default
-      ),
+      Effect.provide(program, TestService.Default),
       DatabaseService.Default
     ),
     UserService.Default
@@ -626,9 +641,11 @@ By inspecting the `Cause`, you can distinguish between expected and unexpected
 failures, logging or escalating as appropriate.
 
 ## Implement Graceful Shutdown for Your Application
+
 **Rule:** Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
 
 ### Example
+
 This example creates a server with a "scoped" database connection. It uses `runFork` to start the server and sets up a `SIGINT` handler to interrupt the server fiber, which in turn guarantees the database finalizer is called.
 
 ```typescript
@@ -672,7 +689,7 @@ const server = Effect.gen(function* () {
 
   // Start server with error handling
   yield* Effect.async<void, Error>((resume) => {
-    httpServer.once('error', (err: Error) => {
+    httpServer.once("error", (err: Error) => {
       resume(Effect.fail(new Error(`Failed to start server: ${err.message}`)));
     });
 
@@ -696,15 +713,16 @@ Effect.runPromise(app).catch((error) => {
   console.error("Application error:", error);
   process.exit(1);
 });
-
 ```
 
 ---
 
 ## Manage Resource Lifecycles with Scope
+
 **Rule:** Use Scope for fine-grained, manual control over resource lifecycles and cleanup guarantees.
 
 ### Example
+
 This example shows how to acquire a resource (like a file handle), use it, and have `Scope` guarantee its release.
 
 ```typescript
@@ -712,7 +730,7 @@ import { Effect, Scope } from "effect";
 
 // Simulate acquiring and releasing a resource
 const acquireFile = Effect.log("File opened").pipe(
-  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) }),
+  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) })
 );
 const releaseFile = Effect.log("File closed.");
 
@@ -746,9 +764,11 @@ File closed
 ---
 
 ## Manage Resources Safely in a Pipeline
+
 **Rule:** Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline.
 
 ### Example
+
 This example creates and writes to a temporary file. `Stream.acquireRelease` is used to acquire a readable stream from that file. The pipeline then processes the file but is designed to fail partway through. The logs demonstrate that the `release` effect (which deletes the file) is still executed, preventing any resource leaks.
 
 ```typescript
@@ -832,24 +852,25 @@ Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
     console.error("Unexpected error:", error);
   }
 );
-
 ```
 
 ## Manually Manage Lifecycles with `Scope`
+
 **Rule:** Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup.
 
 ### Example
+
 ```typescript
 import { Effect, Console } from "effect";
 
 // Mocking a complex file operation
 const openFile = (path: string) =>
   Effect.succeed({ path, handle: Math.random() }).pipe(
-    Effect.tap((f) => Console.log(`Opened ${f.path}`)),
+    Effect.tap((f) => Console.log(`Opened ${f.path}`))
   );
 const createTempFile = (path: string) =>
   Effect.succeed({ path: `${path}.tmp`, handle: Math.random() }).pipe(
-    Effect.tap((f) => Console.log(`Created temp file ${f.path}`)),
+    Effect.tap((f) => Console.log(`Created temp file ${f.path}`))
   );
 const closeFile = (file: { path: string }) =>
   Effect.sync(() => Console.log(`Closed ${file.path}`));
@@ -859,9 +880,8 @@ const deleteFile = (file: { path: string }) =>
 // This program acquires two resources (a file and a temp file)
 // and ensures both are cleaned up correctly using acquireRelease.
 const program = Effect.gen(function* () {
-  const file = yield* Effect.acquireRelease(
-    openFile("data.csv"),
-    (f) => closeFile(f)
+  const file = yield* Effect.acquireRelease(openFile("data.csv"), (f) =>
+    closeFile(f)
   );
 
   const tempFile = yield* Effect.acquireRelease(
@@ -889,9 +909,11 @@ Closed data.csv
 `Effect.scope` creates a new `Scope` and provides it to the `program`. Inside `program`, we access this `Scope` and use `addFinalizer` to register cleanup actions immediately after acquiring each resource. When `Effect.scope` finishes executing `program`, it closes the scope, which in turn executes all registered finalizers in the reverse order of their addition.
 
 ## Organize Layers into Composable Modules
+
 **Rule:** Organize services into modular Layers that are composed hierarchically to manage complexity in large applications.
 
 ### Example
+
 This example shows a `BaseLayer` with a `Logger`, a `UserModule` that uses the `Logger`, and a final `AppLayer` that wires them together.
 
 ### 1. The Base Infrastructure Layer
@@ -900,14 +922,11 @@ This example shows a `BaseLayer` with a `Logger`, a `UserModule` that uses the `
 // src/core/Logger.ts
 import { Effect } from "effect";
 
-export class Logger extends Effect.Service<Logger>()(
-  "App/Core/Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`))
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("App/Core/Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`)),
+  }),
+}) {}
 
 // src/features/User/UserRepository.ts
 export class UserRepository extends Effect.Service<UserRepository>()(
@@ -921,11 +940,11 @@ export class UserRepository extends Effect.Service<UserRepository>()(
           Effect.gen(function* () {
             yield* logger.log(`Finding user ${id}`);
             return { id, name: `User ${id}` };
-          })
+          }),
       };
     }),
     // Declare Logger dependency
-    dependencies: [Logger.Default]
+    dependencies: [Logger.Default],
   }
 ) {}
 
@@ -937,12 +956,9 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    UserRepository.Default
-  )
-).then(console.log);
+Effect.runPromise(Effect.provide(program, UserRepository.Default)).then(
+  console.log
+);
 ```
 
 ### 2. The Feature Module Layer
@@ -951,14 +967,11 @@ Effect.runPromise(
 // src/core/Logger.ts
 import { Effect } from "effect";
 
-export class Logger extends Effect.Service<Logger>()(
-  "App/Core/Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`))
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("App/Core/Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`)),
+  }),
+}) {}
 
 // src/features/User/UserRepository.ts
 export class UserRepository extends Effect.Service<UserRepository>()(
@@ -972,11 +985,11 @@ export class UserRepository extends Effect.Service<UserRepository>()(
           Effect.gen(function* () {
             yield* logger.log(`Finding user ${id}`);
             return { id, name: `User ${id}` };
-          })
+          }),
       };
     }),
     // Declare Logger dependency
-    dependencies: [Logger.Default]
+    dependencies: [Logger.Default],
   }
 ) {}
 
@@ -988,12 +1001,9 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    UserRepository.Default
-  )
-).then(console.log);
+Effect.runPromise(Effect.provide(program, UserRepository.Default)).then(
+  console.log
+);
 ```
 
 ### 3. The Final Application Composition
@@ -1014,9 +1024,11 @@ export const AppLayer = Layer.provide(AllModules, BaseLayer);
 ---
 
 ## Poll for Status Until a Task Completes
+
 **Rule:** Use Effect.race to run a repeating polling task that is automatically interrupted when a main task completes.
 
 ### Example
+
 This program simulates a long-running data processing job. While it's running, a separate effect polls for its status every 2 seconds. When the main job finishes after 10 seconds, the polling automatically stops.
 
 ```typescript
@@ -1024,7 +1036,7 @@ import { Effect, Schedule, Duration } from "effect";
 
 // The main task that takes a long time to complete
 const longRunningJob = Effect.log("Data processing complete!").pipe(
-  Effect.delay(Duration.seconds(10)),
+  Effect.delay(Duration.seconds(10))
 );
 
 // The polling task that checks the status
@@ -1055,9 +1067,11 @@ Data processing complete!
 ---
 
 ## Run Background Tasks with Effect.fork
+
 **Rule:** Use Effect.fork to start a non-blocking background process and manage its lifecycle via its Fiber.
 
 ### Example
+
 This program forks a background process that logs a "tick" every second. The main process does its own work for 5 seconds and then explicitly interrupts the background logger before exiting.
 
 ```typescript
@@ -1068,37 +1082,37 @@ import { Effect, Fiber } from "effect";
 // This simulates a background service like a health check or monitoring task
 const tickingClock = Effect.log("tick").pipe(
   Effect.delay("1 second"), // Wait 1 second between ticks
-  Effect.forever, // Repeat indefinitely - this creates an infinite effect
+  Effect.forever // Repeat indefinitely - this creates an infinite effect
 );
 
 const program = Effect.gen(function* () {
   yield* Effect.log("Forking the ticking clock into the background.");
-  
+
   // Start the clock, but don't wait for it.
   // Effect.fork creates a new fiber that runs concurrently with the main program
   // The main fiber continues immediately without waiting for the background task
   // This is essential for non-blocking background operations
   const clockFiber = yield* Effect.fork(tickingClock);
-  
+
   // At this point, we have two fibers running:
   // 1. The main fiber (this program)
   // 2. The background clock fiber (ticking every second)
 
   yield* Effect.log("Main process is now doing other work for 5 seconds...");
-  
+
   // Simulate the main application doing work
   // While this sleep happens, the background clock continues ticking
   // This demonstrates true concurrency - both fibers run simultaneously
   yield* Effect.sleep("5 seconds");
 
   yield* Effect.log("Main process is done. Interrupting the clock fiber.");
-  
+
   // Stop the background process.
   // Fiber.interrupt sends an interruption signal to the fiber
   // This allows the fiber to perform cleanup operations before terminating
   // Without this, the background task would continue running indefinitely
   yield* Fiber.interrupt(clockFiber);
-  
+
   // Important: Always clean up background fibers to prevent resource leaks
   // In a real application, you might want to:
   // 1. Use Fiber.join instead of interrupt to wait for graceful completion
@@ -1106,7 +1120,7 @@ const program = Effect.gen(function* () {
   // 3. Implement proper shutdown procedures
 
   yield* Effect.log("Program finished.");
-  
+
   // Key concepts demonstrated:
   // 1. Fork creates concurrent fibers without blocking
   // 2. Background tasks run independently of the main program
@@ -1125,12 +1139,15 @@ Effect.runPromise(program);
 ---
 
 ## Teach your AI Agents Effect with the MCP Server
+
 **Rule:** Use the MCP server to provide live application context to AI coding agents, enabling more accurate assistance.
 
 ### Example
+
 The "Good Example" is the workflow this pattern enables.
 
 1.  **You run the MCP server** in your terminal, pointing it at your main `AppLayer`.
+
     ```bash
     npx @effect/mcp-server --layer src/layers.ts:AppLayer
     ```
@@ -1138,11 +1155,13 @@ The "Good Example" is the workflow this pattern enables.
 2.  **You configure your AI agent** (e.g., Cursor) to use the MCP server's endpoint (`http://localhost:3333`).
 
 3.  **You ask the AI a question** that requires deep context about your app:
+
     > "Refactor this code to use the `UserService` to fetch a user by ID and log the result with the `Logger`."
 
 4.  **The AI, in the background, queries the MCP server:**
-    -   It discovers that `UserService` and `Logger` are available in the `AppLayer`.
-    -   It retrieves the exact method signature for `UserService.getUser` and `Logger.log`.
+
+    - It discovers that `UserService` and `Logger` are available in the `AppLayer`.
+    - It retrieves the exact method signature for `UserService.getUser` and `Logger.log`.
 
 5.  **The AI generates correct, context-aware code** because it's not guessing; it's using the live architectural information provided by the MCP server.
 
@@ -1161,9 +1180,11 @@ const program = Effect.gen(function* () {
 ---
 
 ## Understand Fibers as Lightweight Threads
+
 **Rule:** Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.
 
 ### Example
+
 This program demonstrates the efficiency of fibers by forking 100,000 of them. Each fiber does a small amount of work (sleeping for 1 second). Trying to do this with 100,000 OS threads would instantly crash any system.
 
 ```typescript
@@ -1212,8 +1233,6 @@ const program = Effect.gen(function* () {
 // Try running this with OS threads - you'd likely hit system limits around 1000-10000 threads
 // With fibers, 100k+ concurrent operations are easily achievable
 Effect.runPromise(program);
-
 ```
 
 ---
-

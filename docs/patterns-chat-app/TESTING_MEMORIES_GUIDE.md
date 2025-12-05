@@ -7,6 +7,7 @@ This guide covers how to test the infinite scroll memory browsing feature in the
 ## Prerequisites
 
 ### 1. Setup Code Assistant
+
 ```bash
 cd /Users/paul/Projects/Published/Effect-Patterns/app/code-assistant
 
@@ -43,6 +44,7 @@ Before testing memory browsing, you need conversations to search:
    - **Conversation 5:** "TypeScript typing strategies"
 
 Each conversation should have a complete back-and-forth to allow the system to:
+
 - Auto-tag the conversation
 - Calculate satisfaction score
 - Generate semantic embeddings
@@ -80,6 +82,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 ### Phase 3: Search Functionality
 
 #### Basic Search
+
 - [ ] Enter search query: "error handling"
 - [ ] Click "Search" button
 - [ ] Verify results display (should have at least 1 card)
@@ -93,6 +96,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
   - [ ] Relevance scores
 
 #### Search with Different Queries
+
 - [ ] Search: "async"
   - [ ] Should find async-related conversations
 - [ ] Search: "performance"
@@ -103,6 +107,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
   - [ ] Should show empty state with helpful tips
 
 #### Search Error Handling
+
 - [ ] Click Search with empty query
 - [ ] Verify error message: "Please enter a search query"
 - [ ] Verify error displays in red alert
@@ -112,6 +117,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 ### Phase 4: Filtering - Tags
 
 #### Tag Selection
+
 - [ ] Click tag: "error-handling"
   - [ ] Results filter immediately (or debounce)
   - [ ] Badge style changes (darker background)
@@ -124,6 +130,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
   - [ ] Results expand
 
 #### Multiple Tag Filtering
+
 - [ ] Select tags: "effect-ts" + "pattern"
 - [ ] Verify results are AND'd (must have both)
 - [ ] Verify active filters banner shows both tags
@@ -131,6 +138,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 - [ ] Verify all filters reset
 
 #### Tag Filter Combinations
+
 - [ ] Enter search: "retry"
 - [ ] Select tag: "error-handling"
 - [ ] Results should be: query="retry" AND tag="error-handling"
@@ -140,6 +148,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 ### Phase 5: Filtering - Outcomes
 
 #### Outcome Selection
+
 - [ ] Click outcome dropdown
 - [ ] Verify dropdown opens with options:
   - [ ] All Outcomes
@@ -157,12 +166,14 @@ Each conversation should have a complete back-and-forth to allow the system to:
   - [ ] Results change to unsolved conversations
 
 #### Outcome with Tags
+
 - [ ] Select tag: "error-handling"
 - [ ] Select outcome: "Solved"
 - [ ] Results should be: tag="error-handling" AND outcome="solved"
 - [ ] Verify count updates appropriately
 
 #### Clear Outcome Filter
+
 - [ ] With outcome set to "Solved", click Clear All
 - [ ] Verify outcome filter resets to "All Outcomes"
 - [ ] Results expand to all outcomes
@@ -197,6 +208,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 ### Phase 8: Infinite Scroll - Loading
 
 #### Initial Load
+
 - [ ] Search for a common term (should have 20+ results)
 - [ ] Verify 3 skeleton cards appear while loading
 - [ ] Skeleton cards have pulse animation
@@ -204,6 +216,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 - [ ] First page shows 20 results
 
 #### Loading States
+
 - [ ] With results displayed, scroll near bottom (100px)
 - [ ] Verify "Loading more..." indicator appears
 - [ ] Verify loading spinner animates
@@ -213,6 +226,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 - [ ] "Loading more..." indicator disappears
 
 #### Multiple Pages
+
 - [ ] Continue scrolling
 - [ ] Verify more pages load automatically
 - [ ] Verify no duplicate results appear
@@ -221,11 +235,13 @@ Each conversation should have a complete back-and-forth to allow the system to:
 ### Phase 9: Infinite Scroll - End of Results
 
 #### Small Result Set
+
 - [ ] Search for specific term with <20 results
 - [ ] Verify no "Loading more..." indicator
 - [ ] No more pages should load
 
 #### Large Result Set
+
 - [ ] Search for common term with 100+ results
 - [ ] Scroll to end
 - [ ] Verify "You've reached the end" message
@@ -235,6 +251,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 ### Phase 10: Memory Card Details
 
 #### Card Display
+
 - [ ] Each card should show:
   - [ ] Title (1st line of content, ~100 chars)
   - [ ] Timestamp (relative, e.g., "3d ago")
@@ -252,6 +269,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
     - [ ] Final Score: Combined
 
 #### Card Interactions
+
 - [ ] Click "Copy ID" button
   - [ ] Icon feedback (checkmark)
   - [ ] Memory ID copied to clipboard
@@ -263,6 +281,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 ### Phase 11: Empty States
 
 #### No Results
+
 - [ ] Search for random text: "xyzabc123"
 - [ ] Verify empty state shows:
   - [ ] Inbox icon 🗳️
@@ -272,6 +291,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 - [ ] Filters should remain visible
 
 #### Initial State (No Search)
+
 - [ ] Click "Clear All" to clear all filters and search
 - [ ] Verify initial state shows:
   - [ ] Inbox icon 🗳️
@@ -282,6 +302,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 ### Phase 12: Error States
 
 #### Network Error (Simulate)
+
 - [ ] Open browser DevTools Network tab
 - [ ] Set Network to "Offline"
 - [ ] Try to search
@@ -291,6 +312,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 - [ ] Should work normally
 
 #### Invalid Query (400 Error)
+
 - [ ] Some edge case inputs might trigger 400
 - [ ] Verify error displays in alert
 - [ ] Error is recoverable (can search again)
@@ -298,6 +320,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 ### Phase 13: Responsive Design
 
 #### Mobile View (375px)
+
 - [ ] Open DevTools, set to "iPhone 12"
 - [ ] Navigate to `/memories`
 - [ ] Verify layout stacks vertically:
@@ -309,12 +332,14 @@ Each conversation should have a complete back-and-forth to allow the system to:
 - [ ] Infinite scroll works on mobile
 
 #### Tablet View (768px)
+
 - [ ] Set DevTools to "iPad"
 - [ ] Verify optimal spacing
 - [ ] Columns might show 2 cards
 - [ ] All features work
 
 #### Desktop View (1920px)
+
 - [ ] Verify max-width container (5xl)
 - [ ] Verify spacing and alignment
 - [ ] All features work
@@ -322,6 +347,7 @@ Each conversation should have a complete back-and-forth to allow the system to:
 ### Phase 14: Keyboard Navigation
 
 #### Tab Order
+
 - [ ] Press Tab repeatedly from top of page
 - [ ] Verify focus visible on all interactive elements:
   - [ ] Tab triggers
@@ -333,17 +359,20 @@ Each conversation should have a complete back-and-forth to allow the system to:
 - [ ] Verify focus order is logical (left-to-right, top-to-bottom)
 
 #### Enter Key
+
 - [ ] Focus on search input
 - [ ] Type a query
 - [ ] Press Enter
 - [ ] Verify search executes
 
 #### Space Key
+
 - [ ] Focus on tag button
 - [ ] Press Space
 - [ ] Verify tag toggles (selected/unselected)
 
 #### Dropdown Navigation
+
 - [ ] Focus on outcome dropdown
 - [ ] Press Space to open
 - [ ] Press Arrow Down to navigate
@@ -364,12 +393,14 @@ Use a screen reader like NVDA (Windows) or VoiceOver (Mac):
 ### Phase 16: Performance Testing
 
 #### Load Times
+
 - [ ] First search loads in <500ms (check Network tab)
 - [ ] Pagination loads in <300ms
 - [ ] Tab switches in <50ms
 - [ ] No jank or stuttering on scroll
 
 #### Memory Usage
+
 - [ ] Open DevTools Memory tab
 - [ ] Take heap snapshot before search
 - [ ] Perform search with 100+ results
@@ -379,6 +410,7 @@ Use a screen reader like NVDA (Windows) or VoiceOver (Mac):
 - [ ] No memory leaks detected
 
 #### CPU Usage
+
 - [ ] Open DevTools Performance tab
 - [ ] Record while scrolling
 - [ ] Verify smooth 60fps scrolling
@@ -486,17 +518,20 @@ curl "http://localhost:3002/api/search?q=error&offset=20&limit=20"
 ### Enable Browser DevTools
 
 **Network Tab:**
+
 - [ ] Check API response times
 - [ ] Verify correct query parameters
 - [ ] Check response payload size
 - [ ] Look for failed requests
 
 **Console Tab:**
+
 - [ ] Check for JavaScript errors
 - [ ] Look for console warnings
 - [ ] Verify no unhandled rejections
 
 **Performance Tab:**
+
 - [ ] Record while scrolling
 - [ ] Identify long tasks
 - [ ] Check FCP (First Contentful Paint)
@@ -528,6 +563,7 @@ curl "http://localhost:3002/api/search?q=error&offset=20&limit=20"
 **Symptom:** Search returns empty even though conversations exist
 
 **Solutions:**
+
 1. Verify conversations are saved in database
 2. Check if auto-tagging is working
 3. Verify semantic embeddings are generated
@@ -538,6 +574,7 @@ curl "http://localhost:3002/api/search?q=error&offset=20&limit=20"
 **Symptom:** More results don't load when scrolling
 
 **Solutions:**
+
 1. Verify `hasMore` is true in API response
 2. Check IntersectionObserver in DevTools
 3. Verify `offset` parameter is updating
@@ -548,6 +585,7 @@ curl "http://localhost:3002/api/search?q=error&offset=20&limit=20"
 **Symptom:** Tags or outcomes don't filter results
 
 **Solutions:**
+
 1. Verify filter state is updating
 2. Check API request includes filter params
 3. Verify database has tagged memories
@@ -558,6 +596,7 @@ curl "http://localhost:3002/api/search?q=error&offset=20&limit=20"
 **Symptom:** Search takes >1 second, scrolling is janky
 
 **Solutions:**
+
 1. Check API response time (Network tab)
 2. Reduce page size (currently 20 items)
 3. Verify no memory leaks (DevTools Memory)
@@ -576,7 +615,11 @@ const conversations = [
   { topic: "async patterns", tags: ["async"], outcome: "solved" },
   { topic: "performance tips", tags: ["performance"], outcome: "partial" },
   { topic: "TypeScript types", tags: ["types"], outcome: "unsolved" },
-  { topic: "retry logic", tags: ["error-handling", "pattern"], outcome: "solved" },
+  {
+    topic: "retry logic",
+    tags: ["error-handling", "pattern"],
+    outcome: "solved",
+  },
 ];
 
 // Manually create in UI or bulk insert via API

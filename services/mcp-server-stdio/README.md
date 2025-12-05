@@ -7,11 +7,13 @@ Model Context Protocol (MCP) server that provides AI assistants with access to E
 ### 🔧 Tools
 
 1. **search_patterns** - Search for Effect patterns
+
    - Fuzzy search across titles, descriptions, tags
    - Filter by category and difficulty
    - Limit results
 
 2. **get_pattern** - Get detailed pattern information
+
    - Full pattern metadata
    - Code examples
    - Use cases and best practices
@@ -124,6 +126,7 @@ Patterns are loaded from `data/patterns-index.json` at startup. The server cache
 ## Error Handling
 
 All tool calls return structured responses:
+
 - Success: `{ content: [{ type: "text", text: "..." }] }`
 - Error: `{ content: [{ type: "text", text: "..." }], isError: true }`
 

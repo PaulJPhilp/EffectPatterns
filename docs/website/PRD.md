@@ -2,7 +2,8 @@ Great. Delivering the first two documents: PRD and Architecture. After you revie
 
 PRODUCT REQUIREMENTS DOCUMENT (PRD)
 
-1) Vision and Goals
+1. Vision and Goals
+
 - Vision: The Effect Patterns Hub is the go-to resource to learn Effect through curated roadmaps, interactive patterns, and AI-assisted learning, built as a living showcase of Effect best practices.
 - Primary goals:
   - Make Effect approachable: reduce the learning cliff via 10 modular roadmaps and 130 patterns.
@@ -10,13 +11,15 @@ PRODUCT REQUIREMENTS DOCUMENT (PRD)
   - Be the hub for the ecosystem: integrate MCP server, AI Toolkit, CLI, and later LSP/code review.
   - Establish sustainable monetization: free discovery + paid learning features and team/enterprise plans.
 
-2) Audience and Personas
+2. Audience and Personas
+
 - Solo developer: Wants to learn Effect quickly through a guided path and interactive examples.
 - Team lead/architect: Evaluates Effect adoption; needs structured training for a team and later code review.
 - Advanced Effect user: References patterns; contributes patterns and modules.
 - AI agent builders: Consume machine-readable patterns via AI Toolkit/MCP server.
 
-3) MVP Scope
+3. MVP Scope
+
 - Website (Next.js App Router):
   - Homepage with 10 roadmaps (modules), brand and design matching your blog.
   - Module pages: progressive disclosure (sections/stages → patterns).
@@ -38,29 +41,32 @@ PRODUCT REQUIREMENTS DOCUMENT (PRD)
 - Design system:
   - Match paulphilp.com design language; shared components package.
 
-4) Out of Scope (Post-MVP)
+4. Out of Scope (Post-MVP)
+
 - Full chat tutor experience on-site.
 - Code review tool and CI integration.
 - LSP package.
 - Full effect-convex/effect-polar libraries as published packages.
 - OTEL backend deployment.
 
-5) Success Metrics
+5. Success Metrics
+
 - Engagement: time on site, patterns viewed per session, completion rate of a plan.
 - Conversion: signups to plan generation, plan to Pro subscription.
 - Community: inbound links, stars growth, contributions.
 - SEO: impressions/clicks for “Effect patterns” and related keywords.
 
-6) Constraints and Assumptions
+6. Constraints and Assumptions
+
 - All business logic demonstrates Effect patterns (even when using Convex directly early on, we architect with Effect services/layers in mind).
 - Design must align with your blog’s style.
 - MCP server and AI toolkit exist and are linked; not primary blockers for MVP launch.
 - Vector search comes online after embeddings pipeline is ready.
 
-
 ARCHITECTURE DOCUMENT
 
 High-Level System Design
+
 - Frontend: Next.js 14 (App Router), TypeScript, Tailwind + shared components (packages/components), effect-atom for UI-local state.
 - Auth: Clerk.
 - Real-time state + backend functions: Convex (queries, mutations, actions).
@@ -69,6 +75,7 @@ High-Level System Design
 - AI: Vercel AI SDK for learning plan generation (Claude recommended). AI Toolkit used for pattern search/context.
 
 Monorepo Layout
+
 - apps/
   - web/ (Next.js app)
   - openai-app/ (future)
@@ -82,6 +89,7 @@ Monorepo Layout
 - turbo.json
 
 Core Domains and Services
+
 - PatternService (Effect): read/search patterns, fetch related, resolve module placement.
 - LearningPlanService (Effect): generate personalized plan via LLM, store plan, mark progress.
 - UserProgressService (Effect): state transitions (not_started → reading → completed).
@@ -91,6 +99,7 @@ Core Domains and Services
 - BillingService (Polar): entitlements, webhooks, subscription checks.
 
 Layers and DI (Effect)
+
 - ConfigLayer: runtime config, API keys, environment flags.
 - AuthLayer: provides current user and claims (via effect-clerk).
 - RepoLayer:
@@ -101,7 +110,9 @@ Layers and DI (Effect)
 - SessionLayer: Convex subscription → Effect stream adapters (post-MVP).
 
 Data Model (MVP)
+
 - Postgres (Drizzle):
+
   - patterns
     - id (text, PK)
     - title (text)
@@ -133,6 +144,7 @@ Data Model (MVP)
     - unique (user_id, pattern_id)
 
 - Convex (real-time):
+
   - sessions
     - userId (clerk)
     - currentModule
@@ -154,12 +166,14 @@ Data Model (MVP)
   - No local DB mirror required for MVP; store entitlement snapshot in users.tier on webhook.
 
 Auth Flow
+
 - Clerk authenticates in Next.js and Convex.
 - Middleware uses Clerk to allow public pages and protect dashboard/plan routes.
 - AuthLayer exposes current identity to Effect services.
 - Polar webhooks update user tier in Convex + Postgres.
 
 Routing and Data Flow
+
 - Public pages:
   - / → modules overview, links, search.
   - /modules/:id → module page (SSR or SSG, reads from Postgres).
@@ -170,35 +184,41 @@ Routing and Data Flow
   - /api/progress/mark → mutation to Convex; mirror to Postgres asynchronously if needed.
 
 LLM Orchestration (Learning Plans)
+
 - Input: user goal, available patterns (title/id/module/skill/prereqs), optional preferred pace.
 - Output JSON: phases[] with ordered patternIds, rationale per phase, estimate.
 - Effect Schedule for retries/backoff; guardrails on token/timeouts.
 - Store: learning_plans.phases as jsonb; update Convex plan_rt for real-time UI.
 
 Playground Integration
+
 - MDX renderer detects “Good Example” blocks.
 - Add top-right “Run in Playground” button.
 - Button links to effect.website/play/?code={base64(code)}.
 - Keep Anti-Patterns non-runnable.
 
 Observability
+
 - Use Effect.log, Effect.logInfo, with spans via Effect.withSpan on service boundaries.
 - Add RequestId correlation and userId tagging.
 - OTEL exporter wiring later.
 
 Security
+
 - AuthN via Clerk; AuthZ via entitlements (tier) + ownership checks.
 - Rate limiting (basic) on plan generation endpoints.
 - Webhook verification for Polar.
 - Sanitize/escape code snippets; do not execute on server.
 
 Performance
+
 - Server Components for module/pattern lists.
 - Cache MDX render results.
 - Use Postgres indices on tags/title; plan for embedding index later.
 - Convex for state eliminates polling.
 
 Monetization Gates (MVP)
+
 - Free:
   - View all patterns, search, browse modules.
   - Generate 1 plan total (or 1/month).
@@ -210,14 +230,15 @@ Monetization Gates (MVP)
   - Team plans, admin dashboard, custom roadmaps, SSO, SLAs.
 
 Open Questions to Track
+
 - Exact plan limits for free tier (1 total vs 1/month).
 - Domain selection and SEO plan.
 - Exact list of Good Example blocks in MDX (annotation scheme).
 - Embeddings pipeline choice and timing (OpenAI, Voyage, local).
 - Convex↔Postgres sync strategy details (one-way vs two-way for plan/progress).
 
-
 NEXT STEPS
+
 - If this PRD and Architecture look right, I’ll deliver:
   - Implementation Plan (milestones, tasks, scaffolds)
   - Agent Prompts (phase-by-phase build instructions and Q&A flow)

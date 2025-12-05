@@ -45,16 +45,23 @@ export interface Pattern {
 export interface UploadResult {
   patternId: string;
   memoryId: string;
-  status: 'success' | 'error';
+  status: "success" | "error";
   message?: string;
 }
 
 export interface OutputOptions {
-  format: 'human' | 'json';
+  format: "human" | "json";
   verbose?: boolean;
 }
 
-export type ProcessingStatus = 'queued' | 'extracting' | 'chunking' | 'embedding' | 'indexing' | 'done' | 'failed';
+export type ProcessingStatus =
+  | "queued"
+  | "extracting"
+  | "chunking"
+  | "embedding"
+  | "indexing"
+  | "done"
+  | "failed";
 
 export interface ProcessingDocument {
   id: string;
@@ -74,9 +81,9 @@ export interface ProcessingQueue {
 
 export interface UserProfile {
   userId: string;
-  static: string[];      // Long-term, stable facts about the user
-  dynamic: string[];     // Recent context and temporary information
-  retrievedAt: string;   // ISO timestamp of when profile was retrieved
+  static: string[]; // Long-term, stable facts about the user
+  dynamic: string[]; // Recent context and temporary information
+  retrievedAt: string; // ISO timestamp of when profile was retrieved
 }
 
 export interface SearchResult {
@@ -90,7 +97,7 @@ export interface UserProfileWithSearch {
   profile: UserProfile;
   searchResults?: SearchResult[];
   searchQuery?: string;
-  searchTiming?: number;  // milliseconds
+  searchTiming?: number; // milliseconds
 }
 
 export interface ProfileComparison {
@@ -124,7 +131,7 @@ export interface FilterClause {
 
 export interface FilterConditions {
   clauses: FilterClause[];
-  logic: 'AND' | 'OR';
+  logic: "AND" | "OR";
 }
 
 export interface DocumentSearchOptions {

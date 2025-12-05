@@ -9,15 +9,18 @@ Enhanced the TypeScript testing step with parallel execution, type checking, and
 ### 1. Parallel Execution ⚡
 
 **Before:**
+
 - Sequential execution (one test at a time)
 - 89 tests would take ~135 seconds
 
 **After:**
+
 - Parallel execution with 10 workers
 - 89 tests complete in ~24 seconds
 - **5.6x speedup**
 
 **Configuration:**
+
 ```typescript
 const CONCURRENCY = 10; // Adjustable based on system resources
 ```
@@ -25,16 +28,19 @@ const CONCURRENCY = 10; // Adjustable based on system resources
 ### 2. Type Checking 📝
 
 **Before:**
+
 - Only runtime testing
 - Type errors discovered during development
 
 **After:**
+
 - Type checking runs first (`tsc --noEmit`)
 - Catches type errors before runtime tests
 - Shows detailed type error output
 - Continues with runtime tests even if type check fails
 
 **Benefits:**
+
 - Early detection of type errors
 - Helps identify patterns that need updating
 - Currently shows 36 type errors (mostly in test files referencing effect-mdx)
@@ -42,12 +48,14 @@ const CONCURRENCY = 10; // Adjustable based on system resources
 ### 3. Better Error Reporting 🎨
 
 **Before:**
+
 ```
 Running pattern.ts...
 Error: something went wrong
 ```
 
 **After:**
+
 ```
 🧪 Enhanced TypeScript Testing
 
@@ -78,6 +86,7 @@ Slowest Tests:
 ```
 
 **Features:**
+
 - Color-coded output (green=pass, red=fail, yellow=warnings)
 - Real-time progress bar
 - Detailed timing statistics
@@ -108,24 +117,26 @@ bun run pipeline
 In `test-improved.ts`:
 
 ```typescript
-const CONCURRENCY = 10;              // Number of parallel workers
-const ENABLE_TYPE_CHECK = true;      // Run type checking first
-const SHOW_PROGRESS = true;          // Show progress bar
+const CONCURRENCY = 10; // Number of parallel workers
+const ENABLE_TYPE_CHECK = true; // Run type checking first
+const SHOW_PROGRESS = true; // Show progress bar
 ```
 
 ## Performance Results
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Total time | ~135s | ~24s | **5.6x faster** |
-| Feedback | End only | Real-time | Progress bar |
-| Type checking | Manual | Automatic | Built-in |
-| Error detail | Basic | Rich | Colors, stats |
+| Metric        | Before   | After     | Improvement     |
+| ------------- | -------- | --------- | --------------- |
+| Total time    | ~135s    | ~24s      | **5.6x faster** |
+| Feedback      | End only | Real-time | Progress bar    |
+| Type checking | Manual   | Automatic | Built-in        |
+| Error detail  | Basic    | Rich      | Colors, stats   |
 
 ## Known Issues
 
 ### Type Errors (36 total)
+
 Most type errors are in:
+
 - Test files referencing `effect-mdx` (waiting for library update)
 - Autofix suggestion files (experimental code)
 - Ingest scripts (need refactoring)
@@ -135,35 +146,45 @@ These don't affect the actual pattern examples.
 ## Future Improvements
 
 ### 1. Configurable Type Checking
+
 Add CLI flag to skip type checking for faster development feedback:
+
 ```bash
 bun run test --skip-type-check
 ```
 
 ### 2. Test Filtering
+
 Run specific patterns or categories:
+
 ```bash
 bun run test --pattern="fiber-*"
 bun run test --use-case="concurrency"
 ```
 
 ### 3. Watch Mode
+
 Auto-run tests on file changes:
+
 ```bash
 bun run test --watch
 ```
 
 ### 4. Test Timeout Configuration
+
 Make timeouts configurable per pattern:
+
 ```typescript
 const TIMEOUTS = {
   "decouple-fibers-with-queue-pubsub": 15000, // 15s
-  "default": 30000 // 30s
-}
+  default: 30000, // 30s
+};
 ```
 
 ### 5. Better Expected Error Handling
+
 Use pattern metadata instead of hardcoded map:
+
 ```mdx
 ---
 title: "Pattern Name"
@@ -172,13 +193,17 @@ expectedErrors: ["NotFoundError"]
 ```
 
 ### 6. Test Caching
+
 Skip tests for unchanged files:
+
 - Hash file contents
 - Cache results
 - Only re-run changed patterns
 
 ### 7. Junit/TAP Output
+
 Generate standard test output formats:
+
 ```bash
 bun run test --reporter=junit > results.xml
 ```
@@ -193,6 +218,7 @@ bun run test --reporter=junit > results.xml
 ## Metrics
 
 Current test suite:
+
 - **89 TypeScript patterns**
 - **All passing** ✅
 - **Average execution time:** 1.5s per test

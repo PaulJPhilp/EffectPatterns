@@ -90,15 +90,18 @@ export const promptChoice = (
         const rl = createReadlineInterface();
 
         return new Promise<string>((resolve) => {
-          rl.question(chalk.cyan(`Choose (1-${options.length}): `), (answer) => {
-            rl.close();
-            const idx = parseInt(answer, 10) - 1;
-            if (idx >= 0 && idx < options.length) {
-              resolve(options[idx]);
-            } else {
-              resolve(options[0]);
+          rl.question(
+            chalk.cyan(`Choose (1-${options.length}): `),
+            (answer) => {
+              rl.close();
+              const idx = parseInt(answer, 10) - 1;
+              if (idx >= 0 && idx < options.length) {
+                resolve(options[idx]);
+              } else {
+                resolve(options[0]);
+              }
             }
-          });
+          );
         });
       },
       catch: (error) => new Error(`Failed to read input: ${error}`),
@@ -122,4 +125,3 @@ export const promptConfirm = (question: string): Effect.Effect<boolean> =>
     },
     catch: (error) => new Error(`Failed to read input: ${error}`),
   });
-

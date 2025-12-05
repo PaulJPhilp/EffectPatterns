@@ -31,10 +31,12 @@ If you're deploying the MCP Server:
    ```
 
 2. **Rotate Keys Regularly**
+
    - Recommended: Every 90 days
    - See [API_KEY_ROTATION.md](./services/mcp-server/API_KEY_ROTATION.md)
 
 3. **Store Secrets Securely**
+
    - Use Vercel environment variables (encrypted at rest)
    - Use GitHub encrypted secrets for CI/CD
    - Never commit secrets to Git
@@ -71,6 +73,7 @@ If you're deploying the MCP Server:
    ```
 
 3. **Follow Secure Coding Guidelines**
+
    - Always sanitize user input
    - Use parameterized queries (no SQL injection)
    - Avoid eval(), Function(), etc.

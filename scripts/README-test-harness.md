@@ -15,6 +15,7 @@ The test harness provides an interactive menu-driven interface to test and valid
 
 1. **Set Environment Variables**:
    Ensure your `.env.local` file has the necessary API keys for the AI models you want to test:
+
    - `ANTHROPIC_API_KEY` for Claude models
    - `OPENAI_API_KEY` for GPT models
    - `GOOGLE_GENERATIVE_AI_API_KEY` for Gemini models
@@ -43,16 +44,19 @@ This launches an interactive menu where you can select testing options.
 ## Test Scenarios
 
 ### Chat Scenarios
+
 - `basic_greeting`: Test basic conversational response
 - `coding_question`: Test coding assistance capabilities
 - `effect_pattern`: Test Effect-TS pattern knowledge
 - `complex_reasoning`: Test reasoning capabilities
 
 ### Task Scenarios
+
 - `create_component`: Test component creation task
 - `refactor_code`: Test code refactoring task
 
 ### Available Models
+
 - `chat-model`: Basic chat model
 - `chat-model-reasoning`: Reasoning model
 - `claude-3-5-sonnet`: Anthropic Claude
@@ -130,7 +134,7 @@ Add model IDs to the `AVAILABLE_MODELS` array:
 ```typescript
 const AVAILABLE_MODELS = [
   // ... existing models
-  'new-model-id',
+  "new-model-id",
 ];
 ```
 
@@ -160,19 +164,23 @@ The interactive interface includes:
 ### Common Issues
 
 1. **API Key Missing**:
+
    - Ensure all required API keys are set in `.env.local`
    - Check that the keys are valid and have sufficient credits/quota
 
 2. **Rate Limiting**:
+
    - AI APIs have rate limits; wait between test runs if hitting limits
    - Consider testing fewer scenarios or models to stay within limits
 
 3. **API Costs**:
+
    - Each test consumes tokens and may incur costs
    - Monitor your API provider dashboard for usage
    - Start with single scenarios to test functionality before running full suites
 
 4. **Slow Tests**:
+
    - AI model responses can take time; the harness includes proper timeouts
    - Network latency and API queue times affect response times
 

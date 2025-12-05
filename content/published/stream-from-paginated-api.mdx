@@ -46,7 +46,7 @@ Calling paginated APIs is a classic programming challenge. It often involves wri
 This example simulates fetching users from a paginated API. The `fetchUsersPage` function gets one page of data and returns the next page number. `Stream.paginateEffect` uses this function to create a single stream of all users across all pages.
 
 ```typescript
-import { Effect, Stream, Chunk, Option } from 'effect';
+import { Effect, Stream, Chunk, Option } from "effect";
 
 // --- Mock Paginated API ---
 interface User {
@@ -56,7 +56,7 @@ interface User {
 
 // Define FetchError as a class with a literal type tag
 class FetchError {
-  readonly _tag = 'FetchError' as const;
+  readonly _tag = "FetchError" as const;
   constructor(readonly message: string) {}
 }
 
@@ -78,7 +78,7 @@ const fetchUsersPage = (
 
     // Simulate potential API errors
     if (page < 1) {
-      return yield* Effect.fail(fetchError('Invalid page number'));
+      return yield* Effect.fail(fetchError("Invalid page number"));
     }
 
     const users = Chunk.fromIterable(allUsers.slice(offset, offset + pageSize));
@@ -99,10 +99,8 @@ const userStream = Stream.paginateEffect(1, fetchUsersPage);
 const program = userStream.pipe(
   Stream.runCollect,
   Effect.map((users) => users.length),
-  Effect.tap((totalUsers) => 
-    Effect.log(`Total users fetched: ${totalUsers}`)
-  ),
-  Effect.catchTag('FetchError', (error) => 
+  Effect.tap((totalUsers) => Effect.log(`Total users fetched: ${totalUsers}`)),
+  Effect.catchTag("FetchError", (error) =>
     Effect.succeed(`Error fetching users: ${error.message}`)
   )
 );
@@ -131,7 +129,7 @@ Output:
 The anti-pattern is to write manual, imperative logic to handle the pagination loop. This code is stateful, harder to read, and not composable.
 
 ```typescript
-import { Effect, Chunk, Option } from 'effect';
+import { Effect, Chunk, Option } from "effect";
 // ... same mock API setup ...
 
 const fetchAllUsersManually = (): Effect.Effect<Chunk.Chunk<User>, Error> =>

@@ -1,6 +1,7 @@
 # Fixed Anthropic API Error - Now Using Gemini ✅
 
 ## Summary
+
 Resolved the Anthropic API credit error by clearing cached compiled code and restarting the dev server, which now correctly uses Google Gemini 2.5 Flash as the default model.
 
 **Status**: ✅ **Fixed - Dev Server Running with Gemini**
@@ -10,6 +11,7 @@ Resolved the Anthropic API credit error by clearing cached compiled code and res
 ## The Problem
 
 The dev server logs showed:
+
 ```
 Error [AI_APICallError]: Your credit balance is too low to access the Anthropic API.
   url: 'https://api.anthropic.com/v1/messages'
@@ -22,6 +24,7 @@ Even though we had updated the configuration files to use Google Gemini, the run
 ## Root Cause
 
 Next.js Turbopack caches compiled code in the `.next/` directory. When we modified `lib/ai/providers.ts`:
+
 - The source file was updated ✅
 - But the running dev server was using cached compiled bytecode ❌
 - The old compiled code still referenced Anthropic
@@ -44,6 +47,7 @@ bun run dev
 ```
 
 This forces:
+
 - ✅ Complete recompilation of all TypeScript/JavaScript
 - ✅ Fresh resolution of environment variables
 - ✅ New build picks up the Gemini configuration from providers.ts
@@ -53,6 +57,7 @@ This forces:
 ## Verification
 
 Dev server now:
+
 - ✅ Starts clean without lock file conflicts
 - ✅ Compiles successfully
 - ✅ Loads on http://localhost:3000
@@ -64,12 +69,12 @@ Next API call will use **Google Gemini 2.5 Flash** instead of Anthropic Claude.
 
 ## What Changed
 
-| Item | Before | After |
-|------|--------|-------|
-| API Provider | Anthropic Claude (error) | Google Gemini 2.5 |
-| `.next/` cache | Stale (old compiled code) | Deleted, recompiled |
-| Dev server process | Old/cached | Fresh restart |
-| Configuration files | Already updated ✅ | Already correct ✅ |
+| Item                | Before                    | After               |
+| ------------------- | ------------------------- | ------------------- |
+| API Provider        | Anthropic Claude (error)  | Google Gemini 2.5   |
+| `.next/` cache      | Stale (old compiled code) | Deleted, recompiled |
+| Dev server process  | Old/cached                | Fresh restart       |
+| Configuration files | Already updated ✅        | Already correct ✅  |
 
 **Code Changes**: None - just cleared cache
 **Configuration**: Already correct from previous updates
@@ -89,6 +94,7 @@ Next API call will use **Google Gemini 2.5 Flash** instead of Anthropic Claude.
 ## Testing the Fix
 
 ### Quick Test
+
 ```bash
 # In the browser, go to http://localhost:3000
 # Start a new chat and ask: "What is Effect-TS?"
@@ -96,7 +102,9 @@ Next API call will use **Google Gemini 2.5 Flash** instead of Anthropic Claude.
 ```
 
 ### Dev Console Logs
+
 Should show:
+
 ```
 GET / 200
 GET /api/auth/session 200
@@ -106,12 +114,15 @@ POST /api/chat 200
 **NOT** showing Anthropic API errors.
 
 ### Supermemory Integration
+
 Should also see:
+
 ```
 [Supermemory] Stored conversation embedding for chat <ID>
 ```
 
 This confirms:
+
 - ✅ Chat API working
 - ✅ Model responding
 - ✅ Pattern embeddings storing
@@ -121,6 +132,7 @@ This confirms:
 ## Why This Happens
 
 Next.js Turbopack optimization:
+
 1. Compiles TypeScript → JavaScript (with optimizations)
 2. Caches compiled code in `.next/` for faster reloads
 3. When dev server runs, uses cached bytecode
@@ -136,6 +148,7 @@ Next.js Turbopack optimization:
 To avoid this in the future when changing configuration:
 
 ### Quick Restart (clears cache)
+
 ```bash
 # Kill old process and start fresh
 pkill -f "next dev"
@@ -144,6 +157,7 @@ bun run dev
 ```
 
 ### Or use environment variable
+
 ```bash
 # Disable Turbopack caching during development
 TURBOPACK_CACHE_WORKERS=0 bun run dev

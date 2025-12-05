@@ -28,14 +28,13 @@ const result = someValue.pipe(
 function findUser(id: number): Option.Option<{ id: number; name: string }> {
   return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
 }
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Option.some(value)` represents a present value.
 - `Option.none()` represents absence.
 - `Option.fromNullable` safely lifts nullable values into Option.
 - Pattern matching ensures all cases are handled.
 
 ---
-

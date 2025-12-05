@@ -28,4 +28,3 @@ export const ScoringConfigSchema = Schema.Struct({
   topicMatchWeight: Schema.Number,
   guidanceIndicatorWeight: Schema.Number,
 });
-

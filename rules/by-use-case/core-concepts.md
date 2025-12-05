@@ -10,15 +10,12 @@ Access configuration from the Effect context.
 import { Config, Effect, Layer } from "effect";
 
 // Define config service
-class AppConfig extends Effect.Service<AppConfig>()(
-  "AppConfig",
-  {
-    sync: () => ({
-      host: "localhost",
-      port: 3000
-    })
-  }
-) {}
+class AppConfig extends Effect.Service<AppConfig>()("AppConfig", {
+  sync: () => ({
+    host: "localhost",
+    port: 3000,
+  }),
+}) {}
 
 // Create program that uses config
 const program = Effect.gen(function* () {
@@ -27,9 +24,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with default config
-Effect.runPromise(
-  Effect.provide(program, AppConfig.Default)
-);
+Effect.runPromise(Effect.provide(program, AppConfig.Default));
 ```
 
 **Explanation:**  
@@ -55,7 +50,9 @@ interface Event {
 }
 
 // This function is pure and testable because it depends on Clock
-const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> =>
+const createEvent = (
+  message: string
+): Effect.Effect<Event, never, Types.Clock> =>
   Effect.gen(function* () {
     const timestamp = yield* Clock.currentTimeMillis;
     return { message, timestamp };
@@ -103,9 +100,7 @@ const effect = Effect.succeed(2).pipe(
 ); // Effect<number>
 
 // Option: Chain two optional computations
-const option = Option.some(2).pipe(
-  Option.flatMap((n) => Option.some(n * 10))
-); // Option<number>
+const option = Option.some(2).pipe(Option.flatMap((n) => Option.some(n * 10))); // Option<number>
 
 // Either: Chain two computations that may fail
 const either = Either.right(2).pipe(
@@ -135,9 +130,7 @@ import { Effect, Stream, Option, Either } from "effect";
 // Effect: Combine two effects and get both results
 const effectA = Effect.succeed(1);
 const effectB = Effect.succeed("hello");
-const zippedEffect = effectA.pipe(
-  Effect.zip(effectB)
-); // Effect<[number, string]>
+const zippedEffect = effectA.pipe(Effect.zip(effectB)); // Effect<[number, string]>
 
 // Option: Combine two options, only Some if both are Some
 const optionA = Option.some(1);
@@ -152,9 +145,7 @@ const zippedEither = Either.all([eitherA, eitherB]); // Either<never, [number, s
 // Stream: Pair up values from two streams
 const streamA = Stream.fromIterable([1, 2, 3]);
 const streamB = Stream.fromIterable(["a", "b", "c"]);
-const zippedStream = streamA.pipe(
-  Stream.zip(streamB)
-); // Stream<[number, string]>
+const zippedStream = streamA.pipe(Stream.zip(streamB)); // Stream<[number, string]>
 ```
 
 **Explanation:**  
@@ -225,21 +216,17 @@ import { Effect, Stream, Option, Either } from "effect";
 // Effect: Branch based on a condition
 const effect = Effect.if(true, {
   onTrue: () => Effect.succeed("yes"),
-  onFalse: () => Effect.succeed("no")
+  onFalse: () => Effect.succeed("no"),
 }); // Effect<string>
 
 // Option: Conditionally create an Option
 const option = true ? Option.some("yes") : Option.none(); // Option<string> (Some("yes"))
 
 // Either: Conditionally create an Either
-const either = true
-  ? Either.right("yes")
-  : Either.left("error"); // Either<string, string> (Right("yes"))
+const either = true ? Either.right("yes") : Either.left("error"); // Either<string, string> (Right("yes"))
 
 // Stream: Conditionally emit a stream
-const stream = false
-  ? Stream.fromIterable([1, 2])
-  : Stream.empty; // Stream<number> (empty)
+const stream = false ? Stream.fromIterable([1, 2]) : Stream.empty; // Stream<number> (empty)
 ```
 
 **Explanation:**  
@@ -255,27 +242,35 @@ Use conditional combinators for control flow.
 ### Example
 
 ```typescript
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 const attemptAdminAction = (user: { isAdmin: boolean }) =>
   Effect.if(user.isAdmin, {
     onTrue: () => Effect.succeed("Admin action completed."),
-    onFalse: () => Effect.fail("Permission denied.")
-  })
+    onFalse: () => Effect.fail("Permission denied."),
+  });
 
 const program = Effect.gen(function* () {
   // Try with admin user
-  yield* Effect.logInfo("\nTrying with admin user...")
-  const adminResult = yield* Effect.either(attemptAdminAction({ isAdmin: true }))
-  yield* Effect.logInfo(`Admin result: ${adminResult._tag === 'Right' ? adminResult.right : adminResult.left}`)
+  yield* Effect.logInfo("\nTrying with admin user...");
+  const adminResult = yield* Effect.either(
+    attemptAdminAction({ isAdmin: true })
+  );
+  yield* Effect.logInfo(
+    `Admin result: ${adminResult._tag === "Right" ? adminResult.right : adminResult.left}`
+  );
 
   // Try with non-admin user
-  yield* Effect.logInfo("\nTrying with non-admin user...")
-  const userResult = yield* Effect.either(attemptAdminAction({ isAdmin: false }))
-  yield* Effect.logInfo(`User result: ${userResult._tag === 'Right' ? userResult.right : userResult.left}`)
-})
+  yield* Effect.logInfo("\nTrying with non-admin user...");
+  const userResult = yield* Effect.either(
+    attemptAdminAction({ isAdmin: false })
+  );
+  yield* Effect.logInfo(
+    `User result: ${userResult._tag === "Right" ? userResult.right : userResult.left}`
+  );
+});
 
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 **Explanation:**  
@@ -301,18 +296,19 @@ const option = Option.fromNullable(nullableValue); // Option<string>
 const someValue = Option.some(42);
 const effectFromOption = Option.match(someValue, {
   onNone: () => Effect.fail("No value"),
-  onSome: (value) => Effect.succeed(value)
+  onSome: (value) => Effect.succeed(value),
 }); // Effect<number, string, never>
 
 // Effect: Convert an Either to an Effect
 const either = Either.right("success");
 const effectFromEither = Either.match(either, {
   onLeft: (error) => Effect.fail(error),
-  onRight: (value) => Effect.succeed(value)
+  onRight: (value) => Effect.succeed(value),
 }); // Effect<string, never, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fromNullable` lifts a nullable value into an Effect, failing if the value is `null` or `undefined`.
 - `Effect.fromOption` lifts an Option into an Effect, failing if the Option is `none`.
 - `Effect.fromEither` lifts an Either into an Effect, failing if the Either is `left`.
@@ -326,7 +322,7 @@ Create pre-resolved effects with succeed and fail.
 ### Example
 
 ```typescript
-import { Effect, Data } from "effect"
+import { Effect, Data } from "effect";
 
 // Create a custom error type
 class MyError extends Data.TaggedError("MyError") {}
@@ -334,26 +330,26 @@ class MyError extends Data.TaggedError("MyError") {}
 // Create a program that demonstrates pre-resolved effects
 const program = Effect.gen(function* () {
   // Success effect
-  yield* Effect.logInfo("Running success effect...")
+  yield* Effect.logInfo("Running success effect...");
   yield* Effect.gen(function* () {
-    const value = yield* Effect.succeed(42)
-    yield* Effect.logInfo(`Success value: ${value}`)
-  })
+    const value = yield* Effect.succeed(42);
+    yield* Effect.logInfo(`Success value: ${value}`);
+  });
 
   // Failure effect
-  yield* Effect.logInfo("\nRunning failure effect...")
+  yield* Effect.logInfo("\nRunning failure effect...");
   yield* Effect.gen(function* () {
     // Use return yield* for effects that never succeed
-    return yield* Effect.fail(new MyError())
+    return yield* Effect.fail(new MyError());
   }).pipe(
     Effect.catchTag("MyError", (error) =>
       Effect.logInfo(`Error occurred: ${error._tag}`)
     )
-  )
-})
+  );
+});
 
 // Run the program
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 **Explanation:**  
@@ -369,36 +365,31 @@ Define a type-safe configuration schema.
 ### Example
 
 ```typescript
-import { Config, Effect, ConfigProvider, Layer } from "effect"
+import { Config, Effect, ConfigProvider, Layer } from "effect";
 
 const ServerConfig = Config.nested("SERVER")(
   Config.all({
     host: Config.string("HOST"),
     port: Config.number("PORT"),
   })
-)
+);
 
 // Example program that uses the config
 const program = Effect.gen(function* () {
-  const config = yield* ServerConfig
-  yield* Effect.logInfo(`Server config loaded: ${JSON.stringify(config)}`)
-})
+  const config = yield* ServerConfig;
+  yield* Effect.logInfo(`Server config loaded: ${JSON.stringify(config)}`);
+});
 
 // Create a config provider with test values
 const TestConfig = ConfigProvider.fromMap(
   new Map([
     ["SERVER.HOST", "localhost"],
-    ["SERVER.PORT", "3000"]
+    ["SERVER.PORT", "3000"],
   ])
-)
+);
 
 // Run with test config
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Layer.setConfigProvider(TestConfig)
-  )
-)
+Effect.runPromise(Effect.provide(program, Layer.setConfigProvider(TestConfig)));
 ```
 
 **Explanation:**  
@@ -430,10 +421,8 @@ const option = Option.some(4).pipe(
 
 // Either: Use map and flatMap to filter
 const either = Either.right(4).pipe(
-  Either.flatMap((n) => 
-    n % 2 === 0
-      ? Either.right(n)
-      : Either.left("Number is not even")
+  Either.flatMap((n) =>
+    n % 2 === 0 ? Either.right(n) : Either.left("Number is not even")
   )
 ); // Either<string, number>
 
@@ -467,7 +456,8 @@ const option = Option.some("hello"); // Option<string>
 const either = Either.right({ id: 1 }); // Either<never, { id: number }>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.succeed(value)` creates an effect that always succeeds with `value`.
 - `Option.some(value)` creates an option that is always present.
 - `Either.right(value)` creates an either that always represents success.
@@ -496,7 +486,7 @@ interface PaginatedResponse {
 
 // A mock API call that returns a page of users
 const fetchUserPage = (
-  page: number,
+  page: number
 ): Effect.Effect<PaginatedResponse, "ApiError"> =>
   Effect.succeed(
     page < 3
@@ -507,26 +497,28 @@ const fetchUserPage = (
           ],
           nextPage: page + 1,
         }
-      : { users: [], nextPage: null },
+      : { users: [], nextPage: null }
   ).pipe(Effect.delay("50 millis"));
 
 // Stream.paginateEffect creates a stream from a paginated source
-const userStream: Stream.Stream<User, "ApiError"> = Stream.paginateEffect(0, (page) =>
-  fetchUserPage(page).pipe(
-    Effect.map((response) => [
-      response.users,
-      Option.fromNullable(response.nextPage)
-    ] as const),
-  ),
+const userStream: Stream.Stream<User, "ApiError"> = Stream.paginateEffect(
+  0,
+  (page) =>
+    fetchUserPage(page).pipe(
+      Effect.map(
+        (response) =>
+          [response.users, Option.fromNullable(response.nextPage)] as const
+      )
+    )
 ).pipe(
   // Flatten the stream of user arrays into a stream of individual users
-  Stream.flatMap((users) => Stream.fromIterable(users)),
+  Stream.flatMap((users) => Stream.fromIterable(users))
 );
 
 // We can now process the stream of users.
 // Stream.runForEach will pull from the stream until it's exhausted.
 const program = Stream.runForEach(userStream, (user: User) =>
-  Effect.log(`Processing user: ${user.name}`),
+  Effect.log(`Processing user: ${user.name}`)
 );
 
 const programWithErrorHandling = program.pipe(
@@ -551,24 +543,24 @@ Provide configuration to your app via a Layer.
 
 ### Example
 
-````typescript
+```typescript
 import { Effect, Layer } from "effect";
 
-class ServerConfig extends Effect.Service<ServerConfig>()(
-  "ServerConfig",
-  {
-    sync: () => ({
-      port: process.env.PORT ? parseInt(process.env.PORT) : 8080
-    })
-  }
-) {}
+class ServerConfig extends Effect.Service<ServerConfig>()("ServerConfig", {
+  sync: () => ({
+    port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
+  }),
+}) {}
 
 const program = Effect.gen(function* () {
   const config = yield* ServerConfig;
   yield* Effect.log(`Starting application on port ${config.port}...`);
 });
 
-const programWithErrorHandling = Effect.provide(program, ServerConfig.Default).pipe(
+const programWithErrorHandling = Effect.provide(
+  program,
+  ServerConfig.Default
+).pipe(
   Effect.catchAll((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Program error: ${error}`);
@@ -578,7 +570,7 @@ const programWithErrorHandling = Effect.provide(program, ServerConfig.Default).p
 );
 
 Effect.runPromise(programWithErrorHandling);
-````
+```
 
 **Explanation:**  
 This approach makes configuration available contextually, supporting better testing and modularity.
@@ -640,7 +632,6 @@ const demonstration = Effect.gen(function* () {
 });
 
 Effect.runPromise(demonstration);
-
 ```
 
 ---
@@ -735,7 +726,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(Effect.provide(program, HttpClient.Default));
-
 ```
 
 ---
@@ -804,7 +794,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -823,24 +812,16 @@ Use map to apply a pure function to the value inside an Effect, Stream, Option, 
 import { Effect, Stream, Option, Either } from "effect";
 
 // Effect: Transform the result of an effect
-const effect = Effect.succeed(2).pipe(
-  Effect.map((n) => n * 10)
-); // Effect<number>
+const effect = Effect.succeed(2).pipe(Effect.map((n) => n * 10)); // Effect<number>
 
 // Option: Transform an optional value
-const option = Option.some(2).pipe(
-  Option.map((n) => n * 10)
-); // Option<number>
+const option = Option.some(2).pipe(Option.map((n) => n * 10)); // Option<number>
 
 // Either: Transform a value that may be an error
-const either = Either.right(2).pipe(
-  Either.map((n) => n * 10)
-); // Either<never, number>
+const either = Either.right(2).pipe(Either.map((n) => n * 10)); // Either<never, number>
 
 // Stream: Transform every value in a stream
-const stream = Stream.fromIterable([1, 2, 3]).pipe(
-  Stream.map((n) => n * 10)
-); // Stream<number>
+const stream = Stream.fromIterable([1, 2, 3]).pipe(Stream.map((n) => n * 10)); // Stream<number>
 ```
 
 **Explanation:**  
@@ -860,31 +841,25 @@ Here, we define a `Notifier` service that requires a `Logger` to be built. The `
 import { Effect } from "effect";
 
 // Define the Logger service with a default implementation
-export class Logger extends Effect.Service<Logger>()(
-  "Logger",
-  {
-    // Provide a synchronous implementation
-    sync: () => ({
-      log: (msg: string) => Effect.log(`LOG: ${msg}`)
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("Logger", {
+  // Provide a synchronous implementation
+  sync: () => ({
+    log: (msg: string) => Effect.log(`LOG: ${msg}`),
+  }),
+}) {}
 
 // Define the Notifier service that depends on Logger
-export class Notifier extends Effect.Service<Notifier>()(
-  "Notifier",
-  {
-    // Provide an implementation that requires Logger
-    effect: Effect.gen(function* () {
-      const logger = yield* Logger;
-      return {
-        notify: (msg: string) => logger.log(`Notifying: ${msg}`)
-      };
-    }),
-    // Specify dependencies
-    dependencies: [Logger.Default]
-  }
-) {}
+export class Notifier extends Effect.Service<Notifier>()("Notifier", {
+  // Provide an implementation that requires Logger
+  effect: Effect.gen(function* () {
+    const logger = yield* Logger;
+    return {
+      notify: (msg: string) => logger.log(`Notifying: ${msg}`),
+    };
+  }),
+  // Specify dependencies
+  dependencies: [Logger.Default],
+}) {}
 
 // Create a program that uses both services
 const program = Effect.gen(function* () {
@@ -893,12 +868,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with the default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Notifier.Default
-  )
-);
+Effect.runPromise(Effect.provide(program, Notifier.Default));
 ```
 
 ---
@@ -922,7 +892,9 @@ const program = Effect.gen(function* () {
 });
 
 const demonstrationProgram = Effect.gen(function* () {
-  yield* Effect.log("2. The blueprint has been defined. No work has been done yet.");
+  yield* Effect.log(
+    "2. The blueprint has been defined. No work has been done yet."
+  );
   yield* program;
 });
 
@@ -947,25 +919,26 @@ This function signature is a self-documenting contract. It clearly states that t
 import { Effect, Data } from "effect";
 
 // Define the types for our channels
-interface User { readonly name: string; } // The 'A' type
+interface User {
+  readonly name: string;
+} // The 'A' type
 class UserNotFoundError extends Data.TaggedError("UserNotFoundError") {} // The 'E' type
 
 // Define the Database service using Effect.Service
-export class Database extends Effect.Service<Database>()(
-  "Database",
-  {
-    // Provide a default implementation
-    sync: () => ({
-      findUser: (id: number) =>
-        id === 1
-          ? Effect.succeed({ name: "Paul" })
-          : Effect.fail(new UserNotFoundError())
-    })
-  }
-) {}
+export class Database extends Effect.Service<Database>()("Database", {
+  // Provide a default implementation
+  sync: () => ({
+    findUser: (id: number) =>
+      id === 1
+        ? Effect.succeed({ name: "Paul" })
+        : Effect.fail(new UserNotFoundError()),
+  }),
+}) {}
 
 // This function's signature shows all three channels
-const getUser = (id: number): Effect.Effect<User, UserNotFoundError, Database> =>
+const getUser = (
+  id: number
+): Effect.Effect<User, UserNotFoundError, Database> =>
   Effect.gen(function* () {
     const db = yield* Database;
     return yield* db.findUser(id);
@@ -1059,7 +1032,6 @@ const demo = Effect.gen(function* () {
 });
 
 Effect.runPromise(demo);
-
 ```
 
 **Explanation:**  
@@ -1217,7 +1189,6 @@ const program = Effect.gen(function* () {
 
 // Run with mock implementation
 Effect.runPromise(Effect.provide(program, MockHttpClient.Default));
-
 ```
 
 **Explanation:**  
@@ -1267,7 +1238,9 @@ const program = Effect.gen(function* () {
   yield* Effect.log("\n1. Basic sync computation (random number):");
   const random1 = yield* randomNumber;
   const random2 = yield* randomNumber;
-  yield* Effect.log(`Random numbers: ${random1.toFixed(4)}, ${random2.toFixed(4)}`);
+  yield* Effect.log(
+    `Random numbers: ${random1.toFixed(4)}, ${random2.toFixed(4)}`
+  );
 
   // Example 2: Successful JSON parsing
   yield* Effect.log("\n2. Successful JSON parsing:");
@@ -1315,7 +1288,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -1489,7 +1461,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -1497,4 +1468,3 @@ Effect.runPromise(program);
 maintain, even when chaining many asynchronous steps.
 
 ---
-

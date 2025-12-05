@@ -96,6 +96,7 @@ bun run ingest
 ```
 
 This script:
+
 1. Validates MDX frontmatter and required sections
 2. Moves TypeScript files to `/content/src`
 3. Moves MDX files to `/content/raw`
@@ -103,6 +104,7 @@ This script:
 ## Typical Workflow
 
 1. **Create new pattern**
+
    ```bash
    # Create files in content/new
    touch content/new/my-pattern.mdx
@@ -110,6 +112,7 @@ This script:
    ```
 
 2. **Process new pattern**
+
    ```bash
    bun run ingest
    ```
@@ -118,8 +121,9 @@ This script:
    ```bash
    bun run pipeline
    ```
-   
+
 This will:
+
 - Run all TypeScript examples
 - Convert raw MDX to published format
 - Validate all files

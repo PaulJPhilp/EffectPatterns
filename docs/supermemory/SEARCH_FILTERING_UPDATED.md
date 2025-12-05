@@ -9,11 +9,13 @@
 The original search and filtering plan has been **updated with actual Supermemory API details**:
 
 ### Original Plan
+
 - Generic search/filter framework
 - Assumed single search endpoint
 - Basic filtering concepts
 
 ### Updated Plan (Current)
+
 - **Dual endpoint architecture** (v3/search + v4/search)
 - **Documents Search** (`/v3/search`) - Ingested files, PDFs, etc.
 - **Memories Search** (`/v4/search`) - User memories and preferences
@@ -26,12 +28,14 @@ The original search and filtering plan has been **updated with actual Supermemor
 ### Two Endpoints, Two Use Cases
 
 **1. Documents Search (`POST /v3/search`)**
+
 - Searches ingested documents (PDFs, text, images, videos)
 - Returns: Chunks with full context
 - **Use cases**: Document discovery, RAG, chat with files
 - **Latency**: 150-300ms typical
 
 **Key Parameters:**
+
 - `documentThreshold` - Document relevance (0.0-1.0)
 - `chunkThreshold` - Chunk relevance (0.0-1.0)
 - `rerank` - Re-score for higher accuracy
@@ -40,12 +44,14 @@ The original search and filtering plan has been **updated with actual Supermemor
 - `filters` - Metadata SQL-like conditions
 
 **2. Memories Search (`POST /v4/search`)**
+
 - Searches user memories and preferences
 - Returns: Memories with similarity scores
 - **Use cases**: Personalized AI, user context, auto-selection
 - **Latency**: 100-200ms typical
 
 **Key Parameters:**
+
 - `threshold` - Similarity threshold (0.0-1.0)
 - `containerTag` - User identifier
 - `rerank` - Re-score results
@@ -53,22 +59,26 @@ The original search and filtering plan has been **updated with actual Supermemor
 ## Key Concepts Implemented
 
 ### 1. Threshold Control
+
 - **0.0** = Broad search (more results, lower quality)
 - **1.0** = Precise search (fewer results, higher quality)
 - Use thresholds to balance sensitivity
 
 ### 2. Query Rewriting
+
 - Expands queries for better coverage
 - "ML" becomes "machine learning artificial intelligence"
 - Adds ~400ms latency
 - Useful for abbreviations and domain terms
 
 ### 3. Reranking
+
 - Re-scores results using different algorithm
 - More accurate relevance
 - Recommended for critical searches
 
 ### 4. Container Tags vs Metadata Filters
+
 - **Container Tags**: Organizational grouping, exact matching
 - **Metadata Filters**: SQL-like conditions for date/author/category
 
@@ -77,6 +87,7 @@ The original search and filtering plan has been **updated with actual Supermemor
 ### Phase 1: Type Definitions (Task 1)
 
 Add to `app/sm-cli/src/types.ts`:
+
 ```typescript
 // Document search
 interface DocumentSearchOptions { ... }
@@ -96,6 +107,7 @@ interface FilterClause { ... }
 ### Phase 2: Service Layer (Task 2)
 
 Add to `app/sm-cli/src/services/supermemory.ts`:
+
 ```typescript
 readonly searchDocuments: (options: DocumentSearchOptions)
   => Effect.Effect<DocumentSearchResult, SupermemoryError>;
@@ -107,6 +119,7 @@ readonly searchMemories: (options: MemorySearchOptions)
 ### Phase 3: Filter Parser (Task 3)
 
 Create `app/sm-cli/src/lib/filter-parser.ts`:
+
 ```typescript
 export const parseFilterExpression = (expr: string): FilterConditions
 export const validateFilterClause = (clause: FilterClause): boolean
@@ -116,6 +129,7 @@ export const filterToQuery = (conditions: FilterConditions): string
 ### Phase 4: CLI Commands (Tasks 4-6)
 
 Enhance `app/sm-cli/src/commands/memories.ts`:
+
 ```bash
 # Memories search (v4/search)
 bun run sm-cli memories search "kubernetes" \
@@ -157,12 +171,14 @@ bun run sm-cli documents search "machine learning" \
 ## Documentation Created
 
 ### 1. SEARCH_FILTERING_PLAN.md
+
 - Comprehensive implementation plan
 - Supermemory API details
 - CLI command specifications
 - Service layer design
 
 ### 2. SUPERMEMORY_SEARCH_INTEGRATION.md (NEW)
+
 - Dual search architecture explanation
 - Core concepts and strategies
 - Implementation task breakdown
@@ -170,6 +186,7 @@ bun run sm-cli documents search "machine learning" \
 - Performance characteristics
 
 ### 3. SEARCH_FILTERING_SETUP.md
+
 - Branch setup information
 - Implementation phases
 - Success criteria
@@ -229,6 +246,7 @@ All planning is complete with actual Supermemory API details. Ready to:
 2. Or proceed with a different task?
 
 The comprehensive documentation is ready:
+
 - SEARCH_FILTERING_PLAN.md - Full specifications
 - SUPERMEMORY_SEARCH_INTEGRATION.md - Implementation guide
 - SEARCH_FILTERING_SETUP.md - Setup reference

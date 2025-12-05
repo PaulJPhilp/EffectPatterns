@@ -7,11 +7,13 @@ Semantic search adds intelligent, context-aware retrieval to your memory system 
 ## Current State
 
 **What We Have:**
+
 - Supermemory API for storing memories with keyword search
 - Conversation context, metadata, and activity tracking
 - Stored conversations with themes and topics
 
 **What's Missing:**
+
 - Semantic/vector search capabilities
 - Embeddings for conversations and user queries
 - Similarity-based ranking
@@ -21,22 +23,25 @@ Semantic search adds intelligent, context-aware retrieval to your memory system 
 ### Option 1: Supermemory Built-in Semantic Search (Recommended)
 
 **Pros:**
+
 - ✅ Works with existing Supermemory API
 - ✅ No additional infrastructure needed
 - ✅ Handles embeddings automatically
 - ✅ Simple to implement
 
 **Cons:**
+
 - ❌ Requires Supermemory Pro/Enterprise tier
 - ❌ Limited customization
 - ❌ Vendor lock-in
 
 **Implementation:**
+
 ```typescript
 // Supermemory likely has semantic search built-in:
 const results = await client.search.memories({
   q: "error handling patterns",
-  semantic: true,  // Enable semantic search
+  semantic: true, // Enable semantic search
   limit: 10,
 });
 ```
@@ -48,17 +53,20 @@ const results = await client.search.memories({
 ### Option 2: Hybrid Search (Keyword + Semantic) - RECOMMENDED FOR FULL CONTROL
 
 **Pros:**
+
 - ✅ Best of both worlds (keyword + semantic)
 - ✅ No vendor lock-in
 - ✅ Highly customizable
 - ✅ Can use any embedding model
 
 **Cons:**
+
 - ⚠️ Requires embedding service (free/paid)
 - ⚠️ More complex implementation
 - ⚠️ Need to store embeddings
 
 **Components:**
+
 1. **Embedding Model** - Convert text to vectors
 2. **Vector Storage** - Store embeddings with metadata
 3. **Search Layer** - Keyword + vector similarity ranking
@@ -69,11 +77,13 @@ const results = await client.search.memories({
 ### Option 3: AI-Powered Semantic Search
 
 **Pros:**
+
 - ✅ Use Claude API for semantic understanding
 - ✅ Very accurate
 - ✅ Can do reasoning-based search
 
 **Cons:**
+
 - ❌ Expensive (API calls per search)
 - ❌ Slower than embeddings
 - ❌ Overkill for many use cases
@@ -86,24 +96,26 @@ const results = await client.search.memories({
 
 **Best Options:**
 
-| Model | Provider | Quality | Cost | Speed | Setup |
-|-------|----------|---------|------|-------|-------|
-| Voyage AI | Voyage AI | ⭐⭐⭐⭐⭐ | $$$$ | Fast | API |
-| OpenAI | OpenAI | ⭐⭐⭐⭐⭐ | $$ | Fast | API |
-| Cohere | Cohere | ⭐⭐⭐⭐ | $$$ | Fast | API |
-| Ollama | Local | ⭐⭐⭐ | FREE | Slow | Self-hosted |
-| Nomic | Local | ⭐⭐⭐⭐ | FREE | Medium | Self-hosted |
+| Model     | Provider  | Quality    | Cost | Speed  | Setup       |
+| --------- | --------- | ---------- | ---- | ------ | ----------- |
+| Voyage AI | Voyage AI | ⭐⭐⭐⭐⭐ | $$$$ | Fast   | API         |
+| OpenAI    | OpenAI    | ⭐⭐⭐⭐⭐ | $$   | Fast   | API         |
+| Cohere    | Cohere    | ⭐⭐⭐⭐   | $$$  | Fast   | API         |
+| Ollama    | Local     | ⭐⭐⭐     | FREE | Slow   | Self-hosted |
+| Nomic     | Local     | ⭐⭐⭐⭐   | FREE | Medium | Self-hosted |
 
 **Recommendation:** OpenAI `text-embedding-3-small` for best cost/quality balance
 
 ### Step 2: Choose Vector Storage
 
 **In-Process Options:**
+
 - `hnswlib` - Simple, works in-memory
 - `vectordb` - TypeScript native
 - `sqlite-vec` - SQLite with vector support
 
 **Cloud Options:**
+
 - Pinecone - Managed vector DB
 - Weaviate - Open-source vector search
 - Milvus - Distributed vector DB
@@ -162,7 +174,7 @@ export class VectorStore {
 
   search(queryVector: number[], limit: number = 5): VectorStoreItem[] {
     const results = this.index.searchKnn(queryVector, limit);
-    return results.map(idx => {
+    return results.map((idx) => {
       const entries = Array.from(this.items.values());
       return entries[idx];
     });
@@ -327,21 +339,21 @@ Hybrid search combines multiple signals:
 
 ```typescript
 interface SearchScore {
-  vectorSimilarity: number;    // 0-1 (cosine similarity)
-  keywordRelevance: number;    // 0-1 (fuzzy match score)
-  recencyBoost: number;        // 0-1 (recent = higher)
-  satisfactionBoost: number;   // 0-1 (solved conversations higher)
-  topicMatch: number;          // 0-1 (matching tags)
+  vectorSimilarity: number; // 0-1 (cosine similarity)
+  keywordRelevance: number; // 0-1 (fuzzy match score)
+  recencyBoost: number; // 0-1 (recent = higher)
+  satisfactionBoost: number; // 0-1 (solved conversations higher)
+  topicMatch: number; // 0-1 (matching tags)
 }
 
 const calculateFinalScore = (
   item: SearchResult,
   weights: {
-    vector: number;      // 0.4
-    keyword: number;     // 0.3
-    recency: number;     // 0.15
-    satisfaction: number;// 0.1
-    topic: number;       // 0.05
+    vector: number; // 0.4
+    keyword: number; // 0.3
+    recency: number; // 0.15
+    satisfaction: number; // 0.1
+    topic: number; // 0.05
   }
 ): number => {
   return (
@@ -359,24 +371,28 @@ const calculateFinalScore = (
 ## Step-by-Step Implementation
 
 ### Phase 1: Add Embedding Support
+
 1. Install embedding library (`yarn add @anthropic-ai/sdk` - already have it)
 2. Create `lib/semantic-search/embeddings.ts`
 3. Add embedding generation function
 4. Test with sample conversations
 
 ### Phase 2: Add Vector Storage
+
 1. Install vector store (`yarn add hnswlib-wasm`)
 2. Create `lib/semantic-search/vector-store.ts`
 3. Implement CRUD operations
 4. Persist to disk (optional)
 
 ### Phase 3: Integrate with Chat
+
 1. Update chat route to generate/store embeddings
 2. Create search API endpoint
 3. Update systemPrompt to include similar conversations
 4. Test with various queries
 
 ### Phase 4: Optimize & Monitor
+
 1. Add caching for embeddings
 2. Implement batch processing
 3. Add search analytics
@@ -387,6 +403,7 @@ const calculateFinalScore = (
 ## Code Examples
 
 ### Using OpenAI Embeddings
+
 ```typescript
 import { OpenAI } from "openai";
 
@@ -404,6 +421,7 @@ export const generateEmbedding = async (text: string): Promise<number[]> => {
 ```
 
 ### Using Anthropic Embeddings (When Available)
+
 ```typescript
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -418,6 +436,7 @@ export const generateEmbedding = async (text: string): Promise<number[]> => {
 ```
 
 ### Using Local Embeddings (Ollama)
+
 ```typescript
 export const generateEmbedding = async (text: string): Promise<number[]> => {
   const response = await fetch("http://localhost:11434/api/embeddings", {
@@ -436,15 +455,15 @@ export const generateEmbedding = async (text: string): Promise<number[]> => {
 
 ## Comparison Matrix
 
-| Feature | Keyword Search | Semantic Search | Hybrid |
-|---------|---|---|---|
-| Exact match | ✅ | ❌ | ✅ |
-| Concept match | ❌ | ✅ | ✅ |
-| Typo tolerance | ⚠️ | ✅ | ✅ |
-| Speed | ⚡ | 🐢 | ⚡⚡ |
-| Quality | 6/10 | 9/10 | 9.5/10 |
-| Complexity | Simple | Complex | Medium |
-| Cost | FREE | $$ | $$ |
+| Feature        | Keyword Search | Semantic Search | Hybrid |
+| -------------- | -------------- | --------------- | ------ |
+| Exact match    | ✅             | ❌              | ✅     |
+| Concept match  | ❌             | ✅              | ✅     |
+| Typo tolerance | ⚠️             | ✅              | ✅     |
+| Speed          | ⚡             | 🐢              | ⚡⚡   |
+| Quality        | 6/10           | 9/10            | 9.5/10 |
+| Complexity     | Simple         | Complex         | Medium |
+| Cost           | FREE           | $$              | $$     |
 
 ---
 
@@ -479,4 +498,3 @@ app/(chat)/api/chat/route.ts  # Store embeddings
 3. **Budget:** How much can we spend on embeddings?
 4. **Performance:** Is 100ms search latency acceptable?
 5. **Scope:** All conversations or just recent ones?
-

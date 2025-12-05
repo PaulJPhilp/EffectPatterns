@@ -51,7 +51,8 @@ export class ErrorBoundary extends Component<Props, State> {
                   Something went wrong
                 </h2>
                 <p className="text-sm text-muted-foreground mb-4">
-                  An error occurred while rendering this component. Try refreshing or going back.
+                  An error occurred while rendering this component. Try
+                  refreshing or going back.
                 </p>
                 {process.env.NODE_ENV === "development" && this.state.error && (
                   <div className="bg-muted p-3 rounded-md mb-4 text-left overflow-auto max-h-40">

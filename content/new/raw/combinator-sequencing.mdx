@@ -4,16 +4,28 @@ id: "combinator-sequencing"
 skillLevel: "intermediate"
 useCase: ["Combinators", "Sequencing", "Composition", "Side Effects"]
 summary: "Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either."
-tags: ["sequencing", "andThen", "tap", "flatten", "combinator", "effect", "stream", "option", "either"]
+tags:
+  [
+    "sequencing",
+    "andThen",
+    "tap",
+    "flatten",
+    "combinator",
+    "effect",
+    "stream",
+    "option",
+    "either",
+  ]
 rule:
   description: "Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures, while preserving error and context handling."
-related: [
-  "combinator-flatmap",
-  "combinator-map",
-  "combinator-foreach-all",
-  "combinator-zip",
-  "combinator-error-handling"
-]
+related:
+  [
+    "combinator-flatmap",
+    "combinator-map",
+    "combinator-foreach-all",
+    "combinator-zip",
+    "combinator-error-handling",
+  ]
 author: "PaulJPhilp"
 ---
 
@@ -21,7 +33,8 @@ author: "PaulJPhilp"
 
 ## Guideline
 
-Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures.  
+Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures.
+
 - `andThen` runs one computation after another, ignoring the first result.
 - `tap` runs a side-effecting computation with the result, without changing the value.
 - `flatten` removes one level of nesting from nested structures.
@@ -32,6 +45,7 @@ These work for `Effect`, `Stream`, `Option`, and `Either`.
 
 Sequencing is fundamental for expressing workflows.  
 These combinators let you:
+
 - Run computations in order (`andThen`)
 - Attach logging, metrics, or other side effects (`tap`)
 - Simplify nested structures (`flatten`)
@@ -71,7 +85,8 @@ const stream = Stream.fromIterable([1, 2, 3]).pipe(
 ); // Stream<number>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `andThen` is for sequencing when you don’t care about the first result.
 - `tap` is for running side effects (like logging) without changing the value.
 - `flatten` is for removing unnecessary nesting (e.g., `Option<Option<A>>` → `Option<A>`).

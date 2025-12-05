@@ -11,12 +11,16 @@ import { Effect, Data } from "effect";
 
 // Define tagged error types
 class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
-class ValidationError extends Data.TaggedError("ValidationError")<{ message: string }> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
 
 type MyError = NotFoundError | ValidationError;
 
 // Effect: Handle only ValidationError, let others propagate
-const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as MyError).pipe(
+const effect = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
   Effect.catchTag("ValidationError", (err) =>
     Effect.succeed(`Recovered from validation error: ${err.message}`)
   )
@@ -26,12 +30,14 @@ const effect = Effect.fail(new ValidationError({ message: "Invalid input" }) as 
 const effect2 = Effect.fail(new NotFoundError() as MyError).pipe(
   Effect.catchTags({
     NotFoundError: () => Effect.succeed("Handled not found!"),
-    ValidationError: (err) => Effect.succeed(`Handled validation: ${err.message}`),
+    ValidationError: (err) =>
+      Effect.succeed(`Handled validation: ${err.message}`),
   })
 ); // Effect<string>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `catchTag` lets you recover from a specific tagged error type.
 - `catchTags` lets you handle multiple tagged error types in one place.
 - Unhandled errors continue to propagate, preserving error safety.
@@ -65,10 +71,10 @@ const effect: Effect.Effect<string, never, never> = Effect.fail(
       Effect.succeed(`Validation failed: ${err.message}`),
   })
 ); // Effect<string>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
 - This is safer and more maintainable than using `instanceof` or manual property checks.
 
@@ -85,16 +91,16 @@ import { Data } from "effect";
 
 // Define a tagged union for a simple state machine
 type State = Data.TaggedEnum<{
-  Loading: {}
-  Success: { data: string }
-  Failure: { error: string }
-}>
-const { Loading, Success, Failure } = Data.taggedEnum<State>()
+  Loading: {};
+  Success: { data: string };
+  Failure: { error: string };
+}>;
+const { Loading, Success, Failure } = Data.taggedEnum<State>();
 
 // Create instances
-const state1: State = Loading()
-const state2: State = Success({ data: "Hello" })
-const state3: State = Failure({ error: "Oops" })
+const state1: State = Loading();
+const state2: State = Success({ data: "Hello" });
+const state3: State = Failure({ error: "Oops" });
 
 // Pattern match on the state
 function handleState(state: State): string {
@@ -109,10 +115,10 @@ function handleState(state: State): string {
 }
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.case` creates tagged constructors for each state.
 - The `_tag` property enables exhaustive pattern matching.
 - Use for domain modeling, state machines, and error types.
 
 ---
-

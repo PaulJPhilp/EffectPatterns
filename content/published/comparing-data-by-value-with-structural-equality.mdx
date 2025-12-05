@@ -26,6 +26,7 @@ author: effect_website
 ## Guideline
 
 To compare objects or classes by their contents rather than by their memory reference, use one of two methods:
+
 1.  **For plain data objects:** Define them with `Data.struct`.
 2.  **For classes:** Extend `Data.Class` or implement the `Equal.Equal` interface.
 
@@ -35,7 +36,7 @@ Then, compare instances using the `Equal.equals(a, b)` function.
 
 ## Rationale
 
-In JavaScript, comparing two non-primitive values with `===` checks for *referential equality*. It only returns `true` if they are the exact same instance in memory. This means two objects with identical contents are not considered equal, which is a common source of bugs.
+In JavaScript, comparing two non-primitive values with `===` checks for _referential equality_. It only returns `true` if they are the exact same instance in memory. This means two objects with identical contents are not considered equal, which is a common source of bugs.
 
 ```typescript
 { a: 1 } === { a: 1 } // false!

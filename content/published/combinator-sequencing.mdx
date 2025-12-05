@@ -1,5 +1,5 @@
 ---
-title: 'Sequencing with andThen, tap, and flatten'
+title: "Sequencing with andThen, tap, and flatten"
 id: combinator-sequencing
 skillLevel: intermediate
 useCase: concurrency
@@ -34,7 +34,8 @@ author: PaulJPhilp
 
 ## Guideline
 
-Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures.  
+Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures.
+
 - `andThen` runs one computation after another, ignoring the first result.
 - `tap` runs a side-effecting computation with the result, without changing the value.
 - `flatten` removes one level of nesting from nested structures.
@@ -45,6 +46,7 @@ These work for `Effect`, `Stream`, `Option`, and `Either`.
 
 Sequencing is fundamental for expressing workflows.  
 These combinators let you:
+
 - Run computations in order (`andThen`)
 - Attach logging, metrics, or other side effects (`tap`)
 - Simplify nested structures (`flatten`)
@@ -84,7 +86,8 @@ const stream = Stream.fromIterable([1, 2, 3]).pipe(
 ); // Stream<number>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `andThen` is for sequencing when you don’t care about the first result.
 - `tap` is for running side effects (like logging) without changing the value.
 - `flatten` is for removing unnecessary nesting (e.g., `Option<Option<A>>` → `Option<A>`).

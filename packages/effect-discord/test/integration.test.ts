@@ -15,25 +15,25 @@
  *   Set SKIP_INTEGRATION_TESTS=true
  */
 
-import { describe, expect, test } from 'bun:test';
-import { NodeContext } from '@effect/platform-node';
-import { Effect, Exit, Layer, Secret } from 'effect';
+import { describe, expect, test } from "bun:test";
+import { NodeContext } from "@effect/platform-node";
+import { Effect, Exit, Layer, Secret } from "effect";
 import {
   type ChannelExport,
   Discord,
   DiscordConfig,
   DiscordExportError,
-} from '../dist/index.js';
-import { DiscordLive } from '../dist/layer.js';
+} from "../dist/index.js";
+import { DiscordLive } from "../dist/layer.js";
 
 // Skip integration tests if environment variable is set
-const SKIP_TESTS = process.env.SKIP_INTEGRATION_TESTS === 'true';
+const SKIP_TESTS = process.env.SKIP_INTEGRATION_TESTS === "true";
 
 // Check for required environment variables
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const TEST_CHANNEL_ID = process.env.DISCORD_TEST_CHANNEL_ID;
 const EXPORTER_PATH =
-  process.env.DISCORD_EXPORTER_PATH || './tools/DiscordChatExporter.Cli';
+  process.env.DISCORD_EXPORTER_PATH || "./tools/DiscordChatExporter.Cli";
 
 const shouldSkip = SKIP_TESTS || !BOT_TOKEN || !TEST_CHANNEL_ID;
 
@@ -59,33 +59,33 @@ To skip these warnings, set: SKIP_INTEGRATION_TESTS=true
 `);
 }
 
-describe('Discord Integration Tests', () => {
+describe("Discord Integration Tests", () => {
   // Create the configuration layer
   const ConfigLive = Layer.succeed(DiscordConfig, {
-    botToken: Secret.fromString(BOT_TOKEN || 'mock-token'),
+    botToken: Secret.fromString(BOT_TOKEN || "mock-token"),
     exporterPath: EXPORTER_PATH,
   });
 
   // Compose all layers
   const TestLayer = DiscordLive.pipe(
     Layer.provide(ConfigLive),
-    Layer.provide(NodeContext.layer),
+    Layer.provide(NodeContext.layer)
   );
 
   // Helper to run an Effect with our test layer
   const runTest = <E, A>(effect: Effect.Effect<A, E, Discord>) =>
     Effect.runPromise(
-      effect.pipe(Effect.provide(TestLayer), Effect.provide(NodeContext.layer)),
+      effect.pipe(Effect.provide(TestLayer), Effect.provide(NodeContext.layer))
     );
 
   test.skipIf(shouldSkip)(
-    'should export messages from a real Discord channel',
+    "should export messages from a real Discord channel",
     async () => {
       const channelId = TEST_CHANNEL_ID;
 
       if (!channelId) {
         throw new Error(
-          'DISCORD_TEST_CHANNEL_ID environment variable is missing',
+          "DISCORD_TEST_CHANNEL_ID environment variable is missing"
         );
       }
 
@@ -113,23 +113,23 @@ describe('Discord Integration Tests', () => {
       expect(firstMessage.author.id).toBeDefined();
       expect(firstMessage.author.name).toBeDefined();
     },
-    30_000,
+    30_000
   ); // 30 second timeout for API call
 
   test.skipIf(shouldSkip)(
-    'should handle invalid channel ID gracefully',
+    "should handle invalid channel ID gracefully",
     async () => {
       const program = Effect.gen(function* () {
         const discord = yield* Discord;
-        return yield* discord.exportChannel('invalid-channel-id');
+        return yield* discord.exportChannel("invalid-channel-id");
       });
 
       const exit = await Effect.runPromise(
         program.pipe(
           Effect.provide(TestLayer),
           Effect.provide(NodeContext.layer),
-          Effect.exit,
-        ),
+          Effect.exit
+        )
       );
 
       // Should fail with DiscordExportError
@@ -141,17 +141,17 @@ describe('Discord Integration Tests', () => {
         expect(error).toBeDefined();
       }
     },
-    30_000,
+    30_000
   );
 
   test.skipIf(shouldSkip)(
-    'should export messages with correct structure',
+    "should export messages with correct structure",
     async () => {
       const channelId = TEST_CHANNEL_ID;
 
       if (!channelId) {
         throw new Error(
-          'DISCORD_TEST_CHANNEL_ID environment variable is missing',
+          "DISCORD_TEST_CHANNEL_ID environment variable is missing"
         );
       }
 
@@ -164,48 +164,48 @@ describe('Discord Integration Tests', () => {
 
       // Verify all messages have required fields
       result.messages.forEach((message) => {
-        expect(typeof message.id).toBe('string');
-        expect(typeof message.content).toBe('string');
+        expect(typeof message.id).toBe("string");
+        expect(typeof message.content).toBe("string");
         expect(message.author).toBeDefined();
-        expect(typeof message.author.id).toBe('string');
-        expect(typeof message.author.name).toBe('string');
+        expect(typeof message.author.id).toBe("string");
+        expect(typeof message.author.name).toBe("string");
       });
     },
-    30_000,
+    30_000
   );
 
-  test('should have correct service interface', async () => {
+  test("should have correct service interface", async () => {
     const program = Effect.gen(function* () {
       const discord = yield* Discord;
 
       // Verify the service has the expected method
-      expect(typeof discord.exportChannel).toBe('function');
+      expect(typeof discord.exportChannel).toBe("function");
 
-      return 'ok';
+      return "ok";
     });
 
     const result = await runTest(program);
-    expect(result).toBe('ok');
+    expect(result).toBe("ok");
   });
 });
 
-describe('Discord Error Handling', () => {
-  test('should create proper error types', () => {
+describe("Discord Error Handling", () => {
+  test("should create proper error types", () => {
     const error = new DiscordExportError({
-      reason: 'CommandFailed',
-      cause: new Error('Test error'),
+      reason: "CommandFailed",
+      cause: new Error("Test error"),
     });
 
-    expect(error._tag).toBe('DiscordExportError');
-    expect(error.reason).toBe('CommandFailed');
+    expect(error._tag).toBe("DiscordExportError");
+    expect(error.reason).toBe("CommandFailed");
     expect(error.cause).toBeDefined();
   });
 
-  test('should support all error reasons', () => {
-    const reasons: Array<DiscordExportError['reason']> = [
-      'CommandFailed',
-      'FileNotFound',
-      'JsonParseError',
+  test("should support all error reasons", () => {
+    const reasons: Array<DiscordExportError["reason"]> = [
+      "CommandFailed",
+      "FileNotFound",
+      "JsonParseError",
     ];
 
     reasons.forEach((reason) => {
@@ -215,22 +215,22 @@ describe('Discord Error Handling', () => {
   });
 });
 
-describe('Discord Data Models', () => {
-  test('should create ChannelExport instances', () => {
+describe("Discord Data Models", () => {
+  test("should create ChannelExport instances", () => {
     const channelExport: ChannelExport = {
       messages: [
         {
-          id: '123',
-          content: 'Test message',
+          id: "123",
+          content: "Test message",
           author: {
-            id: '456',
-            name: 'TestUser',
+            id: "456",
+            name: "TestUser",
           },
         },
       ],
     };
 
     expect(channelExport.messages).toHaveLength(1);
-    expect(channelExport.messages[0].id).toBe('123');
+    expect(channelExport.messages[0].id).toBe("123");
   });
 });

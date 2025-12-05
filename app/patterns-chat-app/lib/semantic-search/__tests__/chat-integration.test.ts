@@ -5,7 +5,14 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { MockSupermemoryClient, testUserId, testChatId, mockTags, createMockConversationEmbedding, createMockSearchMemory } from "./mocks";
+import {
+  MockSupermemoryClient,
+  testUserId,
+  testChatId,
+  mockTags,
+  createMockConversationEmbedding,
+  createMockSearchMemory,
+} from "./mocks";
 
 describe("Chat Route Integration", () => {
   let mockClient: MockSupermemoryClient;
@@ -17,7 +24,8 @@ describe("Chat Route Integration", () => {
 
   describe("conversation storage", () => {
     it("should store conversation after completion", async () => {
-      const conversationText = "User: How do I handle errors in Effect?\nAssistant: You can use...";
+      const conversationText =
+        "User: How do I handle errors in Effect?\nAssistant: You can use...";
 
       const embedding = {
         vector: Array(1536).fill(0.1),
@@ -277,7 +285,8 @@ describe("Chat Route Integration", () => {
     });
 
     it("should detect revisited conversations", async () => {
-      const revisitedContent = "I had this issue before, let me revisit the solution...";
+      const revisitedContent =
+        "I had this issue before, let me revisit the solution...";
 
       await mockClient.add({
         content: JSON.stringify({
@@ -310,7 +319,11 @@ describe("Chat Route Integration", () => {
         .map((_, i) =>
           mockClient.add({
             content: JSON.stringify(
-              createMockConversationEmbedding(`user1-chat-${i}`, "user-1", mockTags)
+              createMockConversationEmbedding(
+                `user1-chat-${i}`,
+                "user-1",
+                mockTags
+              )
             ),
             metadata: {
               type: "conversation",
@@ -327,7 +340,11 @@ describe("Chat Route Integration", () => {
         .map((_, i) =>
           mockClient.add({
             content: JSON.stringify(
-              createMockConversationEmbedding(`user2-chat-${i}`, "user-2", mockTags)
+              createMockConversationEmbedding(
+                `user2-chat-${i}`,
+                "user-2",
+                mockTags
+              )
             ),
             metadata: {
               type: "conversation",
@@ -368,7 +385,9 @@ describe("Chat Route Integration", () => {
       // User 1 data
       await mockClient.add({
         content: JSON.stringify(
-          createMockConversationEmbedding(testChatId, "user-1", ["secret-project"])
+          createMockConversationEmbedding(testChatId, "user-1", [
+            "secret-project",
+          ])
         ),
         metadata: {
           type: "conversation",

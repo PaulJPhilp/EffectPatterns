@@ -1,7 +1,9 @@
 # Effect-Patterns AI Agent Instructions
 
 ## Project Overview
+
 Effect-Patterns is a community-driven knowledge base of practical patterns for building robust applications with Effect-TS. The project includes:
+
 - A pattern server for serving API endpoints
 - Documentation and examples of Effect-TS patterns
 - Rules and guidelines for AI coding agents
@@ -10,34 +12,39 @@ Effect-Patterns is a community-driven knowledge base of practical patterns for b
 ## Key Architectural Patterns
 
 ### Service Pattern
+
 All services must use the modern `Effect.Service` pattern:
+
 ```typescript
 export class UserService extends Effect.Service<UserService>()("UserService", {
   // Enable static accessor methods
   accessors: true,
-  
+
   // Define implementation with dependencies
   effect: Effect.gen(function* () {
     // Get dependencies
     const logger = yield* LoggerService;
     const db = yield* DatabaseService;
-    
+
     return {
-      getUser: (id: string) => Effect.gen(function* () {
-        yield* logger.log(`Fetching user ${id}`);
-        return yield* db.query(`SELECT * FROM users WHERE id = ${id}`);
-      })
+      getUser: (id: string) =>
+        Effect.gen(function* () {
+          yield* logger.log(`Fetching user ${id}`);
+          return yield* db.query(`SELECT * FROM users WHERE id = ${id}`);
+        }),
     };
   }),
-  
+
   // Declare dependencies
-  dependencies: [LoggerService.Default, DatabaseService.Default] 
+  dependencies: [LoggerService.Default, DatabaseService.Default],
 }) {}
 ```
 
 ### Dependency Injection
+
 - Use Layer-based DI with `Layer.merge`
 - Compose layers logically:
+
 ```typescript
 const mainLayer = Layer.merge(
   DatabaseService.Default,
@@ -51,7 +58,9 @@ const program = Effect.gen(function* () {
 ```
 
 ### Error Handling
+
 Define tagged errors for type-safety:
+
 ```typescript
 export class ServiceError extends Data.TaggedError("ServiceError")<{
   message: string;
@@ -63,16 +72,20 @@ Effect.gen(function* () {
   try {
     // Operation
   } catch (cause) {
-    yield* Effect.fail(new ServiceError({ 
-      message: "Operation failed",
-      cause
-    }));
+    yield* Effect.fail(
+      new ServiceError({
+        message: "Operation failed",
+        cause,
+      })
+    );
   }
 });
 ```
 
 ### HTTP Server
+
 Build HTTP servers with `@effect/platform`:
+
 ```typescript
 const app = HttpRouter.empty.pipe(
   HttpRouter.get("/health", () =>
@@ -82,15 +95,15 @@ const app = HttpRouter.empty.pipe(
   )
 );
 
-const server = NodeHttpServer.layer(() => 
-  require("node:http").createServer(),
-  { port: 3001 }
-);
+const server = NodeHttpServer.layer(() => require("node:http").createServer(), {
+  port: 3001,
+});
 
 const serverLayer = HttpServer.serve(app);
 ```
 
 ## Project Structure
+
 ```
 /
 ├── api/           # API endpoint implementations
@@ -105,6 +118,7 @@ const serverLayer = HttpServer.serve(app);
 ```
 
 ## Development Workflow
+
 1. Start MCP server for AI assistance:
    ```bash
    npx @effect/mcp-server --layer src/layers.ts:AppLayer
@@ -121,7 +135,9 @@ const serverLayer = HttpServer.serve(app);
 ## Testing Guidelines
 
 ### Test Structure
+
 Place tests adjacent to implementation:
+
 ```
 services/
   my-service/
@@ -133,49 +149,49 @@ services/
 ```
 
 ### Test Pattern
+
 ```typescript
 describe("MyService", () => {
-  const testLayer = Layer.provide(
-    MyService.Default,
-    NodeContext.layer
-  );
+  const testLayer = Layer.provide(MyService.Default, NodeContext.layer);
 
-  it("should perform operation", () => 
+  it("should perform operation", () =>
     Effect.gen(function* () {
       const service = yield* MyService;
       const result = yield* service.myMethod("test");
       expect(result).toBe("expected");
-    }).pipe(Effect.provide(testLayer))
-  );
+    }).pipe(Effect.provide(testLayer)));
 
-  it("should handle errors", () => 
+  it("should handle errors", () =>
     Effect.gen(function* () {
       const service = yield* MyService;
       const error = yield* service.riskyMethod().pipe(Effect.flip);
       expect(error).toBeInstanceOf(ServiceError);
-    }).pipe(Effect.provide(testLayer))
-  );
+    }).pipe(Effect.provide(testLayer)));
 });
 ```
 
 ## Common Patterns
+
 - Use `Effect.gen` for sequential operations
 - Handle data validation with `Schema.struct()`
 - Follow TypeScript strict mode conventions
 - Use direct imports:
+
   ```typescript
   // ✅ Preferred
-  import { Effect, Layer } from "effect"
-  import { FileSystem } from "@effect/platform"
+  import { Effect, Layer } from "effect";
+  import { FileSystem } from "@effect/platform";
 
   // ❌ Avoid
-  import * as Effect from "effect"
+  import * as Effect from "effect";
   ```
 
 ## Configuration & Deployment
 
 ### Configuration Pattern
+
 Use type-safe configuration with Effect's Config service:
+
 ```typescript
 // Define config schema
 const ServerConfig = Config.nested("SERVER")(
@@ -183,16 +199,16 @@ const ServerConfig = Config.nested("SERVER")(
     host: Config.string("HOST"),
     port: Config.number("PORT"),
   })
-)
+);
 
 // Create config service
 class AppConfig extends Effect.Service<AppConfig>()("AppConfig", {
   effect: Effect.gen(function* () {
     const config = yield* ServerConfig;
     return {
-      getConfig: () => Effect.succeed(config)
+      getConfig: () => Effect.succeed(config),
     };
-  })
+  }),
 }) {}
 
 // Use in application
@@ -203,7 +219,9 @@ const program = Effect.gen(function* () {
 ```
 
 ### Environment Setup
+
 Required environment variables:
+
 ```env
 # API Security
 PATTERN_API_KEY=your-secret-api-key-here
@@ -219,19 +237,23 @@ PORT=3000
 ```
 
 ### Deployment Process
+
 1. Build and test:
+
    ```bash
    bun run build
    bun test
    ```
 
 2. Deploy to staging:
+
    ```bash
    cd services/mcp-server
    vercel --env staging
    ```
 
 3. Verify deployment:
+
    ```bash
    bun run smoke-test https://your-deployment-url.vercel.app
    ```
@@ -242,7 +264,9 @@ PORT=3000
    ```
 
 ### Post-Deployment Verification
+
 Always run smoke tests:
+
 ```bash
 # Health check
 curl https://your-deployment-url.vercel.app/api/health
@@ -257,6 +281,7 @@ curl -H "x-api-key: $PATTERN_API_KEY" \
 The project includes a CLI tool (`ep`) for managing patterns and AI rules:
 
 ### Installation
+
 ```bash
 # Install dependencies
 bun install
@@ -274,6 +299,7 @@ ep --version
 ### Common Commands
 
 #### Pattern Management
+
 ```bash
 # Create new pattern
 ep pattern new                              # Interactive wizard
@@ -292,6 +318,7 @@ ep admin test --pattern "error-handling"    # Test specific pattern
 ```
 
 #### AI Tool Integration
+
 ```bash
 # List supported AI tools
 ep install list
@@ -309,6 +336,7 @@ ep install add --tool cursor \
 ```
 
 #### Repository Management
+
 ```bash
 # Run complete pipeline
 ep admin pipeline                # Full validation
@@ -331,7 +359,9 @@ ep admin release create --dry-run  # Test release process
 The CLI is built with `@effect/cli` following Effect-TS patterns:
 
 #### Error Types
+
 Define tagged errors for type-safe error handling:
+
 ```typescript
 // CLI-specific errors
 export class ToolError extends Data.TaggedError("ToolError")<{
@@ -353,60 +383,64 @@ export class ApiError extends Data.TaggedError("ApiError")<{
 ```
 
 #### Input Validation
+
 Use Schema for type-safe option validation:
-```typescript
+
+````typescript
 // --- Schema Composition and Transformation ---
 
 // Base types with refinements
 const SkillLevel = Schema.literal("beginner", "intermediate", "advanced");
 const UseCase = Schema.array(Schema.string);
 const Version = Schema.string.pipe(
-  Schema.filter(v => /^\d+\.\d+\.\d+$/.test(v)),
+  Schema.filter((v) => /^\d+\.\d+\.\d+$/.test(v)),
   Schema.transformer((v: string) => ({
     major: parseInt(v.split(".")[0]),
     minor: parseInt(v.split(".")[1]),
-    patch: parseInt(v.split(".")[2])
+    patch: parseInt(v.split(".")[2]),
   }))
 );
 
 // Composable schema components
 const TimestampFields = Schema.struct({
   createdAt: Schema.number,
-  updatedAt: Schema.number
+  updatedAt: Schema.number,
 });
 
 const MetadataFields = Schema.struct({
   author: Schema.string,
   tags: Schema.array(Schema.string),
-  draft: Schema.boolean
+  draft: Schema.boolean,
 });
 
 // Custom validation transforms
 const NonEmptyString = Schema.string.pipe(
-  Schema.filter(s => s.trim().length > 0, {
-    message: "String must not be empty"
+  Schema.filter((s) => s.trim().length > 0, {
+    message: "String must not be empty",
   }),
-  Schema.transformer(s => s.trim())
+  Schema.transformer((s) => s.trim())
 );
 
 const HttpUrl = Schema.string.pipe(
-  Schema.filter(url => {
-    try {
-      new URL(url);
-      return url.startsWith("http");
-    } catch {
-      return false;
+  Schema.filter(
+    (url) => {
+      try {
+        new URL(url);
+        return url.startsWith("http");
+      } catch {
+        return false;
+      }
+    },
+    {
+      message: "Must be a valid HTTP URL",
     }
-  }, {
-    message: "Must be a valid HTTP URL"
-  })
+  )
 );
 
 const EmailList = Schema.array(Schema.string).pipe(
-  Schema.filter(emails => 
-    emails.every(email => 
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    ),
+  Schema.filter(
+    (emails) =>
+      emails.every((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)),
     { message: "All entries must be valid email addresses" }
   )
 );
@@ -418,8 +452,8 @@ const withValidation = <I, O>(schema: Schema.Schema<I, O>) =>
     validation: Schema.struct({
       enabled: Schema.boolean,
       rules: Schema.array(Schema.string),
-      severity: Schema.literal("error", "warn", "info")
-    })
+      severity: Schema.literal("error", "warn", "info"),
+    }),
   });
 
 // Complex schema composition with transforms
@@ -427,13 +461,13 @@ const PatternSchema = Schema.struct({
   // Core fields with validation
   id: NonEmptyString,
   title: Schema.string.pipe(
-    Schema.filter(t => t.length >= 3 && t.length <= 100),
-    Schema.transformer(t => t.trim())
+    Schema.filter((t) => t.length >= 3 && t.length <= 100),
+    Schema.transformer((t) => t.trim())
   ),
   description: NonEmptyString,
   skillLevel: SkillLevel,
   useCase: Schema.array(NonEmptyString),
-  
+
   // Content validation
   content: Schema.string.pipe(
     Schema.filter((c) => c.includes("## Good Example")),
@@ -442,38 +476,38 @@ const PatternSchema = Schema.struct({
       // Use the shared utility to split content into sections by markdown headings
       // (handles CRLF, multiple heading levels, and trims results).
       sections: splitSections(content),
-      examples: content.match(/\`\`\`[^\n]*([\s\S]*?)\`\`\`/g) ?? []
+      examples: content.match(/\`\`\`[^\n]*([\s\S]*?)\`\`\`/g) ?? [],
     }))
   ),
-  
+
   // Links and references
   links: Schema.array(HttpUrl),
   relatedPatterns: Schema.array(Schema.string),
-  contributors: Schema.array(Schema.struct({
-    name: NonEmptyString,
-    email: Schema.string.pipe(
-      Schema.filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
-    )
-  })),
-  
+  contributors: Schema.array(
+    Schema.struct({
+      name: NonEmptyString,
+      email: Schema.string.pipe(
+        Schema.filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+      ),
+    })
+  ),
+
   // Metadata composition
   ...TimestampFields.fields,
   ...MetadataFields.fields,
-  
+
   // Validation rules
   validation: Schema.struct({
     lintRules: Schema.array(Schema.string),
-    testCoverage: Schema.number.pipe(
-      Schema.filter(n => n >= 0 && n <= 100)
-    ),
-    reviewers: EmailList
-  })
+    testCoverage: Schema.number.pipe(Schema.filter((n) => n >= 0 && n <= 100)),
+    reviewers: EmailList,
+  }),
 }).pipe(
   // Add computed fields
-  Schema.transformer(pattern => ({
+  Schema.transformer((pattern) => ({
     ...pattern,
-    slug: pattern.title.toLowerCase().replace(/\s+/g, '-'),
-    readingTime: Math.ceil(pattern.content.raw.split(/\s+/).length / 200)
+    slug: pattern.title.toLowerCase().replace(/\s+/g, "-"),
+    readingTime: Math.ceil(pattern.content.raw.split(/\s+/).length / 200),
   }))
 );
 
@@ -482,44 +516,48 @@ const AddOptions = Schema.struct({
   tool: Schema.string,
   skillLevel: Schema.optional(SkillLevel),
   useCase: Schema.optional(UseCase),
-  serverUrl: Schema.optional(Schema.string.pipe(
-    Schema.filter(url => url.startsWith("http"))
-  ))
+  serverUrl: Schema.optional(
+    Schema.string.pipe(Schema.filter((url) => url.startsWith("http")))
+  ),
 });
 
 const ReleaseOptions = Schema.struct({
   version: Version,
   dryRun: Schema.optional(Schema.boolean),
-  force: Schema.optional(Schema.boolean)
+  force: Schema.optional(Schema.boolean),
 }).pipe(
   // Cross-field validation
-  Schema.filter(opts => 
-    !(opts.force && opts.dryRun),
-    { message: "Cannot use both force and dry-run" }
-  )
+  Schema.filter((opts) => !(opts.force && opts.dryRun), {
+    message: "Cannot use both force and dry-run",
+  })
 );
 
 // --- Validation Helpers ---
 
 // Basic option validation
-const validateOptions = (raw: unknown) => 
+const validateOptions = (raw: unknown) =>
   Effect.gen(function* () {
     const result = yield* Schema.decode(AddOptions)(raw).pipe(
-      Effect.mapError(errors => new ValidationError({
-        field: "options",
-        message: "Invalid options provided",
-        value: errors
-      }))
+      Effect.mapError(
+        (errors) =>
+          new ValidationError({
+            field: "options",
+            message: "Invalid options provided",
+            value: errors,
+          })
+      )
     );
-    
+
     // Business rule validation
     if (result.skillLevel && result.useCase) {
-      yield* Effect.fail(new ValidationError({
-        field: "options",
-        message: "Cannot specify both skillLevel and useCase"
-      }));
+      yield* Effect.fail(
+        new ValidationError({
+          field: "options",
+          message: "Cannot specify both skillLevel and useCase",
+        })
+      );
     }
-    
+
     return result;
   });
 
@@ -528,35 +566,37 @@ const validatePattern = (pattern: unknown) =>
   Effect.gen(function* () {
     // Schema validation
     const result = yield* Schema.decode(PatternSchema)(pattern);
-    
+
     // Content structure validation
     if (!result.content.includes("## Rationale")) {
-      yield* Effect.fail(new ValidationError({
-        field: "content",
-        message: "Missing Rationale section"
-      }));
+      yield* Effect.fail(
+        new ValidationError({
+          field: "content",
+          message: "Missing Rationale section",
+        })
+      );
     }
-    
+
     // Code example validation
     const hasTypeScript = yield* validateCodeExamples(result.content);
     if (!hasTypeScript) {
-      yield* Effect.fail(new ValidationError({
-        field: "content",
-        message: "Missing TypeScript example"
-      }));
+      yield* Effect.fail(
+        new ValidationError({
+          field: "content",
+          message: "Missing TypeScript example",
+        })
+      );
     }
-    
+
     // Cross-reference validation
     yield* validateReferences(result);
-    
+
     return result;
   }).pipe(
     Effect.tap(() => Effect.log("Pattern validation successful")),
-    Effect.catchAll(error => 
+    Effect.catchAll((error) =>
       Effect.gen(function* () {
-        yield* Effect.logError(
-          `Pattern validation failed: ${error.message}`
-        );
+        yield* Effect.logError(`Pattern validation failed: ${error.message}`);
         return Effect.fail(error);
       })
     )
@@ -569,17 +609,17 @@ const validateConfig = (config: unknown) =>
     const ConfigSchema = Schema.struct({
       server: Schema.struct({
         url: Schema.string.pipe(
-          Schema.filter(url => url.startsWith("http")),
+          Schema.filter((url) => url.startsWith("http")),
           Schema.description("Server URL must start with http/https")
         ),
         port: Schema.number.pipe(
-          Schema.filter(p => p >= 1000 && p <= 65535),
+          Schema.filter((p) => p >= 1000 && p <= 65535),
           Schema.description("Port must be between 1000-65535")
         ),
         timeout: Schema.number.pipe(
-          Schema.filter(t => t >= 0),
+          Schema.filter((t) => t >= 0),
           Schema.description("Timeout must be non-negative")
-        )
+        ),
       }),
       api: Schema.struct({
         key: Schema.string.pipe(
@@ -589,7 +629,7 @@ const validateConfig = (config: unknown) =>
         version: Schema.string.pipe(
           Schema.pattern(/^v\d+$/),
           Schema.description("API version must match pattern v1, v2, etc")
-        )
+        ),
       }),
       logging: Schema.struct({
         level: Schema.literal("debug", "info", "warn", "error"),
@@ -598,7 +638,7 @@ const validateConfig = (config: unknown) =>
           Schema.literal("stdout"),
           Schema.literal("file"),
           Schema.struct({ path: Schema.string })
-        )
+        ),
       }),
       features: Schema.record(
         Schema.string,
@@ -606,25 +646,25 @@ const validateConfig = (config: unknown) =>
           Schema.boolean,
           Schema.struct({
             enabled: Schema.boolean,
-            config: Schema.record(Schema.string, Schema.unknown)
+            config: Schema.record(Schema.string, Schema.unknown),
           })
         )
-      )
+      ),
     }).pipe(
       // Set defaults for optional fields
       Schema.withDefaults({
         server: {
           timeout: 5000,
-          port: 3000
+          port: 3000,
         },
         logging: {
           level: "info",
           format: "json",
-          destination: "stdout"
-        }
+          destination: "stdout",
+        },
       })
     );
-    
+
     return yield* Schema.decode(ConfigSchema)(config);
   });
 
@@ -649,42 +689,41 @@ describe("Pattern Validation", () => {
     validation: {
       lintRules: ["no-any"],
       testCoverage: 100,
-      reviewers: ["reviewer@effect.website"]
-    }
+      reviewers: ["reviewer@effect.website"],
+    },
   };
 
   describe("Schema Validation", () => {
     it("should validate valid pattern", () =>
       Effect.gen(function* () {
         const pattern = yield* validatePattern(validPattern);
-        
+
         // Test core fields
         expect(pattern.id).toBe("error-handling");
         expect(pattern.skillLevel).toBe("intermediate");
-        
+
         // Test computed fields
         expect(pattern.slug).toBe("effect-error-handling");
         expect(typeof pattern.readingTime).toBe("number");
-        
+
         // Test content parsing
         expect(pattern.content.examples).toHaveLength(1);
         expect(pattern.content.sections).toHaveLength(2);
-      })
-    );
+      }));
 
     it("should validate and transform content", () =>
       Effect.gen(function* () {
         const pattern = yield* validatePattern({
           ...validPattern,
           title: "  Spaces  ",
-          content: "## Section 1\n```ts\ncode1\n```\n## Section 2\n```ts\ncode2\n```"
+          content:
+            "## Section 1\n```ts\ncode1\n```\n## Section 2\n```ts\ncode2\n```",
         });
 
         expect(pattern.title).toBe("Spaces");
         expect(pattern.content.sections).toHaveLength(2);
         expect(pattern.content.examples).toHaveLength(2);
-      })
-    );
+      }));
   });
 
   describe("Custom Validation Rules", () => {
@@ -692,25 +731,23 @@ describe("Pattern Validation", () => {
       Effect.gen(function* () {
         const error = yield* validatePattern({
           ...validPattern,
-          content: "# Missing Good Example"
+          content: "# Missing Good Example",
         }).pipe(Effect.flip);
 
         expect(error).toBeInstanceOf(ValidationError);
         expect(error.message).toContain("Missing Good Example");
-      })
-    );
+      }));
 
     it("should validate email formats", () =>
       Effect.gen(function* () {
         const error = yield* validatePattern({
           ...validPattern,
-          contributors: [{ name: "John", email: "invalid" }]
+          contributors: [{ name: "John", email: "invalid" }],
         }).pipe(Effect.flip);
 
         expect(error).toBeInstanceOf(ValidationError);
         expect(error.message).toContain("email");
-      })
-    );
+      }));
   });
 
   describe("Validation Pipeline", () => {
@@ -723,14 +760,13 @@ describe("Pattern Validation", () => {
           validation: {
             enabled: true,
             rules: ["format", "links"],
-            severity: "error"
-          }
+            severity: "error",
+          },
         });
 
         expect(result.validation.enabled).toBe(true);
         expect(result.validation.rules).toContain("format");
-      })
-    );
+      }));
   });
 
   describe("Error Reporting", () => {
@@ -742,34 +778,33 @@ describe("Pattern Validation", () => {
           links: ["not-a-url"], // Invalid URL
           validation: {
             ...validPattern.validation,
-            testCoverage: 101 // Invalid range
-          }
+            testCoverage: 101, // Invalid range
+          },
         }).pipe(Effect.flip);
 
         expect(error.errors).toHaveLength(3);
         expect(error.errors).toContainEqual(
           expect.objectContaining({
             field: "title",
-            message: expect.stringContaining("empty")
+            message: expect.stringContaining("empty"),
           })
         );
-      })
-    );
+      }));
 
     it("should report validation errors with context", () =>
       Effect.gen(function* () {
         const result = yield* validatePattern({
           ...validPattern,
-          title: ""
+          title: "",
         }).pipe(
-          Effect.tapError(error => 
+          Effect.tapError((error) =>
             Effect.sync(() => {
               // Test error reporting format
               expect(error.toJSON()).toEqual({
                 _tag: "ValidationError",
                 field: "title",
                 message: expect.any(String),
-                context: expect.any(Object)
+                context: expect.any(Object),
               });
             })
           ),
@@ -777,14 +812,15 @@ describe("Pattern Validation", () => {
         );
 
         expect(result).toBeDefined();
-      })
-    );
+      }));
   });
 });
-```
+````
 
 #### Command Definition
+
 Commands with validation and error handling:
+
 ```typescript
 const installAddCommand = Command.make("add", {
   options: {
@@ -792,22 +828,22 @@ const installAddCommand = Command.make("add", {
       Options.withDescription("AI tool to configure")
     ),
     skillLevel: Options.optional(Options.string("skill-level")),
-    useCase: Options.optional(Options.string("use-case"))
-  }
+    useCase: Options.optional(Options.string("use-case")),
+  },
 }).pipe(
   Command.withDescription("Install Effect patterns rules into AI tools"),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
       // Validate options
       const validOptions = yield* validateOptions(options);
-      
+
       // Verify tool is supported
       const tool = yield* verifyTool(validOptions.tool);
-      
+
       // Fetch rules with error handling
       const rules = yield* fetchRules(validOptions).pipe(
         Effect.retry(Schedule.exponential(1000)),
-        Effect.catchTag("ApiError", error => 
+        Effect.catchTag("ApiError", (error) =>
           Effect.gen(function* () {
             yield* Effect.logError(
               `API error: ${error.statusCode} - ${error.endpoint}`
@@ -816,20 +852,18 @@ const installAddCommand = Command.make("add", {
           })
         )
       );
-      
+
       // Install rules with rollback
       yield* installRules(tool, rules).pipe(
-        Effect.catchTag("ToolError", error =>
+        Effect.catchTag("ToolError", (error) =>
           Effect.gen(function* () {
-            yield* Effect.logError(
-              `Failed to install rules: ${error.reason}`
-            );
+            yield* Effect.logError(`Failed to install rules: ${error.reason}`);
             yield* cleanup(tool);
             yield* Effect.fail(error);
           })
         )
       );
-      
+
       yield* Effect.log(`Successfully installed rules for ${tool}`);
     })
   )
@@ -841,39 +875,41 @@ const epCommand = Command.make("ep").pipe(
   Command.withSubcommands([
     patternCommand,
     installCommand.pipe(
-      Command.tapError(error => 
+      Command.tapError((error) =>
         Effect.gen(function* () {
           yield* Effect.logError(`Command failed: ${error._tag}`);
           yield* reportError(error);
         })
       )
     ),
-    adminCommand
+    adminCommand,
   ])
 );
 ```
 
 #### Runtime Configuration
+
 The CLI uses Effect's runtime system for dependency injection and error handling:
+
 ```typescript
 // Define runtime layers with error handling
 const RuntimeLayers = Layer.mergeAll(
   // HTTP client with retry logic
   FetchHttpClient.layer.pipe(
-    Layer.provide(RetryConfig.layer({
-      maxAttempts: 3,
-      backoff: "exponential"
-    }))
+    Layer.provide(
+      RetryConfig.layer({
+        maxAttempts: 3,
+        backoff: "exponential",
+      })
+    )
   ),
-  
+
   // Node.js context
   NodeContext.layer,
-  
+
   // CLI configuration with validation
-  ConfigService.layer.pipe(
-    Layer.tap(config => validateConfig(config))
-  ),
-  
+  ConfigService.layer.pipe(Layer.tap((config) => validateConfig(config))),
+
   // Error reporting
   ErrorReporter.layer
 );
@@ -881,37 +917,35 @@ const RuntimeLayers = Layer.mergeAll(
 // Configure and run CLI with comprehensive error handling
 const cli = Command.run(epCommand, {
   name: "EffectPatterns CLI",
-  version: "0.4.0"
+  version: "0.4.0",
 });
 
 cli(process.argv).pipe(
   Effect.provide(RuntimeLayers),
-  Effect.tapError(error => logErrorDetails(error)),
+  Effect.tapError((error) => logErrorDetails(error)),
   Effect.catchTags({
     // Handle specific error types
-    ToolError: error => 
+    ToolError: (error) =>
       Effect.gen(function* () {
-        yield* Effect.logError(
-          `Tool error: ${error.tool} - ${error.reason}`
-        );
+        yield* Effect.logError(`Tool error: ${error.tool} - ${error.reason}`);
         return process.exit(1);
       }),
-    ValidationError: error =>
+    ValidationError: (error) =>
       Effect.gen(function* () {
         yield* Effect.logError(
           `Validation error: ${error.field} - ${error.message}`
         );
         return process.exit(1);
       }),
-    ApiError: error =>
+    ApiError: (error) =>
       Effect.gen(function* () {
         yield* Effect.logError(
           `API error: ${error.statusCode} - ${error.endpoint}`
         );
         return process.exit(1);
-      })
+      }),
   }),
-  Effect.catchAll(error => 
+  Effect.catchAll((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Unexpected error: ${error.message}`);
       yield* ErrorReporter.report(error);
@@ -923,6 +957,7 @@ cli(process.argv).pipe(
 ```
 
 ## Additional Resources
+
 - See `docs/SERVICE_PATTERNS.md` for detailed service patterns
 - See `docs/patterns-guide.md` for core Effect-TS patterns
 - See `rules/` directory for comprehensive coding rules

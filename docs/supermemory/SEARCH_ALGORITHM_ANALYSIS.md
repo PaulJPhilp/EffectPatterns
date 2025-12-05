@@ -39,7 +39,7 @@ function fuzzyScore(query: string, target: string): number {
     targetIndex++;
   }
 
-  if (queryIndex !== query.length) return 0;  // CRITICAL: ALL chars must match
+  if (queryIndex !== query.length) return 0; // CRITICAL: ALL chars must match
 
   const baseScore = matches / query.length;
   const consecutiveBonus = consecutiveMatches / query.length;
@@ -51,6 +51,7 @@ function fuzzyScore(query: string, target: string): number {
 **Algorithm:** Character-by-character substring matching with consecutive character bonuses
 
 **Key Issue:** Line 40 - `if (queryIndex !== query.length) return 0;`
+
 - This line returns 0 if **not all characters** from the query are found in the target
 - This is extremely strict and treats any partial match as a failure
 
@@ -82,6 +83,7 @@ function calculateRelevance(pattern: Pattern, query: string): number {
 ```
 
 **Strategy:**
+
 1. Search title first (weight: 1.0) - early return if found
 2. Then description (weight: 0.7)
 3. Then tags (weight: 0.5)
@@ -99,14 +101,14 @@ export function searchPatterns(params: SearchPatternsParams): Pattern[] {
   // Apply category filter
   if (category) {
     results = results.filter(
-      (p) => p.category.toLowerCase() === category.toLowerCase(),
+      (p) => p.category.toLowerCase() === category.toLowerCase()
     );
   }
 
   // Apply difficulty filter
   if (difficulty) {
     results = results.filter(
-      (p) => p.difficulty.toLowerCase() === difficulty.toLowerCase(),
+      (p) => p.difficulty.toLowerCase() === difficulty.toLowerCase()
     );
   }
 
@@ -117,7 +119,7 @@ export function searchPatterns(params: SearchPatternsParams): Pattern[] {
         pattern,
         score: calculateRelevance(pattern, query.trim()),
       }))
-      .filter((item) => item.score > 0)  // Filters out all zero-score matches
+      .filter((item) => item.score > 0) // Filters out all zero-score matches
       .sort((a, b) => b.score - a.score);
 
     results = scored.map((item) => item.pattern);
@@ -177,12 +179,14 @@ Algorithm stops - MATCH FAILS
 ## Issues Identified
 
 ### 1. **Substring Matching vs. Word Matching**
+
 - Algorithm requires **exact character-by-character matching** in sequence
 - Does NOT understand word boundaries
 - Multi-word queries like "error handling" fail against "error-handling"
 - Spaces are treated as literal characters to match
 
 **Example Failures:**
+
 ```
 Query: "error handling"     Target: "error-handling"  Result: NO MATCH ✗
 Query: "error handling"     Target: "error handling"  Result: MATCH ✓
@@ -190,17 +194,19 @@ Query: "data transform"     Target: "data-transformation"  Result: NO MATCH ✗
 ```
 
 ### 2. **Early Return in calculateRelevance**
+
 - Searches title first, returns immediately if found
 - Never searches description, tags, or category if title matches (even with score 0.1)
 - This means lower-weighted but more relevant fields are ignored
 
 **Example:**
+
 ```typescript
 // Pattern: { title: "Error", tags: ["error-handling", "retry"] }
 // Query: "retry"
 
 // Step 1: Check title "Error" vs "retry"
-// r → E (doesn't match) 
+// r → E (doesn't match)
 // ... continues but can't find "r" at start
 // Score: 0 (fails because title doesn't contain "r" followed by...)
 // RETURNS 0 IMMEDIATELY
@@ -209,10 +215,12 @@ Query: "data transform"     Target: "data-transformation"  Result: NO MATCH ✗
 ```
 
 ### 3. **Case Sensitivity Before Lowercasing**
+
 - While query is lowercased, the algorithm is still character-strict
 - No tolerance for punctuation variations (hyphens vs spaces)
 
 ### 4. **Space Handling**
+
 - Spaces are treated as matchable characters
 - Query "error handling" cannot match "error-handling"
 - Query "data transformation" cannot match "data-transformation"
@@ -227,17 +235,20 @@ From the sample data (patterns-index.json):
    - Category: `error-handling`
    - Tags: `["retry", "resilience", "error-handling", "backoff"]`
 
-  Search failures:
-  ```
-  Query "error handling" → NO MATCH (space vs hyphen in category)
-  Query "data transform" → Would fail if searched
-  ```
+Search failures:
+
+```
+Query "error handling" → NO MATCH (space vs hyphen in category)
+Query "data transform" → Would fail if searched
+```
 
 2. **"Concurrent Batch Processing"**
+
    - Category: `concurrency`
    - Tags: `["concurrency", "batch", "parallel", "performance"]`
 
    Search issues:
+
    ```
    Query "concurrent batch"  → NO MATCH (space vs literal tag match)
    ```
@@ -245,11 +256,13 @@ From the sample data (patterns-index.json):
 ### Why Users See Empty Results
 
 When users search for:
+
 - "error handling" - expects to find patterns tagged with "error-handling"
 - "data transformation" - expects to find patterns tagged with "data-transformation"
 - "retry pattern" - expects to find "retry" patterns
 
 **But they get empty results because:**
+
 1. The fuzzy matcher requires exact character sequence matching
 2. It fails on space-to-hyphen mismatches
 3. Early returns prevent checking multiple fields
@@ -260,6 +273,7 @@ When users search for:
 ### Implementation Files
 
 - **Pure function version:** `/Users/paul/Projects/Published/Effect-Patterns/packages/toolkit/src/search.ts`
+
   - Lines 20-46: `fuzzyScore()` function
   - Lines 55-76: `calculateRelevance()` function
   - Lines 109-146: `searchPatterns()` function
@@ -289,12 +303,14 @@ When users search for:
 ## Recommended Solutions
 
 ### Option 1: Split Query into Words
+
 ```typescript
 // Split query by spaces and match word-by-word
 // More lenient - matches substrings across word boundaries
 ```
 
 ### Option 2: Normalize Separators
+
 ```typescript
 // Replace hyphens with spaces in both query and target before matching
 query = "error handling" → "error handling"
@@ -302,6 +318,7 @@ target = "error-handling" → "error handling"
 ```
 
 ### Option 3: Token-Based Matching
+
 ```typescript
 // Split both query and target into tokens
 // Match tokens individually, not characters
@@ -311,6 +328,7 @@ target = "error-handling" → "error handling"
 ```
 
 ### Option 4: Remove Early Return
+
 ```typescript
 // Check all fields (title, description, tags, category)
 // Don't return early - accumulate scores
@@ -342,6 +360,7 @@ For full pattern "Retry with Exponential Backoff":
 ## Conclusion
 
 The `searchPatterns` function uses a strict character-by-character fuzzy matching algorithm that fails on:
+
 1. Multi-word queries with spaces when data uses hyphens
 2. Partial word matches due to the all-or-nothing matching requirement
 3. Queries that would match multiple fields due to early returns

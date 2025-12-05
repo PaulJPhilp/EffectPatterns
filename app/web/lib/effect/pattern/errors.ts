@@ -2,13 +2,13 @@
  * Error definitions for Pattern repository
  */
 
-import { Data } from 'effect';
+import { Data } from "effect";
 
-export class PatternNotFound extends Data.TaggedError('PatternNotFound')<{
+export class PatternNotFound extends Data.TaggedError("PatternNotFound")<{
   id: string;
 }> {}
 
-export class PatternQueryError extends Data.TaggedError('PatternQueryError')<{
+export class PatternQueryError extends Data.TaggedError("PatternQueryError")<{
   message: string;
   cause?: unknown;
 }> {}

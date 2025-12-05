@@ -128,7 +128,9 @@ function PureMultimodalInput({
   const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
     if (value.length > MAX_MESSAGE_LENGTH) {
-      toast.error(`Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`);
+      toast.error(
+        `Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`
+      );
       setInput(value.substring(0, MAX_MESSAGE_LENGTH));
       return;
     }
@@ -140,7 +142,11 @@ function PureMultimodalInput({
   const isMessageTooLong = (input?.length ?? 0) > MAX_MESSAGE_LENGTH;
   const isWaitingForResponse = status !== "ready";
   const isUploading = uploadQueue.length > 0;
-  const canSubmit = !isMessageEmpty && !isMessageTooLong && !isWaitingForResponse && !isUploading;
+  const canSubmit =
+    !isMessageEmpty &&
+    !isMessageTooLong &&
+    !isWaitingForResponse &&
+    !isUploading;
 
   const submitForm = useCallback(() => {
     // Validate message before submission
@@ -150,7 +156,9 @@ function PureMultimodalInput({
     }
 
     if (isMessageTooLong) {
-      toast.error(`Message is too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`);
+      toast.error(
+        `Message is too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.`
+      );
       return;
     }
 
@@ -439,7 +447,8 @@ function PureModelSelectorCompact({
   selectedModelId: ChatModelId;
   onModelChange?: (modelId: ChatModelId) => void;
 }) {
-  const [optimisticModelId, setOptimisticModelId] = useState<ChatModelId>(selectedModelId);
+  const [optimisticModelId, setOptimisticModelId] =
+    useState<ChatModelId>(selectedModelId);
 
   useEffect(() => {
     setOptimisticModelId(selectedModelId);
@@ -474,7 +483,9 @@ function PureModelSelectorCompact({
         <div className="flex flex-col gap-px">
           {chatModels.map((model) => (
             <SelectItem key={model.id} value={model.name}>
-              <div className="truncate font-medium text-[10px]">{model.name}</div>
+              <div className="truncate font-medium text-[10px]">
+                {model.name}
+              </div>
               <div className="mt-px truncate text-[8px] text-muted-foreground leading-tight">
                 {model.description}
               </div>

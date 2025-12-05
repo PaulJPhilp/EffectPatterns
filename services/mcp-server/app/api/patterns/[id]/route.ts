@@ -3,56 +3,63 @@
  *
  * GET /api/patterns/:id
  * Returns full pattern details for a specific pattern ID
+ *
+ * With Effect.fn("get-pattern"), spans are created automatically
+ * in the OpenTelemetry trace.
  */
 
-import { Effect } from 'effect';
-import { type NextRequest, NextResponse } from 'next/server';
+import { Effect } from "effect";
+import { type NextRequest, NextResponse } from "next/server";
 import {
   isAuthenticationError,
   validateApiKey,
-} from '../../../../src/auth/apiKey';
-import {
-  PatternsService,
-  runWithRuntime,
-} from '../../../../src/server/init';
-import { TracingService } from '../../../../src/tracing/otlpLayer';
+} from "../../../../src/auth/apiKey";
+import { PatternsService, runWithRuntime } from "../../../../src/server/init";
+import { TracingService } from "../../../../src/tracing/otlpLayer";
+
+// Handler implementation with automatic span creation via Effect.fn
+const handleGetPattern = Effect.fn("get-pattern")(function* (
+  request: NextRequest,
+  patternId: string
+) {
+  const tracing = yield* TracingService;
+  const patternsService = yield* PatternsService;
+
+  // Validate API key
+  yield* validateApiKey(request);
+
+  // Annotate span with pattern ID
+  yield* Effect.annotateCurrentSpan({
+    patternId,
+  });
+
+  // Fetch pattern
+  const pattern = yield* patternsService.getPatternById(patternId);
+
+  if (!pattern) {
+    return yield* Effect.fail(new Error(`Pattern not found: ${patternId}`));
+  }
+
+  const traceId = tracing.getTraceId();
+
+  return {
+    pattern,
+    traceId,
+  };
+});
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const getPatternEffect = Effect.gen(function* () {
-    const tracing = yield* TracingService;
-    const patternsService = yield* PatternsService;
-
-    // Validate API key
-    yield* validateApiKey(request);
-
-    // Get pattern ID from params
-    const { id } = yield* Effect.promise(() => params);
-
-    // Fetch pattern
-    const pattern = yield* patternsService.getPatternById(id);
-
-    if (!pattern) {
-      return yield* Effect.fail(new Error(`Pattern not found: ${id}`));
-    }
-
-    const traceId = tracing.getTraceId();
-
-    return {
-      pattern,
-      traceId,
-    };
-  });
-
   try {
-    const result = await runWithRuntime(getPatternEffect);
+    const { id } = await params;
+    const result = await runWithRuntime(handleGetPattern(request, id));
 
     return NextResponse.json(result, {
       status: 200,
       headers: {
-        'x-trace-id': result.traceId || '',
+        "x-trace-id": result.traceId || "",
       },
     });
   } catch (error) {
@@ -60,7 +67,7 @@ export async function GET(
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
-    if (error instanceof Error && error.message.includes('not found')) {
+    if (error instanceof Error && error.message.includes("not found")) {
       return NextResponse.json({ error: error.message }, { status: 404 });
     }
 
@@ -68,7 +75,7 @@ export async function GET(
       {
         error: String(error),
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

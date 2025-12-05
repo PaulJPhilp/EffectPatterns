@@ -5,10 +5,10 @@
  * with full module placement data.
  */
 
-import type { Effect } from 'effect';
-import type { SkillLevel } from '../pattern/types.js';
-import type { CatalogError } from './errors.js';
-import type { CatalogPattern, ModuleView } from './types.js';
+import type { Effect } from "effect";
+import type { SkillLevel } from "../pattern/types.js";
+import type { CatalogError } from "./errors.js";
+import type { CatalogPattern, ModuleView } from "./types.js";
 
 export interface Catalog {
   /**

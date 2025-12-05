@@ -8,14 +8,16 @@
  * for running Effects in Next.js route handlers.
  */
 
-
 // biome-ignore assist/source/organizeImports: <>
-import  {
+import {
   loadPatternsFromJsonRunnable,
   type Pattern,
   type PatternsIndex,
 } from "@effect-patterns/toolkit";
+import { NodeSdk } from "@effect/opentelemetry";
 import { Effect, Layer, Ref } from "effect";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import * as path from "node:path";
 import { TracingLayerLive, type TracingService } from "../tracing/otlpLayer";
 
@@ -94,13 +96,35 @@ export class PatternsService extends Effect.Service<PatternsService>()(
 /**
  * App Layer - Full application layer composition
  *
- * Composes: Config -> Tracing -> Patterns
- * Services are self-managed via Effect.Service pattern
+ * Composes: Config -> Tracing (with NodeSdk) -> Patterns
+ * Services are self-managed via Effect.Service pattern.
+ * The NodeSdk layer enables automatic span creation via Effect.fn.
  */
+const NodeSdkLayer = NodeSdk.layer(() => ({
+  resource: {
+    serviceName: process.env.SERVICE_NAME || "effect-patterns-mcp-server",
+    serviceVersion: process.env.SERVICE_VERSION || "0.5.0",
+  },
+  spanProcessor: new BatchSpanProcessor(
+    new OTLPTraceExporter({
+      url: process.env.OTLP_ENDPOINT || "http://localhost:4318/v1/traces",
+      headers: process.env.OTLP_HEADERS
+        ? Object.fromEntries(
+            process.env.OTLP_HEADERS.split(",").map((pair) => {
+              const [key, value] = pair.split("=");
+              return [key.trim(), value.trim()];
+            })
+          )
+        : {},
+    })
+  ),
+}));
+
 export const AppLayer = Layer.mergeAll(
   ConfigService.Default,
   PatternsService.Default,
-  TracingLayerLive
+  TracingLayerLive,
+  NodeSdkLayer
 );
 
 /**

@@ -38,9 +38,13 @@ export function useUserPreferences() {
       setError(null);
     } catch (err) {
       // Only log as error if it's not a network/fetch error
-      const isNetworkError = err instanceof TypeError && err.message.includes("fetch");
+      const isNetworkError =
+        err instanceof TypeError && err.message.includes("fetch");
       if (isNetworkError) {
-        console.debug("Network error loading preferences, using defaults:", err);
+        console.debug(
+          "Network error loading preferences, using defaults:",
+          err
+        );
       } else {
         console.error("Error loading preferences:", err);
       }
@@ -66,7 +70,7 @@ export function useUserPreferences() {
       if (response.status === 401) {
         console.debug("User not authenticated, cannot save preferences");
         // Still update local state optimistically for guest experience
-        setPreferences(prev => ({ ...prev, ...newPreferences }));
+        setPreferences((prev) => ({ ...prev, ...newPreferences }));
         setError(null);
         return;
       }
@@ -85,18 +89,21 @@ export function useUserPreferences() {
       }
 
       // Update local state
-      setPreferences(prev => ({ ...prev, ...newPreferences }));
+      setPreferences((prev) => ({ ...prev, ...newPreferences }));
       setError(null);
     } catch (err) {
       // Only log network errors as debug, not as errors
       if (err instanceof TypeError && err.message.includes("fetch")) {
-        console.debug("Network error saving preferences, using local state:", err);
+        console.debug(
+          "Network error saving preferences, using local state:",
+          err
+        );
       } else {
         console.warn("Error saving preferences:", err);
       }
 
       // Still update local state optimistically - app should work in offline mode
-      setPreferences(prev => ({ ...prev, ...newPreferences }));
+      setPreferences((prev) => ({ ...prev, ...newPreferences }));
       setError(null);
       // Don't re-throw - allow UI to recover gracefully
       // The preference save failure shouldn't crash the app

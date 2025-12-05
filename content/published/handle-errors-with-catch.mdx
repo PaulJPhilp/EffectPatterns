@@ -1,5 +1,5 @@
 ---
-title: 'Handle Errors with catchTag, catchTags, and catchAll'
+title: "Handle Errors with catchTag, catchTags, and catchAll"
 id: handle-errors-with-catch
 skillLevel: intermediate
 useCase: error-management
@@ -12,7 +12,7 @@ tags:
   - tagged-error
   - recovery
 rule:
-  description: 'Handle errors with catchTag, catchTags, and catchAll.'
+  description: "Handle errors with catchTag, catchTags, and catchAll."
 related:
   - define-tagged-errors
 author: effect_website
@@ -47,16 +47,16 @@ interface User {
 class NetworkError extends Data.TaggedError("NetworkError")<{
   readonly url: string;
   readonly code: number;
-}> { }
+}> {}
 
 class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly field: string;
   readonly message: string;
-}> { }
+}> {}
 
 class NotFoundError extends Data.TaggedError("NotFoundError")<{
   readonly id: string;
-}> { }
+}> {}
 
 // Define UserService
 class UserService extends Effect.Service<UserService>()("UserService", {
@@ -103,7 +103,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
         return message;
       }),
   }),
-}) { }
+}) {}
 
 // Compose operations with error handling using catchTags
 const processUser = (
@@ -156,7 +156,6 @@ const runTests = Effect.gen(function* () {
 
 // Run the program
 Effect.runPromise(Effect.provide(runTests, UserService.Default));
-
 ```
 
 **Explanation:**  

@@ -9,7 +9,8 @@ export function createNotionClient(config?: Partial<NotionConfig>) {
   const apiKey = config?.apiKey || process.env.NOTION_API_KEY;
   const blogPostsDatabaseId =
     config?.blogPostsDatabaseId || process.env.NOTION_DATABASE_ID_BLOG_POSTS;
-  const seriesDatabaseId = config?.seriesDatabaseId || process.env.NOTION_DATABASE_ID_SERIES;
+  const seriesDatabaseId =
+    config?.seriesDatabaseId || process.env.NOTION_DATABASE_ID_SERIES;
   const resourcesDatabaseId =
     config?.resourcesDatabaseId || process.env.NOTION_DATABASE_ID_RESOURCES;
 
@@ -18,7 +19,9 @@ export function createNotionClient(config?: Partial<NotionConfig>) {
   }
 
   if (!blogPostsDatabaseId) {
-    throw new Error("Missing NOTION_DATABASE_ID_BLOG_POSTS environment variable");
+    throw new Error(
+      "Missing NOTION_DATABASE_ID_BLOG_POSTS environment variable"
+    );
   }
 
   if (!seriesDatabaseId) {
@@ -51,7 +54,9 @@ export function validateNotionEnvironment(): NotionConfig {
   }
 
   if (!blogPostsDatabaseId) {
-    throw new Error("Missing NOTION_DATABASE_ID_BLOG_POSTS environment variable");
+    throw new Error(
+      "Missing NOTION_DATABASE_ID_BLOG_POSTS environment variable"
+    );
   }
 
   if (!seriesDatabaseId) {

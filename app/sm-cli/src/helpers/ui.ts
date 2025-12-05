@@ -53,4 +53,3 @@ export function displayError(message: string): Effect.Effect<void> {
 export function displaySuccess(message: string): Effect.Effect<void> {
   return displayOutput(message, "success");
 }
-

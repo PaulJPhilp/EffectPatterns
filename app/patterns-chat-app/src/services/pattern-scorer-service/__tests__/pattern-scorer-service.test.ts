@@ -37,4 +37,3 @@ describe("PatternScorerService", () => {
   // - setMinimumThreshold validation
   // - getConfig retrieves current configuration
 });
-

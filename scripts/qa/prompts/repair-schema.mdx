@@ -21,6 +21,7 @@ This prompt defines the JSON schema for generating repair instructions for faile
 ## Repair Guidelines
 
 ### Content Structure
+
 - **repairedContent**: Complete repaired MDX content including frontmatter
 - **changes**: Array of specific changes made (be specific and actionable)
 - **explanation**: Brief explanation of the repair approach
@@ -28,12 +29,14 @@ This prompt defines the JSON schema for generating repair instructions for faile
 ### Repair Focus Areas
 
 1. **Technical Fixes**
+
    - Correct import statements
    - Fix TypeScript syntax errors
    - Update deprecated patterns
    - Ensure code examples compile
 
 2. **Documentation Improvements**
+
    - Clarify explanations
    - Add missing context
    - Improve examples
@@ -48,6 +51,7 @@ This prompt defines the JSON schema for generating repair instructions for faile
 ### Change Descriptions
 
 Each change should be specific:
+
 - "Updated Effect.Service.Class to Effect.Service pattern"
 - "Fixed import: @effect/platform/HttpClient → @effect/platform"
 - "Added missing .Default usage explanation"
@@ -79,6 +83,7 @@ Each change should be specific:
 ## Validation
 
 After repairs, the content should:
+
 - Pass all QA validation checks
 - Follow Effect best practices
 - Be technically accurate

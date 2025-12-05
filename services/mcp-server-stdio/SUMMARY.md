@@ -25,21 +25,27 @@ mcp-server-stdio/
 ## 🔧 Tools Provided
 
 ### 1. **search_patterns**
+
 Search for Effect patterns with filters:
+
 - **Query**: Fuzzy search across titles, descriptions, tags
 - **Category**: Filter by pattern category
 - **Difficulty**: Filter by beginner/intermediate/advanced
 - **Limit**: Control result count
 
 ### 2. **get_pattern**
+
 Get complete pattern details:
+
 - Full metadata
 - Code examples
 - Use cases
 - Tags and categories
 
 ### 3. **generate_snippet**
+
 Generate customized code snippets:
+
 - Custom function/variable names
 - Custom input values
 - ESM or CJS module format
@@ -56,6 +62,7 @@ Generate customized code snippets:
 ## ✅ Testing
 
 All 5 integration tests passing:
+
 - ✓ Load patterns from JSON
 - ✓ Search patterns successfully
 - ✓ Get pattern by ID
@@ -86,6 +93,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 **User**: "Search for Effect patterns about error handling"
 
 **Claude** calls `search_patterns`:
+
 ```json
 {
   "query": "error handling",
@@ -97,6 +105,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 **User**: "Show me the retry-with-backoff pattern"
 
 **Claude** calls `get_pattern`:
+
 ```json
 {
   "patternId": "retry-with-backoff"
@@ -106,6 +115,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 **User**: "Generate code for retry with custom name 'retryApiCall'"
 
 **Claude** calls `generate_snippet`:
+
 ```json
 {
   "patternId": "retry-with-backoff",

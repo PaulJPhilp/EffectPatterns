@@ -15,12 +15,14 @@ points.
 ## 📊 Current State Assessment
 
 ### ✅ What's Working
+
 - LangGraph workflow with Effect-TS integration
 - OpenAI GPT-4o integration via LangChain
 - Basic test with mock data (53 messages)
 - Effect-TS service patterns
 
 ### ❌ What Needs Improvement
+
 - **No schema validation** - Uses `z.any()` instead of typed schemas
 - **Generic prompts** - Not specific to Effect-TS domain
 - **Fixed chunk size** - Hardcoded at 200, but real data has only 50 messages
@@ -34,7 +36,9 @@ points.
 I've created 4 comprehensive documents in `scripts/analyzer/`:
 
 ### 1. `PREPARATION_PLAN.md` (Main Document)
+
 **Comprehensive preparation plan with:**
+
 - Detailed analysis of current state
 - 10 implementation steps with code examples
 - Schema definitions
@@ -45,7 +49,9 @@ I've created 4 comprehensive documents in `scripts/analyzer/`:
 - Success criteria
 
 ### 2. `QUICK_START.md` (TL;DR Version)
+
 **Quick reference with:**
+
 - Summary of issues
 - Checklist format
 - Quick commands
@@ -53,7 +59,9 @@ I've created 4 comprehensive documents in `scripts/analyzer/`:
 - Success metrics
 
 ### 3. `ARCHITECTURE.md` (Visual Guide)
+
 **System architecture with:**
+
 - Current vs. proposed architecture diagrams
 - Data flow visualization
 - Error handling flow
@@ -62,7 +70,9 @@ I've created 4 comprehensive documents in `scripts/analyzer/`:
 - Testing strategy
 
 ### 4. `IMPLEMENTATION_CHECKLIST.md` (Task List)
+
 **Step-by-step checklist with:**
+
 - 3 phases of implementation
 - Validation steps for each task
 - Estimated timeline (5-8 hours)
@@ -120,11 +130,11 @@ const MessageSchema = Schema.Struct({
 
 ```typescript
 // Add tagged errors for:
-- FileNotFoundError
-- InvalidJSONError
-- SchemaValidationError
-- LLMTimeoutError
-- LLMRateLimitError
+-FileNotFoundError -
+  InvalidJSONError -
+  SchemaValidationError -
+  LLMTimeoutError -
+  LLMRateLimitError;
 
 // Add retry logic with exponential backoff
 ```
@@ -132,6 +142,7 @@ const MessageSchema = Schema.Struct({
 ## 📋 Implementation Phases
 
 ### Phase 1: Foundation (2-3 hours)
+
 1. Create schemas for message data
 2. Create validation service
 3. Create configuration service
@@ -139,12 +150,14 @@ const MessageSchema = Schema.Struct({
 5. Update LLM service with retry logic
 
 ### Phase 2: Optimization (2-3 hours)
+
 6. Improve LLM prompts for Effect-TS
 7. Create smart chunking service
 8. Add structured logging
 9. Update graph to use all new services
 
 ### Phase 3: Testing & Docs (1-2 hours)
+
 10. Add test with real discord-qna.json
 11. Create README for analyzer
 12. Create runnable example script
@@ -240,18 +253,21 @@ Implementation is complete when:
 ## 💡 Key Insights
 
 ### Data Analysis
+
 - Real data has **50 messages** covering Effect-TS Q&A
 - Topics include: HttpApi, error handling, services, layers, schema, RPC
 - Messages have rich structure with seqId for ordering
 - Q&A format with questions and expert answers
 
 ### Technical Challenges
+
 - Need to preserve Q&A context in chunking
 - Must validate against proper schemas
 - Should extract Effect-TS specific patterns
 - Need robust error handling for LLM calls
 
 ### Recommended Approach
+
 1. Start with strong foundation (schemas, validation, config)
 2. Improve prompts to be Effect-TS specific
 3. Add smart chunking to preserve context

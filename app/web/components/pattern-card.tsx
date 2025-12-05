@@ -19,13 +19,22 @@ export interface PatternCardProps {
   tags?: string[];
 }
 
-const SKILL_VARIANTS: Record<PatternCardProps["skillLevel"], "secondary" | "accent" | "destructive"> = {
+const SKILL_VARIANTS: Record<
+  PatternCardProps["skillLevel"],
+  "secondary" | "accent" | "destructive"
+> = {
   beginner: "secondary",
   intermediate: "accent",
   advanced: "destructive",
 };
 
-export function PatternCard({ id, title, summary, skillLevel, tags }: PatternCardProps) {
+export function PatternCard({
+  id,
+  title,
+  summary,
+  skillLevel,
+  tags,
+}: PatternCardProps) {
   return (
     <Card hoverable className="group flex h-full flex-col justify-between">
       <CardHeader className="pb-4">
@@ -52,7 +61,11 @@ export function PatternCard({ id, title, summary, skillLevel, tags }: PatternCar
         {tags && tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {tags.slice(0, 4).map((tag) => (
-              <Badge key={tag} variant="outline" className="lowercase tracking-normal">
+              <Badge
+                key={tag}
+                variant="outline"
+                className="lowercase tracking-normal"
+              >
                 {tag}
               </Badge>
             ))}
@@ -67,7 +80,10 @@ export function PatternCard({ id, title, summary, skillLevel, tags }: PatternCar
           size="sm"
           className="px-0 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
         >
-          <Link href={`/patterns/${id}`} className={cn("inline-flex items-center gap-1")}>
+          <Link
+            href={`/patterns/${id}`}
+            className={cn("inline-flex items-center gap-1")}
+          >
             View pattern
             <span aria-hidden>→</span>
           </Link>
@@ -76,4 +92,3 @@ export function PatternCard({ id, title, summary, skillLevel, tags }: PatternCar
     </Card>
   );
 }
-

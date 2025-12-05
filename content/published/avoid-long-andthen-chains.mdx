@@ -38,13 +38,11 @@ import { Effect } from "effect";
 
 // Define our steps with logging
 const step1 = (): Effect.Effect<number> =>
-  Effect.succeed(42).pipe(
-    Effect.tap(n => Effect.log(`Step 1: ${n}`))
-  );
+  Effect.succeed(42).pipe(Effect.tap((n) => Effect.log(`Step 1: ${n}`)));
 
 const step2 = (a: number): Effect.Effect<string> =>
   Effect.succeed(`Result: ${a * 2}`).pipe(
-    Effect.tap(s => Effect.log(`Step 2: ${s}`))
+    Effect.tap((s) => Effect.log(`Step 2: ${s}`))
   );
 
 // Using Effect.gen for better readability

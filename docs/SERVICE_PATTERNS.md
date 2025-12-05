@@ -17,23 +17,24 @@ import { FileSystem, Path } from "@effect/platform";
 export class MyService extends Effect.Service<MyService>()("MyService", {
   // Enable static accessor methods
   accessors: true,
-  
+
   // Service implementation using Effect.gen for dependency injection
   effect: Effect.gen(function* () {
     // Access dependencies using yield*
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
-    
+
     // Service implementation
     return {
-      myMethod: (param: string) => Effect.gen(function* () {
-        // Implementation using dependencies
-        const filePath = path.join("data", param);
-        const content = yield* fs.readFileString(filePath);
-        return content;
-      })
+      myMethod: (param: string) =>
+        Effect.gen(function* () {
+          // Implementation using dependencies
+          const filePath = path.join("data", param);
+          const content = yield* fs.readFileString(filePath);
+          return content;
+        }),
     };
-  })
+  }),
 }) {}
 ```
 
@@ -51,16 +52,17 @@ export class UserService extends Effect.Service<UserService>()("UserService", {
   effect: Effect.gen(function* () {
     const db = yield* DatabaseService;
     const logger = yield* LoggerService;
-    
+
     return {
-      getUser: (id: string) => Effect.gen(function* () {
-        yield* logger.log(`Fetching user ${id}`);
-        return yield* db.query(`SELECT * FROM users WHERE id = ${id}`);
-      })
+      getUser: (id: string) =>
+        Effect.gen(function* () {
+          yield* logger.log(`Fetching user ${id}`);
+          return yield* db.query(`SELECT * FROM users WHERE id = ${id}`);
+        }),
     };
   }),
   // Specify dependencies for automatic layer composition
-  dependencies: [DatabaseService.Default, LoggerService.Default]
+  dependencies: [DatabaseService.Default, LoggerService.Default],
 }) {}
 ```
 
@@ -73,21 +75,21 @@ Services typically have an accompanying API layer that provides a clean interfac
 export class UserService extends Effect.Service<UserService>()("UserService", {
   effect: Effect.gen(function* () {
     return {
-      getUser: (id: string) => Effect.succeed({ id, name: "John" })
+      getUser: (id: string) => Effect.succeed({ id, name: "John" }),
     };
-  })
+  }),
 }) {}
 
 // api.ts - Public API
 export class UserApi extends Effect.Service<UserApi>()("UserApi", {
   effect: Effect.gen(function* () {
     const userService = yield* UserService;
-    
+
     return {
-      getUserProfile: (id: string) => userService.getUser(id)
+      getUserProfile: (id: string) => userService.getUser(id),
     };
   }),
-  dependencies: [UserService.Default]
+  dependencies: [UserService.Default],
 }) {}
 ```
 
@@ -130,13 +132,12 @@ const testLayer = Layer.provide(
 
 ```typescript
 describe("MyService", () => {
-  it("should perform operation", () => 
+  it("should perform operation", () =>
     Effect.gen(function* () {
       const service = yield* MyService;
       const result = yield* service.myMethod("test");
       expect(result).toBe("expected");
-    }).pipe(Effect.provide(testLayer))
-  );
+    }).pipe(Effect.provide(testLayer)));
 });
 ```
 
@@ -151,7 +152,7 @@ describe("MyService", () => {
         return yield* service.asyncMethod("test");
       }).pipe(Effect.provide(testLayer))
     );
-    
+
     expect(result).toBe("expected");
   });
 });
@@ -161,16 +162,15 @@ describe("MyService", () => {
 
 ```typescript
 describe("MyService", () => {
-  it("should handle errors", () => 
+  it("should handle errors", () =>
     Effect.gen(function* () {
       const service = yield* MyService;
       const result = yield* service.errorMethod("invalid").pipe(
         Effect.flip // Convert success to error for testing
       );
-      
+
       expect(result.message).toContain("Invalid input");
-    }).pipe(Effect.provide(testLayer))
-  );
+    }).pipe(Effect.provide(testLayer)));
 });
 ```
 
@@ -179,10 +179,7 @@ describe("MyService", () => {
 #### Simple Layer
 
 ```typescript
-const testLayer = Layer.provide(
-  MyService.Default,
-  NodeContext.layer
-);
+const testLayer = Layer.provide(MyService.Default, NodeContext.layer);
 ```
 
 #### Complex Layer with Dependencies
@@ -204,16 +201,10 @@ Always use real services instead of mocks:
 
 ```typescript
 // ✅ Preferred - use real services
-const testLayer = Layer.provide(
-  MyService.Default,
-  NodeFileSystem.layer
-);
+const testLayer = Layer.provide(MyService.Default, NodeFileSystem.layer);
 
 // ❌ Avoid - don't mock unless absolutely necessary
-const mockLayer = Layer.provide(
-  MyService.Default,
-  mockFileSystemLayer
-);
+const mockLayer = Layer.provide(MyService.Default, mockFileSystemLayer);
 ```
 
 ### Test Organization
@@ -259,30 +250,30 @@ export class ServiceError extends Data.TaggedError("ServiceError")<{
 
 // Usage in service
 return {
-  riskyOperation: () => Effect.gen(function* () {
-    try {
-      // operation
-    } catch (cause) {
-      yield* Effect.fail(new ServiceError({ message: "Operation failed", cause }));
-    }
-  })
+  riskyOperation: () =>
+    Effect.gen(function* () {
+      try {
+        // operation
+      } catch (cause) {
+        yield* Effect.fail(
+          new ServiceError({ message: "Operation failed", cause })
+        );
+      }
+    }),
 };
 ```
 
 ### Error Handling in Tests
 
 ```typescript
-it("should handle service errors", () => 
+it("should handle service errors", () =>
   Effect.gen(function* () {
     const service = yield* MyService;
-    const error = yield* service.riskyOperation("invalid").pipe(
-      Effect.flip
-    );
-    
+    const error = yield* service.riskyOperation("invalid").pipe(Effect.flip);
+
     expect(error).toBeInstanceOf(ServiceError);
     expect(error.message).toBe("Operation failed");
-  }).pipe(Effect.provide(testLayer))
-);
+  }).pipe(Effect.provide(testLayer)));
 ```
 
 ## Configuration Pattern
@@ -290,22 +281,25 @@ it("should handle service errors", () =>
 ### Service Configuration
 
 ```typescript
-export class ConfigService extends Effect.Service<ConfigService>()("ConfigService", {
-  effect: Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const path = yield* Path.Path;
-    
-    const loadConfig = Effect.gen(function* () {
-      const configPath = path.join(process.cwd(), "config.json");
-      const content = yield* fs.readFileString(configPath);
-      return JSON.parse(content);
-    });
-    
-    return {
-      getConfig: () => loadConfig
-    };
-  })
-}) {}
+export class ConfigService extends Effect.Service<ConfigService>()(
+  "ConfigService",
+  {
+    effect: Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+
+      const loadConfig = Effect.gen(function* () {
+        const configPath = path.join(process.cwd(), "config.json");
+        const content = yield* fs.readFileString(configPath);
+        return JSON.parse(content);
+      });
+
+      return {
+        getConfig: () => loadConfig,
+      };
+    }),
+  }
+) {}
 ```
 
 ### Test Configuration
@@ -314,15 +308,12 @@ export class ConfigService extends Effect.Service<ConfigService>()("ConfigServic
 // Override configuration for tests
 const testConfig = {
   apiKey: "test-key",
-  endpoint: "http://localhost:3000"
+  endpoint: "http://localhost:3000",
 };
 
 const testLayer = Layer.provide(
   ConfigService.Default,
-  Layer.merge(
-    NodeContext.layer,
-    Layer.succeed(ConfigService, testConfig)
-  )
+  Layer.merge(NodeContext.layer, Layer.succeed(ConfigService, testConfig))
 );
 ```
 
@@ -368,14 +359,14 @@ it("should work with test runtime", async () => {
 
 ## Common Patterns Reference
 
-| Pattern | Usage |
-|---------|--------|
-| `Effect.gen(function* () => {...})` | Generator-based effect composition |
-| `yield* Service` | Access service dependencies |
-| `Effect.provide(layer)` | Provide dependencies to effects |
-| `Layer.mergeAll(...layers)` | Combine multiple layers |
-| `Effect.flip` | Convert success to error for testing |
-| `Effect.runPromise(effect)` | Execute effects in tests |
-| `describe/it` | Vitest test structure |
+| Pattern                             | Usage                                |
+| ----------------------------------- | ------------------------------------ |
+| `Effect.gen(function* () => {...})` | Generator-based effect composition   |
+| `yield* Service`                    | Access service dependencies          |
+| `Effect.provide(layer)`             | Provide dependencies to effects      |
+| `Layer.mergeAll(...layers)`         | Combine multiple layers              |
+| `Effect.flip`                       | Convert success to error for testing |
+| `Effect.runPromise(effect)`         | Execute effects in tests             |
+| `describe/it`                       | Vitest test structure                |
 
 This pattern ensures consistent, type-safe, and maintainable services and tests throughout the Effect TypeScript codebase.

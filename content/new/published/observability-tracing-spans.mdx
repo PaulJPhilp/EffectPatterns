@@ -4,7 +4,8 @@ id: "observability-tracing-spans"
 skillLevel: "intermediate"
 useCase: ["Observability", "Tracing", "Performance", "Debugging"]
 summary: "Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations."
-tags: ["tracing", "spans", "observability", "performance", "debugging", "effect"]
+tags:
+  ["tracing", "spans", "observability", "performance", "debugging", "effect"]
 rule:
   description: "Use Effect.withSpan to create and annotate tracing spans for operations, enabling distributed tracing and performance analysis."
 related: ["observability-structured-logging", "observability-custom-metrics"]
@@ -54,10 +55,10 @@ const program = Effect.gen(function* () {
     Effect.withSpan("workflow.end")
   );
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.withSpan` creates a tracing span around an operation.
 - Spans can be named and annotated with attributes for richer context.
 - Tracing enables distributed observability and performance analysis.

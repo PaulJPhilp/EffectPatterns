@@ -5,6 +5,7 @@
 The publishing pipeline is **fully operational** with 100% success rate.
 
 ### What Works
+
 - ✅ **88 patterns published** and validated
 - ✅ **README generated** with all patterns organized by use case
 - ✅ **26 rule files** created for AI coding assistants
@@ -12,6 +13,7 @@ The publishing pipeline is **fully operational** with 100% success rate.
 - ✅ **All scripts simplified** (no dependency issues)
 
 ### Pipeline Commands
+
 ```bash
 bun run pipeline  # Full pipeline ✅
 bun run test      # Test TypeScript examples ✅
@@ -26,6 +28,7 @@ bun run rules     # Generate AI rules ✅
 ## 📦 Package Updates Made
 
 Upgraded to support effect-mdx requirements:
+
 - `@effect/platform`: `0.90.2` → `0.90.10`
 - `@effect/platform-node`: `0.90.0` → `0.94.2`
 - `effect`: `3.17.7` → `3.17.14`
@@ -39,12 +42,14 @@ All packages installed successfully, no conflicts.
 **Decision:** Keep simplified scripts for now, migrate to effect-mdx later.
 
 **Why:**
+
 - Simplified scripts work perfectly (100% success)
 - effect-mdx needs proper test suite (user adding it now)
 - No urgency to switch
 - Can migrate when effect-mdx is fully tested
 
 **effect-mdx Changes Made:**
+
 - ✅ Fixed service access API (`MdxConfigService.scoped` → `MdxConfigService`)
 - 🔨 User is now writing comprehensive test suite
 - 📅 Will integrate once tests are complete
@@ -54,12 +59,14 @@ All packages installed successfully, no conflicts.
 ## 📊 What We Have Now
 
 ### Published Content
+
 - 88 MDX patterns in `content/published/`
 - 87 TypeScript examples in `content/src/`
 - README.md with organized table of contents
 - rules/ directory with 26 files
 
 ### New Patterns Waiting (in backups)
+
 - **22 patterns** ✅ Passing TypeScript checks
 - **20 patterns** ❌ Need TypeScript fixes
 - Total: 42 new patterns ready to process
@@ -69,21 +76,25 @@ All packages installed successfully, no conflicts.
 ## 🎯 Next Steps: Release Planning
 
 ### Option A: Quick Infrastructure Release (v0.2.1)
+
 **Time:** 30 minutes  
 **What:** Ship the fixed pipeline as-is
 
 **Tasks:**
+
 1. Commit all changes (pipeline scripts, restored content, docs)
 2. Tag as v0.2.1
 3. Push to GitHub
 4. Update release notes
 
 **Benefits:**
+
 - Get working pipeline out immediately
 - Stable checkpoint for future work
 - Users can access all 88 patterns
 
 **Deliverables:**
+
 - ✅ Fixed publishing pipeline
 - ✅ 88 working patterns
 - ✅ Generated README and rules
@@ -92,10 +103,12 @@ All packages installed successfully, no conflicts.
 ---
 
 ### Option B: Full Content Release (v0.3.0)
+
 **Time:** 1-2 weeks  
 **What:** Fix and add the 42 new patterns
 
 **Tasks:**
+
 1. ✅ Pipeline working (done!)
 2. Fix 20 failing TypeScript patterns (2-3 days)
    - Update to current Effect API
@@ -112,11 +125,13 @@ All packages installed successfully, no conflicts.
 5. Tag v0.3.0
 
 **Benefits:**
+
 - Complete release with all content
 - 110 total patterns (25% increase)
 - Comprehensive validation
 
 **Deliverables:**
+
 - ✅ Everything from v0.2.1
 - ✅ 22 additional patterns
 - ✅ Fixed TypeScript examples
@@ -129,6 +144,7 @@ All packages installed successfully, no conflicts.
 **Ship v0.2.1 first, then work on v0.3.0:**
 
 **Rationale:**
+
 1. **Working pipeline is valuable** - Major accomplishment worth releasing
 2. **Clean checkpoint** - Separate infrastructure fixes from content additions
 3. **Lower risk** - Release what's tested vs. adding 42 untested patterns
@@ -136,6 +152,7 @@ All packages installed successfully, no conflicts.
 5. **User benefit** - They get working patterns immediately
 
 **Timeline:**
+
 - **Today:** Release v0.2.1 (30 min)
 - **Next 1-2 weeks:** Work on v0.3.0 content at your pace
 - **When ready:** Release v0.3.0 with all new patterns

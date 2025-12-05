@@ -7,7 +7,8 @@
 
 export const memoriesGuide = {
   title: "Guide to Memories",
-  description: "Learn how the Code Assistant remembers and learns from your conversations",
+  description:
+    "Learn how the Code Assistant remembers and learns from your conversations",
   sections: [
     {
       id: "what-are-memories",
@@ -318,7 +319,9 @@ Long-Term:
 
 export type MemoriesGuideSection = (typeof memoriesGuide.sections)[number];
 
-export function getMemoriesSectionById(id: string): MemoriesGuideSection | undefined {
+export function getMemoriesSectionById(
+  id: string
+): MemoriesGuideSection | undefined {
   return memoriesGuide.sections.find((section) => section.id === id);
 }
 
@@ -354,6 +357,7 @@ export const memoriesQuickTips = [
   },
   {
     title: "Privacy First",
-    description: "Your memories are encrypted and private. Only you can access your data.",
+    description:
+      "Your memories are encrypted and private. Only you can access your data.",
   },
 ];

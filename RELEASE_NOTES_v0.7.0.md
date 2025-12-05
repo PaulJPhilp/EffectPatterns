@@ -9,6 +9,7 @@
 The MCP server now includes production-ready OpenTelemetry tracing with automatic span creation. All API handlers use `Effect.fn` for automatic instrumentation without manual span wrapping.
 
 **Key Improvements:**
+
 - Automatic span creation via `Effect.fn` for all API endpoints
 - Span metadata annotations with `Effect.annotateCurrentSpan()`
 - Full OpenTelemetry integration with OTLP HTTP exporter
@@ -16,6 +17,7 @@ The MCP server now includes production-ready OpenTelemetry tracing with automati
 - Stack trace location details captured automatically
 
 **Endpoints Instrumented:**
+
 - `GET /api/patterns/search` - span: "search-patterns"
 - `GET /api/patterns/{id}` - span: "get-pattern"
 - `POST /api/generate` - span: "generate-snippet"
@@ -46,6 +48,7 @@ The MCP server now includes production-ready OpenTelemetry tracing with automati
 ### observability-effect-fn
 
 **Before (Incorrect):**
+
 ```typescript
 const handler = Effect.fn("operation")(fn).pipe(
   Effect.withSpan("operation", { ... }) // Manual wrapping - didn't work
@@ -53,11 +56,14 @@ const handler = Effect.fn("operation")(fn).pipe(
 ```
 
 **After (Correct):**
+
 ```typescript
 const handler = Effect.fn("operation")(function* () {
-  yield* Effect.annotateCurrentSpan({ /* metadata */ })
+  yield* Effect.annotateCurrentSpan({
+    /* metadata */
+  });
   // Spans created automatically - no manual wrapping needed
-})
+});
 ```
 
 ## 🎯 What This Means
@@ -70,6 +76,7 @@ const handler = Effect.fn("operation")(function* () {
 ## Upgrade Guide
 
 No breaking changes. Update to v0.7.0 to get:
+
 - Automatic OpenTelemetry tracing on all API endpoints
 - Correct pattern examples for observability
 - Better debugging with proper trace context
@@ -77,6 +84,7 @@ No breaking changes. Update to v0.7.0 to get:
 ## Testing
 
 All tests pass with the new implementation:
+
 - ✅ 33 MCP server tests passing
 - ✅ TypeScript compilation successful
 - ✅ Next.js build successful

@@ -3,35 +3,45 @@
 ## Prompt for AI Coding Agent
 
 ### Objective
+
 Create the foundational boilerplate for a new HTTP web server using the Effect ecosystem.
 
 ### Context
+
 This is the first step in building our new Pattern Server. The goal for this task is to set up a minimal, runnable "hello world" server. We are not implementing the actual API logic yet; we are only creating the essential server structure.
 
 ### Technical Requirements
 
 #### 1. Create a New Directory and File
+
 Create a new directory named `server/` at the project root, and within it, create a new entry point file named `index.ts`.
 
 #### 2. Use Effect Libraries
+
 The server must be built using the idiomatic libraries from the Effect ecosystem, primarily:
+
 - `@effect/platform-node` for the Node.js runtime
 - `@effect/platform` for HTTP server and routing logic
 
 **Important**: Review the existing dependencies in `package.json` to see which Effect platform packages are already installed. Based on the current dependencies, you should use:
+
 - `@effect/platform-node` (v0.94.2) - Already installed
 - `@effect/platform` (v0.90.10) - Already installed
 - `effect` (v3.17.14) - Already installed
 
 #### 3. Implement a Basic Server
+
 The server should:
+
 - Listen on a configurable port (defaulting to `3000`)
 - Use Effect's dependency injection system (Layer) for configuration
 - Use Effect.gen for the main program logic
 - Follow Effect-TS best practices as outlined in the repository patterns
 
 #### 4. Create a Health-Check Endpoint
+
 Add a single API endpoint:
+
 - **Route:** `GET /health`
 - **Response:** Return a JSON response with a `200 OK` status
 - **Body:** `{"status": "ok"}`
@@ -39,7 +49,9 @@ Add a single API endpoint:
 Use Effect's HTTP routing system to define the route handler.
 
 #### 5. Add `package.json` Script
+
 Add a new script to the `scripts` section of `package.json`:
+
 ```json
 "server:dev": "bun --watch server/index.ts"
 ```
@@ -47,6 +59,7 @@ Add a new script to the `scripts` section of `package.json`:
 ### Implementation Guidelines
 
 #### Follow Repository Conventions
+
 1. **Use Bun runtime**: The project uses Bun, not Node.js (see `.cursor/rules/use-bun-instead-of-node-vite-npm-pnpm.mdc`)
 2. **Effect patterns**: Follow the Effect-TS patterns documented in `content/published/`
 3. **Type safety**: Use proper TypeScript types throughout
@@ -54,27 +67,32 @@ Add a new script to the `scripts` section of `package.json`:
 5. **Structured logging**: Use Effect's built-in logging (`Effect.log`)
 
 #### Effect-TS Best Practices
+
 Based on the repository's patterns:
 
 1. **Use Effect.gen for sequential logic** (pattern: `use-gen-for-business-logic.mdx`)
+
    ```typescript
    Effect.gen(function* () {
      // Sequential operations with yield*
-   })
+   });
    ```
 
 2. **Use Layer for dependency injection** (pattern: `understand-layers-for-dependency-injection.mdx`)
+
    - Define services and their implementations as Layers
    - Compose layers with `Layer.provide` or `Layer.merge`
 
 3. **Use runMain for long-running processes** (pattern: `execute-long-running-apps-with-runfork.mdx`)
+
    ```typescript
-   NodeRuntime.runMain(program)
+   NodeRuntime.runMain(program);
    ```
 
 4. **Use structured logging** (pattern: `leverage-structured-logging.mdx`)
+
    ```typescript
-   Effect.log("Server starting", { port })
+   Effect.log("Server starting", { port });
    ```
 
 5. **Use tagged errors** (pattern: `define-tagged-errors.mdx`)
@@ -87,7 +105,9 @@ Based on the repository's patterns:
 ### Expected Deliverables
 
 #### 1. Server Implementation (`server/index.ts`)
+
 A complete, runnable Effect-based HTTP server that:
+
 - Follows Effect-TS idioms and patterns
 - Uses proper dependency injection with Layers
 - Implements the `/health` endpoint
@@ -96,13 +116,17 @@ A complete, runnable Effect-based HTTP server that:
 - Can be run with `bun --watch server/index.ts`
 
 #### 2. Package.json Update
+
 The exact line to add to the `scripts` section:
+
 ```json
 "server:dev": "bun --watch server/index.ts"
 ```
 
 #### 3. Dependencies Analysis
+
 List any new npm packages that need to be installed. Note that these packages are already available:
+
 - `@effect/platform` (v0.90.10)
 - `@effect/platform-node` (v0.94.2)
 - `effect` (v3.17.14)
@@ -112,6 +136,7 @@ If additional packages are needed (e.g., for HTTP routing), list them explicitly
 ### Validation Criteria
 
 The implementation should:
+
 1. ✅ Run successfully with `bun run server:dev`
 2. ✅ Respond to `GET /health` with `{"status": "ok"}`
 3. ✅ Log structured startup messages
@@ -125,6 +150,7 @@ The implementation should:
 ### Reference Patterns
 
 Review these patterns from `content/published/` for implementation guidance:
+
 - `build-a-basic-http-server.mdx` - HTTP server setup
 - `handle-get-request.mdx` - Route handling
 - `send-json-response.mdx` - JSON responses
@@ -202,6 +228,7 @@ curl http://localhost:3000/health
 ### Success Criteria
 
 The implementation is successful when:
+
 - ✅ Server starts without errors
 - ✅ Health endpoint returns correct JSON
 - ✅ Logs show structured startup messages

@@ -1,5 +1,9 @@
 import { auth } from "@/app/(auth)/auth";
-import { getUserPreferences, setUserPreferences, type UserPreferences } from "@/lib/memory";
+import {
+  getUserPreferences,
+  setUserPreferences,
+  type UserPreferences,
+} from "@/lib/memory";
 import { ChatSDKError } from "@/lib/errors";
 
 export async function GET() {

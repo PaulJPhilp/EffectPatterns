@@ -4,7 +4,16 @@ id: "data-case"
 skillLevel: "intermediate"
 useCase: ["Data Types", "Tagged Unions", "ADTs", "Domain Modeling"]
 summary: "Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching."
-tags: ["Data.case", "tagged-union", "ADT", "domain-modeling", "pattern-matching", "data-type", "effect"]
+tags:
+  [
+    "Data.case",
+    "tagged-union",
+    "ADT",
+    "domain-modeling",
+    "pattern-matching",
+    "data-type",
+    "effect",
+  ]
 rule:
   description: "Use Data.case to define tagged unions (ADTs) for modeling domain-specific states and enabling exhaustive pattern matching."
 related: ["data-struct", "pattern-matchtag"]
@@ -33,7 +42,10 @@ const Loading = Data.case("Loading", () => ({}));
 const Success = Data.case("Success", (value: { data: string }) => value);
 const Failure = Data.case("Failure", (value: { error: string }) => value);
 
-type State = ReturnType<typeof Loading> | ReturnType<typeof Success> | ReturnType<typeof Failure>;
+type State =
+  | ReturnType<typeof Loading>
+  | ReturnType<typeof Success>
+  | ReturnType<typeof Failure>;
 
 // Create instances
 const state1: State = Loading();
@@ -53,7 +65,8 @@ function handleState(state: State): string {
 }
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.case` creates tagged constructors for each state.
 - The `_tag` property enables exhaustive pattern matching.
 - Use for domain modeling, state machines, and error types.

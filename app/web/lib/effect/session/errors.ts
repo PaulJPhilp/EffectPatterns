@@ -2,16 +2,16 @@
  * Error definitions for Session service
  */
 
-import { Data } from 'effect';
+import { Data } from "effect";
 
 export class SessionNotFoundError extends Data.TaggedError(
-  'Session/NotFoundError'
+  "Session/NotFoundError"
 )<{
   readonly userId: string;
 }> {}
 
 export class SessionUpdateError extends Data.TaggedError(
-  'Session/UpdateError'
+  "Session/UpdateError"
 )<{
   readonly message: string;
   readonly cause?: unknown;

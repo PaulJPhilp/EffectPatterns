@@ -36,6 +36,7 @@ vercel link
 ```
 
 When prompted:
+
 - **Set up and deploy?** → Yes
 - **Which scope?** → Select your personal account or team
 - **Link to existing project?** → No (first time) or Yes (if project exists)
@@ -50,12 +51,12 @@ This creates `.vercel/` directory with project configuration.
 
 You need to set these environment variables in Vercel:
 
-| Variable | Description | Example Value |
-|----------|-------------|---------------|
-| `PATTERN_API_KEY` | API key for authenticating requests | Generate a secure random string |
-| `OTLP_ENDPOINT` | OpenTelemetry collector endpoint | `https://api.honeycomb.io/v1/traces` |
-| `OTLP_HEADERS` | Headers for OTLP exporter (JSON) | `{"x-honeycomb-team":"your-api-key"}` |
-| `SERVICE_NAME` | Service name for traces | `effect-patterns-mcp-server-staging` |
+| Variable          | Description                         | Example Value                         |
+| ----------------- | ----------------------------------- | ------------------------------------- |
+| `PATTERN_API_KEY` | API key for authenticating requests | Generate a secure random string       |
+| `OTLP_ENDPOINT`   | OpenTelemetry collector endpoint    | `https://api.honeycomb.io/v1/traces`  |
+| `OTLP_HEADERS`    | Headers for OTLP exporter (JSON)    | `{"x-honeycomb-team":"your-api-key"}` |
+| `SERVICE_NAME`    | Service name for traces             | `effect-patterns-mcp-server-staging`  |
 
 ### Option 1: Via Vercel CLI (Recommended)
 
@@ -115,6 +116,7 @@ openssl rand -hex 32
 ### Option B: Local Jaeger (Development)
 
 1. Run Jaeger locally:
+
    ```bash
    docker run -d --name jaeger \
      -e COLLECTOR_OTLP_ENABLED=true \
@@ -130,6 +132,7 @@ openssl rand -hex 32
 ### Option C: No Tracing
 
 If you don't want tracing for now:
+
 - `OTLP_ENDPOINT`: `http://localhost:4318/v1/traces` (will fail silently)
 - `OTLP_HEADERS`: `{}`
 
@@ -149,6 +152,7 @@ This creates a preview deployment with URL like:
 `https://effect-patterns-mcp-server-abc123.vercel.app`
 
 The deployment will:
+
 1. Install dependencies with Bun
 2. Build toolkit package (required dependency)
 3. Build Next.js MCP server
@@ -239,6 +243,7 @@ vercel alias <deployment-url> api.effectpatterns.com
 ```
 
 Or via Vercel Dashboard:
+
 1. Go to Project Settings → Domains
 2. Click "Add"
 3. Enter domain: `api.effectpatterns.com`
@@ -258,6 +263,7 @@ To enable automatic deployments from GitHub:
    - **Automatic Deployments**: Enabled
 
 Now:
+
 - Pushes to `main` → Production deployment
 - Pushes to other branches → Preview deployment
 
@@ -266,6 +272,7 @@ Now:
 To enable the `deploy-staging.yml` workflow:
 
 1. **Get Vercel Token**:
+
    - Go to https://vercel.com/account/tokens
    - Click "Create"
    - Name: "GitHub Actions"
@@ -273,11 +280,14 @@ To enable the `deploy-staging.yml` workflow:
    - Copy token
 
 2. **Get Project IDs**:
+
    ```bash
    # In services/mcp-server directory
    cat .vercel/project.json
    ```
+
    This shows:
+
    - `orgId`: Your organization/team ID
    - `projectId`: Your project ID
 
@@ -309,6 +319,7 @@ vercel logs --output=short
 ### View Metrics
 
 Go to Vercel Dashboard:
+
 - **Analytics**: Request counts, response times, error rates
 - **Speed Insights**: Core Web Vitals, performance metrics
 - **Logs**: Function invocation logs
@@ -316,6 +327,7 @@ Go to Vercel Dashboard:
 ### View Traces
 
 In Honeycomb (or your OTLP collector):
+
 - Go to https://ui.honeycomb.io
 - Select environment: "staging"
 - View traces by service name: `effect-patterns-mcp-server-staging`
@@ -327,6 +339,7 @@ In Honeycomb (or your OTLP collector):
 **Error: "Cannot find module '@effect-patterns/toolkit'"**
 
 **Solution**: Ensure the build command builds toolkit first:
+
 ```bash
 # In vercel.json:
 "buildCommand": "cd ../.. && bun install --frozen-lockfile && bun --filter @effect-patterns/mcp-server run build"
@@ -337,6 +350,7 @@ In Honeycomb (or your OTLP collector):
 **Error: "PATTERN_API_KEY is not set"**
 
 **Solution**: Check environment variables are set:
+
 ```bash
 vercel env ls
 
@@ -347,11 +361,13 @@ vercel env add PATTERN_API_KEY staging
 ### Deployment Succeeds but Smoke Tests Fail
 
 **Possible Causes**:
+
 - Environment variables not applied to deployment
 - Cold start taking too long
 - Wrong API key used in tests
 
 **Solution**:
+
 ```bash
 # Check deployment environment
 vercel env pull .env.staging
@@ -366,11 +382,13 @@ vercel --force
 ### OTLP Traces Not Appearing
 
 **Possible Causes**:
+
 - Invalid OTLP endpoint
 - Invalid OTLP headers JSON
 - Network blocked
 
 **Solution**:
+
 ```bash
 # Test OTLP endpoint manually
 curl -X POST \
@@ -385,10 +403,12 @@ curl -X POST \
 ## Cost Optimization
 
 Vercel pricing tiers:
+
 - **Hobby (Free)**: 100GB bandwidth, 100 hours function execution
 - **Pro ($20/mo)**: 1TB bandwidth, unlimited executions
 
 Tips:
+
 - Use caching headers to reduce function invocations
 - Implement Edge Functions for frequently accessed endpoints
 - Monitor bandwidth usage in dashboard

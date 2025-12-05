@@ -2,15 +2,15 @@
  * Catalog service errors
  */
 
-import { Data } from 'effect';
+import { Data } from "effect";
 
 export class CatalogNotInitialized extends Data.TaggedError(
-  'CatalogNotInitialized'
+  "CatalogNotInitialized"
 )<{
   message: string;
 }> {}
 
-export class CatalogLoadError extends Data.TaggedError('CatalogLoadError')<{
+export class CatalogLoadError extends Data.TaggedError("CatalogLoadError")<{
   message: string;
   cause?: unknown;
 }> {}

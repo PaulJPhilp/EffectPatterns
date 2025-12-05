@@ -15,6 +15,7 @@ The Effect Patterns Hub uses a **fuzzy matching search algorithm** paired with *
 **Type:** Pure TypeScript functions (no dependencies)
 
 **Key Functions:**
+
 - `fuzzyScore(query, target)` - Character-by-character matching
 - `calculateRelevance(pattern, query)` - Multi-field scoring
 - `searchPatterns(params)` - Main search with filters
@@ -22,6 +23,7 @@ The Effect Patterns Hub uses a **fuzzy matching search algorithm** paired with *
 - `toPatternSummary(pattern)` - Lightweight conversion
 
 **Features:**
+
 - Fuzzy matching with substring search
 - Category filtering
 - Difficulty level filtering
@@ -29,6 +31,7 @@ The Effect Patterns Hub uses a **fuzzy matching search algorithm** paired with *
 - Configurable result limit
 
 **Algorithm Details:**
+
 ```typescript
 // Matches characters sequentially with consecutive bonus
 // Returns 0 if ANY character doesn't match
@@ -36,6 +39,7 @@ The Effect Patterns Hub uses a **fuzzy matching search algorithm** paired with *
 ```
 
 **Critical Issue:** Fails on multi-word queries with spaces when data uses hyphens
+
 - Query "error handling" ≠ Target "error-handling"
 
 ---
@@ -47,6 +51,7 @@ The Effect Patterns Hub uses a **fuzzy matching search algorithm** paired with *
 **Type:** Effect service with configuration and logging
 
 **Features:**
+
 - Configuration layer (max results, timeout)
 - Logging integration
 - Timeout handling
@@ -54,6 +59,7 @@ The Effect Patterns Hub uses a **fuzzy matching search algorithm** paired with *
 - Backward-compatible legacy functions
 
 **Architecture:**
+
 ```typescript
 export class PatternSearch extends Effect.Service<PatternSearch>()
   // Wraps pure functions in Effect monad
@@ -70,11 +76,13 @@ export class PatternSearch extends Effect.Service<PatternSearch>()
 **Type:** AI SDK tool definitions (Vercel AI SDK)
 
 **Tools:**
+
 1. `searchPatternsTool` - Search by query, category, difficulty
 2. `getPatternByIdTool` - Retrieve specific pattern
 3. `listPatternCategoriesTool` - List all categories
 
 **Implementation:**
+
 ```typescript
 // Uses toolkit's searchPatterns function
 // Passes data from data/patterns-index.json
@@ -97,8 +105,8 @@ export class PatternSearch extends Effect.Service<PatternSearch>()
 ```typescript
 // Read pattern (Line 153)
 const memories = await this.client.search.memories({
-  q: key,           // Search key (e.g., "user:user-id:preferences")
-  limit: 1
+  q: key, // Search key (e.g., "user:user-id:preferences")
+  limit: 1,
 });
 
 // Write pattern (Line 188)
@@ -108,12 +116,13 @@ await this.client.memories.add({
     type: "user_preferences|conversation_memory|user_data",
     userId,
     key,
-    timestamp: new Date().toISOString()
-  }
+    timestamp: new Date().toISOString(),
+  },
 });
 ```
 
 **Stored Data Types:**
+
 1. **User Preferences** - Model selection, theme, sidebar state
 2. **Conversation Memory** - Chat context, history
 3. **Conversation Metadata** - Tags, outcome, satisfaction score
@@ -121,6 +130,7 @@ await this.client.memories.add({
 5. **Generic User Data** - Extensible key-value storage
 
 **Key Characteristics:**
+
 - NO direct delete operation (limitations acknowledged)
 - NO bulk operations
 - Metadata-driven organization
@@ -187,15 +197,14 @@ function fuzzyScore(query: string, target: string): number {
   // Iterates through query characters
   // For each char, scans target to find a match
   // Tracks consecutive matches for bonus
-  
   // CRITICAL: If any query char doesn't match → returns 0
-  
-  // Score: (successful_matches / query_length) * 0.7 + 
+  // Score: (successful_matches / query_length) * 0.7 +
   //        (consecutive_matches / query_length) * 0.3
 }
 ```
 
 **Problems:**
+
 - Character-by-character matching (too strict)
 - Space/hyphen mismatches cause complete failure
 - No word boundary understanding
@@ -210,7 +219,6 @@ function calculateRelevance(pattern: Pattern, query: string): number {
   // 2. Description (weight: 0.7)
   // 3. Tags (weight: 0.5)
   // 4. Category (weight: 0.4)
-  
   // Problem: Early returns skip lower-weighted but more relevant fields
 }
 ```
@@ -243,6 +251,7 @@ searchPatterns({
 ### 5.1 Search for Vector Evidence
 
 **Files Checked:**
+
 - app/code-assistant/lib/ai/tools/search-patterns.ts - ✗ No vectors
 - app/code-assistant/lib/memory.ts - ✗ No embeddings
 - packages/toolkit/src/search.ts - ✗ Pure fuzzy matching
@@ -250,19 +259,20 @@ searchPatterns({
 - All API routes - ✗ No embedding endpoints
 
 **Grep Results:**
+
 - Pattern "vector|embedding|semantic" returns 0 results in app/code-assistant
 - No Pinecone, Weaviate, or similar vector DB integration
 - No OpenAI embeddings or other embedding models
 
 ### 5.2 Search Classification
 
-| Aspect | Current | Available |
-|--------|---------|-----------|
-| **Search Type** | Lexical fuzzy | ✗ Semantic/Vector |
-| **Algorithm** | Character-by-character | ✗ Embedding distance |
-| **Memory** | Supermemory metadata | ✓ Implemented |
-| **Data** | In-memory JSON | ✗ Vector DB |
-| **Inference** | Pure functions | ✗ LLM embeddings |
+| Aspect          | Current                | Available            |
+| --------------- | ---------------------- | -------------------- |
+| **Search Type** | Lexical fuzzy          | ✗ Semantic/Vector    |
+| **Algorithm**   | Character-by-character | ✗ Embedding distance |
+| **Memory**      | Supermemory metadata   | ✓ Implemented        |
+| **Data**        | In-memory JSON         | ✗ Vector DB          |
+| **Inference**   | Pure functions         | ✗ LLM embeddings     |
 
 ---
 
@@ -273,6 +283,7 @@ searchPatterns({
 **Endpoint:** `POST /app/(chat)/api/chat/route.ts`
 
 **Includes Tools:**
+
 - `searchPatternsTool` - Pattern search
 - `getPatternByIdTool` - Get pattern details
 - `listPatternCategoriesTool` - List categories
@@ -286,6 +297,7 @@ searchPatterns({
 **Endpoint:** `GET/POST /app/(chat)/api/user/preferences/route.ts`
 
 **Functionality:**
+
 - Load user preferences from Supermemory
 - Save user preferences to Supermemory
 - Graceful degradation for unauthenticated users
@@ -295,6 +307,7 @@ searchPatterns({
 **File:** `data/patterns-index.json`
 
 **Format:**
+
 ```json
 {
   "patterns": [
@@ -324,17 +337,18 @@ searchPatterns({
 // React hook for loading/saving preferences
 // Endpoint: /api/user/preferences
 
-const { 
-  preferences,      // Current user preferences
-  loading,          // Loading state
-  error,            // Error state (gracefully hidden)
-  loadPreferences,  // Manual load
-  savePreferences,  // Batch save
-  updatePreference  // Single field update
-} = useUserPreferences()
+const {
+  preferences, // Current user preferences
+  loading, // Loading state
+  error, // Error state (gracefully hidden)
+  loadPreferences, // Manual load
+  savePreferences, // Batch save
+  updatePreference, // Single field update
+} = useUserPreferences();
 ```
 
 **Features:**
+
 - Automatic load on mount
 - Graceful degradation for unauthenticated users
 - Optimistic updates
@@ -344,6 +358,7 @@ const {
 ### 7.2 Supermemory Integration
 
 **Supermemory SDK Usage:**
+
 ```typescript
 // Initialization
 const client = new Supermemory({ apiKey: process.env.SUPERMEMORY_API_KEY })
@@ -402,18 +417,22 @@ content/
 ### Current Issues
 
 1. **Character-by-character Matching**
+
    - Fails on space/hyphen variations
    - Query "error handling" ≠ "error-handling"
 
 2. **Early Returns in Relevance**
+
    - Only one field checked if it scores > 0
    - Lower-weighted fields ignored
 
 3. **No Semantic Understanding**
+
    - Cannot understand "error handling" = "exception management"
    - No synonym matching
 
 4. **Memory Not Used for Search**
+
    - Supermemory stores preferences, not search context
    - Cannot learn from past queries
 
@@ -429,10 +448,12 @@ content/
 ### Immediate Fixes
 
 1. **Normalize Separators** (Line 17-18 in search.ts)
+
    - Already implemented in code!
    - Just needs to be used in fuzzyScore()
 
 2. **Remove Early Returns**
+
    - Check ALL fields, track max score
    - Would solve: Query "retry" against pattern with better tag match
 
@@ -443,16 +464,19 @@ content/
 ### Future Enhancements
 
 1. **Vector Search (Phase 2)**
+
    - Add embedding model (OpenAI, local)
    - Store vectors in Postgres (Neon)
    - Hybrid: fuzzy + semantic
 
 2. **Conversation Search Memory**
+
    - Store past successful searches in Supermemory
    - Use LLM to find similar queries
    - Improve recall from conversation context
 
 3. **Pattern Recommendations**
+
    - Track user interaction patterns
    - Use Supermemory user_activity data
    - Personalize search results
@@ -466,15 +490,14 @@ content/
 
 ## Summary Table
 
-| Aspect | Implementation | Status |
-|--------|---------------|----|
-| **Pattern Search** | Fuzzy matching (toolkit) | ✓ Implemented |
-| **AI Tool Integration** | searchPatternsTool (AI SDK) | ✓ Implemented |
-| **Memory Storage** | Supermemory API | ✓ Implemented |
-| **Preferences** | React hook + API | ✓ Implemented |
-| **Vector Search** | Not implemented | ✗ |
-| **Semantic Search** | Not implemented | ✗ |
-| **Full-Text Search** | Not implemented | ✗ |
-| **User Activity Tracking** | Partial (via Supermemory) | ◐ |
-| **Search Analytics** | Basic logging | ◐ |
-
+| Aspect                     | Implementation              | Status        |
+| -------------------------- | --------------------------- | ------------- |
+| **Pattern Search**         | Fuzzy matching (toolkit)    | ✓ Implemented |
+| **AI Tool Integration**    | searchPatternsTool (AI SDK) | ✓ Implemented |
+| **Memory Storage**         | Supermemory API             | ✓ Implemented |
+| **Preferences**            | React hook + API            | ✓ Implemented |
+| **Vector Search**          | Not implemented             | ✗             |
+| **Semantic Search**        | Not implemented             | ✗             |
+| **Full-Text Search**       | Not implemented             | ✗             |
+| **User Activity Tracking** | Partial (via Supermemory)   | ◐             |
+| **Search Analytics**       | Basic logging               | ◐             |

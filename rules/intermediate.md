@@ -1,22 +1,21 @@
 # Intermediate Level Rules
 
 ## Access Configuration from the Context
+
 **Rule:** Access configuration from the Effect context.
 
 ### Example
+
 ```typescript
 import { Config, Effect, Layer } from "effect";
 
 // Define config service
-class AppConfig extends Effect.Service<AppConfig>()(
-  "AppConfig",
-  {
-    sync: () => ({
-      host: "localhost",
-      port: 3000
-    })
-  }
-) {}
+class AppConfig extends Effect.Service<AppConfig>()("AppConfig", {
+  sync: () => ({
+    host: "localhost",
+    port: 3000,
+  }),
+}) {}
 
 // Create program that uses config
 const program = Effect.gen(function* () {
@@ -25,18 +24,18 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with default config
-Effect.runPromise(
-  Effect.provide(program, AppConfig.Default)
-);
+Effect.runPromise(Effect.provide(program, AppConfig.Default));
 ```
 
 **Explanation:**  
 By yielding the config object, you make your dependency explicit and leverage Effect's context system for testability and modularity.
 
 ## Accessing the Current Time with Clock
+
 **Rule:** Use the Clock service to get the current time, enabling deterministic testing with TestClock.
 
 ### Example
+
 This example shows a function that checks if a token is expired. Its logic depends on `Clock`, making it fully testable.
 
 ```typescript
@@ -48,10 +47,16 @@ interface Token {
 }
 
 // This function is pure and testable because it depends on Clock
-const isTokenExpired = (token: Token): Effect.Effect<boolean, never, Clock.Clock> =>
+const isTokenExpired = (
+  token: Token
+): Effect.Effect<boolean, never, Clock.Clock> =>
   Clock.currentTimeMillis.pipe(
     Effect.map((now) => now > token.expiresAt),
-    Effect.tap((expired) => Effect.log(`Token expired? ${expired} (current time: ${new Date().toISOString()})`))
+    Effect.tap((expired) =>
+      Effect.log(
+        `Token expired? ${expired} (current time: ${new Date().toISOString()})`
+      )
+    )
   );
 
 // Create a test clock service that advances time
@@ -90,21 +95,21 @@ const program = Effect.gen(function* () {
 
 // Run the program with default clock
 Effect.runPromise(
-  program.pipe(
-    Effect.provideService(Clock.Clock, makeTestClock(Date.now()))
-  )
+  program.pipe(Effect.provideService(Clock.Clock, makeTestClock(Date.now())))
 );
 ```
 
 ---
 
 ## Accumulate Multiple Errors with Either
+
 **Rule:** Use Either to accumulate multiple validation errors instead of failing on the first one.
 
 ### Example
+
 Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
 
-````typescript
+```typescript
 import { Effect, Schema, Data } from "effect";
 
 // Define validation error type
@@ -124,13 +129,13 @@ const UserSchema = Schema.Struct({
   name: Schema.String.pipe(
     Schema.minLength(3),
     Schema.filter((name) => /^[A-Za-z\s]+$/.test(name), {
-      message: () => "name must contain only letters and spaces"
+      message: () => "name must contain only letters and spaces",
     })
   ),
   email: Schema.String.pipe(
     Schema.pattern(/@/),
     Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
-      message: () => "email must be a valid email address"
+      message: () => "email must be a valid email address",
     })
   ),
 });
@@ -148,7 +153,7 @@ const invalidInputs: User[] = [
   {
     name: "Alice Smith", // Valid
     email: "alice@example.com", // Valid
-  }
+  },
 ];
 
 // Validate a single user
@@ -161,40 +166,44 @@ const validateUser = (input: User) =>
 // Process multiple users and accumulate all errors
 const program = Effect.gen(function* () {
   console.log("Validating users...\n");
-  
+
   for (const input of invalidInputs) {
     const result = yield* Effect.either(validateUser(input));
-    
+
     console.log(`Validating user: ${input.name} <${input.email}>`);
-    
+
     yield* Effect.match(result, {
-      onFailure: (error) => Effect.sync(() => {
-        console.log("❌ Validation failed:");
-        console.log(error.message);
-        console.log(); // Empty line for readability
-      }),
-      onSuccess: (user) => Effect.sync(() => {
-        console.log("✅ User is valid:", user);
-        console.log(); // Empty line for readability
-      })
+      onFailure: (error) =>
+        Effect.sync(() => {
+          console.log("❌ Validation failed:");
+          console.log(error.message);
+          console.log(); // Empty line for readability
+        }),
+      onSuccess: (user) =>
+        Effect.sync(() => {
+          console.log("✅ User is valid:", user);
+          console.log(); // Empty line for readability
+        }),
     });
   }
 });
 
 // Run the program
 Effect.runSync(program);
-````
+```
 
 ---
 
 ## Add Custom Metrics to Your Application
+
 **Rule:** Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
 
 ### Example
+
 This example creates a counter to track how many times a user is created and a histogram to track the duration of the database operation.
 
 ```typescript
-import { Effect, Metric, Duration } from "effect";  // We don't need MetricBoundaries anymore
+import { Effect, Metric, Duration } from "effect"; // We don't need MetricBoundaries anymore
 
 // 1. Define your metrics
 const userRegisteredCounter = Metric.counter("users_registered_total", {
@@ -208,7 +217,7 @@ const dbDurationTimer = Metric.timer(
 
 // 2. Simulated database call
 const saveUserToDb = Effect.succeed("user saved").pipe(
-  Effect.delay(Duration.millis(Math.random() * 100)),
+  Effect.delay(Duration.millis(Math.random() * 100))
 );
 
 // 3. Instrument the business logic
@@ -229,12 +238,14 @@ Effect.runPromise(createUser).then(console.log);
 ---
 
 ## Automatically Retry Failed Operations
+
 **Rule:** Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
 
 ### Example
+
 This example simulates an API that fails the first two times it's called. The stream processes a list of IDs, and the `retry` operator ensures that the failing operation for `id: 2` is automatically retried until it succeeds.
 
-````typescript
+```typescript
 import { Effect, Stream, Schedule } from "effect";
 
 // A mock function that simulates a flaky API call
@@ -308,25 +319,24 @@ Output:
 ... level=INFO msg="Attempting to process item 2..."
 ... level=INFO msg="Attempting to process item 3..."
 */
-
-````
+```
 
 ## Avoid Long Chains of .andThen; Use Generators Instead
+
 **Rule:** Prefer generators over long chains of .andThen.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
 // Define our steps with logging
 const step1 = (): Effect.Effect<number> =>
-  Effect.succeed(42).pipe(
-    Effect.tap(n => Effect.log(`Step 1: ${n}`))
-  );
+  Effect.succeed(42).pipe(Effect.tap((n) => Effect.log(`Step 1: ${n}`)));
 
 const step2 = (a: number): Effect.Effect<string> =>
   Effect.succeed(`Result: ${a * 2}`).pipe(
-    Effect.tap(s => Effect.log(`Step 2: ${s}`))
+    Effect.tap((s) => Effect.log(`Step 2: ${s}`))
   );
 
 // Using Effect.gen for better readability
@@ -337,8 +347,8 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program
-Effect.runPromise(program).then(
-  result => Effect.runSync(Effect.log(`Final result: ${result}`))
+Effect.runPromise(program).then((result) =>
+  Effect.runSync(Effect.log(`Final result: ${result}`))
 );
 ```
 
@@ -346,9 +356,11 @@ Effect.runPromise(program).then(
 Generators keep sequential logic readable and easy to maintain.
 
 ## Beyond the Date Type - Real World Dates, Times, and Timezones
+
 **Rule:** Use the Clock service for testable time-based logic and immutable primitives for timestamps.
 
 ### Example
+
 This example shows a function that creates a timestamped event. It depends on the `Clock` service, making it fully testable.
 
 ```typescript
@@ -361,7 +373,9 @@ interface Event {
 }
 
 // This function is pure and testable because it depends on Clock
-const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> =>
+const createEvent = (
+  message: string
+): Effect.Effect<Event, never, Types.Clock> =>
   Effect.gen(function* () {
     const timestamp = yield* Clock.currentTimeMillis;
     return { message, timestamp };
@@ -377,15 +391,19 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program
-Effect.runPromise(program.pipe(Effect.provideService(Clock.Clock, Clock.make()))).catch(console.error);
+Effect.runPromise(
+  program.pipe(Effect.provideService(Clock.Clock, Clock.make()))
+).catch(console.error);
 ```
 
 ---
 
 ## Compose Resource Lifecycles with `Layer.merge`
+
 **Rule:** Compose multiple scoped layers using `Layer.merge` or by providing one layer to another.
 
 ### Example
+
 ```typescript
 import { Effect, Layer, Console } from "effect";
 
@@ -394,30 +412,24 @@ interface DatabaseOps {
   query: (sql: string) => Effect.Effect<string, never, never>;
 }
 
-class Database extends Effect.Service<DatabaseOps>()(
-  "Database",
-  {
-    sync: () => ({
-      query: (sql: string): Effect.Effect<string, never, never> =>
-        Effect.sync(() => `db says: ${sql}`)
-    })
-  }
-) {}
+class Database extends Effect.Service<DatabaseOps>()("Database", {
+  sync: () => ({
+    query: (sql: string): Effect.Effect<string, never, never> =>
+      Effect.sync(() => `db says: ${sql}`),
+  }),
+}) {}
 
 // --- Service 2: API Client ---
 interface ApiClientOps {
   fetch: (path: string) => Effect.Effect<string, never, never>;
 }
 
-class ApiClient extends Effect.Service<ApiClientOps>()(
-  "ApiClient",
-  {
-    sync: () => ({
-      fetch: (path: string): Effect.Effect<string, never, never> =>
-        Effect.sync(() => `api says: ${path}`)
-    })
-  }
-) {}
+class ApiClient extends Effect.Service<ApiClientOps>()("ApiClient", {
+  sync: () => ({
+    fetch: (path: string): Effect.Effect<string, never, never> =>
+      Effect.sync(() => `api says: ${path}`),
+  }),
+}) {}
 
 // --- Application Layer ---
 // We merge the two independent layers into one.
@@ -453,9 +465,11 @@ Database pool closed
 We define two completely independent services, `Database` and `ApiClient`, each with its own resource lifecycle. By combining them with `Layer.merge`, we create a single `AppLayer`. When `program` runs, Effect acquires the resources for both layers. When `program` finishes, Effect closes the application's scope, releasing the resources in the reverse order they were acquired (`ApiClient` then `Database`), ensuring a clean and predictable shutdown.
 
 ## Conditionally Branching Workflows
+
 **Rule:** Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
 
 ### Example
+
 Here, we use `Effect.filterOrFail` with named predicates to validate a user before proceeding. The intent is crystal clear, and the business rules (`isActive`, `isAdmin`) are reusable.
 
 ```typescript
@@ -473,24 +487,16 @@ const findUser = (id: number): Effect.Effect<User, "DbError"> =>
   Effect.succeed({ id, status: "active", roles: ["admin"] });
 
 // Reusable, testable predicates that document business rules.
-const isActive = (user: User): boolean =>
-  user.status === "active";
+const isActive = (user: User): boolean => user.status === "active";
 
-const isAdmin = (user: User): boolean =>
-  user.roles.includes("admin");
+const isAdmin = (user: User): boolean => user.roles.includes("admin");
 
 const program = (id: number): Effect.Effect<string, UserError> =>
   findUser(id).pipe(
     // Validate user is active using Effect.filterOrFail
-    Effect.filterOrFail(
-      isActive,
-      () => "UserIsInactive" as const
-    ),
+    Effect.filterOrFail(isActive, () => "UserIsInactive" as const),
     // Validate user is admin using Effect.filterOrFail
-    Effect.filterOrFail(
-      isAdmin,
-      () => "UserIsNotAdmin" as const
-    ),
+    Effect.filterOrFail(isAdmin, () => "UserIsNotAdmin" as const),
     // Success case
     Effect.map((user) => `Welcome, admin user #${user.id}!`)
   );
@@ -510,7 +516,7 @@ const handled = program(123).pipe(
           return `Unknown error: ${error}`;
       }
     },
-    onSuccess: (result) => result
+    onSuccess: (result) => result,
   })
 );
 
@@ -521,31 +527,41 @@ Effect.runPromise(handled).then(console.log);
 ---
 
 ## Control Flow with Conditional Combinators
+
 **Rule:** Use conditional combinators for control flow.
 
 ### Example
+
 ```typescript
-import { Effect } from "effect"
+import { Effect } from "effect";
 
 const attemptAdminAction = (user: { isAdmin: boolean }) =>
   Effect.if(user.isAdmin, {
     onTrue: () => Effect.succeed("Admin action completed."),
-    onFalse: () => Effect.fail("Permission denied.")
-  })
+    onFalse: () => Effect.fail("Permission denied."),
+  });
 
 const program = Effect.gen(function* () {
   // Try with admin user
-  yield* Effect.logInfo("\nTrying with admin user...")
-  const adminResult = yield* Effect.either(attemptAdminAction({ isAdmin: true }))
-  yield* Effect.logInfo(`Admin result: ${adminResult._tag === 'Right' ? adminResult.right : adminResult.left}`)
+  yield* Effect.logInfo("\nTrying with admin user...");
+  const adminResult = yield* Effect.either(
+    attemptAdminAction({ isAdmin: true })
+  );
+  yield* Effect.logInfo(
+    `Admin result: ${adminResult._tag === "Right" ? adminResult.right : adminResult.left}`
+  );
 
   // Try with non-admin user
-  yield* Effect.logInfo("\nTrying with non-admin user...")
-  const userResult = yield* Effect.either(attemptAdminAction({ isAdmin: false }))
-  yield* Effect.logInfo(`User result: ${userResult._tag === 'Right' ? userResult.right : userResult.left}`)
-})
+  yield* Effect.logInfo("\nTrying with non-admin user...");
+  const userResult = yield* Effect.either(
+    attemptAdminAction({ isAdmin: false })
+  );
+  yield* Effect.logInfo(
+    `User result: ${userResult._tag === "Right" ? userResult.right : userResult.left}`
+  );
+});
 
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 **Explanation:**  
@@ -553,92 +569,87 @@ Effect.runPromise(program)
 the Effect world or breaking the flow of composition.
 
 ## Control Repetition with Schedule
+
 **Rule:** Use Schedule to create composable policies for controlling the repetition and retrying of effects.
 
 ### Example
+
 This example demonstrates composition by creating a common, robust retry policy: exponential backoff with jitter, limited to 5 attempts.
 
 ```typescript
-import { Effect, Schedule, Duration } from "effect"
+import { Effect, Schedule, Duration } from "effect";
 
 // A simple effect that can fail
 const flakyEffect = Effect.try({
   try: () => {
     if (Math.random() > 0.2) {
-      throw new Error("Transient error")
+      throw new Error("Transient error");
     }
-    return "Operation succeeded!"
+    return "Operation succeeded!";
   },
   catch: (error: unknown) => {
-    Effect.logInfo("Operation failed, retrying...")
-    return error
-  }
-})
+    Effect.logInfo("Operation failed, retrying...");
+    return error;
+  },
+});
 
 // --- Building a Composable Schedule ---
 
 // 1. Start with a base exponential backoff (100ms, 200ms, 400ms...)
-const exponentialBackoff = Schedule.exponential("100 millis")
+const exponentialBackoff = Schedule.exponential("100 millis");
 
 // 2. Add random jitter to avoid thundering herd problems
-const withJitter = Schedule.jittered(exponentialBackoff)
+const withJitter = Schedule.jittered(exponentialBackoff);
 
 // 3. Limit the schedule to a maximum of 5 repetitions
-const limitedWithJitter = Schedule.compose(
-  withJitter,
-  Schedule.recurs(5)
-)
+const limitedWithJitter = Schedule.compose(withJitter, Schedule.recurs(5));
 
 // --- Using the Schedule ---
 const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting operation...")
-  const result = yield* Effect.retry(flakyEffect, limitedWithJitter)
-  yield* Effect.logInfo(`Final result: ${result}`)
-})
+  yield* Effect.logInfo("Starting operation...");
+  const result = yield* Effect.retry(flakyEffect, limitedWithJitter);
+  yield* Effect.logInfo(`Final result: ${result}`);
+});
 
 // Run the program
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 ---
 
 ## Create a Service Layer from a Managed Resource
+
 **Rule:** Provide a managed resource to the application context using `Layer.scoped`.
 
 ### Example
+
 ```typescript
 import { Effect, Console } from "effect";
 
 // 1. Define the service interface
 interface DatabaseService {
-  readonly query: (sql: string) => Effect.Effect<string[], never, never>
+  readonly query: (sql: string) => Effect.Effect<string[], never, never>;
 }
 
 // 2. Define the service implementation with scoped resource management
-class Database extends Effect.Service<DatabaseService>()(
-  "Database",
-  {
-    // The scoped property manages the resource lifecycle
-    scoped: Effect.gen(function* () {
-      const id = Math.floor(Math.random() * 1000);
-      
-      // Acquire the connection
-      yield* Console.log(`[Pool ${id}] Acquired`);
-      
-      // Setup cleanup to run when scope closes
-      yield* Effect.addFinalizer(() => 
-        Console.log(`[Pool ${id}] Released`)
-      );
-      
-      // Return the service implementation
-      return {
-        query: (sql: string) => Effect.sync(() => 
-          [`Result for '${sql}' from pool ${id}`]
-        )
-      };
-    })
-  }
-) {}
+class Database extends Effect.Service<DatabaseService>()("Database", {
+  // The scoped property manages the resource lifecycle
+  scoped: Effect.gen(function* () {
+    const id = Math.floor(Math.random() * 1000);
+
+    // Acquire the connection
+    yield* Console.log(`[Pool ${id}] Acquired`);
+
+    // Setup cleanup to run when scope closes
+    yield* Effect.addFinalizer(() => Console.log(`[Pool ${id}] Released`));
+
+    // Return the service implementation
+    return {
+      query: (sql: string) =>
+        Effect.sync(() => [`Result for '${sql}' from pool ${id}`]),
+    };
+  }),
+}) {}
 
 // 3. Use the service in your program
 const program = Effect.gen(function* () {
@@ -649,9 +660,7 @@ const program = Effect.gen(function* () {
 
 // 4. Run the program with scoped resource management
 Effect.runPromise(
-  Effect.scoped(program).pipe(
-    Effect.provide(Database.Default)
-  )
+  Effect.scoped(program).pipe(Effect.provide(Database.Default))
 );
 
 /*
@@ -666,109 +675,105 @@ Query successful: Result for 'SELECT * FROM users' from pool 458
 The `Effect.Service` helper creates the `Database` class with a `scoped` implementation. When `program` asks for the `Database` service, the Effect runtime creates a new connection pool, logs the acquisition, and automatically releases it when the scope closes. The `scoped` implementation ensures proper resource lifecycle management - the pool is acquired when first needed and released when the scope ends.
 
 ## Create a Testable HTTP Client Service
+
 **Rule:** Define an HttpClient service with distinct Live and Test layers to enable testable API interactions.
 
 ### Example
+
 ### 1. Define the Service
 
 ```typescript
-import { Effect, Data, Layer } from "effect"
+import { Effect, Data, Layer } from "effect";
 
 interface HttpErrorType {
-  readonly _tag: "HttpError"
-  readonly error: unknown
+  readonly _tag: "HttpError";
+  readonly error: unknown;
 }
 
-const HttpError = Data.tagged<HttpErrorType>("HttpError")
+const HttpError = Data.tagged<HttpErrorType>("HttpError");
 
 interface HttpClientType {
-  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>
+  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>;
 }
 
-class HttpClient extends Effect.Service<HttpClientType>()(
-  "HttpClient",
-  {
-    sync: () => ({
-      get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
-        Effect.tryPromise({
-          try: () => fetch(url).then((res) => res.json()),
-          catch: (error) => HttpError({ error })
-        })
-    })
-  }
-) {}
+class HttpClient extends Effect.Service<HttpClientType>()("HttpClient", {
+  sync: () => ({
+    get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
+      Effect.tryPromise({
+        try: () => fetch(url).then((res) => res.json()),
+        catch: (error) => HttpError({ error }),
+      }),
+  }),
+}) {}
 
 // Test implementation
 const TestLayer = Layer.succeed(
   HttpClient,
   HttpClient.of({
-    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T)
+    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T),
   })
-)
+);
 
 // Example usage
 const program = Effect.gen(function* () {
-  const client = yield* HttpClient
-  yield* Effect.logInfo("Fetching data...")
-  const data = yield* client.get<{ title: string }>("https://api.example.com/data")
-  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`)
-})
+  const client = yield* HttpClient;
+  yield* Effect.logInfo("Fetching data...");
+  const data = yield* client.get<{ title: string }>(
+    "https://api.example.com/data"
+  );
+  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`);
+});
 
 // Run with test implementation
-Effect.runPromise(
-  Effect.provide(program, TestLayer)
-)
+Effect.runPromise(Effect.provide(program, TestLayer));
 ```
 
 ### 2. Create the Live Implementation
 
 ```typescript
-import { Effect, Data, Layer } from "effect"
+import { Effect, Data, Layer } from "effect";
 
 interface HttpErrorType {
-  readonly _tag: "HttpError"
-  readonly error: unknown
+  readonly _tag: "HttpError";
+  readonly error: unknown;
 }
 
-const HttpError = Data.tagged<HttpErrorType>("HttpError")
+const HttpError = Data.tagged<HttpErrorType>("HttpError");
 
 interface HttpClientType {
-  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>
+  readonly get: <T>(url: string) => Effect.Effect<T, HttpErrorType>;
 }
 
-class HttpClient extends Effect.Service<HttpClientType>()(
-  "HttpClient",
-  {
-    sync: () => ({
-      get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
-        Effect.tryPromise({
-          try: () => fetch(url).then((res) => res.json()),
-          catch: (error) => HttpError({ error })
-        })
-    })
-  }
-) {}
+class HttpClient extends Effect.Service<HttpClientType>()("HttpClient", {
+  sync: () => ({
+    get: <T>(url: string): Effect.Effect<T, HttpErrorType> =>
+      Effect.tryPromise({
+        try: () => fetch(url).then((res) => res.json()),
+        catch: (error) => HttpError({ error }),
+      }),
+  }),
+}) {}
 
 // Test implementation
 const TestLayer = Layer.succeed(
   HttpClient,
   HttpClient.of({
-    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T)
+    get: <T>(_url: string) => Effect.succeed({ title: "Mock Data" } as T),
   })
-)
+);
 
 // Example usage
 const program = Effect.gen(function* () {
-  const client = yield* HttpClient
-  yield* Effect.logInfo("Fetching data...")
-  const data = yield* client.get<{ title: string }>("https://api.example.com/data")
-  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`)
-})
+  const client = yield* HttpClient;
+  yield* Effect.logInfo("Fetching data...");
+  const data = yield* client.get<{ title: string }>(
+    "https://api.example.com/data"
+  );
+  yield* Effect.logInfo(`Received data: ${JSON.stringify(data)}`);
+});
 
 // Run with test implementation
-Effect.runPromise(
-  Effect.provide(program, TestLayer)
-)
+Effect.runPromise(Effect.provide(program, TestLayer));
 ```
 
 ### 3. Create the Test Implementation
@@ -782,7 +787,7 @@ export const HttpClientTest = Layer.succeed(
   HttpClient,
   HttpClient.of({
     get: (url) => Effect.succeed({ mock: "data", url }),
-  }),
+  })
 );
 ```
 
@@ -807,119 +812,113 @@ export const getUserFromApi = (id: number) =>
 ---
 
 ## Define a Type-Safe Configuration Schema
+
 **Rule:** Define a type-safe configuration schema.
 
 ### Example
+
 ```typescript
-import { Config, Effect, ConfigProvider, Layer } from "effect"
+import { Config, Effect, ConfigProvider, Layer } from "effect";
 
 const ServerConfig = Config.nested("SERVER")(
   Config.all({
     host: Config.string("HOST"),
     port: Config.number("PORT"),
   })
-)
+);
 
 // Example program that uses the config
 const program = Effect.gen(function* () {
-  const config = yield* ServerConfig
-  yield* Effect.logInfo(`Server config loaded: ${JSON.stringify(config)}`)
-})
+  const config = yield* ServerConfig;
+  yield* Effect.logInfo(`Server config loaded: ${JSON.stringify(config)}`);
+});
 
 // Create a config provider with test values
 const TestConfig = ConfigProvider.fromMap(
   new Map([
     ["SERVER.HOST", "localhost"],
-    ["SERVER.PORT", "3000"]
+    ["SERVER.PORT", "3000"],
   ])
-)
+);
 
 // Run with test config
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Layer.setConfigProvider(TestConfig)
-  )
-)
+Effect.runPromise(Effect.provide(program, Layer.setConfigProvider(TestConfig)));
 ```
 
 **Explanation:**  
 This schema ensures that both `host` and `port` are present and properly typed, and that their source is clearly defined.
 
 ## Define Contracts Upfront with Schema
+
 **Rule:** Define contracts upfront with schema.
 
 ### Example
+
 ```typescript
-import { Schema, Effect, Data } from "effect"
+import { Schema, Effect, Data } from "effect";
 
 // Define User schema and type
 const UserSchema = Schema.Struct({
   id: Schema.Number,
-  name: Schema.String
-})
+  name: Schema.String,
+});
 
-type User = Schema.Schema.Type<typeof UserSchema>
+type User = Schema.Schema.Type<typeof UserSchema>;
 
 // Define error type
 class UserNotFound extends Data.TaggedError("UserNotFound")<{
-  readonly id: number
+  readonly id: number;
 }> {}
 
 // Create database service implementation
-export class Database extends Effect.Service<Database>()(
-  "Database",
-  {
-    sync: () => ({
-      getUser: (id: number) =>
-        id === 1
-          ? Effect.succeed({ id: 1, name: "John" })
-          : Effect.fail(new UserNotFound({ id }))
-    })
-  }
-) {}
+export class Database extends Effect.Service<Database>()("Database", {
+  sync: () => ({
+    getUser: (id: number) =>
+      id === 1
+        ? Effect.succeed({ id: 1, name: "John" })
+        : Effect.fail(new UserNotFound({ id })),
+  }),
+}) {}
 
 // Create a program that demonstrates schema and error handling
 const program = Effect.gen(function* () {
-  const db = yield* Database
-  
+  const db = yield* Database;
+
   // Try to get an existing user
-  yield* Effect.logInfo("Looking up user 1...")
-  const user1 = yield* db.getUser(1)
-  yield* Effect.logInfo(`Found user: ${JSON.stringify(user1)}`)
-  
+  yield* Effect.logInfo("Looking up user 1...");
+  const user1 = yield* db.getUser(1);
+  yield* Effect.logInfo(`Found user: ${JSON.stringify(user1)}`);
+
   // Try to get a non-existent user
-  yield* Effect.logInfo("\nLooking up user 999...")
-  yield* Effect.logInfo("Attempting to get user 999...")
+  yield* Effect.logInfo("\nLooking up user 999...");
+  yield* Effect.logInfo("Attempting to get user 999...");
   yield* Effect.gen(function* () {
-    const user = yield* db.getUser(999)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
+    const user = yield* db.getUser(999);
+    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchAll((error) => {
       if (error instanceof UserNotFound) {
-        return Effect.logInfo(`Error: User with id ${error.id} not found`)
+        return Effect.logInfo(`Error: User with id ${error.id} not found`);
       }
-      return Effect.logInfo(`Unexpected error: ${error}`)
+      return Effect.logInfo(`Unexpected error: ${error}`);
     })
-  )
+  );
 
   // Try to decode invalid data
-  yield* Effect.logInfo("\nTrying to decode invalid user data...")
-  const invalidUser = { id: "not-a-number", name: 123 } as any
+  yield* Effect.logInfo("\nTrying to decode invalid user data...");
+  const invalidUser = { id: "not-a-number", name: 123 } as any;
   yield* Effect.gen(function* () {
-    const user = yield* Schema.decode(UserSchema)(invalidUser)
-    yield* Effect.logInfo(`Decoded user: ${JSON.stringify(user)}`)
+    const user = yield* Schema.decode(UserSchema)(invalidUser);
+    yield* Effect.logInfo(`Decoded user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logInfo(`Validation failed:\n${JSON.stringify(error, null, 2)}`)
     )
-  )
-})
+  );
+});
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, Database.Default)
-)
+Effect.runPromise(Effect.provide(program, Database.Default));
 ```
 
 **Explanation:**  
@@ -927,70 +926,76 @@ Defining schemas upfront clarifies your contracts and ensures both type safety
 and runtime validation.
 
 ## Define Type-Safe Errors with Data.TaggedError
+
 **Rule:** Define type-safe errors with Data.TaggedError.
 
 ### Example
+
 ```typescript
-import { Data, Effect } from "effect"
+import { Data, Effect } from "effect";
 
 // Define our tagged error type
 class DatabaseError extends Data.TaggedError("DatabaseError")<{
-  readonly cause: unknown
+  readonly cause: unknown;
 }> {}
 
 // Function that simulates a database error
-const findUser = (id: number): Effect.Effect<{ id: number; name: string }, DatabaseError> =>
+const findUser = (
+  id: number
+): Effect.Effect<{ id: number; name: string }, DatabaseError> =>
   Effect.gen(function* () {
     if (id < 0) {
-      return yield* Effect.fail(new DatabaseError({ cause: "Invalid ID" }))
+      return yield* Effect.fail(new DatabaseError({ cause: "Invalid ID" }));
     }
-    return { id, name: `User ${id}` }
-  })
+    return { id, name: `User ${id}` };
+  });
 
 // Create a program that demonstrates error handling
 const program = Effect.gen(function* () {
   // Try to find a valid user
-  yield* Effect.logInfo("Looking up user 1...")
+  yield* Effect.logInfo("Looking up user 1...");
   yield* Effect.gen(function* () {
-    const user = yield* findUser(1)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
+    const user = yield* findUser(1);
+    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchAll((error) =>
       Effect.logInfo(`Error finding user: ${error._tag} - ${error.cause}`)
     )
-  )
+  );
 
   // Try to find an invalid user
-  yield* Effect.logInfo("\nLooking up user -1...")
+  yield* Effect.logInfo("\nLooking up user -1...");
   yield* Effect.gen(function* () {
-    const user = yield* findUser(-1)
-    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`)
+    const user = yield* findUser(-1);
+    yield* Effect.logInfo(`Found user: ${JSON.stringify(user)}`);
   }).pipe(
     Effect.catchTag("DatabaseError", (error) =>
       Effect.logInfo(`Database error: ${error._tag} - ${error.cause}`)
     )
-  )
-})
+  );
+});
 
 // Run the program
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 **Explanation:**  
 Tagged errors allow you to handle errors in a type-safe, self-documenting way.
 
 ## Distinguish 'Not Found' from Errors
+
 **Rule:** Use Effect<Option<A>> to distinguish between recoverable 'not found' cases and actual failures.
 
 ### Example
-This function to find a user can fail if the database is down, or it can succeed but find no user. The return type ``Effect.Effect<Option.Option<User>, DatabaseError>`` makes this contract perfectly clear.
 
-````typescript
-import { Effect, Option, Data } from "effect"
+This function to find a user can fail if the database is down, or it can succeed but find no user. The return type `Effect.Effect<Option.Option<User>, DatabaseError>` makes this contract perfectly clear.
+
+```typescript
+import { Effect, Option, Data } from "effect";
 
 interface User {
-  id: number
-  name: string
+  id: number;
+  name: string;
 }
 class DatabaseError extends Data.TaggedError("DatabaseError") {}
 
@@ -1002,12 +1007,12 @@ const findUserInDb = (
     // This could fail with a DatabaseError
     const dbResult = yield* Effect.try({
       try: () => (id === 1 ? { id: 1, name: "Paul" } : null),
-      catch: () => new DatabaseError()
-    })
+      catch: () => new DatabaseError(),
+    });
 
     // We wrap the potentially null result in an Option
-    return Option.fromNullable(dbResult)
-  })
+    return Option.fromNullable(dbResult);
+  });
 
 // The caller can now handle all three cases explicitly.
 const program = (id: number) =>
@@ -1016,64 +1021,65 @@ const program = (id: number) =>
       Option.match(maybeUser, {
         onNone: () =>
           Effect.logInfo(`Result: User with ID ${id} was not found.`),
-        onSome: (user) =>
-          Effect.logInfo(`Result: Found user ${user.name}.`)
+        onSome: (user) => Effect.logInfo(`Result: Found user ${user.name}.`),
       })
     ),
     Effect.catchAll((error) =>
       Effect.logInfo("Error: Could not connect to the database.")
     )
-  )
+  );
 
 // Run the program with different IDs
 Effect.runPromise(
   Effect.gen(function* () {
     // Try with existing user
-    yield* Effect.logInfo("Looking for user with ID 1...")
-    yield* program(1)
+    yield* Effect.logInfo("Looking for user with ID 1...");
+    yield* program(1);
 
     // Try with non-existent user
-    yield* Effect.logInfo("\nLooking for user with ID 2...")
-    yield* program(2)
+    yield* Effect.logInfo("\nLooking for user with ID 2...");
+    yield* program(2);
   })
-)
-````
+);
+```
 
 ## Handle API Errors
+
 **Rule:** Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses.
 
 ### Example
+
 This example defines two custom error types, `UserNotFoundError` and `InvalidIdError`. The route logic can fail with either. The `unhandledErrorResponse` function inspects the error and returns a `404` or `400` response accordingly, with a generic `500` for any other unexpected errors.
 
 ```typescript
-import { Cause, Data, Effect } from 'effect';
+import { Cause, Data, Effect } from "effect";
 
 // Define our domain types
 export interface User {
   readonly id: string;
   readonly name: string;
   readonly email: string;
-  readonly role: 'admin' | 'user';
+  readonly role: "admin" | "user";
 }
 
 // Define specific, typed errors for our domain
-export class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{
+export class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   readonly id: string;
-}> { }
+}> {}
 
-export class InvalidIdError extends Data.TaggedError('InvalidIdError')<{
+export class InvalidIdError extends Data.TaggedError("InvalidIdError")<{
   readonly id: string;
   readonly reason: string;
-}> { }
+}> {}
 
-export class UnauthorizedError extends Data.TaggedError('UnauthorizedError')<{
+export class UnauthorizedError extends Data.TaggedError("UnauthorizedError")<{
   readonly action: string;
   readonly role: string;
-}> { }
+}> {}
 
 // Define error handler service
 export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
-  'ErrorHandlerService',
+  "ErrorHandlerService",
   {
     sync: () => ({
       // Handle API errors with proper logging
@@ -1082,61 +1088,94 @@ export class ErrorHandlerService extends Effect.Service<ErrorHandlerService>()(
           yield* Effect.logError(`API Error: ${JSON.stringify(error)}`);
 
           if (error instanceof UserNotFoundError) {
-            return { error: 'Not Found', message: `User ${error.id} not found` };
+            return {
+              error: "Not Found",
+              message: `User ${error.id} not found`,
+            };
           }
           if (error instanceof InvalidIdError) {
-            return { error: 'Bad Request', message: error.reason };
+            return { error: "Bad Request", message: error.reason };
           }
           if (error instanceof UnauthorizedError) {
-            return { error: 'Unauthorized', message: `${error.role} cannot ${error.action}` };
+            return {
+              error: "Unauthorized",
+              message: `${error.role} cannot ${error.action}`,
+            };
           }
 
-          return { error: 'Internal Server Error', message: 'An unexpected error occurred' };
+          return {
+            error: "Internal Server Error",
+            message: "An unexpected error occurred",
+          };
         }),
 
       // Handle unexpected errors
-      handleUnexpectedError: (cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
+      handleUnexpectedError: (
+        cause: Cause.Cause<unknown>
+      ): Effect.Effect<void, never, never> =>
         Effect.gen(function* () {
-          yield* Effect.logError('Unexpected error occurred');
+          yield* Effect.logError("Unexpected error occurred");
 
           if (Cause.isDie(cause)) {
             const defect = Cause.failureOption(cause);
-            if (defect._tag === 'Some') {
+            if (defect._tag === "Some") {
               const error = defect.value as Error;
               yield* Effect.logError(`Defect: ${error.message}`);
-              yield* Effect.logError(`Stack: ${error.stack?.split('\n')[1]?.trim() ?? 'N/A'}`);
+              yield* Effect.logError(
+                `Stack: ${error.stack?.split("\n")[1]?.trim() ?? "N/A"}`
+              );
             }
           }
 
           return Effect.succeed(void 0);
-        })
-    })
+        }),
+    }),
   }
-) { }
+) {}
 
 // Define UserRepository service
 export class UserRepository extends Effect.Service<UserRepository>()(
-  'UserRepository',
+  "UserRepository",
   {
     sync: () => {
       const users = new Map<string, User>([
-        ['user_123', { id: 'user_123', name: 'Paul', email: 'paul@example.com', role: 'admin' }],
-        ['user_456', { id: 'user_456', name: 'Alice', email: 'alice@example.com', role: 'user' }]
+        [
+          "user_123",
+          {
+            id: "user_123",
+            name: "Paul",
+            email: "paul@example.com",
+            role: "admin",
+          },
+        ],
+        [
+          "user_456",
+          {
+            id: "user_456",
+            name: "Alice",
+            email: "alice@example.com",
+            role: "user",
+          },
+        ],
       ]);
 
       return {
         // Get user by ID with proper error handling
-        getUser: (id: string): Effect.Effect<User, UserNotFoundError | InvalidIdError> =>
+        getUser: (
+          id: string
+        ): Effect.Effect<User, UserNotFoundError | InvalidIdError> =>
           Effect.gen(function* () {
             yield* Effect.logInfo(`Attempting to get user with id: ${id}`);
 
             // Validate ID format
             if (!id.match(/^user_\d+$/)) {
               yield* Effect.logWarning(`Invalid user ID format: ${id}`);
-              return yield* Effect.fail(new InvalidIdError({
-                id,
-                reason: 'ID must be in format user_<number>'
-              }));
+              return yield* Effect.fail(
+                new InvalidIdError({
+                  id,
+                  reason: "ID must be in format user_<number>",
+                })
+              );
             }
 
             const user = users.get(id);
@@ -1150,25 +1189,36 @@ export class UserRepository extends Effect.Service<UserRepository>()(
           }),
 
         // Check if user has required role
-        checkRole: (user: User, requiredRole: 'admin' | 'user'): Effect.Effect<void, UnauthorizedError> =>
+        checkRole: (
+          user: User,
+          requiredRole: "admin" | "user"
+        ): Effect.Effect<void, UnauthorizedError> =>
           Effect.gen(function* () {
-            yield* Effect.logInfo(`Checking if user ${user.id} has role: ${requiredRole}`);
+            yield* Effect.logInfo(
+              `Checking if user ${user.id} has role: ${requiredRole}`
+            );
 
-            if (user.role !== requiredRole && user.role !== 'admin') {
-              yield* Effect.logWarning(`User ${user.id} with role ${user.role} cannot access ${requiredRole} resources`);
-              return yield* Effect.fail(new UnauthorizedError({
-                action: 'access_user',
-                role: user.role
-              }));
+            if (user.role !== requiredRole && user.role !== "admin") {
+              yield* Effect.logWarning(
+                `User ${user.id} with role ${user.role} cannot access ${requiredRole} resources`
+              );
+              return yield* Effect.fail(
+                new UnauthorizedError({
+                  action: "access_user",
+                  role: user.role,
+                })
+              );
             }
 
-            yield* Effect.logInfo(`User ${user.id} has required role: ${user.role}`);
+            yield* Effect.logInfo(
+              `User ${user.id} has required role: ${user.role}`
+            );
             return Effect.succeed(void 0);
-          })
+          }),
       };
-    }
+    },
   }
-) { }
+) {}
 
 interface ApiResponse {
   readonly error?: string;
@@ -1177,64 +1227,64 @@ interface ApiResponse {
 }
 
 // Create routes with proper error handling
-const createRoutes = () => Effect.gen(function* () {
-  const repo = yield* UserRepository;
-  const errorHandler = yield* ErrorHandlerService;
+const createRoutes = () =>
+  Effect.gen(function* () {
+    const repo = yield* UserRepository;
+    const errorHandler = yield* ErrorHandlerService;
 
-  yield* Effect.logInfo('=== Processing API request ===');
+    yield* Effect.logInfo("=== Processing API request ===");
 
-  // Test different scenarios
-  for (const userId of ['user_123', 'user_456', 'invalid_id', 'user_789']) {
-    yield* Effect.logInfo(`\n--- Testing user ID: ${userId} ---`);
+    // Test different scenarios
+    for (const userId of ["user_123", "user_456", "invalid_id", "user_789"]) {
+      yield* Effect.logInfo(`\n--- Testing user ID: ${userId} ---`);
 
-    const response = yield* repo.getUser(userId).pipe(
-      Effect.map(user => ({
-        data: {
-          ...user,
-          email: user.role === 'admin' ? user.email : '[hidden]'
-        }
-      })),
-      Effect.catchAll(error => errorHandler.handleApiError(error))
+      const response = yield* repo.getUser(userId).pipe(
+        Effect.map((user) => ({
+          data: {
+            ...user,
+            email: user.role === "admin" ? user.email : "[hidden]",
+          },
+        })),
+        Effect.catchAll((error) => errorHandler.handleApiError(error))
+      );
+
+      yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
+    }
+
+    // Test role checking
+    const adminUser = yield* repo.getUser("user_123");
+    const regularUser = yield* repo.getUser("user_456");
+
+    yield* Effect.logInfo("\n=== Testing role checks ===");
+
+    yield* repo.checkRole(adminUser, "admin").pipe(
+      Effect.tap(() => Effect.logInfo("Admin access successful")),
+      Effect.catchAll((error) => errorHandler.handleApiError(error))
     );
 
-    yield* Effect.logInfo(`Response: ${JSON.stringify(response)}`);
-  }
+    yield* repo.checkRole(regularUser, "admin").pipe(
+      Effect.tap(() => Effect.logInfo("User admin access successful")),
+      Effect.catchAll((error) => errorHandler.handleApiError(error))
+    );
 
-  // Test role checking
-  const adminUser = yield* repo.getUser('user_123');
-  const regularUser = yield* repo.getUser('user_456');
-
-  yield* Effect.logInfo('\n=== Testing role checks ===');
-
-  yield* repo.checkRole(adminUser, 'admin').pipe(
-    Effect.tap(() => Effect.logInfo('Admin access successful')),
-    Effect.catchAll(error => errorHandler.handleApiError(error))
-  );
-
-  yield* repo.checkRole(regularUser, 'admin').pipe(
-    Effect.tap(() => Effect.logInfo('User admin access successful')),
-    Effect.catchAll(error => errorHandler.handleApiError(error))
-  );
-
-  return { message: 'Tests completed successfully' };
-});
+    return { message: "Tests completed successfully" };
+  });
 
 // Run the program with all services
 Effect.runPromise(
   Effect.provide(
-    Effect.provide(
-      createRoutes(),
-      ErrorHandlerService.Default
-    ),
+    Effect.provide(createRoutes(), ErrorHandlerService.Default),
     UserRepository.Default
   )
 );
 ```
 
 ## Handle Errors with catchTag, catchTags, and catchAll
+
 **Rule:** Handle errors with catchTag, catchTags, and catchAll.
 
 ### Example
+
 ```typescript
 import { Data, Effect } from "effect";
 
@@ -1248,16 +1298,16 @@ interface User {
 class NetworkError extends Data.TaggedError("NetworkError")<{
   readonly url: string;
   readonly code: number;
-}> { }
+}> {}
 
 class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly field: string;
   readonly message: string;
-}> { }
+}> {}
 
 class NotFoundError extends Data.TaggedError("NotFoundError")<{
   readonly id: string;
-}> { }
+}> {}
 
 // Define UserService
 class UserService extends Effect.Service<UserService>()("UserService", {
@@ -1304,7 +1354,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
         return message;
       }),
   }),
-}) { }
+}) {}
 
 // Compose operations with error handling using catchTags
 const processUser = (
@@ -1357,16 +1407,17 @@ const runTests = Effect.gen(function* () {
 
 // Run the program
 Effect.runPromise(Effect.provide(runTests, UserService.Default));
-
 ```
 
 **Explanation:**  
 Use `catchTag` to handle specific error types in a type-safe, composable way.
 
 ## Handle Flaky Operations with Retries and Timeouts
+
 **Rule:** Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects.
 
 ### Example
+
 This program attempts to fetch data from a flaky API. It will retry the request up to 3 times with increasing delays if it fails. It will also give up entirely if any single attempt takes longer than 2 seconds.
 
 ```typescript
@@ -1381,50 +1432,55 @@ interface ApiResponse {
 class ApiError extends Data.TaggedError("ApiError")<{
   readonly message: string;
   readonly attempt: number;
-}> { }
+}> {}
 
 class TimeoutError extends Data.TaggedError("TimeoutError")<{
   readonly duration: string;
   readonly attempt: number;
-}> { }
+}> {}
 
 // Define API service
-class ApiService extends Effect.Service<ApiService>()(
-  "ApiService",
-  {
-    sync: () => ({
-      // Flaky API call that might fail or be slow
-      fetchData: (): Effect.Effect<ApiResponse, ApiError | TimeoutError> =>
-        Effect.gen(function* () {
-          const attempt = Math.floor(Math.random() * 5) + 1;
-          yield* Effect.logInfo(`Attempt ${attempt}: Making API call...`);
+class ApiService extends Effect.Service<ApiService>()("ApiService", {
+  sync: () => ({
+    // Flaky API call that might fail or be slow
+    fetchData: (): Effect.Effect<ApiResponse, ApiError | TimeoutError> =>
+      Effect.gen(function* () {
+        const attempt = Math.floor(Math.random() * 5) + 1;
+        yield* Effect.logInfo(`Attempt ${attempt}: Making API call...`);
 
-          if (Math.random() > 0.3) {
-            yield* Effect.logWarning(`Attempt ${attempt}: API call failed`);
-            return yield* Effect.fail(new ApiError({
+        if (Math.random() > 0.3) {
+          yield* Effect.logWarning(`Attempt ${attempt}: API call failed`);
+          return yield* Effect.fail(
+            new ApiError({
               message: "API Error",
-              attempt
-            }));
-          }
+              attempt,
+            })
+          );
+        }
 
-          const delay = Math.random() * 3000;
-          yield* Effect.logInfo(`Attempt ${attempt}: API call will take ${delay.toFixed(0)}ms`);
+        const delay = Math.random() * 3000;
+        yield* Effect.logInfo(
+          `Attempt ${attempt}: API call will take ${delay.toFixed(0)}ms`
+        );
 
-          yield* Effect.sleep(Duration.millis(delay));
+        yield* Effect.sleep(Duration.millis(delay));
 
-          const response = { data: "some important data" };
-          yield* Effect.logInfo(`Attempt ${attempt}: API call succeeded with data: ${JSON.stringify(response)}`);
-          return response;
-        })
-    })
-  }
-) { }
+        const response = { data: "some important data" };
+        yield* Effect.logInfo(
+          `Attempt ${attempt}: API call succeeded with data: ${JSON.stringify(response)}`
+        );
+        return response;
+      }),
+  }),
+}) {}
 
 // Define retry policy: exponential backoff, up to 3 retries
 const retryPolicy = Schedule.exponential(Duration.millis(100)).pipe(
   Schedule.compose(Schedule.recurs(3)),
   Schedule.tapInput((error: ApiError | TimeoutError) =>
-    Effect.logWarning(`Retrying after error: ${error._tag} (Attempt ${error.attempt})`)
+    Effect.logWarning(
+      `Retrying after error: ${error._tag} (Attempt ${error.attempt})`
+    )
   )
 );
 
@@ -1447,14 +1503,18 @@ const program = Effect.gen(function* () {
       Effect.catchTags({
         ApiError: (error) =>
           Effect.gen(function* () {
-            yield* Effect.logError(`All retries failed: ${error.message} (Last attempt: ${error.attempt})`);
+            yield* Effect.logError(
+              `All retries failed: ${error.message} (Last attempt: ${error.attempt})`
+            );
             return { data: "fallback data due to API error" } as ApiResponse;
           }),
         TimeoutError: (error) =>
           Effect.gen(function* () {
-            yield* Effect.logError(`All retries timed out after ${error.duration} (Last attempt: ${error.attempt})`);
+            yield* Effect.logError(
+              `All retries timed out after ${error.duration} (Last attempt: ${error.attempt})`
+            );
             return { data: "fallback data due to timeout" } as ApiResponse;
-          })
+          }),
       })
     );
 
@@ -1465,17 +1525,17 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, ApiService.Default)
-);
+Effect.runPromise(Effect.provide(program, ApiService.Default));
 ```
 
 ---
 
 ## Leverage Effect's Built-in Structured Logging
+
 **Rule:** Leverage Effect's built-in structured logging.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -1483,9 +1543,7 @@ const program = Effect.logDebug("Processing user", { userId: 123 });
 
 // Run the program with debug logging enabled
 Effect.runSync(
-  program.pipe(
-    Effect.tap(() => Effect.log("Debug logging enabled"))
-  )
+  program.pipe(Effect.tap(() => Effect.log("Debug logging enabled")))
 );
 ```
 
@@ -1494,9 +1552,11 @@ Using Effect's logging system ensures your logs are structured, filterable,
 and context-aware.
 
 ## Make an Outgoing HTTP Client Request
+
 **Rule:** Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem.
 
 ### Example
+
 This example creates a proxy endpoint. A request to `/proxy/posts/1` on our server will trigger an outgoing request to the JSONPlaceholder API. The response is then parsed and relayed back to the original client.
 
 ```typescript
@@ -1508,7 +1568,7 @@ import { Console, Data, Duration, Effect, Fiber, Layer } from "effect";
 
 class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   id: string;
-}> { }
+}> {}
 
 export class Database extends Effect.Service<Database>()("Database", {
   sync: () => ({
@@ -1517,7 +1577,7 @@ export class Database extends Effect.Service<Database>()("Database", {
         ? Effect.succeed({ name: "Paul" })
         : Effect.fail(new UserNotFoundError({ id })),
   }),
-}) { }
+}) {}
 
 const userHandler = Effect.flatMap(HttpRouter.params, (p) =>
   Effect.flatMap(Database, (db) => db.getUser(p["userId"] ?? "")).pipe(
@@ -1557,15 +1617,19 @@ const program = Effect.gen(function* () {
 });
 
 NodeRuntime.runMain(
-  Effect.provide(program, Layer.provide(serverLayer, Layer.merge(Database.Default, server))) as Effect.Effect<void, unknown, never>
+  Effect.provide(
+    program,
+    Layer.provide(serverLayer, Layer.merge(Database.Default, server))
+  ) as Effect.Effect<void, unknown, never>
 );
-
 ```
 
 ## Manage Shared State Safely with Ref
+
 **Rule:** Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
 
 ### Example
+
 This program simulates 1,000 concurrent fibers all trying to increment a shared counter. Because we use `Ref.update`, every single increment is applied atomically, and the final result is always correct.
 
 ```typescript
@@ -1590,15 +1654,16 @@ const program = Effect.gen(function* () {
 
 // The result will always be 1000
 Effect.runPromise(program).then(console.log);
-
 ```
 
 ---
 
 ## Mapping Errors to Fit Your Domain
+
 **Rule:** Use Effect.mapError to transform errors and create clean architectural boundaries between layers.
 
 ### Example
+
 A `UserRepository` uses a `Database` service. The `Database` can fail with specific errors, but the `UserRepository` maps them to a single, generic `RepositoryError` before they are exposed to the rest of the application.
 
 ```typescript
@@ -1641,7 +1706,10 @@ const program = Effect.gen(function* () {
     Effect.gen(function* () {
       if (error instanceof RepositoryError) {
         yield* Effect.logInfo(`Repository error occurred: ${error._tag}`);
-        if (error.cause instanceof ConnectionError || error.cause instanceof QueryError) {
+        if (
+          error.cause instanceof ConnectionError ||
+          error.cause instanceof QueryError
+        ) {
           yield* Effect.logInfo(`Original cause: ${error.cause._tag}`);
         }
       } else {
@@ -1652,15 +1720,16 @@ const program = Effect.gen(function* () {
 );
 
 Effect.runPromise(program);
-
 ```
 
 ---
 
 ## Mocking Dependencies in Tests
+
 **Rule:** Provide mock service implementations via a test-specific Layer to isolate the unit under test.
 
 ### Example
+
 We want to test a `Notifier` service that uses an `EmailClient` to send emails. In our test, we provide a mock `EmailClient` that doesn't actually send emails but just returns a success value.
 
 ```typescript
@@ -1668,36 +1737,30 @@ import { Effect, Layer } from "effect";
 
 // --- The Services ---
 interface EmailClientService {
-  send: (address: string, body: string) => Effect.Effect<void>
+  send: (address: string, body: string) => Effect.Effect<void>;
 }
 
-class EmailClient extends Effect.Service<EmailClientService>()(
-  "EmailClient",
-  {
-    sync: () => ({
-      send: (address: string, body: string) => 
-        Effect.sync(() => Effect.log(`Sending email to ${address}: ${body}`))
-    })
-  }
-) {}
+class EmailClient extends Effect.Service<EmailClientService>()("EmailClient", {
+  sync: () => ({
+    send: (address: string, body: string) =>
+      Effect.sync(() => Effect.log(`Sending email to ${address}: ${body}`)),
+  }),
+}) {}
 
 interface NotifierService {
-  notifyUser: (userId: number, message: string) => Effect.Effect<void>
+  notifyUser: (userId: number, message: string) => Effect.Effect<void>;
 }
 
-class Notifier extends Effect.Service<NotifierService>()(
-  "Notifier",
-  {
-    effect: Effect.gen(function* () {
-      const emailClient = yield* EmailClient;
-      return {
-        notifyUser: (userId: number, message: string) =>
-          emailClient.send(`user-${userId}@example.com`, message)
-      };
-    }),
-    dependencies: [EmailClient.Default]
-  }
-) {}
+class Notifier extends Effect.Service<NotifierService>()("Notifier", {
+  effect: Effect.gen(function* () {
+    const emailClient = yield* EmailClient;
+    return {
+      notifyUser: (userId: number, message: string) =>
+        emailClient.send(`user-${userId}@example.com`, message),
+    };
+  }),
+  dependencies: [EmailClient.Default],
+}) {}
 
 // Create a program that uses the Notifier service
 const program = Effect.gen(function* () {
@@ -1707,50 +1770,42 @@ const program = Effect.gen(function* () {
 
   // Create mock EmailClient that logs differently
   yield* Effect.log("\nUsing mock EmailClient implementation...");
-  const mockEmailClient = Layer.succeed(
-    EmailClient,
-    {
-      send: (address: string, body: string) =>
-        Effect.sync(() => 
-          Effect.log(`MOCK: Would send to ${address} with body: ${body}`)
-        )
-    } as EmailClientService
-  );
+  const mockEmailClient = Layer.succeed(EmailClient, {
+    send: (address: string, body: string) =>
+      Effect.sync(() =>
+        Effect.log(`MOCK: Would send to ${address} with body: ${body}`)
+      ),
+  } as EmailClientService);
 
   // Run the same notification with mock client
   yield* Effect.gen(function* () {
     const notifier = yield* Notifier;
     yield* notifier.notifyUser(123, "Your invoice is ready.");
-  }).pipe(
-    Effect.provide(mockEmailClient)
-  );
+  }).pipe(Effect.provide(mockEmailClient));
 });
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, Notifier.Default)
-);
+Effect.runPromise(Effect.provide(program, Notifier.Default));
 ```
 
 ---
 
 ## Model Dependencies as Services
+
 **Rule:** Model dependencies as services.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
 // Define Random service with production implementation as default
-export class Random extends Effect.Service<Random>()(
-  "Random",
-  {
-    // Default production implementation
-    sync: () => ({
-      next: Effect.sync(() => Math.random())
-    })
-  }
-) {}
+export class Random extends Effect.Service<Random>()("Random", {
+  // Default production implementation
+  sync: () => ({
+    next: Effect.sync(() => Math.random()),
+  }),
+}) {}
 
 // Example usage
 const program = Effect.gen(function* () {
@@ -1760,21 +1815,20 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementation
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Random.Default
-  )
-).then(value => console.log('Random value:', value));
+Effect.runPromise(Effect.provide(program, Random.Default)).then((value) =>
+  console.log("Random value:", value)
+);
 ```
 
 **Explanation:**  
 By modeling dependencies as services, you can easily substitute mocked or deterministic implementations for testing, leading to more reliable and predictable tests.
 
 ## Model Optional Values Safely with Option
+
 **Rule:** Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
 
 ### Example
+
 A function that looks for a user in a database is a classic use case. It might find a user, or it might not. Returning an `Option<User>` makes this contract explicit and safe.
 
 ```typescript
@@ -1802,7 +1856,7 @@ const greeting = (id: number): string =>
     Option.match({
       onNone: () => "User not found.",
       onSome: (user) => `Welcome, ${user.name}!`,
-    }),
+    })
   );
 
 console.log(greeting(1)); // "Welcome, Paul!"
@@ -1810,9 +1864,11 @@ console.log(greeting(3)); // "User not found."
 ```
 
 ## Model Validated Domain Types with Brand
+
 **Rule:** Model validated domain types with Brand.
 
 ### Example
+
 ```typescript
 import { Brand, Option } from "effect";
 
@@ -1822,7 +1878,9 @@ const makeEmail = (s: string): Option.Option<Email> =>
   s.includes("@") ? Option.some(s as Email) : Option.none();
 
 // A function can now trust that its input is a valid email.
-const sendEmail = (email: Email, body: string) => { /* ... */ };
+const sendEmail = (email: Email, body: string) => {
+  /* ... */
+};
 ```
 
 **Explanation:**  
@@ -1830,9 +1888,11 @@ Branding ensures that only validated values are used, reducing bugs and
 repetitive checks.
 
 ## Parse and Validate Data with Schema.decode
+
 **Rule:** Parse and validate data with Schema.decode.
 
 ### Example
+
 ```typescript
 import { Effect, Schema } from "effect";
 
@@ -1871,7 +1931,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -1879,9 +1938,11 @@ Effect.runPromise(program);
 making error handling composable and type-safe.
 
 ## Process a Collection in Parallel with Effect.forEach
+
 **Rule:** Use Effect.forEach with the `concurrency` option to process a collection in parallel with a fixed limit.
 
 ### Example
+
 Imagine you have a list of 100 user IDs and you need to fetch the data for each one. `Effect.forEach` with a concurrency of 10 will process them in controlled parallel batches.
 
 ```typescript
@@ -1920,23 +1981,24 @@ const program = Effect.gen(function* () {
 // The result will be an array of all user objects.
 // The total time will be much less than running them sequentially.
 Effect.runPromise(program);
-
 ```
 
 ---
 
 ## Process a Large File with Constant Memory
+
 **Rule:** Use Stream.fromReadable with a Node.js Readable stream to process files efficiently.
 
 ### Example
+
 This example demonstrates reading a text file, splitting it into individual lines, and processing each line. The combination of `Stream.fromReadable`, `Stream.decodeText`, and `Stream.splitLines` is a powerful and common pattern for handling text-based files.
 
 ```typescript
-import { FileSystem } from '@effect/platform';
-import { NodeFileSystem } from '@effect/platform-node';
-import type { PlatformError } from '@effect/platform/Error';
-import { Effect, Stream } from 'effect';
-import * as path from 'node:path';
+import { FileSystem } from "@effect/platform";
+import { NodeFileSystem } from "@effect/platform-node";
+import type { PlatformError } from "@effect/platform/Error";
+import { Effect, Stream } from "effect";
+import * as path from "node:path";
 
 const processFile = (
   filePath: string,
@@ -1949,14 +2011,13 @@ const processFile = (
     yield* fs.writeFileString(filePath, content);
 
     // Create a stream from file content
-    const fileStream = Stream.fromEffect(fs.readFileString(filePath))
-      .pipe(
-        // Split content into lines
-        Stream.map((content: string) => content.split('\n')),
-        Stream.flatMap(Stream.fromIterable),
-        // Process each line
-        Stream.tap((line) => Effect.log(`Processing: ${line}`))
-      );
+    const fileStream = Stream.fromEffect(fs.readFileString(filePath)).pipe(
+      // Split content into lines
+      Stream.map((content: string) => content.split("\n")),
+      Stream.flatMap(Stream.fromIterable),
+      // Process each line
+      Stream.tap((line) => Effect.log(`Processing: ${line}`))
+    );
 
     // Run the stream to completion
     yield* Stream.runDrain(fileStream);
@@ -1966,23 +2027,18 @@ const processFile = (
   });
 
 const program = Effect.gen(function* () {
-  const filePath = path.join(__dirname, 'large-file.txt');
+  const filePath = path.join(__dirname, "large-file.txt");
 
-  yield* processFile(
-    filePath,
-    'line 1\nline 2\nline 3'
-  ).pipe(
+  yield* processFile(filePath, "line 1\nline 2\nline 3").pipe(
     Effect.catchAll((error: PlatformError) =>
       Effect.logError(`Error processing file: ${error.message}`)
     )
   );
 });
 
-Effect.runPromise(
-  program.pipe(
-    Effect.provide(NodeFileSystem.layer)
-  )
-).catch(console.error);
+Effect.runPromise(program.pipe(Effect.provide(NodeFileSystem.layer))).catch(
+  console.error
+);
 /*
 Output:
 ... level=INFO msg="Processing: line 1"
@@ -1992,18 +2048,22 @@ Output:
 ```
 
 ## Process collections of data asynchronously
+
 **Rule:** Leverage Stream to process collections effectfully with built-in concurrency control and resource safety.
 
 ### Example
+
 This example processes a list of IDs by fetching user data for each one. `Stream.mapEffect` is used to apply an effectful function (`getUserById`) to each element, with concurrency limited to 2 simultaneous requests.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 // A mock function that simulates fetching a user from a database
-const getUserById = (id: number): Effect.Effect<{ id: number; name: string }, Error> =>
+const getUserById = (
+  id: number
+): Effect.Effect<{ id: number; name: string }, Error> =>
   Effect.succeed({ id, name: `User ${id}` }).pipe(
-    Effect.delay('100 millis'),
+    Effect.delay("100 millis"),
     Effect.tap(() => Effect.log(`Fetched user ${id}`))
   );
 
@@ -2016,23 +2076,25 @@ const program = Stream.fromIterable([1, 2, 3, 4, 5]).pipe(
 );
 
 Effect.runPromise(program).then((users) => {
-  console.log('All users fetched:', Chunk.toArray(users));
+  console.log("All users fetched:", Chunk.toArray(users));
 });
 ```
 
 ## Process Items Concurrently
+
 **Rule:** Use Stream.mapEffect with the `concurrency` option to process stream items in parallel.
 
 ### Example
+
 This example processes four items, each taking one second. By setting `concurrency: 2`, the total runtime is approximately two seconds instead of four, because items are processed in parallel pairs.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 
 // A mock function that simulates a slow I/O operation
 const processItem = (id: number): Effect.Effect<string, Error> =>
   Effect.log(`Starting item ${id}...`).pipe(
-    Effect.delay('1 second'),
+    Effect.delay("1 second"),
     Effect.map(() => `Finished item ${id}`),
     Effect.tap(Effect.log)
   );
@@ -2048,10 +2110,12 @@ const program = Stream.fromIterable(ids).pipe(
 // Measure the total time taken
 const timedProgram = Effect.timed(program);
 
-Effect.runPromise(timedProgram).then(([duration, _]) => {
-  const durationMs = Number(duration);
-  console.log(`\nTotal time: ${Math.round(durationMs / 1000)} seconds`);
-}).catch(console.error);
+Effect.runPromise(timedProgram)
+  .then(([duration, _]) => {
+    const durationMs = Number(duration);
+    console.log(`\nTotal time: ${Math.round(durationMs / 1000)} seconds`);
+  })
+  .catch(console.error);
 /*
 Output:
 ... level=INFO msg="Starting item 1..."
@@ -2068,13 +2132,15 @@ Total time: 2 seconds
 ```
 
 ## Process Items in Batches
+
 **Rule:** Use Stream.grouped(n) to transform a stream of items into a stream of batched chunks.
 
 ### Example
+
 This example processes 10 users. By using `Stream.grouped(5)`, it transforms the stream of 10 individual users into a stream of two chunks (each a batch of 5). The `saveUsersInBulk` function is then called only twice, once for each batch.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 // A mock function that simulates a bulk database insert
 const saveUsersInBulk = (
@@ -2083,7 +2149,7 @@ const saveUsersInBulk = (
   Effect.log(
     `Saving batch of ${userBatch.length} users: ${Chunk.toArray(userBatch)
       .map((u) => u.id)
-      .join(', ')}`
+      .join(", ")}`
   );
 
 const userIds = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
@@ -2105,9 +2171,11 @@ Output:
 ```
 
 ## Process Streaming Data with Stream
+
 **Rule:** Use Stream to model and process data that arrives over time in a composable, efficient way.
 
 ### Example
+
 This example demonstrates creating a `Stream` from a paginated API. The `Stream` will make API calls as needed, processing one page of users at a time without ever holding the entire user list in memory.
 
 ```typescript
@@ -2124,7 +2192,7 @@ interface PaginatedResponse {
 
 // A mock API call that returns a page of users
 const fetchUserPage = (
-  page: number,
+  page: number
 ): Effect.Effect<PaginatedResponse, "ApiError"> =>
   Effect.succeed(
     page < 3
@@ -2135,26 +2203,28 @@ const fetchUserPage = (
           ],
           nextPage: page + 1,
         }
-      : { users: [], nextPage: null },
+      : { users: [], nextPage: null }
   ).pipe(Effect.delay("50 millis"));
 
 // Stream.paginateEffect creates a stream from a paginated source
-const userStream: Stream.Stream<User, "ApiError"> = Stream.paginateEffect(0, (page) =>
-  fetchUserPage(page).pipe(
-    Effect.map((response) => [
-      response.users,
-      Option.fromNullable(response.nextPage)
-    ] as const),
-  ),
+const userStream: Stream.Stream<User, "ApiError"> = Stream.paginateEffect(
+  0,
+  (page) =>
+    fetchUserPage(page).pipe(
+      Effect.map(
+        (response) =>
+          [response.users, Option.fromNullable(response.nextPage)] as const
+      )
+    )
 ).pipe(
   // Flatten the stream of user arrays into a stream of individual users
-  Stream.flatMap((users) => Stream.fromIterable(users)),
+  Stream.flatMap((users) => Stream.fromIterable(users))
 );
 
 // We can now process the stream of users.
 // Stream.runForEach will pull from the stream until it's exhausted.
 const program = Stream.runForEach(userStream, (user: User) =>
-  Effect.log(`Processing user: ${user.name}`),
+  Effect.log(`Processing user: ${user.name}`)
 );
 
 Effect.runPromise(program).catch(console.error);
@@ -2163,38 +2233,39 @@ Effect.runPromise(program).catch(console.error);
 ---
 
 ## Provide Configuration to Your App via a Layer
+
 **Rule:** Provide configuration to your app via a Layer.
 
 ### Example
-````typescript
+
+```typescript
 import { Effect, Layer } from "effect";
 
-class ServerConfig extends Effect.Service<ServerConfig>()(
-  "ServerConfig",
-  {
-    sync: () => ({
-      port: process.env.PORT ? parseInt(process.env.PORT) : 8080
-    })
-  }
-) {}
+class ServerConfig extends Effect.Service<ServerConfig>()("ServerConfig", {
+  sync: () => ({
+    port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
+  }),
+}) {}
 
 const program = Effect.gen(function* () {
   const config = yield* ServerConfig;
   yield* Effect.log(`Starting application on port ${config.port}...`);
 });
 
-Effect.runPromise(
-  Effect.provide(program, ServerConfig.Default)
-).catch(console.error);
-````
+Effect.runPromise(Effect.provide(program, ServerConfig.Default)).catch(
+  console.error
+);
+```
 
 **Explanation:**  
 This approach makes configuration available contextually, supporting better testing and modularity.
 
 ## Provide Dependencies to Routes
+
 **Rule:** Define dependencies with Effect.Service and provide them to your HTTP server using a Layer.
 
 ### Example
+
 This example defines a `Database` service. The route handler for `/users/:userId` requires this service to fetch a user. We then provide a "live" implementation of the `Database` to the entire server using a `Layer`.
 
 ```typescript
@@ -2235,10 +2306,9 @@ const app = HttpRouter.empty.pipe(
 const serverEffect = HttpServer.serveEffect(app).pipe(
   Effect.provide(Database.Default),
   Effect.provide(
-    NodeHttpServer.layer(
-      () => require("node:http").createServer(),
-      { port: 3458 }
-    )
+    NodeHttpServer.layer(() => require("node:http").createServer(), {
+      port: 3458,
+    })
   )
 );
 
@@ -2262,13 +2332,14 @@ const program = Effect.gen(function* () {
 
 // Run the program
 NodeRuntime.runMain(program);
-
 ```
 
 ## Race Concurrent Effects for the Fastest Result
+
 **Rule:** Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers.
 
 ### Example
+
 A classic use case is checking a fast cache before falling back to a slower database. We can race the cache lookup against the database query.
 
 ```typescript
@@ -2334,15 +2405,16 @@ const programWithLogging = Effect.gen(function* () {
 );
 
 Effect.runPromise(programWithLogging);
-
 ```
 
 ---
 
 ## Representing Time Spans with Duration
+
 **Rule:** Use the Duration data type to represent time intervals instead of raw numbers.
 
 ### Example
+
 This example shows how to create and use `Duration` to make time-based operations clear and unambiguous.
 
 ```typescript
@@ -2392,16 +2464,17 @@ const demonstration = Effect.gen(function* () {
 });
 
 Effect.runPromise(demonstration);
-
 ```
 
 ---
 
 ## Retry Operations Based on Specific Errors
+
 **Rule:** Use predicate-based retry policies to retry an operation only for specific, recoverable errors.
 
 ### Example
-This example simulates an API client that can fail with different, specific error types. The retry policy is configured to *only* retry on `ServerBusyError` and give up immediately on `NotFoundError`.
+
+This example simulates an API client that can fail with different, specific error types. The retry policy is configured to _only_ retry on `ServerBusyError` and give up immediately on `NotFoundError`.
 
 ```typescript
 import { Effect, Data, Schedule, Duration } from "effect";
@@ -2489,15 +2562,16 @@ const demonstrateNotFound = Effect.gen(function* () {
 });
 
 Effect.runPromise(program.pipe(Effect.flatMap(() => demonstrateNotFound)));
-
 ```
 
 ---
 
 ## Run Independent Effects in Parallel with Effect.all
+
 **Rule:** Use Effect.all to execute a collection of independent effects concurrently.
 
 ### Example
+
 Imagine fetching a user's profile and their latest posts from two different API endpoints. These are independent operations and can be run in parallel to save time.
 
 ```typescript
@@ -2505,12 +2579,12 @@ import { Effect } from "effect";
 
 // Simulate fetching a user, takes 1 second
 const fetchUser = Effect.succeed({ id: 1, name: "Paul" }).pipe(
-  Effect.delay("1 second"),
+  Effect.delay("1 second")
 );
 
 // Simulate fetching posts, takes 1.5 seconds
 const fetchPosts = Effect.succeed([{ title: "Effect is great" }]).pipe(
-  Effect.delay("1.5 seconds"),
+  Effect.delay("1.5 seconds")
 );
 
 // Run both effects concurrently
@@ -2524,23 +2598,22 @@ Effect.runPromise(program).then(console.log);
 ---
 
 ## Supercharge Your Editor with the Effect LSP
+
 **Rule:** Install and use the Effect LSP extension for enhanced type information and error checking in your editor.
 
 ### Example
+
 Imagine you have the following code. Without the LSP, hovering over `program` might show a complex, hard-to-read inferred type.
 
 ```typescript
 import { Effect } from "effect";
 
 // Define Logger service using Effect.Service pattern
-class Logger extends Effect.Service<Logger>()(
-  "Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`LOG: ${msg}`))
-    })
-  }
-) {}
+class Logger extends Effect.Service<Logger>()("Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.sync(() => console.log(`LOG: ${msg}`)),
+  }),
+}) {}
 
 const program = Effect.succeed(42).pipe(
   Effect.map((n) => n.toString()),
@@ -2564,9 +2637,11 @@ This immediately tells you that the final program returns nothing (`void`), has 
 ---
 
 ## Trace Operations Across Services with Spans
+
 **Rule:** Use Effect.withSpan to create custom tracing spans for important operations.
 
 ### Example
+
 This example shows a multi-step operation. Each step, and the overall operation, is wrapped in a span. This creates a parent-child hierarchy in the trace that is easy to visualize.
 
 ```typescript
@@ -2640,15 +2715,16 @@ const program = Effect.gen(function* () {
 // When run with a tracing SDK, this will produce traces with root spans
 // "createUserOperation" and child spans: "validateInput" and "saveToDatabase".
 Effect.runPromise(program);
-
 ```
 
 ---
 
 ## Transform Data During Validation with Schema
+
 **Rule:** Use Schema.transform to safely convert data types during the validation and parsing process.
 
 ### Example
+
 This schema parses a string but produces a `Date` object, making the final data structure much more useful.
 
 ```typescript
@@ -2668,13 +2744,13 @@ type ParsedEvent = {
 // Define the schema for our event
 const ApiEventSchema = Schema.Struct({
   name: Schema.String,
-  timestamp: Schema.String
+  timestamp: Schema.String,
 });
 
 // Example input
 const rawInput: RawEvent = {
   name: "User Login",
-  timestamp: "2025-06-22T20:08:42.000Z"
+  timestamp: "2025-06-22T20:08:42.000Z",
 };
 
 // Parse and transform
@@ -2682,21 +2758,20 @@ const program = Effect.gen(function* () {
   const parsed = yield* Schema.decode(ApiEventSchema)(rawInput);
   return {
     name: parsed.name,
-    timestamp: new Date(parsed.timestamp)
+    timestamp: new Date(parsed.timestamp),
   } as ParsedEvent;
 });
 
 Effect.runPromise(program).then(
   (event) => {
-    console.log('Event year:', event.timestamp.getFullYear());
-    console.log('Full event:', event);
+    console.log("Event year:", event.timestamp.getFullYear());
+    console.log("Full event:", event);
   },
   (error) => {
-    console.error('Failed to parse event:', error);
+    console.error("Failed to parse event:", error);
   }
 );
 ```
-
 
 `transformOrFail` is perfect for creating branded types, as the validation can fail.
 
@@ -2711,8 +2786,8 @@ const Email = Schema.string.pipe(
       s.includes("@")
         ? Either.right(s as Email)
         : Either.left(Schema.ParseError.create(ast, "Invalid email format")),
-    (email) => Either.right(email),
-  ),
+    (email) => Either.right(email)
+  )
 );
 
 const result = Schema.decode(Email)("paul@example.com"); // Succeeds
@@ -2722,13 +2797,15 @@ const errorResult = Schema.decode(Email)("invalid-email"); // Fails
 ---
 
 ## Turn a Paginated API into a Single Stream
+
 **Rule:** Use Stream.paginateEffect to model a paginated data source as a single, continuous stream.
 
 ### Example
+
 This example simulates fetching users from a paginated API. The `fetchUsersPage` function gets one page of data and returns the next page number. `Stream.paginateEffect` uses this function to create a single stream of all users across all pages.
 
 ```typescript
-import { Effect, Stream, Chunk, Option } from 'effect';
+import { Effect, Stream, Chunk, Option } from "effect";
 
 // --- Mock Paginated API ---
 interface User {
@@ -2738,7 +2815,7 @@ interface User {
 
 // Define FetchError as a class with a literal type tag
 class FetchError {
-  readonly _tag = 'FetchError' as const;
+  readonly _tag = "FetchError" as const;
   constructor(readonly message: string) {}
 }
 
@@ -2760,7 +2837,7 @@ const fetchUsersPage = (
 
     // Simulate potential API errors
     if (page < 1) {
-      return yield* Effect.fail(fetchError('Invalid page number'));
+      return yield* Effect.fail(fetchError("Invalid page number"));
     }
 
     const users = Chunk.fromIterable(allUsers.slice(offset, offset + pageSize));
@@ -2781,10 +2858,8 @@ const userStream = Stream.paginateEffect(1, fetchUsersPage);
 const program = userStream.pipe(
   Stream.runCollect,
   Effect.map((users) => users.length),
-  Effect.tap((totalUsers) => 
-    Effect.log(`Total users fetched: ${totalUsers}`)
-  ),
-  Effect.catchTag('FetchError', (error) => 
+  Effect.tap((totalUsers) => Effect.log(`Total users fetched: ${totalUsers}`)),
+  Effect.catchTag("FetchError", (error) =>
     Effect.succeed(`Error fetching users: ${error.message}`)
   )
 );
@@ -2803,40 +2878,36 @@ Output:
 ```
 
 ## Understand Layers for Dependency Injection
+
 **Rule:** Understand that a Layer is a blueprint describing how to construct a service and its dependencies.
 
 ### Example
+
 Here, we define a `Notifier` service that requires a `Logger` to be built. The `NotifierLive` layer's type signature, `Layer<Logger, never, Notifier>`, clearly documents this dependency.
 
 ```typescript
 import { Effect } from "effect";
 
 // Define the Logger service with a default implementation
-export class Logger extends Effect.Service<Logger>()(
-  "Logger",
-  {
-    // Provide a synchronous implementation
-    sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`LOG: ${msg}`))
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("Logger", {
+  // Provide a synchronous implementation
+  sync: () => ({
+    log: (msg: string) => Effect.sync(() => console.log(`LOG: ${msg}`)),
+  }),
+}) {}
 
 // Define the Notifier service that depends on Logger
-export class Notifier extends Effect.Service<Notifier>()(
-  "Notifier",
-  {
-    // Provide an implementation that requires Logger
-    effect: Effect.gen(function* () {
-      const logger = yield* Logger;
-      return {
-        notify: (msg: string) => logger.log(`Notifying: ${msg}`)
-      };
-    }),
-    // Specify dependencies
-    dependencies: [Logger.Default]
-  }
-) {}
+export class Notifier extends Effect.Service<Notifier>()("Notifier", {
+  // Provide an implementation that requires Logger
+  effect: Effect.gen(function* () {
+    const logger = yield* Logger;
+    return {
+      notify: (msg: string) => logger.log(`Notifying: ${msg}`),
+    };
+  }),
+  // Specify dependencies
+  dependencies: [Logger.Default],
+}) {}
 
 // Create a program that uses both services
 const program = Effect.gen(function* () {
@@ -2845,20 +2916,17 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program with the default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    Notifier.Default
-  )
-);
+Effect.runPromise(Effect.provide(program, Notifier.Default));
 ```
 
 ---
 
 ## Use Chunk for High-Performance Collections
+
 **Rule:** Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance.
 
 ### Example
+
 This example shows how to create and manipulate a `Chunk`. The API is very similar to `Array`, but the underlying performance characteristics for these immutable operations are superior.
 
 ```typescript
@@ -2885,9 +2953,11 @@ console.log(finalArray); // [0, 1, 2]
 ---
 
 ## Use Effect.gen for Business Logic
+
 **Rule:** Use Effect.gen for business logic.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -2933,7 +3003,9 @@ const dbCreateUser = (data: {
     return user;
   });
 
-const createUser = (userData: any): Effect.Effect<{ id: number; email: string }, Error, never> =>
+const createUser = (
+  userData: any
+): Effect.Effect<{ id: number; email: string }, Error, never> =>
   Effect.gen(function* () {
     const validated = yield* validateUser(userData);
     const hashed = yield* hashPassword(validated.password);
@@ -2978,7 +3050,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  
@@ -2986,49 +3057,48 @@ Effect.runPromise(program);
 improving maintainability.
 
 ## Use the Auto-Generated .Default Layer in Tests
+
 **Rule:** Use the auto-generated .Default layer in tests.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
 // Define MyService using Effect.Service pattern
-class MyService extends Effect.Service<MyService>()(
-  "MyService",
-  {
-    sync: () => ({
-      doSomething: () => 
-        Effect.succeed("done").pipe(
-          Effect.tap(() => Effect.log("MyService did something!"))
-        )
-    })
-  }
-) {}
+class MyService extends Effect.Service<MyService>()("MyService", {
+  sync: () => ({
+    doSomething: () =>
+      Effect.succeed("done").pipe(
+        Effect.tap(() => Effect.log("MyService did something!"))
+      ),
+  }),
+}) {}
 
 // Create a program that uses MyService
 const program = Effect.gen(function* () {
   yield* Effect.log("Getting MyService...");
   const service = yield* MyService;
-  
+
   yield* Effect.log("Calling doSomething()...");
   const result = yield* service.doSomething();
-  
+
   yield* Effect.log(`Result: ${result}`);
 });
 
 // Run the program with default service implementation
-Effect.runPromise(
-  Effect.provide(program, MyService.Default)
-);
+Effect.runPromise(Effect.provide(program, MyService.Default));
 ```
 
 **Explanation:**  
 This approach ensures your tests are idiomatic, maintainable, and take full advantage of Effect's dependency injection system.
 
 ## Validate Request Body
+
 **Rule:** Use Http.request.schemaBodyJson with a Schema to automatically parse and validate request bodies.
 
 ### Example
+
 This example defines a `POST` route to create a user. It uses a `CreateUser` schema to validate the request body. If validation passes, it returns a success message with the typed data. If it fails, the platform automatically sends a descriptive 400 error.
 
 ```typescript
@@ -3053,7 +3123,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
   sync: () => ({
     validateUser: (data: unknown) => S.decodeUnknown(UserSchema)(data),
   }),
-}) { }
+}) {}
 
 // Define HTTP server service interface
 interface HttpServerInterface {
@@ -3154,7 +3224,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
   }),
   // Specify dependencies
   dependencies: [UserService.Default],
-}) { }
+}) {}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
@@ -3185,13 +3255,14 @@ To test:
 - POST http://localhost:3456/users with body {"name": "Paul"}
   -> Returns 400 Bad Request with error message about missing email field
 */
-
 ```
 
 ## Write Tests That Adapt to Application Code
+
 **Rule:** Write tests that adapt to application code.
 
 ### Example
+
 ```typescript
 import { Effect } from "effect";
 
@@ -3286,7 +3357,9 @@ const program = Effect.gen(function* () {
     try {
       return yield* db.getUserById(123);
     } catch (error) {
-      yield* Effect.logError(`Failed to get user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      yield* Effect.logError(
+        `Failed to get user: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       return { id: -1, name: "Error" };
     }
   });
@@ -3304,7 +3377,9 @@ const program = Effect.gen(function* () {
         );
         return { id: 404, name: "Not Found" };
       }
-      yield* Effect.logError(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      yield* Effect.logError(
+        `Unexpected error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       return { id: -1, name: "Error" };
     }
   });
@@ -3328,7 +3403,9 @@ const program = Effect.gen(function* () {
         try {
           return yield* testDb.getUserById(1);
         } catch (error) {
-          yield* Effect.logError(`Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          yield* Effect.logError(
+            `Test failed: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
           return { id: -1, name: "Test Error" };
         }
       });
@@ -3340,7 +3417,7 @@ const program = Effect.gen(function* () {
           return yield* testDb.getUserById(404);
         } catch (error) {
           yield* Effect.logInfo(
-            `✅ Test service properly threw NotFoundError: ${error instanceof Error ? error.message : 'Unknown error'}`
+            `✅ Test service properly threw NotFoundError: ${error instanceof Error ? error.message : "Unknown error"}`
           );
           return { id: 404, name: "Test Not Found" };
         }
@@ -3360,11 +3437,13 @@ const program = Effect.gen(function* () {
 
 // Run the program with the default database service
 Effect.runPromise(
-  Effect.provide(program, DatabaseService.Default) as Effect.Effect<void, never, never>
+  Effect.provide(program, DatabaseService.Default) as Effect.Effect<
+    void,
+    never,
+    never
+  >
 );
-
 ```
 
 **Explanation:**  
 Tests should reflect the real interface and behavior of your code, not force changes to it.
-

@@ -49,7 +49,8 @@ const all = [e1, e2, e3].filter(Either.isRight).map((e) => e.right); // [1]
 const errors = [e1, e2, e3].filter(Either.isLeft).map((e) => e.left); // ["fail1", "fail2"]
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Either.right(value)` represents success.
 - `Either.left(error)` represents failure.
 - Pattern matching ensures all cases are handled.

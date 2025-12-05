@@ -9,12 +9,14 @@ Add infinite scroll functionality to the memories system, allowing users to prog
 ### What We Have
 
 1. **Supermemory-backed Search System**
+
    - `lib/semantic-search/supermemory-store.ts` - Vector store with Supermemory client
    - `lib/semantic-search/search.ts` - Hybrid search algorithm (60% semantic + 30% keyword + 7% recency + 3% satisfaction)
    - `/api/search` endpoint - Accepts `limit` and `offset`/`cursor` parameters
    - Supports filtering by tags, outcomes, and date ranges
 
 2. **Search API Current State**
+
    - Located: `app/(chat)/api/search/route.ts`
    - Parameters: `q`, `limit`, `outcome`, `tag`, `minSimilarity`, `type`
    - Currently returns: `{ query, tag, limit, count, results }`
@@ -27,14 +29,17 @@ Add infinite scroll functionality to the memories system, allowing users to prog
 ### What We Need to Add
 
 1. **Pagination Support in Search API**
+
    - Add `offset` or `cursor`-based pagination
    - Return pagination metadata for infinite scroll
 
 2. **New Memories Browser Component**
+
    - Interactive component to browse and search memories
    - Infinite scroll implementation with `useIntersectionObserver`
 
 3. **New API Endpoint or Enhancement**
+
    - Create `/api/memories/browse` for pagination
    - Or enhance `/api/search` with pagination metadata
 
@@ -47,15 +52,18 @@ Add infinite scroll functionality to the memories system, allowing users to prog
 ### Option 1: Enhanced /api/search (Recommended)
 
 **Pros:**
+
 - Reuses existing search infrastructure
 - Single API endpoint for all memory queries
 - Supermemory already supports pagination
 
 **Cons:**
+
 - Changes existing API surface
 - Need to maintain backward compatibility
 
 **Implementation:**
+
 ```typescript
 // GET /api/search?q=error&limit=20&offset=0
 Response {
@@ -72,15 +80,18 @@ Response {
 ### Option 2: New /api/memories/browse Endpoint (Clean Separation)
 
 **Pros:**
+
 - Clear separation of concerns
 - Dedicated browsing API
 - Easier to optimize for infinite scroll
 
 **Cons:**
+
 - Duplicate code
 - More endpoints to maintain
 
 **Implementation:**
+
 ```typescript
 // GET /api/memories/browse?q=error&limit=20&offset=0&sort=recency
 Response {
@@ -141,10 +152,12 @@ async search(
 File: `app/(chat)/api/search/route.ts`
 
 Add query parameters:
+
 - `offset` (default: 0) - Current offset
 - `sort` (default: "relevance") - Sort by relevance, recency, or satisfaction
 
 Return pagination metadata:
+
 ```typescript
 {
   query,
@@ -164,6 +177,7 @@ Return pagination metadata:
 File: `components/memories-browser.tsx`
 
 Features:
+
 - Search input
 - Filter buttons (tags, outcomes)
 - Results list with infinite scroll
@@ -276,6 +290,7 @@ export function MemoriesBrowser() {
 File: `components/memory-card.tsx`
 
 Display individual memory with:
+
 - Title/summary
 - Tags
 - Outcome badge
@@ -297,6 +312,7 @@ File: `components/memory-search.tsx`
 #### Step 3.1: Add Browse Tab to Memories Page
 
 Option A: Enhance `/memories` with tabs (Guide + Browse)
+
 ```
 /memories
 ├── Tab 1: Guide (existing)
@@ -304,6 +320,7 @@ Option A: Enhance `/memories` with tabs (Guide + Browse)
 ```
 
 Option B: Create `/memories/browse`
+
 ```
 /memories - Guide (existing)
 /memories/browse - Interactive browsing (new)
@@ -314,6 +331,7 @@ Option B: Create `/memories/browse`
 #### Step 3.2: Update Memories Navigation
 
 Add "Browse Memories" link/button in:
+
 - Chat header Memories button
 - Greeting welcome banner
 - Memories page
@@ -324,24 +342,26 @@ Add "Browse Memories" link/button in:
 
 ```typescript
 // From lib/semantic-search/supermemory-store.ts
-this.client.memories.add(content, metadata)
-this.client.memories.search(query, options)
-this.client.memories.delete(id)
+this.client.memories.add(content, metadata);
+this.client.memories.search(query, options);
+this.client.memories.delete(id);
 ```
 
 ### Required for Infinite Scroll
 
 Check Supermemory API for:
+
 1. Does `search()` support `limit` and `offset`?
 2. Does it return `total` count?
 3. What's the maximum `limit` value?
 4. Can we sort by recency, relevance, satisfaction?
 
 **Research Action:** Test Supermemory API pagination
+
 ```typescript
 // Test pagination
-const page1 = await client.memories.search(query, { limit: 20, offset: 0 })
-const page2 = await client.memories.search(query, { limit: 20, offset: 20 })
+const page1 = await client.memories.search(query, { limit: 20, offset: 0 });
+const page2 = await client.memories.search(query, { limit: 20, offset: 20 });
 ```
 
 ## Performance Considerations
@@ -349,20 +369,24 @@ const page2 = await client.memories.search(query, { limit: 20, offset: 20 })
 ### Optimization Strategies
 
 1. **Request Caching**
+
    - Cache search results by query + offset
    - Use React Query / SWR for automatic cache management
    - Invalidate cache when filters change
 
 2. **Virtual Scrolling**
+
    - For large result sets (1000+), use `react-window` or `@tanstack/react-virtual`
    - Render only visible items to maintain performance
    - Reduce memory footprint
 
 3. **Search Debouncing**
+
    - Debounce search input (300ms)
    - Prevent excessive API calls
 
 4. **Batch Loading**
+
    - Load 20 items per request (configurable)
    - Balance between latency and payload size
 
@@ -413,12 +437,14 @@ Virtual scrolling: ~100KB (only visible items)
 ## Implementation Timeline
 
 ### Phase 1: Backend (1-2 hours)
+
 - Add pagination types to search.ts
 - Implement offset in supermemory-store.ts
 - Update /api/search endpoint
 - Add tests for pagination logic
 
 ### Phase 2: Frontend (2-3 hours)
+
 - Create memories-browser component
 - Create memory-card component
 - Create search/filter UI
@@ -427,6 +453,7 @@ Virtual scrolling: ~100KB (only visible items)
 - Add tests
 
 ### Phase 3: Integration (1-2 hours)
+
 - Add Browse tab to /memories page
 - Update navigation/links
 - Style and polish
@@ -438,18 +465,22 @@ Virtual scrolling: ~100KB (only visible items)
 ## Decisions to Make
 
 1. **Pagination Approach**
+
    - Option 1: Enhance existing `/api/search` ✅ Recommended
    - Option 2: New `/api/memories/browse` endpoint
 
 2. **UI Location**
+
    - Option A: Add "Browse" tab to `/memories` ✅ Recommended
    - Option B: Create `/memories/browse` as separate page
 
 3. **Items Per Request**
+
    - Default: 20 items per request
    - Configurable? (e.g., 10, 20, 50)
 
 4. **Virtual Scrolling**
+
    - Implement from start? (safer, but more complex)
    - Add if needed later? (simpler start, may cause issues at scale)
 

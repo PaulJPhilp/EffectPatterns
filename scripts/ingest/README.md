@@ -72,6 +72,7 @@ flowchart TD
 ## Scripts
 
 - `scripts/publish/process_patterns.ts`
+
   - Input: `--input content/new`  
     Output: `--output content/raw`  
     Source: `--source content/new/src`
@@ -79,19 +80,23 @@ flowchart TD
     `<Example path="./src/<name>.ts" />`.
 
 - `scripts/publish/publish-patterns.ts`
+
   - Input: `--input content/raw`  
     Output: `--output content/published`  
     Source: `--source content/new/src`
   - Re-embeds code from `src/` back into MDX.
 
 - `scripts/publish/pattern-validator.ts`
+
   - Validates that “Good Example” blocks in `content/published/`
     exactly match their `src/` files.
 
 - `scripts/publish/validate_and_generate.ts`
+
   - Combines validation and README generation.
 
 - `scripts/publish/rules.ts`
+
   - Enforces our conventions on examples and referenced code:
     - Use direct named imports for Effect/platform libraries.
     - Prefer `Effect.Service` over legacy tags or classes.

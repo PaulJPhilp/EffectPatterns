@@ -14,7 +14,9 @@ async function example1_basicSearch() {
   console.log("📝 Example 1: Basic Search");
 
   const query = "error handling";
-  const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=5`);
+  const response = await fetch(
+    `/api/search?q=${encodeURIComponent(query)}&limit=5`
+  );
   const data = await response.json();
 
   console.log(`Query: "${query}"`);
@@ -32,10 +34,10 @@ async function example2_semanticMatching() {
   // If you created a conversation about "error handling",
   // search for "exception handling" - semantically similar but different words
   const similarQueries = [
-    "error handling",      // Original
-    "exception handling",  // Synonym
+    "error handling", // Original
+    "exception handling", // Synonym
     "how to catch errors", // Rephrased
-    "error management",    // Related
+    "error management", // Related
   ];
 
   for (const query of similarQueries) {
@@ -202,9 +204,7 @@ async function example8_errorHandling() {
 
   // Invalid outcome
   console.log("Test 4: Invalid outcome (ignored)");
-  const test4 = await fetch(
-    `/api/search?q=test&outcome=invalid&limit=5`
-  );
+  const test4 = await fetch(`/api/search?q=test&outcome=invalid&limit=5`);
   console.log(`Status: ${test4.status}`, await test4.json());
 }
 
@@ -225,9 +225,10 @@ async function example9_batchSearch() {
   ];
 
   const results = await Promise.all(
-    queries.map(q =>
-      fetch(`/api/search?q=${encodeURIComponent(q)}&limit=3`)
-        .then(r => r.json())
+    queries.map((q) =>
+      fetch(`/api/search?q=${encodeURIComponent(q)}&limit=3`).then((r) =>
+        r.json()
+      )
     )
   );
 

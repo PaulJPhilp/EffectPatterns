@@ -4,7 +4,19 @@ id: "constructor-from-nullable-option-either"
 skillLevel: "beginner"
 useCase: ["Constructors", "Interop", "Conversion"]
 summary: "Use fromNullable, fromOption, and fromEither to convert nullable values, Option, or Either into Effects or Streams, enabling safe and composable interop."
-tags: ["fromNullable", "fromOption", "fromEither", "constructor", "effect", "stream", "option", "either", "interop", "conversion"]
+tags:
+  [
+    "fromNullable",
+    "fromOption",
+    "fromEither",
+    "constructor",
+    "effect",
+    "stream",
+    "option",
+    "either",
+    "interop",
+    "conversion",
+  ]
 rule:
   description: "Use fromNullable, fromOption, and fromEither to lift nullable values, Option, or Either into Effects or Streams for safe, typeful interop."
 related: ["constructor-succeed-some-right", "constructor-fail-none-left"]
@@ -35,18 +47,19 @@ const option = Option.fromNullable(nullableValue); // Option<string>
 const someValue = Option.some(42);
 const effectFromOption = Option.match(someValue, {
   onNone: () => Effect.fail("No value"),
-  onSome: (value) => Effect.succeed(value)
+  onSome: (value) => Effect.succeed(value),
 }); // Effect<number, string, never>
 
 // Effect: Convert an Either to an Effect
 const either = Either.right("success");
 const effectFromEither = Either.match(either, {
   onLeft: (error) => Effect.fail(error),
-  onRight: (value) => Effect.succeed(value)
+  onRight: (value) => Effect.succeed(value),
 }); // Effect<string, never, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fromNullable` lifts a nullable value into an Effect, failing if the value is `null` or `undefined`.
 - `Effect.fromOption` lifts an Option into an Effect, failing if the Option is `none`.
 - `Effect.fromEither` lifts an Either into an Effect, failing if the Either is `left`.

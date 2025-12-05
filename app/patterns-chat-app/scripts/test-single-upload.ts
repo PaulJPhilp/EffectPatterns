@@ -100,7 +100,9 @@ async function testSingleUpload() {
           const parsed = JSON.parse(result.memory);
           console.log(`   Type: ${parsed.type}`);
           console.log(`   PatternId: ${parsed.patternId}`);
-          console.log(`   Content preview: ${result.memory.substring(0, 60)}...`);
+          console.log(
+            `   Content preview: ${result.memory.substring(0, 60)}...`
+          );
         } catch (e) {
           console.log(`   Content: ${result.memory.substring(0, 80)}...`);
         }
@@ -141,7 +143,6 @@ async function testSingleUpload() {
     }
 
     console.log("\n✅ Test completed!");
-
   } catch (error) {
     console.error("❌ Error:", error);
     if (error instanceof Error) {

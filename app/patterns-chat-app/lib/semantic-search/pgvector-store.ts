@@ -198,10 +198,7 @@ export class PgVectorStore {
           and(
             eq(conversationEmbedding.userId, userId),
             outcome
-              ? eq(
-                  sql`${conversationEmbedding.metadata}->>'outcome'`,
-                  outcome
-                )
+              ? eq(sql`${conversationEmbedding.metadata}->>'outcome'`, outcome)
               : undefined,
             sql`1 - (${conversationEmbedding.embedding} <-> ${sql.raw(JSON.stringify(queryVector))}::vector) / 2 >= ${minSimilarity}`
           )
@@ -220,9 +217,7 @@ export class PgVectorStore {
           .from(conversationTag)
           .where(inArray(conversationTag.tag, tags))
           .groupBy(conversationTag.chatId)
-          .having(
-            sql`count(*) = ${tags.length}`
-          );
+          .having(sql`count(*) = ${tags.length}`);
 
         const validChatIds = tagResults.map((r) => r.chatId);
         results = results.filter((r) => validChatIds.includes(r.chatId));
@@ -230,9 +225,7 @@ export class PgVectorStore {
 
       // Cache results if enabled
       if (cacheResults && results.length > 0) {
-        const queryHash = Buffer.from(
-          JSON.stringify(queryVector.slice(0, 10))
-        )
+        const queryHash = Buffer.from(JSON.stringify(queryVector.slice(0, 10)))
           .toString("hex")
           .substring(0, 64);
 
@@ -252,7 +245,7 @@ export class PgVectorStore {
       }
 
       return results.map((r) => {
-        const tags = r.metadata?.tags as string[] || [];
+        const tags = (r.metadata?.tags as string[]) || [];
         return {
           id: `conv_${r.chatId}`,
           similarity: r.vectorSimilarity,
@@ -362,7 +355,9 @@ export class PgVectorStore {
         );
 
       // Also delete associated tags
-      await db.delete(conversationTag).where(eq(conversationTag.chatId, chatId));
+      await db
+        .delete(conversationTag)
+        .where(eq(conversationTag.chatId, chatId));
 
       return true;
     } catch (error) {

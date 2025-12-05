@@ -24,6 +24,7 @@ A **7-stage automated pipeline** to ingest new Effect patterns from backups into
 ## 📊 Pipeline Stages
 
 ### 1. Discovery & Extraction 📖
+
 - Scans `content/new/raw/` for MDX files
 - Extracts frontmatter metadata
 - **Extracts TypeScript code from Good Example sections**
@@ -31,36 +32,42 @@ A **7-stage automated pipeline** to ingest new Effect patterns from backups into
 - **Output:** Pattern inventory + TypeScript files
 
 ### 2. Validation 🔍
+
 - Checks required frontmatter fields
 - Validates content structure
 - Ensures Good Example/Anti-Pattern sections exist
 - **Output:** Validation results with issues
 
 ### 3. Testing 🧪
+
 - Executes each TypeScript file with `bun run`
 - Catches runtime errors
 - Marks tests as passed/failed
 - **Output:** Test results
 
 ### 5. Comparison 🔎
+
 - Compares with existing patterns
 - Detects duplicates
 - Identifies truly new patterns
 - **Output:** Duplicate flags
 
 ### 6. Migration 📦
+
 - Copies validated patterns to `content/raw/`
 - Copies TypeScript to `content/src/`
 - Only migrates: valid + tested + non-duplicate
 - **Output:** Migration success count
 
 ### 7. Integration 🔄
+
 - Runs full publishing pipeline
 - Tests all patterns (old + new)
 - Regenerates README and rules
 - **Output:** Updated repository
 
 ### 8. Reporting 📊
+
 - Generates JSON and Markdown reports
 - Lists successful migrations
 - Details failures and duplicates
@@ -100,24 +107,26 @@ const REPORT_DIR = "content/new/ingest-reports";
 
 ## 📈 Performance
 
-| Stage | Duration | Notes |
-|-------|----------|-------|
-| Discovery | <1s | File system scan |
-| Validation | 1-2s | Structure checks |
-| Testing | 30-60s | Parallel (10 workers) |
-| Comparison | <1s | Set lookups |
-| Migration | 1-2s | File copies |
-| Integration | 25-30s | Full pipeline |
-| Reporting | <1s | Report generation |
-| **Total** | **~60s** | For 42 patterns |
+| Stage       | Duration | Notes                 |
+| ----------- | -------- | --------------------- |
+| Discovery   | <1s      | File system scan      |
+| Validation  | 1-2s     | Structure checks      |
+| Testing     | 30-60s   | Parallel (10 workers) |
+| Comparison  | <1s      | Set lookups           |
+| Migration   | 1-2s     | File copies           |
+| Integration | 25-30s   | Full pipeline         |
+| Reporting   | <1s      | Report generation     |
+| **Total**   | **~60s** | For 42 patterns       |
 
 ## 📝 Reports Generated
 
 ### Markdown Report
+
 ```markdown
 # Ingest Pipeline Report
 
 ## Summary
+
 - Total Patterns: 42
 - Validated: 38
 - Tests Passed: 36
@@ -126,20 +135,25 @@ const REPORT_DIR = "content/new/ingest-reports";
 - Failed: 6
 
 ## ✅ Successfully Migrated (34)
+
 - brand-model-domain-type
 - combinator-filter
-...
+  ...
 
 ## ⚠️ Duplicates (2)
+
 - existing-pattern
 
 ## ❌ Failed Patterns (6)
+
 ### pattern-with-errors
+
 ❌ [frontmatter] Missing required field: title
 ❌ [testing] TypeScript execution failed
 ```
 
 ### JSON Report
+
 ```json
 {
   "timestamp": "2025-09-29T10:30:00.000Z",
@@ -156,23 +170,27 @@ const REPORT_DIR = "content/new/ingest-reports";
 ## 🛡️ Safety Features
 
 ### Validation
+
 - ✅ Required frontmatter fields
 - ✅ Content structure checks
 - ✅ TypeScript file existence
 - ✅ Code quality validation
 
 ### Testing
+
 - ✅ Runtime execution verification
 - ✅ Error catching and reporting
 - ✅ Timeout protection (10s per test)
 - ✅ Parallel execution for speed
 
 ### Duplicate Prevention
+
 - ✅ Automatic detection
 - ✅ No overwriting existing patterns
 - ✅ Clear reporting of conflicts
 
 ### Error Handling
+
 - ✅ Graceful failures
 - ✅ Detailed error messages
 - ✅ Continues processing other patterns
@@ -201,6 +219,7 @@ bun run pipeline
 ```
 
 **Result:**
+
 - 📄 Updated README.md
 - 📂 201 rule files (Cursor/Windsurf)
 - ✅ All patterns tested and validated
@@ -285,22 +304,26 @@ Running publish pipeline...
 ## 🎓 Key Features
 
 ### Automated
+
 - ✅ No manual file copying
 - ✅ No manual testing
 - ✅ No manual README updates
 
 ### Safe
+
 - ✅ Validates before migrating
 - ✅ Tests before accepting
 - ✅ Detects duplicates
 - ✅ Detailed error reporting
 
 ### Fast
+
 - ✅ Parallel testing (10 workers)
 - ✅ Completes in ~60 seconds
 - ✅ Efficient file operations
 
 ### Comprehensive
+
 - ✅ 7 validation stages
 - ✅ Full integration testing
 - ✅ Detailed reports
@@ -309,6 +332,7 @@ Running publish pipeline...
 ## 🔮 Future Enhancements
 
 ### Planned
+
 1. **Dry run mode** - Preview without changes
 2. **Pattern filtering** - Process specific patterns only
 3. **Interactive mode** - Manual review and approval
@@ -316,6 +340,7 @@ Running publish pipeline...
 5. **Conflict resolution** - Handle duplicates intelligently
 
 ### Advanced
+
 6. **AI validation** - Auto-fix common issues
 7. **Quality scoring** - Rate pattern quality
 8. **Similarity detection** - Find near-duplicates
@@ -327,18 +352,21 @@ Running publish pipeline...
 The ingest pipeline enables:
 
 ### For Maintainers
+
 - ✅ **Fast pattern addition** - 60s vs hours of manual work
 - ✅ **Quality assurance** - Automatic validation and testing
 - ✅ **Safe integration** - No duplicate/broken patterns
 - ✅ **Clear reporting** - Know exactly what happened
 
 ### For the Project
+
 - ✅ **Scalability** - Handle 100+ patterns easily
 - ✅ **Consistency** - Same quality bar for all patterns
 - ✅ **Documentation** - Automatically updated
 - ✅ **Growth** - Easy to add new patterns
 
 ### By the Numbers
+
 ```
 Time saved: 95%         (60s vs 30min manual)
 Error rate: <1%         (automated testing)

@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 
-describe('PatternService', () => {
-  it('should be implemented in Phase 1', () => {
+describe("PatternService", () => {
+  it("should be implemented in Phase 1", () => {
     expect(true).toBe(true);
   });
 

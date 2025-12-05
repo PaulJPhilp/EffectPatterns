@@ -6,8 +6,8 @@
       "**/*",
       "!components/ui",
       "!lib/utils.ts",
-      "!hooks/use-mobile.ts"
-    ]
+      "!hooks/use-mobile.ts",
+    ],
   },
   "linter": {
     "rules": {
@@ -22,30 +22,30 @@
         "noConsole": "off",
 
         /* Needed for generateUUID() */
-        "noBitwiseOperators": "off"
+        "noBitwiseOperators": "off",
       },
       "style": {
         /* Allowing magic numbers */
         "noMagicNumbers": "off",
 
         /* Needs more work to fix */
-        "noNestedTernary": "off"
+        "noNestedTernary": "off",
       },
       "nursery": {
         /* Too many false positives */
-        "noUnnecessaryConditions": "off"
+        "noUnnecessaryConditions": "off",
       },
       "complexity": {
         /* Needs more work to fix */
         "noExcessiveCognitiveComplexity": "off",
 
         /* This one has false positives. It's a bit... iffy 😉 */
-        "useSimplifiedLogicExpression": "off"
+        "useSimplifiedLogicExpression": "off",
       },
       "a11y": {
         /* Needs more work to fix */
-        "noSvgWithoutTitle": "off"
-      }
-    }
-  }
+        "noSvgWithoutTitle": "off",
+      },
+    },
+  },
 }

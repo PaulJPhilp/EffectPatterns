@@ -10,6 +10,7 @@ Supermemory automatically builds user profiles from the memories and interaction
 - **Dynamic Profile**: Recent context and temporary information (current projects, recent activities, current focus)
 
 These profiles are built automatically from the memories you create and are perfect for:
+
 - Getting holistic context about a user
 - Personalizing responses and interactions
 - Understanding user patterns and preferences
@@ -28,6 +29,7 @@ POST /v4/profile
 ```
 
 Response:
+
 ```json
 {
   "profile": {
@@ -48,6 +50,7 @@ Response:
 Display a user's profile with static and dynamic facts.
 
 **Usage:**
+
 ```bash
 bun run sm-cli profiles show --user user_123
 bun run sm-cli profiles show --user user_123 --section static
@@ -56,11 +59,13 @@ bun run sm-cli profiles show --user user_123 --format json
 ```
 
 **Options:**
+
 - `--user` (required) - User ID or container tag
 - `--section` (optional) - Show section: `static`, `dynamic`, or `both` (default: both)
 - `--format` (optional) - Output format: `human` or `json` (default: human)
 
 **Example:**
+
 ```bash
 $ bun run sm-cli profiles show --user alice_123
 
@@ -87,17 +92,20 @@ $ bun run sm-cli profiles show --user alice_123
 Get a user's profile combined with search results for a specific query.
 
 **Usage:**
+
 ```bash
 bun run sm-cli profiles search --user user_123 --query "authentication"
 bun run sm-cli profiles search --user user_123 --query "current projects" --format json
 ```
 
 **Options:**
+
 - `--user` (required) - User ID or container tag
 - `--query` (required) - Search query to combine with profile
 - `--format` (optional) - Output format: `human` or `json` (default: human)
 
 **Example:**
+
 ```bash
 $ bun run sm-cli profiles search --user alice_123 --query "deployment"
 
@@ -137,6 +145,7 @@ Timing: 145ms
 Export a user's profile to a file in various formats.
 
 **Usage:**
+
 ```bash
 bun run sm-cli profiles export --user user_123 --output profile.json
 bun run sm-cli profiles export --user user_123 --format prompt
@@ -144,6 +153,7 @@ bun run sm-cli profiles export --user user_123 --format text --output profile.tx
 ```
 
 **Options:**
+
 - `--user` (required) - User ID or container tag
 - `--format` (optional) - Export format: `json`, `prompt`, or `text` (default: json)
 - `--output` (optional) - Output file path (default: stdout)
@@ -151,6 +161,7 @@ bun run sm-cli profiles export --user user_123 --format text --output profile.tx
 **Formats:**
 
 **JSON Format** (for programmatic use):
+
 ```json
 {
   "userId": "user_123",
@@ -161,6 +172,7 @@ bun run sm-cli profiles export --user user_123 --format text --output profile.tx
 ```
 
 **Prompt Format** (for LLM integration):
+
 ```
 ABOUT THE USER:
 User ID: user_123
@@ -179,6 +191,7 @@ Retrieved: 2025-11-04T16:46:00Z
 ```
 
 **Text Format** (human readable):
+
 ```
 User Profile: user_123
 Retrieved: 11/4/2025, 4:46 PM
@@ -202,6 +215,7 @@ DYNAMIC PROFILE (Recent Context):
 List profiles in a container with statistics.
 
 **Usage:**
+
 ```bash
 bun run sm-cli profiles list --container default
 bun run sm-cli profiles list --container project_alpha --limit 50
@@ -209,11 +223,13 @@ bun run sm-cli profiles list --container default --format json
 ```
 
 **Options:**
+
 - `--container` (required) - Container tag to query
 - `--limit` (optional) - Maximum profiles to show (default: 20)
 - `--format` (optional) - Output format: `human` or `json` (default: human)
 
 **Example:**
+
 ```bash
 $ bun run sm-cli profiles list --container project_alpha
 
@@ -250,6 +266,7 @@ $ bun run sm-cli profiles list --container project_alpha
 Compare profiles between two users.
 
 **Usage:**
+
 ```bash
 bun run sm-cli profiles compare --user1 user_123 --user2 user_456
 bun run sm-cli profiles compare --user1 alice --user2 bob --show differences
@@ -257,12 +274,14 @@ bun run sm-cli profiles compare --user1 alice --user2 bob --format json
 ```
 
 **Options:**
+
 - `--user1` (required) - First user ID
 - `--user2` (required) - Second user ID
 - `--show` (optional) - What to compare: `all`, `similarities`, `differences` (default: all)
 - `--format` (optional) - Output format: `human` or `json` (default: human)
 
 **Example:**
+
 ```bash
 $ bun run sm-cli profiles compare --user1 alice --user2 bob
 
@@ -306,16 +325,19 @@ Unique to bob (Static)
 Show detailed statistics about profiles in a container.
 
 **Usage:**
+
 ```bash
 bun run sm-cli profiles stats --container default
 bun run sm-cli profiles stats --container project_alpha --format json
 ```
 
 **Options:**
+
 - `--container` (required) - Container tag to analyze
 - `--format` (optional) - Output format: `human` or `json` (default: human)
 
 **Example:**
+
 ```bash
 $ bun run sm-cli profiles stats --container default
 
@@ -415,12 +437,14 @@ All commands support flexible output:
 - **json** - Structured JSON for programmatic use
 
 Use JSON for:
+
 - Scripting and automation
 - Integration with other tools
 - Data analysis and reporting
 - Piping to other commands
 
 Example:
+
 ```bash
 # Export all profiles from a container as JSON
 bun run sm-cli profiles list --container default --format json | jq '.commonTopics'
@@ -495,6 +519,7 @@ bun run sm-cli profiles export --user user_123 --format prompt
 ## Use Cases
 
 ### Customer Support
+
 ```bash
 # Before helping a customer, review their profile
 bun run sm-cli profiles show --user customer_id
@@ -502,6 +527,7 @@ bun run sm-cli profiles search --user customer_id --query "previous issues"
 ```
 
 ### Team Collaboration
+
 ```bash
 # Find an expert to help with a task
 bun run sm-cli profiles search --user team_member --query "kubernetes"
@@ -511,6 +537,7 @@ bun run sm-cli profiles compare --user1 alice --user2 bob
 ```
 
 ### Personal Knowledge Management
+
 ```bash
 # Export your profile to understand your own growth
 bun run sm-cli profiles show --user my_user_id --format json
@@ -520,6 +547,7 @@ bun run sm-cli profiles export --user my_user_id --format text --output profile-
 ```
 
 ### AI Assistant Training
+
 ```bash
 # Get user context for personalized responses
 PROFILE=$(bun run sm-cli profiles export --user user_123 --format prompt)
@@ -533,6 +561,7 @@ anthropic_api_call \
 ## API Details
 
 ### Endpoint
+
 ```
 POST /v4/profile
 Authorization: Bearer YOUR_API_KEY
@@ -540,6 +569,7 @@ Content-Type: application/json
 ```
 
 ### Request
+
 ```json
 {
   "containerTag": "user_123",
@@ -548,17 +578,12 @@ Content-Type: application/json
 ```
 
 ### Response
+
 ```json
 {
   "profile": {
-    "static": [
-      "Senior developer with 10 years experience",
-      "Effect-TS expert"
-    ],
-    "dynamic": [
-      "Currently working on auth system",
-      "Interested in performance"
-    ]
+    "static": ["Senior developer with 10 years experience", "Effect-TS expert"],
+    "dynamic": ["Currently working on auth system", "Interested in performance"]
   },
   "searchResults": {
     "results": [

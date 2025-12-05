@@ -7,11 +7,12 @@
 In software, a **resource** is any component that has a defined lifecycle—it must be explicitly **acquired** before use and **released** after use. Properly managing this lifecycle is critical to prevent common and severe bugs like memory leaks, file corruption, and exhausted connection pools.
 
 Common examples of resources include:
-*   Database connection pools
-*   Individual database transactions
-*   File handles
-*   Network sockets and HTTP clients
-*   Locks and mutexes
+
+- Database connection pools
+- Individual database transactions
+- File handles
+- Network sockets and HTTP clients
+- Locks and mutexes
 
 **In native TypeScript**, resource management typically relies on `try...finally` blocks, often combined with `async/await`. This approach, however, becomes brittle in complex applications. It's difficult to compose the lifecycles of multiple resources, and more importantly, it cannot gracefully handle interruptions—if an asynchronous `Promise` is cancelled, there is no standard mechanism to ensure its `finally` block is executed immediately.
 
@@ -22,10 +23,10 @@ This roadmap explores Effect's first-class solution for resource management. By 
 **Core Patterns & Concepts:**
 
 1.  **Pattern: The `acquireRelease` Bracket**
-    *   **Concept:** ...
+    - **Concept:** ...
 2.  **Pattern: The Scoped Service Layer**
-    *   **Concept:** ...
+    - **Concept:** ...
 3.  **Pattern: Understanding `Scope`**
-    *   **Concept:** ...
+    - **Concept:** ...
 4.  **Pattern: Composing Scoped Layers**
-    *   **Concept:** ...
+    - **Concept:** ...

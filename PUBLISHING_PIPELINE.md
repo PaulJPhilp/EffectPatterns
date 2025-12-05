@@ -26,6 +26,7 @@ content/
 **Output**: `content/new/src/*.ts` + `content/new/processed/*.mdx`
 
 Processes raw pattern files by:
+
 - Parsing YAML frontmatter (id, title, skillLevel, useCase, summary)
 - Validating required sections: Good Example, Anti-Pattern, Explanation/Rationale
 - Extracting TypeScript code from "Good Example" section → `src/{id}.ts`
@@ -33,6 +34,7 @@ Processes raw pattern files by:
 - Writing processed MDX to `processed/` directory
 
 **Validation**:
+
 - Frontmatter completeness and valid skillLevel (Beginner/Intermediate/Advanced)
 - Required section presence
 - TypeScript code block extraction success
@@ -43,12 +45,14 @@ Processes raw pattern files by:
 **Output**: `content/new/published/*.mdx`
 
 Converts processed MDX back to publication format by:
+
 - Reading each processed MDX file
 - Locating corresponding TypeScript file in `src/`
 - Replacing `<Example path="./src/{id}.ts" />` with embedded code block
 - Writing final published MDX with full code content
 
 **Validation**:
+
 - TypeScript file existence for each pattern
 - Successful code block replacement
 
@@ -58,6 +62,7 @@ Converts processed MDX back to publication format by:
 **Output**: Validation report (exit code 0 or 1)
 
 Ensures published patterns meet quality standards:
+
 - **Frontmatter validation**: id, title, skillLevel, useCase, summary present
 - **Filename consistency**: Frontmatter id matches filename
 - **Section validation**: Good Example, Anti-Pattern, Explanation/Rationale present
@@ -86,6 +91,7 @@ Published MDX (embedded code)
 1. **Two-representation model**: Patterns exist in both processed (Example tags) and published (embedded code) forms, enabling flexible content management
 
 2. **Separate source files**: TypeScript code extracted to individual files allows:
+
    - Independent code validation and linting
    - Reusability across multiple patterns
    - Easier version control and diffing

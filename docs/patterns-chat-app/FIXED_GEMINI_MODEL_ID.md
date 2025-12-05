@@ -1,6 +1,7 @@
 # Fixed Gemini Model ID Error ✅
 
 ## Summary
+
 Resolved Google API 404 error by correcting the Gemini model IDs from `gemini-2.5-flash-001` to `gemini-2.5-flash` (the actual model name in Google's API).
 
 **Status**: ✅ **Fixed - Server Running with Correct Model ID**
@@ -10,6 +11,7 @@ Resolved Google API 404 error by correcting the Gemini model IDs from `gemini-2.
 ## The Problem
 
 Google API error:
+
 ```
 Error [AI_APICallError]: models/gemini-2.5-flash-001 is not found for API version v1beta
   url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-001:streamGenerateContent?alt=sse'
@@ -24,11 +26,11 @@ The SDK was trying to call a non-existent model version `gemini-2.5-flash-001`.
 
 Google's naming convention for Gemini models doesn't use the `-001` suffix that other providers use:
 
-| Provider | Model ID Format | Example |
-|----------|---|---|
-| OpenAI | Version suffix | `gpt-4o`, `gpt-4-turbo` |
-| Anthropic | Version suffix | `claude-3-opus-20240229` |
-| Google Gemini | No suffix | `gemini-2.5-flash` (NOT `gemini-2.5-flash-001`) |
+| Provider      | Model ID Format | Example                                         |
+| ------------- | --------------- | ----------------------------------------------- |
+| OpenAI        | Version suffix  | `gpt-4o`, `gpt-4-turbo`                         |
+| Anthropic     | Version suffix  | `claude-3-opus-20240229`                        |
+| Google Gemini | No suffix       | `gemini-2.5-flash` (NOT `gemini-2.5-flash-001`) |
 
 ---
 
@@ -37,6 +39,7 @@ Google's naming convention for Gemini models doesn't use the `-001` suffix that 
 Updated `lib/ai/providers.ts` to use correct Google model IDs:
 
 **Changed**:
+
 - Default model: `gemini-2.5-flash-001` → **`gemini-2.5-flash`**
 - Gemini 2.0: `gemini-2.0-flash-001` → **`gemini-2.0-flash`**
 - Gemini 2.5 explicit: `gemini-2.5-flash-001` → **`gemini-2.5-flash`**
@@ -59,10 +62,10 @@ Updated `lib/ai/providers.ts` to use correct Google model IDs:
 
 ## Changes Made
 
-| Model | Old ID | New ID |
-|-------|--------|--------|
-| Default Chat | `gemini-2.5-flash-001` | `gemini-2.5-flash` |
-| Gemini 2.0 | `gemini-2.0-flash-001` | `gemini-2.0-flash` |
+| Model                 | Old ID                 | New ID             |
+| --------------------- | ---------------------- | ------------------ |
+| Default Chat          | `gemini-2.5-flash-001` | `gemini-2.5-flash` |
+| Gemini 2.0            | `gemini-2.0-flash-001` | `gemini-2.0-flash` |
 | Gemini 2.5 (explicit) | `gemini-2.5-flash-001` | `gemini-2.5-flash` |
 
 **File**: `lib/ai/providers.ts`
@@ -87,6 +90,7 @@ bun run dev
 ```
 
 Result:
+
 - ✅ Server started on `http://localhost:3000`
 - ✅ Using correct Gemini model IDs
 - ✅ API responding normally
@@ -97,6 +101,7 @@ Result:
 ## Verification
 
 Server now:
+
 - ✅ Compiles without errors
 - ✅ Ready in 1.6 seconds
 - ✅ API endpoints responding (`/api/auth/session` returning null as expected)
@@ -108,12 +113,14 @@ Server now:
 ## How to Test
 
 ### In the Browser
+
 1. Go to `http://localhost:3000`
 2. Start a new chat
 3. Ask a question (e.g., "What is Effect-TS?")
 4. Should receive response from Gemini (not an error)
 
 ### Expected Behavior
+
 - Chat responds normally
 - No Google API errors in console
 - Supermemory logs appear: `[Supermemory] Stored conversation embedding`
@@ -124,9 +131,9 @@ Server now:
 
 For future reference, Google's Gemini model names:
 
-| Model | API Name |
-|-------|----------|
-| Gemini 1.5 Pro | `gemini-1.5-pro` |
+| Model            | API Name           |
+| ---------------- | ------------------ |
+| Gemini 1.5 Pro   | `gemini-1.5-pro`   |
 | Gemini 1.5 Flash | `gemini-1.5-flash` |
 | Gemini 2.0 Flash | `gemini-2.0-flash` |
 | Gemini 2.5 Flash | `gemini-2.5-flash` |
@@ -145,8 +152,8 @@ For future reference, Google's Gemini model names:
 
 ## Files Modified
 
-| File | Changes |
-|------|---------|
+| File                  | Changes                                            |
+| --------------------- | -------------------------------------------------- |
 | `lib/ai/providers.ts` | 3 model ID strings updated (removed `-001` suffix) |
 
 **Lines Changed**: 3

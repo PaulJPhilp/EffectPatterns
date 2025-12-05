@@ -167,11 +167,13 @@ All endpoints except `/api/health` require API key authentication.
 ### Methods
 
 **Option 1: Header (Recommended)**
+
 ```bash
 x-api-key: your-api-key
 ```
 
 **Option 2: Query Parameter**
+
 ```bash
 ?key=your-api-key
 ```
@@ -179,6 +181,7 @@ x-api-key: your-api-key
 ### Beta API Key
 
 **Current (Beta):**
+
 ```bash
 x-api-key: demo-beta-2025
 ```
@@ -188,6 +191,7 @@ x-api-key: demo-beta-2025
 - **Valid:** Until v1.0 release
 
 **Coming in v1.0:**
+
 - Self-service API key generation
 - Personal rate limits (100 req/min per key)
 - Usage analytics dashboard
@@ -242,18 +246,19 @@ services/mcp-server/
 The server uses Effect-TS services for all core functionality:
 
 ```typescript
-import { Effect } from 'effect'
-import { ConfigService } from './server/init'
+import { Effect } from "effect";
+import { ConfigService } from "./server/init";
 
 // All operations return Effect
 const program = Effect.gen(function* () {
-  const config = yield* ConfigService
-  const apiKey = yield* config.getApiKey()
+  const config = yield* ConfigService;
+  const apiKey = yield* config.getApiKey();
   // Type-safe, composable, testable
-})
+});
 ```
 
 **Services:**
+
 - **ConfigService** - Environment configuration
 - **LoggerService** - Structured logging
 - **CacheService** - In-memory caching with TTL
@@ -265,24 +270,24 @@ const program = Effect.gen(function* () {
 
 ### Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `PATTERN_API_KEY` | Yes | - | API authentication key |
-| `NODE_ENV` | No | `development` | Environment mode |
-| `PORT` | No | `3000` | Server port |
-| `PATTERNS_PATH` | No | `../../data/patterns-index.json` | Pattern data file |
-| `PATTERNS_CACHE_TTL_MS` | No | `300000` | Pattern cache TTL (5 min) |
-| `RATE_LIMIT_ENABLED` | No | `true` | Enable rate limiting |
-| `RATE_LIMIT_REQUESTS` | No | `100` | Requests per window |
-| `RATE_LIMIT_WINDOW_MS` | No | `60000` | Rate limit window (1 min) |
-| `CACHE_ENABLED` | No | `true` | Enable caching |
-| `LOGGING_ENABLED` | No | `true` | Enable logging |
-| `METRICS_ENABLED` | No | `true` | Enable metrics |
-| `TRACING_ENABLED` | No | `false` | Enable OpenTelemetry |
-| `OTLP_ENDPOINT` | No | - | OpenTelemetry endpoint |
-| `OTLP_HEADERS` | No | - | OpenTelemetry headers |
-| `SERVICE_NAME` | No | `effect-patterns-mcp-server` | Service name for tracing |
-| `SERVICE_VERSION` | No | `0.1.0` | Service version |
+| Variable                | Required | Default                          | Description               |
+| ----------------------- | -------- | -------------------------------- | ------------------------- |
+| `PATTERN_API_KEY`       | Yes      | -                                | API authentication key    |
+| `NODE_ENV`              | No       | `development`                    | Environment mode          |
+| `PORT`                  | No       | `3000`                           | Server port               |
+| `PATTERNS_PATH`         | No       | `../../data/patterns-index.json` | Pattern data file         |
+| `PATTERNS_CACHE_TTL_MS` | No       | `300000`                         | Pattern cache TTL (5 min) |
+| `RATE_LIMIT_ENABLED`    | No       | `true`                           | Enable rate limiting      |
+| `RATE_LIMIT_REQUESTS`   | No       | `100`                            | Requests per window       |
+| `RATE_LIMIT_WINDOW_MS`  | No       | `60000`                          | Rate limit window (1 min) |
+| `CACHE_ENABLED`         | No       | `true`                           | Enable caching            |
+| `LOGGING_ENABLED`       | No       | `true`                           | Enable logging            |
+| `METRICS_ENABLED`       | No       | `true`                           | Enable metrics            |
+| `TRACING_ENABLED`       | No       | `false`                          | Enable OpenTelemetry      |
+| `OTLP_ENDPOINT`         | No       | -                                | OpenTelemetry endpoint    |
+| `OTLP_HEADERS`          | No       | -                                | OpenTelemetry headers     |
+| `SERVICE_NAME`          | No       | `effect-patterns-mcp-server`     | Service name for tracing  |
+| `SERVICE_VERSION`       | No       | `0.1.0`                          | Service version           |
 
 ### Development Configuration
 
@@ -380,12 +385,14 @@ GET /api/patterns
 **Problem:** API key is missing or incorrect.
 
 **Solution:**
+
 - Verify your API key is correct
 - Ensure you're using the correct header: `x-api-key: YOUR_KEY`
 - Or use query parameter: `?key=YOUR_KEY`
 - If key is expired, request a new one via GitHub issues
 
 Example:
+
 ```bash
 # Correct usage
 curl -H "x-api-key: YOUR_KEY" \
@@ -397,6 +404,7 @@ curl -H "x-api-key: YOUR_KEY" \
 **Problem:** Pattern ID doesn't exist.
 
 **Solution:**
+
 - Search for patterns first to find valid IDs
 - Pattern IDs are kebab-case (e.g., `retry-with-backoff`)
 - Use the search endpoint to discover available patterns
@@ -406,6 +414,7 @@ curl -H "x-api-key: YOUR_KEY" \
 **Problem:** Rate limit exceeded (100 requests per minute).
 
 **Solution:**
+
 - Wait for the rate limit window to reset
 - Implement request throttling in your client
 - Contact maintainers if you need higher limits
@@ -415,6 +424,7 @@ curl -H "x-api-key: YOUR_KEY" \
 **Problem:** Production server appears down.
 
 **Solution:**
+
 1. Check server status: `curl https://mcp-server-three-omega.vercel.app/api/health`
 2. If down, open a GitHub issue immediately
 3. Check Vercel status page: https://www.vercel-status.com/
@@ -424,6 +434,7 @@ curl -H "x-api-key: YOUR_KEY" \
 **Problem:** Response doesn't match documentation.
 
 **Solution:**
+
 - Verify you're using the correct endpoint
 - Check API version (currently v0.5.0)
 - Report discrepancies via GitHub issues
@@ -433,12 +444,14 @@ curl -H "x-api-key: YOUR_KEY" \
 ### API Key Security
 
 **DO:**
+
 - ✅ Store API keys in environment variables
 - ✅ Use secrets managers (e.g., GitHub Secrets, Vercel Env Vars)
 - ✅ Rotate keys if compromised
 - ✅ Use HTTPS only (enforced in production)
 
 **DON'T:**
+
 - ❌ Commit API keys to version control
 - ❌ Share keys publicly
 - ❌ Embed keys in client-side code
@@ -447,11 +460,13 @@ curl -H "x-api-key: YOUR_KEY" \
 ### Rate Limits
 
 **Beta (Current):**
+
 - **Demo Key:** 10 requests per minute (shared across all users)
 - **Enforcement:** Automatic via sliding window
 - **Response:** `429 Too Many Requests` when exceeded
 
 **v1.0 (Coming Soon):**
+
 - **Personal Keys:** 100 requests per minute per key
 - **Headers:** `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
 - **Upgrades:** Higher limits available on request
@@ -492,12 +507,12 @@ Maintainers will respond within 48 hours.
 
 ### Response Times
 
-| Endpoint | Average | P95 | P99 |
-|----------|---------|-----|-----|
-| `/api/health` | 5ms | 10ms | 15ms |
-| `/api/patterns` (search) | 25ms | 50ms | 75ms |
-| `/api/patterns/:id` | 20ms | 40ms | 60ms |
-| `/api/generate` | 30ms | 60ms | 90ms |
+| Endpoint                 | Average | P95  | P99  |
+| ------------------------ | ------- | ---- | ---- |
+| `/api/health`            | 5ms     | 10ms | 15ms |
+| `/api/patterns` (search) | 25ms    | 50ms | 75ms |
+| `/api/patterns/:id`      | 20ms    | 40ms | 60ms |
+| `/api/generate`          | 30ms    | 60ms | 90ms |
 
 ## Roadmap
 
@@ -560,4 +575,3 @@ MIT License - see [LICENSE](./LICENSE) for details.
 **Production URL:** https://mcp-server-three-omega.vercel.app  
 **Status:** ✅ Operational  
 **Last Updated:** 2025-11-09
-

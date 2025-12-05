@@ -7,6 +7,7 @@ Enhanced rules generation to create comprehensive AI coding rules in multiple fo
 ## What Was Generated
 
 ### Output Summary
+
 ```
 Total Files: 201
 - Full Rules:        1 file  (rules.md)
@@ -20,7 +21,9 @@ Total Files: 201
 ### File Formats
 
 #### 1. Full Rules (`rules.md`)
+
 Complete patterns with examples, anti-patterns, and explanations:
+
 ```markdown
 ## Handle Errors with catchTag, catchTags, and catchAll
 
@@ -31,24 +34,31 @@ Complete patterns with examples, anti-patterns, and explanations:
 **Use Cases:** error-management
 
 ### Good Example
+
 [Code example with full implementation]
 
 ### Anti-Pattern
+
 [What NOT to do]
 
 ### Explanation
+
 [Why this pattern works]
 ```
 
 #### 2. Compact Rules (`rules-compact.md`)
+
 One-line summaries for quick reference:
+
 ```markdown
 - **Handle Errors with catchTag, catchTags, and catchAll**: Handle errors with catchTag, catchTags, and catchAll.
 - **Transform Effect Values with map and flatMap**: Transform Effect Values with map and flatMap.
 ```
 
 #### 3. JSON Rules (`rules.json`)
+
 Structured data for programmatic access:
+
 ```json
 [
   {
@@ -65,7 +75,9 @@ Structured data for programmatic access:
 ```
 
 #### 4. Use Case Rules (`by-use-case/*.md`)
+
 Patterns grouped by category (22 files):
+
 - `core-concepts.md`
 - `error-management.md`
 - `concurrency.md`
@@ -94,22 +106,27 @@ Patterns grouped by category (22 files):
 IDE-specific rules for **Cursor AI editor** (88 files):
 
 Format:
-```markdown
+
+````markdown
 description: Handle errors with catchTag, catchTags, and catchAll.
-globs: "**/*.ts"
+globs: "\*_/_.ts"
 alwaysApply: true
 
 # Handle Errors with catchTag, catchTags, and catchAll
+
 **Rule:** Handle errors with catchTag, catchTags, and catchAll.
 
 ### Example
+
 ```typescript
 [Full working code example]
 ```
+````
 
 **Explanation:**  
 [Why and how to use this pattern]
-```
+
+````
 
 **Features:**
 - Frontmatter metadata for Cursor
@@ -137,11 +154,12 @@ alwaysApply: true
 ### Anti-Pattern (Avoid)
 [What NOT to do]
 
-**Explanation:**  
+**Explanation:**
 [Detailed explanation]
-```
+````
 
 **Differences from Cursor:**
+
 - Includes Anti-Pattern section (what NOT to do)
 - Same frontmatter format
 - Additional context for AI understanding
@@ -207,12 +225,12 @@ async function extractRules(): Promise<Rule[]> {
 ```typescript
 // Generate all formats in parallel
 await Promise.all([
-  generateFullRules(rules),        // rules.md
-  generateCompactRules(rules),     // rules-compact.md
-  generateJsonRules(rules),        // rules.json
-  generateUseCaseRules(rules),     // by-use-case/*.md
-  generateCursorRules(rules),      // cursor/*.mdc ⭐
-  generateWindsurfRules(rules),    // windsurf/*.mdc ⭐
+  generateFullRules(rules), // rules.md
+  generateCompactRules(rules), // rules-compact.md
+  generateJsonRules(rules), // rules.json
+  generateUseCaseRules(rules), // by-use-case/*.md
+  generateCursorRules(rules), // cursor/*.mdc ⭐
+  generateWindsurfRules(rules), // windsurf/*.mdc ⭐
 ]);
 ```
 
@@ -224,15 +242,15 @@ All 6 formats generate simultaneously for maximum speed.
 
 ```typescript
 interface Rule {
-  id: string;              // Pattern identifier
-  title: string;           // Human-readable title
-  description: string;     // Short rule description
-  skillLevel?: string;     // beginner | intermediate | advanced
-  useCases?: string[];     // Categories this applies to
-  example?: string;        // Good example code
-  antiPattern?: string;    // Bad example code
-  explanation?: string;    // Why this pattern works
-  content?: string;        // Full MDX content
+  id: string; // Pattern identifier
+  title: string; // Human-readable title
+  description: string; // Short rule description
+  skillLevel?: string; // beginner | intermediate | advanced
+  useCases?: string[]; // Categories this applies to
+  example?: string; // Good example code
+  antiPattern?: string; // Bad example code
+  explanation?: string; // Why this pattern works
+  content?: string; // Full MDX content
 }
 ```
 
@@ -303,10 +321,10 @@ Create custom rule sets by filtering:
 
 ```typescript
 // Only beginner rules
-const beginnerRules = rules.filter(r => r.skillLevel === "beginner");
+const beginnerRules = rules.filter((r) => r.skillLevel === "beginner");
 
 // Only error handling rules
-const errorRules = rules.filter(r => 
+const errorRules = rules.filter((r) =>
   r.useCases?.includes("error-management")
 );
 ```
@@ -323,10 +341,7 @@ async function generateMyCustomFormat(rules: Rule[]) {
 }
 
 // Add to main generation
-await Promise.all([
-  ...existingGenerators,
-  generateMyCustomFormat(rules),
-]);
+await Promise.all([...existingGenerators, generateMyCustomFormat(rules)]);
 ```
 
 ## Integration Examples
@@ -334,6 +349,7 @@ await Promise.all([
 ### Cursor
 
 In your TypeScript project:
+
 1. Create `.cursor/rules` directory
 2. Copy rules from `rules/cursor/*.mdc`
 3. Cursor automatically loads and applies them
@@ -341,6 +357,7 @@ In your TypeScript project:
 ### Windsurf
 
 In your TypeScript project:
+
 1. Create `.windsurf/rules` directory
 2. Copy rules from `rules/windsurf/*.mdc`
 3. Windsurf automatically provides suggestions
@@ -371,26 +388,31 @@ jobs:
 ## Future Enhancements
 
 ### 1. Rule Validation
+
 - Ensure all patterns have proper frontmatter
 - Validate code examples compile
 - Check for broken links
 
 ### 2. Rule Analytics
+
 - Track which rules are most applied
 - Measure pattern adoption
 - Identify confusing rules
 
 ### 3. Interactive Rules
+
 - Link to documentation
 - Show related patterns
 - Suggest alternatives
 
 ### 4. Version-Specific Rules
+
 - Generate rules for specific Effect versions
 - Migration guides between versions
 - Compatibility warnings
 
 ### 5. Additional IDE Support
+
 - VS Code snippets
 - IntelliJ IDEA templates
 - Vim/Neovim configuration
@@ -414,7 +436,7 @@ function extractSection(content: string, ...names: string[]): string {
 const sanitizeName = (name: string) =>
   name
     .toLowerCase()
-    .replace(/\s+/g, "-")    // Spaces to hyphens
+    .replace(/\s+/g, "-") // Spaces to hyphens
     .replace(/[^a-z0-9-]/g, ""); // Remove special chars
 ```
 
@@ -422,8 +444,8 @@ const sanitizeName = (name: string) =>
 
 ```yaml
 description: Short rule description
-globs: "**/*.ts"        # File patterns to apply to
-alwaysApply: true       # Always show suggestions
+globs: "**/*.ts" # File patterns to apply to
+alwaysApply: true # Always show suggestions
 ```
 
 ## Related Files

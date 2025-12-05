@@ -7,7 +7,7 @@
  * - Validation and transformation schemas
  */
 
-import { Schema } from 'effect';
+import { Schema } from "effect";
 
 // ============================================================================
 // Discord Message Schemas
@@ -141,7 +141,7 @@ export const MinimumMessagesSchema = (min: number) =>
  * Schema for validating a chunk of messages
  */
 export const MessageChunkSchema = Schema.Array(MessageSchema).pipe(
-  Schema.minItems(1),
+  Schema.minItems(1)
 );
 
 export type MessageChunk = Schema.Schema.Type<typeof MessageChunkSchema>;

@@ -8,9 +8,9 @@
  *   bun run qa:repair [--dry-run]
  */
 
-import { execSync } from 'node:child_process';
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
+import { execSync } from "node:child_process";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 
 interface QaResult {
   patternId?: string;
@@ -31,14 +31,14 @@ interface RepairInstructions {
 
 // --- CONFIGURATION ---
 const PROJECT_ROOT = process.cwd();
-const QA_DIR = path.join(PROJECT_ROOT, 'content/qa');
-const RESULTS_DIR = path.join(QA_DIR, 'results');
-const BACKUPS_DIR = path.join(QA_DIR, 'backups');
-const REPAIRS_DIR = path.join(QA_DIR, 'repairs');
-const PATTERNS_DIR = path.join(PROJECT_ROOT, 'content/new/processed');
+const QA_DIR = path.join(PROJECT_ROOT, "content/qa");
+const RESULTS_DIR = path.join(QA_DIR, "results");
+const BACKUPS_DIR = path.join(QA_DIR, "backups");
+const REPAIRS_DIR = path.join(QA_DIR, "repairs");
+const PATTERNS_DIR = path.join(PROJECT_ROOT, "content/new/processed");
 const _REPAIR_PROMPT = path.join(
   PROJECT_ROOT,
-  'scripts/qa/prompts/repair-schema.mdx',
+  "scripts/qa/prompts/repair-schema.mdx"
 );
 
 // --- SETUP ---
@@ -49,17 +49,17 @@ async function ensureDirectories() {
 
 // --- MAIN PROCESSING ---
 async function main() {
-  const dryRun = process.argv.includes('--dry-run');
+  const dryRun = process.argv.includes("--dry-run");
 
-  console.log(`QA Repair Process${dryRun ? ' (DRY RUN)' : ''}`);
-  console.log('=====================================');
+  console.log(`QA Repair Process${dryRun ? " (DRY RUN)" : ""}`);
+  console.log("=====================================");
 
   await ensureDirectories();
 
   try {
     // Check if results exist
     const files = await fs.readdir(RESULTS_DIR);
-    const qaResults = files.filter((f) => f.endsWith('.json'));
+    const qaResults = files.filter((f) => f.endsWith(".json"));
 
     if (qaResults.length === 0) {
       console.log('No QA results found. Run "bun run qa:process" first.');
@@ -70,7 +70,7 @@ async function main() {
     const failedResults: QaResult[] = [];
     for (const file of qaResults) {
       const filePath = path.join(RESULTS_DIR, file);
-      const content = await fs.readFile(filePath, 'utf-8');
+      const content = await fs.readFile(filePath, "utf-8");
       const result = JSON.parse(content) as QaResult;
 
       if (!result.passed) {
@@ -82,7 +82,7 @@ async function main() {
     }
 
     if (failedResults.length === 0) {
-      console.log('No failed patterns found to repair.');
+      console.log("No failed patterns found to repair.");
       return;
     }
 
@@ -102,7 +102,7 @@ async function main() {
       }
     }
 
-    console.log(`\nRepair Process Complete${dryRun ? ' (DRY RUN)' : ''}:`);
+    console.log(`\nRepair Process Complete${dryRun ? " (DRY RUN)" : ""}:`);
     console.log(`  Attempted: ${failedResults.length}`);
     console.log(`  Successfully Repaired: ${repaired}`);
     console.log(`  Failed: ${failed}`);
@@ -112,13 +112,13 @@ async function main() {
       console.log(`Repair instructions saved to: ${REPAIRS_DIR}`);
     }
   } catch (error) {
-    console.error('Repair process failed:', error);
+    console.error("Repair process failed:", error);
     process.exit(1);
   }
 }
 
 async function repairPattern(result: QaResult, dryRun: boolean): Promise<void> {
-  const patternId = result.patternId || 'unknown';
+  const patternId = result.patternId || "unknown";
   const fileName = result.fileName || `${patternId}.mdx`;
   const patternPath = path.join(PATTERNS_DIR, fileName);
 
@@ -134,7 +134,7 @@ async function repairPattern(result: QaResult, dryRun: boolean): Promise<void> {
 
   // Create backup
   const backupFile = path.join(BACKUPS_DIR, `${patternId}-${Date.now()}.mdx`);
-  const originalContent = await fs.readFile(patternPath, 'utf-8');
+  const originalContent = await fs.readFile(patternPath, "utf-8");
 
   if (!dryRun) {
     await fs.writeFile(backupFile, originalContent);
@@ -144,7 +144,7 @@ async function repairPattern(result: QaResult, dryRun: boolean): Promise<void> {
   // Generate repair instructions using CLI
   const repairInstructions = await generateRepairInstructions(
     result,
-    originalContent,
+    originalContent
   );
 
   if (!repairInstructions) {
@@ -158,29 +158,29 @@ async function repairPattern(result: QaResult, dryRun: boolean): Promise<void> {
 
   if (dryRun) {
     console.log(
-      `  DRY RUN: Would apply ${repairInstructions.changes.length} changes`,
+      `  DRY RUN: Would apply ${repairInstructions.changes.length} changes`
     );
-    console.log(`  Changes: ${repairInstructions.changes.join('; ')}`);
+    console.log(`  Changes: ${repairInstructions.changes.join("; ")}`);
     return;
   }
 
   // Apply repairs
   await applyRepairs(patternPath, repairInstructions);
   console.log(
-    `  ✓ Repaired: ${repairInstructions.changes.length} changes applied`,
+    `  ✓ Repaired: ${repairInstructions.changes.length} changes applied`
   );
 }
 
 async function generateRepairInstructions(
   result: QaResult,
-  originalContent: string,
+  originalContent: string
 ): Promise<RepairInstructions | null> {
   const prompt = `Generate repair instructions for this failed Effect pattern:
 
-Pattern: ${result.metadata?.title || 'Unknown'}
-Errors: ${(result.errors || []).join(', ')}
-Warnings: ${(result.warnings || []).join(', ')}
-Suggestions: ${(result.suggestions || []).join(', ')}
+Pattern: ${result.metadata?.title || "Unknown"}
+Errors: ${(result.errors || []).join(", ")}
+Warnings: ${(result.warnings || []).join(", ")}
+Suggestions: ${(result.suggestions || []).join(", ")}
 
 Original Content:
 ${originalContent}
@@ -196,7 +196,7 @@ Return JSON only.`;
     const command = `bun run cli generate --prompt "${prompt}" --output-format json`;
 
     const output = execSync(command, {
-      encoding: 'utf-8',
+      encoding: "utf-8",
       cwd: PROJECT_ROOT,
     });
 
@@ -209,24 +209,24 @@ Return JSON only.`;
 
 async function applyRepairs(
   patternPath: string,
-  repairInstructions: RepairInstructions,
+  repairInstructions: RepairInstructions
 ): Promise<void> {
   const { repairedContent } = repairInstructions;
 
   if (!repairedContent) {
-    throw new Error('No repaired content provided');
+    throw new Error("No repaired content provided");
   }
 
   await fs.writeFile(patternPath, repairedContent);
 }
 
 // --- ERROR HANDLING ---
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
   process.exit(1);
 });
 
 main().catch((error) => {
-  console.error('Repair process failed:', error);
+  console.error("Repair process failed:", error);
   process.exit(1);
 });

@@ -17,18 +17,19 @@ const option = Option.fromNullable(nullableValue); // Option<string>
 const someValue = Option.some(42);
 const effectFromOption = Option.match(someValue, {
   onNone: () => Effect.fail("No value"),
-  onSome: (value) => Effect.succeed(value)
+  onSome: (value) => Effect.succeed(value),
 }); // Effect<number, string, never>
 
 // Effect: Convert an Either to an Effect
 const either = Either.right("success");
 const effectFromEither = Either.match(either, {
   onLeft: (error) => Effect.fail(error),
-  onRight: (value) => Effect.succeed(value)
+  onRight: (value) => Effect.succeed(value),
 }); // Effect<string, never, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fromNullable` lifts a nullable value into an Effect, failing if the value is `null` or `undefined`.
 - `Effect.fromOption` lifts an Option into an Effect, failing if the Option is `none`.
 - `Effect.fromEither` lifts an Either into an Effect, failing if the Either is `left`.
@@ -60,7 +61,8 @@ const effects = [Effect.succeed(1), Effect.succeed(2)];
 const batchEffect = Effect.all(effects); // Effect<[1, 2]>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Stream.fromIterable` creates a stream from any array or iterable, enabling streaming and batch operations.
 - `Effect.all` (covered elsewhere) can be used to process arrays of effects in batch.
 
@@ -92,10 +94,10 @@ const effectAsync = Effect.async<string, Error>((resume) => {
     else if (data) resume(Effect.succeed(data));
   });
 }); // Effect<string, Error, never>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.sync` is for synchronous computations that are guaranteed not to throw.
 - `Effect.async` is for integrating callback-based APIs, converting them into Effects.
 
@@ -120,7 +122,8 @@ const option = Option.none(); // Option<never>
 const either = Either.left("Invalid input"); // Either<string, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fail(error)` creates an effect that always fails with `error`.
 - `Option.none()` creates an option that is always absent.
 - `Either.left(error)` creates an either that always represents failure.
@@ -146,7 +149,8 @@ const option = Option.some("hello"); // Option<string>
 const either = Either.right({ id: 1 }); // Either<never, { id: number }>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.succeed(value)` creates an effect that always succeeds with `value`.
 - `Option.some(value)` creates an option that is always present.
 - `Either.right(value)` creates an either that always represents success.
@@ -165,19 +169,19 @@ import { Effect } from "effect";
 // Synchronous: Wrap code that may throw
 const effectSync = Effect.try({
   try: () => JSON.parse("{ invalid json }"),
-  catch: (error) => `Parse error: ${String(error)}`
+  catch: (error) => `Parse error: ${String(error)}`,
 }); // Effect<string, never, never>
 
 // Asynchronous: Wrap a promise that may reject
 const effectAsync = Effect.tryPromise({
-  try: () => fetch("https://api.example.com/data").then(res => res.json()),
-  catch: (error) => `Network error: ${String(error)}`
+  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
+  catch: (error) => `Network error: ${String(error)}`,
 }); // Effect<string, any, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
 - `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
 
 ---
-

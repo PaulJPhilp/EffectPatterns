@@ -7,6 +7,7 @@ This document outlines the comprehensive design system used in the Wetware & Sof
 ## 🏗️ Architecture
 
 ### Tech Stack
+
 - **Framework**: Next.js 15 with React 19
 - **Styling**: Tailwind CSS with shadcn/ui components
 - **Language**: TypeScript with strict type checking
@@ -14,6 +15,7 @@ This document outlines the comprehensive design system used in the Wetware & Sof
 - **Color Space**: OKLCH for perceptually uniform colors
 
 ### Core Principles
+
 1. **Consistency**: Unified design language across all components
 2. **Accessibility**: WCAG compliant with keyboard navigation and screen reader support
 3. **Performance**: Optimized CSS with minimal bundle size impact
@@ -25,24 +27,27 @@ This document outlines the comprehensive design system used in the Wetware & Sof
 ## 🎨 Color System
 
 ### OKLCH Color Space
+
 The system uses OKLCH color space for better perceptual uniformity and accessibility.
 
 ### Brand Colors
+
 ```css
 /* CSS Custom Properties */
 :root {
-  --color-silver: 248 248 248;   /* #f8f8f8 - Light backgrounds */
-  --color-charcoal: 33 33 33;   /* #212121 - Dark text */
-  --color-orange: 255 122 0;    /* #ff7a00 - Brand accent */
+  --color-silver: 248 248 248; /* #f8f8f8 - Light backgrounds */
+  --color-charcoal: 33 33 33; /* #212121 - Dark text */
+  --color-orange: 255 122 0; /* #ff7a00 - Brand accent */
 }
 
 .dark {
-  --color-charcoal: 24 24 24;   /* Darker for dark mode */
-  --color-orange: 255 150 60;   /* Warmer accent in dark */
+  --color-charcoal: 24 24 24; /* Darker for dark mode */
+  --color-orange: 255 150 60; /* Warmer accent in dark */
 }
 ```
 
 ### Theme System
+
 The system uses shadcn/ui's theme system with OKLCH values:
 
 ```css
@@ -63,6 +68,7 @@ The system uses shadcn/ui's theme system with OKLCH values:
 ```
 
 ### Usage in Components
+
 ```tsx
 // ✅ Correct - Use theme tokens
 <div className="bg-background text-foreground border-border">
@@ -78,6 +84,7 @@ The system uses shadcn/ui's theme system with OKLCH values:
 ```
 
 ### Color Roles
+
 - **Background**: `bg-background` - Main background color
 - **Surface**: `bg-card` - Elevated surfaces, cards
 - **Primary**: `text-primary` - Primary actions, links
@@ -90,6 +97,7 @@ The system uses shadcn/ui's theme system with OKLCH values:
 ## 📝 Typography
 
 ### Font Families
+
 ```css
 /* Tailwind Configuration */
 fontFamily: {
@@ -100,6 +108,7 @@ fontFamily: {
 ```
 
 ### Fluid Typography Scale
+
 The system uses responsive typography that scales with viewport size:
 
 ```css
@@ -113,6 +122,7 @@ fluidTypography: {
 ```
 
 ### Typography Hierarchy
+
 ```tsx
 // Headings
 <h1 className="text-4xl font-bold tracking-tight">Hero Title</h1>
@@ -127,13 +137,16 @@ fluidTypography: {
 ```
 
 ### Prose Styling
+
 ```css
 /* Tailwind Typography Plugin Configuration */
 .prose {
   @apply max-w-none dark:prose-invert prose-sm md:prose-base;
 }
 
-.prose h1, .prose h2, .prose h3 {
+.prose h1,
+.prose h2,
+.prose h3 {
   @apply font-sans;
 }
 
@@ -147,6 +160,7 @@ fluidTypography: {
 ## 📏 Spacing & Layout
 
 ### Spacing Scale
+
 The system uses Tailwind's default spacing scale (4px increments):
 
 ```tsx
@@ -160,10 +174,11 @@ The system uses Tailwind's default spacing scale (4px increments):
 ### Layout Patterns
 
 #### Grid System
+
 ```tsx
 // Responsive grid layouts
 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-  {items.map(item => (
+  {items.map((item) => (
     <Card key={item.id} className="p-6">
       <CardContent>{item.content}</CardContent>
     </Card>
@@ -172,6 +187,7 @@ The system uses Tailwind's default spacing scale (4px increments):
 ```
 
 #### Content + Sidebar Layout
+
 ```tsx
 <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
   <main className="min-w-0">        {/* Main content */}
@@ -180,6 +196,7 @@ The system uses Tailwind's default spacing scale (4px increments):
 ```
 
 #### Container Widths
+
 ```tsx
 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
   {/* Content constrained to readable width */}
@@ -191,17 +208,18 @@ The system uses Tailwind's default spacing scale (4px increments):
 ## 🧩 Component System
 
 ### Base Component Props
+
 All components extend consistent prop interfaces:
 
 ```typescript
 interface BaseComponentProps {
-  className?: string;      // Additional CSS classes
-  children?: ReactNode;    // Child components
-  testId?: string;         // Test identifier
+  className?: string; // Additional CSS classes
+  children?: ReactNode; // Child components
+  testId?: string; // Test identifier
 }
 
 interface CardComponentProps extends BaseComponentProps {
-  hoverable?: boolean;     // Enable hover effects
+  hoverable?: boolean; // Enable hover effects
   variant?: "default" | "outlined" | "elevated";
 }
 ```
@@ -211,23 +229,25 @@ interface CardComponentProps extends BaseComponentProps {
 #### 1. Card Components
 
 ##### PostCard
+
 Displays blog posts with rich metadata and visual appeal.
 
 ```typescript
 interface PostCardProps extends CardComponentProps {
-  post: Post;                          // Post data
-  showDescription?: boolean;           // Show description (default: true)
-  showTags?: boolean;                  // Show tags (default: true)
-  maxTags?: number;                    // Max tags to show (default: 3)
-  minHeight?: string;                  // Minimum card height (default: "200px")
-  titleLineClamp?: number;              // Title line clamp (default: 2)
-  descriptionLineClamp?: number;        // Description line clamp (default: 3)
-  interactive?: boolean;               // Make card clickable (default: false)
-  imagePriority?: boolean;             // Image loading priority (default: false)
+  post: Post; // Post data
+  showDescription?: boolean; // Show description (default: true)
+  showTags?: boolean; // Show tags (default: true)
+  maxTags?: number; // Max tags to show (default: 3)
+  minHeight?: string; // Minimum card height (default: "200px")
+  titleLineClamp?: number; // Title line clamp (default: 2)
+  descriptionLineClamp?: number; // Description line clamp (default: 3)
+  interactive?: boolean; // Make card clickable (default: false)
+  imagePriority?: boolean; // Image loading priority (default: false)
 }
 ```
 
 **Usage Examples:**
+
 ```tsx
 // Standard blog post card
 <PostCard
@@ -258,21 +278,23 @@ interface PostCardProps extends CardComponentProps {
 ```
 
 ##### SeriesCard
+
 Flexible series display with multiple layout variants.
 
 ```typescript
 interface SeriesCardProps {
-  series: Series;                       // Series data
+  series: Series; // Series data
   variant?: "grid" | "carousel" | "list"; // Layout variant (default: "grid")
-  size?: "sm" | "md" | "lg";           // Size variant (default: "md")
-  showDescription?: boolean;           // Show description (default: true)
-  showArticleCount?: boolean;          // Show article count (default: true)
-  priority?: boolean;                  // Image loading priority (default: false)
-  testId?: string;                     // Test identifier
+  size?: "sm" | "md" | "lg"; // Size variant (default: "md")
+  showDescription?: boolean; // Show description (default: true)
+  showArticleCount?: boolean; // Show article count (default: true)
+  priority?: boolean; // Image loading priority (default: false)
+  testId?: string; // Test identifier
 }
 ```
 
 **Usage Examples:**
+
 ```tsx
 // Grid layout for series pages
 <SeriesCard
@@ -301,17 +323,19 @@ interface SeriesCardProps {
 ```
 
 ##### ProjectCard
+
 Showcase projects with status indicators and technology stack.
 
 ```typescript
 interface ProjectCardProps extends CardComponentProps {
-  project: Project;                    // Project data
-  showDescription?: boolean;           // Show description (default: true)
-  showTechnologies?: boolean;          // Show tech stack (default: true)
+  project: Project; // Project data
+  showDescription?: boolean; // Show description (default: true)
+  showTechnologies?: boolean; // Show tech stack (default: true)
 }
 ```
 
 **Usage Examples:**
+
 ```tsx
 // Full project display
 <ProjectCard
@@ -332,18 +356,20 @@ interface ProjectCardProps extends CardComponentProps {
 #### 2. Layout Components
 
 ##### SeriesContentLayout
+
 Creates consistent layouts with series sidebar and main content.
 
 ```typescript
 interface SeriesContentLayoutProps extends BaseComponentProps {
-  series: Series[];                    // Series data (currently unused in layout)
-  children: ReactNode;                 // Main content
+  series: Series[]; // Series data (currently unused in layout)
+  children: ReactNode; // Main content
   maxWidth?: "4xl" | "5xl" | "6xl" | "7xl" | "full"; // Container width (default: "7xl")
-  gap?: "sm" | "md" | "lg" | "xl";     // Gap between sections (default: "lg")
+  gap?: "sm" | "md" | "lg" | "xl"; // Gap between sections (default: "lg")
 }
 ```
 
 **Usage Examples:**
+
 ```tsx
 // Standard layout with wide container
 <SeriesContentLayout series={series} maxWidth="7xl" gap="lg">
@@ -367,18 +393,20 @@ interface SeriesContentLayoutProps extends BaseComponentProps {
 #### 3. Content Display Components
 
 ##### LatestPosts
+
 Displays recent posts with view switching capabilities.
 
 ```typescript
 interface LatestPostsProps extends BaseComponentProps {
-  posts: Post[];                       // Posts to display
-  maxPosts?: number;                   // Maximum posts to show (default: 10)
-  defaultView?: "card" | "list";       // Default view mode (default: "card")
-  showViewToggle?: boolean;            // Show view switcher (default: true)
+  posts: Post[]; // Posts to display
+  maxPosts?: number; // Maximum posts to show (default: 10)
+  defaultView?: "card" | "list"; // Default view mode (default: "card")
+  showViewToggle?: boolean; // Show view switcher (default: true)
 }
 ```
 
 **Usage Examples:**
+
 ```tsx
 // Full-featured with view switching
 <LatestPosts
@@ -400,6 +428,7 @@ interface LatestPostsProps extends BaseComponentProps {
 #### 4. UI Components
 
 ##### Card System
+
 Consistent container styling with slots for structured content:
 
 ```typescript
@@ -421,6 +450,7 @@ interface CardFooterProps extends BaseComponentProps {
 ```
 
 **Usage Examples:**
+
 ```tsx
 // Standard card structure
 <Card className="p-6">
@@ -445,11 +475,18 @@ interface CardFooterProps extends BaseComponentProps {
 ```
 
 ##### Button
+
 Accessible button component with multiple variants:
 
 ```typescript
 interface ButtonProps extends BaseComponentProps {
-  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  variant?:
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | "link";
   size?: "default" | "sm" | "lg" | "icon";
   disabled?: boolean;
   onClick?: () => void;
@@ -457,6 +494,7 @@ interface ButtonProps extends BaseComponentProps {
 ```
 
 **Usage Examples:**
+
 ```tsx
 // Primary action
 <Button variant="default" size="default">
@@ -475,6 +513,7 @@ interface ButtonProps extends BaseComponentProps {
 ```
 
 ##### CustomTag
+
 Styled tag component for metadata:
 
 ```typescript
@@ -485,12 +524,14 @@ interface CustomTagProps extends BaseComponentProps {
 ```
 
 **Usage Examples:**
+
 ```tsx
 <CustomTag>Technology</CustomTag>
 <CustomTag variant="secondary">Tutorial</CustomTag>
 ```
 
 ### Component Variants
+
 Components support multiple variants for different contexts:
 
 ```tsx
@@ -505,6 +546,7 @@ Components support multiple variants for different contexts:
 ## ♿ Accessibility
 
 ### Focus Management
+
 ```css
 /* Consistent focus rings */
 .focus-ring {
@@ -513,6 +555,7 @@ Components support multiple variants for different contexts:
 ```
 
 ### Keyboard Navigation
+
 ```tsx
 // Focusable elements with proper tab order
 <button className="focus-ring" onClick={handleClick}>
@@ -525,18 +568,22 @@ Components support multiple variants for different contexts:
 ```
 
 ### ARIA Support
+
 ```tsx
 // Semantic markup with ARIA where needed
 <nav aria-label="Main navigation">
   <ul role="menubar">
     <li role="none">
-      <a role="menuitem" href="/home">Home</a>
+      <a role="menuitem" href="/home">
+        Home
+      </a>
     </li>
   </ul>
 </nav>
 ```
 
 ### Color Contrast
+
 - All text combinations meet WCAG AA standards
 - Focus indicators have 3:1 contrast ratio
 - Interactive elements have sufficient color contrast
@@ -546,8 +593,9 @@ Components support multiple variants for different contexts:
 ## 🌓 Theming & Dark Mode
 
 ### Theme Provider Setup
+
 ```tsx
-import { ThemeProvider } from "next-themes"
+import { ThemeProvider } from "next-themes";
 
 export function App({ children }) {
   return (
@@ -559,16 +607,17 @@ export function App({ children }) {
     >
       {children}
     </ThemeProvider>
-  )
+  );
 }
 ```
 
 ### Theme-Aware Components
+
 ```tsx
-import { useTheme } from "next-themes"
+import { useTheme } from "next-themes";
 
 function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme();
 
   return (
     <button
@@ -577,11 +626,12 @@ function ThemeToggle() {
     >
       Toggle theme
     </button>
-  )
+  );
 }
 ```
 
 ### CSS Custom Properties
+
 All colors automatically adapt through CSS custom properties:
 
 ```css
@@ -605,18 +655,21 @@ All colors automatically adapt through CSS custom properties:
 ### Project Setup
 
 1. **Install Dependencies**
+
 ```bash
 bun add @radix-ui/react-slot class-variance-authority clsx tailwind-merge lucide-react
 bun add -D @shadcn/ui tailwindcss postcss autoprefixer
 ```
 
 2. **Initialize shadcn/ui**
+
 ```bash
 npx shadcn-ui@latest init
 # Select: New York style, CSS variables, OKLCH colors
 ```
 
 3. **Configure Tailwind**
+
 ```javascript
 // tailwind.config.js
 module.exports = {
@@ -637,10 +690,11 @@ module.exports = {
     },
   },
   plugins: [require("@tailwindcss/typography"), require("tailwindcss-animate")],
-}
+};
 ```
 
 4. **Add Global Styles**
+
 ```css
 /* globals.css */
 @tailwind base;
@@ -678,6 +732,7 @@ module.exports = {
 ### Component Development
 
 1. **Component Structure with Variants**
+
 ```typescript
 // components/MyComponent.tsx
 import { cva, type VariantProps } from "class-variance-authority"
@@ -739,38 +794,40 @@ export { MyComponent, type MyComponentProps }
 ```
 
 2. **Type Definitions**
+
 ```typescript
 // lib/component-types.ts
 export interface BaseComponentProps {
-  className?: string
-  children?: React.ReactNode
-  testId?: string
+  className?: string;
+  children?: React.ReactNode;
+  testId?: string;
 }
 
 export interface CardComponentProps extends BaseComponentProps {
-  hoverable?: boolean
-  variant?: "default" | "outlined" | "elevated"
+  hoverable?: boolean;
+  variant?: "default" | "outlined" | "elevated";
 }
 
 export interface ClickableProps {
-  onClick?: () => void
-  disabled?: boolean
+  onClick?: () => void;
+  disabled?: boolean;
 }
 
 export interface LoadingProps {
-  isLoading?: boolean
-  loadingText?: string
+  isLoading?: boolean;
+  loadingText?: string;
 }
 
 // Utility type for component props with refs
 export type ComponentPropsWithRef<T extends keyof React.JSX.IntrinsicElements> =
-  BaseComponentProps & React.JSX.IntrinsicElements[T]
+  BaseComponentProps & React.JSX.IntrinsicElements[T];
 
 // Utility type for required props
-export type RequiredProps<T, K extends keyof T> = T & Required<Pick<T, K>>
+export type RequiredProps<T, K extends keyof T> = T & Required<Pick<T, K>>;
 ```
 
 3. **Component with Forwarded Ref**
+
 ```typescript
 // components/MyInput.tsx
 import { cn } from "@/lib/utils"
@@ -805,6 +862,7 @@ export { MyInput, type MyInputProps }
 ```
 
 4. **Compound Component Pattern**
+
 ```typescript
 // components/MyCard.tsx
 import { cn } from "@/lib/utils"
@@ -893,9 +951,10 @@ export {
 ### Configuration Files
 
 #### Complete Tailwind Configuration
+
 ```javascript
 // tailwind.config.js
-/ ** @type {import('tailwindcss').Config} */
+/ ** @type {import('tailwindcss').Config} */;
 module.exports = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   darkMode: "class",
@@ -961,14 +1020,12 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    require("@tailwindcss/typography"),
-    require("tailwindcss-animate"),
-  ],
-}
+  plugins: [require("@tailwindcss/typography"), require("tailwindcss-animate")],
+};
 ```
 
 #### Complete Global Styles
+
 ```css
 /* src/app/globals.css */
 @tailwind base;
@@ -1219,6 +1276,7 @@ module.exports = {
 ```
 
 #### Theme Provider Setup
+
 ```typescript
 // components/theme-provider.tsx
 "use client"
@@ -1234,13 +1292,14 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 ```
 
 #### Utility Functions
+
 ```typescript
 // lib/utils.ts
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 // Additional utility functions
@@ -1249,12 +1308,12 @@ export function formatDate(date: Date): string {
     year: "numeric",
     month: "long",
     day: "numeric",
-  }).format(date)
+  }).format(date);
 }
 
 export function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text
-  return text.slice(0, maxLength) + "..."
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + "...";
 }
 ```
 
@@ -1308,11 +1367,13 @@ describe("MyComponent", () => {
 
 // Testing compound components
 ```
+
 ---
 
 ## 📋 Checklist for New Projects
 
 ### Setup Phase
+
 - [ ] Initialize Next.js project with TypeScript
 - [ ] Install required dependencies (Tailwind, shadcn/ui, fonts)
 - [ ] Configure Tailwind with theme system
@@ -1321,6 +1382,7 @@ describe("MyComponent", () => {
 - [ ] Set up theme provider for dark mode
 
 ### Component Development
+
 - [ ] Create base component types and utilities
 - [ ] Implement core UI components (Button, Card, etc.)
 - [ ] Build layout components
@@ -1331,6 +1393,7 @@ describe("MyComponent", () => {
 - [ ] Implement focus management and accessibility
 
 ### Quality Assurance
+
 - [ ] All components use theme tokens (no hardcoded colors)
 - [ ] Typography follows established hierarchy
 - [ ] Spacing uses Tailwind scale consistently
@@ -1341,6 +1404,7 @@ describe("MyComponent", () => {
 - [ ] Components have comprehensive tests
 
 ### Documentation
+
 - [ ] Component usage guidelines documented
 - [ ] Props and variants clearly explained
 - [ ] Code examples provided
@@ -1352,18 +1416,21 @@ describe("MyComponent", () => {
 ## 🚀 Migration & Maintenance
 
 ### Updating the System
+
 1. **Color Changes**: Modify CSS custom properties in globals.css
 2. **Typography**: Update font families or sizes in tailwind.config.js
 3. **Components**: Extend existing variants or add new component types
 4. **Spacing**: Adjust Tailwind configuration if needed
 
 ### Version Compatibility
+
 - **Next.js**: Compatible with 13+ (App Router)
 - **React**: Works with 18+ (including React 19)
 - **Tailwind**: Requires 3.0+ with CSS variables support
 - **shadcn/ui**: Latest version recommended
 
 ### Performance Considerations
+
 - CSS custom properties enable efficient theme switching
 - Component variants use CSS classes for optimal performance
 - Tree-shakable imports reduce bundle size

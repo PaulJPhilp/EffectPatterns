@@ -21,10 +21,10 @@ const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
 // Convert to milliseconds or human-readable format
 const ms = Duration.toMillis(fiveMinutes); // 300000
 const readable = Duration.format(oneSecond); // "1s"
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Duration` is immutable and type-safe.
 - Use helpers for common intervals and arithmetic for composition.
 - Prefer `Duration` over raw numbers for all time-based logic.
@@ -61,13 +61,12 @@ const program = Effect.gen(function* () {
 
   return { now, inOneHour, oneHourAgo, iso, isBefore };
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `DateTime` is immutable and time-zone-aware.
 - Supports parsing, formatting, arithmetic, and comparison.
 - Use for all date/time logic to avoid bugs with native `Date`.
 
 ---
-

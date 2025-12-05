@@ -168,17 +168,21 @@ async function inspectPatterns() {
         });
 
         const count = results.results?.length || 0;
-        const patternCount = results.results?.filter((r: any) => {
-          try {
-            const memField = r.memory;
-            const parsed = typeof memField === "string" ? JSON.parse(memField) : memField;
-            return parsed?.type === "effect_pattern";
-          } catch {
-            return false;
-          }
-        }).length || 0;
+        const patternCount =
+          results.results?.filter((r: any) => {
+            try {
+              const memField = r.memory;
+              const parsed =
+                typeof memField === "string" ? JSON.parse(memField) : memField;
+              return parsed?.type === "effect_pattern";
+            } catch {
+              return false;
+            }
+          }).length || 0;
 
-        console.log(`   "${query}": ${count} results (${patternCount} patterns)`);
+        console.log(
+          `   "${query}": ${count} results (${patternCount} patterns)`
+        );
       } catch (error) {
         console.log(`   "${query}": Error`);
       }
@@ -192,7 +196,10 @@ async function inspectPatterns() {
       console.log(`   Projects: ${Array.from(byProject.keys()).join(", ")}`);
       console.log(`   Users: ${Array.from(byUser.keys()).join(", ")}`);
 
-      if (withPatternId === allPatterns.length && withTitle === allPatterns.length) {
+      if (
+        withPatternId === allPatterns.length &&
+        withTitle === allPatterns.length
+      ) {
         console.log("\n✅ All patterns have required fields");
       } else {
         console.log("\n⚠️  Some patterns are missing required fields");
@@ -200,7 +207,9 @@ async function inspectPatterns() {
 
       const effectPatternsProject = byProject.get("effect-patterns");
       if (effectPatternsProject && effectPatternsProject.length > 0) {
-        console.log(`\n✅ "effect-patterns" project exists with ${effectPatternsProject.length} patterns`);
+        console.log(
+          `\n✅ "effect-patterns" project exists with ${effectPatternsProject.length} patterns`
+        );
       } else {
         console.log('\n⚠️  "effect-patterns" project ID not found in patterns');
       }
@@ -208,7 +217,6 @@ async function inspectPatterns() {
       console.log("❌ No Effect Patterns found in Supermemory");
       console.log("   Run: npm run seed-patterns to populate");
     }
-
   } catch (error) {
     console.error("❌ Error:", error);
     if (error instanceof Error) {

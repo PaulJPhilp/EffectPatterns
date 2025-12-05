@@ -1,5 +1,5 @@
 ---
-title: 'Beyond the Date Type - Real World Dates, Times, and Timezones'
+title: "Beyond the Date Type - Real World Dates, Times, and Timezones"
 id: beyond-the-date-type
 skillLevel: intermediate
 useCase: core-concepts
@@ -26,6 +26,7 @@ author: paul
 ## Guideline
 
 To handle specific points in time robustly in Effect, follow these principles:
+
 1.  **Access "now" via the `Clock` service** (`Clock.currentTimeMillis`) instead of `Date.now()`.
 2.  **Store and pass timestamps** as immutable primitives: `number` for UTC milliseconds or `string` for ISO 8601 format.
 3.  **Perform calculations locally:** When you need to perform date-specific calculations (e.g., "get the day of the week"), create a `new Date(timestamp)` instance inside a pure computation, use it, and then discard it. Never hold onto mutable `Date` objects in your application state.
@@ -37,8 +38,9 @@ To handle specific points in time robustly in Effect, follow these principles:
 JavaScript's native `Date` object is a common source of bugs. It is mutable, its behavior can be inconsistent across different JavaScript environments (especially with timezones), and its reliance on the system clock makes time-dependent logic difficult to test.
 
 Effect's approach solves these problems:
--   The **`Clock` service** abstracts away the concept of "now." In production, the `Live` clock uses the system time. In tests, you can provide a `TestClock` that gives you complete, deterministic control over the passage of time.
--   Using **primitive `number` or `string`** for timestamps ensures immutability and makes your data easy to serialize, store, and transfer.
+
+- The **`Clock` service** abstracts away the concept of "now." In production, the `Live` clock uses the system time. In tests, you can provide a `TestClock` that gives you complete, deterministic control over the passage of time.
+- Using **primitive `number` or `string`** for timestamps ensures immutability and makes your data easy to serialize, store, and transfer.
 
 This makes your time-based logic pure, predictable, and easy to test.
 
@@ -58,7 +60,9 @@ interface Event {
 }
 
 // This function is pure and testable because it depends on Clock
-const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> =>
+const createEvent = (
+  message: string
+): Effect.Effect<Event, never, Types.Clock> =>
   Effect.gen(function* () {
     const timestamp = yield* Clock.currentTimeMillis;
     return { message, timestamp };

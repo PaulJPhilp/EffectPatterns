@@ -4,7 +4,17 @@ id: "combinator-error-handling"
 skillLevel: "intermediate"
 useCase: ["Combinators", "Error Handling", "Composition"]
 summary: "Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option."
-tags: ["error-handling", "catchAll", "orElse", "match", "combinator", "effect", "either", "option"]
+tags:
+  [
+    "error-handling",
+    "catchAll",
+    "orElse",
+    "match",
+    "combinator",
+    "effect",
+    "either",
+    "option",
+  ]
 rule:
   description: "Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way."
 related: ["combinator-map", "combinator-flatmap", "combinator-conditional"]
@@ -34,9 +44,7 @@ const effect = Effect.fail("fail!").pipe(
 ); // Effect<string>
 
 // Option: Provide a fallback if value is None
-const option = Option.none().pipe(
-  Option.orElse(() => Option.some("default"))
-); // Option<string>
+const option = Option.none().pipe(Option.orElse(() => Option.some("default"))); // Option<string>
 
 // Either: Provide a fallback if value is Left
 const either = Either.left("error").pipe(

@@ -3,12 +3,10 @@ module.exports = function transformer(file, api) {
   const root = j(file.source);
 
   const hasJsx =
-    root.find(j.JSXElement).size() > 0 ||
-    root.find(j.JSXFragment).size() > 0;
+    root.find(j.JSXElement).size() > 0 || root.find(j.JSXFragment).size() > 0;
 
-  const hasReactImport = root
-    .find(j.ImportDeclaration, { source: { value: "react" } })
-    .size() > 0;
+  const hasReactImport =
+    root.find(j.ImportDeclaration, { source: { value: "react" } }).size() > 0;
 
   if (!hasJsx || hasReactImport) {
     return null;

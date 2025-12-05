@@ -25,7 +25,8 @@ const effects = [Effect.succeed(1), Effect.succeed(2)];
 const batchEffect = Effect.all(effects); // Effect<[1, 2]>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Stream.fromIterable` creates a stream from any array or iterable, enabling streaming and batch operations.
 - `Effect.all` (covered elsewhere) can be used to process arrays of effects in batch.
 
@@ -62,7 +63,6 @@ const stream = Stream.fromIterable([
   [1, 2],
   [3, 4],
 ]).pipe(Stream.flatMap((arr) => Stream.fromIterable(arr))); // Stream<number>
-
 ```
 
 **Explanation:**  
@@ -95,7 +95,8 @@ const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
 const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Chunk` is immutable and optimized for performance.
 - It supports efficient batch operations, concatenation, and transformation.
 - Use `Chunk` in data pipelines, streaming, and concurrent scenarios.
@@ -119,16 +120,17 @@ const setB = HashSet.fromIterable([3, 4, 5]);
 const hasTwo = HashSet.has(setA, 2); // true
 
 // Union, intersection, difference
-const union = HashSet.union(setA, setB);         // HashSet {1, 2, 3, 4, 5}
+const union = HashSet.union(setA, setB); // HashSet {1, 2, 3, 4, 5}
 const intersection = HashSet.intersection(setA, setB); // HashSet {3}
-const difference = HashSet.difference(setA, setB);     // HashSet {1, 2}
+const difference = HashSet.difference(setA, setB); // HashSet {1, 2}
 
 // Add and remove elements
-const withSix = HashSet.add(setA, 6);    // HashSet {1, 2, 3, 6}
+const withSix = HashSet.add(setA, 6); // HashSet {1, 2, 3, 6}
 const withoutOne = HashSet.remove(setA, 1); // HashSet {2, 3}
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `HashSet` is immutable and supports efficient set operations.
 - Use it for membership checks, set algebra, and modeling unique collections.
 - Safe for concurrent and functional workflows.
@@ -160,10 +162,10 @@ console.log(HashSet.has(set, arr2)); // true
 const doubled = arr1.map((n) => n * 2); // Data.array([2, 4, 6])
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.array` creates immutable arrays with value-based equality.
 - Useful for modeling ordered collections in a safe, functional way.
 - Supports all standard array operations, but with immutability and structural equality.
 
 ---
-

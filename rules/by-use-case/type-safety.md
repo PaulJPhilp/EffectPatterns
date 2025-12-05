@@ -22,13 +22,12 @@ const email = "user@example.com" as Email;
 
 sendWelcome(email); // OK
 // sendWelcome("not-an-email"); // Type error! (commented to allow compilation)
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Brand.Branded<T, Name>` creates a new type that is distinct from its base type.
 - Only values explicitly branded as `Email` can be used where an `Email` is required.
 - This prevents accidental mixing of domain types.
 
 ---
-

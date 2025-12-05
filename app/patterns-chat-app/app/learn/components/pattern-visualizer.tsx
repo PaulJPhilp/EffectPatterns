@@ -44,13 +44,15 @@ export function PatternVisualizer({
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-semibold text-lg">{title}</h3>
               {difficulty && (
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  difficulty === "beginner"
-                    ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                    : difficulty === "intermediate"
-                    ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
-                    : "bg-red-500/10 text-red-700 dark:text-red-400"
-                }`}>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    difficulty === "beginner"
+                      ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                      : difficulty === "intermediate"
+                        ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+                        : "bg-red-500/10 text-red-700 dark:text-red-400"
+                  }`}
+                >
                   {difficulty}
                 </span>
               )}
@@ -183,4 +185,3 @@ export function PatternVisualizer({
     </div>
   );
 }
-

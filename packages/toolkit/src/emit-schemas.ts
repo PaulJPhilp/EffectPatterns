@@ -5,16 +5,16 @@
  * schemas for LLM tool-call function parameter specifications.
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { stderr, stdout } from 'node:process';
-import { fileURLToPath } from 'node:url';
-import { JSONSchema, type Schema as S } from '@effect/schema';
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { stderr, stdout } from "node:process";
+import { fileURLToPath } from "node:url";
+import { JSONSchema, type Schema as S } from "@effect/schema";
 import {
   ExplainPatternRequest,
   GenerateRequest,
   SearchPatternsRequest,
-} from './schemas/generate.js';
+} from "./schemas/generate.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -25,14 +25,14 @@ const __dirname = dirname(__filename);
 function emitSchema<A, I, R>(
   schema: S.Schema<A, I, R>,
   name: string,
-  outputDir: string,
+  outputDir: string
 ): void {
   try {
     const jsonSchema = JSONSchema.make(schema);
 
     const outputPath = join(outputDir, `${name}.json`);
 
-    writeFileSync(outputPath, JSON.stringify(jsonSchema, null, 2), 'utf-8');
+    writeFileSync(outputPath, JSON.stringify(jsonSchema, null, 2), "utf-8");
 
     stdout.write(`✓ Emitted ${name}.json\n`);
   } catch (error) {
@@ -45,9 +45,9 @@ function emitSchema<A, I, R>(
  * Main emitter function
  */
 function main(): void {
-  stdout.write('Emitting JSON Schemas for LLM tool calls...\n\n');
+  stdout.write("Emitting JSON Schemas for LLM tool calls...\n\n");
 
-  const outputDir = join(__dirname, '../dist/schemas');
+  const outputDir = join(__dirname, "../dist/schemas");
 
   // Ensure output directory exists
   if (!existsSync(outputDir)) {
@@ -55,11 +55,11 @@ function main(): void {
   }
 
   // Emit schemas for tool-call functions
-  emitSchema(GenerateRequest, 'generate-request', outputDir);
-  emitSchema(SearchPatternsRequest, 'search-patterns-request', outputDir);
-  emitSchema(ExplainPatternRequest, 'explain-pattern-request', outputDir);
+  emitSchema(GenerateRequest, "generate-request", outputDir);
+  emitSchema(SearchPatternsRequest, "search-patterns-request", outputDir);
+  emitSchema(ExplainPatternRequest, "explain-pattern-request", outputDir);
 
-  stdout.write('\nAll schemas emitted successfully!\n');
+  stdout.write("\nAll schemas emitted successfully!\n");
 }
 
 main();

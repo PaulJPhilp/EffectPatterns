@@ -89,7 +89,12 @@ export function Header() {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <Button asChild size="sm" variant="secondary" className="hidden md:inline-flex">
+          <Button
+            asChild
+            size="sm"
+            variant="secondary"
+            className="hidden md:inline-flex"
+          >
             <Link href="/patterns">Explore patterns</Link>
           </Button>
         </div>
@@ -97,5 +102,3 @@ export function Header() {
     </header>
   );
 }
-
-

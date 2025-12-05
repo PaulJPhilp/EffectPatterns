@@ -55,6 +55,7 @@ npm run seed:patterns
 ```
 
 **Expected output**:
+
 ```
 ✅ Queued 130/130 patterns
 ⏳ Phase 2: Waiting for queue processing...
@@ -62,6 +63,7 @@ npm run seed:patterns
 ```
 
 The script will now:
+
 - Queue all 130 patterns to the `effect-patterns` project
 - Each pattern tagged with `projectId: "effect-patterns"`
 - Search will filter for patterns in this project
@@ -71,11 +73,13 @@ The script will now:
 After seeding completes, verify patterns appear:
 
 **In Supermemory Console**:
+
 1. Switch to `effect-patterns` project
 2. Look for memories with type "effect_pattern"
 3. You should see 130 pattern entries
 
 **In the App**:
+
 ```bash
 npm run test:patterns
 
@@ -85,6 +89,7 @@ npm run test:patterns
 ```
 
 Or manually in the memory browser:
+
 1. Go to http://localhost:3001
 2. Click "Browse" sidebar
 3. Search "error" or "retry"
@@ -97,6 +102,7 @@ Or manually in the memory browser:
 ### Changed Files: 2
 
 **1. `app/code-assistant/scripts/seed-patterns.ts`**
+
 ```diff
 + const PROJECT_ID = "effect-patterns";
 
@@ -107,6 +113,7 @@ Or manually in the memory browser:
 ```
 
 **2. `app/code-assistant/lib/semantic-search/supermemory-store.ts`**
+
 ```diff
 + private effectPatternsProjectId: string = "effect-patterns";
 
@@ -121,6 +128,7 @@ Or manually in the memory browser:
 ## Before & After
 
 ### Before (Broken) ❌
+
 ```
 Seeding → Queue patterns to default project
 Search → Look in default project (not effect-patterns)
@@ -129,6 +137,7 @@ Console → Patterns don't appear in effect-patterns project
 ```
 
 ### After (Fixed) ✅
+
 ```
 Seeding → Queue patterns to effect-patterns project
 Search → Look in effect-patterns project
@@ -140,12 +149,12 @@ Console → Patterns appear in effect-patterns project
 
 ## Risk Assessment
 
-| Aspect | Risk | Mitigation |
-|--------|------|-----------|
+| Aspect           | Risk | Mitigation                                       |
+| ---------------- | ---- | ------------------------------------------------ |
 | Breaking Changes | None | Only adds project filtering, backward compatible |
-| Data Loss | None | No data deleted, only tagged with project |
-| Rollback | Easy | Simply remove project filtering |
-| Testing | Low | Already tested with diagnostic script |
+| Data Loss        | None | No data deleted, only tagged with project        |
+| Rollback         | Easy | Simply remove project filtering                  |
+| Testing          | Low  | Already tested with diagnostic script            |
 
 ---
 
@@ -194,13 +203,13 @@ After completing these steps, you should see:
 
 ## Timeline
 
-| Step | Time | Total |
-|------|------|-------|
-| 1. Create project | 1 min | 1 min |
-| 2. Stop seeding | 1 min | 2 min |
-| 3. Clean up | 0-2 min | 2-4 min |
-| 4. Run seeding | 2-5 min | 4-9 min |
-| 5. Verify | 1 min | 5-10 min |
+| Step              | Time    | Total    |
+| ----------------- | ------- | -------- |
+| 1. Create project | 1 min   | 1 min    |
+| 2. Stop seeding   | 1 min   | 2 min    |
+| 3. Clean up       | 0-2 min | 2-4 min  |
+| 4. Run seeding    | 2-5 min | 4-9 min  |
+| 5. Verify         | 1 min   | 5-10 min |
 
 **Total time**: ~10 minutes
 
@@ -228,6 +237,7 @@ Once patterns are displaying correctly:
 ## Questions?
 
 Refer to:
+
 1. **`SUPERMEMORY_PROJECT_FIX.md`** - For detailed explanation
 2. **`INDEXING_INVESTIGATION.md`** - For technical deep-dive
 3. **Code changes** - Look at the diffs in the files above

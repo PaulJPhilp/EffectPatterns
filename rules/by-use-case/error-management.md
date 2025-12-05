@@ -35,7 +35,8 @@ const options = [Option.some(1), Option.none(), Option.some(3)];
 const presentValues = options.filter(Option.isSome).map((o) => o.value); // [1, 3]
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Option.isSome` and `Option.isNone` let you check for presence or absence.
 - `Either.isRight` and `Either.isLeft` let you check for success or failure.
 - These are especially useful for filtering or quick conditional logic.
@@ -65,24 +66,16 @@ const findUser = (id: number): Effect.Effect<User, "DbError"> =>
   Effect.succeed({ id, status: "active", roles: ["admin"] });
 
 // Reusable, testable predicates that document business rules.
-const isActive = (user: User): boolean =>
-  user.status === "active";
+const isActive = (user: User): boolean => user.status === "active";
 
-const isAdmin = (user: User): boolean =>
-  user.roles.includes("admin");
+const isAdmin = (user: User): boolean => user.roles.includes("admin");
 
 const program = (id: number): Effect.Effect<string, UserError> =>
   findUser(id).pipe(
     // Validate user is active using Effect.filterOrFail
-    Effect.filterOrFail(
-      isActive,
-      () => "UserIsInactive" as const
-    ),
+    Effect.filterOrFail(isActive, () => "UserIsInactive" as const),
     // Validate user is admin using Effect.filterOrFail
-    Effect.filterOrFail(
-      isAdmin,
-      () => "UserIsNotAdmin" as const
-    ),
+    Effect.filterOrFail(isAdmin, () => "UserIsNotAdmin" as const),
     // Success case
     Effect.map((user) => `Welcome, admin user #${user.id}!`)
   );
@@ -102,7 +95,7 @@ const handled = program(123).pipe(
           return `Unknown error: ${error}`;
       }
     },
-    onSuccess: (result) => result
+    onSuccess: (result) => result,
   })
 );
 
@@ -129,45 +122,42 @@ Use Schedule to create composable policies for controlling the repetition and re
 This example demonstrates composition by creating a common, robust retry policy: exponential backoff with jitter, limited to 5 attempts.
 
 ```typescript
-import { Effect, Schedule, Duration } from "effect"
+import { Effect, Schedule, Duration } from "effect";
 
 // A simple effect that can fail
 const flakyEffect = Effect.try({
   try: () => {
     if (Math.random() > 0.2) {
-      throw new Error("Transient error")
+      throw new Error("Transient error");
     }
-    return "Operation succeeded!"
+    return "Operation succeeded!";
   },
   catch: (error: unknown) => {
-    Effect.logInfo("Operation failed, retrying...")
-    return error
-  }
-})
+    Effect.logInfo("Operation failed, retrying...");
+    return error;
+  },
+});
 
 // --- Building a Composable Schedule ---
 
 // 1. Start with a base exponential backoff (100ms, 200ms, 400ms...)
-const exponentialBackoff = Schedule.exponential("100 millis")
+const exponentialBackoff = Schedule.exponential("100 millis");
 
 // 2. Add random jitter to avoid thundering herd problems
-const withJitter = Schedule.jittered(exponentialBackoff)
+const withJitter = Schedule.jittered(exponentialBackoff);
 
 // 3. Limit the schedule to a maximum of 5 repetitions
-const limitedWithJitter = Schedule.compose(
-  withJitter,
-  Schedule.recurs(5)
-)
+const limitedWithJitter = Schedule.compose(withJitter, Schedule.recurs(5));
 
 // --- Using the Schedule ---
 const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting operation...")
-  const result = yield* Effect.retry(flakyEffect, limitedWithJitter)
-  yield* Effect.logInfo(`Final result: ${result}`)
-})
+  yield* Effect.logInfo("Starting operation...");
+  const result = yield* Effect.retry(flakyEffect, limitedWithJitter);
+  yield* Effect.logInfo(`Final result: ${result}`);
+});
 
 // Run the program
-Effect.runPromise(program)
+Effect.runPromise(program);
 ```
 
 ---
@@ -192,7 +182,8 @@ const effect = Effect.fail("Oops!").pipe(
 ); // Effect<void>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchEffect` allows you to run an Effect for both the success and failure cases.
 - This is useful for logging, cleanup, retries, or any effectful side effect that depends on the outcome.
 
@@ -217,16 +208,16 @@ interface User {
 class NetworkError extends Data.TaggedError("NetworkError")<{
   readonly url: string;
   readonly code: number;
-}> { }
+}> {}
 
 class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly field: string;
   readonly message: string;
-}> { }
+}> {}
 
 class NotFoundError extends Data.TaggedError("NotFoundError")<{
   readonly id: string;
-}> { }
+}> {}
 
 // Define UserService
 class UserService extends Effect.Service<UserService>()("UserService", {
@@ -273,7 +264,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
         return message;
       }),
   }),
-}) { }
+}) {}
 
 // Compose operations with error handling using catchTags
 const processUser = (
@@ -326,7 +317,6 @@ const runTests = Effect.gen(function* () {
 
 // Run the program
 Effect.runPromise(Effect.provide(runTests, UserService.Default));
-
 ```
 
 **Explanation:**  
@@ -354,50 +344,55 @@ interface ApiResponse {
 class ApiError extends Data.TaggedError("ApiError")<{
   readonly message: string;
   readonly attempt: number;
-}> { }
+}> {}
 
 class TimeoutError extends Data.TaggedError("TimeoutError")<{
   readonly duration: string;
   readonly attempt: number;
-}> { }
+}> {}
 
 // Define API service
-class ApiService extends Effect.Service<ApiService>()(
-  "ApiService",
-  {
-    sync: () => ({
-      // Flaky API call that might fail or be slow
-      fetchData: (): Effect.Effect<ApiResponse, ApiError | TimeoutError> =>
-        Effect.gen(function* () {
-          const attempt = Math.floor(Math.random() * 5) + 1;
-          yield* Effect.logInfo(`Attempt ${attempt}: Making API call...`);
+class ApiService extends Effect.Service<ApiService>()("ApiService", {
+  sync: () => ({
+    // Flaky API call that might fail or be slow
+    fetchData: (): Effect.Effect<ApiResponse, ApiError | TimeoutError> =>
+      Effect.gen(function* () {
+        const attempt = Math.floor(Math.random() * 5) + 1;
+        yield* Effect.logInfo(`Attempt ${attempt}: Making API call...`);
 
-          if (Math.random() > 0.3) {
-            yield* Effect.logWarning(`Attempt ${attempt}: API call failed`);
-            return yield* Effect.fail(new ApiError({
+        if (Math.random() > 0.3) {
+          yield* Effect.logWarning(`Attempt ${attempt}: API call failed`);
+          return yield* Effect.fail(
+            new ApiError({
               message: "API Error",
-              attempt
-            }));
-          }
+              attempt,
+            })
+          );
+        }
 
-          const delay = Math.random() * 3000;
-          yield* Effect.logInfo(`Attempt ${attempt}: API call will take ${delay.toFixed(0)}ms`);
+        const delay = Math.random() * 3000;
+        yield* Effect.logInfo(
+          `Attempt ${attempt}: API call will take ${delay.toFixed(0)}ms`
+        );
 
-          yield* Effect.sleep(Duration.millis(delay));
+        yield* Effect.sleep(Duration.millis(delay));
 
-          const response = { data: "some important data" };
-          yield* Effect.logInfo(`Attempt ${attempt}: API call succeeded with data: ${JSON.stringify(response)}`);
-          return response;
-        })
-    })
-  }
-) { }
+        const response = { data: "some important data" };
+        yield* Effect.logInfo(
+          `Attempt ${attempt}: API call succeeded with data: ${JSON.stringify(response)}`
+        );
+        return response;
+      }),
+  }),
+}) {}
 
 // Define retry policy: exponential backoff, up to 3 retries
 const retryPolicy = Schedule.exponential(Duration.millis(100)).pipe(
   Schedule.compose(Schedule.recurs(3)),
   Schedule.tapInput((error: ApiError | TimeoutError) =>
-    Effect.logWarning(`Retrying after error: ${error._tag} (Attempt ${error.attempt})`)
+    Effect.logWarning(
+      `Retrying after error: ${error._tag} (Attempt ${error.attempt})`
+    )
   )
 );
 
@@ -420,14 +415,18 @@ const program = Effect.gen(function* () {
       Effect.catchTags({
         ApiError: (error) =>
           Effect.gen(function* () {
-            yield* Effect.logError(`All retries failed: ${error.message} (Last attempt: ${error.attempt})`);
+            yield* Effect.logError(
+              `All retries failed: ${error.message} (Last attempt: ${error.attempt})`
+            );
             return { data: "fallback data due to API error" } as ApiResponse;
           }),
         TimeoutError: (error) =>
           Effect.gen(function* () {
-            yield* Effect.logError(`All retries timed out after ${error.duration} (Last attempt: ${error.attempt})`);
+            yield* Effect.logError(
+              `All retries timed out after ${error.duration} (Last attempt: ${error.attempt})`
+            );
             return { data: "fallback data due to timeout" } as ApiResponse;
-          })
+          }),
       })
     );
 
@@ -438,9 +437,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run the program
-Effect.runPromise(
-  Effect.provide(program, ApiService.Default)
-);
+Effect.runPromise(Effect.provide(program, ApiService.Default));
 ```
 
 ---
@@ -487,19 +484,21 @@ class DatabaseService extends Effect.Service<DatabaseService>()(
   {
     sync: () => ({
       // Connect to database with proper error handling
-      connect: (config: DatabaseConfig): Effect.Effect<DatabaseConnection, DatabaseError> =>
+      connect: (
+        config: DatabaseConfig
+      ): Effect.Effect<DatabaseConnection, DatabaseError> =>
         Effect.gen(function* () {
           yield* Effect.logInfo(`Connecting to database: ${config.url}`);
-          
+
           if (!config.url) {
             const error = new DatabaseError({
               operation: "connect",
-              details: "Missing URL"
+              details: "Missing URL",
             });
             yield* Effect.logError(`Database error: ${JSON.stringify(error)}`);
             return yield* Effect.fail(error);
           }
-          
+
           // Simulate unexpected errors
           if (config.url === "invalid") {
             yield* Effect.logError("Invalid connection string");
@@ -507,136 +506,145 @@ class DatabaseService extends Effect.Service<DatabaseService>()(
               throw new Error("Failed to parse connection string");
             });
           }
-          
+
           if (config.url === "timeout") {
             yield* Effect.logError("Connection timeout");
             return yield* Effect.sync(() => {
               throw new Error("Connection timed out");
             });
           }
-          
+
           yield* Effect.logInfo("Database connection successful");
           return { success: true };
-        })
-    })
+        }),
+    }),
   }
 ) {}
 
 // Define user service
-class UserService extends Effect.Service<UserService>()(
-  "UserService",
-  {
-    sync: () => ({
-      // Parse user data with validation
-      parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`Parsing user data: ${JSON.stringify(input)}`);
-          
-          try {
-            if (typeof input !== "object" || !input) {
-              const error = new ValidationError({
-                field: "input",
-                message: "Invalid input type"
-              });
-              yield* Effect.logWarning(`Validation error: ${JSON.stringify(error)}`);
-              throw error;
-            }
-            
-            const data = input as Record<string, unknown>;
-            
-            if (typeof data.id !== "string" || typeof data.name !== "string") {
-              const error = new ValidationError({
-                field: "input",
-                message: "Missing required fields"
-              });
-              yield* Effect.logWarning(`Validation error: ${JSON.stringify(error)}`);
-              throw error;
-            }
-            
-            const user = { id: data.id, name: data.name };
-            yield* Effect.logInfo(`Successfully parsed user: ${JSON.stringify(user)}`);
-            return user;
-          } catch (e) {
-            if (e instanceof ValidationError) {
-              return yield* Effect.fail(e);
-            }
-            yield* Effect.logError(`Unexpected error: ${e instanceof Error ? e.message : String(e)}`);
-            throw e;
+class UserService extends Effect.Service<UserService>()("UserService", {
+  sync: () => ({
+    // Parse user data with validation
+    parseUser: (input: unknown): Effect.Effect<UserData, ValidationError> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`Parsing user data: ${JSON.stringify(input)}`);
+
+        try {
+          if (typeof input !== "object" || !input) {
+            const error = new ValidationError({
+              field: "input",
+              message: "Invalid input type",
+            });
+            yield* Effect.logWarning(
+              `Validation error: ${JSON.stringify(error)}`
+            );
+            throw error;
           }
-        })
-    })
-  }
-) {}
+
+          const data = input as Record<string, unknown>;
+
+          if (typeof data.id !== "string" || typeof data.name !== "string") {
+            const error = new ValidationError({
+              field: "input",
+              message: "Missing required fields",
+            });
+            yield* Effect.logWarning(
+              `Validation error: ${JSON.stringify(error)}`
+            );
+            throw error;
+          }
+
+          const user = { id: data.id, name: data.name };
+          yield* Effect.logInfo(
+            `Successfully parsed user: ${JSON.stringify(user)}`
+          );
+          return user;
+        } catch (e) {
+          if (e instanceof ValidationError) {
+            return yield* Effect.fail(e);
+          }
+          yield* Effect.logError(
+            `Unexpected error: ${e instanceof Error ? e.message : String(e)}`
+          );
+          throw e;
+        }
+      }),
+  }),
+}) {}
 
 // Define test service
-class TestService extends Effect.Service<TestService>()(
-  "TestService",
-  {
-    sync: () => {
-      // Create instance methods
-      const printCause = (prefix: string, cause: Cause.Cause<unknown>): Effect.Effect<void, never, never> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`\n=== ${prefix} ===`);
-          
-          if (Cause.isDie(cause)) {
-            const defect = Cause.failureOption(cause);
-            if (defect._tag === "Some") {
-              const error = defect.value as Error;
-              yield* Effect.logError("Defect (unexpected error)");
-              yield* Effect.logError(`Message: ${error.message}`);
-              yield* Effect.logError(`Stack: ${error.stack?.split('\n')[1]?.trim() ?? 'N/A'}`);
-            }
-          } else if (Cause.isFailure(cause)) {
-            const error = Cause.failureOption(cause);
-            yield* Effect.logWarning("Expected failure");
-            yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
+class TestService extends Effect.Service<TestService>()("TestService", {
+  sync: () => {
+    // Create instance methods
+    const printCause = (
+      prefix: string,
+      cause: Cause.Cause<unknown>
+    ): Effect.Effect<void, never, never> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`\n=== ${prefix} ===`);
+
+        if (Cause.isDie(cause)) {
+          const defect = Cause.failureOption(cause);
+          if (defect._tag === "Some") {
+            const error = defect.value as Error;
+            yield* Effect.logError("Defect (unexpected error)");
+            yield* Effect.logError(`Message: ${error.message}`);
+            yield* Effect.logError(
+              `Stack: ${error.stack?.split("\n")[1]?.trim() ?? "N/A"}`
+            );
           }
+        } else if (Cause.isFailure(cause)) {
+          const error = Cause.failureOption(cause);
+          yield* Effect.logWarning("Expected failure");
+          yield* Effect.logWarning(`Error: ${JSON.stringify(error)}`);
+        }
 
-          // Don't return an Effect inside Effect.gen, just return the value directly
-          return void 0;
-        });
+        // Don't return an Effect inside Effect.gen, just return the value directly
+        return void 0;
+      });
 
-      const runScenario = <E, A extends { [key: string]: any }>(
-        name: string,
-        program: Effect.Effect<A, E>
-      ): Effect.Effect<void, never, never> =>
-        Effect.gen(function* () {
-          yield* Effect.logInfo(`\n=== Testing: ${name} ===`);
-          
-          type TestError = { readonly _tag: "error"; readonly cause: Cause.Cause<E> };
-          
-          const result = yield* Effect.catchAllCause(
-            program,
-            (cause) => Effect.succeed({ _tag: "error" as const, cause } as TestError)
-          );
-          
-          if ("cause" in result) {
-            yield* printCause("Error details", result.cause);
-          } else {
-            yield* Effect.logInfo(`Success: ${JSON.stringify(result)}`);
-          }
+    const runScenario = <E, A extends { [key: string]: any }>(
+      name: string,
+      program: Effect.Effect<A, E>
+    ): Effect.Effect<void, never, never> =>
+      Effect.gen(function* () {
+        yield* Effect.logInfo(`\n=== Testing: ${name} ===`);
 
-          // Don't return an Effect inside Effect.gen, just return the value directly
-          return void 0;
-        });
+        type TestError = {
+          readonly _tag: "error";
+          readonly cause: Cause.Cause<E>;
+        };
 
-      // Return bound methods
-      return {
-        printCause,
-        runScenario
-      };
-    }
-  }
-) {}
+        const result = yield* Effect.catchAllCause(program, (cause) =>
+          Effect.succeed({ _tag: "error" as const, cause } as TestError)
+        );
+
+        if ("cause" in result) {
+          yield* printCause("Error details", result.cause);
+        } else {
+          yield* Effect.logInfo(`Success: ${JSON.stringify(result)}`);
+        }
+
+        // Don't return an Effect inside Effect.gen, just return the value directly
+        return void 0;
+      });
+
+    // Return bound methods
+    return {
+      printCause,
+      runScenario,
+    };
+  },
+}) {}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
   const db = yield* DatabaseService;
   const users = yield* UserService;
   const test = yield* TestService;
-  
+
   yield* Effect.logInfo("=== Starting Error Handling Tests ===");
-  
+
   // Test expected database errors
   yield* test.runScenario(
     "Expected database error",
@@ -651,7 +659,7 @@ const program = Effect.gen(function* () {
       return result;
     })
   );
-  
+
   // Test unexpected connection errors
   yield* test.runScenario(
     "Unexpected connection error",
@@ -660,7 +668,7 @@ const program = Effect.gen(function* () {
         db.connect({ url: "invalid" }),
         Schedule.recurs(3)
       ).pipe(
-        Effect.catchAllCause(cause =>
+        Effect.catchAllCause((cause) =>
           Effect.gen(function* () {
             yield* Effect.logError("Failed after 3 retries");
             yield* Effect.logError(Cause.pretty(cause));
@@ -671,38 +679,45 @@ const program = Effect.gen(function* () {
       return result;
     })
   );
-  
+
   // Test user validation with recovery
   yield* test.runScenario(
     "Valid user data",
     Effect.gen(function* () {
-      const result = yield* users.parseUser({ id: "1", name: "John" }).pipe(
-        Effect.orElse(() => 
-          Effect.succeed({ id: "default", name: "Default User" })
-        )
-      );
+      const result = yield* users
+        .parseUser({ id: "1", name: "John" })
+        .pipe(
+          Effect.orElse(() =>
+            Effect.succeed({ id: "default", name: "Default User" })
+          )
+        );
       return result;
     })
   );
-  
+
   // Test concurrent error handling with timeout
   yield* test.runScenario(
     "Concurrent operations",
     Effect.gen(function* () {
-      const results = yield* Effect.all([
-        db.connect({ url: "" }).pipe(
-          Effect.timeout(Duration.seconds(1)),
-          Effect.catchAll(() => Effect.succeed({ success: true }))
-        ),
-        users.parseUser({ id: "invalid" }).pipe(
-          Effect.timeout(Duration.seconds(1)),
-          Effect.catchAll(() => Effect.succeed({ id: "timeout", name: "Timeout" }))
-        )
-      ], { concurrency: 2 });
+      const results = yield* Effect.all(
+        [
+          db.connect({ url: "" }).pipe(
+            Effect.timeout(Duration.seconds(1)),
+            Effect.catchAll(() => Effect.succeed({ success: true }))
+          ),
+          users.parseUser({ id: "invalid" }).pipe(
+            Effect.timeout(Duration.seconds(1)),
+            Effect.catchAll(() =>
+              Effect.succeed({ id: "timeout", name: "Timeout" })
+            )
+          ),
+        ],
+        { concurrency: 2 }
+      );
       return results;
     })
   );
-  
+
   yield* Effect.logInfo("\n=== Error Handling Tests Complete ===");
 
   // Don't return an Effect inside Effect.gen, just return the value directly
@@ -713,10 +728,7 @@ const program = Effect.gen(function* () {
 Effect.runPromise(
   Effect.provide(
     Effect.provide(
-      Effect.provide(
-        program,
-        TestService.Default
-      ),
+      Effect.provide(program, TestService.Default),
       DatabaseService.Default
     ),
     UserService.Default
@@ -762,10 +774,10 @@ const handled = program.pipe(
     })
   )
 );
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
 - Use `Cause.pretty` for human-readable error traces.
 - Enables advanced error handling and debugging.
@@ -787,9 +799,7 @@ const effect = Effect.fail("fail!").pipe(
 ); // Effect<string>
 
 // Option: Provide a fallback if value is None
-const option = Option.none().pipe(
-  Option.orElse(() => Option.some("default"))
-); // Option<string>
+const option = Option.none().pipe(Option.orElse(() => Option.some("default"))); // Option<string>
 
 // Either: Provide a fallback if value is Left
 const either = Either.left("error").pipe(
@@ -824,9 +834,7 @@ const program = Effect.logDebug("Processing user", { userId: 123 });
 
 // Run the program with debug logging enabled
 Effect.runSync(
-  program.pipe(
-    Effect.tap(() => Effect.log("Debug logging enabled"))
-  )
+  program.pipe(Effect.tap(() => Effect.log("Debug logging enabled")))
 );
 ```
 
@@ -855,7 +863,8 @@ const option = Option.none(); // Option<never>
 const either = Either.left("Invalid input"); // Either<string, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.fail(error)` creates an effect that always fails with `error`.
 - `Option.none()` creates an option that is always absent.
 - `Either.left(error)` creates an either that always represents failure.
@@ -910,7 +919,10 @@ const program = Effect.gen(function* () {
     Effect.gen(function* () {
       if (error instanceof RepositoryError) {
         yield* Effect.logInfo(`Repository error occurred: ${error._tag}`);
-        if (error.cause instanceof ConnectionError || error.cause instanceof QueryError) {
+        if (
+          error.cause instanceof ConnectionError ||
+          error.cause instanceof QueryError
+        ) {
           yield* Effect.logInfo(`Original cause: ${error.cause._tag}`);
         }
       } else {
@@ -921,7 +933,6 @@ const program = Effect.gen(function* () {
 );
 
 Effect.runPromise(program);
-
 ```
 
 ---
@@ -962,7 +973,8 @@ const either = Either.left("fail").pipe(
 ); // string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.match` lets you handle both the error and success channels in one place.
 - `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
 
@@ -992,7 +1004,8 @@ runAndCapture.then((exit) => {
 });
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
 - Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
 - Pattern matching on `Exit` lets you handle all possible outcomes.
@@ -1005,7 +1018,7 @@ Use predicate-based retry policies to retry an operation only for specific, reco
 
 ### Example
 
-This example simulates an API client that can fail with different, specific error types. The retry policy is configured to *only* retry on `ServerBusyError` and give up immediately on `NotFoundError`.
+This example simulates an API client that can fail with different, specific error types. The retry policy is configured to _only_ retry on `ServerBusyError` and give up immediately on `NotFoundError`.
 
 ```typescript
 import { Data, Effect, Schedule } from "effect";
@@ -1093,7 +1106,6 @@ const demonstrateNotFound = Effect.gen(function* () {
 });
 
 Effect.runPromise(program.pipe(Effect.flatMap(() => demonstrateNotFound)));
-
 ```
 
 ---
@@ -1112,19 +1124,19 @@ import { Effect } from "effect";
 // Synchronous: Wrap code that may throw
 const effectSync = Effect.try({
   try: () => JSON.parse("{ invalid json }"),
-  catch: (error) => `Parse error: ${String(error)}`
+  catch: (error) => `Parse error: ${String(error)}`,
 }); // Effect<string, never, never>
 
 // Asynchronous: Wrap a promise that may reject
 const effectAsync = Effect.tryPromise({
-  try: () => fetch("https://api.example.com/data").then(res => res.json()),
-  catch: (error) => `Network error: ${String(error)}`
+  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
+  catch: (error) => `Network error: ${String(error)}`,
 }); // Effect<string, any, never>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
 - `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
 
 ---
-

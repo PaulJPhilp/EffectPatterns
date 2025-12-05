@@ -1,5 +1,5 @@
 ---
-title: 'Lifting Values with succeed, some, and right'
+title: "Lifting Values with succeed, some, and right"
 id: constructor-succeed-some-right
 skillLevel: beginner
 useCase: core-concepts
@@ -51,7 +51,8 @@ const option = Option.some("hello"); // Option<string>
 const either = Either.right({ id: 1 }); // Either<never, { id: number }>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.succeed(value)` creates an effect that always succeeds with `value`.
 - `Option.some(value)` creates an option that is always present.
 - `Either.right(value)` creates an either that always represents success.

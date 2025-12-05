@@ -5,6 +5,7 @@
 ### 1. `lib/semantic-search/supermemory-store.ts`
 
 **Added Private Fields** (lines 38-40):
+
 ```typescript
 private memoriesCache: Map<string, any[]> = new Map();
 private cacheTimestamp: number = 0;
@@ -12,12 +13,14 @@ private cacheTTL: number = 5 * 60 * 1000; // 5 minutes
 ```
 
 **Added Private Method: `fetchAllMemories()`** (lines 56-110):
+
 - Fetches all memories using pagination through `client.memories.list()`
 - Implements caching with 5-minute TTL
 - Handles pagination automatically
 - Returns full array of all memories
 
 **Added Public Method: `searchByList()`** (lines 116-213):
+
 - Alternative to broken `search()` method
 - Takes query text and search options
 - Implements client-side filtering by:
@@ -33,6 +36,7 @@ private cacheTTL: number = 5 * 60 * 1000; // 5 minutes
 **Modified: `semanticSearchConversations()` function** (lines 78-163):
 
 **Before** (line 99-108):
+
 ```typescript
 const vectorResults = await supermemoryStore.search(
   queryEmbedding.vector,
@@ -48,25 +52,25 @@ const vectorResults = await supermemoryStore.search(
 ```
 
 **After** (line 99-108):
+
 ```typescript
-const vectorResults = await supermemoryStore.searchByList(
-  query,
-  {
-    userId,
-    limit: fetchLimit,
-    minSimilarity,
-    outcome: filters.outcome,
-    tags: filters.tags,
-  }
-);
+const vectorResults = await supermemoryStore.searchByList(query, {
+  userId,
+  limit: fetchLimit,
+  minSimilarity,
+  outcome: filters.outcome,
+  tags: filters.tags,
+});
 ```
 
 **Removed** (before line 94):
+
 ```typescript
 const queryEmbedding = await generateEmbedding(query);
 ```
 
 **Impact**:
+
 - Eliminates embedding generation step (not needed for keyword search)
 - Uses working API instead of broken search API
 - Maintains same function signature and return types
@@ -75,6 +79,7 @@ const queryEmbedding = await generateEmbedding(query);
 ### 3. `scripts/seed-patterns.ts` (Created)
 
 **Complete new file** with:
+
 - Pattern loading from `content/published/`
 - Gray matter parsing for frontmatter
 - Two-phase seeding:
@@ -84,6 +89,7 @@ const queryEmbedding = await generateEmbedding(query);
 - Error handling and reporting
 
 **Key Features**:
+
 - SYSTEM_USER_ID: `system:patterns`
 - Batch processing with 100ms delays
 - 30-second timeout per pattern
@@ -92,6 +98,7 @@ const queryEmbedding = await generateEmbedding(query);
 ### 4. `package.json`
 
 **Added Script** (in scripts section):
+
 ```json
 "seed:patterns": "tsx scripts/seed-patterns.ts"
 ```
@@ -99,6 +106,7 @@ const queryEmbedding = await generateEmbedding(query);
 ### 5. `components/memories-browser.tsx` (Earlier fix)
 
 **Fixed Scrolling Issue**:
+
 - Added `h-full flex flex-col` to main container
 - Added `flex-1 overflow-y-auto` to results container
 
@@ -118,12 +126,14 @@ The list API works perfectly and returns all 361 memories. Client-side filtering
 ### Caching Strategy
 
 **TTL: 5 minutes**
+
 - Balances freshness vs. performance
 - First search: ~1-2 seconds (full API fetch)
 - Subsequent searches: <100ms (cached)
 - Good for typical conversation patterns
 
 **Per-Instance Cache**
+
 - Simple, no external dependencies
 - Suitable for single-instance deployment
 - Consider Redis for multi-instance production
@@ -131,15 +141,17 @@ The list API works perfectly and returns all 361 memories. Client-side filtering
 ### Relevance Scoring
 
 Maintains the existing hybrid scoring model:
+
 ```typescript
 finalScore =
-  vectorSimilarity * 0.6 +      // Now keyword-based
-  keywordRelevance * 0.3 +      // Direct text matching
-  recencyBoost * 0.07 +         // More recent = higher
-  satisfactionBoost * 0.03      // User satisfaction
+  vectorSimilarity * 0.6 + // Now keyword-based
+  keywordRelevance * 0.3 + // Direct text matching
+  recencyBoost * 0.07 + // More recent = higher
+  satisfactionBoost * 0.03; // User satisfaction
 ```
 
 This combines multiple signals for better ranking:
+
 - Primary: Keyword matches (60%)
 - Secondary: Keyword matches for accessibility (30%)
 - Tertiary: Recency and satisfaction (10%)
@@ -148,11 +160,11 @@ This combines multiple signals for better ranking:
 
 ### Search Speed
 
-| Scenario | Time | Notes |
-|----------|------|-------|
-| First search | 1-2 sec | Full API fetch + filtering |
-| Cached search | 50-100 ms | From memory cache |
-| Load more (pagination) | 10-50 ms | Already cached |
+| Scenario               | Time      | Notes                      |
+| ---------------------- | --------- | -------------------------- |
+| First search           | 1-2 sec   | Full API fetch + filtering |
+| Cached search          | 50-100 ms | From memory cache          |
+| Load more (pagination) | 10-50 ms  | Already cached             |
 
 ### Memory Usage
 
@@ -185,6 +197,7 @@ Result: **90%+ reduction in API calls** to Supermemory
 ## Breaking Changes
 
 **None** - This is a drop-in replacement:
+
 - Same function signatures
 - Same return types
 - Same endpoint URLs
@@ -196,6 +209,7 @@ Result: **90%+ reduction in API calls** to Supermemory
 The `search()` method on SupermemoryStore still exists for backward compatibility, but it's not used by the search implementation. It will continue to return 0 results due to the Supermemory API issue.
 
 If you need semantic vector search in the future:
+
 1. Wait for Supermemory to fix their search API
 2. Switch to a different vector database
 3. Implement hybrid search combining both APIs

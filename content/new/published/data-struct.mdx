@@ -41,7 +41,8 @@ const set = HashSet.make(user1);
 console.log(HashSet.has(set, user2)); // true
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.struct` creates immutable objects with value-based equality.
 - Use for domain entities, value objects, and when storing objects in sets or as map keys.
 - Avoids bugs from reference-based comparison.

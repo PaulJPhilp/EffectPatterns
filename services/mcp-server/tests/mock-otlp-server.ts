@@ -9,7 +9,7 @@ import {
   createServer,
   type IncomingMessage,
   type ServerResponse,
-} from 'node:http';
+} from "node:http";
 
 const HTTP_STATUS_OK = 200;
 const HTTP_STATUS_BAD_REQUEST = 400;
@@ -57,7 +57,7 @@ export class MockOTLPCollector {
         resolve();
       });
 
-      this.server.on('error', reject);
+      this.server.on("error", reject);
     });
   }
 
@@ -81,28 +81,28 @@ export class MockOTLPCollector {
    */
   private handleRequest(req: IncomingMessage, res: ServerResponse): void {
     // Handle OTLP trace export
-    if (req.url === '/v1/traces' && req.method === 'POST') {
-      let body = '';
+    if (req.url === "/v1/traces" && req.method === "POST") {
+      let body = "";
 
-      req.on('data', (chunk) => {
+      req.on("data", (chunk) => {
         body += chunk.toString();
       });
 
-      req.on('end', () => {
+      req.on("end", () => {
         try {
           const trace = JSON.parse(body) as OTLPTrace;
           this.traces.push(trace);
           const spanCount = this.countSpans(trace);
 
           res.writeHead(HTTP_STATUS_OK, {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           });
-          res.end(JSON.stringify({ status: 'success', spanCount }));
+          res.end(JSON.stringify({ status: "success", spanCount }));
         } catch (_error) {
           res.writeHead(HTTP_STATUS_BAD_REQUEST, {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           });
-          res.end(JSON.stringify({ error: 'Invalid trace data' }));
+          res.end(JSON.stringify({ error: "Invalid trace data" }));
         }
       });
     } else {
@@ -120,9 +120,9 @@ export class MockOTLPCollector {
         total +
         rs.scopeSpans.reduce(
           (scopeTotal, ss) => scopeTotal + ss.spans.length,
-          0,
+          0
         ),
-      0,
+      0
     );
   }
 
@@ -190,7 +190,7 @@ export class MockOTLPCollector {
  * Helper to create and start a mock OTLP collector
  */
 export async function createMockOTLPCollector(
-  port = 4318,
+  port = 4318
 ): Promise<MockOTLPCollector> {
   const collector = new MockOTLPCollector(port);
   await collector.start();

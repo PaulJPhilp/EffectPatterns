@@ -9,6 +9,7 @@ Repository layer for querying Effect patterns from the database.
 ## Purpose
 
 The PatternRepository provides low-level database access for pattern metadata:
+
 - Query patterns by ID, tag, or search filters
 - Paginate results with limit/offset
 - Order patterns by module placement (stage + position)
@@ -47,10 +48,12 @@ List patterns by module ID, ordered by stage ASC NULLS LAST, position ASC. Optio
 ## Database Schema
 
 Base tables:
+
 - `patterns` - Pattern metadata (id, title, summary, skillLevel, tags, etc.)
 - `pattern_module_placements` - Module placements (moduleId, stage, position)
 
 Indices:
+
 - `patterns.title` (btree)
 - `patterns.tags` (GIN)
 - `placements(module_id, stage, position)` (composite)
@@ -58,26 +61,23 @@ Indices:
 ## Usage Example
 
 ```typescript
-import { Effect, Layer } from 'effect';
-import {
-  PatternRepositoryService,
-  PatternRepositoryLive,
-} from './service.js';
+import { Effect, Layer } from "effect";
+import { PatternRepositoryService, PatternRepositoryLive } from "./service.js";
 
 const program = Effect.gen(function* () {
   const repo = yield* PatternRepositoryService;
-  
+
   // Find by ID
-  const pattern = yield* repo.findById('error-handling');
-  
+  const pattern = yield* repo.findById("error-handling");
+
   // Search with filters
   const results = yield* repo.search({
-    query: 'retry',
-    skillLevel: 'intermediate',
+    query: "retry",
+    skillLevel: "intermediate",
   });
-  
+
   // List by module
-  const modulePatterns = yield* repo.listByModule('module-1-foundations');
+  const modulePatterns = yield* repo.listByModule("module-1-foundations");
 });
 
 Effect.runPromise(program.pipe(Effect.provide(PatternRepositoryLive)));
@@ -88,6 +88,7 @@ Effect.runPromise(program.pipe(Effect.provide(PatternRepositoryLive)));
 Unit tests use mocked repository implementations with in-memory data. See `__tests__/pattern.repository.test.ts`.
 
 Run tests:
+
 ```bash
 bun test app/web/lib/effect/pattern/__tests__
 ```
@@ -95,6 +96,7 @@ bun test app/web/lib/effect/pattern/__tests__
 ## Next Steps
 
 After the repository, implement the Catalog service to:
+
 1. Load all patterns + placements into memory at startup
 2. Build indices: byId, byTag, byModule, byModuleStage, bySkill
 3. Populate `modules` field on `PatternMeta` with placement data

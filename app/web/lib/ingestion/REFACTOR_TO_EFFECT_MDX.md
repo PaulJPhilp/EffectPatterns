@@ -3,6 +3,7 @@
 ## Current Implementation
 
 The pattern-parser.ts currently uses:
+
 - `gray-matter` for parsing MDX frontmatter
 - Manual `FileSystem.readFileString()` calls
 - `@effect/schema` for validation after parsing
@@ -20,28 +21,32 @@ The pattern-parser.ts currently uses:
 ### Step 1: Update Imports
 
 **Before:**
+
 ```typescript
-import { Effect } from 'effect';
-import { FileSystem, Path } from '@effect/platform';
-import { Schema } from '@effect/schema';
-import matter from 'gray-matter';
+import { Effect } from "effect";
+import { FileSystem, Path } from "@effect/platform";
+import { Schema } from "@effect/schema";
+import matter from "gray-matter";
 ```
 
 **After:**
+
 ```typescript
-import { Effect } from 'effect';
-import { FileSystem, Path } from '@effect/platform';
-import { Schema } from '@effect/schema';
-import { MdxService } from 'effect-mdx';
+import { Effect } from "effect";
+import { FileSystem, Path } from "@effect/platform";
+import { Schema } from "@effect/schema";
+import { MdxService } from "effect-mdx";
 ```
 
 **Changes:**
+
 - Remove `gray-matter` import
 - Add `MdxService` import from `effect-mdx`
 
 ### Step 2: Add MdxService to Effect Requirements
 
 **Before:**
+
 ```typescript
 export const parsePatternFile = (
   filePath: string
@@ -53,6 +58,7 @@ export const parsePatternFile = (
 ```
 
 **After:**
+
 ```typescript
 export const parsePatternFile = (
   filePath: string
@@ -64,11 +70,13 @@ export const parsePatternFile = (
 ```
 
 **Changes:**
+
 - Add `| MdxService` to the requirements (R) type parameter
 
 ### Step 3: Replace File Reading + gray-matter with MdxService
 
 **Before:**
+
 ```typescript
 Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
@@ -87,13 +95,14 @@ Effect.gen(function* () {
 ```
 
 **After - Option A (File-based):**
+
 ```typescript
 Effect.gen(function* () {
   const mdx = yield* MdxService;
   const path = yield* Path.Path;
 
   // Read and parse in one step
-  const { frontmatter: rawFrontmatter, mdxBody } = 
+  const { frontmatter: rawFrontmatter, mdxBody } =
     yield* mdx.readMdxAndFrontmatter(filePath);
 
   // Validate frontmatter with your schema
@@ -103,6 +112,7 @@ Effect.gen(function* () {
 ```
 
 **After - Option B (String-based, if you need content first):**
+
 ```typescript
 Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
@@ -122,6 +132,7 @@ Effect.gen(function* () {
 ```
 
 **Changes:**
+
 - Replace `fs.readFileString() + matter()` with `mdx.readMdxAndFrontmatter()`
 - OR replace `matter()` with `mdx.parseMdxFile()`
 - Still use Schema validation for your custom schema
@@ -129,6 +140,7 @@ Effect.gen(function* () {
 ### Step 4: Update parseAllPatterns Requirements
 
 **Before:**
+
 ```typescript
 export const parseAllPatterns = (
   directory: string
@@ -140,6 +152,7 @@ export const parseAllPatterns = (
 ```
 
 **After:**
+
 ```typescript
 export const parseAllPatterns = (
   directory: string
@@ -151,30 +164,33 @@ export const parseAllPatterns = (
 ```
 
 **Changes:**
+
 - Add `| MdxService` to requirements
 
 ### Step 5: Update Layer Provision
 
 **Before (in pipeline.ts):**
+
 ```typescript
 export const runDefaultIngestion = (): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
-    const patternsDir = 'content/published';
-    const roadmapsDir = 'roadmap';
+    const patternsDir = "content/published";
+    const roadmapsDir = "roadmap";
 
     yield* runIngestion(patternsDir, roadmapsDir);
   }).pipe(Effect.provide(NodeContext.layer));
 ```
 
 **After:**
+
 ```typescript
-import { MdxService } from 'effect-mdx';
-import { MdxConfigService } from 'effect-mdx';
+import { MdxService } from "effect-mdx";
+import { MdxConfigService } from "effect-mdx";
 
 export const runDefaultIngestion = (): Effect.Effect<void, Error> =>
   Effect.gen(function* () {
-    const patternsDir = 'content/published';
-    const roadmapsDir = 'roadmap';
+    const patternsDir = "content/published";
+    const roadmapsDir = "roadmap";
 
     yield* runIngestion(patternsDir, roadmapsDir);
   }).pipe(
@@ -185,6 +201,7 @@ export const runDefaultIngestion = (): Effect.Effect<void, Error> =>
 ```
 
 **Changes:**
+
 - Add `MdxService.Default` layer
 - Add `MdxConfigService.Default` layer (required dependency)
 - Order: Service layers first, then NodeContext.layer
@@ -193,48 +210,47 @@ export const runDefaultIngestion = (): Effect.Effect<void, Error> =>
 ### Step 6: Error Handling Updates
 
 **Before:**
+
 ```typescript
 try {
-  const pattern = yield* parsePatternFile(filePath);
+  const pattern = yield * parsePatternFile(filePath);
   patterns.push(pattern);
-  yield* Effect.logInfo(`Parsed pattern: ${pattern.id}`);
+  yield * Effect.logInfo(`Parsed pattern: ${pattern.id}`);
 } catch (error) {
-  yield* Effect.logWarning(
-    `Failed to parse ${file}: ${error}`
-  );
+  yield * Effect.logWarning(`Failed to parse ${file}: ${error}`);
 }
 ```
 
 **After (Effect-style error handling):**
-```typescript
-const result = yield* parsePatternFile(filePath).pipe(
-  Effect.either
-);
 
-if (result._tag === 'Right') {
+```typescript
+const result = yield * parsePatternFile(filePath).pipe(Effect.either);
+
+if (result._tag === "Right") {
   patterns.push(result.right);
-  yield* Effect.logInfo(`Parsed pattern: ${result.right.id}`);
+  yield * Effect.logInfo(`Parsed pattern: ${result.right.id}`);
 } else {
-  yield* Effect.logWarning(
-    `Failed to parse ${file}: ${result.left.message}`
-  );
+  yield * Effect.logWarning(`Failed to parse ${file}: ${result.left.message}`);
 }
 ```
 
 **OR using catchAll:**
+
 ```typescript
-yield* parsePatternFile(filePath).pipe(
-  Effect.tap((pattern) => {
-    patterns.push(pattern);
-    return Effect.logInfo(`Parsed pattern: ${pattern.id}`);
-  }),
-  Effect.catchAll((error) =>
-    Effect.logWarning(`Failed to parse ${file}: ${error.message}`)
-  )
-);
+yield *
+  parsePatternFile(filePath).pipe(
+    Effect.tap((pattern) => {
+      patterns.push(pattern);
+      return Effect.logInfo(`Parsed pattern: ${pattern.id}`);
+    }),
+    Effect.catchAll((error) =>
+      Effect.logWarning(`Failed to parse ${file}: ${error.message}`)
+    )
+  );
 ```
 
 **Changes:**
+
 - Remove try/catch from Effect.gen
 - Use Effect.either, Effect.catchAll, or Effect.catchTag instead
 
@@ -245,28 +261,28 @@ yield* parsePatternFile(filePath).pipe(
  * MDX Pattern Parser - Refactored with effect-mdx
  */
 
-import { Effect } from 'effect';
-import { FileSystem, Path } from '@effect/platform';
-import { Schema } from '@effect/schema';
-import { MdxService } from 'effect-mdx';
-import type { NewPattern } from '../db/schema.js';
+import { Effect } from "effect";
+import { FileSystem, Path } from "@effect/platform";
+import { Schema } from "@effect/schema";
+import { MdxService } from "effect-mdx";
+import type { NewPattern } from "../db/schema.js";
 
 export class PatternFrontmatterSchema extends Schema.Class<PatternFrontmatterSchema>(
-  'PatternFrontmatter'
+  "PatternFrontmatter"
 )({
   id: Schema.String,
   title: Schema.String,
   summary: Schema.String,
-  skillLevel: Schema.Literal('beginner', 'intermediate', 'advanced'),
+  skillLevel: Schema.Literal("beginner", "intermediate", "advanced"),
   tags: Schema.Array(Schema.String),
   useCase: Schema.optional(Schema.Array(Schema.String)),
   related: Schema.optional(Schema.Array(Schema.String)),
   author: Schema.optional(Schema.String),
   rule: Schema.optional(
     Schema.Struct({
-      description: Schema.String
+      description: Schema.String,
     })
-  )
+  ),
 }) {}
 
 export type PatternFrontmatter = typeof PatternFrontmatterSchema.Type;
@@ -286,17 +302,17 @@ export const parsePatternFile = (
     const path = yield* Path.Path;
 
     // Read and parse MDX file
-    const { frontmatter: rawFrontmatter } = 
+    const { frontmatter: rawFrontmatter } =
       yield* mdx.readMdxAndFrontmatter(filePath);
 
     // Validate with schema
-    const frontmatter = yield* Schema.decodeUnknown(
-      PatternFrontmatterSchema
-    )(rawFrontmatter);
+    const frontmatter = yield* Schema.decodeUnknown(PatternFrontmatterSchema)(
+      rawFrontmatter
+    );
 
     // Extract filename for slug
     const filename = path.basename(filePath);
-    const mdxSlug = filename.replace(/\.mdx$/, '');
+    const mdxSlug = filename.replace(/\.mdx$/, "");
 
     // Build pattern record
     const pattern: NewPattern = {
@@ -309,7 +325,7 @@ export const parsePatternFile = (
       related: frontmatter.related ? [...frontmatter.related] : undefined,
       author: frontmatter.author,
       mdxSlug,
-      contentPath: filePath
+      contentPath: filePath,
     };
 
     return pattern;
@@ -333,18 +349,16 @@ export const parseAllPatterns = (
     const files = yield* fs.readDirectory(directory);
 
     // Filter MDX files
-    const mdxFiles = files.filter((file) => file.endsWith('.mdx'));
+    const mdxFiles = files.filter((file) => file.endsWith(".mdx"));
 
     // Parse each file
     const patterns: NewPattern[] = [];
     for (const file of mdxFiles) {
       const filePath = path.join(directory, file);
-      
-      const result = yield* parsePatternFile(filePath).pipe(
-        Effect.either
-      );
 
-      if (result._tag === 'Right') {
+      const result = yield* parsePatternFile(filePath).pipe(Effect.either);
+
+      if (result._tag === "Right") {
         patterns.push(result.right);
         yield* Effect.logInfo(`Parsed pattern: ${result.right.id}`);
       } else {
@@ -384,10 +398,10 @@ bun run ingest:patterns
 ### Compile Pattern Body to HTML
 
 ```typescript
-const { frontmatter, mdxBody } = yield* mdx.readMdxAndFrontmatter(filePath);
+const { frontmatter, mdxBody } = yield * mdx.readMdxAndFrontmatter(filePath);
 
 // Compile to HTML for preview
-const html = yield* mdx.compileMdxToHtml(mdxBody);
+const html = yield * mdx.compileMdxToHtml(mdxBody);
 
 // Store in database
 const pattern: NewPattern = {
@@ -399,7 +413,7 @@ const pattern: NewPattern = {
 ### Extract Parameters from Frontmatter
 
 ```typescript
-const { frontmatter } = yield* mdx.readMdxAndFrontmatter(filePath);
+const { frontmatter } = yield * mdx.readMdxAndFrontmatter(filePath);
 
 // Extract parameter definitions
 const params = mdx.extractParameters(frontmatter);
@@ -410,9 +424,9 @@ const params = mdx.extractParameters(frontmatter);
 ### Custom MDX Configuration
 
 ```typescript
-import { MdxConfigService, makeMdxConfigLayer } from 'effect-mdx';
-import remarkSlug from 'remark-slug';
-import remarkAutolinkHeadings from 'remark-autolink-headings';
+import { MdxConfigService, makeMdxConfigLayer } from "effect-mdx";
+import remarkSlug from "remark-slug";
+import remarkAutolinkHeadings from "remark-autolink-headings";
 
 const customMdxConfig = makeMdxConfigLayer({
   remarkPlugins: [remarkSlug, remarkAutolinkHeadings],
@@ -442,8 +456,9 @@ If issues arise:
 **Cause:** Forgot to provide MdxService.Default layer
 
 **Fix:**
+
 ```typescript
-Effect.provide(MdxService.Default)
+Effect.provide(MdxService.Default);
 ```
 
 ### Issue: "Missing FileSystem in context"
@@ -451,9 +466,9 @@ Effect.provide(MdxService.Default)
 **Cause:** MdxService needs FileSystem for file operations
 
 **Fix:**
+
 ```typescript
-Effect.provide(MdxService.Default)
-  .pipe(Effect.provide(NodeContext.layer))
+Effect.provide(MdxService.Default).pipe(Effect.provide(NodeContext.layer));
 ```
 
 ### Issue: "Missing MdxConfigService in context"
@@ -461,10 +476,11 @@ Effect.provide(MdxService.Default)
 **Cause:** MdxService depends on MdxConfigService
 
 **Fix:**
+
 ```typescript
 Effect.provide(MdxService.Default)
   .pipe(Effect.provide(MdxConfigService.Default))
-  .pipe(Effect.provide(NodeContext.layer))
+  .pipe(Effect.provide(NodeContext.layer));
 ```
 
 ### Issue: Schema validation fails differently

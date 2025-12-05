@@ -25,10 +25,10 @@ console.log(HashSet.has(set, t2)); // true
 const [id, name] = t1; // id: number, name: string
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Data.tuple` creates immutable tuples with value-based equality.
 - Useful for modeling pairs, coordinates, or any fixed-size, heterogeneous data.
 - Supports safe pattern matching and collection operations.
 
 ---
-

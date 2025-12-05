@@ -116,28 +116,32 @@ Success metrics (first 90 days)
 - 70% of installs generate ≥1 snippet within 7 days.
 - p50 latency for search < 150ms; p95 < 300ms (on small pattern indexes).
 - 95% of API calls produce OTLP traces visible in configured collector during integration tests.
-- >= 80% test coverage for server-side code.
+- > = 80% test coverage for server-side code.
 
 ---
 
 ## 8. API contracts (MVP)
 
 - GET /api/patterns?q=...
+
   - Auth: x-api-key header or ?key
   - Response 200:
     { count: number, patterns: PatternSummary[] }
   - PatternSummary: { id, title, summary, tags[], example: { lang: "ts", code }, detailsUrl }
 
 - GET /api/patterns/:id
+
   - Response 200: Pattern object with details, prosCons, example, detailsUrl
 
 - POST /api/generate
+
   - Body:
     { patternId: string, name?: string, input?: string, moduleType?: "esm"|"cjs", effectVersion?: string }
   - Response 200:
     { patternId, title, snippet, traceId, timestamp }
 
 - GET /api/trace-wiring
+
   - Response 200: { effectNodeSdk: string, effectWithSpan: string, langgraphPython: string, notes: string }
 
 - GET /api/health
@@ -150,6 +154,7 @@ All endpoints must return structured error objects and use consistent status cod
 ## 9. Intermediate deliverables (required)
 
 1. Effect Patterns Toolkit (library)
+
    - Purpose: deterministic domain logic for search & snippet rendering callable by LLMs/agents.
    - Deliverables: npm/monorepo package, types, zod schemas, unit tests, LLM function descriptors.
 
@@ -188,12 +193,15 @@ Constraints
 ## 12. Risks & mitigations
 
 - Supply-chain / malicious plugin risk
+
   - Mitigation: private marketplaces, code review, signed releases, manual vetting step.
 
 - OTLP exporter in serverless (cold start, network)
+
   - Mitigation: document recommended exporters, keep exporter warm (if possible), provide guidance for alternative ingestion methods (push from a persistent service).
 
 - Rate-limits & outages in Claude
+
   - Mitigation: design for graceful failure, local caching, retry/backoff.
 
 - Template injection or accidental code execution
