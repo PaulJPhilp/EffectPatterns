@@ -21,6 +21,13 @@ const RuleSchema = Schema.Struct({
   content: Schema.String,
 });
 
+// Schema for the API response wrapper
+const ApiResponseSchema = Schema.Struct({
+  success: Schema.Boolean,
+  data: Schema.Array(RuleSchema),
+  meta: Schema.optional(Schema.Any),
+});
+
 // --- TEST UTILITIES ---
 
 const TEST_PORT = 45102;
@@ -121,9 +128,8 @@ describe('End-to-End Integration', { sequential: true }, () => {
 
         const response = yield* client.get(`${BASE_URL}/api/v1/rules`);
         const json = yield* response.json;
-        const rules = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-          json,
-        );
+        const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(json);
+        const rules = parsed.data;
 
         expect(rules.length).toBeGreaterThan(0);
         return rules.length;
@@ -134,7 +140,7 @@ describe('End-to-End Integration', { sequential: true }, () => {
       );
 
       // 2. Run CLI command to inject rules
-      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
+      const cliResult = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       expect(cliResult.exitCode).toBe(0);
       expect(cliResult.stdout).toContain(`Fetched ${serverRuleCount} rules`);
@@ -162,7 +168,15 @@ describe('End-to-End Integration', { sequential: true }, () => {
           `${BASE_URL}/api/v1/rules/use-effect-gen-for-business-logic`,
         );
         const json = yield* response.json;
-        const rule = yield* Schema.decodeUnknown(RuleSchema)(json);
+        // Single rule endpoint also wraps response
+        const parsed = yield* Schema.decodeUnknown(
+          Schema.Struct({
+            success: Schema.Boolean,
+            data: RuleSchema,
+            meta: Schema.optional(Schema.Any),
+          })
+        )(json);
+        const rule = parsed.data;
 
         return rule;
       });
@@ -172,7 +186,7 @@ describe('End-to-End Integration', { sequential: true }, () => {
       );
 
       // 2. Run CLI command
-      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
+      const cliResult = await runCommand(['install', 'add', '--tool', 'cursor']);
       expect(cliResult.exitCode).toBe(0);
 
       // 3. Verify the specific rule is in the file
@@ -186,14 +200,14 @@ describe('End-to-End Integration', { sequential: true }, () => {
   describe('Multiple Updates', () => {
     it('should handle multiple CLI runs correctly', async () => {
       // Run command first time
-      const result1 = await runCommand(['rules', 'add', '--tool', 'cursor']);
+      const result1 = await runCommand(['install', 'add', '--tool', 'cursor']);
       expect(result1.exitCode).toBe(0);
 
       const content1 = await fs.readFile('.cursor/rules.md', 'utf-8');
       const lineCount1 = content1.split('\n').length;
 
       // Run command second time
-      const result2 = await runCommand(['rules', 'add', '--tool', 'cursor']);
+      const result2 = await runCommand(['install', 'add', '--tool', 'cursor']);
       expect(result2.exitCode).toBe(0);
 
       const content2 = await fs.readFile('.cursor/rules.md', 'utf-8');
@@ -218,7 +232,8 @@ describe('End-to-End Integration', { sequential: true }, () => {
 
         const response = yield* client.get(`${BASE_URL}/api/v1/rules`);
         const json = yield* response.json;
-        return yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(json);
+        const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(json);
+        return parsed.data;
       });
 
       const serverRules = await Effect.runPromise(
@@ -226,7 +241,7 @@ describe('End-to-End Integration', { sequential: true }, () => {
       );
 
       // 2. Run CLI command
-      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
+      const cliResult = await runCommand(['install', 'add', '--tool', 'cursor']);
       expect(cliResult.exitCode).toBe(0);
 
       // 3. Verify all rules are in the file
@@ -238,7 +253,7 @@ describe('End-to-End Integration', { sequential: true }, () => {
     });
 
     it('should maintain rule formatting consistency', async () => {
-      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
+      const cliResult = await runCommand(['install', 'add', '--tool', 'cursor']);
       expect(cliResult.exitCode).toBe(0);
 
       const fileContent = await fs.readFile('.cursor/rules.md', 'utf-8');
@@ -263,7 +278,7 @@ describe('End-to-End Integration', { sequential: true }, () => {
     it('should handle partial server data gracefully', async () => {
       // This tests that even if server returns partial data,
       // CLI handles it correctly
-      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
+      const cliResult = await runCommand(['install', 'add', '--tool', 'cursor']);
 
       // Should succeed even with any data shape
       expect(cliResult.exitCode).toBe(0);
@@ -286,7 +301,7 @@ describe('End-to-End Integration', { sequential: true }, () => {
       expect(dirExistsBefore).toBe(false);
 
       // Run command
-      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
+      const cliResult = await runCommand(['install', 'add', '--tool', 'cursor']);
       expect(cliResult.exitCode).toBe(0);
 
       // Verify directory was created
@@ -310,7 +325,7 @@ Content here`;
       await fs.writeFile('.cursor/rules.md', customContent);
 
       // Run command
-      const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
+      const cliResult = await runCommand(['install', 'add', '--tool', 'cursor']);
       expect(cliResult.exitCode).toBe(0);
 
       // Verify custom content is preserved
@@ -327,7 +342,7 @@ describe('Performance', { sequential: true }, () => {
   it('should complete end-to-end flow in reasonable time', async () => {
     const startTime = Date.now();
 
-    const cliResult = await runCommand(['rules', 'add', '--tool', 'cursor']);
+    const cliResult = await runCommand(['install', 'add', '--tool', 'cursor']);
     expect(cliResult.exitCode).toBe(0);
 
     const duration = Date.now() - startTime;

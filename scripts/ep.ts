@@ -1205,6 +1205,19 @@ const RuleSchema = Schema.Struct({
 
 type Rule = typeof RuleSchema.Type;
 
+// Schema for the API response wrapper
+const ApiResponseSchema = Schema.Struct({
+  success: Schema.Boolean,
+  data: Schema.Array(RuleSchema),
+  meta: Schema.optional(
+    Schema.Struct({
+      timestamp: Schema.optional(Schema.String),
+      requestId: Schema.optional(Schema.String),
+      version: Schema.optional(Schema.String),
+    })
+  ),
+});
+
 /**
  * Check if Pattern Server is reachable
  */
@@ -1239,7 +1252,8 @@ const fetchRulesFromAPI = (serverUrl: string) =>
 
     const response = yield* client.get(`${serverUrl}/api/v1/rules`).pipe(
       Effect.flatMap((response) => response.json),
-      Effect.flatMap(Schema.decodeUnknown(Schema.Array(RuleSchema))),
+      Effect.flatMap(Schema.decodeUnknown(ApiResponseSchema)),
+      Effect.map((parsed) => parsed.data),
       Effect.catchAll((error) =>
         Effect.gen(function* () {
           // Check if server is reachable
