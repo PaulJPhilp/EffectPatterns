@@ -1,4 +1,4 @@
-# Building Data Pipelines Patterns
+# building-data-pipelines Patterns
 
 ## Automatically Retry Failed Operations
 

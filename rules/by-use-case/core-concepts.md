@@ -1,80 +1,250 @@
-# Core Concepts Patterns
+# core-concepts Patterns
 
-## Conditionally Branching Workflows
+## Access Configuration from the Context
 
-Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
+Access configuration from the Effect context.
 
 ### Example
 
-Here, we use `Effect.filterOrFail` with named predicates to validate a user before proceeding. The intent is crystal clear, and the business rules (`isActive`, `isAdmin`) are reusable.
-
 ```typescript
-import { Effect } from "effect";
+import { Config, Effect, Layer } from "effect";
 
-interface User {
-  id: number;
-  status: "active" | "inactive";
-  roles: string[];
-}
+// Define config service
+class AppConfig extends Effect.Service<AppConfig>()(
+  "AppConfig",
+  {
+    sync: () => ({
+      host: "localhost",
+      port: 3000
+    })
+  }
+) {}
 
-type UserError = "DbError" | "UserIsInactive" | "UserIsNotAdmin";
-
-const findUser = (id: number): Effect.Effect<User, "DbError"> =>
-  Effect.succeed({ id, status: "active", roles: ["admin"] });
-
-// Reusable, testable predicates that document business rules.
-const isActive = (user: User): boolean =>
-  user.status === "active";
-
-const isAdmin = (user: User): boolean =>
-  user.roles.includes("admin");
-
-const program = (id: number): Effect.Effect<string, UserError> =>
-  findUser(id).pipe(
-    // Validate user is active using Effect.filterOrFail
-    Effect.filterOrFail(
-      isActive,
-      () => "UserIsInactive" as const
-    ),
-    // Validate user is admin using Effect.filterOrFail
-    Effect.filterOrFail(
-      isAdmin,
-      () => "UserIsNotAdmin" as const
-    ),
-    // Success case
-    Effect.map((user) => `Welcome, admin user #${user.id}!`)
-  );
-
-// We can then handle the specific failures in a type-safe way.
-const handled = program(123).pipe(
-  Effect.match({
-    onFailure: (error) => {
-      switch (error) {
-        case "UserIsNotAdmin":
-          return "Access denied: requires admin role.";
-        case "UserIsInactive":
-          return "Access denied: user is not active.";
-        case "DbError":
-          return "Error: could not find user.";
-        default:
-          return `Unknown error: ${error}`;
-      }
-    },
-    onSuccess: (result) => result
-  })
-);
-
-// Run the program
-const programWithLogging = Effect.gen(function* () {
-  const result = yield* handled;
-  yield* Effect.log(result);
-  return result;
+// Create program that uses config
+const program = Effect.gen(function* () {
+  const config = yield* AppConfig;
+  yield* Effect.log(`Starting server on http://${config.host}:${config.port}`);
 });
 
-Effect.runPromise(programWithLogging);
+// Run the program with default config
+Effect.runPromise(
+  Effect.provide(program, AppConfig.Default)
+);
+```
+
+**Explanation:**  
+By yielding the config object, you make your dependency explicit and leverage Effect's context system for testability and modularity.
+
+---
+
+## Beyond the Date Type - Real World Dates, Times, and Timezones
+
+Use the Clock service for testable time-based logic and immutable primitives for timestamps.
+
+### Example
+
+This example shows a function that creates a timestamped event. It depends on the `Clock` service, making it fully testable.
+
+```typescript
+import { Effect, Clock } from "effect";
+import type * as Types from "effect/Clock";
+
+interface Event {
+  readonly message: string;
+  readonly timestamp: number; // Store as a primitive number (UTC millis)
+}
+
+// This function is pure and testable because it depends on Clock
+const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> =>
+  Effect.gen(function* () {
+    const timestamp = yield* Clock.currentTimeMillis;
+    return { message, timestamp };
+  });
+
+// Create and log some events
+const program = Effect.gen(function* () {
+  const loginEvent = yield* createEvent("User logged in");
+  yield* Effect.log("Login event:", loginEvent);
+
+  const logoutEvent = yield* createEvent("User logged out");
+  yield* Effect.log("Logout event:", logoutEvent);
+});
+
+// Run the program
+const programWithErrorHandling = program.pipe(
+  Effect.provideService(Clock.Clock, Clock.make()),
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithErrorHandling);
 ```
 
 ---
+
+---
+
+## Chaining Computations with flatMap
+
+Use flatMap to sequence computations, flattening nested structures and preserving error and context handling.
+
+### Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Chain two effectful computations
+const effect = Effect.succeed(2).pipe(
+  Effect.flatMap((n) => Effect.succeed(n * 10))
+); // Effect<number>
+
+// Option: Chain two optional computations
+const option = Option.some(2).pipe(
+  Option.flatMap((n) => Option.some(n * 10))
+); // Option<number>
+
+// Either: Chain two computations that may fail
+const either = Either.right(2).pipe(
+  Either.flatMap((n) => Either.right(n * 10))
+); // Either<never, number>
+
+// Stream: Chain streams (flattening)
+const stream = Stream.fromIterable([1, 2]).pipe(
+  Stream.flatMap((n) => Stream.fromIterable([n, n * 10]))
+); // Stream<number>
+```
+
+**Explanation:**  
+`flatMap` lets you build pipelines where each step can depend on the result of the previous one, and the structure is always flattened—no `Option<Option<A>>` or `Effect<Effect<A>>`.
+
+---
+
+## Combining Values with zip
+
+Use zip to run two computations and combine their results into a tuple, preserving error and context handling.
+
+### Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Combine two effects and get both results
+const effectA = Effect.succeed(1);
+const effectB = Effect.succeed("hello");
+const zippedEffect = effectA.pipe(
+  Effect.zip(effectB)
+); // Effect<[number, string]>
+
+// Option: Combine two options, only Some if both are Some
+const optionA = Option.some(1);
+const optionB = Option.some("hello");
+const zippedOption = Option.all([optionA, optionB]); // Option<[number, string]>
+
+// Either: Combine two eithers, only Right if both are Right
+const eitherA = Either.right(1);
+const eitherB = Either.right("hello");
+const zippedEither = Either.all([eitherA, eitherB]); // Either<never, [number, string]>
+
+// Stream: Pair up values from two streams
+const streamA = Stream.fromIterable([1, 2, 3]);
+const streamB = Stream.fromIterable(["a", "b", "c"]);
+const zippedStream = streamA.pipe(
+  Stream.zip(streamB)
+); // Stream<[number, string]>
+```
+
+**Explanation:**  
+`zip` runs both computations and pairs their results.  
+If either computation fails (or is None/Left/empty), the result is a failure (or None/Left/empty).
+
+---
+
+## Comparing Data by Value with Structural Equality
+
+Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
+
+### Example
+
+We define two points using `Data.struct`. Even though `p1` and `p2` are different instances in memory, `Equal.equals` correctly reports them as equal because their contents match.
+
+```typescript
+import { Data, Equal, Effect } from "effect";
+
+// Define a Point type with structural equality
+interface Point {
+  readonly _tag: "Point";
+  readonly x: number;
+  readonly y: number;
+}
+
+const Point = Data.tagged<Point>("Point");
+
+// Create a program to demonstrate structural equality
+const program = Effect.gen(function* () {
+  const p1 = Point({ x: 1, y: 2 });
+  const p2 = Point({ x: 1, y: 2 });
+  const p3 = Point({ x: 3, y: 4 });
+
+  // Standard reference equality fails
+  yield* Effect.log("Comparing points with reference equality (===):");
+  yield* Effect.log(`p1 === p2: ${p1 === p2}`);
+
+  // Structural equality works as expected
+  yield* Effect.log("\nComparing points with structural equality:");
+  yield* Effect.log(`p1 equals p2: ${Equal.equals(p1, p2)}`);
+  yield* Effect.log(`p1 equals p3: ${Equal.equals(p1, p3)}`);
+
+  // Show the actual points
+  yield* Effect.log("\nPoint values:");
+  yield* Effect.log(`p1: ${JSON.stringify(p1)}`);
+  yield* Effect.log(`p2: ${JSON.stringify(p2)}`);
+  yield* Effect.log(`p3: ${JSON.stringify(p3)}`);
+});
+
+// Run the program
+Effect.runPromise(program);
+```
+
+---
+
+---
+
+## Conditional Branching with if, when, and cond
+
+Use combinators such as if, when, and cond to branch computations based on runtime conditions, without imperative if statements.
+
+### Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Branch based on a condition
+const effect = Effect.if(true, {
+  onTrue: () => Effect.succeed("yes"),
+  onFalse: () => Effect.succeed("no")
+}); // Effect<string>
+
+// Option: Conditionally create an Option
+const option = true ? Option.some("yes") : Option.none(); // Option<string> (Some("yes"))
+
+// Either: Conditionally create an Either
+const either = true
+  ? Either.right("yes")
+  : Either.left("error"); // Either<string, string> (Right("yes"))
+
+// Stream: Conditionally emit a stream
+const stream = false
+  ? Stream.fromIterable([1, 2])
+  : Stream.empty; // Stream<number> (empty)
+```
+
+**Explanation:**  
+These combinators let you branch your computation based on a boolean or predicate, without leaving the world of composable, type-safe code.  
+You can also use `when` to run an effect only if a condition is true, or `unless` to run it only if a condition is false.
 
 ---
 
@@ -114,57 +284,38 @@ the Effect world or breaking the flow of composition.
 
 ---
 
-## Control Repetition with Schedule
+## Converting from Nullable, Option, or Either
 
-Use Schedule to create composable policies for controlling the repetition and retrying of effects.
+Use fromNullable, fromOption, and fromEither to lift nullable values, Option, or Either into Effects or Streams for safe, typeful interop.
 
 ### Example
 
-This example demonstrates composition by creating a common, robust retry policy: exponential backoff with jitter, limited to 5 attempts.
-
 ```typescript
-import { Effect, Schedule, Duration } from "effect"
+import { Effect, Option, Either } from "effect";
 
-// A simple effect that can fail
-const flakyEffect = Effect.try({
-  try: () => {
-    if (Math.random() > 0.2) {
-      throw new Error("Transient error")
-    }
-    return "Operation succeeded!"
-  },
-  catch: (error: unknown) => {
-    Effect.logInfo("Operation failed, retrying...")
-    return error
-  }
-})
+// Option: Convert a nullable value to an Option
+const nullableValue: string | null = Math.random() > 0.5 ? "hello" : null;
+const option = Option.fromNullable(nullableValue); // Option<string>
 
-// --- Building a Composable Schedule ---
+// Effect: Convert an Option to an Effect that may fail
+const someValue = Option.some(42);
+const effectFromOption = Option.match(someValue, {
+  onNone: () => Effect.fail("No value"),
+  onSome: (value) => Effect.succeed(value)
+}); // Effect<number, string, never>
 
-// 1. Start with a base exponential backoff (100ms, 200ms, 400ms...)
-const exponentialBackoff = Schedule.exponential("100 millis")
-
-// 2. Add random jitter to avoid thundering herd problems
-const withJitter = Schedule.jittered(exponentialBackoff)
-
-// 3. Limit the schedule to a maximum of 5 repetitions
-const limitedWithJitter = Schedule.compose(
-  withJitter,
-  Schedule.recurs(5)
-)
-
-// --- Using the Schedule ---
-const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting operation...")
-  const result = yield* Effect.retry(flakyEffect, limitedWithJitter)
-  yield* Effect.logInfo(`Final result: ${result}`)
-})
-
-// Run the program
-Effect.runPromise(program)
+// Effect: Convert an Either to an Effect
+const either = Either.right("success");
+const effectFromEither = Either.match(either, {
+  onLeft: (error) => Effect.fail(error),
+  onRight: (value) => Effect.succeed(value)
+}); // Effect<string, never, never>
 ```
 
----
+**Explanation:**  
+- `Effect.fromNullable` lifts a nullable value into an Effect, failing if the value is `null` or `undefined`.
+- `Effect.fromOption` lifts an Option into an Effect, failing if the Option is `none`.
+- `Effect.fromEither` lifts an Either into an Effect, failing if the Either is `left`.
 
 ---
 
@@ -211,46 +362,115 @@ immediate, known errors.
 
 ---
 
-## Manage Shared State Safely with Ref
+## Define a Type-Safe Configuration Schema
 
-Use Ref to manage shared, mutable state concurrently, ensuring atomicity.
+Define a type-safe configuration schema.
 
 ### Example
 
-This program simulates 1,000 concurrent fibers all trying to increment a shared counter. Because we use `Ref.update`, every single increment is applied atomically, and the final result is always correct.
-
 ```typescript
-import { Effect, Ref } from "effect";
+import { Config, Effect, ConfigProvider, Layer } from "effect"
 
+const ServerConfig = Config.nested("SERVER")(
+  Config.all({
+    host: Config.string("HOST"),
+    port: Config.number("PORT"),
+  })
+)
+
+// Example program that uses the config
 const program = Effect.gen(function* () {
-  // Create a new Ref with an initial value of 0
-  const ref = yield* Ref.make(0);
+  const config = yield* ServerConfig
+  yield* Effect.logInfo(`Server config loaded: ${JSON.stringify(config)}`)
+})
 
-  // Define an effect that increments the counter by 1
-  const increment = Ref.update(ref, (n) => n + 1);
+// Create a config provider with test values
+const TestConfig = ConfigProvider.fromMap(
+  new Map([
+    ["SERVER.HOST", "localhost"],
+    ["SERVER.PORT", "3000"]
+  ])
+)
 
-  // Create an array of 1,000 increment effects
-  const tasks = Array.from({ length: 1000 }, () => increment);
-
-  // Run all 1,000 effects concurrently
-  yield* Effect.all(tasks, { concurrency: "unbounded" });
-
-  // Get the final value of the counter
-  return yield* Ref.get(ref);
-});
-
-// The result will always be 1000
-const programWithLogging = Effect.gen(function* () {
-  const result = yield* program;
-  yield* Effect.log(`Final counter value: ${result}`);
-  return result;
-});
-
-Effect.runPromise(programWithLogging);
-
+// Run with test config
+Effect.runPromise(
+  Effect.provide(
+    program,
+    Layer.setConfigProvider(TestConfig)
+  )
+)
 ```
 
+**Explanation:**  
+This schema ensures that both `host` and `port` are present and properly typed, and that their source is clearly defined.
+
 ---
+
+## Filtering Results with filter
+
+Use filter to declaratively express conditional logic, keeping only values that satisfy a predicate.
+
+### Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Only succeed if the value is even, fail otherwise
+const effect = Effect.succeed(4).pipe(
+  Effect.filterOrFail(
+    (n): n is number => n % 2 === 0,
+    () => "Number is not even"
+  )
+); // Effect<number, string>
+
+// Option: Only keep the value if it is even
+const option = Option.some(4).pipe(
+  Option.filter((n): n is number => n % 2 === 0)
+); // Option<number>
+
+// Either: Use map and flatMap to filter
+const either = Either.right(4).pipe(
+  Either.flatMap((n) => 
+    n % 2 === 0
+      ? Either.right(n)
+      : Either.left("Number is not even")
+  )
+); // Either<string, number>
+
+// Stream: Only emit even numbers
+const stream = Stream.fromIterable([1, 2, 3, 4]).pipe(
+  Stream.filter((n): n is number => n % 2 === 0)
+); // Stream<number>
+```
+
+**Explanation:**  
+`filter` applies a predicate to the value(s) inside the structure. If the predicate fails, the result is a failure (`Effect.fail`, `Either.left`), `Option.none`, or an empty stream.
+
+---
+
+## Lifting Values with succeed, some, and right
+
+Use succeed, some, and right to create Effect, Option, or Either from plain values.
+
+### Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Lift a value into an Effect that always succeeds
+const effect = Effect.succeed(42); // Effect<never, number, never>
+
+// Option: Lift a value into an Option that is always Some
+const option = Option.some("hello"); // Option<string>
+
+// Either: Lift a value into an Either that is always Right
+const either = Either.right({ id: 1 }); // Either<never, { id: number }>
+```
+
+**Explanation:**  
+- `Effect.succeed(value)` creates an effect that always succeeds with `value`.
+- `Option.some(value)` creates an option that is always present.
+- `Either.right(value)` creates an either that always represents success.
 
 ---
 
@@ -319,6 +539,108 @@ const programWithErrorHandling = program.pipe(
 );
 
 Effect.runPromise(programWithErrorHandling);
+```
+
+---
+
+---
+
+## Provide Configuration to Your App via a Layer
+
+Provide configuration to your app via a Layer.
+
+### Example
+
+````typescript
+import { Effect, Layer } from "effect";
+
+class ServerConfig extends Effect.Service<ServerConfig>()(
+  "ServerConfig",
+  {
+    sync: () => ({
+      port: process.env.PORT ? parseInt(process.env.PORT) : 8080
+    })
+  }
+) {}
+
+const program = Effect.gen(function* () {
+  const config = yield* ServerConfig;
+  yield* Effect.log(`Starting application on port ${config.port}...`);
+});
+
+const programWithErrorHandling = Effect.provide(program, ServerConfig.Default).pipe(
+  Effect.catchAll((error) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(`Program error: ${error}`);
+      return null;
+    })
+  )
+);
+
+Effect.runPromise(programWithErrorHandling);
+````
+
+**Explanation:**  
+This approach makes configuration available contextually, supporting better testing and modularity.
+
+---
+
+## Representing Time Spans with Duration
+
+Use the Duration data type to represent time intervals instead of raw numbers.
+
+### Example
+
+This example shows how to create and use `Duration` to make time-based operations clear and unambiguous.
+
+```typescript
+import { Effect, Duration } from "effect";
+
+// Create durations with clear, explicit units
+const fiveSeconds = Duration.seconds(5);
+const oneHundredMillis = Duration.millis(100);
+
+// Use them in Effect operators
+const program = Effect.log("Starting...").pipe(
+  Effect.delay(oneHundredMillis),
+  Effect.flatMap(() => Effect.log("Running after 100ms")),
+  Effect.timeout(fiveSeconds) // This whole operation must complete within 5 seconds
+);
+
+// Durations can also be compared
+const isLonger = Duration.greaterThan(fiveSeconds, oneHundredMillis); // true
+
+// Demonstrate the duration functionality
+const demonstration = Effect.gen(function* () {
+  yield* Effect.logInfo("=== Duration Demonstration ===");
+
+  // Show duration values
+  yield* Effect.logInfo(`Five seconds: ${Duration.toMillis(fiveSeconds)}ms`);
+  yield* Effect.logInfo(
+    `One hundred millis: ${Duration.toMillis(oneHundredMillis)}ms`
+  );
+
+  // Show comparison
+  yield* Effect.logInfo(`Is 5 seconds longer than 100ms? ${isLonger}`);
+
+  // Run the timed program
+  yield* Effect.logInfo("Running timed program...");
+  yield* program;
+
+  // Show more duration operations
+  const combined = Duration.sum(fiveSeconds, oneHundredMillis);
+  yield* Effect.logInfo(`Combined duration: ${Duration.toMillis(combined)}ms`);
+
+  // Show different duration units
+  const oneMinute = Duration.minutes(1);
+  yield* Effect.logInfo(`One minute: ${Duration.toMillis(oneMinute)}ms`);
+
+  const isMinuteLonger = Duration.greaterThan(oneMinute, fiveSeconds);
+  yield* Effect.logInfo(`Is 1 minute longer than 5 seconds? ${isMinuteLonger}`);
+});
+
+Effect.runPromise(demonstration);
+
 ```
 
 ---
@@ -491,64 +813,38 @@ simple value transformations.
 
 ---
 
-## Understand Fibers as Lightweight Threads
+## Transforming Values with map
 
-Understand that a Fiber is a lightweight, virtual thread managed by the Effect runtime for massive concurrency.
+Use map to apply a pure function to the value inside an Effect, Stream, Option, or Either.
 
 ### Example
 
-This program demonstrates the efficiency of fibers by forking 100,000 of them. Each fiber does a small amount of work (sleeping for 1 second). Trying to do this with 100,000 OS threads would instantly crash any system.
-
 ```typescript
-import { Effect, Fiber } from "effect";
+import { Effect, Stream, Option, Either } from "effect";
 
-const program = Effect.gen(function* () {
-  // Demonstrate the lightweight nature of fibers by creating 100,000 of them
-  // This would be impossible with OS threads due to memory and context switching overhead
-  const fiberCount = 100_000;
-  yield* Effect.log(`Forking ${fiberCount} fibers...`);
+// Effect: Transform the result of an effect
+const effect = Effect.succeed(2).pipe(
+  Effect.map((n) => n * 10)
+); // Effect<number>
 
-  // Create an array of 100,000 simple effects
-  // Each effect sleeps for 1 second and then returns its index
-  // This simulates lightweight concurrent tasks
-  const tasks = Array.from({ length: fiberCount }, (_, i) =>
-    Effect.sleep("1 second").pipe(Effect.as(i))
-  );
+// Option: Transform an optional value
+const option = Option.some(2).pipe(
+  Option.map((n) => n * 10)
+); // Option<number>
 
-  // Fork all of them into background fibers
-  // Effect.fork creates a new fiber for each task without blocking
-  // This demonstrates fiber creation scalability - 100k fibers created almost instantly
-  // Each fiber is much lighter than an OS thread (typically ~1KB vs ~8MB per thread)
-  const fibers = yield* Effect.forEach(tasks, Effect.fork);
+// Either: Transform a value that may be an error
+const either = Either.right(2).pipe(
+  Either.map((n) => n * 10)
+); // Either<never, number>
 
-  yield* Effect.log(
-    "All fibers have been forked. Now waiting for them to complete..."
-  );
-
-  // Wait for all fibers to finish their work
-  // Fiber.joinAll waits for all fibers to complete and collects their results
-  // This demonstrates fiber coordination - managing thousands of concurrent operations
-  // The runtime efficiently schedules these fibers using a work-stealing thread pool
-  const results = yield* Fiber.joinAll(fibers);
-
-  yield* Effect.log(`All ${results.length} fibers have completed.`);
-
-  // Key insights from this example:
-  // 1. Fibers are extremely lightweight - 100k fibers use minimal memory
-  // 2. Fiber creation is fast - no expensive OS thread allocation
-  // 3. The Effect runtime efficiently schedules fibers across available CPU cores
-  // 4. Fibers can be suspended and resumed without blocking OS threads
-  // 5. This enables massive concurrency for I/O-bound operations
-});
-
-// This program runs successfully, demonstrating the low overhead of fibers.
-// Try running this with OS threads - you'd likely hit system limits around 1000-10000 threads
-// With fibers, 100k+ concurrent operations are easily achievable
-Effect.runPromise(program);
-
+// Stream: Transform every value in a stream
+const stream = Stream.fromIterable([1, 2, 3]).pipe(
+  Stream.map((n) => n * 10)
+); // Stream<number>
 ```
 
----
+**Explanation:**  
+No matter which type you use, `map` lets you apply a function to the value inside, without changing the error or context.
 
 ---
 

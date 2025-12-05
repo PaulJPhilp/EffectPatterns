@@ -1,47 +1,4 @@
-# Project Setup & Execution Patterns
-
-## Create a Managed Runtime for Scoped Resources
-
-Create a managed runtime for scoped resources.
-
-### Example
-
-```typescript
-import { Effect, Layer } from "effect";
-
-class DatabasePool extends Effect.Service<DatabasePool>()(
-  "DbPool",
-  {
-    effect: Effect.gen(function* () {
-      yield* Effect.log("Acquiring pool");
-      return {
-        query: () => Effect.succeed("result")
-      };
-    })
-  }
-) {}
-
-// Create a program that uses the DatabasePool service
-const program = Effect.gen(function* () {
-  const db = yield* DatabasePool;
-  yield* Effect.log("Using DB");
-  yield* db.query();
-});
-
-// Run the program with the service implementation
-Effect.runPromise(
-  program.pipe(
-    Effect.provide(DatabasePool.Default),
-    Effect.scoped
-  )
-);
-```
-
-**Explanation:**  
-`Layer.launch` ensures that resources are acquired and released safely, even
-in the event of errors or interruptions.
-
----
+# project-setup--execution Patterns
 
 ## Create a Reusable Runtime from Layers
 
@@ -104,44 +61,6 @@ Effect.runPromise(programWithLogging);
 **Explanation:**  
 `Effect.runPromise` executes your effect and returns a Promise, making it
 easy to integrate with existing JavaScript async workflows.
-
----
-
-## Execute Long-Running Apps with Effect.runFork
-
-Use Effect.runFork to launch a long-running application as a manageable, detached fiber.
-
-### Example
-
-This example starts a simple "server" that runs forever. We use `runFork` to launch it and then use the returned `Fiber` to shut it down gracefully after 5 seconds.
-
-```typescript
-import { Effect, Fiber } from "effect";
-
-// A server that listens for requests forever
-const server = Effect.log("Server received a request.").pipe(
-  Effect.delay("1 second"),
-  Effect.forever,
-);
-
-Effect.runSync(Effect.log("Starting server..."));
-
-// Launch the server as a detached, top-level fiber
-const appFiber = Effect.runFork(server);
-
-// In a real app, you would listen for OS signals.
-// Here, we simulate a shutdown signal after 5 seconds.
-setTimeout(() => {
-  const shutdownProgram = Effect.gen(function* () {
-    yield* Effect.log("Shutdown signal received. Interrupting server fiber...");
-    // This ensures all cleanup logic within the server effect would run.
-    yield* Fiber.interrupt(appFiber);
-  });
-  Effect.runPromise(shutdownProgram);
-}, 5000);
-```
-
----
 
 ---
 

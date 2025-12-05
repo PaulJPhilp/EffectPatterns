@@ -1,4 +1,4 @@
-# Concurrency Patterns
+# concurrency Patterns
 
 ## Add Caching by Wrapping a Layer
 
@@ -81,57 +81,38 @@ Effect.runPromise(Effect.provide(program, AppLayer));
 
 ---
 
-## Control Repetition with Schedule
+## Creating from Synchronous and Callback Code
 
-Use Schedule to create composable policies for controlling the repetition and retrying of effects.
+Use sync and async to create Effects from synchronous or callback-based computations, making them composable and type-safe.
 
 ### Example
 
-This example demonstrates composition by creating a common, robust retry policy: exponential backoff with jitter, limited to 5 attempts.
-
 ```typescript
-import { Effect, Schedule, Duration } from "effect"
+import { Effect } from "effect";
 
-// A simple effect that can fail
-const flakyEffect = Effect.try({
-  try: () => {
-    if (Math.random() > 0.2) {
-      throw new Error("Transient error")
-    }
-    return "Operation succeeded!"
-  },
-  catch: (error: unknown) => {
-    Effect.logInfo("Operation failed, retrying...")
-    return error
-  }
-})
+// Synchronous: Wrap a computation that is guaranteed not to throw
+const effectSync = Effect.sync(() => Math.random()); // Effect<never, number, never>
 
-// --- Building a Composable Schedule ---
+// Callback-based: Wrap a Node.js-style callback API
+function legacyReadFile(
+  path: string,
+  cb: (err: Error | null, data?: string) => void
+) {
+  setTimeout(() => cb(null, "file contents"), 10);
+}
 
-// 1. Start with a base exponential backoff (100ms, 200ms, 400ms...)
-const exponentialBackoff = Schedule.exponential("100 millis")
+const effectAsync = Effect.async<string, Error>((resume) => {
+  legacyReadFile("file.txt", (err, data) => {
+    if (err) resume(Effect.fail(err));
+    else if (data) resume(Effect.succeed(data));
+  });
+}); // Effect<string, Error, never>
 
-// 2. Add random jitter to avoid thundering herd problems
-const withJitter = Schedule.jittered(exponentialBackoff)
-
-// 3. Limit the schedule to a maximum of 5 repetitions
-const limitedWithJitter = Schedule.compose(
-  withJitter,
-  Schedule.recurs(5)
-)
-
-// --- Using the Schedule ---
-const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Starting operation...")
-  const result = yield* Effect.retry(flakyEffect, limitedWithJitter)
-  yield* Effect.logInfo(`Final result: ${result}`)
-})
-
-// Run the program
-Effect.runPromise(program)
 ```
 
----
+**Explanation:**  
+- `Effect.sync` is for synchronous computations that are guaranteed not to throw.
+- `Effect.async` is for integrating callback-based APIs, converting them into Effects.
 
 ---
 
@@ -524,34 +505,43 @@ const program = Effect.gen(function* () {
 
 ---
 
-## Modeling Effect Results with Exit
+## Mapping and Chaining over Collections with forEach and all
 
-Use Exit to capture the outcome of an Effect, including success, failure, and defects, for robust error handling and coordination.
+Use forEach and all to process collections of values with effectful functions, collecting results in a type-safe and composable way.
 
 ### Example
 
 ```typescript
-import { Effect, Exit } from "effect";
+import { Effect, Either, Option, Stream } from "effect";
 
-// Run an Effect and capture its Exit value
-const program = Effect.succeed(42);
+// Effect: Apply an effectful function to each item in an array
+const numbers = [1, 2, 3];
+const effect = Effect.forEach(numbers, (n) => Effect.succeed(n * 2));
+// Effect<number[]>
 
-const runAndCapture = Effect.runPromiseExit(program); // Promise<Exit<never, number>>
+// Effect: Run multiple effects in parallel and collect results
+const effects = [Effect.succeed(1), Effect.succeed(2)];
+const allEffect = Effect.all(effects, { concurrency: "unbounded" }); // Effect<[1, 2]>
 
-// Pattern match on Exit
-runAndCapture.then((exit) => {
-  if (Exit.isSuccess(exit)) {
-    console.log("Success:", exit.value);
-  } else if (Exit.isFailure(exit)) {
-    console.error("Failure:", exit.cause);
-  }
-});
+// Option: Map over a collection of options and collect only the Some values
+const options = [Option.some(1), Option.none(), Option.some(3)];
+const filtered = options.filter(Option.isSome).map((o) => o.value); // [1, 3]
+
+// Either: Collect all Right values from a collection of Eithers
+const eithers = [Either.right(1), Either.left("fail"), Either.right(3)];
+const rights = eithers.filter(Either.isRight); // [Either.Right(1), Either.Right(3)]
+
+// Stream: Map and flatten a stream of arrays
+const stream = Stream.fromIterable([
+  [1, 2],
+  [3, 4],
+]).pipe(Stream.flatMap((arr) => Stream.fromIterable(arr))); // Stream<number>
+
 ```
 
 **Explanation:**  
-- `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
-- Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
-- Pattern matching on `Exit` lets you handle all possible outcomes.
+`forEach` and `all` let you process collections in a way that is composable, type-safe, and often parallel.  
+They handle errors and context automatically, and can be used for batch jobs, parallel requests, or data transformations.
 
 ---
 
@@ -851,6 +841,50 @@ Effect.runPromise(programWithLogging);
 ```
 
 ---
+
+---
+
+## Sequencing with andThen, tap, and flatten
+
+Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures, while preserving error and context handling.
+
+### Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// andThen: Run one effect, then another, ignore the first result
+const logThenCompute = Effect.log("Starting...").pipe(
+  Effect.andThen(Effect.succeed(42))
+); // Effect<number>
+
+// tap: Log the result of an effect, but keep the value
+const computeAndLog = Effect.succeed(42).pipe(
+  Effect.tap((n) => Effect.log(`Result is ${n}`))
+); // Effect<number>
+
+// flatten: Remove one level of nesting
+const nestedOption = Option.some(Option.some(1));
+const flatOption = Option.flatten(nestedOption); // Option<number>
+
+const nestedEffect = Effect.succeed(Effect.succeed(1));
+const flatEffect = Effect.flatten(nestedEffect); // Effect<number>
+
+// tapError: Log errors without handling them
+const mightFail = Effect.fail("fail!").pipe(
+  Effect.tapError((err) => Effect.logError(`Error: ${err}`))
+); // Effect<never>
+
+// Stream: tap for side effects on each element
+const stream = Stream.fromIterable([1, 2, 3]).pipe(
+  Stream.tap((n) => Effect.log(`Saw: ${n}`))
+); // Stream<number>
+```
+
+**Explanation:**  
+- `andThen` is for sequencing when you don’t care about the first result.
+- `tap` is for running side effects (like logging) without changing the value.
+- `flatten` is for removing unnecessary nesting (e.g., `Option<Option<A>>` → `Option<A>`).
 
 ---
 

@@ -1,4 +1,4 @@
-# Tooling and Debugging Patterns
+# tooling-and-debugging Patterns
 
 ## Supercharge Your Editor with the Effect LSP
 

@@ -9,34 +9,40 @@ alwaysApply: true
 ```typescript
 import { Effect } from "effect";
 
-// A simple function to instrument
-function add(a: number, b: number): number {
-  return a + b;
-}
-
-// Wrap the function with Effect.fn to add logging and tracking
-const addWithLogging = (a: number, b: number) =>
-  Effect.gen(function* () {
-    yield* Effect.logInfo(`Calling add with ${a} and ${b}`);
-    const result = add(a, b);
-    yield* Effect.logInfo(`Result: ${result}`);
-    return result;
+// Use Effect.fn to wrap a function with automatic span creation
+const fetchUser = Effect.fn("fetch-user")(function* (userId: string) {
+  // Annotate the span with contextual information
+  yield* Effect.annotateCurrentSpan({
+    userId,
   });
 
-// Use the instrumented function in an Effect workflow
-const program = addWithLogging(2, 3).pipe(
-  Effect.tap((sum) => Effect.logInfo(`Sum is ${sum}`))
-);
+  // Simulate async operation
+  const user = yield* Effect.tryPromise(() =>
+    Promise.resolve({ id: userId, name: "Alice" })
+  );
 
-// Run the program (commented to avoid runtime issues)
+  return user;
+});
+
+// Use the instrumented function in an Effect workflow
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("Fetching user");
+  const user = yield* fetchUser("user-123");
+  yield* Effect.logInfo(`Fetched user: ${user.name}`);
+  return user;
+});
+
+// Run the program with OpenTelemetry integration
 // Effect.runPromise(program);
 
 ```
 
-**Explanation:**  
-- `Effect.fn` wraps a function, returning a new function that produces an Effect.
-- You can add logging, metrics, tracing, or any effectful logic before/after the call.
-- Keeps instrumentation separate from business logic and fully composable.
+**Explanation:**
+- `Effect.fn("operation-name")(function*)` wraps a function and automatically creates OpenTelemetry spans with the given name.
+- No manual span wrapping needed—the Effect runtime handles span creation and lifecycle automatically.
+- Use `Effect.annotateCurrentSpan()` to add metadata and context to the span.
+- Integrates seamlessly with OpenTelemetry for distributed tracing, logging, and metrics.
+- Keeps instrumentation composable and type-safe without cluttering business logic.
 
 **Explanation:**  
 Instrumenting function calls is essential for observability, especially in complex or critical code paths.  
