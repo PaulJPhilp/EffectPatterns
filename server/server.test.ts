@@ -26,6 +26,13 @@ const RuleSchema = Schema.Struct({
 
 type Rule = typeof RuleSchema.Type;
 
+// Schema for the API response wrapper
+const ApiResponseSchema = Schema.Struct({
+  success: Schema.Boolean,
+  data: Schema.Array(RuleSchema),
+  meta: Schema.optional(Schema.Any),
+});
+
 // --- TEST UTILITIES ---
 
 const TEST_PORT = 45103;
@@ -114,7 +121,10 @@ describe('Pattern Server', { sequential: true }, () => {
         const response = yield* makeRequest('/health');
         const json = yield* getJson(response);
 
-        expect(json).toEqual({ status: 'ok' });
+        // Health endpoint returns wrapped response with status in data
+        expect(json.success).toBe(true);
+        expect(json).toHaveProperty('data');
+        expect(json.data).toHaveProperty('status');
         expect(response.status).toBe(200);
       });
 
@@ -128,8 +138,10 @@ describe('Pattern Server', { sequential: true }, () => {
         const response = yield* makeRequest('/api/v1/rules');
         const json = yield* getJson(response);
 
-        expect(Array.isArray(json)).toBe(true);
-        const rules = json as ReadonlyArray<unknown>;
+        // Rules endpoint returns wrapped response
+        expect(json.success).toBe(true);
+        expect(Array.isArray(json.data)).toBe(true);
+        const rules = json.data as ReadonlyArray<unknown>;
         expect(rules.length).toBeGreaterThan(0);
       });
 
@@ -141,10 +153,9 @@ describe('Pattern Server', { sequential: true }, () => {
         const response = yield* makeRequest('/api/v1/rules');
         const json = yield* getJson(response);
 
-        // Validate against schema
-        const validated = yield* Schema.decodeUnknown(
-          Schema.Array(RuleSchema),
-        )(json);
+        // Unwrap the response and validate the data array against schema
+        const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(json);
+        const validated = parsed.data;
 
         expect(validated.length).toBeGreaterThan(0);
 
@@ -203,7 +214,14 @@ describe('Pattern Server', { sequential: true }, () => {
         );
         const json = yield* getJson(response);
 
-        const validated = yield* Schema.decodeUnknown(RuleSchema)(json);
+        // Single rule endpoint also wraps response
+        const singleRuleSchema = Schema.Struct({
+          success: Schema.Boolean,
+          data: RuleSchema,
+          meta: Schema.optional(Schema.Any),
+        });
+        const parsed = yield* Schema.decodeUnknown(singleRuleSchema)(json);
+        const validated = parsed.data;
 
         expect(validated.id).toBe('use-effect-gen-for-business-logic');
         expect(validated.title).toBeTruthy();
@@ -228,9 +246,13 @@ describe('Pattern Server', { sequential: true }, () => {
           const response = result.right;
           expect(response.status).toBe(404);
 
-          const json = (yield* getJson(response)) as { error?: unknown };
+          const json = yield* getJson(response);
+          expect(json).toHaveProperty('success');
+          expect(json.success).toBe(false);
           expect(json).toHaveProperty('error');
-          expect(json.error).toBe('Rule not found');
+          // Error is now an object with message and code
+          expect(json.error).toHaveProperty('message');
+          expect(json.error.message).toContain('not found');
         }
       });
 
@@ -242,9 +264,8 @@ describe('Pattern Server', { sequential: true }, () => {
         // First get all rules to find a valid ID
         const listResponse = yield* makeRequest('/api/v1/rules');
         const listJson = yield* getJson(listResponse);
-        const rules = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-          listJson,
-        );
+        const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(listJson);
+        const rules = parsed.data;
 
         // Pick a random rule
         const randomRule = rules[Math.floor(Math.random() * rules.length)];
@@ -252,7 +273,13 @@ describe('Pattern Server', { sequential: true }, () => {
         // Fetch it by ID
         const response = yield* makeRequest(`/api/v1/rules/${randomRule.id}`);
         const json = yield* getJson(response);
-        const validated = yield* Schema.decodeUnknown(RuleSchema)(json);
+        const singleRuleSchema = Schema.Struct({
+          success: Schema.Boolean,
+          data: RuleSchema,
+          meta: Schema.optional(Schema.Any),
+        });
+        const singleParsed = yield* Schema.decodeUnknown(singleRuleSchema)(json);
+        const validated = singleParsed.data;
 
         expect(validated.id).toBe(randomRule.id);
         expect(validated.title).toBe(randomRule.title);
