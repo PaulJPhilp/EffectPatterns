@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Effect Patterns Hub - Claude Code Context
 
-**Version:** 0.4.1
-**Last Updated:** 2025-10-30
+**Version:** 0.6.0
+**Last Updated:** 2025-12-05
 
 This document provides comprehensive context for Claude Code when working on the Effect Patterns Hub project.
 
@@ -47,20 +47,28 @@ Effect Patterns Hub is a community-driven knowledge base of practical, goal-orie
 ```
 Effect-Patterns/
 ├── app/                    # AI Assistant Applications
-│   ├── code-assistant/    # Vercel coding-agent with Supermemory (Phase 1) ✨ NEW
+│   ├── web/               # Web UI for pattern browsing
 │   │   ├── app/           # Next.js 16 routes
-│   │   │   ├── api/       # API endpoints
-│   │   │   ├── chat/      # Chat mode (Supermemory + Effect Patterns)
-│   │   │   └── tasks/     # Task mode (coding agent with sandbox)
-│   │   ├── lib/           # Database, auth, sandbox utilities
-│   │   ├── components/    # React components
-│   │   └── .env.local     # Environment configuration
+│   │   └── components/    # React components
 │   │
-│   └── chat-assistant/    # Legacy chat interface
-│       ├── app/           # Next.js 15 app directory
-│       └── package.json   # App dependencies
+│   ├── patterns-chat-app/ # Supermemory-integrated chat interface
+│   │   ├── app/           # Next.js app directory
+│   │   ├── lib/           # Utilities and services
+│   │   └── components/    # React components
+│   │
+│   └── sm-cli/            # Supermemory CLI integration (legacy)
 │
 ├── packages/
+│   ├── ep-cli/            # CLI entry point (@effect-patterns/ep-cli)
+│   │   ├── src/
+│   │   │   └── index.ts   # CLI command definitions
+│   │   └── dist/          # Built CLI (ESM)
+│   │
+│   ├── ep-admin/          # Admin CLI tool (@effect-patterns/ep-admin)
+│   │   ├── src/
+│   │   │   └── index.ts   # Admin commands
+│   │   └── dist/          # Built admin tool
+│   │
 │   ├── toolkit/           # Effect Patterns Toolkit
 │   │   ├── src/
 │   │   │   ├── patterns/  # Pattern data access layer
@@ -70,14 +78,18 @@ Effect-Patterns/
 │   │   │   └── index.ts   # Public API
 │   │   └── dist/          # Built toolkit (ESM + CJS)
 │   │
-│   └── effect-discord/    # Discord integration service
-│       ├── src/
-│       │   ├── index.ts   # Service definitions and API
-│       │   └── layer.ts   # Live implementation
-│       ├── test/
-│       │   └── integration.test.ts  # Integration tests
-│       ├── INTEGRATION_TESTS.md     # Test setup guide
-│       └── dist/          # Built package
+│   ├── effect-discord/    # Discord integration service
+│   │   ├── src/
+│   │   │   ├── index.ts   # Service definitions and API
+│   │   │   └── layer.ts   # Live implementation
+│   │   ├── test/
+│   │   │   └── integration.test.ts  # Integration tests
+│   │   ├── INTEGRATION_TESTS.md     # Test setup guide
+│   │   └── dist/          # Built package
+│   │
+│   ├── cli/               # Shared CLI utilities
+│   ├── design-system/     # UI components library
+│   └── shared/            # Shared utilities
 │
 ├── services/
 │   └── mcp-server/        # MCP server implementation
@@ -316,7 +328,7 @@ Patterns must include:
 
 ### Working with the CLI
 
-The `ep` CLI is the main interface for pattern discovery and installation.
+The `ep` CLI is the main interface for pattern discovery and installation. Recent restructuring (v0.6.0) moved the CLI into dedicated packages.
 
 **CLI Structure:**
 ```
@@ -335,10 +347,12 @@ ep
 ```
 
 **CLI Implementation:**
-- Entry point: `scripts/ep.ts`
+- Main entry point: `packages/ep-cli/src/index.ts`
+- Admin tool: `packages/ep-admin/src/index.ts`
 - Uses `@effect/cli` for command parsing
-- Commands in `scripts/publish/`
+- Legacy entry point: `scripts/ep.ts` (maintained for compatibility)
 - Tests in `scripts/__tests__/`
+- Built artifacts in `packages/ep-cli/dist/` and `packages/ep-admin/dist/`
 
 ### Working with the MCP Server
 
@@ -718,14 +732,17 @@ describe("MyService", () => {
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/ep.ts` | CLI entry point |
+| `packages/ep-cli/src/index.ts` | Main CLI entry point (v0.6.0+) |
+| `packages/ep-admin/src/index.ts` | Admin CLI tool (v0.6.0+) |
+| `scripts/ep.ts` | Legacy CLI entry point (maintained for compatibility) |
 | `scripts/publish/pipeline.ts` | Main pipeline orchestrator |
-| `scripts/publish/validate.ts` | Pattern validation |
+| `scripts/publish/validate-improved.ts` | Advanced pattern validation |
 | `scripts/publish/publish.ts` | Pattern publishing |
-| `scripts/publish/rules.ts` | AI rules generation |
-| `scripts/ingest/ingest-pipeline-improved.ts` | Pattern ingestion |
+| `scripts/publish/rules-improved.ts` | Advanced AI rules generation |
+| `scripts/publish/generate-claude-rules.ts` | Claude-specific rules |
+| `scripts/ingest/ingest-pipeline-improved.ts` | Advanced pattern ingestion |
 | `scripts/ingest-discord.ts` | Discord data export and anonymization |
-| `scripts/analyzer.ts` | Analysis agent entry point |
+| `agents/analyzer.ts` | LangGraph analysis agent entry point |
 | `scripts/analyzer/graph.ts` | LangGraph workflow orchestration |
 
 ### Documentation
@@ -1058,27 +1075,36 @@ vercel --prod
 
 ## Project Goals
 
-### Current Focus (v0.4.0)
+### Current Focus (v0.6.0)
 
 - ✅ 150+ curated patterns
-- ✅ CLI tool with pattern search and installation
+- ✅ Restructured CLI with dedicated packages (`ep-cli`, `ep-admin`)
 - ✅ MCP server with REST API
-- ✅ ChatGPT app for interactive exploration
+- ✅ Web app for pattern browsing (`app/web`)
+- ✅ Supermemory-integrated chat assistant (`app/patterns-chat-app`)
+- ✅ Code Assistant with sandbox execution (Phase 1 complete)
 - ✅ AI coding rules for 10+ tools
 - ✅ Data analysis engine with Discord export and LangGraph thematic analysis
 - ✅ Comprehensive test coverage (80%+)
 - ✅ CI/CD with GitHub Actions
 - ✅ Vercel deployment
 
-### Roadmap (Next 3 Months)
+### Recent Changes (v0.6.0)
 
-- [ ] Package manager support (npm, pnpm)
-- [ ] Re-enable Effect-TS linter
+- **CLI Restructuring**: Extracted CLI into `@effect-patterns/ep-cli` and `@effect-patterns/ep-admin` packages
+- **Package Additions**: Added `design-system`, improved `shared` utilities
+- **Build Improvements**: Enhanced validation and rules generation scripts with `-improved` variants
+- **LangGraph Integration**: Moved analysis agent to `agents/analyzer.ts` with enhanced workflow
+
+### Roadmap
+
+- [ ] Package manager support (npm, pnpm) beyond Bun
 - [ ] Interactive rule selection in CLI
 - [ ] Rule update notifications
 - [ ] Additional AI tool support
-- [ ] Pattern templates
-- [ ] Web UI for pattern browsing
+- [ ] Pattern templates for new effect developers
+- [ ] Enhanced web UI for pattern browsing
+- [ ] Pattern recommendation engine based on usage
 
 See `ROADMAP.md` for detailed roadmap.
 
@@ -1092,6 +1118,6 @@ See `ROADMAP.md` for detailed roadmap.
 
 ---
 
-**This document is maintained by the Effect Patterns Hub team. Last updated: 2025-10-10**
+**This document is maintained by the Effect Patterns Hub team. Last updated: 2025-12-05**
 
 **For Claude Code:** This context should be loaded when working on any part of the Effect Patterns Hub project to ensure consistency with project structure, conventions, and best practices.
