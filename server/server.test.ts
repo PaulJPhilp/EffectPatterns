@@ -174,9 +174,8 @@ describe('Pattern Server', { sequential: true }, () => {
       const program = Effect.gen(function* () {
         const response = yield* makeRequest('/api/v1/rules');
         const json = yield* getJson(response);
-        const validated = yield* Schema.decodeUnknown(
-          Schema.Array(RuleSchema),
-        )(json);
+        const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(json);
+        const validated = parsed.data;
 
         validated.forEach((rule: Rule) => {
           expect(rule.id).toBeTruthy();
