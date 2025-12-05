@@ -2,6 +2,44 @@
 
 Summary of all changes made to the Effect Patterns Hub CLI.
 
+## Version 0.6.1 - Patch Release (December 2025)
+
+### 🐛 Bug Fixes
+
+**Pattern Documentation**
+- Fixed `observability-effect-fn.mdx` pattern to correctly demonstrate `Effect.fn` usage
+  - The code example was using `Effect.gen` instead of `Effect.fn`
+  - Updated to properly show function instrumentation with observability integration
+  - Applied fix across all pattern file versions
+
+### 📚 Documentation Updates
+
+- Updated CLAUDE.md context guide for v0.6.1
+- Clarified CLI package structure (ep-cli, ep-admin)
+- Documented recent v0.6.0 restructuring changes
+- Added references to new packages and utilities
+- Updated project goals and roadmap sections
+
+---
+
+## Version 0.6.0 - CLI Restructuring Release (November 2025)
+
+### ♻️ Refactoring
+
+**CLI Package Structure**
+- Extracted CLI into dedicated `@effect-patterns/ep-cli` package
+- Added `@effect-patterns/ep-admin` admin tool package
+- Improved package organization with cli utilities and design-system packages
+
+### 🎉 New Features
+
+- Enhanced validation and rules generation scripts (`*-improved` variants)
+- LangGraph analysis agent moved to `agents/analyzer.ts`
+- Added `design-system` package for UI components
+- Improved `shared` utilities package
+
+---
+
 ## Version 0.4.0 - Production Release (October 2025)
 
 ### 🎉 Production-Ready Release
