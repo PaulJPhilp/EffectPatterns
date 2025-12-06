@@ -16,7 +16,7 @@ interface PatternFrontmatter {
   id: string;
   title: string;
   skillLevel: string;
-  useCase: string[];
+  useCase: string | string[];
   summary: string;
 }
 
@@ -38,7 +38,12 @@ async function generateReadme() {
   const useCaseGroups = new Map<string, PatternFrontmatter[]>();
 
   for (const pattern of patterns) {
-    for (const useCase of pattern.useCase) {
+    // Handle both string and array types for useCase
+    const useCases = Array.isArray(pattern.useCase)
+      ? pattern.useCase
+      : [pattern.useCase];
+
+    for (const useCase of useCases) {
       if (!useCaseGroups.has(useCase)) {
         useCaseGroups.set(useCase, []);
       }
