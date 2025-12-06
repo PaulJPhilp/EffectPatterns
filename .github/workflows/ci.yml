@@ -106,10 +106,10 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build toolkit
-        run: bun --filter @effect-patterns/toolkit run build
+        run: cd packages/toolkit && bun run build
 
       - name: Emit JSON schemas
-        run: bun --filter @effect-patterns/toolkit run build:schemas
+        run: cd packages/toolkit && bun run build:schemas
 
       - name: Verify schema output
         run: |
@@ -142,7 +142,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build MCP server
-        run: bun --filter @effect-patterns/mcp-server run build
+        run: cd services/mcp-server && bun run build
         env:
           SKIP_ENV_VALIDATION: true
 
