@@ -144,20 +144,18 @@ jobs:
           bunx license-checker --json > licenses.json
 
           # Check for prohibited licenses (copyleft licenses)
-          PROHIBITED_LICENSES="GPL-2.0 GPL-3.0 AGPL LGPL"
-
           echo "## License Check Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Parse and check licenses
-          jq -r 'to_entries[] | "\(.key): \(.value.licenses)"' licenses.json | while read -r line; do
-            for prohibited in $PROHIBITED_LICENSES; do
-              if echo "$line" | grep -q "$prohibited"; then
-                echo "❌ Prohibited license found: $line" | tee -a $GITHUB_STEP_SUMMARY
-                exit 1
-              fi
-            done
-          done
+          # Extract license information and check for prohibited licenses
+          LICENSE_OUTPUT=$(jq -r 'to_entries[] | "\(.key): \(.value.licenses)"' licenses.json)
+
+          # Check if any prohibited licenses are found (GPL, AGPL, LGPL)
+          if echo "$LICENSE_OUTPUT" | grep -iE "(GPL|AGPL|LGPL)"; then
+            echo "❌ Prohibited copyleft licenses found" >> $GITHUB_STEP_SUMMARY
+            echo "Prohibited licenses (GPL, AGPL, LGPL) are not allowed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
 
           echo "✅ No prohibited licenses found" >> $GITHUB_STEP_SUMMARY
 
@@ -223,8 +221,8 @@ jobs:
 
       - name: Generate SBOM (CycloneDX format)
         run: |
-          # Install CycloneDX BOM tool using npm (more reliable than bunx)
-          npm install -D @cyclonedx/bom
+          # Install CycloneDX BOM tool using npm (with --force for dependency conflicts)
+          npm install -D --force @cyclonedx/bom
 
           # Generate SBOM using npx
           npx @cyclonedx/bom --output sbom.json
