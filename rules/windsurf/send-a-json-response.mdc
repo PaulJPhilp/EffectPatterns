@@ -49,7 +49,7 @@ const program = Effect.gen(function* () {
         yield* Effect.logError(`Request error: ${error.message}`);
       }
     });
-    
+
     Effect.runPromise(requestHandler);
   });
 
@@ -85,31 +85,29 @@ const program = Effect.gen(function* () {
     })
   ),
   // Merge layers and provide them in a single call to ensure proper lifecycle management
-  Effect.provide(Layer.merge(
-    JsonServer.Default,
-    NodeContext.layer
-  ))
+  Effect.provide(Layer.merge(JsonServer.Default, NodeContext.layer))
 );
 
 // Run the program
 // Use Effect.runFork for server applications that shouldn't resolve the promise
-Effect.runPromise(program.pipe(
-  // Ensure the Effect has no remaining context requirements for runPromise
-  Effect.map(() => undefined)
-));
-
+Effect.runPromise(
+  program.pipe(
+    // Ensure the Effect has no remaining context requirements for runPromise
+    Effect.map(() => undefined)
+  )
+);
 ```
 
 ### Anti-Pattern (Avoid)
 The anti-pattern is to manually serialize the data to a string and set the headers yourself. This is verbose and introduces opportunities for error.
 
 ```typescript
-import { Effect } from 'effect';
-import { Http, NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Effect } from "effect";
+import { Http, NodeHttpServer, NodeRuntime } from "@effect/platform-node";
 
 const getUserRoute = Http.router.get(
-  '/users/1',
-  Effect.succeed({ id: 1, name: 'Paul', team: 'Effect' }).pipe(
+  "/users/1",
+  Effect.succeed({ id: 1, name: "Paul", team: "Effect" }).pipe(
     Effect.flatMap((user) => {
       // Manually serialize the object to a JSON string.
       const jsonString = JSON.stringify(user);
@@ -119,8 +117,8 @@ const getUserRoute = Http.router.get(
       return Effect.succeed(
         Http.response.setHeader(
           response,
-          'Content-Type',
-          'application/json; charset=utf-8'
+          "Content-Type",
+          "application/json; charset=utf-8"
         )
       );
     })
@@ -129,9 +127,9 @@ const getUserRoute = Http.router.get(
 
 const app = Http.router.empty.pipe(Http.router.addRoute(getUserRoute));
 
-const program = Http.server.serve(app).pipe(
-  Effect.provide(NodeHttpServer.layer({ port: 3000 }))
-);
+const program = Http.server
+  .serve(app)
+  .pipe(Effect.provide(NodeHttpServer.layer({ port: 3000 })));
 
 NodeRuntime.runMain(program);
 ```

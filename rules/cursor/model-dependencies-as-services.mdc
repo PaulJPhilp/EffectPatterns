@@ -10,15 +10,12 @@ alwaysApply: true
 import { Effect } from "effect";
 
 // Define Random service with production implementation as default
-export class Random extends Effect.Service<Random>()(
-  "Random",
-  {
-    // Default production implementation
-    sync: () => ({
-      next: Effect.sync(() => Math.random())
-    })
-  }
-) {}
+export class Random extends Effect.Service<Random>()("Random", {
+  // Default production implementation
+  sync: () => ({
+    next: Effect.sync(() => Math.random()),
+  }),
+}) {}
 
 // Example usage
 const program = Effect.gen(function* () {

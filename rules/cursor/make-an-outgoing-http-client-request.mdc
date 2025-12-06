@@ -17,7 +17,7 @@ import { Console, Data, Duration, Effect, Fiber, Layer } from "effect";
 
 class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
   id: string;
-}> { }
+}> {}
 
 export class Database extends Effect.Service<Database>()("Database", {
   sync: () => ({
@@ -26,7 +26,7 @@ export class Database extends Effect.Service<Database>()("Database", {
         ? Effect.succeed({ name: "Paul" })
         : Effect.fail(new UserNotFoundError({ id })),
   }),
-}) { }
+}) {}
 
 const userHandler = Effect.flatMap(HttpRouter.params, (p) =>
   Effect.flatMap(Database, (db) => db.getUser(p["userId"] ?? "")).pipe(
@@ -66,9 +66,11 @@ const program = Effect.gen(function* () {
 });
 
 NodeRuntime.runMain(
-  Effect.provide(program, Layer.provide(serverLayer, Layer.merge(Database.Default, server))) as Effect.Effect<void, unknown, never>
+  Effect.provide(
+    program,
+    Layer.provide(serverLayer, Layer.merge(Database.Default, server))
+  ) as Effect.Effect<void, unknown, never>
 );
-
 ```
 
 **Explanation:**  

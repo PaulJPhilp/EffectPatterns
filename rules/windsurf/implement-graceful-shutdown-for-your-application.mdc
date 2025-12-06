@@ -49,7 +49,7 @@ const server = Effect.gen(function* () {
 
   // Start server with error handling
   yield* Effect.async<void, Error>((resume) => {
-    httpServer.once('error', (err: Error) => {
+    httpServer.once("error", (err: Error) => {
       resume(Effect.fail(new Error(`Failed to start server: ${err.message}`)));
     });
 
@@ -73,7 +73,6 @@ Effect.runPromise(app).catch((error) => {
   Effect.runSync(Effect.logError("Application error: " + error));
   process.exit(1);
 });
-
 ```
 
 ---

@@ -9,7 +9,7 @@ alwaysApply: true
 This example processes 10 users. By using `Stream.grouped(5)`, it transforms the stream of 10 individual users into a stream of two chunks (each a batch of 5). The `saveUsersInBulk` function is then called only twice, once for each batch.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 // A mock function that simulates a bulk database insert
 const saveUsersInBulk = (
@@ -18,7 +18,7 @@ const saveUsersInBulk = (
   Effect.log(
     `Saving batch of ${userBatch.length} users: ${Chunk.toArray(userBatch)
       .map((u) => u.id)
-      .join(', ')}`
+      .join(", ")}`
   );
 
 const userIds = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));

@@ -18,7 +18,9 @@ interface Event {
 }
 
 // This function is pure and testable because it depends on Clock
-const createEvent = (message: string): Effect.Effect<Event, never, Types.Clock> =>
+const createEvent = (
+  message: string
+): Effect.Effect<Event, never, Types.Clock> =>
   Effect.gen(function* () {
     const timestamp = yield* Clock.currentTimeMillis;
     return { message, timestamp };
@@ -70,8 +72,9 @@ const createEventUnsafely = (message: string): Effect.Effect<any> =>
 JavaScript's native `Date` object is a common source of bugs. It is mutable, its behavior can be inconsistent across different JavaScript environments (especially with timezones), and its reliance on the system clock makes time-dependent logic difficult to test.
 
 Effect's approach solves these problems:
--   The **`Clock` service** abstracts away the concept of "now." In production, the `Live` clock uses the system time. In tests, you can provide a `TestClock` that gives you complete, deterministic control over the passage of time.
--   Using **primitive `number` or `string`** for timestamps ensures immutability and makes your data easy to serialize, store, and transfer.
+
+- The **`Clock` service** abstracts away the concept of "now." In production, the `Live` clock uses the system time. In tests, you can provide a `TestClock` that gives you complete, deterministic control over the passage of time.
+- Using **primitive `number` or `string`** for timestamps ensures immutability and makes your data easy to serialize, store, and transfer.
 
 This makes your time-based logic pure, predictable, and easy to test.
 

@@ -23,24 +23,16 @@ const findUser = (id: number): Effect.Effect<User, "DbError"> =>
   Effect.succeed({ id, status: "active", roles: ["admin"] });
 
 // Reusable, testable predicates that document business rules.
-const isActive = (user: User): boolean =>
-  user.status === "active";
+const isActive = (user: User): boolean => user.status === "active";
 
-const isAdmin = (user: User): boolean =>
-  user.roles.includes("admin");
+const isAdmin = (user: User): boolean => user.roles.includes("admin");
 
 const program = (id: number): Effect.Effect<string, UserError> =>
   findUser(id).pipe(
     // Validate user is active using Effect.filterOrFail
-    Effect.filterOrFail(
-      isActive,
-      () => "UserIsInactive" as const
-    ),
+    Effect.filterOrFail(isActive, () => "UserIsInactive" as const),
     // Validate user is admin using Effect.filterOrFail
-    Effect.filterOrFail(
-      isAdmin,
-      () => "UserIsNotAdmin" as const
-    ),
+    Effect.filterOrFail(isAdmin, () => "UserIsNotAdmin" as const),
     // Success case
     Effect.map((user) => `Welcome, admin user #${user.id}!`)
   );
@@ -60,7 +52,7 @@ const handled = program(123).pipe(
           return `Unknown error: ${error}`;
       }
     },
-    onSuccess: (result) => result
+    onSuccess: (result) => result,
   })
 );
 
@@ -96,7 +88,7 @@ const program = (id: number) =>
       // The resulting type is Effect<User | void, "DbError">, which is problematic.
     }),
     // This `map` will now have a type error because `u` could be `void`.
-    Effect.map((u) => `Welcome, ${u.name}!`),
+    Effect.map((u) => `Welcome, ${u.name}!`)
   );
 
 // `Effect.filterOrFail` avoids this problem entirely by forcing a failure,
@@ -105,9 +97,9 @@ const program = (id: number) =>
 
 ### Why This is Better
 
-*   **It's a Real Bug:** This isn't just a style issue; it's a legitimate logical error that leads to incorrect types and broken code.
-*   **It's a Common Mistake:** Developers new to functional pipelines often forget that every path must return a value.
-*   **It Reinforces the "Why":** It perfectly demonstrates *why* `Effect.filterOrFail` is superior: `filterOrFail` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
+- **It's a Real Bug:** This isn't just a style issue; it's a legitimate logical error that leads to incorrect types and broken code.
+- **It's a Common Mistake:** Developers new to functional pipelines often forget that every path must return a value.
+- **It Reinforces the "Why":** It perfectly demonstrates _why_ `Effect.filterOrFail` is superior: `filterOrFail` guarantees that if the condition fails, the computation fails, preserving the integrity of the success channel.
 
 **Explanation:**  
 This pattern allows you to embed decision-making logic directly into your composition pipelines, making your code more declarative and readable. It solves two key problems:

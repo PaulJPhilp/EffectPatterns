@@ -74,7 +74,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(Effect.provide(program, AppLayer));
-
 ```
 
 ---
@@ -94,18 +93,19 @@ const WeatherServiceWithInlineCache = Layer.effect(
         return Effect.succeed("...");
       },
     });
-  }),
+  })
 );
 ```
 
 **Explanation:**  
 You often want to add functionality like caching, logging, or metrics to a service without polluting its core business logic. The wrapper layer pattern is a clean way to achieve this.
 
-By creating a layer that *requires* the original service, you can get an instance of it from the context, and then provide a *new* implementation of that same service that calls the original.
+By creating a layer that _requires_ the original service, you can get an instance of it from the context, and then provide a _new_ implementation of that same service that calls the original.
 
 This approach is powerful because:
--   **It's Non-Invasive:** The original service (`DatabaseLive`) remains completely unchanged.
--   **It's Composable:** You can apply multiple wrappers. You could wrap a database layer with a caching layer, then wrap that with a metrics layer.
--   **It's Explicit:** The composition is clearly defined at the application's top level where you build your final `AppLayer`.
+
+- **It's Non-Invasive:** The original service (`DatabaseLive`) remains completely unchanged.
+- **It's Composable:** You can apply multiple wrappers. You could wrap a database layer with a caching layer, then wrap that with a metrics layer.
+- **It's Explicit:** The composition is clearly defined at the application's top level where you build your final `AppLayer`.
 
 ---

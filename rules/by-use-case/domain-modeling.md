@@ -2,46 +2,6 @@
 
 ## Accumulate Multiple Errors with Either
 
-Use Either to model computations that may fail, making errors explicit and type-safe.
-
-### Example
-
-```typescript
-import { Either } from "effect";
-
-// Create a Right (success) or Left (failure)
-const success = Either.right(42); // Either<never, number>
-const failure = Either.left("Something went wrong"); // Either<string, never>
-
-// Pattern match on Either
-const result = success.pipe(
-  Either.match({
-    onLeft: (err) => `Error: ${err}`,
-    onRight: (value) => `Value: ${value}`,
-  })
-); // string
-
-// Combine multiple Eithers and accumulate errors
-const e1 = Either.right(1);
-const e2 = Either.left("fail1");
-const e3 = Either.left("fail2");
-
-const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
-const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
-const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
-```
-
-**Explanation:**
-
-- `Either.right(value)` represents success.
-- `Either.left(error)` represents failure.
-- Pattern matching ensures all cases are handled.
-- You can accumulate errors or results from multiple Eithers.
-
----
-
-## Accumulate Multiple Errors with Either
-
 Use Either to accumulate multiple validation errors instead of failing on the first one.
 
 ### Example
@@ -134,6 +94,46 @@ Effect.runSync(program);
 ```
 
 ---
+
+---
+
+## Accumulate Multiple Errors with Either
+
+Use Either to model computations that may fail, making errors explicit and type-safe.
+
+### Example
+
+```typescript
+import { Either } from "effect";
+
+// Create a Right (success) or Left (failure)
+const success = Either.right(42); // Either<never, number>
+const failure = Either.left("Something went wrong"); // Either<string, never>
+
+// Pattern match on Either
+const result = success.pipe(
+  Either.match({
+    onLeft: (err) => `Error: ${err}`,
+    onRight: (value) => `Value: ${value}`,
+  })
+); // string
+
+// Combine multiple Eithers and accumulate errors
+const e1 = Either.right(1);
+const e2 = Either.left("fail1");
+const e3 = Either.left("fail2");
+
+const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
+const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
+const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
+```
+
+**Explanation:**
+
+- `Either.right(value)` represents success.
+- `Either.left(error)` represents failure.
+- Pattern matching ensures all cases are handled.
+- You can accumulate errors or results from multiple Eithers.
 
 ---
 
@@ -490,45 +490,6 @@ const effect: Effect.Effect<string, never, never> = Effect.fail(
 
 ## Model Optional Values Safely with Option
 
-Use Option to model values that may be present or absent, making absence explicit and type-safe.
-
-### Example
-
-```typescript
-import { Option } from "effect";
-
-// Create an Option from a value
-const someValue = Option.some(42); // Option<number>
-const noValue = Option.none(); // Option<never>
-
-// Safely convert a nullable value to Option
-const fromNullable = Option.fromNullable(Math.random() > 0.5 ? "hello" : null); // Option<string>
-
-// Pattern match on Option
-const result = someValue.pipe(
-  Option.match({
-    onNone: () => "No value",
-    onSome: (n) => `Value: ${n}`,
-  })
-); // string
-
-// Use Option in a workflow
-function findUser(id: number): Option.Option<{ id: number; name: string }> {
-  return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
-}
-```
-
-**Explanation:**
-
-- `Option.some(value)` represents a present value.
-- `Option.none()` represents absence.
-- `Option.fromNullable` safely lifts nullable values into Option.
-- Pattern matching ensures all cases are handled.
-
----
-
-## Model Optional Values Safely with Option
-
 Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
 
 ### Example
@@ -570,6 +531,45 @@ const program = Effect.gen(function* () {
 
 Effect.runPromise(program);
 ```
+
+---
+
+## Model Optional Values Safely with Option
+
+Use Option to model values that may be present or absent, making absence explicit and type-safe.
+
+### Example
+
+```typescript
+import { Option } from "effect";
+
+// Create an Option from a value
+const someValue = Option.some(42); // Option<number>
+const noValue = Option.none(); // Option<never>
+
+// Safely convert a nullable value to Option
+const fromNullable = Option.fromNullable(Math.random() > 0.5 ? "hello" : null); // Option<string>
+
+// Pattern match on Option
+const result = someValue.pipe(
+  Option.match({
+    onNone: () => "No value",
+    onSome: (n) => `Value: ${n}`,
+  })
+); // string
+
+// Use Option in a workflow
+function findUser(id: number): Option.Option<{ id: number; name: string }> {
+  return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
+}
+```
+
+**Explanation:**
+
+- `Option.some(value)` represents a present value.
+- `Option.none()` represents absence.
+- `Option.fromNullable` safely lifts nullable values into Option.
+- Pattern matching ensures all cases are handled.
 
 ---
 
@@ -821,6 +821,7 @@ const programWithLogging = Effect.gen(function* () {
 
 Effect.runPromise(programWithLogging);
 ```
+
 
 `transformOrFail` is perfect for creating branded types, as the validation can fail.
 
@@ -1104,3 +1105,4 @@ const [id, name] = t1; // id: number, name: string
 - Supports safe pattern matching and collection operations.
 
 ---
+

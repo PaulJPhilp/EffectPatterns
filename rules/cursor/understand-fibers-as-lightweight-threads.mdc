@@ -54,7 +54,6 @@ const program = Effect.gen(function* () {
 // Try running this with OS threads - you'd likely hit system limits around 1000-10000 threads
 // With fibers, 100k+ concurrent operations are easily achievable
 Effect.runPromise(program);
-
 ```
 
 ---

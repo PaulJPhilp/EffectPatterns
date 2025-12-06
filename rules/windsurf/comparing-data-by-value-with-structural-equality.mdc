@@ -70,7 +70,7 @@ if (selectedUsers.includes({ id: 1, name: "Paul" })) {
 ```
 
 **Explanation:**  
-In JavaScript, comparing two non-primitive values with `===` checks for *referential equality*. It only returns `true` if they are the exact same instance in memory. This means two objects with identical contents are not considered equal, which is a common source of bugs.
+In JavaScript, comparing two non-primitive values with `===` checks for _referential equality_. It only returns `true` if they are the exact same instance in memory. This means two objects with identical contents are not considered equal, which is a common source of bugs.
 
 ```typescript
 { a: 1 } === { a: 1 } // false!

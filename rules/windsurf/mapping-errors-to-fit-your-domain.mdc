@@ -48,7 +48,10 @@ const program = Effect.gen(function* () {
     Effect.gen(function* () {
       if (error instanceof RepositoryError) {
         yield* Effect.logInfo(`Repository error occurred: ${error._tag}`);
-        if (error.cause instanceof ConnectionError || error.cause instanceof QueryError) {
+        if (
+          error.cause instanceof ConnectionError ||
+          error.cause instanceof QueryError
+        ) {
           yield* Effect.logInfo(`Original cause: ${error.cause._tag}`);
         }
       } else {
@@ -59,7 +62,6 @@ const program = Effect.gen(function* () {
 );
 
 Effect.runPromise(program);
-
 ```
 
 ---
@@ -89,6 +91,6 @@ const findUserUnsafely = (): Effect.Effect<
 **Explanation:**  
 This pattern is essential for creating clean architectural boundaries and preventing "leaky abstractions." An outer layer of your application (e.g., a `UserService`) should not expose the internal failure details of the layers it depends on (e.g., a `Database` that can fail with `ConnectionError` or `QueryError`).
 
-By using `Effect.mapError`, the outer layer can define its own, more abstract error type (like `RepositoryError`) and map all the specific, low-level errors into it. This decouples the layers. If you later swap your database implementation, you only need to update the mapping logic within the repository layer; none of the code that *uses* the repository needs to change.
+By using `Effect.mapError`, the outer layer can define its own, more abstract error type (like `RepositoryError`) and map all the specific, low-level errors into it. This decouples the layers. If you later swap your database implementation, you only need to update the mapping logic within the repository layer; none of the code that _uses_ the repository needs to change.
 
 ---

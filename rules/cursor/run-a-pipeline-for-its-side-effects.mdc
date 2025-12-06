@@ -9,9 +9,9 @@ alwaysApply: true
 This example creates a stream of tasks. For each task, it performs a side effect (logging it as "complete"). `Stream.runDrain` executes the pipeline, ensuring all logs are written, but without collecting the `void` results of each logging operation.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 
-const tasks = ['task 1', 'task 2', 'task 3'];
+const tasks = ["task 1", "task 2", "task 3"];
 
 // A function that performs a side effect for a task
 const completeTask = (task: string): Effect.Effect<void, never> =>
@@ -26,7 +26,7 @@ const program = Stream.fromIterable(tasks).pipe(
 
 const programWithLogging = Effect.gen(function* () {
   yield* program;
-  yield* Effect.log('\nAll tasks have been processed.');
+  yield* Effect.log("\nAll tasks have been processed.");
 });
 
 Effect.runPromise(programWithLogging);

@@ -41,7 +41,9 @@ const program = Effect.gen(function* () {
   yield* Effect.log("\n1. Basic sync computation (random number):");
   const random1 = yield* randomNumber;
   const random2 = yield* randomNumber;
-  yield* Effect.log(`Random numbers: ${random1.toFixed(4)}, ${random2.toFixed(4)}`);
+  yield* Effect.log(
+    `Random numbers: ${random1.toFixed(4)}, ${random2.toFixed(4)}`
+  );
 
   // Example 2: Successful JSON parsing
   yield* Effect.log("\n2. Successful JSON parsing:");
@@ -89,7 +91,6 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(program);
-
 ```
 
 **Explanation:**  

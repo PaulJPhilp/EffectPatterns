@@ -14,7 +14,7 @@ import { Effect, Fiber } from "effect";
 // A server that listens for requests forever
 const server = Effect.log("Server received a request.").pipe(
   Effect.delay("1 second"),
-  Effect.forever,
+  Effect.forever
 );
 
 Effect.runSync(Effect.log("Starting server..."));
@@ -45,7 +45,10 @@ import { Effect, Fiber } from "effect";
 const someEffect = Effect.succeed(42);
 
 // ❌ WRONG: This is just a complicated way to write `Effect.runPromise(someEffect)`
-const resultPromise = Effect.runFork(someEffect).pipe(Fiber.join, Effect.runPromise);
+const resultPromise = Effect.runFork(someEffect).pipe(
+  Fiber.join,
+  Effect.runPromise
+);
 ```
 
 **Explanation:**  

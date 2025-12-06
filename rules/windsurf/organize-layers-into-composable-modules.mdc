@@ -14,14 +14,11 @@ This example shows a `BaseLayer` with a `Logger`, a `UserModule` that uses the `
 // src/core/Logger.ts
 import { Effect } from "effect";
 
-export class Logger extends Effect.Service<Logger>()(
-  "App/Core/Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.log(`[LOG] ${msg}`)
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("App/Core/Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.log(`[LOG] ${msg}`),
+  }),
+}) {}
 
 // src/features/User/UserRepository.ts
 export class UserRepository extends Effect.Service<UserRepository>()(
@@ -35,11 +32,11 @@ export class UserRepository extends Effect.Service<UserRepository>()(
           Effect.gen(function* () {
             yield* logger.log(`Finding user ${id}`);
             return { id, name: `User ${id}` };
-          })
+          }),
       };
     }),
     // Declare Logger dependency
-    dependencies: [Logger.Default]
+    dependencies: [Logger.Default],
   }
 ) {}
 
@@ -51,12 +48,7 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    UserRepository.Default
-  )
-);
+Effect.runPromise(Effect.provide(program, UserRepository.Default));
 
 const programWithLogging = Effect.gen(function* () {
   const result = yield* program;
@@ -73,14 +65,11 @@ Effect.runPromise(Effect.provide(programWithLogging, UserRepository.Default));
 // src/core/Logger.ts
 import { Effect } from "effect";
 
-export class Logger extends Effect.Service<Logger>()(
-  "App/Core/Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`))
-    })
-  }
-) {}
+export class Logger extends Effect.Service<Logger>()("App/Core/Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.sync(() => console.log(`[LOG] ${msg}`)),
+  }),
+}) {}
 
 // src/features/User/UserRepository.ts
 export class UserRepository extends Effect.Service<UserRepository>()(
@@ -94,11 +83,11 @@ export class UserRepository extends Effect.Service<UserRepository>()(
           Effect.gen(function* () {
             yield* logger.log(`Finding user ${id}`);
             return { id, name: `User ${id}` };
-          })
+          }),
       };
     }),
     // Declare Logger dependency
-    dependencies: [Logger.Default]
+    dependencies: [Logger.Default],
   }
 ) {}
 
@@ -110,12 +99,9 @@ const program = Effect.gen(function* () {
 });
 
 // Run with default implementations
-Effect.runPromise(
-  Effect.provide(
-    program,
-    UserRepository.Default
-  )
-).then(console.log);
+Effect.runPromise(Effect.provide(program, UserRepository.Default)).then(
+  console.log
+);
 ```
 
 ### 3. The Final Application Composition
@@ -149,7 +135,7 @@ const AppLayer = Layer.mergeAll(
   UserRepositoryLive,
   ProductServiceLive,
   ProductRepositoryLive,
-  BillingServiceLive,
+  BillingServiceLive
   // ...and 50 other services
 );
 ```

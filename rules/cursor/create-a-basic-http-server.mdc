@@ -69,7 +69,10 @@ const program = Effect.gen(function* () {
 );
 
 // Run the server with proper error handling
-const programWithErrorHandling = Effect.provide(program, HttpServer.Default).pipe(
+const programWithErrorHandling = Effect.provide(
+  program,
+  HttpServer.Default
+).pipe(
   Effect.catchAll((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Program failed: ${error}`);
@@ -89,7 +92,6 @@ To test:
 3. Proper cleanup on shutdown
 4. Demonstrates server lifecycle: start -> run -> shutdown
 */
-
 ```
 
 **Explanation:**  

@@ -30,10 +30,10 @@ const program = Effect.gen(function* () {
 
   return { now, inOneHour, oneHourAgo, iso, isBefore };
 });
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `DateTime` is immutable and time-zone-aware.
 - Supports parsing, formatting, arithmetic, and comparison.
 - Use for all date/time logic to avoid bugs with native `Date`.

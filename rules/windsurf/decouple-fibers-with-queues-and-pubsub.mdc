@@ -90,7 +90,6 @@ const program = Effect.gen(function* () {
 // - Backpressure prevents resource exhaustion
 // - Interruption allows for graceful shutdown
 Effect.runPromise(program);
-
 ```
 
 
@@ -110,9 +109,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`AUDIT: Received event: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Subscriber 2: The "Notifier" service
@@ -123,9 +122,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`NOTIFIER: Sending notification for: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Give subscribers time to start
@@ -153,11 +152,12 @@ const program = Effect.gen(function* () {
 
   // Consumer has to constantly poll the array to see if it's empty.
   const consumer = Ref.get(queueRef).pipe(
-    Effect.flatMap((q) =>
-      q.length > 0
-        ? Ref.set(queueRef, q.slice(1)).pipe(Effect.as(q[0]))
-        : Effect.sleep("1 second").pipe(Effect.flatMap(() => consumer)), // Inefficient polling
-    ),
+    Effect.flatMap(
+      (q) =>
+        q.length > 0
+          ? Ref.set(queueRef, q.slice(1)).pipe(Effect.as(q[0]))
+          : Effect.sleep("1 second").pipe(Effect.flatMap(() => consumer)) // Inefficient polling
+    )
   );
 });
 ```

@@ -13,7 +13,7 @@ import { Effect, Scope } from "effect";
 
 // Simulate acquiring and releasing a resource
 const acquireFile = Effect.log("File opened").pipe(
-  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) }),
+  Effect.as({ write: (data: string) => Effect.log(`Wrote: ${data}`) })
 );
 const releaseFile = Effect.log("File closed.");
 

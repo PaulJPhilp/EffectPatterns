@@ -295,3 +295,4 @@ Connection 0.12345... Released
 By using `Effect.acquireRelease`, the `closeDbConnection` logic is guaranteed to run after the main logic completes. This creates a self-contained, leak-proof unit of work that can be safely composed into larger programs.
 
 ---
+

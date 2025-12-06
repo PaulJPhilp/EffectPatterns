@@ -83,13 +83,12 @@ const programWithLogging = Effect.gen(function* () {
 );
 
 Effect.runPromise(programWithLogging);
-
 ```
 
 ---
 
 ### Anti-Pattern (Avoid)
-Don't use `Effect.race` if you need the results of *all* the effects. That is the job of `Effect.all`. Using `race` in this scenario will cause you to lose data, as all but one of the effects will be interrupted and their results discarded.
+Don't use `Effect.race` if you need the results of _all_ the effects. That is the job of `Effect.all`. Using `race` in this scenario will cause you to lose data, as all but one of the effects will be interrupted and their results discarded.
 
 ```typescript
 import { Effect } from "effect";
@@ -106,10 +105,11 @@ const completeData = Effect.all([fetchProfile, fetchPermissions]);
 ```
 
 **Explanation:**  
-`Effect.race` is a powerful concurrency primitive for performance and resilience. It starts all provided effects in parallel. The moment one of them succeeds, `Effect.race` immediately interrupts all the other "losing" effects and returns the winning result. If one of the effects fails before any have succeeded, the race is not over; the remaining effects continue to run. The entire race only fails if *all* participating effects fail.
+`Effect.race` is a powerful concurrency primitive for performance and resilience. It starts all provided effects in parallel. The moment one of them succeeds, `Effect.race` immediately interrupts all the other "losing" effects and returns the winning result. If one of the effects fails before any have succeeded, the race is not over; the remaining effects continue to run. The entire race only fails if _all_ participating effects fail.
 
 This is commonly used for:
--   **Performance:** Querying multiple redundant data sources (e.g., two API replicas) and taking the response from whichever is faster.
--   **Implementing Timeouts:** Racing a primary effect against a delayed `Effect.fail`, effectively creating a timeout mechanism.
+
+- **Performance:** Querying multiple redundant data sources (e.g., two API replicas) and taking the response from whichever is faster.
+- **Implementing Timeouts:** Racing a primary effect against a delayed `Effect.fail`, effectively creating a timeout mechanism.
 
 ---
