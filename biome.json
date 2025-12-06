@@ -43,13 +43,8 @@
   },
   "files": {
     "includes": [
-      "api/**/*.ts",
-      "agents/**/*.ts",
-      "cli/**/*.ts",
-      "packages/**/*.ts",
-      "services/**/*.ts",
+      "packages/!(*/dist)/**/*.ts",
       "scripts/**/*.ts",
-      "server/**/*.ts",
       "content/src/**/*.ts"
     ]
   }
