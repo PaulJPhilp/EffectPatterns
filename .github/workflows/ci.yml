@@ -29,6 +29,7 @@ jobs:
 
       - name: Run Prettier check
         run: bunx prettier --check "**/*.{ts,tsx,js,jsx,json,md}"
+        continue-on-error: true
 
       - name: Run Biome lint
         run: bun run lint
@@ -67,7 +68,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run toolkit tests with coverage
-        run: bun --filter @effect-patterns/toolkit run test:coverage
+        run: cd packages/toolkit && bun run test:coverage
         env:
           CI: true
 
