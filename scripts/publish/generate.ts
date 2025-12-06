@@ -56,7 +56,7 @@ async function generateReadme() {
   const toc: string[] = [];
 
   for (const [useCase, patterns] of useCaseGroups) {
-    const anchor = useCase.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const anchor = useCase.toLowerCase();
     toc.push(`- [${useCase}](#${anchor})`);
 
     sections.push(`## ${useCase}\n`);
