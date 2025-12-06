@@ -89,7 +89,7 @@ export const LLMServiceLive = Layer.effect(
     );
 
     return LLMService.of({
-      analyzeChunk: (chunk: Message[]) => {
+      analyzeChunk: (chunk: Message[]): Effect.Effect<string, LLMServiceError | AnalysisError> => {
         // Build Effect-TS specific prompt for chunk analysis
         const prompt = `You are an expert in Effect-TS, a TypeScript library for building robust applications with functional programming patterns.
 
@@ -112,7 +112,7 @@ Return your analysis in JSON format with these fields:
 - codeExamples: Array<{pattern: string, code: string, explanation: string}>`;
 
         return Effect.tryPromise({
-          try: () => llm.invoke(prompt).then((res) => res.content as string),
+          try: () => llm.invoke(prompt).then((res: { content: unknown }) => String(res.content)),
           catch: mapLLMError,
         }).pipe(
           Effect.retry(retryPolicy),
@@ -126,7 +126,7 @@ Return your analysis in JSON format with these fields:
         );
       },
 
-      aggregateAnalyses: (analyses: string[]) => {
+      aggregateAnalyses: (analyses: string[]): Effect.Effect<string, LLMServiceError | AnalysisError> => {
         // Build Effect-TS specific prompt for aggregation
         const prompt = `You are an expert in Effect-TS. You have received ${analyses.length} partial analyses of Discord Q&A conversations about Effect-TS.
 
@@ -161,7 +161,7 @@ Suggestions for improving documentation, learning resources, or common confusion
 Format the output as well-structured Markdown.`;
 
         return Effect.tryPromise({
-          try: () => llm.invoke(prompt).then((res) => res.content as string),
+          try: () => llm.invoke(prompt).then((res: { content: unknown }) => String(res.content)),
           catch: mapLLMError,
         }).pipe(
           Effect.retry(retryPolicy),
