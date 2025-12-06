@@ -21,16 +21,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout current repo
+      - name: Checkout repo
         uses: actions/checkout@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Checkout EffectPatterns source repo
-        uses: actions/checkout@v5
-        with:
-          repository: PaulJPhilp/EffectPatterns
-          path: source-patterns
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -40,43 +34,38 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Generate patterns.json
+      - name: Generate patterns
         run: |
-          # Create data directory if it doesn't exist
-          mkdir -p data
-
-          # Run pattern generation script (assumes toolkit has this capability)
-          # This is a placeholder - adjust based on actual generation script
-          bun --filter @effect-patterns/toolkit run generate:patterns \
-            --source ./source-patterns \
-            --output ./data/patterns.json
+          # Run the full publishing pipeline to validate and prepare patterns
+          bun run pipeline
 
       - name: Verify patterns.json
         run: |
-          if [ ! -f "data/patterns.json" ]; then
-            echo "Error: patterns.json not generated"
+          # Check if patterns.json exists in MCP server data directory
+          if [ ! -f "services/mcp-server/data/patterns.json" ]; then
+            echo "Error: patterns.json not found"
             exit 1
           fi
 
           # Validate JSON format
-          if ! cat data/patterns.json | bun run -e "JSON.parse(require('fs').readFileSync(0, 'utf-8'))"; then
+          if ! jq empty "services/mcp-server/data/patterns.json" 2>/dev/null; then
             echo "Error: Invalid JSON in patterns.json"
             exit 1
           fi
 
-          echo "✅ patterns.json generated successfully"
+          echo "✅ patterns.json validated successfully"
 
       - name: Upload patterns.json as artifact
         uses: actions/upload-artifact@v5
         with:
           name: patterns-data
-          path: data/patterns.json
+          path: services/mcp-server/data/patterns.json
           retention-days: 30
 
       - name: Check for changes
         id: changes
         run: |
-          if git diff --quiet data/patterns.json; then
+          if git diff --quiet services/mcp-server/data/patterns.json; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -87,8 +76,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/patterns.json
-          git commit -m "chore: regenerate patterns.json from EffectPatterns source
+          git add services/mcp-server/data/patterns.json
+          git commit -m "chore: regenerate patterns from published sources
+
+          Updated patterns.json based on latest published patterns.
 
           🤖 Generated with [Claude Code](https://claude.com/claude-code)"
           git push
