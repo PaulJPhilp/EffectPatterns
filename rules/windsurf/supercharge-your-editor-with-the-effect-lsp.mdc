@@ -12,14 +12,11 @@ Imagine you have the following code. Without the LSP, hovering over `program` mi
 import { Effect } from "effect";
 
 // Define Logger service using Effect.Service pattern
-class Logger extends Effect.Service<Logger>()(
-  "Logger",
-  {
-    sync: () => ({
-      log: (msg: string) => Effect.log(`LOG: ${msg}`)
-    })
-  }
-) {}
+class Logger extends Effect.Service<Logger>()("Logger", {
+  sync: () => ({
+    log: (msg: string) => Effect.log(`LOG: ${msg}`),
+  }),
+}) {}
 
 const program = Effect.succeed(42).pipe(
   Effect.map((n) => n.toString()),
@@ -49,9 +46,10 @@ Going without the LSP. While your code will still compile and work perfectly fin
 Effect's type system is incredibly powerful, but TypeScript's default language server doesn't always display the rich information contained within the `A`, `E`, and `R` channels in the most intuitive way.
 
 The Effect LSP is a specialized tool that understands the semantics of Effect. It hooks into your editor to provide a superior experience:
--   **Rich Inline Types:** It displays the full `Effect<A, E, R>` signature directly in your code as you work, so you always know exactly what an effect produces, how it can fail, and what it requires.
--   **Clear Error Messages:** It provides more specific and helpful error messages tailored to Effect's APIs.
--   **Enhanced Autocompletion:** It can offer more context-aware suggestions.
+
+- **Rich Inline Types:** It displays the full `Effect<A, E, R>` signature directly in your code as you work, so you always know exactly what an effect produces, how it can fail, and what it requires.
+- **Clear Error Messages:** It provides more specific and helpful error messages tailored to Effect's APIs.
+- **Enhanced Autocompletion:** It can offer more context-aware suggestions.
 
 This tool essentially makes the compiler's knowledge visible at a glance, reducing the mental overhead of tracking complex types and allowing you to catch errors before you even save the file.
 

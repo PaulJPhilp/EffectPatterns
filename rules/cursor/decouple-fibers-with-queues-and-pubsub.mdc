@@ -90,7 +90,6 @@ const program = Effect.gen(function* () {
 // - Backpressure prevents resource exhaustion
 // - Interruption allows for graceful shutdown
 Effect.runPromise(program);
-
 ```
 
 
@@ -110,9 +109,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`AUDIT: Received event: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Subscriber 2: The "Notifier" service
@@ -123,9 +122,9 @@ const program = Effect.gen(function* () {
           const event = yield* Queue.take(subscription);
           yield* Effect.log(`NOTIFIER: Sending notification for: ${event}`);
         }
-      }),
+      })
     ),
-    Effect.fork,
+    Effect.fork
   );
 
   // Give subscribers time to start

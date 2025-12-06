@@ -9,6 +9,7 @@ alwaysApply: true
 The "Good Example" is the workflow this pattern enables.
 
 1.  **You run the MCP server** in your terminal, pointing it at your main `AppLayer`.
+
     ```bash
     npx @effect/mcp-server --layer src/layers.ts:AppLayer
     ```
@@ -16,11 +17,13 @@ The "Good Example" is the workflow this pattern enables.
 2.  **You configure your AI agent** (e.g., Cursor) to use the MCP server's endpoint (`http://localhost:3333`).
 
 3.  **You ask the AI a question** that requires deep context about your app:
+
     > "Refactor this code to use the `UserService` to fetch a user by ID and log the result with the `Logger`."
 
 4.  **The AI, in the background, queries the MCP server:**
-    -   It discovers that `UserService` and `Logger` are available in the `AppLayer`.
-    -   It retrieves the exact method signature for `UserService.getUser` and `Logger.log`.
+
+    - It discovers that `UserService` and `Logger` are available in the `AppLayer`.
+    - It retrieves the exact method signature for `UserService.getUser` and `Logger.log`.
 
 5.  **The AI generates correct, context-aware code** because it's not guessing; it's using the live architectural information provided by the MCP server.
 
@@ -34,7 +37,6 @@ const program = Effect.gen(function* () {
   const user = yield* userService.getUser("123");
   yield* Effect.log(`Found user: ${user.name}`);
 });
-
 ```
 
 ---
@@ -48,10 +50,11 @@ AI coding agents are powerful, but they often lack the deep, structural understa
 The MCP server solves this problem. It's a specialized server that runs alongside your application during development. It inspects your `AppLayer` and creates a real-time, queryable model of your entire application architecture.
 
 An AI agent can then connect to this MCP server to ask specific questions before generating code, such as:
--   "What services are available in the current context?"
--   "What is the full API of the `UserService`?"
--   "What errors can `UserRepository.findById` fail with?"
 
-By providing this live, ground-truth context, you transform your AI from a generic coding assistant into a specialized expert on *your* specific codebase, resulting in far more accurate and useful code generation and refactoring.
+- "What services are available in the current context?"
+- "What is the full API of the `UserService`?"
+- "What errors can `UserRepository.findById` fail with?"
+
+By providing this live, ground-truth context, you transform your AI from a generic coding assistant into a specialized expert on _your_ specific codebase, resulting in far more accurate and useful code generation and refactoring.
 
 ---

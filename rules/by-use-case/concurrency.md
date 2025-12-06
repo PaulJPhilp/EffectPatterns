@@ -207,6 +207,7 @@ const program = Effect.gen(function* () {
 Effect.runPromise(program);
 ```
 
+
 A publisher sends an event, and multiple subscribers react to it independently.
 
 ```typescript
@@ -941,3 +942,4 @@ Effect.runPromise(program);
 ---
 
 ---
+

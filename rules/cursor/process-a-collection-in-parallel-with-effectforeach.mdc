@@ -44,7 +44,6 @@ const program = Effect.gen(function* () {
 // The result will be an array of all user objects.
 // The total time will be much less than running them sequentially.
 Effect.runPromise(program);
-
 ```
 
 ---

@@ -9,7 +9,7 @@ alwaysApply: true
 This example processes 10 users. By using `Stream.grouped(5)`, it transforms the stream of 10 individual users into a stream of two chunks (each a batch of 5). The `saveUsersInBulk` function is then called only twice, once for each batch.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 // A mock function that simulates a bulk database insert
 const saveUsersInBulk = (
@@ -18,7 +18,7 @@ const saveUsersInBulk = (
   Effect.log(
     `Saving batch of ${userBatch.length} users: ${Chunk.toArray(userBatch)
       .map((u) => u.id)
-      .join(', ')}`
+      .join(", ")}`
   );
 
 const userIds = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
@@ -43,7 +43,7 @@ Output:
 The anti-pattern is to process items one by one when a more efficient bulk operation is available. This is a common performance bottleneck.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 
 // A mock function that saves one user at a time
 const saveUser = (user: { id: number }): Effect.Effect<void, Error> =>
@@ -66,7 +66,7 @@ Output:
 */
 ```
 
-This individual processing approach is an anti-pattern because it creates unnecessary overhead. If each `saveUser` call took 50ms of network latency, the total time would be over 500ms. The batched approach might only take 100ms (2 batches * 50ms), resulting in a 5x performance improvement.
+This individual processing approach is an anti-pattern because it creates unnecessary overhead. If each `saveUser` call took 50ms of network latency, the total time would be over 500ms. The batched approach might only take 100ms (2 batches \* 50ms), resulting in a 5x performance improvement.
 
 **Explanation:**  
 When interacting with external systems like databases or APIs, making one request per item is often incredibly inefficient. The network latency and overhead of each individual call can dominate the total processing time. Most high-performance systems offer bulk or batch endpoints to mitigate this.

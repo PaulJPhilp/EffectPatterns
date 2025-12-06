@@ -9,12 +9,14 @@ alwaysApply: true
 This example processes a list of IDs by fetching user data for each one. `Stream.mapEffect` is used to apply an effectful function (`getUserById`) to each element, with concurrency limited to 2 simultaneous requests.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 // A mock function that simulates fetching a user from a database
-const getUserById = (id: number): Effect.Effect<{ id: number; name: string }, Error> =>
+const getUserById = (
+  id: number
+): Effect.Effect<{ id: number; name: string }, Error> =>
   Effect.succeed({ id, name: `User ${id}` }).pipe(
-    Effect.delay('100 millis'),
+    Effect.delay("100 millis"),
     Effect.tap(() => Effect.log(`Fetched user ${id}`))
   );
 
@@ -28,7 +30,9 @@ const program = Stream.fromIterable([1, 2, 3, 4, 5]).pipe(
 
 const programWithLogging = Effect.gen(function* () {
   const users = yield* program;
-  yield* Effect.log(`All users fetched: ${JSON.stringify(Chunk.toArray(users))}`);
+  yield* Effect.log(
+    `All users fetched: ${JSON.stringify(Chunk.toArray(users))}`
+  );
   return users;
 });
 

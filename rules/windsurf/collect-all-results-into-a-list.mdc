@@ -9,7 +9,7 @@ alwaysApply: true
 This example creates a stream of numbers, filters for only the even ones, transforms them into strings, and then uses `runCollect` to gather the final results into a `Chunk`.
 
 ```typescript
-import { Effect, Stream, Chunk } from 'effect';
+import { Effect, Stream, Chunk } from "effect";
 
 const program = Stream.range(1, 10).pipe(
   // Find all the even numbers
@@ -22,7 +22,9 @@ const program = Stream.range(1, 10).pipe(
 
 const programWithLogging = Effect.gen(function* () {
   const results = yield* program;
-  yield* Effect.log(`Collected results: ${JSON.stringify(Chunk.toArray(results))}`);
+  yield* Effect.log(
+    `Collected results: ${JSON.stringify(Chunk.toArray(results))}`
+  );
   return results;
 });
 
@@ -43,7 +45,7 @@ Collected results: [
 The anti-pattern is using `Stream.runCollect` on a stream that produces an unbounded or extremely large number of items. This will inevitably lead to an out-of-memory error.
 
 ```typescript
-import { Effect, Stream } from 'effect';
+import { Effect, Stream } from "effect";
 
 // An infinite stream of numbers
 const infiniteStream = Stream.range(1, Infinity);
@@ -57,7 +59,7 @@ const program = infiniteStream.pipe(
 // by consuming all available memory.
 // Effect.runPromise(program);
 console.log(
-  'This code is commented out because it would cause an out-of-memory crash.'
+  "This code is commented out because it would cause an out-of-memory crash."
 );
 ```
 

@@ -69,7 +69,10 @@ const program = Effect.gen(function* () {
 );
 
 // Run the server with proper error handling
-const programWithErrorHandling = Effect.provide(program, HttpServer.Default).pipe(
+const programWithErrorHandling = Effect.provide(
+  program,
+  HttpServer.Default
+).pipe(
   Effect.catchAll((error) =>
     Effect.gen(function* () {
       yield* Effect.logError(`Program failed: ${error}`);
@@ -89,19 +92,18 @@ To test:
 3. Proper cleanup on shutdown
 4. Demonstrates server lifecycle: start -> run -> shutdown
 */
-
 ```
 
 ### Anti-Pattern (Avoid)
 The common anti-pattern is to use the raw Node.js `http` module directly, outside of the Effect runtime. This approach creates a disconnect between your application logic and the server's lifecycle.
 
 ```typescript
-import * as http from 'http';
+import * as http from "http";
 
 // Manually create a server using the Node.js built-in module.
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Hello, World!');
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Hello, World!");
 });
 
 // Manually start the server and log the port.

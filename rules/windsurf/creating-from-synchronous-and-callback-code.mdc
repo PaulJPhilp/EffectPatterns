@@ -26,10 +26,10 @@ const effectAsync = Effect.async<string, Error>((resume) => {
     else if (data) resume(Effect.succeed(data));
   });
 }); // Effect<string, Error, never>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `Effect.sync` is for synchronous computations that are guaranteed not to throw.
 - `Effect.async` is for integrating callback-based APIs, converting them into Effects.
 

@@ -8,7 +8,7 @@ alwaysApply: true
 ### Example
 This example simulates an API that fails the first two times it's called. The stream processes a list of IDs, and the `retry` operator ensures that the failing operation for `id: 2` is automatically retried until it succeeds.
 
-````typescript
+```typescript
 import { Effect, Stream, Schedule } from "effect";
 
 // A mock function that simulates a flaky API call
@@ -63,8 +63,8 @@ const program = Effect.gen(function* () {
 
   yield* Effect.log("=== Results ===");
   for (let index = 0; index < results.length; index++) {
-  yield* Effect.log(`Item ${ids[index]}: ${results[index]}`);
-}
+    yield* Effect.log(`Item ${ids[index]}: ${results[index]}`);
+  }
 
   yield* Effect.log("✅ Stream processing completed");
 });
@@ -82,15 +82,14 @@ Output:
 ... level=INFO msg="Attempting to process item 2..."
 ... level=INFO msg="Attempting to process item 3..."
 */
-
-````
+```
 
 **Explanation:**  
 Real-world systems are unreliable. Network connections drop, APIs return temporary `503` errors, and databases can experience deadlocks. A naive pipeline will fail completely on the first sign of trouble. A resilient pipeline, however, can absorb these transient errors and heal itself.
 
 The `retry` operator, combined with the `Schedule` module, provides a powerful and declarative way to build this resilience:
 
-1.  **Declarative Resilience**: Instead of writing complex `try/catch` loops with manual delay logic, you declaratively state *how* the pipeline should retry. For example, "retry 3 times, with an exponential backoff starting at 100ms."
+1.  **Declarative Resilience**: Instead of writing complex `try/catch` loops with manual delay logic, you declaratively state _how_ the pipeline should retry. For example, "retry 3 times, with an exponential backoff starting at 100ms."
 2.  **Separation of Concerns**: Your core pipeline logic remains focused on the "happy path." The retry strategy is a separate, composable concern that you apply to the entire stream.
 3.  **Rich Scheduling Policies**: `Schedule` is incredibly powerful. You can create schedules based on a fixed number of retries, exponential backoff, jitter (to avoid thundering herd problems), or even combinations of these.
 4.  **Prevents Cascading Failures**: By handling temporary issues at the source, you prevent a small, transient glitch from causing a complete failure of your entire application.

@@ -9,11 +9,11 @@ alwaysApply: true
 This example demonstrates reading a text file, splitting it into individual lines, and processing each line. The combination of `Stream.fromReadable`, `Stream.decodeText`, and `Stream.splitLines` is a powerful and common pattern for handling text-based files.
 
 ```typescript
-import { FileSystem } from '@effect/platform';
-import { NodeFileSystem } from '@effect/platform-node';
-import type { PlatformError } from '@effect/platform/Error';
-import { Effect, Stream } from 'effect';
-import * as path from 'node:path';
+import { FileSystem } from "@effect/platform";
+import { NodeFileSystem } from "@effect/platform-node";
+import type { PlatformError } from "@effect/platform/Error";
+import { Effect, Stream } from "effect";
+import * as path from "node:path";
 
 const processFile = (
   filePath: string,
@@ -26,15 +26,14 @@ const processFile = (
     yield* fs.writeFileString(filePath, content);
 
     // Create a STREAMING pipeline - reads file in chunks, not all at once
-    const fileStream = fs.readFile(filePath)
-      .pipe(
-        // Decode bytes to text
-        Stream.decodeText('utf-8'),
-        // Split into lines
-        Stream.splitLines,
-        // Process each line
-        Stream.tap((line) => Effect.log(`Processing: ${line}`))
-      );
+    const fileStream = fs.readFile(filePath).pipe(
+      // Decode bytes to text
+      Stream.decodeText("utf-8"),
+      // Split into lines
+      Stream.splitLines,
+      // Process each line
+      Stream.tap((line) => Effect.log(`Processing: ${line}`))
+    );
 
     // Run the stream to completion
     yield* Stream.runDrain(fileStream);
@@ -44,24 +43,18 @@ const processFile = (
   });
 
 const program = Effect.gen(function* () {
-  const filePath = path.join(__dirname, 'large-file.txt');
+  const filePath = path.join(__dirname, "large-file.txt");
 
-  yield* processFile(
-    filePath,
-    'line 1\nline 2\nline 3'
-  ).pipe(
+  yield* processFile(filePath, "line 1\nline 2\nline 3").pipe(
     Effect.catchAll((error: PlatformError) =>
       Effect.logError(`Error processing file: ${error.message}`)
     )
   );
 });
 
-Effect.runPromise(
-  program.pipe(
-    Effect.provide(NodeFileSystem.layer)
-  ))
+Effect.runPromise(program.pipe(Effect.provide(NodeFileSystem.layer)));
 
-  /*
+/*
 Output:
 ... level=INFO msg="Processing: line 1"
 ... level=INFO msg="Processing: line 2"

@@ -23,24 +23,16 @@ const findUser = (id: number): Effect.Effect<User, "DbError"> =>
   Effect.succeed({ id, status: "active", roles: ["admin"] });
 
 // Reusable, testable predicates that document business rules.
-const isActive = (user: User): boolean =>
-  user.status === "active";
+const isActive = (user: User): boolean => user.status === "active";
 
-const isAdmin = (user: User): boolean =>
-  user.roles.includes("admin");
+const isAdmin = (user: User): boolean => user.roles.includes("admin");
 
 const program = (id: number): Effect.Effect<string, UserError> =>
   findUser(id).pipe(
     // Validate user is active using Effect.filterOrFail
-    Effect.filterOrFail(
-      isActive,
-      () => "UserIsInactive" as const
-    ),
+    Effect.filterOrFail(isActive, () => "UserIsInactive" as const),
     // Validate user is admin using Effect.filterOrFail
-    Effect.filterOrFail(
-      isAdmin,
-      () => "UserIsNotAdmin" as const
-    ),
+    Effect.filterOrFail(isAdmin, () => "UserIsNotAdmin" as const),
     // Success case
     Effect.map((user) => `Welcome, admin user #${user.id}!`)
   );
@@ -60,7 +52,7 @@ const handled = program(123).pipe(
           return `Unknown error: ${error}`;
       }
     },
-    onSuccess: (result) => result
+    onSuccess: (result) => result,
   })
 );
 

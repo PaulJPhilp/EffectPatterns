@@ -49,7 +49,7 @@ const program = Effect.gen(function* () {
         yield* Effect.logError(`Request error: ${error.message}`);
       }
     });
-    
+
     Effect.runPromise(requestHandler);
   });
 
@@ -85,19 +85,17 @@ const program = Effect.gen(function* () {
     })
   ),
   // Merge layers and provide them in a single call to ensure proper lifecycle management
-  Effect.provide(Layer.merge(
-    JsonServer.Default,
-    NodeContext.layer
-  ))
+  Effect.provide(Layer.merge(JsonServer.Default, NodeContext.layer))
 );
 
 // Run the program
 // Use Effect.runFork for server applications that shouldn't resolve the promise
-Effect.runPromise(program.pipe(
-  // Ensure the Effect has no remaining context requirements for runPromise
-  Effect.map(() => undefined)
-));
-
+Effect.runPromise(
+  program.pipe(
+    // Ensure the Effect has no remaining context requirements for runPromise
+    Effect.map(() => undefined)
+  )
+);
 ```
 
 **Explanation:**  

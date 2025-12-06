@@ -48,16 +48,18 @@ function* largeDataSource() {
 // ❌ DANGEROUS: `Chunk.fromIterable` will try to pull all 1,000,000 items
 // from the generator and load them into memory at once before the stream
 // even starts. This can lead to high memory usage or a crash.
-const programWithChunk = Stream.fromChunk(Chunk.fromIterable(largeDataSource())).pipe(
+const programWithChunk = Stream.fromChunk(
+  Chunk.fromIterable(largeDataSource())
+).pipe(
   Stream.map((n) => n * 2),
-  Stream.runDrain,
+  Stream.runDrain
 );
 
 // ✅ CORRECT: `Stream.fromIterable` pulls items from the data source lazily,
 // one at a time (or in small batches), maintaining constant memory usage.
 const programWithIterable = Stream.fromIterable(largeDataSource()).pipe(
   Stream.map((n) => n * 2),
-  Stream.runDrain,
+  Stream.runDrain
 );
 ```
 

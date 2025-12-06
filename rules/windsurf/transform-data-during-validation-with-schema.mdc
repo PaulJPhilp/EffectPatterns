@@ -25,13 +25,13 @@ type ParsedEvent = {
 // Define the schema for our event
 const ApiEventSchema = Schema.Struct({
   name: Schema.String,
-  timestamp: Schema.String
+  timestamp: Schema.String,
 });
 
 // Example input
 const rawInput: RawEvent = {
   name: "User Login",
-  timestamp: "2025-06-22T20:08:42.000Z"
+  timestamp: "2025-06-22T20:08:42.000Z",
 };
 
 // Parse and transform
@@ -39,7 +39,7 @@ const program = Effect.gen(function* () {
   const parsed = yield* Schema.decode(ApiEventSchema)(rawInput);
   return {
     name: parsed.name,
-    timestamp: new Date(parsed.timestamp)
+    timestamp: new Date(parsed.timestamp),
   } as ParsedEvent;
 });
 
@@ -79,8 +79,8 @@ const Email = Schema.string.pipe(
       s.includes("@")
         ? Either.right(s as Email)
         : Either.left(Schema.ParseError.create(ast, "Invalid email format")),
-    (email) => Either.right(email),
-  ),
+    (email) => Either.right(email)
+  )
 );
 
 const result = Schema.decode(Email)("paul@example.com"); // Succeeds
@@ -108,7 +108,7 @@ const program = Schema.decode(RawApiEventSchema)(rawInput).pipe(
   Effect.map((rawEvent) => ({
     ...rawEvent,
     timestamp: new Date(rawEvent.timestamp), // Manual transformation after parsing.
-  })),
+  }))
 );
 ```
 

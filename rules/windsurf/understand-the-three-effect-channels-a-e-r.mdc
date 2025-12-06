@@ -12,25 +12,26 @@ This function signature is a self-documenting contract. It clearly states that t
 import { Effect, Data } from "effect";
 
 // Define the types for our channels
-interface User { readonly name: string; } // The 'A' type
+interface User {
+  readonly name: string;
+} // The 'A' type
 class UserNotFoundError extends Data.TaggedError("UserNotFoundError") {} // The 'E' type
 
 // Define the Database service using Effect.Service
-export class Database extends Effect.Service<Database>()(
-  "Database",
-  {
-    // Provide a default implementation
-    sync: () => ({
-      findUser: (id: number) =>
-        id === 1
-          ? Effect.succeed({ name: "Paul" })
-          : Effect.fail(new UserNotFoundError())
-    })
-  }
-) {}
+export class Database extends Effect.Service<Database>()("Database", {
+  // Provide a default implementation
+  sync: () => ({
+    findUser: (id: number) =>
+      id === 1
+        ? Effect.succeed({ name: "Paul" })
+        : Effect.fail(new UserNotFoundError()),
+  }),
+}) {}
 
 // This function's signature shows all three channels
-const getUser = (id: number): Effect.Effect<User, UserNotFoundError, Database> =>
+const getUser = (
+  id: number
+): Effect.Effect<User, UserNotFoundError, Database> =>
   Effect.gen(function* () {
     const db = yield* Database;
     return yield* db.findUser(id);
@@ -75,7 +76,8 @@ function getUserUnsafely(id: number, db: any): Effect.Effect<any> {
 ```
 
 **Explanation:**  
-This three-channel signature is what makes Effect so expressive and safe. Unlike a ``Promise<A>`` which can only describe its success type, an ``Effect``'s signature tells you everything you need to know about a computation before you run it:
+This three-channel signature is what makes Effect so expressive and safe. Unlike a `Promise<A>` which can only describe its success type, an `Effect`'s signature tells you everything you need to know about a computation before you run it:
+
 1.  **What it produces (`A`):** The data you get on the "happy path."
 2.  **How it can fail (`E`):** The specific, known errors you need to handle. This makes error handling type-safe and explicit, unlike throwing generic `Error`s.
 3.  **What it needs (`R`):** The "ingredients" or dependencies required to run the effect. This is the foundation of Effect's powerful dependency injection system. An `Effect` can only be executed when its `R` channel is `never`, meaning all its dependencies have been provided.

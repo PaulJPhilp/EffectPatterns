@@ -17,7 +17,9 @@ const program = Effect.gen(function* () {
 });
 
 const demonstrationProgram = Effect.gen(function* () {
-  yield* Effect.log("2. The blueprint has been defined. No work has been done yet.");
+  yield* Effect.log(
+    "2. The blueprint has been defined. No work has been done yet."
+  );
   yield* program;
 });
 

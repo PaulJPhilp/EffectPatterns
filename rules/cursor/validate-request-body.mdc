@@ -30,7 +30,7 @@ class UserService extends Effect.Service<UserService>()("UserService", {
   sync: () => ({
     validateUser: (data: unknown) => S.decodeUnknown(UserSchema)(data),
   }),
-}) { }
+}) {}
 
 // Define HTTP server service interface
 interface HttpServerInterface {
@@ -131,7 +131,7 @@ class HttpServer extends Effect.Service<HttpServer>()("HttpServer", {
   }),
   // Specify dependencies
   dependencies: [UserService.Default],
-}) { }
+}) {}
 
 // Create program with proper error handling
 const program = Effect.gen(function* () {
@@ -162,7 +162,6 @@ To test:
 - POST http://localhost:3456/users with body {"name": "Paul"}
   -> Returns 400 Bad Request with error message about missing email field
 */
-
 ```
 
 **Explanation:**  

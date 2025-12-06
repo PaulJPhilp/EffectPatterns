@@ -76,7 +76,9 @@ const program = Effect.gen(function* () {
         );
       }
 
-      yield* Effect.log("✅ Processing completed with proper resource management");
+      yield* Effect.log(
+        "✅ Processing completed with proper resource management"
+      );
     })
   );
 });
@@ -87,7 +89,6 @@ Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
     Effect.runSync(Effect.logError("Unexpected error: " + error));
   }
 );
-
 ```
 
 **Explanation:**  
@@ -95,7 +96,7 @@ What happens if a pipeline processing a file fails halfway through? In a naive i
 
 `Stream.acquireRelease` is Effect's robust solution to this problem. It's built on `Scope`, Effect's fundamental resource-management tool.
 
-1.  **Guaranteed Cleanup**: You provide an `acquire` effect to open the resource and a `release` effect to close it. Effect guarantees that the `release` effect will be called when the stream terminates, for *any* reason: successful completion, a processing failure, or even external interruption.
+1.  **Guaranteed Cleanup**: You provide an `acquire` effect to open the resource and a `release` effect to close it. Effect guarantees that the `release` effect will be called when the stream terminates, for _any_ reason: successful completion, a processing failure, or even external interruption.
 2.  **Declarative and Co-located**: The logic for a resource's entire lifecycle—acquisition, usage (the stream itself), and release—is defined in one place. This makes the code easier to understand and reason about compared to manual `try/finally` blocks.
 3.  **Prevents Resource Leaks**: It is the idiomatic way to build truly resilient pipelines that do not leak resources, which is essential for long-running, production-grade applications.
 4.  **Composability**: The resulting stream is just a normal `Stream`, which can be composed with any other stream operators.

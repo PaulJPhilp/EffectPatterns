@@ -27,10 +27,10 @@ const effect: Effect.Effect<string, never, never> = Effect.fail(
       Effect.succeed(`Validation failed: ${err.message}`),
   })
 ); // Effect<string>
-
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
 - This is safer and more maintainable than using `instanceof` or manual property checks.
 

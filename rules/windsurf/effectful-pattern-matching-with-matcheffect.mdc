@@ -18,7 +18,8 @@ const effect = Effect.fail("Oops!").pipe(
 ); // Effect<void>
 ```
 
-**Explanation:**  
+**Explanation:**
+
 - `matchEffect` allows you to run an Effect for both the success and failure cases.
 - This is useful for logging, cleanup, retries, or any effectful side effect that depends on the outcome.
 
