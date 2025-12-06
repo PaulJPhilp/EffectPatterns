@@ -9,6 +9,10 @@ on:
     branches:
       - main
 
+# 2.5. Grant permissions for the workflow to write to the repository
+permissions:
+  contents: write
+
 # 3. The list of jobs to run. We only have one job.
 jobs:
   generate:
