@@ -143,8 +143,8 @@ jobs:
           # Generate license report
           bunx license-checker --json > licenses.json
 
-          # Check for prohibited licenses
-          PROHIBITED_LICENSES="GPL-2.0 GPL-3.0 AGPL"
+          # Check for prohibited licenses (copyleft licenses)
+          PROHIBITED_LICENSES="GPL-2.0 GPL-3.0 AGPL LGPL"
 
           echo "## License Check Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -223,11 +223,11 @@ jobs:
 
       - name: Generate SBOM (CycloneDX format)
         run: |
-          # Install CycloneDX BOM tool
-          bun add -D @cyclonedx/bom
+          # Install CycloneDX BOM tool using npm (more reliable than bunx)
+          npm install -D @cyclonedx/bom
 
-          # Generate SBOM
-          bunx @cyclonedx/bom --output sbom.json
+          # Generate SBOM using npx
+          npx @cyclonedx/bom --output sbom.json
 
           echo "✅ SBOM generated successfully"
 
