@@ -24,7 +24,7 @@
     "@effect/schema": "^0.75.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "drizzle-orm": "^0.44.7",
+    "drizzle-orm": "^0.45.0",
     "effect": "^3.19.2",
     "effect-mdx": "^0.2.2",
     "gray-matter": "^4.0.3",
