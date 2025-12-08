@@ -58,7 +58,7 @@
     "date-fns": "^4.1.0",
     "diff-match-patch": "^1.0.5",
     "dotenv": "^16.6.1",
-    "drizzle-orm": "^0.34.1",
+    "drizzle-orm": "^0.45.0",
     "effect-json": "^0.1.0",
     "embla-carousel-react": "^8.6.0",
     "fast-deep-equal": "^3.1.3",
