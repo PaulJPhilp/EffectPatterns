@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 # Check if vercel is installed
 if ! command -v vercel &> /dev/null; then
     echo "❌ Vercel CLI not found. Installing..."
-    bun add -g vercel
+    bun add -g vercel@latest
 fi
 
 echo "✓ Vercel CLI found"

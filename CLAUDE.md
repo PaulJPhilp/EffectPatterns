@@ -206,6 +206,12 @@ bun run ep                  # Run CLI in development
 bun run ep search "query"   # Test search
 bun run ep install add --tool cursor --dry-run  # Test install
 
+# Linting CLI
+bun run ep init             # Create ep.json configuration
+bun run ep lint rules       # List all linter rules
+bun run ep lint content/new/src/**  # Lint TypeScript examples
+bun run ep lint --apply     # Auto-fix linting violations
+
 # Toolkit
 bun run toolkit:build       # Build toolkit package
 bun run toolkit:test        # Test toolkit
@@ -1074,7 +1080,7 @@ curl -H "x-api-key: your-key" http://localhost:3000/api/patterns/search?q=retry
 
 ```bash
 # Install Vercel CLI
-npm i -g vercel
+npm i -g vercel@latest
 
 # Deploy to staging
 vercel

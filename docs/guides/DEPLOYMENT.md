@@ -4,7 +4,7 @@ The Pattern Server is configured to deploy to Vercel as serverless functions.
 
 ### Prerequisites
 
-1. Install Vercel CLI: `npm i -g vercel`
+1. Install Vercel CLI: `npm i -g vercel@latest`
 2. Have a Vercel account at https://vercel.com
 
 ### Deployment Steps
