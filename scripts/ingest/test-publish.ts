@@ -22,15 +22,15 @@
  * - Exit with code 1 if any errors occur
  */
 
-import * as path from "node:path";
-import { FileSystem } from "@effect/platform";
-import { Effect } from "effect";
-import { MdxService } from "effect-mdx";
+import * as path from 'node:path';
+import { FileSystem } from '@effect/platform';
+import { Effect } from 'effect';
+import { MdxService } from 'effect-mdx';
 
 // --- CONFIGURATION ---
-const PROCESSED_DIR = path.join(process.cwd(), "content/new/processed");
-const PUBLISHED_DIR = path.join(process.cwd(), "content/new/published");
-const SRC_DIR = path.join(process.cwd(), "content/new/src");
+const PROCESSED_DIR = path.join(process.cwd(), 'content/new/processed');
+const PUBLISHED_DIR = path.join(process.cwd(), 'content/new/published');
+const SRC_DIR = path.join(process.cwd(), 'content/new/src');
 
 // --- Effect Program ---
 interface PublishOptions {
@@ -59,7 +59,7 @@ const publishPatterns = ({
     yield* fs.makeDirectory(outdir, { recursive: true });
     // Get all MDX files from input directory
     const files = yield* fs.readDirectory(indir);
-    const mdxFiles = files.filter((file) => file.endsWith(".mdx"));
+    const mdxFiles = files.filter((file) => file.endsWith('.mdx'));
 
     console.log(`Found ${mdxFiles.length} MDX files to process`);
 
@@ -69,37 +69,37 @@ const publishPatterns = ({
         Effect.gen(function* () {
           const inPath = path.join(indir, mdxFile);
           const outPath = path.join(outdir, mdxFile);
-          const tsFile = path.join(srcdir, mdxFile.replace(".mdx", ".ts"));
+          const tsFile = path.join(srcdir, mdxFile.replace('.mdx', '.ts'));
 
           const content = yield* fs.readFileString(inPath);
           const tsContent = yield* fs.readFileString(tsFile);
 
           const processedContent = content.replace(
             /<Example path=".\/src\/.*?" \/>/g,
-            `\`\`\`typescript\n${tsContent}\n\`\`\``
+            `\`\`\`typescript\n${tsContent}\n\`\`\``,
           );
 
           yield* fs.writeFileString(outPath, processedContent);
-          return { mdxFile, status: "published" as const };
+          return { mdxFile, status: 'published' as const };
         }).pipe(
           Effect.tap(() =>
             Effect.sync(() =>
               console.log(
-                `✅ Published ${mdxFile} to ${path.join(outdir, mdxFile)}`
-              )
-            )
+                `✅ Published ${mdxFile} to ${path.join(outdir, mdxFile)}`,
+              ),
+            ),
           ),
           Effect.catchAll((error) =>
             Effect.sync(() => {
               console.error(`❌ Error processing ${mdxFile}:`, error);
-              return { mdxFile, status: "error" as const, error };
-            })
-          )
+              return { mdxFile, status: 'error' as const, error };
+            }),
+          ),
         ),
-      { concurrency: "inherit" }
+      { concurrency: 'inherit' },
     );
 
-    console.log("✨ Publishing complete!");
+    console.log('✨ Publishing complete!');
     return results;
   });
 

@@ -9,34 +9,34 @@
  *   bun run qa:status             # Status for published patterns (content/qa)
  */
 
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 // --- CONFIGURATION ---
 const PROJECT_ROOT = process.cwd();
-const useNewPatterns = process.argv.includes("--new");
+const useNewPatterns = process.argv.includes('--new');
 const QA_DIR = useNewPatterns
-  ? path.join(PROJECT_ROOT, "content/new/qa")
-  : path.join(PROJECT_ROOT, "content/qa");
-const RESULTS_DIR = path.join(QA_DIR, "results");
+  ? path.join(PROJECT_ROOT, 'content/new/qa')
+  : path.join(PROJECT_ROOT, 'content/qa');
+const RESULTS_DIR = path.join(QA_DIR, 'results');
 
 // --- STATUS CHECK ---
 async function showStatus() {
-  const patternType = useNewPatterns ? "New Patterns" : "Published Patterns";
+  const patternType = useNewPatterns ? 'New Patterns' : 'Published Patterns';
   console.log(`QA Status Report - ${patternType}`);
-  console.log("=".repeat(40));
+  console.log('='.repeat(40));
   console.log(`Source: ${QA_DIR}\n`);
 
   try {
     // Check if results exist
     const files = await fs.readdir(RESULTS_DIR);
-    const qaResults = files.filter((f) => f.endsWith("-qa.json"));
+    const qaResults = files.filter((f) => f.endsWith('-qa.json'));
 
     if (qaResults.length === 0) {
       const processCmd = useNewPatterns
-        ? "bun run qa:process --new"
-        : "bun run qa:process";
-      console.log("No QA results found.");
+        ? 'bun run qa:process --new'
+        : 'bun run qa:process';
+      console.log('No QA results found.');
       console.log(`Run "${processCmd}" to generate QA results.`);
       return;
     }
@@ -52,7 +52,7 @@ async function showStatus() {
 
     for (const file of qaResults) {
       const filePath = path.join(RESULTS_DIR, file);
-      const content = await fs.readFile(filePath, "utf-8");
+      const content = await fs.readFile(filePath, 'utf-8');
       const result = JSON.parse(content);
 
       total++;
@@ -73,7 +73,7 @@ async function showStatus() {
       }
 
       // Track by skill level
-      const level = result.metadata?.skillLevel || "unknown";
+      const level = result.metadata?.skillLevel || 'unknown';
       if (!skillLevels[level]) {
         skillLevels[level] = { passed: 0, failed: 0 };
       }
@@ -87,19 +87,19 @@ async function showStatus() {
 
     const passRate = total > 0 ? (passed / total) * 100 : 0;
 
-    console.log("\nSummary:");
+    console.log('\nSummary:');
     console.log(`  Total Patterns: ${total}`);
     console.log(`  Passed: ${passed}`);
     console.log(`  Failed: ${failed}`);
     console.log(`  Pass Rate: ${passRate.toFixed(1)}%`);
 
     if (failed > 0) {
-      console.log("\nFailure Categories:");
+      console.log('\nFailure Categories:');
       for (const [category, count] of Object.entries(failuresByCategory)) {
         console.log(`  ${category}: ${count}`);
       }
 
-      console.log("\nBy Skill Level:");
+      console.log('\nBy Skill Level:');
       for (const [level, stats] of Object.entries(skillLevels)) {
         const levelRate =
           stats.passed + stats.failed > 0
@@ -108,7 +108,7 @@ async function showStatus() {
         console.log(
           `  ${level}: ${stats.passed}/${
             stats.passed + stats.failed
-          } (${levelRate}%)`
+          } (${levelRate}%)`,
         );
       }
     }
@@ -119,9 +119,9 @@ async function showStatus() {
     }
   } catch (error) {
     const processCmd = useNewPatterns
-      ? "bun run qa:process --new"
-      : "bun run qa:process";
-    console.error("Error reading QA results:", error);
+      ? 'bun run qa:process --new'
+      : 'bun run qa:process';
+    console.error('Error reading QA results:', error);
     console.log(`Run "${processCmd}" to generate QA results.`);
   }
 }
@@ -129,26 +129,26 @@ async function showStatus() {
 function categorizeError(error: string): string {
   const errorLower = error.toLowerCase();
 
-  if (errorLower.includes("import") || errorLower.includes("export"))
-    return "imports";
-  if (errorLower.includes("type") || errorLower.includes("typescript"))
-    return "typescript";
-  if (errorLower.includes("deprecated") || errorLower.includes("outdated"))
-    return "deprecated";
-  if (errorLower.includes("example") || errorLower.includes("demo"))
-    return "examples";
-  if (errorLower.includes("documentation") || errorLower.includes("clarity"))
-    return "documentation";
-  if (errorLower.includes("metadata") || errorLower.includes("frontmatter"))
-    return "metadata";
-  if (errorLower.includes("pattern") || errorLower.includes("best practice"))
-    return "patterns";
+  if (errorLower.includes('import') || errorLower.includes('export'))
+    return 'imports';
+  if (errorLower.includes('type') || errorLower.includes('typescript'))
+    return 'typescript';
+  if (errorLower.includes('deprecated') || errorLower.includes('outdated'))
+    return 'deprecated';
+  if (errorLower.includes('example') || errorLower.includes('demo'))
+    return 'examples';
+  if (errorLower.includes('documentation') || errorLower.includes('clarity'))
+    return 'documentation';
+  if (errorLower.includes('metadata') || errorLower.includes('frontmatter'))
+    return 'metadata';
+  if (errorLower.includes('pattern') || errorLower.includes('best practice'))
+    return 'patterns';
 
-  return "other";
+  return 'other';
 }
 
 // --- MAIN ---
 showStatus().catch((error) => {
-  console.error("Status check failed:", error);
+  console.error('Status check failed:', error);
   process.exit(1);
 });

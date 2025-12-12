@@ -1,6 +1,6 @@
-import { Context, Effect, Layer } from "effect";
-import * as Queries from "./queries"; // This will be the real queries, but we will mock them
-import { DbService } from "../app/code-assistant/lib/db/service"; // Import the DbService interface
+import { Context, Effect, Layer } from 'effect';
+import * as Queries from './queries'; // This will be the real queries, but we will mock them
+import { DbService } from '../app/code-assistant/lib/db/service'; // Import the DbService interface
 
 export const getChatById = async ({ id }: { id: string }) => {
   console.log(`MOCK DB: getChatById called with id: ${id}`);
@@ -15,13 +15,13 @@ export const getMessageCountByUserId = async ({
   differenceInHours: number;
 }) => {
   console.log(
-    `MOCK DB: getMessageCountByUserId called with id: ${id}, hours: ${differenceInHours}`
+    `MOCK DB: getMessageCountByUserId called with id: ${id}, hours: ${differenceInHours}`,
   );
   return 0; // For now, assume no messages
 };
 
 export const saveChat = async (chat: any) => {
-  console.log("MOCK DB: saveChat called with:", chat);
+  console.log('MOCK DB: saveChat called with:', chat);
   return chat; // Return the saved chat
 };
 
@@ -31,7 +31,7 @@ export const getMessagesByChatId = async ({ id }: { id: string }) => {
 };
 
 export const saveMessages = async ({ messages }: { messages: any[] }) => {
-  console.log("MOCK DB: saveMessages called with:", messages);
+  console.log('MOCK DB: saveMessages called with:', messages);
   return messages; // Return the saved messages
 };
 
@@ -43,7 +43,7 @@ export const createStreamId = async ({
   chatId: string;
 }) => {
   console.log(
-    `MOCK DB: createStreamId called with streamId: ${streamId}, chatId: ${chatId}`
+    `MOCK DB: createStreamId called with streamId: ${streamId}, chatId: ${chatId}`,
   );
   return { streamId, chatId };
 };
@@ -57,7 +57,7 @@ export const updateChatLastContextById = async ({
 }) => {
   console.log(
     `MOCK DB: updateChatLastContextById called with chatId: ${chatId}, context:`,
-    context
+    context,
   );
   return { chatId, context };
 };

@@ -1,14 +1,14 @@
 #!/usr/bin/env tsx
 
-import { config } from "dotenv";
-import { myProvider } from "../app/code-assistant/lib/ai/providers";
-import { chatModels } from "../app/code-assistant/lib/ai/models";
-import { generateText } from "ai";
+import { config } from 'dotenv';
+import { myProvider } from '../app/code-assistant/lib/ai/providers';
+import { chatModels } from '../app/code-assistant/lib/ai/models';
+import { generateText } from 'ai';
 
 // Load environment variables
-config({ path: "../app/code-assistant/.env.local" });
+config({ path: '../app/code-assistant/.env.local' });
 
-const TEST_PROMPT = "Where is Paris?";
+const TEST_PROMPT = 'Where is Paris?';
 
 async function testModel(modelId: string) {
   console.log(`\n🔍 Testing model: ${modelId}`);
@@ -18,10 +18,10 @@ async function testModel(modelId: string) {
   try {
     const result = await generateText({
       model: myProvider.languageModel(modelId),
-      system: "You are a helpful assistant.",
+      system: 'You are a helpful assistant.',
       messages: [
         {
-          role: "user",
+          role: 'user',
           content: TEST_PROMPT,
         },
       ],
@@ -34,7 +34,7 @@ async function testModel(modelId: string) {
 
     console.log(`✅ ${modelId} (${duration}ms)`);
     console.log(
-      `📝 Response: ${fullResponse.slice(0, 200)}${fullResponse.length > 200 ? "..." : ""}`
+      `📝 Response: ${fullResponse.slice(0, 200)}${fullResponse.length > 200 ? '...' : ''}`,
     );
 
     return {
@@ -49,7 +49,7 @@ async function testModel(modelId: string) {
 
     console.log(`❌ ${modelId} (${duration}ms)`);
     console.log(
-      `🚨 Error: ${error instanceof Error ? error.message : String(error)}`
+      `🚨 Error: ${error instanceof Error ? error.message : String(error)}`,
     );
 
     return {
@@ -62,7 +62,7 @@ async function testModel(modelId: string) {
 }
 
 async function testAllModels() {
-  console.log("🚀 Starting Model Tester");
+  console.log('🚀 Starting Model Tester');
   console.log(`📝 Test prompt: "${TEST_PROMPT}"`);
   console.log(`📊 Testing ${chatModels.length} models...`);
 
@@ -76,8 +76,8 @@ async function testAllModels() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 
-  console.log("\n📊 SUMMARY");
-  console.log("=".repeat(50));
+  console.log('\n📊 SUMMARY');
+  console.log('='.repeat(50));
 
   const successful = results.filter((r) => r.success);
   const failed = results.filter((r) => !r.success);
@@ -86,20 +86,20 @@ async function testAllModels() {
   console.log(`❌ Failed: ${failed.length}`);
 
   if (successful.length > 0) {
-    console.log("\n🎯 Successful models:");
+    console.log('\n🎯 Successful models:');
     successful.forEach((result) => {
       console.log(`  • ${result.modelId} (${result.duration}ms)`);
     });
   }
 
   if (failed.length > 0) {
-    console.log("\n💥 Failed models:");
+    console.log('\n💥 Failed models:');
     failed.forEach((result) => {
       console.log(`  • ${result.modelId}: ${result.error}`);
     });
   }
 
-  console.log("\n🏁 Model testing complete!");
+  console.log('\n🏁 Model testing complete!');
 }
 
 // Run the test

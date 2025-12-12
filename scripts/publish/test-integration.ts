@@ -12,22 +12,22 @@
  * Complements unit tests with real-world validation.
  */
 
-import { exec } from "node:child_process";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import { promisify } from "node:util";
+import { exec } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
 // --- CONFIGURATION ---
-const _NEW_SRC_DIR = path.join(process.cwd(), "content/new/src");
-const TEST_DATA_DIR = path.join(process.cwd(), "test-data");
+const _NEW_SRC_DIR = path.join(process.cwd(), 'content/new/src');
+const TEST_DATA_DIR = path.join(process.cwd(), 'test-data');
 const _CONCURRENCY = 3; // Lower for resource-intensive tests
 
 // --- TYPES ---
 interface IntegrationTestResult {
   pattern: string;
-  testType: "streaming" | "parallel" | "error-handling" | "resource-management";
+  testType: 'streaming' | 'parallel' | 'error-handling' | 'resource-management';
   passed: boolean;
   metrics: {
     duration?: number;
@@ -42,14 +42,14 @@ interface IntegrationTestResult {
 
 // --- COLORS ---
 const colors = {
-  reset: "\x1b[0m",
-  bright: "\x1b[1m",
-  dim: "\x1b[2m",
-  red: "\x1b[31m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  blue: "\x1b[34m",
-  cyan: "\x1b[36m",
+  reset: '\x1b[0m',
+  bright: '\x1b[1m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  cyan: '\x1b[36m',
 };
 
 function colorize(text: string, color: keyof typeof colors): string {
@@ -59,18 +59,18 @@ function colorize(text: string, color: keyof typeof colors): string {
 // --- TEST UTILITIES ---
 
 async function createTestFile(
-  size: "small" | "medium" | "large"
+  size: 'small' | 'medium' | 'large',
 ): Promise<string> {
   await fs.mkdir(TEST_DATA_DIR, { recursive: true });
 
   const fileName = `test-file-${size}.txt`;
   const filePath = path.join(TEST_DATA_DIR, fileName);
 
-  const lines = size === "small" ? 100 : size === "medium" ? 10_000 : 1_000_000;
+  const lines = size === 'small' ? 100 : size === 'medium' ? 10_000 : 1_000_000;
   const content = Array.from(
     { length: lines },
-    (_, i) => `Line ${i + 1}: ${"x".repeat(80)}\n`
-  ).join("");
+    (_, i) => `Line ${i + 1}: ${'x'.repeat(80)}\n`,
+  ).join('');
 
   await fs.writeFile(filePath, content);
   return filePath;
@@ -91,12 +91,12 @@ async function cleanup() {
  * Verifies constant memory usage while processing large files
  */
 async function testStreamingLargeFile(): Promise<IntegrationTestResult> {
-  const pattern = "stream-from-file";
+  const pattern = 'stream-from-file';
   const issues: string[] = [];
 
   try {
     // Create large test file (100MB+)
-    const testFile = await createTestFile("large");
+    const testFile = await createTestFile('large');
     const fileStats = await fs.stat(testFile);
     const fileSize = fileStats.size / (1024 * 1024); // MB
 
@@ -133,7 +133,7 @@ async function testStreamingLargeFile(): Promise<IntegrationTestResult> {
       Effect.runPromise(program)
     `;
 
-    const scriptPath = path.join(TEST_DATA_DIR, "streaming-test.ts");
+    const scriptPath = path.join(TEST_DATA_DIR, 'streaming-test.ts');
     await fs.writeFile(scriptPath, testScript);
 
     // Monitor memory while running
@@ -157,13 +157,13 @@ async function testStreamingLargeFile(): Promise<IntegrationTestResult> {
     const memoryThreshold = 100; // MB - should use much less than file size
     if (memDelta > memoryThreshold) {
       issues.push(
-        `Memory usage (${memDelta.toFixed(2)}MB) exceeds threshold for streaming (${memoryThreshold}MB)`
+        `Memory usage (${memDelta.toFixed(2)}MB) exceeds threshold for streaming (${memoryThreshold}MB)`,
       );
     }
 
     return {
       pattern,
-      testType: "streaming",
+      testType: 'streaming',
       passed: issues.length === 0,
       metrics: {
         duration,
@@ -176,7 +176,7 @@ async function testStreamingLargeFile(): Promise<IntegrationTestResult> {
   } catch (error: any) {
     return {
       pattern,
-      testType: "streaming",
+      testType: 'streaming',
       passed: false,
       metrics: {},
       issues: [`Test failed: ${error.message}`],
@@ -190,7 +190,7 @@ async function testStreamingLargeFile(): Promise<IntegrationTestResult> {
  * Verifies parallel execution is actually faster
  */
 async function testParallelPerformance(): Promise<IntegrationTestResult> {
-  const pattern = "parallel-execution";
+  const pattern = 'parallel-execution';
   const issues: string[] = [];
 
   try {
@@ -219,7 +219,7 @@ async function testParallelPerformance(): Promise<IntegrationTestResult> {
       Effect.runPromise(program)
     `;
 
-    const scriptPath = path.join(TEST_DATA_DIR, "parallel-test.ts");
+    const scriptPath = path.join(TEST_DATA_DIR, 'parallel-test.ts');
     await fs.writeFile(scriptPath, parallelScript);
 
     const result = await execAsync(`bun run ${scriptPath}`, {
@@ -232,20 +232,20 @@ async function testParallelPerformance(): Promise<IntegrationTestResult> {
     const speedup = sequentialTime / parallelTime;
     if (speedup < 2) {
       issues.push(
-        `Parallel execution not fast enough: ${speedup.toFixed(2)}x speedup (expected >2x)`
+        `Parallel execution not fast enough: ${speedup.toFixed(2)}x speedup (expected >2x)`,
       );
     }
 
     // Parallel should be close to single task time (~500ms)
     if (parallelTime > 800) {
       issues.push(
-        `Parallel time (${parallelTime}ms) too slow, expected ~500-600ms`
+        `Parallel time (${parallelTime}ms) too slow, expected ~500-600ms`,
       );
     }
 
     return {
       pattern,
-      testType: "parallel",
+      testType: 'parallel',
       passed: issues.length === 0,
       metrics: {
         duration: parallelTime,
@@ -256,7 +256,7 @@ async function testParallelPerformance(): Promise<IntegrationTestResult> {
   } catch (error: any) {
     return {
       pattern,
-      testType: "parallel",
+      testType: 'parallel',
       passed: false,
       metrics: {},
       issues: [`Test failed: ${error.message}`],
@@ -270,7 +270,7 @@ async function testParallelPerformance(): Promise<IntegrationTestResult> {
  * Verifies error handling works correctly under various conditions
  */
 async function testErrorHandlingStress(): Promise<IntegrationTestResult> {
-  const pattern = "error-handling";
+  const pattern = 'error-handling';
   const issues: string[] = [];
 
   try {
@@ -311,7 +311,7 @@ async function testErrorHandlingStress(): Promise<IntegrationTestResult> {
       Effect.runPromise(program)
     `;
 
-    const scriptPath = path.join(TEST_DATA_DIR, "error-test.ts");
+    const scriptPath = path.join(TEST_DATA_DIR, 'error-test.ts');
     await fs.writeFile(scriptPath, errorScript);
 
     const result = await execAsync(`bun run ${scriptPath}`, {
@@ -323,13 +323,13 @@ async function testErrorHandlingStress(): Promise<IntegrationTestResult> {
 
     if (failedTests.length > 0) {
       issues.push(
-        `Failed error handling tests: ${failedTests.map((t: any) => t.test).join(", ")}`
+        `Failed error handling tests: ${failedTests.map((t: any) => t.test).join(', ')}`,
       );
     }
 
     return {
       pattern,
-      testType: "error-handling",
+      testType: 'error-handling',
       passed: issues.length === 0,
       metrics: {
         errorRate: failedTests.length / results.length,
@@ -340,7 +340,7 @@ async function testErrorHandlingStress(): Promise<IntegrationTestResult> {
   } catch (error: any) {
     return {
       pattern,
-      testType: "error-handling",
+      testType: 'error-handling',
       passed: false,
       metrics: {},
       issues: [`Test failed: ${error.message}`],
@@ -354,7 +354,7 @@ async function testErrorHandlingStress(): Promise<IntegrationTestResult> {
  * Verifies resources are properly acquired and released
  */
 async function testResourceManagement(): Promise<IntegrationTestResult> {
-  const pattern = "resource-management";
+  const pattern = 'resource-management';
   const issues: string[] = [];
 
   try {
@@ -403,7 +403,7 @@ async function testResourceManagement(): Promise<IntegrationTestResult> {
       Effect.runPromise(program)
     `;
 
-    const scriptPath = path.join(TEST_DATA_DIR, "resource-test.ts");
+    const scriptPath = path.join(TEST_DATA_DIR, 'resource-test.ts');
     await fs.writeFile(scriptPath, resourceScript);
 
     const result = await execAsync(`bun run ${scriptPath}`, {
@@ -415,13 +415,13 @@ async function testResourceManagement(): Promise<IntegrationTestResult> {
     // All acquired resources should be released
     if (acquired !== released) {
       issues.push(
-        `Resource leak detected: ${acquired} acquired but only ${released} released`
+        `Resource leak detected: ${acquired} acquired but only ${released} released`,
       );
     }
 
     return {
       pattern,
-      testType: "resource-management",
+      testType: 'resource-management',
       passed: issues.length === 0,
       metrics: {},
       issues,
@@ -430,7 +430,7 @@ async function testResourceManagement(): Promise<IntegrationTestResult> {
   } catch (error: any) {
     return {
       pattern,
-      testType: "resource-management",
+      testType: 'resource-management',
       passed: false,
       metrics: {},
       issues: [`Test failed: ${error.message}`],
@@ -448,52 +448,52 @@ async function runIntegrationTests(): Promise<IntegrationTestResult[]> {
   await cleanup();
   await fs.mkdir(TEST_DATA_DIR, { recursive: true });
 
-  console.log(colorize("Running integration tests...\n", "cyan"));
+  console.log(colorize('Running integration tests...\n', 'cyan'));
 
   // Test 1: Streaming
   console.log(
-    `${colorize("1/4", "dim")} Testing streaming with large files...`
+    `${colorize('1/4', 'dim')} Testing streaming with large files...`,
   );
   const streamingResult = await testStreamingLargeFile();
   results.push(streamingResult);
   console.log(
     streamingResult.passed
-      ? colorize("  ✓ Passed", "green")
-      : colorize("  ✗ Failed", "red")
+      ? colorize('  ✓ Passed', 'green')
+      : colorize('  ✗ Failed', 'red'),
   );
 
   // Test 2: Parallel
   console.log(
-    `${colorize("\n2/4", "dim")} Testing parallel vs sequential performance...`
+    `${colorize('\n2/4', 'dim')} Testing parallel vs sequential performance...`,
   );
   const parallelResult = await testParallelPerformance();
   results.push(parallelResult);
   console.log(
     parallelResult.passed
-      ? colorize("  ✓ Passed", "green")
-      : colorize("  ✗ Failed", "red")
+      ? colorize('  ✓ Passed', 'green')
+      : colorize('  ✗ Failed', 'red'),
   );
 
   // Test 3: Error Handling
   console.log(
-    `${colorize("\n3/4", "dim")} Testing error handling under stress...`
+    `${colorize('\n3/4', 'dim')} Testing error handling under stress...`,
   );
   const errorResult = await testErrorHandlingStress();
   results.push(errorResult);
   console.log(
     errorResult.passed
-      ? colorize("  ✓ Passed", "green")
-      : colorize("  ✗ Failed", "red")
+      ? colorize('  ✓ Passed', 'green')
+      : colorize('  ✗ Failed', 'red'),
   );
 
   // Test 4: Resource Management
-  console.log(`${colorize("\n4/4", "dim")} Testing resource management...`);
+  console.log(`${colorize('\n4/4', 'dim')} Testing resource management...`);
   const resourceResult = await testResourceManagement();
   results.push(resourceResult);
   console.log(
     resourceResult.passed
-      ? colorize("  ✓ Passed", "green")
-      : colorize("  ✗ Failed", "red")
+      ? colorize('  ✓ Passed', 'green')
+      : colorize('  ✗ Failed', 'red'),
   );
 
   // Cleanup
@@ -505,49 +505,49 @@ async function runIntegrationTests(): Promise<IntegrationTestResult[]> {
 // --- REPORTING ---
 
 function printResults(results: IntegrationTestResult[]) {
-  console.log(colorize("\n\n📊 Integration Test Results", "cyan"));
-  console.log("═".repeat(60));
+  console.log(colorize('\n\n📊 Integration Test Results', 'cyan'));
+  console.log('═'.repeat(60));
 
   const passed = results.filter((r) => r.passed);
   const failed = results.filter((r) => !r.passed);
 
-  console.log(`${colorize("Total:", "bright")}     ${results.length} tests`);
-  console.log(`${colorize("Passed:", "green")}    ${passed.length} tests`);
+  console.log(`${colorize('Total:', 'bright')}     ${results.length} tests`);
+  console.log(`${colorize('Passed:', 'green')}    ${passed.length} tests`);
   if (failed.length > 0) {
-    console.log(`${colorize("Failed:", "red")}    ${failed.length} tests`);
+    console.log(`${colorize('Failed:', 'red')}    ${failed.length} tests`);
   }
 
   // Test details
-  console.log(`\n${colorize("Test Details:", "bright")}`);
-  console.log("─".repeat(60));
+  console.log(`\n${colorize('Test Details:', 'bright')}`);
+  console.log('─'.repeat(60));
 
   for (const result of results) {
-    const icon = result.passed ? colorize("✓", "green") : colorize("✗", "red");
+    const icon = result.passed ? colorize('✓', 'green') : colorize('✗', 'red');
     console.log(
-      `\n${icon} ${colorize(result.pattern, "bright")} (${result.testType})`
+      `\n${icon} ${colorize(result.pattern, 'bright')} (${result.testType})`,
     );
-    console.log(colorize(`  ${result.details}`, "dim"));
+    console.log(colorize(`  ${result.details}`, 'dim'));
 
     if (Object.keys(result.metrics).length > 0) {
       const metrics = Object.entries(result.metrics)
         .map(([key, value]) => {
-          if (typeof value === "number") {
+          if (typeof value === 'number') {
             return `${key}: ${value.toFixed(2)}`;
           }
           return `${key}: ${value}`;
         })
-        .join(", ");
-      console.log(colorize(`  Metrics: ${metrics}`, "dim"));
+        .join(', ');
+      console.log(colorize(`  Metrics: ${metrics}`, 'dim'));
     }
 
     if (result.issues.length > 0) {
       for (const issue of result.issues) {
-        console.log(colorize(`  ⚠ ${issue}`, "yellow"));
+        console.log(colorize(`  ⚠ ${issue}`, 'yellow'));
       }
     }
   }
 
-  console.log(`\n${"═".repeat(60)}`);
+  console.log(`\n${'═'.repeat(60)}`);
 }
 
 // --- MAIN ---
@@ -555,8 +555,8 @@ function printResults(results: IntegrationTestResult[]) {
 async function main() {
   const startTime = Date.now();
 
-  console.log(colorize("\n🔬 Integration & E2E Testing", "bright"));
-  console.log(colorize("Testing patterns in realistic scenarios\n", "dim"));
+  console.log(colorize('\n🔬 Integration & E2E Testing', 'bright'));
+  console.log(colorize('Testing patterns in realistic scenarios\n', 'dim'));
 
   // Run tests
   const results = await runIntegrationTests();
@@ -571,19 +571,22 @@ async function main() {
     console.log(
       colorize(
         `\n❌ Integration testing completed in ${duration}ms with ${failed} failure(s)\n`,
-        "red"
-      )
+        'red',
+      ),
     );
     process.exit(1);
   } else {
     console.log(
-      colorize(`\n✨ All integration tests passed in ${duration}ms!\n`, "green")
+      colorize(
+        `\n✨ All integration tests passed in ${duration}ms!\n`,
+        'green',
+      ),
     );
   }
 }
 
 main().catch((error) => {
-  console.error(colorize("\n💥 Fatal error:", "red"));
+  console.error(colorize('\n💥 Fatal error:', 'red'));
   console.error(error);
   process.exit(1);
 });
