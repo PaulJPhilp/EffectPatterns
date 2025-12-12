@@ -1,0 +1,1968 @@
+{
+  "timestamp": "2025-12-12T11:30:09.277Z",
+  "totalPatterns": 42,
+  "validated": 42,
+  "testsPassed": 29,
+  "duplicates": 42,
+  "migrated": 0,
+  "failed": 13,
+  "results": [
+    {
+      "pattern": {
+        "id": "data-duration",
+        "title": "Representing Time Spans with Duration",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-duration.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-duration.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-duration.mdx",
+        "frontmatter": {
+          "title": "Representing Time Spans with Duration",
+          "id": "data-duration",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Data Types",
+            "Time",
+            "Duration",
+            "Domain Modeling"
+          ],
+          "summary": "Use Duration to represent time intervals in a type-safe, human-readable, and composable way.",
+          "tags": [
+            "Duration",
+            "time",
+            "interval",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Duration to model and manipulate time spans, enabling safe and expressive time-based logic."
+          },
+          "related": [
+            "data-datetime",
+            "data-cause"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "data-duration"
+    },
+    {
+      "pattern": {
+        "id": "combinator-zip",
+        "title": "Combining Values with zip",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/combinator-zip.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/combinator-zip.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/combinator-zip.mdx",
+        "frontmatter": {
+          "title": "Combining Values with zip",
+          "id": "combinator-zip",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Combinators",
+            "Composition",
+            "Pairing"
+          ],
+          "summary": "Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either.",
+          "tags": [
+            "zip",
+            "combinator",
+            "pair",
+            "effect",
+            "stream",
+            "option",
+            "either"
+          ],
+          "rule": {
+            "description": "Use zip to run two computations and combine their results into a tuple, preserving error and context handling."
+          },
+          "related": [
+            "combinator-map",
+            "combinator-flatmap",
+            "combinator-all-race"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "combinator-zip"
+    },
+    {
+      "pattern": {
+        "id": "data-chunk",
+        "title": "Use Chunk for High-Performance Collections",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-chunk.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-chunk.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-chunk.mdx",
+        "frontmatter": {
+          "title": "Use Chunk for High-Performance Collections",
+          "id": "data-chunk",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Data Types",
+            "Collections",
+            "Performance"
+          ],
+          "summary": "Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines.",
+          "tags": [
+            "Chunk",
+            "collection",
+            "performance",
+            "immutable",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Chunk to model immutable, high-performance collections for efficient data processing and transformation."
+          },
+          "related": [
+            "data-array",
+            "data-hashset"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "data-chunk"
+    },
+    {
+      "pattern": {
+        "id": "constructor-sync-async",
+        "title": "Creating from Synchronous and Callback Code",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/constructor-sync-async.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/constructor-sync-async.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/constructor-sync-async.mdx",
+        "frontmatter": {
+          "title": "Creating from Synchronous and Callback Code",
+          "id": "constructor-sync-async",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Constructors",
+            "Interop",
+            "Async",
+            "Callback"
+          ],
+          "summary": "Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code.",
+          "tags": [
+            "sync",
+            "async",
+            "constructor",
+            "effect",
+            "interop",
+            "callback",
+            "legacy"
+          ],
+          "rule": {
+            "description": "Use sync and async to create Effects from synchronous or callback-based computations, making them composable and type-safe."
+          },
+          "related": [
+            "constructor-try-trypromise",
+            "constructor-succeed-some-right"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "constructor-sync-async"
+    },
+    {
+      "pattern": {
+        "id": "data-option",
+        "title": "Model Optional Values Safely with Option",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-option.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-option.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-option.mdx",
+        "frontmatter": {
+          "title": "Model Optional Values Safely with Option",
+          "id": "data-option",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Data Types",
+            "Domain Modeling",
+            "Optional Values"
+          ],
+          "summary": "Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors.",
+          "tags": [
+            "Option",
+            "optional",
+            "data-type",
+            "domain",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Option to model values that may be present or absent, making absence explicit and type-safe."
+          },
+          "related": [
+            "data-either",
+            "data-struct"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-option"
+    },
+    {
+      "pattern": {
+        "id": "observability-effect-fn",
+        "title": "Instrument and Observe Function Calls with Effect.fn",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/observability-effect-fn.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/observability-effect-fn.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/observability-effect-fn.mdx",
+        "frontmatter": {
+          "title": "Instrument and Observe Function Calls with Effect.fn",
+          "id": "observability-effect-fn",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Observability",
+            "Instrumentation",
+            "Function Calls",
+            "Debugging"
+          ],
+          "summary": "Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries.",
+          "tags": [
+            "Effect.fn",
+            "observability",
+            "instrumentation",
+            "function",
+            "logging",
+            "metrics",
+            "tracing"
+          ],
+          "rule": {
+            "description": "Use Effect.fn to wrap functions with effectful instrumentation, such as logging, metrics, or tracing, in a composable and type-safe way."
+          },
+          "related": [
+            "observability-structured-logging",
+            "observability-custom-metrics",
+            "observability-tracing-spans"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "observability-effect-fn"
+    },
+    {
+      "pattern": {
+        "id": "observability-structured-logging",
+        "title": "Leverage Effect's Built-in Structured Logging",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/observability-structured-logging.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/observability-structured-logging.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/observability-structured-logging.mdx",
+        "frontmatter": {
+          "title": "Leverage Effect's Built-in Structured Logging",
+          "id": "observability-structured-logging",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Observability",
+            "Logging",
+            "Debugging"
+          ],
+          "summary": "Use Effect's built-in logging functions for structured, configurable, and context-aware logging.",
+          "tags": [
+            "logging",
+            "observability",
+            "debugging",
+            "effect",
+            "structured-logging"
+          ],
+          "rule": {
+            "description": "Use Effect.log, Effect.logInfo, and Effect.logError to add structured, context-aware logging to your Effect code."
+          },
+          "related": [
+            "observability-custom-metrics",
+            "observability-tracing-spans"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "observability-structured-logging"
+    },
+    {
+      "pattern": {
+        "id": "data-hashset",
+        "title": "Work with Immutable Sets using HashSet",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-hashset.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-hashset.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-hashset.mdx",
+        "frontmatter": {
+          "title": "Work with Immutable Sets using HashSet",
+          "id": "data-hashset",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Data Types",
+            "Collections",
+            "Set Operations"
+          ],
+          "summary": "Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations.",
+          "tags": [
+            "HashSet",
+            "set",
+            "collection",
+            "immutable",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use HashSet to represent sets of unique values with efficient, immutable operations for membership, union, intersection, and difference."
+          },
+          "related": [
+            "data-chunk",
+            "data-array"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-hashset"
+    },
+    {
+      "pattern": {
+        "id": "combinator-sequencing",
+        "title": "Sequencing with andThen, tap, and flatten",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/combinator-sequencing.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/combinator-sequencing.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/combinator-sequencing.mdx",
+        "frontmatter": {
+          "title": "Sequencing with andThen, tap, and flatten",
+          "id": "combinator-sequencing",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Combinators",
+            "Sequencing",
+            "Composition",
+            "Side Effects"
+          ],
+          "summary": "Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either.",
+          "tags": [
+            "sequencing",
+            "andThen",
+            "tap",
+            "flatten",
+            "combinator",
+            "effect",
+            "stream",
+            "option",
+            "either"
+          ],
+          "rule": {
+            "description": "Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures, while preserving error and context handling."
+          },
+          "related": [
+            "combinator-flatmap",
+            "combinator-map",
+            "combinator-foreach-all",
+            "combinator-zip",
+            "combinator-error-handling"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "combinator-sequencing"
+    },
+    {
+      "pattern": {
+        "id": "data-either",
+        "title": "Accumulate Multiple Errors with Either",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-error.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-either.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-error.mdx",
+        "frontmatter": {
+          "title": "Accumulate Multiple Errors with Either",
+          "id": "data-either",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Data Types",
+            "Error Handling",
+            "Domain Modeling"
+          ],
+          "summary": "Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one.",
+          "tags": [
+            "Either",
+            "error-handling",
+            "data-type",
+            "domain",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Either to model computations that may fail, making errors explicit and type-safe."
+          },
+          "related": [
+            "data-option",
+            "data-cause"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-either"
+    },
+    {
+      "pattern": {
+        "id": "combinator-error-handling",
+        "title": "Handling Errors with catchAll, orElse, and match",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/combinator-error-handling.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/combinator-error-handling.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/combinator-error-handling.mdx",
+        "frontmatter": {
+          "title": "Handling Errors with catchAll, orElse, and match",
+          "id": "combinator-error-handling",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Combinators",
+            "Error Handling",
+            "Composition"
+          ],
+          "summary": "Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option.",
+          "tags": [
+            "error-handling",
+            "catchAll",
+            "orElse",
+            "match",
+            "combinator",
+            "effect",
+            "either",
+            "option"
+          ],
+          "rule": {
+            "description": "Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way."
+          },
+          "related": [
+            "combinator-map",
+            "combinator-flatmap",
+            "combinator-conditional"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "combinator-error-handling"
+    },
+    {
+      "pattern": {
+        "id": "data-redacted",
+        "title": "Redact and Handle Sensitive Data",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-redacted.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-redacted.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-redacted.mdx",
+        "frontmatter": {
+          "title": "Redact and Handle Sensitive Data",
+          "id": "data-redacted",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Data Types",
+            "Security",
+            "Sensitive Data",
+            "Logging"
+          ],
+          "summary": "Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed.",
+          "tags": [
+            "Redacted",
+            "security",
+            "sensitive-data",
+            "logging",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Redacted to wrap sensitive values, preventing accidental exposure in logs or error messages."
+          },
+          "related": [
+            "data-struct",
+            "observability-structured-logging"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-redacted"
+    },
+    {
+      "pattern": {
+        "id": "constructor-succeed-some-right",
+        "title": "Lifting Values with succeed, some, and right",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/constructor-succeed-some-right.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/constructor-succeed-some-right.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/constructor-succeed-some-right.mdx",
+        "frontmatter": {
+          "title": "Lifting Values with succeed, some, and right",
+          "id": "constructor-succeed-some-right",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Constructors",
+            "Lifting",
+            "Composition"
+          ],
+          "summary": "Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe.",
+          "tags": [
+            "succeed",
+            "some",
+            "right",
+            "constructor",
+            "effect",
+            "option",
+            "either",
+            "lifting"
+          ],
+          "rule": {
+            "description": "Use succeed, some, and right to create Effect, Option, or Either from plain values."
+          },
+          "related": [
+            "constructor-fail-none-left",
+            "constructor-try-trypromise"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "constructor-succeed-some-right"
+    },
+    {
+      "pattern": {
+        "id": "observability-custom-metrics",
+        "title": "Add Custom Metrics to Your Application",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/observability-custom-metrics.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/observability-custom-metrics.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/observability-custom-metrics.mdx",
+        "frontmatter": {
+          "title": "Add Custom Metrics to Your Application",
+          "id": "observability-custom-metrics",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Observability",
+            "Metrics",
+            "Monitoring",
+            "Performance"
+          ],
+          "summary": "Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators.",
+          "tags": [
+            "metrics",
+            "observability",
+            "monitoring",
+            "performance",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Effect's Metric module to define and update custom metrics for business and performance monitoring."
+          },
+          "related": [
+            "observability-structured-logging",
+            "observability-tracing-spans"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "observability-custom-metrics"
+    },
+    {
+      "pattern": {
+        "id": "data-exit",
+        "title": "Modeling Effect Results with Exit",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-exit.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-exit.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-exit.mdx",
+        "frontmatter": {
+          "title": "Modeling Effect Results with Exit",
+          "id": "data-exit",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Data Types",
+            "Effect Results",
+            "Error Handling",
+            "Concurrency"
+          ],
+          "summary": "Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way.",
+          "tags": [
+            "Exit",
+            "effect",
+            "result",
+            "error-handling",
+            "concurrency",
+            "data-type"
+          ],
+          "rule": {
+            "description": "Use Exit to capture the outcome of an Effect, including success, failure, and defects, for robust error handling and coordination."
+          },
+          "related": [
+            "data-cause",
+            "data-either"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-exit"
+    },
+    {
+      "pattern": {
+        "id": "data-bigdecimal",
+        "title": "Work with Arbitrary-Precision Numbers using BigDecimal",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-bigdecimal.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-bigdecimal.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-bigdecimal.mdx",
+        "frontmatter": {
+          "title": "Work with Arbitrary-Precision Numbers using BigDecimal",
+          "id": "data-bigdecimal",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Data Types",
+            "Numeric Precision",
+            "Financial",
+            "Scientific"
+          ],
+          "summary": "Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations.",
+          "tags": [
+            "BigDecimal",
+            "numeric",
+            "precision",
+            "decimal",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use BigDecimal to represent and compute with decimal numbers that require arbitrary precision, such as in finance or scientific domains."
+          },
+          "related": [
+            "data-chunk",
+            "data-struct"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "data-bigdecimal"
+    },
+    {
+      "pattern": {
+        "id": "pattern-matchtag",
+        "title": "Matching Tagged Unions with matchTag and matchTags",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/pattern-matchtag.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/pattern-matchtag.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/pattern-matchtag.mdx",
+        "frontmatter": {
+          "title": "Matching Tagged Unions with matchTag and matchTags",
+          "id": "pattern-matchtag",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Pattern Matching",
+            "Tagged Unions",
+            "Error Handling",
+            "Branching"
+          ],
+          "summary": "Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching.",
+          "tags": [
+            "matchTag",
+            "matchTags",
+            "pattern-matching",
+            "tagged-union",
+            "effect",
+            "error-handling",
+            "branching"
+          ],
+          "rule": {
+            "description": "Use matchTag and matchTags to handle specific cases of tagged unions or custom error types in a declarative, type-safe way."
+          },
+          "related": [
+            "pattern-match",
+            "pattern-catchtag",
+            "pattern-matcheffect"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "pattern-matchtag"
+    },
+    {
+      "pattern": {
+        "id": "combinator-conditional",
+        "title": "Conditional Branching with if, when, and cond",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/combinator-conditional.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/combinator-conditional.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/combinator-conditional.mdx",
+        "frontmatter": {
+          "title": "Conditional Branching with if, when, and cond",
+          "id": "combinator-conditional",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Combinators",
+            "Composition",
+            "Conditional Logic"
+          ],
+          "summary": "Use combinators like if, when, and cond to express conditional logic declaratively across Effect, Stream, Option, and Either.",
+          "tags": [
+            "conditional",
+            "if",
+            "when",
+            "cond",
+            "combinator",
+            "effect",
+            "stream",
+            "option",
+            "either"
+          ],
+          "rule": {
+            "description": "Use combinators such as if, when, and cond to branch computations based on runtime conditions, without imperative if statements."
+          },
+          "related": [
+            "combinator-filter",
+            "combinator-map",
+            "combinator-flatmap"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "combinator-conditional"
+    },
+    {
+      "pattern": {
+        "id": "combinator-map",
+        "title": "Transforming Values with map",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/combinator-map.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/combinator-map.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/combinator-map.mdx",
+        "frontmatter": {
+          "title": "Transforming Values with map",
+          "id": "combinator-map",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Combinators",
+            "Composition"
+          ],
+          "summary": "Use map to transform the result of an Effect, Stream, Option, or Either in a declarative, type-safe way.",
+          "tags": [
+            "map",
+            "combinator",
+            "functor",
+            "effect",
+            "stream",
+            "option",
+            "either"
+          ],
+          "rule": {
+            "description": "Use map to apply a pure function to the value inside an Effect, Stream, Option, or Either."
+          },
+          "related": [
+            "combinator-flatmap",
+            "combinator-filter"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "combinator-map"
+    },
+    {
+      "pattern": {
+        "id": "observability-tracing-spans",
+        "title": "Trace Operations Across Services with Spans",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/observability-tracing-spans.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/observability-tracing-spans.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/observability-tracing-spans.mdx",
+        "frontmatter": {
+          "title": "Trace Operations Across Services with Spans",
+          "id": "observability-tracing-spans",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Observability",
+            "Tracing",
+            "Performance",
+            "Debugging"
+          ],
+          "summary": "Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations.",
+          "tags": [
+            "tracing",
+            "spans",
+            "observability",
+            "performance",
+            "debugging",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Effect.withSpan to create and annotate tracing spans for operations, enabling distributed tracing and performance analysis."
+          },
+          "related": [
+            "observability-structured-logging",
+            "observability-custom-metrics"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "observability-tracing-spans"
+    },
+    {
+      "pattern": {
+        "id": "combinator-flatmap",
+        "title": "Chaining Computations with flatMap",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/combinator-flatmap.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/combinator-flatmap.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/combinator-flatmap.mdx",
+        "frontmatter": {
+          "title": "Chaining Computations with flatMap",
+          "id": "combinator-flatmap",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Combinators",
+            "Composition",
+            "Sequencing"
+          ],
+          "summary": "Use flatMap to chain together computations where each step may itself be effectful, optional, or error-prone.",
+          "tags": [
+            "flatMap",
+            "combinator",
+            "monad",
+            "effect",
+            "stream",
+            "option",
+            "either"
+          ],
+          "rule": {
+            "description": "Use flatMap to sequence computations, flattening nested structures and preserving error and context handling."
+          },
+          "related": [
+            "combinator-map",
+            "combinator-gen",
+            "combinator-foreach-all"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "combinator-flatmap"
+    },
+    {
+      "pattern": {
+        "id": "pattern-matcheffect",
+        "title": "Effectful Pattern Matching with matchEffect",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/pattern-matcheffect.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/pattern-matcheffect.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/pattern-matcheffect.mdx",
+        "frontmatter": {
+          "title": "Effectful Pattern Matching with matchEffect",
+          "id": "pattern-matcheffect",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Pattern Matching",
+            "Effectful Branching",
+            "Error Handling"
+          ],
+          "summary": "Use matchEffect to perform effectful branching based on success or failure, enabling rich workflows in the Effect world.",
+          "tags": [
+            "matchEffect",
+            "pattern-matching",
+            "effect",
+            "branching",
+            "error-handling"
+          ],
+          "rule": {
+            "description": "Use matchEffect to pattern match on the result of an Effect, running effectful logic for both success and failure cases."
+          },
+          "related": [
+            "pattern-match",
+            "pattern-matchtag",
+            "pattern-catchtag"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "pattern-matcheffect"
+    },
+    {
+      "pattern": {
+        "id": "combinator-filter",
+        "title": "Filtering Results with filter",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/combinator-filter.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/combinator-filter.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/combinator-filter.mdx",
+        "frontmatter": {
+          "title": "Filtering Results with filter",
+          "id": "combinator-filter",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Combinators",
+            "Composition",
+            "Conditional Logic"
+          ],
+          "summary": "Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either.",
+          "tags": [
+            "filter",
+            "combinator",
+            "predicate",
+            "effect",
+            "stream",
+            "option",
+            "either"
+          ],
+          "rule": {
+            "description": "Use filter to declaratively express conditional logic, keeping only values that satisfy a predicate."
+          },
+          "related": [
+            "combinator-map",
+            "combinator-flatmap",
+            "combinator-conditional"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "combinator-filter"
+    },
+    {
+      "pattern": {
+        "id": "data-struct",
+        "title": "Comparing Data by Value with Data.struct",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-struct.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-struct.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-struct.mdx",
+        "frontmatter": {
+          "title": "Comparing Data by Value with Data.struct",
+          "id": "data-struct",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Data Types",
+            "Structural Equality",
+            "Domain Modeling"
+          ],
+          "summary": "Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference.",
+          "tags": [
+            "Data.struct",
+            "structural-equality",
+            "immutable",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Data.struct to define objects whose equality is based on their contents, enabling safe and predictable comparisons."
+          },
+          "related": [
+            "data-tuple",
+            "data-equal"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-struct"
+    },
+    {
+      "pattern": {
+        "id": "brand-model-domain-type",
+        "title": "Modeling Validated Domain Types with Brand",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/brand-model-domain-type.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/brand-model-domain-type.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/brand-model-domain-type.mdx",
+        "frontmatter": {
+          "title": "Modeling Validated Domain Types with Brand",
+          "id": "brand-model-domain-type",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Branded Types",
+            "Domain Modeling",
+            "Type Safety"
+          ],
+          "summary": "Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse.",
+          "tags": [
+            "Brand",
+            "domain",
+            "type-safety",
+            "validation",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Brand to define types like Email, UserId, or PositiveInt, ensuring only valid values can be constructed and used."
+          },
+          "related": [
+            "brand-validate-parse"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "brand-model-domain-type"
+    },
+    {
+      "pattern": {
+        "id": "data-cause",
+        "title": "Handle Unexpected Errors by Inspecting the Cause",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-cause.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-cause.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-cause.mdx",
+        "frontmatter": {
+          "title": "Handle Unexpected Errors by Inspecting the Cause",
+          "id": "data-cause",
+          "skillLevel": "advanced",
+          "useCase": [
+            "Data Types",
+            "Error Handling",
+            "Debugging",
+            "Effect Results"
+          ],
+          "summary": "Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces.",
+          "tags": [
+            "Cause",
+            "error-handling",
+            "debugging",
+            "effect",
+            "failure",
+            "data-type"
+          ],
+          "rule": {
+            "description": "Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions."
+          },
+          "related": [
+            "data-exit",
+            "data-either"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-cause"
+    },
+    {
+      "pattern": {
+        "id": "brand-validate-parse",
+        "title": "Validating and Parsing Branded Types",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/brand-validate-parse.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/brand-validate-parse.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/brand-validate-parse.mdx",
+        "frontmatter": {
+          "title": "Validating and Parsing Branded Types",
+          "id": "brand-validate-parse",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Branded Types",
+            "Domain Modeling",
+            "Validation",
+            "Parsing"
+          ],
+          "summary": "Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed.",
+          "tags": [
+            "Brand",
+            "Schema",
+            "validation",
+            "parsing",
+            "domain",
+            "type-safety",
+            "effect"
+          ],
+          "rule": {
+            "description": "Combine Schema and Brand to validate and parse branded types, guaranteeing only valid domain values are created at runtime."
+          },
+          "related": [
+            "brand-model-domain-type"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "brand-validate-parse"
+    },
+    {
+      "pattern": {
+        "id": "pattern-catchtag",
+        "title": "Handling Specific Errors with catchTag and catchTags",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/pattern-catchtag.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/pattern-catchtag.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/pattern-catchtag.mdx",
+        "frontmatter": {
+          "title": "Handling Specific Errors with catchTag and catchTags",
+          "id": "pattern-catchtag",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Pattern Matching",
+            "Error Handling",
+            "Tagged Unions"
+          ],
+          "summary": "Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery.",
+          "tags": [
+            "catchTag",
+            "catchTags",
+            "pattern-matching",
+            "effect",
+            "error-handling",
+            "tagged-union"
+          ],
+          "rule": {
+            "description": "Use catchTag and catchTags to handle specific tagged error types in the Effect failure channel, providing targeted recovery logic."
+          },
+          "related": [
+            "pattern-matchtag",
+            "pattern-match",
+            "pattern-matcheffect"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "pattern-catchtag"
+    },
+    {
+      "pattern": {
+        "id": "constructor-from-nullable-option-either",
+        "title": "Converting from Nullable, Option, or Either",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/constructor-from-nullable-option-either.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/constructor-from-nullable-option-either.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/constructor-from-nullable-option-either.mdx",
+        "frontmatter": {
+          "title": "Converting from Nullable, Option, or Either",
+          "id": "constructor-from-nullable-option-either",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Constructors",
+            "Interop",
+            "Conversion"
+          ],
+          "summary": "Use fromNullable, fromOption, and fromEither to convert nullable values, Option, or Either into Effects or Streams, enabling safe and composable interop.",
+          "tags": [
+            "fromNullable",
+            "fromOption",
+            "fromEither",
+            "constructor",
+            "effect",
+            "stream",
+            "option",
+            "either",
+            "interop",
+            "conversion"
+          ],
+          "rule": {
+            "description": "Use fromNullable, fromOption, and fromEither to lift nullable values, Option, or Either into Effects or Streams for safe, typeful interop."
+          },
+          "related": [
+            "constructor-succeed-some-right",
+            "constructor-fail-none-left"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "constructor-from-nullable-option-either"
+    },
+    {
+      "pattern": {
+        "id": "data-class",
+        "title": "Type Classes for Equality, Ordering, and Hashing with Data.Class",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-class.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-class.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-class.mdx",
+        "frontmatter": {
+          "title": "Type Classes for Equality, Ordering, and Hashing with Data.Class",
+          "id": "data-class",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Data Types",
+            "Type Classes",
+            "Equality",
+            "Ordering",
+            "Hashing"
+          ],
+          "summary": "Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions.",
+          "tags": [
+            "Data.Class",
+            "type-class",
+            "equality",
+            "ordering",
+            "hashing",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Data.Class to define and derive type classes for your data types, supporting composable equality, ordering, and hashing."
+          },
+          "related": [
+            "data-struct",
+            "data-tuple",
+            "data-array"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "data-class"
+    },
+    {
+      "pattern": {
+        "id": "constructor-try-trypromise",
+        "title": "Wrapping Synchronous and Asynchronous Computations",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/constructor-try-trypromise.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/constructor-try-trypromise.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/constructor-try-trypromise.mdx",
+        "frontmatter": {
+          "title": "Wrapping Synchronous and Asynchronous Computations",
+          "id": "constructor-try-trypromise",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Constructors",
+            "Error Handling",
+            "Async",
+            "Interop"
+          ],
+          "summary": "Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world.",
+          "tags": [
+            "try",
+            "tryPromise",
+            "constructor",
+            "effect",
+            "error",
+            "async",
+            "interop"
+          ],
+          "rule": {
+            "description": "Use try and tryPromise to lift code that may throw or reject into Effect, capturing errors in the failure channel."
+          },
+          "related": [
+            "constructor-succeed-some-right",
+            "constructor-fail-none-left",
+            "constructor-sync-async"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "constructor-try-trypromise"
+    },
+    {
+      "pattern": {
+        "id": "constructor-from-iterable",
+        "title": "Creating from Collections",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/constructor-from-iterable.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/constructor-from-iterable.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/constructor-from-iterable.mdx",
+        "frontmatter": {
+          "title": "Creating from Collections",
+          "id": "constructor-from-iterable",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Constructors",
+            "Collections",
+            "Streams",
+            "Batch Processing"
+          ],
+          "summary": "Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations.",
+          "tags": [
+            "fromIterable",
+            "fromArray",
+            "constructor",
+            "stream",
+            "effect",
+            "collection",
+            "batch"
+          ],
+          "rule": {
+            "description": "Use fromIterable and fromArray to lift collections into Streams or Effects for batch or streaming processing."
+          },
+          "related": [
+            "constructor-succeed-some-right",
+            "constructor-from-nullable-option-either"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "constructor-from-iterable"
+    },
+    {
+      "pattern": {
+        "id": "pattern-match",
+        "title": "Matching on Success and Failure with match",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/pattern-match.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/pattern-match.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/pattern-match.mdx",
+        "frontmatter": {
+          "title": "Matching on Success and Failure with match",
+          "id": "pattern-match",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Pattern Matching",
+            "Error Handling",
+            "Branching"
+          ],
+          "summary": "Use match to handle both success and failure cases in a single, declarative place for Effect, Option, and Either.",
+          "tags": [
+            "match",
+            "pattern-matching",
+            "effect",
+            "option",
+            "either",
+            "error-handling",
+            "branching"
+          ],
+          "rule": {
+            "description": "Use match to pattern match on the result of an Effect, Option, or Either, handling both success and failure cases declaratively."
+          },
+          "related": [
+            "pattern-matchtag",
+            "pattern-matcheffect",
+            "pattern-option-either-match"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "pattern-match"
+    },
+    {
+      "pattern": {
+        "id": "data-tuple",
+        "title": "Working with Tuples using Data.tuple",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-tuple.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-tuple.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-tuple.mdx",
+        "frontmatter": {
+          "title": "Working with Tuples using Data.tuple",
+          "id": "data-tuple",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Data Types",
+            "Tuples",
+            "Structural Equality",
+            "Domain Modeling"
+          ],
+          "summary": "Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching.",
+          "tags": [
+            "Data.tuple",
+            "tuple",
+            "structural-equality",
+            "immutable",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Data.tuple to define tuples whose equality is based on their contents, enabling safe and predictable comparisons and pattern matching."
+          },
+          "related": [
+            "data-struct",
+            "data-array"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-tuple"
+    },
+    {
+      "pattern": {
+        "id": "data-case",
+        "title": "Modeling Tagged Unions with Data.case",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-case.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-case.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-case.mdx",
+        "frontmatter": {
+          "title": "Modeling Tagged Unions with Data.case",
+          "id": "data-case",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Data Types",
+            "Tagged Unions",
+            "ADTs",
+            "Domain Modeling"
+          ],
+          "summary": "Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching.",
+          "tags": [
+            "Data.case",
+            "tagged-union",
+            "ADT",
+            "domain-modeling",
+            "pattern-matching",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Data.case to define tagged unions (ADTs) for modeling domain-specific states and enabling exhaustive pattern matching."
+          },
+          "related": [
+            "data-struct",
+            "pattern-matchtag"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-case"
+    },
+    {
+      "pattern": {
+        "id": "observability-opentelemetry",
+        "title": "Integrate Effect Tracing with OpenTelemetry",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/observability-opentelemetry.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/observability-opentelemetry.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/observability-opentelemetry.mdx",
+        "frontmatter": {
+          "title": "Integrate Effect Tracing with OpenTelemetry",
+          "id": "observability-opentelemetry",
+          "skillLevel": "advanced",
+          "useCase": [
+            "Observability",
+            "Tracing",
+            "OpenTelemetry",
+            "Distributed Systems"
+          ],
+          "summary": "Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization.",
+          "tags": [
+            "tracing",
+            "opentelemetry",
+            "observability",
+            "effect",
+            "distributed-tracing"
+          ],
+          "rule": {
+            "description": "Integrate Effect.withSpan with OpenTelemetry to export traces and visualize request flows across services."
+          },
+          "related": [
+            "observability-tracing-spans",
+            "observability-structured-logging"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "observability-opentelemetry"
+    },
+    {
+      "pattern": {
+        "id": "constructor-fail-none-left",
+        "title": "Lifting Errors and Absence with fail, none, and left",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/constructor-fail-none-left.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/constructor-fail-none-left.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/constructor-fail-none-left.mdx",
+        "frontmatter": {
+          "title": "Lifting Errors and Absence with fail, none, and left",
+          "id": "constructor-fail-none-left",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Constructors",
+            "Lifting",
+            "Error Handling",
+            "Absence"
+          ],
+          "summary": "Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe.",
+          "tags": [
+            "fail",
+            "none",
+            "left",
+            "constructor",
+            "effect",
+            "option",
+            "either",
+            "error",
+            "absence"
+          ],
+          "rule": {
+            "description": "Use fail, none, and left to create Effect, Option, or Either that represent failure or absence."
+          },
+          "related": [
+            "constructor-succeed-some-right",
+            "constructor-try-trypromise"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "constructor-fail-none-left"
+    },
+    {
+      "pattern": {
+        "id": "combinator-foreach-all",
+        "title": "Mapping and Chaining over Collections with forEach and all",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/combinator-foreach-all.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/combinator-foreach-all.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/combinator-foreach-all.mdx",
+        "frontmatter": {
+          "title": "Mapping and Chaining over Collections with forEach and all",
+          "id": "combinator-foreach-all",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Combinators",
+            "Collections",
+            "Parallelism",
+            "Batch Processing"
+          ],
+          "summary": "Use forEach and all to apply effectful functions to collections and combine the results, enabling batch and parallel processing.",
+          "tags": [
+            "forEach",
+            "all",
+            "collections",
+            "parallelism",
+            "batch",
+            "combinator",
+            "effect",
+            "stream",
+            "option",
+            "either"
+          ],
+          "rule": {
+            "description": "Use forEach and all to process collections of values with effectful functions, collecting results in a type-safe and composable way."
+          },
+          "related": [
+            "combinator-map",
+            "combinator-flatmap",
+            "combinator-all-race"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "combinator-foreach-all"
+    },
+    {
+      "pattern": {
+        "id": "pattern-option-either-checks",
+        "title": "Checking Option and Either Cases",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/pattern-option-either-checks.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/pattern-option-either-checks.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/pattern-option-either-checks.mdx",
+        "frontmatter": {
+          "title": "Checking Option and Either Cases",
+          "id": "pattern-option-either-checks",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Pattern Matching",
+            "Option",
+            "Either",
+            "Branching",
+            "Checks"
+          ],
+          "summary": "Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching.",
+          "tags": [
+            "isSome",
+            "isNone",
+            "isLeft",
+            "isRight",
+            "pattern-matching",
+            "option",
+            "either",
+            "checks"
+          ],
+          "rule": {
+            "description": "Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe conditional logic."
+          },
+          "related": [
+            "pattern-option-either-match",
+            "pattern-match"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "pattern-option-either-checks"
+    },
+    {
+      "pattern": {
+        "id": "data-datetime",
+        "title": "Work with Dates and Times using DateTime",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-datetime.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-datetime.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-datetime.mdx",
+        "frontmatter": {
+          "title": "Work with Dates and Times using DateTime",
+          "id": "data-datetime",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Data Types",
+            "Time",
+            "Date",
+            "Domain Modeling"
+          ],
+          "summary": "Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations.",
+          "tags": [
+            "DateTime",
+            "date",
+            "time",
+            "timezone",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use DateTime to represent and manipulate dates and times in a type-safe, immutable, and time-zone-aware way."
+          },
+          "related": [
+            "data-duration",
+            "data-struct"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": false,
+      "isDuplicate": true,
+      "existingPatternId": "data-datetime"
+    },
+    {
+      "pattern": {
+        "id": "data-array",
+        "title": "Working with Immutable Arrays using Data.array",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-array.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-array.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-array.mdx",
+        "frontmatter": {
+          "title": "Working with Immutable Arrays using Data.array",
+          "id": "data-array",
+          "skillLevel": "beginner",
+          "useCase": [
+            "Data Types",
+            "Arrays",
+            "Structural Equality",
+            "Collections"
+          ],
+          "summary": "Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations.",
+          "tags": [
+            "Data.array",
+            "array",
+            "structural-equality",
+            "immutable",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Data.array to define arrays whose equality is based on their contents, enabling safe, predictable comparisons and functional operations."
+          },
+          "related": [
+            "data-chunk",
+            "data-struct",
+            "data-tuple"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-array"
+    },
+    {
+      "pattern": {
+        "id": "data-ref",
+        "title": "Manage Shared State Safely with Ref",
+        "rawPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/raw/data-ref.mdx",
+        "srcPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/src/data-ref.ts",
+        "processedPath": "/Users/paul/Projects/Public/Effect-Patterns/content/new/processed/data-ref.mdx",
+        "frontmatter": {
+          "title": "Manage Shared State Safely with Ref",
+          "id": "data-ref",
+          "skillLevel": "intermediate",
+          "useCase": [
+            "Data Types",
+            "State",
+            "Concurrency",
+            "Mutable State"
+          ],
+          "summary": "Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions.",
+          "tags": [
+            "Ref",
+            "state",
+            "concurrency",
+            "mutable",
+            "data-type",
+            "effect"
+          ],
+          "rule": {
+            "description": "Use Ref to safely manage shared, mutable state in concurrent and effectful programs."
+          },
+          "related": [
+            "data-chunk",
+            "data-hashset"
+          ],
+          "author": "PaulJPhilp"
+        },
+        "hasTypeScript": true
+      },
+      "valid": true,
+      "issues": [],
+      "qaPassed": true,
+      "qaScore": 0.85,
+      "qaIssues": [],
+      "testPassed": true,
+      "isDuplicate": true,
+      "existingPatternId": "data-ref"
+    }
+  ]
+}
