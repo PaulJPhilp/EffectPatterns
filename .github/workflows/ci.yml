@@ -53,6 +53,25 @@ jobs:
       - name: TypeScript type check
         run: bun run typecheck
 
+  lint-patterns:
+    name: Lint Effect Patterns
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint Effect patterns
+        run: bun run packages/ep-cli/dist/index.js lint content/new/src/*.ts
+        continue-on-error: true
+
   test-toolkit:
     name: Unit Tests - Toolkit
     runs-on: ubuntu-latest

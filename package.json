@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "effect-patterns-hub",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "packageManager": "bun@1.2.23",
   "private": true,
   "description": "A community-driven knowledge base for Effect-TS patterns.",
