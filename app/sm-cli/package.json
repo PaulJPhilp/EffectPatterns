@@ -37,7 +37,7 @@
   "devDependencies": {
     "@types/node": "^20.19.24",
     "@vitest/coverage-v8": "^2.1.9",
-    "@vitest/ui": "^2.1.9",
+    "@vitest/ui": "^4.0.15",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^2.1.9"
