@@ -68,6 +68,55 @@ All patterns must have:
 4. Either an Explanation or Rationale section
 5. TypeScript code that matches the source file
 
+## Linting Guidelines
+
+The Effect Patterns Hub includes a linter that enforces best practices for Effect-TS code.
+
+### Running the Linter
+
+```bash
+# Check all patterns
+ep init                # Create ep.json configuration
+ep lint rules          # List all linter rules
+ep lint content/new/src/**  # Lint TypeScript examples
+ep lint --apply        # Auto-fix violations where possible
+```
+
+### Linter Rules
+
+The linter enforces 6 key rules:
+
+1. **effect-use-taperror** (warning)
+   - Use `Effect.tapError` for logging errors instead of `catchAll` + `Effect.gen`
+   - Promotes cleaner, more readable error handling
+
+2. **effect-explicit-concurrency** (warning)
+   - Always specify the `concurrency` option in `Effect.all()` and `Effect.forEach()`
+   - Prevents accidental sequential execution and resource exhaustion
+
+3. **effect-deprecated-api** (error)
+   - Catch usage of deprecated Effect APIs
+   - Helps keep patterns up-to-date with current Effect versions
+
+4. **effect-prefer-pipe** (info)
+   - Suggest using `pipe()` for long method chains (>3 operations)
+   - Improves readability for complex effect compositions
+
+5. **effect-stream-memory** (error)
+   - Detect memory-loading operations in stream files
+   - Prevents accidental performance issues with large datasets
+
+6. **effect-error-model** (info)
+   - Suggest using `Data.TaggedError` instead of generic `Error`
+   - Encourages type-safe error handling patterns
+
+### Tips for Pattern Authors
+
+- Run `ep lint` before submitting pull requests
+- Use `ep lint --apply` to automatically fix violations where possible
+- Review linter output to ensure your examples follow Effect best practices
+- If you disagree with a linter rule for your specific context, document the exception
+
 ## Adding New Patterns
 
 ### Step 1: Create New Pattern Files
