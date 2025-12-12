@@ -12124,7 +12124,7 @@ curl -H "x-api-key: your-key" http://localhost:3000/api/patterns/search?q=retry
 
 ```bash
 # Install Vercel CLI
-npm i -g vercel
+npm i -g vercel@latest
 
 # Deploy to staging
 vercel

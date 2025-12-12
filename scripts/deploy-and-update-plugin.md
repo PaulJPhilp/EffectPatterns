@@ -37,7 +37,7 @@ set -euo pipefail
 # basic checks
 
 if ! command -v vercel >/dev/null 2>&1; then
-echo "vercel CLI not found. Install: npm i -g vercel"
+echo "vercel CLI not found. Install: npm i -g vercel@latest"
 exit 1
 fi
 if ! command -v jq >/dev/null 2>&1; then
