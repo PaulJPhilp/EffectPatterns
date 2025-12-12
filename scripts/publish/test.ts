@@ -17,26 +17,26 @@
  * ```
  */
 
-import { exec } from "node:child_process";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import { promisify } from "node:util";
+import { exec } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
 // --- CONFIGURATION ---
-const NEW_SRC_DIR = path.join(process.cwd(), "content/new/src");
+const NEW_SRC_DIR = path.join(process.cwd(), 'content/new/src');
 
 // List of patterns that are expected to throw errors as part of their example
 const EXPECTED_ERRORS = new Map<string, string[]>([
-  ["write-tests-that-adapt-to-application-code", ["NotFoundError"]],
-  ["control-repetition-with-schedule", ["Transient error"]],
+  ['write-tests-that-adapt-to-application-code', ['NotFoundError']],
+  ['control-repetition-with-schedule', ['Transient error']],
   // Add more patterns here as needed
 ]);
 
 async function runTypeScriptFile(filePath: string): Promise<void> {
   const relativePath = path.relative(process.cwd(), filePath);
-  const baseName = path.basename(filePath, ".ts");
+  const baseName = path.basename(filePath, '.ts');
   const expectedErrors = EXPECTED_ERRORS.get(baseName) || [];
 
   try {
@@ -47,14 +47,14 @@ async function runTypeScriptFile(filePath: string): Promise<void> {
     // Check if this is an expected error
     const errorMessage = error.message || String(error);
     const isExpectedError = expectedErrors.some((expected) =>
-      errorMessage.includes(expected)
+      errorMessage.includes(expected),
     );
 
     if (isExpectedError) {
       console.log(
         `✅ ${relativePath} failed as expected with ${expectedErrors.join(
-          ", "
-        )}`
+          ', ',
+        )}`,
       );
     } else {
       console.error(`❌ Error running ${relativePath}:`);
@@ -65,12 +65,12 @@ async function runTypeScriptFile(filePath: string): Promise<void> {
 }
 
 async function main() {
-  console.log("Running TypeScript example files...");
+  console.log('Running TypeScript example files...');
   console.log(`Looking in ${NEW_SRC_DIR}`);
 
   // Get all TypeScript files
   const files = await fs.readdir(NEW_SRC_DIR);
-  const tsFiles = files.filter((file) => file.endsWith(".ts"));
+  const tsFiles = files.filter((file) => file.endsWith('.ts'));
   console.log(`Found ${tsFiles.length} TypeScript files`);
 
   let errorCount = 0;
@@ -90,11 +90,11 @@ async function main() {
     console.error(`\n❌ ${errorCount} files failed to run`);
     process.exit(1);
   } else {
-    console.log("\n✨ All TypeScript files ran successfully!");
+    console.log('\n✨ All TypeScript files ran successfully!');
   }
 }
 
 main().catch((error) => {
-  console.error("Fatal error:", error);
+  console.error('Fatal error:', error);
   process.exit(1);
 });

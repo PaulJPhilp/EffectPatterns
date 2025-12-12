@@ -16,10 +16,10 @@
  *     [--eslint]
  */
 
-import { spawn } from "node:child_process";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import { parse as parseYaml } from "yaml";
+import { spawn } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import { parse as parseYaml } from 'yaml';
 
 function argValue(flag: string): string | undefined {
   const idx = process.argv.indexOf(flag);
@@ -40,50 +40,50 @@ function extractGoodExamplePath(mdx: string): string | null {
 async function runCmd(
   cmd: string,
   args: string[],
-  opts: { cwd?: string } = {}
+  opts: { cwd?: string } = {},
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     const child = spawn(cmd, args, {
       cwd: opts.cwd,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
-    let stdout = "";
-    let stderr = "";
-    child.stdout.on("data", (d) => {
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => {
       stdout += String(d);
     });
-    child.stderr.on("data", (d) => {
+    child.stderr.on('data', (d) => {
       stderr += String(d);
     });
-    child.on("close", (code) => {
+    child.on('close', (code) => {
       resolve({ code: code ?? 0, stdout, stderr });
     });
   });
 }
 
 const PROJECT_ROOT = process.cwd();
-const DEFAULT_SRC = path.join(PROJECT_ROOT, "content/new/src");
+const DEFAULT_SRC = path.join(PROJECT_ROOT, 'content/new/src');
 
 async function main() {
-  const mdxPathArg = argValue("--mdx");
+  const mdxPathArg = argValue('--mdx');
   if (!mdxPathArg) {
-    throw new Error("--mdx <processed.mdx> is required");
+    throw new Error('--mdx <processed.mdx> is required');
   }
   const mdxPath = path.resolve(mdxPathArg);
-  const srcDir = path.resolve(argValue("--srcdir") ?? DEFAULT_SRC);
+  const srcDir = path.resolve(argValue('--srcdir') ?? DEFAULT_SRC);
   // We intentionally avoid project-wide type-checks to prevent unrelated
   // repo types from failing this single-file check.
   // --tsconfig is accepted but ignored to keep this check isolated.
-  const _tsconfig = argValue("--tsconfig");
-  const runEslint = hasFlag("--eslint");
+  const _tsconfig = argValue('--tsconfig');
+  const runEslint = hasFlag('--eslint');
 
-  const full = await fs.readFile(mdxPath, "utf8");
-  const parts = full.split("---", 3);
+  const full = await fs.readFile(mdxPath, 'utf8');
+  const parts = full.split('---', 3);
   if (parts.length < 3) {
-    throw new Error("Missing or malformed frontmatter block");
+    throw new Error('Missing or malformed frontmatter block');
   }
   const fm = parseYaml(parts[1]) as Record<string, any>;
-  for (const key of ["id", "title"]) {
+  for (const key of ['id', 'title']) {
     if (!fm[key]) {
       throw new Error(`Missing required frontmatter field '${key}'`);
     }
@@ -92,13 +92,13 @@ async function main() {
 
   const examplePath = extractGoodExamplePath(parts[2]);
   if (!examplePath) {
-    throw new Error("Missing <Example path=... /> in Good Example section");
+    throw new Error('Missing <Example path=... /> in Good Example section');
   }
 
   const expected = `./src/${id}.ts`;
   if (examplePath !== expected) {
     throw new Error(
-      `Example path mismatch. Expected '${expected}', got '${examplePath}'`
+      `Example path mismatch. Expected '${expected}', got '${examplePath}'`,
     );
   }
 
@@ -111,40 +111,40 @@ async function main() {
 
   // Always per-file compile with safe flags to avoid repo-wide type
   // interactions (Node vs Bun types, private identifiers in libs, etc.)
-  const tsc = await runCmd("bunx", [
-    "tsc",
-    "--noEmit",
-    "--target",
-    "ES2020",
-    "--module",
-    "NodeNext",
-    "--moduleResolution",
-    "NodeNext",
-    "--skipLibCheck",
+  const tsc = await runCmd('bunx', [
+    'tsc',
+    '--noEmit',
+    '--target',
+    'ES2020',
+    '--module',
+    'NodeNext',
+    '--moduleResolution',
+    'NodeNext',
+    '--skipLibCheck',
     tsPath,
   ]);
   if (tsc.code !== 0) {
-    console.error("❌ TypeScript check failed:");
+    console.error('❌ TypeScript check failed:');
     process.stderr.write(tsc.stderr || tsc.stdout);
     process.exit(1);
   }
 
   // optional eslint
   if (runEslint) {
-    const eslint = await runCmd("bunx", ["eslint", tsPath]);
+    const eslint = await runCmd('bunx', ['eslint', tsPath]);
     if (eslint.code !== 0) {
-      console.error("❌ ESLint failed:");
+      console.error('❌ ESLint failed:');
       process.stderr.write(eslint.stderr || eslint.stdout);
       process.exit(1);
     }
   }
 
-  console.log("✅ Pre-publish checks passed for:", path.basename(mdxPath));
-  console.log("  MDX:", path.relative(PROJECT_ROOT, mdxPath));
-  console.log("  TS:", path.relative(PROJECT_ROOT, tsPath));
+  console.log('✅ Pre-publish checks passed for:', path.basename(mdxPath));
+  console.log('  MDX:', path.relative(PROJECT_ROOT, mdxPath));
+  console.log('  TS:', path.relative(PROJECT_ROOT, tsPath));
 }
 
 main().catch((err) => {
-  console.error("❌ Pre-publish check error:", err);
+  console.error('❌ Pre-publish check error:', err);
   process.exit(1);
 });

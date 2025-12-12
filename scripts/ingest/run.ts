@@ -6,13 +6,13 @@
  * and preparing pattern files for publishing.
  */
 
-import { FileSystem, Path } from "@effect/platform";
-import { NodeContext } from "@effect/platform-node";
-import { Console, Effect, Layer } from "effect";
-import { MdxService } from "effect-mdx";
+import { FileSystem, Path } from '@effect/platform';
+import { NodeContext } from '@effect/platform-node';
+import { Console, Effect, Layer } from 'effect';
+import { MdxService } from 'effect-mdx';
 
 // --- Configuration Service ---
-class AppConfig extends Effect.Service<AppConfig>()("AppConfig", {
+class AppConfig extends Effect.Service<AppConfig>()('AppConfig', {
   sync: () => ({
     rawDir: `${process.cwd()}/content/new/raw`,
     srcDir: `${process.cwd()}/content/new/src`,
@@ -36,7 +36,7 @@ const extract = Effect.gen(function* () {
   const path = yield* Path.Path;
   const mdx = yield* MdxService;
 
-  yield* Console.log("--- Running: Extract Stage ---");
+  yield* Console.log('--- Running: Extract Stage ---');
 
   const rawMdxFiles = yield* fs.readDirectory(config.rawDir);
 
@@ -53,7 +53,7 @@ const extract = Effect.gen(function* () {
         // Simple validation for now, can be expanded
         if (!(frontmatter.id && frontmatter.title)) {
           return yield* Effect.fail(
-            new Error(`Missing id or title in ${file}`)
+            new Error(`Missing id or title in ${file}`),
           );
         }
 
@@ -64,7 +64,7 @@ const extract = Effect.gen(function* () {
 
         if (!tsCode) {
           return yield* Effect.fail(
-            new Error(`No TypeScript code block found in ${file}`)
+            new Error(`No TypeScript code block found in ${file}`),
           );
         }
 
@@ -73,31 +73,31 @@ const extract = Effect.gen(function* () {
 
         const processedMdx = content.replace(
           codeBlockRegex,
-          `## Good Example\n\n<Example path="./src/${frontmatter.id}.ts" />`
+          `## Good Example\n\n<Example path="./src/${frontmatter.id}.ts" />`,
         );
         const mdxTargetPath = path.join(
           config.processedDir,
-          `${frontmatter.id}.mdx`
+          `${frontmatter.id}.mdx`,
         );
         yield* fs.writeFileString(mdxTargetPath, processedMdx);
 
         yield* Console.log(`✅ Successfully extracted ${file}`);
       }).pipe(Effect.catchAll((error) => Console.error(String(error)))),
-    { concurrency: "unbounded", discard: true }
+    { concurrency: 'unbounded', discard: true },
   );
 
-  yield* Console.log("--- Completed: Extract Stage ---");
+  yield* Console.log('--- Completed: Extract Stage ---');
 });
 
 // --- Main Orchestrator ---
 const main = Effect.gen(function* () {
-  yield* Console.log("🚀 Starting ingest pipeline...");
+  yield* Console.log('🚀 Starting ingest pipeline...');
 
   // For now, we only run the extract stage.
   // We will add more stages here.
   yield* extract;
 
-  yield* Console.log("✅ Ingest pipeline completed successfully!");
+  yield* Console.log('✅ Ingest pipeline completed successfully!');
 });
 
 // --- Run the Program ---
@@ -106,9 +106,9 @@ const runnable = main.pipe(
     Layer.mergeAll(
       AppConfig.Default,
       NodeContext.layer,
-      Layer.provide(MdxService.Default, NodeContext.layer)
-    )
-  )
+      Layer.provide(MdxService.Default, NodeContext.layer),
+    ),
+  ),
 );
 
 Effect.runFork(runnable as Effect.Effect<void, unknown, never>);

@@ -9,17 +9,17 @@
  * Makes real API calls to LLM services (no mocking).
  */
 
-import { chatModels } from "../app/code-assistant/lib/ai/models";
-import ora from "ora";
-import { TUIHandler } from "effect-cli-tui";
-import * as Effect from "effect/Effect";
-import { Layer } from "effect";
-import { myProvider } from "../app/code-assistant/lib/ai/providers";
-import { systemPrompt } from "../app/code-assistant/lib/ai/prompts";
-import { convertToModelMessages } from "ai";
-import { LLMService, LLMServiceLive } from "../services/llm-service";
-import { FetchHttpClient } from "@effect/platform";
-import { NodeContext, NodeRuntime } from "@effect/platform-node";
+import { chatModels } from '../app/code-assistant/lib/ai/models';
+import ora from 'ora';
+import { TUIHandler } from 'effect-cli-tui';
+import * as Effect from 'effect/Effect';
+import { Layer } from 'effect';
+import { myProvider } from '../app/code-assistant/lib/ai/providers';
+import { systemPrompt } from '../app/code-assistant/lib/ai/prompts';
+import { convertToModelMessages } from 'ai';
+import { LLMService, LLMServiceLive } from '../services/llm-service';
+import { FetchHttpClient } from '@effect/platform';
+import { NodeContext, NodeRuntime } from '@effect/platform-node';
 
 // --- TYPES ---
 
@@ -44,49 +44,49 @@ interface TestScenario {
 
 const CHAT_SCENARIOS: TestScenario[] = [
   {
-    name: "basic_greeting",
-    description: "Test basic conversational response",
-    prompt: "Hello, how are you?",
-    expectedPatterns: ["hello", "hi", "greetings"],
+    name: 'basic_greeting',
+    description: 'Test basic conversational response',
+    prompt: 'Hello, how are you?',
+    expectedPatterns: ['hello', 'hi', 'greetings'],
   },
   {
-    name: "coding_question",
-    description: "Test coding assistance capabilities",
-    prompt: "How do I create a function in TypeScript?",
-    expectedPatterns: ["function", "typescript", "const|let|var"],
+    name: 'coding_question',
+    description: 'Test coding assistance capabilities',
+    prompt: 'How do I create a function in TypeScript?',
+    expectedPatterns: ['function', 'typescript', 'const|let|var'],
   },
   {
-    name: "effect_pattern",
-    description: "Test Effect-TS pattern knowledge",
-    prompt: "Show me how to handle errors with Effect.gen",
-    expectedPatterns: ["Effect\\.gen", "yield\\*", "catchTag|mapError"],
+    name: 'effect_pattern',
+    description: 'Test Effect-TS pattern knowledge',
+    prompt: 'Show me how to handle errors with Effect.gen',
+    expectedPatterns: ['Effect\\.gen', 'yield\\*', 'catchTag|mapError'],
   },
   {
-    name: "complex_reasoning",
-    description: "Test reasoning capabilities",
+    name: 'complex_reasoning',
+    description: 'Test reasoning capabilities',
     prompt:
-      "Explain the difference between monads and functors in functional programming",
-    expectedPatterns: ["monad", "functor", "map|flatMap|bind"],
+      'Explain the difference between monads and functors in functional programming',
+    expectedPatterns: ['monad', 'functor', 'map|flatMap|bind'],
   },
 ];
 
 const TASK_SCENARIOS: TestScenario[] = [
   {
-    name: "create_component",
-    description: "Test component creation task",
-    prompt: "Create a React component for a todo list",
+    name: 'create_component',
+    description: 'Test component creation task',
+    prompt: 'Create a React component for a todo list',
     expectedPatterns: [
-      "import.*React",
-      "function|const.*Component",
-      "useState|useEffect",
+      'import.*React',
+      'function|const.*Component',
+      'useState|useEffect',
     ],
   },
   {
-    name: "refactor_code",
-    description: "Test code refactoring task",
+    name: 'refactor_code',
+    description: 'Test code refactoring task',
     prompt:
-      "Refactor this JavaScript code to use modern syntax: var x = function() { return 42; }",
-    expectedPatterns: ["const|let|=>|arrow function"],
+      'Refactor this JavaScript code to use modern syntax: var x = function() { return 42; }',
+    expectedPatterns: ['const|let|=>|arrow function'],
   },
 ];
 
@@ -99,7 +99,7 @@ const command = args[0];
 
 const runChatTest = async (
   scenario: TestScenario,
-  modelId: string
+  modelId: string,
 ): Promise<TestResult> => {
   const startTime = Date.now();
 
@@ -111,10 +111,10 @@ const runChatTest = async (
     // Convert scenario prompt to messages format
     const messages = convertToModelMessages([
       {
-        role: "user",
+        role: 'user',
         content: scenario.prompt,
         id: `msg-${Date.now()}`,
-        parts: [{ type: "text", text: scenario.prompt }],
+        parts: [{ type: 'text', text: scenario.prompt }],
         createdAt: new Date(),
         attachments: [],
       },
@@ -132,7 +132,7 @@ const runChatTest = async (
     // Check for expected patterns
     const hasExpectedPatterns =
       scenario.expectedPatterns?.every((pattern) =>
-        new RegExp(pattern, "i").test(result.text)
+        new RegExp(pattern, 'i').test(result.text),
       ) ?? true;
 
     return {
@@ -150,7 +150,7 @@ const runChatTest = async (
   const layer = Layer.mergeAll(
     LLMServiceLive,
     NodeContext.layer,
-    FetchHttpClient.layer
+    FetchHttpClient.layer,
   );
 
   try {
@@ -170,29 +170,29 @@ const runChatTest = async (
 // --- CLI COMMAND HANDLERS ---
 
 async function handleList() {
-  console.log("\n🤖 Available AI Models:");
-  console.log("─".repeat(30));
+  console.log('\n🤖 Available AI Models:');
+  console.log('─'.repeat(30));
   for (const model of chatModels) {
     console.log(`  ${model.name} (${model.id})`);
     console.log(`    ${model.description}`);
   }
-  console.log("");
+  console.log('');
 
-  console.log("\n💬 Chat Scenarios:");
-  console.log("─".repeat(40));
+  console.log('\n💬 Chat Scenarios:');
+  console.log('─'.repeat(40));
   for (const scenario of CHAT_SCENARIOS) {
     console.log(`  ${scenario.name.padEnd(20)} ${scenario.description}`);
     console.log(`    Prompt: ${scenario.prompt}`);
   }
-  console.log("");
+  console.log('');
 
-  console.log("\n🔧 Task Scenarios:");
-  console.log("─".repeat(40));
+  console.log('\n🔧 Task Scenarios:');
+  console.log('─'.repeat(40));
   for (const scenario of TASK_SCENARIOS) {
     console.log(`  ${scenario.name.padEnd(20)} ${scenario.description}`);
     console.log(`    Prompt: ${scenario.prompt}`);
   }
-  console.log("");
+  console.log('');
 }
 
 async function handleChat(scenarioName?: string, modelId?: string) {
@@ -200,12 +200,12 @@ async function handleChat(scenarioName?: string, modelId?: string) {
   modelId = modelId || args[2];
 
   if (!scenarioName || !modelId) {
-    console.error("Usage: bun run test:harness chat <scenario> <model>");
+    console.error('Usage: bun run test:harness chat <scenario> <model>');
     console.error(
-      "Available scenarios:",
-      CHAT_SCENARIOS.map((s) => s.name).join(", ")
+      'Available scenarios:',
+      CHAT_SCENARIOS.map((s) => s.name).join(', '),
     );
-    console.error("Available models:", chatModels.map((m) => m.id).join(", "));
+    console.error('Available models:', chatModels.map((m) => m.id).join(', '));
     process.exit(1);
   }
 
@@ -213,8 +213,8 @@ async function handleChat(scenarioName?: string, modelId?: string) {
   if (!scenario) {
     console.error(`Scenario '${scenarioName}' not found.`);
     console.error(
-      "Available scenarios:",
-      CHAT_SCENARIOS.map((s) => s.name).join(", ")
+      'Available scenarios:',
+      CHAT_SCENARIOS.map((s) => s.name).join(', '),
     );
     process.exit(1);
   }
@@ -222,23 +222,23 @@ async function handleChat(scenarioName?: string, modelId?: string) {
   const model = chatModels.find((m) => m.id === modelId);
   if (!model) {
     console.error(`Model '${modelId}' not found.`);
-    console.error("Available models:", chatModels.map((m) => m.id).join(", "));
+    console.error('Available models:', chatModels.map((m) => m.id).join(', '));
     process.exit(1);
   }
 
   console.log(`🗣️ Testing chat scenario: ${scenario.name}`);
   console.log(`🤖 Using model: ${model.name}`);
   console.log(`💬 Prompt: ${scenario.prompt}`);
-  console.log("");
+  console.log('');
 
-  const spinner = ora("Running test...").start();
+  const spinner = ora('Running test...').start();
   const result = await runChatTest(scenario, modelId);
   spinner.stop();
 
-  console.log(`📊 Test Result: ${result.success ? "✅ PASSED" : "❌ FAILED"}`);
+  console.log(`📊 Test Result: ${result.success ? '✅ PASSED' : '❌ FAILED'}`);
   console.log(`⏱️  Duration: ${result.duration}ms`);
   console.log(
-    `📏 Response Length: ${result.metrics?.responseLength || 0} chars`
+    `📏 Response Length: ${result.metrics?.responseLength || 0} chars`,
   );
 
   if (result.response) {
@@ -257,12 +257,12 @@ async function handleTask(scenarioName?: string, modelId?: string) {
   modelId = modelId || args[2];
 
   if (!scenarioName || !modelId) {
-    console.error("Usage: bun run test:harness task <scenario> <model>");
+    console.error('Usage: bun run test:harness task <scenario> <model>');
     console.error(
-      "Available scenarios:",
-      TASK_SCENARIOS.map((s) => s.name).join(", ")
+      'Available scenarios:',
+      TASK_SCENARIOS.map((s) => s.name).join(', '),
     );
-    console.error("Available models:", chatModels.map((m) => m.id).join(", "));
+    console.error('Available models:', chatModels.map((m) => m.id).join(', '));
     process.exit(1);
   }
 
@@ -270,8 +270,8 @@ async function handleTask(scenarioName?: string, modelId?: string) {
   if (!scenario) {
     console.error(`Scenario '${scenarioName}' not found.`);
     console.error(
-      "Available scenarios:",
-      TASK_SCENARIOS.map((s) => s.name).join(", ")
+      'Available scenarios:',
+      TASK_SCENARIOS.map((s) => s.name).join(', '),
     );
     process.exit(1);
   }
@@ -279,23 +279,23 @@ async function handleTask(scenarioName?: string, modelId?: string) {
   const model = chatModels.find((m) => m.id === modelId);
   if (!model) {
     console.error(`Model '${modelId}' not found.`);
-    console.error("Available models:", chatModels.map((m) => m.id).join(", "));
+    console.error('Available models:', chatModels.map((m) => m.id).join(', '));
     process.exit(1);
   }
 
   console.log(`🔧 Testing task scenario: ${scenario.name}`);
   console.log(`🤖 Using model: ${model.name}`);
   console.log(`📝 Prompt: ${scenario.prompt}`);
-  console.log("");
+  console.log('');
 
-  const spinner = ora("Running test...").start();
+  const spinner = ora('Running test...').start();
   const result = await runChatTest(scenario, modelId); // Reuse runChatTest, assuming it's similar
   spinner.stop();
 
-  console.log(`📊 Test Result: ${result.success ? "✅ PASSED" : "❌ FAILED"}`);
+  console.log(`📊 Test Result: ${result.success ? '✅ PASSED' : '❌ FAILED'}`);
   console.log(`⏱️  Duration: ${result.duration}ms`);
   console.log(
-    `📏 Response Length: ${result.metrics?.responseLength || 0} chars`
+    `📏 Response Length: ${result.metrics?.responseLength || 0} chars`,
   );
 
   if (result.response) {
@@ -313,10 +313,10 @@ async function handleModels(scenarioName?: string) {
   scenarioName = scenarioName || args[1];
 
   if (!scenarioName) {
-    console.error("Usage: bun run test:harness models <scenario>");
+    console.error('Usage: bun run test:harness models <scenario>');
     console.error(
-      "Available scenarios:",
-      CHAT_SCENARIOS.map((s) => s.name).join(", ")
+      'Available scenarios:',
+      CHAT_SCENARIOS.map((s) => s.name).join(', '),
     );
     process.exit(1);
   }
@@ -325,18 +325,18 @@ async function handleModels(scenarioName?: string) {
   if (!scenario) {
     console.error(`Scenario '${scenarioName}' not found.`);
     console.error(
-      "Available scenarios:",
-      CHAT_SCENARIOS.map((s) => s.name).join(", ")
+      'Available scenarios:',
+      CHAT_SCENARIOS.map((s) => s.name).join(', '),
     );
     process.exit(1);
   }
 
   console.log(`🏁 Comparing all models on scenario: ${scenario.name}`);
   console.log(`💬 Prompt: ${scenario.prompt}`);
-  console.log("");
+  console.log('');
 
   const results: TestResult[] = [];
-  const spinner = ora("Running model comparison...").start();
+  const spinner = ora('Running model comparison...').start();
 
   for (const model of chatModels) {
     spinner.text = `Testing ${model.name}...`;
@@ -346,17 +346,17 @@ async function handleModels(scenarioName?: string) {
 
   spinner.stop();
 
-  console.log("\n📊 Model Comparison Results:");
-  console.log("─".repeat(60));
+  console.log('\n📊 Model Comparison Results:');
+  console.log('─'.repeat(60));
 
   const sortedResults = results.sort((a, b) => a.duration - b.duration);
 
   for (const result of sortedResults) {
-    const status = result.success ? "✅" : "❌";
+    const status = result.success ? '✅' : '❌';
     const time = `${result.duration}ms`;
     const model = chatModels.find((m) => result.testName.includes(m.id));
     console.log(
-      `${status} ${model?.name.padEnd(20)} ${time.padStart(8)} ${result.success ? "PASS" : "FAIL"}`
+      `${status} ${model?.name.padEnd(20)} ${time.padStart(8)} ${result.success ? 'PASS' : 'FAIL'}`,
     );
   }
 
@@ -365,7 +365,7 @@ async function handleModels(scenarioName?: string) {
   const avgDuration =
     results.reduce((sum, r) => sum + r.duration, 0) / results.length;
 
-  console.log("\n📈 Summary:");
+  console.log('\n📈 Summary:');
   console.log(`Fastest: ${fastest.testName} (${fastest.duration}ms)`);
   console.log(`Slowest: ${slowest.testName} (${slowest.duration}ms)`);
   console.log(`Average: ${avgDuration.toFixed(0)}ms`);
@@ -384,22 +384,22 @@ async function main() {
 
   try {
     switch (command) {
-      case "list":
+      case 'list':
         await handleList();
         break;
-      case "chat":
+      case 'chat':
         await handleChat();
         break;
-      case "models":
+      case 'models':
         await handleModels();
         break;
       default:
         console.error(`Unknown command: ${command}`);
-        console.log("Use: bun run test:harness (no args for help)");
+        console.log('Use: bun run test:harness (no args for help)');
         process.exit(1);
     }
   } catch (error) {
-    console.error("Test harness failed:", error);
+    console.error('Test harness failed:', error);
     process.exit(1);
   }
 }
@@ -416,118 +416,118 @@ async function runTestHarness() {
   while (continueTesting && iterations < maxIterations) {
     iterations++;
     try {
-      console.log("🤖 AI Coding Assistant Test Harness");
+      console.log('🤖 AI Coding Assistant Test Harness');
 
       const choice = await Effect.runPromise(
-        tui.selectOption("What would you like to do?", [
+        tui.selectOption('What would you like to do?', [
           {
-            label: "🗣️  Test Chat Scenarios",
-            value: "chat",
-            description: "Test conversational AI capabilities",
+            label: '🗣️  Test Chat Scenarios',
+            value: 'chat',
+            description: 'Test conversational AI capabilities',
           },
           {
-            label: "🔧 Test Task Scenarios",
-            value: "task",
-            description: "Test coding agent functionality",
+            label: '🔧 Test Task Scenarios',
+            value: 'task',
+            description: 'Test coding agent functionality',
           },
           {
-            label: "🏁 Compare Models",
-            value: "models",
-            description: "Compare performance across AI models",
+            label: '🏁 Compare Models',
+            value: 'models',
+            description: 'Compare performance across AI models',
           },
           {
-            label: "📋 List Scenarios & Models",
-            value: "list",
-            description: "Browse available test scenarios and models",
+            label: '📋 List Scenarios & Models',
+            value: 'list',
+            description: 'Browse available test scenarios and models',
           },
           {
-            label: "❌ Exit",
-            value: "exit",
-            description: "Exit the test harness",
+            label: '❌ Exit',
+            value: 'exit',
+            description: 'Exit the test harness',
           },
-        ])
+        ]),
       );
 
-      if (choice === "exit") {
-        await Effect.runPromise(tui.display("👋 Goodbye!", "success"));
+      if (choice === 'exit') {
+        await Effect.runPromise(tui.display('👋 Goodbye!', 'success'));
         return;
       }
 
-      if (choice === "list") {
+      if (choice === 'list') {
         await handleList();
-      } else if (choice === "chat") {
+      } else if (choice === 'chat') {
         const scenarioName = await Effect.runPromise(
           tui.selectOption(
-            "Select a chat scenario:",
+            'Select a chat scenario:',
             CHAT_SCENARIOS.map((s) => ({
               label: s.name,
               value: s.name,
               description: s.description,
-            }))
-          )
+            })),
+          ),
         );
         const modelId = await Effect.runPromise(
           tui.selectOption(
-            "Select a model:",
+            'Select a model:',
             chatModels.map((m) => ({
               label: `${m.name} (${m.id})`,
               value: m.id,
               description: m.description,
-            }))
-          )
+            })),
+          ),
         );
         await handleChat(scenarioName, modelId);
-      } else if (choice === "task") {
+      } else if (choice === 'task') {
         const scenarioName = await Effect.runPromise(
           tui.selectOption(
-            "Select a task scenario:",
+            'Select a task scenario:',
             TASK_SCENARIOS.map((s) => ({
               label: s.name,
               value: s.name,
               description: s.description,
-            }))
-          )
+            })),
+          ),
         );
         const modelId = await Effect.runPromise(
           tui.selectOption(
-            "Select a model:",
+            'Select a model:',
             chatModels.map((m) => ({
               label: `${m.name} (${m.id})`,
               value: m.id,
               description: m.description,
-            }))
-          )
+            })),
+          ),
         );
         await handleTask(scenarioName, modelId);
-      } else if (choice === "models") {
+      } else if (choice === 'models') {
         const scenarioName = await Effect.runPromise(
           tui.selectOption(
-            "Select a scenario to compare models:",
+            'Select a scenario to compare models:',
             CHAT_SCENARIOS.map((s) => ({
               label: s.name,
               value: s.name,
               description: s.description,
-            }))
-          )
+            })),
+          ),
         );
         await handleModels(scenarioName);
       } else {
-        console.log("Invalid choice:", choice);
+        console.log('Invalid choice:', choice);
         continueTesting = false;
       }
 
       if (continueTesting) {
         continueTesting = await Effect.runPromise(
-          tui.confirm("Would you like to do something else?")
+          tui.confirm('Would you like to do something else?'),
         );
       }
     } catch (error) {
-      console.error("Test harness failed:", error);
+      console.error('Test harness failed:', error);
       continueTesting = false; // Stop on error
     }
   }
 
-  await Effect.runPromise(tui.display("👋 Goodbye!", "success"));
+  await Effect.runPromise(tui.display('👋 Goodbye!', 'success'));
 }
 
 main();
