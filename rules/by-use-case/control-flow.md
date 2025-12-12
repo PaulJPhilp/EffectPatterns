@@ -1,0 +1,96 @@
+# Control Flow Patterns
+
+## Pattern Match on Option and Either
+
+Use Option.match() and Either.match() for declarative pattern matching on optional and error-prone values
+
+### Example
+
+### Basic Option Matching
+
+```typescript
+import { Option } from "effect";
+
+const getUserName = (id: number): Option.Option<string> => {
+  return id === 1 ? Option.some("Alice") : Option.none();
+};
+
+// Using .match() for declarative pattern matching
+const displayUser = (id: number): string =>
+  getUserName(id).pipe(
+    Option.match({
+      onNone: () => "Guest User",
+      onSome: (name) => `Hello, ${name}!`,
+    })
+  );
+
+console.log(displayUser(1));   // "Hello, Alice!"
+console.log(displayUser(999)); // "Guest User"
+```
+
+### Basic Either Matching
+
+```typescript
+import { Either } from "effect";
+
+const validateAge = (age: number): Either.Either<number, string> => {
+  return age >= 18
+    ? Either.right(age)
+    : Either.left("Must be 18 or older");
+};
+
+// Using .match() for error handling
+const processAge = (age: number): string =>
+  validateAge(age).pipe(
+    Either.match({
+      onLeft: (error) => `Validation failed: ${error}`,
+      onRight: (validAge) => `Age ${validAge} is valid`,
+    })
+  );
+
+console.log(processAge(25)); // "Age 25 is valid"
+console.log(processAge(15)); // "Validation failed: Must be 18 or older"
+```
+
+### Advanced: Nested Matching
+
+When dealing with nested Option and Either, use nested `.match()` calls:
+
+```typescript
+import { Option, Either } from "effect";
+
+interface UserProfile {
+  name: string;
+  age: number;
+}
+
+const getUserProfile = (
+  id: number
+): Option.Option<Either.Either<string, UserProfile>> => {
+  if (id === 0) return Option.none(); // User not found
+  if (id === 1) return Option.some(Either.left("Profile incomplete"));
+  return Option.some(Either.right({ name: "Bob", age: 25 }));
+};
+
+// Nested matching - first on Option, then on Either
+const displayProfile = (id: number): string =>
+  getUserProfile(id).pipe(
+    Option.match({
+      onNone: () => "User not found",
+      onSome: (result) =>
+        result.pipe(
+          Either.match({
+            onLeft: (error) => `Error: ${error}`,
+            onRight: (profile) => `${profile.name} (${profile.age})`,
+          })
+        ),
+    })
+  );
+
+console.log(displayProfile(0)); // "User not found"
+console.log(displayProfile(1)); // "Error: Profile incomplete"
+console.log(displayProfile(2)); // "Bob (25)"
+```
+
+---
+

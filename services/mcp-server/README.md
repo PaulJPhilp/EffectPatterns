@@ -414,7 +414,7 @@ See [VERCEL_SETUP.md](./VERCEL_SETUP.md) for detailed instructions.
 
 ```bash
 # Install Vercel CLI
-npm i -g vercel
+npm i -g vercel@latest
 
 # Login
 vercel login

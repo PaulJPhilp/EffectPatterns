@@ -31,7 +31,7 @@ export class PatternFrontmatterSchema extends Schema.Class<PatternFrontmatterSch
       description: Schema.String,
     })
   ),
-}) {}
+}) { }
 
 export type PatternFrontmatter = typeof PatternFrontmatterSchema.Type;
 
@@ -43,41 +43,42 @@ export const parsePatternFile = (
 ): Effect.Effect<
   NewPattern,
   Error,
-  FileSystem.FileSystem | Path.Path | MdxServiceSchema
+  MdxServiceSchema | FileSystem.FileSystem | Path.Path
 > =>
-  Effect.gen(function* () {
-    const mdx = yield* MdxService;
-    const path = yield* Path.Path;
+  Effect.all([MdxService, FileSystem.FileSystem, Path.Path]).pipe(
+    Effect.flatMap(([mdx, fs, path]) =>
+      Effect.gen(function* () {
+        // Read and parse MDX file with effect-mdx
+        const { frontmatter: rawFrontmatter } =
+          yield* mdx.readMdxAndFrontmatter(filePath);
 
-    // Read and parse MDX file with effect-mdx
-    const { frontmatter: rawFrontmatter } =
-      yield* mdx.readMdxAndFrontmatter(filePath);
+        // Validate frontmatter with schema
+        const frontmatter = yield* Schema.decodeUnknown(
+          PatternFrontmatterSchema
+        )(rawFrontmatter);
 
-    // Validate frontmatter with schema
-    const frontmatter = yield* Schema.decodeUnknown(PatternFrontmatterSchema)(
-      rawFrontmatter
-    );
+        // Extract filename for slug
+        const filename = path.basename(filePath);
+        const mdxSlug = filename.replace(/\.mdx$/, "");
 
-    // Extract filename for slug
-    const filename = path.basename(filePath);
-    const mdxSlug = filename.replace(/\.mdx$/, "");
+        // Build pattern record
+        const pattern: NewPattern = {
+          id: frontmatter.id,
+          title: frontmatter.title,
+          summary: frontmatter.summary,
+          skillLevel: frontmatter.skillLevel,
+          tags: [...frontmatter.tags],
+          useCase: frontmatter.useCase ? [...frontmatter.useCase] : undefined,
+          related: frontmatter.related ? [...frontmatter.related] : undefined,
+          author: frontmatter.author,
+          mdxSlug,
+          contentPath: filePath,
+        };
 
-    // Build pattern record
-    const pattern: NewPattern = {
-      id: frontmatter.id,
-      title: frontmatter.title,
-      summary: frontmatter.summary,
-      skillLevel: frontmatter.skillLevel,
-      tags: [...frontmatter.tags],
-      useCase: frontmatter.useCase ? [...frontmatter.useCase] : undefined,
-      related: frontmatter.related ? [...frontmatter.related] : undefined,
-      author: frontmatter.author,
-      mdxSlug,
-      contentPath: filePath,
-    };
-
-    return pattern;
-  });
+        return pattern;
+      })
+    )
+  );
 
 /**
  * Parse all pattern files in a directory
@@ -89,33 +90,36 @@ export const parseAllPatterns = (
   Error,
   FileSystem.FileSystem | Path.Path | MdxServiceSchema
 > =>
-  Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const path = yield* Path.Path;
+  Effect.all([FileSystem.FileSystem, Path.Path, MdxService]).pipe(
+    Effect.flatMap(([fs, path, mdx]) =>
+      Effect.gen(function* () {
+        // Read directory
+        const files = yield* fs.readDirectory(directory);
 
-    // Read directory
-    const files = yield* fs.readDirectory(directory);
+        // Filter MDX files
+        const mdxFiles = files.filter((file) => file.endsWith(".mdx"));
 
-    // Filter MDX files
-    const mdxFiles = files.filter((file) => file.endsWith(".mdx"));
+        // Parse each file
+        const patterns: NewPattern[] = [];
+        for (const file of mdxFiles) {
+          const filePath = path.join(directory, file);
 
-    // Parse each file
-    const patterns: NewPattern[] = [];
-    for (const file of mdxFiles) {
-      const filePath = path.join(directory, file);
+          const result = yield* parsePatternFile(filePath).pipe(
+            Effect.either
+          );
 
-      const result = yield* parsePatternFile(filePath).pipe(Effect.either);
+          if (result._tag === "Right") {
+            patterns.push(result.right);
+            yield* Effect.logInfo(`Parsed pattern: ${result.right.id}`);
+          } else {
+            yield* Effect.logWarning(
+              `Failed to parse ${file}: ${result.left.message}`
+            );
+          }
+        }
 
-      if (result._tag === "Right") {
-        patterns.push(result.right);
-        yield* Effect.logInfo(`Parsed pattern: ${result.right.id}`);
-      } else {
-        yield* Effect.logWarning(
-          `Failed to parse ${file}: ${result.left.message}`
-        );
-      }
-    }
-
-    yield* Effect.logInfo(`Parsed ${patterns.length} patterns total`);
-    return patterns;
-  });
+        yield* Effect.logInfo(`Parsed ${patterns.length} patterns total`);
+        return patterns;
+      })
+    )
+  );

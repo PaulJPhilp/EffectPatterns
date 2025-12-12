@@ -7,9 +7,9 @@ Step-by-step guide to deploy the Effect Patterns MCP Server to Vercel staging en
 1. **Vercel Account**: Sign up at https://vercel.com
 2. **Vercel CLI**: Install globally
    ```bash
-   npm install -g vercel
+   npm install -g vercel@latest
    # or
-   bun add -g vercel
+   bun add -g vercel@latest
    ```
 3. **OpenTelemetry Collector**: Set up Honeycomb, Jaeger, or other OTLP-compatible service
 
@@ -17,7 +17,7 @@ Step-by-step guide to deploy the Effect Patterns MCP Server to Vercel staging en
 
 ```bash
 # Install Vercel CLI
-npm install -g vercel
+npm install -g vercel@latest
 
 # Login to Vercel
 vercel login

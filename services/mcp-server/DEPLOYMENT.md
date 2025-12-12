@@ -27,9 +27,9 @@ The following environment variables must be configured in Vercel:
 ### 1. Install Vercel CLI
 
 ```bash
-npm install -g vercel
+npm install -g vercel@latest
 # or
-bun add -g vercel
+bun add -g vercel@latest
 ```
 
 ### 2. Login to Vercel

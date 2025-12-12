@@ -2,6 +2,71 @@
 
 Summary of all changes made to the Effect Patterns Hub CLI.
 
+## Version 0.7.3 - Linter Re-enablement (December 12, 2025)
+
+### 🎯 Major Features
+
+#### ✨ Effect-TS Linter Re-enabled
+The linter (444 lines of implementation) has been successfully re-enabled in the CLI.
+
+**New Commands:**
+- `ep init` - Initialize `ep.json` configuration file
+- `ep lint rules` - Display all 6 linter rules
+- `ep lint <files>` - Lint TypeScript files
+- `ep lint --apply` - Auto-fix violations
+
+**Linter Rules:**
+1. `effect-use-taperror` (warning)
+2. `effect-explicit-concurrency` (warning)
+3. `effect-deprecated-api` (error)
+4. `effect-prefer-pipe` (info)
+5. `effect-stream-memory` (error)
+6. `effect-error-model` (info)
+
+**Implementation Details:**
+- ✅ Parallel execution (10-worker pool)
+- ✅ Configuration file support (`ep.json`)
+- ✅ Auto-fix for select rules
+- ✅ Color-coded output
+- ✅ File globbing support
+
+### 🔧 Infrastructure
+
+#### CLI Code Changes
+- Removed `if (false as any)` wrapper from `packages/cli/src/index.ts`
+- Renamed `_initCommand` and `_lintCommand` to active exports
+- Added linter commands to `userRootCommand` subcommands
+- Built `@effect-patterns/cli-core` package successfully
+
+#### Pipeline Integration
+- Added linter step to publishing pipeline (after validation)
+- Uses existing `lint-effect-patterns.ts` implementation
+
+#### CI/CD Integration
+- New `lint-patterns` GitHub Actions job
+- Runs on all PRs and commits to main
+- Uses `continue-on-error: true` for non-blocking mode
+
+### 📖 Documentation
+
+**CLAUDE.md Updates:**
+- Added "Linting CLI" section with command examples
+
+**CONTRIBUTING.md Updates:**
+- New "Linting Guidelines" section
+- Comprehensive rule descriptions
+- Best practices for pattern authors
+- Auto-fix instructions
+
+### 🐛 Quality Improvements
+
+**Testing Results:**
+- 43 TypeScript files checked
+- 43 files passing (100%)
+- 0 violations remaining
+
+---
+
 ## Version 0.6.1 - Patch Release (December 2025)
 
 ### 🐛 Bug Fixes
