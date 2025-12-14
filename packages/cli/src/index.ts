@@ -2694,32 +2694,16 @@ Effect.runSync(Effect.succeed("Hello, World!"));
 /**
  * search <query> - Search patterns by keyword
  */
-const searchCommand: any = Command.make("search", {
+export const searchCommand = Command.make("search", {
   args: {
     query: Args.text({ name: "query" }),
   },
-  options: {
-    difficulty: Options.optional(
-      Options.text("difficulty").pipe(
-        Options.withAlias("d"),
-        Options.withDescription("Filter by difficulty (beginner|intermediate|advanced)")
-      )
-    ),
-    category: Options.optional(
-      Options.text("category").pipe(
-        Options.withAlias("c"),
-        Options.withDescription("Filter by category")
-      )
-    ),
-    limit: Options.integer("limit").pipe(
-      Options.withDefault(10),
-      Options.withDescription("Maximum results to show")
-    ),
-  },
 }).pipe(
   Command.withDescription("Search patterns by keyword"),
-  Command.withHandler(({ args, options }) =>
+  Command.withHandler(({ args }) =>
     Effect.gen(function* () {
+      yield* Console.log(`\n🔍 Searching for patterns matching "${args.query}"...\n`);
+
       // Load patterns from JSON
       const patternsPath = path.join(
         PROJECT_ROOT,
@@ -2738,81 +2722,25 @@ const searchCommand: any = Command.make("search", {
       const json = JSON.parse(content);
       const allPatterns = json.patterns || [];
 
-      // Execute search with filters
-      let results = allPatterns.filter((p: any) => {
-          const query = args.query.toLowerCase();
-          const matchesQuery =
-            p.title.toLowerCase().includes(query) ||
-            p.description.toLowerCase().includes(query) ||
-            p.id.toLowerCase().includes(query) ||
-            (p.tags && p.tags.some((t: string) => t.toLowerCase().includes(query)));
+      // Simple search
+      const results = allPatterns.filter((p: any) => {
+        const query = args.query.toLowerCase();
+        return (
+          p.title.toLowerCase().includes(query) ||
+          p.description.toLowerCase().includes(query) ||
+          p.id.toLowerCase().includes(query)
+        );
+      }).slice(0, 10);
 
-          const matchesDifficulty = Option.isNone(options.difficulty)
-            ? true
-            : p.difficulty.toLowerCase() ===
-              (options.difficulty as Option.Some<string>).value.toLowerCase();
-
-          const matchesCategory = Option.isNone(options.category)
-            ? true
-            : p.category.toLowerCase() ===
-              (options.category as Option.Some<string>).value.toLowerCase();
-
-          return matchesQuery && matchesDifficulty && matchesCategory;
-        });
-
-        // Sort by relevance (title match > description match)
-        results.sort((a: any, b: any) => {
-          const aTitle = a.title.toLowerCase().includes(args.query.toLowerCase());
-          const bTitle = b.title.toLowerCase().includes(args.query.toLowerCase());
-          return aTitle === bTitle ? 0 : aTitle ? -1 : 1;
-        });
-
-        // Limit results
-        results = results.slice(0, options.limit);
-
-        // Handle empty results
-        if (results.length === 0) {
-          yield* Console.log(
-            `\n❌ No patterns found matching "${args.query}"\n`
-          );
-          return;
+      if (results.length === 0) {
+        yield* Console.log(`❌ No patterns found matching "${args.query}"\n`);
+      } else {
+        yield* Console.log(`✓ Found ${results.length} pattern(s):\n`);
+        for (const pattern of results) {
+          yield* Console.log(`  • ${pattern.title} (${pattern.id})`);
         }
-
-        // Prepare table data
-        const tableData = results.map((p: any) => ({
-          title: p.title,
-          id: p.id,
-          difficulty: p.difficulty,
-          category: p.category,
-          tags: p.tags ? p.tags.slice(0, 2).join(", ") : "",
-        }));
-
-        // Display with TUI table or console table
-        yield* showTable(tableData, {
-          columns: [
-            { key: "title", header: "Pattern", width: 35 },
-            {
-              key: "difficulty",
-              header: "Level",
-              width: 15,
-              formatter: (val: string) => {
-                const badges: Record<string, string> = {
-                  beginner: "🟢 Beginner",
-                  intermediate: "🟡 Intermediate",
-                  advanced: "🔴 Advanced",
-                };
-                return badges[val.toLowerCase()] || val;
-              },
-            },
-            { key: "category", header: "Category", width: 18 },
-            { key: "tags", header: "Tags", width: 20 },
-          ],
-        });
-
-      // Summary
-      yield* showSuccess(
-        `Found ${results.length} pattern(s) matching "${args.query}"`
-      );
+        yield* Console.log("");
+      }
     })
   )
 );
@@ -2862,7 +2790,7 @@ export const userRootCommand = Command.make("ep").pipe(
   Command.withDescription(
     "A CLI for Effect Patterns Hub - Create, manage, and learn Effect-TS patterns"
   ),
-  Command.withSubcommands([searchCommand, patternCommand, installCommand])
+  Command.withSubcommands([patternCommand, installCommand]) // searchCommand temporarily disabled
 );
 
 export const adminRootCommand = Command.make("ep-admin").pipe(
