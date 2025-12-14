@@ -3,10 +3,10 @@
 import { Effect } from "effect";
 import { EffectCLIRuntime } from "effect-cli-tui";
 
-import { createUserProgram, runtimeLayer } from "@effect-patterns/cli-core";
+import { createUserProgram, runtimeLayerWithTUI } from "@effect-patterns/cli-core";
 
 const program = createUserProgram(process.argv).pipe(
-  Effect.provide(runtimeLayer)
+  Effect.provide(runtimeLayerWithTUI)
 );
 
 await EffectCLIRuntime.runPromise(program);
