@@ -1,0 +1,44 @@
+{
+  "type": "module",
+  "name": "@effect-patterns/pipeline-state",
+  "version": "1.0.0",
+  "description": "State machine for managing pattern publishing pipeline workflow",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "effect",
+    "state-machine",
+    "pipeline",
+    "publishing",
+    "workflow"
+  ],
+  "author": "Effect Patterns Team",
+  "license": "MIT",
+  "dependencies": {
+    "effect": "^3.18.0"
+  },
+  "devDependencies": {
+    "@effect/schema": "^0.68.0",
+    "typescript": "^5.8.0",
+    "vitest": "^2.0.0"
+  },
+  "peerDependencies": {
+    "@effect/schema": "^0.68.0"
+  }
+}
