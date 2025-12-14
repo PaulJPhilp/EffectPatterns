@@ -54,6 +54,10 @@ export const statusCommand: any = Command.make("status", {
           yield* Console.log("   Steps:");
           for (const step of WORKFLOW_STEPS) {
             const stepState = state.steps[step];
+            if (!stepState) {
+              yield* Console.log(`     ⚪ ${step} (not initialized)`);
+              continue;
+            }
             const icon = getStepIcon(stepState.status);
             const time = stepState.duration
               ? ` (${stepState.duration.toFixed(1)}s)`

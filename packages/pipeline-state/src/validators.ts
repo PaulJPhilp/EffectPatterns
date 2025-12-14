@@ -97,6 +97,11 @@ export const isReadyForNextStep = (
     const currentIndex = WORKFLOW_STEPS.indexOf(state.currentStep);
     const currentStepState = state.steps[state.currentStep];
 
+    // Step must exist
+    if (!currentStepState) {
+      return false;
+    }
+
     // Must have completed current step
     if (currentStepState.status !== "completed") {
       return false;
@@ -132,8 +137,12 @@ export const validatePatternState = (
       errors.push(`Invalid currentStep: ${state.currentStep}`);
     }
 
-    // Check that all steps exist
+    // Check that all required steps exist (draft is optional for migrated patterns)
     for (const step of WORKFLOW_STEPS) {
+      if (step === "draft") {
+        // Draft is optional for migrated patterns
+        continue;
+      }
       if (!(step in state.steps)) {
         errors.push(`Missing step state for: ${step}`);
       }
@@ -143,7 +152,15 @@ export const validatePatternState = (
     const currentIndex = WORKFLOW_STEPS.indexOf(state.currentStep);
     for (let i = 0; i < currentIndex; i++) {
       const step = WORKFLOW_STEPS[i];
+      if (step === "draft") {
+        // Draft is optional for migrated patterns
+        continue;
+      }
       const stepState = state.steps[step];
+      if (!stepState) {
+        errors.push(`Missing step state for: ${step}`);
+        continue;
+      }
       if (stepState.status === "pending") {
         errors.push(`Step ${step} is pending but should be completed`);
       }
