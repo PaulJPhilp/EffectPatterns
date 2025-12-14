@@ -30,6 +30,13 @@ import {
   showError,
   showTable,
 } from "./services/display.js";
+import {
+  readPattern,
+  groupPatternsByCategory,
+  generateCategorySkill,
+  writeSkill,
+  type PatternContent,
+} from "./skills/skill-generator.js";
 
 // --- PROJECT ROOT RESOLUTION ---
 // Find the project root by looking for package.json with "name": "effect-patterns-hub"
@@ -1732,13 +1739,173 @@ const rulesGenerateCommand = Command.make("generate", {
 );
 
 /**
+ * install:skills - Generate Claude Skills from published Effect patterns
+ */
+const installSkillsCommand = Command.make("skills", {
+  options: {
+    category: Options.text("category").pipe(
+      Options.withDescription("Generate skill for specific category only"),
+      Options.optional
+    ),
+  },
+  args: {},
+}).pipe(
+  Command.withDescription(
+    "Generate Claude Skills from published Effect patterns"
+  ),
+  Command.withHandler(({ options }) =>
+    Effect.gen(function* () {
+      yield* Console.log(
+        colorize("\n🎓 Generating Claude Skills from Effect Patterns\n", "bright")
+      );
+
+      const publishedDir = path.join(PROJECT_ROOT, "content/published");
+
+      // Read all published patterns
+      yield* Console.log(colorize("📖 Reading published patterns...", "cyan"));
+      const files = yield* Effect.tryPromise({
+        try: () => fs.readdir(publishedDir),
+        catch: (error) => new Error(`Failed to read patterns directory: ${error}`)
+      });
+
+      const mdxFiles = files.filter((f) => f.endsWith(".mdx"));
+      yield* Console.log(
+        colorize(`✓ Found ${mdxFiles.length} patterns\n`, "green")
+      );
+
+      // Parse patterns
+      const patterns: PatternContent[] = [];
+      for (const file of mdxFiles) {
+        const filePath = path.join(publishedDir, file);
+        const result = yield* Effect.tryPromise({
+          try: () => readPattern(filePath),
+          catch: (error) => new Error(`Failed to parse ${file}`)
+        }).pipe(
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              yield* Console.log(
+                colorize(
+                  `⚠️  Skipped ${file}: ${error.message}`,
+                  "yellow"
+                )
+              );
+              return null;
+            })
+          )
+        );
+
+        if (result) {
+          patterns.push(result);
+        }
+      }
+
+      yield* Console.log(colorize(`✓ Parsed ${patterns.length} patterns\n`, "green"));
+
+      // Group by category
+      yield* Console.log(colorize("🗂️  Grouping patterns by category...", "cyan"));
+      const categoryMap = groupPatternsByCategory(patterns);
+      yield* Console.log(
+        colorize(`✓ Found ${categoryMap.size} categories\n`, "green")
+      );
+
+      // Handle --category flag
+      if (Option.isSome(options.category)) {
+        const category = options.category.value.toLowerCase().replace(/\s+/g, "-");
+        const categoryPatterns = categoryMap.get(category);
+
+        if (!categoryPatterns) {
+          yield* Console.error(
+            colorize(`\n❌ Category not found: ${category}\n`, "red")
+          );
+          yield* Console.log(colorize("Available categories:\n", "bright"));
+          const sortedCategories = Array.from(categoryMap.keys()).sort();
+          for (const cat of sortedCategories) {
+            yield* Console.log(`  • ${cat}`);
+          }
+          return yield* Effect.fail(new Error("Category not found"));
+        }
+
+        const skillName = `effect-patterns-${category}`;
+        const content = generateCategorySkill(category, categoryPatterns);
+
+        yield* Effect.tryPromise({
+          try: () => writeSkill(skillName, content, PROJECT_ROOT),
+          catch: (error) => new Error(`Failed to write skill: ${error}`)
+        });
+
+        yield* Console.log(
+          colorize(`✓ Generated: ${skillName}\n`, "green")
+        );
+        return;
+      }
+
+      // Generate all category skills
+      yield* Console.log(
+        colorize(`📝 Generating ${categoryMap.size} skills...\n`, "cyan")
+      );
+
+      let count = 0;
+      for (const [category, categoryPatterns] of categoryMap.entries()) {
+        const skillName = `effect-patterns-${category}`;
+        const content = generateCategorySkill(category, categoryPatterns);
+
+        const writeResult = yield* Effect.tryPromise({
+          try: () => writeSkill(skillName, content, PROJECT_ROOT),
+          catch: (error) => new Error(`Failed to write ${skillName}: ${error}`)
+        }).pipe(
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              yield* Console.log(
+                colorize(
+                  `⚠️  ${error.message}`,
+                  "yellow"
+                )
+              );
+              return null;
+            })
+          )
+        );
+
+        if (writeResult !== null) {
+          yield* Console.log(
+            colorize(
+              `  ✓ ${skillName} (${categoryPatterns.length} patterns)`,
+              "green"
+            )
+          );
+          count++;
+        }
+      }
+
+      // Summary
+      yield* showPanel(
+        `Generated ${count} Claude Skills from ${patterns.length} Effect patterns.
+
+Each skill is organized by category and includes:
+- Curated patterns from the published library
+- Code examples (Good & Anti-patterns)
+- Rationale and best practices
+- Skill level guidance (Beginner → Intermediate → Advanced)
+
+Skills Location: .claude/skills/
+Use these skills in Claude Code or Claude Desktop for AI-powered guidance on Effect-TS patterns!`,
+        "✨ Skills Generation Complete!",
+        { type: "success" }
+      );
+
+      return void 0;
+    })
+  )
+);
+
+/**
  * install - Install Effect patterns rules into AI tools
  */
 export const installCommand = Command.make("install").pipe(
   Command.withDescription(
     "Install Effect patterns rules into AI tool configurations"
   ),
-  Command.withSubcommands([installAddCommand, installListCommand])
+  Command.withSubcommands([installAddCommand, installListCommand, installSkillsCommand])
 );
 
 // --- TEMPORARILY DISABLED COMMANDS ---
