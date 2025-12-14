@@ -2695,55 +2695,63 @@ Effect.runSync(Effect.succeed("Hello, World!"));
  * search <query> - Search patterns by keyword
  */
 export const searchCommand = Command.make("search", {
+  options: {},
   args: {
     query: Args.text({ name: "query" }),
   },
-}).pipe(
-  Command.withDescription("Search patterns by keyword"),
-  Command.withHandler(({ args }) =>
-    Effect.gen(function* () {
-      yield* Console.log(`\n🔍 Searching for patterns matching "${args.query}"...\n`);
-
-      // Load patterns from JSON
-      const patternsPath = path.join(
-        PROJECT_ROOT,
-        "services/mcp-server/data/patterns.json"
-      );
-
-      const content = yield* Effect.try({
-        try: () =>
-          require("fs").readFileSync(patternsPath, "utf-8"),
-        catch: (error: unknown) =>
-          new Error(
-            `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
-          ),
-      });
-
-      const json = JSON.parse(content);
-      const allPatterns = json.patterns || [];
-
-      // Simple search
-      const results = allPatterns.filter((p: any) => {
-        const query = args.query.toLowerCase();
-        return (
-          p.title.toLowerCase().includes(query) ||
-          p.description.toLowerCase().includes(query) ||
-          p.id.toLowerCase().includes(query)
+})
+  .pipe(Command.withDescription("Search patterns by keyword"))
+  .pipe(
+    Command.withHandler(({ args }) =>
+      Effect.gen(function* () {
+        yield* Console.log(
+          `\n🔍 Searching for patterns matching "${args.query}"...\n`
         );
-      }).slice(0, 10);
 
-      if (results.length === 0) {
-        yield* Console.log(`❌ No patterns found matching "${args.query}"\n`);
-      } else {
-        yield* Console.log(`✓ Found ${results.length} pattern(s):\n`);
-        for (const pattern of results) {
-          yield* Console.log(`  • ${pattern.title} (${pattern.id})`);
+        // Load patterns from JSON
+        const patternsPath = path.join(
+          PROJECT_ROOT,
+          "services/mcp-server/data/patterns.json"
+        );
+
+        const content = yield* Effect.try({
+          try: () =>
+            require("fs").readFileSync(patternsPath, "utf-8"),
+          catch: (error: unknown) =>
+            new Error(
+              `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
+            ),
+        });
+
+        const json = JSON.parse(content);
+        const allPatterns = json.patterns || [];
+
+        // Simple search
+        const results = allPatterns
+          .filter((p: any) => {
+            const query = args.query.toLowerCase();
+            return (
+              p.title.toLowerCase().includes(query) ||
+              p.description.toLowerCase().includes(query) ||
+              p.id.toLowerCase().includes(query)
+            );
+          })
+          .slice(0, 10);
+
+        if (results.length === 0) {
+          yield* Console.log(
+            `❌ No patterns found matching "${args.query}"\n`
+          );
+        } else {
+          yield* Console.log(`✓ Found ${results.length} pattern(s):\n`);
+          for (const pattern of results) {
+            yield* Console.log(`  • ${pattern.title} (${pattern.id})`);
+          }
+          yield* Console.log("");
         }
-        yield* Console.log("");
-      }
-    })
-  )
-);
+      })
+    )
+  );
 
 /**
  * pattern - Create and manage Effect-TS patterns
@@ -2790,7 +2798,7 @@ export const userRootCommand = Command.make("ep").pipe(
   Command.withDescription(
     "A CLI for Effect Patterns Hub - Create, manage, and learn Effect-TS patterns"
   ),
-  Command.withSubcommands([patternCommand, installCommand]) // searchCommand temporarily disabled
+  Command.withSubcommands([searchCommand, patternCommand, installCommand])
 );
 
 export const adminRootCommand = Command.make("ep-admin").pipe(
