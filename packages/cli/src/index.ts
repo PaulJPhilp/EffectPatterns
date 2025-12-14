@@ -2754,6 +2754,143 @@ export const searchCommand = Command.make("search", {
   );
 
 /**
+ * list - List all patterns with optional filtering and grouping
+ */
+export const listCommand = Command.make("list", {
+  options: {
+    difficulty: Options.optional(
+      Options.text("difficulty").pipe(
+        Options.withAlias("d"),
+        Options.withDescription("Filter by difficulty (beginner|intermediate|advanced)")
+      )
+    ),
+    category: Options.optional(
+      Options.text("category").pipe(
+        Options.withAlias("c"),
+        Options.withDescription("Filter by category")
+      )
+    ),
+    groupBy: Options.text("group-by").pipe(
+      Options.withDefault("none"),
+      Options.withDescription("Group results (category|difficulty|none)")
+    ),
+  },
+})
+  .pipe(Command.withDescription("List all patterns with optional filters"))
+  .pipe(
+    Command.withHandler(({ options }) =>
+      Effect.gen(function* () {
+        // Load patterns from JSON
+        const patternsPath = path.join(
+          PROJECT_ROOT,
+          "services/mcp-server/data/patterns.json"
+        );
+
+        const content = yield* Effect.try({
+          try: () =>
+            require("fs").readFileSync(patternsPath, "utf-8"),
+          catch: (error: unknown) =>
+            new Error(
+              `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
+            ),
+        });
+
+        const json = JSON.parse(content);
+        let patterns: any[] = json.patterns || [];
+
+        // Apply filters
+        if (Option.isSome(options.difficulty)) {
+          const difficultyValue = (options.difficulty as Option.Some<string>)
+            .value;
+          patterns = patterns.filter(
+            (p: any) =>
+              p.difficulty.toLowerCase() === difficultyValue.toLowerCase()
+          );
+        }
+
+        if (Option.isSome(options.category)) {
+          const categoryValue = (options.category as Option.Some<string>).value;
+          patterns = patterns.filter(
+            (p: any) =>
+              p.category.toLowerCase() === categoryValue.toLowerCase()
+          );
+        }
+
+        if (patterns.length === 0) {
+          yield* Console.log("\n❌ No patterns match the filter criteria\n");
+          return;
+        }
+
+        // Group or display flat
+        if (options.groupBy === "category") {
+          // Group by category
+          const groups: Record<string, any[]> = {};
+          patterns.forEach((p: any) => {
+            const cat = p.category || "Other";
+            if (!groups[cat]) groups[cat] = [];
+            groups[cat].push(p);
+          });
+
+          yield* Console.log("\n📂 Patterns by Category:\n");
+          for (const [category, items] of Object.entries(groups)) {
+            yield* Console.log(`\n${category.toUpperCase()}`);
+            yield* Console.log("─".repeat(40));
+            for (const p of items) {
+              yield* Console.log(`  • ${p.title} (${p.id})`);
+            }
+          }
+        } else if (options.groupBy === "difficulty") {
+          // Group by difficulty
+          const groups: Record<string, any[]> = {
+            beginner: [],
+            intermediate: [],
+            advanced: [],
+          };
+          patterns.forEach((p: any) => {
+            const diff = p.difficulty.toLowerCase() || "intermediate";
+            if (groups[diff]) groups[diff].push(p);
+          });
+
+          yield* Console.log("\n📊 Patterns by Difficulty Level:\n");
+          for (const [level, items] of Object.entries(groups)) {
+            if (items.length > 0) {
+              const emoji =
+                level === "beginner"
+                  ? "🟢"
+                  : level === "intermediate"
+                    ? "🟡"
+                    : "🔴";
+              yield* Console.log(`\n${emoji} ${level.toUpperCase()} (${items.length})`);
+              yield* Console.log("─".repeat(40));
+              for (const p of items) {
+                yield* Console.log(`  • ${p.title} (${p.id})`);
+              }
+            }
+          }
+        } else {
+          // Flat list
+          yield* Console.log("\n📋 All Patterns:\n");
+          for (const p of patterns) {
+            const emoji =
+              p.difficulty === "beginner"
+                ? "🟢"
+                : p.difficulty === "intermediate"
+                  ? "🟡"
+                  : "🔴";
+            yield* Console.log(
+              `  ${emoji} ${p.title} (${p.id}) - ${p.category}`
+            );
+          }
+        }
+
+        yield* Console.log(
+          `\n\n📈 Total: ${patterns.length} pattern(s)\n`
+        );
+      })
+    )
+  );
+
+/**
  * pattern - Create and manage Effect-TS patterns
  */
 export const patternCommand = Command.make("pattern").pipe(
@@ -2798,7 +2935,12 @@ export const userRootCommand = Command.make("ep").pipe(
   Command.withDescription(
     "A CLI for Effect Patterns Hub - Create, manage, and learn Effect-TS patterns"
   ),
-  Command.withSubcommands([searchCommand, patternCommand, installCommand])
+  Command.withSubcommands([
+    searchCommand,
+    listCommand,
+    patternCommand,
+    installCommand,
+  ])
 );
 
 export const adminRootCommand = Command.make("ep-admin").pipe(
