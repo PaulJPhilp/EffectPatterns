@@ -19,6 +19,11 @@ import ora from "ora";
 import * as semver from "semver";
 import { pipelineManagementCommand } from "./pipeline-commands.js";
 import { StateStoreLive } from "@effect-patterns/pipeline-state";
+import {
+  executeScriptWithTUI,
+  executeScriptCapture,
+} from "./services/execution.js";
+import { showPanel, showSuccess, showError } from "./services/display.js";
 
 // --- PROJECT ROOT RESOLUTION ---
 // Find the project root by looking for package.json with "name": "effect-patterns-hub"
@@ -1130,10 +1135,12 @@ const validateCommand = Command.make("validate", {
     "Validates all pattern files for correctness and consistency."
   ),
   Command.withHandler(({ options }) =>
-    executeScriptWithProgress(
+    executeScriptWithTUI(
       path.join(PROJECT_ROOT, "scripts/publish/validate-improved.ts"),
       "Validating pattern files",
       { verbose: options.verbose }
+    ).pipe(
+      Effect.andThen(() => showSuccess("All patterns are valid!"))
     )
   )
 );
@@ -1180,10 +1187,12 @@ const pipelineCommand = Command.make("pipeline", {
     "Runs the complete pattern publishing pipeline from test to rules generation."
   ),
   Command.withHandler(({ options }) =>
-    executeScriptWithProgress(
+    executeScriptWithTUI(
       path.join(PROJECT_ROOT, "scripts/publish/pipeline.ts"),
-      "Running publishing pipeline",
+      "Publishing pipeline",
       { verbose: options.verbose }
+    ).pipe(
+      Effect.andThen(() => showSuccess("Publishing pipeline completed successfully!"))
     )
   )
 );
@@ -2730,15 +2739,35 @@ export const adminRootCommand = Command.make("ep-admin").pipe(
 
 import { FetchHttpClient } from "@effect/platform";
 
+// Import TUI layer for ep-admin (optional - lazy loaded)
+let EffectCLITUILayer: any = null;
+try {
+  const tuiModule = require("effect-cli-tui");
+  EffectCLITUILayer = tuiModule.EffectCLITUILayer;
+} catch {
+  // TUI not available, will use standard runtime
+}
+
 export const fileSystemLayer = NodeFileSystem.layer.pipe(
   Layer.provide(NodeContext.layer)
 );
 
+// Standard runtime for ep (user CLI) - no TUI
 export const runtimeLayer = Layer.mergeAll(
   fileSystemLayer,
   FetchHttpClient.layer,
   StateStoreLive
 ) as unknown as Layer.Layer<never, never, never>;
+
+// TUI-enabled runtime for ep-admin
+export const runtimeLayerWithTUI = EffectCLITUILayer
+  ? Layer.mergeAll(
+      fileSystemLayer,
+      FetchHttpClient.layer,
+      StateStoreLive,
+      EffectCLITUILayer
+    )
+  : runtimeLayer; // Fallback to standard runtime if TUI not available
 
 const userCliRunner = Command.run(userRootCommand, {
   name: "EffectPatterns CLI",
