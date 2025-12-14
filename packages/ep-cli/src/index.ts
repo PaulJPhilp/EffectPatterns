@@ -6,8 +6,8 @@ import { EffectCLIRuntime } from "effect-cli-tui";
 import { createUserProgram, runtimeLayerWithTUI } from "@effect-patterns/cli-core";
 
 const program = createUserProgram(process.argv).pipe(
-  Effect.provide(runtimeLayerWithTUI)
-);
+  Effect.provide(runtimeLayerWithTUI as any)
+) as any;
 
 await EffectCLIRuntime.runPromise(program);
 await EffectCLIRuntime.dispose();
