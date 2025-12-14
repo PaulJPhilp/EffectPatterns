@@ -208,6 +208,7 @@ Separate Next.js projects with independent configurations:
 - Shared CLI utilities and helpers
 - Reusable command patterns
 - CLI infrastructure
+- **TUI Integration:** Service abstraction layer for terminal UI features
 
 **@effect-patterns/design-system** (`packages/design-system/`)
 - React UI component library
@@ -236,6 +237,66 @@ Separate Next.js projects with independent configurations:
 **`scripts/analyzer.ts`**
 - Entry point for LangGraph analysis agent
 - Orchestrates Discord data analysis
+
+### TUI Integration
+
+The CLI supports optional Terminal User Interface (TUI) features via **effect-cli-tui** library for enhanced command output. TUI is used by `ep-admin` while the main `ep` CLI remains console-based.
+
+#### Service Abstraction Layer
+
+**`packages/cli/src/services/display.ts`**
+- Adaptive display functions that auto-detect TUI availability
+- Falls back to console output when TUI services not available
+- Allows code reuse between TUI and console-based CLIs
+- Exported functions: `showSuccess()`, `showError()`, `showInfo()`, `showWarning()`, `showPanel()`, `showTable()`, `showHighlight()`, `showSeparator()`
+
+**Example:**
+```typescript
+// Same code works with or without TUI
+yield* showSuccess("Pattern published");  // Uses TUI if available, console otherwise
+yield* showTable(patterns, { columns: [...] });  // Display table with TUI or console.table
+```
+
+#### Script Execution with Spinner
+
+**`packages/cli/src/services/execution.ts`**
+- Wraps child process execution with optional TUI spinner feedback
+- Three execution modes:
+  - `executeScriptWithTUI()` - Spinner + completion feedback
+  - `executeScriptCapture()` - Capture stdout for processing
+  - `executeScriptStream()` - Inherit stdio for real-time output
+- Auto-detects InkService and gracefully degrades to console indicators
+
+#### Runtime Configuration
+
+**`packages/cli/src/index.ts`** exports two runtime layers:
+
+1. **`runtimeLayer`** (default for `ep`)
+   - Basic CLI services
+   - No TUI support
+   - Lightweight console output
+
+2. **`runtimeLayerWithTUI`** (used by `ep-admin`)
+   - Includes EffectCLITUILayer from effect-cli-tui
+   - Enables DisplayService and InkService
+   - Service wrappers auto-detect and use TUI features
+
+**Entry Points:**
+- `packages/ep-admin/src/index.ts` - Uses `runtimeLayerWithTUI` for TUI features
+- `packages/ep-cli/src/index.ts` - Uses `runtimeLayer` for lightweight console output
+
+#### Testing TUI Integration
+
+Service wrappers are tested with comprehensive unit tests:
+- **Test Location:** `packages/cli/__tests__/services/`
+- **Coverage:** Both TUI-enabled and TUI-disabled paths
+- **Test Framework:** Vitest with Effect.runPromise
+
+Tests verify:
+- Display functions work with and without DisplayService
+- Execution service handles success/failure/timeout scenarios
+- Error messages include script output for debugging
+- Console fallback works when TUI unavailable
 
 ---
 

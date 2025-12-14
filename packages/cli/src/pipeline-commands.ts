@@ -15,6 +15,12 @@ import {
   StateStoreLive,
   WORKFLOW_STEPS,
 } from "@effect-patterns/pipeline-state";
+import {
+  showTable,
+  showPanel,
+  showSuccess,
+  showInfo,
+} from "./services/display.js";
 
 /**
  * Status command: Show pipeline state for all patterns or a specific pattern
@@ -78,31 +84,78 @@ export const statusCommand: any = Command.make("status", {
         const patterns = Object.values(all) as Array<typeof all[string]>;
 
         if (patterns.length === 0) {
-          yield* Console.log("No patterns in pipeline.");
+          yield* showInfo("No patterns in pipeline.");
           return;
         }
 
-        yield* Console.log(`\n📊 Pipeline Status (${patterns.length} patterns)\n`);
+        // Prepare table data
+        const tableData = patterns.map((p) => {
+          const stepState = p.steps[p.currentStep];
+          return {
+            title: p.metadata.title || p.id,
+            id: p.id,
+            status: p.status || "unknown",
+            step: p.currentStep || "draft",
+            errors: stepState?.errors?.length || 0,
+          };
+        });
 
-        // Group by status
-        const groups: Record<string, Array<typeof all[string]>> = {};
-        for (const p of patterns) {
-          if (!groups[p.status]) groups[p.status] = [];
-          groups[p.status].push(p);
-        }
+        // Sort by status priority
+        const statusPriority = {
+          "in-progress": 0,
+          failed: 1,
+          ready: 2,
+          draft: 3,
+          completed: 4,
+        };
+        tableData.sort(
+          (a, b) =>
+            (statusPriority[a.status as keyof typeof statusPriority] ?? 99) -
+            (statusPriority[b.status as keyof typeof statusPriority] ?? 99)
+        );
 
-        // Display
-        const order = ["in-progress", "failed", "ready", "draft", "completed"];
-        for (const status of order) {
-          if (groups[status]) {
-            yield* Console.log(`${getStatusEmoji(status)} ${status}:`);
-            for (const p of groups[status]) {
-              const step = p.currentStep || "draft";
-              yield* Console.log(`   • ${p.metadata.title} (${step})`);
-            }
-            yield* Console.log("");
-          }
-        }
+        // Display table
+        yield* showTable(tableData, {
+          columns: [
+            {
+              key: "title",
+              header: "Pattern",
+              width: 35,
+            },
+            {
+              key: "status",
+              header: "Status",
+              width: 15,
+              formatter: (value: string) => `${getStatusEmoji(value)} ${value}`,
+            },
+            {
+              key: "step",
+              header: "Step",
+              width: 15,
+            },
+            {
+              key: "errors",
+              header: "Errors",
+              width: 10,
+              formatter: (value: number) => (value > 0 ? `❌ ${value}` : "✓"),
+            },
+          ],
+        });
+
+        // Show summary
+        const summary = {
+          total: patterns.length,
+          completed: patterns.filter((p) => p.status === "completed").length,
+          inProgress: patterns.filter((p) => p.status === "in-progress").length,
+          failed: patterns.filter((p) => p.status === "failed").length,
+          ready: patterns.filter((p) => p.status === "ready").length,
+        };
+
+        yield* showPanel(
+          `Total: ${summary.total} | ✨ Completed: ${summary.completed} | 🔄 In Progress: ${summary.inProgress} | ❌ Failed: ${summary.failed} | ✅ Ready: ${summary.ready}`,
+          "Summary",
+          { type: "info" }
+        );
       }
     }).pipe(
       Effect.provide(StateStoreLive),
