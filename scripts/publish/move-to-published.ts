@@ -9,12 +9,33 @@
  * 2. Publishing patterns (embed code)
  * 3. QA validation passes
  *
+ * Features:
+ * - Checkpoint recording for pipeline state tracking
+ * - Dry-run mode for safety
+ * - Comprehensive error handling
+ *
  * Usage:
  *   bun scripts/publish/move-to-published.ts [--dry-run]
  */
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+// --- CHECKPOINT LOGGING ---
+/**
+ * Log a checkpoint for pipeline state tracking
+ */
+function logCheckpoint(operation: string, data?: unknown) {
+  const timestamp = new Date().toISOString();
+  const checkpoint = {
+    operation,
+    timestamp,
+    data,
+  };
+  console.error(
+    `[CHECKPOINT] ${JSON.stringify(checkpoint)}`
+  );
+}
 
 const PROJECT_ROOT = process.cwd();
 const NEW_PUBLISHED_DIR = path.join(PROJECT_ROOT, 'content/new/published');
@@ -256,6 +277,12 @@ async function main(): Promise<void> {
   console.log('🚀 Moving patterns to published...');
   console.log('='.repeat(60));
 
+  // Log finalization started checkpoint
+  logCheckpoint('finalize-started', {
+    dryRun: isDryRun,
+    timestamp: new Date().toISOString(),
+  });
+
   const report: MoveReport = {
     moved: [],
     cleaned: [],
@@ -266,9 +293,25 @@ async function main(): Promise<void> {
     // Step 1: Move files
     report.moved = await movePatternFiles();
 
+    // Log files moved checkpoint
+    logCheckpoint('patterns-moved', {
+      total: report.moved.length,
+      successful: report.moved.filter((r) => r.success).length,
+      failed: report.moved.filter((r) => !r.success).length,
+      movedFiles: report.moved
+        .filter((r) => r.success)
+        .map((r) => r.file),
+    });
+
     // Step 2: Clean up working directories
     if (report.moved.length > 0) {
       report.cleaned = await cleanupWorkingDirectories();
+
+      // Log cleanup checkpoint
+      logCheckpoint('cleanup-completed', {
+        directoriesCleaned: report.cleaned.length,
+        clearedDirectories: report.cleaned,
+      });
 
       // Step 3: Verify cleanup (only in non-dry-run mode)
       if (!isDryRun) {
@@ -286,6 +329,15 @@ async function main(): Promise<void> {
       console.log(
         '\n⚠️  Move completed with errors. Please review failed operations.',
       );
+
+      // Log finalization failed checkpoint
+      logCheckpoint('finalize-failed', {
+        failedMoves: report.moved
+          .filter((r) => !r.success)
+          .map((r) => ({ file: r.file, error: r.error })),
+        verificationErrors: report.errors,
+      });
+
       process.exit(1);
     }
 
@@ -293,13 +345,33 @@ async function main(): Promise<void> {
       console.log(
         '\n✨ Dry run completed! Run without --dry-run to apply changes.',
       );
+
+      // Log dry run completed checkpoint
+      logCheckpoint('finalize-dry-run-completed', {
+        filesWouldMove: report.moved.length,
+        directoriesWouldClean: report.cleaned.length,
+      });
     } else {
       console.log('\n✨ Move completed successfully!');
       console.log('\nAll patterns are now in content/published/');
       console.log('All working directories in content/new/ are empty');
+
+      // Log finalization completed checkpoint
+      logCheckpoint('finalize-completed', {
+        patternsMoved: report.moved.length,
+        directoriesCleaned: report.cleaned.length,
+        timestamp: new Date().toISOString(),
+      });
     }
   } catch (error) {
     console.error('\n💥 Move failed:', error);
+
+    // Log fatal error checkpoint
+    logCheckpoint('finalize-fatal-error', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     process.exit(1);
   }
 }

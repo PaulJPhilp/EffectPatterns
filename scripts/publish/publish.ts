@@ -7,10 +7,28 @@
  * Reads from content/new/processed/ (MDX with <Example /> tags)
  * Reads TypeScript from content/new/src/
  * Writes to content/new/published/ (MDX with embedded code)
+ *
+ * Checkpoint recording for pipeline state tracking
  */
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+// --- CHECKPOINT LOGGING ---
+/**
+ * Log a checkpoint for pipeline state tracking
+ */
+function logCheckpoint(operation: string, data?: unknown) {
+  const timestamp = new Date().toISOString();
+  const checkpoint = {
+    operation,
+    timestamp,
+    data,
+  };
+  console.error(
+    `[CHECKPOINT] ${JSON.stringify(checkpoint)}`
+  );
+}
 
 // --- CONFIGURATION ---
 const PROCESSED_DIR = path.join(process.cwd(), 'content/new/processed');
@@ -23,6 +41,11 @@ export async function publishPatterns() {
   );
   console.log(`Using TypeScript source files from ${NEW_SRC_DIR}`);
 
+  // Log publish started checkpoint
+  logCheckpoint('publish-started', {
+    timestamp: new Date().toISOString(),
+  });
+
   // Ensure output directory exists
   await fs.mkdir(NEW_PUBLISHED_DIR, { recursive: true });
 
@@ -34,6 +57,8 @@ export async function publishPatterns() {
 
   let successCount = 0;
   let errorCount = 0;
+  const publishedFiles: string[] = [];
+  const failedFiles: Array<{ file: string; error: string }> = [];
 
   for (const mdxFile of mdxFiles) {
     const inPath = path.join(PROCESSED_DIR, mdxFile);
@@ -57,16 +82,41 @@ export async function publishPatterns() {
       // Write published MDX
       await fs.writeFile(outPath, processedContent, 'utf-8');
       console.log(`✅ Published ${mdxFile}`);
+      publishedFiles.push(mdxFile);
       successCount++;
+
+      // Log individual file publish checkpoint
+      logCheckpoint('file-published', {
+        file: mdxFile,
+        path: outPath,
+      });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`❌ Error processing ${mdxFile}:`, error);
+      failedFiles.push({ file: mdxFile, error: errorMessage });
       errorCount++;
+
+      // Log individual file publish failure checkpoint
+      logCheckpoint('file-publish-failed', {
+        file: mdxFile,
+        error: errorMessage,
+      });
     }
   }
 
   console.log('\n✨ Publishing complete!');
   console.log(`   Success: ${successCount}`);
   console.log(`   Errors: ${errorCount}`);
+
+  // Log publish results checkpoint
+  logCheckpoint('publish-completed', {
+    total: mdxFiles.length,
+    published: successCount,
+    failed: errorCount,
+    publishedFiles,
+    failedFiles: failedFiles.length > 0 ? failedFiles : undefined,
+    timestamp: new Date().toISOString(),
+  });
 
   if (errorCount > 0) {
     process.exit(1);

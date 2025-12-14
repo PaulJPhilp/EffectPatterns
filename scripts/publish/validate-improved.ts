@@ -8,6 +8,7 @@
  * - Better error categorization
  * - Detailed reporting
  * - Progress tracking
+ * - Checkpoint recording for pipeline state tracking
  *
  * Validates content/new/published/ (output of publish step)
  * Checks for corresponding TypeScript files in content/new/src/
@@ -20,6 +21,22 @@ import { promisify } from 'node:util';
 import matter from 'gray-matter';
 
 const _execAsync = promisify(exec);
+
+// --- CHECKPOINT LOGGING ---
+/**
+ * Log a checkpoint for pipeline state tracking
+ */
+function logCheckpoint(operation: string, data?: unknown) {
+  const timestamp = new Date().toISOString();
+  const checkpoint = {
+    operation,
+    timestamp,
+    data,
+  };
+  console.error(
+    `[CHECKPOINT] ${JSON.stringify(checkpoint)}`
+  );
+}
 
 // --- CONFIGURATION ---
 const NEW_PUBLISHED_DIR = path.join(process.cwd(), 'content/new/published');
@@ -605,6 +622,12 @@ async function main() {
   console.log(colorize('\n🔍 Enhanced Pattern Validation', 'bright'));
   console.log(colorize('Validating Effect patterns documentation\n', 'dim'));
 
+  // Log validation started checkpoint
+  logCheckpoint('validation-started', {
+    type: 'patternDocumentation',
+    timestamp: new Date().toISOString(),
+  });
+
   // Get all MDX files
   const files = await fs.readdir(NEW_PUBLISHED_DIR);
   const mdxFiles = files
@@ -627,6 +650,7 @@ async function main() {
 
   const duration = Date.now() - startTime;
   const invalid = results.filter((r) => !r.valid).length;
+  const totalWarnings = results.reduce((sum, r) => sum + r.warnings, 0);
 
   if (invalid > 0) {
     console.log(
@@ -635,9 +659,23 @@ async function main() {
         'red',
       ),
     );
+
+    // Log validation failed checkpoint
+    logCheckpoint('validation-failed', {
+      total: results.length,
+      invalid,
+      warnings: totalWarnings,
+      invalidFiles: results
+        .filter((r) => !r.valid)
+        .map((r) => ({
+          file: r.file,
+          errors: r.errors,
+          issues: r.issues.filter((i) => i.type === 'error'),
+        })),
+    });
+
     process.exit(1);
   } else {
-    const totalWarnings = results.reduce((sum, r) => sum + r.warnings, 0);
     if (totalWarnings > 0) {
       console.log(
         colorize(
@@ -653,6 +691,14 @@ async function main() {
         ),
       );
     }
+
+    // Log validation passed checkpoint
+    logCheckpoint('validation-passed', {
+      total: results.length,
+      warnings: totalWarnings,
+      durationMs: duration,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 
