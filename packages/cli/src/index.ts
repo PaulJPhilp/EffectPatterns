@@ -2669,20 +2669,27 @@ Effect.runSync(Effect.succeed("Hello, World!"));
       );
       yield* Console.log(colorize(`✓ Created: ${tsPath}`, "green"));
 
-      yield* Console.log("\n━".repeat(60));
-      yield* Console.log("✨ Pattern scaffolding complete!");
-      yield* Console.log("━".repeat(60));
-      yield* Console.log("\n📄 Files created:");
-      yield* Console.log(`   - ${mdxPath}`);
-      yield* Console.log(`   - ${tsPath}`);
-      yield* Console.log("\n💡 Next steps:");
-      yield* Console.log(
-        "   1. Edit the MDX file to add pattern documentation"
+      // Display success panel with pattern details
+      yield* showPanel(
+        `Files created successfully!
+
+MDX File: ${mdxPath}
+TypeScript File: ${tsPath}
+
+Pattern Details:
+  Title: ${title}
+  Skill Level: ${skillLevel}
+  Use Case: ${useCase}
+  Summary: ${summary}
+
+Next steps:
+  1. Edit the MDX file to add pattern documentation
+  2. Edit the TypeScript file to add working examples
+  3. Run 'bun ep validate' to check your pattern
+  4. Run 'bun ep publish' to add to the pattern library`,
+        "Pattern Scaffolding Complete",
+        { type: "success" }
       );
-      yield* Console.log(
-        "   2. Edit the TypeScript file to add working examples"
-      );
-      yield* Console.log("   3. Run `bun ep validate` to check your pattern\n");
     })
   )
 );
