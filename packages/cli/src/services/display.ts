@@ -171,11 +171,14 @@ export const showTable = <T extends Record<string, any>>(
           bordered: options.bordered,
           head: options.head,
         });
-        return;
+      } else {
+        // Fallback to console
+        console.table(data);
       }
+    } else {
+      // Fallback to console
+      console.table(data);
     }
-    // Fallback to console
-    console.table(data);
   });
 
 /**
@@ -188,11 +191,14 @@ export const showHighlight = (message: string) =>
       const maybeDisplay = yield* Effect.serviceOption(DisplayService);
       if (maybeDisplay._tag === "Some" && displayHighlightTUI) {
         yield* displayHighlightTUI(message);
-        return;
+      } else {
+        // Fallback to console
+        yield* Console.log(`\n📌 ${message}\n`);
       }
+    } else {
+      // Fallback to console
+      yield* Console.log(`\n📌 ${message}\n`);
     }
-    // Fallback to console
-    yield* Console.log(`\n📌 ${message}\n`);
   });
 
 /**
