@@ -22,6 +22,7 @@ import { StateStoreLive } from "@effect-patterns/pipeline-state";
 import {
   executeScriptWithTUI,
   executeScriptCapture,
+  withSpinner,
 } from "./services/execution.js";
 import {
   showPanel,
@@ -1552,16 +1553,11 @@ const installAddCommand = Command.make("add", {
         return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
       }
 
-      yield* Console.log(
-        colorize("\n🔄 Fetching rules from Pattern Server...\n", "cyan")
-      );
-      yield* Console.log(colorize(`Server: ${serverUrl}\n`, "dim"));
-
       // Fetch rules from API
       const allRules = yield* fetchRulesFromAPI(serverUrl);
 
       yield* Console.log(
-        colorize(`✓ Fetched ${allRules.length} rules\n`, "green")
+        `✓ Fetched ${allRules.length} rules from Pattern Server`
       );
 
       // Filter rules based on options
@@ -1639,15 +1635,17 @@ const installAddCommand = Command.make("add", {
         )
       );
 
-      yield* Console.log(
-        colorize(
-          `✅ Successfully added ${count} rules to ${targetFile}\n`,
-          "green"
-        )
-      );
-      yield* Console.log("━".repeat(60));
-      yield* Console.log(
-        colorize("✨ Rules integration complete!\n", "bright")
+      // Display success with TUI panel
+      yield* showPanel(
+        `Successfully added ${count} rules to ${targetFile}
+
+Tool: ${tool}
+File: ${targetFile}
+Rules Added: ${count}
+
+Your AI tool configuration has been updated with Effect patterns!`,
+        "Installation Complete",
+        { type: "success" }
       );
     })
   )
@@ -3107,7 +3105,7 @@ export const runtimeLayer = Layer.mergeAll(
 ) as unknown as Layer.Layer<never, never, never>;
 
 // TUI-enabled runtime for ep-admin
-export const runtimeLayerWithTUI = EffectCLITUILayer
+export const runtimeLayerWithTUI: any = EffectCLITUILayer
   ? Layer.mergeAll(
       fileSystemLayer,
       FetchHttpClient.layer,

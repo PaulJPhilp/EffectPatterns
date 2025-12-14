@@ -194,3 +194,22 @@ export const executeScriptStream = (
       }
     });
   });
+
+/**
+ * Wrap any Effect with a console spinner
+ *
+ * Shows progress messages before and after the effect execution.
+ */
+export const withSpinner = <A, E, R>(
+  message: string,
+  effect: Effect.Effect<A, E, R>,
+  _options?: ExecutionOptions
+): Effect.Effect<A, E, R> => {
+  const showStart = Console.log(`⣾ ${message}...`);
+  const showEnd = Console.log(`✓ ${message} completed`);
+
+  return showStart.pipe(
+    Effect.andThen(() => effect),
+    Effect.andThen((result) => showEnd.pipe(Effect.map(() => result)))
+  );
+};
