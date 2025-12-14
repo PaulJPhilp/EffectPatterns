@@ -8,7 +8,7 @@
  */
 
 import { Args, Command, Options, Prompt } from "@effect/cli";
-import { FileSystem, HttpClient } from "@effect/platform";
+import { FileSystem, HttpClient, type FileSystem as IFileSystem } from "@effect/platform";
 import { NodeContext, NodeFileSystem } from "@effect/platform-node";
 import { Console, Effect, Layer, Option, Schema } from "effect";
 import { glob } from "glob";
@@ -18,6 +18,7 @@ import * as path from "node:path";
 import ora from "ora";
 import * as semver from "semver";
 import { pipelineManagementCommand } from "./pipeline-commands.js";
+import { StateStoreLive } from "@effect-patterns/pipeline-state";
 
 // --- PROJECT ROOT RESOLUTION ---
 // Find the project root by looking for package.json with "name": "effect-patterns-hub"
@@ -2735,8 +2736,9 @@ export const fileSystemLayer = NodeFileSystem.layer.pipe(
 
 export const runtimeLayer = Layer.mergeAll(
   fileSystemLayer,
-  FetchHttpClient.layer
-);
+  FetchHttpClient.layer,
+  StateStoreLive
+) as unknown as Layer.Layer<never, never, never>;
 
 const userCliRunner = Command.run(userRootCommand, {
   name: "EffectPatterns CLI",
