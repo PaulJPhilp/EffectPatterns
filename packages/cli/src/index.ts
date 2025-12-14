@@ -2891,6 +2891,141 @@ export const listCommand = Command.make("list", {
   );
 
 /**
+ * show <pattern-id> - Show detailed pattern information
+ */
+export const showCommand = Command.make("show", {
+  options: {
+    format: Options.text("format").pipe(
+      Options.withDefault("full"),
+      Options.withDescription("Display format (full|summary)")
+    ),
+  },
+  args: {
+    patternId: Args.text({ name: "pattern-id" }),
+  },
+})
+  .pipe(Command.withDescription("Show detailed pattern information"))
+  .pipe(
+    Command.withHandler(({ args, options }) =>
+      Effect.gen(function* () {
+        // Load patterns from JSON
+        const patternsPath = path.join(
+          PROJECT_ROOT,
+          "services/mcp-server/data/patterns.json"
+        );
+
+        const content = yield* Effect.try({
+          try: () =>
+            require("fs").readFileSync(patternsPath, "utf-8"),
+          catch: (error: unknown) =>
+            new Error(
+              `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
+            ),
+        });
+
+        const json = JSON.parse(content);
+        const allPatterns = json.patterns || [];
+
+        // Find pattern
+        const pattern = allPatterns.find(
+          (p: any) => p.id === args.patternId
+        );
+
+        if (!pattern) {
+          yield* Console.log(
+            `\n❌ Pattern "${args.patternId}" not found\n`
+          );
+
+          // Suggest similar patterns
+          const similar = allPatterns
+            .filter(
+              (p: any) =>
+                p.id.includes(args.patternId) ||
+                p.title.toLowerCase().includes(args.patternId.toLowerCase())
+            )
+            .slice(0, 3);
+
+          if (similar.length > 0) {
+            yield* Console.log("Did you mean one of these?\n");
+            for (const p of similar) {
+              yield* Console.log(`  • ${p.id}`);
+            }
+            yield* Console.log("");
+          }
+          return;
+        }
+
+        // Display metadata panel
+        const metadata = `
+ID: ${pattern.id}
+Title: ${pattern.title}
+Skill Level: ${pattern.difficulty}
+Category: ${pattern.category}
+Tags: ${pattern.tags ? pattern.tags.join(", ") : "None"}`.trim();
+
+        yield* Console.log("\n" + "═".repeat(60));
+        yield* Console.log("📋 PATTERN METADATA");
+        yield* Console.log("═".repeat(60));
+        yield* Console.log(metadata);
+
+        // Display summary
+        if (pattern.description) {
+          yield* Console.log(
+            "\n" + "─".repeat(60)
+          );
+          yield* Console.log("📝 DESCRIPTION");
+          yield* Console.log("─".repeat(60));
+          yield* Console.log(pattern.description);
+        }
+
+        // Full format shows more
+        if (options.format === "full") {
+          // Display examples
+          if (pattern.examples && pattern.examples.length > 0) {
+            yield* Console.log(
+              "\n" + "─".repeat(60)
+            );
+            yield* Console.log("💡 EXAMPLES");
+            yield* Console.log("─".repeat(60));
+            for (let i = 0; i < pattern.examples.length; i++) {
+              const ex = pattern.examples[i];
+              yield* Console.log(`\nExample ${i + 1}: ${ex.description}`);
+              yield* Console.log("─".repeat(40));
+              yield* Console.log(ex.code);
+            }
+          }
+
+          // Display use cases
+          if (pattern.useCases && pattern.useCases.length > 0) {
+            yield* Console.log(
+              "\n" + "─".repeat(60)
+            );
+            yield* Console.log("🎯 USE CASES");
+            yield* Console.log("─".repeat(60));
+            for (const useCase of pattern.useCases) {
+              yield* Console.log(`  • ${useCase}`);
+            }
+          }
+
+          // Display related patterns
+          if (pattern.relatedPatterns && pattern.relatedPatterns.length > 0) {
+            yield* Console.log(
+              "\n" + "─".repeat(60)
+            );
+            yield* Console.log("🔗 RELATED PATTERNS");
+            yield* Console.log("─".repeat(60));
+            for (const related of pattern.relatedPatterns) {
+              yield* Console.log(`  • ${related}`);
+            }
+          }
+        }
+
+        yield* Console.log("\n" + "═".repeat(60) + "\n");
+      })
+    )
+  );
+
+/**
  * pattern - Create and manage Effect-TS patterns
  */
 export const patternCommand = Command.make("pattern").pipe(
@@ -2938,6 +3073,7 @@ export const userRootCommand = Command.make("ep").pipe(
   Command.withSubcommands([
     searchCommand,
     listCommand,
+    showCommand,
     patternCommand,
     installCommand,
   ])
