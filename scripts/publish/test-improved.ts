@@ -7,6 +7,7 @@
  * - Better error reporting with colors and summaries
  * - Progress tracking
  * - Detailed timing information
+ * - Checkpoint recording for pipeline state tracking
  *
  * Tests TypeScript files in content/new/src/
  */
@@ -17,6 +18,22 @@ import * as path from 'node:path';
 import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
+
+// --- CHECKPOINT LOGGING ---
+/**
+ * Log a checkpoint for pipeline state tracking
+ */
+function logCheckpoint(operation: string, data?: unknown) {
+  const timestamp = new Date().toISOString();
+  const checkpoint = {
+    operation,
+    timestamp,
+    data,
+  };
+  console.error(
+    `[CHECKPOINT] ${JSON.stringify(checkpoint)}`
+  );
+}
 
 // --- CONFIGURATION ---
 const NEW_SRC_DIR = path.join(process.cwd(), 'content/new/src');
@@ -272,9 +289,21 @@ async function main() {
   console.log(colorize('\n🧪 Enhanced TypeScript Testing', 'bright'));
   console.log(colorize('Testing Effect patterns examples\n', 'dim'));
 
+  // Log test started checkpoint
+  logCheckpoint('test-started', {
+    type: 'typeScriptExamples',
+    timestamp: new Date().toISOString(),
+  });
+
   // Step 1: Type checking
   if (ENABLE_TYPE_CHECK) {
     const typeCheckPassed = await runTypeCheck();
+
+    logCheckpoint('typecheck-completed', {
+      passed: typeCheckPassed,
+      timestamp: new Date().toISOString(),
+    });
+
     if (!typeCheckPassed) {
       console.log(
         colorize(
@@ -310,13 +339,22 @@ async function main() {
   // Run tests in parallel
   const startTime = Date.now();
   const results = await runTestsInParallel(tsFiles);
-  const _duration = Date.now() - startTime;
+  const testDuration = Date.now() - startTime;
 
   // Print results
   printResults(results);
 
   const overallDuration = Date.now() - overallStart;
   const failed = results.filter((r) => !r.success);
+
+  // Log test results checkpoint
+  logCheckpoint('test-completed', {
+    total: results.length,
+    passed: results.length - failed.length,
+    failed: failed.length,
+    durationMs: testDuration,
+    timestamp: new Date().toISOString(),
+  });
 
   if (failed.length > 0) {
     console.log(
@@ -325,11 +363,23 @@ async function main() {
         'red',
       ),
     );
+
+    // Log failure checkpoint
+    logCheckpoint('test-failed', {
+      failedTests: failed.map((f) => ({ file: f.file, error: f.error })),
+    });
+
     process.exit(1);
   } else {
     console.log(
       colorize(`\n✨ All tests passed in ${overallDuration}ms!\n`, 'green'),
     );
+
+    // Log success checkpoint
+    logCheckpoint('test-passed', {
+      testsRun: results.length,
+      allPassed: true,
+    });
   }
 }
 

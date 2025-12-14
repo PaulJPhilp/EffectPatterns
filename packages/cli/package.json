@@ -25,6 +25,7 @@
     "@effect/cli": "^0.69.2",
     "@effect/platform": "^0.90.10",
     "@effect/platform-node": "^0.98.4",
+    "@effect-patterns/pipeline-state": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
     "conventional-commits-parser": "^6.2.1",
     "conventional-recommended-bump": "^11.2.0",

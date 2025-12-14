@@ -17,6 +17,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import ora from "ora";
 import * as semver from "semver";
+import { pipelineManagementCommand } from "./pipeline-commands.js";
 
 // --- PROJECT ROOT RESOLUTION ---
 // Find the project root by looking for package.json with "name": "effect-patterns-hub"
@@ -2711,6 +2712,7 @@ const adminSubcommands = [
   generateCommand,
   rulesCommand,
   releaseCommand,
+  pipelineManagementCommand,
 ] as const;
 
 export const userRootCommand = Command.make("ep").pipe(
