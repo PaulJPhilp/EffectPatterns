@@ -44,7 +44,7 @@
     "effect": "^3.18.2"
   },
   "devDependencies": {
-    "@types/node": "^24.8.1",
+    "@types/node": "^25.0.2",
     "@vitest/coverage-v8": "^4.0.4",
     "typescript": "5.9.3",
     "vitest": "^4.0.4"
