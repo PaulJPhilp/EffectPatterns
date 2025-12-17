@@ -15,54 +15,75 @@ const README_PATH = path.join(process.cwd(), 'README.md');
 interface PatternFrontmatter {
   id: string;
   title: string;
-  skillLevel: string;
-  useCase: string | string[];
+  skillLevel?: string;
+  skill?: string;
+  useCase?: string | string[];
   summary: string;
+}
+
+// Helper to get skill level from pattern (handles both skillLevel and skill fields)
+function getSkillLevel(pattern: PatternFrontmatter): string {
+  return (pattern.skillLevel || pattern.skill || 'intermediate').toLowerCase();
 }
 
 async function generateReadme() {
   console.log('Starting README generation...');
 
-  // Recursively find all MDX files
-  async function findMdxFiles(dir: string): Promise<string[]> {
+  // Recursively find all MDX files with their directory info
+  async function findMdxFilesWithCategory(dir: string): Promise<Array<{ file: string; category: string }>> {
     const entries = await fs.readdir(dir, { withFileTypes: true });
-    const files: string[] = [];
+    const files: Array<{ file: string; category: string }> = [];
 
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        files.push(...await findMdxFiles(fullPath));
+        files.push(...await findMdxFilesWithCategory(fullPath));
       } else if (entry.isFile() && entry.name.endsWith('.mdx')) {
-        files.push(fullPath);
+        // Extract category from path (e.g., 'core' or 'schema/composition')
+        const relPath = path.relative(PUBLISHED_DIR, fullPath);
+        const parts = relPath.split(path.sep);
+        const category = parts.length > 2 ? parts.slice(1, -1).join('/') : parts[0];
+        files.push({ file: fullPath, category });
       }
     }
 
     return files;
   }
 
-  const mdxFiles = await findMdxFiles(PUBLISHED_DIR);
+  const mdxFilesWithCategory = await findMdxFilesWithCategory(PUBLISHED_DIR);
 
-  const patterns: PatternFrontmatter[] = [];
-  for (const file of mdxFiles) {
+  // Separate core and schema patterns
+  const corePatterns: Array<PatternFrontmatter & { path: string }> = [];
+  const schemaPatterns: Map<string, Array<PatternFrontmatter & { path: string }>> = new Map();
+
+  for (const { file, category } of mdxFilesWithCategory) {
     const content = await fs.readFile(file, 'utf-8');
     const { data } = matter(content);
-    patterns.push(data as PatternFrontmatter);
+    const pattern = data as PatternFrontmatter & { path: string };
+    pattern.path = path.relative(process.cwd(), file);
+
+    if (category === 'core') {
+      corePatterns.push(pattern);
+    } else {
+      if (!schemaPatterns.has(category)) {
+        schemaPatterns.set(category, []);
+      }
+      schemaPatterns.get(category)?.push(pattern);
+    }
   }
 
-  // Group patterns by use case
-  const useCaseGroups = new Map<string, PatternFrontmatter[]>();
-
-  for (const pattern of patterns) {
-    // Handle both string and array types for useCase
+  // Group core patterns by useCase
+  const coreUseCaseGroups = new Map<string, Array<PatternFrontmatter & { path: string }>>();
+  for (const pattern of corePatterns) {
     const useCases = Array.isArray(pattern.useCase)
       ? pattern.useCase
       : [pattern.useCase];
 
     for (const useCase of useCases) {
-      if (!useCaseGroups.has(useCase)) {
-        useCaseGroups.set(useCase, []);
+      if (!coreUseCaseGroups.has(useCase)) {
+        coreUseCaseGroups.set(useCase, []);
       }
-      useCaseGroups.get(useCase)?.push(pattern);
+      coreUseCaseGroups.get(useCase)?.push(pattern);
     }
   }
 
@@ -70,38 +91,134 @@ async function generateReadme() {
   const sections: string[] = [];
   const toc: string[] = [];
 
-  for (const [useCase, patterns] of useCaseGroups) {
-    const anchor = useCase.toLowerCase();
-    toc.push(`- [${useCase}](#${anchor})`);
+  // Core Effect Patterns section
+  toc.push('### Core Effect Patterns\n');
+  const coreOrder = [
+    'resource-management',
+    'concurrency',
+    'core-concepts',
+    'testing',
+    'domain-modeling',
+    'modeling-data',
+    'building-apis',
+    'error-management',
+    'building-data-pipelines',
+    'making-http-requests',
+    'tooling-and-debugging',
+    'observability',
+    'project-setup--execution',
+  ];
 
+  for (const useCase of coreOrder) {
+    if (coreUseCaseGroups.has(useCase)) {
+      const anchor = useCase.toLowerCase().replace(/\s+/g, '-');
+      toc.push(`- [${useCase}](#${anchor})`);
+    }
+  }
+
+  // Schema Patterns section
+  toc.push('\n### Schema Patterns\n');
+  const schemaOrder = [
+    'composition',
+    'transformations',
+    'unions',
+    'recursive',
+    'error-handling',
+    'async-validation',
+    'validating-api-responses',
+    'parsing-ai-responses',
+    'defining-ai-output-schemas',
+    'web-standards-validation',
+    'form-validation',
+    'json-file-validation',
+    'json-db-validation',
+    'environment-config',
+  ];
+
+  for (const category of schemaOrder) {
+    const displayName = category
+      .split('-')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+    const anchor = category.toLowerCase();
+    toc.push(`- [${displayName}](#${anchor})`);
+  }
+
+  toc.push('\n');
+
+  // Generate core patterns sections
+  for (const useCase of coreOrder) {
+    const patterns = coreUseCaseGroups.get(useCase);
+    if (!patterns) continue;
+
+    const anchor = useCase.toLowerCase().replace(/\s+/g, '-');
     sections.push(`## ${useCase}\n`);
     sections.push(
       '| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n',
     );
 
-    // Sort patterns by skill level (beginner -> intermediate -> advanced)
+    // Sort patterns by skill level
     const sortedPatterns = patterns.sort((a, b) => {
       const levels = { beginner: 0, intermediate: 1, advanced: 2 };
       return (
-        levels[a.skillLevel as keyof typeof levels] -
-        levels[b.skillLevel as keyof typeof levels]
+        levels[getSkillLevel(a) as keyof typeof levels] -
+        levels[getSkillLevel(b) as keyof typeof levels]
       );
     });
 
     for (const pattern of sortedPatterns) {
+      const skillLevel = getSkillLevel(pattern);
       const skillEmoji =
         {
           beginner: '🟢',
           intermediate: '🟡',
           advanced: '🟠',
-        }[pattern.skillLevel] || '⚪️';
-
-      // Find the relative path to the pattern file
-      const patternPath = mdxFiles.find((file) => file.endsWith(`${pattern.id}.mdx`));
-      const relativePath = patternPath ? path.relative(process.cwd(), patternPath) : `content/published/${pattern.id}.mdx`;
+        }[skillLevel] || '⚪️';
 
       sections.push(
-        `| [${pattern.title}](./${relativePath}) | ${skillEmoji} **${pattern.skillLevel.charAt(0).toUpperCase() + pattern.skillLevel.slice(1)}** | ${pattern.summary} |\n`,
+        `| [${pattern.title}](./${pattern.path}) | ${skillEmoji} **${skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)}** | ${pattern.summary} |\n`,
+      );
+    }
+
+    sections.push('\n');
+  }
+
+  // Generate schema patterns sections
+  for (const category of schemaOrder) {
+    const patterns = schemaPatterns.get(`schema/${category}`);
+    if (!patterns) continue;
+
+    const displayName = category
+      .split('-')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+    const anchor = category.toLowerCase();
+
+    sections.push(`## ${displayName}\n`);
+    sections.push(
+      '| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n',
+    );
+
+    // Sort patterns by skill level
+    const sortedPatterns = patterns.sort((a, b) => {
+      const levels = { beginner: 0, intermediate: 1, advanced: 2 };
+      return (
+        levels[getSkillLevel(a) as keyof typeof levels] -
+        levels[getSkillLevel(b) as keyof typeof levels]
+      );
+    });
+
+    for (const pattern of sortedPatterns) {
+      const skillLevel = getSkillLevel(pattern);
+      const skillEmoji =
+        {
+          beginner: '🟢',
+          intermediate: '🟡',
+          advanced: '🟠',
+        }[skillLevel] || '⚪️';
+
+      sections.push(
+        `| [${pattern.title}](./${pattern.path}) | ${skillEmoji} **${skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)}** | ${pattern.summary} |\n`,
       );
     }
 
