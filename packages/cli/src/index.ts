@@ -37,6 +37,8 @@ import {
   writeSkill,
   generateGeminiSkill,
   writeGeminiSkill,
+  generateOpenAISkill,
+  writeOpenAISkill,
   type PatternContent,
   type GeminiSkillContent,
 } from "./skills/skill-generator.js";
@@ -1742,7 +1744,7 @@ const rulesGenerateCommand = Command.make("generate", {
 );
 
 /**
- * install:skills - Generate Claude Skills and/or Gemini Skills from published Effect patterns
+ * install:skills - Generate Skills (Claude, Gemini, OpenAI) from published Effect patterns
  */
 const installSkillsCommand = Command.make("skills", {
   options: {
@@ -1751,32 +1753,61 @@ const installSkillsCommand = Command.make("skills", {
       Options.optional
     ),
     format: Options.text("format").pipe(
-      Options.withDescription("Output format: claude, gemini, or both (default: both)"),
+      Options.withDescription("Output format: claude, gemini, openai, or both (default: both)"),
       Options.optional
     ),
   },
   args: {},
 }).pipe(
   Command.withDescription(
-    "Generate Claude Skills and/or Gemini Skills from published Effect patterns"
+    "Generate Skills (Claude, Gemini, OpenAI) from published Effect patterns"
   ),
   Command.withHandler(({ options }) => {
     return Effect.gen(function* () {
       const formatOption = Option.getOrElse(options.format, () => "both");
-      const validFormats = ["claude", "gemini", "both"];
+      const validOptions = ["claude", "gemini", "openai", "both"];
 
-      if (!validFormats.includes(formatOption.toLowerCase())) {
+      // Parse format option: support individual formats, comma-separated, or "both"
+      let generateClaude = false;
+      let generateGemini = false;
+      let generateOpenAI = false;
+
+      const formatLower = formatOption.toLowerCase();
+
+      if (formatLower === "both") {
+        generateClaude = true;
+        generateGemini = true;
+        generateOpenAI = true;
+      } else {
+        // Support comma-separated values
+        const formats = formatLower.split(",").map((f) => f.trim());
+
+        for (const fmt of formats) {
+          if (!validOptions.includes(fmt)) {
+            yield* Console.error(
+              colorize(
+                `\n❌ Invalid format: ${fmt}\nValid options: ${validOptions.join(", ")}\n`,
+                "red"
+              )
+            );
+            return yield* Effect.fail(new Error("Invalid format option"));
+          }
+
+          if (fmt === "claude") generateClaude = true;
+          if (fmt === "gemini") generateGemini = true;
+          if (fmt === "openai") generateOpenAI = true;
+        }
+      }
+
+      if (!generateClaude && !generateGemini && !generateOpenAI) {
         yield* Console.error(
           colorize(
-            `\n❌ Invalid format: ${formatOption}\nValid options: ${validFormats.join(", ")}\n`,
+            `\n❌ No formats specified. Valid options: ${validOptions.join(", ")}\n`,
             "red"
           )
         );
-        return yield* Effect.fail(new Error("Invalid format option"));
+        return yield* Effect.fail(new Error("No format option"));
       }
-
-      const generateClaude = formatOption === "claude" || formatOption === "both";
-      const generateGemini = formatOption === "gemini" || formatOption === "both";
 
       yield* Console.log(
         colorize("\n🎓 Generating Skills from Effect Patterns\n", "bright")
@@ -1877,6 +1908,21 @@ const installSkillsCommand = Command.make("skills", {
           );
         }
 
+        // Generate OpenAI skill for category if requested
+        if (generateOpenAI) {
+          const skillName = `effect-patterns-${category}`;
+          const content = generateOpenAISkill(category, categoryPatterns);
+
+          yield* Effect.tryPromise({
+            try: () => writeOpenAISkill(skillName, content, PROJECT_ROOT),
+            catch: (error) => new Error(`Failed to write OpenAI skill: ${error}`)
+          });
+
+          yield* Console.log(
+            colorize(`✓ Generated OpenAI skill: ${skillName}\n`, "green")
+          );
+        }
+
         return;
       }
 
@@ -1887,6 +1933,7 @@ const installSkillsCommand = Command.make("skills", {
 
       let claudeCount = 0;
       let geminiCount = 0;
+      let openaiCount = 0;
 
       for (const [category, categoryPatterns] of categoryMap.entries()) {
         // Generate Claude skill
@@ -1947,6 +1994,36 @@ const installSkillsCommand = Command.make("skills", {
             geminiCount++;
           }
         }
+
+        // Generate OpenAI skill
+        if (generateOpenAI) {
+          const skillName = `effect-patterns-${category}`;
+          const content = generateOpenAISkill(category, categoryPatterns);
+
+          const writeResult = yield* Effect.tryPromise({
+            try: () => writeOpenAISkill(skillName, content, PROJECT_ROOT),
+            catch: (error) => new Error(`Failed to write OpenAI skill: ${error}`)
+          }).pipe(
+            Effect.catchAll((error) =>
+              Effect.gen(function* () {
+                yield* Console.log(
+                  colorize(`⚠️  ${error.message}`, "yellow")
+                );
+                return null;
+              })
+            )
+          );
+
+          if (writeResult !== null) {
+            yield* Console.log(
+              colorize(
+                `  ✓ ${skillName} (${categoryPatterns.length} patterns)`,
+                "green"
+              )
+            );
+            openaiCount++;
+          }
+        }
       }
 
       // Summary
@@ -1960,6 +2037,11 @@ const installSkillsCommand = Command.make("skills", {
       if (generateGemini && geminiCount > 0) {
         summaryParts.push(`Generated ${geminiCount} Gemini Skills from ${patterns.length} Effect patterns.`);
         summaryParts.push(`Gemini Skills Location: .gemini/skills/`);
+      }
+
+      if (generateOpenAI && openaiCount > 0) {
+        summaryParts.push(`Generated ${openaiCount} OpenAI Skills from ${patterns.length} Effect patterns.`);
+        summaryParts.push(`OpenAI Skills Location: .openai/skills/`);
       }
 
       summaryParts.push(
