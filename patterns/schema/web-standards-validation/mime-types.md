@@ -1,0 +1,227 @@
+---
+id: schema-web-standards-mime-types
+title: MIME Type Validation
+category: web-standards-validation
+skill: intermediate
+tags:
+  - schema
+  - validation
+  - web-standards
+  - mime-types
+  - content-types
+  - file-upload
+---
+
+# Problem
+
+Your application accepts file uploads or specifies content types. Users submit unknown MIME types, you get files with mismatched extensions, or malicious uploads bypass checks. You need to validate MIME types against a whitelist, ensure the value is properly formatted, and safely work with known types in your business logic.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// 1. Define known MIME types as literals
+const ImageMimeType = Schema.Literal(
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif"
+)
+
+type ImageMimeType = typeof ImageMimeType.Type
+
+const DocumentMimeType = Schema.Literal(
+  "application/pdf",
+  "text/plain",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+)
+
+type DocumentMimeType = typeof DocumentMimeType.Type
+
+// 2. Create branded MIME types
+const ValidMimeType = Schema.Union(
+  ImageMimeType,
+  DocumentMimeType,
+  Schema.Literal(
+    "application/json",
+    "text/html",
+    "application/xml"
+  )
+).pipe(Schema.brand("ValidMimeType"))
+
+type ValidMimeType = typeof ValidMimeType.Type
+
+// 3. File upload schema
+const FileUpload = Schema.Struct({
+  filename: Schema.String.pipe(
+    Schema.minLength(1),
+    Schema.maxLength(255)
+  ),
+  mimeType: ValidMimeType,
+  size: Schema.Number.pipe(
+    Schema.int(),
+    Schema.between(1, 10 * 1024 * 1024) // 10MB limit
+  ),
+})
+
+type FileUpload = typeof FileUpload.Type
+
+// 4. Validate by extension mapping
+const getMimeTypeFromExtension = (
+  filename: string
+): ValidMimeType | null => {
+  const ext = filename.split(".").pop()?.toLowerCase()
+
+  const map: Record<string, ValidMimeType> = {
+    pdf: "application/pdf",
+    txt: "text/plain",
+    json: "application/json",
+    html: "text/html",
+    xml: "application/xml",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif",
+  }
+
+  return map[ext || ""] || null
+}
+
+// 5. File handler with validation
+const handleFileUpload = (input: unknown) =>
+  Effect.gen(function* () {
+    const file = yield* Schema.decodeUnknown(
+      FileUpload
+    )(input).pipe(
+      Effect.mapError((error) => ({
+        _tag: "InvalidFile" as const,
+        message: `Invalid file: ${error.message}`,
+      }))
+    )
+
+    // Extract file info
+    const ext = file.mimeType.split("/")[1]
+    console.log(
+      `Uploading ${file.filename} (${(file.size / 1024).toFixed(1)}KB, type: ${file.mimeType})`
+    )
+
+    // Type-safe operations based on MIME type
+    if (file.mimeType.startsWith("image/")) {
+      console.log("Processing as image")
+    } else if (file.mimeType === "application/pdf") {
+      console.log("Processing as PDF")
+    }
+
+    return {
+      id: crypto.randomUUID(),
+      ...file,
+      uploadedAt: new Date().toISOString(),
+    }
+  })
+
+// 6. Content negotiation
+const selectOutputFormat = (
+  accepted: string[]
+): ValidMimeType | null =>
+  Effect.gen(function* () {
+    // Validate accepted types
+    const validated = yield* Effect.all(
+      accepted.map((type) =>
+        Schema.decodeUnknown(ValidMimeType)(type).pipe(
+          Effect.catchTag("ParseError", () =>
+            Effect.none()
+          )
+        )
+      )
+    )
+
+    // Return first acceptable type
+    const supported = validated.find((v) =>
+      Effect.isEffect(v) ? false : true
+    )
+    return supported || null
+  })
+
+// 7. Media type with parameters
+const MediaTypeWithParams = Schema.String.pipe(
+  Schema.pattern(
+    /^[\w\-]+\/[\w\.\+\-]+(\s*;\s*[\w\-]+\s*=\s*[\w\-]+)*$/
+  ).pipe(
+    Schema.annotations({
+      description:
+        "MIME type with optional parameters (e.g., text/html; charset=utf-8)",
+    })
+  ),
+  Schema.brand("MediaTypeWithParams")
+)
+
+type MediaTypeWithParams =
+  typeof MediaTypeWithParams.Type
+
+const parseMediaType = (raw: string) =>
+  Effect.gen(function* () {
+    const media = yield* Schema.decodeUnknown(
+      MediaTypeWithParams
+    )(raw).pipe(
+      Effect.mapError((error) => ({
+        _tag: "InvalidMediaType" as const,
+        message: `Invalid media type: ${error.message}`,
+      }))
+    )
+
+    // Extract base type
+    const [baseType, ...params] = media.split(";")
+    console.log(
+      `Base type: ${baseType.trim()}, Params: ${params.length}`
+    )
+
+    return {
+      baseType: baseType.trim(),
+      params: params.map((p) => p.trim()),
+    }
+  })
+
+// Usage
+const uploadInput = {
+  filename: "document.pdf",
+  mimeType: "application/pdf",
+  size: 1024 * 100, // 100KB
+}
+
+Effect.runPromise(handleFileUpload(uploadInput))
+  .then((result) => {
+    console.log(`✅ Uploaded: ${result.id}`)
+  })
+  .catch((error) =>
+    console.error(`Error: ${error.message}`)
+  )
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| `Schema.Literal` | Whitelist known, safe MIME types |
+| `Schema.Union` | Combine image, document, data types |
+| Type narrowing | `switch(mimeType)` tells TypeScript which type it is |
+| Extension mapping | Validate uploaded file matches declared type |
+| `Schema.pattern` | Validate media type with parameters format |
+| `Schema.brand` | Creates nominal type—`ValidMimeType ≠ string` |
+
+# When to Use
+
+- File upload validation
+- API content negotiation (Accept header)
+- Response Content-Type validation
+- Media server configuration
+- Multi-format data handling
+- Security: prevent executing uploaded files
+
+# Related Patterns
+
+- [HTTP Header Validation](./http-headers.md)
+- [Email Validation](./email.md)
+- [URL Validation](./url.md)
