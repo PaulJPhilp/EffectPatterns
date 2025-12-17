@@ -1,0 +1,188 @@
+---
+id: schema-web-standards-iso-date
+title: ISO 8601 Date Validation
+category: web-standards-validation
+skill: intermediate
+tags:
+  - schema
+  - validation
+  - web-standards
+  - iso-8601
+  - dates
+  - timestamps
+---
+
+# Problem
+
+Your API accepts dates as strings from JSON. Without validation, you get malformed dates like "2024-13-45" or timezone-naive strings. You need to validate ISO 8601 format at runtime, ensure dates are valid (no impossible dates), optionally enforce timezones, and create a distinct type so dates can't be confused with plain strings.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// 1. ISO 8601 datetime with timezone
+const ISODateTime = Schema.String.pipe(
+  Schema.pattern(
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z?$/
+  ).pipe(
+    Schema.annotations({
+      description:
+        "ISO 8601 datetime (YYYY-MM-DDTHH:mm:ss[.sss][Z])",
+    })
+  ),
+  Schema.filter((s) => {
+    try {
+      const date = new Date(s)
+      // Check it parses to valid Date
+      if (isNaN(date.getTime())) {
+        return false
+      }
+      // Optional: check year is reasonable
+      const year = date.getUTCFullYear()
+      return year >= 1900 && year <= 2100
+    } catch {
+      return false
+    }
+  }).pipe(
+    Schema.annotations({
+      description: "Valid date between 1900-2100",
+    })
+  ),
+  Schema.brand("ISODateTime")
+)
+
+type ISODateTime = typeof ISODateTime.Type
+
+// 2. ISO 8601 date only (no time)
+const ISODate = Schema.String.pipe(
+  Schema.pattern(/^\d{4}-\d{2}-\d{2}$/).pipe(
+    Schema.annotations({
+      description: "ISO 8601 date (YYYY-MM-DD)",
+    })
+  ),
+  Schema.filter((s) => {
+    const date = new Date(s + "T00:00:00Z")
+    return !isNaN(date.getTime())
+  }),
+  Schema.brand("ISODate")
+)
+
+type ISODate = typeof ISODate.Type
+
+// 3. Use in event schema
+const Event = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  startDate: ISODate,
+  startTime: ISODateTime,
+  endTime: ISODateTime,
+  timezone: Schema.String.pipe(
+    Schema.default("UTC")
+  ),
+})
+
+type Event = typeof Event.Type
+
+// 4. Validate and work with dates
+const createEvent = (input: unknown) =>
+  Effect.gen(function* () {
+    const event = yield* Schema.decodeUnknown(Event)(
+      input
+    ).pipe(
+      Effect.mapError((error) => ({
+        _tag: "ValidationError" as const,
+        message: `Invalid event: ${error.message}`,
+      }))
+    )
+
+    // Parse validated dates
+    const startTime = new Date(event.startTime)
+    const endTime = new Date(event.endTime)
+
+    // Type-safe duration calculation
+    const durationMs =
+      endTime.getTime() - startTime.getTime()
+
+    if (durationMs <= 0) {
+      return yield* Effect.fail(
+        new Error("Event must end after it starts")
+      )
+    }
+
+    console.log(
+      `Event "${event.name}" duration: ${(durationMs / 1000 / 60).toFixed(0)} min`
+    )
+
+    return event
+  })
+
+// 5. Filter events by date range
+const getEventsBetween = (
+  events: Event[],
+  start: ISODate,
+  end: ISODate
+) =>
+  Effect.gen(function* () {
+    const startDate = new Date(start + "T00:00:00Z")
+    const endDate = new Date(
+      end + "T23:59:59Z"
+    )
+
+    const filtered = events.filter((event) => {
+      const eventDate = new Date(
+        event.startDate + "T00:00:00Z"
+      )
+      return (
+        eventDate >= startDate &&
+        eventDate <= endDate
+      )
+    })
+
+    return filtered
+  })
+
+// Usage
+const eventInput = {
+  id: "evt-001",
+  name: "Team Meeting",
+  startDate: "2024-12-20",
+  startTime: "2024-12-20T14:00:00Z",
+  endTime: "2024-12-20T15:30:00Z",
+  timezone: "America/New_York",
+}
+
+Effect.runPromise(createEvent(eventInput))
+  .then((event) => {
+    console.log(`✅ Event created: ${event.name}`)
+  })
+  .catch((error) =>
+    console.error(`Error: ${error.message}`)
+  )
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| `Schema.pattern` | Regex validates ISO 8601 format |
+| `new Date()` parsing | Native validation of actual date validity |
+| Year range check | Prevents far-future or ancient dates |
+| `ISODate` vs `ISODateTime` | Separate types for different precision needs |
+| `Schema.brand` | Creates nominal type—`ISODateTime ≠ string` |
+| Safe date math | Once validated, can do duration/range calculations |
+
+# When to Use
+
+- API request/response date validation
+- Event scheduling systems
+- Log timestamps
+- Database audit fields (created_at, updated_at)
+- Time-range queries
+- Calendar applications
+
+# Related Patterns
+
+- [Email Validation](./email.md)
+- [UUID Validation](./uuid.md)
+- [HTTP Header Validation](./http-headers.md)
