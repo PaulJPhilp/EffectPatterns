@@ -1,0 +1,206 @@
+---
+id: schema-api-response-with-retry
+title: API Validation with Retry
+category: validating-api-responses
+skill: intermediate
+tags:
+  - schema
+  - api
+  - retry
+  - error-recovery
+  - resilience
+---
+
+# Problem
+
+APIs are flaky. Network timeouts, rate limits, temporary service degradation—these happen. You validate the response with a schema, but what if the API is temporarily down?
+
+You need to:
+- Retry on network errors (transient failures)
+- Not retry on validation errors (permanent failures)
+- Back off exponentially to avoid hammering the API
+- Eventually fail with a clear error
+- Validate only successful responses
+
+# Solution
+
+```typescript
+import { Effect, Schema, Duration, Exit } from "effect"
+
+// Define the schema
+const User = Schema.Struct({
+  id: Schema.Number,
+  name: Schema.String,
+  email: Schema.String,
+})
+
+type User = typeof User.Type
+
+const parseUser = Schema.decodeUnknown(User)
+
+// Custom errors to distinguish failure modes
+class NetworkError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "NetworkError"
+  }
+}
+
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "ValidationError"
+  }
+}
+
+// Fetch with explicit error handling
+const fetchUserRaw = (id: number) =>
+  Effect.tryPromise(() =>
+    fetch(`https://api.example.com/users/${id}`)
+      .then((r) => {
+        if (!r.ok) throw new NetworkError(`HTTP ${r.status}`)
+        return r.json()
+      })
+  ).pipe(
+    Effect.catchAll((error) =>
+      // Wrap fetch errors as NetworkError
+      Effect.fail(new NetworkError(String(error)))
+    )
+  )
+
+// Validate response
+const validateUserResponse = (response: unknown) =>
+  parseUser(response).pipe(
+    Effect.mapError((error) => new ValidationError(String(error)))
+  )
+
+// Combine: fetch + validate with retry on network errors only
+const fetchUserWithRetry = (id: number) =>
+  Effect.gen(function* () {
+    const response = yield* fetchUserRaw(id)
+    const user = yield* validateUserResponse(response)
+    return user
+  }).pipe(
+    // Retry only network errors, not validation errors
+    Effect.retry({
+      times: 3,
+      delay: Duration.millis(100), // Initial delay
+      schedule: Effect.linear(Duration.millis(100)), // Linear backoff
+    }),
+    Effect.catchTag("ValidationError", (error) =>
+      // Don't retry validation errors—fail immediately
+      Effect.fail(error)
+    ),
+    Effect.catchTag("NetworkError", (error) =>
+      // All retries exhausted
+      Effect.fail(new Error(`Failed after 3 retries: ${error.message}`))
+    )
+  )
+
+// Alternative: Exponential backoff with max attempts
+const fetchUserWithExponentialBackoff = (id: number) =>
+  Effect.gen(function* () {
+    const response = yield* fetchUserRaw(id)
+    const user = yield* validateUserResponse(response)
+    return user
+  }).pipe(
+    Effect.retry({
+      times: 5,
+      delay: Duration.millis(100),
+      schedule: Effect.exponential(Duration.millis(100)), // 100ms, 200ms, 400ms, 800ms, 1600ms
+    })
+  )
+
+// With logging for visibility
+const fetchUserWithLogging = (id: number) =>
+  Effect.gen(function* () {
+    const response = yield* fetchUserRaw(id)
+    const user = yield* validateUserResponse(response)
+    return user
+  }).pipe(
+    Effect.retry({
+      times: 3,
+      delay: Duration.millis(100),
+      schedule: Effect.exponential(Duration.millis(100)),
+    }),
+    Effect.tapErrorTag("NetworkError", (error) =>
+      Effect.log(`Network error fetching user ${id}: ${error.message}`)
+    ),
+    Effect.tapErrorTag("ValidationError", (error) =>
+      Effect.log(`Validation error for user ${id}: ${error.message}`)
+    )
+  )
+
+// Batch fetch with retry
+const fetchUsers = (ids: number[]) =>
+  Effect.gen(function* () {
+    yield* Effect.log(`Fetching ${ids.length} users...`)
+
+    const users = yield* Effect.forEach(ids, (id) =>
+      fetchUserWithLogging(id)
+    )
+
+    yield* Effect.log(`Successfully fetched ${users.length} users`)
+    return users
+  }).pipe(
+    // Retry entire batch on transient failures
+    Effect.retry({
+      times: 2,
+      delay: Duration.seconds(1),
+      schedule: Effect.linear(Duration.seconds(1)),
+    })
+  )
+
+// Advanced: Partial recovery - fetch what we can
+const fetchUsersPartial = (ids: number[]) =>
+  Effect.gen(function* () {
+    const results = yield* Effect.forEach(ids, (id) =>
+      fetchUserWithRetry(id).pipe(Effect.exit)
+    )
+
+    const successful = results.filter(Exit.isSuccess).map((e) => e.value)
+    const failed = results.filter(Exit.isFailure).map((e) => e.cause)
+
+    yield* Effect.log(`Fetched ${successful.length}/${ids.length} users`)
+
+    if (failed.length > 0) {
+      yield* Effect.log(`${failed.length} users failed to fetch`)
+    }
+
+    return { users: successful, failedCount: failed.length }
+  })
+
+// Execute
+const main = Effect.gen(function* () {
+  const user = yield* fetchUserWithRetry(123)
+  yield* Effect.log(`User: ${user.name}`)
+})
+
+await Effect.runPromise(main)
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Separate errors** | Network errors vs. validation errors—retry first, never second |
+| **Effect.retry** | Automatically retries on error; configurable schedule and attempt limit |
+| **Backoff schedule** | Linear or exponential delays prevent overwhelming the API |
+| **catchTag** | Distinguish error types, apply different recovery strategies |
+| **tapErrorTag** | Log errors without changing them—useful for observability |
+| **Exit** | Wrap results as success/failure to handle partial success in batches |
+
+# When to Use
+
+- Fetching from remote APIs that might timeout or rate-limit
+- Network-dependent operations where retries help
+- Validation errors that shouldn't be retried
+- Batch operations where some items may fail
+- Distributed systems with transient failures
+
+# Related Patterns
+
+- [Basic API Response Decoding](./basic.md) — Start with simple validation first
+- [Handling Decode Failures](./error-handling.md) — Error recovery strategies
+- [Handling Union/Discriminated Responses](./union-responses.md) — Multiple response types
+- [Full Pipeline with @effect/platform](./with-http-client.md) — Complete HTTP workflow

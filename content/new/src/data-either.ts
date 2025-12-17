@@ -1,8 +1,8 @@
 import { Either } from "effect";
 
 // Create a Right (success) or Left (failure)
-const success = Either.right(42); // Either<never, number>
-const failure = Either.left("Something went wrong"); // Either<string, never>
+const success = Either.right(42); // Either<string, number>
+const failure = Either.left("Something went wrong"); // Either<string, number>
 
 // Pattern match on Either
 const result = success.pipe(
@@ -13,9 +13,9 @@ const result = success.pipe(
 ); // string
 
 // Combine multiple Eithers and accumulate errors
-const e1 = Either.right(1);
-const e2 = Either.left("fail1");
-const e3 = Either.left("fail2");
+const e1: Either.Either<string, number> = Either.right(1);
+const e2: Either.Either<string, number> = Either.left("fail1");
+const e3: Either.Either<string, number> = Either.left("fail2");
 
-const all = [e1, e2, e3].filter(Either.isRight).map((e) => e.right); // [1]
-const errors = [e1, e2, e3].filter(Either.isLeft).map((e) => e.left); // ["fail1", "fail2"]
+const all = [e1, e2, e3].filter(Either.isRight); // Either<string, number>[]
+const errors = [e1, e2, e3].filter(Either.isLeft); // Either<string, number>[]

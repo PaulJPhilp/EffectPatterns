@@ -1,17 +1,18 @@
-import { DateTime, Duration } from "effect";
+import { Duration } from "effect";
 
-// Create a DateTime for the current instant
-const now = DateTime.now(); // DateTime
+// Create a Date for the current instant
+const now = new Date();
 
 // Parse from ISO string
-const parsed = DateTime.fromISOString("2024-07-19T12:34:56Z"); // DateTime
+const parsed = new Date("2024-07-19T12:34:56Z");
 
 // Add or subtract durations
-const inOneHour = DateTime.plus(now, Duration.hours(1));
-const oneHourAgo = DateTime.minus(now, Duration.hours(1));
+const oneHour = Duration.toMillis(Duration.hours(1));
+const inOneHour = new Date(now.getTime() + oneHour);
+const oneHourAgo = new Date(now.getTime() - oneHour);
 
 // Format as ISO string
-const iso = DateTime.toISOString(now); // e.g., "2024-07-19T23:33:19.000Z"
+const iso = now.toISOString(); // e.g., "2024-07-19T23:33:19.000Z"
 
 // Compare DateTimes
-const isBefore = DateTime.before(oneHourAgo, now); // true
+const isBefore = oneHourAgo.getTime() < now.getTime(); // true

@@ -4,7 +4,7 @@ import { Redacted } from "effect";
 const secret = Redacted.make("super-secret-password");
 
 // Use the secret in your application logic
-function authenticate(user: string, password: Redacted<string>) {
+function authenticate(user: string, password: Redacted.Redacted<string>) {
   // ... authentication logic
 }
 

@@ -1,19 +1,20 @@
 import { Brand, Schema, Effect } from "effect";
 
 // Define a branded type for Email
-type Email = Brand.Branded<string, "Email">;
+type Email = Brand.Brand<string, "Email">;
 
 // Create a Schema for Email validation
-const EmailSchema = Schema.string.pipe(
-  Schema.pattern(/^[^@]+@[^@]+\.[^@]+$/), // Simple email regex
-  Brand.schema<Email>() // Attach the brand
+const EmailSchema = Schema.String.pipe(
+  Schema.pattern(/^[^@]+@[^@]+\.[^@]+$/)
+).pipe(
+  Schema.brand("Email")
 );
 
 // Parse and validate an email at runtime
 const parseEmail = (input: string) =>
-  Effect.try({
-    try: () => Schema.decodeSync(EmailSchema)(input),
-    catch: (err) => `Invalid email: ${String(err)}`,
+  Effect.tryPromise({
+    try: () => Promise.resolve(Schema.decodeSync(EmailSchema)(input)),
+    catch: (err) => new Error(`Invalid email: ${String(err)}`),
   });
 
 // Usage
