@@ -84,12 +84,8 @@
     "deploy:staging": "vercel --prod --yes",
     "deploy:production": "vercel --prod --yes",
     "deploy:mcp-server": "cd services/mcp-server && vercel --prod --yes",
-    "deploy:code-assistant": "cd app/code-assistant && vercel --prod --yes",
-    "deploy:web": "cd app/web && vercel --prod --yes",
     "rollback": "vercel rollback",
-    "rollback:mcp-server": "vercel rollback --project mcp-server",
-    "rollback:code-assistant": "vercel rollback --project code-assistant",
-    "rollback:web": "vercel rollback --project web"
+    "rollback:mcp-server": "vercel rollback --project mcp-server"
   },
   "dependencies": {
     "@effect/cli": "^0.69.2",
