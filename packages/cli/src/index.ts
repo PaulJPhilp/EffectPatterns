@@ -35,7 +35,10 @@ import {
   groupPatternsByCategory,
   generateCategorySkill,
   writeSkill,
+  generateGeminiSkill,
+  writeGeminiSkill,
   type PatternContent,
+  type GeminiSkillContent,
 } from "./skills/skill-generator.js";
 
 // --- PROJECT ROOT RESOLUTION ---
@@ -1739,7 +1742,7 @@ const rulesGenerateCommand = Command.make("generate", {
 );
 
 /**
- * install:skills - Generate Claude Skills from published Effect patterns
+ * install:skills - Generate Claude Skills and/or Gemini Skills from published Effect patterns
  */
 const installSkillsCommand = Command.make("skills", {
   options: {
@@ -1747,16 +1750,36 @@ const installSkillsCommand = Command.make("skills", {
       Options.withDescription("Generate skill for specific category only"),
       Options.optional
     ),
+    format: Options.text("format").pipe(
+      Options.withDescription("Output format: claude, gemini, or both (default: both)"),
+      Options.optional
+    ),
   },
   args: {},
 }).pipe(
   Command.withDescription(
-    "Generate Claude Skills from published Effect patterns"
+    "Generate Claude Skills and/or Gemini Skills from published Effect patterns"
   ),
-  Command.withHandler(({ options }) =>
-    Effect.gen(function* () {
+  Command.withHandler(({ options }) => {
+    return Effect.gen(function* () {
+      const formatOption = Option.getOrElse(options.format, () => "both");
+      const validFormats = ["claude", "gemini", "both"];
+
+      if (!validFormats.includes(formatOption.toLowerCase())) {
+        yield* Console.error(
+          colorize(
+            `\n❌ Invalid format: ${formatOption}\nValid options: ${validFormats.join(", ")}\n`,
+            "red"
+          )
+        );
+        return yield* Effect.fail(new Error("Invalid format option"));
+      }
+
+      const generateClaude = formatOption === "claude" || formatOption === "both";
+      const generateGemini = formatOption === "gemini" || formatOption === "both";
+
       yield* Console.log(
-        colorize("\n🎓 Generating Claude Skills from Effect Patterns\n", "bright")
+        colorize("\n🎓 Generating Skills from Effect Patterns\n", "bright")
       );
 
       const publishedDir = path.join(PROJECT_ROOT, "content/published");
@@ -1825,77 +1848,135 @@ const installSkillsCommand = Command.make("skills", {
           return yield* Effect.fail(new Error("Category not found"));
         }
 
-        const skillName = `effect-patterns-${category}`;
-        const content = generateCategorySkill(category, categoryPatterns);
+        // Generate Claude skill for category if requested
+        if (generateClaude) {
+          const skillName = `effect-patterns-${category}`;
+          const content = generateCategorySkill(category, categoryPatterns);
 
-        yield* Effect.tryPromise({
-          try: () => writeSkill(skillName, content, PROJECT_ROOT),
-          catch: (error) => new Error(`Failed to write skill: ${error}`)
-        });
+          yield* Effect.tryPromise({
+            try: () => writeSkill(skillName, content, PROJECT_ROOT),
+            catch: (error) => new Error(`Failed to write Claude skill: ${error}`)
+          });
 
-        yield* Console.log(
-          colorize(`✓ Generated: ${skillName}\n`, "green")
-        );
+          yield* Console.log(
+            colorize(`✓ Generated Claude skill: ${skillName}\n`, "green")
+          );
+        }
+
+        // Generate Gemini skill for category if requested
+        if (generateGemini) {
+          const geminiSkill = generateGeminiSkill(category, categoryPatterns);
+
+          yield* Effect.tryPromise({
+            try: () => writeGeminiSkill(geminiSkill, PROJECT_ROOT),
+            catch: (error) => new Error(`Failed to write Gemini skill: ${error}`)
+          });
+
+          yield* Console.log(
+            colorize(`✓ Generated Gemini skill: ${geminiSkill.skillId}\n`, "green")
+          );
+        }
+
         return;
       }
 
       // Generate all category skills
       yield* Console.log(
-        colorize(`📝 Generating ${categoryMap.size} skills...\n`, "cyan")
+        colorize(`📝 Generating ${categoryMap.size} skills for ${formatOption}...\n`, "cyan")
       );
 
-      let count = 0;
+      let claudeCount = 0;
+      let geminiCount = 0;
+
       for (const [category, categoryPatterns] of categoryMap.entries()) {
-        const skillName = `effect-patterns-${category}`;
-        const content = generateCategorySkill(category, categoryPatterns);
+        // Generate Claude skill
+        if (generateClaude) {
+          const skillName = `effect-patterns-${category}`;
+          const content = generateCategorySkill(category, categoryPatterns);
 
-        const writeResult = yield* Effect.tryPromise({
-          try: () => writeSkill(skillName, content, PROJECT_ROOT),
-          catch: (error) => new Error(`Failed to write ${skillName}: ${error}`)
-        }).pipe(
-          Effect.catchAll((error) =>
-            Effect.gen(function* () {
-              yield* Console.log(
-                colorize(
-                  `⚠️  ${error.message}`,
-                  "yellow"
-                )
-              );
-              return null;
-            })
-          )
-        );
-
-        if (writeResult !== null) {
-          yield* Console.log(
-            colorize(
-              `  ✓ ${skillName} (${categoryPatterns.length} patterns)`,
-              "green"
+          const writeResult = yield* Effect.tryPromise({
+            try: () => writeSkill(skillName, content, PROJECT_ROOT),
+            catch: (error) => new Error(`Failed to write ${skillName}: ${error}`)
+          }).pipe(
+            Effect.catchAll((error) =>
+              Effect.gen(function* () {
+                yield* Console.log(
+                  colorize(`⚠️  ${error.message}`, "yellow")
+                );
+                return null;
+              })
             )
           );
-          count++;
+
+          if (writeResult !== null) {
+            yield* Console.log(
+              colorize(
+                `  ✓ ${skillName} (${categoryPatterns.length} patterns)`,
+                "green"
+              )
+            );
+            claudeCount++;
+          }
+        }
+
+        // Generate Gemini skill
+        if (generateGemini) {
+          const geminiSkill = generateGeminiSkill(category, categoryPatterns);
+
+          const writeResult = yield* Effect.tryPromise({
+            try: () => writeGeminiSkill(geminiSkill, PROJECT_ROOT),
+            catch: (error) => new Error(`Failed to write Gemini skill: ${error}`)
+          }).pipe(
+            Effect.catchAll((error) =>
+              Effect.gen(function* () {
+                yield* Console.log(
+                  colorize(`⚠️  ${error.message}`, "yellow")
+                );
+                return null;
+              })
+            )
+          );
+
+          if (writeResult !== null) {
+            yield* Console.log(
+              colorize(
+                `  ✓ ${geminiSkill.skillId} (${categoryPatterns.length} patterns)`,
+                "green"
+              )
+            );
+            geminiCount++;
+          }
         }
       }
 
       // Summary
-      yield* showPanel(
-        `Generated ${count} Claude Skills from ${patterns.length} Effect patterns.
+      const summaryParts: string[] = [];
 
-Each skill is organized by category and includes:
+      if (generateClaude && claudeCount > 0) {
+        summaryParts.push(`Generated ${claudeCount} Claude Skills from ${patterns.length} Effect patterns.`);
+        summaryParts.push(`Claude Skills Location: .claude/skills/`);
+      }
+
+      if (generateGemini && geminiCount > 0) {
+        summaryParts.push(`Generated ${geminiCount} Gemini Skills from ${patterns.length} Effect patterns.`);
+        summaryParts.push(`Gemini Skills Location: .gemini/skills/`);
+      }
+
+      summaryParts.push(
+        `\nEach skill is organized by category and includes:
 - Curated patterns from the published library
 - Code examples (Good & Anti-patterns)
 - Rationale and best practices
-- Skill level guidance (Beginner → Intermediate → Advanced)
+- Skill level guidance (Beginner → Intermediate → Advanced)`
+      );
 
-Skills Location: .claude/skills/
-Use these skills in Claude Code or Claude Desktop for AI-powered guidance on Effect-TS patterns!`,
+      yield* showPanel(
+        summaryParts.join("\n"),
         "✨ Skills Generation Complete!",
         { type: "success" }
       );
-
-      return void 0;
-    })
-  )
+    });
+  })
 );
 
 /**

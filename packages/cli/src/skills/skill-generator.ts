@@ -248,3 +248,106 @@ export async function writeSkill(
   await fs.mkdir(skillDir, { recursive: true });
   await fs.writeFile(skillFile, content, 'utf-8');
 }
+
+/**
+ * Gemini Skills format types
+ */
+export interface GeminiSkillTool {
+  name: string;
+  description: string;
+  displayName: string;
+  skillLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+  codeExample?: string;
+  antiPattern?: string;
+  rationale?: string;
+}
+
+export interface GeminiSkillContent {
+  skillName: string;
+  skillId: string;
+  displayName: string;
+  description: string;
+  category: string;
+  totalPatterns: number;
+  tools: GeminiSkillTool[];
+  systemPrompt: string;
+}
+
+/**
+ * Generate Gemini Skill content in JSON format
+ *
+ * Creates a Gemini-compatible skill definition with tool descriptions
+ * that can be used to enhance Gemini's understanding of Effect-TS patterns.
+ */
+export function generateGeminiSkill(
+  category: string,
+  patterns: PatternContent[]
+): GeminiSkillContent {
+  // Format category name for display
+  const categoryTitle = category
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  // Sort by skill level
+  const levels = { beginner: 0, intermediate: 1, advanced: 2 };
+  const sorted = patterns.sort(
+    (a, b) => levels[a.skillLevel] - levels[b.skillLevel]
+  );
+
+  // Convert patterns to Gemini tools
+  const tools: GeminiSkillTool[] = sorted.map((pattern) => ({
+    name: pattern.id.replace(/-/g, '_'),
+    description: pattern.rule?.description || pattern.summary || '',
+    displayName: pattern.title,
+    skillLevel:
+      pattern.skillLevel === 'beginner'
+        ? 'BEGINNER'
+        : pattern.skillLevel === 'intermediate'
+          ? 'INTERMEDIATE'
+          : 'ADVANCED',
+    codeExample: pattern.goodExample ? pattern.goodExample.substring(0, 500) : undefined,
+    antiPattern: pattern.antiPattern ? pattern.antiPattern.substring(0, 300) : undefined,
+    rationale: pattern.rationale ? pattern.rationale.substring(0, 300) : undefined,
+  }));
+
+  // Create system prompt for Gemini
+  const systemPrompt = `You are an expert in Effect-TS patterns and best practices.
+
+When discussing ${categoryTitle.toLowerCase()} in Effect-TS applications, reference these patterns:
+
+${tools.map((tool) => `- ${tool.displayName}: ${tool.description}`).join('\n')}
+
+Provide practical guidance on using Effect-TS effectively, citing relevant patterns from this skill.
+When users ask about ${categoryTitle.toLowerCase()}, recommend the most appropriate patterns based on their use case.
+Include code examples and explain the rationale behind using Effect-TS patterns.`;
+
+  return {
+    skillName: `effect-patterns-${category}`,
+    skillId: `effect_patterns_${category.replace(/-/g, '_')}`,
+    displayName: `Effect-TS Patterns: ${categoryTitle}`,
+    description: `Expert patterns and best practices for ${categoryTitle.toLowerCase()} in Effect-TS applications`,
+    category,
+    totalPatterns: patterns.length,
+    tools,
+    systemPrompt,
+  };
+}
+
+/**
+ * Write Gemini Skill to the filesystem
+ *
+ * Creates the .gemini/skills/{skillName} directory and writes skill.json and system-prompt.txt
+ */
+export async function writeGeminiSkill(
+  skillContent: GeminiSkillContent,
+  projectRoot: string
+): Promise<void> {
+  const skillDir = path.join(projectRoot, '.gemini', 'skills', skillContent.skillId);
+  const skillFile = path.join(skillDir, 'skill.json');
+  const promptFile = path.join(skillDir, 'system-prompt.txt');
+
+  await fs.mkdir(skillDir, { recursive: true });
+  await fs.writeFile(skillFile, JSON.stringify(skillContent, null, 2), 'utf-8');
+  await fs.writeFile(promptFile, skillContent.systemPrompt, 'utf-8');
+}
