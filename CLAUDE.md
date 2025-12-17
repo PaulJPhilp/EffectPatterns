@@ -2,7 +2,7 @@
 
 Context for Claude Code when working on the Effect Patterns Hub repository.
 
-**Version:** 0.7.4 | **Last Updated:** 2025-12-13
+**Version:** 0.8.1 | **Last Updated:** 2025-12-17
 
 ---
 
@@ -24,11 +24,12 @@ bun run ep search "effect"     # Test CLI
 
 ## Project Overview
 
-Effect Patterns Hub is a knowledge base of 150+ practical patterns for building robust Effect-TS applications.
+Effect Patterns Hub is a knowledge base of 131+ practical patterns for building robust Effect-TS applications.
 
 **Main Components:**
-- Pattern Library (150+ curated patterns with TypeScript examples)
-- CLI Tool (`ep`) - Search and discover patterns
+- Pattern Library (131+ curated patterns with TypeScript examples)
+- CLI Tool (`ep`) - Search, discover, and manage patterns
+- Universal Skills Generation (v0.8.0+) - Export to Claude, Gemini, and OpenAI
 - Effect Patterns Toolkit - Type-safe pattern operations library
 - MCP Server - REST API for programmatic access
 - Code Assistant - AI-powered coding agent (Phase 1 complete)
@@ -74,6 +75,16 @@ bun run lint:effect         # Effect-specific linting
 bun run ep                  # Run CLI
 bun run ep search "query"   # Test search
 bun run ep lint --apply     # Auto-fix violations
+```
+
+**Skills Generation (v0.8.0+):**
+```bash
+bun run ep install skills                           # Generate all skills (Claude, Gemini, OpenAI)
+bun run ep install skills --format claude          # Claude Skills only
+bun run ep install skills --format gemini          # Gemini Skills only
+bun run ep install skills --format openai          # OpenAI Skills only
+bun run ep install skills --format claude,gemini   # Multiple formats
+bun run ep install skills --category error-management  # Specific category
 ```
 
 **MCP Server:**
@@ -235,14 +246,17 @@ const fetchUser = (id: string) =>
 - `vercel.json` - Vercel deployment settings
 
 **Content Directories:**
-- `content/published/*.mdx` - Final published patterns (150+)
+- `content/published/*.mdx` - Final published patterns (131+)
 - `content/new/src/*.ts` - TypeScript examples (development)
 - `content/new/processed/*.mdx` - MDX with component tags (from ingest)
 - `content/new/published/*.mdx` - Pipeline output (before finalization)
+- `.claude/skills/` - Generated Claude Skills (14 categories)
+- `.gemini/skills/` - Generated Gemini Skills (JSON format with system prompts)
+- `.openai/skills/` - Generated OpenAI Skills (SKILL.md format)
 
 **Core Entry Points:**
-- `packages/ep-cli/src/index.ts` - Main CLI
-- `packages/ep-admin/src/index.ts` - Admin CLI
+- `packages/cli/src/index.ts` - Main CLI
+- `packages/cli/src/skills/skill-generator.ts` - Skills generation utilities (v0.8.0+)
 - `services/mcp-server/src/` - MCP server
 - `packages/toolkit/src/` - Pattern toolkit
 - `app/code-assistant/` - Code Assistant app
@@ -276,6 +290,13 @@ const fetchUser = (id: string) =>
 - Check `PATTERN_API_KEY` is set in environment
 - Verify `data/patterns.json` exists
 - Run `bun run toolkit:build` first
+
+**Skills generation fails:**
+- Ensure published patterns exist: `ls content/published/*.mdx`
+- Verify YAML frontmatter is valid in pattern files
+- Check skill output directories are writable: `.claude/`, `.gemini/`, `.openai/`
+- Try specific format: `bun run ep install skills --format claude`
+- Review error message for missing pattern sections
 
 ---
 
