@@ -1,0 +1,185 @@
+---
+id: schema-ai-output-enums-and-literals
+title: Enums and Literal Types
+category: defining-ai-output-schemas
+skill: intermediate
+tags:
+  - schema
+  - ai
+  - enums
+  - literals
+  - constraints
+---
+
+# Problem
+
+You need the LLM to pick from a specific set of values—like priority levels, categories, or statuses. Without constraints, the LLM might output variations ("high", "HIGH", "urgent", "priority: high"), breaking your downstream logic. You need to enforce exact values at the schema level.
+
+# Solution
+
+```typescript
+import { Schema, JSONSchema, Effect } from "effect"
+import { Anthropic } from "@anthropic-ai/sdk"
+
+// 1. Define literal and enum types
+const Priority = Schema.Literal("critical", "high", "medium", "low").pipe(
+  Schema.description(
+    "Task priority: critical (fix immediately), high (this sprint), " +
+    "medium (next sprint), low (backlog)"
+  )
+)
+
+const Status = Schema.Enum({
+  TODO: "todo",
+  IN_PROGRESS: "in_progress",
+  BLOCKED: "blocked",
+  DONE: "done",
+  CANCELLED: "cancelled",
+})
+
+const Category = Schema.Union(
+  Schema.Literal("bug"),
+  Schema.Literal("feature"),
+  Schema.Literal("documentation"),
+  Schema.Literal("refactor"),
+  Schema.Literal("test")
+).pipe(
+  Schema.description("Categorize the work type")
+)
+
+// 2. Compose into task schema
+const Task = Schema.Struct({
+  title: Schema.String,
+  description: Schema.String,
+  priority: Priority,
+  status: Status,
+  category: Category,
+  estimatedHours: Schema.Number.pipe(
+    Schema.int(),
+    Schema.between(1, 40),
+    Schema.description("Estimate in hours: 1-40 range")
+  ),
+  labels: Schema.Array(Schema.String).pipe(
+    Schema.description(
+      "Free-form labels. Can include any string"
+    )
+  ),
+})
+
+type Task = typeof Task.Type
+
+// 3. Generate JSON Schema (shows enum values)
+const jsonSchema = JSONSchema.make(Task)
+// Schema shows: priority: { enum: ["critical", "high", "medium", "low"] }
+
+// 4. Use in LLM call
+const extractTask = (userInput: string) =>
+  Effect.gen(function* () {
+    const client = new Anthropic()
+
+    const response = yield* Effect.tryPromise({
+      try: () =>
+        client.messages.create({
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 1024,
+          messages: [
+            {
+              role: "user",
+              content: `Extract task details:\n\n${userInput}`,
+            },
+          ],
+          tools: [
+            {
+              name: "extract_task",
+              description: "Extract task with category and priority",
+              input_schema: jsonSchema as any,
+            },
+          ],
+        }),
+      catch: (error) => new Error(`API call failed: ${error}`),
+    })
+
+    const toolUse = response.content.find(
+      (block) => block.type === "tool_use"
+    ) as any
+
+    if (!toolUse) {
+      return yield* Effect.fail(new Error("No tool use in response"))
+    }
+
+    // Validation enforces literal values
+    const task = yield* Effect.tryPromise({
+      try: () => Schema.decodeUnknownSync(Task)(toolUse.input),
+      catch: (error) => new Error(`Invalid task data: ${error}`),
+    })
+
+    return task
+  })
+
+// 5. Type-safe pattern matching on enum values
+const getSeverityColor = (task: Task): string => {
+  switch (task.priority) {
+    case "critical":
+      return "#FF0000" // red
+    case "high":
+      return "#FF8800" // orange
+    case "medium":
+      return "#FFFF00" // yellow
+    case "low":
+      return "#00FF00" // green
+  }
+}
+
+const getStatusEmoji = (task: Task): string => {
+  switch (task.status) {
+    case "todo":
+      return "📋"
+    case "in_progress":
+      return "🚀"
+    case "blocked":
+      return "🚫"
+    case "done":
+      return "✅"
+    case "cancelled":
+      return "❌"
+  }
+}
+
+// Usage
+const userInput =
+  "We need to fix the critical login bug ASAP. " +
+  "It's preventing users from accessing the app. Estimate 3 hours."
+
+Effect.runPromise(extractTask(userInput))
+  .then((task) => {
+    console.log(`${getStatusEmoji(task)} ${task.title}`)
+    console.log(`Priority: ${task.priority}`)
+    console.log(`Category: ${task.category}`)
+    console.log(`Hours: ${task.estimatedHours}`)
+  })
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| `Schema.Literal` | Restricts to exact strings—LLM can't deviate |
+| `Schema.Enum` | Named constants mapped to values for cleaner code |
+| `Schema.Union` | Allows combining multiple literals for OR logic |
+| JSON Schema enum | LLM sees `"enum": ["critical", "high", ...]` in the tool schema |
+| Exhaustive matching | TypeScript forces all cases in `switch` statements |
+
+# When to Use
+
+- Status fields (todo, in_progress, done, etc.)
+- Priority levels (critical, high, medium, low)
+- Category selection (bug, feature, documentation)
+- Type classification (customer, vendor, internal)
+- Any field where LLM must pick from a fixed set
+
+# Related Patterns
+
+- [Basic AI Output Schema](./basic.md)
+- [Adding Descriptions for AI Context](./with-descriptions.md)
+- [Union Types for Flexible Outputs](./unions-for-ai.md)
+- [Integration with Vercel AI SDK](./vercel-ai-sdk.md)
