@@ -4,6 +4,84 @@ All notable changes to the Effect Patterns Hub project are documented here.
 
 ---
 
+## Version 0.8.1 - Documentation & QA Process Documentation (December 17, 2025)
+
+### 📚 Documentation Improvements
+
+#### New Comprehensive Documentation
+
+1. **[docs/QA_PROCESS.md](./docs/QA_PROCESS.md)** - Complete QA Workflow Guide
+   - Detailed overview of pattern Quality Assurance process
+   - QA architecture and pipeline flow
+   - Validation rules for patterns (ID, skill level, use cases, tags)
+   - Testing strategy (type checking + runtime validation)
+   - QA commands reference (`test`, `validate`, `qa:process`, `qa:report`, `qa:repair`)
+   - Automatic repair mechanisms for common issues
+   - Comprehensive troubleshooting guide
+   - Best practices for authors and reviewers
+   - 968 lines of detailed technical documentation
+
+2. **[docs/SKILLS.md](./docs/SKILLS.md)** - Universal Skills Generation Guide
+   - Multi-platform skill generation (Claude, Gemini, OpenAI)
+   - Platform-specific format specifications
+   - Quick start examples and usage patterns
+   - Skill directory structure and content
+   - Workflow integration guide
+   - Custom skill generation instructions
+
+#### Documentation Polish
+
+- **ABOUT.md** - Added v0.8.0 features and updated pattern counts (150+ → 131+)
+- **CLAUDE.md** - Added CLI skills commands and troubleshooting (v0.8.0 → v0.8.1)
+- **docs/ARCHITECTURE.md** - Updated monorepo structure with skills directories and CLI modules
+- **docs/PUBLISHING_PIPELINE.md** - Updated pattern counts and added skills reference
+- **docs/ep/SETUP.md** - Added "Generating AI Skills (v0.8.0+)" section
+- **docs/DATA_ANALYSIS.md** - Fixed broken analyzer directory references
+
+#### Fixed Issues
+
+- ✅ Fixed broken links to analyzer documentation (scripts/analyzer/ → agents/analyzer/)
+- ✅ Updated SETUP.md references to correct path (docs/ep/SETUP.md)
+- ✅ Added missing SKILLS.md to documentation index
+- ✅ Updated pattern count references (150+ → 131+) across all documentation
+
+### 📊 Documentation Statistics
+
+- **New Files:** 2 (QA_PROCESS.md, SKILLS.md)
+- **Files Updated:** 8
+- **Broken Links Fixed:** 2
+- **New Sections Added:** 6
+- **Total Lines Added:** 1,500+
+
+### 🔍 QA Process Coverage
+
+The new QA_PROCESS.md documents:
+
+- **test-improved.ts** - TypeScript type checking and runtime validation
+- **validate-improved.ts** - MDX structure and frontmatter validation
+- **qa-process.sh** - QA orchestration and pattern analysis
+- **qa-report.ts** - Comprehensive report generation with metrics
+- **qa-repair.ts** - Automatic fixes for common issues
+- **qa-status.ts** - Status checking and file integrity validation
+
+### ✅ Backward Compatibility
+
+All changes are fully backward compatible:
+- No code changes
+- No CLI modifications
+- No pattern modifications
+- Documentation-only release
+
+### 🎯 Benefits
+
+- Developers can understand the complete QA workflow
+- Pattern authors know validation requirements upfront
+- QA reviewers have comprehensive guides for maintenance
+- Contributors can troubleshoot issues independently
+- Documentation is now more discoverable and organized
+
+---
+
 ## Version 0.8.0 - Multi-Platform Skills Release (December 17, 2025)
 
 ### 🎯 Major Features
