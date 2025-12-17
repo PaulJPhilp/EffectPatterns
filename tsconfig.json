@@ -31,6 +31,7 @@
   "include": [
     "scripts/publish/**/*.ts",
     "scripts/qa/**/*.ts",
+    "scripts/*.ts",
     "content/src/**/*.ts",
     "content/new/src/**/*.ts",
     "content/new/processed/**/*.ts",
@@ -67,13 +68,22 @@
     "content/new/src/constructor-try-trypromise.ts",
     "content/new/src/combinator-foreach-all.ts",
     "content/new/src/brand-validate-parse.ts",
+    "content/new/src/brand-model-domain-type.ts",
     "content/new/src/combinator-conditional.ts",
     "content/new/src/combinator-filter.ts",
     "content/new/src/data-class.ts",
     "content/new/src/data-either.ts",
     "content/new/src/pattern-option-either-match.ts",
+    "content/new/src/data-bigdecimal.ts",
+    "content/new/src/data-case.ts",
+    "content/new/src/data-cause.ts",
+    "content/new/src/data-chunk.ts",
+    "content/new/src/data-datetime.ts",
+    "content/new/src/data-readonly-array.ts",
+    "content/new/src/data-redacted.ts",
+    "content/new/src/data-duration.ts",
+    "content/new/src/data-option.ts",
     "scripts/ingest-discord.ts",
-    "scripts/ingest/populate-expectations.ts",
-    "scripts/ingest/process.ts"
+    "scripts/ingest/**/*.ts"
   ]
 }
