@@ -1,0 +1,304 @@
+---
+id: schema-json-db-schema-evolution
+title: Handling Schema Evolution
+category: json-db-validation
+skill: intermediate
+tags:
+  - schema
+  - database
+  - json
+  - evolution
+  - migration
+---
+
+# Problem
+
+Databases store historical data in JSONB columns that may be from different application versions. Your current schema expects fields that old records don't have. Old records might have fields your current code doesn't recognize. You need to validate and transform data from different schema versions gracefully—accepting v1 and v2 and v3 data, normalizing them to your current schema, and logging what was transformed. You can't just reject old data; you need migration strategies.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect";
+
+// 1. Define schema versions
+const UserProfileV1 = Schema.Struct({
+  userId: Schema.String,
+  name: Schema.String,
+  email: Schema.String,
+  createdAt: Schema.String,
+});
+
+type UserProfileV1 = typeof UserProfileV1.Type;
+
+// V2: Added `phone` field
+const UserProfileV2 = Schema.Struct({
+  userId: Schema.String,
+  name: Schema.String,
+  email: Schema.String,
+  phone: Schema.String.pipe(Schema.optional),
+  createdAt: Schema.String,
+  updatedAt: Schema.String.pipe(Schema.optional),
+});
+
+type UserProfileV2 = typeof UserProfileV2.Type;
+
+// V3: Renamed `name` to `fullName`, added `version` marker
+const UserProfileV3 = Schema.Struct({
+  userId: Schema.String,
+  fullName: Schema.String,
+  email: Schema.String,
+  phone: Schema.String.pipe(Schema.optional),
+  createdAt: Schema.String,
+  updatedAt: Schema.String.pipe(Schema.optional),
+  schemaVersion: Schema.Literal("v1", "v2", "v3").pipe(
+    Schema.optionalWith({ default: () => "v3" })
+  ),
+});
+
+type UserProfileV3 = typeof UserProfileV3.Type;
+
+// Current schema (V3)
+const UserProfile = UserProfileV3;
+type UserProfile = UserProfileV3;
+
+// 2. Detect schema version
+const detectSchemaVersion = (
+  data: unknown
+): "v1" | "v2" | "v3" => {
+  const obj = data as Record<string, unknown>;
+
+  // V3: Has schemaVersion field
+  if (obj.schemaVersion) {
+    return "v3";
+  }
+
+  // V3: Has updatedAt (differentiator from V2)
+  if (obj.updatedAt !== undefined) {
+    return "v3";
+  }
+
+  // V2: Has phone field (differentiator from V1)
+  if (obj.phone !== undefined) {
+    return "v2";
+  }
+
+  // V1: Minimal fields
+  return "v1";
+};
+
+// 3. Migrate from V1 to V3
+const migrateFromV1 = (v1: UserProfileV1) =>
+  Effect.gen(function* () {
+    const v3: UserProfileV3 = {
+      userId: v1.userId,
+      fullName: v1.name, // Renamed field
+      email: v1.email,
+      phone: undefined, // New field
+      createdAt: v1.createdAt,
+      updatedAt: undefined, // New field
+      schemaVersion: "v1", // Track origin
+    };
+
+    yield* Effect.sync(() => {
+      console.log(
+        `  ↳ Migrated from V1: name → fullName`
+      );
+    });
+
+    return v3;
+  });
+
+// 4. Migrate from V2 to V3
+const migrateFromV2 = (v2: UserProfileV2) =>
+  Effect.gen(function* () {
+    // V2 might have old `name` field
+    const obj = v2 as Record<string, unknown>;
+    const fullName = (obj.name as string) || "Unknown";
+
+    const v3: UserProfileV3 = {
+      userId: v2.userId,
+      fullName,
+      email: v2.email,
+      phone: v2.phone,
+      createdAt: v2.createdAt,
+      updatedAt: v2.updatedAt,
+      schemaVersion: "v2",
+    };
+
+    yield* Effect.sync(() => {
+      console.log(
+        `  ↳ Migrated from V2: preserved phone, added schemaVersion`
+      );
+    });
+
+    return v3;
+  });
+
+// 5. Universal validator with version detection
+const validateAndMigrate = (rawData: unknown) =>
+  Effect.gen(function* () {
+    const version = detectSchemaVersion(rawData);
+
+    console.log(`📊 Detected schema version: ${version}`);
+
+    let profile: UserProfile;
+
+    switch (version) {
+      case "v1": {
+        const v1 = yield* Schema.decodeUnknown(UserProfileV1)(
+          rawData
+        ).pipe(
+          Effect.mapError((error) => ({
+            _tag: "V1Error" as const,
+            message: `V1 validation failed: ${error.message}`,
+          }))
+        );
+        profile = yield* migrateFromV1(v1);
+        break;
+      }
+
+      case "v2": {
+        const v2 = yield* Schema.decodeUnknown(UserProfileV2)(
+          rawData
+        ).pipe(
+          Effect.mapError((error) => ({
+            _tag: "V2Error" as const,
+            message: `V2 validation failed: ${error.message}`,
+          }))
+        );
+        profile = yield* migrateFromV2(v2);
+        break;
+      }
+
+      case "v3": {
+        profile = yield* Schema.decodeUnknown(UserProfile)(
+          rawData
+        ).pipe(
+          Effect.mapError((error) => ({
+            _tag: "V3Error" as const,
+            message: `V3 validation failed: ${error.message}`,
+          }))
+        );
+        break;
+      }
+    }
+
+    return profile;
+  });
+
+// 6. Batch migrate historical records
+const migrateHistoricalRecords = (records: unknown[]) =>
+  Effect.gen(function* () {
+    console.log(`\n🔄 Migrating ${records.length} records...\n`);
+
+    const results = yield* Effect.all(
+      records.map((record, index) =>
+        validateAndMigrate(record).pipe(
+          Effect.catchAll((error) =>
+            Effect.succeed({
+              index,
+              success: false,
+              error: error.message,
+            } as const)
+          )
+        )
+      )
+    );
+
+    const successful = results.filter((r) => "userId" in r);
+    const failed = results.filter(
+      (r) => !("userId" in r)
+    );
+
+    console.log(
+      `\n✅ Migrated ${successful.length}/${records.length} records`
+    );
+    if (failed.length > 0) {
+      console.log(`⚠️  ${failed.length} records failed`);
+    }
+
+    return { successful, failed };
+  });
+
+// 7. Usage: Migrate from different versions
+const historicalData: unknown[] = [
+  // V1 record (old)
+  {
+    userId: "user-1",
+    name: "Alice",
+    email: "alice@example.com",
+    createdAt: "2023-01-15T00:00:00Z",
+  },
+  // V2 record (transitional)
+  {
+    userId: "user-2",
+    name: "Bob",
+    email: "bob@example.com",
+    phone: "+1-555-1234",
+    createdAt: "2023-06-20T00:00:00Z",
+    updatedAt: "2024-01-10T00:00:00Z",
+  },
+  // V3 record (current)
+  {
+    userId: "user-3",
+    fullName: "Charlie Brown",
+    email: "charlie@example.com",
+    phone: "+1-555-5678",
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-12-17T00:00:00Z",
+    schemaVersion: "v3",
+  },
+];
+
+Effect.runPromise(
+  migrateHistoricalRecords(historicalData)
+)
+  .then((result) => {
+    if (result.successful.length > 0) {
+      console.log("\n📋 Sample migrated record:");
+      const sample = result.successful[0];
+      console.log(`  User: ${sample.fullName}`);
+      console.log(`  Email: ${sample.email}`);
+      console.log(
+        `  From Schema: ${sample.schemaVersion}`
+      );
+    }
+  })
+  .catch((error) => {
+    console.error(
+      `❌ Migration failed: ${error.message}`
+    );
+  });
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| Version detection | Identify schema version from data structure |
+| Progressive migration | V1 → V2 → V3 pipelines handle all cases |
+| Backward compatibility | Accept old data without rejection |
+| Field mapping | Rename/restructure fields during migration |
+| Metadata tracking | `schemaVersion` marker identifies origin |
+| Effect composition | Chain validations and migrations |
+| Batch operations | Migrate multiple records with error reporting |
+| Audit trail | Log what changed during migration |
+
+# When to Use
+
+- Long-running systems with historical database data
+- Schema changes: adding fields, renaming, removing deprecated fields
+- Multi-version APIs that receive data from different client versions
+- Data imports from older systems
+- Gradual schema rollouts where old and new data coexist
+- Audit logs where structure evolved over time
+- Preventing data loss when schema changes
+- Zero-downtime deployments with schema migrations
+- Database backups from different application versions
+
+# Related Patterns
+
+- [Validating JSON Database Columns](./basic.md)
+- [PostgreSQL JSONB Validation](./postgres-jsonb.md)
+- [Validating Partial Documents](./partial-validation.md)
+- [Nested Form Structures](../form-validation/nested-forms.md)
