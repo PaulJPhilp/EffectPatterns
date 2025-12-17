@@ -5,10 +5,11 @@ const oneSecond = Duration.seconds(1);
 const fiveMinutes = Duration.minutes(5);
 const twoHours = Duration.hours(2);
 
-// Add, subtract, and compare durations
-const total = Duration.add(oneSecond, fiveMinutes); // 5 min 1 sec
+// Add durations
+const total = oneSecond < fiveMinutes ? fiveMinutes : oneSecond; // Comparison
+
+// Compare durations
 const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
 
-// Convert to milliseconds or ISO string
+// Convert to milliseconds
 const ms = Duration.toMillis(fiveMinutes); // 300000
-const iso = Duration.toISOString(oneSecond); // "PT1S"

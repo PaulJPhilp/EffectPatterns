@@ -1,0 +1,287 @@
+---
+id: schema-api-response-with-http-client
+title: Full Pipeline with @effect/platform
+category: validating-api-responses
+skill: advanced
+tags:
+  - schema
+  - api
+  - http-client
+  - effect-platform
+  - production
+---
+
+# Problem
+
+Production code needs more than `fetch()`: connection pooling, request timeouts, retries, logging, metrics, and proper resource management. Using `Effect.tryPromise` with raw `fetch` is fragile.
+
+You need an HTTP client that:
+- Integrates natively with Effect
+- Handles connection pooling automatically
+- Supports timeouts and retries as first-class citizens
+- Works with Schemas for validation
+- Provides observability (logging, metrics, tracing)
+- Cleans up resources properly
+
+# Solution
+
+```typescript
+import { Effect, Schema, Duration, HttpClient, Layer } from "effect"
+import { HttpClientRequest, HttpClientResponse } from "@effect/platform"
+
+// 1. Define the schema
+const User = Schema.Struct({
+  id: Schema.Number,
+  name: Schema.String,
+  email: Schema.String,
+})
+
+type User = typeof User.Type
+
+const parseUser = Schema.decodeUnknown(User)
+
+// 2. Create a typed HTTP client service
+interface UserClient {
+  readonly getUser: (id: number) => Effect.Effect<User>
+}
+
+const UserClient = Effect.Tag<UserClient>()
+
+// 3. Implement the service
+const UserClientLive = Layer.succeed(
+  UserClient,
+  {
+    getUser: (id: number) =>
+      Effect.gen(function* () {
+        const client = yield* HttpClient.HttpClient
+
+        // Build request
+        const request = HttpClientRequest.get(
+          `https://api.example.com/users/${id}`
+        )
+
+        // Execute request with timeout
+        const response = yield* client(request).pipe(
+          Effect.timeout(Duration.seconds(5))
+        )
+
+        // Validate status
+        const statusCode = response.status
+
+        if (statusCode !== 200) {
+          return yield* Effect.fail(
+            new Error(`HTTP ${statusCode}: Failed to fetch user ${id}`)
+          )
+        }
+
+        // Parse body as JSON
+        const body = yield* response.json
+
+        // Validate against schema
+        const user = yield* parseUser(body)
+
+        return user
+      }).pipe(
+        // Retry on transient errors
+        Effect.retry({
+          times: 3,
+          delay: Duration.millis(100),
+          schedule: Effect.exponential(Duration.millis(100)),
+        })
+      ),
+  } satisfies UserClient
+)
+
+// 4. Use the service
+const fetchUser = (id: number) =>
+  Effect.gen(function* () {
+    const userClient = yield* UserClient
+    const user = yield* userClient.getUser(id)
+
+    yield* Effect.log(`Fetched user: ${user.name} <${user.email}>`)
+
+    return user
+  })
+
+// 5. Run with proper resource management
+const main = Effect.gen(function* () {
+  const user = yield* fetchUser(123)
+  yield* Effect.log(`Processing user: ${user.email}`)
+})
+
+// Provide the HTTP client and UserClient layers
+const layer = Layer.merge(
+  HttpClient.layer, // Built-in HTTP client from @effect/platform
+  UserClientLive    // Our user service
+)
+
+await Effect.runPromise(main.pipe(Effect.provide(layer)))
+```
+
+## More Advanced: Custom Client with Middleware
+
+```typescript
+import { Effect, Schema, Duration, HttpClient, Layer, Fiber } from "effect"
+import { HttpClientRequest } from "@effect/platform"
+
+// Schemas
+const User = Schema.Struct({
+  id: Schema.Number,
+  name: Schema.String,
+  email: Schema.String,
+})
+
+type User = typeof User.Type
+
+const parseUser = Schema.decodeUnknown(User)
+
+// Error type
+class ApiError extends Error {
+  constructor(
+    readonly statusCode: number,
+    readonly path: string,
+    message: string
+  ) {
+    super(message)
+    this.name = "ApiError"
+  }
+}
+
+// Custom HTTP client with logging and metrics
+interface ApiClient {
+  readonly get: <T>(
+    path: string,
+    schema: Schema.Schema<T>
+  ) => Effect.Effect<T, ApiError>
+  readonly baseUrl: string
+}
+
+const ApiClient = Effect.Tag<ApiClient>()
+
+const createApiClient = (baseUrl: string): Layer.Layer<ApiClient> =>
+  Layer.succeed(ApiClient, {
+    baseUrl,
+    get: (path, schema) =>
+      Effect.gen(function* () {
+        const httpClient = yield* HttpClient.HttpClient
+
+        yield* Effect.log(`GET ${path}`)
+
+        const request = HttpClientRequest.get(`${baseUrl}${path}`)
+
+        const response = yield* httpClient(request).pipe(
+          Effect.timeout(Duration.seconds(10)),
+          Effect.catchTag("TimeoutException", () =>
+            Effect.fail(
+              new ApiError(0, path, `Request timeout for ${path}`)
+            )
+          )
+        )
+
+        // Check status
+        if (response.status !== 200) {
+          const errorBody = yield* response.text
+
+          return yield* Effect.fail(
+            new ApiError(
+              response.status,
+              path,
+              `HTTP ${response.status}: ${errorBody}`
+            )
+          )
+        }
+
+        // Parse and validate
+        const body = yield* response.json
+
+        const parsed = yield* Schema.decodeUnknown(schema)(body).pipe(
+          Effect.mapError(
+            (error) =>
+              new ApiError(
+                200,
+                path,
+                `Validation error: ${String(error)}`
+              )
+          )
+        )
+
+        yield* Effect.log(`✓ ${path}`)
+
+        return parsed
+      }).pipe(
+        Effect.retry({
+          times: 2,
+          delay: Duration.millis(200),
+          schedule: Effect.exponential(Duration.millis(200)),
+        }),
+        Effect.tapError((error) =>
+          Effect.log(`✗ ${path}: ${error.message}`)
+        )
+      ),
+  } satisfies ApiClient)
+
+// Use the custom client
+const getUserService = (userId: number) =>
+  Effect.gen(function* () {
+    const client = yield* ApiClient
+    const user = yield* client.get(
+      `/users/${userId}`,
+      User
+    )
+    return user
+  })
+
+// Batch operation with the client
+const fetchMultipleUsers = (userIds: number[]) =>
+  Effect.gen(function* () {
+    const client = yield* ApiClient
+    yield* Effect.log(`Fetching ${userIds.length} users...`)
+
+    const users = yield* Effect.forEach(userIds, (id) =>
+      client.get(`/users/${id}`, User)
+    )
+
+    yield* Effect.log(`✓ Fetched ${users.length} users`)
+    return users
+  })
+
+// Run with proper dependencies
+const program = Effect.gen(function* () {
+  const users = yield* fetchMultipleUsers([1, 2, 3])
+  yield* Effect.log(`Users: ${users.map((u) => u.name).join(", ")}`)
+})
+
+const layer = Layer.merge(
+  HttpClient.layer,
+  createApiClient("https://jsonplaceholder.typicode.com")
+)
+
+await Effect.runPromise(program.pipe(Effect.provide(layer)))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **HttpClient from @effect/platform** | Native Effect HTTP client with connection pooling, timeout handling, proper resource cleanup |
+| **Layers for DI** | Inject HTTP client and custom services—easy to test with mocks |
+| **Typed services** | Create service interfaces that clients depend on, not implementation details |
+| **Timeout as first-class** | Built-in timeout support prevents hanging requests |
+| **Retry with schedule** | Exponential backoff is configured, not ad-hoc |
+| **Error handling** | Custom error types (`ApiError`) distinct from other failures |
+| **Observability** | Logging at request/response boundaries, not mixed into business logic |
+
+# When to Use
+
+- Production APIs that need reliable, observable HTTP clients
+- Services that require connection pooling and timeout management
+- Complex applications with multiple API dependencies
+- When you need request-level logging and metrics
+- Distributed systems requiring observability
+
+# Related Patterns
+
+- [Basic API Response Decoding](./basic.md) — Start with simple validation
+- [Handling Decode Failures](./error-handling.md) — Error recovery strategies
+- [Decoding Nested API Responses](./nested-responses.md) — Complex response structures
+- [API Validation with Retry](./with-retry.md) — Retry strategies

@@ -1,15 +1,15 @@
 import { Chunk } from "effect";
 
 // Create a Chunk from an array
-const numbers = Chunk.fromArray([1, 2, 3, 4]); // Chunk<number>
+const numbers = Chunk.unsafeFromArray([1, 2, 3, 4]); // Chunk<number>
 
 // Map and filter over a Chunk
-const doubled = Chunk.map(numbers, (n) => n * 2); // Chunk<number>
-const evens = Chunk.filter(numbers, (n) => n % 2 === 0); // Chunk<number>
+const doubled = numbers.pipe(Chunk.map((n: number) => n * 2)); // Chunk<number>
+const evens = numbers.pipe(Chunk.filter((n: number) => n % 2 === 0)); // Chunk<number>
 
 // Concatenate Chunks
-const moreNumbers = Chunk.fromArray([5, 6]);
-const allNumbers = Chunk.concat(numbers, moreNumbers); // Chunk<number>
+const moreNumbers = Chunk.unsafeFromArray([5, 6]);
+const allNumbers = numbers.pipe(Chunk.appendAll(moreNumbers)); // Chunk<number>
 
 // Convert back to array
-const arr = Chunk.toArray(allNumbers); // number[]
+const arr = Array.from(allNumbers); // number[]
