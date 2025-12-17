@@ -10,15 +10,24 @@ Use Effect.log, Effect.logInfo, and Effect.logError to add structured, context-a
 import { Effect } from "effect";
 
 // Log a simple message
-const program = Effect.log("Starting the application");
+const program = Effect.gen(function* () {
+  yield* Effect.log("Starting the application");
+});
 
 // Log at different levels
-const info = Effect.logInfo("User signed in");
-const error = Effect.logError("Failed to connect to database");
+const infoProgram = Effect.gen(function* () {
+  yield* Effect.logInfo("User signed in");
+});
+
+const errorProgram = Effect.gen(function* () {
+  yield* Effect.logError("Failed to connect to database");
+});
 
 // Log with dynamic values
 const userId = 42;
-const logUser = Effect.logInfo(`Processing user: ${userId}`);
+const logUserProgram = Effect.gen(function* () {
+  yield* Effect.logInfo(`Processing user: ${userId}`);
+});
 
 // Use logging in a workflow
 const workflow = Effect.gen(function* () {
@@ -67,3 +76,4 @@ console.log(String(secret)); // Output: <redacted>
 - Prevents accidental exposure of secrets in logs or error messages.
 
 ---
+

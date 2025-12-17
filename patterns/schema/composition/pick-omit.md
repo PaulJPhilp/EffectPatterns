@@ -1,0 +1,269 @@
+---
+id: schema-pick-omit
+title: Pick and Omit - Selecting and Excluding Fields
+category: composition
+skill: intermediate
+tags:
+  - schema
+  - composition
+  - pick
+  - omit
+  - field-selection
+---
+
+# Problem
+
+You have a comprehensive User schema with 15 fields. For the public profile API, you only need 5 fields. For the admin export, you need everything except passwords and tokens. Writing three separate schemas is redundant. You need to derive schemas by selecting or excluding specific fields.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// ============================================
+// 1. Comprehensive schema
+// ============================================
+
+const User = Schema.Struct({
+  id: Schema.String,
+  username: Schema.String,
+  email: Schema.String,
+  password: Schema.String,
+  bio: Schema.Optional(Schema.String),
+  avatar: Schema.Optional(Schema.String),
+  role: Schema.String,
+  createdAt: Schema.Date,
+  updatedAt: Schema.Date,
+  lastLogin: Schema.Optional(Schema.Date),
+  emailVerified: Schema.Boolean,
+  phoneVerified: Schema.Boolean,
+  twoFactorSecret: Schema.Optional(Schema.String),
+  apiToken: Schema.Optional(Schema.String),
+  preferences: Schema.Struct({
+    theme: Schema.Enum({ light: "light", dark: "dark" }),
+    language: Schema.String,
+    notifications: Schema.Boolean,
+  }),
+})
+
+type User = typeof User.Type
+
+// ============================================
+// 2. Pick - select specific fields
+// ============================================
+
+// Public profile - only certain fields
+const PublicProfile = Schema.pick(User, ["id", "username", "bio", "avatar", "createdAt"])
+
+type PublicProfile = typeof PublicProfile.Type
+
+// Admin view - most fields
+const AdminView = Schema.pick(User, [
+  "id",
+  "username",
+  "email",
+  "role",
+  "createdAt",
+  "updatedAt",
+  "emailVerified",
+  "phoneVerified",
+  "lastLogin",
+])
+
+type AdminView = typeof AdminView.Type
+
+// API key response
+const ApiTokenResponse = Schema.pick(User, ["id", "username", "apiToken", "createdAt"])
+
+type ApiTokenResponse = typeof ApiTokenResponse.Type
+
+// ============================================
+// 3. Omit - exclude specific fields
+// ============================================
+
+// Sanitized for export (remove sensitive data)
+const UserForExport = Schema.omit(User, [
+  "password",
+  "twoFactorSecret",
+  "apiToken",
+])
+
+type UserForExport = typeof UserForExport.Type
+
+// User update input (exclude immutable fields)
+const UpdateUserInput = Schema.omit(User, [
+  "id",
+  "createdAt",
+  "updatedAt",
+  "role",
+])
+
+type UpdateUserInput = typeof UpdateUserInput.Type
+
+// ============================================
+// 4. Combination patterns
+// ============================================
+
+// User with credentials for login
+const UserCredentials = Schema.pick(User, ["email", "password"])
+
+type UserCredentials = typeof UserCredentials.Type
+
+// Minimal info for list views
+const UserListItem = Schema.pick(User, ["id", "username", "role", "lastLogin"])
+
+type UserListItem = typeof UserListItem.Type
+
+// ============================================
+// 5. Processing picked/omitted schemas
+// ============================================
+
+const sanitizeForPublic = (user: User): PublicProfile => ({
+  id: user.id,
+  username: user.username,
+  bio: user.bio,
+  avatar: user.avatar,
+  createdAt: user.createdAt,
+})
+
+const sanitizeForExport = (user: User): UserForExport => {
+  const { password, twoFactorSecret, apiToken, ...rest } = user
+  return rest
+}
+
+const parsePublicProfile = (raw: unknown): Effect.Effect<PublicProfile, Error> =>
+  Effect.tryPromise({
+    try: () => Schema.decodeUnknown(PublicProfile)(raw),
+    catch: (error) => new Error(String(error)),
+  })
+
+// ============================================
+// 6. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  console.log("=== Pick and Omit Patterns ===\n")
+
+  // Full user with all sensitive data
+  const fullUser: User = {
+    id: "user_123",
+    username: "alice",
+    email: "alice@example.com",
+    password: "$2b$10$...",
+    bio: "Developer and open source enthusiast",
+    avatar: "https://example.com/alice.png",
+    role: "user",
+    createdAt: new Date("2025-01-01"),
+    updatedAt: new Date("2025-12-17"),
+    lastLogin: new Date("2025-12-16"),
+    emailVerified: true,
+    phoneVerified: false,
+    twoFactorSecret: "test_2fa_secret_xxxxx",
+    apiToken: "pk_test_xxxxxxxxxxxxxxxxxxxx",
+    preferences: {
+      theme: "dark",
+      language: "en",
+      notifications: true,
+    },
+  }
+
+  console.log("1. Full User (all fields):")
+  console.log(Object.keys(fullUser).join(", "))
+
+  console.log("\n2. Public Profile (picked fields):")
+  const publicProfile = sanitizeForPublic(fullUser)
+  console.log(Object.keys(publicProfile).join(", "))
+  console.log(`  - ${publicProfile.username}: ${publicProfile.bio}`)
+
+  console.log("\n3. Admin View (picked fields):")
+  const adminView = Schema.pick(User, [
+    "id",
+    "username",
+    "email",
+    "role",
+    "emailVerified",
+  ]) as unknown as typeof AdminView
+  const admin = (({ id, username, email, role, emailVerified }) => ({
+    id,
+    username,
+    email,
+    role,
+    emailVerified,
+  }))(fullUser as any)
+  console.log(Object.keys(admin).join(", "))
+
+  console.log("\n4. User For Export (omitted fields):")
+  const exported = sanitizeForExport(fullUser)
+  console.log(Object.keys(exported).join(", "))
+  console.log(`  ✗ Removed: password, twoFactorSecret, apiToken`)
+
+  console.log("\n5. List View (picked for tables):")
+  const listItem: UserListItem = {
+    id: fullUser.id,
+    username: fullUser.username,
+    role: fullUser.role,
+    lastLogin: fullUser.lastLogin,
+  }
+  console.log(Object.keys(listItem).join(", "))
+
+  console.log("\n6. API Response (minimal for clients):")
+  const apiResponse: ApiTokenResponse = {
+    id: fullUser.id,
+    username: fullUser.username,
+    apiToken: fullUser.apiToken,
+    createdAt: fullUser.createdAt,
+  }
+  console.log(Object.keys(apiResponse).join(", "))
+
+  console.log("\n7. Update Input (exclude immutable):")
+  console.log("Allowed fields:")
+  console.log([
+    "username",
+    "email",
+    "bio",
+    "avatar",
+    "preferences",
+  ].join(", "))
+  console.log(`  ✗ Cannot update: id, createdAt, updatedAt, role`)
+
+  console.log("\n8. Type Safety Example:")
+  console.log("All derived schemas are fully typed at compile time")
+  console.log("Missing fields → TypeScript error")
+  console.log("Extra fields → TypeScript error")
+
+  return { fullUser, publicProfile, exported }
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Pick/Omit patterns complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Pick** | Select exact fields needed; ignore the rest |
+| **Omit** | Exclude sensitive fields automatically |
+| **Type derivation** | New type inferred from selected fields |
+| **No duplication** | Single source of truth; derive variants |
+| **API contracts** | Different endpoints get different schemas |
+| **Security** | Easy to exclude passwords, tokens, secrets |
+| **Composition** | Combine with other patterns |
+
+# When to Use
+
+- Public API vs admin API views
+- User profiles (public/private/admin)
+- Export formats (include/exclude fields)
+- Form inputs (which fields to show)
+- Data sanitization for external systems
+- API response shaping
+- Reducing payload size
+
+# Related Patterns
+
+- [Extend Schemas](./extend-schemas.md)
+- [Merge Schemas](./merge-schemas.md)
+- [Inheritance Patterns](./inheritance-patterns.md)

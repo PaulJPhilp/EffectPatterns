@@ -159,6 +159,58 @@ This makes any time-dependent logic pure, deterministic, and easy to test with p
 
 ## Accumulate Multiple Errors with Either
 
+**Rule:** Use Either to model computations that may fail, making errors explicit and type-safe.
+
+**Skill Level:** beginner
+
+**Use Cases:** Data Types, Error Handling, Domain Modeling
+
+### Good Example
+
+```typescript
+import { Either } from "effect";
+
+// Create a Right (success) or Left (failure)
+const success = Either.right(42); // Either<never, number>
+const failure = Either.left("Something went wrong"); // Either<string, never>
+
+// Pattern match on Either
+const result = success.pipe(
+  Either.match({
+    onLeft: (err) => `Error: ${err}`,
+    onRight: (value) => `Value: ${value}`,
+  })
+); // string
+
+// Combine multiple Eithers and accumulate errors
+const e1 = Either.right(1);
+const e2 = Either.left("fail1");
+const e3 = Either.left("fail2");
+
+const all = [e1, e2, e3].filter(Either.isRight).map(Either.getRight); // [1]
+const errors = [e1, e2, e3].filter(Either.isLeft).map(Either.getLeft); // ["fail1", "fail2"]
+```
+
+**Explanation:**
+
+- `Either.right(value)` represents success.
+- `Either.left(error)` represents failure.
+- Pattern matching ensures all cases are handled.
+- You can accumulate errors or results from multiple Eithers.
+
+### Anti-Pattern
+
+Throwing exceptions or using ad-hoc error codes, which are not type-safe, not composable, and make error handling less predictable.
+
+### Explanation
+
+`Either` is a foundational data type for error handling in functional programming.  
+It allows you to accumulate errors, model domain-specific failures, and avoid exceptions and unchecked errors.
+
+---
+
+## Accumulate Multiple Errors with Either
+
 **Rule:** Use Either to accumulate multiple validation errors instead of failing on the first one.
 
 **Skill Level:** intermediate
@@ -288,59 +340,6 @@ However, for tasks like validating a user's input, this is poor user experience.
 
 ---
 
-## Accumulate Multiple Errors with Either
-
-**Rule:** Use Either to model computations that may fail, making errors explicit and type-safe.
-
-**Skill Level:** beginner
-
-**Use Cases:** domain-modeling
-
-### Good Example
-
-```typescript
-import { Either } from "effect";
-
-// Create a Right (success) or Left (failure)
-const success = Either.right(42); // Either<never, number>
-const failure = Either.left("Something went wrong"); // Either<string, never>
-
-// Pattern match on Either
-const result = success.pipe(
-  Either.match({
-    onLeft: (err) => `Error: ${err}`,
-    onRight: (value) => `Value: ${value}`,
-  })
-); // string
-
-// Combine multiple Eithers and accumulate errors
-const e1 = Either.right(1);
-const e2 = Either.left("fail1");
-const e3 = Either.left("fail2");
-
-const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
-const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
-const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
-```
-
-**Explanation:**
-
-- `Either.right(value)` represents success.
-- `Either.left(error)` represents failure.
-- Pattern matching ensures all cases are handled.
-- You can accumulate errors or results from multiple Eithers.
-
-### Anti-Pattern
-
-Throwing exceptions or using ad-hoc error codes, which are not type-safe, not composable, and make error handling less predictable.
-
-### Explanation
-
-`Either` is a foundational data type for error handling in functional programming.  
-It allows you to accumulate errors, model domain-specific failures, and avoid exceptions and unchecked errors.
-
----
-
 ## Add Caching by Wrapping a Layer
 
 **Rule:** Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
@@ -461,65 +460,6 @@ This approach is powerful because:
 
 ## Add Custom Metrics to Your Application
 
-**Rule:** Use Effect's Metric module to define and update custom metrics for business and performance monitoring.
-
-**Skill Level:** intermediate
-
-**Use Cases:** observability
-
-### Good Example
-
-```typescript
-import { Effect, Metric, MetricBoundaries } from "effect";
-
-// Define a counter metric for processed jobs
-const jobsProcessed = Metric.counter("jobs_processed");
-
-// Increment the counter when a job is processed
-const processJob = Effect.gen(function* () {
-  // ... process the job
-  yield* Effect.log("Job processed");
-  yield* Metric.increment(jobsProcessed);
-});
-
-// Define a gauge for current active users
-const activeUsers = Metric.gauge("active_users");
-
-// Update the gauge when users sign in or out
-const userSignedIn = Metric.set(activeUsers, 1);
-const userSignedOut = Metric.set(activeUsers, -1);
-
-// Define a histogram for request durations
-const requestDuration = Metric.histogram(
-  "request_duration",
-  MetricBoundaries.linear({ start: 0, width: 1, count: 6 })
-);
-
-// Record a request duration
-const recordDuration = (duration: number) =>
-  Metric.update(requestDuration, duration);
-```
-
-**Explanation:**
-
-- `Metric.counter` tracks counts of events.
-- `Metric.gauge` tracks a value that can go up or down (e.g., active users).
-- `Metric.histogram` tracks distributions (e.g., request durations).
-- `Effect.updateMetric` updates the metric in your workflow.
-
-### Anti-Pattern
-
-Relying solely on logs for monitoring, or using ad-hoc counters and variables that are not integrated with your observability stack.
-
-### Explanation
-
-Metrics provide quantitative insight into your application's behavior and performance.  
-By instrumenting your code with metrics, you can monitor key events, detect anomalies, and drive business decisions.
-
----
-
-## Add Custom Metrics to Your Application
-
 **Rule:** Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
 
 **Skill Level:** intermediate
@@ -589,6 +529,64 @@ This allows you to answer questions like:
 - "What is the 95th percentile latency for our API requests?"
 
 ---
+
+---
+
+## Add Custom Metrics to Your Application
+
+**Rule:** Use Effect's Metric module to define and update custom metrics for business and performance monitoring.
+
+**Skill Level:** intermediate
+
+**Use Cases:** Observability, Metrics, Monitoring, Performance
+
+### Good Example
+
+```typescript
+import { Effect, Metric } from "effect";
+
+// Define a counter metric for processed jobs
+const jobsProcessed = Metric.counter("jobs_processed");
+
+// Increment the counter when a job is processed
+const processJob = Effect.gen(function* () {
+  // ... process the job
+  yield* Effect.log("Job processed");
+  yield* Metric.increment(jobsProcessed);
+});
+
+// Define a gauge for current active users
+const activeUsers = Metric.gauge("active_users");
+
+// Update the gauge when users sign in or out
+const userSignedIn = Metric.set(activeUsers, 1); // Set to 1 (simplified example)
+const userSignedOut = Metric.set(activeUsers, 0); // Set to 0 (simplified example)
+
+// Define a histogram for request durations
+const requestDuration = Metric.histogram("request_duration", [
+  0.1, 0.5, 1, 2, 5,
+] as any); // boundaries in seconds
+
+// Record a request duration
+const recordDuration = (duration: number) =>
+  Metric.update(requestDuration, duration);
+```
+
+**Explanation:**
+
+- `Metric.counter` tracks counts of events.
+- `Metric.gauge` tracks a value that can go up or down (e.g., active users).
+- `Metric.histogram` tracks distributions (e.g., request durations).
+- `Effect.updateMetric` updates the metric in your workflow.
+
+### Anti-Pattern
+
+Relying solely on logs for monitoring, or using ad-hoc counters and variables that are not integrated with your observability stack.
+
+### Explanation
+
+Metrics provide quantitative insight into your application's behavior and performance.  
+By instrumenting your code with metrics, you can monitor key events, detect anomalies, and drive business decisions.
 
 ---
 
@@ -956,7 +954,7 @@ This architecture ensures that your request handling logic is fully testable, be
 
 **Skill Level:** beginner
 
-**Use Cases:** core-concepts
+**Use Cases:** Combinators, Composition, Sequencing
 
 ### Good Example
 
@@ -1003,7 +1001,7 @@ It allows you to express workflows where each step may fail, be optional, or pro
 
 **Skill Level:** beginner
 
-**Use Cases:** error-management
+**Use Cases:** Pattern Matching, Option, Either, Branching, Checks
 
 ### Good Example
 
@@ -1144,12 +1142,12 @@ The result of `Stream.runCollect` is an `Effect` that, when executed, yields a `
 
 **Skill Level:** beginner
 
-**Use Cases:** core-concepts
+**Use Cases:** Combinators, Composition, Pairing
 
 ### Good Example
 
 ```typescript
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Either, Option, Stream } from "effect";
 
 // Effect: Combine two effects and get both results
 const effectA = Effect.succeed(1);
@@ -1194,7 +1192,7 @@ It preserves error handling and context, and keeps your code declarative and typ
 
 **Skill Level:** beginner
 
-**Use Cases:** domain-modeling
+**Use Cases:** Data Types, Structural Equality, Domain Modeling
 
 ### Good Example
 
@@ -1428,7 +1426,7 @@ This automates one of the most complex and error-prone parts of application arch
 
 **Skill Level:** beginner
 
-**Use Cases:** core-concepts
+**Use Cases:** Combinators, Composition, Conditional Logic
 
 ### Good Example
 
@@ -1743,7 +1741,7 @@ While you could write manual loops or recursive functions, `Schedule` provides a
 
 **Skill Level:** beginner
 
-**Use Cases:** core-concepts
+**Use Cases:** Constructors, Interop, Conversion
 
 ### Good Example
 
@@ -2401,7 +2399,7 @@ values within functions that must return an `Effect`.
 
 **Skill Level:** beginner
 
-**Use Cases:** resource-management
+**Use Cases:** Constructors, Collections, Streams, Batch Processing
 
 ### Good Example
 
@@ -2446,7 +2444,7 @@ It also enables you to use all of Effect's combinators for transformation, filte
 
 **Skill Level:** beginner
 
-**Use Cases:** concurrency
+**Use Cases:** Constructors, Interop, Async, Callback
 
 ### Good Example
 
@@ -2467,7 +2465,7 @@ function legacyReadFile(
 const effectAsync = Effect.async<string, Error>((resume) => {
   legacyReadFile("file.txt", (err, data) => {
     if (err) resume(Effect.fail(err));
-    else if (data) resume(Effect.succeed(data));
+    else resume(Effect.succeed(data!));
   });
 }); // Effect<string, Error, never>
 ```
@@ -2992,7 +2990,7 @@ By using `Option` inside the success channel of an `Effect`, you keep the error 
 
 **Skill Level:** intermediate
 
-**Use Cases:** error-management
+**Use Cases:** Pattern Matching, Effectful Branching, Error Handling
 
 ### Good Example
 
@@ -3366,7 +3364,7 @@ By defining parameters directly in the path string, you gain several benefits:
 
 **Skill Level:** beginner
 
-**Use Cases:** core-concepts
+**Use Cases:** Combinators, Composition, Conditional Logic
 
 ### Good Example
 
@@ -4188,61 +4186,6 @@ Combining these two patterns is a best practice for any interaction with an exte
 
 ## Handle Unexpected Errors by Inspecting the Cause
 
-**Rule:** Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions.
-
-**Skill Level:** advanced
-
-**Use Cases:** error-management
-
-### Good Example
-
-```typescript
-import { Cause, Effect } from "effect";
-
-// An Effect that may fail with an error or defect
-const program = Effect.try({
-  try: () => {
-    throw new Error("Unexpected failure!");
-  },
-  catch: (err) => err,
-});
-
-// Catch all causes and inspect them
-const handled = program.pipe(
-  Effect.catchAllCause((cause) =>
-    Effect.sync(() => {
-      if (Cause.isDie(cause)) {
-        console.error("Defect (die):", Cause.pretty(cause));
-      } else if (Cause.isFailure(cause)) {
-        console.error("Expected error:", Cause.pretty(cause));
-      } else if (Cause.isInterrupted(cause)) {
-        console.error("Interrupted:", Cause.pretty(cause));
-      }
-      // Handle or rethrow as needed
-    })
-  )
-);
-```
-
-**Explanation:**
-
-- `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
-- Use `Cause.pretty` for human-readable error traces.
-- Enables advanced error handling and debugging.
-
-### Anti-Pattern
-
-Catching only expected errors and ignoring defects or interruptions, which can lead to silent failures, missed bugs, and harder debugging.
-
-### Explanation
-
-Traditional error handling often loses information about _why_ a failure occurred.  
-`Cause` preserves the full error context, enabling advanced debugging, error reporting, and robust recovery strategies.
-
----
-
-## Handle Unexpected Errors by Inspecting the Cause
-
 **Rule:** Handle unexpected errors by inspecting the cause.
 
 **Skill Level:** advanced
@@ -4554,13 +4497,68 @@ thrown exception). They should be handled differently.
 
 ---
 
+## Handle Unexpected Errors by Inspecting the Cause
+
+**Rule:** Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions.
+
+**Skill Level:** advanced
+
+**Use Cases:** Data Types, Error Handling, Debugging, Effect Results
+
+### Good Example
+
+```typescript
+import { Cause, Effect } from "effect";
+
+// An Effect that may fail with an error or defect
+const program = Effect.try({
+  try: () => {
+    throw new Error("Unexpected failure!");
+  },
+  catch: (err) => err,
+});
+
+// Catch all causes and inspect them
+const handled = program.pipe(
+  Effect.catchAllCause((cause) =>
+    Effect.sync(() => {
+      if (Cause.isDie(cause)) {
+        console.error("Defect (die):", Cause.pretty(cause));
+      } else if (Cause.isFailure(cause)) {
+        console.error("Expected error:", Cause.pretty(cause));
+      } else if (Cause.isInterrupted(cause)) {
+        console.error("Interrupted:", Cause.pretty(cause));
+      }
+      // Handle or rethrow as needed
+    })
+  )
+);
+```
+
+**Explanation:**
+
+- `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
+- Use `Cause.pretty` for human-readable error traces.
+- Enables advanced error handling and debugging.
+
+### Anti-Pattern
+
+Catching only expected errors and ignoring defects or interruptions, which can lead to silent failures, missed bugs, and harder debugging.
+
+### Explanation
+
+Traditional error handling often loses information about _why_ a failure occurred.  
+`Cause` preserves the full error context, enabling advanced debugging, error reporting, and robust recovery strategies.
+
+---
+
 ## Handling Errors with catchAll, orElse, and match
 
 **Rule:** Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way.
 
 **Skill Level:** intermediate
 
-**Use Cases:** error-management
+**Use Cases:** Combinators, Error Handling, Composition
 
 ### Good Example
 
@@ -4611,7 +4609,7 @@ By using combinators, you keep error recovery logic close to where errors may oc
 
 **Skill Level:** intermediate
 
-**Use Cases:** domain-modeling
+**Use Cases:** Pattern Matching, Error Handling, Tagged Unions
 
 ### Good Example
 
@@ -4774,47 +4772,41 @@ By launching your app with `runFork`, you get a `Fiber` that represents the enti
 
 **Skill Level:** intermediate
 
-**Use Cases:** observability
+**Use Cases:** Observability, Instrumentation, Function Calls, Debugging
 
 ### Good Example
 
 ```typescript
 import { Effect } from "effect";
 
-// Use Effect.fn to wrap a function with automatic span creation
-const fetchUser = Effect.fn("fetch-user")(function* (userId: string) {
-  // Annotate the span with contextual information
-  yield* Effect.annotateCurrentSpan({
-    userId,
-  });
+// A simple function to instrument
+function add(a: number, b: number): number {
+  return a + b;
+}
 
-  // Simulate async operation
-  const user = yield* Effect.tryPromise(() =>
-    Promise.resolve({ id: userId, name: "Alice" })
-  );
-
-  return user;
-});
+// Use Effect.fn to instrument the function with observability
+const addWithLogging = Effect.fn("add")(add).pipe(
+  Effect.withSpan("add", { attributes: { "fn.name": "add" } })
+);
 
 // Use the instrumented function in an Effect workflow
 const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Fetching user");
-  const user = yield* fetchUser("user-123");
-  yield* Effect.logInfo(`Fetched user: ${user.name}`);
-  return user;
+  yield* Effect.logInfo("Calling add function");
+  const sum = yield* addWithLogging(2, 3);
+  yield* Effect.logInfo(`Sum is ${sum}`);
+  return sum;
 });
 
-// Run the program with OpenTelemetry integration
-// Effect.runPromise(program);
+// Run the program
+Effect.runPromise(program);
 ```
 
 **Explanation:**
 
-- `Effect.fn("operation-name")(function*)` wraps a function and automatically creates OpenTelemetry spans with the given name.
-- No manual span wrapping needed—the Effect runtime handles span creation and lifecycle automatically.
-- Use `Effect.annotateCurrentSpan()` to add metadata and context to the span.
-- Integrates seamlessly with OpenTelemetry for distributed tracing, logging, and metrics.
-- Keeps instrumentation composable and type-safe without cluttering business logic.
+- `Effect.fn("name")(fn)` wraps a function with instrumentation capabilities, enabling observability.
+- You can add tracing spans, logging, metrics, and other observability logic to function boundaries.
+- Keeps instrumentation separate from business logic and fully composable.
+- The wrapped function integrates seamlessly with Effect's observability and tracing infrastructure.
 
 ### Anti-Pattern
 
@@ -4833,7 +4825,7 @@ Instrumenting function calls is essential for observability, especially in compl
 
 **Skill Level:** advanced
 
-**Use Cases:** observability
+**Use Cases:** Observability, Tracing, OpenTelemetry, Distributed Systems
 
 ### Good Example
 
@@ -4892,6 +4884,66 @@ By integrating Effect's spans with OpenTelemetry, you gain deep visibility into 
 
 ## Leverage Effect's Built-in Structured Logging
 
+**Rule:** Use Effect.log, Effect.logInfo, and Effect.logError to add structured, context-aware logging to your Effect code.
+
+**Skill Level:** intermediate
+
+**Use Cases:** Observability, Logging, Debugging
+
+### Good Example
+
+```typescript
+import { Effect } from "effect";
+
+// Log a simple message
+const program = Effect.gen(function* () {
+  yield* Effect.log("Starting the application");
+});
+
+// Log at different levels
+const infoProgram = Effect.gen(function* () {
+  yield* Effect.logInfo("User signed in");
+});
+
+const errorProgram = Effect.gen(function* () {
+  yield* Effect.logError("Failed to connect to database");
+});
+
+// Log with dynamic values
+const userId = 42;
+const logUserProgram = Effect.gen(function* () {
+  yield* Effect.logInfo(`Processing user: ${userId}`);
+});
+
+// Use logging in a workflow
+const workflow = Effect.gen(function* () {
+  yield* Effect.log("Beginning workflow");
+  // ... do some work
+  yield* Effect.logInfo("Workflow step completed");
+  // ... handle errors
+  yield* Effect.logError("Something went wrong");
+});
+```
+
+**Explanation:**
+
+- `Effect.log` logs a message at the default level.
+- `Effect.logInfo` and `Effect.logError` log at specific levels.
+- Logging is context-aware and can be used anywhere in your Effect workflows.
+
+### Anti-Pattern
+
+Using `console.log` or ad-hoc logging scattered throughout your code, which is not structured, not context-aware, and harder to manage in production.
+
+### Explanation
+
+Structured logging makes it easier to search, filter, and analyze logs in production.  
+Effect’s logging functions are context-aware, meaning they automatically include relevant metadata and can be configured globally.
+
+---
+
+## Leverage Effect's Built-in Structured Logging
+
 **Rule:** Leverage Effect's built-in structured logging.
 
 **Skill Level:** intermediate
@@ -4928,64 +4980,13 @@ side-effect.
 
 ---
 
-## Leverage Effect's Built-in Structured Logging
-
-**Rule:** Use Effect.log, Effect.logInfo, and Effect.logError to add structured, context-aware logging to your Effect code.
-
-**Skill Level:** intermediate
-
-**Use Cases:** observability
-
-### Good Example
-
-```typescript
-import { Effect } from "effect";
-
-// Log a simple message
-const program = Effect.log("Starting the application");
-
-// Log at different levels
-const info = Effect.logInfo("User signed in");
-const error = Effect.logError("Failed to connect to database");
-
-// Log with dynamic values
-const userId = 42;
-const logUser = Effect.logInfo(`Processing user: ${userId}`);
-
-// Use logging in a workflow
-const workflow = Effect.gen(function* () {
-  yield* Effect.log("Beginning workflow");
-  // ... do some work
-  yield* Effect.logInfo("Workflow step completed");
-  // ... handle errors
-  yield* Effect.logError("Something went wrong");
-});
-```
-
-**Explanation:**
-
-- `Effect.log` logs a message at the default level.
-- `Effect.logInfo` and `Effect.logError` log at specific levels.
-- Logging is context-aware and can be used anywhere in your Effect workflows.
-
-### Anti-Pattern
-
-Using `console.log` or ad-hoc logging scattered throughout your code, which is not structured, not context-aware, and harder to manage in production.
-
-### Explanation
-
-Structured logging makes it easier to search, filter, and analyze logs in production.  
-Effect’s logging functions are context-aware, meaning they automatically include relevant metadata and can be configured globally.
-
----
-
 ## Lifting Errors and Absence with fail, none, and left
 
 **Rule:** Use fail, none, and left to create Effect, Option, or Either that represent failure or absence.
 
 **Skill Level:** beginner
 
-**Use Cases:** error-management
+**Use Cases:** Constructors, Lifting, Error Handling, Absence
 
 ### Good Example
 
@@ -5026,7 +5027,7 @@ This leads to more robust and maintainable code.
 
 **Skill Level:** beginner
 
-**Use Cases:** core-concepts
+**Use Cases:** Constructors, Lifting, Composition
 
 ### Good Example
 
@@ -5521,7 +5522,7 @@ Directly using a mutable variable (e.g., `let myState = ...`) in a concurrent sy
 
 **Skill Level:** intermediate
 
-**Use Cases:** concurrency
+**Use Cases:** Data Types, State, Concurrency, Mutable State
 
 ### Good Example
 
@@ -5666,7 +5667,7 @@ By interacting with `Scope` directly, you gain precise, imperative-style control
 
 **Skill Level:** intermediate
 
-**Use Cases:** concurrency
+**Use Cases:** Combinators, Collections, Parallelism, Batch Processing
 
 ### Good Example
 
@@ -5821,7 +5822,7 @@ By using `Effect.mapError`, the outer layer can define its own, more abstract er
 
 **Skill Level:** beginner
 
-**Use Cases:** error-management
+**Use Cases:** Pattern Matching, Error Handling, Branching
 
 ### Good Example
 
@@ -5875,7 +5876,7 @@ It avoids scattered if/else or switch statements and makes your intent explicit.
 
 **Skill Level:** intermediate
 
-**Use Cases:** domain-modeling
+**Use Cases:** Pattern Matching, Tagged Unions, Error Handling, Branching
 
 ### Good Example
 
@@ -6076,6 +6077,58 @@ This pattern is the key to testability. It allows you to provide a `Live` implem
 
 ## Model Optional Values Safely with Option
 
+**Rule:** Use Option to model values that may be present or absent, making absence explicit and type-safe.
+
+**Skill Level:** beginner
+
+**Use Cases:** Data Types, Domain Modeling, Optional Values
+
+### Good Example
+
+```typescript
+import { Option } from "effect";
+
+// Create an Option from a value
+const someValue = Option.some(42); // Option<number>
+const noValue = Option.none(); // Option<never>
+
+// Safely convert a nullable value to Option
+const fromNullable = Option.fromNullable(Math.random() > 0.5 ? "hello" : null); // Option<string>
+
+// Pattern match on Option
+const result = someValue.pipe(
+  Option.match({
+    onNone: () => "No value",
+    onSome: (n) => `Value: ${n}`,
+  })
+); // string
+
+// Use Option in a workflow
+function findUser(id: number): Option.Option<{ id: number; name: string }> {
+  return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
+}
+```
+
+**Explanation:**
+
+- `Option.some(value)` represents a present value.
+- `Option.none()` represents absence.
+- `Option.fromNullable` safely lifts nullable values into Option.
+- Pattern matching ensures all cases are handled.
+
+### Anti-Pattern
+
+Using `null` or `undefined` to represent absence, or forgetting to handle the "no value" case, which leads to runtime errors and less maintainable code.
+
+### Explanation
+
+`Option` makes it impossible to forget to handle the "no value" case.  
+It improves code safety, readability, and composability, and is a foundation for robust domain modeling.
+
+---
+
+## Model Optional Values Safely with Option
+
 **Rule:** Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
 
 **Skill Level:** intermediate
@@ -6155,58 +6208,6 @@ The `Option` type solves this by making the possibility of an absent value expli
 
 ---
 
-## Model Optional Values Safely with Option
-
-**Rule:** Use Option to model values that may be present or absent, making absence explicit and type-safe.
-
-**Skill Level:** beginner
-
-**Use Cases:** domain-modeling
-
-### Good Example
-
-```typescript
-import { Option } from "effect";
-
-// Create an Option from a value
-const someValue = Option.some(42); // Option<number>
-const noValue = Option.none(); // Option<never>
-
-// Safely convert a nullable value to Option
-const fromNullable = Option.fromNullable(Math.random() > 0.5 ? "hello" : null); // Option<string>
-
-// Pattern match on Option
-const result = someValue.pipe(
-  Option.match({
-    onNone: () => "No value",
-    onSome: (n) => `Value: ${n}`,
-  })
-); // string
-
-// Use Option in a workflow
-function findUser(id: number): Option.Option<{ id: number; name: string }> {
-  return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
-}
-```
-
-**Explanation:**
-
-- `Option.some(value)` represents a present value.
-- `Option.none()` represents absence.
-- `Option.fromNullable` safely lifts nullable values into Option.
-- Pattern matching ensures all cases are handled.
-
-### Anti-Pattern
-
-Using `null` or `undefined` to represent absence, or forgetting to handle the "no value" case, which leads to runtime errors and less maintainable code.
-
-### Explanation
-
-`Option` makes it impossible to forget to handle the "no value" case.  
-It improves code safety, readability, and composability, and is a foundation for robust domain modeling.
-
----
-
 ## Model Validated Domain Types with Brand
 
 **Rule:** Model validated domain types with Brand.
@@ -6255,7 +6256,7 @@ eliminating repetitive checks.
 
 **Skill Level:** intermediate
 
-**Use Cases:** error-management
+**Use Cases:** Data Types, Effect Results, Error Handling, Concurrency
 
 ### Good Example
 
@@ -6300,7 +6301,7 @@ When running or supervising effects, you often need to know not just if they suc
 
 **Skill Level:** intermediate
 
-**Use Cases:** domain-modeling
+**Use Cases:** Data Types, Tagged Unions, ADTs, Domain Modeling
 
 ### Good Example
 
@@ -6356,7 +6357,7 @@ Modeling domain logic with tagged unions ensures that all cases are handled, pre
 
 **Skill Level:** intermediate
 
-**Use Cases:** domain-modeling
+**Use Cases:** Branded Types, Domain Modeling, Type Safety
 
 ### Good Example
 
@@ -7764,7 +7765,7 @@ This is commonly used for:
 
 **Skill Level:** intermediate
 
-**Use Cases:** observability
+**Use Cases:** Data Types, Security, Sensitive Data, Logging
 
 ### Good Example
 
@@ -7798,6 +7799,50 @@ Passing sensitive data as plain strings, which can be accidentally logged, seria
 
 Sensitive data should never appear in logs, traces, or error messages.  
 `Redacted` provides a type-safe way to mark and protect secrets throughout your application.
+
+---
+
+## Representing Time Spans with Duration
+
+**Rule:** Use Duration to model and manipulate time spans, enabling safe and expressive time-based logic.
+
+**Skill Level:** intermediate
+
+**Use Cases:** Data Types, Time, Duration, Domain Modeling
+
+### Good Example
+
+```typescript
+import { Duration } from "effect";
+
+// Create durations using helpers
+const oneSecond = Duration.seconds(1);
+const fiveMinutes = Duration.minutes(5);
+const twoHours = Duration.hours(2);
+
+// Add, subtract, and compare durations
+const total = Duration.sum(oneSecond, fiveMinutes); // 5 min 1 sec
+const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
+
+// Convert to milliseconds or ISO string
+const ms = Duration.toMillis(fiveMinutes); // 300000
+const iso = Duration.formatIso(oneSecond); // "PT1S"
+```
+
+**Explanation:**
+
+- `Duration` is immutable and type-safe.
+- Use helpers for common intervals and arithmetic for composition.
+- Prefer `Duration` over raw numbers for all time-based logic.
+
+### Anti-Pattern
+
+Using raw numbers (e.g., `5000` for 5 seconds) for time intervals, which is error-prone, hard to read, and less maintainable.
+
+### Explanation
+
+Working with raw numbers for time intervals (e.g., milliseconds) is error-prone and hard to read.  
+`Duration` provides a clear, expressive API for modeling time spans, improving code safety and maintainability.
 
 ---
 
@@ -7886,50 +7931,6 @@ Using raw numbers to represent time is a common source of bugs and confusion. Wh
 `Duration` solves this by making the unit explicit in the code. It provides a type-safe, immutable, and human-readable way to work with time intervals. This eliminates ambiguity and makes your code easier to read and maintain. Durations are used throughout Effect's time-based operators, such as `Effect.sleep`, `Effect.timeout`, and `Schedule`.
 
 ---
-
----
-
-## Representing Time Spans with Duration
-
-**Rule:** Use Duration to model and manipulate time spans, enabling safe and expressive time-based logic.
-
-**Skill Level:** intermediate
-
-**Use Cases:** domain-modeling
-
-### Good Example
-
-```typescript
-import { Duration } from "effect";
-
-// Create durations using helpers
-const oneSecond = Duration.seconds(1);
-const fiveMinutes = Duration.minutes(5);
-const twoHours = Duration.hours(2);
-
-// Add, subtract, and compare durations
-const total = Duration.sum(oneSecond, fiveMinutes); // 5 min 1 sec
-const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
-
-// Convert to milliseconds or human-readable format
-const ms = Duration.toMillis(fiveMinutes); // 300000
-const readable = Duration.format(oneSecond); // "1s"
-```
-
-**Explanation:**
-
-- `Duration` is immutable and type-safe.
-- Use helpers for common intervals and arithmetic for composition.
-- Prefer `Duration` over raw numbers for all time-based logic.
-
-### Anti-Pattern
-
-Using raw numbers (e.g., `5000` for 5 seconds) for time intervals, which is error-prone, hard to read, and less maintainable.
-
-### Explanation
-
-Working with raw numbers for time intervals (e.g., milliseconds) is error-prone and hard to read.  
-`Duration` provides a clear, expressive API for modeling time spans, improving code safety and maintainability.
 
 ---
 
@@ -8565,7 +8566,7 @@ Using `Http.response.json` is superior because:
 
 **Skill Level:** intermediate
 
-**Use Cases:** concurrency
+**Use Cases:** Combinators, Sequencing, Composition, Side Effects
 
 ### Good Example
 
@@ -8928,6 +8929,64 @@ By providing this live, ground-truth context, you transform your AI from a gener
 
 ## Trace Operations Across Services with Spans
 
+**Rule:** Use Effect.withSpan to create and annotate tracing spans for operations, enabling distributed tracing and performance analysis.
+
+**Skill Level:** intermediate
+
+**Use Cases:** Observability, Tracing, Performance, Debugging
+
+### Good Example
+
+```typescript
+import { Effect } from "effect";
+
+// Trace a database query with a custom span
+const fetchUser = Effect.sync(() => {
+  // ...fetch user from database
+  return { id: 1, name: "Alice" };
+}).pipe(Effect.withSpan("db.fetchUser"));
+
+// Trace an HTTP request with additional attributes
+const fetchData = Effect.tryPromise({
+  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
+  catch: (err) => `Network error: ${String(err)}`,
+}).pipe(
+  Effect.withSpan("http.fetchData", {
+    attributes: { url: "https://api.example.com/data" },
+  })
+);
+
+// Use spans in a workflow
+const program = Effect.gen(function* () {
+  yield* Effect.log("Starting workflow").pipe(
+    Effect.withSpan("workflow.start")
+  );
+  const user = yield* fetchUser;
+  yield* Effect.log(`Fetched user: ${user.name}`).pipe(
+    Effect.withSpan("workflow.end")
+  );
+});
+```
+
+**Explanation:**
+
+- `Effect.withSpan` creates a tracing span around an operation.
+- Spans can be named and annotated with attributes for richer context.
+- Tracing enables distributed observability and performance analysis.
+
+### Anti-Pattern
+
+Relying only on logs or metrics for performance analysis, or lacking visibility into the flow of requests and operations across services.
+
+### Explanation
+
+Tracing spans help you understand the flow and timing of operations, especially in distributed systems or complex workflows.  
+They allow you to pinpoint bottlenecks, visualize dependencies, and correlate logs and metrics with specific requests.
+
+---
+
+## Trace Operations Across Services with Spans
+
 **Rule:** Use Effect.withSpan to create custom tracing spans for important operations.
 
 **Skill Level:** intermediate
@@ -9031,64 +9090,6 @@ Each piece of work in that trace is a `span`. `Effect.withSpan` allows you to cr
 Effect's tracing is built on OpenTelemetry, the industry standard, so it integrates seamlessly with tools like Jaeger, Zipkin, and Datadog.
 
 ---
-
----
-
-## Trace Operations Across Services with Spans
-
-**Rule:** Use Effect.withSpan to create and annotate tracing spans for operations, enabling distributed tracing and performance analysis.
-
-**Skill Level:** intermediate
-
-**Use Cases:** observability
-
-### Good Example
-
-```typescript
-import { Effect } from "effect";
-
-// Trace a database query with a custom span
-const fetchUser = Effect.sync(() => {
-  // ...fetch user from database
-  return { id: 1, name: "Alice" };
-}).pipe(Effect.withSpan("db.fetchUser"));
-
-// Trace an HTTP request with additional attributes
-const fetchData = Effect.tryPromise({
-  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
-  catch: (err) => `Network error: ${String(err)}`,
-}).pipe(
-  Effect.withSpan("http.fetchData", {
-    attributes: { url: "https://api.example.com/data" },
-  })
-);
-
-// Use spans in a workflow
-const program = Effect.gen(function* () {
-  yield* Effect.log("Starting workflow").pipe(
-    Effect.withSpan("workflow.start")
-  );
-  const user = yield* fetchUser;
-  yield* Effect.log(`Fetched user: ${user.name}`).pipe(
-    Effect.withSpan("workflow.end")
-  );
-});
-```
-
-**Explanation:**
-
-- `Effect.withSpan` creates a tracing span around an operation.
-- Spans can be named and annotated with attributes for richer context.
-- Tracing enables distributed observability and performance analysis.
-
-### Anti-Pattern
-
-Relying only on logs or metrics for performance analysis, or lacking visibility into the flow of requests and operations across services.
-
-### Explanation
-
-Tracing spans help you understand the flow and timing of operations, especially in distributed systems or complex workflows.  
-They allow you to pinpoint bottlenecks, visualize dependencies, and correlate logs and metrics with specific requests.
 
 ---
 
@@ -9312,7 +9313,7 @@ returns an `Effect`.
 
 **Skill Level:** beginner
 
-**Use Cases:** core-concepts
+**Use Cases:** Combinators, Composition
 
 ### Good Example
 
@@ -9494,7 +9495,7 @@ Calling paginated APIs is a classic programming challenge. It often involves wri
 
 **Skill Level:** intermediate
 
-**Use Cases:** domain-modeling
+**Use Cases:** Data Types, Type Classes, Equality, Ordering, Hashing
 
 ### Good Example
 
@@ -9950,7 +9951,7 @@ you to see the flow of data transformations in a clear, linear fashion.
 
 **Skill Level:** intermediate
 
-**Use Cases:** observability
+**Use Cases:** Data Types, Collections, Performance
 
 ### Good Example
 
@@ -9961,15 +9962,15 @@ import { Chunk } from "effect";
 const numbers = Chunk.fromIterable([1, 2, 3, 4]); // Chunk<number>
 
 // Map and filter over a Chunk
-const doubled = numbers.pipe(Chunk.map((n) => n * 2)); // Chunk<number>
-const evens = numbers.pipe(Chunk.filter((n) => n % 2 === 0)); // Chunk<number>
+const doubled = Chunk.map(numbers, (n) => n * 2); // Chunk<number>
+const evens = Chunk.filter(numbers, (n) => n % 2 === 0); // Chunk<number>
 
 // Concatenate Chunks
 const moreNumbers = Chunk.fromIterable([5, 6]);
 const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
 
 // Convert back to array
-const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
+const arr = Chunk.toArray(allNumbers); // number[]
 ```
 
 **Explanation:**
@@ -10472,7 +10473,7 @@ Using `Http.request.schemaBodyJson` offers several major advantages:
 
 **Skill Level:** intermediate
 
-**Use Cases:** domain-modeling
+**Use Cases:** Branded Types, Domain Modeling, Validation, Parsing
 
 ### Good Example
 
@@ -10526,7 +10527,7 @@ While branding types at the type level prevents accidental misuse, runtime valid
 
 **Skill Level:** intermediate
 
-**Use Cases:** modeling-data
+**Use Cases:** Data Types, Numeric Precision, Financial, Scientific
 
 ### Good Example
 
@@ -10572,7 +10573,7 @@ JavaScript's `number` type is a floating-point double, which can introduce subtl
 
 **Skill Level:** intermediate
 
-**Use Cases:** domain-modeling
+**Use Cases:** Data Types, Time, Date, Domain Modeling
 
 ### Good Example
 
@@ -10625,7 +10626,7 @@ JavaScript's native `Date` is mutable, not time-zone-aware, and can be error-pro
 
 **Skill Level:** intermediate
 
-**Use Cases:** modeling-data
+**Use Cases:** Data Types, Collections, Set Operations
 
 ### Good Example
 
@@ -10672,7 +10673,7 @@ It avoids the pitfalls of mutable JavaScript `Set` and is optimized for use in E
 
 **Skill Level:** beginner
 
-**Use Cases:** modeling-data
+**Use Cases:** Data Types, Arrays, Structural Equality, Collections
 
 ### Good Example
 
@@ -10718,7 +10719,7 @@ JavaScript arrays are mutable and compared by reference, which can lead to bugs 
 
 **Skill Level:** beginner
 
-**Use Cases:** domain-modeling
+**Use Cases:** Data Types, Tuples, Structural Equality, Domain Modeling
 
 ### Good Example
 
@@ -11017,7 +11018,7 @@ the Effect's error channel.
 
 **Skill Level:** beginner
 
-**Use Cases:** error-management
+**Use Cases:** Constructors, Error Handling, Async, Interop
 
 ### Good Example
 

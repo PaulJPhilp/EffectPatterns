@@ -1,0 +1,347 @@
+---
+id: schema-polymorphic-apis
+title: Polymorphic API Responses and Data Shaping
+category: unions
+skill: intermediate
+tags:
+  - schema
+  - polymorphic
+  - api-design
+  - response-shapes
+  - data-variants
+---
+
+# Problem
+
+Your API returns different response shapes for different endpoints. Search returns paginated results; detail returns single object; batch returns array. Each endpoint has its own shape. Without schema unification, clients write custom parsing for each endpoint. You need a polymorphic schema system where different response types are handled uniformly but type-safely.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// ============================================
+// 1. Define polymorphic API response types
+// ============================================
+
+// Paginated list response
+const PaginatedResponse = Schema.Struct({
+  _type: Schema.Literal("paginated"),
+  items: Schema.Array(
+    Schema.Struct({
+      id: Schema.String,
+      name: Schema.String,
+      createdAt: Schema.Date,
+    })
+  ),
+  page: Schema.Number,
+  pageSize: Schema.Number,
+  total: Schema.Number,
+  hasMore: Schema.Boolean,
+})
+
+// Single item response
+const SingleItemResponse = Schema.Struct({
+  _type: Schema.Literal("single"),
+  id: Schema.String,
+  name: Schema.String,
+  description: Schema.String,
+  createdAt: Schema.Date,
+  updatedAt: Schema.Date,
+  tags: Schema.Array(Schema.String),
+})
+
+// Batch/array response
+const BatchResponse = Schema.Struct({
+  _type: Schema.Literal("batch"),
+  items: Schema.Array(
+    Schema.Struct({
+      id: Schema.String,
+      status: Schema.Enum({
+        success: "success" as const,
+        failed: "failed" as const,
+        pending: "pending" as const,
+      }),
+      data: Schema.Any,
+    })
+  ),
+  processedAt: Schema.Date,
+  failureCount: Schema.Number,
+})
+
+// Error response
+const ErrorResponse = Schema.Struct({
+  _type: Schema.Literal("error"),
+  status: Schema.Number,
+  message: Schema.String,
+  details: Schema.Optional(Schema.Record(Schema.String, Schema.Any)),
+  requestId: Schema.String,
+  timestamp: Schema.Date,
+})
+
+// Unified polymorphic API response
+const ApiResponse = Schema.Union(
+  PaginatedResponse,
+  SingleItemResponse,
+  BatchResponse,
+  ErrorResponse
+)
+
+type ApiResponse = typeof ApiResponse.Type
+
+// ============================================
+// 2. Search API: returns paginated results
+// ============================================
+
+const fetchSearchResults = (
+  query: string,
+  page: number
+): Effect.Effect<ApiResponse, Error> =>
+  Effect.gen(function* () {
+    // Simulate API call
+    const response: ApiResponse = {
+      _type: "paginated",
+      items: [
+        {
+          id: "item_1",
+          name: `Result for "${query}" 1`,
+          createdAt: new Date("2025-12-01"),
+        },
+        {
+          id: "item_2",
+          name: `Result for "${query}" 2`,
+          createdAt: new Date("2025-12-02"),
+        },
+      ],
+      page,
+      pageSize: 10,
+      total: 42,
+      hasMore: page * 10 < 42,
+    }
+
+    return yield* Effect.tryPromise({
+      try: () => Schema.decodeUnknown(ApiResponse)(response),
+      catch: (error) => {
+        const msg = error instanceof Error ? error.message : String(error)
+        return new Error(`Search API error: ${msg}`)
+      },
+    })
+  })
+
+// ============================================
+// 3. Detail API: returns single item
+// ============================================
+
+const fetchItemDetail = (id: string): Effect.Effect<ApiResponse, Error> =>
+  Effect.gen(function* () {
+    // Simulate API call
+    const response: ApiResponse = {
+      _type: "single",
+      id,
+      name: "Detailed Item",
+      description:
+        "This is a detailed description of the item including all metadata",
+      createdAt: new Date("2025-11-01"),
+      updatedAt: new Date("2025-12-10"),
+      tags: ["important", "featured", "new"],
+    }
+
+    return yield* Effect.tryPromise({
+      try: () => Schema.decodeUnknown(ApiResponse)(response),
+      catch: (error) => {
+        const msg = error instanceof Error ? error.message : String(error)
+        return new Error(`Detail API error: ${msg}`)
+      },
+    })
+  })
+
+// ============================================
+// 4. Batch API: processes multiple items
+// ============================================
+
+const processBatch = (
+  itemIds: string[]
+): Effect.Effect<ApiResponse, Error> =>
+  Effect.gen(function* () {
+    // Simulate batch processing
+    const response: ApiResponse = {
+      _type: "batch",
+      items: itemIds.map((id, idx) => ({
+        id,
+        status: idx % 3 === 0 ? "failed" : idx % 3 === 1 ? "pending" : "success",
+        data: { processed: true, timestamp: new Date() },
+      })),
+      processedAt: new Date(),
+      failureCount: Math.floor(itemIds.length / 3),
+    }
+
+    return yield* Effect.tryPromise({
+      try: () => Schema.decodeUnknown(ApiResponse)(response),
+      catch: (error) => {
+        const msg = error instanceof Error ? error.message : String(error)
+        return new Error(`Batch API error: ${msg}`)
+      },
+    })
+  })
+
+// ============================================
+// 5. Error response handler
+// ============================================
+
+const handleApiError = (
+  response: ErrorResponse
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.logError(`API Error [${response.status}]: ${response.message}`)
+
+    if (response.details) {
+      yield* Effect.logDebug(`Details: ${JSON.stringify(response.details)}`)
+    }
+
+    yield* Effect.logDebug(`Request ID: ${response.requestId}`)
+  })
+
+// ============================================
+// 6. Polymorphic response handler
+// ============================================
+
+const handleApiResponse = (response: ApiResponse): Effect.Effect<string> =>
+  Effect.gen(function* () {
+    switch (response._type) {
+      case "paginated":
+        const summary = `Found ${response.total} results (page ${response.page}/${Math.ceil(response.total / response.pageSize)})`
+        yield* Effect.log(summary)
+        for (const item of response.items) {
+          yield* Effect.log(`  - ${item.name} (${item.id})`)
+        }
+        return summary
+
+      case "single":
+        yield* Effect.log(`Details for ${response.id}:`)
+        yield* Effect.log(`  Name: ${response.name}`)
+        yield* Effect.log(`  Description: ${response.description}`)
+        yield* Effect.log(`  Tags: ${response.tags.join(", ")}`)
+        yield* Effect.log(`  Created: ${response.createdAt.toISOString()}`)
+        yield* Effect.log(`  Updated: ${response.updatedAt.toISOString()}`)
+        return `Single item: ${response.name}`
+
+      case "batch":
+        const successCount = response.items.filter((i) => i.status === "success")
+          .length
+        const summary2 = `Batch processed: ${successCount}/${response.items.length} succeeded`
+        yield* Effect.log(summary2)
+        for (const item of response.items) {
+          const emoji =
+            item.status === "success"
+              ? "✅"
+              : item.status === "failed"
+                ? "❌"
+                : "⏳"
+          yield* Effect.log(`  ${emoji} ${item.id}: ${item.status}`)
+        }
+        return summary2
+
+      case "error":
+        yield* handleApiError(response)
+        return `Error: ${response.message}`
+    }
+  })
+
+// ============================================
+// 7. Client that works with all response types
+// ============================================
+
+class PolymorphicApiClient {
+  async search(query: string, page: number = 1): Promise<ApiResponse> {
+    return Effect.runPromise(fetchSearchResults(query, page))
+  }
+
+  async detail(id: string): Promise<ApiResponse> {
+    return Effect.runPromise(fetchItemDetail(id))
+  }
+
+  async batch(itemIds: string[]): Promise<ApiResponse> {
+    return Effect.runPromise(processBatch(itemIds))
+  }
+
+  async handleResponse(response: ApiResponse): Promise<string> {
+    return Effect.runPromise(handleApiResponse(response))
+  }
+}
+
+// ============================================
+// 8. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  const client = new PolymorphicApiClient()
+
+  console.log("=== Search API (Paginated Response) ===\n")
+  const searchResponse = yield* fetchSearchResults("effect", 1)
+  yield* handleApiResponse(searchResponse)
+
+  console.log("\n=== Detail API (Single Item Response) ===\n")
+  const detailResponse = yield* fetchItemDetail("item_123")
+  yield* handleApiResponse(detailResponse)
+
+  console.log("\n=== Batch API (Batch Response) ===\n")
+  const batchResponse = yield* processBatch([
+    "item_1",
+    "item_2",
+    "item_3",
+    "item_4",
+  ])
+  yield* handleApiResponse(batchResponse)
+
+  console.log("\n=== Type-safe response handling ===\n")
+
+  // Compiler ensures we handle all response types
+  const responses: ApiResponse[] = [
+    searchResponse,
+    detailResponse,
+    batchResponse,
+  ]
+
+  for (const response of responses) {
+    yield* Effect.log(`\nResponse type: ${response._type}`)
+    yield* handleApiResponse(response)
+  }
+
+  return responses
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Polymorphic API handling complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Polymorphic design** | Single schema handles multiple response shapes |
+| **Type discriminator** | `_type` field identifies response variant |
+| **Exhaustive handling** | TypeScript error if you forget response type |
+| **Client simplicity** | One handler for all response types |
+| **Validation per type** | Each variant validated independently |
+| **Real API patterns** | Matches how REST/GraphQL APIs actually work |
+| **Type narrowing** | After switch, TypeScript knows exact shape |
+| **Scalable** | Add new response types without changing handlers |
+
+# When to Use
+
+- REST APIs with multiple endpoint types (search, detail, batch)
+- GraphQL responses with different result shapes
+- Webhook payloads with multiple variants
+- External API integrations with varied responses
+- Feature-specific API response formats
+- Microservice communication with multiple message types
+- Legacy API compatibility (different versions)
+
+# Related Patterns
+
+- [Basic Unions](./basic-unions.md)
+- [Discriminated Unions](./discriminated-unions.md)
+- [Exhaustive Matching](./exhaustive-matching.md)
+- [Bidirectional Transformations](../transformations/bidirectional.md)

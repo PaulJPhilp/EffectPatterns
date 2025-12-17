@@ -26,3 +26,4 @@ const either = Either.left("Invalid input"); // Either<string, never>
 - `Either.left(error)` creates an either that always represents failure.
 
 ---
+

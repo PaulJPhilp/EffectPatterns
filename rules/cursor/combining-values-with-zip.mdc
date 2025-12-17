@@ -7,7 +7,7 @@ alwaysApply: true
 
 ### Example
 ```typescript
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Either, Option, Stream } from "effect";
 
 // Effect: Combine two effects and get both results
 const effectA = Effect.succeed(1);

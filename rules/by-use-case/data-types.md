@@ -26,9 +26,8 @@ const e1 = Either.right(1);
 const e2 = Either.left("fail1");
 const e3 = Either.left("fail2");
 
-const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
-const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
-const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
+const all = [e1, e2, e3].filter(Either.isRight).map(Either.getRight); // [1]
+const errors = [e1, e2, e3].filter(Either.isLeft).map(Either.getLeft); // ["fail1", "fail2"]
 ```
 
 **Explanation:**
@@ -313,9 +312,9 @@ const twoHours = Duration.hours(2);
 const total = Duration.sum(oneSecond, fiveMinutes); // 5 min 1 sec
 const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
 
-// Convert to milliseconds or human-readable format
+// Convert to milliseconds or ISO string
 const ms = Duration.toMillis(fiveMinutes); // 300000
-const readable = Duration.format(oneSecond); // "1s"
+const iso = Duration.formatIso(oneSecond); // "PT1S"
 ```
 
 **Explanation:**
@@ -375,15 +374,15 @@ import { Chunk } from "effect";
 const numbers = Chunk.fromIterable([1, 2, 3, 4]); // Chunk<number>
 
 // Map and filter over a Chunk
-const doubled = numbers.pipe(Chunk.map((n) => n * 2)); // Chunk<number>
-const evens = numbers.pipe(Chunk.filter((n) => n % 2 === 0)); // Chunk<number>
+const doubled = Chunk.map(numbers, (n) => n * 2); // Chunk<number>
+const evens = Chunk.filter(numbers, (n) => n % 2 === 0); // Chunk<number>
 
 // Concatenate Chunks
 const moreNumbers = Chunk.fromIterable([5, 6]);
 const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
 
 // Convert back to array
-const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
+const arr = Chunk.toArray(allNumbers); // number[]
 ```
 
 **Explanation:**
@@ -566,3 +565,4 @@ const [id, name] = t1; // id: number, name: string
 - Supports safe pattern matching and collection operations.
 
 ---
+

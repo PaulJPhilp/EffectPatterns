@@ -7,7 +7,7 @@ Use Effect's Metric module to define and update custom metrics for business and 
 ### Example
 
 ```typescript
-import { Effect, Metric, MetricBoundaries } from "effect";
+import { Effect, Metric } from "effect";
 
 // Define a counter metric for processed jobs
 const jobsProcessed = Metric.counter("jobs_processed");
@@ -23,14 +23,13 @@ const processJob = Effect.gen(function* () {
 const activeUsers = Metric.gauge("active_users");
 
 // Update the gauge when users sign in or out
-const userSignedIn = Metric.set(activeUsers, 1);
-const userSignedOut = Metric.set(activeUsers, -1);
+const userSignedIn = Metric.set(activeUsers, 1); // Set to 1 (simplified example)
+const userSignedOut = Metric.set(activeUsers, 0); // Set to 0 (simplified example)
 
 // Define a histogram for request durations
-const requestDuration = Metric.histogram(
-  "request_duration",
-  MetricBoundaries.linear({ start: 0, width: 1, count: 6 })
-);
+const requestDuration = Metric.histogram("request_duration", [
+  0.1, 0.5, 1, 2, 5,
+] as any); // boundaries in seconds
 
 // Record a request duration
 const recordDuration = (duration: number) =>
@@ -104,15 +103,15 @@ import { Chunk } from "effect";
 const numbers = Chunk.fromIterable([1, 2, 3, 4]); // Chunk<number>
 
 // Map and filter over a Chunk
-const doubled = numbers.pipe(Chunk.map((n) => n * 2)); // Chunk<number>
-const evens = numbers.pipe(Chunk.filter((n) => n % 2 === 0)); // Chunk<number>
+const doubled = Chunk.map(numbers, (n) => n * 2); // Chunk<number>
+const evens = Chunk.filter(numbers, (n) => n % 2 === 0); // Chunk<number>
 
 // Concatenate Chunks
 const moreNumbers = Chunk.fromIterable([5, 6]);
 const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
 
 // Convert back to array
-const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
+const arr = Chunk.toArray(allNumbers); // number[]
 ```
 
 **Explanation:**
@@ -122,3 +121,4 @@ const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
 - Use `Chunk` in data pipelines, streaming, and concurrent scenarios.
 
 ---
+

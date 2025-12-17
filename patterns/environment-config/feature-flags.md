@@ -1,0 +1,276 @@
+---
+id: feature-flags-schema
+title: Feature Flags with Dynamic Validation
+category: environment-config
+skill: intermediate
+tags:
+  - feature-flags
+  - configuration
+  - schema
+  - dynamic
+  - a-b-testing
+  - gradual-rollout
+---
+
+# Problem
+
+You want to roll out features gradually: enable for 10% of users, then 50%, then 100%. Or toggle features without redeploying. Feature flags scattered across code make it impossible to reason about what's enabled. You need a centralized, type-safe feature flag system that supports gradual rollouts, user segments, and dynamic evaluation.
+
+# Solution
+
+```typescript
+import { Schema, Effect, Data } from "effect"
+
+// 1. Define feature flag types
+const FeatureFlagSchema = Schema.Struct({
+  name: Schema.String,
+  enabled: Schema.Boolean,
+  rolloutPercentage: Schema.pipe(
+    Schema.Number,
+    Schema.between(0, 100)
+  ),
+  allowedUserIds: Schema.Array(Schema.String),
+  allowedGroups: Schema.Array(Schema.String),
+})
+
+type FeatureFlag = typeof FeatureFlagSchema.Type
+
+// 2. Define feature flag store
+const FeaturesConfig = Schema.Struct({
+  newDashboard: FeatureFlagSchema,
+  advancedAnalytics: FeatureFlagSchema,
+  darkMode: FeatureFlagSchema,
+  betaApi: FeatureFlagSchema,
+})
+
+type FeaturesConfig = typeof FeaturesConfig.Type
+
+// 3. Feature flag evaluation context
+class FeatureFlagContext {
+  constructor(
+    readonly userId: string,
+    readonly userGroup: string,
+    readonly isAdmin: boolean,
+  ) {}
+}
+
+// 4. Feature flag errors
+class FeatureFlagNotFound extends Data.TaggedError(
+  "FeatureFlagNotFound"
+) {
+  constructor(readonly flagName: string) {
+    super()
+  }
+}
+
+// 5. Hash function for consistent rollout
+const hashUserId = (userId: string): number => {
+  let hash = 0
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash) + userId.charCodeAt(i)
+    hash = hash & hash // Convert to 32-bit integer
+  }
+  return Math.abs(hash) % 100
+}
+
+// 6. Evaluate feature flag for user
+const evaluateFlag = (
+  flag: FeatureFlag,
+  context: FeatureFlagContext,
+): boolean => {
+  // Admins always get all features
+  if (context.isAdmin) return true
+
+  // Check if explicitly disabled
+  if (!flag.enabled) return false
+
+  // Check user allowlist
+  if (flag.allowedUserIds.length > 0) {
+    return flag.allowedUserIds.includes(context.userId)
+  }
+
+  // Check group allowlist
+  if (flag.allowedGroups.length > 0) {
+    if (!flag.allowedGroups.includes(context.userGroup)) {
+      return false
+    }
+  }
+
+  // Apply gradual rollout percentage
+  const userHash = hashUserId(context.userId)
+  return userHash < flag.rolloutPercentage
+}
+
+// 7. Feature flag service
+class FeatureFlagService {
+  constructor(readonly features: FeaturesConfig) {}
+
+  isEnabled(
+    flagName: keyof FeaturesConfig,
+    context: FeatureFlagContext,
+  ): Effect.Effect<boolean, FeatureFlagNotFound> {
+    return Effect.gen(function* () {
+      const flag = this.features[flagName]
+
+      if (!flag) {
+        return yield* Effect.fail(new FeatureFlagNotFound(flagName as string))
+      }
+
+      return evaluateFlag(flag, context)
+    })
+  }
+
+  getFlag(
+    flagName: keyof FeaturesConfig,
+  ): Effect.Effect<FeatureFlag, FeatureFlagNotFound> {
+    return Effect.gen(function* () {
+      const flag = this.features[flagName]
+
+      if (!flag) {
+        return yield* Effect.fail(new FeatureFlagNotFound(flagName as string))
+      }
+
+      return flag
+    })
+  }
+
+  listEnabled(
+    context: FeatureFlagContext,
+  ): Effect.Effect<Array<[string, boolean]>> {
+    return Effect.sync(() => {
+      return Object.entries(this.features).map(([name, flag]) => [
+        name,
+        evaluateFlag(flag, context),
+      ])
+    })
+  }
+}
+
+// 8. Load feature flags from configuration
+const loadFeatureFlags = (config: any): Effect.Effect<FeaturesConfig, Error> =>
+  Effect.tryPromise({
+    try: () => Schema.decodeUnknown(FeaturesConfig)(config),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Feature flag validation failed: ${msg}`)
+    },
+  })
+
+// 9. Create feature flag layer
+const FeatureFlagServiceLive = (config: any) =>
+  Effect.gen(function* () {
+    const features = yield* loadFeatureFlags(config)
+    return new FeatureFlagService(features)
+  }).pipe(Effect.layer)
+
+// Usage example
+const defaultFlags: FeaturesConfig = {
+  newDashboard: {
+    name: "new_dashboard",
+    enabled: true,
+    rolloutPercentage: 50,
+    allowedUserIds: [],
+    allowedGroups: [],
+  },
+  advancedAnalytics: {
+    name: "advanced_analytics",
+    enabled: true,
+    rolloutPercentage: 25,
+    allowedUserIds: ["user123", "user456"],
+    allowedGroups: [],
+  },
+  darkMode: {
+    name: "dark_mode",
+    enabled: true,
+    rolloutPercentage: 100,
+    allowedUserIds: [],
+    allowedGroups: ["premium"],
+  },
+  betaApi: {
+    name: "beta_api",
+    enabled: false,
+    rolloutPercentage: 0,
+    allowedUserIds: [],
+    allowedGroups: ["engineering"],
+  },
+}
+
+// Application logic
+const appLogic = Effect.gen(function* () {
+  const flagService = yield* Effect.service(FeatureFlagService)
+
+  const userContext = new FeatureFlagContext(
+    "user789",
+    "standard",
+    false,
+  )
+
+  const adminContext = new FeatureFlagContext(
+    "admin001",
+    "admin",
+    true,
+  )
+
+  // Check individual flags
+  const userHasDashboard = yield* flagService.isEnabled(
+    "newDashboard",
+    userContext,
+  )
+  console.log(`User has new dashboard: ${userHasDashboard}`)
+
+  const userHasAnalytics = yield* flagService.isEnabled(
+    "advancedAnalytics",
+    userContext,
+  )
+  console.log(`User has advanced analytics: ${userHasAnalytics}`)
+
+  // Admins always get features
+  const adminHasBetaApi = yield* flagService.isEnabled(
+    "betaApi",
+    adminContext,
+  )
+  console.log(`Admin has beta API: ${adminHasBetaApi}`)
+
+  // List all enabled features for user
+  const enabledFeatures = yield* flagService.listEnabled(userContext)
+  console.log(`User enabled features:`, enabledFeatures)
+
+  return enabledFeatures
+})
+
+// Run with feature flags
+Effect.runPromise(
+  appLogic.pipe(Effect.provide(FeatureFlagServiceLive(defaultFlags)))
+)
+  .then(() => console.log("✅ Feature flag evaluation complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Gradual rollout** | Percentage-based enables for 10%/50%/100% deployments |
+| **User allowlist** | Specific users always get the feature |
+| **Group targeting** | Enable for premium/beta users only |
+| **Admin bypass** | Admins see all features regardless of flags |
+| **Consistent hashing** | Same user always gets same flag state |
+| **Type-safe** | TypeScript ensures flag names and types match |
+| **Service layer** | Centralized flag evaluation logic |
+| **Validation** | Schema ensures flag config is correct at load time |
+
+# When to Use
+
+- Rolling out new features to a percentage of users
+- A/B testing with control and treatment groups
+- Gradual migrations from old to new systems
+- Beta features for specific user groups
+- Feature toggles for CI/CD deployment safety
+- Disabling features during incidents
+- Canary deployments with percentage rollouts
+
+# Related Patterns
+
+- [Environment Variables with Schema Validation](./env-variables.md)
+- [Config Layers](./config-layers.md)
+- [Secrets Redaction](./secrets-redaction.md)

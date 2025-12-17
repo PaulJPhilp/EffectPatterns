@@ -95,3 +95,4 @@ const [id, name] = t1; // id: number, name: string
 - Supports safe pattern matching and collection operations.
 
 ---
+

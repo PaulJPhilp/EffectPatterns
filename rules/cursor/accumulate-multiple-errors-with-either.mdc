@@ -1,43 +1,105 @@
-description: Use Either to model computations that may fail, making errors explicit and type-safe.
+description: Use Either to accumulate multiple validation errors instead of failing on the first one.
 globs: "**/*.ts"
 alwaysApply: true
 
 # Accumulate Multiple Errors with Either
-**Rule:** Use Either to model computations that may fail, making errors explicit and type-safe.
+**Rule:** Use Either to accumulate multiple validation errors instead of failing on the first one.
 
 ### Example
+Using `Schema.decode` with the `allErrors: true` option demonstrates this pattern perfectly. The underlying mechanism uses `Either` to collect all parsing errors into an array instead of stopping at the first one.
+
 ```typescript
-import { Either } from "effect";
+import { Effect, Schema, Data, Either } from "effect";
 
-// Create a Right (success) or Left (failure)
-const success = Either.right(42); // Either<never, number>
-const failure = Either.left("Something went wrong"); // Either<string, never>
+// Define validation error type
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  readonly field: string;
+  readonly message: string;
+}> {}
 
-// Pattern match on Either
-const result = success.pipe(
-  Either.match({
-    onLeft: (err) => `Error: ${err}`,
-    onRight: (value) => `Value: ${value}`,
-  })
-); // string
+// Define user type
+type User = {
+  name: string;
+  email: string;
+};
 
-// Combine multiple Eithers and accumulate errors
-const e1 = Either.right(1);
-const e2 = Either.left("fail1");
-const e3 = Either.left("fail2");
+// Define schema with custom validation
+const UserSchema = Schema.Struct({
+  name: Schema.String.pipe(
+    Schema.minLength(3),
+    Schema.filter((name) => /^[A-Za-z\s]+$/.test(name), {
+      message: () => "name must contain only letters and spaces",
+    })
+  ),
+  email: Schema.String.pipe(
+    Schema.pattern(/@/),
+    Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
+      message: () => "email must be a valid email address",
+    })
+  ),
+});
 
-const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
-const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
-const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
+// Example inputs
+const invalidInputs: User[] = [
+  {
+    name: "Al", // Too short
+    email: "bob-no-at-sign.com", // Invalid pattern
+  },
+  {
+    name: "John123", // Contains numbers
+    email: "john@incomplete", // Invalid email
+  },
+  {
+    name: "Alice Smith", // Valid
+    email: "alice@example.com", // Valid
+  },
+];
+
+// Validate a single user
+const validateUser = (input: User) =>
+  Effect.gen(function* () {
+    const result = yield* Schema.decode(UserSchema)(input, { errors: "all" });
+    return result;
+  });
+
+// Process multiple users and accumulate all errors
+const program = Effect.gen(function* () {
+  yield* Effect.log("Validating users...\n");
+
+  for (const input of invalidInputs) {
+    const result = yield* Effect.either(validateUser(input));
+
+    yield* Effect.log(`Validating user: ${input.name} <${input.email}>`);
+
+    // Handle success and failure cases separately for clarity
+    // Using Either.match which is the idiomatic way to handle Either values
+    yield* Either.match(result, {
+      onLeft: (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log("❌ Validation failed:");
+          yield* Effect.log(error.message);
+          yield* Effect.log(""); // Empty line for readability
+        }),
+      onRight: (user) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`✅ User is valid: ${JSON.stringify(user)}`);
+          yield* Effect.log(""); // Empty line for readability
+        }),
+    });
+  }
+});
+
+// Run the program
+Effect.runSync(program);
 ```
 
-**Explanation:**
-
-- `Either.right(value)` represents success.
-- `Either.left(error)` represents failure.
-- Pattern matching ensures all cases are handled.
-- You can accumulate errors or results from multiple Eithers.
+---
 
 **Explanation:**  
-`Either` is a foundational data type for error handling in functional programming.  
-It allows you to accumulate errors, model domain-specific failures, and avoid exceptions and unchecked errors.
+The `Effect` error channel is designed to short-circuit. The moment an `Effect` fails, the entire computation stops and the error is propagated. This is perfect for handling unrecoverable errors like a lost database connection.
+
+However, for tasks like validating a user's input, this is poor user experience. You want to show the user all of their mistakes at once.
+
+`Either` is the solution. Since it's a pure data structure, you can run multiple checks that each return an `Either`, and then combine the results to accumulate all the `Left` (error) values. The `Effect/Schema` module uses this pattern internally to provide powerful error accumulation.
+
+---

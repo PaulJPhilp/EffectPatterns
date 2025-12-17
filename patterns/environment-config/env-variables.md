@@ -1,0 +1,131 @@
+---
+id: env-variables-schema-validation
+title: Environment Variables with Schema Validation
+category: environment-config
+skill: beginner
+tags:
+  - environment
+  - config
+  - schema
+  - validation
+  - dotenv
+---
+
+# Problem
+
+Environment variables power your application—database URLs, API keys, ports. But they're just strings. You load them with `process.env.DATABASE_URL`, hoping it exists and is valid. No type safety, no compile-time checks. One missing variable crashes production. You need a single source of truth for environment configuration with validation and type safety.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// 1. Define environment schema
+const EnvironmentSchema = Schema.Struct({
+  DATABASE_URL: Schema.String.pipe(
+    Schema.description("PostgreSQL connection string")
+  ),
+  API_KEY: Schema.String.pipe(
+    Schema.minLength(32),
+    Schema.description("API authentication key (min 32 chars)")
+  ),
+  PORT: Schema.pipe(
+    Schema.String,
+    Schema.parseNumber(),
+    Schema.int(),
+    Schema.between(1024, 65535),
+    Schema.description("Server port (1024-65535)")
+  ),
+  LOG_LEVEL: Schema.Literal("debug", "info", "warn", "error").pipe(
+    Schema.description("Logging level")
+  ),
+  NODE_ENV: Schema.Literal("development", "staging", "production").pipe(
+    Schema.description("Deployment environment")
+  ),
+})
+
+type Environment = typeof EnvironmentSchema.Type
+
+// 2. Create validator
+const validateEnv = Schema.decodeUnknown(EnvironmentSchema)
+
+// 3. Load and validate environment
+const loadEnvironment = (): Effect.Effect<Environment, Error> =>
+  Effect.gen(function* () {
+    const envVars = process.env
+
+    const validated = yield* Effect.tryPromise({
+      try: () => validateEnv(envVars),
+      catch: (error) => {
+        const errorMsg =
+          error instanceof Error ? error.message : String(error)
+        return new Error(`Environment validation failed: ${errorMsg}`)
+      },
+    })
+
+    console.log(`✅ Environment loaded: NODE_ENV=${validated.NODE_ENV}`)
+    return validated
+  })
+
+// 4. Create service to provide environment
+class EnvironmentService {
+  constructor(readonly env: Environment) {}
+
+  isDev = () => this.env.NODE_ENV === "development"
+  isProd = () => this.env.NODE_ENV === "production"
+  isStaging = () => this.env.NODE_ENV === "staging"
+}
+
+// 5. Provide environment as a service
+const EnvironmentServiceLive = Effect.gen(function* () {
+  const env = yield* loadEnvironment()
+  return new EnvironmentService(env)
+}).pipe(Effect.layer)
+
+// Usage
+const appLogic = Effect.gen(function* () {
+  const envService = yield* Effect.service(EnvironmentService)
+
+  console.log(`Database: ${envService.env.DATABASE_URL}`)
+  console.log(`Port: ${envService.env.PORT}`)
+  console.log(`Log level: ${envService.env.LOG_LEVEL}`)
+  console.log(`Is production: ${envService.isProd()}`)
+
+  return envService.env.PORT
+})
+
+// Run with environment layer
+Effect.runPromise(
+  appLogic.pipe(Effect.provide(EnvironmentServiceLive))
+)
+  .then((port) => console.log(`Server starting on port ${port}`))
+  .catch((error) => console.error(`Failed to start: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Schema definition** | Single source of truth for all env vars |
+| **Type safety** | TypeScript knows exact env var types at compile time |
+| **Validation rules** | Enforce constraints (min length, numeric ranges, allowed values) |
+| **Fail early** | Validation errors happen on startup, not runtime |
+| **Service pattern** | Environment accessible throughout app via dependency injection |
+| **Immutable config** | Environment locked after validation, prevents accidental changes |
+| **Helper methods** | `isDev()`, `isProd()` encapsulate environment checks |
+
+# When to Use
+
+- Application startup with required configuration
+- Multi-environment deployments (dev, staging, production)
+- Third-party API integrations requiring keys
+- Database connection strings with validation
+- Server configuration (port, timeouts, limits)
+- Any scenario where invalid env vars should crash fast
+
+# Related Patterns
+
+- [Config Layers](./config-layers.md)
+- [Feature Flags](./feature-flags.md)
+- [Secrets Redaction](./secrets-redaction.md)
+- [Web Standards Validation](../schema/web-standards-validation/url.md)

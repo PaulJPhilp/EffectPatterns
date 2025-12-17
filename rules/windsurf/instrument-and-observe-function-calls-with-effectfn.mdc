@@ -9,40 +9,34 @@ alwaysApply: true
 ```typescript
 import { Effect } from "effect";
 
-// Use Effect.fn to wrap a function with automatic span creation
-const fetchUser = Effect.fn("fetch-user")(function* (userId: string) {
-  // Annotate the span with contextual information
-  yield* Effect.annotateCurrentSpan({
-    userId,
-  });
+// A simple function to instrument
+function add(a: number, b: number): number {
+  return a + b;
+}
 
-  // Simulate async operation
-  const user = yield* Effect.tryPromise(() =>
-    Promise.resolve({ id: userId, name: "Alice" })
-  );
-
-  return user;
-});
+// Use Effect.fn to instrument the function with observability
+const addWithLogging = Effect.fn("add")(add).pipe(
+  Effect.withSpan("add", { attributes: { "fn.name": "add" } })
+);
 
 // Use the instrumented function in an Effect workflow
 const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Fetching user");
-  const user = yield* fetchUser("user-123");
-  yield* Effect.logInfo(`Fetched user: ${user.name}`);
-  return user;
+  yield* Effect.logInfo("Calling add function");
+  const sum = yield* addWithLogging(2, 3);
+  yield* Effect.logInfo(`Sum is ${sum}`);
+  return sum;
 });
 
-// Run the program with OpenTelemetry integration
-// Effect.runPromise(program);
+// Run the program
+Effect.runPromise(program);
 ```
 
 **Explanation:**
 
-- `Effect.fn("operation-name")(function*)` wraps a function and automatically creates OpenTelemetry spans with the given name.
-- No manual span wrapping needed—the Effect runtime handles span creation and lifecycle automatically.
-- Use `Effect.annotateCurrentSpan()` to add metadata and context to the span.
-- Integrates seamlessly with OpenTelemetry for distributed tracing, logging, and metrics.
-- Keeps instrumentation composable and type-safe without cluttering business logic.
+- `Effect.fn("name")(fn)` wraps a function with instrumentation capabilities, enabling observability.
+- You can add tracing spans, logging, metrics, and other observability logic to function boundaries.
+- Keeps instrumentation separate from business logic and fully composable.
+- The wrapped function integrates seamlessly with Effect's observability and tracing infrastructure.
 
 ### Anti-Pattern (Avoid)
 Scattering logging, metrics, or tracing logic directly inside business functions, making code harder to test, maintain, and compose.

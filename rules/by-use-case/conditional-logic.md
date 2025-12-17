@@ -70,3 +70,4 @@ const stream = Stream.fromIterable([1, 2, 3, 4]).pipe(
 `filter` applies a predicate to the value(s) inside the structure. If the predicate fails, the result is a failure (`Effect.fail`, `Either.left`), `Option.none`, or an empty stream.
 
 ---
+

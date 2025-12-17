@@ -35,3 +35,4 @@ console.log(users.some((u) => Equal.equals(u, user2))); // true
 - These type classes make your types fully compatible with Effect’s collections and algorithms.
 
 ---
+

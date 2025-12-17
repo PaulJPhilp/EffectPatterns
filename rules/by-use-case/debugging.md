@@ -56,29 +56,29 @@ function add(a: number, b: number): number {
   return a + b;
 }
 
-// Wrap the function with Effect.fn to add logging and tracking
-const addWithLogging = (a: number, b: number) =>
-  Effect.gen(function* () {
-    yield* Effect.logInfo(`Calling add with ${a} and ${b}`);
-    const result = add(a, b);
-    yield* Effect.logInfo(`Result: ${result}`);
-    return result;
-  });
-
-// Use the instrumented function in an Effect workflow
-const program = addWithLogging(2, 3).pipe(
-  Effect.tap((sum) => Effect.logInfo(`Sum is ${sum}`))
+// Use Effect.fn to instrument the function with observability
+const addWithLogging = Effect.fn("add")(add).pipe(
+  Effect.withSpan("add", { attributes: { "fn.name": "add" } })
 );
 
-// Run the program (commented to avoid runtime issues)
-// Effect.runPromise(program);
+// Use the instrumented function in an Effect workflow
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("Calling add function");
+  const sum = yield* addWithLogging(2, 3);
+  yield* Effect.logInfo(`Sum is ${sum}`);
+  return sum;
+});
+
+// Run the program
+Effect.runPromise(program);
 ```
 
 **Explanation:**
 
-- `Effect.fn` wraps a function, returning a new function that produces an Effect.
-- You can add logging, metrics, tracing, or any effectful logic before/after the call.
+- `Effect.fn("name")(fn)` wraps a function with instrumentation capabilities, enabling observability.
+- You can add tracing spans, logging, metrics, and other observability logic to function boundaries.
 - Keeps instrumentation separate from business logic and fully composable.
+- The wrapped function integrates seamlessly with Effect's observability and tracing infrastructure.
 
 ---
 
@@ -92,15 +92,24 @@ Use Effect.log, Effect.logInfo, and Effect.logError to add structured, context-a
 import { Effect } from "effect";
 
 // Log a simple message
-const program = Effect.log("Starting the application");
+const program = Effect.gen(function* () {
+  yield* Effect.log("Starting the application");
+});
 
 // Log at different levels
-const info = Effect.logInfo("User signed in");
-const error = Effect.logError("Failed to connect to database");
+const infoProgram = Effect.gen(function* () {
+  yield* Effect.logInfo("User signed in");
+});
+
+const errorProgram = Effect.gen(function* () {
+  yield* Effect.logError("Failed to connect to database");
+});
 
 // Log with dynamic values
 const userId = 42;
-const logUser = Effect.logInfo(`Processing user: ${userId}`);
+const logUserProgram = Effect.gen(function* () {
+  yield* Effect.logInfo(`Processing user: ${userId}`);
+});
 
 // Use logging in a workflow
 const workflow = Effect.gen(function* () {
@@ -164,3 +173,4 @@ const program = Effect.gen(function* () {
 - Tracing enables distributed observability and performance analysis.
 
 ---
+

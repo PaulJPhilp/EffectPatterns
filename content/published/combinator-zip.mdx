@@ -1,28 +1,14 @@
 ---
-title: Combining Values with zip
-id: combinator-zip
-skillLevel: beginner
-useCase: core-concepts
-summary: >-
-  Use zip to combine two computations, pairing their results together in Effect,
-  Stream, Option, or Either.
-tags:
-  - zip
-  - combinator
-  - pair
-  - effect
-  - stream
-  - option
-  - either
+title: "Combining Values with zip"
+id: "combinator-zip"
+skillLevel: "beginner"
+useCase: ["Combinators", "Composition", "Pairing"]
+summary: "Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either."
+tags: ["zip", "combinator", "pair", "effect", "stream", "option", "either"]
 rule:
-  description: >-
-    Use zip to run two computations and combine their results into a tuple,
-    preserving error and context handling.
-related:
-  - combinator-map
-  - combinator-flatmap
-  - combinator-all-race
-author: PaulJPhilp
+  description: "Use zip to run two computations and combine their results into a tuple, preserving error and context handling."
+related: ["combinator-map", "combinator-flatmap", "combinator-all-race"]
+author: "PaulJPhilp"
 ---
 
 # Combining Values with `zip`
@@ -40,7 +26,7 @@ It preserves error handling and context, and keeps your code declarative and typ
 ## Good Example
 
 ```typescript
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Either, Option, Stream } from "effect";
 
 // Effect: Combine two effects and get both results
 const effectA = Effect.succeed(1);

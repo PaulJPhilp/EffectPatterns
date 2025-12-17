@@ -1,0 +1,347 @@
+---
+id: error-handling-recovery-strategies
+title: Error Recovery and Fallback Strategies
+category: error-handling
+skill: intermediate
+tags:
+  - error-handling
+  - recovery
+  - fallbacks
+  - retry
+  - resilience
+  - backoff
+---
+
+# Problem
+
+An API call fails. Retry immediately—it works the second time. But retry too fast and you overload the system. Wait too long and users think the app is broken. Network hiccups, temporary outages, transient errors. You need intelligent recovery: retry with exponential backoff, provide sensible defaults, catch specific errors and recover gracefully, or escalate when necessary.
+
+# Solution
+
+```typescript
+import { Effect, Duration, Data } from "effect"
+
+// ============================================
+// 1. Define domain errors
+// ============================================
+
+class NetworkError extends Data.TaggedError("NetworkError") {
+  constructor(readonly message: string) {
+    super()
+  }
+}
+
+class TimeoutError extends Data.TaggedError("TimeoutError") {
+  constructor(readonly durationMs: number) {
+    super()
+  }
+}
+
+class RateLimitError extends Data.TaggedError("RateLimitError") {
+  constructor(readonly retryAfterMs: number) {
+    super()
+  }
+}
+
+class NotFoundError extends Data.TaggedError("NotFoundError") {
+  constructor(readonly resource: string) {
+    super()
+  }
+}
+
+// ============================================
+// 2. Retry with exponential backoff
+// ============================================
+
+const retryWithBackoff = <A, E, R>(
+  effect: Effect.Effect<A, E, R>,
+  options: {
+    maxRetries: number
+    initialDelayMs: number
+    maxDelayMs: number
+  }
+): Effect.Effect<A, E, R> => {
+  const attempt = (retriesLeft: number, currentDelayMs: number): Effect.Effect<A, E, R> =>
+    effect.pipe(
+      Effect.catchAll((error) => {
+        if (retriesLeft === 0) {
+          return Effect.fail(error)
+        }
+
+        const nextDelay = Math.min(
+          currentDelayMs * 2,
+          options.maxDelayMs
+        )
+
+        console.log(
+          `⏳ Retry attempt ${options.maxRetries - retriesLeft + 1}/${options.maxRetries}, waiting ${currentDelayMs}ms...`
+        )
+
+        return Effect.gen(function* () {
+          yield* Effect.sleep(Duration.millis(currentDelayMs))
+          return yield* attempt(retriesLeft - 1, nextDelay)
+        })
+      })
+    )
+
+  return attempt(options.maxRetries, options.initialDelayMs)
+}
+
+// ============================================
+// 3. Timeout wrapper
+// ============================================
+
+const withTimeout = <A, E, R>(
+  effect: Effect.Effect<A, E, R>,
+  timeoutMs: number
+): Effect.Effect<A, TimeoutError | E, R> =>
+  effect.pipe(
+    Effect.timeout(Duration.millis(timeoutMs)),
+    Effect.mapError((option) =>
+      option._tag === "None"
+        ? new TimeoutError(timeoutMs)
+        : option.value as TimeoutError | E
+    )
+  )
+
+// ============================================
+// 4. Fallback with defaults
+// ============================================
+
+const withFallback = <A, E, R>(
+  effect: Effect.Effect<A, E, R>,
+  fallbackValue: A,
+  shouldUseFallback?: (error: E) => boolean
+): Effect.Effect<A, never, R> =>
+  effect.pipe(
+    Effect.catchAll((error) => {
+      if (shouldUseFallback && !shouldUseFallback(error)) {
+        return Effect.fail(error)
+      }
+      console.log("⚠️ Using fallback value due to error")
+      return Effect.succeed(fallbackValue)
+    })
+  )
+
+// ============================================
+// 5. Recovery by error type
+// ============================================
+
+const withRecovery = <A, E, R>(
+  effect: Effect.Effect<A, E, R>,
+  handlers: {
+    [K in E as E["_tag"]]?: (error: Extract<E, { _tag: K }>) => Effect.Effect<A, E, R>
+  }
+): Effect.Effect<A, E, R> =>
+  effect.pipe(
+    Effect.catchAll((error: E) => {
+      const handler = handlers[error._tag as E["_tag"]]
+      if (handler) {
+        return (handler as any)(error)
+      }
+      return Effect.fail(error)
+    })
+  )
+
+// ============================================
+// 6. Simulate external service
+// ============================================
+
+let callCount = 0
+
+const fetchUserData = (id: string): Effect.Effect<{ id: string; name: string }, NetworkError> =>
+  Effect.gen(function* () {
+    callCount++
+
+    // Fail first 2 times, succeed on 3rd
+    if (callCount <= 2) {
+      console.log(`  Attempt ${callCount}: Network error`)
+      return yield* Effect.fail(new NetworkError("Connection refused"))
+    }
+
+    console.log(`  Attempt ${callCount}: Success`)
+    return { id, name: "Alice" }
+  })
+
+const fetchUserPreferences = (
+  id: string
+): Effect.Effect<{ theme: string; language: string }, TimeoutError> =>
+  Effect.gen(function* () {
+    // Simulate timeout
+    yield* Effect.sleep(Duration.millis(100))
+    console.log("⏱️ Request timed out")
+    return yield* Effect.fail(new TimeoutError(5000))
+  })
+
+const fetchUserAnalytics = (id: string): Effect.Effect<{ visits: number }, NotFoundError> =>
+  Effect.gen(function* () {
+    console.log("📊 Analytics not found for user")
+    return yield* Effect.fail(new NotFoundError(id))
+  })
+
+// ============================================
+// 7. Compose recovery strategies
+// ============================================
+
+const getFullUserProfile = (id: string) =>
+  Effect.gen(function* () {
+    // 1. Fetch user data with retry + timeout
+    const userData = yield* Effect.gen(function* () {
+      const withBackoff = retryWithBackoff(fetchUserData(id), {
+        maxRetries: 3,
+        initialDelayMs: 100,
+        maxDelayMs: 1000,
+      })
+
+      return yield* withTimeout(withBackoff, 10000)
+    })
+
+    console.log(`✅ Got user data: ${userData.name}`)
+
+    // 2. Fetch preferences with timeout + fallback
+    const preferences = yield* Effect.gen(function* () {
+      const withTimeoutEffect = withTimeout(fetchUserPreferences(id), 5000)
+
+      return yield* withFallback(
+        withTimeoutEffect,
+        { theme: "light", language: "en" }
+      )
+    })
+
+    console.log(`✅ Got preferences with fallback:`, preferences)
+
+    // 3. Fetch analytics with error-specific recovery
+    const analytics = yield* fetchUserAnalytics(id).pipe(
+      Effect.catchTags({
+        NotFoundError: () => {
+          console.log("⚠️ No analytics available, using defaults")
+          return Effect.succeed({ visits: 0 })
+        },
+      })
+    )
+
+    console.log(`✅ Got analytics:`, analytics)
+
+    return {
+      user: userData,
+      preferences,
+      analytics,
+    }
+  })
+
+// ============================================
+// 8. Circuit breaker pattern
+// ============================================
+
+type CircuitBreakerState = "closed" | "open" | "half-open"
+
+class CircuitBreaker {
+  private state: CircuitBreakerState = "closed"
+  private failureCount = 0
+  private readonly failureThreshold = 3
+  private lastOpenTime = 0
+  private readonly resetTimeoutMs = 5000
+
+  execute<A, E, R>(
+    effect: Effect.Effect<A, E, R>
+  ): Effect.Effect<A, E | NetworkError, R> {
+    if (this.state === "open") {
+      if (Date.now() - this.lastOpenTime > this.resetTimeoutMs) {
+        this.state = "half-open"
+        console.log("🔄 Circuit breaker: half-open (testing)")
+      } else {
+        return Effect.fail(
+          new NetworkError("Circuit breaker is open")
+        ) as Effect.Effect<A, E | NetworkError, R>
+      }
+    }
+
+    return effect.pipe(
+      Effect.catchAll((error) => {
+        this.failureCount++
+
+        if (this.failureCount >= this.failureThreshold) {
+          this.state = "open"
+          this.lastOpenTime = Date.now()
+          console.log("🔴 Circuit breaker: open (too many failures)")
+        }
+
+        return Effect.fail(error)
+      }),
+      Effect.tap(() => {
+        if (this.state === "half-open") {
+          this.state = "closed"
+          this.failureCount = 0
+          console.log("🟢 Circuit breaker: closed (recovered)")
+        }
+      })
+    )
+  }
+}
+
+// ============================================
+// 9. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  console.log("=== Retry with Exponential Backoff ===\n")
+  callCount = 0
+
+  const profile = yield* getFullUserProfile("user_123")
+
+  console.log("\n✅ Full profile:", profile)
+
+  console.log("\n=== Circuit Breaker ===\n")
+
+  const breaker = new CircuitBreaker()
+
+  for (let i = 0; i < 5; i++) {
+    const result = yield* breaker.execute(
+      Effect.fail(new NetworkError("Service down")).pipe(
+        Effect.either
+      )
+    )
+
+    if (result._tag === "Left") {
+      console.log(`Request ${i + 1}: Failed -`, result.left.message)
+    }
+  }
+
+  return profile
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Recovery strategies complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Exponential backoff** | Retry delays increase (100ms, 200ms, 400ms) to avoid overwhelming system |
+| **Timeout protection** | Fail fast if operation takes too long |
+| **Fallback values** | Sensible defaults when recovery impossible |
+| **Error-specific handling** | NotFoundError doesn't retry; NetworkError does |
+| **Circuit breaker** | Prevent cascading failures; open circuit after threshold |
+| **Half-open state** | Test if system recovered before resuming |
+| **Composable** | Combine retry + timeout + fallback + recovery |
+| **Type-safe** | Each error type specifies recovery action |
+
+# When to Use
+
+- External API calls (retry transient network errors)
+- Database connections (timeout + retry)
+- Cache misses (fallback to fresh data)
+- User data with degraded mode (show cached data)
+- Batch operations (retry failed items)
+- Microservice calls (prevent cascade failures)
+- Scheduled jobs (exponential backoff for retries)
+- Feature flags (use defaults when service unavailable)
+
+# Related Patterns
+
+- [Tagged Errors](./tagged-errors.md)
+- [Error Aggregation](./error-aggregation.md)
+- [User-Friendly Error Messages](./user-friendly-messages.md)

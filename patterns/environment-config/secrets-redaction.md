@@ -1,0 +1,275 @@
+---
+id: secrets-redaction-schema
+title: Secrets Redaction and Masking
+category: environment-config
+skill: intermediate
+tags:
+  - secrets
+  - security
+  - masking
+  - redaction
+  - logging
+  - sensitive-data
+---
+
+# Problem
+
+Logs contain API keys, database passwords, and authentication tokens. A developer accidentally logs config, exposing secrets. An error gets reported with stack traces containing credentials. You need automatic secret redaction: mask sensitive values everywhere without manual string replacements scattered throughout the codebase.
+
+# Solution
+
+```typescript
+import { Schema, Effect, Data } from "effect"
+
+// 1. Define secret types
+const SecretSchema = Schema.String.pipe(
+  Schema.minLength(1),
+  Schema.brand("Secret")
+)
+
+type Secret = typeof SecretSchema.Type
+
+const SensitiveFields = ["password", "token", "secret", "key", "api_key", "apiKey"] as const
+
+// 2. Define configuration with secrets
+const DatabaseConfig = Schema.Struct({
+  host: Schema.String,
+  port: Schema.Number,
+  username: Schema.String,
+  password: SecretSchema,
+})
+
+const ApiConfig = Schema.Struct({
+  url: Schema.String,
+  apiKey: SecretSchema,
+  secret: SecretSchema,
+})
+
+type ApiConfig = typeof ApiConfig.Type
+
+// 3. Redaction pattern
+class RedactionPattern {
+  constructor(readonly pattern: RegExp, readonly replacement: string) {}
+}
+
+const redactionPatterns: RedactionPattern[] = [
+  // Bearer tokens
+  new RedactionPattern(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi, "Bearer [REDACTED]"),
+  // API keys (common formats)
+  new RedactionPattern(/api[_-]?key["\']?\s*[:=]\s*["\']?[A-Za-z0-9\-._~+/]+=*["\']?/gi, "apiKey: [REDACTED]"),
+  // Passwords
+  new RedactionPattern(/password["\']?\s*[:=]\s*["\']?[^"\s,}]+["\']?/gi, "password: [REDACTED]"),
+  // Database credentials
+  new RedactionPattern(/postgresql:\/\/[^@]+@/gi, "postgresql://[USER]:[PASSWORD]@"),
+  // URLs with auth
+  new RedactionPattern(/https?:\/\/[^:]+:[^@]+@/gi, "https://[USER]:[PASSWORD]@"),
+]
+
+// 4. Secret tracking metadata
+class SecretMetadata {
+  constructor(readonly fieldName: string, readonly isSensitive: boolean) {}
+}
+
+const isSensitiveField = (fieldName: string): boolean => {
+  const lower = fieldName.toLowerCase()
+  return SensitiveFields.some((f) => lower.includes(f))
+}
+
+// 5. Redaction function
+const redactString = (value: string): string => {
+  let redacted = value
+
+  for (const pattern of redactionPatterns) {
+    redacted = redacted.replace(pattern.pattern, pattern.replacement)
+  }
+
+  return redacted
+}
+
+// 6. Deep redaction for objects
+const redactObject = (
+  obj: any,
+  depth: number = 0,
+  maxDepth: number = 10,
+): any => {
+  if (depth > maxDepth) return "[DEPTH_LIMIT]"
+
+  if (obj === null || obj === undefined) return obj
+  if (typeof obj === "string") return redactString(obj)
+  if (typeof obj !== "object") return obj
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => redactObject(item, depth + 1, maxDepth))
+  }
+
+  const redacted: any = {}
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (isSensitiveField(key)) {
+      redacted[key] = "[REDACTED]"
+    } else if (typeof value === "object") {
+      redacted[key] = redactObject(value, depth + 1, maxDepth)
+    } else if (typeof value === "string") {
+      redacted[key] = redactString(value)
+    } else {
+      redacted[key] = value
+    }
+  }
+
+  return redacted
+}
+
+// 7. Safe error with redaction
+class RedactedError extends Data.TaggedError("RedactedError") {
+  constructor(
+    readonly message: string,
+    readonly originalError: Error,
+  ) {
+    super()
+  }
+
+  toString(): string {
+    const safeMessage = redactString(this.message)
+    const safeStack = this.originalError.stack
+      ? redactString(this.originalError.stack)
+      : "[NO_STACK]"
+
+    return `${safeMessage}\n${safeStack}`
+  }
+}
+
+// 8. Safe logger
+class SafeLogger {
+  private static formatValue(value: any): string {
+    if (typeof value === "string") {
+      return redactString(value)
+    }
+    return JSON.stringify(redactObject(value), null, 2)
+  }
+
+  static debug(message: string, ...args: any[]): void {
+    const redacted = args.map((arg) => this.formatValue(arg))
+    console.debug(message, ...redacted)
+  }
+
+  static info(message: string, ...args: any[]): void {
+    const redacted = args.map((arg) => this.formatValue(arg))
+    console.info(message, ...redacted)
+  }
+
+  static warn(message: string, ...args: any[]): void {
+    const redacted = args.map((arg) => this.formatValue(arg))
+    console.warn(message, ...redacted)
+  }
+
+  static error(message: string, ...args: any[]): void {
+    const redacted = args.map((arg) => this.formatValue(arg))
+    console.error(message, ...redacted)
+  }
+}
+
+// 9. Safe config service
+class ConfigService {
+  constructor(readonly config: ApiConfig) {}
+
+  getConfig(): ApiConfig {
+    return this.config
+  }
+
+  getRedactedConfig(): any {
+    return redactObject(this.config)
+  }
+
+  toString(): string {
+    return JSON.stringify(this.getRedactedConfig(), null, 2)
+  }
+}
+
+// 10. Load and validate config with redaction
+const loadConfig = (rawConfig: any): Effect.Effect<ConfigService, Error> =>
+  Effect.gen(function* () {
+    const validated = yield* Effect.tryPromise({
+      try: () => Schema.decodeUnknown(ApiConfig)(rawConfig),
+      catch: (error) => {
+        const msg = error instanceof Error ? error.message : String(error)
+        return new Error(`Config validation failed: ${msg}`)
+      },
+    })
+
+    SafeLogger.info("Configuration loaded successfully", {
+      config: redactObject(validated),
+    })
+
+    return new ConfigService(validated)
+  })
+
+// Usage example
+const apiConfig = {
+  url: "https://api.example.com",
+  apiKey: "pk_test_xxxxxxxxxxxxxxxxxxxx",
+  secret: "test_secret_key_xxxxx",
+}
+
+// Application logic
+const appLogic = Effect.gen(function* () {
+  const configService = yield* loadConfig(apiConfig)
+
+  // Safe to log - secrets are redacted
+  SafeLogger.info("Config initialized", configService.getRedactedConfig())
+
+  // Access actual secrets when needed (internal only)
+  const actualConfig = configService.getConfig()
+  console.log(`Real API key (not logged): ${actualConfig.apiKey.slice(0, 10)}...`)
+
+  // Simulate error with secrets in stack trace
+  try {
+    throw new Error(`Failed to connect to ${actualConfig.url} with key ${actualConfig.apiKey}`)
+  } catch (originalError) {
+    const safeError = new RedactedError(
+      (originalError as Error).message,
+      originalError as Error
+    )
+    SafeLogger.error("Connection failed", safeError.toString())
+  }
+
+  return configService
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then((service) => {
+    console.log("\n✅ Application initialized")
+    console.log("Full config:", service.toString())
+  })
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Regex patterns** | Matches common secret formats (tokens, keys, passwords) |
+| **Field-based detection** | Redacts by field name (password, apiKey, secret) |
+| **Deep traversal** | Handles nested objects and arrays |
+| **Safe logging** | All log output automatically redacted |
+| **Bounded recursion** | Prevents infinite loops in circular references |
+| **Error redaction** | Stack traces don't leak credentials |
+| **String replacement** | No storage of actual secrets, only redacted versions |
+| **Separation of concerns** | Safe logger keeps secrets safe without changing app logic |
+
+# When to Use
+
+- Logging system outputs with configuration
+- Error reporting and monitoring systems
+- Debugging logs that contain config
+- API response logging that includes credentials
+- Stack trace collection and analysis
+- Any user-facing error messages
+- Development debugging with sensitive data
+- Security audit logs
+
+# Related Patterns
+
+- [Environment Variables with Schema Validation](./env-variables.md)
+- [Config Layers](./config-layers.md)
+- [Feature Flags with Dynamic Validation](./feature-flags.md)

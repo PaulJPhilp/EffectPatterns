@@ -1,0 +1,276 @@
+---
+id: schema-extend-schemas
+title: Extending and Adding Fields to Schemas
+category: composition
+skill: beginner
+tags:
+  - schema
+  - composition
+  - extension
+  - inheritance
+  - reuse
+---
+
+# Problem
+
+You have a base schema (User) and need variants with additional fields (AdminUser, PremiumUser). Copy-pasting the schema creates maintenance burden—change one field and you update three schemas. You need schema inheritance where you extend a base with new fields without duplication.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// ============================================
+// 1. Base schemas
+// ============================================
+
+const BaseUser = Schema.Struct({
+  id: Schema.String,
+  username: Schema.String,
+  email: Schema.String,
+  createdAt: Schema.Date,
+})
+
+type BaseUser = typeof BaseUser.Type
+
+// ============================================
+// 2. Extend with new fields using Schema.extend
+// ============================================
+
+const AdminUser = Schema.extend(
+  BaseUser,
+  Schema.Struct({
+    role: Schema.Literal("admin"),
+    permissions: Schema.Array(Schema.String),
+    lastLogin: Schema.Date,
+  })
+)
+
+type AdminUser = typeof AdminUser.Type
+
+const PremiumUser = Schema.extend(
+  BaseUser,
+  Schema.Struct({
+    tier: Schema.Enum({ gold: "gold", platinum: "platinum" }),
+    subscriptionEnd: Schema.Date,
+    features: Schema.Array(Schema.String),
+  })
+)
+
+type PremiumUser = typeof PremiumUser.Type
+
+// ============================================
+// 3. Extend with optional fields
+// ============================================
+
+const UserWithProfile = Schema.extend(
+  BaseUser,
+  Schema.Struct({
+    bio: Schema.Optional(Schema.String),
+    avatar: Schema.Optional(Schema.String),
+    location: Schema.Optional(Schema.String),
+    website: Schema.Optional(Schema.String),
+  })
+)
+
+type UserWithProfile = typeof UserWithProfile.Type
+
+// ============================================
+// 4. Multi-level extension
+// ============================================
+
+const VerifiedUser = Schema.extend(
+  UserWithProfile,
+  Schema.Struct({
+    emailVerified: Schema.Boolean,
+    phoneVerified: Schema.Boolean,
+    verificationDate: Schema.Optional(Schema.Date),
+  })
+)
+
+type VerifiedUser = typeof VerifiedUser.Type
+
+const VerifiedAdmin = Schema.extend(
+  VerifiedUser,
+  Schema.Struct({
+    adminRole: Schema.String,
+    adminTeam: Schema.String,
+  })
+)
+
+type VerifiedAdmin = typeof VerifiedAdmin.Type
+
+// ============================================
+// 5. Union of extended schemas
+// ============================================
+
+const AnyUser = Schema.Union(BaseUser, AdminUser, PremiumUser)
+
+type AnyUser = typeof AnyUser.Type
+
+// ============================================
+// 6. Processing extended schemas
+// ============================================
+
+const describeUser = (user: AnyUser): string => {
+  if ("role" in user) {
+    return `Admin: ${user.username} [${(user as AdminUser).role}]`
+  }
+  if ("tier" in user) {
+    return `Premium: ${user.username} [${(user as PremiumUser).tier}]`
+  }
+  return `User: ${user.username}`
+}
+
+const parseUser = (
+  raw: unknown,
+  type: "base" | "admin" | "premium"
+): Effect.Effect<AnyUser, Error> =>
+  Effect.tryPromise({
+    try: async () => {
+      const schema =
+        type === "admin"
+          ? AdminUser
+          : type === "premium"
+            ? PremiumUser
+            : BaseUser
+      return await Schema.decodeUnknown(schema)(raw)
+    },
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`User parsing failed: ${msg}`)
+    },
+  })
+
+// ============================================
+// 7. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  console.log("=== Schema Extension ===\n")
+
+  console.log("1. Base User\n")
+
+  const baseUserData = {
+    id: "user_1",
+    username: "alice",
+    email: "alice@example.com",
+    createdAt: new Date("2025-01-01"),
+  }
+
+  const baseUser = yield* parseUser(baseUserData, "base")
+  console.log(describeUser(baseUser))
+
+  console.log("\n2. Extended: Admin User\n")
+
+  const adminUserData = {
+    id: "user_2",
+    username: "bob",
+    email: "bob@example.com",
+    createdAt: new Date("2024-06-01"),
+    role: "admin",
+    permissions: ["read", "write", "delete", "manage_users"],
+    lastLogin: new Date(),
+  }
+
+  const adminUser = yield* parseUser(adminUserData, "admin")
+  console.log(describeUser(adminUser))
+  if ("permissions" in adminUser) {
+    console.log(`Permissions: ${(adminUser as AdminUser).permissions.join(", ")}`)
+  }
+
+  console.log("\n3. Extended: Premium User\n")
+
+  const premiumUserData = {
+    id: "user_3",
+    username: "charlie",
+    email: "charlie@example.com",
+    createdAt: new Date("2024-12-01"),
+    tier: "platinum",
+    subscriptionEnd: new Date("2026-12-01"),
+    features: ["priority_support", "advanced_analytics", "api_access"],
+  }
+
+  const premiumUser = yield* parseUser(premiumUserData, "premium")
+  console.log(describeUser(premiumUser))
+  if ("tier" in premiumUser) {
+    console.log(
+      `Subscription ends: ${(premiumUser as PremiumUser).subscriptionEnd.toDateString()}`
+    )
+  }
+
+  console.log("\n4. Multi-level Extension\n")
+
+  const verifiedAdminData = {
+    id: "user_4",
+    username: "diana",
+    email: "diana@example.com",
+    createdAt: new Date("2024-01-01"),
+    bio: "Senior administrator",
+    avatar: "https://example.com/diana.png",
+    location: "San Francisco",
+    website: "https://diana.dev",
+    emailVerified: true,
+    phoneVerified: true,
+    verificationDate: new Date("2025-01-15"),
+    adminRole: "super_admin",
+    adminTeam: "Security",
+  }
+
+  const verifiedAdmin = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(VerifiedAdmin)(verifiedAdminData),
+    catch: (error) => new Error(String(error)),
+  })
+
+  console.log(`${verifiedAdmin.username} - ${verifiedAdmin.bio}`)
+  console.log(
+    `Team: ${(verifiedAdmin as any).adminTeam}, Role: ${(verifiedAdmin as any).adminRole}`
+  )
+
+  console.log("\n5. Type Hierarchy\n")
+
+  const users: AnyUser[] = [
+    baseUser,
+    adminUser as AnyUser,
+    premiumUser as AnyUser,
+  ]
+
+  for (const user of users) {
+    console.log(`- ${describeUser(user)}`)
+  }
+
+  return { baseUser, adminUser, premiumUser, verifiedAdmin }
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Schema extension complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Schema.extend** | Add fields to existing schema without copying |
+| **Type inheritance** | Extended types automatically include base fields |
+| **DRY principle** | Single source of truth for base fields |
+| **Composable** | Can extend multiple levels deep |
+| **Type safety** | All fields available; no missing properties |
+| **Validation** | Base and new fields all validated |
+| **Union support** | Extended schemas work in unions naturally |
+
+# When to Use
+
+- User roles (BaseUser → AdminUser, PremiumUser)
+- API responses with variant fields
+- Gradual feature addition
+- Specialized domain models
+- Role-based access patterns
+- Reducing schema duplication
+
+# Related Patterns
+
+- [Pick/Omit](./pick-omit.md)
+- [Merge Schemas](./merge-schemas.md)
+- [Inheritance Patterns](./inheritance-patterns.md)
