@@ -351,3 +351,33 @@ export async function writeGeminiSkill(
   await fs.writeFile(skillFile, JSON.stringify(skillContent, null, 2), 'utf-8');
   await fs.writeFile(promptFile, skillContent.systemPrompt, 'utf-8');
 }
+
+/**
+ * Generate OpenAI Skill content
+ *
+ * OpenAI uses the same SKILL.md format as Claude, so this reuses the Claude generation logic
+ */
+export function generateOpenAISkill(
+  category: string,
+  patterns: PatternContent[]
+): string {
+  // OpenAI uses the same SKILL.md format as Claude
+  return generateCategorySkill(category, patterns);
+}
+
+/**
+ * Write OpenAI Skill to the filesystem
+ *
+ * Creates the .openai/skills/{skillName} directory and writes SKILL.md
+ */
+export async function writeOpenAISkill(
+  skillName: string,
+  content: string,
+  projectRoot: string
+): Promise<void> {
+  const skillDir = path.join(projectRoot, '.openai', 'skills', skillName);
+  const skillFile = path.join(skillDir, 'SKILL.md');
+
+  await fs.mkdir(skillDir, { recursive: true });
+  await fs.writeFile(skillFile, content, 'utf-8');
+}
