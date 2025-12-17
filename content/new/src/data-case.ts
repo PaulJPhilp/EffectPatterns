@@ -1,19 +1,13 @@
-import { Data } from "effect";
-
 // Define a tagged union for a simple state machine
-const Loading = Data.case("Loading", () => ({}));
-const Success = Data.case("Success", (value: { data: string }) => value);
-const Failure = Data.case("Failure", (value: { error: string }) => value);
-
 type State =
-  | ReturnType<typeof Loading>
-  | ReturnType<typeof Success>
-  | ReturnType<typeof Failure>;
+  | { readonly _tag: "Loading" }
+  | { readonly _tag: "Success"; readonly data: string }
+  | { readonly _tag: "Failure"; readonly error: string };
 
 // Create instances
-const state1: State = Loading();
-const state2: State = Success({ data: "Hello" });
-const state3: State = Failure({ error: "Oops" });
+const state1: State = { _tag: "Loading" };
+const state2: State = { _tag: "Success", data: "Hello" };
+const state3: State = { _tag: "Failure", error: "Oops" };
 
 // Pattern match on the state
 function handleState(state: State): string {

@@ -1,11 +1,11 @@
 import { Option } from "effect";
 
 // Create an Option from a value
-const someValue = Option.some(42); // Option<number>
-const noValue = Option.none(); // Option<never>
+const someValue = Option.some(42); // Option.Option<number>
+const noValue = Option.none(); // Option.Option<never>
 
 // Safely convert a nullable value to Option
-const fromNullable = Option.fromNullable(Math.random() > 0.5 ? "hello" : null); // Option<string>
+const fromNullable = Option.fromNullable(Math.random() > 0.5 ? "hello" : null); // Option.Option<string>
 
 // Pattern match on Option
 const result = someValue.pipe(
@@ -16,6 +16,6 @@ const result = someValue.pipe(
 ); // string
 
 // Use Option in a workflow
-function findUser(id: number): Option<{ id: number; name: string }> {
+function findUser(id: number): Option.Option<{ id: number; name: string }> {
   return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
 }

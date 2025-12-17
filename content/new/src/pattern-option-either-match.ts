@@ -36,11 +36,11 @@ interface UserProfile {
 
 const getUserProfile = (
   id: number
-): Option.Option<Either.Either<string, UserProfile>> => {
+): Option.Option<Either.Either<UserProfile, string>> => {
   // Simulates looking up user and validating their profile
   if (id === 0) return Option.none(); // User not found
-  if (id === 1) return Option.some(Either.left("Profile incomplete"));
-  return Option.some(Either.right({ name: "Bob", age: 25 }));
+  if (id === 1) return Option.some(Either.left({ name: "Unknown", age: 0 }));
+  return Option.some(Either.right("Success"));
 };
 
 const displayProfile = (id: number) =>
@@ -50,8 +50,8 @@ const displayProfile = (id: number) =>
       onSome: (result) =>
         result.pipe(
           Either.match({
-            onLeft: (error) => `Error: ${error}`,
-            onRight: (profile) => `${profile.name} (${profile.age})`,
+            onLeft: (profile: UserProfile) => `${profile.name} (${profile.age})`,
+            onRight: (msg: string) => `Message: ${msg}`,
           })
         ),
     })

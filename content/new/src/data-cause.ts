@@ -14,10 +14,8 @@ const handled = program.pipe(
     Effect.sync(() => {
       if (Cause.isDie(cause)) {
         console.error("Defect (die):", Cause.pretty(cause));
-      } else if (Cause.isFail(cause)) {
-        console.error("Expected error:", Cause.pretty(cause));
-      } else if (Cause.isInterrupted(cause)) {
-        console.error("Interrupted:", Cause.pretty(cause));
+      } else {
+        console.error("Error:", Cause.pretty(cause));
       }
       // Handle or rethrow as needed
     })
