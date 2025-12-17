@@ -23,13 +23,28 @@ interface PatternFrontmatter {
 async function generateReadme() {
   console.log('Starting README generation...');
 
-  // Read all MDX files and parse frontmatter
-  const files = await fs.readdir(PUBLISHED_DIR);
-  const mdxFiles = files.filter((file) => file.endsWith('.mdx'));
+  // Recursively find all MDX files
+  async function findMdxFiles(dir: string): Promise<string[]> {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const files: string[] = [];
+
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        files.push(...await findMdxFiles(fullPath));
+      } else if (entry.isFile() && entry.name.endsWith('.mdx')) {
+        files.push(fullPath);
+      }
+    }
+
+    return files;
+  }
+
+  const mdxFiles = await findMdxFiles(PUBLISHED_DIR);
 
   const patterns: PatternFrontmatter[] = [];
   for (const file of mdxFiles) {
-    const content = await fs.readFile(path.join(PUBLISHED_DIR, file), 'utf-8');
+    const content = await fs.readFile(file, 'utf-8');
     const { data } = matter(content);
     patterns.push(data as PatternFrontmatter);
   }
@@ -81,8 +96,12 @@ async function generateReadme() {
           advanced: '🟠',
         }[pattern.skillLevel] || '⚪️';
 
+      // Find the relative path to the pattern file
+      const patternPath = mdxFiles.find((file) => file.endsWith(`${pattern.id}.mdx`));
+      const relativePath = patternPath ? path.relative(process.cwd(), patternPath) : `content/published/${pattern.id}.mdx`;
+
       sections.push(
-        `| [${pattern.title}](./content/published/${pattern.id}.mdx) | ${skillEmoji} **${pattern.skillLevel.charAt(0).toUpperCase() + pattern.skillLevel.slice(1)}** | ${pattern.summary} |\n`,
+        `| [${pattern.title}](./${relativePath}) | ${skillEmoji} **${pattern.skillLevel.charAt(0).toUpperCase() + pattern.skillLevel.slice(1)}** | ${pattern.summary} |\n`,
       );
     }
 
