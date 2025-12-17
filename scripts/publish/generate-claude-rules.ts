@@ -13,9 +13,9 @@ import * as path from 'node:path';
 import matter from 'gray-matter';
 
 // --- CONFIGURATION ---
-const PUBLISHED_DIR = path.join(process.cwd(), 'content/published');
+const PUBLISHED_DIR = path.join(process.cwd(), 'content/published/patterns/core');
 const CLAUDE_MD_PATH = path.join(process.cwd(), 'CLAUDE.md');
-const OUTPUT_DIR = path.join(process.cwd(), 'rules/generated');
+const OUTPUT_DIR = path.join(process.cwd(), 'content/published/rules/generated');
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'rules-for-claude.md');
 
 // --- COLORS ---

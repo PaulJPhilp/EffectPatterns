@@ -2031,17 +2031,17 @@ const installSkillsCommand = Command.make("skills", {
 
       if (generateClaude && claudeCount > 0) {
         summaryParts.push(`Generated ${claudeCount} Claude Skills from ${patterns.length} Effect patterns.`);
-        summaryParts.push(`Claude Skills Location: .claude/skills/`);
+        summaryParts.push(`Claude Skills Location: content/published/skills/claude/`);
       }
 
       if (generateGemini && geminiCount > 0) {
         summaryParts.push(`Generated ${geminiCount} Gemini Skills from ${patterns.length} Effect patterns.`);
-        summaryParts.push(`Gemini Skills Location: .gemini/skills/`);
+        summaryParts.push(`Gemini Skills Location: content/published/skills/gemini/`);
       }
 
       if (generateOpenAI && openaiCount > 0) {
         summaryParts.push(`Generated ${openaiCount} OpenAI Skills from ${patterns.length} Effect patterns.`);
-        summaryParts.push(`OpenAI Skills Location: .openai/skills/`);
+        summaryParts.push(`OpenAI Skills Location: content/published/skills/openai/`);
       }
 
       summaryParts.push(

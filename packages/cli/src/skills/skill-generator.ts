@@ -242,7 +242,7 @@ export async function writeSkill(
   content: string,
   projectRoot: string
 ): Promise<void> {
-  const skillDir = path.join(projectRoot, '.claude', 'skills', skillName);
+  const skillDir = path.join(projectRoot, 'content/published/skills/claude', skillName);
   const skillFile = path.join(skillDir, 'SKILL.md');
 
   await fs.mkdir(skillDir, { recursive: true });
@@ -343,7 +343,7 @@ export async function writeGeminiSkill(
   skillContent: GeminiSkillContent,
   projectRoot: string
 ): Promise<void> {
-  const skillDir = path.join(projectRoot, '.gemini', 'skills', skillContent.skillId);
+  const skillDir = path.join(projectRoot, 'content/published/skills/gemini', skillContent.skillId);
   const skillFile = path.join(skillDir, 'skill.json');
   const promptFile = path.join(skillDir, 'system-prompt.txt');
 
@@ -375,7 +375,7 @@ export async function writeOpenAISkill(
   content: string,
   projectRoot: string
 ): Promise<void> {
-  const skillDir = path.join(projectRoot, '.openai', 'skills', skillName);
+  const skillDir = path.join(projectRoot, 'content/published/skills/openai', skillName);
   const skillFile = path.join(skillDir, 'SKILL.md');
 
   await fs.mkdir(skillDir, { recursive: true });

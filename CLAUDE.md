@@ -246,13 +246,15 @@ const fetchUser = (id: string) =>
 - `vercel.json` - Vercel deployment settings
 
 **Content Directories:**
-- `content/published/*.mdx` - Final published patterns (131+)
+- `content/published/patterns/core/*.mdx` - Final published patterns (131+)
+- `content/published/patterns/schema/` - Schema validation patterns
 - `content/new/src/*.ts` - TypeScript examples (development)
 - `content/new/processed/*.mdx` - MDX with component tags (from ingest)
 - `content/new/published/*.mdx` - Pipeline output (before finalization)
-- `.claude/skills/` - Generated Claude Skills (14 categories)
-- `.gemini/skills/` - Generated Gemini Skills (JSON format with system prompts)
-- `.openai/skills/` - Generated OpenAI Skills (SKILL.md format)
+- `content/published/rules/` - Generated AI coding rules
+- `content/published/skills/claude/` - Generated Claude Skills (14 categories)
+- `content/published/skills/gemini/` - Generated Gemini Skills (JSON format with system prompts)
+- `content/published/skills/openai/` - Generated OpenAI Skills (SKILL.md format)
 
 **Core Entry Points:**
 - `packages/cli/src/index.ts` - Main CLI
@@ -292,9 +294,9 @@ const fetchUser = (id: string) =>
 - Run `bun run toolkit:build` first
 
 **Skills generation fails:**
-- Ensure published patterns exist: `ls content/published/*.mdx`
+- Ensure published patterns exist: `ls content/published/patterns/core/*.mdx`
 - Verify YAML frontmatter is valid in pattern files
-- Check skill output directories are writable: `.claude/`, `.gemini/`, `.openai/`
+- Check skill output directories are writable: `content/published/skills/claude/`, `content/published/skills/gemini/`, `content/published/skills/openai/`
 - Try specific format: `bun run ep install skills --format claude`
 - Review error message for missing pattern sections
 
