@@ -99,7 +99,6 @@ async function generateReadme() {
     'core-concepts',
     'testing',
     'domain-modeling',
-    'modeling-data',
     'building-apis',
     'error-management',
     'building-data-pipelines',
