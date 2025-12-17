@@ -1,0 +1,170 @@
+---
+id: schema-form-dependent-fields
+title: Dependent Field Validation
+category: form-validation
+skill: intermediate
+tags:
+  - schema
+  - form
+  - validation
+  - cross-field
+  - conditional
+  - refinement
+---
+
+# Problem
+
+Form fields depend on each other: password must match confirmation, checkout address must match billing address, date range end must be after start. Standard field-by-field validation can't check these relationships. You need cross-field validation that compares multiple fields and reports errors clearly.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// 1. Define form with dependent fields
+const PasswordChangeForm = Schema.Struct({
+  currentPassword: Schema.String.pipe(
+    Schema.minLength(1)
+  ),
+  newPassword: Schema.String.pipe(
+    Schema.minLength(8)
+  ),
+  confirmPassword: Schema.String,
+}).pipe(
+  Schema.refine(
+    (form) => form.newPassword === form.confirmPassword,
+    {
+      message: "Passwords do not match",
+    }
+  )
+)
+
+type PasswordChangeForm = typeof PasswordChangeForm.Type
+
+// 2. Complex: Conditional fields
+const RegistrationForm = Schema.Struct({
+  country: Schema.String,
+  state: Schema.String.pipe(Schema.optional),
+  zipCode: Schema.String.pipe(Schema.optional),
+}).pipe(
+  Schema.refine((form) => {
+    // If country is US, state and zipCode are required
+    if (form.country === "US") {
+      return (
+        form.state !== undefined &&
+        form.state.length > 0 &&
+        form.zipCode !== undefined &&
+        form.zipCode.length > 0
+      )
+    }
+    return true
+  }, {
+    message:
+      "US addresses require state and zip code",
+  })
+)
+
+type RegistrationForm = typeof RegistrationForm.Type
+
+// 3. Date range validation
+const EventForm = Schema.Struct({
+  name: Schema.String,
+  startDate: Schema.String.pipe(
+    Schema.pattern(/^\d{4}-\d{2}-\d{2}$/)
+  ),
+  endDate: Schema.String.pipe(
+    Schema.pattern(/^\d{4}-\d{2}-\d{2}$/)
+  ),
+}).pipe(
+  Schema.refine((form) => {
+    const start = new Date(form.startDate)
+    const end = new Date(form.endDate)
+    return end > start
+  }, {
+    message: "End date must be after start date",
+  })
+)
+
+type EventForm = typeof EventForm.Type
+
+// 4. Validate with field-specific error handling
+const validatePasswordChange = (input: unknown) =>
+  Effect.gen(function* () {
+    const result = yield* Schema.decodeUnknown(
+      PasswordChangeForm
+    )(input).pipe(
+      Effect.matchEffect({
+        onSuccess: (form) =>
+          Effect.succeed({ success: true, form }),
+        onFailure: (error) => {
+          // Extract top-level refinement error
+          const messages = error.errors
+            .filter((e: any) => e._tag === "Refinement")
+            .map((e: any) => e.message)
+
+          return Effect.succeed({
+            success: false,
+            errors: messages,
+          })
+        },
+      })
+    )
+
+    return result
+  })
+
+// 5. Usage: Password form
+const passwordData = {
+  currentPassword: "oldpass123",
+  newPassword: "newpass456",
+  confirmPassword: "differentpass", // Mismatch!
+}
+
+Effect.runPromise(validatePasswordChange(passwordData))
+  .then((result) => {
+    if (result.success) {
+      console.log("✅ Passwords match!")
+    } else {
+      console.error("❌ Errors:", result.errors)
+    }
+  })
+
+// 6. Usage: Event form with date validation
+const eventData = {
+  name: "Conference 2024",
+  startDate: "2024-06-15",
+  endDate: "2024-06-10", // Before start!
+}
+
+Effect.runPromise(
+  Schema.decodeUnknown(EventForm)(eventData)
+).catch((error) => {
+  console.error("Date error:", error.message)
+})
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| `Schema.refine` | Custom validation logic across multiple fields |
+| Compare field values | Check password match, date ranges, conditional requirements |
+| Compose refinements | Chain multiple refinement checks |
+| Field relationships | Validate entire object, not just individual fields |
+| Clear error messages | Report which relationship failed |
+
+# When to Use
+
+- Password confirmation matching
+- Address verification (billing = shipping)
+- Date ranges (start before end)
+- Conditional fields (if country is US, show state)
+- Cross-field dependencies
+- Complex business logic validation
+
+# Related Patterns
+
+- [Basic Form Validation](./basic.md)
+- [Collecting All Validation Errors](./collect-all-errors.md)
+- [Async Validation](./async-validation.md)
+- [Nested Form Structures](./nested-forms.md)

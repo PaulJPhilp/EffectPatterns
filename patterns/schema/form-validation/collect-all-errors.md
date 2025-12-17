@@ -1,0 +1,172 @@
+---
+id: schema-form-collect-all-errors
+title: Collecting All Validation Errors
+category: form-validation
+skill: beginner
+tags:
+  - schema
+  - form
+  - validation
+  - error-handling
+  - user-experience
+---
+
+# Problem
+
+Standard validation stops at the first error: "Username is required". But users want to see ALL problems at once—missing fields, invalid formats, out-of-range values. Showing one error at a time frustrates users who must resubmit multiple times. You need to collect all validation errors and display them together.
+
+# Solution
+
+```typescript
+import { Schema, Effect, ParseResult } from "effect"
+
+// 1. Define form with multiple fields
+const RegistrationForm = Schema.Struct({
+  firstName: Schema.String.pipe(Schema.minLength(1)),
+  lastName: Schema.String.pipe(Schema.minLength(1)),
+  email: Schema.String.pipe(
+    Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+  ),
+  phone: Schema.String.pipe(
+    Schema.pattern(/^\d{10}$/)
+  ),
+  age: Schema.Number.pipe(Schema.between(18, 120)),
+  terms: Schema.Boolean.pipe(
+    Schema.refine((b) => b === true, {
+      message: "You must accept terms",
+    })
+  ),
+})
+
+type RegistrationForm = typeof RegistrationForm.Type
+
+// 2. Collect all errors
+const validateWithAllErrors = (input: unknown) =>
+  Effect.gen(function* () {
+    const result = yield* Schema.decodeUnknown(
+      RegistrationForm
+    )(input).pipe(
+      Effect.matchEffect({
+        onSuccess: (form) =>
+          Effect.succeed({ success: true, form }),
+        onFailure: (error) => {
+          // Extract all error details
+          const errors = error.errors.flatMap((e: any) => {
+            if (e._tag === "Type") {
+              return [
+                {
+                  field: e.path.join("."),
+                  message: `Invalid type for ${e.path.join(".")}`,
+                },
+              ]
+            }
+            if (e._tag === "Refinement") {
+              return [
+                {
+                  field: e.path.join(".") || "root",
+                  message:
+                    e.message ||
+                    `Refinement failed for ${e.path.join(".")}`,
+                },
+              ]
+            }
+            return []
+          })
+
+          return Effect.succeed({
+            success: false,
+            errors,
+          })
+        },
+      })
+    )
+
+    return result
+  })
+
+// 3. Format errors by field
+const formatErrorsByField = (errors: Array<any>) => {
+  const byField: Record<string, string[]> = {}
+
+  for (const error of errors) {
+    const field = error.field || "general"
+    if (!byField[field]) {
+      byField[field] = []
+    }
+    byField[field].push(error.message)
+  }
+
+  return byField
+}
+
+// 4. Handle form submission
+const submitRegistration = (formData: unknown) =>
+  Effect.gen(function* () {
+    const result = yield* validateWithAllErrors(formData)
+
+    if (result.success) {
+      console.log("✅ Form valid!")
+      return result.form
+    }
+
+    // Format errors for display
+    const errorsByField = formatErrorsByField(
+      result.errors
+    )
+
+    console.error("❌ Form has errors:")
+    for (const [field, messages] of Object.entries(
+      errorsByField
+    )) {
+      console.error(`  ${field}: ${messages.join(", ")}`)
+    }
+
+    return yield* Effect.fail({
+      _tag: "FormValidationError" as const,
+      errorsByField,
+    })
+  })
+
+// 5. Usage with invalid data
+const badData = {
+  firstName: "", // Empty
+  lastName: "", // Empty
+  email: "not-an-email", // Invalid format
+  phone: "123", // Wrong length
+  age: 15, // Too young
+  terms: false, // Not accepted
+}
+
+Effect.runPromise(submitRegistration(badData))
+  .then((form) => console.log("Form submitted:", form))
+  .catch((error) => {
+    if (error._tag === "FormValidationError") {
+      // Pass errorsByField to UI component for rendering
+      console.log("Errors to display:", error.errorsByField)
+    }
+  })
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| Schema validation fails → flattened errors array | All validation errors collected before failing |
+| `error.errors.flatMap()` | Extract path and message from each error |
+| `formatErrorsByField()` | Group errors by field name for UI display |
+| `errorsByField` object | Easy to map to form field error displays |
+| User sees all problems at once | No need to resubmit after fixing one error |
+
+# When to Use
+
+- Multi-field forms (registration, checkout, profiles)
+- Forms where users want immediate feedback
+- Long forms where one error at a time is frustrating
+- When you want professional UX with all errors visible
+- Mobile forms where resubmission is costly (network)
+
+# Related Patterns
+
+- [Basic Form Validation](./basic.md)
+- [Dependent Field Validation](./dependent-fields.md)
+- [Async Validation](./async-validation.md)
