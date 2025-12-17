@@ -4,6 +4,107 @@ All notable changes to the Effect Patterns Hub project are documented here.
 
 ---
 
+## Version 0.8.0 - Multi-Platform Skills Release (December 17, 2025)
+
+### 🎯 Major Features
+
+#### ✨ Universal Skills Generation for Multiple AI Platforms
+
+This release introduces groundbreaking multi-platform support for AI skill generation, enabling Effect patterns to be automatically distributed to Claude, Gemini, and OpenAI tools.
+
+**Three New Skill Formats Supported:**
+
+1. **Claude Skills** - SKILL.md format with YAML frontmatter
+   - Saved to `.claude/skills/{skillName}/SKILL.md`
+   - Fully integrated with Claude Code and Claude Desktop
+   - Organized by category with patterns sorted by skill level
+
+2. **Gemini Skills** - JSON-based tool definitions with system prompts
+   - Saved to `.gemini/skills/{skillId}/` with `skill.json` + `system-prompt.txt`
+   - Includes auto-generated system prompts for AI guidance
+   - Tool definitions for each pattern with examples and rationale
+
+3. **OpenAI Skills** - Compatible with OpenAI Codex CLI
+   - Saved to `.openai/skills/{skillName}/SKILL.md`
+   - Uses same SKILL.md format as Claude for simplicity
+   - Ready for integration with OpenAI's skill ecosystem
+
+#### 🚀 Enhanced CLI with Flexible Format Selection
+
+New `--format` flag with flexible options:
+- `--format both` (default) - Generate all three formats
+- `--format claude` - Claude Skills only
+- `--format gemini` - Gemini Skills only
+- `--format openai` - OpenAI Skills only
+- `--format claude,openai` - Comma-separated custom combinations
+- Works with `--category` flag for targeted generation
+
+**Usage Examples:**
+```bash
+# Generate all formats
+bun run ep install skills
+
+# Specific platform
+bun run ep install skills --format openai
+
+# Multiple platforms
+bun run ep install skills --format claude,gemini
+
+# Specific category
+bun run ep install skills --category error-management --format openai
+```
+
+### 📊 What's Included
+
+**From Published Patterns:**
+- 14 category-based skills generated
+- 131+ Effect-TS patterns distributed
+- Patterns sorted by skill level (Beginner → Intermediate → Advanced)
+- Each skill includes: examples, anti-patterns, rationale, and best practices
+
+**Directory Structure Created:**
+```
+.claude/skills/     # Claude Skills (SKILL.md files)
+.gemini/skills/     # Gemini Skills (JSON + system prompts)
+.openai/skills/     # OpenAI Skills (SKILL.md files)
+```
+
+### 🛠️ Implementation Details
+
+- `generateOpenAISkill()` function - Reuses Claude SKILL.md format
+- `generateGeminiSkill()` function - Creates JSON tool definitions with system prompts
+- Enhanced format parsing - Supports individual, comma-separated, and "both" options
+- Format validation - Clear error messages for invalid format options
+- Separate output summaries for each platform
+
+### 🐛 Bug Fixes
+
+- Fixed Effect.gen() handler composition for proper effect return
+- Improved error handling for skill generation failures
+- Added support for graceful skipping of malformed patterns
+
+### 📚 Documentation Updates
+
+- Updated CLI command descriptions for multi-platform support
+- Added comprehensive format option documentation
+- Included usage examples for all format combinations
+
+### 🎨 Enhancements
+
+- Color-coded output for each skill format
+- Format-specific counts and summaries
+- Flexible format validation with helpful error messages
+- Seamless integration with existing skill generation infrastructure
+
+### 🔄 Backward Compatibility
+
+All changes are fully backward compatible:
+- Default behavior unchanged (generates all formats)
+- Existing `ep install skills` command works as before
+- Single-format generation as fallback option
+
+---
+
 ## Version 0.7.3 - Linter & Quality Release (December 12, 2025)
 
 ### 🎯 Major Features
