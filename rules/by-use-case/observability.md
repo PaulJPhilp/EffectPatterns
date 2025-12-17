@@ -1,4 +1,4 @@
-# observability Patterns
+# Observability Patterns
 
 ## Add Custom Metrics to Your Application
 
@@ -7,7 +7,7 @@ Use Effect's Metric module to define and update custom metrics for business and 
 ### Example
 
 ```typescript
-import { Effect, Metric, MetricBoundaries } from "effect";
+import { Effect, Metric } from "effect";
 
 // Define a counter metric for processed jobs
 const jobsProcessed = Metric.counter("jobs_processed");
@@ -23,14 +23,13 @@ const processJob = Effect.gen(function* () {
 const activeUsers = Metric.gauge("active_users");
 
 // Update the gauge when users sign in or out
-const userSignedIn = Metric.set(activeUsers, 1);
-const userSignedOut = Metric.set(activeUsers, -1);
+const userSignedIn = Metric.set(activeUsers, 1); // Set to 1 (simplified example)
+const userSignedOut = Metric.set(activeUsers, 0); // Set to 0 (simplified example)
 
 // Define a histogram for request durations
-const requestDuration = Metric.histogram(
-  "request_duration",
-  MetricBoundaries.linear({ start: 0, width: 1, count: 6 })
-);
+const requestDuration = Metric.histogram("request_duration", [
+  0.1, 0.5, 1, 2, 5,
+] as any); // boundaries in seconds
 
 // Record a request duration
 const recordDuration = (duration: number) =>
@@ -46,57 +45,6 @@ const recordDuration = (duration: number) =>
 
 ---
 
-## Add Custom Metrics to Your Application
-
-Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
-
-### Example
-
-This example creates a counter to track how many times a user is created and a histogram to track the duration of the database operation.
-
-```typescript
-import { Effect, Metric, Duration } from "effect"; // We don't need MetricBoundaries anymore
-
-// 1. Define your metrics
-const userRegisteredCounter = Metric.counter("users_registered_total", {
-  description: "A counter for how many users have been registered.",
-});
-
-const dbDurationTimer = Metric.timer(
-  "db_operation_duration",
-  "A timer for DB operation durations"
-);
-
-// 2. Simulated database call
-const saveUserToDb = Effect.succeed("user saved").pipe(
-  Effect.delay(Duration.millis(Math.random() * 100))
-);
-
-// 3. Instrument the business logic
-const createUser = Effect.gen(function* () {
-  // Time the operation
-  yield* saveUserToDb.pipe(Metric.trackDuration(dbDurationTimer));
-
-  // Increment the counter
-  yield* Metric.increment(userRegisteredCounter);
-
-  return { status: "success" };
-});
-
-// Run the Effect
-const programWithLogging = Effect.gen(function* () {
-  const result = yield* createUser;
-  yield* Effect.log(`Result: ${JSON.stringify(result)}`);
-  return result;
-});
-
-Effect.runPromise(programWithLogging);
-```
-
----
-
----
-
 ## Instrument and Observe Function Calls with Effect.fn
 
 Use Effect.fn to wrap functions with effectful instrumentation, such as logging, metrics, or tracing, in a composable and type-safe way.
@@ -106,40 +54,34 @@ Use Effect.fn to wrap functions with effectful instrumentation, such as logging,
 ```typescript
 import { Effect } from "effect";
 
-// Use Effect.fn to wrap a function with automatic span creation
-const fetchUser = Effect.fn("fetch-user")(function* (userId: string) {
-  // Annotate the span with contextual information
-  yield* Effect.annotateCurrentSpan({
-    userId,
-  });
+// A simple function to instrument
+function add(a: number, b: number): number {
+  return a + b;
+}
 
-  // Simulate async operation
-  const user = yield* Effect.tryPromise(() =>
-    Promise.resolve({ id: userId, name: "Alice" })
-  );
-
-  return user;
-});
+// Use Effect.fn to instrument the function with observability
+const addWithLogging = Effect.fn("add")(add).pipe(
+  Effect.withSpan("add", { attributes: { "fn.name": "add" } })
+);
 
 // Use the instrumented function in an Effect workflow
 const program = Effect.gen(function* () {
-  yield* Effect.logInfo("Fetching user");
-  const user = yield* fetchUser("user-123");
-  yield* Effect.logInfo(`Fetched user: ${user.name}`);
-  return user;
+  yield* Effect.logInfo("Calling add function");
+  const sum = yield* addWithLogging(2, 3);
+  yield* Effect.logInfo(`Sum is ${sum}`);
+  return sum;
 });
 
-// Run the program with OpenTelemetry integration
-// Effect.runPromise(program);
+// Run the program
+Effect.runPromise(program);
 ```
 
 **Explanation:**
 
-- `Effect.fn("operation-name")(function*)` wraps a function and automatically creates OpenTelemetry spans with the given name.
-- No manual span wrapping needed—the Effect runtime handles span creation and lifecycle automatically.
-- Use `Effect.annotateCurrentSpan()` to add metadata and context to the span.
-- Integrates seamlessly with OpenTelemetry for distributed tracing, logging, and metrics.
-- Keeps instrumentation composable and type-safe without cluttering business logic.
+- `Effect.fn("name")(fn)` wraps a function with instrumentation capabilities, enabling observability.
+- You can add tracing spans, logging, metrics, and other observability logic to function boundaries.
+- Keeps instrumentation separate from business logic and fully composable.
+- The wrapped function integrates seamlessly with Effect's observability and tracing infrastructure.
 
 ---
 
@@ -203,15 +145,24 @@ Use Effect.log, Effect.logInfo, and Effect.logError to add structured, context-a
 import { Effect } from "effect";
 
 // Log a simple message
-const program = Effect.log("Starting the application");
+const program = Effect.gen(function* () {
+  yield* Effect.log("Starting the application");
+});
 
 // Log at different levels
-const info = Effect.logInfo("User signed in");
-const error = Effect.logError("Failed to connect to database");
+const infoProgram = Effect.gen(function* () {
+  yield* Effect.logInfo("User signed in");
+});
+
+const errorProgram = Effect.gen(function* () {
+  yield* Effect.logError("Failed to connect to database");
+});
 
 // Log with dynamic values
 const userId = 42;
-const logUser = Effect.logInfo(`Processing user: ${userId}`);
+const logUserProgram = Effect.gen(function* () {
+  yield* Effect.logInfo(`Processing user: ${userId}`);
+});
 
 // Use logging in a workflow
 const workflow = Effect.gen(function* () {
@@ -228,121 +179,6 @@ const workflow = Effect.gen(function* () {
 - `Effect.log` logs a message at the default level.
 - `Effect.logInfo` and `Effect.logError` log at specific levels.
 - Logging is context-aware and can be used anywhere in your Effect workflows.
-
----
-
-## Redact and Handle Sensitive Data
-
-Use Redacted to wrap sensitive values, preventing accidental exposure in logs or error messages.
-
-### Example
-
-```typescript
-import { Redacted } from "effect";
-
-// Wrap a sensitive value
-const secret = Redacted.make("super-secret-password");
-
-// Use the secret in your application logic
-function authenticate(user: string, password: Redacted.Redacted<string>) {
-  // ... authentication logic
-}
-
-// Logging or stringifying a Redacted value
-console.log(`Password: ${secret}`); // Output: Password: <redacted>
-console.log(String(secret)); // Output: <redacted>
-```
-
-**Explanation:**
-
-- `Redacted.make(value)` wraps a sensitive value.
-- When logged or stringified, the value is replaced with `<redacted>`.
-- Prevents accidental exposure of secrets in logs or error messages.
-
----
-
-## Trace Operations Across Services with Spans
-
-Use Effect.withSpan to create custom tracing spans for important operations.
-
-### Example
-
-This example shows a multi-step operation. Each step, and the overall operation, is wrapped in a span. This creates a parent-child hierarchy in the trace that is easy to visualize.
-
-```typescript
-import { Effect, Duration } from "effect";
-
-const validateInput = (input: unknown) =>
-  Effect.gen(function* () {
-    yield* Effect.logInfo("Starting input validation...");
-    yield* Effect.sleep(Duration.millis(10));
-    const result = { email: "paul@example.com" };
-    yield* Effect.logInfo(`✅ Input validated: ${result.email}`);
-    return result;
-  }).pipe(
-    // This creates a child span
-    Effect.withSpan("validateInput")
-  );
-
-const saveToDatabase = (user: { email: string }) =>
-  Effect.gen(function* () {
-    yield* Effect.logInfo(`Saving user to database: ${user.email}`);
-    yield* Effect.sleep(Duration.millis(50));
-    const result = { id: 123, ...user };
-    yield* Effect.logInfo(`✅ User saved with ID: ${result.id}`);
-    return result;
-  }).pipe(
-    // This span includes useful attributes
-    Effect.withSpan("saveToDatabase", {
-      attributes: { "db.system": "postgresql", "db.user.email": user.email },
-    })
-  );
-
-const createUser = (input: unknown) =>
-  Effect.gen(function* () {
-    yield* Effect.logInfo("=== Creating User with Tracing ===");
-    yield* Effect.logInfo(
-      "This demonstrates how spans trace operations through the call stack"
-    );
-
-    const validated = yield* validateInput(input);
-    const user = yield* saveToDatabase(validated);
-
-    yield* Effect.logInfo(
-      `✅ User creation completed: ${JSON.stringify(user)}`
-    );
-    yield* Effect.logInfo(
-      "Note: In production, spans would be sent to a tracing system like Jaeger or Zipkin"
-    );
-
-    return user;
-  }).pipe(
-    // This is the parent span for the entire operation
-    Effect.withSpan("createUserOperation")
-  );
-
-// Demonstrate the tracing functionality
-const program = Effect.gen(function* () {
-  yield* Effect.logInfo("=== Trace Operations with Spans Demo ===");
-
-  // Create multiple users to show tracing in action
-  const user1 = yield* createUser({ email: "user1@example.com" });
-
-  yield* Effect.logInfo("\n--- Creating second user ---");
-  const user2 = yield* createUser({ email: "user2@example.com" });
-
-  yield* Effect.logInfo("\n=== Summary ===");
-  yield* Effect.logInfo("Created users with tracing spans:");
-  yield* Effect.logInfo(`User 1: ID ${user1.id}, Email: ${user1.email}`);
-  yield* Effect.logInfo(`User 2: ID ${user2.id}, Email: ${user2.email}`);
-});
-
-// When run with a tracing SDK, this will produce traces with root spans
-// "createUserOperation" and child spans: "validateInput" and "saveToDatabase".
-Effect.runPromise(program);
-```
-
----
 
 ---
 
@@ -388,38 +224,6 @@ const program = Effect.gen(function* () {
 - `Effect.withSpan` creates a tracing span around an operation.
 - Spans can be named and annotated with attributes for richer context.
 - Tracing enables distributed observability and performance analysis.
-
----
-
-## Use Chunk for High-Performance Collections
-
-Use Chunk to model immutable, high-performance collections for efficient data processing and transformation.
-
-### Example
-
-```typescript
-import { Chunk } from "effect";
-
-// Create a Chunk from an array
-const numbers = Chunk.fromIterable([1, 2, 3, 4]); // Chunk<number>
-
-// Map and filter over a Chunk
-const doubled = numbers.pipe(Chunk.map((n) => n * 2)); // Chunk<number>
-const evens = numbers.pipe(Chunk.filter((n) => n % 2 === 0)); // Chunk<number>
-
-// Concatenate Chunks
-const moreNumbers = Chunk.fromIterable([5, 6]);
-const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
-
-// Convert back to array
-const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
-```
-
-**Explanation:**
-
-- `Chunk` is immutable and optimized for performance.
-- It supports efficient batch operations, concatenation, and transformation.
-- Use `Chunk` in data pipelines, streaming, and concurrent scenarios.
 
 ---
 

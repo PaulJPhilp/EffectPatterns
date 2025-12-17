@@ -32,3 +32,4 @@ const asNumber = BigDecimal.unsafeToNumber(sum); // 0.3
 - Avoids the pitfalls of floating-point math in JavaScript.
 
 ---
+

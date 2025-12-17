@@ -84,15 +84,15 @@ import { Chunk } from "effect";
 const numbers = Chunk.fromIterable([1, 2, 3, 4]); // Chunk<number>
 
 // Map and filter over a Chunk
-const doubled = numbers.pipe(Chunk.map((n) => n * 2)); // Chunk<number>
-const evens = numbers.pipe(Chunk.filter((n) => n % 2 === 0)); // Chunk<number>
+const doubled = Chunk.map(numbers, (n) => n * 2); // Chunk<number>
+const evens = Chunk.filter(numbers, (n) => n % 2 === 0); // Chunk<number>
 
 // Concatenate Chunks
 const moreNumbers = Chunk.fromIterable([5, 6]);
 const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
 
 // Convert back to array
-const arr = Chunk.toReadonlyArray(allNumbers); // readonly number[]
+const arr = Chunk.toArray(allNumbers); // number[]
 ```
 
 **Explanation:**
@@ -169,3 +169,4 @@ const doubled = arr1.map((n) => n * 2); // Data.array([2, 4, 6])
 - Supports all standard array operations, but with immutability and structural equality.
 
 ---
+

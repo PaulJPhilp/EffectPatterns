@@ -1,27 +1,15 @@
 ---
-title: Creating from Synchronous and Callback Code
-id: constructor-sync-async
-skillLevel: beginner
-useCase: concurrency
-summary: >-
-  Use sync and async to lift synchronous or callback-based computations into
-  Effect, enabling safe and composable interop with legacy code.
+title: "Creating from Synchronous and Callback Code"
+id: "constructor-sync-async"
+skillLevel: "beginner"
+useCase: ["Constructors", "Interop", "Async", "Callback"]
+summary: "Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code."
 tags:
-  - sync
-  - async
-  - constructor
-  - effect
-  - interop
-  - callback
-  - legacy
+  ["sync", "async", "constructor", "effect", "interop", "callback", "legacy"]
 rule:
-  description: >-
-    Use sync and async to create Effects from synchronous or callback-based
-    computations, making them composable and type-safe.
-related:
-  - constructor-try-trypromise
-  - constructor-succeed-some-right
-author: PaulJPhilp
+  description: "Use sync and async to create Effects from synchronous or callback-based computations, making them composable and type-safe."
+related: ["constructor-try-trypromise", "constructor-succeed-some-right"]
+author: "PaulJPhilp"
 ---
 
 # Creating from Synchronous and Callback Code
@@ -55,7 +43,7 @@ function legacyReadFile(
 const effectAsync = Effect.async<string, Error>((resume) => {
   legacyReadFile("file.txt", (err, data) => {
     if (err) resume(Effect.fail(err));
-    else if (data) resume(Effect.succeed(data));
+    else resume(Effect.succeed(data!));
   });
 }); // Effect<string, Error, never>
 ```

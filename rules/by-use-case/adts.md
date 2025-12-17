@@ -42,3 +42,4 @@ function handleState(state: State): string {
 - Use for domain modeling, state machines, and error types.
 
 ---
+

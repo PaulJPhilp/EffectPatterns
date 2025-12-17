@@ -53,3 +53,4 @@ const either = Either.right({ id: 1 }); // Either<never, { id: number }>
 - `Either.right(value)` creates an either that always represents success.
 
 ---
+

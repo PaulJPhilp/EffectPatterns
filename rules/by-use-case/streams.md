@@ -31,3 +31,4 @@ const batchEffect = Effect.all(effects); // Effect<[1, 2]>
 - `Effect.all` (covered elsewhere) can be used to process arrays of effects in batch.
 
 ---
+

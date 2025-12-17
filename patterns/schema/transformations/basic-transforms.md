@@ -1,0 +1,188 @@
+---
+id: schema-basic-transforms
+title: Basic Schema Transformations
+category: transformations
+skill: beginner
+tags:
+  - schema
+  - transform
+  - data-mapping
+  - conversion
+  - type-casting
+---
+
+# Problem
+
+Your application receives data in one shape but needs it in another. API returns a Unix timestamp; your domain uses Date objects. Form input arrives as strings; you need typed numbers. Database returns `createdAt` as ISO string; frontend expects milliseconds. Without schema transformations, you're writing conversion code everywhere—error-prone and scattered throughout the codebase.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// 1. Basic string-to-number transformation
+const StringToNumber = Schema.transform(
+  Schema.String,
+  Schema.Number,
+  {
+    decode: (input) => {
+      const num = Number(input)
+      if (isNaN(num)) {
+        throw new Error(`Invalid number: ${input}`)
+      }
+      return num
+    },
+    encode: (num) => String(num),
+  }
+)
+
+// 2. Unix timestamp to Date transformation
+const UnixTimestamp = Schema.transform(
+  Schema.Number,
+  Schema.Date,
+  {
+    decode: (timestamp) => new Date(timestamp * 1000),
+    encode: (date) => Math.floor(date.getTime() / 1000),
+  }
+)
+
+// 3. ISO date string to Date transformation
+const ISODateString = Schema.transform(
+  Schema.String,
+  Schema.Date,
+  {
+    decode: (input) => {
+      const date = new Date(input)
+      if (isNaN(date.getTime())) {
+        throw new Error(`Invalid ISO date: ${input}`)
+      }
+      return date
+    },
+    encode: (date) => date.toISOString(),
+  }
+)
+
+// 4. Trimmed string transformation
+const Trimmed = Schema.transform(
+  Schema.String,
+  Schema.String,
+  {
+    decode: (input) => input.trim(),
+    encode: (output) => output, // Already trimmed
+  }
+)
+
+// 5. Uppercase transformation
+const Uppercase = Schema.transform(
+  Schema.String,
+  Schema.String,
+  {
+    decode: (input) => input.toUpperCase(),
+    encode: (output) => output,
+  }
+)
+
+// 6. Define a user form with transformations
+const UserFormInput = Schema.Struct({
+  name: Trimmed,
+  age: StringToNumber,
+  country: Uppercase,
+  registeredAt: UnixTimestamp,
+})
+
+type UserFormInput = typeof UserFormInput.Type
+
+// Decoded type (after transformations)
+type User = {
+  name: string
+  age: number
+  country: string
+  registeredAt: Date
+}
+
+// 7. Create decoder and encoder
+const decodeUserForm = Schema.decodeUnknown(UserFormInput)
+const encodeUserForm = Schema.encode(UserFormInput)
+
+// 8. Apply transformations in effect
+const processUserForm = (rawInput: unknown) =>
+  Effect.gen(function* () {
+    // Decode: raw input → transformed data
+    const user = yield* Effect.tryPromise({
+      try: () => decodeUserForm(rawInput),
+      catch: (error) => {
+        const msg = error instanceof Error ? error.message : String(error)
+        return new Error(`Form validation failed: ${msg}`)
+      },
+    })
+
+    console.log(`✅ Decoded user:`, {
+      name: user.name,
+      age: user.age,
+      country: user.country,
+      registeredAt: user.registeredAt.toISOString(),
+    })
+
+    // Business logic on transformed data
+    const yearsSinceRegistration = Math.floor(
+      (Date.now() - user.registeredAt.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+    )
+
+    console.log(`Years since registration: ${yearsSinceRegistration}`)
+
+    // Encode: transformed data → raw output (if needed for storage)
+    const encodedUser = yield* Effect.tryPromise({
+      try: () => encodeUserForm(user),
+      catch: (error) => {
+        const msg = error instanceof Error ? error.message : String(error)
+        return new Error(`Encoding failed: ${msg}`)
+      },
+    })
+
+    console.log(`✅ Encoded back:`, encodedUser)
+
+    return user
+  })
+
+// Usage
+const rawFormData = {
+  name: "  alice smith  ",
+  age: "28",
+  country: "usa",
+  registeredAt: 1609459200, // Unix timestamp: 2021-01-01
+}
+
+Effect.runPromise(processUserForm(rawFormData))
+  .then((user) => console.log(`\n✅ User processed: ${user.name}`))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Schema.transform** | Maps input type to output type with decode/encode |
+| **decode** | Converts raw input to desired type (validation + conversion) |
+| **encode** | Reverses transformation (desired type → raw format) |
+| **Type safety** | TypeScript enforces correctness at compile time |
+| **Composable** | Chain transformations by building on existing ones |
+| **Reusable** | Define once, use everywhere without repetition |
+| **Error handling** | Validation errors caught immediately at boundary |
+| **Bidirectional** | Same schema handles both input and output |
+
+# When to Use
+
+- Converting form input (strings) to domain types (numbers, dates, enums)
+- Mapping API responses to domain models
+- Persisting domain objects to database format
+- Handling different timestamp formats (Unix, ISO, milliseconds)
+- Trimming and normalizing string input
+- Parsing CSV or JSON files with type conversion
+- Request/response transformation in HTTP handlers
+
+# Related Patterns
+
+- [Branded Types](./branded-types.md)
+- [Bidirectional Transformations](./bidirectional.md)
+- [Data Normalization](./data-normalization.md)
+- [Basic Form Validation](../form-validation/basic.md)

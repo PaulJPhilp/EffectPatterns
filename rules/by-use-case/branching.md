@@ -119,3 +119,4 @@ const effect: Effect.Effect<string, never, never> = Effect.fail(
 - This is safer and more maintainable than using `instanceof` or manual property checks.
 
 ---
+

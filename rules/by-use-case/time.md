@@ -18,9 +18,9 @@ const twoHours = Duration.hours(2);
 const total = Duration.sum(oneSecond, fiveMinutes); // 5 min 1 sec
 const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
 
-// Convert to milliseconds or human-readable format
+// Convert to milliseconds or ISO string
 const ms = Duration.toMillis(fiveMinutes); // 300000
-const readable = Duration.format(oneSecond); // "1s"
+const iso = Duration.formatIso(oneSecond); // "PT1S"
 ```
 
 **Explanation:**
@@ -70,3 +70,4 @@ const program = Effect.gen(function* () {
 - Use for all date/time logic to avoid bugs with native `Date`.
 
 ---
+

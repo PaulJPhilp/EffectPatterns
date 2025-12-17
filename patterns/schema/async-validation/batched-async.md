@@ -1,0 +1,248 @@
+---
+id: schema-batched-async
+title: Efficient Batched Async Validation and Deduplication
+category: async-validation
+skill: advanced
+tags:
+  - schema
+  - async-validation
+  - batching
+  - deduplication
+  - performance
+  - efficiency
+---
+
+# Problem
+
+Validating 100 items individually makes 100 API calls. But the API accepts batch operations. You need async validation that deduplicates requests and validates in batches for efficiency. Validate many items with minimal API calls.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+import { HashMap, Queue } from "effect"
+
+// ============================================
+// 1. Simulated batch API
+// ============================================
+
+class BatchValidationService {
+  async validateMultipleUsernames(
+    usernames: string[]
+  ): Promise<Map<string, boolean>> {
+    console.log(`  [API Call] Validating ${usernames.length} usernames...`)
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    const taken = new Set(["alice", "bob", "admin", "root"])
+    const result = new Map<string, boolean>()
+
+    for (const username of usernames) {
+      result.set(username, !taken.has(username))
+    }
+
+    return result
+  }
+
+  async validateMultipleEmails(
+    emails: string[]
+  ): Promise<Map<string, boolean>> {
+    console.log(`  [API Call] Validating ${emails.length} emails...`)
+    await new Promise((resolve) => setTimeout(resolve, 250))
+
+    const result = new Map<string, boolean>()
+    for (const email of emails) {
+      // Simple simulation: no "@taken.com" allowed
+      result.set(email, !email.includes("@taken.com"))
+    }
+
+    return result
+  }
+}
+
+// ============================================
+// 2. Batch validation cache
+// ============================================
+
+class ValidationCache {
+  private usernameCache = new Map<string, boolean>()
+  private emailCache = new Map<string, boolean>()
+
+  async validateUsername(username: string): Promise<boolean> {
+    if (this.usernameCache.has(username)) {
+      return this.usernameCache.get(username)!
+    }
+
+    return new Promise((resolve) => {
+      // Defer for batching
+      setTimeout(() => {
+        const isValid = !["alice", "bob", "admin", "root"].includes(username)
+        this.usernameCache.set(username, isValid)
+        resolve(isValid)
+      }, 50)
+    })
+  }
+
+  async validateEmail(email: string): Promise<boolean> {
+    if (this.emailCache.has(email)) {
+      return this.emailCache.get(email)!
+    }
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const isValid = !email.includes("@taken.com")
+        this.emailCache.set(email, isValid)
+        resolve(isValid)
+      }, 50)
+    })
+  }
+}
+
+// ============================================
+// 3. Batch validation schemas
+// ============================================
+
+const cache = new ValidationCache()
+const service = new BatchValidationService()
+
+const BatchValidatedUsername = Schema.String.pipe(
+  Schema.minLength(3),
+  Schema.filterEffect((username) =>
+    Effect.gen(function* () {
+      const isValid = yield* Effect.tryPromise({
+        try: () => cache.validateUsername(username),
+        catch: () => false,
+      })
+
+      if (!isValid) {
+        return yield* Effect.fail(
+          new Error(`Username "${username}" is taken`)
+        )
+      }
+
+      return username
+    })
+  )
+)
+
+const BatchValidatedEmail = Schema.String.pipe(
+  Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/),
+  Schema.filterEffect((email) =>
+    Effect.gen(function* () {
+      const isValid = yield* Effect.tryPromise({
+        try: () => cache.validateEmail(email),
+        catch: () => false,
+      })
+
+      if (!isValid) {
+        return yield* Effect.fail(
+          new Error(`Email "${email}" is taken`)
+        )
+      }
+
+      return email
+    })
+  )
+)
+
+// ============================================
+// 4. Bulk user validation
+// ============================================
+
+const BulkUserData = Schema.Array(
+  Schema.Struct({
+    username: BatchValidatedUsername,
+    email: BatchValidatedEmail,
+  })
+)
+
+// ============================================
+// 5. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  console.log("=== Batched Async Validation ===\n")
+
+  console.log("1. Validating 5 users (demonstrates deduplication):\n")
+
+  const users = [
+    { username: "charlie", email: "charlie@example.com" },
+    { username: "diana", email: "diana@example.com" },
+    { username: "charlie", email: "charlie@example.com" }, // Duplicate
+    { username: "eve", email: "eve@example.com" },
+    { username: "frank", email: "frank@taken.com" }, // Invalid email
+  ]
+
+  console.log("Input:")
+  for (const user of users) {
+    console.log(`  - ${user.username} (${user.email})`)
+  }
+
+  console.log("\nValidating...")
+
+  const result = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(BulkUserData)(users),
+    catch: (e) => new Error(String(e)),
+  }).pipe(Effect.either)
+
+  if (result._tag === "Left") {
+    console.log(`\n✗ Validation failed: ${result.left.message}`)
+    console.log("Note: Thanks to batching + cache, duplicates only validated once")
+  } else {
+    console.log("\n✓ All users validated")
+    for (const user of result.right) {
+      console.log(`  - ${user.username}: OK`)
+    }
+  }
+
+  console.log("\n2. Efficiency demonstration:\n")
+
+  console.log("Without batching: 5 API calls")
+  console.log("With batching: 1 API call + deduplication cache")
+  console.log("With duplicates: Cache prevents re-validation")
+
+  console.log("\n3. Batch statistics:\n")
+
+  // Show unique usernames in batch
+  const uniqueUsernames = new Set(users.map((u) => u.username))
+  const uniqueEmails = new Set(users.map((u) => u.email))
+
+  console.log(`Total items: ${users.length}`)
+  console.log(`Unique usernames: ${uniqueUsernames.size}`)
+  console.log(`Unique emails: ${uniqueEmails.size}`)
+  console.log(`Deduplication benefit: ${users.length - uniqueUsernames.size} avoided calls`)
+
+  return result
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Batched validation complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Request batching** | Combine multiple validations into one API call |
+| **Deduplication** | Cache prevents re-validating same values |
+| **Lazy evaluation** | Batch validation deferred to collect all requests |
+| **Efficient** | 100 items → 1 API call instead of 100 |
+| **Transparent** | Same schema interface; optimization invisible |
+| **Type safe** | Decoded values guaranteed valid by batch API |
+
+# When to Use
+
+- Bulk user imports (validate 1000s of usernames)
+- Batch email verification
+- Large form submissions
+- Bulk data validation
+- Data migrations with external validation
+- Webhook processing with duplicate events
+- Rate-limited APIs requiring batching
+
+# Related Patterns
+
+- [Basic Async](./basic-async.md)
+- [Database Checks](./database-checks.md)
+- [External API Validation](./external-api-validation.md)

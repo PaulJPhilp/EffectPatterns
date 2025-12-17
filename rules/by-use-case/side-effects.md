@@ -44,3 +44,4 @@ const stream = Stream.fromIterable([1, 2, 3]).pipe(
 - `flatten` is for removing unnecessary nesting (e.g., `Option<Option<A>>` → `Option<A>`).
 
 ---
+

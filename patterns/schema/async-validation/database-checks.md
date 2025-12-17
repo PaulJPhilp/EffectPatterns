@@ -1,0 +1,278 @@
+---
+id: schema-database-checks
+title: Database Validation - Uniqueness, Foreign Keys, Constraints
+category: async-validation
+skill: intermediate
+tags:
+  - schema
+  - async-validation
+  - database
+  - constraints
+  - uniqueness
+  - foreign-keys
+---
+
+# Problem
+
+A username must be unique in the database. A product reference must exist. An email can't belong to two accounts. These database constraints can't be validated with sync schemas. You need async validation that queries the database during parsing.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+import { Duration } from "effect"
+
+// ============================================
+// 1. Simulated database
+// ============================================
+
+class Database {
+  private users = new Map<string, { id: string; username: string }>([
+    ["user1", { id: "1", username: "alice" }],
+    ["user2", { id: "2", username: "bob" }],
+  ])
+
+  private products = new Map<string, string>([
+    ["prod1", "Laptop"],
+    ["prod2", "Monitor"],
+  ])
+
+  async checkUsernameUnique(username: string): Promise<boolean> {
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    return !Array.from(this.users.values()).some(
+      (u) => u.username === username
+    )
+  }
+
+  async productExists(id: string): Promise<boolean> {
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    return this.products.has(id)
+  }
+
+  async checkEmailUnique(email: string): Promise<boolean> {
+    await new Promise((resolve) => setTimeout(resolve, 80))
+    // Simulated check
+    return !email.includes("taken")
+  }
+
+  async validateForeignKey(
+    parentId: string,
+    table: string
+  ): Promise<boolean> {
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    if (table === "users") return this.users.has(parentId)
+    if (table === "products") return this.products.has(parentId)
+    return false
+  }
+}
+
+// ============================================
+// 2. Create database service
+// ============================================
+
+const db = new Database()
+
+// ============================================
+// 3. Schemas with database validation
+// ============================================
+
+const UniqueUsername = Schema.String.pipe(
+  Schema.minLength(3),
+  Schema.filterEffect((username) =>
+    Effect.gen(function* () {
+      const isUnique = yield* Effect.tryPromise({
+        try: () => db.checkUsernameUnique(username),
+        catch: () => false,
+      })
+
+      if (!isUnique) {
+        return yield* Effect.fail(
+          new Error(`Username "${username}" is taken`)
+        )
+      }
+
+      return username
+    })
+  )
+)
+
+const UniqueEmail = Schema.String.pipe(
+  Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/),
+  Schema.filterEffect((email) =>
+    Effect.gen(function* () {
+      const isUnique = yield* Effect.tryPromise({
+        try: () => db.checkEmailUnique(email),
+        catch: () => false,
+      })
+
+      if (!isUnique) {
+        return yield* Effect.fail(
+          new Error(`Email "${email}" already registered`)
+        )
+      }
+
+      return email
+    })
+  )
+)
+
+const ExistingProduct = Schema.String.pipe(
+  Schema.filterEffect((productId) =>
+    Effect.gen(function* () {
+      const exists = yield* Effect.tryPromise({
+        try: () => db.productExists(productId),
+        catch: () => false,
+      })
+
+      if (!exists) {
+        return yield* Effect.fail(
+          new Error(`Product "${productId}" not found`)
+        )
+      }
+
+      return productId
+    })
+  )
+)
+
+const ValidUserReference = Schema.String.pipe(
+  Schema.filterEffect((userId) =>
+    Effect.gen(function* () {
+      const exists = yield* Effect.tryPromise({
+        try: () => db.validateForeignKey(userId, "users"),
+        catch: () => false,
+      })
+
+      if (!exists) {
+        return yield* Effect.fail(
+          new Error(`User "${userId}" does not exist`)
+        )
+      }
+
+      return userId
+    })
+  )
+)
+
+// ============================================
+// 4. Forms with foreign keys
+// ============================================
+
+const CreateOrderForm = Schema.Struct({
+  userId: ValidUserReference,
+  productId: ExistingProduct,
+  quantity: Schema.Number.pipe(Schema.int(), Schema.between(1, 100)),
+})
+
+const CreateUserForm = Schema.Struct({
+  username: UniqueUsername,
+  email: UniqueEmail,
+  password: Schema.String.pipe(Schema.minLength(8)),
+})
+
+// ============================================
+// 5. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  console.log("=== Database Validation ===\n")
+
+  console.log("1. Valid unique username:\n")
+
+  const validUser = {
+    username: "charlie",
+    email: "charlie@example.com",
+    password: "SecurePass123",
+  }
+
+  const user1 = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(CreateUserForm)(validUser),
+    catch: (e) => new Error(String(e)),
+  })
+
+  console.log(`✓ User created: ${user1.username}`)
+
+  console.log("\n2. Duplicate username:\n")
+
+  const duplicateUser = {
+    username: "alice",
+    email: "newalice@example.com",
+    password: "SecurePass123",
+  }
+
+  const user2 = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(CreateUserForm)(duplicateUser),
+    catch: (e) => new Error(String(e)),
+  }).pipe(Effect.either)
+
+  if (user2._tag === "Left") {
+    console.log(`✗ Error: ${user2.left.message}`)
+  }
+
+  console.log("\n3. Valid order with foreign keys:\n")
+
+  const validOrder = {
+    userId: "user1",
+    productId: "prod1",
+    quantity: 5,
+  }
+
+  const order = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(CreateOrderForm)(validOrder),
+    catch: (e) => new Error(String(e)),
+  })
+
+  console.log(`✓ Order created for user ${order.userId}`)
+  console.log(`  Product: ${order.productId}, Quantity: ${order.quantity}`)
+
+  console.log("\n4. Invalid product reference:\n")
+
+  const invalidOrder = {
+    userId: "user1",
+    productId: "prod999",
+    quantity: 2,
+  }
+
+  const order2 = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(CreateOrderForm)(invalidOrder),
+    catch: (e) => new Error(String(e)),
+  }).pipe(Effect.either)
+
+  if (order2._tag === "Left") {
+    console.log(`✗ Error: ${order2.left.message}`)
+  }
+
+  return { user1, order }
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Database validation complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Database query during parse** | Validate constraints at schema layer |
+| **Foreign key checks** | Ensure referenced entities exist |
+| **Uniqueness constraints** | Prevent duplicates in database |
+| **Consistent validation** | All instances validated same way |
+| **Error clarity** | Clear messages if constraints violated |
+| **Type safety** | Decoded value guaranteed to pass all checks |
+
+# When to Use
+
+- Unique constraints (username, email, slug)
+- Foreign key validation
+- Reference existence checks
+- Duplicate detection
+- Business rule validation via database
+- Permission checks
+
+# Related Patterns
+
+- [Basic Async](./basic-async.md)
+- [External API Validation](./external-api-validation.md)
+- [Batched Async](./batched-async.md)

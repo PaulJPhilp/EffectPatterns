@@ -26,9 +26,8 @@ const e1 = Either.right(1);
 const e2 = Either.left("fail1");
 const e3 = Either.left("fail2");
 
-const all = Either.all([e1, e2, e3]); // Either<string, [number, never, never]>
-const rights = [e1, e2, e3].filter(Either.isRight); // Right values only
-const lefts = [e1, e2, e3].filter(Either.isLeft); // Left values only
+const all = [e1, e2, e3].filter(Either.isRight).map(Either.getRight); // [1]
+const errors = [e1, e2, e3].filter(Either.isLeft).map(Either.getLeft); // ["fail1", "fail2"]
 ```
 
 **Explanation:**
@@ -352,3 +351,4 @@ const effectAsync = Effect.tryPromise({
 - `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
 
 ---
+

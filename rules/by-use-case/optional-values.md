@@ -38,3 +38,4 @@ function findUser(id: number): Option.Option<{ id: number; name: string }> {
 - Pattern matching ensures all cases are handled.
 
 ---
+

@@ -7,7 +7,7 @@ Use zip to run two computations and combine their results into a tuple, preservi
 ### Example
 
 ```typescript
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Either, Option, Stream } from "effect";
 
 // Effect: Combine two effects and get both results
 const effectA = Effect.succeed(1);
@@ -35,3 +35,4 @@ const zippedStream = streamA.pipe(Stream.zip(streamB)); // Stream<[number, strin
 If either computation fails (or is None/Left/empty), the result is a failure (or None/Left/empty).
 
 ---
+

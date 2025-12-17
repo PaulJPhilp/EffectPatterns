@@ -40,7 +40,7 @@ Use zip to run two computations and combine their results into a tuple, preservi
 ### Example
 
 ```typescript
-import { Effect, Stream, Option, Either } from "effect";
+import { Effect, Either, Option, Stream } from "effect";
 
 // Effect: Combine two effects and get both results
 const effectA = Effect.succeed(1);
@@ -275,3 +275,4 @@ const stream = Stream.fromIterable([1, 2, 3]).pipe(Stream.map((n) => n * 10)); /
 No matter which type you use, `map` lets you apply a function to the value inside, without changing the error or context.
 
 ---
+

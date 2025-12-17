@@ -91,7 +91,7 @@ function legacyReadFile(
 const effectAsync = Effect.async<string, Error>((resume) => {
   legacyReadFile("file.txt", (err, data) => {
     if (err) resume(Effect.fail(err));
-    else if (data) resume(Effect.succeed(data));
+    else resume(Effect.succeed(data!));
   });
 }); // Effect<string, Error, never>
 ```
@@ -185,3 +185,4 @@ const effectAsync = Effect.tryPromise({
 - `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
 
 ---
+

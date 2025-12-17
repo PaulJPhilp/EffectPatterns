@@ -1,63 +1,48 @@
-description: Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
+description: Use Effect's Metric module to define and update custom metrics for business and performance monitoring.
 globs: "**/*.ts"
 alwaysApply: true
 
 # Add Custom Metrics to Your Application
-**Rule:** Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
+**Rule:** Use Effect's Metric module to define and update custom metrics for business and performance monitoring.
 
 ### Example
-This example creates a counter to track how many times a user is created and a histogram to track the duration of the database operation.
-
 ```typescript
-import { Effect, Metric, Duration } from "effect"; // We don't need MetricBoundaries anymore
+import { Effect, Metric } from "effect";
 
-// 1. Define your metrics
-const userRegisteredCounter = Metric.counter("users_registered_total", {
-  description: "A counter for how many users have been registered.",
+// Define a counter metric for processed jobs
+const jobsProcessed = Metric.counter("jobs_processed");
+
+// Increment the counter when a job is processed
+const processJob = Effect.gen(function* () {
+  // ... process the job
+  yield* Effect.log("Job processed");
+  yield* Metric.increment(jobsProcessed);
 });
 
-const dbDurationTimer = Metric.timer(
-  "db_operation_duration",
-  "A timer for DB operation durations"
-);
+// Define a gauge for current active users
+const activeUsers = Metric.gauge("active_users");
 
-// 2. Simulated database call
-const saveUserToDb = Effect.succeed("user saved").pipe(
-  Effect.delay(Duration.millis(Math.random() * 100))
-);
+// Update the gauge when users sign in or out
+const userSignedIn = Metric.set(activeUsers, 1); // Set to 1 (simplified example)
+const userSignedOut = Metric.set(activeUsers, 0); // Set to 0 (simplified example)
 
-// 3. Instrument the business logic
-const createUser = Effect.gen(function* () {
-  // Time the operation
-  yield* saveUserToDb.pipe(Metric.trackDuration(dbDurationTimer));
+// Define a histogram for request durations
+const requestDuration = Metric.histogram("request_duration", [
+  0.1, 0.5, 1, 2, 5,
+] as any); // boundaries in seconds
 
-  // Increment the counter
-  yield* Metric.increment(userRegisteredCounter);
-
-  return { status: "success" };
-});
-
-// Run the Effect
-const programWithLogging = Effect.gen(function* () {
-  const result = yield* createUser;
-  yield* Effect.log(`Result: ${JSON.stringify(result)}`);
-  return result;
-});
-
-Effect.runPromise(programWithLogging);
+// Record a request duration
+const recordDuration = (duration: number) =>
+  Metric.update(requestDuration, duration);
 ```
 
----
+**Explanation:**
+
+- `Metric.counter` tracks counts of events.
+- `Metric.gauge` tracks a value that can go up or down (e.g., active users).
+- `Metric.histogram` tracks distributions (e.g., request durations).
+- `Effect.updateMetric` updates the metric in your workflow.
 
 **Explanation:**  
-While logs are for events and traces are for requests, metrics are for aggregation. They provide a high-level, numerical view of your system's health over time, which is perfect for building dashboards and setting up alerts.
-
-Effect's `Metric` module provides a simple, declarative way to add this instrumentation. By defining your metrics upfront, you can then use operators like `Metric.increment` or `Effect.timed` to update them. This is fully integrated with Effect's context system, allowing you to provide different metric backends (like Prometheus or StatsD) via a `Layer`.
-
-This allows you to answer questions like:
-
-- "What is our user sign-up rate over the last 24 hours?"
-- "Are we approaching our maximum number of database connections?"
-- "What is the 95th percentile latency for our API requests?"
-
----
+Metrics provide quantitative insight into your application's behavior and performance.  
+By instrumenting your code with metrics, you can monitor key events, detect anomalies, and drive business decisions.

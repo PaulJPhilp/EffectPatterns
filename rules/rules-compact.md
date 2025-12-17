@@ -2,11 +2,11 @@
 
 - **Access Configuration from the Context**: Access configuration from the Effect context.
 - **Accessing the Current Time with Clock**: Use the Clock service to get the current time, enabling deterministic testing with TestClock.
-- **Accumulate Multiple Errors with Either**: Use Either to accumulate multiple validation errors instead of failing on the first one.
 - **Accumulate Multiple Errors with Either**: Use Either to model computations that may fail, making errors explicit and type-safe.
+- **Accumulate Multiple Errors with Either**: Use Either to accumulate multiple validation errors instead of failing on the first one.
 - **Add Caching by Wrapping a Layer**: Use a wrapping Layer to add cross-cutting concerns like caching to a service without altering its original implementation.
-- **Add Custom Metrics to Your Application**: Use Effect's Metric module to define and update custom metrics for business and performance monitoring.
 - **Add Custom Metrics to Your Application**: Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
+- **Add Custom Metrics to Your Application**: Use Effect's Metric module to define and update custom metrics for business and performance monitoring.
 - **Automatically Retry Failed Operations**: Compose a Stream with the .retry(Schedule) operator to automatically recover from transient failures.
 - **Avoid Long Chains of .andThen; Use Generators Instead**: Prefer generators over long chains of .andThen.
 - **Beyond the Date Type - Real World Dates, Times, and Timezones**: Use the Clock service for testable time-based logic and immutable primitives for timestamps.
@@ -47,15 +47,15 @@
 - **Handle API Errors**: Model application errors as typed classes and use Http.server.serveOptions to map them to specific HTTP responses.
 - **Handle Errors with catchTag, catchTags, and catchAll**: Handle errors with catchTag, catchTags, and catchAll.
 - **Handle Flaky Operations with Retries and Timeouts**: Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing effects.
-- **Handle Unexpected Errors by Inspecting the Cause**: Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions.
 - **Handle Unexpected Errors by Inspecting the Cause**: Handle unexpected errors by inspecting the cause.
+- **Handle Unexpected Errors by Inspecting the Cause**: Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions.
 - **Handling Errors with catchAll, orElse, and match**: Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way.
 - **Handling Specific Errors with catchTag and catchTags**: Use catchTag and catchTags to handle specific tagged error types in the Effect failure channel, providing targeted recovery logic.
 - **Implement Graceful Shutdown for Your Application**: Use Effect.runFork and OS signal listeners to implement graceful shutdown for long-running applications.
 - **Instrument and Observe Function Calls with Effect.fn**: Use Effect.fn to wrap functions with effectful instrumentation, such as logging, metrics, or tracing, in a composable and type-safe way.
 - **Integrate Effect Tracing with OpenTelemetry**: Integrate Effect.withSpan with OpenTelemetry to export traces and visualize request flows across services.
-- **Leverage Effect's Built-in Structured Logging**: Leverage Effect's built-in structured logging.
 - **Leverage Effect's Built-in Structured Logging**: Use Effect.log, Effect.logInfo, and Effect.logError to add structured, context-aware logging to your Effect code.
+- **Leverage Effect's Built-in Structured Logging**: Leverage Effect's built-in structured logging.
 - **Lifting Errors and Absence with fail, none, and left**: Use fail, none, and left to create Effect, Option, or Either that represent failure or absence.
 - **Lifting Values with succeed, some, and right**: Use succeed, some, and right to create Effect, Option, or Either from plain values.
 - **Make an Outgoing HTTP Client Request**: Use the Http.client module to make outgoing requests to keep the entire operation within the Effect ecosystem.
@@ -70,8 +70,8 @@
 - **Matching Tagged Unions with matchTag and matchTags**: Use matchTag and matchTags to handle specific cases of tagged unions or custom error types in a declarative, type-safe way.
 - **Mocking Dependencies in Tests**: Provide mock service implementations via a test-specific Layer to isolate the unit under test.
 - **Model Dependencies as Services**: Model dependencies as services.
-- **Model Optional Values Safely with Option**: Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
 - **Model Optional Values Safely with Option**: Use Option to model values that may be present or absent, making absence explicit and type-safe.
+- **Model Optional Values Safely with Option**: Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
 - **Model Validated Domain Types with Brand**: Model validated domain types with Brand.
 - **Modeling Effect Results with Exit**: Use Exit to capture the outcome of an Effect, including success, failure, and defects, for robust error handling and coordination.
 - **Modeling Tagged Unions with Data.case**: Use Data.case to define tagged unions (ADTs) for modeling domain-specific states and enabling exhaustive pattern matching.
@@ -90,8 +90,8 @@
 - **Provide Dependencies to Routes**: Define dependencies with Effect.Service and provide them to your HTTP server using a Layer.
 - **Race Concurrent Effects for the Fastest Result**: Use Effect.race to get the result from the first of several effects to succeed, automatically interrupting the losers.
 - **Redact and Handle Sensitive Data**: Use Redacted to wrap sensitive values, preventing accidental exposure in logs or error messages.
-- **Representing Time Spans with Duration**: Use the Duration data type to represent time intervals instead of raw numbers.
 - **Representing Time Spans with Duration**: Use Duration to model and manipulate time spans, enabling safe and expressive time-based logic.
+- **Representing Time Spans with Duration**: Use the Duration data type to represent time intervals instead of raw numbers.
 - **Retry Operations Based on Specific Errors**: Use predicate-based retry policies to retry an operation only for specific, recoverable errors.
 - **Run a Pipeline for its Side Effects**: Use Stream.runDrain to execute a stream for its side effects when you don't need the final values.
 - **Run Background Tasks with Effect.fork**: Use Effect.fork to start a non-blocking background process and manage its lifecycle via its Fiber.
@@ -103,8 +103,8 @@
 - **Solve Promise Problems with Effect**: Recognize that Effect solves the core limitations of Promises: untyped errors, no dependency injection, and no cancellation.
 - **Supercharge Your Editor with the Effect LSP**: Install and use the Effect LSP extension for enhanced type information and error checking in your editor.
 - **Teach your AI Agents Effect with the MCP Server**: Use the MCP server to provide live application context to AI coding agents, enabling more accurate assistance.
-- **Trace Operations Across Services with Spans**: Use Effect.withSpan to create custom tracing spans for important operations.
 - **Trace Operations Across Services with Spans**: Use Effect.withSpan to create and annotate tracing spans for operations, enabling distributed tracing and performance analysis.
+- **Trace Operations Across Services with Spans**: Use Effect.withSpan to create custom tracing spans for important operations.
 - **Transform Data During Validation with Schema**: Use Schema.transform to safely convert data types during the validation and parsing process.
 - **Transform Effect Values with map and flatMap**: Transform Effect values with map and flatMap.
 - **Transforming Values with map**: Use map to apply a pure function to the value inside an Effect, Stream, Option, or Either.

@@ -35,3 +35,4 @@ const effectFromEither = Either.match(either, {
 - `Effect.fromEither` lifts an Either into an Effect, failing if the Either is `left`.
 
 ---
+

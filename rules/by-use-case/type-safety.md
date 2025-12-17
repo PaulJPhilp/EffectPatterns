@@ -31,3 +31,4 @@ sendWelcome(email); // OK
 - This prevents accidental mixing of domain types.
 
 ---
+

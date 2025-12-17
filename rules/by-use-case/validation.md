@@ -41,3 +41,4 @@ parseEmail("user@example.com").pipe(
 - This pattern ensures both compile-time and runtime safety.
 
 ---
+

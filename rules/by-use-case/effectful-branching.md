@@ -24,3 +24,4 @@ const effect = Effect.fail("Oops!").pipe(
 - This is useful for logging, cleanup, retries, or any effectful side effect that depends on the outcome.
 
 ---
+

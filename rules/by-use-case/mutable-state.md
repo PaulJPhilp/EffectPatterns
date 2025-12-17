@@ -38,3 +38,4 @@ const program = Effect.gen(function* () {
 - Use `Ref` for counters, caches, or any shared mutable state.
 
 ---
+
