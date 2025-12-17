@@ -117,7 +117,7 @@ Effect-Patterns/
 │   │
 │   └── qa/                # Quality assurance
 │
-├── rules/                 # AI coding rules (generated)
+├── content/published/rules/  # AI coding rules (generated)
 │   └── generated/
 │       ├── rules-for-claude.md      # Claude Code rules (377KB)
 │       ├── rules-for-cursor.md      # Cursor rules
@@ -333,6 +333,97 @@ content/published/*.mdx
 ### Legacy Locations
 - `content/src/` - Not actively used
 - `content/raw/` - Not actively used
+
+---
+
+## Pipeline Integrity Protection
+
+### The Schema Pattern Incident (December 17, 2025)
+
+On December 17, 2025, 60 schema patterns were generated directly to `patterns/schema/` instead of flowing through the pipeline. This caused:
+
+- **Output Structure Violations** - Files in forbidden directories
+- **Pipeline Steps Skipped** - Validation was incomplete
+- **Rules & Skills Not Regenerated** - AI tool support was outdated
+- **Repository Integrity Compromised** - Architecture violated
+
+**Atomic Prevention System** was implemented to make this impossible:
+
+### Layer 1: Pre-commit Hook
+
+**File:** `.git/hooks/pre-commit`
+
+Blocks any commit attempts to forbidden directories:
+- `patterns/` - Schema patterns generation output
+- `rules/` - AI coding rules generation output
+- `.claude/skills/` - Claude skill generation output
+- `.gemini/skills/` - Gemini skill generation output
+- `.openai/skills/` - OpenAI skill generation output
+
+**Error Message:** Clear instructions to use the pipeline
+
+### Layer 2: Pipeline Validation
+
+**Script:** `scripts/publish/validate-pipeline-integrity.ts`
+
+Runs at the start of `bun run pipeline` to detect unauthorized files.
+
+Checks for existence of forbidden directories before proceeding with any generation steps. Fails immediately with detailed error message if violations found.
+
+### Layer 3: Architecture Enforcement
+
+**Key Rule:** All generated outputs MUST flow through the pipeline.
+
+✅ **ALLOWED:**
+```
+content/new/ (source)
+    ↓
+bun run pipeline (validation + generation)
+    ↓
+content/published/ (final output)
+```
+
+❌ **FORBIDDEN:**
+- Direct writes to `patterns/`
+- Direct writes to `rules/`
+- Direct writes to `.*/skills/`
+- Bypassing validation steps
+- Manual modifications to `content/published/` without pipeline
+
+### Why This Matters
+
+The publishing pipeline ensures:
+
+1. **TypeScript Validation** - All examples type-check
+2. **MDX Validation** - Frontmatter and sections verified
+3. **Consistent Output** - All patterns follow structure
+4. **Complete Generation** - README, rules, and skills all regenerate together
+5. **Audit Trail** - Every pattern publication is tracked
+
+When generation bypasses the pipeline:
+- Validation steps are skipped
+- Output structure becomes inconsistent
+- Generated artifacts don't regenerate
+- Repository integrity is compromised
+
+### For Contributors
+
+If you see the pre-commit hook error:
+
+```
+❌ ERROR: Generated files detected outside content/published/
+```
+
+**You are trying to bypass the pipeline.** This is not allowed.
+
+**Correct workflow:**
+
+1. Create/edit source in `content/new/`
+2. Run: `bun run pipeline`
+3. Run: `bun run scripts/publish/move-to-published.ts`
+4. Commit output from `content/published/`
+
+See `CONTRIBUTING.md` for detailed workflow instructions.
 
 ---
 

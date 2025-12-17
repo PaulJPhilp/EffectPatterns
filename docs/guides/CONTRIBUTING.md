@@ -3,6 +3,50 @@
 Thank you for your interest in contributing! This project aims to be the best
 community-driven knowledge base for Effect-TS patterns. Every contribution helps.
 
+---
+
+## ⚠️ Pipeline Integrity (CRITICAL)
+
+**All generation must flow through the pipeline. Never bypass it.**
+
+### The Schema Pattern Incident
+
+On December 17, 2025, 60 schema patterns were generated directly to `patterns/schema/` instead of through the pipeline. This caused:
+
+- Output structure violations
+- Pipeline steps were skipped
+- Validation was incomplete
+- Rules and skills didn't regenerate
+- Repository integrity was compromised
+
+**This will never happen again.**
+
+### The Rule
+
+✅ **ALLOWED:**
+- Create/edit source files in `content/new/`
+- Run the pipeline: `bun run pipeline`
+- Finalize: `bun run scripts/publish/move-to-published.ts`
+- Commit output from `content/published/`
+
+❌ **FORBIDDEN:**
+- Never write directly to `patterns/`
+- Never write directly to `rules/`
+- Never write directly to `.claude/skills/`, `.gemini/`, `.openai/`
+- Never modify `content/published/` without using the pipeline
+
+### Three-Layer Protection
+
+We've implemented safeguards to prevent bypass:
+
+1. **Pre-commit Hook** - Blocks commits to forbidden directories
+2. **Pipeline Validation** - Detects unauthorized generated files before running
+3. **CI/CD Enforcement** - Repository rules validate pipeline integrity
+
+If you see a hook error, **you are trying to bypass the pipeline**. This is not allowed. Let the pipeline handle generation.
+
+---
+
 ## Documentation Pipeline
 
 This project uses a two-stage pipeline system:

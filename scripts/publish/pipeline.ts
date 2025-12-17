@@ -90,6 +90,53 @@ const STEPS = [
 // --- HELPER FUNCTIONS ---
 
 /**
+ * Validate that no generation outputs exist outside content/published/
+ * This prevents bypassing the pipeline for generated files.
+ */
+async function validatePipelineIntegrity(): Promise<void> {
+  const { existsSync } = await import('node:fs');
+
+  const forbiddenDirs = [
+    'patterns/',
+    'rules/',
+    '.claude/skills/',
+    '.gemini/skills/',
+    '.openai/skills/',
+  ];
+
+  const violations: string[] = [];
+
+  for (const dir of forbiddenDirs) {
+    const fullPath = path.join(PROJECT_ROOT, dir);
+    if (existsSync(fullPath)) {
+      violations.push(dir);
+    }
+  }
+
+  if (violations.length > 0) {
+    console.error('\n❌ PIPELINE INTEGRITY CHECK FAILED');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error('\nGenerated files exist outside content/published/:');
+    violations.forEach((dir) => console.error(`  ✗ ${dir}`));
+    console.error('\nThis means generation bypassed the pipeline.');
+    console.error('\nCORRECT WORKFLOW:');
+    console.error('  1. Generate patterns → content/new/');
+    console.error('  2. Run: bun run validate');
+    console.error('  3. Run: bun run pipeline  ← Handles all generation');
+    console.error('  4. Outputs go to: content/published/');
+    console.error('\nDo NOT generate to:');
+    console.error('  ❌ patterns/');
+    console.error('  ❌ rules/');
+    console.error('  ❌ .claude/skills/');
+    console.error('  ❌ .gemini/skills/');
+    console.error('  ❌ .openai/skills/');
+    console.error('\nFor more info: docs/PUBLISHING_PIPELINE.md');
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    process.exit(1);
+  }
+}
+
+/**
  * Prompt user for confirmation
  */
 async function confirm(message: string): Promise<boolean> {
@@ -149,6 +196,12 @@ async function runStep(
 // --- MAIN EXECUTION ---
 async function main() {
   console.log('🚀 Starting Effect Patterns publishing pipeline...\n');
+
+  // Validate pipeline integrity before starting
+  console.log('🔍 Checking pipeline integrity...');
+  await validatePipelineIntegrity();
+  console.log('✅ Pipeline integrity check passed\n');
+
   console.log('Workflow Steps: ingested → tested → validated → published → finalized\n');
   const startTime = Date.now();
 
