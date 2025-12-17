@@ -1,0 +1,201 @@
+---
+id: schema-ai-parsing-error-recovery
+title: Handling Malformed AI Outputs
+category: parsing-ai-responses
+skill: beginner
+tags:
+  - schema
+  - ai
+  - error-handling
+  - fallback
+  - recovery
+  - validation
+---
+
+# Problem
+
+An LLM returns malformed JSON or fields that don't match your schema. The parse fails and the operation stops. You need graceful recovery strategies: provide sensible defaults, extract partial data, ask for clarification, or log for debugging without crashing your application.
+
+# Solution
+
+```typescript
+import { Effect, Schema, Option } from "effect"
+import { Anthropic } from "@anthropic-ai/sdk"
+
+// 1. Define schema with optional recovery paths
+const Article = Schema.Struct({
+  title: Schema.String,
+  content: Schema.String,
+  author: Schema.String.pipe(Schema.optional),
+  publishedAt: Schema.String.pipe(Schema.optional),
+})
+
+type Article = typeof Article.Type
+
+// 2. Recovery strategy 1: Provide defaults
+const parseWithDefaults = (data: unknown) =>
+  Effect.gen(function* () {
+    const parseArticle = Schema.decodeUnknown(Article)
+
+    const result = yield* parseArticle(data).pipe(
+      Effect.catchTag("ParseError", () =>
+        Effect.succeed({
+          title: "Untitled",
+          content: String(data),
+          author: undefined,
+          publishedAt: undefined,
+        } as Article)
+      )
+    )
+
+    return result
+  })
+
+// 3. Recovery strategy 2: Extract partial data
+const parsePartial = (data: unknown) =>
+  Effect.gen(function* () {
+    if (typeof data !== "object" || data === null) {
+      return yield* Effect.fail(
+        new Error("Response must be object")
+      )
+    }
+
+    const obj = data as Record<string, unknown>
+
+    // Extract what we can
+    const article: Article = {
+      title: String(obj.title || "Unknown"),
+      content: String(obj.content || ""),
+      author: obj.author ? String(obj.author) : undefined,
+      publishedAt: obj.publishedAt
+        ? String(obj.publishedAt)
+        : undefined,
+    }
+
+    return article
+  })
+
+// 4. Recovery strategy 3: Retry with clarification
+const parseWithRetry = (
+  initialData: unknown,
+  retryFn: () => Promise<unknown>,
+  maxRetries: number = 2
+) =>
+  Effect.gen(function* () {
+    const parseArticle = Schema.decodeUnknown(Article)
+    let lastError: Error | null = null
+    let data = initialData
+
+    for (let i = 0; i < maxRetries; i++) {
+      const result = yield* parseArticle(data).pipe(
+        Effect.catchTag("ParseError", (error) => {
+          lastError = new Error(
+            `Parse failed (attempt ${i + 1}): ${error.message}`
+          )
+          return Effect.none()
+        })
+      )
+
+      if (Option.isSome(result)) {
+        return result.value
+      }
+
+      // Retry with fresh call
+      console.log(`Retrying parse (${i + 1}/${maxRetries})...`)
+      data = yield* Effect.tryPromise({
+        try: () => retryFn(),
+        catch: (error) => new Error(`Retry failed: ${error}`),
+      })
+    }
+
+    return yield* Effect.fail(
+      lastError ||
+        new Error("Parse failed after retries")
+    )
+  })
+
+// 5. Recovery strategy 4: Log and continue
+const parseWithLogging = (data: unknown, id: string) =>
+  Effect.gen(function* () {
+    const parseArticle = Schema.decodeUnknown(Article)
+
+    const result = yield* parseArticle(data).pipe(
+      Effect.catchTag("ParseError", (error) => {
+        console.error(`[${id}] Parse error:`, {
+          error: error.message,
+          received: data,
+          timestamp: new Date().toISOString(),
+        })
+
+        // Log for analysis but return sensible defaults
+        return Effect.succeed({
+          title: "Error - See Logs",
+          content: JSON.stringify(data),
+          author: undefined,
+          publishedAt: undefined,
+        } as Article)
+      })
+    )
+
+    return result
+  })
+
+// Usage example
+const handleResponse = (response: unknown) =>
+  Effect.gen(function* () {
+    // Try exact parse first
+    const exact = yield* Schema.decodeUnknown(Article)(
+      response
+    ).pipe(
+      Effect.catchTag("ParseError", () =>
+        Effect.none()
+      )
+    )
+
+    if (Option.isSome(exact)) {
+      console.log("✅ Exact parse succeeded")
+      return exact.value
+    }
+
+    // Fallback to partial extraction
+    console.log(
+      "⚠️ Exact parse failed, extracting partial"
+    )
+    const partial = yield* parsePartial(response)
+    return partial
+  })
+
+// Usage
+const rawResponse = {
+  title: "Effect-TS Guide",
+  content: "Learn Effect...",
+  // author and publishedAt missing
+}
+
+Effect.runPromise(handleResponse(rawResponse))
+  .then((article) => console.log(article))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| Multiple recovery paths | Exact parse → partial → defaults |
+| `Effect.catchTag` | Handle specific errors without throwing |
+| `Option.isSome` | Type-safe check for successful parse |
+| Partial extraction | Get what's available instead of failing completely |
+| Structured logging | Track parse failures for analysis without crashing |
+
+# When to Use
+
+- Untrusted LLM outputs
+- Noisy or corrupted data
+- When partial data is better than failure
+- Production systems that need resilience
+- Extracting signal from imperfect responses
+
+# Related Patterns
+
+- [Basic AI Response Parsing](./basic.md)
+- [Retry Strategies for Parse Failures](./retry-on-failure.md)
+- [Parsing Partial/Incomplete Responses](./partial-responses.md)
