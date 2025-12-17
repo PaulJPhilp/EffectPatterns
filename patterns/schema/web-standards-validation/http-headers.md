@@ -1,0 +1,185 @@
+---
+id: schema-web-standards-http-headers
+title: HTTP Header Validation
+category: web-standards-validation
+skill: intermediate
+tags:
+  - schema
+  - validation
+  - web-standards
+  - http-headers
+  - content-type
+  - authentication
+---
+
+# Problem
+
+Your HTTP server receives headers as strings—`Content-Type: text/plain`, `Authorization: Bearer token`, etc. Headers are unvalidated and can be malformed, contain invalid values, or abuse your API. You need to validate headers at parse time, enforce strict formats, and safely extract values without runtime errors.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// 1. Define common header schemas
+const ContentType = Schema.Union(
+  Schema.Literal(
+    "application/json",
+    "text/plain",
+    "text/html",
+    "application/octet-stream"
+  ),
+  Schema.String.pipe(
+    Schema.pattern(/^[\w\-]+\/[\w\.\+\-]+$/),
+    Schema.annotations({
+      description: "MIME type (type/subtype)",
+    })
+  )
+).pipe(Schema.brand("ContentType"))
+
+type ContentType = typeof ContentType.Type
+
+// 2. Authorization header
+const Authorization = Schema.String.pipe(
+  Schema.pattern(
+    /^Bearer [A-Za-z0-9\-\._~\+\/]+=*$/
+  ).pipe(
+    Schema.annotations({
+      description:
+        "Authorization: Bearer <token>",
+    })
+  ),
+  Schema.brand("Authorization")
+)
+
+type Authorization = typeof Authorization.Type
+
+// 3. Custom header validation
+const CustomHeader = Schema.String.pipe(
+  Schema.minLength(1),
+  Schema.maxLength(1024),
+  Schema.filter((s) => {
+    // No control characters
+    return !s.match(/[\x00-\x1F\x7F]/g)
+  }).pipe(
+    Schema.annotations({
+      description: "Valid HTTP header value",
+    })
+  )
+)
+
+// 4. Parse headers from request
+const RequestHeaders = Schema.Struct({
+  "content-type": ContentType.pipe(Schema.optional),
+  authorization: Authorization.pipe(Schema.optional),
+  "user-agent": CustomHeader.pipe(Schema.optional),
+  "x-correlation-id": Schema.String.pipe(
+    Schema.regex(/^[a-f0-9\-]+$/),
+    Schema.optional,
+    Schema.annotations({
+      description: "Correlation ID (UUID format)",
+    })
+  ),
+})
+
+type RequestHeaders = typeof RequestHeaders.Type
+
+// 5. Validate incoming request
+const validateRequest = (
+  raw: Record<string, string>
+) =>
+  Effect.gen(function* () {
+    const headers = yield* Schema.decodeUnknown(
+      RequestHeaders
+    )(raw).pipe(
+      Effect.mapError((error) => ({
+        _tag: "InvalidHeaders" as const,
+        message: `Invalid headers: ${error.message}`,
+      }))
+    )
+
+    // Extract and use validated values
+    const contentType =
+      headers["content-type"] ||
+      ("application/json" as ContentType)
+
+    const correlationId =
+      headers["x-correlation-id"] ||
+      crypto.randomUUID()
+
+    console.log(
+      `[${correlationId}] Content-Type: ${contentType}`
+    )
+
+    // Parse auth token if present
+    if (headers.authorization) {
+      const token = headers.authorization.replace(
+        /^Bearer /,
+        ""
+      )
+      console.log(`Token length: ${token.length}`)
+    }
+
+    return { contentType, correlationId }
+  })
+
+// 6. Typed middleware
+const authMiddleware = (
+  auth: Authorization | undefined
+) =>
+  Effect.gen(function* () {
+    if (!auth) {
+      return yield* Effect.fail(
+        new Error("Authorization header required")
+      )
+    }
+
+    // Safe to extract token—already validated format
+    const token = auth.replace(/^Bearer /, "")
+    return token
+  })
+
+// Usage example
+const requestHeaders = {
+  "content-type": "application/json",
+  authorization: "Bearer eyJhbGciOiJIUzI1NiI...",
+  "user-agent": "MyClient/1.0",
+  "x-correlation-id": "550e8400-e29b-41d4",
+}
+
+Effect.runPromise(validateRequest(requestHeaders))
+  .then((result) => {
+    console.log(
+      `✅ Request validated (${result.correlationId})`
+    )
+  })
+  .catch((error) =>
+    console.error(`Error: ${error.message}`)
+  )
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| `Schema.Literal` | Restrict to known, safe values (MIME types) |
+| `Schema.pattern` | Regex validates format (Bearer token, UUID) |
+| `Schema.filter` | Custom logic (no control chars) |
+| Case-insensitive parsing | HTTP headers are case-insensitive by spec |
+| Optional fields | Headers may be absent, handle gracefully |
+| `Schema.brand` | Type safety—`Authorization ≠ string` |
+
+# When to Use
+
+- HTTP middleware/request validation
+- Webhook signature verification
+- API authentication
+- Content negotiation (Content-Type acceptance)
+- Request tracking (correlation IDs)
+- Custom domain headers
+
+# Related Patterns
+
+- [MIME Type Validation](./mime-types.md)
+- [Email Validation](./email.md)
+- [UUID Validation](./uuid.md)
