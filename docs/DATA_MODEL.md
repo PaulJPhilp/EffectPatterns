@@ -158,44 +158,68 @@ path: content/published/patterns/concurrency/getting-started/concurrency-hello-w
 
 | ID | Name | Patterns | Beginner | Jobs Doc |
 |----|------|----------|----------|----------|
-| `getting-started` | Getting Started | 6 | 6 | |
-| `core-concepts` | Core Concepts | 55 | 29 | |
-| `error-management` | Error Management | 18 | 3 | |
-| `resource-management` | Resource Management | 5 | 1 | |
+| `getting-started` | Getting Started | 6 | 6 | ✓ |
+| `core-concepts` | Core Concepts | 55 | 29 | ✓ |
+| `error-management` | Error Management | 19 | 4 | ✓ |
+| `resource-management` | Resource Management | 5 | 1 | ✓ |
 | `concurrency` | Concurrency | 24 | 4 | ✓ |
 | `streams` | Streams | 18 | 5 | ✓ |
 | `schema` | Schema | 77 | 34 | ✓ |
 | `platform` | Platform | 8 | 4 | ✓ |
-| `scheduling` | Scheduling | 4 | 0 | |
-| `domain-modeling` | Domain Modeling | 12 | 0 | |
-| `building-apis` | Building APIs | 8 | 4 | |
-| `building-data-pipelines` | Building Data Pipelines | 10 | 3 | |
-| `making-http-requests` | Making HTTP Requests | 3 | 0 | |
-| `testing` | Testing | 5 | 0 | |
-| `observability` | Observability | 7 | 0 | |
-| `tooling-and-debugging` | Tooling and Debugging | 2 | 0 | |
-| **Total** | | **262** | **93** | |
+| `scheduling` | Scheduling | 6 | 2 | ✓ |
+| `domain-modeling` | Domain Modeling | 15 | 3 | ✓ |
+| `building-apis` | Building APIs | 8 | 4 | ✓ |
+| `building-data-pipelines` | Building Data Pipelines | 10 | 3 | ✓ |
+| `making-http-requests` | Making HTTP Requests | 5 | 2 | ✓ |
+| `testing` | Testing | 7 | 2 | ✓ |
+| `observability` | Observability | 9 | 2 | ✓ |
+| `tooling-and-debugging` | Tooling and Debugging | 4 | 2 | ✓ |
+| **Total** | | **276** | **107** | |
 
 ### Jobs Coverage
 
 | Application Pattern | Total Jobs | Covered | Gaps |
 |---------------------|------------|---------|------|
-| Schema | 40 | 40 | 0 |
-| Streams | 24 | 24 | 0 |
+| Getting Started | 9 | 8 | 0 |
+| Core Concepts | 37 | 37 | 0 |
+| Error Management | 18 | 18 | 0 |
+| Resource Management | 11 | 5 | 3 |
 | Concurrency | 22 | 22 | 0 |
+| Streams | 24 | 24 | 0 |
+| Schema | 40 | 40 | 0 |
 | Platform | 10 | 10 | 0 |
-| *Others* | TBD | TBD | TBD |
+| Scheduling | 10 | 7 | 0 |
+| Domain Modeling | 17 | 14 | 0 |
+| Building APIs | 14 | 8 | 5 |
+| Building Data Pipelines | 14 | 10 | 4 |
+| Making HTTP Requests | 14 | 6 | 5 |
+| Testing | 13 | 7 | 3 |
+| Observability | 17 | 7 | 4 |
+| Tooling and Debugging | 14 | 4 | 4 |
+| **Total** | **274** | **227** | **28** |
 
-### Beginner Coverage Gaps
+### Beginner Coverage ✅
 
-| Application Pattern | Patterns | Beginner | Status |
-|---------------------|----------|----------|--------|
-| Domain Modeling | 12 | 0 | ❌ Needs work |
-| Testing | 5 | 0 | ❌ Needs work |
-| Scheduling | 4 | 0 | ❌ Needs work |
-| Observability | 7 | 0 | ❌ Needs work |
-| Making HTTP Requests | 3 | 0 | ❌ Needs work |
-| Tooling and Debugging | 2 | 0 | ❌ Needs work |
+All 16 Application Patterns now have beginner entry points:
+
+| Application Pattern | Beginner Patterns |
+|---------------------|-------------------|
+| Getting Started | 6 |
+| Core Concepts | 29 |
+| Schema | 34 |
+| Error Management | 4 |
+| Concurrency | 4 |
+| Streams | 5 |
+| Platform | 4 |
+| Building APIs | 4 |
+| Building Data Pipelines | 3 |
+| Domain Modeling | 3 |
+| Scheduling | 2 |
+| Testing | 2 |
+| Observability | 2 |
+| Making HTTP Requests | 2 |
+| Tooling and Debugging | 2 |
+| Resource Management | 1 |
 
 ---
 
@@ -209,10 +233,22 @@ Effect Patterns Repository
 │
 ├── docs/
 │   ├── DATA_MODEL.md                    # This file
-│   ├── SCHEMA_JOBS_TO_BE_DONE.md       # Jobs for Schema AP
-│   ├── STREAMS_JOBS_TO_BE_DONE.md      # Jobs for Streams AP
-│   ├── CONCURRENCY_JOBS_TO_BE_DONE.md  # Jobs for Concurrency AP
-│   └── PLATFORM_JOBS_TO_BE_DONE.md     # Jobs for Platform AP
+│   ├── GETTING_STARTED_JOBS_TO_BE_DONE.md
+│   ├── CORE_CONCEPTS_JOBS_TO_BE_DONE.md
+│   ├── ERROR_MANAGEMENT_JOBS_TO_BE_DONE.md
+│   ├── RESOURCE_MANAGEMENT_JOBS_TO_BE_DONE.md
+│   ├── CONCURRENCY_JOBS_TO_BE_DONE.md
+│   ├── STREAMS_JOBS_TO_BE_DONE.md
+│   ├── SCHEMA_JOBS_TO_BE_DONE.md
+│   ├── PLATFORM_JOBS_TO_BE_DONE.md
+│   ├── SCHEDULING_JOBS_TO_BE_DONE.md
+│   ├── DOMAIN_MODELING_JOBS_TO_BE_DONE.md
+│   ├── BUILDING_APIS_JOBS_TO_BE_DONE.md
+│   ├── BUILDING_DATA_PIPELINES_JOBS_TO_BE_DONE.md
+│   ├── MAKING_HTTP_REQUESTS_JOBS_TO_BE_DONE.md
+│   ├── TESTING_JOBS_TO_BE_DONE.md
+│   ├── OBSERVABILITY_JOBS_TO_BE_DONE.md
+│   └── TOOLING_AND_DEBUGGING_JOBS_TO_BE_DONE.md
 │
 └── content/published/patterns/
     ├── getting-started/                 # (6 patterns)
