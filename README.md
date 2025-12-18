@@ -39,6 +39,84 @@ This repository is designed to be a living document that helps developers move f
 - [tooling-and-debugging](#tooling-and-debugging)
 - [observability](#observability)
 - [project-setup--execution](#project-setup--execution)
+- [ADTs](#adts)
+- [Absence](#absence)
+- [Arrays](#arrays)
+- [Async](#async)
+- [Batch Processing](#batch-processing)
+- [Branching](#branching)
+- [Branded Types](#branded-types)
+- [Callback](#callback)
+- [Checks](#checks)
+- [Collections](#collections)
+- [Combinators](#combinators)
+- [Composition](#composition)
+- [Concurrency](#concurrency)
+- [Conditional Logic](#conditional-logic)
+- [Constructors](#constructors)
+- [Control Flow](#control-flow)
+- [Conversion](#conversion)
+- [Data Types](#data-types)
+- [Date](#date)
+- [Debugging](#debugging)
+- [Distributed Systems](#distributed-systems)
+- [Domain Modeling](#domain-modeling)
+- [Duration](#duration)
+- [Effect Results](#effect-results)
+- [Effectful Branching](#effectful-branching)
+- [Either](#either)
+- [Equality](#equality)
+- [Error Handling](#error-handling)
+- [Financial](#financial)
+- [Function Calls](#function-calls)
+- [Hashing](#hashing)
+- [Instrumentation](#instrumentation)
+- [Interop](#interop)
+- [Lifting](#lifting)
+- [Logging](#logging)
+- [Metrics](#metrics)
+- [Monitoring](#monitoring)
+- [Mutable State](#mutable-state)
+- [Numeric Precision](#numeric-precision)
+- [Observability](#observability)
+- [OpenTelemetry](#opentelemetry)
+- [Option](#option)
+- [Optional Values](#optional-values)
+- [Ordering](#ordering)
+- [Pairing](#pairing)
+- [Parallelism](#parallelism)
+- [Parsing](#parsing)
+- [Pattern Matching](#pattern-matching)
+- [Performance](#performance)
+- [Scientific](#scientific)
+- [Security](#security)
+- [Sensitive Data](#sensitive-data)
+- [Sequencing](#sequencing)
+- [Set Operations](#set-operations)
+- [Side Effects](#side-effects)
+- [State](#state)
+- [Streams](#streams)
+- [Structural Equality](#structural-equality)
+- [Tagged Unions](#tagged-unions)
+- [Time](#time)
+- [Tracing](#tracing)
+- [Tuples](#tuples)
+- [Type Classes](#type-classes)
+- [Type Safety](#type-safety)
+- [Validation](#validation)
+- [concurrency-coordination](#concurrency-coordination)
+- [concurrent-state-management](#concurrent-state-management)
+- [error-handling](#error-handling)
+- [error-handling-resilience](#error-handling-resilience)
+- [platform-integration](#platform-integration)
+- [platform-specific-operations](#platform-specific-operations)
+- [scheduling](#scheduling)
+- [scheduling-periodic-tasks](#scheduling-periodic-tasks)
+- [stream-error-handling](#stream-error-handling)
+- [stream-persistence](#stream-persistence)
+- [stream-processing](#stream-processing)
+- [value-handling](#value-handling)
+- [working-with-streams](#working-with-streams)
 
 ### Schema Patterns
 
@@ -196,6 +274,508 @@ This repository is designed to be a living document that helps developers move f
 | [Execute Asynchronous Effects with Effect.runPromise](./content/published/patterns/core/execute-with-runpromise.mdx) | 🟢 **Beginner** | Use Effect.runPromise at the 'end of the world' to execute an asynchronous Effect and get its result as a JavaScript Promise. |
 | [Set Up a New Effect Project](./content/published/patterns/core/setup-new-project.mdx) | 🟢 **Beginner** | Initialize a new Node.js project with the necessary TypeScript configuration and Effect dependencies to start building. |
 | [Create a Reusable Runtime from Layers](./content/published/patterns/core/create-reusable-runtime-from-layers.mdx) | 🟠 **Advanced** | Compile your application's layers into a reusable Runtime object to efficiently execute multiple effects that share the same context. |
+
+## ADTs
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Modeling Tagged Unions with Data.case](./content/published/patterns/core/data-case.mdx) | 🟡 **Intermediate** | Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching. |
+
+## Absence
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Lifting Errors and Absence with fail, none, and left](./content/published/patterns/core/constructor-fail-none-left.mdx) | 🟢 **Beginner** | Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe. |
+
+## Arrays
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Working with Immutable Arrays using Data.array](./content/published/patterns/core/data-array.mdx) | 🟢 **Beginner** | Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations. |
+
+## Async
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Creating from Synchronous and Callback Code](./content/published/patterns/core/constructor-sync-async.mdx) | 🟢 **Beginner** | Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code. |
+| [Wrapping Synchronous and Asynchronous Computations](./content/published/patterns/core/constructor-try-trypromise.mdx) | 🟢 **Beginner** | Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world. |
+
+## Batch Processing
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Creating from Collections](./content/published/patterns/core/constructor-from-iterable.mdx) | 🟢 **Beginner** | Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations. |
+| [Mapping and Chaining over Collections with forEach and all](./content/published/patterns/core/combinator-foreach-all.mdx) | 🟡 **Intermediate** | Use forEach and all to apply effectful functions to collections and combine the results, enabling batch and parallel processing. |
+
+## Branching
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Matching on Success and Failure with match](./content/published/patterns/core/pattern-match.mdx) | 🟢 **Beginner** | Use match to handle both success and failure cases in a single, declarative place for Effect, Option, and Either. |
+| [Checking Option and Either Cases](./content/published/patterns/core/pattern-option-either-checks.mdx) | 🟢 **Beginner** | Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching. |
+| [Matching Tagged Unions with matchTag and matchTags](./content/published/patterns/core/pattern-matchtag.mdx) | 🟡 **Intermediate** | Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching. |
+
+## Branded Types
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Modeling Validated Domain Types with Brand](./content/published/patterns/core/brand-model-domain-type.mdx) | 🟡 **Intermediate** | Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse. |
+| [Validating and Parsing Branded Types](./content/published/patterns/core/brand-validate-parse.mdx) | 🟡 **Intermediate** | Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed. |
+
+## Callback
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Creating from Synchronous and Callback Code](./content/published/patterns/core/constructor-sync-async.mdx) | 🟢 **Beginner** | Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code. |
+
+## Checks
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Checking Option and Either Cases](./content/published/patterns/core/pattern-option-either-checks.mdx) | 🟢 **Beginner** | Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching. |
+
+## Collections
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Creating from Collections](./content/published/patterns/core/constructor-from-iterable.mdx) | 🟢 **Beginner** | Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations. |
+| [Working with Immutable Arrays using Data.array](./content/published/patterns/core/data-array.mdx) | 🟢 **Beginner** | Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations. |
+| [Use Chunk for High-Performance Collections](./content/published/patterns/core/data-chunk.mdx) | 🟡 **Intermediate** | Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines. |
+| [Work with Immutable Sets using HashSet](./content/published/patterns/core/data-hashset.mdx) | 🟡 **Intermediate** | Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations. |
+| [Mapping and Chaining over Collections with forEach and all](./content/published/patterns/core/combinator-foreach-all.mdx) | 🟡 **Intermediate** | Use forEach and all to apply effectful functions to collections and combine the results, enabling batch and parallel processing. |
+
+## Combinators
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Combining Values with zip](./content/published/patterns/core/combinator-zip.mdx) | 🟢 **Beginner** | Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either. |
+| [Conditional Branching with if, when, and cond](./content/published/patterns/core/combinator-conditional.mdx) | 🟢 **Beginner** | Use combinators like if, when, and cond to express conditional logic declaratively across Effect, Stream, Option, and Either. |
+| [Transforming Values with map](./content/published/patterns/core/combinator-map.mdx) | 🟢 **Beginner** | Use map to transform the result of an Effect, Stream, Option, or Either in a declarative, type-safe way. |
+| [Chaining Computations with flatMap](./content/published/patterns/core/combinator-flatmap.mdx) | 🟢 **Beginner** | Use flatMap to chain together computations where each step may itself be effectful, optional, or error-prone. |
+| [Filtering Results with filter](./content/published/patterns/core/combinator-filter.mdx) | 🟢 **Beginner** | Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either. |
+| [Sequencing with andThen, tap, and flatten](./content/published/patterns/core/combinator-sequencing.mdx) | 🟡 **Intermediate** | Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either. |
+| [Handling Errors with catchAll, orElse, and match](./content/published/patterns/core/combinator-error-handling.mdx) | 🟡 **Intermediate** | Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option. |
+| [Mapping and Chaining over Collections with forEach and all](./content/published/patterns/core/combinator-foreach-all.mdx) | 🟡 **Intermediate** | Use forEach and all to apply effectful functions to collections and combine the results, enabling batch and parallel processing. |
+
+## Composition
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Combining Values with zip](./content/published/patterns/core/combinator-zip.mdx) | 🟢 **Beginner** | Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either. |
+| [Lifting Values with succeed, some, and right](./content/published/patterns/core/constructor-succeed-some-right.mdx) | 🟢 **Beginner** | Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe. |
+| [Conditional Branching with if, when, and cond](./content/published/patterns/core/combinator-conditional.mdx) | 🟢 **Beginner** | Use combinators like if, when, and cond to express conditional logic declaratively across Effect, Stream, Option, and Either. |
+| [Transforming Values with map](./content/published/patterns/core/combinator-map.mdx) | 🟢 **Beginner** | Use map to transform the result of an Effect, Stream, Option, or Either in a declarative, type-safe way. |
+| [Chaining Computations with flatMap](./content/published/patterns/core/combinator-flatmap.mdx) | 🟢 **Beginner** | Use flatMap to chain together computations where each step may itself be effectful, optional, or error-prone. |
+| [Filtering Results with filter](./content/published/patterns/core/combinator-filter.mdx) | 🟢 **Beginner** | Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either. |
+| [Sequencing with andThen, tap, and flatten](./content/published/patterns/core/combinator-sequencing.mdx) | 🟡 **Intermediate** | Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either. |
+| [Handling Errors with catchAll, orElse, and match](./content/published/patterns/core/combinator-error-handling.mdx) | 🟡 **Intermediate** | Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option. |
+
+## Concurrency
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Modeling Effect Results with Exit](./content/published/patterns/core/data-exit.mdx) | 🟡 **Intermediate** | Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way. |
+| [Manage Shared State Safely with Ref](./content/published/patterns/core/data-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
+
+## Conditional Logic
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Conditional Branching with if, when, and cond](./content/published/patterns/core/combinator-conditional.mdx) | 🟢 **Beginner** | Use combinators like if, when, and cond to express conditional logic declaratively across Effect, Stream, Option, and Either. |
+| [Filtering Results with filter](./content/published/patterns/core/combinator-filter.mdx) | 🟢 **Beginner** | Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either. |
+
+## Constructors
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Creating from Synchronous and Callback Code](./content/published/patterns/core/constructor-sync-async.mdx) | 🟢 **Beginner** | Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code. |
+| [Lifting Values with succeed, some, and right](./content/published/patterns/core/constructor-succeed-some-right.mdx) | 🟢 **Beginner** | Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe. |
+| [Converting from Nullable, Option, or Either](./content/published/patterns/core/constructor-from-nullable-option-either.mdx) | 🟢 **Beginner** | Use fromNullable, fromOption, and fromEither to convert nullable values, Option, or Either into Effects or Streams, enabling safe and composable interop. |
+| [Wrapping Synchronous and Asynchronous Computations](./content/published/patterns/core/constructor-try-trypromise.mdx) | 🟢 **Beginner** | Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world. |
+| [Creating from Collections](./content/published/patterns/core/constructor-from-iterable.mdx) | 🟢 **Beginner** | Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations. |
+| [Lifting Errors and Absence with fail, none, and left](./content/published/patterns/core/constructor-fail-none-left.mdx) | 🟢 **Beginner** | Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe. |
+
+## Control Flow
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Pattern Match on Option and Either](./content/published/patterns/core/pattern-option-either-match.mdx) | 🟢 **Beginner** | Use declarative match() combinators to handle optional and error-prone values |
+
+## Conversion
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Converting from Nullable, Option, or Either](./content/published/patterns/core/constructor-from-nullable-option-either.mdx) | 🟢 **Beginner** | Use fromNullable, fromOption, and fromEither to convert nullable values, Option, or Either into Effects or Streams, enabling safe and composable interop. |
+
+## Data Types
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Model Optional Values Safely with Option](./content/published/patterns/core/data-option.mdx) | 🟢 **Beginner** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
+| [Accumulate Multiple Errors with Either](./content/published/patterns/core/data-either.mdx) | 🟢 **Beginner** | Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one. |
+| [Comparing Data by Value with Data.struct](./content/published/patterns/core/data-struct.mdx) | 🟢 **Beginner** | Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference. |
+| [Working with Tuples using Data.tuple](./content/published/patterns/core/data-tuple.mdx) | 🟢 **Beginner** | Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching. |
+| [Working with Immutable Arrays using Data.array](./content/published/patterns/core/data-array.mdx) | 🟢 **Beginner** | Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations. |
+| [Representing Time Spans with Duration](./content/published/patterns/core/data-duration.mdx) | 🟡 **Intermediate** | Use Duration to represent time intervals in a type-safe, human-readable, and composable way. |
+| [Use Chunk for High-Performance Collections](./content/published/patterns/core/data-chunk.mdx) | 🟡 **Intermediate** | Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines. |
+| [Work with Immutable Sets using HashSet](./content/published/patterns/core/data-hashset.mdx) | 🟡 **Intermediate** | Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations. |
+| [Redact and Handle Sensitive Data](./content/published/patterns/core/data-redacted.mdx) | 🟡 **Intermediate** | Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed. |
+| [Modeling Effect Results with Exit](./content/published/patterns/core/data-exit.mdx) | 🟡 **Intermediate** | Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way. |
+| [Work with Arbitrary-Precision Numbers using BigDecimal](./content/published/patterns/core/data-bigdecimal.mdx) | 🟡 **Intermediate** | Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations. |
+| [Type Classes for Equality, Ordering, and Hashing with Data.Class](./content/published/patterns/core/data-class.mdx) | 🟡 **Intermediate** | Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions. |
+| [Modeling Tagged Unions with Data.case](./content/published/patterns/core/data-case.mdx) | 🟡 **Intermediate** | Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching. |
+| [Work with Dates and Times using DateTime](./content/published/patterns/core/data-datetime.mdx) | 🟡 **Intermediate** | Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations. |
+| [Manage Shared State Safely with Ref](./content/published/patterns/core/data-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
+| [Handle Unexpected Errors by Inspecting the Cause](./content/published/patterns/core/data-cause.mdx) | 🟠 **Advanced** | Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces. |
+
+## Date
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Work with Dates and Times using DateTime](./content/published/patterns/core/data-datetime.mdx) | 🟡 **Intermediate** | Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations. |
+
+## Debugging
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Instrument and Observe Function Calls with Effect.fn](./content/published/patterns/core/observability-effect-fn.mdx) | 🟡 **Intermediate** | Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries. |
+| [Leverage Effect's Built-in Structured Logging](./content/published/patterns/core/observability-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions for structured, configurable, and context-aware logging. |
+| [Trace Operations Across Services with Spans](./content/published/patterns/core/observability-tracing-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
+| [Handle Unexpected Errors by Inspecting the Cause](./content/published/patterns/core/data-cause.mdx) | 🟠 **Advanced** | Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces. |
+
+## Distributed Systems
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Integrate Effect Tracing with OpenTelemetry](./content/published/patterns/core/observability-opentelemetry.mdx) | 🟠 **Advanced** | Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization. |
+
+## Domain Modeling
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Model Optional Values Safely with Option](./content/published/patterns/core/data-option.mdx) | 🟢 **Beginner** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
+| [Accumulate Multiple Errors with Either](./content/published/patterns/core/data-either.mdx) | 🟢 **Beginner** | Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one. |
+| [Comparing Data by Value with Data.struct](./content/published/patterns/core/data-struct.mdx) | 🟢 **Beginner** | Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference. |
+| [Working with Tuples using Data.tuple](./content/published/patterns/core/data-tuple.mdx) | 🟢 **Beginner** | Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching. |
+| [Representing Time Spans with Duration](./content/published/patterns/core/data-duration.mdx) | 🟡 **Intermediate** | Use Duration to represent time intervals in a type-safe, human-readable, and composable way. |
+| [Modeling Validated Domain Types with Brand](./content/published/patterns/core/brand-model-domain-type.mdx) | 🟡 **Intermediate** | Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse. |
+| [Validating and Parsing Branded Types](./content/published/patterns/core/brand-validate-parse.mdx) | 🟡 **Intermediate** | Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed. |
+| [Modeling Tagged Unions with Data.case](./content/published/patterns/core/data-case.mdx) | 🟡 **Intermediate** | Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching. |
+| [Work with Dates and Times using DateTime](./content/published/patterns/core/data-datetime.mdx) | 🟡 **Intermediate** | Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations. |
+
+## Duration
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Representing Time Spans with Duration](./content/published/patterns/core/data-duration.mdx) | 🟡 **Intermediate** | Use Duration to represent time intervals in a type-safe, human-readable, and composable way. |
+
+## Effect Results
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Modeling Effect Results with Exit](./content/published/patterns/core/data-exit.mdx) | 🟡 **Intermediate** | Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way. |
+| [Handle Unexpected Errors by Inspecting the Cause](./content/published/patterns/core/data-cause.mdx) | 🟠 **Advanced** | Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces. |
+
+## Effectful Branching
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Effectful Pattern Matching with matchEffect](./content/published/patterns/core/pattern-matcheffect.mdx) | 🟡 **Intermediate** | Use matchEffect to perform effectful branching based on success or failure, enabling rich workflows in the Effect world. |
+
+## Either
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Checking Option and Either Cases](./content/published/patterns/core/pattern-option-either-checks.mdx) | 🟢 **Beginner** | Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching. |
+
+## Equality
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Type Classes for Equality, Ordering, and Hashing with Data.Class](./content/published/patterns/core/data-class.mdx) | 🟡 **Intermediate** | Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions. |
+
+## Error Handling
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Accumulate Multiple Errors with Either](./content/published/patterns/core/data-either.mdx) | 🟢 **Beginner** | Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one. |
+| [Wrapping Synchronous and Asynchronous Computations](./content/published/patterns/core/constructor-try-trypromise.mdx) | 🟢 **Beginner** | Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world. |
+| [Matching on Success and Failure with match](./content/published/patterns/core/pattern-match.mdx) | 🟢 **Beginner** | Use match to handle both success and failure cases in a single, declarative place for Effect, Option, and Either. |
+| [Lifting Errors and Absence with fail, none, and left](./content/published/patterns/core/constructor-fail-none-left.mdx) | 🟢 **Beginner** | Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe. |
+| [Handling Errors with catchAll, orElse, and match](./content/published/patterns/core/combinator-error-handling.mdx) | 🟡 **Intermediate** | Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option. |
+| [Modeling Effect Results with Exit](./content/published/patterns/core/data-exit.mdx) | 🟡 **Intermediate** | Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way. |
+| [Matching Tagged Unions with matchTag and matchTags](./content/published/patterns/core/pattern-matchtag.mdx) | 🟡 **Intermediate** | Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching. |
+| [Effectful Pattern Matching with matchEffect](./content/published/patterns/core/pattern-matcheffect.mdx) | 🟡 **Intermediate** | Use matchEffect to perform effectful branching based on success or failure, enabling rich workflows in the Effect world. |
+| [Handling Specific Errors with catchTag and catchTags](./content/published/patterns/core/pattern-catchtag.mdx) | 🟡 **Intermediate** | Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery. |
+| [Handle Unexpected Errors by Inspecting the Cause](./content/published/patterns/core/data-cause.mdx) | 🟠 **Advanced** | Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces. |
+
+## Financial
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Work with Arbitrary-Precision Numbers using BigDecimal](./content/published/patterns/core/data-bigdecimal.mdx) | 🟡 **Intermediate** | Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations. |
+
+## Function Calls
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Instrument and Observe Function Calls with Effect.fn](./content/published/patterns/core/observability-effect-fn.mdx) | 🟡 **Intermediate** | Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries. |
+
+## Hashing
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Type Classes for Equality, Ordering, and Hashing with Data.Class](./content/published/patterns/core/data-class.mdx) | 🟡 **Intermediate** | Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions. |
+
+## Instrumentation
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Instrument and Observe Function Calls with Effect.fn](./content/published/patterns/core/observability-effect-fn.mdx) | 🟡 **Intermediate** | Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries. |
+
+## Interop
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Creating from Synchronous and Callback Code](./content/published/patterns/core/constructor-sync-async.mdx) | 🟢 **Beginner** | Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code. |
+| [Converting from Nullable, Option, or Either](./content/published/patterns/core/constructor-from-nullable-option-either.mdx) | 🟢 **Beginner** | Use fromNullable, fromOption, and fromEither to convert nullable values, Option, or Either into Effects or Streams, enabling safe and composable interop. |
+| [Wrapping Synchronous and Asynchronous Computations](./content/published/patterns/core/constructor-try-trypromise.mdx) | 🟢 **Beginner** | Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world. |
+
+## Lifting
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Lifting Values with succeed, some, and right](./content/published/patterns/core/constructor-succeed-some-right.mdx) | 🟢 **Beginner** | Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe. |
+| [Lifting Errors and Absence with fail, none, and left](./content/published/patterns/core/constructor-fail-none-left.mdx) | 🟢 **Beginner** | Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe. |
+
+## Logging
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Leverage Effect's Built-in Structured Logging](./content/published/patterns/core/observability-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions for structured, configurable, and context-aware logging. |
+| [Redact and Handle Sensitive Data](./content/published/patterns/core/data-redacted.mdx) | 🟡 **Intermediate** | Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed. |
+
+## Metrics
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Add Custom Metrics to Your Application](./content/published/patterns/core/observability-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
+
+## Monitoring
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Add Custom Metrics to Your Application](./content/published/patterns/core/observability-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
+
+## Mutable State
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Manage Shared State Safely with Ref](./content/published/patterns/core/data-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
+
+## Numeric Precision
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Work with Arbitrary-Precision Numbers using BigDecimal](./content/published/patterns/core/data-bigdecimal.mdx) | 🟡 **Intermediate** | Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations. |
+
+## Observability
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Instrument and Observe Function Calls with Effect.fn](./content/published/patterns/core/observability-effect-fn.mdx) | 🟡 **Intermediate** | Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries. |
+| [Leverage Effect's Built-in Structured Logging](./content/published/patterns/core/observability-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions for structured, configurable, and context-aware logging. |
+| [Add Custom Metrics to Your Application](./content/published/patterns/core/observability-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
+| [Trace Operations Across Services with Spans](./content/published/patterns/core/observability-tracing-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
+| [Integrate Effect Tracing with OpenTelemetry](./content/published/patterns/core/observability-opentelemetry.mdx) | 🟠 **Advanced** | Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization. |
+
+## OpenTelemetry
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Integrate Effect Tracing with OpenTelemetry](./content/published/patterns/core/observability-opentelemetry.mdx) | 🟠 **Advanced** | Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization. |
+
+## Option
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Checking Option and Either Cases](./content/published/patterns/core/pattern-option-either-checks.mdx) | 🟢 **Beginner** | Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching. |
+
+## Optional Values
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Model Optional Values Safely with Option](./content/published/patterns/core/data-option.mdx) | 🟢 **Beginner** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
+
+## Ordering
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Type Classes for Equality, Ordering, and Hashing with Data.Class](./content/published/patterns/core/data-class.mdx) | 🟡 **Intermediate** | Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions. |
+
+## Pairing
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Combining Values with zip](./content/published/patterns/core/combinator-zip.mdx) | 🟢 **Beginner** | Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either. |
+
+## Parallelism
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Mapping and Chaining over Collections with forEach and all](./content/published/patterns/core/combinator-foreach-all.mdx) | 🟡 **Intermediate** | Use forEach and all to apply effectful functions to collections and combine the results, enabling batch and parallel processing. |
+
+## Parsing
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Validating and Parsing Branded Types](./content/published/patterns/core/brand-validate-parse.mdx) | 🟡 **Intermediate** | Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed. |
+
+## Pattern Matching
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Matching on Success and Failure with match](./content/published/patterns/core/pattern-match.mdx) | 🟢 **Beginner** | Use match to handle both success and failure cases in a single, declarative place for Effect, Option, and Either. |
+| [Checking Option and Either Cases](./content/published/patterns/core/pattern-option-either-checks.mdx) | 🟢 **Beginner** | Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching. |
+| [Matching Tagged Unions with matchTag and matchTags](./content/published/patterns/core/pattern-matchtag.mdx) | 🟡 **Intermediate** | Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching. |
+| [Effectful Pattern Matching with matchEffect](./content/published/patterns/core/pattern-matcheffect.mdx) | 🟡 **Intermediate** | Use matchEffect to perform effectful branching based on success or failure, enabling rich workflows in the Effect world. |
+| [Handling Specific Errors with catchTag and catchTags](./content/published/patterns/core/pattern-catchtag.mdx) | 🟡 **Intermediate** | Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery. |
+
+## Performance
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Use Chunk for High-Performance Collections](./content/published/patterns/core/data-chunk.mdx) | 🟡 **Intermediate** | Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines. |
+| [Add Custom Metrics to Your Application](./content/published/patterns/core/observability-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
+| [Trace Operations Across Services with Spans](./content/published/patterns/core/observability-tracing-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
+
+## Scientific
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Work with Arbitrary-Precision Numbers using BigDecimal](./content/published/patterns/core/data-bigdecimal.mdx) | 🟡 **Intermediate** | Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations. |
+
+## Security
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Redact and Handle Sensitive Data](./content/published/patterns/core/data-redacted.mdx) | 🟡 **Intermediate** | Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed. |
+
+## Sensitive Data
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Redact and Handle Sensitive Data](./content/published/patterns/core/data-redacted.mdx) | 🟡 **Intermediate** | Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed. |
+
+## Sequencing
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Chaining Computations with flatMap](./content/published/patterns/core/combinator-flatmap.mdx) | 🟢 **Beginner** | Use flatMap to chain together computations where each step may itself be effectful, optional, or error-prone. |
+| [Sequencing with andThen, tap, and flatten](./content/published/patterns/core/combinator-sequencing.mdx) | 🟡 **Intermediate** | Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either. |
+
+## Set Operations
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Work with Immutable Sets using HashSet](./content/published/patterns/core/data-hashset.mdx) | 🟡 **Intermediate** | Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations. |
+
+## Side Effects
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Sequencing with andThen, tap, and flatten](./content/published/patterns/core/combinator-sequencing.mdx) | 🟡 **Intermediate** | Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either. |
+
+## State
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Manage Shared State Safely with Ref](./content/published/patterns/core/data-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
+
+## Streams
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Creating from Collections](./content/published/patterns/core/constructor-from-iterable.mdx) | 🟢 **Beginner** | Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations. |
+
+## Structural Equality
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Comparing Data by Value with Data.struct](./content/published/patterns/core/data-struct.mdx) | 🟢 **Beginner** | Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference. |
+| [Working with Tuples using Data.tuple](./content/published/patterns/core/data-tuple.mdx) | 🟢 **Beginner** | Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching. |
+| [Working with Immutable Arrays using Data.array](./content/published/patterns/core/data-array.mdx) | 🟢 **Beginner** | Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations. |
+
+## Tagged Unions
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Matching Tagged Unions with matchTag and matchTags](./content/published/patterns/core/pattern-matchtag.mdx) | 🟡 **Intermediate** | Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching. |
+| [Handling Specific Errors with catchTag and catchTags](./content/published/patterns/core/pattern-catchtag.mdx) | 🟡 **Intermediate** | Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery. |
+| [Modeling Tagged Unions with Data.case](./content/published/patterns/core/data-case.mdx) | 🟡 **Intermediate** | Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching. |
+
+## Time
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Representing Time Spans with Duration](./content/published/patterns/core/data-duration.mdx) | 🟡 **Intermediate** | Use Duration to represent time intervals in a type-safe, human-readable, and composable way. |
+| [Work with Dates and Times using DateTime](./content/published/patterns/core/data-datetime.mdx) | 🟡 **Intermediate** | Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations. |
+
+## Tracing
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Trace Operations Across Services with Spans](./content/published/patterns/core/observability-tracing-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
+| [Integrate Effect Tracing with OpenTelemetry](./content/published/patterns/core/observability-opentelemetry.mdx) | 🟠 **Advanced** | Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization. |
+
+## Tuples
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Working with Tuples using Data.tuple](./content/published/patterns/core/data-tuple.mdx) | 🟢 **Beginner** | Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching. |
+
+## Type Classes
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Type Classes for Equality, Ordering, and Hashing with Data.Class](./content/published/patterns/core/data-class.mdx) | 🟡 **Intermediate** | Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions. |
+
+## Type Safety
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Modeling Validated Domain Types with Brand](./content/published/patterns/core/brand-model-domain-type.mdx) | 🟡 **Intermediate** | Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse. |
+
+## Validation
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Validating and Parsing Branded Types](./content/published/patterns/core/brand-validate-parse.mdx) | 🟡 **Intermediate** | Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed. |
+
+## concurrency-coordination
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Concurrency Pattern 2: Rate Limit Concurrent Access with Semaphore](./content/published/patterns/core/concurrency-pattern-rate-limit-with-semaphore.mdx) | 🟡 **Intermediate** | Use Semaphore to limit the number of concurrent operations, enabling connection pooling, API rate limiting, and controlled resource access without overload. |
+| [Concurrency Pattern 3: Coordinate Multiple Fibers with Latch](./content/published/patterns/core/concurrency-pattern-coordinate-with-latch.mdx) | 🟡 **Intermediate** | Use Latch to synchronize multiple fibers, enabling patterns like coordinating N async tasks, fan-out/fan-in, and barrier synchronization. |
+| [Concurrency Pattern 5: Broadcast Events with PubSub](./content/published/patterns/core/concurrency-pattern-pubsub-event-broadcast.mdx) | 🟡 **Intermediate** | Use PubSub to broadcast events to multiple subscribers, enabling event-driven architectures and fan-out patterns without direct coupling. |
+| [Concurrency Pattern 6: Race and Timeout Competing Effects](./content/published/patterns/core/concurrency-pattern-race-timeout.mdx) | 🟡 **Intermediate** | Use race and timeout to compete multiple effects and enforce deadlines, enabling timeout handling and choosing fastest result. |
+| [Concurrency Pattern 1: Coordinate Async Operations with Deferred](./content/published/patterns/core/concurrency-pattern-coordinate-with-deferred.mdx) | 🟡 **Intermediate** | Use Deferred to coordinate async operations where multiple fibers wait for a single event to complete, enabling producer-consumer patterns and async signaling without polling. |
+| [Concurrency Pattern 4: Distribute Work with Queue](./content/published/patterns/core/concurrency-pattern-queue-work-distribution.mdx) | 🟡 **Intermediate** | Use Queue to decouple producers and consumers, enabling work distribution, pipeline stages, and backpressure handling across concurrent fibers. |
+
+## concurrent-state-management
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [State Management Pattern 1: Synchronized Reference with SynchronizedRef](./content/published/patterns/core/state-management-pattern-synchronized-ref.mdx) | 🟠 **Advanced** | Use SynchronizedRef to safely share mutable state across concurrent fibers, with atomic updates and guaranteed consistency. |
+| [State Management Pattern 2: Observable State with SubscriptionRef](./content/published/patterns/core/state-management-pattern-subscription-ref.mdx) | 🟠 **Advanced** | Build observable state that notifies subscribers on changes, enabling reactive patterns and state-driven architecture. |
+
+## error-handling
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Error Handling Pattern 1: Accumulating Multiple Errors](./content/published/patterns/core/error-handling-pattern-accumulation.mdx) | 🟡 **Intermediate** | Collect multiple errors across operations instead of failing on first error, enabling comprehensive error reporting and validation. |
+| [Error Handling Pattern 2: Error Propagation and Chains](./content/published/patterns/core/error-handling-pattern-propagation.mdx) | 🟠 **Advanced** | Propagate errors through effect chains with context, preserving error information and enabling recovery at appropriate layers. |
+| [Error Handling Pattern 3: Custom Error Strategies](./content/published/patterns/core/error-handling-pattern-custom-strategies.mdx) | 🟠 **Advanced** | Build domain-specific error types and recovery strategies that align with business logic and provide actionable error information. |
+
+## error-handling-resilience
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Scheduling Pattern 2: Implement Exponential Backoff for Retries](./content/published/patterns/core/scheduling-pattern-exponential-backoff.mdx) | 🟡 **Intermediate** | Use exponential backoff with jitter to retry failed operations with increasing delays, preventing resource exhaustion and cascade failures in distributed systems. |
+
+## platform-integration
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Platform Pattern 4: Interactive Terminal I/O](./content/published/patterns/core/platform-terminal-interactive.mdx) | 🟢 **Beginner** | Use Terminal module to read user input and write formatted output, enabling interactive CLI applications with proper buffering and encoding. |
+| [Platform Pattern 2: Filesystem Operations](./content/published/patterns/core/platform-filesystem-operations.mdx) | 🟢 **Beginner** | Use FileSystem module to read, write, list, and manage files with proper resource cleanup and error handling. |
+| [Platform Pattern 3: Persistent Key-Value Storage](./content/published/patterns/core/platform-keyvaluestore-persistence.mdx) | 🟡 **Intermediate** | Use KeyValueStore for simple persistent key-value storage, enabling caching, session management, and lightweight data persistence. |
+| [Platform Pattern 1: Execute Shell Commands](./content/published/patterns/core/platform-pattern-command-execution.mdx) | 🟡 **Intermediate** | Use Command module to execute shell commands, capture output, and handle exit codes, enabling integration with system tools and external programs. |
+
+## platform-specific-operations
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Platform Pattern 5: Cross-Platform Path Manipulation](./content/published/patterns/core/platform-pattern-path-manipulation.mdx) | 🟡 **Intermediate** | Use platform-aware path operations to handle file system paths correctly across Windows, macOS, and Linux with proper resolution and normalization. |
+| [Platform Pattern 6: Advanced FileSystem Operations](./content/published/patterns/core/platform-pattern-advanced-filesystem.mdx) | 🟠 **Advanced** | Handle complex file system scenarios including watching files, recursive operations, atomic writes, and efficient bulk operations. |
+
+## scheduling
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Scheduling Pattern 1: Repeat an Effect on a Fixed Interval](./content/published/patterns/core/scheduling-pattern-repeat-effect-on-fixed-interval.mdx) | 🟡 **Intermediate** | Use Schedule.fixed to repeat an effect at regular intervals, enabling polling, health checks, and periodic background tasks without busy-waiting or manual timing logic. |
+
+## scheduling-periodic-tasks
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Scheduling Pattern 4: Debounce and Throttle Execution](./content/published/patterns/core/scheduling-pattern-debounce-throttle.mdx) | 🟡 **Intermediate** | Use debouncing and throttling to limit how often effects execute, preventing runaway operations and handling rapid event sequences. |
+| [Scheduling Pattern 3: Schedule Tasks with Cron Expressions](./content/published/patterns/core/scheduling-pattern-cron-expressions.mdx) | 🟡 **Intermediate** | Use cron expressions to schedule tasks at specific times and intervals, enabling calendar-based scheduling with timezone support. |
+| [Scheduling Pattern 5: Advanced Retry Chains and Circuit Breakers](./content/published/patterns/core/scheduling-pattern-advanced-retry-chains.mdx) | 🟠 **Advanced** | Build sophisticated retry chains with circuit breakers, fallbacks, and complex failure patterns for production-grade reliability. |
+
+## stream-error-handling
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Sink Pattern 5: Fall Back to Alternative Sink on Failure](./content/published/patterns/core/sink-pattern-fall-back-to-alternative-sink-on-failure.mdx) | 🟡 **Intermediate** | Use Sink to attempt writing to a primary destination, and automatically fall back to an alternative destination if the primary fails, enabling progressive degradation and high availability. |
+| [Sink Pattern 6: Retry Failed Stream Operations](./content/published/patterns/core/sink-pattern-retry-failed-stream-operations.mdx) | 🟡 **Intermediate** | Use Sink with configurable retry policies to automatically retry failed operations with exponential backoff, enabling recovery from transient failures without losing data. |
+
+## stream-persistence
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Sink Pattern 1: Batch Insert Stream Records into Database](./content/published/patterns/core/batch-insert-stream-records-into-database.mdx) | 🟡 **Intermediate** | Use Sink to batch stream records and insert them efficiently into a database in groups, rather than one-by-one, for better performance and resource usage. |
+| [Sink Pattern 2: Write Stream Events to Event Log](./content/published/patterns/core/write-stream-events-to-event-log.mdx) | 🟡 **Intermediate** | Use Sink to append stream events to an event log with metadata and causal ordering, enabling event sourcing and audit trail patterns. |
+| [Sink Pattern 4: Send Stream Records to Message Queue](./content/published/patterns/core/sink-pattern-send-stream-records-to-message-queue.mdx) | 🟡 **Intermediate** | Use Sink to publish stream records to a message queue with partitioning, batching, and acknowledgment handling for distributed systems. |
+| [Sink Pattern 3: Write Stream Lines to File](./content/published/patterns/core/sink-pattern-write-stream-lines-to-file.mdx) | 🟡 **Intermediate** | Use Sink to write stream data as lines to a file with buffering for efficiency, supporting log files and line-oriented formats. |
+
+## stream-processing
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Stream Pattern 1: Transform Streams with Map and Filter](./content/published/patterns/core/stream-pattern-map-filter-transformations.mdx) | 🟢 **Beginner** | Use Stream.map and Stream.filter to transform and select stream elements, enabling data pipelines that reshape and filter data in flight. |
+| [Stream Pattern 2: Merge and Combine Multiple Streams](./content/published/patterns/core/stream-pattern-merge-combine.mdx) | 🟡 **Intermediate** | Use Stream.merge, Stream.concat, and Stream.mergeAll to combine multiple streams into a single stream, enabling multi-source data aggregation. |
+| [Stream Pattern 3: Control Backpressure in Streams](./content/published/patterns/core/stream-pattern-backpressure-control.mdx) | 🟡 **Intermediate** | Use Stream throttling, buffering, and chunk operations to manage backpressure, preventing upstream from overwhelming downstream consumers. |
+| [Stream Pattern 4: Stateful Operations with Scan and Fold](./content/published/patterns/core/stream-pattern-stateful-operations.mdx) | 🟡 **Intermediate** | Use Stream.scan and Stream.fold to maintain state across stream elements, enabling cumulative operations, counters, aggregations, and stateful transformations. |
+
+## value-handling
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Optional Pattern 1: Handling None and Some Values](./content/published/patterns/core/optional-pattern-handling-none-some.mdx) | 🟡 **Intermediate** | Use Effect's Option type to safely handle values that may not exist, avoiding null/undefined bugs and enabling composable error handling. |
+| [Optional Pattern 2: Optional Chaining and Composition](./content/published/patterns/core/optional-pattern-optional-chains.mdx) | 🟠 **Advanced** | Chain optional values across multiple steps with composable operators, enabling elegant data flow through systems with missing values. |
+
+## working-with-streams
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Stream Pattern 5: Grouping and Windowing Streams](./content/published/patterns/core/stream-pattern-grouping-windowing.mdx) | 🟠 **Advanced** | Use grouping and windowing to organize streams by key or time window, enabling batch operations and temporal aggregations. |
+| [Stream Pattern 6: Resource Management in Streams](./content/published/patterns/core/stream-pattern-resource-management.mdx) | 🟠 **Advanced** | Properly manage resources (connections, files, memory) in streams using acquire/release patterns and ensuring cleanup on error or completion. |
+| [Stream Pattern 7: Error Handling in Streams](./content/published/patterns/core/stream-pattern-error-handling.mdx) | 🟠 **Advanced** | Handle errors gracefully in streams with recovery strategies, resuming after failures, and maintaining stream integrity. |
+| [Stream Pattern 8: Advanced Stream Transformations](./content/published/patterns/core/stream-pattern-advanced-transformations.mdx) | 🟠 **Advanced** | Apply complex transformations across streams including custom operators, effect-based transformations, and composition patterns. |
 
 ## Composition
 | Pattern | Skill Level | Summary |
