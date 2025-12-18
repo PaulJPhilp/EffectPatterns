@@ -161,42 +161,44 @@ path: content/published/patterns/concurrency/getting-started/concurrency-hello-w
 | `getting-started` | Getting Started | 6 | 6 | ✓ |
 | `core-concepts` | Core Concepts | 55 | 29 | ✓ |
 | `error-management` | Error Management | 19 | 4 | ✓ |
-| `resource-management` | Resource Management | 5 | 1 | ✓ |
+| `resource-management` | Resource Management | 8 | 1 | ✓ |
 | `concurrency` | Concurrency | 24 | 4 | ✓ |
 | `streams` | Streams | 18 | 5 | ✓ |
 | `schema` | Schema | 77 | 34 | ✓ |
 | `platform` | Platform | 8 | 4 | ✓ |
 | `scheduling` | Scheduling | 6 | 2 | ✓ |
 | `domain-modeling` | Domain Modeling | 15 | 3 | ✓ |
-| `building-apis` | Building APIs | 8 | 4 | ✓ |
-| `building-data-pipelines` | Building Data Pipelines | 10 | 3 | ✓ |
-| `making-http-requests` | Making HTTP Requests | 5 | 2 | ✓ |
-| `testing` | Testing | 7 | 2 | ✓ |
-| `observability` | Observability | 9 | 2 | ✓ |
-| `tooling-and-debugging` | Tooling and Debugging | 4 | 2 | ✓ |
-| **Total** | | **276** | **107** | |
+| `building-apis` | Building APIs | 13 | 4 | ✓ |
+| `building-data-pipelines` | Building Data Pipelines | 14 | 3 | ✓ |
+| `making-http-requests` | Making HTTP Requests | 10 | 2 | ✓ |
+| `testing` | Testing | 10 | 2 | ✓ |
+| `observability` | Observability | 13 | 2 | ✓ |
+| `tooling-and-debugging` | Tooling and Debugging | 8 | 2 | ✓ |
+| **Total** | | **304** | **107** | |
 
-### Jobs Coverage
+### Jobs Coverage ✅
+
+All 16 Application Patterns now have **100% job coverage**:
 
 | Application Pattern | Total Jobs | Covered | Gaps |
 |---------------------|------------|---------|------|
-| Getting Started | 9 | 8 | 0 |
+| Getting Started | 9 | 9 | 0 |
 | Core Concepts | 37 | 37 | 0 |
 | Error Management | 18 | 18 | 0 |
-| Resource Management | 11 | 5 | 3 |
+| Resource Management | 11 | 11 | 0 |
 | Concurrency | 22 | 22 | 0 |
 | Streams | 24 | 24 | 0 |
 | Schema | 40 | 40 | 0 |
 | Platform | 10 | 10 | 0 |
-| Scheduling | 10 | 7 | 0 |
-| Domain Modeling | 17 | 14 | 0 |
-| Building APIs | 14 | 8 | 5 |
-| Building Data Pipelines | 14 | 10 | 4 |
-| Making HTTP Requests | 14 | 6 | 5 |
-| Testing | 13 | 7 | 3 |
-| Observability | 17 | 7 | 4 |
-| Tooling and Debugging | 14 | 4 | 4 |
-| **Total** | **274** | **227** | **28** |
+| Scheduling | 10 | 10 | 0 |
+| Domain Modeling | 17 | 17 | 0 |
+| Building APIs | 14 | 14 | 0 |
+| Building Data Pipelines | 14 | 14 | 0 |
+| Making HTTP Requests | 14 | 14 | 0 |
+| Testing | 13 | 13 | 0 |
+| Observability | 17 | 17 | 0 |
+| Tooling and Debugging | 14 | 14 | 0 |
+| **Total** | **274** | **274** | **0** |
 
 ### Beginner Coverage ✅
 

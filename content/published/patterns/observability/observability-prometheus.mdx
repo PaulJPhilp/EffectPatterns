@@ -1,0 +1,290 @@
+---
+title: Export Metrics to Prometheus
+id: observability-prometheus
+skillLevel: advanced
+applicationPatternId: observability
+summary: >-
+  Expose application metrics in Prometheus format for monitoring and alerting.
+tags:
+  - observability
+  - metrics
+  - prometheus
+  - monitoring
+rule:
+  description: Use Effect metrics and expose a /metrics endpoint for Prometheus scraping.
+author: PaulJPhilp
+related:
+  - observability-custom-metrics
+  - observability-alerting
+---
+
+## Guideline
+
+Create metrics with Effect's Metric API and expose them via an HTTP endpoint in Prometheus text format.
+
+---
+
+## Rationale
+
+Prometheus metrics enable:
+
+1. **Real-time monitoring** - See what's happening now
+2. **Historical analysis** - Track trends over time
+3. **Alerting** - Get notified of issues
+4. **Dashboards** - Visualize system health
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Metric, MetricLabel, Duration } from "effect"
+import { HttpServerResponse } from "@effect/platform"
+
+// ============================================
+// 1. Define application metrics
+// ============================================
+
+// Counter - counts events
+const httpRequestsTotal = Metric.counter("http_requests_total", {
+  description: "Total number of HTTP requests",
+})
+
+// Counter with labels
+const httpRequestsByStatus = Metric.counter("http_requests_by_status", {
+  description: "HTTP requests by status code",
+})
+
+// Gauge - current value
+const activeConnections = Metric.gauge("active_connections", {
+  description: "Number of active connections",
+})
+
+// Histogram - distribution of values
+const requestDuration = Metric.histogram("http_request_duration_seconds", {
+  description: "HTTP request duration in seconds",
+  boundaries: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+})
+
+// Summary - percentiles
+const responseSizeBytes = Metric.summary("http_response_size_bytes", {
+  description: "HTTP response size in bytes",
+  maxAge: Duration.minutes(5),
+  maxSize: 100,
+  quantiles: [0.5, 0.9, 0.99],
+})
+
+// ============================================
+// 2. Instrument code with metrics
+// ============================================
+
+const handleRequest = (path: string, status: number) =>
+  Effect.gen(function* () {
+    const startTime = Date.now()
+
+    // Increment request counter
+    yield* Metric.increment(httpRequestsTotal)
+
+    // Increment with labels
+    yield* Metric.increment(
+      httpRequestsByStatus.pipe(
+        Metric.tagged("status", String(status)),
+        Metric.tagged("path", path)
+      )
+    )
+
+    // Track active connections
+    yield* Metric.increment(activeConnections)
+
+    // Simulate work
+    yield* Effect.sleep("100 millis")
+
+    // Record duration
+    const duration = (Date.now() - startTime) / 1000
+    yield* Metric.update(requestDuration, duration)
+
+    // Record response size
+    yield* Metric.update(responseSizeBytes, 1024)
+
+    // Decrement active connections
+    yield* Metric.decrement(activeConnections)
+  })
+
+// ============================================
+// 3. Prometheus text format exporter
+// ============================================
+
+interface MetricSnapshot {
+  name: string
+  type: "counter" | "gauge" | "histogram" | "summary"
+  help: string
+  values: Array<{
+    labels: Record<string, string>
+    value: number
+  }>
+  // For histograms
+  buckets?: Array<{
+    le: number
+    count: number
+    labels?: Record<string, string>
+  }>
+  sum?: number
+  count?: number
+}
+
+const formatPrometheusMetrics = (metrics: MetricSnapshot[]): string => {
+  const lines: string[] = []
+
+  for (const metric of metrics) {
+    // Help line
+    lines.push(`# HELP ${metric.name} ${metric.help}`)
+    lines.push(`# TYPE ${metric.name} ${metric.type}`)
+
+    // Values
+    for (const { labels, value } of metric.values) {
+      const labelStr = Object.entries(labels)
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(",")
+
+      if (labelStr) {
+        lines.push(`${metric.name}{${labelStr}} ${value}`)
+      } else {
+        lines.push(`${metric.name} ${value}`)
+      }
+    }
+
+    // Histogram buckets
+    if (metric.buckets) {
+      for (const bucket of metric.buckets) {
+        const labelStr = Object.entries(bucket.labels || {})
+          .map(([k, v]) => `${k}="${v}"`)
+          .concat([`le="${bucket.le}"`])
+          .join(",")
+        lines.push(`${metric.name}_bucket{${labelStr}} ${bucket.count}`)
+      }
+      lines.push(`${metric.name}_sum ${metric.sum}`)
+      lines.push(`${metric.name}_count ${metric.count}`)
+    }
+
+    lines.push("")
+  }
+
+  return lines.join("\n")
+}
+
+// ============================================
+// 4. /metrics endpoint handler
+// ============================================
+
+const metricsHandler = Effect.gen(function* () {
+  // In real implementation, read from Effect's MetricRegistry
+  const metrics: MetricSnapshot[] = [
+    {
+      name: "http_requests_total",
+      type: "counter",
+      help: "Total number of HTTP requests",
+      values: [{ labels: {}, value: 1234 }],
+    },
+    {
+      name: "http_requests_by_status",
+      type: "counter",
+      help: "HTTP requests by status code",
+      values: [
+        { labels: { status: "200", path: "/api/users" }, value: 1000 },
+        { labels: { status: "404", path: "/api/users" }, value: 50 },
+        { labels: { status: "500", path: "/api/users" }, value: 10 },
+      ],
+    },
+    {
+      name: "active_connections",
+      type: "gauge",
+      help: "Number of active connections",
+      values: [{ labels: {}, value: 42 }],
+    },
+    {
+      name: "http_request_duration_seconds",
+      type: "histogram",
+      help: "HTTP request duration in seconds",
+      values: [],
+      buckets: [
+        { le: 0.01, count: 100 },
+        { le: 0.05, count: 500 },
+        { le: 0.1, count: 800 },
+        { le: 0.25, count: 950 },
+        { le: 0.5, count: 990 },
+        { le: 1, count: 999 },
+        { le: Infinity, count: 1000 },
+      ],
+      sum: 123.456,
+      count: 1000,
+    },
+  ]
+
+  const body = formatPrometheusMetrics(metrics)
+
+  return HttpServerResponse.text(body, {
+    headers: {
+      "Content-Type": "text/plain; version=0.0.4; charset=utf-8",
+    },
+  })
+})
+
+// ============================================
+// 5. Example output
+// ============================================
+
+/*
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total 1234
+
+# HELP http_requests_by_status HTTP requests by status code
+# TYPE http_requests_by_status counter
+http_requests_by_status{status="200",path="/api/users"} 1000
+http_requests_by_status{status="404",path="/api/users"} 50
+http_requests_by_status{status="500",path="/api/users"} 10
+
+# HELP active_connections Number of active connections
+# TYPE active_connections gauge
+active_connections 42
+
+# HELP http_request_duration_seconds HTTP request duration in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{le="0.01"} 100
+http_request_duration_seconds_bucket{le="0.05"} 500
+http_request_duration_seconds_bucket{le="0.1"} 800
+http_request_duration_seconds_bucket{le="+Inf"} 1000
+http_request_duration_seconds_sum 123.456
+http_request_duration_seconds_count 1000
+*/
+```
+
+## Metric Types
+
+| Type | Use For |
+|------|---------|
+| **Counter** | Events that only increase |
+| **Gauge** | Values that go up and down |
+| **Histogram** | Distribution of values |
+| **Summary** | Percentiles of values |
+
+## Prometheus Config
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'effect-app'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['localhost:3000']
+    metrics_path: '/metrics'
+```
+
+## Best Practices
+
+1. **Name metrics well** - `{namespace}_{subsystem}_{name}_{unit}`
+2. **Use labels sparingly** - High cardinality = problems
+3. **Include help text** - Document what metrics mean
+4. **Choose right type** - Counter vs gauge matters
+5. **Set appropriate buckets** - Match your SLOs
+

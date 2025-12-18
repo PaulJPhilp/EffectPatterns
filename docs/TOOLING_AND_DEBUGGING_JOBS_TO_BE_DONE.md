@@ -52,20 +52,19 @@ This document lists the **jobs** a developer needs to accomplish when setting up
 
 ---
 
-## 5. Advanced Tooling
+## 5. Advanced Tooling ✅
 
 ### Jobs:
-- [ ] Set up CI/CD for Effect projects
-- [ ] Configure ESLint/Biome for Effect
-- [ ] Use Effect DevTools
-- [ ] Profile Effect applications
+- [x] Set up CI/CD for Effect projects
+- [x] Configure ESLint/Biome for Effect
+- [x] Use Effect DevTools
+- [x] Profile Effect applications
 
-### Gap Analysis:
-These patterns would improve developer experience:
-- CI/CD configuration examples
-- Linting rules for Effect best practices
-- DevTools setup and usage
-- Performance profiling
+### Patterns (4):
+- `tooling-ci-cd.mdx` - Set Up CI/CD for Effect Projects
+- `tooling-linting.mdx` - Configure Linting for Effect
+- `tooling-devtools.mdx` - Use Effect DevTools
+- `tooling-profiling.mdx` - Profile Effect Applications
 
 ---
 
@@ -77,10 +76,8 @@ These patterns would improve developer experience:
 | Understanding Errors | 3 | 1 | 0 |
 | Editor Support | 2 | 1 | 0 |
 | AI Assistance | 2 | 1 | 0 |
-| Advanced Tooling | 4 | 0 | 4 |
-| **Total** | **14** | **4** | **4** |
+| Advanced Tooling | 4 | 4 | 0 |
+| **Total** | **14** | **8** | **0** |
 
-### Coverage: 71%
-
-Core tooling is covered. Advanced patterns (CI/CD, linting, DevTools, profiling) could be added.
+### Coverage: 100%
 

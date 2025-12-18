@@ -58,20 +58,19 @@ This document lists the **jobs** a developer needs to accomplish when building d
 
 ---
 
-## 5. Advanced Pipeline Patterns
+## 5. Advanced Pipeline Patterns ✅
 
 ### Jobs:
-- [ ] Implement backpressure
-- [ ] Fan out to multiple consumers
-- [ ] Merge multiple streams
-- [ ] Implement dead letter queues
+- [x] Implement backpressure
+- [x] Fan out to multiple consumers
+- [x] Merge multiple streams
+- [x] Implement dead letter queues
 
-### Gap Analysis:
-These advanced patterns would be useful:
-- Backpressure and flow control
-- Fan-out/fan-in patterns
-- Stream merging and zipping
-- Error routing to dead letter queues
+### Patterns (4):
+- `pipeline-backpressure.mdx` - Implement Backpressure in Pipelines
+- `pipeline-fan-out.mdx` - Fan Out to Multiple Consumers
+- `pipeline-merge.mdx` - Merge Multiple Streams
+- `pipeline-dead-letter-queue.mdx` - Implement Dead Letter Queues
 
 ---
 
@@ -83,10 +82,8 @@ These advanced patterns would be useful:
 | Processing Data | 3 | 3 | 0 |
 | Running Pipelines | 2 | 2 | 0 |
 | Resilience | 2 | 2 | 0 |
-| Advanced Pipeline Patterns | 4 | 0 | 4 |
-| **Total** | **14** | **10** | **4** |
+| Advanced Pipeline Patterns | 4 | 4 | 0 |
+| **Total** | **14** | **14** | **0** |
 
-### Coverage: 71%
-
-Core pipeline patterns are well covered. Advanced patterns (backpressure, fan-out, merging) could be added.
+### Coverage: 100%
 

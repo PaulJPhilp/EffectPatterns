@@ -1,0 +1,236 @@
+---
+title: Add Timeouts to HTTP Requests
+id: http-timeouts
+skillLevel: intermediate
+applicationPatternId: making-http-requests
+summary: >-
+  Set timeouts on HTTP requests to prevent hanging operations.
+tags:
+  - http
+  - timeouts
+  - resilience
+rule:
+  description: Always set timeouts on HTTP requests to ensure your application doesn't hang.
+author: PaulJPhilp
+related:
+  - http-hello-world
+  - http-retries
+---
+
+## Guideline
+
+Use Effect's timeout functions to set limits on HTTP request duration, with appropriate fallback handling.
+
+---
+
+## Rationale
+
+HTTP requests can hang indefinitely:
+
+1. **Server issues** - Unresponsive servers
+2. **Network problems** - Packets lost
+3. **Slow responses** - Large payloads
+4. **Resource leaks** - Connections never closed
+
+Timeouts prevent these from blocking your application.
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Duration, Data } from "effect"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+
+// ============================================
+// 1. Basic request timeout
+// ============================================
+
+const fetchWithTimeout = (url: string, timeout: Duration.DurationInput) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    return yield* client.get(url).pipe(
+      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.timeout(timeout)
+    )
+    // Returns Option<A> - None if timed out
+  })
+
+// ============================================
+// 2. Timeout with custom error
+// ============================================
+
+class RequestTimeoutError extends Data.TaggedError("RequestTimeoutError")<{
+  readonly url: string
+  readonly timeout: Duration.Duration
+}> {}
+
+const fetchWithTimeoutError = (url: string, timeout: Duration.DurationInput) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    return yield* client.get(url).pipe(
+      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.timeoutFail({
+        duration: timeout,
+        onTimeout: () => new RequestTimeoutError({
+          url,
+          timeout: Duration.decode(timeout),
+        }),
+      })
+    )
+  })
+
+// ============================================
+// 3. Different timeouts for different phases
+// ============================================
+
+const fetchWithPhasedTimeouts = (url: string) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    // Connection timeout (initial)
+    const response = yield* client.get(url).pipe(
+      Effect.timeout("5 seconds"),
+      Effect.flatten,
+      Effect.mapError(() => new Error("Connection timeout"))
+    )
+
+    // Read timeout (body)
+    const body = yield* HttpClientResponse.text(response).pipe(
+      Effect.timeout("30 seconds"),
+      Effect.flatten,
+      Effect.mapError(() => new Error("Read timeout"))
+    )
+
+    return body
+  })
+
+// ============================================
+// 4. Timeout with fallback
+// ============================================
+
+interface ApiResponse {
+  data: unknown
+  cached: boolean
+}
+
+const fetchWithFallback = (url: string): Effect.Effect<ApiResponse> =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    return yield* client.get(url).pipe(
+      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.map((data) => ({ data, cached: false })),
+      Effect.timeout("5 seconds"),
+      Effect.flatMap((result) =>
+        result._tag === "Some"
+          ? Effect.succeed(result.value)
+          : Effect.succeed({ data: null, cached: true })  // Fallback
+      )
+    )
+  })
+
+// ============================================
+// 5. Timeout with interrupt
+// ============================================
+
+const fetchWithInterrupt = (url: string) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    return yield* client.get(url).pipe(
+      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.interruptible,
+      Effect.timeout("10 seconds")
+    )
+    // Fiber is interrupted if timeout, freeing resources
+  })
+
+// ============================================
+// 6. Configurable timeout wrapper
+// ============================================
+
+interface TimeoutConfig {
+  readonly connect: Duration.DurationInput
+  readonly read: Duration.DurationInput
+  readonly total: Duration.DurationInput
+}
+
+const defaultTimeouts: TimeoutConfig = {
+  connect: "5 seconds",
+  read: "30 seconds",
+  total: "60 seconds",
+}
+
+const createHttpClient = (config: TimeoutConfig = defaultTimeouts) =>
+  Effect.gen(function* () {
+    const baseClient = yield* HttpClient.HttpClient
+
+    return {
+      get: (url: string) =>
+        baseClient.get(url).pipe(
+          Effect.timeout(config.connect),
+          Effect.flatten,
+          Effect.flatMap((r) =>
+            HttpClientResponse.json(r).pipe(
+              Effect.timeout(config.read),
+              Effect.flatten
+            )
+          ),
+          Effect.timeout(config.total),
+          Effect.flatten
+        ),
+    }
+  })
+
+// ============================================
+// 7. Usage
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("Fetching with timeout...")
+
+  const result = yield* fetchWithTimeoutError(
+    "https://api.example.com/slow",
+    "5 seconds"
+  ).pipe(
+    Effect.catchTag("RequestTimeoutError", (error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`Request to ${error.url} timed out`)
+        return { error: "timeout" }
+      })
+    )
+  )
+
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`)
+})
+```
+
+## Timeout Types
+
+| Timeout | What It Limits |
+|---------|----------------|
+| **Connect** | Time to establish connection |
+| **Read** | Time to read response body |
+| **Total** | Entire request duration |
+| **Idle** | Time between data packets |
+
+## Timeout Functions
+
+| Function | Behavior |
+|----------|----------|
+| `Effect.timeout` | Returns Option |
+| `Effect.timeoutFail` | Fails with custom error |
+| `Effect.timeoutTo` | Returns fallback value |
+| `Effect.disconnect` | Interrupt and return |
+
+## Best Practices
+
+1. **Always set timeouts** - Never wait forever
+2. **Use appropriate values** - Too short = false failures
+3. **Layer timeouts** - Connect, read, total
+4. **Handle gracefully** - Fallbacks or clear errors
+5. **Log timeouts** - Track slow endpoints
+

@@ -1,0 +1,224 @@
+---
+title: Fan Out to Multiple Consumers
+id: pipeline-fan-out
+skillLevel: advanced
+applicationPatternId: building-data-pipelines
+summary: >-
+  Distribute stream data to multiple parallel consumers for processing.
+tags:
+  - data-pipelines
+  - fan-out
+  - broadcast
+  - parallel
+rule:
+  description: Use broadcast or partition to send stream data to multiple consumers.
+author: PaulJPhilp
+related:
+  - pipeline-merge
+  - process-concurrently
+---
+
+## Guideline
+
+Use `Stream.broadcast` to send every item to all consumers, or partition streams to distribute items based on criteria.
+
+---
+
+## Rationale
+
+Fan-out enables parallel processing:
+
+1. **Throughput** - Multiple consumers process faster
+2. **Specialization** - Different consumers handle different data
+3. **Redundancy** - Multiple copies for reliability
+4. **Decoupling** - Consumers evolve independently
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Stream, Queue, Fiber, Chunk } from "effect"
+
+// ============================================
+// 1. Broadcast to all consumers
+// ============================================
+
+const broadcastExample = Effect.scoped(
+  Effect.gen(function* () {
+    const source = Stream.fromIterable([1, 2, 3, 4, 5])
+
+    // Broadcast to 3 consumers - each gets all items
+    const [stream1, stream2, stream3] = yield* Stream.broadcast(source, 3)
+
+    // Consumer 1: Log items
+    const consumer1 = stream1.pipe(
+      Stream.tap((n) => Effect.log(`Consumer 1: ${n}`)),
+      Stream.runDrain
+    )
+
+    // Consumer 2: Sum items
+    const consumer2 = stream2.pipe(
+      Stream.runFold(0, (acc, n) => acc + n),
+      Effect.tap((sum) => Effect.log(`Consumer 2 sum: ${sum}`))
+    )
+
+    // Consumer 3: Collect to array
+    const consumer3 = stream3.pipe(
+      Stream.runCollect,
+      Effect.tap((items) => Effect.log(`Consumer 3 collected: ${Chunk.toReadonlyArray(items)}`))
+    )
+
+    // Run all consumers in parallel
+    yield* Effect.all([consumer1, consumer2, consumer3], { concurrency: 3 })
+  })
+)
+
+// ============================================
+// 2. Partition by predicate
+// ============================================
+
+const partitionExample = Effect.gen(function* () {
+  const numbers = Stream.fromIterable([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+  // Partition into even and odd
+  const [evens, odds] = yield* Stream.partition(
+    numbers,
+    (n) => n % 2 === 0
+  )
+
+  const processEvens = evens.pipe(
+    Stream.tap((n) => Effect.log(`Even: ${n}`)),
+    Stream.runDrain
+  )
+
+  const processOdds = odds.pipe(
+    Stream.tap((n) => Effect.log(`Odd: ${n}`)),
+    Stream.runDrain
+  )
+
+  yield* Effect.all([processEvens, processOdds], { concurrency: 2 })
+})
+
+// ============================================
+// 3. Partition into multiple buckets
+// ============================================
+
+interface Event {
+  type: "click" | "scroll" | "submit"
+  data: unknown
+}
+
+const multiPartitionExample = Effect.gen(function* () {
+  const events: Event[] = [
+    { type: "click", data: { x: 100 } },
+    { type: "scroll", data: { y: 200 } },
+    { type: "submit", data: { form: "login" } },
+    { type: "click", data: { x: 150 } },
+    { type: "scroll", data: { y: 300 } },
+  ]
+
+  const source = Stream.fromIterable(events)
+
+  // Group by type using groupByKey
+  const grouped = source.pipe(
+    Stream.groupByKey((event) => event.type, {
+      bufferSize: 16,
+    })
+  )
+
+  // Process each group
+  yield* grouped.pipe(
+    Stream.flatMap(([key, stream]) =>
+      stream.pipe(
+        Stream.tap((event) => Effect.log(`[${key}] Processing: ${JSON.stringify(event.data)}`)),
+        Stream.runDrain,
+        Stream.fromEffect
+      )
+    ),
+    Stream.runDrain
+  )
+})
+
+// ============================================
+// 4. Fan-out with queues (manual control)
+// ============================================
+
+const queueFanOut = Effect.gen(function* () {
+  const source = Stream.fromIterable([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+  // Create queues for each consumer
+  const queue1 = yield* Queue.unbounded<number>()
+  const queue2 = yield* Queue.unbounded<number>()
+  const queue3 = yield* Queue.unbounded<number>()
+
+  // Distribute items round-robin
+  const distributor = source.pipe(
+    Stream.zipWithIndex,
+    Stream.tap(([item, index]) => {
+      const queue = index % 3 === 0 ? queue1 : index % 3 === 1 ? queue2 : queue3
+      return Queue.offer(queue, item)
+    }),
+    Stream.runDrain,
+    Effect.tap(() => Effect.all([
+      Queue.shutdown(queue1),
+      Queue.shutdown(queue2),
+      Queue.shutdown(queue3),
+    ]))
+  )
+
+  // Consumers
+  const makeConsumer = (name: string, queue: Queue.Queue<number>) =>
+    Stream.fromQueue(queue).pipe(
+      Stream.tap((n) => Effect.log(`${name}: ${n}`)),
+      Stream.runDrain
+    )
+
+  yield* Effect.all([
+    distributor,
+    makeConsumer("Worker 1", queue1),
+    makeConsumer("Worker 2", queue2),
+    makeConsumer("Worker 3", queue3),
+  ], { concurrency: 4 })
+})
+
+// ============================================
+// 5. Run examples
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Broadcast Example ===")
+  yield* broadcastExample
+
+  yield* Effect.log("\n=== Partition Example ===")
+  yield* partitionExample
+})
+
+Effect.runPromise(program)
+```
+
+## Fan-Out Patterns
+
+| Pattern | Use Case |
+|---------|----------|
+| **Broadcast** | Every consumer needs all data |
+| **Partition** | Route by predicate |
+| **GroupBy** | Route by key |
+| **Round-robin** | Load balancing |
+
+## Key Functions
+
+| Function | Purpose |
+|----------|---------|
+| `Stream.broadcast` | Clone stream to N consumers |
+| `Stream.partition` | Split by predicate |
+| `Stream.groupByKey` | Group by key function |
+| `Stream.distributedWith` | Custom distribution |
+
+## Best Practices
+
+1. **Bound queues** - Prevent memory issues
+2. **Handle slow consumers** - Don't block fast ones
+3. **Monitor lag** - Track consumer progress
+4. **Graceful shutdown** - Complete in-flight items
+
