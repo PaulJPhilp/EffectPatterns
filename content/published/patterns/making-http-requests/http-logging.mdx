@@ -1,0 +1,302 @@
+---
+title: Log HTTP Requests and Responses
+id: http-logging
+skillLevel: intermediate
+applicationPatternId: making-http-requests
+summary: >-
+  Add request/response logging for debugging and observability.
+tags:
+  - http
+  - logging
+  - debugging
+  - observability
+rule:
+  description: Use Effect's logging to trace HTTP requests for debugging and monitoring.
+author: PaulJPhilp
+related:
+  - http-hello-world
+  - observability-hello-world
+---
+
+## Guideline
+
+Wrap HTTP clients with logging middleware to capture request details, response info, and timing for debugging and observability.
+
+---
+
+## Rationale
+
+HTTP logging helps with:
+
+1. **Debugging** - See what's being sent/received
+2. **Performance** - Track slow requests
+3. **Auditing** - Record API usage
+4. **Troubleshooting** - Diagnose production issues
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Duration } from "effect"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+
+// ============================================
+// 1. Simple request/response logging
+// ============================================
+
+const withLogging = <A, E>(
+  request: Effect.Effect<A, E, HttpClient.HttpClient>
+): Effect.Effect<A, E, HttpClient.HttpClient> =>
+  Effect.gen(function* () {
+    const startTime = Date.now()
+    yield* Effect.log("→ HTTP Request starting...")
+
+    const result = yield* request
+
+    const duration = Date.now() - startTime
+    yield* Effect.log(`← HTTP Response received (${duration}ms)`)
+
+    return result
+  })
+
+// ============================================
+// 2. Detailed request logging
+// ============================================
+
+interface RequestLog {
+  method: string
+  url: string
+  headers: Record<string, string>
+  body?: unknown
+}
+
+interface ResponseLog {
+  status: number
+  headers: Record<string, string>
+  duration: number
+  size?: number
+}
+
+const makeLoggingClient = Effect.gen(function* () {
+  const baseClient = yield* HttpClient.HttpClient
+
+  const logRequest = (method: string, url: string, headers: Record<string, string>) =>
+    Effect.log("HTTP Request").pipe(
+      Effect.annotateLogs({
+        method,
+        url,
+        headers: JSON.stringify(headers),
+      })
+    )
+
+  const logResponse = (status: number, duration: number, headers: Record<string, string>) =>
+    Effect.log("HTTP Response").pipe(
+      Effect.annotateLogs({
+        status: String(status),
+        duration: `${duration}ms`,
+        headers: JSON.stringify(headers),
+      })
+    )
+
+  return {
+    get: <T>(url: string, options?: { headers?: Record<string, string> }) =>
+      Effect.gen(function* () {
+        const headers = options?.headers ?? {}
+        yield* logRequest("GET", url, headers)
+        const startTime = Date.now()
+
+        const response = yield* baseClient.get(url)
+
+        yield* logResponse(
+          response.status,
+          Date.now() - startTime,
+          response.headers
+        )
+
+        return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+      }),
+
+    post: <T>(url: string, body: unknown, options?: { headers?: Record<string, string> }) =>
+      Effect.gen(function* () {
+        const headers = options?.headers ?? {}
+        yield* logRequest("POST", url, headers).pipe(
+          Effect.annotateLogs("body", JSON.stringify(body).slice(0, 200))
+        )
+        const startTime = Date.now()
+
+        const request = yield* HttpClientRequest.post(url).pipe(
+          HttpClientRequest.jsonBody(body)
+        )
+        const response = yield* baseClient.execute(request)
+
+        yield* logResponse(
+          response.status,
+          Date.now() - startTime,
+          response.headers
+        )
+
+        return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+      }),
+  }
+})
+
+// ============================================
+// 3. Log with span for timing
+// ============================================
+
+const fetchWithSpan = (url: string) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    return yield* client.get(url).pipe(
+      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.withLogSpan(`HTTP GET ${url}`)
+    )
+  })
+
+// ============================================
+// 4. Conditional logging (debug mode)
+// ============================================
+
+const makeConditionalLoggingClient = (debug: boolean) =>
+  Effect.gen(function* () {
+    const baseClient = yield* HttpClient.HttpClient
+
+    const maybeLog = (message: string, data?: Record<string, unknown>) =>
+      debug
+        ? Effect.log(message).pipe(
+            data ? Effect.annotateLogs(data) : (e) => e
+          )
+        : Effect.void
+
+    return {
+      get: <T>(url: string) =>
+        Effect.gen(function* () {
+          yield* maybeLog("HTTP Request", { method: "GET", url })
+          const startTime = Date.now()
+
+          const response = yield* baseClient.get(url)
+
+          yield* maybeLog("HTTP Response", {
+            status: String(response.status),
+            duration: `${Date.now() - startTime}ms`,
+          })
+
+          return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+        }),
+    }
+  })
+
+// ============================================
+// 5. Request ID tracking
+// ============================================
+
+const makeTrackedClient = Effect.gen(function* () {
+  const baseClient = yield* HttpClient.HttpClient
+
+  return {
+    get: <T>(url: string) =>
+      Effect.gen(function* () {
+        const requestId = crypto.randomUUID().slice(0, 8)
+
+        yield* Effect.log("HTTP Request").pipe(
+          Effect.annotateLogs({
+            requestId,
+            method: "GET",
+            url,
+          })
+        )
+
+        const startTime = Date.now()
+        const response = yield* baseClient.get(url)
+
+        yield* Effect.log("HTTP Response").pipe(
+          Effect.annotateLogs({
+            requestId,
+            status: String(response.status),
+            duration: `${Date.now() - startTime}ms`,
+          })
+        )
+
+        return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+      })
+  }
+})
+
+// ============================================
+// 6. Error logging
+// ============================================
+
+const fetchWithErrorLogging = (url: string) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    return yield* client.get(url).pipe(
+      Effect.flatMap((response) => {
+        if (response.status >= 400) {
+          return Effect.gen(function* () {
+            yield* Effect.logError("HTTP Error").pipe(
+              Effect.annotateLogs({
+                url,
+                status: String(response.status),
+              })
+            )
+            return yield* Effect.fail(new Error(`HTTP ${response.status}`))
+          })
+        }
+        return Effect.succeed(response)
+      }),
+      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.tapError((error) =>
+        Effect.logError("Request failed").pipe(
+          Effect.annotateLogs({
+            url,
+            error: String(error),
+          })
+        )
+      )
+    )
+  })
+
+// ============================================
+// 7. Usage
+// ============================================
+
+const program = Effect.gen(function* () {
+  const client = yield* makeLoggingClient
+
+  yield* Effect.log("Starting HTTP operations...")
+
+  const data = yield* client.get("https://api.example.com/users")
+
+  yield* Effect.log("Operations complete")
+})
+```
+
+## Log Levels
+
+| Level | Use For |
+|-------|---------|
+| Debug | Full request/response bodies |
+| Info | Request method, URL, status |
+| Warning | Slow requests, retries |
+| Error | Failed requests, 5xx responses |
+
+## What to Log
+
+| Request | Response |
+|---------|----------|
+| Method, URL | Status code |
+| Headers (sanitized) | Headers |
+| Body (truncated) | Duration |
+| Timestamp | Size |
+
+## Best Practices
+
+1. **Redact sensitive data** - Don't log auth tokens, passwords
+2. **Truncate bodies** - Limit logged size
+3. **Use structured logs** - JSON for parsing
+4. **Include request IDs** - Correlate logs
+5. **Log errors separately** - Different levels
+

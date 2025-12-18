@@ -451,10 +451,14 @@ Process and transform data at scale
 | [Turn a Paginated API into a Single Stream](./content/published/patterns/building-data-pipelines/stream-from-paginated-api.mdx) | 🟡 **Intermediate** | Convert a paginated API into a continuous, easy-to-use stream, abstracting away the complexity of fetching page by page. |
 | [Process Items Concurrently](./content/published/patterns/building-data-pipelines/stream-process-concurrently.mdx) | 🟡 **Intermediate** | Perform an asynchronous action for each item in a stream with controlled parallelism to dramatically improve performance. |
 | [Process Items in Batches](./content/published/patterns/building-data-pipelines/stream-process-in-batches.mdx) | 🟡 **Intermediate** | Group items into chunks for efficient bulk operations, like database inserts or batch API calls. |
+| [Merge Multiple Streams](./content/published/patterns/building-data-pipelines/pipeline-merge.mdx) | 🟡 **Intermediate** | Combine data from multiple streams into a single unified stream. |
 | [Process collections of data asynchronously](./content/published/patterns/building-data-pipelines/process-a-collection-of-data-asynchronously.mdx) | 🟡 **Intermediate** | Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream. |
 | [Process a Large File with Constant Memory](./content/published/patterns/building-data-pipelines/stream-from-file.mdx) | 🟡 **Intermediate** | Create a data pipeline from a file on disk, processing it line-by-line without loading the entire file into memory. |
 | [Automatically Retry Failed Operations](./content/published/patterns/building-data-pipelines/stream-retry-on-failure.mdx) | 🟡 **Intermediate** | Build a self-healing pipeline that can automatically retry failed processing steps using a configurable backoff strategy. |
+| [Fan Out to Multiple Consumers](./content/published/patterns/building-data-pipelines/pipeline-fan-out.mdx) | 🟠 **Advanced** | Distribute stream data to multiple parallel consumers for processing. |
 | [Manage Resources Safely in a Pipeline](./content/published/patterns/building-data-pipelines/stream-manage-resources.mdx) | 🟠 **Advanced** | Ensure resources like file handles or connections are safely acquired at the start of a pipeline and always released at the end, even on failure. |
+| [Implement Backpressure in Pipelines](./content/published/patterns/building-data-pipelines/pipeline-backpressure.mdx) | 🟠 **Advanced** | Control data flow rates to prevent overwhelming slow consumers. |
+| [Implement Dead Letter Queues](./content/published/patterns/building-data-pipelines/pipeline-dead-letter-queue.mdx) | 🟠 **Advanced** | Route failed items to a separate queue for later analysis and reprocessing. |
 
 ## Making HTTP Requests
 HTTP client patterns with Effect
@@ -463,8 +467,13 @@ HTTP client patterns with Effect
 | :--- | :--- | :--- |
 | [Parse JSON Responses Safely](./content/published/patterns/making-http-requests/http-json-responses.mdx) | 🟢 **Beginner** | Use Effect Schema to validate and parse HTTP JSON responses with type safety. |
 | [Your First HTTP Request](./content/published/patterns/making-http-requests/http-hello-world.mdx) | 🟢 **Beginner** | Learn how to make HTTP requests using Effect's HttpClient with proper error handling. |
+| [Retry HTTP Requests with Backoff](./content/published/patterns/making-http-requests/http-retries.mdx) | 🟡 **Intermediate** | Implement robust retry logic for HTTP requests with exponential backoff. |
+| [Log HTTP Requests and Responses](./content/published/patterns/making-http-requests/http-logging.mdx) | 🟡 **Intermediate** | Add request/response logging for debugging and observability. |
+| [Cache HTTP Responses](./content/published/patterns/making-http-requests/http-caching.mdx) | 🟡 **Intermediate** | Implement response caching to reduce API calls and improve performance. |
+| [Add Timeouts to HTTP Requests](./content/published/patterns/making-http-requests/http-timeouts.mdx) | 🟡 **Intermediate** | Set timeouts on HTTP requests to prevent hanging operations. |
 | [Model Dependencies as Services](./content/published/patterns/making-http-requests/model-dependencies-as-services.mdx) | 🟡 **Intermediate** | Abstract external dependencies and capabilities into swappable, testable services using Effect's dependency injection system. |
 | [Create a Testable HTTP Client Service](./content/published/patterns/making-http-requests/create-a-testable-http-client-service.mdx) | 🟡 **Intermediate** | Define an HttpClient service with separate 'Live' and 'Test' layers to enable robust, testable interactions with external APIs. |
+| [Handle Rate Limiting Responses](./content/published/patterns/making-http-requests/http-rate-limit-handling.mdx) | 🟡 **Intermediate** | Gracefully handle 429 responses and respect API rate limits. |
 | [Build a Basic HTTP Server](./content/published/patterns/making-http-requests/build-a-basic-http-server.mdx) | 🟠 **Advanced** | Combine Layer, Runtime, and Effect to create a simple, robust HTTP server using Node.js's built-in http module. |
 
 ## Testing
@@ -479,6 +488,9 @@ Test Effect applications
 | [Use the Auto-Generated .Default Layer in Tests](./content/published/patterns/testing/use-default-layer-for-tests.mdx) | 🟡 **Intermediate** | When testing, always use the MyService.Default layer that is automatically generated by the Effect.Service class for dependency injection. |
 | [Mocking Dependencies in Tests](./content/published/patterns/testing/mocking-dependencies-in-tests.mdx) | 🟡 **Intermediate** | Use a test-specific Layer to provide mock implementations of services your code depends on, enabling isolated and deterministic unit tests. |
 | [Organize Layers into Composable Modules](./content/published/patterns/testing/organize-layers-into-composable-modules.mdx) | 🟠 **Advanced** | Structure a large application by grouping related services into 'module' layers, which are then composed together with a shared base layer. |
+| [Test Streaming Effects](./content/published/patterns/testing/testing-streams.mdx) | 🟠 **Advanced** | Write tests for Stream operations, transformations, and error handling. |
+| [Test Concurrent Code](./content/published/patterns/testing/testing-concurrent-code.mdx) | 🟠 **Advanced** | Test race conditions, parallelism, and concurrent behavior in Effect programs. |
+| [Property-Based Testing with Effect](./content/published/patterns/testing/testing-property-based.mdx) | 🟠 **Advanced** | Use fast-check with Effect for property-based testing of pure functions and effects. |
 
 ## Observability
 Logging, tracing, and metrics
@@ -493,6 +505,10 @@ Logging, tracing, and metrics
 | [Add Custom Metrics to Your Application](./content/published/patterns/observability/observability-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
 | [Trace Operations Across Services with Spans](./content/published/patterns/observability/observability-tracing-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
 | [Trace Operations Across Services with Spans](./content/published/patterns/observability/trace-operations-with-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
+| [Create Observability Dashboards](./content/published/patterns/observability/observability-dashboards.mdx) | 🟠 **Advanced** | Design effective dashboards to visualize your Effect application metrics. |
+| [Set Up Alerting](./content/published/patterns/observability/observability-alerting.mdx) | 🟠 **Advanced** | Configure alerts to notify you when your Effect application has problems. |
+| [Export Metrics to Prometheus](./content/published/patterns/observability/observability-prometheus.mdx) | 🟠 **Advanced** | Expose application metrics in Prometheus format for monitoring and alerting. |
+| [Implement Distributed Tracing](./content/published/patterns/observability/observability-distributed-tracing.mdx) | 🟠 **Advanced** | Set up end-to-end distributed tracing across services with trace context propagation. |
 | [Integrate Effect Tracing with OpenTelemetry](./content/published/patterns/observability/observability-opentelemetry.mdx) | 🟠 **Advanced** | Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization. |
 
 ## Tooling and Debugging
@@ -503,5 +519,9 @@ Debug and profile Effect applications
 | [Read Effect Type Errors](./content/published/patterns/tooling-and-debugging/tooling-type-errors.mdx) | 🟢 **Beginner** | Learn how to read and understand Effect's TypeScript error messages. |
 | [Set Up Your Effect Development Environment](./content/published/patterns/tooling-and-debugging/tooling-hello-world.mdx) | 🟢 **Beginner** | Configure your editor and tools for the best Effect development experience. |
 | [Supercharge Your Editor with the Effect LSP](./content/published/patterns/tooling-and-debugging/supercharge-your-editor-with-the-effect-lsp.mdx) | 🟡 **Intermediate** | Install the Effect Language Server (LSP) extension for your editor to get rich, inline type information and enhanced error checking for your Effect code. |
+| [Use Effect DevTools](./content/published/patterns/tooling-and-debugging/tooling-devtools.mdx) | 🟡 **Intermediate** | Debug Effect applications with specialized developer tools. |
+| [Configure Linting for Effect](./content/published/patterns/tooling-and-debugging/tooling-linting.mdx) | 🟡 **Intermediate** | Set up Biome or ESLint with Effect-specific rules for code quality. |
+| [Set Up CI/CD for Effect Projects](./content/published/patterns/tooling-and-debugging/tooling-ci-cd.mdx) | 🟡 **Intermediate** | Configure GitHub Actions to build, test, and deploy Effect applications. |
+| [Profile Effect Applications](./content/published/patterns/tooling-and-debugging/tooling-profiling.mdx) | 🟠 **Advanced** | Measure and optimize performance of Effect applications. |
 | [Teach your AI Agents Effect with the MCP Server](./content/published/patterns/tooling-and-debugging/teach-your-ai-agents-effect-with-the-mcp-server.mdx) | 🟠 **Advanced** | Use the Effect MCP server to provide live, contextual information about your application's structure directly to AI coding agents. |
 

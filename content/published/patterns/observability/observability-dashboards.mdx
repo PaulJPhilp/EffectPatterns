@@ -1,0 +1,229 @@
+---
+title: Create Observability Dashboards
+id: observability-dashboards
+skillLevel: advanced
+applicationPatternId: observability
+summary: >-
+  Design effective dashboards to visualize your Effect application metrics.
+tags:
+  - observability
+  - dashboards
+  - grafana
+  - visualization
+rule:
+  description: Create focused dashboards that answer specific questions about system health.
+author: PaulJPhilp
+related:
+  - observability-prometheus
+  - observability-alerting
+---
+
+## Guideline
+
+Design dashboards that answer specific questions about system health, performance, and user experience.
+
+---
+
+## Rationale
+
+Good dashboards provide:
+
+1. **Quick health check** - See problems at a glance
+2. **Trend analysis** - Spot gradual degradation
+3. **Debugging aid** - Correlate metrics during incidents
+4. **Capacity planning** - Forecast resource needs
+
+---
+
+## Dashboard Patterns
+
+### 1. Service Overview Dashboard
+
+```typescript
+import { Effect, Metric } from "effect"
+
+// ============================================
+// Key metrics for overview dashboard
+// ============================================
+
+// RED metrics (Rate, Errors, Duration)
+const requestRate = Metric.counter("http_requests_total")
+const errorRate = Metric.counter("http_errors_total")
+const requestDuration = Metric.histogram("http_request_duration_seconds", {
+  boundaries: [0.01, 0.05, 0.1, 0.5, 1, 5],
+})
+
+// USE metrics (Utilization, Saturation, Errors)
+const cpuUtilization = Metric.gauge("cpu_utilization_percent")
+const memoryUsage = Metric.gauge("memory_usage_bytes")
+const connectionPoolSize = Metric.gauge("connection_pool_active")
+
+// Business metrics
+const ordersProcessed = Metric.counter("orders_processed_total")
+const revenueTotal = Metric.counter("revenue_dollars_total")
+```
+
+### 2. Grafana Dashboard JSON
+
+```json
+{
+  "title": "Effect Application Overview",
+  "panels": [
+    {
+      "title": "Request Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[5m])",
+          "legendFormat": "{{method}} {{path}}"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 6 }
+    },
+    {
+      "title": "Error Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(http_errors_total[5m]) / rate(http_requests_total[5m]) * 100",
+          "legendFormat": "Error %"
+        }
+      ],
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 6 }
+    },
+    {
+      "title": "P99 Latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P99"
+        }
+      ],
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 6 }
+    },
+    {
+      "title": "Active Connections",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "active_connections",
+          "legendFormat": "Connections"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 6, "w": 6, "h": 4 }
+    }
+  ]
+}
+```
+
+### 3. SLO Dashboard
+
+```typescript
+// ============================================
+// SLO-focused metrics
+// ============================================
+
+// Availability: % of successful requests
+const availabilitySLO = `
+  sum(rate(http_requests_total{status!~"5.."}[5m]))
+  /
+  sum(rate(http_requests_total[5m]))
+  * 100
+`
+
+// Latency: % of requests under threshold
+const latencySLO = `
+  sum(rate(http_request_duration_seconds_bucket{le="0.5"}[5m]))
+  /
+  sum(rate(http_request_duration_seconds_count[5m]))
+  * 100
+`
+
+// Error budget remaining
+const errorBudget = `
+  1 - (
+    (1 - (sum(rate(http_requests_total{status!~"5.."}[30d])) / sum(rate(http_requests_total[30d]))))
+    /
+    (1 - 0.999)  # 99.9% SLO target
+  )
+`
+```
+
+### 4. Effect-Specific Dashboard
+
+```typescript
+import { Effect, Metric } from "effect"
+
+// Effect runtime metrics
+const fiberCount = Metric.gauge("effect_fibers_active")
+const fiberCreated = Metric.counter("effect_fibers_created_total")
+const effectDuration = Metric.histogram("effect_duration_seconds")
+
+// Service layer metrics
+const serviceCallsTotal = Metric.counter("service_calls_total")
+const serviceErrors = Metric.counter("service_errors_total")
+
+// Instrument Effect programs
+const instrumentedProgram = <A, E, R>(
+  name: string,
+  effect: Effect.Effect<A, E, R>
+) =>
+  Effect.gen(function* () {
+    yield* Metric.increment(serviceCallsTotal.pipe(Metric.tagged("service", name)))
+    const startTime = Date.now()
+
+    const result = yield* effect.pipe(
+      Effect.tapError(() =>
+        Metric.increment(serviceErrors.pipe(Metric.tagged("service", name)))
+      )
+    )
+
+    const duration = (Date.now() - startTime) / 1000
+    yield* Metric.update(
+      effectDuration.pipe(Metric.tagged("service", name)),
+      duration
+    )
+
+    return result
+  })
+```
+
+## Dashboard Layout
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Service Overview                      │
+├──────────────────┬──────────────────┬──────────────────┤
+│   Request Rate   │    Error Rate    │   P99 Latency    │
+│   ▄▄▄▄▄▄▄▄▄▄▄   │   ▄▄▄▄▄▄▄▄▄▄▄   │   ▄▄▄▄▄▄▄▄▄▄▄   │
+├──────────────────┴──────────────────┴──────────────────┤
+│                   Resource Usage                         │
+├──────────────────┬──────────────────┬──────────────────┤
+│   CPU: 45%       │   Memory: 2.1GB  │   Connections: 42│
+├──────────────────┴──────────────────┴──────────────────┤
+│                   SLO Compliance                         │
+├──────────────────┬──────────────────┬──────────────────┤
+│ Availability     │  Latency SLO     │  Error Budget    │
+│    99.95%        │     98.2%        │    75% remaining │
+└──────────────────┴──────────────────┴──────────────────┘
+```
+
+## Key Queries
+
+| Metric | PromQL |
+|--------|--------|
+| Request rate | `rate(http_requests_total[5m])` |
+| Error rate | `rate(http_errors_total[5m]) / rate(http_requests_total[5m])` |
+| P50 latency | `histogram_quantile(0.5, rate(duration_bucket[5m]))` |
+| P99 latency | `histogram_quantile(0.99, rate(duration_bucket[5m]))` |
+| Saturation | `active / max` |
+
+## Best Practices
+
+1. **Start with RED** - Rate, Errors, Duration
+2. **Add USE** - Utilization, Saturation, Errors
+3. **Include SLOs** - Show compliance
+4. **Group logically** - Related metrics together
+5. **Use consistent time ranges** - 5m, 1h, 24h
+

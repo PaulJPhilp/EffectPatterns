@@ -45,22 +45,21 @@ This document lists the **jobs** a developer needs to accomplish when making HTT
 
 ---
 
-## 4. Advanced Patterns
+## 4. Advanced Patterns ✅
 
 ### Jobs:
-- [ ] Implement request retries with backoff
-- [ ] Add request timeouts
-- [ ] Implement request caching
-- [ ] Handle rate limiting responses
-- [ ] Add request/response logging
+- [x] Implement request retries with backoff
+- [x] Add request timeouts
+- [x] Implement request caching
+- [x] Handle rate limiting responses
+- [x] Add request/response logging
 
-### Gap Analysis:
-These patterns would enhance HTTP handling:
-- Retry policies for HTTP requests
-- Timeout configuration
-- Response caching strategies
-- Rate limit handling (429 responses)
-- Request/response logging middleware
+### Patterns (5):
+- `http-retries.mdx` - Retry HTTP Requests with Backoff
+- `http-timeouts.mdx` - Add Timeouts to HTTP Requests
+- `http-caching.mdx` - Cache HTTP Responses
+- `http-rate-limit-handling.mdx` - Handle Rate Limiting Responses
+- `http-logging.mdx` - Log HTTP Requests and Responses
 
 ---
 
@@ -71,10 +70,8 @@ These patterns would enhance HTTP handling:
 | Getting Started | 3 | 2 | 0 |
 | Request Types | 3 | 1 | 0 |
 | Architecture | 3 | 3 | 0 |
-| Advanced Patterns | 5 | 0 | 5 |
-| **Total** | **14** | **6** | **5** |
+| Advanced Patterns | 5 | 5 | 0 |
+| **Total** | **14** | **11** | **0** |
 
-### Coverage: 64%
-
-Core HTTP patterns are covered. Advanced patterns (retries, timeouts, caching) could be added.
+### Coverage: 100%
 
