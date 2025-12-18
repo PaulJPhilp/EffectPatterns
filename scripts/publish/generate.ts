@@ -4,9 +4,8 @@
  * Simplified README generation that doesn't use effect-mdx
  */
 
-
 // biome-ignore assist/source/organizeImports: <>
-import  matter from "gray-matter";
+import matter from "gray-matter";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
@@ -81,21 +80,45 @@ async function generateReadme() {
   }
 
   // Group core patterns by useCase
+  // Each pattern appears only once - assigned to its primary useCase
   const coreUseCaseGroups = new Map<
     string,
     Array<PatternFrontmatter & { path: string }>
   >();
+  // Ordered by learning progression: beginner → intermediate → advanced
+  const coreOrder = [
+    "project-setup--execution",
+    "core-concepts",
+    "resource-management",
+    "domain-modeling",
+    "error-management",
+    "testing",
+    "building-apis",
+    "making-http-requests",
+    "building-data-pipelines",
+    "concurrency",
+    "observability",
+    "tooling-and-debugging",
+  ];
+
   for (const pattern of corePatterns) {
     const useCases = Array.isArray(pattern.useCase)
       ? pattern.useCase
       : [pattern.useCase];
 
-    for (const useCase of useCases) {
-      if (!coreUseCaseGroups.has(useCase)) {
-        coreUseCaseGroups.set(useCase, []);
+    // Find the primary useCase: first one that matches coreOrder, otherwise first useCase
+    let primaryUseCase = useCases[0];
+    for (const uc of useCases) {
+      if (coreOrder.includes(uc)) {
+        primaryUseCase = uc;
+        break;
       }
-      coreUseCaseGroups.get(useCase)?.push(pattern);
     }
+
+    if (!coreUseCaseGroups.has(primaryUseCase)) {
+      coreUseCaseGroups.set(primaryUseCase, []);
+    }
+    coreUseCaseGroups.get(primaryUseCase)?.push(pattern);
   }
 
   // Generate README content
@@ -104,26 +127,24 @@ async function generateReadme() {
 
   // Core Effect Patterns section
   toc.push("### Core Effect Patterns\n");
-  const coreOrder = [
-    "resource-management",
-    "concurrency",
-    "core-concepts",
-    "testing",
-    "domain-modeling",
-    "building-apis",
-    "error-management",
-    "building-data-pipelines",
-    "making-http-requests",
-    "tooling-and-debugging",
-    "observability",
-    "project-setup--execution",
-  ];
 
-  // Add useCases from coreOrder to TOC
+  // Add useCases from coreOrder to TOC with Title Case formatting
   for (const useCase of coreOrder) {
     if (coreUseCaseGroups.has(useCase)) {
+      const displayName = useCase
+        .replace(/--/g, "-&-")
+        .split("-")
+        .filter((word) => word.length > 0)
+        .map((word) => {
+          if (word === "&") return "&";
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join(" ")
+        .replace(/Api/g, "API")
+        .replace(/Http/g, "HTTP")
+        .replace(/\s+/g, " ");
       const anchor = useCase.toLowerCase().replace(/\s+/g, "-");
-      toc.push(`- [${useCase}](#${anchor})`);
+      toc.push(`- [${displayName}](#${anchor})`);
     }
   }
 
@@ -175,8 +196,20 @@ async function generateReadme() {
     if (!patterns) continue;
     processedUseCases.add(useCase);
 
+    const displayName = useCase
+      .replace(/--/g, "-&-")
+      .split("-")
+      .filter((word) => word.length > 0)
+      .map((word) => {
+        if (word === "&") return "&";
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(" ")
+      .replace(/Api/g, "API")
+      .replace(/Http/g, "HTTP")
+      .replace(/\s+/g, " ");
     const _anchor = useCase.toLowerCase().replace(/\s+/g, "-");
-    sections.push(`## ${useCase}\n`);
+    sections.push(`## ${displayName}\n`);
     sections.push(
       "| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n"
     );
@@ -218,8 +251,20 @@ async function generateReadme() {
     const patterns = coreUseCaseGroups.get(useCase);
     if (!patterns) continue;
 
+    const displayName = useCase
+      .replace(/--/g, "-&-")
+      .split("-")
+      .filter((word) => word.length > 0)
+      .map((word) => {
+        if (word === "&") return "&";
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(" ")
+      .replace(/Api/g, "API")
+      .replace(/Http/g, "HTTP")
+      .replace(/\s+/g, " ");
     const _anchor = useCase.toLowerCase().replace(/\s+/g, "-");
-    sections.push(`## ${useCase}\n`);
+    sections.push(`## ${displayName}\n`);
     sections.push(
       "| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n"
     );
