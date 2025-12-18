@@ -1,0 +1,508 @@
+---
+title: "Scheduling Pattern 2: Implement Exponential Backoff for Retries"
+id: scheduling-pattern-exponential-backoff
+skillLevel: intermediate
+applicationPatternId: error-handling-resilience
+summary: >-
+  Use exponential backoff with jitter to retry failed operations with
+  increasing delays, preventing resource exhaustion and cascade failures
+  in distributed systems.
+tags:
+  - scheduling
+  - retry
+  - backoff
+  - resilience
+  - failure-recovery
+  - jitter
+rule:
+  description: >-
+    Use exponential backoff with jitter for retries to prevent overwhelming
+    failing services and improve success likelihood through smart timing.
+related:
+  - retry-effects-with-configuration
+  - understand-failure-handling-with-either
+  - handle-errors-with-try-catch-pattern
+author: effect_website
+---
+
+## Guideline
+
+When retrying failed operations, use exponential backoff with jitter: delay doubles on each retry (with random jitter), up to a maximum. This prevents:
+
+- **Thundering herd**: All clients retrying simultaneously
+- **Cascade failures**: Overwhelming a recovering service
+- **Resource exhaustion**: Too many queued retry attempts
+
+Formula: `delay = min(maxDelay, baseDelay * 2^attempt + random_jitter)`
+
+---
+
+## Rationale
+
+Naive retry strategies fail under load:
+
+**Immediate retry**:
+- All failures retry at once
+- Fails service under load (recovery takes longer)
+- Leads to cascade failure
+
+**Fixed backoff** (e.g., 1 second always):
+- No pressure reduction during recovery
+- Multiple clients cause thundering herd
+- Predictable = synchronized retries
+
+**Exponential backoff**:
+- Gives failing service time to recover
+- Each retry waits progressively longer
+- Without jitter, synchronized retries still hammer service
+
+**Exponential backoff + jitter**:
+- Spreads retry attempts over time
+- Failures de-correlate across clients
+- Service recovery time properly utilized
+- Success likelihood increases with each retry
+
+Real-world example: 100 clients fail simultaneously
+- **Immediate retry**: 100 requests in milliseconds → failure
+- **Fixed backoff**: 100 requests at exactly 1s → failure
+- **Exponential**: 100 requests at 100ms, 200ms, 400ms, 800ms → recovery → success
+
+---
+
+## Good Example
+
+This example demonstrates exponential backoff with jitter for retrying a flaky API call.
+
+```typescript
+import { Effect, Schedule } from "effect";
+
+interface RetryStats {
+  readonly attempt: number;
+  readonly delay: number;
+  readonly lastError?: Error;
+}
+
+// Simulate flaky API that fails first 3 times, succeeds on 4th
+let attemptCount = 0;
+
+const flakyApiCall = (): Effect.Effect<{ status: string }> =>
+  Effect.gen(function* () {
+    attemptCount++;
+    yield* Effect.log(`[API] Attempt ${attemptCount}`);
+
+    if (attemptCount < 4) {
+      yield* Effect.fail(new Error("Service temporarily unavailable (503)"));
+    }
+
+    return { status: "ok" };
+  });
+
+// Calculate exponential backoff with jitter
+interface BackoffConfig {
+  readonly baseDelayMs: number;
+  readonly maxDelayMs: number;
+  readonly maxRetries: number;
+}
+
+const exponentialBackoffWithJitter = (config: BackoffConfig) => {
+  let attempt = 0;
+
+  // Calculate delay for this attempt
+  const calculateDelay = (): number => {
+    const exponential = config.baseDelayMs * Math.pow(2, attempt);
+    const withJitter = exponential * (0.5 + Math.random() * 0.5); // ±50% jitter
+    const capped = Math.min(withJitter, config.maxDelayMs);
+
+    yield* Effect.log(
+      `[BACKOFF] Attempt ${attempt + 1}: ${Math.round(capped)}ms delay`
+    );
+
+    return Math.round(capped);
+  };
+
+  return Effect.gen(function* () {
+    const effect = flakyApiCall();
+
+    let lastError: Error | undefined;
+
+    for (attempt = 0; attempt < config.maxRetries; attempt++) {
+      const result = yield* effect.pipe(Effect.either);
+
+      if (result._tag === "Right") {
+        yield* Effect.log(`[SUCCESS] Succeeded on attempt ${attempt + 1}`);
+        return result.right;
+      }
+
+      lastError = result.left;
+
+      if (attempt < config.maxRetries - 1) {
+        const delay = calculateDelay();
+        yield* Effect.sleep(`${delay} millis`);
+      }
+    }
+
+    yield* Effect.log(
+      `[FAILURE] All ${config.maxRetries} attempts exhausted`
+    );
+    yield* Effect.fail(lastError);
+  });
+};
+
+// Run with exponential backoff
+const program = exponentialBackoffWithJitter({
+  baseDelayMs: 100,
+  maxDelayMs: 5000,
+  maxRetries: 5,
+});
+
+console.log(
+  `\n[START] Retrying flaky API with exponential backoff\n`
+);
+
+Effect.runPromise(program).then(
+  (result) => console.log(`\n[RESULT] ${JSON.stringify(result)}\n`),
+  (error) => console.error(`\n[ERROR] ${error.message}\n`)
+);
+```
+
+Output demonstrates increasing delays with jitter:
+```
+[START] Retrying flaky API with exponential backoff
+
+[API] Attempt 1
+[BACKOFF] Attempt 1: 78ms delay
+[API] Attempt 2
+[BACKOFF] Attempt 2: 192ms delay
+[API] Attempt 3
+[BACKOFF] Attempt 3: 356ms delay
+[API] Attempt 4
+[SUCCESS] Succeeded on attempt 4
+
+[RESULT] {"status":"ok"}
+```
+
+---
+
+## Advanced: Effect Schedule with Exponential Backoff
+
+Use Effect's `Schedule` API for declarative exponential backoff:
+
+```typescript
+import { Effect, Schedule } from "effect";
+
+const exponentialBackoffSchedule = (baseDelayMs: number, maxDelayMs: number) =>
+  Schedule.exponential(baseDelayMs).pipe(
+    // Add jitter: ±20% randomization
+    Schedule.jittered(0.2, 0.2),
+    // Cap maximum delay
+    Schedule.mapDelay((delay) => Math.min(delay, maxDelayMs)),
+    // Log each retry attempt
+    Schedule.tapInput((error) =>
+      Effect.log(`[RETRY] Retrying after error: ${error.message}`)
+    )
+  );
+
+// Use in Effect.retry
+const robustApiCall = flakyApiCall().pipe(
+  Effect.retry(
+    exponentialBackoffSchedule(100, 5000).pipe(
+      // Max 5 retries
+      Schedule.upTo(5)
+    )
+  ),
+  Effect.tap(() => Effect.log("[SUCCESS] API call succeeded"))
+);
+
+Effect.runPromise(robustApiCall);
+```
+
+---
+
+## Advanced: Deadline-Aware Retries
+
+Stop retrying after absolute deadline, not just attempt count:
+
+```typescript
+interface DeadlineConfig extends BackoffConfig {
+  readonly deadlineMs: number; // Stop all retries by this time
+}
+
+const exponentialBackoffWithDeadline = (config: DeadlineConfig) =>
+  Effect.gen(function* () {
+    const startTime = Date.now();
+    let attempt = 0;
+
+    const isDeadlineExceeded = () =>
+      Date.now() - startTime > config.deadlineMs;
+
+    while (!isDeadlineExceeded() && attempt < config.maxRetries) {
+      const result = yield* flakyApiCall().pipe(Effect.either);
+
+      if (result._tag === "Right") {
+        return result.right;
+      }
+
+      if (isDeadlineExceeded()) {
+        yield* Effect.fail(
+          new Error(
+            `Deadline exceeded after ${Date.now() - startTime}ms and ${attempt} attempts`
+          )
+        );
+      }
+
+      // Calculate delay
+      const exponential = config.baseDelayMs * Math.pow(2, attempt);
+      const withJitter = exponential * (0.5 + Math.random() * 0.5);
+      const delay = Math.min(withJitter, config.maxDelayMs);
+      const timeRemaining = config.deadlineMs - (Date.now() - startTime);
+
+      // Don't sleep longer than time remaining
+      const actualDelay = Math.min(delay, timeRemaining);
+
+      yield* Effect.log(
+        `[DEADLINE] Attempt ${attempt + 1}: ${Math.round(actualDelay)}ms (${Math.round(
+          timeRemaining - actualDelay
+        )}ms remaining)`
+      );
+
+      if (actualDelay > 0) {
+        yield* Effect.sleep(`${Math.round(actualDelay)} millis`);
+      }
+
+      attempt++;
+    }
+
+    yield* Effect.fail(new Error("Max retries exhausted or deadline exceeded"));
+  });
+```
+
+---
+
+## Advanced: Adaptive Backoff Based on Error Type
+
+Different backoff strategies for different failure modes:
+
+```typescript
+enum ErrorType {
+  Transient = "transient", // 503, timeout → backoff helps
+  Throttled = "throttled", // 429, rate limited → aggressive backoff
+  Permanent = "permanent", // 400, 401 → don't retry
+}
+
+const classifyError = (error: Error): ErrorType => {
+  const message = error.message;
+
+  if (
+    message.includes("429") ||
+    message.includes("too many requests") ||
+    message.includes("rate limit")
+  ) {
+    return ErrorType.Throttled;
+  }
+
+  if (
+    message.includes("503") ||
+    message.includes("timeout") ||
+    message.includes("temporarily unavailable")
+  ) {
+    return ErrorType.Transient;
+  }
+
+  return ErrorType.Permanent;
+};
+
+interface AdaptiveBackoffConfig {
+  transientConfig: BackoffConfig;
+  throttledConfig: BackoffConfig;
+}
+
+const exponentialBackoffAdaptive = (config: AdaptiveBackoffConfig) =>
+  Effect.gen(function* () {
+    let attempt = 0;
+    let lastError: Error | undefined;
+
+    while (true) {
+      const result = yield* flakyApiCall().pipe(Effect.either);
+
+      if (result._tag === "Right") {
+        return result.right;
+      }
+
+      lastError = result.left;
+      const errorType = classifyError(lastError);
+
+      if (errorType === ErrorType.Permanent) {
+        yield* Effect.log(
+          `[ERROR] Permanent error, not retrying: ${lastError.message}`
+        );
+        yield* Effect.fail(lastError);
+      }
+
+      const backoffConfig =
+        errorType === ErrorType.Throttled
+          ? config.throttledConfig
+          : config.transientConfig;
+
+      if (attempt >= backoffConfig.maxRetries) {
+        yield* Effect.log(
+          `[ERROR] Max retries (${backoffConfig.maxRetries}) exhausted for ${errorType} errors`
+        );
+        yield* Effect.fail(lastError);
+      }
+
+      const exponential =
+        backoffConfig.baseDelayMs * Math.pow(2, attempt);
+      const withJitter = exponential * (0.5 + Math.random() * 0.5);
+      const delay = Math.min(withJitter, backoffConfig.maxDelayMs);
+
+      yield* Effect.log(
+        `[BACKOFF] ${errorType} error (${lastError.message}): ${Math.round(delay)}ms delay`
+      );
+
+      yield* Effect.sleep(`${Math.round(delay)} millis`);
+
+      attempt++;
+    }
+  });
+
+// Different configs for different error types
+const adaptiveProgram = exponentialBackoffAdaptive({
+  transientConfig: {
+    baseDelayMs: 100,
+    maxDelayMs: 5000,
+    maxRetries: 5,
+  },
+  throttledConfig: {
+    baseDelayMs: 500, // Start longer for throttled
+    maxDelayMs: 30000, // Respect rate limiting
+    maxRetries: 10, // Retry more for throttled
+  },
+});
+```
+
+---
+
+## Advanced: Circuit Breaker with Backoff
+
+Combine exponential backoff with circuit breaker pattern:
+
+```typescript
+enum CircuitState {
+  Closed = "closed",
+  Open = "open",
+  HalfOpen = "half-open",
+}
+
+interface CircuitBreakerConfig extends BackoffConfig {
+  readonly failureThreshold: number; // Failures before opening
+  readonly successThreshold: number; // Successes in half-open before closing
+  readonly timeout: number; // Time in half-open state
+}
+
+const exponentialBackoffWithCircuitBreaker = (
+  config: CircuitBreakerConfig
+) =>
+  Effect.gen(function* () {
+    let state = CircuitState.Closed;
+    let failureCount = 0;
+    let successCount = 0;
+    let lastOpenTime = 0;
+    let attempt = 0;
+
+    while (true) {
+      // Check if should transition out of open state
+      if (state === CircuitState.Open) {
+        const timeSinceOpen = Date.now() - lastOpenTime;
+        if (timeSinceOpen > config.timeout) {
+          yield* Effect.log(
+            `[CIRCUIT] Transitioning to half-open after ${timeSinceOpen}ms`
+          );
+          state = CircuitState.HalfOpen;
+          successCount = 0;
+        } else {
+          yield* Effect.fail(
+            new Error(
+              `Circuit breaker open, reopens in ${config.timeout - timeSinceOpen}ms`
+            )
+          );
+        }
+      }
+
+      if (state === CircuitState.Closed || state === CircuitState.HalfOpen) {
+        const result = yield* flakyApiCall().pipe(Effect.either);
+
+        if (result._tag === "Right") {
+          if (state === CircuitState.HalfOpen) {
+            successCount++;
+            if (successCount >= config.successThreshold) {
+              yield* Effect.log(
+                `[CIRCUIT] Transitioning to closed (${successCount} successes)`
+              );
+              state = CircuitState.Closed;
+              failureCount = 0;
+            }
+          }
+          return result.right;
+        }
+
+        failureCount++;
+        if (failureCount >= config.failureThreshold) {
+          yield* Effect.log(
+            `[CIRCUIT] Opening circuit (${failureCount} failures)`
+          );
+          state = CircuitState.Open;
+          lastOpenTime = Date.now();
+        } else if (attempt < config.maxRetries) {
+          const exponential =
+            config.baseDelayMs * Math.pow(2, attempt);
+          const delay = Math.min(exponential, config.maxDelayMs);
+          yield* Effect.sleep(`${Math.round(delay)} millis`);
+          attempt++;
+        } else {
+          yield* Effect.fail(result.left);
+        }
+      }
+    }
+  });
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use exponential backoff when:**
+
+- Retrying failed API calls to external services
+- Implementing resilient microservice communication
+- Recovering from temporary network failures
+- Accessing resources under load or recovery
+- Preventing cascade failures in distributed systems
+- Rate limiting automatic retries
+
+⚠️ **Trade-offs:**
+
+- Adds latency to failure recovery
+- Requires tuning baseDelay and maxDelay
+- Jitter reduces predictability (often desired)
+- Very aggressive backoff can take too long
+
+---
+
+## Backoff Configuration Guide
+
+| Scenario | baseDelay | maxDelay | maxRetries | Notes |
+| --- | --- | --- | --- | --- |
+| Fast API (internal) | 10ms | 1s | 5 | Quick recovery expected |
+| External API | 100ms | 10s | 5 | Slower service recovery |
+| Rate-limited API | 500ms | 60s | 10 | Respect rate limits |
+| Database retry | 50ms | 5s | 3 | Quick local recovery |
+| Third-party service | 1s | 30s | 5 | Conservative for stability |
+
+---
+
+## See Also
+
+- [Retry Effects with Configuration](./retry-effects-with-configuration.mdx) - Configure retry strategies
+- [Handle Errors with Try-Catch Pattern](./handle-errors-with-try-catch-pattern.mdx) - Error handling basics
+- [Understand Failure Handling with Either](./understand-failure-handling-with-either.mdx) - Either/Result pattern
+- [Scheduling Pattern 1: Repeat on Fixed Interval](./scheduling-pattern-repeat-effect-on-fixed-interval.mdx) - Fixed intervals

@@ -1,0 +1,98 @@
+---
+title: Add Custom Metrics to Your Application
+id: add-custom-metrics
+skillLevel: intermediate
+applicationPatternId: observability
+summary: >-
+  Use Effect's Metric module to instrument your code with counters, gauges, and
+  histograms to track key business and performance indicators.
+tags:
+  - metrics
+  - observability
+  - monitoring
+  - counter
+  - gauge
+  - histogram
+rule:
+  description: >-
+    Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code
+    for monitoring.
+related:
+  - trace-operations-with-spans
+  - leverage-structured-logging
+author: effect_website
+---
+
+## Guideline
+
+To monitor the health and performance of your application, instrument your code with `Metric`s. The three main types are:
+
+- **`Metric.counter("name")`**: To count occurrences of an event (e.g., `users_registered_total`). It only goes up.
+- **`Metric.gauge("name")`**: To track a value that can go up or down (e.g., `active_connections`).
+- **`Metric.histogram("name")`**: To track the distribution of a value (e.g., `request_duration_seconds`).
+
+---
+
+## Rationale
+
+While logs are for events and traces are for requests, metrics are for aggregation. They provide a high-level, numerical view of your system's health over time, which is perfect for building dashboards and setting up alerts.
+
+Effect's `Metric` module provides a simple, declarative way to add this instrumentation. By defining your metrics upfront, you can then use operators like `Metric.increment` or `Effect.timed` to update them. This is fully integrated with Effect's context system, allowing you to provide different metric backends (like Prometheus or StatsD) via a `Layer`.
+
+This allows you to answer questions like:
+
+- "What is our user sign-up rate over the last 24 hours?"
+- "Are we approaching our maximum number of database connections?"
+- "What is the 95th percentile latency for our API requests?"
+
+---
+
+## Good Example
+
+This example creates a counter to track how many times a user is created and a histogram to track the duration of the database operation.
+
+```typescript
+import { Effect, Metric, Duration } from "effect"; // We don't need MetricBoundaries anymore
+
+// 1. Define your metrics
+const userRegisteredCounter = Metric.counter("users_registered_total", {
+  description: "A counter for how many users have been registered.",
+});
+
+const dbDurationTimer = Metric.timer(
+  "db_operation_duration",
+  "A timer for DB operation durations"
+);
+
+// 2. Simulated database call
+const saveUserToDb = Effect.succeed("user saved").pipe(
+  Effect.delay(Duration.millis(Math.random() * 100))
+);
+
+// 3. Instrument the business logic
+const createUser = Effect.gen(function* () {
+  // Time the operation
+  yield* saveUserToDb.pipe(Metric.trackDuration(dbDurationTimer));
+
+  // Increment the counter
+  yield* Metric.increment(userRegisteredCounter);
+
+  return { status: "success" };
+});
+
+// Run the Effect
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* createUser;
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
+```
+
+---
+
+## Anti-Pattern
+
+Not adding any metrics to your application. Without metrics, you are flying blind. You have no high-level overview of your application's health, performance, or business KPIs. You can't build dashboards, you can't set up alerts for abnormal behavior (e.g., "error rate is too high"), and you are forced to rely on digging through logs to
+understand the state of your system.

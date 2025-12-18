@@ -1,0 +1,419 @@
+---
+title: "Platform Pattern 1: Execute Shell Commands"
+id: platform-pattern-command-execution
+skillLevel: intermediate
+applicationPatternId: platform
+summary: >-
+  Use Command module to execute shell commands, capture output, and handle
+  exit codes, enabling integration with system tools and external programs.
+tags:
+  - platform
+  - command
+  - shell
+  - subprocess
+  - system-integration
+  - external-process
+rule:
+  description: >-
+    Use Command to spawn and manage external processes, capturing output and
+    handling exit codes reliably with proper error handling.
+related:
+  - platform-filesystem-operations
+  - handle-side-effects-with-effect-sync
+  - handle-errors-with-catch
+author: effect_website
+---
+
+## Guideline
+
+Execute shell commands with Command:
+
+- **Spawn**: Start external process
+- **Capture**: Get stdout/stderr/exit code
+- **Wait**: Block until completion
+- **Handle errors**: Exit codes indicate failure
+
+Pattern: `Command.exec("command args").pipe(...)`
+
+---
+
+## Rationale
+
+Shell integration without proper handling causes issues:
+
+- **Unhandled errors**: Non-zero exit codes lost
+- **Deadlocks**: Stdout buffer fills if not drained
+- **Resource leaks**: Processes left running
+- **Output loss**: stderr ignored
+- **Race conditions**: Unsafe concurrent execution
+
+Command enables:
+
+- **Type-safe execution**: Success/failure handled in Effect
+- **Output capture**: Both stdout and stderr available
+- **Resource cleanup**: Automatic process termination
+- **Exit code handling**: Explicit error mapping
+
+Real-world example: Build pipeline
+- **Direct**: Process spawned, output mixed with app logs, exit code ignored
+- **With Command**: Output captured, exit code checked, errors propagated
+
+---
+
+## Good Example
+
+This example demonstrates executing commands and handling their output.
+
+```typescript
+import { Command, Effect, Chunk } from "@effect/platform";
+
+// Simple command execution
+const program = Effect.gen(function* () {
+  console.log(`\n[COMMAND] Executing shell commands\n`);
+
+  // Example 1: List files
+  console.log(`[1] List files in current directory:\n`);
+
+  const lsResult = yield* Command.make("ls", ["-la"]).pipe(
+    Command.string
+  );
+
+  console.log(lsResult);
+
+  // Example 2: Get current date
+  console.log(`\n[2] Get current date:\n`);
+
+  const dateResult = yield* Command.make("date", ["+%Y-%m-%d %H:%M:%S"]).pipe(
+    Command.string
+  );
+
+  console.log(`Current date: ${dateResult.trim()}`);
+
+  // Example 3: Capture exit code
+  console.log(`\n[3] Check if file exists:\n`);
+
+  const fileCheckCmd = yield* Command.make("test", [
+    "-f",
+    "/etc/passwd",
+  ]).pipe(
+    Command.exitCode,
+    Effect.either
+  );
+
+  if (fileCheckCmd._tag === "Right") {
+    console.log(`✓ File exists (exit code: 0)`);
+  } else {
+    console.log(`✗ File not found (exit code: ${fileCheckCmd.left})`);
+  }
+
+  // Example 4: Execute with custom working directory
+  console.log(`\n[4] List TypeScript files:\n`);
+
+  const findResult = yield* Command.make("find", [
+    ".",
+    "-name",
+    "*.ts",
+    "-type",
+    "f",
+  ]).pipe(
+    Command.lines
+  );
+
+  const tsFiles = Chunk.take(findResult, 5); // First 5
+
+  Chunk.forEach(tsFiles, (file) => {
+    console.log(`  - ${file}`);
+  });
+
+  if (Chunk.size(findResult) > 5) {
+    console.log(`  ... and ${Chunk.size(findResult) - 5} more`);
+  }
+
+  // Example 5: Handle command failure
+  console.log(`\n[5] Handle command failure gracefully:\n`);
+
+  const failResult = yield* Command.make("false").pipe(
+    Command.exitCode,
+    Effect.catchAll((error) =>
+      Effect.succeed(-1) // Return -1 for any error
+    )
+  );
+
+  console.log(`Exit code: ${failResult}`);
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+## Advanced: Run Multiple Commands in Sequence
+
+Chain command executions:
+
+```typescript
+const buildPipeline = Effect.gen(function* () {
+  console.log(`[BUILD] Starting build pipeline\n`);
+
+  // Step 1: Clean
+  console.log(`[STEP 1] Cleaning...\n`);
+
+  yield* Command.make("rm", ["-rf", "dist"]).pipe(
+    Command.exitCode,
+    Effect.tap((code) =>
+      Effect.log(`Clean: exit code ${code}`)
+    )
+  );
+
+  // Step 2: Compile
+  console.log(`[STEP 2] Compiling...\n`);
+
+  const compileOutput = yield* Command.make("tsc", []).pipe(
+    Command.string,
+    Effect.catchAll((error) => {
+      console.error(`Compile failed: ${error}`);
+      return Effect.fail(error);
+    })
+  );
+
+  yield* Effect.log(`Compile output:\n${compileOutput}`);
+
+  // Step 3: Test
+  console.log(`[STEP 3] Running tests...\n`);
+
+  const testOutput = yield* Command.make("npm", ["test"]).pipe(
+    Command.string
+  );
+
+  yield* Effect.log(`Tests: ${testOutput.includes("pass") ? "✓" : "✗"}`);
+
+  // Step 4: Report
+  console.log(`[STEP 4] Build complete\n`);
+
+  return { status: "success" };
+});
+```
+
+---
+
+## Advanced: Streaming Command Output
+
+Process output line-by-line:
+
+```typescript
+const streamCommandOutput = (
+  command: string,
+  args: string[]
+): Stream.Stream<string> =>
+  Command.make(command, args).pipe(
+    Command.lines,
+    Stream.fromChunk
+  );
+
+// Usage: Process log file line-by-line
+const logProcessing = streamCommandOutput("tail", ["-f", "/var/log/system.log"]).pipe(
+  Stream.filter((line) => line.includes("ERROR")),
+  Stream.tap((line) =>
+    Effect.log(`[ERROR LOG] ${line}`)
+  ),
+  Stream.take(10),
+  Stream.runDrain
+);
+
+// Usage: Process command output with transformation
+const fileStats = streamCommandOutput("ls", ["-lh"]).pipe(
+  Stream.drop(1), // Skip header
+  Stream.map((line) => {
+    const parts = line.split(/\s+/);
+    return { size: parts[4], name: parts[8] };
+  }),
+  Stream.tap((stat) =>
+    Effect.log(`File: ${stat.name} (${stat.size})`)
+  ),
+  Stream.runDrain
+);
+```
+
+---
+
+## Advanced: Command with Environment Variables
+
+Set environment for command execution:
+
+```typescript
+const commandWithEnv = Effect.gen(function* () {
+  // Execute command with custom environment
+  const result = yield* Command.make("printenv", ["MY_VAR"]).pipe(
+    Command.env((env) => ({
+      ...env,
+      MY_VAR: "custom-value",
+      NODE_ENV: "production",
+    })),
+    Command.string,
+    Effect.map((output) => output.trim())
+  );
+
+  yield* Effect.log(`MY_VAR = ${result}`);
+});
+
+// Usage: Build with environment variables
+const buildWithEnv = Effect.gen(function* () {
+  const result = yield* Command.make("npm", ["run", "build"]).pipe(
+    Command.env((env) => ({
+      ...env,
+      NODE_ENV: "production",
+      SKIP_TESTS: "true",
+    })),
+    Command.exitCode
+  );
+
+  yield* Effect.log(`Build exit code: ${result}`);
+});
+```
+
+---
+
+## Advanced: Parallel Command Execution
+
+Run multiple commands concurrently:
+
+```typescript
+const parallelCommands = Effect.gen(function* () {
+  console.log(`[PARALLEL] Running 3 commands concurrently\n`);
+
+  const cmd1 = Command.make("npm", ["list"]).pipe(Command.string);
+  const cmd2 = Command.make("git", ["status"]).pipe(Command.string);
+  const cmd3 = Command.make("node", ["-v"]).pipe(Command.string);
+
+  // Execute in parallel
+  const [result1, result2, result3] = yield* Effect.all(
+    [cmd1, cmd2, cmd3],
+    { concurrency: 3 } // Run 3 at once
+  );
+
+  console.log(`\n[NPM]\n${result1}`);
+  console.log(`\n[GIT]\n${result2}`);
+  console.log(`\n[NODE]\n${result3}`);
+});
+```
+
+---
+
+## Advanced: Timeout and Cancellation
+
+Set execution timeouts:
+
+```typescript
+const commandWithTimeout = (
+  command: string,
+  args: string[],
+  timeoutMs: number
+) =>
+  Command.make(command, args).pipe(
+    Command.string,
+    Effect.timeout(`${timeoutMs} millis`),
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(
+          `Command timed out after ${timeoutMs}ms`
+        );
+        return Effect.fail(error);
+      })
+    )
+  );
+
+// Usage: Long-running build with 30 second timeout
+const buildWithTimeout = commandWithTimeout("npm", ["run", "build"], 30000).pipe(
+  Effect.tap((output) =>
+    Effect.log(`Build completed:\n${output}`)
+  ),
+  Effect.catchAll((error) =>
+    Effect.log(`Build failed: ${error.message}`)
+  )
+);
+```
+
+---
+
+## Advanced: Command Retry with Backoff
+
+Retry failed commands:
+
+```typescript
+const commandWithRetry = (
+  command: string,
+  args: string[],
+  maxRetries: number
+) =>
+  Command.make(command, args).pipe(
+    Command.exitCode,
+    Effect.retry(
+      Schedule.exponential("100 millis").pipe(
+        Schedule.upTo(`5 seconds`),
+        Schedule.compose(Schedule.recurs(maxRetries))
+      )
+    ),
+    Effect.tap((code) =>
+      Effect.log(`Command succeeded with exit code ${code}`)
+    ),
+    Effect.catchAll((error) =>
+      Effect.log(`Command failed after ${maxRetries} retries`)
+    )
+  );
+
+// Usage: Retry flaky network command
+const flakyCurl = commandWithRetry(
+  "curl",
+  ["https://api.example.com/health"],
+  3
+);
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use Command when:**
+
+- Executing external programs
+- Running shell scripts
+- System integration tasks
+- Build pipeline steps
+- Running CLI tools
+- Background process execution
+
+⚠️ **Trade-offs:**
+
+- External process overhead
+- Output parsing required (no schema)
+- Cross-platform command differences
+- Shell injection risks (sanitize inputs)
+- Resource consumption
+
+---
+
+## Security Considerations
+
+**Avoid shell injection:**
+```typescript
+// ❌ UNSAFE - Input not escaped
+Command.make("echo", [`Hello ${userInput}`])
+
+// ✅ SAFE - Input as separate argument
+Command.make("echo", [userInput])
+```
+
+**Validate/sanitize inputs:**
+```typescript
+const safePath = path.replace(/[^\w.-]/g, ''); // Remove special chars
+Command.make("ls", [safePath])
+```
+
+---
+
+## See Also
+
+- [Platform Pattern 2: FileSystem Operations](./platform-filesystem-operations.mdx) - File I/O
+- [Handle Side Effects with Effect.sync](./handle-side-effects-with-effect-sync.mdx) - Side effects
+- [Handle Errors with Catch](./handle-errors-with-catch.mdx) - Error handling
+- [Scheduling Pattern 2: Exponential Backoff](./scheduling-pattern-exponential-backoff.mdx) - Retry strategy

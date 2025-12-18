@@ -1,0 +1,586 @@
+---
+title: "Error Handling Pattern 2: Error Propagation and Chains"
+id: error-handling-pattern-propagation
+skillLevel: advanced
+applicationPatternId: error-handling
+summary: >-
+  Propagate errors through effect chains with context, preserving error
+  information and enabling recovery at appropriate layers.
+tags:
+  - error-handling
+  - error-propagation
+  - error-chains
+  - context-preservation
+  - debugging
+  - stack-traces
+rule:
+  description: >-
+    Use error propagation to preserve context through effect chains, enabling
+    debugging and recovery at the right abstraction level.
+related:
+  - error-handling-pattern-accumulation
+  - error-handling-pattern-custom-strategies
+  - scheduling-pattern-advanced-retry-chains
+author: effect_website
+---
+
+## Guideline
+
+Error propagation preserves context:
+
+- **Cause chain**: Keep original error + context
+- **Stack trace**: Preserve execution history
+- **Error context**: Add operation name, parameters
+- **Error mapping**: Transform errors between layers
+- **Recovery points**: Decide where to handle errors
+
+Pattern: Use `mapError()`, `tapError()`, `catchAll()`, `Cause.prettyPrint()`
+
+---
+
+## Rationale
+
+Loss of error context causes problems:
+
+**Problem 1: Useless error messages**
+- User sees: "Error: null"
+- Debugging: Where did it come from? When? Why?
+- Wasted hours searching logs
+
+**Problem 2: Wrong recovery layer**
+- Network error → recovered at business logic layer (inefficient)
+- Should be recovered at network layer → retry, exponential backoff
+
+**Problem 3: Error context loss**
+- Database connection failed
+- But which database? Which query? With what parameters?
+- Logs show "Connection failed" (not actionable)
+
+**Problem 4: Hidden root cause**
+- Effect 1 fails → triggers Effect 2 → different error
+- Developer sees Effect 2 error
+- Doesn't know Effect 1 was root cause
+- Fixes wrong thing
+
+Solutions:
+
+**Error context**:
+- Include operation name
+- Include relevant parameters
+- Include timestamps
+- Include retry count
+
+**Error cause chains**:
+- Keep original error
+- Add context at each layer
+- `mapError()` to transform
+- `tapError()` to log context
+
+**Recovery layers**:
+- Low-level: Retry network requests
+- Mid-level: Transform domain errors
+- High-level: Convert to user-friendly messages
+
+---
+
+## Good Example
+
+This example demonstrates error propagation with context.
+
+```typescript
+import { Effect, Data, Cause } from "effect";
+
+// Domain-specific errors with context
+class DatabaseError extends Data.TaggedError("DatabaseError")<{
+  query: string;
+  parameters: unknown[];
+  cause: Error;
+}> {}
+
+class NetworkError extends Data.TaggedError("NetworkError")<{
+  endpoint: string;
+  method: string;
+  statusCode?: number;
+  cause: Error;
+}> {}
+
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  field: string;
+  value: unknown;
+  reason: string;
+}> {}
+
+class BusinessLogicError extends Data.TaggedError("BusinessLogicError")<{
+  operation: string;
+  context: Record<string, unknown>;
+  originalError: Error;
+}> {}
+
+const program = Effect.gen(function* () {
+  console.log(`\n[ERROR PROPAGATION] Error chains with context\n`);
+
+  // Example 1: Simple error propagation
+  console.log(`[1] Error propagation through layers:\n`);
+
+  const lowLevelOperation = Effect.gen(function* () {
+    yield* Effect.log(`[LAYER 1] Low-level operation starting`);
+
+    yield* Effect.fail(new Error("File not found"));
+  });
+
+  const midLevelOperation = lowLevelOperation.pipe(
+    Effect.mapError((error) =>
+      new DatabaseError({
+        query: "SELECT * FROM users",
+        parameters: ["id=123"],
+        cause: error instanceof Error ? error : new Error(String(error)),
+      })
+    )
+  );
+
+  const highLevelOperation = midLevelOperation.pipe(
+    Effect.catchTag("DatabaseError", (dbError) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[LAYER 3] Caught database error`);
+        yield* Effect.log(`[LAYER 3]   Query: ${dbError.query}`);
+        yield* Effect.log(`[LAYER 3]   Cause: ${dbError.cause.message}`);
+
+        // Recovery decision
+        return "fallback-value";
+      })
+    )
+  );
+
+  const result1 = yield* highLevelOperation;
+
+  yield* Effect.log(`[RESULT] Recovered with: ${result1}\n`);
+
+  // Example 2: Error context accumulation
+  console.log(`[2] Accumulating context through layers:\n`);
+
+  interface ErrorContext {
+    timestamp: Date;
+    operation: string;
+    userId?: string;
+    requestId: string;
+  }
+
+  const errorWithContext = (context: ErrorContext) =>
+    Effect.fail(
+      new BusinessLogicError({
+        operation: context.operation,
+        context: {
+          userId: context.userId,
+          timestamp: context.timestamp.toISOString(),
+          requestId: context.requestId,
+        },
+        originalError: new Error("Operation failed"),
+      })
+    );
+
+  const myContext: ErrorContext = {
+    timestamp: new Date(),
+    operation: "process-payment",
+    userId: "user-123",
+    requestId: "req-abc-def",
+  };
+
+  const withContextRecovery = errorWithContext(myContext).pipe(
+    Effect.mapError((error) => {
+      // Log complete context
+      return {
+        ...error,
+        enriched: true,
+        additionalInfo: {
+          serviceName: "payment-service",
+          environment: "production",
+          version: "1.2.3",
+        },
+      };
+    }),
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[ERROR CAUGHT] ${error.operation}`);
+        yield* Effect.log(`[CONTEXT] ${JSON.stringify(error.context, null, 2)}`);
+        return "recovered";
+      })
+    )
+  );
+
+  yield* withContextRecovery;
+
+  // Example 3: Network error with retry context
+  console.log(`\n[3] Network errors with retry context:\n`);
+
+  interface RetryContext {
+    attempt: number;
+    maxAttempts: number;
+    delay: number;
+  }
+
+  let attemptCount = 0;
+
+  const networkCall = Effect.gen(function* () {
+    attemptCount++;
+
+    yield* Effect.log(`[ATTEMPT] ${attemptCount}/3`);
+
+    if (attemptCount < 3) {
+      yield* Effect.fail(
+        new NetworkError({
+          endpoint: "https://api.example.com/data",
+          method: "GET",
+          statusCode: 503,
+          cause: new Error("Service Unavailable"),
+        })
+      );
+    }
+
+    return "success";
+  });
+
+  const withRetryContext = Effect.gen(function* () {
+    let lastError: NetworkError | null = null;
+
+    for (let i = 1; i <= 3; i++) {
+      const result = yield* networkCall.pipe(
+        Effect.catchTag("NetworkError", (error) => {
+          lastError = error;
+
+          yield* Effect.log(
+            `[RETRY] Attempt ${i} failed: ${error.statusCode}`
+          );
+
+          if (i < 3) {
+            yield* Effect.log(`[RETRY] Waiting before retry...`);
+          }
+
+          return Effect.fail(error);
+        })
+      ).pipe(
+        Effect.tap(() => Effect.log(`[SUCCESS] Connected on attempt ${i}`))
+      ).pipe(
+        Effect.catchAll(() => Effect.succeed(null))
+      );
+
+      if (result !== null) {
+        return result;
+      }
+    }
+
+    if (lastError) {
+      yield* Effect.fail(lastError);
+    }
+
+    return null;
+  });
+
+  const networkResult = yield* withRetryContext.pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[EXHAUSTED] All retries failed`);
+        return "fallback";
+      })
+    )
+  );
+
+  yield* Effect.log(`\n`);
+
+  // Example 4: Multi-layer error transformation
+  console.log(`[4] Error transformation between layers:\n`);
+
+  const layer1Error = Effect.gen(function* () {
+    yield* Effect.fail(new Error("Raw system error"));
+  });
+
+  // Layer 2: Convert to domain error
+  const layer2 = layer1Error.pipe(
+    Effect.mapError((error) =>
+      new DatabaseError({
+        query: "SELECT ...",
+        parameters: [],
+        cause: error instanceof Error ? error : new Error(String(error)),
+      })
+    )
+  );
+
+  // Layer 3: Convert to business error
+  const layer3 = layer2.pipe(
+    Effect.mapError((dbError) =>
+      new BusinessLogicError({
+        operation: "fetch-user-profile",
+        context: {
+          dbError: dbError.query,
+        },
+        originalError: dbError.cause,
+      })
+    )
+  );
+
+  // Layer 4: Return user-friendly error
+  const userFacingError = layer3.pipe(
+    Effect.mapError((bizError) => ({
+      message: "Unable to load profile",
+      code: "PROFILE_LOAD_FAILED",
+      originalError: bizError.originalError.message,
+    })),
+    Effect.catchAll((userError) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[USER MESSAGE] ${userError.message}`);
+        yield* Effect.log(`[CODE] ${userError.code}`);
+        yield* Effect.log(`[DEBUG] ${userError.originalError}`);
+        return null;
+      })
+    )
+  );
+
+  yield* userFacingError;
+
+  // Example 5: Error aggregation in concurrent operations
+  console.log(`\n[5] Error propagation in concurrent operations:\n`);
+
+  const operation = (id: number, shouldFail: boolean) =>
+    Effect.gen(function* () {
+      if (shouldFail) {
+        yield* Effect.fail(
+          new Error(`Operation ${id} failed`)
+        );
+      }
+
+      return `result-${id}`;
+    });
+
+  const concurrent = Effect.gen(function* () {
+    const results = yield* Effect.all(
+      [
+        operation(1, false),
+        operation(2, true),
+        operation(3, false),
+      ],
+      { concurrency: 3 }
+    ).pipe(
+      Effect.catchAll((errors) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`[CONCURRENT] Caught aggregated errors`);
+
+          // In real code, Cause provides error details
+          yield* Effect.log(`[ERROR] Errors encountered during concurrent execution`);
+
+          return [];
+        })
+      )
+    );
+
+    return results;
+  });
+
+  yield* concurrent;
+
+  yield* Effect.log(`\n[DEMO] Error propagation complete`);
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+## Advanced: Cause Chain Introspection
+
+Inspect error causes for debugging:
+
+```typescript
+const inspectCauseChain = <E,>(effect: Effect.Effect<unknown, E>) =>
+  Effect.gen(function* () {
+    const result = yield* effect.pipe(
+      Effect.mapError((error) => {
+        // In real code, inspect cause chain
+        if (error instanceof Error) {
+          return {
+            message: error.message,
+            stack: error.stack,
+            cause: (error as any).cause,
+          };
+        }
+
+        return error;
+      }),
+      Effect.catchAll((error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[CAUSE] ${JSON.stringify(error, null, 2)}`
+          );
+          return null;
+        })
+      )
+    );
+
+    return result;
+  });
+```
+
+---
+
+## Advanced: Hierarchical Error Recovery
+
+Recover at appropriate layers:
+
+```typescript
+interface RecoveryStrategy {
+  canRecover: (error: Error) => boolean;
+  recover: (error: Error) => Effect.Effect<unknown>;
+  level: "low" | "mid" | "high";
+}
+
+const applyRecoveryStrategies = (
+  effect: Effect.Effect<unknown>,
+  strategies: RecoveryStrategy[]
+) => {
+  const sorted = strategies.sort((a, b) => {
+    const levelOrder = { low: 0, mid: 1, high: 2 };
+    return levelOrder[a.level] - levelOrder[b.level];
+  });
+
+  return sorted.reduce(
+    (current, strategy) =>
+      current.pipe(
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            if (strategy.canRecover(error as Error)) {
+              yield* Effect.log(
+                `[RECOVER] Using ${strategy.level}-level strategy`
+              );
+
+              return yield* strategy.recover(error as Error);
+            }
+
+            return yield* Effect.fail(error);
+          })
+        )
+      ),
+    effect
+  );
+};
+```
+
+---
+
+## Advanced: Error Telemetry
+
+Track error propagation for observability:
+
+```typescript
+interface ErrorTelemetry {
+  errorType: string;
+  message: string;
+  layers: string[];
+  timestamp: Date;
+  duration: number;
+}
+
+const trackErrorPropagation = <E,>(
+  effect: Effect.Effect<unknown, E>,
+  operationName: string
+) =>
+  Effect.gen(function* () {
+    const startTime = Date.now();
+    const layers: string[] = [];
+
+    const tracked = effect.pipe(
+      Effect.mapError((error) => {
+        layers.push("layer-1");
+        return error;
+      }),
+      Effect.mapError((error) => {
+        layers.push("layer-2");
+        return error;
+      }),
+      Effect.catchAll((error) =>
+        Effect.gen(function* () {
+          const duration = Date.now() - startTime;
+
+          const telemetry: ErrorTelemetry = {
+            errorType: error instanceof Error
+              ? error.constructor.name
+              : "Unknown",
+            message: error instanceof Error ? error.message : String(error),
+            layers,
+            timestamp: new Date(),
+            duration,
+          };
+
+          yield* Effect.log(
+            `[TELEMETRY] ${JSON.stringify(telemetry)}`
+          );
+
+          return null;
+        })
+      )
+    );
+
+    return tracked;
+  });
+```
+
+---
+
+## Error Context Best Practices
+
+| Practice | Benefit | Trade-off |
+| --- | --- | --- |
+| **Add timestamps** | Correlate logs | Slight overhead |
+| **Include request ID** | Trace across services | Requires coordination |
+| **Track attempt count** | Retry analysis | More state |
+| **Include parameters** | Reproduce issue | Privacy concerns |
+| **Stack traces** | Root cause | Performance cost |
+
+---
+
+## When to Use This Pattern
+
+✅ **Use error propagation when:**
+- Debugging production issues
+- Multi-layer architectures
+- Distributed systems
+- Complex error recovery
+- Audit requirements
+
+✅ **Add context when:**
+- Error affects multiple layers
+- Need reproduce information
+- Audit trail required
+- Performance analysis needed
+
+⚠️ **Trade-offs:**
+- More memory for error objects
+- Serialization overhead
+- Privacy concerns (parameters)
+- Performance impact
+
+---
+
+## Error Recovery Decision Tree
+
+```
+Error occurs
+  ↓
+Is it retryable?
+  ├─ Yes → Can recover here?
+  │  ├─ Yes → Recover & continue
+  │  └─ No → Propagate up
+  └─ No → Propagate up with context
+      ↓
+    Next layer catches
+      ↓
+    Can recover?
+      ├─ Yes → Recover & continue
+      └─ No → Propagate up
+```
+
+---
+
+## See Also
+
+- [Error Handling Pattern 1: Accumulation](./error-handling-pattern-accumulation.mdx) - Multiple errors
+- [Error Handling Pattern 3: Custom Strategies](./error-handling-pattern-custom-strategies.mdx) - Custom error types
+- [Scheduling Pattern 5: Advanced Retries](./scheduling-pattern-advanced-retry-chains.mdx) - Retry with recovery
+- [Stream Pattern 6: Resource Management](./stream-pattern-resource-management.mdx) - Safe cleanup on error

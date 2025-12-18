@@ -1,0 +1,164 @@
+1---
+title: Fork Background Work
+id: concurrency-fork-basics
+skillLevel: beginner
+applicationPatternId: concurrency-getting-started
+summary: >-
+  Use Effect.fork to run work in the background while your main code continues.
+tags:
+  - concurrency
+  - fork
+  - background
+  - fiber
+  - getting-started
+rule:
+  description: Use Effect.fork to start background work, Effect.forkDaemon for fire-and-forget tasks.
+author: PaulJPhilp
+related:
+  - concurrency-understanding-fibers
+  - concurrency-hello-world
+---
+
+## Guideline
+
+Use `Effect.fork` to run effects in the background. The forked effect runs on its own fiber while your main code continues.
+
+---
+
+## Rationale
+
+Background work is useful for:
+
+1. **Non-blocking operations** - Start work, continue immediately
+2. **Parallel processing** - Multiple tasks at once
+3. **Fire-and-forget** - Tasks you don't need to wait for
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Fiber } from "effect"
+
+// ============================================
+// BASIC FORK: Run in background, wait later
+// ============================================
+
+const basicFork = Effect.gen(function* () {
+  // Start expensive work in background
+  const fiber = yield* Effect.fork(
+    Effect.gen(function* () {
+      yield* Effect.log("Starting expensive computation...")
+      yield* Effect.sleep("2 seconds")
+      return 42
+    })
+  )
+  
+  // Do other work while computation runs
+  yield* Effect.log("Doing other work...")
+  yield* Effect.sleep("500 millis")
+  yield* Effect.log("Other work done")
+  
+  // Now wait for the result
+  const result = yield* Fiber.join(fiber)
+  yield* Effect.log(`Computation result: ${result}`)
+})
+
+// ============================================
+// FORK DAEMON: Fire and forget
+// ============================================
+
+const fireAndForget = Effect.gen(function* () {
+  // This runs completely independently
+  yield* Effect.forkDaemon(
+    Effect.gen(function* () {
+      yield* Effect.log("Daemon: Starting background task")
+      yield* Effect.sleep("5 seconds")
+      yield* Effect.log("Daemon: Done (no one waiting)")
+    })
+  )
+  
+  yield* Effect.log("Main: Continuing without waiting")
+  // Main can exit, daemon keeps running
+})
+
+// ============================================
+// FORK SCOPED: Tied to scope lifecycle
+// ============================================
+
+const scopedFork = Effect.gen(function* () {
+  yield* Effect.forkScoped(
+    Effect.gen(function* () {
+      yield* Effect.log("Scoped fiber running")
+      yield* Effect.sleep("10 seconds")
+      yield* Effect.log("Scoped fiber done")
+    })
+  )
+  
+  yield* Effect.log("Scope active, fiber runs")
+  yield* Effect.sleep("1 second")
+  yield* Effect.log("Scope ending, fiber will be interrupted")
+}).pipe(Effect.scoped) // Fiber interrupted when scope closes
+
+// ============================================
+// MULTIPLE FORKS: Fan out work
+// ============================================
+
+const fanOut = Effect.gen(function* () {
+  const tasks = [1, 2, 3, 4, 5]
+  
+  // Fork all tasks
+  const fibers = yield* Effect.forEach(tasks, (n) =>
+    Effect.fork(
+      Effect.gen(function* () {
+        yield* Effect.sleep(`${n * 100} millis`)
+        yield* Effect.log(`Task ${n} complete`)
+        return n * 10
+      })
+    )
+  )
+  
+  yield* Effect.log("All tasks forked, waiting for results...")
+  
+  // Wait for all
+  const results = yield* Fiber.joinAll(fibers)
+  yield* Effect.log(`Results: ${[...results]}`)
+})
+
+Effect.runPromise(fanOut)
+```
+
+## Fork Variants
+
+| Method | Behavior |
+|--------|----------|
+| `Effect.fork` | Child fiber, interrupted when parent completes |
+| `Effect.forkDaemon` | Independent fiber, keeps running |
+| `Effect.forkScoped` | Tied to scope, interrupted when scope closes |
+| `Effect.forkIn(scope)` | Fork into specific scope |
+
+## Common Patterns
+
+```typescript
+// Fire and forget (logging, analytics)
+yield* Effect.forkDaemon(sendAnalytics(event))
+
+// Background with timeout
+const fiber = yield* Effect.fork(longRunningTask)
+yield* Effect.sleep("5 seconds")
+yield* Fiber.interrupt(fiber) // Cancel if still running
+
+// Parallel fan-out/fan-in
+const fibers = yield* Effect.forEach(items, (item) =>
+  Effect.fork(processItem(item))
+)
+const results = yield* Fiber.joinAll(fibers)
+```
+
+## Best Practices
+
+1. **Join or interrupt** - Don't leave fibers dangling
+2. **Use scoped** - For work tied to a resource's lifetime
+3. **Use daemon** - For truly independent background work
+4. **Handle errors** - Forked fibers can fail silently
+

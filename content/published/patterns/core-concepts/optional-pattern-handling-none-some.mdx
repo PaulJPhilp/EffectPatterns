@@ -1,0 +1,397 @@
+---
+title: "Optional Pattern 1: Handling None and Some Values"
+id: optional-pattern-handling-none-some
+skillLevel: intermediate
+applicationPatternId: value-handling
+summary: >-
+  Use Effect's Option type to safely handle values that may not exist,
+  avoiding null/undefined bugs and enabling composable error handling.
+tags:
+  - optional
+  - null-safety
+  - error-handling
+  - value-handling
+  - pattern-matching
+  - composition
+rule:
+  description: >-
+    Use Option to represent values that may not exist, replacing null/undefined
+    with type-safe Option that forces explicit handling.
+related:
+  - error-handling-pattern-custom-strategies
+  - stream-pattern-stateful-operations
+  - error-handling-pattern-propagation
+author: effect_website
+---
+
+## Guideline
+
+Option enables null-safe programming:
+
+- **Some(value)**: Value exists
+- **None**: Value doesn't exist
+- **Pattern matching**: Handle both cases
+- **Chaining**: Compose operations safely
+- **Fallbacks**: Default values
+- **Conversions**: Option ↔ Error
+
+Pattern: Use `Option.isSome()`, `Option.isNone()`, `match()`, `map()`, `flatMap()`
+
+---
+
+## Rationale
+
+Null/undefined causes widespread bugs:
+
+**Problem 1: Billion-dollar mistake**
+- Tony Hoare invented null in ALGOL in 1965
+- Created "billion-dollar mistake"
+- 90% of security vulnerabilities involve null handling
+
+**Problem 2: Undefined behavior**
+- `user.profile.name` - any property could be null
+- Runtime error: "Cannot read property 'name' of undefined"
+- No compile-time warning
+- Production crash
+
+**Problem 3: Silent failures**
+- Function returns null on failure
+- Caller doesn't check
+- Uses null as if it's a value
+- Corrupts state downstream
+
+**Problem 4: Conditional hell**
+```javascript
+if (user !== null && user.profile !== null && user.profile.name !== null) {
+  // Do thing
+}
+```
+
+Solutions:
+
+**Option type**:
+- `Some(value)` = value exists
+- `None` = value doesn't exist
+- Type system forces checking
+- No silent null checks possible
+
+**Pattern matching**:
+- `Option.match()`
+- Handle both cases explicitly
+- Compiler warns if you miss one
+
+**Chaining**:
+- `option.map().flatMap().match()`
+- Pipeline of operations
+- Null-safe by design
+
+---
+
+## Good Example
+
+This example demonstrates Option handling patterns.
+
+```typescript
+import { Effect, Option } from "effect";
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface Profile {
+  bio: string;
+  website?: string;
+  location?: string;
+}
+
+const program = Effect.gen(function* () {
+  console.log(
+    `\n[OPTION HANDLING] None/Some values and pattern matching\n`
+  );
+
+  // Example 1: Creating Options
+  console.log(`[1] Creating Option values:\n`);
+
+  const someValue: Option.Option<string> = Option.some("data");
+  const noneValue: Option.Option<string> = Option.none();
+
+  const displayOption = <T,>(opt: Option.Option<T>, label: string) =>
+    Effect.gen(function* () {
+      if (Option.isSome(opt)) {
+        yield* Effect.log(`${label}: Some(${opt.value})`);
+      } else {
+        yield* Effect.log(`${label}: None`);
+      }
+    });
+
+  yield* displayOption(someValue, "someValue");
+  yield* displayOption(noneValue, "noneValue");
+
+  // Example 2: Creating from nullable values
+  console.log(`\n[2] Converting nullable to Option:\n`);
+
+  const possiblyNull = (shouldExist: boolean): string | null =>
+    shouldExist ? "found" : null;
+
+  const toOption = (value: string | null | undefined): Option.Option<string> =>
+    value ? Option.some(value) : Option.none();
+
+  const opt1 = toOption(possiblyNull(true));
+  const opt2 = toOption(possiblyNull(false));
+
+  yield* displayOption(opt1, "toOption(found)");
+  yield* displayOption(opt2, "toOption(null)");
+
+  // Example 3: Pattern matching on Option
+  console.log(`\n[3] Pattern matching with match():\n`);
+
+  const userId: Option.Option<string> = Option.some("user-123");
+
+  const message = Option.match(userId, {
+    onSome: (id) => `User ID: ${id}`,
+    onNone: () => "No user found",
+  });
+
+  yield* Effect.log(`[MATCH] ${message}`);
+
+  const emptyUserId: Option.Option<string> = Option.none();
+
+  const emptyMessage = Option.match(emptyUserId, {
+    onSome: (id) => `User ID: ${id}`,
+    onNone: () => "No user found",
+  });
+
+  yield* Effect.log(`[MATCH] ${emptyMessage}\n`);
+
+  // Example 4: Transforming with map
+  console.log(`[4] Transforming values with map():\n`);
+
+  const userCount: Option.Option<number> = Option.some(42);
+
+  const doubled = Option.map(userCount, (count) => count * 2);
+
+  yield* displayOption(doubled, "doubled");
+
+  // Chaining maps
+  const email: Option.Option<string> = Option.some("user@example.com");
+
+  const domain = Option.map(email, (e) =>
+    e.split("@")[1] ?? "unknown"
+  );
+
+  yield* displayOption(domain, "email domain");
+
+  // Example 5: Chaining with flatMap
+  console.log(`\n[5] Chaining operations with flatMap():\n`);
+
+  const findUser = (id: string): Option.Option<User> =>
+    id === "user-1"
+      ? Option.some({ id, name: "Alice", email: "alice@example.com" })
+      : Option.none();
+
+  const getProfile = (userId: string): Option.Option<Profile> =>
+    userId === "user-1"
+      ? Option.some({ bio: "Developer", website: "alice.dev" })
+      : Option.none();
+
+  const userId2 = Option.some("user-1");
+
+  // Chained operations: userId -> user -> profile
+  const profileChain = Option.flatMap(userId2, (id) =>
+    Option.flatMap(findUser(id), (user) =>
+      getProfile(user.id)
+    )
+  );
+
+  const profileResult = Option.match(profileChain, {
+    onSome: (profile) => `Bio: ${profile.bio}, Website: ${profile.website}`,
+    onNone: () => "No profile found",
+  });
+
+  yield* Effect.log(`[CHAIN] ${profileResult}\n`);
+
+  // Example 6: Fallback values with getOrElse
+  console.log(`[6] Default values with getOrElse():\n`);
+
+  const optionalStatus: Option.Option<string> = Option.none();
+
+  const status = Option.getOrElse(optionalStatus, () => "unknown");
+
+  yield* Effect.log(`[DEFAULT] Status: ${status}`);
+
+  // Real value
+  const knownStatus: Option.Option<string> = Option.some("active");
+
+  const realStatus = Option.getOrElse(knownStatus, () => "unknown");
+
+  yield* Effect.log(`[VALUE] Status: ${realStatus}\n`);
+
+  // Example 7: Filter with predicate
+  console.log(`[7] Filtering with conditions:\n`);
+
+  const ageOption: Option.Option<number> = Option.some(25);
+
+  const isAdult = Option.filter(ageOption, (age) => age >= 18);
+
+  yield* displayOption(isAdult, "Adult check (25)");
+
+  const ageOption2: Option.Option<number> = Option.some(15);
+
+  const isAdult2 = Option.filter(ageOption2, (age) => age >= 18);
+
+  yield* displayOption(isAdult2, "Adult check (15)");
+
+  // Example 8: Multiple Options (all present?)
+  console.log(`\n[8] Combining multiple Options:\n`);
+
+  const firstName: Option.Option<string> = Option.some("John");
+  const lastName: Option.Option<string> = Option.some("Doe");
+  const middleName: Option.Option<string> = Option.none();
+
+  // All three present?
+  const allPresent = Option.all([firstName, lastName, middleName]);
+
+  yield* displayOption(allPresent, "All present");
+
+  // Just two
+  const twoPresent = Option.all([firstName, lastName]);
+
+  yield* displayOption(twoPresent, "Two present");
+
+  // Example 9: Converting Option to Error
+  console.log(`\n[9] Converting Option to Result/Error:\n`);
+
+  const optionalConfig: Option.Option<{ apiKey: string }> = Option.none();
+
+  const configOrError = Option.match(optionalConfig, {
+    onSome: (config) => config,
+    onNone: () => {
+      throw new Error("Configuration not found");
+    },
+  });
+
+  // In real code, would catch error
+  const result = Option.match(optionalConfig, {
+    onSome: (config) => ({ success: true, value: config }),
+    onNone: () => ({ success: false, error: "config-not-found" }),
+  });
+
+  yield* Effect.log(`[CONVERT] ${JSON.stringify(result)}\n`);
+
+  // Example 10: Option in business logic
+  console.log(`[10] Practical: Optional user settings:\n`);
+
+  const userSettings: Option.Option<{
+    theme: string;
+    notifications: boolean;
+  }> = Option.some({
+    theme: "dark",
+    notifications: true,
+  });
+
+  const getTheme = Option.map(userSettings, (s) => s.theme);
+  const theme = Option.getOrElse(getTheme, () => "light"); // Default
+
+  yield* Effect.log(`[SETTING] Theme: ${theme}`);
+
+  // No settings
+  const noSettings: Option.Option<{ theme: string; notifications: boolean }> =
+    Option.none();
+
+  const noTheme = Option.map(noSettings, (s) => s.theme);
+  const defaultTheme = Option.getOrElse(noTheme, () => "light");
+
+  yield* Effect.log(`[DEFAULT] Theme: ${defaultTheme}`);
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+## Advanced: Option Chains
+
+Build complex pipelines with Options:
+
+```typescript
+const processUser = (
+  userId: Option.Option<string>
+): Option.Option<{ email: string; verified: boolean }> =>
+  Option.flatMap(userId, (id) =>
+    Option.flatMap(findUser(id), (user) =>
+      Option.flatMap(loadSettings(user.id), (settings) =>
+        Option.some({
+          email: user.email,
+          verified: settings.emailVerified,
+        })
+      )
+    )
+  );
+
+// Or using pipe syntax
+const processUserPipe = (userId: Option.Option<string>) =>
+  userId
+    .pipe(Option.flatMap((id) => findUser(id)))
+    .pipe(Option.flatMap((user) => loadSettings(user.id)))
+    .pipe(Option.map((settings) => ({ verified: settings.emailVerified })));
+```
+
+---
+
+## Advanced: Lifting Functions
+
+Convert regular functions to work with Options:
+
+```typescript
+const liftOption = <A, B,>(
+  f: (a: A) => B
+): ((opt: Option.Option<A>) => Option.Option<B>) =>
+  (opt: Option.Option<A>) =>
+    Option.isSome(opt) ? Option.some(f(opt.value)) : Option.none();
+
+// Usage
+const parseNumber = liftOption((s: string) => parseInt(s));
+
+const result1 = parseNumber(Option.some("42")); // Some(42)
+const result2 = parseNumber(Option.none()); // None
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use Option when:**
+- Value may not exist
+- Nullable database fields
+- Optional function parameters
+- Dictionary lookups
+- Parsing/validation
+
+⚠️ **Trade-offs:**
+- More code than null checks
+- Requires pattern matching
+- Learning curve for teams
+- Some boilerplate
+
+---
+
+## Comparison: Null vs Option
+
+| Aspect | Null | Option |
+| --- | --- | --- |
+| **Safety** | Unsafe (runtime errors) | Safe (compile-time) |
+| **Verbosity** | Less code initially | More explicit |
+| **Bugs** | Easy to miss null | Forced to handle |
+| **Performance** | Slightly faster | Negligible difference |
+| **Debugging** | Hard (type: null) | Clear (Some/None) |
+
+---
+
+## See Also
+
+- [Optional Pattern 2: Optional Chains](./optional-pattern-optional-chains.mdx) - Advanced chaining
+- [Error Handling Pattern 3: Custom Strategies](./error-handling-pattern-custom-strategies.mdx) - Error types
+- [Stream Pattern 1: Map & Filter](./stream-pattern-map-filter-transformations.mdx) - Stream transformations
+- [State Management Pattern 1: SynchronizedRef](./state-management-pattern-synchronized-ref.mdx) - State safety

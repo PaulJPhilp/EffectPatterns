@@ -1,0 +1,194 @@
+---
+id: pattern-option-either-match
+title: Pattern Match on Option and Either
+summary: Use declarative match() combinators to handle optional and error-prone values
+skillLevel: beginner
+applicationPatternId: error-management
+  - control-flow
+tags:
+  - option
+  - either
+  - pattern-matching
+  - match
+  - declarative
+related:
+  - pattern-match
+  - data-option
+  - data-either
+  - pattern-option-either-checks
+author: Effect Patterns Hub
+rule:
+  description: >-
+    Use Option.match() and Either.match() for declarative pattern matching on
+    optional and error-prone values
+---
+
+## Guideline
+
+When you need to handle `Option` or `Either` values, use the `.match()` combinator instead of imperative checks. The `.match()` method provides a declarative, exhaustive way to handle all cases (Some/None for Option, Right/Left for Either) in a single expression.
+
+Use `.match()` when:
+- You need to handle both success and failure cases
+- You want type-safe pattern matching
+- You prefer declarative over imperative code
+- You need to transform values based on their case
+
+## Rationale
+
+The `.match()` combinator is superior to manual checks (`isSome()`, `isLeft()`) because:
+
+1. **Declarative**: Expresses intent clearly - "match on these cases"
+2. **Type-safe**: TypeScript ensures all cases are handled
+3. **Exhaustive**: You can't accidentally miss a case
+4. **Composable**: Works naturally with `.pipe()` for chaining operations
+5. **Readable**: The structure mirrors the data type itself
+
+Without `.match()`, you'd need imperative conditionals, which are harder to read and easier to get wrong.
+
+## Good Example
+
+### Basic Option Matching
+
+```typescript
+import { Option } from "effect";
+
+const getUserName = (id: number): Option.Option<string> => {
+  return id === 1 ? Option.some("Alice") : Option.none();
+};
+
+// Using .match() for declarative pattern matching
+const displayUser = (id: number): string =>
+  getUserName(id).pipe(
+    Option.match({
+      onNone: () => "Guest User",
+      onSome: (name) => `Hello, ${name}!`,
+    })
+  );
+
+console.log(displayUser(1));   // "Hello, Alice!"
+console.log(displayUser(999)); // "Guest User"
+```
+
+### Basic Either Matching
+
+```typescript
+import { Either } from "effect";
+
+const validateAge = (age: number): Either.Either<number, string> => {
+  return age >= 18
+    ? Either.right(age)
+    : Either.left("Must be 18 or older");
+};
+
+// Using .match() for error handling
+const processAge = (age: number): string =>
+  validateAge(age).pipe(
+    Either.match({
+      onLeft: (error) => `Validation failed: ${error}`,
+      onRight: (validAge) => `Age ${validAge} is valid`,
+    })
+  );
+
+console.log(processAge(25)); // "Age 25 is valid"
+console.log(processAge(15)); // "Validation failed: Must be 18 or older"
+```
+
+### Advanced: Nested Matching
+
+When dealing with nested Option and Either, use nested `.match()` calls:
+
+```typescript
+import { Option, Either } from "effect";
+
+interface UserProfile {
+  name: string;
+  age: number;
+}
+
+const getUserProfile = (
+  id: number
+): Option.Option<Either.Either<string, UserProfile>> => {
+  if (id === 0) return Option.none(); // User not found
+  if (id === 1) return Option.some(Either.left("Profile incomplete"));
+  return Option.some(Either.right({ name: "Bob", age: 25 }));
+};
+
+// Nested matching - first on Option, then on Either
+const displayProfile = (id: number): string =>
+  getUserProfile(id).pipe(
+    Option.match({
+      onNone: () => "User not found",
+      onSome: (result) =>
+        result.pipe(
+          Either.match({
+            onLeft: (error) => `Error: ${error}`,
+            onRight: (profile) => `${profile.name} (${profile.age})`,
+          })
+        ),
+    })
+  );
+
+console.log(displayProfile(0)); // "User not found"
+console.log(displayProfile(1)); // "Error: Profile incomplete"
+console.log(displayProfile(2)); // "Bob (25)"
+```
+
+## Anti-Pattern
+
+Avoid manual conditional checks and nested ternaries:
+
+```typescript
+// ❌ ANTI-PATTERN: Imperative checks with isSome/isLeft
+const name = getUserName(1);
+let result: string;
+if (Option.isSome(name)) {
+  result = `Hello, ${name.value}!`;
+} else {
+  result = "Guest User";
+}
+
+// ❌ ANTI-PATTERN: Nested ternaries
+const ageResult = validateAge(25);
+const message = ageResult.pipe(
+  Either.match({
+    onLeft: () => "Invalid",
+    onRight: (age) => age >= 21 ? "Can drink" : "Cannot drink",
+  })
+);
+
+// ❌ ANTI-PATTERN: Chained if-else instead of match
+function processValue(value: Option.Option<number>): string {
+  if (Option.isSome(value)) {
+    if (value.value > 0) {
+      return "Positive";
+    } else if (value.value < 0) {
+      return "Negative";
+    } else {
+      return "Zero";
+    }
+  }
+  return "No value";
+}
+```
+
+Why these are worse:
+- **Less readable**: The intent is hidden in imperative logic
+- **Error-prone**: Easy to forget cases or introduce bugs
+- **Mutable state**: Often requires intermediate variables
+- **Less composable**: Harder to pipe and combine operations
+
+## Trade-offs
+
+### Pros
+- **Type-safe**: Exhaustiveness checking by TypeScript
+- **Declarative**: Clear intent, easy to understand
+- **Composable**: Works naturally with `.pipe()` chains
+- **Refactor-friendly**: Changes to the data type are caught at compile time
+- **Predictable**: Behavior is explicit and visible
+
+### Cons
+- **Slightly more verbose**: Compared to a simple `if` statement for trivial cases
+- **Learning curve**: Developers unfamiliar with FP may need adjustment
+- **Boilerplate**: For simple cases, `.match()` might feel like overkill
+
+For most use cases, the benefits far outweigh the minor verbosity. The type safety and clarity make `.match()` the right choice.

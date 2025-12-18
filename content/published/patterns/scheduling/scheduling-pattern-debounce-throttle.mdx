@@ -1,0 +1,443 @@
+---
+title: "Scheduling Pattern 4: Debounce and Throttle Execution"
+id: scheduling-pattern-debounce-throttle
+skillLevel: intermediate
+applicationPatternId: scheduling-periodic-tasks
+summary: >-
+  Use debouncing and throttling to limit how often effects execute,
+  preventing runaway operations and handling rapid event sequences.
+tags:
+  - scheduling
+  - debounce
+  - throttle
+  - rate-limiting
+  - event-handling
+  - deduplication
+rule:
+  description: >-
+    Use debounce to wait for silence before executing, and throttle to limit
+    execution frequency, both critical for handling rapid events.
+related:
+  - scheduling-pattern-exponential-backoff
+  - stream-pattern-backpressure-control
+  - concurrency-pattern-rate-limit-with-semaphore
+author: effect_website
+---
+
+## Guideline
+
+Debounce and throttle manage rapid events:
+
+- **Debounce**: Wait for silence (delay after last event), then execute once
+- **Throttle**: Execute at most once per interval
+- **Deduplication**: Skip duplicate events
+- **Rate limiting**: Limit events per second
+
+Pattern: `Schedule.debounce(duration)` or `Schedule.throttle(maxEvents, duration)`
+
+---
+
+## Rationale
+
+Rapid events without debounce/throttle cause problems:
+
+**Debounce example**: Search input
+- User types "hello" character by character
+- Without debounce: 5 API calls (one per character)
+- With debounce: 1 API call after user stops typing
+
+**Throttle example**: Scroll events
+- Scroll fires 100+ times per second
+- Without throttle: Updates lag, GC pressure
+- With throttle: Update max 60 times per second
+
+Real-world issues:
+- **API overload**: Search queries hammer backend
+- **Rendering lag**: Too many DOM updates
+- **Resource exhaustion**: Event handlers never catch up
+
+Debounce/throttle enable:
+- **Efficiency**: Fewer operations
+- **Responsiveness**: UI stays smooth
+- **Resource safety**: Prevent exhaustion
+- **Sanity**: Predictable execution
+
+---
+
+## Good Example
+
+This example demonstrates debouncing and throttling for common scenarios.
+
+```typescript
+import { Effect, Schedule, Ref } from "effect";
+
+interface SearchQuery {
+  readonly query: string;
+  readonly timestamp: Date;
+}
+
+// Simulate API search
+const performSearch = (query: string): Effect.Effect<string[]> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[API] Searching for: "${query}"`);
+
+    yield* Effect.sleep("100 millis"); // Simulate API delay
+
+    return [
+      `Result 1 for ${query}`,
+      `Result 2 for ${query}`,
+      `Result 3 for ${query}`,
+    ];
+  });
+
+// Main: demonstrate debounce and throttle
+const program = Effect.gen(function* () {
+  console.log(`\n[DEBOUNCE/THROTTLE] Handling rapid events\n`);
+
+  // Example 1: Debounce search input
+  console.log(`[1] Debounced search (wait for silence):\n`);
+
+  const searchQueries = ["h", "he", "hel", "hell", "hello"];
+
+  const debouncedSearches = yield* Ref.make<Effect.Effect<string[]>[]>([]);
+
+  for (const query of searchQueries) {
+    yield* Effect.log(`[INPUT] User typed: "${query}"`);
+
+    // In real app, this would be debounced
+    yield* Effect.sleep("150 millis"); // User typing
+  }
+
+  // After user stops, execute search
+  yield* Effect.log(`[DEBOUNCE] User silent for 200ms, executing search`);
+
+  const searchResults = yield* performSearch("hello");
+
+  yield* Effect.log(`[RESULTS] ${searchResults.length} results found\n`);
+
+  // Example 2: Throttle scroll events
+  console.log(`[2] Throttled scroll handler (max 10/sec):\n`);
+
+  const scrollEventCount = yield* Ref.make(0);
+  const updateCount = yield* Ref.make(0);
+
+  // Simulate 100 rapid scroll events
+  for (let i = 0; i < 100; i++) {
+    yield* Ref.update(scrollEventCount, (c) => c + 1);
+
+    // In real app, scroll handler would be throttled
+    if (i % 10 === 0) {
+      // Simulate throttled update (max 10 per second)
+      yield* Ref.update(updateCount, (c) => c + 1);
+    }
+  }
+
+  const events = yield* Ref.get(scrollEventCount);
+  const updates = yield* Ref.get(updateCount);
+
+  yield* Effect.log(
+    `[THROTTLE] ${events} scroll events → ${updates} updates (${(updates / events * 100).toFixed(1)}% update rate)\n`
+  );
+
+  // Example 3: Deduplication
+  console.log(`[3] Deduplicating rapid events:\n`);
+
+  const userClicks = ["click", "click", "click", "dblclick", "click"];
+
+  const lastClick = yield* Ref.make<string | null>(null);
+  const clickCount = yield* Ref.make(0);
+
+  for (const click of userClicks) {
+    const prev = yield* Ref.get(lastClick);
+
+    if (click !== prev) {
+      yield* Effect.log(`[CLICK] Processing: ${click}`);
+      yield* Ref.update(clickCount, (c) => c + 1);
+      yield* Ref.set(lastClick, click);
+    } else {
+      yield* Effect.log(`[CLICK] Duplicate: ${click} (skipped)`);
+    }
+  }
+
+  const processed = yield* Ref.get(clickCount);
+
+  yield* Effect.log(
+    `\n[DEDUPE] ${userClicks.length} clicks → ${processed} processed\n`
+  );
+
+  // Example 4: Exponential backoff on repeated errors
+  console.log(`[4] Throttled retry on errors:\n`);
+
+  let retryCount = 0;
+
+  const operation = Effect.gen(function* () {
+    retryCount++;
+
+    if (retryCount < 3) {
+      yield* Effect.fail(new Error("Still failing"));
+    }
+
+    yield* Effect.log(`[SUCCESS] Succeeded on attempt ${retryCount}`);
+
+    return "done";
+  }).pipe(
+    Effect.retry(
+      Schedule.exponential("100 millis").pipe(
+        Schedule.upTo("1 second"),
+        Schedule.recurs(5)
+      )
+    )
+  );
+
+  yield* operation;
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+## Advanced: Custom Debounce Implementation
+
+Build your own debounce with Ref:
+
+```typescript
+const createDebounced = <A, B>(
+  handler: (value: A) => Effect.Effect<B>,
+  delayMs: number
+) =>
+  Effect.gen(function* () {
+    let timeoutId: NodeJS.Timeout | null = null;
+    const lastValue = yield* Ref.make<A | null>(null);
+
+    return (value: A) =>
+      Effect.gen(function* () {
+        yield* Ref.set(lastValue, value);
+
+        // Clear previous timeout
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+
+        // Set new timeout
+        return new Promise<B>((resolve, reject) => {
+          timeoutId = setTimeout(
+            () => {
+              handler(value).pipe(
+                Effect.runPromise
+              ).then(resolve).catch(reject);
+            },
+            delayMs
+          );
+        });
+      });
+  });
+
+// Usage
+const debouncedSearch = createDebounced(
+  (query: string) =>
+    Effect.gen(function* () {
+      yield* Effect.log(`[DEBOUNCED] Searching: ${query}`);
+      return ["result1", "result2"];
+    }),
+  300 // Wait 300ms after last input
+);
+```
+
+---
+
+## Advanced: Throttle with Burst Allowance
+
+Allow occasional bursts while throttling:
+
+```typescript
+const createThrottled = <A,>(
+  handler: (value: A) => Effect.Effect<void>,
+  config: {
+    maxPerSec: number;
+    burstSize: number;
+  }
+) =>
+  Effect.gen(function* () {
+    let tokens = config.burstSize;
+    let lastRefillTime = Date.now();
+
+    return (value: A) =>
+      Effect.gen(function* () {
+        const now = Date.now();
+        const timeSinceRefill = (now - lastRefillTime) / 1000;
+
+        // Refill tokens based on time passed
+        tokens = Math.min(
+          config.burstSize,
+          tokens + timeSinceRefill * config.maxPerSec
+        );
+
+        lastRefillTime = now;
+
+        if (tokens >= 1) {
+          tokens--;
+          yield* handler(value);
+        } else {
+          const waitTime = (1 - tokens) / config.maxPerSec * 1000;
+
+          yield* Effect.log(
+            `[THROTTLE] Rate limited, waiting ${waitTime.toFixed(0)}ms`
+          );
+
+          yield* Effect.sleep(`${Math.ceil(waitTime)} millis`);
+          yield* handler(value);
+        }
+      });
+  });
+
+// Usage: Allow 10/sec with bursts of 5
+const throttledAPI = createThrottled(
+  (request: string) =>
+    Effect.log(`[REQUEST] ${request}`),
+  { maxPerSec: 10, burstSize: 5 }
+);
+```
+
+---
+
+## Advanced: Adaptive Debounce
+
+Increase debounce delay if events keep coming:
+
+```typescript
+const adaptiveDebounce = <A, B>(
+  handler: (value: A) => Effect.Effect<B>,
+  config: {
+    initialDelayMs: number;
+    maxDelayMs: number;
+    increaseMs: number;
+  }
+) =>
+  Effect.gen(function* () {
+    let currentDelay = config.initialDelayMs;
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    return (value: A) =>
+      Effect.gen(function* () {
+        if (timeoutId) {
+          // Event came while waiting, increase delay
+          clearTimeout(timeoutId);
+
+          currentDelay = Math.min(
+            config.maxDelayMs,
+            currentDelay + config.increaseMs
+          );
+
+          yield* Effect.log(
+            `[ADAPTIVE] Increased debounce to ${currentDelay}ms`
+          );
+        } else {
+          // First event, reset delay
+          currentDelay = config.initialDelayMs;
+        }
+
+        return new Promise<B>((resolve, reject) => {
+          timeoutId = setTimeout(
+            () => {
+              handler(value).pipe(
+                Effect.runPromise
+              ).then(resolve).catch(reject);
+
+              timeoutId = null;
+              currentDelay = config.initialDelayMs; // Reset for next batch
+            },
+            currentDelay
+          );
+        });
+      });
+  });
+
+// Usage: Search that waits longer if user keeps typing
+const adaptiveSearch = adaptiveDebounce(
+  performSearch,
+  { initialDelayMs: 100, maxDelayMs: 500, increaseMs: 100 }
+);
+```
+
+---
+
+## Advanced: Deduplicate Consecutive Values
+
+Skip duplicate events in sequence:
+
+```typescript
+const deduplicateConsecutive = <A,>(
+  stream: Effect.Effect<A[]>,
+  equals: (a: A, b: A) => boolean = (a, b) => a === b
+) =>
+  Effect.gen(function* () {
+    let lastValue: A | undefined;
+    const deduplicated: A[] = [];
+
+    const values = yield* stream;
+
+    for (const value of values) {
+      if (lastValue === undefined || !equals(value, lastValue)) {
+        deduplicated.push(value);
+        lastValue = value;
+      }
+    }
+
+    return deduplicated;
+  });
+
+// Usage: Remove duplicate clicks
+const dedupeClicks = deduplicateConsecutive(
+  Effect.succeed(["click", "click", "dblclick", "click"]),
+  (a, b) => a === b
+);
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use debounce when:**
+
+- Search/filter input
+- Auto-save functionality
+- Window resize/scroll handlers
+- Form validation
+- API calls should wait for silence
+
+✅ **Use throttle when:**
+
+- Scroll events
+- Mouse move tracking
+- API rate limiting
+- Real-time updates
+- High-frequency events
+
+⚠️ **Trade-offs:**
+
+- Debounce adds latency (user waits)
+- Throttle misses some events
+- Tuning delays requires testing
+- Complex state management
+
+---
+
+## Debounce vs Throttle
+
+| Aspect | Debounce | Throttle |
+| --- | --- | --- |
+| **Trigger** | After silence | At intervals |
+| **Use Case** | Search input | Scroll tracking |
+| **Latency** | High | Low |
+| **Events Lost** | Many | None guaranteed |
+| **Best For** | Bursty traffic | Continuous stream |
+
+---
+
+## See Also
+
+- [Stream Pattern 3: Backpressure Control](./stream-pattern-backpressure-control.mdx) - Backpressure handling
+- [Concurrency Pattern 2: Rate Limit with Semaphore](./concurrency-pattern-rate-limit-with-semaphore.mdx) - Rate limiting
+- [Scheduling Pattern 2: Exponential Backoff](./scheduling-pattern-exponential-backoff.mdx) - Retry with backoff
+- [Control Repetition with Schedule](./control-repetition-with-schedule.mdx) - Schedule fundamentals

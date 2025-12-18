@@ -1,0 +1,137 @@
+---
+title: "Run Multiple Effects in Parallel with Effect.all"
+id: getting-started-run-in-parallel
+skillLevel: beginner
+applicationPatternId: getting-started
+summary: >-
+  Use Effect.all to run multiple Effects at the same time and collect all
+  their results.
+tags:
+  - getting-started
+  - concurrency
+  - parallel
+  - all
+  - beginner
+rule:
+  description: Run multiple Effects in parallel with Effect.all.
+related:
+  - getting-started-hello-world
+  - combinator-foreach-all
+  - run-independent-effects-in-parallel
+author: Paul Philp
+---
+
+# Run Multiple Effects in Parallel with Effect.all
+
+## Guideline
+
+Use `Effect.all` to run multiple Effects concurrently and wait for all of
+them to complete. By default, Effects run sequentially - add the
+`concurrency` option to run them in parallel.
+
+## Rationale
+
+Real applications often need to do multiple things at once - fetch data from
+several APIs, process multiple files, etc. `Effect.all` lets you express
+this naturally without callback hell or complex Promise.all patterns.
+
+## Sequential vs Parallel
+
+```typescript
+import { Effect } from "effect";
+
+const task1 = Effect.delay(Effect.succeed("Task 1 done"), "1 second");
+const task2 = Effect.delay(Effect.succeed("Task 2 done"), "1 second");
+const task3 = Effect.delay(Effect.succeed("Task 3 done"), "1 second");
+
+// SEQUENTIAL (default) - takes 3 seconds
+const sequential = Effect.all([task1, task2, task3]);
+
+// PARALLEL - takes 1 second (all run at once)
+const parallel = Effect.all([task1, task2, task3], { concurrency: "unbounded" });
+```
+
+## Good Example
+
+```typescript
+import { Effect, pipe } from "effect";
+
+// Simulate fetching data from different sources
+const fetchUser = Effect.succeed({ id: 1, name: "Alice" }).pipe(
+  Effect.delay("100 millis")
+);
+
+const fetchPosts = Effect.succeed([
+  { id: 1, title: "Hello World" },
+  { id: 2, title: "Effect is awesome" },
+]).pipe(Effect.delay("150 millis"));
+
+const fetchSettings = Effect.succeed({ theme: "dark" }).pipe(
+  Effect.delay("50 millis")
+);
+
+// Fetch all data in parallel
+const program = Effect.gen(function* () {
+  const [user, posts, settings] = yield* Effect.all(
+    [fetchUser, fetchPosts, fetchSettings],
+    { concurrency: "unbounded" }
+  );
+
+  yield* Effect.log(`Loaded ${user.name} with ${posts.length} posts`);
+  return { user, posts, settings };
+});
+
+Effect.runPromise(program);
+```
+
+## Concurrency Options
+
+| Option | Behavior |
+|--------|----------|
+| `{ concurrency: 1 }` | Sequential (default) |
+| `{ concurrency: 3 }` | Max 3 at a time |
+| `{ concurrency: "unbounded" }` | All at once |
+| `{ concurrency: "inherit" }` | Use parent's setting |
+
+## Using with Objects
+
+```typescript
+import { Effect } from "effect";
+
+// Effect.all also works with objects - keys are preserved
+const result = Effect.all({
+  user: fetchUser,
+  posts: fetchPosts,
+  settings: fetchSettings,
+}, { concurrency: "unbounded" });
+
+// result type: Effect<{ user: User, posts: Post[], settings: Settings }>
+```
+
+## Error Handling
+
+If any Effect fails, `Effect.all` fails with that error (by default):
+
+```typescript
+import { Effect } from "effect";
+
+const willFail = Effect.fail("Oops!");
+const willSucceed = Effect.succeed("OK");
+
+const program = Effect.all([willSucceed, willFail, willSucceed]);
+// This fails with "Oops!" - other results are discarded
+```
+
+## Key Points
+
+1. **Default is sequential** - add `concurrency` option for parallelism
+2. **All results collected** - returns array or object matching input shape
+3. **Fail-fast by default** - first failure stops everything
+4. **Type-safe** - TypeScript knows the exact result type
+
+## What's Next?
+
+- Learn `Effect.race` to take the first result
+- Learn `Effect.forEach` for processing collections
+- Learn about Fibers for more control over concurrent tasks
+
