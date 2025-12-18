@@ -29,6 +29,7 @@ interface PatternFrontmatter {
   skillLevel?: string;
   skill?: string;
   applicationPatternId?: string;
+  lessonOrder?: number;
   summary: string;
 }
 
@@ -143,10 +144,14 @@ async function generateReadme() {
 
       const sortedPatterns = noSubDir.sort((a, b) => {
         const levels = { beginner: 0, intermediate: 1, advanced: 2 };
-        return (
+        const levelDiff =
           levels[getSkillLevel(a) as keyof typeof levels] -
-          levels[getSkillLevel(b) as keyof typeof levels]
-        );
+          levels[getSkillLevel(b) as keyof typeof levels];
+        if (levelDiff !== 0) return levelDiff;
+        // Secondary sort by lessonOrder (if present)
+        const orderA = a.lessonOrder ?? 999;
+        const orderB = b.lessonOrder ?? 999;
+        return orderA - orderB;
       });
 
       for (const pattern of sortedPatterns) {
@@ -187,10 +192,14 @@ async function generateReadme() {
 
       const sortedSubPatterns = subPatterns.sort((a, b) => {
         const levels = { beginner: 0, intermediate: 1, advanced: 2 };
-        return (
+        const levelDiff =
           levels[getSkillLevel(a) as keyof typeof levels] -
-          levels[getSkillLevel(b) as keyof typeof levels]
-        );
+          levels[getSkillLevel(b) as keyof typeof levels];
+        if (levelDiff !== 0) return levelDiff;
+        // Secondary sort by lessonOrder (if present)
+        const orderA = a.lessonOrder ?? 999;
+        const orderB = b.lessonOrder ?? 999;
+        return orderA - orderB;
       });
 
       for (const pattern of sortedSubPatterns) {
