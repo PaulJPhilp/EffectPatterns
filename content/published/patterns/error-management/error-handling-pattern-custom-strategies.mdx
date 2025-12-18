@@ -1,0 +1,679 @@
+---
+title: "Error Handling Pattern 3: Custom Error Strategies"
+id: error-handling-pattern-custom-strategies
+skillLevel: advanced
+applicationPatternId: error-handling
+summary: >-
+  Build domain-specific error types and recovery strategies that align with
+  business logic and provide actionable error information.
+tags:
+  - error-handling
+  - custom-errors
+  - error-classification
+  - domain-errors
+  - recovery-strategies
+  - error-semantics
+rule:
+  description: >-
+    Use tagged errors and custom error types to enable type-safe error handling
+    and business-logic-aware recovery strategies.
+related:
+  - error-handling-pattern-accumulation
+  - error-handling-pattern-propagation
+  - scheduling-pattern-advanced-retry-chains
+author: effect_website
+---
+
+## Guideline
+
+Custom error strategies enable business logic:
+
+- **Tagged errors**: Effect.Data for type-safe errors
+- **Error classification**: Retryable, transient, permanent
+- **Domain semantics**: Business-meaning errors
+- **Recovery strategies**: Different per error type
+- **Error context**: Includes recovery hints
+
+Pattern: Use `Data.TaggedError`, error discriminators, `catchTag()`
+
+---
+
+## Rationale
+
+Generic errors prevent optimal recovery:
+
+**Problem 1: One-size-fits-all retry**
+- Network timeout (transient, retry with backoff)
+- Invalid API key (permanent, don't retry)
+- Both treated same = wrong recovery
+
+**Problem 2: Lost business intent**
+- System error: "Connection refused"
+- Business meaning: Unclear
+- User message: "Something went wrong" (not helpful)
+
+**Problem 3: Wrong recovery layer**
+- Should retry at network layer
+- Instead retried at application layer
+- Wasted compute, poor user experience
+
+**Problem 4: Silent failures**
+- Multiple error types possible
+- Generic catch ignores distinctions
+- Bug: handled Error A as if it were Error B
+- Data corruption, hard to debug
+
+Solutions:
+
+**Tagged errors**:
+- `NetworkError`, `ValidationError`, `PermissionError`
+- Type system ensures handling
+- TypeScript compiler catches missed cases
+- Clear intent
+
+**Recovery strategies**:
+- `NetworkError` → Retry with exponential backoff
+- `ValidationError` → Return user message, no retry
+- `PermissionError` → Log security event, no retry
+- `TemporaryError` → Retry with jitter
+
+**Business semantics**:
+- Error type matches domain concept
+- Code reads like domain language
+- Easier to maintain
+- New developers understand quickly
+
+---
+
+## Good Example
+
+This example demonstrates custom error strategies.
+
+```typescript
+import { Effect, Data, Schedule } from "effect";
+
+// Custom domain errors
+class NetworkError extends Data.TaggedError("NetworkError")<{
+  endpoint: string;
+  statusCode?: number;
+  retryable: boolean;
+}> {}
+
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  field: string;
+  reason: string;
+}> {}
+
+class AuthenticationError extends Data.TaggedError("AuthenticationError")<{
+  reason: "invalid-token" | "expired-token" | "missing-token";
+}> {}
+
+class PermissionError extends Data.TaggedError("PermissionError")<{
+  resource: string;
+  action: string;
+}> {}
+
+class RateLimitError extends Data.TaggedError("RateLimitError")<{
+  retryAfter: number; // milliseconds
+}> {}
+
+class NotFoundError extends Data.TaggedError("NotFoundError")<{
+  resource: string;
+  id: string;
+}> {}
+
+// Recovery strategy selector
+const selectRecoveryStrategy = (
+  error: Error
+): "retry" | "fallback" | "fail" | "user-message" => {
+  if (error instanceof NetworkError && error.retryable) {
+    return "retry";
+  }
+
+  if (error instanceof RateLimitError) {
+    return "retry"; // With backoff
+  }
+
+  if (error instanceof ValidationError) {
+    return "user-message"; // User can fix
+  }
+
+  if (error instanceof NotFoundError) {
+    return "fallback"; // Use empty result
+  }
+
+  if (
+    error instanceof AuthenticationError &&
+    error.reason === "expired-token"
+  ) {
+    return "retry"; // Refresh token
+  }
+
+  if (error instanceof PermissionError) {
+    return "fail"; // Don't retry
+  }
+
+  return "fail"; // Default: don't retry
+};
+
+const program = Effect.gen(function* () {
+  console.log(
+    `\n[CUSTOM ERROR STRATEGIES] Domain-aware error handling\n`
+  );
+
+  // Example 1: Type-safe error handling
+  console.log(`[1] Type-safe error catching:\n`);
+
+  const operation1 = Effect.fail(
+    new ValidationError({
+      field: "email",
+      reason: "Invalid format",
+    })
+  );
+
+  const handled1 = operation1.pipe(
+    Effect.catchTag("ValidationError", (error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[CAUGHT] Validation error`);
+        yield* Effect.log(`  Field: ${error.field}`);
+        yield* Effect.log(`  Reason: ${error.reason}\n`);
+
+        return "validation-failed";
+      })
+    )
+  );
+
+  yield* handled1;
+
+  // Example 2: Multiple error types with different recovery
+  console.log(`[2] Different recovery per error type:\n`);
+
+  interface ApiResponse {
+    status: number;
+    body?: unknown;
+  }
+
+  const callApi = (shouldFail: "network" | "validation" | "ratelimit" | "success") =>
+    Effect.gen(function* () {
+      switch (shouldFail) {
+        case "network":
+          yield* Effect.fail(
+            new NetworkError({
+              endpoint: "https://api.example.com/data",
+              statusCode: 503,
+              retryable: true,
+            })
+          );
+
+        case "validation":
+          yield* Effect.fail(
+            new ValidationError({
+              field: "id",
+              reason: "Must be numeric",
+            })
+          );
+
+        case "ratelimit":
+          yield* Effect.fail(
+            new RateLimitError({
+              retryAfter: 5000,
+            })
+          );
+
+        case "success":
+          return { status: 200, body: { id: 123 } };
+      }
+    });
+
+  // Test each error type
+  const testCases = ["network", "validation", "ratelimit", "success"] as const;
+
+  for (const testCase of testCases) {
+    const strategy = yield* callApi(testCase).pipe(
+      Effect.catchTag("NetworkError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[NETWORK] Retryable: ${error.retryable}, Status: ${error.statusCode}`
+          );
+
+          return "will-retry";
+        })
+      ),
+      Effect.catchTag("ValidationError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[VALIDATION] ${error.field}: ${error.reason} (no retry)`
+          );
+
+          return "user-must-fix";
+        })
+      ),
+      Effect.catchTag("RateLimitError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[RATE-LIMIT] Retry after ${error.retryAfter}ms`
+          );
+
+          return "retry-with-backoff";
+        })
+      ),
+      Effect.catchAll((error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`[SUCCESS] Got response`);
+
+          return "completed";
+        })
+      )
+    );
+
+    yield* Effect.log(`  Strategy: ${strategy}\n`);
+  }
+
+  // Example 3: Custom retry strategy based on error
+  console.log(`[3] Error-specific retry strategies:\n`);
+
+  let attemptCount = 0;
+
+  const networkOperation = Effect.gen(function* () {
+    attemptCount++;
+
+    yield* Effect.log(`[ATTEMPT] ${attemptCount}`);
+
+    if (attemptCount === 1) {
+      yield* Effect.fail(
+        new NetworkError({
+          endpoint: "api.example.com",
+          statusCode: 502,
+          retryable: true,
+        })
+      );
+    }
+
+    if (attemptCount === 2) {
+      yield* Effect.fail(
+        new RateLimitError({
+          retryAfter: 100,
+        })
+      );
+    }
+
+    return "success";
+  });
+
+  // Type-safe retry with error classification
+  let result3: string | null = null;
+
+  for (let i = 0; i < 3; i++) {
+    result3 = yield* networkOperation.pipe(
+      Effect.catchTag("NetworkError", (error) =>
+        Effect.gen(function* () {
+          if (error.retryable && i < 2) {
+            yield* Effect.log(`[RETRY] Network error is retryable`);
+
+            return null; // Signal to retry
+          }
+
+          yield* Effect.log(`[FAIL] Network error not retryable`);
+
+          return Effect.fail(error);
+        })
+      ),
+      Effect.catchTag("RateLimitError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[BACKOFF] Rate limited, waiting ${error.retryAfter}ms`
+          );
+
+          yield* Effect.sleep(`${error.retryAfter} millis`);
+
+          return null; // Signal to retry
+        })
+      ),
+      Effect.catchAll((error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`[ERROR] Unhandled: ${error}`);
+
+          return Effect.fail(error);
+        })
+      )
+    ).pipe(
+      Effect.catchAll(() => Effect.succeed(null))
+    );
+
+    if (result3 !== null) {
+      break;
+    }
+  }
+
+  yield* Effect.log(`\n[RESULT] ${result3}\n`);
+
+  // Example 4: Error-aware business logic
+  console.log(`[4] Business logic with error handling:\n`);
+
+  interface User {
+    id: string;
+    email: string;
+  }
+
+  const loadUser = (id: string): Effect.Effect<User, NetworkError | NotFoundError> =>
+    Effect.gen(function* () {
+      if (id === "invalid") {
+        yield* Effect.fail(
+          new NotFoundError({
+            resource: "user",
+            id,
+          })
+        );
+      }
+
+      if (id === "network-error") {
+        yield* Effect.fail(
+          new NetworkError({
+            endpoint: "/api/users",
+            retryable: true,
+          })
+        );
+      }
+
+      return { id, email: `user-${id}@example.com` };
+    });
+
+  const processUser = (id: string) =>
+    loadUser(id).pipe(
+      Effect.catchTag("NotFoundError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[BUSINESS] User not found: ${error.id}`
+          );
+
+          // Return default/empty user
+          return { id: "", email: "" };
+        })
+      ),
+      Effect.catchTag("NetworkError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[BUSINESS] Network error, will retry from cache`
+          );
+
+          return { id, email: "cached@example.com" };
+        })
+      )
+    );
+
+  yield* processUser("valid-id");
+
+  yield* processUser("invalid");
+
+  yield* processUser("network-error");
+
+  // Example 5: Discriminated union for exhaustiveness
+  console.log(`\n[5] Exhaustiveness checking (compile-time safety):\n`);
+
+  const classifyError = (
+    error: NetworkError | ValidationError | AuthenticationError | PermissionError
+  ): string => {
+    switch (error._tag) {
+      case "NetworkError":
+        return `network: ${error.statusCode}`;
+
+      case "ValidationError":
+        return `validation: ${error.field}`;
+
+      case "AuthenticationError":
+        return `auth: ${error.reason}`;
+
+      case "PermissionError":
+        return `permission: ${error.action}`;
+
+      // TypeScript ensures all cases covered
+      default:
+        const _exhaustive: never = error;
+        return _exhaustive;
+    }
+  };
+
+  const testError = new ValidationError({
+    field: "age",
+    reason: "Must be >= 18",
+  });
+
+  const classification = classifyError(testError);
+
+  yield* Effect.log(`[CLASSIFY] ${classification}`);
+
+  // Example 6: Recovery strategy chains
+  console.log(`\n[6] Chained recovery strategies:\n`);
+
+  const resilientOperation = Effect.gen(function* () {
+    yield* Effect.fail(
+      new RateLimitError({
+        retryAfter: 50,
+      })
+    );
+  });
+
+  const withRecovery = resilientOperation.pipe(
+    Effect.catchTag("RateLimitError", (error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(
+          `[STEP 1] Caught rate limit, waiting ${error.retryAfter}ms`
+        );
+
+        yield* Effect.sleep(`${error.retryAfter} millis`);
+
+        // Try again
+        return yield* Effect.succeed("recovered");
+      })
+    ),
+    Effect.catchTag("NetworkError", (error) =>
+      Effect.gen(function* () {
+        if (error.retryable) {
+          yield* Effect.log(`[STEP 2] Network error, retrying...`);
+
+          return "retry";
+        }
+
+        return yield* Effect.fail(error);
+      })
+    ),
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[STEP 3] Final fallback`);
+
+        return "fallback";
+      })
+    )
+  );
+
+  yield* withRecovery;
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+## Advanced: Error Classification Middleware
+
+Build composable error handlers:
+
+```typescript
+interface ErrorHandler {
+  canHandle: (error: Error) => boolean;
+  handle: (error: Error) => Effect.Effect<unknown>;
+  priority: number; // Higher = tried first
+}
+
+const applyErrorHandlers = (
+  effect: Effect.Effect<unknown>,
+  handlers: ErrorHandler[]
+) => {
+  const sorted = handlers.sort((a, b) => b.priority - a.priority);
+
+  return sorted.reduce(
+    (current, handler) =>
+      current.pipe(
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            if (handler.canHandle(error as Error)) {
+              return yield* handler.handle(error as Error);
+            }
+
+            return yield* Effect.fail(error);
+          })
+        )
+      ),
+    effect
+  );
+};
+
+// Usage
+const handlers: ErrorHandler[] = [
+  {
+    priority: 100,
+    canHandle: (e) => e instanceof RateLimitError,
+    handle: (e) =>
+      Effect.log(
+        `Handling rate limit: ${(e as RateLimitError).retryAfter}ms`
+      ),
+  },
+  {
+    priority: 50,
+    canHandle: (e) => e instanceof NetworkError,
+    handle: (e) =>
+      Effect.log(`Handling network error`),
+  },
+];
+```
+
+---
+
+## Advanced: Semantic Error Recovery
+
+Domain-specific recovery logic:
+
+```typescript
+interface RecoveryAction {
+  type: "retry" | "fallback" | "refresh" | "alert" | "fail";
+  config: Record<string, unknown>;
+}
+
+const determineRecoveryAction = (error: Error): RecoveryAction => {
+  if (error instanceof RateLimitError) {
+    return {
+      type: "retry",
+      config: {
+        delay: error.retryAfter,
+        strategy: "exponential",
+      },
+    };
+  }
+
+  if (error instanceof AuthenticationError && error.reason === "expired-token") {
+    return {
+      type: "refresh",
+      config: {
+        tokenEndpoint: "/auth/refresh",
+        scope: "read write",
+      },
+    };
+  }
+
+  if (error instanceof PermissionError) {
+    return {
+      type: "alert",
+      config: {
+        severity: "high",
+        message: `Access denied: ${error.action}`,
+      },
+    };
+  }
+
+  return { type: "fail", config: {} };
+};
+
+const executeRecoveryAction = (action: RecoveryAction) =>
+  Effect.gen(function* () {
+    switch (action.type) {
+      case "retry":
+        yield* Effect.log(
+          `[RECOVERY] Retrying with delay: ${action.config.delay}ms`
+        );
+        break;
+
+      case "refresh":
+        yield* Effect.log(`[RECOVERY] Refreshing token`);
+        break;
+
+      case "alert":
+        yield* Effect.log(`[RECOVERY] Alert: ${action.config.message}`);
+        break;
+
+      case "fail":
+        yield* Effect.fail(new Error("Unrecoverable error"));
+    }
+  });
+```
+
+---
+
+## Error Type Hierarchy
+
+```
+Error (base)
+├── NetworkError (retryable transient)
+├── RateLimitError (retryable with backoff)
+├── ValidationError (non-retryable user error)
+├── AuthenticationError
+│   ├── InvalidToken (refresh)
+│   ├── ExpiredToken (refresh)
+│   └── MissingToken (fail)
+├── PermissionError (non-retryable security)
+└── NotFoundError (non-retryable with fallback)
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use custom errors when:**
+- Multiple failure modes exist
+- Different recovery per error
+- Need domain semantics
+- TypeScript available
+- Type safety matters
+
+✅ **Use recovery strategies when:**
+- Complex retry logic needed
+- Different backoff per error
+- Business logic affects recovery
+- Audit trail required
+
+⚠️ **Trade-offs:**
+- More error classes to maintain
+- Learning curve for teams
+- More code upfront
+- Harder to add generic handlers
+
+---
+
+## Custom Error Design Checklist
+
+- ✅ Classify errors as retryable/non-retryable
+- ✅ Include recovery hints in error
+- ✅ Use discriminated unions
+- ✅ Test all error paths
+- ✅ Document recovery strategy
+- ✅ Version error types
+- ✅ Consider logging/metrics
+- ✅ Plan error evolution
+
+---
+
+## See Also
+
+- [Error Handling Pattern 1: Accumulation](./error-handling-pattern-accumulation.mdx) - Multiple errors
+- [Error Handling Pattern 2: Propagation](./error-handling-pattern-propagation.mdx) - Error chains
+- [Scheduling Pattern 5: Advanced Retries](./scheduling-pattern-advanced-retry-chains.mdx) - Error-aware retry
+- [Concurrency Pattern 2: Rate Limit](./concurrency-pattern-rate-limit-with-semaphore.mdx) - Rate limit handling

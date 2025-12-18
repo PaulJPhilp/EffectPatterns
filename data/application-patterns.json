@@ -1,0 +1,150 @@
+{
+  "applicationPatterns": [
+    {
+      "id": "getting-started",
+      "name": "Getting Started",
+      "description": "First steps with Effect - hello world, basic concepts",
+      "learningOrder": 1,
+      "effectModule": "Effect",
+      "subPatterns": []
+    },
+    {
+      "id": "core-concepts",
+      "name": "Core Concepts",
+      "description": "Fundamental Effect patterns - generators, pipes, dependencies",
+      "learningOrder": 2,
+      "effectModule": "Effect",
+      "subPatterns": []
+    },
+    {
+      "id": "error-management",
+      "name": "Error Management",
+      "description": "Handle errors, create typed errors, recovery strategies",
+      "learningOrder": 3,
+      "effectModule": "Effect",
+      "subPatterns": ["getting-started"]
+    },
+    {
+      "id": "resource-management",
+      "name": "Resource Management",
+      "description": "Acquire and release resources safely with Scope",
+      "learningOrder": 4,
+      "effectModule": "Effect",
+      "subPatterns": []
+    },
+    {
+      "id": "concurrency",
+      "name": "Concurrency",
+      "description": "Run effects in parallel, manage fibers, coordinate async work",
+      "learningOrder": 5,
+      "effectModule": "Effect",
+      "subPatterns": ["getting-started", "coordination", "state"]
+    },
+    {
+      "id": "streams",
+      "name": "Streams",
+      "description": "Process sequences of data with Stream",
+      "learningOrder": 6,
+      "effectModule": "Stream",
+      "subPatterns": ["getting-started", "sinks"]
+    },
+    {
+      "id": "schema",
+      "name": "Schema",
+      "description": "Validate and transform data with Effect Schema",
+      "learningOrder": 7,
+      "effectModule": "Schema",
+      "subPatterns": [
+        "getting-started",
+        "primitives",
+        "objects",
+        "arrays",
+        "unions",
+        "transformations",
+        "async-validation",
+        "error-handling",
+        "form-validation",
+        "environment-config",
+        "json-validation",
+        "validating-api-responses",
+        "web-standards-validation",
+        "recursive",
+        "composition",
+        "ai-schemas"
+      ]
+    },
+    {
+      "id": "platform",
+      "name": "Platform",
+      "description": "System operations - files, commands, environment",
+      "learningOrder": 8,
+      "effectModule": "Platform",
+      "subPatterns": ["getting-started"]
+    },
+    {
+      "id": "scheduling",
+      "name": "Scheduling",
+      "description": "Schedule and repeat effects with Schedule",
+      "learningOrder": 9,
+      "effectModule": "Schedule",
+      "subPatterns": []
+    },
+    {
+      "id": "domain-modeling",
+      "name": "Domain Modeling",
+      "description": "Model business domains with branded types and services",
+      "learningOrder": 10,
+      "effectModule": "Effect",
+      "subPatterns": []
+    },
+    {
+      "id": "building-apis",
+      "name": "Building APIs",
+      "description": "Build HTTP APIs and services",
+      "learningOrder": 11,
+      "effectModule": "Effect",
+      "subPatterns": []
+    },
+    {
+      "id": "building-data-pipelines",
+      "name": "Building Data Pipelines",
+      "description": "Process and transform data at scale",
+      "learningOrder": 12,
+      "effectModule": "Effect",
+      "subPatterns": []
+    },
+    {
+      "id": "making-http-requests",
+      "name": "Making HTTP Requests",
+      "description": "HTTP client patterns with Effect",
+      "learningOrder": 13,
+      "effectModule": "Effect",
+      "subPatterns": []
+    },
+    {
+      "id": "testing",
+      "name": "Testing",
+      "description": "Test Effect applications",
+      "learningOrder": 14,
+      "effectModule": "Effect",
+      "subPatterns": []
+    },
+    {
+      "id": "observability",
+      "name": "Observability",
+      "description": "Logging, tracing, and metrics",
+      "learningOrder": 15,
+      "effectModule": "Effect",
+      "subPatterns": []
+    },
+    {
+      "id": "tooling-and-debugging",
+      "name": "Tooling and Debugging",
+      "description": "Debug and profile Effect applications",
+      "learningOrder": 16,
+      "effectModule": "Effect",
+      "subPatterns": []
+    }
+  ]
+}
+

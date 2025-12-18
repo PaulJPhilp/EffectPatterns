@@ -6,7 +6,7 @@
 
   To modify this file:
   - Run: bun run pipeline
-  - Or edit: scripts/publish/pipeline.ts
+  - Or edit: scripts/publish/generate.ts
 
   For project information, see ABOUT.md
 -->
@@ -25,376 +25,461 @@ This repository is designed to be a living document that helps developers move f
 
 ## Table of Contents
 
-### Core Effect Patterns
+### Effect Patterns
 
-- [Project Setup & Execution](#project-setup--execution)
+- [Getting Started](#getting-started)
 - [Core Concepts](#core-concepts)
-- [Resource Management](#resource-management)
-- [Domain Modeling](#domain-modeling)
 - [Error Management](#error-management)
-- [Testing](#testing)
-- [Building APIs](#building-apis)
-- [Making HTTP Requests](#making-http-requests)
-- [Building Data Pipelines](#building-data-pipelines)
+- [Resource Management](#resource-management)
 - [Concurrency](#concurrency)
-- [Observability](#observability)
-- [Tooling And Debugging](#tooling-and-debugging)
-- [Branded Types](#branded-types)
-- [Combinators](#combinators)
-- [Constructors](#constructors)
-- [Control Flow](#control-flow)
-- [Data Types](#data-types)
-- [Pattern Matching](#pattern-matching)
-- [Error Handling](#error-handling)
-- [Error Handling Resilience](#error-handling-resilience)
+- [Streams](#streams)
+- [Schema](#schema)
+- [Platform](#platform)
 - [Scheduling](#scheduling)
-- [Scheduling Periodic Tasks](#scheduling-periodic-tasks)
-- [Value Handling](#value-handling)
-
-### Schema Patterns
-
-- [Composition](#composition)
-- [Transformations](#transformations)
-- [Unions](#unions)
-- [Recursive](#recursive)
-- [Error Handling](#error-handling)
-- [Async Validation](#async-validation)
-- [Validating Api Responses](#validating-api-responses)
-- [Parsing Ai Responses](#parsing-ai-responses)
-- [Defining Ai Output Schemas](#defining-ai-output-schemas)
-- [Web Standards Validation](#web-standards-validation)
-- [Form Validation](#form-validation)
-- [Json File Validation](#json-file-validation)
-- [Json Db Validation](#json-db-validation)
-- [Environment Config](#environment-config)
+- [Domain Modeling](#domain-modeling)
+- [Building APIs](#building-apis)
+- [Building Data Pipelines](#building-data-pipelines)
+- [Making HTTP Requests](#making-http-requests)
+- [Testing](#testing)
+- [Observability](#observability)
+- [Tooling and Debugging](#tooling-and-debugging)
 
 
 
 ---
 
-## Project Setup & Execution
+## Getting Started
+First steps with Effect - hello world, basic concepts
+
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Execute Synchronous Effects with Effect.runSync](./content/published/patterns/core/execute-with-runsync.mdx) | 🟢 **Beginner** | Use Effect.runSync at the 'end of the world' to execute a purely synchronous Effect and get its value directly. |
-| [Execute Asynchronous Effects with Effect.runPromise](./content/published/patterns/core/execute-with-runpromise.mdx) | 🟢 **Beginner** | Use Effect.runPromise at the 'end of the world' to execute an asynchronous Effect and get its result as a JavaScript Promise. |
-| [Set Up a New Effect Project](./content/published/patterns/core/setup-new-project.mdx) | 🟢 **Beginner** | Initialize a new Node.js project with the necessary TypeScript configuration and Effect dependencies to start building. |
-| [Create a Reusable Runtime from Layers](./content/published/patterns/core/create-reusable-runtime-from-layers.mdx) | 🟠 **Advanced** | Compile your application's layers into a reusable Runtime object to efficiently execute multiple effects that share the same context. |
+| [Retry a Failed Operation with Effect.retry](./content/published/patterns/getting-started/getting-started-retry-on-failure.mdx) | 🟢 **Beginner** | Use Effect.retry with a Schedule to automatically retry failed operations with customizable delays and limits. |
+| [Hello World: Your First Effect](./content/published/patterns/getting-started/getting-started-hello-world.mdx) | 🟢 **Beginner** | Create and run your very first Effect program using Effect.succeed and Effect.runSync. |
+| [Transform Values with Effect.map](./content/published/patterns/getting-started/getting-started-transform-with-map.mdx) | 🟢 **Beginner** | Use Effect.map to transform the success value of an Effect without changing its error or dependency types. |
+| [Handle Your First Error with Effect.fail and catchAll](./content/published/patterns/getting-started/getting-started-handle-errors.mdx) | 🟢 **Beginner** | Learn how to create Effects that can fail and how to recover from those failures using Effect.fail and Effect.catchAll. |
+| [Run Multiple Effects in Parallel with Effect.all](./content/published/patterns/getting-started/getting-started-run-in-parallel.mdx) | 🟢 **Beginner** | Use Effect.all to run multiple Effects at the same time and collect all their results. |
+| [Why Effect? Comparing Effect to Promise](./content/published/patterns/getting-started/getting-started-effect-vs-promise.mdx) | 🟢 **Beginner** | Understand what Effect gives you that Promise doesn't: type-safe errors, dependency injection, and composability. |
 
 ## Core Concepts
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Comparing Data by Value with Structural Equality](./content/published/patterns/core/comparing-data-by-value-with-structural-equality.mdx) | 🟢 **Beginner** | Use Data.struct and Equal.equals to safely compare objects by their value instead of their reference, avoiding common JavaScript pitfalls. |
-| [Understand that Effects are Lazy Blueprints](./content/published/patterns/core/effects-are-lazy.mdx) | 🟢 **Beginner** | An Effect is a lazy, immutable blueprint describing a computation, which does nothing until it is explicitly executed by a runtime. |
-| [Wrap Asynchronous Computations with tryPromise](./content/published/patterns/core/wrap-asynchronous-computations.mdx) | 🟢 **Beginner** | Use Effect.tryPromise to safely convert a function that returns a Promise into an Effect, capturing rejections in the error channel. |
-| [Write Sequential Code with Effect.gen](./content/published/patterns/core/write-sequential-code-with-gen.mdx) | 🟢 **Beginner** | Use Effect.gen with yield* to write sequential, asynchronous code in a style that looks and feels like familiar async/await. |
-| [Transform Effect Values with map and flatMap](./content/published/patterns/core/transform-effect-values.mdx) | 🟢 **Beginner** | Use Effect.map for synchronous transformations and Effect.flatMap to chain operations that return another Effect. |
-| [Create Pre-resolved Effects with succeed and fail](./content/published/patterns/core/create-pre-resolved-effect.mdx) | 🟢 **Beginner** | Use Effect.succeed(value) to create an Effect that immediately succeeds with a value, and Effect.fail(error) for an Effect that immediately fails. |
-| [Solve Promise Problems with Effect](./content/published/patterns/core/solve-promise-problems-with-effect.mdx) | 🟢 **Beginner** | Understand how Effect solves the fundamental problems of native Promises, such as untyped errors, lack of dependency injection, and no built-in cancellation. |
-| [Wrap Synchronous Computations with sync and try](./content/published/patterns/core/wrap-synchronous-computations.mdx) | 🟢 **Beginner** | Use Effect.sync for non-throwing synchronous code and Effect.try for synchronous code that might throw an exception. |
-| [Use .pipe for Composition](./content/published/patterns/core/use-pipe-for-composition.mdx) | 🟢 **Beginner** | Use the .pipe() method to chain multiple operations onto an Effect in a readable, top-to-bottom sequence. |
-| [Understand the Three Effect Channels (A, E, R)](./content/published/patterns/core/understand-effect-channels.mdx) | 🟢 **Beginner** | Learn about the three generic parameters of an Effect: the success value (A), the failure error (E), and the context requirements (R). |
-| [Access Configuration from the Context](./content/published/patterns/core/access-config-in-context.mdx) | 🟡 **Intermediate** | Access your type-safe configuration within an Effect.gen block by yielding the Config object you defined. |
-| [Representing Time Spans with Duration](./content/published/patterns/core/representing-time-spans-with-duration.mdx) | 🟡 **Intermediate** | Use the Duration data type to represent time intervals in a type-safe, human-readable, and composable way. |
-| [Control Flow with Conditional Combinators](./content/published/patterns/core/control-flow-with-combinators.mdx) | 🟡 **Intermediate** | Use combinators like Effect.if, Effect.when, and Effect.cond to handle conditional logic in a declarative, composable way. |
-| [Process Streaming Data with Stream](./content/published/patterns/core/process-streaming-data-with-stream.mdx) | 🟡 **Intermediate** | Use Stream<A, E, R> to represent and process data that arrives over time, such as file reads, WebSocket messages, or paginated API results. |
-| [Understand Layers for Dependency Injection](./content/published/patterns/core/understand-layers-for-dependency-injection.mdx) | 🟡 **Intermediate** | A Layer is a blueprint that describes how to build a service, detailing its own requirements and any potential errors during its construction. |
-| [Define a Type-Safe Configuration Schema](./content/published/patterns/core/define-config-schema.mdx) | 🟡 **Intermediate** | Use Effect.Config primitives to define a schema for your application's configuration, ensuring type-safety and separation from code. |
-| [Use Chunk for High-Performance Collections](./content/published/patterns/core/use-chunk-for-high-performance-collections.mdx) | 🟡 **Intermediate** | Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines. |
-| [Beyond the Date Type - Real World Dates, Times, and Timezones](./content/published/patterns/core/beyond-the-date-type.mdx) | 🟡 **Intermediate** | Use the Clock service for testable access to the current time and prefer immutable primitives for storing and passing timestamps. |
-| [Provide Configuration to Your App via a Layer](./content/published/patterns/core/provide-config-layer.mdx) | 🟡 **Intermediate** | Use Config.layer(schema) to create a Layer that provides your configuration schema to the application's context. |
+Fundamental Effect patterns - generators, pipes, dependencies
 
-## Resource Management
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Safely Bracket Resource Usage with `acquireRelease`](./content/published/patterns/core/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
-| [Create a Service Layer from a Managed Resource](./content/published/patterns/core/scoped-service-layer.mdx) | 🟡 **Intermediate** | Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service. |
-| [Compose Resource Lifecycles with `Layer.merge`](./content/published/patterns/core/compose-scoped-layers.mdx) | 🟡 **Intermediate** | Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order. |
-| [Manually Manage Lifecycles with `Scope`](./content/published/patterns/core/manual-scope-management.mdx) | 🟠 **Advanced** | Use `Scope` directly to manage complex resource lifecycles or when building custom layers. |
-| [Create a Managed Runtime for Scoped Resources](./content/published/patterns/core/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
-
-## Domain Modeling
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Model Optional Values Safely with Option](./content/published/patterns/core/model-optional-values-with-option.mdx) | 🟡 **Intermediate** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
-| [Use Effect.gen for Business Logic](./content/published/patterns/core/use-gen-for-business-logic.mdx) | 🟡 **Intermediate** | Encapsulate sequential business logic, control flow, and dependency access within Effect.gen for improved readability and maintainability. |
-| [Transform Data During Validation with Schema](./content/published/patterns/core/transform-data-with-schema.mdx) | 🟡 **Intermediate** | Use Schema.transform to safely convert data from one type to another during the parsing phase, such as from a string to a Date. |
-| [Define Type-Safe Errors with Data.TaggedError](./content/published/patterns/core/define-tagged-errors.mdx) | 🟡 **Intermediate** | Create custom, type-safe error classes by extending Data.TaggedError to make error handling robust, predictable, and self-documenting. |
-| [Define Contracts Upfront with Schema](./content/published/patterns/core/define-contracts-with-schema.mdx) | 🟡 **Intermediate** | Use Schema to define the types for your data models and function signatures before writing the implementation, creating clear, type-safe contracts. |
-| [Parse and Validate Data with Schema.decode](./content/published/patterns/core/parse-with-schema-decode.mdx) | 🟡 **Intermediate** | Use Schema.decode(schema) to create an Effect that parses and validates unknown data, which integrates seamlessly with Effect's error handling. |
-| [Avoid Long Chains of .andThen; Use Generators Instead](./content/published/patterns/core/avoid-long-andthen-chains.mdx) | 🟡 **Intermediate** | Prefer Effect.gen over long chains of .andThen for sequential logic to improve readability and maintainability. |
-| [Distinguish 'Not Found' from Errors](./content/published/patterns/core/distinguish-not-found-from-errors.mdx) | 🟡 **Intermediate** | Use Effect<Option<A>> to clearly distinguish between a recoverable 'not found' case (None) and a true failure (Fail). |
-| [Model Validated Domain Types with Brand](./content/published/patterns/core/model-validated-domain-types-with-brand.mdx) | 🟡 **Intermediate** | Use Brand to turn primitive types like string or number into specific, validated domain types like Email or PositiveInt, making illegal states unrepresentable. |
-| [Accumulate Multiple Errors with Either](./content/published/patterns/core/accumulate-multiple-errors-with-either.mdx) | 🟡 **Intermediate** | Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one. |
+| [Combining Values with zip](./content/published/patterns/core-concepts/combinator-zip.mdx) | 🟢 **Beginner** | Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either. |
+| [Creating from Synchronous and Callback Code](./content/published/patterns/core-concepts/constructor-sync-async.mdx) | 🟢 **Beginner** | Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code. |
+| [Model Optional Values Safely with Option](./content/published/patterns/core-concepts/data-option.mdx) | 🟢 **Beginner** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
+| [Comparing Data by Value with Structural Equality](./content/published/patterns/core-concepts/comparing-data-by-value-with-structural-equality.mdx) | 🟢 **Beginner** | Use Data.struct and Equal.equals to safely compare objects by their value instead of their reference, avoiding common JavaScript pitfalls. |
+| [Accumulate Multiple Errors with Either](./content/published/patterns/core-concepts/data-either.mdx) | 🟢 **Beginner** | Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one. |
+| [Execute Synchronous Effects with Effect.runSync](./content/published/patterns/core-concepts/execute-with-runsync.mdx) | 🟢 **Beginner** | Use Effect.runSync at the 'end of the world' to execute a purely synchronous Effect and get its value directly. |
+| [Lifting Values with succeed, some, and right](./content/published/patterns/core-concepts/constructor-succeed-some-right.mdx) | 🟢 **Beginner** | Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe. |
+| [Execute Asynchronous Effects with Effect.runPromise](./content/published/patterns/core-concepts/execute-with-runpromise.mdx) | 🟢 **Beginner** | Use Effect.runPromise at the 'end of the world' to execute an asynchronous Effect and get its result as a JavaScript Promise. |
+| [Understand that Effects are Lazy Blueprints](./content/published/patterns/core-concepts/effects-are-lazy.mdx) | 🟢 **Beginner** | An Effect is a lazy, immutable blueprint describing a computation, which does nothing until it is explicitly executed by a runtime. |
+| [Conditional Branching with if, when, and cond](./content/published/patterns/core-concepts/combinator-conditional.mdx) | 🟢 **Beginner** | Use combinators like if, when, and cond to express conditional logic declaratively across Effect, Stream, Option, and Either. |
+| [Transforming Values with map](./content/published/patterns/core-concepts/combinator-map.mdx) | 🟢 **Beginner** | Use map to transform the result of an Effect, Stream, Option, or Either in a declarative, type-safe way. |
+| [Chaining Computations with flatMap](./content/published/patterns/core-concepts/combinator-flatmap.mdx) | 🟢 **Beginner** | Use flatMap to chain together computations where each step may itself be effectful, optional, or error-prone. |
+| [Filtering Results with filter](./content/published/patterns/core-concepts/combinator-filter.mdx) | 🟢 **Beginner** | Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either. |
+| [Comparing Data by Value with Data.struct](./content/published/patterns/core-concepts/data-struct.mdx) | 🟢 **Beginner** | Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference. |
+| [Wrap Asynchronous Computations with tryPromise](./content/published/patterns/core-concepts/wrap-asynchronous-computations.mdx) | 🟢 **Beginner** | Use Effect.tryPromise to safely convert a function that returns a Promise into an Effect, capturing rejections in the error channel. |
+| [Write Sequential Code with Effect.gen](./content/published/patterns/core-concepts/write-sequential-code-with-gen.mdx) | 🟢 **Beginner** | Use Effect.gen with yield* to write sequential, asynchronous code in a style that looks and feels like familiar async/await. |
+| [Transform Effect Values with map and flatMap](./content/published/patterns/core-concepts/transform-effect-values.mdx) | 🟢 **Beginner** | Use Effect.map for synchronous transformations and Effect.flatMap to chain operations that return another Effect. |
+| [Converting from Nullable, Option, or Either](./content/published/patterns/core-concepts/constructor-from-nullable-option-either.mdx) | 🟢 **Beginner** | Use fromNullable, fromOption, and fromEither to convert nullable values, Option, or Either into Effects or Streams, enabling safe and composable interop. |
+| [Create Pre-resolved Effects with succeed and fail](./content/published/patterns/core-concepts/create-pre-resolved-effect.mdx) | 🟢 **Beginner** | Use Effect.succeed(value) to create an Effect that immediately succeeds with a value, and Effect.fail(error) for an Effect that immediately fails. |
+| [Wrapping Synchronous and Asynchronous Computations](./content/published/patterns/core-concepts/constructor-try-trypromise.mdx) | 🟢 **Beginner** | Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world. |
+| [Set Up a New Effect Project](./content/published/patterns/core-concepts/setup-new-project.mdx) | 🟢 **Beginner** | Initialize a new Node.js project with the necessary TypeScript configuration and Effect dependencies to start building. |
+| [Solve Promise Problems with Effect](./content/published/patterns/core-concepts/solve-promise-problems-with-effect.mdx) | 🟢 **Beginner** | Understand how Effect solves the fundamental problems of native Promises, such as untyped errors, lack of dependency injection, and no built-in cancellation. |
+| [Creating from Collections](./content/published/patterns/core-concepts/constructor-from-iterable.mdx) | 🟢 **Beginner** | Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations. |
+| [Working with Tuples using Data.tuple](./content/published/patterns/core-concepts/data-tuple.mdx) | 🟢 **Beginner** | Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching. |
+| [Lifting Errors and Absence with fail, none, and left](./content/published/patterns/core-concepts/constructor-fail-none-left.mdx) | 🟢 **Beginner** | Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe. |
+| [Wrap Synchronous Computations with sync and try](./content/published/patterns/core-concepts/wrap-synchronous-computations.mdx) | 🟢 **Beginner** | Use Effect.sync for non-throwing synchronous code and Effect.try for synchronous code that might throw an exception. |
+| [Use .pipe for Composition](./content/published/patterns/core-concepts/use-pipe-for-composition.mdx) | 🟢 **Beginner** | Use the .pipe() method to chain multiple operations onto an Effect in a readable, top-to-bottom sequence. |
+| [Understand the Three Effect Channels (A, E, R)](./content/published/patterns/core-concepts/understand-effect-channels.mdx) | 🟢 **Beginner** | Learn about the three generic parameters of an Effect: the success value (A), the failure error (E), and the context requirements (R). |
+| [Working with Immutable Arrays using Data.array](./content/published/patterns/core-concepts/data-array.mdx) | 🟢 **Beginner** | Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations. |
+| [Representing Time Spans with Duration](./content/published/patterns/core-concepts/data-duration.mdx) | 🟡 **Intermediate** | Use Duration to represent time intervals in a type-safe, human-readable, and composable way. |
+| [Use Chunk for High-Performance Collections](./content/published/patterns/core-concepts/data-chunk.mdx) | 🟡 **Intermediate** | Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines. |
+| [Work with Immutable Sets using HashSet](./content/published/patterns/core-concepts/data-hashset.mdx) | 🟡 **Intermediate** | Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations. |
+| [Sequencing with andThen, tap, and flatten](./content/published/patterns/core-concepts/combinator-sequencing.mdx) | 🟡 **Intermediate** | Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either. |
+| [Optional Pattern 1: Handling None and Some Values](./content/published/patterns/core-concepts/optional-pattern-handling-none-some.mdx) | 🟡 **Intermediate** | Use Effect's Option type to safely handle values that may not exist, avoiding null/undefined bugs and enabling composable error handling. |
+| [Handling Errors with catchAll, orElse, and match](./content/published/patterns/core-concepts/combinator-error-handling.mdx) | 🟡 **Intermediate** | Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option. |
+| [Access Configuration from the Context](./content/published/patterns/core-concepts/access-config-in-context.mdx) | 🟡 **Intermediate** | Access your type-safe configuration within an Effect.gen block by yielding the Config object you defined. |
+| [Redact and Handle Sensitive Data](./content/published/patterns/core-concepts/data-redacted.mdx) | 🟡 **Intermediate** | Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed. |
+| [Modeling Effect Results with Exit](./content/published/patterns/core-concepts/data-exit.mdx) | 🟡 **Intermediate** | Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way. |
+| [Work with Arbitrary-Precision Numbers using BigDecimal](./content/published/patterns/core-concepts/data-bigdecimal.mdx) | 🟡 **Intermediate** | Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations. |
+| [Representing Time Spans with Duration](./content/published/patterns/core-concepts/representing-time-spans-with-duration.mdx) | 🟡 **Intermediate** | Use the Duration data type to represent time intervals in a type-safe, human-readable, and composable way. |
+| [Control Flow with Conditional Combinators](./content/published/patterns/core-concepts/control-flow-with-combinators.mdx) | 🟡 **Intermediate** | Use combinators like Effect.if, Effect.when, and Effect.cond to handle conditional logic in a declarative, composable way. |
+| [Process Streaming Data with Stream](./content/published/patterns/core-concepts/process-streaming-data-with-stream.mdx) | 🟡 **Intermediate** | Use Stream<A, E, R> to represent and process data that arrives over time, such as file reads, WebSocket messages, or paginated API results. |
+| [Understand Layers for Dependency Injection](./content/published/patterns/core-concepts/understand-layers-for-dependency-injection.mdx) | 🟡 **Intermediate** | A Layer is a blueprint that describes how to build a service, detailing its own requirements and any potential errors during its construction. |
+| [Type Classes for Equality, Ordering, and Hashing with Data.Class](./content/published/patterns/core-concepts/data-class.mdx) | 🟡 **Intermediate** | Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions. |
+| [Define a Type-Safe Configuration Schema](./content/published/patterns/core-concepts/define-config-schema.mdx) | 🟡 **Intermediate** | Use Effect.Config primitives to define a schema for your application's configuration, ensuring type-safety and separation from code. |
+| [Use Chunk for High-Performance Collections](./content/published/patterns/core-concepts/use-chunk-for-high-performance-collections.mdx) | 🟡 **Intermediate** | Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines. |
+| [Modeling Tagged Unions with Data.case](./content/published/patterns/core-concepts/data-case.mdx) | 🟡 **Intermediate** | Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching. |
+| [Beyond the Date Type - Real World Dates, Times, and Timezones](./content/published/patterns/core-concepts/beyond-the-date-type.mdx) | 🟡 **Intermediate** | Use the Clock service for testable access to the current time and prefer immutable primitives for storing and passing timestamps. |
+| [Mapping and Chaining over Collections with forEach and all](./content/published/patterns/core-concepts/combinator-foreach-all.mdx) | 🟡 **Intermediate** | Use forEach and all to apply effectful functions to collections and combine the results, enabling batch and parallel processing. |
+| [Provide Configuration to Your App via a Layer](./content/published/patterns/core-concepts/provide-config-layer.mdx) | 🟡 **Intermediate** | Use Config.layer(schema) to create a Layer that provides your configuration schema to the application's context. |
+| [Work with Dates and Times using DateTime](./content/published/patterns/core-concepts/data-datetime.mdx) | 🟡 **Intermediate** | Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations. |
+| [Manage Shared State Safely with Ref](./content/published/patterns/core-concepts/data-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
+| [Optional Pattern 2: Optional Chaining and Composition](./content/published/patterns/core-concepts/optional-pattern-optional-chains.mdx) | 🟠 **Advanced** | Chain optional values across multiple steps with composable operators, enabling elegant data flow through systems with missing values. |
+| [Handle Unexpected Errors by Inspecting the Cause](./content/published/patterns/core-concepts/data-cause.mdx) | 🟠 **Advanced** | Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces. |
+| [Create a Reusable Runtime from Layers](./content/published/patterns/core-concepts/create-reusable-runtime-from-layers.mdx) | 🟠 **Advanced** | Compile your application's layers into a reusable Runtime object to efficiently execute multiple effects that share the same context. |
 
 ## Error Management
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Handle Errors with catchTag, catchTags, and catchAll](./content/published/patterns/core/handle-errors-with-catch.mdx) | 🟡 **Intermediate** | Use catchTag for type-safe recovery from specific tagged errors, and catchAll to recover from any possible failure. |
-| [Mapping Errors to Fit Your Domain](./content/published/patterns/core/mapping-errors-to-fit-your-domain.mdx) | 🟡 **Intermediate** | Use Effect.mapError to transform specific, low-level errors into more general domain errors, creating clean architectural boundaries. |
-| [Control Repetition with Schedule](./content/published/patterns/core/control-repetition-with-schedule.mdx) | 🟡 **Intermediate** | Use Schedule to create composable, stateful policies that define precisely how an effect should be repeated or retried. |
-| [Leverage Effect's Built-in Structured Logging](./content/published/patterns/core/leverage-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions (Effect.log, Effect.logInfo, etc.) for structured, configurable, and context-aware logging. |
-| [Conditionally Branching Workflows](./content/published/patterns/core/conditionally-branching-workflows.mdx) | 🟡 **Intermediate** | Use predicate-based operators like Effect.filter and Effect.if to make decisions and control the flow of your application based on runtime values. |
-| [Retry Operations Based on Specific Errors](./content/published/patterns/core/retry-based-on-specific-errors.mdx) | 🟡 **Intermediate** | Use Effect.retry and predicate functions to selectively retry an operation only when specific, recoverable errors occur. |
-| [Handle Flaky Operations with Retries and Timeouts](./content/published/patterns/core/handle-flaky-operations-with-retry-timeout.mdx) | 🟡 **Intermediate** | Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing operations, such as network requests. |
-| [Handle Unexpected Errors by Inspecting the Cause](./content/published/patterns/core/handle-unexpected-errors-with-cause.mdx) | 🟠 **Advanced** | Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die). |
+Handle errors, create typed errors, recovery strategies
 
-## Testing
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Accessing the Current Time with Clock](./content/published/patterns/core/accessing-current-time-with-clock.mdx) | 🟡 **Intermediate** | Use the Clock service to access the current time in a testable, deterministic way, avoiding direct calls to Date.now(). |
-| [Write Tests That Adapt to Application Code](./content/published/patterns/core/write-tests-that-adapt-to-application-code.mdx) | 🟡 **Intermediate** | A cardinal rule of testing: Tests must adapt to the application's interface, not the other way around. Never modify application code solely to make a test pass. |
-| [Use the Auto-Generated .Default Layer in Tests](./content/published/patterns/core/use-default-layer-for-tests.mdx) | 🟡 **Intermediate** | When testing, always use the MyService.Default layer that is automatically generated by the Effect.Service class for dependency injection. |
-| [Mocking Dependencies in Tests](./content/published/patterns/core/mocking-dependencies-in-tests.mdx) | 🟡 **Intermediate** | Use a test-specific Layer to provide mock implementations of services your code depends on, enabling isolated and deterministic unit tests. |
-| [Organize Layers into Composable Modules](./content/published/patterns/core/organize-layers-into-composable-modules.mdx) | 🟠 **Advanced** | Structure a large application by grouping related services into 'module' layers, which are then composed together with a shared base layer. |
+| [Pattern Match on Option and Either](./content/published/patterns/error-management/pattern-option-either-match.mdx) | 🟢 **Beginner** | Use declarative match() combinators to handle optional and error-prone values |
+| [Matching on Success and Failure with match](./content/published/patterns/error-management/pattern-match.mdx) | 🟢 **Beginner** | Use match to handle both success and failure cases in a single, declarative place for Effect, Option, and Either. |
+| [Checking Option and Either Cases](./content/published/patterns/error-management/pattern-option-either-checks.mdx) | 🟢 **Beginner** | Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching. |
+| [Handle Errors with catchTag, catchTags, and catchAll](./content/published/patterns/error-management/handle-errors-with-catch.mdx) | 🟡 **Intermediate** | Use catchTag for type-safe recovery from specific tagged errors, and catchAll to recover from any possible failure. |
+| [Mapping Errors to Fit Your Domain](./content/published/patterns/error-management/mapping-errors-to-fit-your-domain.mdx) | 🟡 **Intermediate** | Use Effect.mapError to transform specific, low-level errors into more general domain errors, creating clean architectural boundaries. |
+| [Control Repetition with Schedule](./content/published/patterns/error-management/control-repetition-with-schedule.mdx) | 🟡 **Intermediate** | Use Schedule to create composable, stateful policies that define precisely how an effect should be repeated or retried. |
+| [Error Handling Pattern 1: Accumulating Multiple Errors](./content/published/patterns/error-management/error-handling-pattern-accumulation.mdx) | 🟡 **Intermediate** | Collect multiple errors across operations instead of failing on first error, enabling comprehensive error reporting and validation. |
+| [Leverage Effect's Built-in Structured Logging](./content/published/patterns/error-management/leverage-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions (Effect.log, Effect.logInfo, etc.) for structured, configurable, and context-aware logging. |
+| [Matching Tagged Unions with matchTag and matchTags](./content/published/patterns/error-management/pattern-matchtag.mdx) | 🟡 **Intermediate** | Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching. |
+| [Conditionally Branching Workflows](./content/published/patterns/error-management/conditionally-branching-workflows.mdx) | 🟡 **Intermediate** | Use predicate-based operators like Effect.filter and Effect.if to make decisions and control the flow of your application based on runtime values. |
+| [Effectful Pattern Matching with matchEffect](./content/published/patterns/error-management/pattern-matcheffect.mdx) | 🟡 **Intermediate** | Use matchEffect to perform effectful branching based on success or failure, enabling rich workflows in the Effect world. |
+| [Retry Operations Based on Specific Errors](./content/published/patterns/error-management/retry-based-on-specific-errors.mdx) | 🟡 **Intermediate** | Use Effect.retry and predicate functions to selectively retry an operation only when specific, recoverable errors occur. |
+| [Handling Specific Errors with catchTag and catchTags](./content/published/patterns/error-management/pattern-catchtag.mdx) | 🟡 **Intermediate** | Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery. |
+| [Handle Flaky Operations with Retries and Timeouts](./content/published/patterns/error-management/handle-flaky-operations-with-retry-timeout.mdx) | 🟡 **Intermediate** | Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing operations, such as network requests. |
+| [Scheduling Pattern 2: Implement Exponential Backoff for Retries](./content/published/patterns/error-management/scheduling-pattern-exponential-backoff.mdx) | 🟡 **Intermediate** | Use exponential backoff with jitter to retry failed operations with increasing delays, preventing resource exhaustion and cascade failures in distributed systems. |
+| [Handle Unexpected Errors by Inspecting the Cause](./content/published/patterns/error-management/handle-unexpected-errors-with-cause.mdx) | 🟠 **Advanced** | Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die). |
+| [Error Handling Pattern 2: Error Propagation and Chains](./content/published/patterns/error-management/error-handling-pattern-propagation.mdx) | 🟠 **Advanced** | Propagate errors through effect chains with context, preserving error information and enabling recovery at appropriate layers. |
+| [Error Handling Pattern 3: Custom Error Strategies](./content/published/patterns/error-management/error-handling-pattern-custom-strategies.mdx) | 🟠 **Advanced** | Build domain-specific error types and recovery strategies that align with business logic and provide actionable error information. |
 
-## Building APIs
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Handle a GET Request](./content/published/patterns/core/handle-get-request.mdx) | 🟢 **Beginner** | Define a route that responds to a specific HTTP GET request path. |
-| [Send a JSON Response](./content/published/patterns/core/send-json-response.mdx) | 🟢 **Beginner** | Create and send a structured JSON response with the correct headers and status code. |
-| [Extract Path Parameters](./content/published/patterns/core/extract-path-parameters.mdx) | 🟢 **Beginner** | Capture and use dynamic segments from a request URL, such as a resource ID. |
-| [Create a Basic HTTP Server](./content/published/patterns/core/launch-http-server.mdx) | 🟢 **Beginner** | Launch a simple, effect-native HTTP server to respond to incoming requests. |
-| [Validate Request Body](./content/published/patterns/core/validate-request-body.mdx) | 🟡 **Intermediate** | Safely parse and validate an incoming JSON request body against a predefined Schema. |
-| [Provide Dependencies to Routes](./content/published/patterns/core/provide-dependencies-to-routes.mdx) | 🟡 **Intermediate** | Inject services like database connections into HTTP route handlers using Layer and Effect.Service. |
-| [Handle API Errors](./content/published/patterns/core/handle-api-errors.mdx) | 🟡 **Intermediate** | Translate application-specific errors from the Effect failure channel into meaningful HTTP error responses. |
-| [Make an Outgoing HTTP Client Request](./content/published/patterns/core/make-http-client-request.mdx) | 🟡 **Intermediate** | Use the built-in Effect HTTP client to make safe and composable requests to external services from within your API. |
+## Resource Management
+Acquire and release resources safely with Scope
 
-## Making HTTP Requests
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Model Dependencies as Services](./content/published/patterns/core/model-dependencies-as-services.mdx) | 🟡 **Intermediate** | Abstract external dependencies and capabilities into swappable, testable services using Effect's dependency injection system. |
-| [Create a Testable HTTP Client Service](./content/published/patterns/core/create-a-testable-http-client-service.mdx) | 🟡 **Intermediate** | Define an HttpClient service with separate 'Live' and 'Test' layers to enable robust, testable interactions with external APIs. |
-| [Build a Basic HTTP Server](./content/published/patterns/core/build-a-basic-http-server.mdx) | 🟠 **Advanced** | Combine Layer, Runtime, and Effect to create a simple, robust HTTP server using Node.js's built-in http module. |
-
-## Building Data Pipelines
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Create a Stream from a List](./content/published/patterns/core/stream-from-iterable.mdx) | 🟢 **Beginner** | Turn a simple in-memory array or list into a foundational data pipeline using Stream. |
-| [Run a Pipeline for its Side Effects](./content/published/patterns/core/stream-run-for-effects.mdx) | 🟢 **Beginner** | Execute a pipeline for its effects without collecting the results, saving memory. |
-| [Collect All Results into a List](./content/published/patterns/core/stream-collect-results.mdx) | 🟢 **Beginner** | Run a pipeline and gather all of its results into an in-memory array. |
-| [Turn a Paginated API into a Single Stream](./content/published/patterns/core/stream-from-paginated-api.mdx) | 🟡 **Intermediate** | Convert a paginated API into a continuous, easy-to-use stream, abstracting away the complexity of fetching page by page. |
-| [Process Items Concurrently](./content/published/patterns/core/stream-process-concurrently.mdx) | 🟡 **Intermediate** | Perform an asynchronous action for each item in a stream with controlled parallelism to dramatically improve performance. |
-| [Process Items in Batches](./content/published/patterns/core/stream-process-in-batches.mdx) | 🟡 **Intermediate** | Group items into chunks for efficient bulk operations, like database inserts or batch API calls. |
-| [Process collections of data asynchronously](./content/published/patterns/core/process-a-collection-of-data-asynchronously.mdx) | 🟡 **Intermediate** | Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream. |
-| [Process a Large File with Constant Memory](./content/published/patterns/core/stream-from-file.mdx) | 🟡 **Intermediate** | Create a data pipeline from a file on disk, processing it line-by-line without loading the entire file into memory. |
-| [Automatically Retry Failed Operations](./content/published/patterns/core/stream-retry-on-failure.mdx) | 🟡 **Intermediate** | Build a self-healing pipeline that can automatically retry failed processing steps using a configurable backoff strategy. |
-| [Manage Resources Safely in a Pipeline](./content/published/patterns/core/stream-manage-resources.mdx) | 🟠 **Advanced** | Ensure resources like file handles or connections are safely acquired at the start of a pipeline and always released at the end, even on failure. |
+| [Safely Bracket Resource Usage with `acquireRelease`](./content/published/patterns/resource-management/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
+| [Create a Service Layer from a Managed Resource](./content/published/patterns/resource-management/scoped-service-layer.mdx) | 🟡 **Intermediate** | Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service. |
+| [Compose Resource Lifecycles with `Layer.merge`](./content/published/patterns/resource-management/compose-scoped-layers.mdx) | 🟡 **Intermediate** | Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order. |
+| [Manually Manage Lifecycles with `Scope`](./content/published/patterns/resource-management/manual-scope-management.mdx) | 🟠 **Advanced** | Use `Scope` directly to manage complex resource lifecycles or when building custom layers. |
+| [Create a Managed Runtime for Scoped Resources](./content/published/patterns/resource-management/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
 
 ## Concurrency
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Race Concurrent Effects for the Fastest Result](./content/published/patterns/core/race-concurrent-effects.mdx) | 🟡 **Intermediate** | Use Effect.race to run multiple effects concurrently and proceed with the result of the one that succeeds first, automatically interrupting the others. |
-| [Concurrency Pattern 2: Rate Limit Concurrent Access with Semaphore](./content/published/patterns/core/concurrency-pattern-rate-limit-with-semaphore.mdx) | 🟡 **Intermediate** | Use Semaphore to limit the number of concurrent operations, enabling connection pooling, API rate limiting, and controlled resource access without overload. |
-| [Manage Shared State Safely with Ref](./content/published/patterns/core/manage-shared-state-with-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
-| [Run Independent Effects in Parallel with Effect.all](./content/published/patterns/core/run-effects-in-parallel-with-all.mdx) | 🟡 **Intermediate** | Use Effect.all to run multiple independent effects concurrently and collect all their results into a single tuple. |
-| [Concurrency Pattern 3: Coordinate Multiple Fibers with Latch](./content/published/patterns/core/concurrency-pattern-coordinate-with-latch.mdx) | 🟡 **Intermediate** | Use Latch to synchronize multiple fibers, enabling patterns like coordinating N async tasks, fan-out/fan-in, and barrier synchronization. |
-| [Concurrency Pattern 5: Broadcast Events with PubSub](./content/published/patterns/core/concurrency-pattern-pubsub-event-broadcast.mdx) | 🟡 **Intermediate** | Use PubSub to broadcast events to multiple subscribers, enabling event-driven architectures and fan-out patterns without direct coupling. |
-| [Process a Collection in Parallel with Effect.forEach](./content/published/patterns/core/process-collection-in-parallel-with-foreach.mdx) | 🟡 **Intermediate** | Use Effect.forEach with the `concurrency` option to process a collection of items in parallel with a fixed limit, preventing resource exhaustion. |
-| [Concurrency Pattern 6: Race and Timeout Competing Effects](./content/published/patterns/core/concurrency-pattern-race-timeout.mdx) | 🟡 **Intermediate** | Use race and timeout to compete multiple effects and enforce deadlines, enabling timeout handling and choosing fastest result. |
-| [Concurrency Pattern 1: Coordinate Async Operations with Deferred](./content/published/patterns/core/concurrency-pattern-coordinate-with-deferred.mdx) | 🟡 **Intermediate** | Use Deferred to coordinate async operations where multiple fibers wait for a single event to complete, enabling producer-consumer patterns and async signaling without polling. |
-| [Concurrency Pattern 4: Distribute Work with Queue](./content/published/patterns/core/concurrency-pattern-queue-work-distribution.mdx) | 🟡 **Intermediate** | Use Queue to decouple producers and consumers, enabling work distribution, pipeline stages, and backpressure handling across concurrent fibers. |
-| [Add Caching by Wrapping a Layer](./content/published/patterns/core/add-caching-by-wrapping-a-layer.mdx) | 🟠 **Advanced** | Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service. |
-| [State Management Pattern 1: Synchronized Reference with SynchronizedRef](./content/published/patterns/core/state-management-pattern-synchronized-ref.mdx) | 🟠 **Advanced** | Use SynchronizedRef to safely share mutable state across concurrent fibers, with atomic updates and guaranteed consistency. |
-| [Manage Resource Lifecycles with Scope](./content/published/patterns/core/manage-resource-lifecycles-with-scope.mdx) | 🟠 **Advanced** | Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed. |
-| [Run Background Tasks with Effect.fork](./content/published/patterns/core/run-background-tasks-with-fork.mdx) | 🟠 **Advanced** | Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting. |
-| [Execute Long-Running Apps with Effect.runFork](./content/published/patterns/core/execute-long-running-apps-with-runfork.mdx) | 🟠 **Advanced** | Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown. |
-| [State Management Pattern 2: Observable State with SubscriptionRef](./content/published/patterns/core/state-management-pattern-subscription-ref.mdx) | 🟠 **Advanced** | Build observable state that notifies subscribers on changes, enabling reactive patterns and state-driven architecture. |
-| [Implement Graceful Shutdown for Your Application](./content/published/patterns/core/implement-graceful-shutdown.mdx) | 🟠 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
-| [Decouple Fibers with Queues and PubSub](./content/published/patterns/core/decouple-fibers-with-queue-pubsub.mdx) | 🟠 **Advanced** | Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers. |
-| [Poll for Status Until a Task Completes](./content/published/patterns/core/poll-for-status-until-task-completes.mdx) | 🟠 **Advanced** | Use Effect.race to run a repeating polling effect alongside a main task, automatically stopping the polling when the main task finishes. |
-| [Understand Fibers as Lightweight Threads](./content/published/patterns/core/understand-fibers-as-lightweight-threads.mdx) | 🟠 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
+Run effects in parallel, manage fibers, coordinate async work
 
-## Observability
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Instrument and Observe Function Calls with Effect.fn](./content/published/patterns/core/observability-effect-fn.mdx) | 🟡 **Intermediate** | Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries. |
-| [Leverage Effect's Built-in Structured Logging](./content/published/patterns/core/observability-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions for structured, configurable, and context-aware logging. |
-| [Add Custom Metrics to Your Application](./content/published/patterns/core/add-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
-| [Add Custom Metrics to Your Application](./content/published/patterns/core/observability-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
-| [Trace Operations Across Services with Spans](./content/published/patterns/core/observability-tracing-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
-| [Trace Operations Across Services with Spans](./content/published/patterns/core/trace-operations-with-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
-| [Integrate Effect Tracing with OpenTelemetry](./content/published/patterns/core/observability-opentelemetry.mdx) | 🟠 **Advanced** | Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization. |
+| [Race Concurrent Effects for the Fastest Result](./content/published/patterns/concurrency/race-concurrent-effects.mdx) | 🟡 **Intermediate** | Use Effect.race to run multiple effects concurrently and proceed with the result of the one that succeeds first, automatically interrupting the others. |
+| [Concurrency Pattern 2: Rate Limit Concurrent Access with Semaphore](./content/published/patterns/concurrency/concurrency-pattern-rate-limit-with-semaphore.mdx) | 🟡 **Intermediate** | Use Semaphore to limit the number of concurrent operations, enabling connection pooling, API rate limiting, and controlled resource access without overload. |
+| [Manage Shared State Safely with Ref](./content/published/patterns/concurrency/manage-shared-state-with-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
+| [Run Independent Effects in Parallel with Effect.all](./content/published/patterns/concurrency/run-effects-in-parallel-with-all.mdx) | 🟡 **Intermediate** | Use Effect.all to run multiple independent effects concurrently and collect all their results into a single tuple. |
+| [Concurrency Pattern 3: Coordinate Multiple Fibers with Latch](./content/published/patterns/concurrency/concurrency-pattern-coordinate-with-latch.mdx) | 🟡 **Intermediate** | Use Latch to synchronize multiple fibers, enabling patterns like coordinating N async tasks, fan-out/fan-in, and barrier synchronization. |
+| [Concurrency Pattern 5: Broadcast Events with PubSub](./content/published/patterns/concurrency/concurrency-pattern-pubsub-event-broadcast.mdx) | 🟡 **Intermediate** | Use PubSub to broadcast events to multiple subscribers, enabling event-driven architectures and fan-out patterns without direct coupling. |
+| [Process a Collection in Parallel with Effect.forEach](./content/published/patterns/concurrency/process-collection-in-parallel-with-foreach.mdx) | 🟡 **Intermediate** | Use Effect.forEach with the `concurrency` option to process a collection of items in parallel with a fixed limit, preventing resource exhaustion. |
+| [Concurrency Pattern 6: Race and Timeout Competing Effects](./content/published/patterns/concurrency/concurrency-pattern-race-timeout.mdx) | 🟡 **Intermediate** | Use race and timeout to compete multiple effects and enforce deadlines, enabling timeout handling and choosing fastest result. |
+| [Concurrency Pattern 1: Coordinate Async Operations with Deferred](./content/published/patterns/concurrency/concurrency-pattern-coordinate-with-deferred.mdx) | 🟡 **Intermediate** | Use Deferred to coordinate async operations where multiple fibers wait for a single event to complete, enabling producer-consumer patterns and async signaling without polling. |
+| [Concurrency Pattern 4: Distribute Work with Queue](./content/published/patterns/concurrency/concurrency-pattern-queue-work-distribution.mdx) | 🟡 **Intermediate** | Use Queue to decouple producers and consumers, enabling work distribution, pipeline stages, and backpressure handling across concurrent fibers. |
+| [Add Caching by Wrapping a Layer](./content/published/patterns/concurrency/add-caching-by-wrapping-a-layer.mdx) | 🟠 **Advanced** | Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service. |
+| [State Management Pattern 1: Synchronized Reference with SynchronizedRef](./content/published/patterns/concurrency/state-management-pattern-synchronized-ref.mdx) | 🟠 **Advanced** | Use SynchronizedRef to safely share mutable state across concurrent fibers, with atomic updates and guaranteed consistency. |
+| [Manage Resource Lifecycles with Scope](./content/published/patterns/concurrency/manage-resource-lifecycles-with-scope.mdx) | 🟠 **Advanced** | Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed. |
+| [Run Background Tasks with Effect.fork](./content/published/patterns/concurrency/run-background-tasks-with-fork.mdx) | 🟠 **Advanced** | Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting. |
+| [Execute Long-Running Apps with Effect.runFork](./content/published/patterns/concurrency/execute-long-running-apps-with-runfork.mdx) | 🟠 **Advanced** | Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown. |
+| [State Management Pattern 2: Observable State with SubscriptionRef](./content/published/patterns/concurrency/state-management-pattern-subscription-ref.mdx) | 🟠 **Advanced** | Build observable state that notifies subscribers on changes, enabling reactive patterns and state-driven architecture. |
+| [Implement Graceful Shutdown for Your Application](./content/published/patterns/concurrency/implement-graceful-shutdown.mdx) | 🟠 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
+| [Decouple Fibers with Queues and PubSub](./content/published/patterns/concurrency/decouple-fibers-with-queue-pubsub.mdx) | 🟠 **Advanced** | Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers. |
+| [Poll for Status Until a Task Completes](./content/published/patterns/concurrency/poll-for-status-until-task-completes.mdx) | 🟠 **Advanced** | Use Effect.race to run a repeating polling effect alongside a main task, automatically stopping the polling when the main task finishes. |
+| [Understand Fibers as Lightweight Threads](./content/published/patterns/concurrency/understand-fibers-as-lightweight-threads.mdx) | 🟠 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
 
-## Tooling And Debugging
+### Getting Started
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Supercharge Your Editor with the Effect LSP](./content/published/patterns/core/supercharge-your-editor-with-the-effect-lsp.mdx) | 🟡 **Intermediate** | Install the Effect Language Server (LSP) extension for your editor to get rich, inline type information and enhanced error checking for your Effect code. |
-| [Teach your AI Agents Effect with the MCP Server](./content/published/patterns/core/teach-your-ai-agents-effect-with-the-mcp-server.mdx) | 🟠 **Advanced** | Use the Effect MCP server to provide live, contextual information about your application's structure directly to AI coding agents. |
+| [Race Effects and Handle Timeouts](./content/published/patterns/concurrency/getting-started/concurrency-race-timeout.mdx) | 🟢 **Beginner** | Race multiple effects to get the fastest result, or add timeouts to prevent hanging operations. |
+| [Understanding Fibers](./content/published/patterns/concurrency/getting-started/concurrency-understanding-fibers.mdx) | 🟢 **Beginner** | Learn what fibers are, how they differ from threads, and why they make Effect powerful for concurrent programming. |
+| [Your First Parallel Operation](./content/published/patterns/concurrency/getting-started/concurrency-hello-world.mdx) | 🟢 **Beginner** | Run multiple effects in parallel with Effect.all and understand when to use parallel vs sequential execution. |
+| [undefined](./content/published/patterns/concurrency/getting-started/concurrency-fork-basics.mdx) | 🟡 **Intermediate** |  |
 
-## Branded Types
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Modeling Validated Domain Types with Brand](./content/published/patterns/core/brand-model-domain-type.mdx) | 🟡 **Intermediate** | Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse. |
-| [Validating and Parsing Branded Types](./content/published/patterns/core/brand-validate-parse.mdx) | 🟡 **Intermediate** | Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed. |
+## Streams
+Process sequences of data with Stream
 
-## Combinators
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Combining Values with zip](./content/published/patterns/core/combinator-zip.mdx) | 🟢 **Beginner** | Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either. |
-| [Conditional Branching with if, when, and cond](./content/published/patterns/core/combinator-conditional.mdx) | 🟢 **Beginner** | Use combinators like if, when, and cond to express conditional logic declaratively across Effect, Stream, Option, and Either. |
-| [Transforming Values with map](./content/published/patterns/core/combinator-map.mdx) | 🟢 **Beginner** | Use map to transform the result of an Effect, Stream, Option, or Either in a declarative, type-safe way. |
-| [Chaining Computations with flatMap](./content/published/patterns/core/combinator-flatmap.mdx) | 🟢 **Beginner** | Use flatMap to chain together computations where each step may itself be effectful, optional, or error-prone. |
-| [Filtering Results with filter](./content/published/patterns/core/combinator-filter.mdx) | 🟢 **Beginner** | Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either. |
-| [Sequencing with andThen, tap, and flatten](./content/published/patterns/core/combinator-sequencing.mdx) | 🟡 **Intermediate** | Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either. |
-| [Handling Errors with catchAll, orElse, and match](./content/published/patterns/core/combinator-error-handling.mdx) | 🟡 **Intermediate** | Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option. |
-| [Mapping and Chaining over Collections with forEach and all](./content/published/patterns/core/combinator-foreach-all.mdx) | 🟡 **Intermediate** | Use forEach and all to apply effectful functions to collections and combine the results, enabling batch and parallel processing. |
+| [Stream Pattern 1: Transform Streams with Map and Filter](./content/published/patterns/streams/stream-pattern-map-filter-transformations.mdx) | 🟢 **Beginner** | Use Stream.map and Stream.filter to transform and select stream elements, enabling data pipelines that reshape and filter data in flight. |
+| [Stream Pattern 2: Merge and Combine Multiple Streams](./content/published/patterns/streams/stream-pattern-merge-combine.mdx) | 🟡 **Intermediate** | Use Stream.merge, Stream.concat, and Stream.mergeAll to combine multiple streams into a single stream, enabling multi-source data aggregation. |
+| [Stream Pattern 3: Control Backpressure in Streams](./content/published/patterns/streams/stream-pattern-backpressure-control.mdx) | 🟡 **Intermediate** | Use Stream throttling, buffering, and chunk operations to manage backpressure, preventing upstream from overwhelming downstream consumers. |
+| [Stream Pattern 4: Stateful Operations with Scan and Fold](./content/published/patterns/streams/stream-pattern-stateful-operations.mdx) | 🟡 **Intermediate** | Use Stream.scan and Stream.fold to maintain state across stream elements, enabling cumulative operations, counters, aggregations, and stateful transformations. |
+| [Stream Pattern 5: Grouping and Windowing Streams](./content/published/patterns/streams/stream-pattern-grouping-windowing.mdx) | 🟠 **Advanced** | Use grouping and windowing to organize streams by key or time window, enabling batch operations and temporal aggregations. |
+| [Stream Pattern 6: Resource Management in Streams](./content/published/patterns/streams/stream-pattern-resource-management.mdx) | 🟠 **Advanced** | Properly manage resources (connections, files, memory) in streams using acquire/release patterns and ensuring cleanup on error or completion. |
+| [Stream Pattern 7: Error Handling in Streams](./content/published/patterns/streams/stream-pattern-error-handling.mdx) | 🟠 **Advanced** | Handle errors gracefully in streams with recovery strategies, resuming after failures, and maintaining stream integrity. |
+| [Stream Pattern 8: Advanced Stream Transformations](./content/published/patterns/streams/stream-pattern-advanced-transformations.mdx) | 🟠 **Advanced** | Apply complex transformations across streams including custom operators, effect-based transformations, and composition patterns. |
 
-## Constructors
+### Getting Started
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Creating from Synchronous and Callback Code](./content/published/patterns/core/constructor-sync-async.mdx) | 🟢 **Beginner** | Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code. |
-| [Lifting Values with succeed, some, and right](./content/published/patterns/core/constructor-succeed-some-right.mdx) | 🟢 **Beginner** | Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe. |
-| [Converting from Nullable, Option, or Either](./content/published/patterns/core/constructor-from-nullable-option-either.mdx) | 🟢 **Beginner** | Use fromNullable, fromOption, and fromEither to convert nullable values, Option, or Either into Effects or Streams, enabling safe and composable interop. |
-| [Wrapping Synchronous and Asynchronous Computations](./content/published/patterns/core/constructor-try-trypromise.mdx) | 🟢 **Beginner** | Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world. |
-| [Creating from Collections](./content/published/patterns/core/constructor-from-iterable.mdx) | 🟢 **Beginner** | Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations. |
-| [Lifting Errors and Absence with fail, none, and left](./content/published/patterns/core/constructor-fail-none-left.mdx) | 🟢 **Beginner** | Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe. |
+| [Your First Stream](./content/published/patterns/streams/getting-started/stream-hello-world.mdx) | 🟢 **Beginner** | Create your first Effect Stream and understand what makes streams different from regular arrays. |
+| [Stream vs Effect - When to Use Which](./content/published/patterns/streams/getting-started/stream-vs-effect.mdx) | 🟢 **Beginner** | Understand when to use Effect (single value) vs Stream (sequence of values) for your use case. |
+| [Running and Collecting Stream Results](./content/published/patterns/streams/getting-started/stream-running-collecting.mdx) | 🟢 **Beginner** | Learn the different ways to run a stream and collect its results: runCollect, runForEach, runDrain, and more. |
+| [Take and Drop Stream Elements](./content/published/patterns/streams/getting-started/stream-take-drop.mdx) | 🟢 **Beginner** | Control how many stream elements to process using take, drop, takeWhile, and dropWhile. |
 
-## Control Flow
+### Sinks
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Pattern Match on Option and Either](./content/published/patterns/core/pattern-option-either-match.mdx) | 🟢 **Beginner** | Use declarative match() combinators to handle optional and error-prone values |
+| [Sink Pattern 1: Batch Insert Stream Records into Database](./content/published/patterns/streams/sinks/batch-insert-stream-records-into-database.mdx) | 🟡 **Intermediate** | Use Sink to batch stream records and insert them efficiently into a database in groups, rather than one-by-one, for better performance and resource usage. |
+| [Sink Pattern 2: Write Stream Events to Event Log](./content/published/patterns/streams/sinks/write-stream-events-to-event-log.mdx) | 🟡 **Intermediate** | Use Sink to append stream events to an event log with metadata and causal ordering, enabling event sourcing and audit trail patterns. |
+| [Sink Pattern 4: Send Stream Records to Message Queue](./content/published/patterns/streams/sinks/sink-pattern-send-stream-records-to-message-queue.mdx) | 🟡 **Intermediate** | Use Sink to publish stream records to a message queue with partitioning, batching, and acknowledgment handling for distributed systems. |
+| [Sink Pattern 5: Fall Back to Alternative Sink on Failure](./content/published/patterns/streams/sinks/sink-pattern-fall-back-to-alternative-sink-on-failure.mdx) | 🟡 **Intermediate** | Use Sink to attempt writing to a primary destination, and automatically fall back to an alternative destination if the primary fails, enabling progressive degradation and high availability. |
+| [Sink Pattern 6: Retry Failed Stream Operations](./content/published/patterns/streams/sinks/sink-pattern-retry-failed-stream-operations.mdx) | 🟡 **Intermediate** | Use Sink with configurable retry policies to automatically retry failed operations with exponential backoff, enabling recovery from transient failures without losing data. |
+| [Sink Pattern 3: Write Stream Lines to File](./content/published/patterns/streams/sinks/sink-pattern-write-stream-lines-to-file.mdx) | 🟡 **Intermediate** | Use Sink to write stream data as lines to a file with buffering for efficiency, supporting log files and line-oriented formats. |
 
-## Data Types
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Model Optional Values Safely with Option](./content/published/patterns/core/data-option.mdx) | 🟢 **Beginner** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
-| [Accumulate Multiple Errors with Either](./content/published/patterns/core/data-either.mdx) | 🟢 **Beginner** | Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one. |
-| [Comparing Data by Value with Data.struct](./content/published/patterns/core/data-struct.mdx) | 🟢 **Beginner** | Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference. |
-| [Working with Tuples using Data.tuple](./content/published/patterns/core/data-tuple.mdx) | 🟢 **Beginner** | Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching. |
-| [Working with Immutable Arrays using Data.array](./content/published/patterns/core/data-array.mdx) | 🟢 **Beginner** | Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations. |
-| [Representing Time Spans with Duration](./content/published/patterns/core/data-duration.mdx) | 🟡 **Intermediate** | Use Duration to represent time intervals in a type-safe, human-readable, and composable way. |
-| [Use Chunk for High-Performance Collections](./content/published/patterns/core/data-chunk.mdx) | 🟡 **Intermediate** | Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines. |
-| [Work with Immutable Sets using HashSet](./content/published/patterns/core/data-hashset.mdx) | 🟡 **Intermediate** | Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations. |
-| [Redact and Handle Sensitive Data](./content/published/patterns/core/data-redacted.mdx) | 🟡 **Intermediate** | Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed. |
-| [Modeling Effect Results with Exit](./content/published/patterns/core/data-exit.mdx) | 🟡 **Intermediate** | Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way. |
-| [Work with Arbitrary-Precision Numbers using BigDecimal](./content/published/patterns/core/data-bigdecimal.mdx) | 🟡 **Intermediate** | Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations. |
-| [Type Classes for Equality, Ordering, and Hashing with Data.Class](./content/published/patterns/core/data-class.mdx) | 🟡 **Intermediate** | Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions. |
-| [Modeling Tagged Unions with Data.case](./content/published/patterns/core/data-case.mdx) | 🟡 **Intermediate** | Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching. |
-| [Work with Dates and Times using DateTime](./content/published/patterns/core/data-datetime.mdx) | 🟡 **Intermediate** | Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations. |
-| [Manage Shared State Safely with Ref](./content/published/patterns/core/data-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
-| [Handle Unexpected Errors by Inspecting the Cause](./content/published/patterns/core/data-cause.mdx) | 🟠 **Advanced** | Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces. |
+## Schema
+Validate and transform data with Effect Schema
 
-## Pattern Matching
+### Getting Started
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Matching on Success and Failure with match](./content/published/patterns/core/pattern-match.mdx) | 🟢 **Beginner** | Use match to handle both success and failure cases in a single, declarative place for Effect, Option, and Either. |
-| [Checking Option and Either Cases](./content/published/patterns/core/pattern-option-either-checks.mdx) | 🟢 **Beginner** | Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching. |
-| [Matching Tagged Unions with matchTag and matchTags](./content/published/patterns/core/pattern-matchtag.mdx) | 🟡 **Intermediate** | Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching. |
-| [Effectful Pattern Matching with matchEffect](./content/published/patterns/core/pattern-matcheffect.mdx) | 🟡 **Intermediate** | Use matchEffect to perform effectful branching based on success or failure, enabling rich workflows in the Effect world. |
-| [Handling Specific Errors with catchTag and catchTags](./content/published/patterns/core/pattern-catchtag.mdx) | 🟡 **Intermediate** | Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery. |
+| [Handling Parse Errors](./content/published/patterns/schema/getting-started/handling-errors.mdx) | 🟢 **Beginner** |  |
+| [Your First Schema](./content/published/patterns/schema/getting-started/hello-world.mdx) | 🟢 **Beginner** |  |
+| [Decode and Encode Data](./content/published/patterns/schema/getting-started/decode-encode.mdx) | 🟢 **Beginner** |  |
+| [Effect Schema vs Zod](./content/published/patterns/schema/getting-started/schema-vs-zod.mdx) | 🟢 **Beginner** |  |
 
-## Error Handling
+### Ai Schemas
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Error Handling Pattern 1: Accumulating Multiple Errors](./content/published/patterns/core/error-handling-pattern-accumulation.mdx) | 🟡 **Intermediate** | Collect multiple errors across operations instead of failing on first error, enabling comprehensive error reporting and validation. |
-| [Error Handling Pattern 2: Error Propagation and Chains](./content/published/patterns/core/error-handling-pattern-propagation.mdx) | 🟠 **Advanced** | Propagate errors through effect chains with context, preserving error information and enabling recovery at appropriate layers. |
-| [Error Handling Pattern 3: Custom Error Strategies](./content/published/patterns/core/error-handling-pattern-custom-strategies.mdx) | 🟠 **Advanced** | Build domain-specific error types and recovery strategies that align with business logic and provide actionable error information. |
+| [Handling Malformed AI Outputs](./content/published/patterns/schema/ai-schemas/parsing-recovery.mdx) | 🟢 **Beginner** |  |
+| [Basic AI Response Parsing](./content/published/patterns/schema/ai-schemas/parsing-basics.mdx) | 🟢 **Beginner** |  |
+| [Basic AI Output Schema](./content/published/patterns/schema/ai-schemas/output-basics.mdx) | 🟢 **Beginner** |  |
+| [Adding Descriptions for AI Context](./content/published/patterns/schema/ai-schemas/output-descriptions.mdx) | 🟢 **Beginner** |  |
+| [Parsing Partial/Incomplete Responses](./content/published/patterns/schema/ai-schemas/parsing-partial.mdx) | 🟡 **Intermediate** |  |
+| [Retry Strategies for Parse Failures](./content/published/patterns/schema/ai-schemas/parsing-retry.mdx) | 🟡 **Intermediate** |  |
+| [Union Types for Flexible Outputs](./content/published/patterns/schema/ai-schemas/output-unions.mdx) | 🟡 **Intermediate** |  |
+| [Nested Object Schemas](./content/published/patterns/schema/ai-schemas/output-nested.mdx) | 🟡 **Intermediate** |  |
+| [Enums and Literal Types](./content/published/patterns/schema/ai-schemas/output-enums.mdx) | 🟡 **Intermediate** |  |
+| [Integration with Vercel AI SDK](./content/published/patterns/schema/ai-schemas/vercel-ai-sdk.mdx) | 🟠 **Advanced** |  |
+| [Validating Streaming AI Responses](./content/published/patterns/schema/ai-schemas/parsing-streaming.mdx) | 🟠 **Advanced** |  |
 
-## Error Handling Resilience
+### Arrays
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Scheduling Pattern 2: Implement Exponential Backoff for Retries](./content/published/patterns/core/scheduling-pattern-exponential-backoff.mdx) | 🟡 **Intermediate** | Use exponential backoff with jitter to retry failed operations with increasing delays, preventing resource exhaustion and cascade failures in distributed systems. |
+| [Array Validation](./content/published/patterns/schema/arrays/basic-arrays.mdx) | 🟢 **Beginner** |  |
+| [Tuple Schemas](./content/published/patterns/schema/arrays/tuples.mdx) | 🟢 **Beginner** |  |
+
+### Async Validation
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Basic Async Validation with Schema.filterEffect](./content/published/patterns/schema/async-validation/basic-async.mdx) | 🟢 **Beginner** |  |
+| [Database Validation - Uniqueness, Foreign Keys, Constraints](./content/published/patterns/schema/async-validation/database-checks.mdx) | 🟡 **Intermediate** |  |
+| [External API Validation During Schema Parsing](./content/published/patterns/schema/async-validation/external-api-validation.mdx) | 🟡 **Intermediate** |  |
+| [Efficient Batched Async Validation and Deduplication](./content/published/patterns/schema/async-validation/batched-async.mdx) | 🟠 **Advanced** |  |
+
+### Composition
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Extending and Adding Fields to Schemas](./content/published/patterns/schema/composition/extend-schemas.mdx) | 🟢 **Beginner** |  |
+| [Schema Inheritance and Specialization](./content/published/patterns/schema/composition/inheritance-patterns.mdx) | 🟡 **Intermediate** |  |
+| [Merging Multiple Schemas into One](./content/published/patterns/schema/composition/merge-schemas.mdx) | 🟡 **Intermediate** |  |
+| [Pick and Omit - Selecting and Excluding Fields](./content/published/patterns/schema/composition/pick-omit.mdx) | 🟡 **Intermediate** |  |
+
+### Environment Config
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Environment Variables with Schema Validation](./content/published/patterns/schema/environment-config/env-variables.mdx) | 🟢 **Beginner** |  |
+| [Secrets Redaction and Masking](./content/published/patterns/schema/environment-config/secrets-redaction.mdx) | 🟡 **Intermediate** |  |
+| [Feature Flags with Dynamic Validation](./content/published/patterns/schema/environment-config/feature-flags.mdx) | 🟡 **Intermediate** |  |
+| [Composable Configuration Layers](./content/published/patterns/schema/environment-config/config-layers.mdx) | 🟡 **Intermediate** |  |
+
+### Error Handling
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Custom Tagged Errors](./content/published/patterns/schema/error-handling/tagged-errors.mdx) | 🟢 **Beginner** |  |
+| [Error Recovery and Fallback Strategies](./content/published/patterns/schema/error-handling/recovery-strategies.mdx) | 🟡 **Intermediate** |  |
+| [Error Aggregation and Collection](./content/published/patterns/schema/error-handling/error-aggregation.mdx) | 🟡 **Intermediate** |  |
+| [User-Friendly Error Messages](./content/published/patterns/schema/error-handling/user-friendly-messages.mdx) | 🟡 **Intermediate** |  |
+
+### Form Validation
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Collecting All Validation Errors](./content/published/patterns/schema/form-validation/collect-all-errors.mdx) | 🟢 **Beginner** |  |
+| [Basic Form Validation](./content/published/patterns/schema/form-validation/basic.mdx) | 🟢 **Beginner** |  |
+| [Async Validation (Username Availability)](./content/published/patterns/schema/form-validation/async-validation.mdx) | 🟡 **Intermediate** |  |
+| [Nested Form Structures](./content/published/patterns/schema/form-validation/nested-forms.mdx) | 🟡 **Intermediate** |  |
+| [Dependent Field Validation](./content/published/patterns/schema/form-validation/dependent-fields.mdx) | 🟡 **Intermediate** |  |
+
+### Json Validation
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Basic JSON File Validation](./content/published/patterns/schema/json-validation/file-validation.mdx) | 🟢 **Beginner** |  |
+| [Validating Config Files](./content/published/patterns/schema/json-validation/config-files.mdx) | 🟢 **Beginner** |  |
+| [Validating JSON Database Columns](./content/published/patterns/schema/json-validation/database-columns.mdx) | 🟢 **Beginner** |  |
+| [Validating Multiple Config Files](./content/published/patterns/schema/json-validation/multiple-files.mdx) | 🟡 **Intermediate** |  |
+| [Handling Schema Evolution](./content/published/patterns/schema/json-validation/schema-evolution.mdx) | 🟡 **Intermediate** |  |
+| [PostgreSQL JSONB Validation](./content/published/patterns/schema/json-validation/postgres-jsonb.mdx) | 🟡 **Intermediate** |  |
+| [Validating Partial Documents](./content/published/patterns/schema/json-validation/partial-documents.mdx) | 🟡 **Intermediate** |  |
+| [Schema with Default Values](./content/published/patterns/schema/json-validation/with-defaults.mdx) | 🟡 **Intermediate** |  |
+
+### Objects
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Basic Object Schemas](./content/published/patterns/schema/objects/basic-objects.mdx) | 🟢 **Beginner** |  |
+| [Nested Object Schemas](./content/published/patterns/schema/objects/nested-objects.mdx) | 🟢 **Beginner** |  |
+| [Optional and Nullable Fields](./content/published/patterns/schema/objects/optional-fields.mdx) | 🟢 **Beginner** |  |
+
+### Primitives
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Date Validation and Parsing](./content/published/patterns/schema/primitives/date-validation.mdx) | 🟢 **Beginner** |  |
+| [String Validation and Refinements](./content/published/patterns/schema/primitives/string-validation.mdx) | 🟢 **Beginner** |  |
+| [Number Validation and Refinements](./content/published/patterns/schema/primitives/number-validation.mdx) | 🟢 **Beginner** |  |
+| [Enums and Literal Types](./content/published/patterns/schema/primitives/enums-literals.mdx) | 🟢 **Beginner** |  |
+
+### Recursive
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Basic Recursive Schemas with Schema.suspend](./content/published/patterns/schema/recursive/basic-recursive.mdx) | 🟢 **Beginner** |  |
+| [Nested Comments and Threaded Discussions](./content/published/patterns/schema/recursive/nested-comments.mdx) | 🟡 **Intermediate** |  |
+| [Tree Structures - File Systems, Org Charts, Hierarchies](./content/published/patterns/schema/recursive/tree-structures.mdx) | 🟡 **Intermediate** |  |
+| [Parsing JSON into Typed Abstract Syntax Trees](./content/published/patterns/schema/recursive/json-ast.mdx) | 🟠 **Advanced** |  |
+
+### Transformations
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Basic Schema Transformations](./content/published/patterns/schema/transformations/basic-transforms.mdx) | 🟢 **Beginner** |  |
+| [Branded Types for Type-Safe IDs and Strings](./content/published/patterns/schema/transformations/branded-types.mdx) | 🟡 **Intermediate** |  |
+| [Data Normalization and Canonical Forms](./content/published/patterns/schema/transformations/data-normalization.mdx) | 🟡 **Intermediate** |  |
+| [Bidirectional API ↔ Domain ↔ DB Transformations](./content/published/patterns/schema/transformations/bidirectional.mdx) | 🟡 **Intermediate** |  |
+
+### Unions
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Basic Union Types and Alternatives](./content/published/patterns/schema/unions/basic-unions.mdx) | 🟢 **Beginner** |  |
+| [Exhaustive Pattern Matching and Never Types](./content/published/patterns/schema/unions/exhaustive-matching.mdx) | 🟡 **Intermediate** |  |
+| [Discriminated Unions with Type Narrowing](./content/published/patterns/schema/unions/discriminated-unions.mdx) | 🟡 **Intermediate** |  |
+| [Polymorphic API Responses and Data Shaping](./content/published/patterns/schema/unions/polymorphic-apis.mdx) | 🟡 **Intermediate** |  |
+
+### Validating Api Responses
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Handling Decode Failures](./content/published/patterns/schema/validating-api-responses/error-handling.mdx) | 🟢 **Beginner** |  |
+| [Basic API Response Decoding](./content/published/patterns/schema/validating-api-responses/basic.mdx) | 🟢 **Beginner** |  |
+| [Decoding Nested API Responses](./content/published/patterns/schema/validating-api-responses/nested-responses.mdx) | 🟡 **Intermediate** |  |
+| [Handling Union/Discriminated Responses](./content/published/patterns/schema/validating-api-responses/union-responses.mdx) | 🟡 **Intermediate** |  |
+| [API Validation with Retry](./content/published/patterns/schema/validating-api-responses/with-retry.mdx) | 🟡 **Intermediate** |  |
+| [Full Pipeline with @effect/platform](./content/published/patterns/schema/validating-api-responses/with-http-client.mdx) | 🟠 **Advanced** |  |
+
+### Web Standards Validation
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [UUID Validation (v4, v7)](./content/published/patterns/schema/web-standards-validation/uuid.mdx) | 🟢 **Beginner** |  |
+| [Email Address Validation](./content/published/patterns/schema/web-standards-validation/email.mdx) | 🟢 **Beginner** |  |
+| [URL Validation](./content/published/patterns/schema/web-standards-validation/url.mdx) | 🟢 **Beginner** |  |
+| [ISO 8601 Date Validation](./content/published/patterns/schema/web-standards-validation/iso-date.mdx) | 🟡 **Intermediate** |  |
+| [MIME Type Validation](./content/published/patterns/schema/web-standards-validation/mime-types.mdx) | 🟡 **Intermediate** |  |
+| [HTTP Header Validation](./content/published/patterns/schema/web-standards-validation/http-headers.mdx) | 🟡 **Intermediate** |  |
+
+## Platform
+System operations - files, commands, environment
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Platform Pattern 4: Interactive Terminal I/O](./content/published/patterns/platform/platform-terminal-interactive.mdx) | 🟢 **Beginner** | Use Terminal module to read user input and write formatted output, enabling interactive CLI applications with proper buffering and encoding. |
+| [Platform Pattern 2: Filesystem Operations](./content/published/patterns/platform/platform-filesystem-operations.mdx) | 🟢 **Beginner** | Use FileSystem module to read, write, list, and manage files with proper resource cleanup and error handling. |
+| [Platform Pattern 3: Persistent Key-Value Storage](./content/published/patterns/platform/platform-keyvaluestore-persistence.mdx) | 🟡 **Intermediate** | Use KeyValueStore for simple persistent key-value storage, enabling caching, session management, and lightweight data persistence. |
+| [Platform Pattern 1: Execute Shell Commands](./content/published/patterns/platform/platform-pattern-command-execution.mdx) | 🟡 **Intermediate** | Use Command module to execute shell commands, capture output, and handle exit codes, enabling integration with system tools and external programs. |
+| [Platform Pattern 5: Cross-Platform Path Manipulation](./content/published/patterns/platform/platform-pattern-path-manipulation.mdx) | 🟡 **Intermediate** | Use platform-aware path operations to handle file system paths correctly across Windows, macOS, and Linux with proper resolution and normalization. |
+| [Platform Pattern 6: Advanced FileSystem Operations](./content/published/patterns/platform/platform-pattern-advanced-filesystem.mdx) | 🟠 **Advanced** | Handle complex file system scenarios including watching files, recursive operations, atomic writes, and efficient bulk operations. |
+
+### Getting Started
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Your First Platform Operation](./content/published/patterns/platform/getting-started/platform-hello-world.mdx) | 🟢 **Beginner** | Get started with Effect Platform by reading a file and understanding how Platform differs from Node.js APIs. |
+| [Access Environment Variables](./content/published/patterns/platform/getting-started/platform-environment-variables.mdx) | 🟢 **Beginner** | Read environment variables safely with Effect Platform, handling missing values gracefully. |
 
 ## Scheduling
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Scheduling Pattern 1: Repeat an Effect on a Fixed Interval](./content/published/patterns/core/scheduling-pattern-repeat-effect-on-fixed-interval.mdx) | 🟡 **Intermediate** | Use Schedule.fixed to repeat an effect at regular intervals, enabling polling, health checks, and periodic background tasks without busy-waiting or manual timing logic. |
+Schedule and repeat effects with Schedule
 
-## Scheduling Periodic Tasks
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Scheduling Pattern 4: Debounce and Throttle Execution](./content/published/patterns/core/scheduling-pattern-debounce-throttle.mdx) | 🟡 **Intermediate** | Use debouncing and throttling to limit how often effects execute, preventing runaway operations and handling rapid event sequences. |
-| [Scheduling Pattern 3: Schedule Tasks with Cron Expressions](./content/published/patterns/core/scheduling-pattern-cron-expressions.mdx) | 🟡 **Intermediate** | Use cron expressions to schedule tasks at specific times and intervals, enabling calendar-based scheduling with timezone support. |
-| [Scheduling Pattern 5: Advanced Retry Chains and Circuit Breakers](./content/published/patterns/core/scheduling-pattern-advanced-retry-chains.mdx) | 🟠 **Advanced** | Build sophisticated retry chains with circuit breakers, fallbacks, and complex failure patterns for production-grade reliability. |
+| [Scheduling Pattern 4: Debounce and Throttle Execution](./content/published/patterns/scheduling/scheduling-pattern-debounce-throttle.mdx) | 🟡 **Intermediate** | Use debouncing and throttling to limit how often effects execute, preventing runaway operations and handling rapid event sequences. |
+| [Scheduling Pattern 1: Repeat an Effect on a Fixed Interval](./content/published/patterns/scheduling/scheduling-pattern-repeat-effect-on-fixed-interval.mdx) | 🟡 **Intermediate** | Use Schedule.fixed to repeat an effect at regular intervals, enabling polling, health checks, and periodic background tasks without busy-waiting or manual timing logic. |
+| [Scheduling Pattern 3: Schedule Tasks with Cron Expressions](./content/published/patterns/scheduling/scheduling-pattern-cron-expressions.mdx) | 🟡 **Intermediate** | Use cron expressions to schedule tasks at specific times and intervals, enabling calendar-based scheduling with timezone support. |
+| [Scheduling Pattern 5: Advanced Retry Chains and Circuit Breakers](./content/published/patterns/scheduling/scheduling-pattern-advanced-retry-chains.mdx) | 🟠 **Advanced** | Build sophisticated retry chains with circuit breakers, fallbacks, and complex failure patterns for production-grade reliability. |
 
-## Value Handling
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Optional Pattern 1: Handling None and Some Values](./content/published/patterns/core/optional-pattern-handling-none-some.mdx) | 🟡 **Intermediate** | Use Effect's Option type to safely handle values that may not exist, avoiding null/undefined bugs and enabling composable error handling. |
-| [Optional Pattern 2: Optional Chaining and Composition](./content/published/patterns/core/optional-pattern-optional-chains.mdx) | 🟠 **Advanced** | Chain optional values across multiple steps with composable operators, enabling elegant data flow through systems with missing values. |
+## Domain Modeling
+Model business domains with branded types and services
 
-## Composition
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Extending and Adding Fields to Schemas](./content/published/patterns/schema/composition/extend-schemas.mdx) | 🟢 **Beginner** | undefined |
-| [Schema Inheritance and Specialization](./content/published/patterns/schema/composition/inheritance-patterns.mdx) | 🟡 **Intermediate** | undefined |
-| [Merging Multiple Schemas into One](./content/published/patterns/schema/composition/merge-schemas.mdx) | 🟡 **Intermediate** | undefined |
-| [Pick and Omit - Selecting and Excluding Fields](./content/published/patterns/schema/composition/pick-omit.mdx) | 🟡 **Intermediate** | undefined |
+| [Model Optional Values Safely with Option](./content/published/patterns/domain-modeling/model-optional-values-with-option.mdx) | 🟡 **Intermediate** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
+| [Use Effect.gen for Business Logic](./content/published/patterns/domain-modeling/use-gen-for-business-logic.mdx) | 🟡 **Intermediate** | Encapsulate sequential business logic, control flow, and dependency access within Effect.gen for improved readability and maintainability. |
+| [Transform Data During Validation with Schema](./content/published/patterns/domain-modeling/transform-data-with-schema.mdx) | 🟡 **Intermediate** | Use Schema.transform to safely convert data from one type to another during the parsing phase, such as from a string to a Date. |
+| [Define Type-Safe Errors with Data.TaggedError](./content/published/patterns/domain-modeling/define-tagged-errors.mdx) | 🟡 **Intermediate** | Create custom, type-safe error classes by extending Data.TaggedError to make error handling robust, predictable, and self-documenting. |
+| [Define Contracts Upfront with Schema](./content/published/patterns/domain-modeling/define-contracts-with-schema.mdx) | 🟡 **Intermediate** | Use Schema to define the types for your data models and function signatures before writing the implementation, creating clear, type-safe contracts. |
+| [Modeling Validated Domain Types with Brand](./content/published/patterns/domain-modeling/brand-model-domain-type.mdx) | 🟡 **Intermediate** | Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse. |
+| [Parse and Validate Data with Schema.decode](./content/published/patterns/domain-modeling/parse-with-schema-decode.mdx) | 🟡 **Intermediate** | Use Schema.decode(schema) to create an Effect that parses and validates unknown data, which integrates seamlessly with Effect's error handling. |
+| [Validating and Parsing Branded Types](./content/published/patterns/domain-modeling/brand-validate-parse.mdx) | 🟡 **Intermediate** | Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed. |
+| [Avoid Long Chains of .andThen; Use Generators Instead](./content/published/patterns/domain-modeling/avoid-long-andthen-chains.mdx) | 🟡 **Intermediate** | Prefer Effect.gen over long chains of .andThen for sequential logic to improve readability and maintainability. |
+| [Distinguish 'Not Found' from Errors](./content/published/patterns/domain-modeling/distinguish-not-found-from-errors.mdx) | 🟡 **Intermediate** | Use Effect<Option<A>> to clearly distinguish between a recoverable 'not found' case (None) and a true failure (Fail). |
+| [Model Validated Domain Types with Brand](./content/published/patterns/domain-modeling/model-validated-domain-types-with-brand.mdx) | 🟡 **Intermediate** | Use Brand to turn primitive types like string or number into specific, validated domain types like Email or PositiveInt, making illegal states unrepresentable. |
+| [Accumulate Multiple Errors with Either](./content/published/patterns/domain-modeling/accumulate-multiple-errors-with-either.mdx) | 🟡 **Intermediate** | Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one. |
 
-## Transformations
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Basic Schema Transformations](./content/published/patterns/schema/transformations/basic-transforms.mdx) | 🟢 **Beginner** | undefined |
-| [Branded Types for Type-Safe IDs and Strings](./content/published/patterns/schema/transformations/branded-types.mdx) | 🟡 **Intermediate** | undefined |
-| [Data Normalization and Canonical Forms](./content/published/patterns/schema/transformations/data-normalization.mdx) | 🟡 **Intermediate** | undefined |
-| [Bidirectional API ↔ Domain ↔ DB Transformations](./content/published/patterns/schema/transformations/bidirectional.mdx) | 🟡 **Intermediate** | undefined |
+## Building APIs
+Build HTTP APIs and services
 
-## Unions
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Basic Union Types and Alternatives](./content/published/patterns/schema/unions/basic-unions.mdx) | 🟢 **Beginner** | undefined |
-| [Exhaustive Pattern Matching and Never Types](./content/published/patterns/schema/unions/exhaustive-matching.mdx) | 🟡 **Intermediate** | undefined |
-| [Discriminated Unions with Type Narrowing](./content/published/patterns/schema/unions/discriminated-unions.mdx) | 🟡 **Intermediate** | undefined |
-| [Polymorphic API Responses and Data Shaping](./content/published/patterns/schema/unions/polymorphic-apis.mdx) | 🟡 **Intermediate** | undefined |
+| [Handle a GET Request](./content/published/patterns/building-apis/handle-get-request.mdx) | 🟢 **Beginner** | Define a route that responds to a specific HTTP GET request path. |
+| [Send a JSON Response](./content/published/patterns/building-apis/send-json-response.mdx) | 🟢 **Beginner** | Create and send a structured JSON response with the correct headers and status code. |
+| [Extract Path Parameters](./content/published/patterns/building-apis/extract-path-parameters.mdx) | 🟢 **Beginner** | Capture and use dynamic segments from a request URL, such as a resource ID. |
+| [Create a Basic HTTP Server](./content/published/patterns/building-apis/launch-http-server.mdx) | 🟢 **Beginner** | Launch a simple, effect-native HTTP server to respond to incoming requests. |
+| [Validate Request Body](./content/published/patterns/building-apis/validate-request-body.mdx) | 🟡 **Intermediate** | Safely parse and validate an incoming JSON request body against a predefined Schema. |
+| [Provide Dependencies to Routes](./content/published/patterns/building-apis/provide-dependencies-to-routes.mdx) | 🟡 **Intermediate** | Inject services like database connections into HTTP route handlers using Layer and Effect.Service. |
+| [Handle API Errors](./content/published/patterns/building-apis/handle-api-errors.mdx) | 🟡 **Intermediate** | Translate application-specific errors from the Effect failure channel into meaningful HTTP error responses. |
+| [Make an Outgoing HTTP Client Request](./content/published/patterns/building-apis/make-http-client-request.mdx) | 🟡 **Intermediate** | Use the built-in Effect HTTP client to make safe and composable requests to external services from within your API. |
 
-## Recursive
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Basic Recursive Schemas with Schema.suspend](./content/published/patterns/schema/recursive/basic-recursive.mdx) | 🟢 **Beginner** | undefined |
-| [Nested Comments and Threaded Discussions](./content/published/patterns/schema/recursive/nested-comments.mdx) | 🟡 **Intermediate** | undefined |
-| [Tree Structures - File Systems, Org Charts, Hierarchies](./content/published/patterns/schema/recursive/tree-structures.mdx) | 🟡 **Intermediate** | undefined |
-| [Parsing JSON into Typed Abstract Syntax Trees](./content/published/patterns/schema/recursive/json-ast.mdx) | 🟠 **Advanced** | undefined |
+## Building Data Pipelines
+Process and transform data at scale
 
-## Error Handling
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Custom Tagged Errors](./content/published/patterns/schema/error-handling/tagged-errors.mdx) | 🟢 **Beginner** | undefined |
-| [Error Recovery and Fallback Strategies](./content/published/patterns/schema/error-handling/recovery-strategies.mdx) | 🟡 **Intermediate** | undefined |
-| [Error Aggregation and Collection](./content/published/patterns/schema/error-handling/error-aggregation.mdx) | 🟡 **Intermediate** | undefined |
-| [User-Friendly Error Messages](./content/published/patterns/schema/error-handling/user-friendly-messages.mdx) | 🟡 **Intermediate** | undefined |
+| [Create a Stream from a List](./content/published/patterns/building-data-pipelines/stream-from-iterable.mdx) | 🟢 **Beginner** | Turn a simple in-memory array or list into a foundational data pipeline using Stream. |
+| [Run a Pipeline for its Side Effects](./content/published/patterns/building-data-pipelines/stream-run-for-effects.mdx) | 🟢 **Beginner** | Execute a pipeline for its effects without collecting the results, saving memory. |
+| [Collect All Results into a List](./content/published/patterns/building-data-pipelines/stream-collect-results.mdx) | 🟢 **Beginner** | Run a pipeline and gather all of its results into an in-memory array. |
+| [Turn a Paginated API into a Single Stream](./content/published/patterns/building-data-pipelines/stream-from-paginated-api.mdx) | 🟡 **Intermediate** | Convert a paginated API into a continuous, easy-to-use stream, abstracting away the complexity of fetching page by page. |
+| [Process Items Concurrently](./content/published/patterns/building-data-pipelines/stream-process-concurrently.mdx) | 🟡 **Intermediate** | Perform an asynchronous action for each item in a stream with controlled parallelism to dramatically improve performance. |
+| [Process Items in Batches](./content/published/patterns/building-data-pipelines/stream-process-in-batches.mdx) | 🟡 **Intermediate** | Group items into chunks for efficient bulk operations, like database inserts or batch API calls. |
+| [Process collections of data asynchronously](./content/published/patterns/building-data-pipelines/process-a-collection-of-data-asynchronously.mdx) | 🟡 **Intermediate** | Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream. |
+| [Process a Large File with Constant Memory](./content/published/patterns/building-data-pipelines/stream-from-file.mdx) | 🟡 **Intermediate** | Create a data pipeline from a file on disk, processing it line-by-line without loading the entire file into memory. |
+| [Automatically Retry Failed Operations](./content/published/patterns/building-data-pipelines/stream-retry-on-failure.mdx) | 🟡 **Intermediate** | Build a self-healing pipeline that can automatically retry failed processing steps using a configurable backoff strategy. |
+| [Manage Resources Safely in a Pipeline](./content/published/patterns/building-data-pipelines/stream-manage-resources.mdx) | 🟠 **Advanced** | Ensure resources like file handles or connections are safely acquired at the start of a pipeline and always released at the end, even on failure. |
 
-## Async Validation
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Basic Async Validation with Schema.filterEffect](./content/published/patterns/schema/async-validation/basic-async.mdx) | 🟢 **Beginner** | undefined |
-| [Database Validation - Uniqueness, Foreign Keys, Constraints](./content/published/patterns/schema/async-validation/database-checks.mdx) | 🟡 **Intermediate** | undefined |
-| [External API Validation During Schema Parsing](./content/published/patterns/schema/async-validation/external-api-validation.mdx) | 🟡 **Intermediate** | undefined |
-| [Efficient Batched Async Validation and Deduplication](./content/published/patterns/schema/async-validation/batched-async.mdx) | 🟠 **Advanced** | undefined |
+## Making HTTP Requests
+HTTP client patterns with Effect
 
-## Validating Api Responses
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Handling Decode Failures](./content/published/patterns/schema/validating-api-responses/error-handling.mdx) | 🟢 **Beginner** | undefined |
-| [Basic API Response Decoding](./content/published/patterns/schema/validating-api-responses/basic.mdx) | 🟢 **Beginner** | undefined |
-| [Decoding Nested API Responses](./content/published/patterns/schema/validating-api-responses/nested-responses.mdx) | 🟡 **Intermediate** | undefined |
-| [Handling Union/Discriminated Responses](./content/published/patterns/schema/validating-api-responses/union-responses.mdx) | 🟡 **Intermediate** | undefined |
-| [API Validation with Retry](./content/published/patterns/schema/validating-api-responses/with-retry.mdx) | 🟡 **Intermediate** | undefined |
-| [Full Pipeline with @effect/platform](./content/published/patterns/schema/validating-api-responses/with-http-client.mdx) | 🟠 **Advanced** | undefined |
+| [Model Dependencies as Services](./content/published/patterns/making-http-requests/model-dependencies-as-services.mdx) | 🟡 **Intermediate** | Abstract external dependencies and capabilities into swappable, testable services using Effect's dependency injection system. |
+| [Create a Testable HTTP Client Service](./content/published/patterns/making-http-requests/create-a-testable-http-client-service.mdx) | 🟡 **Intermediate** | Define an HttpClient service with separate 'Live' and 'Test' layers to enable robust, testable interactions with external APIs. |
+| [Build a Basic HTTP Server](./content/published/patterns/making-http-requests/build-a-basic-http-server.mdx) | 🟠 **Advanced** | Combine Layer, Runtime, and Effect to create a simple, robust HTTP server using Node.js's built-in http module. |
 
-## Web Standards Validation
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [UUID Validation (v4, v7)](./content/published/patterns/schema/web-standards-validation/uuid.mdx) | 🟢 **Beginner** | undefined |
-| [Email Address Validation](./content/published/patterns/schema/web-standards-validation/email.mdx) | 🟢 **Beginner** | undefined |
-| [URL Validation](./content/published/patterns/schema/web-standards-validation/url.mdx) | 🟢 **Beginner** | undefined |
-| [ISO 8601 Date Validation](./content/published/patterns/schema/web-standards-validation/iso-date.mdx) | 🟡 **Intermediate** | undefined |
-| [MIME Type Validation](./content/published/patterns/schema/web-standards-validation/mime-types.mdx) | 🟡 **Intermediate** | undefined |
-| [HTTP Header Validation](./content/published/patterns/schema/web-standards-validation/http-headers.mdx) | 🟡 **Intermediate** | undefined |
+## Testing
+Test Effect applications
 
-## Form Validation
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Collecting All Validation Errors](./content/published/patterns/schema/form-validation/collect-all-errors.mdx) | 🟢 **Beginner** | undefined |
-| [Basic Form Validation](./content/published/patterns/schema/form-validation/basic.mdx) | 🟢 **Beginner** | undefined |
-| [Async Validation (Username Availability)](./content/published/patterns/schema/form-validation/async-validation.mdx) | 🟡 **Intermediate** | undefined |
-| [Nested Form Structures](./content/published/patterns/schema/form-validation/nested-forms.mdx) | 🟡 **Intermediate** | undefined |
-| [Dependent Field Validation](./content/published/patterns/schema/form-validation/dependent-fields.mdx) | 🟡 **Intermediate** | undefined |
+| [Accessing the Current Time with Clock](./content/published/patterns/testing/accessing-current-time-with-clock.mdx) | 🟡 **Intermediate** | Use the Clock service to access the current time in a testable, deterministic way, avoiding direct calls to Date.now(). |
+| [Write Tests That Adapt to Application Code](./content/published/patterns/testing/write-tests-that-adapt-to-application-code.mdx) | 🟡 **Intermediate** | A cardinal rule of testing: Tests must adapt to the application's interface, not the other way around. Never modify application code solely to make a test pass. |
+| [Use the Auto-Generated .Default Layer in Tests](./content/published/patterns/testing/use-default-layer-for-tests.mdx) | 🟡 **Intermediate** | When testing, always use the MyService.Default layer that is automatically generated by the Effect.Service class for dependency injection. |
+| [Mocking Dependencies in Tests](./content/published/patterns/testing/mocking-dependencies-in-tests.mdx) | 🟡 **Intermediate** | Use a test-specific Layer to provide mock implementations of services your code depends on, enabling isolated and deterministic unit tests. |
+| [Organize Layers into Composable Modules](./content/published/patterns/testing/organize-layers-into-composable-modules.mdx) | 🟠 **Advanced** | Structure a large application by grouping related services into 'module' layers, which are then composed together with a shared base layer. |
 
-## Environment Config
+## Observability
+Logging, tracing, and metrics
+
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Environment Variables with Schema Validation](./content/published/patterns/schema/environment-config/env-variables.mdx) | 🟢 **Beginner** | undefined |
-| [Secrets Redaction and Masking](./content/published/patterns/schema/environment-config/secrets-redaction.mdx) | 🟡 **Intermediate** | undefined |
-| [Feature Flags with Dynamic Validation](./content/published/patterns/schema/environment-config/feature-flags.mdx) | 🟡 **Intermediate** | undefined |
-| [Composable Configuration Layers](./content/published/patterns/schema/environment-config/config-layers.mdx) | 🟡 **Intermediate** | undefined |
+| [Instrument and Observe Function Calls with Effect.fn](./content/published/patterns/observability/observability-effect-fn.mdx) | 🟡 **Intermediate** | Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries. |
+| [Leverage Effect's Built-in Structured Logging](./content/published/patterns/observability/observability-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions for structured, configurable, and context-aware logging. |
+| [Add Custom Metrics to Your Application](./content/published/patterns/observability/add-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
+| [Add Custom Metrics to Your Application](./content/published/patterns/observability/observability-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
+| [Trace Operations Across Services with Spans](./content/published/patterns/observability/observability-tracing-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
+| [Trace Operations Across Services with Spans](./content/published/patterns/observability/trace-operations-with-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
+| [Integrate Effect Tracing with OpenTelemetry](./content/published/patterns/observability/observability-opentelemetry.mdx) | 🟠 **Advanced** | Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization. |
+
+## Tooling and Debugging
+Debug and profile Effect applications
+
+| Pattern | Skill Level | Summary |
+| :--- | :--- | :--- |
+| [Supercharge Your Editor with the Effect LSP](./content/published/patterns/tooling-and-debugging/supercharge-your-editor-with-the-effect-lsp.mdx) | 🟡 **Intermediate** | Install the Effect Language Server (LSP) extension for your editor to get rich, inline type information and enhanced error checking for your Effect code. |
+| [Teach your AI Agents Effect with the MCP Server](./content/published/patterns/tooling-and-debugging/teach-your-ai-agents-effect-with-the-mcp-server.mdx) | 🟠 **Advanced** | Use the Effect MCP server to provide live, contextual information about your application's structure directly to AI coding agents. |
 

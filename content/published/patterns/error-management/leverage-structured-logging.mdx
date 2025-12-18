@@ -1,0 +1,56 @@
+---
+title: Leverage Effect's Built-in Structured Logging
+id: leverage-structured-logging
+skillLevel: intermediate
+applicationPatternId: error-management
+summary: >-
+  Use Effect's built-in logging functions (Effect.log, Effect.logInfo, etc.) for
+  structured, configurable, and context-aware logging.
+tags:
+  - logging
+  - logger
+  - structured-logging
+  - observability
+  - debug
+rule:
+  description: Leverage Effect's built-in structured logging.
+related:
+  - create-reusable-runtime-from-layers
+  - define-tagged-errors
+author: Sandro Maglione
+---
+
+# Leverage Effect's Built-in Structured Logging
+
+## Guideline
+
+Use the built-in `Effect.log*` family of functions for all application logging
+instead of using `console.log`.
+
+## Rationale
+
+Effect's logger is structured, context-aware (with trace IDs), configurable
+via `Layer`, and testable. It's a first-class citizen, not an unmanaged
+side-effect.
+
+## Good Example
+
+```typescript
+import { Effect } from "effect";
+
+const program = Effect.logDebug("Processing user", { userId: 123 });
+
+// Run the program with debug logging enabled
+Effect.runSync(
+  program.pipe(Effect.tap(() => Effect.log("Debug logging enabled")))
+);
+```
+
+**Explanation:**  
+Using Effect's logging system ensures your logs are structured, filterable,
+and context-aware.
+
+## Anti-Pattern
+
+Calling `console.log` directly within an Effect composition. This is an
+unmanaged side-effect that bypasses all the benefits of Effect's logging system.

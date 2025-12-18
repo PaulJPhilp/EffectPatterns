@@ -1,0 +1,403 @@
+---
+title: "Scheduling Pattern 1: Repeat an Effect on a Fixed Interval"
+id: scheduling-pattern-repeat-effect-on-fixed-interval
+skillLevel: intermediate
+applicationPatternId: scheduling
+summary: >-
+  Use Schedule.fixed to repeat an effect at regular intervals, enabling
+  polling, health checks, and periodic background tasks without busy-waiting
+  or manual timing logic.
+tags:
+  - scheduling
+  - repetition
+  - polling
+  - health-check
+  - background-task
+  - interval
+rule:
+  description: >-
+    Repeat effects at fixed intervals using Schedule.fixed for steady-state
+    operations and background tasks.
+related:
+  - control-repetition-with-schedule
+  - run-background-tasks-with-fork
+  - understand-fibers-as-lightweight-threads
+author: effect_website
+---
+
+## Guideline
+
+When you need to run an effect repeatedly at regular intervals (e.g., every 5 seconds, every 30 minutes), use `Schedule.fixed` to specify the interval. This creates a schedule that repeats the effect indefinitely or until a condition stops it, with precise timing between executions.
+
+---
+
+## Rationale
+
+Many production systems need periodic operations:
+
+- **Health checks**: Poll service availability every 30 seconds
+- **Cache refresh**: Update cache every 5 minutes
+- **Metrics collection**: Gather system metrics every 10 seconds
+- **Data sync**: Sync data with remote service periodically
+- **Cleanup tasks**: Remove stale data nightly
+
+Without proper scheduling:
+
+- Manual polling with `while` loops wastes CPU (busy-waiting)
+- Thread.sleep blocks threads, preventing other work
+- No automatic restart on failure
+- Difficult to test deterministically
+
+With `Schedule.fixed`:
+
+- Efficient, non-blocking repetition
+- Automatic failure handling and retry
+- Testable with TestClock
+- Clean, declarative syntax
+
+---
+
+## Good Example
+
+This example demonstrates a health check service that polls multiple service endpoints every 30 seconds and reports their status.
+
+```typescript
+import { Effect, Schedule, Duration } from "effect";
+
+interface ServiceStatus {
+  readonly service: string;
+  readonly url: string;
+  readonly isHealthy: boolean;
+  readonly responseTime: number;
+  readonly lastChecked: number;
+}
+
+// Mock health check that calls an endpoint
+const checkServiceHealth = (
+  url: string,
+  service: string
+): Effect.Effect<ServiceStatus> =>
+  Effect.gen(function* () {
+    const startTime = Date.now();
+
+    // Simulate HTTP call with occasional failures
+    const isHealthy = Math.random() > 0.1; // 90% success rate
+    const responseTime = Math.random() * 500; // 0-500ms
+
+    yield* Effect.sleep(Duration.millis(Math.round(responseTime)));
+
+    if (!isHealthy) {
+      yield* Effect.fail(new Error(`${service} is unhealthy`));
+    }
+
+    return {
+      service,
+      url,
+      isHealthy: true,
+      responseTime: Math.round(Date.now() - startTime),
+      lastChecked: Date.now(),
+    };
+  });
+
+// Health check for multiple services
+interface HealthCheckConfig {
+  readonly services: Array<{
+    readonly name: string;
+    readonly url: string;
+  }>;
+  readonly intervalSeconds: number;
+}
+
+// Keep track of service status
+const serviceStatuses = new Map<string, ServiceStatus>();
+
+// Check all services and report status
+const checkAllServices = (
+  config: HealthCheckConfig
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    for (const service of config.services) {
+      const status = yield* checkServiceHealth(service.url, service.name).pipe(
+        Effect.either
+      );
+
+      if (status._tag === "Right") {
+        serviceStatuses.set(service.name, status.right);
+        console.log(
+          `✓ ${service.name}: OK (${status.right.responseTime}ms)`
+        );
+      } else {
+        console.log(`✗ ${service.name}: FAILED`);
+        // Keep last known status if available
+      }
+    }
+  });
+
+// Create the repeating health check
+const createHealthCheckScheduler = (
+  config: HealthCheckConfig
+): Effect.Effect<void> =>
+  checkAllServices(config).pipe(
+    // Schedule with fixed interval (fixed = ignore execution time)
+    Effect.repeat(
+      Schedule.fixed(Duration.seconds(config.intervalSeconds))
+    )
+  );
+
+// Report current status
+const reportStatus = (): Effect.Effect<void> =>
+  Effect.sync(() => {
+    if (serviceStatuses.size === 0) {
+      console.log("\n[STATUS] No services checked yet");
+      return;
+    }
+
+    console.log("\n[STATUS REPORT]");
+    for (const [service, status] of serviceStatuses) {
+      const ago = Math.round((Date.now() - status.lastChecked) / 1000);
+      console.log(
+        `  ${service}: ${status.isHealthy ? "✓" : "✗"} (checked ${ago}s ago)`
+      );
+    }
+  });
+
+// Run health checker in background and check status periodically
+const program = Effect.gen(function* () {
+  const config: HealthCheckConfig = {
+    services: [
+      { name: "API", url: "https://api.example.com/health" },
+      { name: "Database", url: "https://db.example.com/health" },
+      { name: "Cache", url: "https://cache.example.com/health" },
+    ],
+    intervalSeconds: 5, // Check every 5 seconds
+  };
+
+  // Fork the health checker to run in background
+  const checker = yield* createHealthCheckScheduler(config).pipe(
+    Effect.fork
+  );
+
+  // Check and report status every 15 seconds for 60 seconds
+  yield* reportStatus().pipe(
+    Effect.repeat(
+      Schedule.addDelay(
+        Schedule.recurs(3), // 3 repetitions = 4 total (initial + 3)
+        () => Duration.seconds(15)
+      )
+    )
+  );
+
+  // Interrupt the background checker
+  yield* checker.interrupt();
+});
+
+Effect.runPromise(program);
+```
+
+This pattern:
+
+1. **Defines service health checks** that may fail
+2. **Uses Schedule.fixed** to repeat every 5 seconds
+3. **Handles failures gracefully** (keeps last known status)
+4. **Runs in background** while main logic continues
+5. **Reports current status** at intervals
+
+---
+
+## Advanced: Adaptive Interval Based on Conditions
+
+Adjust interval dynamically based on service health:
+
+```typescript
+const createAdaptiveHealthCheckScheduler = (
+  config: HealthCheckConfig
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    let failureCount = 0;
+    let currentInterval = config.intervalSeconds;
+
+    while (true) {
+      const startTime = Date.now();
+
+      // Run health check
+      const allHealthy = yield* checkAllServices(config).pipe(
+        Effect.map(() => true),
+        Effect.catchAll(() => Effect.succeed(false))
+      );
+
+      if (allHealthy) {
+        // All healthy, reset interval and failure count
+        failureCount = 0;
+        currentInterval = config.intervalSeconds;
+        console.log(`[ADAPTIVE] All healthy, using normal interval (${currentInterval}s)`);
+      } else {
+        // Some unhealthy, increase check frequency
+        failureCount++;
+        currentInterval = Math.max(5, config.intervalSeconds / (failureCount + 1));
+        console.log(
+          `[ADAPTIVE] Unhealthy detected, increasing frequency (${currentInterval.toFixed(1)}s)`
+        );
+      }
+
+      // Wait for the configured interval (minus execution time)
+      const elapsedMs = Date.now() - startTime;
+      const remainingMs = Math.max(0, currentInterval * 1000 - elapsedMs);
+
+      if (remainingMs > 0) {
+        yield* Effect.sleep(Duration.millis(remainingMs));
+      }
+    }
+  });
+```
+
+---
+
+## Advanced: Rate-Limited Health Check with Backoff
+
+Handle rate limiting from endpoints:
+
+```typescript
+interface RateLimitAwareConfig extends HealthCheckConfig {
+  readonly maxChecksPerMinute: number;
+  readonly backoffOnRateLimit: boolean;
+}
+
+const createRateLimitAwareHealthCheck = (
+  config: RateLimitAwareConfig
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    let checksInWindow = 0;
+    let windowStart = Date.now();
+    let backoffUntil = 0;
+
+    while (true) {
+      // Check if in backoff period
+      if (Date.now() < backoffUntil) {
+        const waitMs = backoffUntil - Date.now();
+        console.log(`[RATE-LIMIT] Backing off for ${Math.round(waitMs)}ms`);
+        yield* Effect.sleep(Duration.millis(waitMs));
+        backoffUntil = 0;
+      }
+
+      // Reset window if needed
+      if (Date.now() - windowStart > 60000) {
+        checksInWindow = 0;
+        windowStart = Date.now();
+      }
+
+      // Check if we can perform check
+      if (checksInWindow >= config.maxChecksPerMinute) {
+        const waitMs = 60000 - (Date.now() - windowStart);
+        console.log(`[RATE-LIMIT] Rate limit reached, waiting ${waitMs}ms`);
+        yield* Effect.sleep(Duration.millis(waitMs));
+        checksInWindow = 0;
+        windowStart = Date.now();
+      }
+
+      // Perform the health check
+      yield* checkAllServices(config).pipe(
+        Effect.tap(() => {
+          checksInWindow++;
+        }),
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            if (error.message.includes("429") || error.message.includes("rate limit")) {
+              if (config.backoffOnRateLimit) {
+                backoffUntil = Date.now() + 60000; // Back off for 1 minute
+                console.log(`[RATE-LIMIT] Hit 429, backing off`);
+              }
+            }
+            return undefined;
+          })
+        )
+      );
+
+      // Wait for configured interval
+      yield* Effect.sleep(Duration.seconds(config.intervalSeconds));
+    }
+  });
+```
+
+---
+
+## Advanced: Health Check with Exponential Backoff on Failure
+
+Increase check frequency when services are unhealthy, then back off:
+
+```typescript
+const createSmartHealthCheckScheduler = (
+  config: HealthCheckConfig
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const healthySchedule = Schedule.fixed(Duration.seconds(config.intervalSeconds));
+    const unhealthySchedule = Schedule.fixed(Duration.seconds(10)); // Check every 10s when unhealthy
+    const recoverySchedule = Schedule.fixed(Duration.seconds(30)); // Extended checks during recovery
+
+    let state: "healthy" | "unhealthy" | "recovering" = "healthy";
+    let unhealthyCount = 0;
+
+    while (true) {
+      const checkResult = yield* checkAllServices(config).pipe(
+        Effect.either
+      );
+
+      if (checkResult._tag === "Right") {
+        if (state === "unhealthy") {
+          state = "recovering";
+          unhealthyCount = 0;
+          console.log(`[STATE] Transitioning to RECOVERING`);
+        } else if (state === "recovering" && unhealthyCount > 3) {
+          state = "healthy";
+          console.log(`[STATE] Transitioning to HEALTHY`);
+        } else if (state === "recovering") {
+          unhealthyCount++;
+        }
+      } else {
+        if (state !== "unhealthy") {
+          state = "unhealthy";
+          unhealthyCount = 0;
+          console.log(`[STATE] Transitioning to UNHEALTHY`);
+        }
+        unhealthyCount++;
+      }
+
+      // Choose schedule based on state
+      const nextDelay =
+        state === "healthy"
+          ? config.intervalSeconds
+          : state === "unhealthy"
+            ? 10
+            : 30;
+
+      yield* Effect.sleep(Duration.seconds(nextDelay));
+    }
+  });
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use fixed-interval scheduling when:**
+
+- Polling external services (health checks, status updates)
+- Running background maintenance tasks
+- Collecting metrics at regular intervals
+- Syncing data periodically
+- Running cleanup jobs at specific times
+
+⚠️ **Trade-offs:**
+
+- Execution time affects precision (use `Schedule.addDelay` if needed)
+- No jitter by default (add manually if thundering herd is concern)
+- Runs indefinitely (need explicit interrupt or condition)
+- Imprecise for critical real-time work
+
+---
+
+## See Also
+
+- [Control Repetition with Schedule](./control-repetition-with-schedule.mdx) - Schedule fundamentals
+- [Run Background Tasks with Fork](./run-background-tasks-with-fork.mdx) - Background execution
+- [Understand Fibers as Lightweight Threads](./understand-fibers-as-lightweight-threads.mdx) - Fiber concurrency
+- [Handle Flaky Operations with Retry & Timeout](./handle-flaky-operations-with-retry-timeout.mdx) - Error handling in polling

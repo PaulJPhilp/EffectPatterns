@@ -1,0 +1,120 @@
+---
+title: "Why Effect? Comparing Effect to Promise"
+id: getting-started-effect-vs-promise
+skillLevel: beginner
+applicationPatternId: getting-started
+summary: >-
+  Understand what Effect gives you that Promise doesn't: type-safe errors,
+  dependency injection, and composability.
+tags:
+  - getting-started
+  - comparison
+  - promise
+  - motivation
+  - type-safety
+rule:
+  description: Understand why Effect is better than raw Promises.
+related:
+  - getting-started-hello-world
+  - effects-are-lazy
+  - execute-with-runpromise
+author: Paul Philp
+---
+
+# Why Effect? Comparing Effect to Promise
+
+## Guideline
+
+Effect solves three problems that Promises don't:
+1. **Errors are typed** - You know exactly what can go wrong
+2. **Dependencies are tracked** - You know what services are needed
+3. **Effects are lazy** - Nothing runs until you say so
+
+## The Problem with Promises
+
+```typescript
+// With Promises, errors are invisible in the type system
+async function fetchUser(id: string): Promise<User> {
+  const response = await fetch(`/api/users/${id}`);
+  if (!response.ok) throw new Error("Failed to fetch"); // What errors can happen?
+  return response.json();
+}
+
+// The type says Promise<User>, but it might throw anything!
+```
+
+## The Effect Solution
+
+```typescript
+import { Effect } from "effect";
+
+class FetchError {
+  readonly _tag = "FetchError";
+  constructor(readonly message: string) {}
+}
+
+class ParseError {
+  readonly _tag = "ParseError";
+  constructor(readonly message: string) {}
+}
+
+// The type tells you EXACTLY what can go wrong
+const fetchUser = (id: string): Effect.Effect<User, FetchError | ParseError> =>
+  Effect.gen(function* () {
+    const response = yield* Effect.tryPromise({
+      try: () => fetch(`/api/users/${id}`),
+      catch: () => new FetchError("Network request failed"),
+    });
+
+    if (!response.ok) {
+      return yield* Effect.fail(new FetchError(`HTTP ${response.status}`));
+    }
+
+    const json = yield* Effect.tryPromise({
+      try: () => response.json(),
+      catch: () => new ParseError("Invalid JSON"),
+    });
+
+    return json as User;
+  });
+```
+
+## Side-by-Side Comparison
+
+| Feature | Promise | Effect |
+|---------|---------|--------|
+| Error types | `any` (unknown) | Explicit in type signature |
+| Execution | Immediate (eager) | Lazy (runs when you say) |
+| Dependencies | Global/implicit | Explicit in type signature |
+| Composition | `.then()` chains | Powerful combinators |
+| Cancellation | AbortController (manual) | Built-in fiber interruption |
+| Retry/Timeout | Manual implementation | One-liner with Schedule |
+
+## Key Insight
+
+With Promises:
+```typescript
+// You have to read the implementation to know what might fail
+async function doSomething(): Promise<Result> { ... }
+```
+
+With Effect:
+```typescript
+// The type tells you everything
+function doSomething(): Effect<Result, NetworkError | ParseError, Database> { ... }
+//                               ^success  ^errors                   ^dependencies
+```
+
+## When to Use Effect
+
+- ✅ Complex business logic with multiple error types
+- ✅ Applications needing dependency injection
+- ✅ Code that needs to be testable
+- ✅ Operations needing retry, timeout, or concurrency control
+
+## When Promises Are Fine
+
+- ✅ Simple scripts
+- ✅ One-off async operations
+- ✅ When error handling is straightforward
+
