@@ -43,18 +43,17 @@ This document lists the **jobs** a developer needs to accomplish when managing r
 
 ---
 
-## 4. Advanced Resource Patterns
+## 4. Advanced Resource Patterns ✅
 
 ### Jobs:
-- [ ] Pool resources for reuse
-- [ ] Handle resource timeouts
-- [ ] Manage hierarchical resource trees
+- [x] Pool resources for reuse
+- [x] Handle resource timeouts
+- [x] Manage hierarchical resource trees
 
-### Gap Analysis:
-These advanced patterns would be useful additions:
-- Resource pooling (connection pools, worker pools)
-- Resource timeout and cancellation
-- Parent-child resource relationships
+### Patterns (3):
+- `resource-pooling.mdx` - Pool Resources for Reuse
+- `resource-timeouts.mdx` - Handle Resource Timeouts
+- `resource-hierarchies.mdx` - Manage Hierarchical Resources
 
 ---
 
@@ -65,10 +64,10 @@ These advanced patterns would be useful additions:
 | Basic Resource Management | 3 | 1 | 0 |
 | Scope and Lifecycle | 3 | 2 | 0 |
 | Layers and Resources | 2 | 2 | 0 |
-| Advanced Resource Patterns | 3 | 0 | 3 |
-| **Total** | **11** | **5** | **3** |
+| Advanced Resource Patterns | 3 | 3 | 0 |
+| **Total** | **11** | **8** | **0** |
 
-### Coverage: 73%
+### Coverage: 100%
 
-Core resource management is covered. Advanced patterns (pooling, timeouts, hierarchies) could be added.
+Resource management is now fully covered.
 

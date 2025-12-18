@@ -1,0 +1,243 @@
+---
+title: Configure CORS for APIs
+id: api-cors
+skillLevel: intermediate
+applicationPatternId: building-apis
+summary: >-
+  Enable Cross-Origin Resource Sharing to allow browser clients from different domains.
+tags:
+  - building-apis
+  - cors
+  - security
+  - browser
+rule:
+  description: Configure CORS headers to allow legitimate cross-origin requests while blocking unauthorized ones.
+author: PaulJPhilp
+related:
+  - api-middleware
+  - api-authentication
+---
+
+## Guideline
+
+Implement CORS as middleware that adds appropriate headers and handles preflight OPTIONS requests.
+
+---
+
+## Rationale
+
+Browsers block cross-origin requests by default:
+
+1. **Security** - Prevents malicious sites from accessing your API
+2. **Controlled access** - Allow specific origins only
+3. **Credentials** - Control cookie/auth header sharing
+4. **Methods** - Limit which HTTP methods are allowed
+
+---
+
+## Good Example
+
+```typescript
+import { Effect } from "effect"
+import { HttpServerRequest, HttpServerResponse } from "@effect/platform"
+
+// ============================================
+// 1. CORS configuration
+// ============================================
+
+interface CorsConfig {
+  readonly allowedOrigins: ReadonlyArray<string> | "*"
+  readonly allowedMethods: ReadonlyArray<string>
+  readonly allowedHeaders: ReadonlyArray<string>
+  readonly exposedHeaders?: ReadonlyArray<string>
+  readonly credentials?: boolean
+  readonly maxAge?: number
+}
+
+const defaultCorsConfig: CorsConfig = {
+  allowedOrigins: "*",
+  allowedMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
+  exposedHeaders: ["X-Request-Id", "X-Response-Time"],
+  credentials: false,
+  maxAge: 86400, // 24 hours
+}
+
+// ============================================
+// 2. Check if origin is allowed
+// ============================================
+
+const isOriginAllowed = (
+  origin: string | undefined,
+  allowedOrigins: ReadonlyArray<string> | "*"
+): boolean => {
+  if (!origin) return false
+  if (allowedOrigins === "*") return true
+  return allowedOrigins.includes(origin)
+}
+
+// ============================================
+// 3. Add CORS headers to response
+// ============================================
+
+const addCorsHeaders = (
+  response: HttpServerResponse.HttpServerResponse,
+  origin: string | undefined,
+  config: CorsConfig
+): HttpServerResponse.HttpServerResponse => {
+  let result = response
+
+  // Set allowed origin
+  if (config.allowedOrigins === "*") {
+    result = HttpServerResponse.setHeader(result, "Access-Control-Allow-Origin", "*")
+  } else if (origin && isOriginAllowed(origin, config.allowedOrigins)) {
+    result = HttpServerResponse.setHeader(result, "Access-Control-Allow-Origin", origin)
+    result = HttpServerResponse.setHeader(result, "Vary", "Origin")
+  }
+
+  // Set allowed methods
+  result = HttpServerResponse.setHeader(
+    result,
+    "Access-Control-Allow-Methods",
+    config.allowedMethods.join(", ")
+  )
+
+  // Set allowed headers
+  result = HttpServerResponse.setHeader(
+    result,
+    "Access-Control-Allow-Headers",
+    config.allowedHeaders.join(", ")
+  )
+
+  // Set exposed headers
+  if (config.exposedHeaders?.length) {
+    result = HttpServerResponse.setHeader(
+      result,
+      "Access-Control-Expose-Headers",
+      config.exposedHeaders.join(", ")
+    )
+  }
+
+  // Set credentials
+  if (config.credentials) {
+    result = HttpServerResponse.setHeader(
+      result,
+      "Access-Control-Allow-Credentials",
+      "true"
+    )
+  }
+
+  // Set max age for preflight cache
+  if (config.maxAge) {
+    result = HttpServerResponse.setHeader(
+      result,
+      "Access-Control-Max-Age",
+      String(config.maxAge)
+    )
+  }
+
+  return result
+}
+
+// ============================================
+// 4. CORS middleware
+// ============================================
+
+const withCors = (config: CorsConfig = defaultCorsConfig) =>
+  <E, R>(
+    handler: Effect.Effect<HttpServerResponse.HttpServerResponse, E, R>
+  ): Effect.Effect<
+    HttpServerResponse.HttpServerResponse,
+    E,
+    R | HttpServerRequest.HttpServerRequest
+  > =>
+    Effect.gen(function* () {
+      const request = yield* HttpServerRequest.HttpServerRequest
+      const origin = request.headers["origin"]
+
+      // Handle preflight OPTIONS request
+      if (request.method === "OPTIONS") {
+        const preflightResponse = HttpServerResponse.empty({ status: 204 })
+        return addCorsHeaders(preflightResponse, origin, config)
+      }
+
+      // Check if origin is allowed
+      if (
+        origin &&
+        config.allowedOrigins !== "*" &&
+        !isOriginAllowed(origin, config.allowedOrigins)
+      ) {
+        return HttpServerResponse.json(
+          { error: "CORS: Origin not allowed" },
+          { status: 403 }
+        )
+      }
+
+      // Process request and add CORS headers to response
+      const response = yield* handler
+      return addCorsHeaders(response, origin, config)
+    })
+
+// ============================================
+// 5. Usage examples
+// ============================================
+
+// Allow all origins (development)
+const devCors = withCors({
+  ...defaultCorsConfig,
+  allowedOrigins: "*",
+})
+
+// Specific origins (production)
+const prodCors = withCors({
+  allowedOrigins: [
+    "https://myapp.com",
+    "https://admin.myapp.com",
+  ],
+  allowedMethods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+  maxAge: 3600,
+})
+
+// Apply to handlers
+const myHandler = Effect.succeed(
+  HttpServerResponse.json({ message: "Hello!" })
+)
+
+const corsEnabledHandler = devCors(myHandler)
+```
+
+## CORS Headers
+
+| Header | Purpose |
+|--------|---------|
+| `Access-Control-Allow-Origin` | Which origins can access |
+| `Access-Control-Allow-Methods` | Which HTTP methods |
+| `Access-Control-Allow-Headers` | Which request headers |
+| `Access-Control-Expose-Headers` | Which response headers visible |
+| `Access-Control-Allow-Credentials` | Allow cookies/auth |
+| `Access-Control-Max-Age` | Preflight cache time |
+
+## Preflight Requests
+
+Browsers send OPTIONS preflight for:
+- Non-simple methods (PUT, DELETE, etc.)
+- Custom headers
+- Content-Type other than form data
+
+## Common Configurations
+
+| Scenario | Configuration |
+|----------|---------------|
+| Public API | `allowedOrigins: "*"`, no credentials |
+| Web app | Specific origins, credentials |
+| Internal | Localhost + internal domains |
+
+## Security Tips
+
+1. **Never use `*` with credentials** - Browser will reject
+2. **Be specific** - List exact origins in production
+3. **Limit methods** - Only allow what you need
+4. **Audit headers** - Don't expose sensitive headers
+

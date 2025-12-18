@@ -1,0 +1,182 @@
+---
+title: Handle Resource Timeouts
+id: resource-timeouts
+skillLevel: intermediate
+applicationPatternId: resource-management
+summary: >-
+  Set timeouts on resource acquisition and usage to prevent hanging operations.
+tags:
+  - resource-management
+  - timeouts
+  - resilience
+rule:
+  description: Always set timeouts on resource acquisition to prevent indefinite waits.
+author: PaulJPhilp
+related:
+  - resource-pooling
+  - bracket-acquire-release
+---
+
+## Guideline
+
+Set timeouts on resource acquisition and usage to ensure your application doesn't hang waiting for unavailable resources.
+
+---
+
+## Rationale
+
+Resources can become unavailable:
+
+1. **Network partitions** - Can't reach database
+2. **Pool exhaustion** - All connections in use
+3. **Deadlocks** - Resources held indefinitely
+4. **Slow operations** - Query takes too long
+
+Timeouts provide a safety net.
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Duration, Scope } from "effect"
+
+// ============================================
+// 1. Define a resource with slow acquisition
+// ============================================
+
+interface Connection {
+  readonly id: string
+  readonly query: (sql: string) => Effect.Effect<unknown>
+}
+
+const acquireConnection = Effect.gen(function* () {
+  yield* Effect.log("Attempting to connect...")
+  
+  // Simulate slow connection
+  yield* Effect.sleep("2 seconds")
+  
+  const connection: Connection = {
+    id: crypto.randomUUID(),
+    query: (sql) => Effect.succeed({ rows: [] }),
+  }
+  
+  yield* Effect.log(`Connected: ${connection.id}`)
+  return connection
+})
+
+const releaseConnection = (conn: Connection) =>
+  Effect.log(`Released: ${conn.id}`)
+
+// ============================================
+// 2. Timeout on acquisition
+// ============================================
+
+const acquireWithTimeout = acquireConnection.pipe(
+  Effect.timeout("1 second"),
+  Effect.catchTag("TimeoutException", () =>
+    Effect.fail(new Error("Connection timeout - database unreachable"))
+  )
+)
+
+// ============================================
+// 3. Timeout on usage
+// ============================================
+
+const queryWithTimeout = (conn: Connection, sql: string) =>
+  conn.query(sql).pipe(
+    Effect.timeout("5 seconds"),
+    Effect.catchTag("TimeoutException", () =>
+      Effect.fail(new Error(`Query timeout: ${sql}`))
+    )
+  )
+
+// ============================================
+// 4. Full resource lifecycle with timeouts
+// ============================================
+
+const useConnectionWithTimeouts = Effect.acquireRelease(
+  acquireWithTimeout,
+  releaseConnection
+).pipe(
+  Effect.flatMap((conn) =>
+    Effect.gen(function* () {
+      yield* Effect.log("Running queries...")
+      
+      // Each query has its own timeout
+      const result1 = yield* queryWithTimeout(conn, "SELECT 1")
+      const result2 = yield* queryWithTimeout(conn, "SELECT 2")
+      
+      return [result1, result2]
+    })
+  ),
+  Effect.scoped
+)
+
+// ============================================
+// 5. Timeout on entire operation
+// ============================================
+
+const entireOperationWithTimeout = useConnectionWithTimeouts.pipe(
+  Effect.timeout("10 seconds"),
+  Effect.catchTag("TimeoutException", () =>
+    Effect.fail(new Error("Entire operation timed out"))
+  )
+)
+
+// ============================================
+// 6. Run with different scenarios
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Testing timeouts ===")
+  
+  const result = yield* entireOperationWithTimeout.pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.logError(`Failed: ${error.message}`)
+        return []
+      })
+    )
+  )
+  
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`)
+})
+
+Effect.runPromise(program)
+```
+
+## Timeout Strategies
+
+| Level | Purpose | Typical Value |
+|-------|---------|---------------|
+| Acquisition | Connect to resource | 1-5 seconds |
+| Per-operation | Single query/call | 5-30 seconds |
+| Total operation | Entire workflow | 30-120 seconds |
+
+## Timeout with Interrupt
+
+```typescript
+// Timeout that interrupts the fiber
+const withInterrupt = slowOperation.pipe(
+  Effect.timeoutFail({
+    duration: "5 seconds",
+    onTimeout: () => new TimeoutError("Operation took too long"),
+  })
+)
+
+// Timeout that returns Option
+const withOption = slowOperation.pipe(
+  Effect.timeout("5 seconds")
+  // Returns Option<A> - None if timed out
+)
+```
+
+## Best Practices
+
+1. **Layer timeouts** - Different timeouts for different operations
+2. **Log timeouts** - Know when they happen
+3. **Provide fallbacks** - What to do when timeout occurs
+4. **Don't set too short** - Allow for normal variance
+5. **Monitor timeout rates** - High rate indicates issues
+
