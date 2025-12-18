@@ -1,0 +1,437 @@
+---
+title: "Concurrency Pattern 6: Race and Timeout Competing Effects"
+id: concurrency-pattern-race-timeout
+skillLevel: intermediate
+useCase: concurrency-coordination
+summary: >-
+  Use race and timeout to compete multiple effects and enforce deadlines,
+  enabling timeout handling and choosing fastest result.
+tags:
+  - concurrency
+  - race
+  - timeout
+  - deadline
+  - competing-effects
+  - cancellation
+rule:
+  description: >-
+    Use race to compete effects and timeout to enforce deadlines, enabling
+    cancellation when operations exceed time limits or complete.
+related:
+  - concurrency-pattern-coordinate-with-deferred
+  - scheduling-pattern-exponential-backoff
+  - run-background-tasks-with-fork
+author: effect_website
+---
+
+## Guideline
+
+Race and timeout coordinate competing effects:
+
+- **race**: Multiple effects compete, first to succeed wins
+- **timeout**: Effect fails if not completed in time
+- **raceAll**: Race multiple effects, collect winners
+- **timeoutFail**: Fail with specific error on timeout
+
+Pattern: `Effect.race(effect1, effect2)` or `effect.pipe(Effect.timeout(duration))`
+
+---
+
+## Rationale
+
+Without race/timeout, competing effects create issues:
+
+- **Deadlocks**: Waiting for all to complete unnecessarily
+- **Hanging requests**: No deadline enforcement
+- **Wasted resources**: Slow operations continue indefinitely
+- **No fallback**: Can't switch to alternative on timeout
+
+Race/timeout enable:
+
+- **Fastest-wins**: Take first success
+- **Deadline enforcement**: Fail after time limit
+- **Resource cleanup**: Cancel slower operations
+- **Fallback patterns**: Alternative if primary times out
+
+Real-world example: Multi-datacenter request
+- **Without race**: Wait for slowest response
+- **With race**: Get response from fastest datacenter
+
+---
+
+## Good Example
+
+This example demonstrates racing competing effects and handling timeouts.
+
+```typescript
+import { Effect, Fiber } from "effect";
+
+interface DataSource {
+  readonly name: string;
+  readonly latencyMs: number;
+}
+
+// Simulate fetching from different sources
+const fetchFromSource = (source: DataSource): Effect.Effect<string> =>
+  Effect.gen(function* () {
+    yield* Effect.log(
+      `[${source.name}] Starting fetch (latency: ${source.latencyMs}ms)`
+    );
+
+    yield* Effect.sleep(`${source.latencyMs} millis`);
+
+    const result = `Data from ${source.name}`;
+
+    yield* Effect.log(`[${source.name}] ✓ Completed`);
+
+    return result;
+  });
+
+// Main: demonstrate race patterns
+const program = Effect.gen(function* () {
+  console.log(`\n[RACE] Competing effects with race and timeout\n`);
+
+  // Example 1: Simple race (fastest wins)
+  console.log(`[1] Racing 3 data sources:\n`);
+
+  const sources: DataSource[] = [
+    { name: "Primary DC", latencyMs: 200 },
+    { name: "Backup DC", latencyMs: 150 },
+    { name: "Cache", latencyMs: 50 },
+  ];
+
+  const raceResult = yield* Effect.race(
+    fetchFromSource(sources[0]),
+    Effect.race(fetchFromSource(sources[1]), fetchFromSource(sources[2]))
+  );
+
+  console.log(`\nWinner: ${raceResult}\n`);
+
+  // Example 2: Timeout - succeed within deadline
+  console.log(`[2] Timeout with fast operation:\n`);
+
+  const fastOp = fetchFromSource({ name: "Fast Op", latencyMs: 100 }).pipe(
+    Effect.timeout("500 millis")
+  );
+
+  const fastResult = yield* fastOp;
+
+  console.log(`✓ Completed within timeout: ${fastResult}\n`);
+
+  // Example 3: Timeout - exceed deadline
+  console.log(`[3] Timeout with slow operation:\n`);
+
+  const slowOp = fetchFromSource({ name: "Slow Op", latencyMs: 2000 }).pipe(
+    Effect.timeout("500 millis"),
+    Effect.either
+  );
+
+  const timeoutResult = yield* slowOp;
+
+  if (timeoutResult._tag === "Left") {
+    console.log(`✗ Operation timed out after 500ms\n`);
+  }
+
+  // Example 4: Race with timeout fallback
+  console.log(`[4] Race with fallback on timeout:\n`);
+
+  const primary = fetchFromSource({ name: "Primary", latencyMs: 300 });
+
+  const fallback = fetchFromSource({ name: "Fallback", latencyMs: 100 });
+
+  const raceWithFallback = primary.pipe(
+    Effect.timeout("150 millis"),
+    Effect.catchAll(() => {
+      yield* Effect.log(`[PRIMARY] Timed out, using fallback`);
+
+      return fallback;
+    })
+  );
+
+  const fallbackResult = yield* raceWithFallback;
+
+  console.log(`Result: ${fallbackResult}\n`);
+
+  // Example 5: Race all (collect all winners)
+  console.log(`[5] Race all - multiple sources:\n`);
+
+  const raceAllResult = yield* Effect.raceAll(
+    sources.map((s) =>
+      fetchFromSource(s).pipe(
+        Effect.map((data) => ({ source: s.name, data }))
+      )
+    )
+  );
+
+  console.log(`First to complete: ${raceAllResult.source}\n`);
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+## Advanced: Circuit Breaker with Timeout
+
+Implement circuit breaker using race:
+
+```typescript
+enum CircuitState {
+  Closed = "closed",
+  Open = "open",
+  HalfOpen = "half-open",
+}
+
+const circuitBreakerWithTimeout = (
+  operation: Effect.Effect<string>,
+  timeoutMs: number,
+  failureThreshold: number
+) =>
+  Effect.gen(function* () {
+    let state = CircuitState.Closed;
+    let failureCount = 0;
+    let successCount = 0;
+    let lastOpenTime = 0;
+
+    return (op: Effect.Effect<string>) =>
+      Effect.gen(function* () {
+        // Check circuit state
+        if (state === CircuitState.Open) {
+          const timeSinceOpen = Date.now() - lastOpenTime;
+
+          if (timeSinceOpen > 5000) {
+            // Try half-open
+            state = CircuitState.HalfOpen;
+            yield* Effect.log(`[CIRCUIT] Trying half-open`);
+          } else {
+            yield* Effect.fail(
+              new Error("Circuit breaker open")
+            );
+          }
+        }
+
+        // Execute with timeout
+        const result = yield* op.pipe(
+          Effect.timeout(`${timeoutMs} millis`),
+          Effect.either
+        );
+
+        if (result._tag === "Right") {
+          failureCount = 0;
+
+          if (state === CircuitState.HalfOpen) {
+            successCount++;
+
+            if (successCount >= 3) {
+              state = CircuitState.Closed;
+              yield* Effect.log(
+                `[CIRCUIT] Closed (recovered)`
+              );
+            }
+          }
+
+          return result.right;
+        }
+
+        // Failure
+        failureCount++;
+
+        if (failureCount >= failureThreshold) {
+          state = CircuitState.Open;
+          lastOpenTime = Date.now();
+
+          yield* Effect.log(
+            `[CIRCUIT] Opened (too many failures)`
+          );
+        }
+
+        yield* Effect.fail(result.left);
+      });
+  });
+```
+
+---
+
+## Advanced: Retry with Timeout and Backoff
+
+Combine retry, timeout, and backoff:
+
+```typescript
+const retryWithTimeoutAndBackoff = <A,>(
+  effect: Effect.Effect<A>,
+  config: {
+    timeoutMs: number;
+    maxRetries: number;
+    initialBackoffMs: number;
+  }
+): Effect.Effect<A> =>
+  Effect.gen(function* () {
+    let lastError: Error | undefined;
+
+    for (let attempt = 0; attempt < config.maxRetries; attempt++) {
+      const result = yield* effect.pipe(
+        Effect.timeout(`${config.timeoutMs} millis`),
+        Effect.either
+      );
+
+      if (result._tag === "Right") {
+        return result.right;
+      }
+
+      lastError = result.left as Error;
+
+      if (attempt < config.maxRetries - 1) {
+        const backoff = config.initialBackoffMs * Math.pow(2, attempt);
+
+        yield* Effect.log(
+          `[RETRY] Attempt ${attempt + 1} failed, waiting ${backoff}ms`
+        );
+
+        yield* Effect.sleep(`${backoff} millis`);
+      }
+    }
+
+    yield* Effect.fail(
+      lastError || new Error("All retries exhausted")
+    );
+  });
+
+// Usage
+const resilientFetch = retryWithTimeoutAndBackoff(
+  Effect.gen(function* () {
+    // Simulated fetch
+    yield* Effect.sleep("100 millis");
+    return "data";
+  }),
+  {
+    timeoutMs: 500,
+    maxRetries: 3,
+    initialBackoffMs: 100,
+  }
+);
+```
+
+---
+
+## Advanced: Timeout with Graceful Shutdown
+
+Cancel and cleanup on timeout:
+
+```typescript
+const timeoutWithCleanup = <A,>(
+  effect: Effect.Effect<A>,
+  timeoutMs: number,
+  cleanup: Effect.Effect<void>
+): Effect.Effect<A> =>
+  Effect.gen(function* () {
+    const result = yield* effect.pipe(
+      Effect.timeout(`${timeoutMs} millis`),
+      Effect.ensuring(cleanup),
+      Effect.either
+    );
+
+    if (result._tag === "Left") {
+      yield* Effect.fail(
+        new Error(`Operation timed out after ${timeoutMs}ms`)
+      );
+    }
+
+    return result.right;
+  });
+
+// Usage: Timeout with resource cleanup
+const operation = timeoutWithCleanup(
+  Effect.gen(function* () {
+    yield* Effect.sleep("2000 millis");
+    return "done";
+  }),
+  500,
+  Effect.log(`[CLEANUP] Releasing resources`)
+);
+```
+
+---
+
+## Advanced: First to Succeed Pattern
+
+Race effects until one succeeds:
+
+```typescript
+const firstToSucceed = <A,>(
+  effects: Effect.Effect<A>[]
+): Effect.Effect<A> =>
+  Effect.gen(function* () {
+    if (effects.length === 0) {
+      yield* Effect.fail(new Error("No effects to race"));
+    }
+
+    let lastError: Error | undefined;
+
+    for (const effect of effects) {
+      const result = yield* effect.pipe(Effect.either);
+
+      if (result._tag === "Right") {
+        return result.right;
+      }
+
+      lastError = result.left as Error;
+    }
+
+    yield* Effect.fail(
+      lastError || new Error("All effects failed")
+    );
+  });
+
+// Usage: Try multiple sources
+const data = firstToSucceed([
+  fetchFromSource({ name: "Source 1", latencyMs: 100 }),
+  fetchFromSource({ name: "Source 2", latencyMs: 50 }),
+  fetchFromSource({ name: "Source 3", latencyMs: 75 }),
+]);
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use race when:**
+
+- Multiple sources available, want fastest
+- Timeout deadlines necessary
+- Fallback behavior needed
+- Competitive execution
+- Resource constraints
+
+✅ **Use timeout when:**
+
+- API calls to external services
+- User-facing operations
+- Preventing resource exhaustion
+- Enforcing SLA limits
+
+⚠️ **Trade-offs:**
+
+- Race loses slower operations (resource waste)
+- Timeout errors can mask underlying issues
+- Resource cleanup must be explicit
+- Complexity increases with many competing effects
+
+---
+
+## Common Patterns
+
+| Pattern | Use Case | Code |
+| --- | --- | --- |
+| **Race** | Fastest wins | `Effect.race(a, b)` |
+| **Timeout** | Enforce deadline | `Effect.timeout("5s")` |
+| **Fallback** | Try primary, use secondary | `primary.pipe(Effect.catch(() => secondary))` |
+| **First to Succeed** | Try until one works | `firstToSucceed([a, b, c])` |
+
+---
+
+## See Also
+
+- [Concurrency Pattern 3: Coordinate with Latch](./concurrency-pattern-coordinate-with-latch.mdx) - Multi-fiber coordination
+- [Scheduling Pattern 2: Exponential Backoff](./scheduling-pattern-exponential-backoff.mdx) - Retry with backoff
+- [Run Background Tasks with Fork](./run-background-tasks-with-fork.mdx) - Background execution
+- [Concurrency Pattern 2: Rate Limit with Semaphore](./concurrency-pattern-rate-limit-with-semaphore.mdx) - Resource limiting

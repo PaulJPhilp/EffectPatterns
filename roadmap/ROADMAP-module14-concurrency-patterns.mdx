@@ -1,0 +1,359 @@
+---
+title: "Concurrency Patterns Learning Roadmap"
+description: "Master Effect Concurrency primitives for coordinating async operations and distributed work"
+---
+
+# Module 14: Concurrency Patterns - From Coordination to Distributed Work
+
+**Status**: In Development  
+**Level**: Intermediate to Advanced  
+**Focus**: Master Effect's concurrency primitives for coordinating async operations and managing concurrent workloads
+
+---
+
+## 🎯 Module Overview
+
+This module takes you from basic fiber management to sophisticated coordination patterns. You'll learn how to:
+
+- Coordinate async operations with Deferred (promise-like primitives)
+- Rate limit concurrent access with Semaphore
+- Coordinate multiple fibers with Latch
+- Distribute work across Queue with acknowledgment
+- Manage concurrent state safely
+- Handle cancellation and interruption
+- Build fault-tolerant concurrent systems
+
+---
+
+## 📍 Stage 1: The Foundations - Why Concurrency Matters
+
+Learn fundamental concurrency concepts and Effect's approach.
+
+### Conceptual Understanding
+
+- **1. Concurrency vs. Parallelism** `(Intermediate)`
+  - 🟣 Understanding the difference
+  - 🟣 When each matters in Effect
+  - 🟣 Fiber as a lightweight abstraction
+
+- **2. Concurrency Primitives Overview** `(Intermediate)`
+  - 🟣 Deferred, Semaphore, Latch, Queue
+  - 🟣 When to use each primitive
+  - 🟣 Composing primitives into systems
+
+- **3. Cancellation and Interruption** `(Intermediate)`
+  - 🟣 How Effect handles cancellation
+  - 🟣 Finalizers and cleanup
+  - 🟣 Safe resource management in concurrent contexts
+
+---
+
+## 📍 Stage 2: Deferred - Async Coordination
+
+Learn to coordinate async operations with promise-like primitives.
+
+### Basic Deferred Usage
+
+- **4. Coordinate Async Operations with Deferred** `(Intermediate)`
+  - 🟣 Creating and completing Deferred
+  - 🟣 Multiple waiters on single Deferred
+  - 🟣 Producer-consumer patterns
+
+- **5. Implement One-Time Event Signaling** `(Intermediate)`
+  - 🟣 Using Deferred for initialization signals
+  - 🟣 Waiting for service startup
+  - 🟣 Broadcast patterns
+
+- **6. Race Async Operations with Deferred** `(Intermediate)`
+  - 🟣 Racing between Deferred completion and timeout
+  - 🟣 First-to-complete semantics
+  - 🟣 Canceling losers in race
+
+### Advanced Deferred Patterns
+
+- **7. Chain Deferred Operations** `(Intermediate)`
+  - 🟣 Sequential async coordination
+  - 🟣 Dependent async operations
+  - 🟣 Building async workflows
+
+- **8. Deferred with Error Handling** `(Intermediate)`
+  - 🟣 Failing Deferreds with errors
+  - 🟣 Propagating failures to all waiters
+  - 🟣 Timeouts and recovery
+
+---
+
+## 📍 Stage 3: Semaphore - Rate Limiting
+
+Learn to control concurrent access with Semaphore.
+
+### Basic Semaphore Usage
+
+- **9. Rate Limit Concurrent Access with Semaphore** `(Intermediate)`
+  - 🟣 Creating semaphores with permit count
+  - 🟣 Acquiring and releasing permits
+  - 🟣 Coordinating concurrent operations
+
+- **10. Implement Connection Pool Semantics** `(Intermediate)`
+  - 🟣 Limiting concurrent connections
+  - 🟣 Queue of waiting tasks
+  - 🟣 Fair permit distribution
+
+- **11. Limit Concurrent Requests to External API** `(Intermediate)`
+  - 🟣 Rate limiting external service calls
+  - 🟣 Fairness and ordering guarantees
+  - 🟣 Backpressure handling
+
+### Advanced Semaphore Patterns
+
+- **12. Semaphore with Timeout for Deadlock Prevention** `(Intermediate)`
+  - 🟣 Acquiring with deadline
+  - 🟣 Detecting deadlock conditions
+  - 🟣 Graceful degradation
+
+- **13. Tiered Semaphores for Resource Hierarchies** `(Intermediate)`
+  - 🟣 Multiple semaphores for different resource types
+  - 🟣 Avoiding circular waits
+  - 🟣 Complex resource allocation
+
+---
+
+## 📍 Stage 4: Latch - Multi-Fiber Coordination
+
+Learn to coordinate multiple fibers with Latch.
+
+### Basic Latch Usage
+
+- **14. Coordinate Multiple Fibers with Latch** `(Intermediate)`
+  - 🟣 Creating countdown latches
+  - 🟣 Waiting for multiple tasks to complete
+  - 🟣 Barrier patterns
+
+- **15. Implement Fan-Out/Fan-In Patterns** `(Intermediate)`
+  - 🟣 Spawning multiple workers
+  - 🟣 Waiting for all to complete
+  - 🟣 Collecting results
+
+- **16. Synchronize Phase Transitions** `(Intermediate)`
+  - 🟣 Latches for stage gating
+  - 🟣 All-or-nothing transitions
+  - 🟣 Coordinated startup/shutdown
+
+### Advanced Latch Patterns
+
+- **17. Latch with Timeout** `(Intermediate)`
+  - 🟣 Deadline-aware latches
+  - 🟣 Partial completion handling
+  - 🟣 Timeout-based recovery
+
+- **18. Multiple Latches for Complex Workflows** `(Intermediate)`
+  - 🟣 Chaining latches for sequential phases
+  - 🟣 Multi-stage pipelines
+  - 🟣 Conditional advancement
+
+---
+
+## 📍 Stage 5: Queue - Work Distribution
+
+Learn to distribute work across fibers with Queue.
+
+### Basic Queue Usage
+
+- **19. Distribute Work Across Queue with Acknowledgment** `(Intermediate)`
+  - 🟣 Creating bounded and unbounded queues
+  - 🟣 Producers adding work
+  - 🟣 Consumers processing with acknowledgment
+
+- **20. Implement Worker Pool Pattern** `(Intermediate)`
+  - 🟣 Multiple workers consuming from queue
+  - 🟣 Load balancing across workers
+  - 🟣 Dynamic worker scaling
+
+- **21. Handle Backpressure with Bounded Queue** `(Intermediate)`
+  - 🟣 Bounding queue size for memory control
+  - 🟣 Producer blocking when queue full
+  - 🟣 Graceful degradation
+
+### Advanced Queue Patterns
+
+- **22. Priority Queue for Weighted Work** `(Intermediate)`
+  - 🟣 Processing high-priority items first
+  - 🟣 Fair scheduling with priorities
+  - 🟣 Starvation prevention
+
+- **23. Queue with Deduplication** `(Intermediate)`
+  - 🟣 Preventing duplicate work items
+  - 🟣 Idempotent processing
+  - 🟣 Replay prevention
+
+- **24. Distributed Queue Across Fibers** `(Intermediate)`
+  - 🟣 Aggregating work from multiple producers
+  - 🟣 Coordinated consumption
+  - 🟣 Throughput optimization
+
+---
+
+## 📍 Stage 6: Advanced Patterns - Complex Coordination
+
+Master sophisticated concurrency techniques.
+
+### Multi-Primitive Coordination
+
+- **25. Combine Deferred + Semaphore + Queue** `(Advanced)`
+  - 🟣 Coordinating multiple primitives
+  - 🟣 Avoiding deadlocks in complex systems
+  - 🟣 Ordering guarantees
+
+- **26. Cancellation-Aware Coordination** `(Advanced)`
+  - 🟣 Safe cancellation of waiting operations
+  - 🟣 Cleanup on interruption
+  - 🟣 Graceful shutdown coordination
+
+### Performance and Fairness
+
+- **27. Fair Scheduling with Semaphore** `(Advanced)`
+  - 🟣 FIFO vs. priority acquisition
+  - 🟣 Starvation prevention
+  - 🟣 Load balancing strategies
+
+- **28. Measuring and Optimizing Concurrency** `(Advanced)`
+  - 🟣 Metrics for queue depth and wait times
+  - 🟣 Identifying bottlenecks
+  - 🟣 Tuning concurrency parameters
+
+---
+
+## 📍 Stage 7: Integration - Concurrency in Context
+
+Combine concurrency primitives with other Effect patterns.
+
+### With Services & Layers
+
+- **29. Concurrency Primitives as Service Dependencies** `(Advanced)`
+  - 🟣 Injecting semaphores and queues
+  - 🟣 Shared coordination across services
+  - 🟣 Lifecycle management
+
+- **30. Distributed Coordination Patterns** `(Advanced)`
+  - 🟣 Leader election with Deferred
+  - 🟣 Barrier synchronization
+  - 🟣 Consensus-based coordination
+
+### Testing & Verification
+
+- **31. Test Concurrent Code Deterministically** `(Advanced)`
+  - 🟣 Controlling execution order in tests
+  - 🟣 Reproducible race conditions
+  - 🟣 TestClock for timing
+
+- **32. Verify Concurrency Invariants** `(Advanced)`
+  - 🟣 Property-based testing of concurrent code
+  - 🟣 Race condition detection
+  - 🟣 Stress testing patterns
+
+---
+
+## 🎓 Learning Path by Job to be Done
+
+### Job: "Coordinate async operations with Deferred"
+**Stages 2 Focus**
+- Stage 2: All Deferred patterns
+- Patterns 4-8 address this job
+- Prerequisites: Understanding effects and fibers
+
+### Job: "Rate limit concurrent access with Semaphore"
+**Stages 3-6 Focus**
+- Stage 3: Semaphore fundamentals
+- Stage 6: Advanced fairness patterns
+- Patterns 9-13, 27 address this job
+- Prerequisites: Understanding concurrency basics
+
+### Job: "Coordinate multiple fibers with Latch"
+**Stages 4-6 Focus**
+- Stage 4: Latch patterns
+- Patterns 14-18 address this job
+- Prerequisites: Understanding fibers and coordination
+
+### Job: "Distribute work across Queue with acknowledgment"
+**Stages 5-6 Focus**
+- Stage 5: Queue patterns
+- Stage 6: Complex coordination
+- Patterns 19-26 address this job
+- Prerequisites: Understanding producer-consumer patterns
+
+---
+
+## 🔗 Cross-Module References
+
+### Prerequisites (Module 1: Core Concepts)
+- Fibers and background tasks
+- Effect composition basics
+- Error handling
+
+### Synergies (Module 6: Existing Concurrency)
+- Understanding fork and join
+- Race and parallel composition
+- Fiber interruption
+
+### Building Blocks for (Module 12: Sinks)
+- Concurrent sink operations
+- Rate-limited consumption
+
+---
+
+## ✅ Knowledge Checkpoints
+
+### After Stage 2
+You can:
+- Create and coordinate with Deferred
+- Implement producer-consumer patterns
+- Handle async signaling
+
+### After Stage 4
+You can:
+- Use Semaphore for rate limiting
+- Coordinate multiple fibers with Latch
+- Implement fan-out/fan-in patterns
+
+### After Stage 5
+You can:
+- Distribute work with Queue
+- Implement worker pools
+- Handle backpressure
+
+### After Stage 7
+You can:
+- Combine concurrency primitives safely
+- Test concurrent code deterministically
+- Build production-ready concurrent systems
+
+---
+
+## 📊 Pattern Statistics
+
+- **Total Patterns in Module:** 32
+- **Intermediate Patterns:** 24
+- **Advanced Patterns:** 8
+- **Estimated Study Time:** 14-18 hours
+- **Hands-On Coding:** 8-10 hours
+- **Prerequisites:** Module 1 (Core Concepts), Module 6 (Concurrency Basics)
+
+---
+
+## 🎯 Module Goals
+
+By completing this module, you will:
+
+1. ✅ Understand concurrency primitives and their use cases
+2. ✅ Implement all four core concurrency jobs
+3. ✅ Build sophisticated multi-primitive coordination systems
+4. ✅ Handle cancellation and resource cleanup safely
+5. ✅ Measure and optimize concurrent workloads
+6. ✅ Test concurrent code deterministically
+7. ✅ Integrate concurrency into production applications
+
+---
+
+**Last Updated:** December 17, 2025  
+**Status:** Roadmap in Development  
+**Next Steps:** Implement pattern templates for each of the 32 patterns

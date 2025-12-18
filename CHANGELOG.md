@@ -1,3 +1,27 @@
+# v0.9.0-patterns - Comprehensive Core Pattern Library
+
+## 🎯 Overview
+
+Major expansion of core Effect-TS patterns library with **43 production-ready patterns** covering all essential Effect primitives. Achieved **80%+ API coverage** across 8 core categories.
+
+### Patterns Added
+- ✅ Concurrency: 6 patterns (86% coverage)
+- ✅ Scheduling: 5 patterns (100% coverage)
+- ✅ Streams: 8 patterns (100% coverage)
+- ✅ Platform: 6 patterns (86% coverage)
+- ✅ Error Handling: 3 patterns (100% coverage - NEW)
+- ✅ State Management: 2 patterns (100% coverage - NEW)
+- ✅ Optional/Maybe: 2 patterns (100% coverage - NEW)
+- ✅ Sinks: 6 patterns (100% coverage)
+
+**Total:** 43 patterns, ~200KB documentation, 300+ code examples
+
+**Release Date:** December 17, 2025
+
+See [RELEASE_NOTES_v0.9.0-patterns.md](./RELEASE_NOTES_v0.9.0-patterns.md) for detailed release notes.
+
+---
+
 # v0.9.0 - Schema Patterns Complete + Pipeline Protection
 
 ## 🎯 Major Features

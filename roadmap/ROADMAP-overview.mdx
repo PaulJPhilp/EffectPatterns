@@ -253,6 +253,76 @@ types
 
 ---
 
+### Module 12: Sinks Patterns
+
+**Status**: In Development  
+**Level**: Intermediate to Advanced  
+**Focus**: Stream consumption, persistence, and resilient data flow
+
+**What You'll Learn**:
+
+- Understanding the Stream/Sink duality and when to use Sinks
+- Collecting stream elements into final results
+- **Writing streaming data to persistent storage**: Batch inserts, event logging, message queues
+- **Handling errors during stream consumption**: Fallback sinks, retry strategies, dead letter queues
+- **Batching stream elements for efficiency**: Size-based, time-based, and adaptive batching
+- **Deduplicating elements from streams**: Set-based, keyed, windowed, and idempotent deduplication
+- Composing and distributing sinks
+- Observability: Tracing and metrics for sink operations
+- Testing and debugging sink-based systems
+- Integrating sinks into services and larger applications
+
+**Key Stages**: 33 patterns organized across consumption fundamentals, persistence, error handling, efficiency, quality, advanced patterns, and integration
+
+---
+
+### Module 13: Scheduling Patterns
+
+**Status**: In Development  
+**Level**: Intermediate to Advanced  
+**Focus**: Repeating tasks, backoff strategies, and time-based operations
+
+**What You'll Learn**:
+
+- **Repeating effects on fixed intervals**: Health checks, polling, background tasks
+- **Implementing exponential backoff for retries**: Recovering from transient failures with smart delays
+- **Scheduling tasks with cron expressions**: Daily, weekly, monthly, and complex timing patterns
+- **Combining multiple schedules**: Composing schedules with OR/AND logic and custom transformations
+- Repeat with conditional logic and jittered delays
+- Backoff strategies: exponential, linear, Fibonacci
+- Calendar-aware scheduling with timezones and DST
+- Adaptive scheduling based on system load
+- Rate limiting with scheduling primitives
+- Testing scheduled operations deterministically
+- Observing and monitoring schedule execution
+
+**Key Stages**: 28 patterns organized across repetition fundamentals, backoff strategies, time-based scheduling, composition, advanced patterns, and integration
+
+---
+
+### Module 14: Concurrency Patterns
+
+**Status**: In Development  
+**Level**: Intermediate to Advanced  
+**Focus**: Coordinating async operations and distributing concurrent workloads
+
+**What You'll Learn**:
+
+- **Coordinating async operations with Deferred**: Promise-like primitives for multi-producer/consumer coordination
+- **Rate limiting concurrent access with Semaphore**: Controlling concurrent resource access and implementing connection pools
+- **Coordinating multiple fibers with Latch**: Multi-fiber synchronization and fan-out/fan-in patterns
+- **Distributing work across Queue with acknowledgment**: Worker pools and reliable work distribution
+- Multi-primitive coordination without deadlock
+- Cancellation and interruption in concurrent contexts
+- Fair scheduling and starvation prevention
+- Testing concurrent code deterministically
+- Measuring and optimizing concurrency
+- Distributed coordination patterns (leader election, barriers)
+
+**Key Stages**: 32 patterns organized across Deferred, Semaphore, Latch, Queue, advanced coordination, and integration
+
+---
+
 ## 🚀 Beyond the Modules: Real-World Recipes
 
 After completing the core modules, you'll be ready to build complete

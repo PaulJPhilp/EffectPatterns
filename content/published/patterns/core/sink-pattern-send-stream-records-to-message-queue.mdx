@@ -1,0 +1,424 @@
+---
+title: "Sink Pattern 4: Send Stream Records to Message Queue"
+id: sink-pattern-send-stream-records-to-message-queue
+skillLevel: intermediate
+useCase: stream-persistence
+summary: >-
+  Use Sink to publish stream records to a message queue with partitioning,
+  batching, and acknowledgment handling for distributed systems.
+tags:
+  - sink
+  - stream
+  - message-queue
+  - persistence
+  - kafka
+  - pubsub
+  - distributed-systems
+rule:
+  description: >-
+    Stream records to message queues with proper batching and acknowledgment
+    for reliable distributed data flow.
+related:
+  - process-streaming-data-with-stream
+  - sink-pattern-batch-insert-stream-records-into-database
+  - decouple-fibers-with-queue-pubsub
+author: effect_website
+---
+
+## Guideline
+
+When consuming a stream of events that need to be distributed to other systems, use `Sink` to publish them to a message queue. Message queues provide reliable, scalable distribution with guarantees like ordering and exactly-once semantics.
+
+---
+
+## Rationale
+
+Message queues are the backbone of event-driven architectures:
+
+- **Decoupling**: Producers don't wait for consumers
+- **Scalability**: Multiple subscribers can consume independently
+- **Durability**: Messages persist even if subscribers are down
+- **Ordering**: Maintain event sequence (per partition/topic)
+- **Reliability**: Acknowledgments and retries ensure no message loss
+
+Unlike direct writes which block, queue publishing is asynchronous and enables:
+
+- High-throughput publishing (batch multiple records per operation)
+- Backpressure handling (queue manages flow)
+- Multi-subscriber patterns (fan-out)
+- Dead letter queues for error handling
+
+---
+
+## Good Example
+
+This example demonstrates streaming sensor readings and publishing them to a message queue with topic-based partitioning.
+
+```typescript
+import { Effect, Stream, Sink, Chunk } from "effect";
+
+interface SensorReading {
+  readonly sensorId: string;
+  readonly location: string;
+  readonly temperature: number;
+  readonly humidity: number;
+  readonly timestamp: number;
+}
+
+// Mock message queue publisher
+interface QueuePublisher {
+  readonly publish: (
+    topic: string,
+    partition: string,
+    messages: readonly SensorReading[]
+  ) => Effect.Effect<{ acknowledged: number; messageIds: string[] }>;
+}
+
+// Create a mock queue publisher
+const createMockPublisher = (): QueuePublisher => {
+  const publishedMessages: Record<string, SensorReading[]> = {};
+
+  return {
+    publish: (topic, partition, messages) =>
+      Effect.gen(function* () {
+        const key = `${topic}/${partition}`;
+        publishedMessages[key] = [
+          ...(publishedMessages[key] ?? []),
+          ...messages,
+        ];
+
+        const messageIds = Array.from({ length: messages.length }, (_, i) =>
+          `msg-${Date.now()}-${i}`
+        );
+
+        console.log(
+          `Published ${messages.length} messages to ${key} (batch)`
+        );
+
+        return { acknowledged: messages.length, messageIds };
+      }),
+  };
+};
+
+// Determine the partition key based on sensor location
+const getPartitionKey = (reading: SensorReading): string =>
+  reading.location; // Route by location for data locality
+
+// Simulate a stream of sensor readings
+const sensorStream: Stream.Stream<SensorReading> = Stream.fromIterable([
+  {
+    sensorId: "temp-1",
+    location: "warehouse-a",
+    temperature: 22.5,
+    humidity: 45,
+    timestamp: Date.now(),
+  },
+  {
+    sensorId: "temp-2",
+    location: "warehouse-b",
+    temperature: 21.0,
+    humidity: 50,
+    timestamp: Date.now() + 100,
+  },
+  {
+    sensorId: "temp-3",
+    location: "warehouse-a",
+    temperature: 22.8,
+    humidity: 46,
+    timestamp: Date.now() + 200,
+  },
+  {
+    sensorId: "temp-4",
+    location: "warehouse-c",
+    temperature: 20.5,
+    humidity: 55,
+    timestamp: Date.now() + 300,
+  },
+  {
+    sensorId: "temp-5",
+    location: "warehouse-b",
+    temperature: 21.2,
+    humidity: 51,
+    timestamp: Date.now() + 400,
+  },
+  {
+    sensorId: "temp-6",
+    location: "warehouse-a",
+    temperature: 23.0,
+    humidity: 47,
+    timestamp: Date.now() + 500,
+  },
+]);
+
+// Create a sink that batches and publishes to message queue
+const createQueuePublishSink = (
+  publisher: QueuePublisher,
+  topic: string,
+  batchSize: number = 100
+): Sink.Sink<number, Error, SensorReading> =>
+  Sink.fold(
+    { batches: new Map<string, SensorReading[]>(), totalPublished: 0 },
+    (state, reading) =>
+      Effect.gen(function* () {
+        const partition = getPartitionKey(reading);
+        const batch = state.batches.get(partition) ?? [];
+        const newBatch = [...batch, reading];
+
+        if (newBatch.length >= batchSize) {
+          // Batch is full, publish it
+          const result = yield* publisher.publish(topic, partition, newBatch);
+          const newState = new Map(state.batches);
+          newState.delete(partition);
+
+          return {
+            ...state,
+            batches: newState,
+            totalPublished: state.totalPublished + result.acknowledged,
+          };
+        } else {
+          // Add to batch and continue
+          const newState = new Map(state.batches);
+          newState.set(partition, newBatch);
+
+          return { ...state, batches: newState };
+        }
+      }),
+    (state) =>
+      Effect.gen(function* () {
+        let finalCount = state.totalPublished;
+
+        // Publish any remaining partial batches
+        for (const [partition, batch] of state.batches) {
+          if (batch.length > 0) {
+            const result = yield* publisher.publish(topic, partition, batch);
+            finalCount += result.acknowledged;
+          }
+        }
+
+        return finalCount;
+      })
+  );
+
+// Run the stream and publish to queue
+const program = Effect.gen(function* () {
+  const publisher = createMockPublisher();
+  const topic = "sensor-readings";
+
+  const published = yield* sensorStream.pipe(
+    Stream.run(createQueuePublishSink(publisher, topic, 50)) // Batch size of 50
+  );
+
+  console.log(
+    `\nTotal messages published to queue: ${published}`
+  );
+});
+
+Effect.runPromise(program);
+```
+
+This pattern:
+
+1. **Groups readings by partition** (location) for data locality
+2. **Batches records** before publishing (50 at a time)
+3. **Publishes batches** to the queue with partition key
+4. **Flushes partial batches** when stream ends
+5. **Tracks acknowledgments** from the queue
+
+---
+
+## Advanced: Topic-Based Routing
+
+Route different types of records to different topics:
+
+```typescript
+type StreamRecord = SensorReading | AlertEvent | SystemMetric;
+
+type Topic = "sensor-readings" | "alerts" | "metrics";
+
+const getTopicAndPartition = (
+  record: StreamRecord
+): { topic: Topic; partition: string } => {
+  if ("temperature" in record) {
+    return {
+      topic: "sensor-readings",
+      partition: record.location,
+    };
+  } else if ("alertType" in record) {
+    return {
+      topic: "alerts",
+      partition: record.severity,
+    };
+  } else {
+    return {
+      topic: "metrics",
+      partition: record.metricType,
+    };
+  }
+};
+
+// Modified sink that routes to multiple topics
+const createRouterPublishSink = (
+  publisher: QueuePublisher,
+  batchSize: number = 100
+): Sink.Sink<number, Error, StreamRecord> =>
+  Sink.fold(
+    { batches: new Map<string, StreamRecord[]>(), totalPublished: 0 },
+    (state, record) =>
+      Effect.gen(function* () {
+        const { topic, partition } = getTopicAndPartition(record);
+        const batchKey = `${topic}/${partition}`;
+        const batch = state.batches.get(batchKey) ?? [];
+        const newBatch = [...batch, record];
+
+        if (newBatch.length >= batchSize) {
+          const result = yield* publisher.publish(topic, partition, newBatch);
+          const newState = new Map(state.batches);
+          newState.delete(batchKey);
+
+          return {
+            ...state,
+            batches: newState,
+            totalPublished: state.totalPublished + result.acknowledged,
+          };
+        } else {
+          const newState = new Map(state.batches);
+          newState.set(batchKey, newBatch);
+          return { ...state, batches: newState };
+        }
+      }),
+    (state) =>
+      Effect.gen(function* () {
+        let finalCount = state.totalPublished;
+
+        for (const [batchKey, batch] of state.batches) {
+          if (batch.length > 0) {
+            const [topic, partition] = batchKey.split("/");
+            const result = yield* publisher.publish(
+              topic as Topic,
+              partition,
+              batch
+            );
+            finalCount += result.acknowledged;
+          }
+        }
+
+        return finalCount;
+      })
+  );
+```
+
+---
+
+## Advanced: Handling Publishing Failures
+
+Implement retry logic and dead letter handling:
+
+```typescript
+interface PublishConfig {
+  readonly batchSize: number;
+  readonly maxRetries: number;
+  readonly backoffMs: number;
+}
+
+const createResilientPublishSink = (
+  publisher: QueuePublisher,
+  topic: string,
+  config: PublishConfig
+): Sink.Sink<number, Error, SensorReading> =>
+  Sink.fold(
+    { batches: new Map<string, SensorReading[]>(), totalPublished: 0, dead: [] as SensorReading[] },
+    (state, reading) =>
+      Effect.gen(function* () {
+        const partition = getPartitionKey(reading);
+        const batch = state.batches.get(partition) ?? [];
+        const newBatch = [...batch, reading];
+
+        if (newBatch.length >= config.batchSize) {
+          // Try to publish with retries
+          const result = yield* publisher
+            .publish(topic, partition, newBatch)
+            .pipe(
+              Effect.retry({
+                times: config.maxRetries,
+                delay: () =>
+                  Effect.sleep(`${config.backoffMs} millis`),
+              }),
+              Effect.catchAll((error) =>
+                Effect.gen(function* () {
+                  console.error(
+                    `Failed to publish batch to ${partition}: ${error}`
+                  );
+                  // Move to dead letter
+                  return {
+                    acknowledged: 0,
+                    messageIds: [],
+                  };
+                })
+              )
+            );
+
+          const newState = new Map(state.batches);
+          newState.delete(partition);
+
+          return {
+            ...state,
+            batches: newState,
+            totalPublished: state.totalPublished + result.acknowledged,
+            dead: result.acknowledged === 0 ? [...state.dead, ...newBatch] : state.dead,
+          };
+        } else {
+          const newState = new Map(state.batches);
+          newState.set(partition, newBatch);
+          return { ...state, batches: newState };
+        }
+      }),
+    (state) =>
+      Effect.gen(function* () {
+        let finalCount = state.totalPublished;
+
+        for (const [partition, batch] of state.batches) {
+          if (batch.length > 0) {
+            const result = yield* publisher.publish(topic, partition, batch);
+            finalCount += result.acknowledged;
+          }
+        }
+
+        if (state.dead.length > 0) {
+          console.error(
+            `${state.dead.length} messages failed to publish and moved to dead letter`
+          );
+        }
+
+        return finalCount;
+      })
+  );
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use message queues when:**
+
+- Events need to reach multiple downstream systems
+- Publishing shouldn't block (asynchronous)
+- Need ordering guarantees per partition
+- Subscribers may process at different speeds
+- Building event-driven architectures
+- Need reliable, durable message delivery
+
+⚠️ **Trade-offs:**
+
+- Added complexity (queue setup and management)
+- Latency for individual messages (buffered before publish)
+- Distributed systems challenges (exactly-once semantics)
+- Storage and infrastructure costs
+
+---
+
+## See Also
+
+- [Sink Pattern 1: Batch Insert](./sink-pattern-batch-insert-stream-records-into-database.mdx) - Bulk database persistence
+- [Sink Pattern 3: Write Lines to File](./sink-pattern-write-stream-lines-to-file.mdx) - File-based persistence
+- [Decouple Fibers with Queue/PubSub](./decouple-fibers-with-queue-pubsub.mdx) - Internal Effect queues
+- [Process Streaming Data with Stream](./process-streaming-data-with-stream.mdx) - Stream fundamentals
