@@ -1,0 +1,162 @@
+---
+title: "Handle Your First Error with Effect.fail and catchAll"
+id: getting-started-handle-errors
+skillLevel: beginner
+useCase: getting-started
+summary: >-
+  Learn how to create Effects that can fail and how to recover from those
+  failures using Effect.fail and Effect.catchAll.
+tags:
+  - getting-started
+  - error-handling
+  - fail
+  - catchAll
+  - beginner
+rule:
+  description: Handle errors with Effect.fail and catchAll.
+related:
+  - getting-started-hello-world
+  - combinator-error-handling
+  - error-handling-pattern-accumulation
+author: Paul Philp
+---
+
+# Handle Your First Error with Effect.fail and catchAll
+
+## Guideline
+
+Use `Effect.fail` to create an Effect that fails with an error, and
+`Effect.catchAll` to recover from that failure.
+
+## Rationale
+
+Real programs fail. Effect makes failures explicit in the type system so you
+can't forget to handle them. Unlike try/catch, Effect errors are tracked in
+types.
+
+## Creating a Failing Effect
+
+```typescript
+import { Effect } from "effect";
+
+// An Effect that always fails
+const alwaysFails = Effect.fail("Something went wrong");
+
+// An Effect that might fail based on a condition
+const divide = (a: number, b: number) =>
+  b === 0
+    ? Effect.fail("Cannot divide by zero")
+    : Effect.succeed(a / b);
+```
+
+## Recovering from Errors
+
+```typescript
+import { Effect, pipe } from "effect";
+
+const divide = (a: number, b: number) =>
+  b === 0
+    ? Effect.fail("Division by zero")
+    : Effect.succeed(a / b);
+
+// Without error handling - this would fail
+const unsafeResult = divide(10, 0);
+
+// With error handling - recover with a default value
+const safeResult = pipe(
+  divide(10, 0),
+  Effect.catchAll((error) => {
+    console.log(`Caught error: ${error}`);
+    return Effect.succeed(0); // Return 0 as fallback
+  })
+);
+
+Effect.runSync(safeResult); // 0
+```
+
+## Using Typed Errors
+
+```typescript
+import { Effect, pipe } from "effect";
+
+// Define specific error types
+class DivisionByZero {
+  readonly _tag = "DivisionByZero";
+}
+
+class NegativeNumber {
+  readonly _tag = "NegativeNumber";
+  constructor(readonly value: number) {}
+}
+
+// Function with typed errors
+const safeDivide = (a: number, b: number): Effect.Effect<number, DivisionByZero | NegativeNumber> => {
+  if (b === 0) return Effect.fail(new DivisionByZero());
+  if (a < 0) return Effect.fail(new NegativeNumber(a));
+  return Effect.succeed(a / b);
+};
+
+// Handle all errors
+const result = pipe(
+  safeDivide(-10, 2),
+  Effect.catchAll((error) => {
+    switch (error._tag) {
+      case "DivisionByZero":
+        return Effect.succeed(0);
+      case "NegativeNumber":
+        return Effect.succeed(Math.abs(error.value));
+    }
+  })
+);
+```
+
+## Quick Reference
+
+| Function | Purpose |
+|----------|---------|
+| `Effect.fail(error)` | Create an Effect that fails |
+| `Effect.catchAll(handler)` | Catch all errors and recover |
+| `Effect.catchTag(tag, handler)` | Catch specific error by tag |
+| `Effect.orElse(fallback)` | Try a fallback Effect on error |
+| `Effect.orElseSucceed(value)` | Return a fallback value on error |
+
+## Good Example: Real-World Pattern
+
+```typescript
+import { Effect, pipe } from "effect";
+
+class UserNotFound {
+  readonly _tag = "UserNotFound";
+  constructor(readonly id: string) {}
+}
+
+const findUser = (id: string) =>
+  id === "123"
+    ? Effect.succeed({ id, name: "Alice" })
+    : Effect.fail(new UserNotFound(id));
+
+const program = pipe(
+  findUser("456"),
+  Effect.catchTag("UserNotFound", (e) =>
+    Effect.succeed({ id: e.id, name: "Guest" })
+  ),
+  Effect.map((user) => `Hello, ${user.name}!`)
+);
+
+const result = Effect.runSync(program);
+console.log(result); // "Hello, Guest!"
+```
+
+## Key Points
+
+1. **Effect.fail** creates a failing Effect - the error is part of the type
+2. **Effect.catchAll** handles any error and must return an Effect
+3. **Tagged errors** (with `_tag`) let you handle specific errors with `catchTag`
+4. **Errors are values** - not thrown exceptions - making them composable
+
+## What's Next?
+
+- Learn about accumulating multiple errors
+- Learn about retrying failed operations
+- Learn about typed error hierarchies
+

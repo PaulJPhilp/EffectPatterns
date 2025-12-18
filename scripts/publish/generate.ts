@@ -86,6 +86,7 @@ async function generateReadme() {
     Array<PatternFrontmatter & { path: string }>
   >();
   // Ordered by learning progression: beginner → intermediate → advanced
+  // All entries are kebab-case to match standardized useCase values
   const coreOrder = [
     "project-setup--execution",
     "core-concepts",
@@ -99,6 +100,25 @@ async function generateReadme() {
     "concurrency",
     "observability",
     "tooling-and-debugging",
+    "branded-types",
+    "combinators",
+    "constructors",
+    "control-flow",
+    "data-types",
+    "pattern-matching",
+    "concurrency-coordination",
+    "concurrent-state-management",
+    "error-handling",
+    "error-handling-resilience",
+    "platform-integration",
+    "platform-specific-operations",
+    "scheduling",
+    "scheduling-periodic-tasks",
+    "stream-error-handling",
+    "stream-persistence",
+    "stream-processing",
+    "value-handling",
+    "working-with-streams",
   ];
 
   for (const pattern of corePatterns) {
@@ -131,32 +151,37 @@ async function generateReadme() {
   // Add useCases from coreOrder to TOC with Title Case formatting
   for (const useCase of coreOrder) {
     if (coreUseCaseGroups.has(useCase)) {
-      const displayName = useCase
-        .replace(/--/g, "-&-")
-        .split("-")
-        .filter((word) => word.length > 0)
-        .map((word) => {
-          if (word === "&") return "&";
-          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        })
-        .join(" ")
-        .replace(/Api/g, "API")
-        .replace(/Http/g, "HTTP")
-        .replace(/\s+/g, " ");
+      // Preserve Title Case if useCase already has it (e.g., "Branded Types", "Control Flow")
+      // Otherwise convert kebab-case to Title Case
+      let displayName: string;
+      if (useCase.includes(" ") || /^[A-Z]/.test(useCase)) {
+        // Already Title Case - preserve it
+        displayName = useCase
+          .replace(/--/g, " & ")
+          .replace(/Api/g, "API")
+          .replace(/Http/g, "HTTP");
+      } else {
+        // Convert kebab-case to Title Case
+        displayName = useCase
+          .replace(/--/g, "-&-")
+          .split("-")
+          .filter((word) => word.length > 0)
+          .map((word) => {
+            if (word === "&") return "&";
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+          })
+          .join(" ")
+          .replace(/Api/g, "API")
+          .replace(/Http/g, "HTTP")
+          .replace(/\s+/g, " ");
+      }
       const anchor = useCase.toLowerCase().replace(/\s+/g, "-");
       toc.push(`- [${displayName}](#${anchor})`);
     }
   }
 
-  // Add remaining useCases to TOC (alphabetically)
-  const remainingUseCasesForToc = Array.from(coreUseCaseGroups.keys())
-    .filter((uc) => !coreOrder.includes(uc))
-    .sort();
-
-  for (const useCase of remainingUseCasesForToc) {
-    const anchor = useCase.toLowerCase().replace(/\s+/g, "-");
-    toc.push(`- [${useCase}](#${anchor})`);
-  }
+  // Note: All important useCases are now in coreOrder, so we don't add remaining ones
+  // This keeps the README focused on the learning progression
 
   // Schema Patterns section
   toc.push("\n### Schema Patterns\n");
@@ -196,18 +221,31 @@ async function generateReadme() {
     if (!patterns) continue;
     processedUseCases.add(useCase);
 
-    const displayName = useCase
-      .replace(/--/g, "-&-")
-      .split("-")
-      .filter((word) => word.length > 0)
-      .map((word) => {
-        if (word === "&") return "&";
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-      })
-      .join(" ")
-      .replace(/Api/g, "API")
-      .replace(/Http/g, "HTTP")
-      .replace(/\s+/g, " ");
+    // Convert ALL useCase values to Title Case for display
+    // Handle both kebab-case and existing Title Case
+    let displayName: string;
+    if (useCase.includes(" ") || /^[A-Z]/.test(useCase)) {
+      // Already Title Case - just clean it up
+      displayName = useCase
+        .replace(/--/g, " & ")
+        .replace(/Api/g, "API")
+        .replace(/Http/g, "HTTP");
+    } else {
+      // Convert kebab-case to Title Case
+      displayName = useCase
+        .replace(/--/g, "-&-")
+        .split("-")
+        .filter((word) => word.length > 0)
+        .map((word) => {
+          if (word === "&") return "&";
+          // Capitalize first letter, lowercase the rest
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join(" ")
+        .replace(/Api/g, "API")
+        .replace(/Http/g, "HTTP")
+        .replace(/\s+/g, " ");
+    }
     const _anchor = useCase.toLowerCase().replace(/\s+/g, "-");
     sections.push(`## ${displayName}\n`);
     sections.push(
@@ -242,60 +280,8 @@ async function generateReadme() {
     sections.push("\n");
   }
 
-  // Then, include all other useCases not in coreOrder (alphabetically)
-  const remainingUseCases = Array.from(coreUseCaseGroups.keys())
-    .filter((uc) => !processedUseCases.has(uc))
-    .sort();
-
-  for (const useCase of remainingUseCases) {
-    const patterns = coreUseCaseGroups.get(useCase);
-    if (!patterns) continue;
-
-    const displayName = useCase
-      .replace(/--/g, "-&-")
-      .split("-")
-      .filter((word) => word.length > 0)
-      .map((word) => {
-        if (word === "&") return "&";
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-      })
-      .join(" ")
-      .replace(/Api/g, "API")
-      .replace(/Http/g, "HTTP")
-      .replace(/\s+/g, " ");
-    const _anchor = useCase.toLowerCase().replace(/\s+/g, "-");
-    sections.push(`## ${displayName}\n`);
-    sections.push(
-      "| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n"
-    );
-
-    // Sort patterns by skill level
-    const sortedPatterns = patterns.sort((a, b) => {
-      const levels = { beginner: 0, intermediate: 1, advanced: 2 };
-      return (
-        levels[getSkillLevel(a) as keyof typeof levels] -
-        levels[getSkillLevel(b) as keyof typeof levels]
-      );
-    });
-
-    for (const pattern of sortedPatterns) {
-      const skillLevel = getSkillLevel(pattern);
-      const skillEmoji =
-        {
-          beginner: "🟢",
-          intermediate: "🟡",
-          advanced: "🟠",
-        }[skillLevel] || "⚪️";
-
-      sections.push(
-        `| [${pattern.title}](./${pattern.path}) | ${skillEmoji} **${
-          skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)
-        }** | ${pattern.summary} |\n`
-      );
-    }
-
-    sections.push("\n");
-  }
+  // Note: All important useCases are now in coreOrder, so we don't add remaining ones
+  // This keeps the README focused on the learning progression
 
   // Generate schema patterns sections
   for (const category of schemaOrder) {

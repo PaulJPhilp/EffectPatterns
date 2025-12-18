@@ -44,21 +44,20 @@ This repository is designed to be a living document that helps developers move f
 - [Constructors](#constructors)
 - [Control Flow](#control-flow)
 - [Data Types](#data-types)
-- [Observability](#observability)
 - [Pattern Matching](#pattern-matching)
-- [concurrency-coordination](#concurrency-coordination)
-- [concurrent-state-management](#concurrent-state-management)
-- [error-handling](#error-handling)
-- [error-handling-resilience](#error-handling-resilience)
-- [platform-integration](#platform-integration)
-- [platform-specific-operations](#platform-specific-operations)
-- [scheduling](#scheduling)
-- [scheduling-periodic-tasks](#scheduling-periodic-tasks)
-- [stream-error-handling](#stream-error-handling)
-- [stream-persistence](#stream-persistence)
-- [stream-processing](#stream-processing)
-- [value-handling](#value-handling)
-- [working-with-streams](#working-with-streams)
+- [Concurrency Coordination](#concurrency-coordination)
+- [Concurrent State Management](#concurrent-state-management)
+- [Error Handling](#error-handling)
+- [Error Handling Resilience](#error-handling-resilience)
+- [Platform Integration](#platform-integration)
+- [Platform Specific Operations](#platform-specific-operations)
+- [Scheduling](#scheduling)
+- [Scheduling Periodic Tasks](#scheduling-periodic-tasks)
+- [Stream Error Handling](#stream-error-handling)
+- [Stream Persistence](#stream-persistence)
+- [Stream Processing](#stream-processing)
+- [Value Handling](#value-handling)
+- [Working With Streams](#working-with-streams)
 
 ### Schema Patterns
 
@@ -208,8 +207,13 @@ This repository is designed to be a living document that helps developers move f
 ## Observability
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
+| [Instrument and Observe Function Calls with Effect.fn](./content/published/patterns/core/observability-effect-fn.mdx) | 🟡 **Intermediate** | Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries. |
+| [Leverage Effect's Built-in Structured Logging](./content/published/patterns/core/observability-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions for structured, configurable, and context-aware logging. |
 | [Add Custom Metrics to Your Application](./content/published/patterns/core/add-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
+| [Add Custom Metrics to Your Application](./content/published/patterns/core/observability-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
+| [Trace Operations Across Services with Spans](./content/published/patterns/core/observability-tracing-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
 | [Trace Operations Across Services with Spans](./content/published/patterns/core/trace-operations-with-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
+| [Integrate Effect Tracing with OpenTelemetry](./content/published/patterns/core/observability-opentelemetry.mdx) | 🟠 **Advanced** | Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization. |
 
 ## Tooling And Debugging
 | Pattern | Skill Level | Summary |
@@ -217,7 +221,7 @@ This repository is designed to be a living document that helps developers move f
 | [Supercharge Your Editor with the Effect LSP](./content/published/patterns/core/supercharge-your-editor-with-the-effect-lsp.mdx) | 🟡 **Intermediate** | Install the Effect Language Server (LSP) extension for your editor to get rich, inline type information and enhanced error checking for your Effect code. |
 | [Teach your AI Agents Effect with the MCP Server](./content/published/patterns/core/teach-your-ai-agents-effect-with-the-mcp-server.mdx) | 🟠 **Advanced** | Use the Effect MCP server to provide live, contextual information about your application's structure directly to AI coding agents. |
 
-## Branded types
+## Branded Types
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Modeling Validated Domain Types with Brand](./content/published/patterns/core/brand-model-domain-type.mdx) | 🟡 **Intermediate** | Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse. |
@@ -245,12 +249,12 @@ This repository is designed to be a living document that helps developers move f
 | [Creating from Collections](./content/published/patterns/core/constructor-from-iterable.mdx) | 🟢 **Beginner** | Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations. |
 | [Lifting Errors and Absence with fail, none, and left](./content/published/patterns/core/constructor-fail-none-left.mdx) | 🟢 **Beginner** | Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe. |
 
-## Control flow
+## Control Flow
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Pattern Match on Option and Either](./content/published/patterns/core/pattern-option-either-match.mdx) | 🟢 **Beginner** | Use declarative match() combinators to handle optional and error-prone values |
 
-## Data types
+## Data Types
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Model Optional Values Safely with Option](./content/published/patterns/core/data-option.mdx) | 🟢 **Beginner** | Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors. |
@@ -270,16 +274,7 @@ This repository is designed to be a living document that helps developers move f
 | [Manage Shared State Safely with Ref](./content/published/patterns/core/data-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
 | [Handle Unexpected Errors by Inspecting the Cause](./content/published/patterns/core/data-cause.mdx) | 🟠 **Advanced** | Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces. |
 
-## Observability
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Instrument and Observe Function Calls with Effect.fn](./content/published/patterns/core/observability-effect-fn.mdx) | 🟡 **Intermediate** | Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries. |
-| [Leverage Effect's Built-in Structured Logging](./content/published/patterns/core/observability-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions for structured, configurable, and context-aware logging. |
-| [Add Custom Metrics to Your Application](./content/published/patterns/core/observability-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
-| [Trace Operations Across Services with Spans](./content/published/patterns/core/observability-tracing-spans.mdx) | 🟡 **Intermediate** | Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations. |
-| [Integrate Effect Tracing with OpenTelemetry](./content/published/patterns/core/observability-opentelemetry.mdx) | 🟠 **Advanced** | Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization. |
-
-## Pattern matching
+## Pattern Matching
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Matching on Success and Failure with match](./content/published/patterns/core/pattern-match.mdx) | 🟢 **Beginner** | Use match to handle both success and failure cases in a single, declarative place for Effect, Option, and Either. |
