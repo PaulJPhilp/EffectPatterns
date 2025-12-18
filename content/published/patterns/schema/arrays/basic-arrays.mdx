@@ -1,0 +1,168 @@
+---
+id: schema-basic-arrays
+title: Array Validation
+category: arrays
+skill: beginner
+tags:
+  - schema
+  - array
+  - collection
+  - list
+---
+
+# Problem
+
+You receive a list of items and need to validate each one. Without schema validation, you'd loop through and check each item manually. You need to define what valid array items look like and validate the entire array at once.
+
+# Solution
+
+```typescript
+import { Schema } from "effect"
+
+// ============================================
+// BASIC ARRAYS
+// ============================================
+
+// Array of strings
+const Tags = Schema.Array(Schema.String)
+type Tags = typeof Tags.Type  // string[]
+
+// Array of numbers
+const Scores = Schema.Array(Schema.Number)
+type Scores = typeof Scores.Type  // number[]
+
+// Array of booleans
+const Flags = Schema.Array(Schema.Boolean)
+type Flags = typeof Flags.Type  // boolean[]
+
+// ============================================
+// ARRAYS OF OBJECTS
+// ============================================
+
+const User = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  email: Schema.String,
+})
+
+const Users = Schema.Array(User)
+type Users = typeof Users.Type  // Array<{ id: string; name: string; email: string }>
+
+const Product = Schema.Struct({
+  sku: Schema.String,
+  name: Schema.String,
+  price: Schema.Number,
+})
+
+const Products = Schema.Array(Product)
+type Products = typeof Products.Type
+
+// ============================================
+// ARRAY LENGTH CONSTRAINTS
+// ============================================
+
+// Non-empty array (at least 1 item)
+const NonEmptyTags = Schema.NonEmptyArray(Schema.String)
+type NonEmptyTags = typeof NonEmptyTags.Type  // readonly [string, ...string[]]
+
+// Min/max length
+const LimitedList = Schema.Array(Schema.String).pipe(
+  Schema.minItems(1),
+  Schema.maxItems(10)
+)
+
+// Exact length
+const RGBTuple = Schema.Array(Schema.Number).pipe(
+  Schema.itemsCount(3)
+)
+
+// ============================================
+// USING IN STRUCTS
+// ============================================
+
+const BlogPost = Schema.Struct({
+  title: Schema.String,
+  content: Schema.String,
+  tags: Tags,                    // Array of strings
+  authors: NonEmptyTags,         // At least one author
+})
+
+const Order = Schema.Struct({
+  orderId: Schema.String,
+  items: Schema.NonEmptyArray(Product),  // At least one item
+  total: Schema.Number,
+})
+
+// ============================================
+// VALIDATION IN ACTION
+// ============================================
+
+const decodeTags = Schema.decodeUnknownSync(Tags)
+const decodeUsers = Schema.decodeUnknownSync(Users)
+const decodeOrder = Schema.decodeUnknownSync(Order)
+
+// Valid array of strings
+const tags = decodeTags(["typescript", "effect", "schema"])
+console.log(`✅ Tags: ${tags.join(", ")}`)
+
+// Valid array of objects
+const users = decodeUsers([
+  { id: "1", name: "Alice", email: "alice@example.com" },
+  { id: "2", name: "Bob", email: "bob@example.com" },
+])
+console.log(`✅ Users: ${users.map(u => u.name).join(", ")}`)
+
+// Valid order with items
+const order = decodeOrder({
+  orderId: "order_123",
+  items: [
+    { sku: "WIDGET-001", name: "Widget", price: 29.99 },
+    { sku: "GADGET-002", name: "Gadget", price: 49.99 },
+  ],
+  total: 79.98,
+})
+console.log(`✅ Order has ${order.items.length} items`)
+
+// Empty array is valid for Schema.Array
+const emptyTags = decodeTags([])
+console.log(`✅ Empty tags: ${emptyTags.length} items`)
+
+// Invalid - item has wrong type
+try {
+  decodeTags(["valid", 123, "also valid"])  // 123 is not string
+} catch {
+  console.log("❌ Array item must be string")
+}
+
+// Invalid - empty when NonEmptyArray required
+try {
+  const decodeNonEmpty = Schema.decodeUnknownSync(NonEmptyTags)
+  decodeNonEmpty([])
+} catch {
+  console.log("❌ Array must have at least 1 item")
+}
+```
+
+# Why This Works
+
+| Schema | Purpose |
+|--------|---------|
+| **Schema.Array(S)** | Array where all items match S |
+| **Schema.NonEmptyArray(S)** | At least one item required |
+| **minItems/maxItems** | Length constraints |
+| **itemsCount** | Exact length |
+| **Nested objects** | Array of complex types |
+
+# When to Use
+
+- Lists of tags, categories, roles
+- Collections of users, products, orders
+- API responses returning arrays
+- Form data with multiple entries
+
+# Related Patterns
+
+- [Tuple Schemas](./tuples.md)
+- [Basic Objects](../objects/basic-objects.md)
+- [Array Constraints](./array-constraints.md)
+

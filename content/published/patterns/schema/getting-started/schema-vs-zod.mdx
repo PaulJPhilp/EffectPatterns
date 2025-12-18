@@ -1,0 +1,159 @@
+---
+id: schema-vs-zod
+title: Effect Schema vs Zod
+category: getting-started
+skill: beginner
+tags:
+  - schema
+  - comparison
+  - zod
+  - migration
+---
+
+# Problem
+
+You're familiar with Zod (or similar libraries) and want to understand how Effect Schema differs. The syntax looks similar but Effect Schema offers capabilities Zod doesn't have. You need a quick comparison to get productive fast.
+
+# Solution
+
+```typescript
+import { Schema } from "effect"
+
+// ============================================
+// BASIC SCHEMA DEFINITION
+// ============================================
+
+// Zod:
+// const UserZ = z.object({ name: z.string(), age: z.number() })
+
+// Effect Schema:
+const User = Schema.Struct({
+  name: Schema.String,
+  age: Schema.Number,
+})
+
+// ============================================
+// OPTIONAL FIELDS
+// ============================================
+
+// Zod:
+// const ConfigZ = z.object({ port: z.number().optional() })
+
+// Effect Schema:
+const Config = Schema.Struct({
+  port: Schema.optional(Schema.Number),
+})
+
+// ============================================
+// ARRAYS
+// ============================================
+
+// Zod:
+// const ListZ = z.array(z.string())
+
+// Effect Schema:
+const List = Schema.Array(Schema.String)
+
+// ============================================
+// UNIONS
+// ============================================
+
+// Zod:
+// const StatusZ = z.union([z.literal("active"), z.literal("inactive")])
+
+// Effect Schema:
+const Status = Schema.Union(
+  Schema.Literal("active"),
+  Schema.Literal("inactive")
+)
+
+// ============================================
+// REFINEMENTS (custom validation)
+// ============================================
+
+// Zod:
+// const PositiveZ = z.number().refine(n => n > 0, "Must be positive")
+
+// Effect Schema:
+const Positive = Schema.Number.pipe(
+  Schema.filter((n) => n > 0, { message: () => "Must be positive" })
+)
+
+// ============================================
+// TRANSFORMATIONS
+// ============================================
+
+// Zod:
+// const TrimmedZ = z.string().transform(s => s.trim())
+
+// Effect Schema (bidirectional!):
+const Trimmed = Schema.transform(
+  Schema.String,
+  Schema.String,
+  {
+    decode: (s) => s.trim(),
+    encode: (s) => s,
+  }
+)
+
+// ============================================
+// KEY DIFFERENCES
+// ============================================
+
+// 1. BIDIRECTIONAL: Effect Schema encodes AND decodes
+const decode = Schema.decodeUnknownSync(User)
+const encode = Schema.encodeSync(User)
+
+const user = decode({ name: "Alice", age: 30 })
+const json = encode(user)  // Zod can't do this!
+
+// 2. EFFECT INTEGRATION: Returns Effect for async composition
+const parseAsync = Schema.decodeUnknown(User)
+// Returns Effect<User, ParseError> - composable with Effect ecosystem
+
+// 3. DEFECTS VS ERRORS: Schema distinguishes recoverable vs non-recoverable
+// ParseError is typed and trackable through Effect's error channel
+
+// 4. ASYNC VALIDATION: Built-in support
+const UsernameAvailable = Schema.String.pipe(
+  Schema.filterEffect((username) =>
+    // Check database asynchronously
+    Effect.succeed(true)  // Placeholder
+  )
+)
+
+console.log("✅ Effect Schema and Zod both validate at runtime")
+console.log("✅ Effect Schema adds: encode, Effect integration, async validation")
+```
+
+# Why This Works
+
+| Feature | Zod | Effect Schema |
+|---------|-----|---------------|
+| Runtime validation | ✅ | ✅ |
+| Type inference | ✅ | ✅ |
+| Encode (serialize) | ❌ | ✅ |
+| Effect integration | ❌ | ✅ |
+| Async validation | Limited | ✅ Native |
+| Error channel typing | ❌ | ✅ |
+| Bidirectional transforms | ❌ | ✅ |
+
+# When to Use
+
+- **Use Effect Schema** when:
+  - Building with Effect ecosystem
+  - Need encode/decode (API boundaries)
+  - Need async validation (DB checks)
+  - Want typed error handling
+
+- **Zod is fine** when:
+  - Simple validation only
+  - Not using Effect
+  - Team already knows Zod
+
+# Related Patterns
+
+- [Your First Schema](./hello-world.md)
+- [Async Validation](../async-validation/basic-async.mdx)
+- [Basic Transformations](../transformations/basic-transforms.md)
+

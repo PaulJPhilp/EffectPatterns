@@ -431,25 +431,6 @@ This repository is designed to be a living document that helps developers move f
 | [API Validation with Retry](./content/published/patterns/schema/validating-api-responses/with-retry.mdx) | 🟡 **Intermediate** | undefined |
 | [Full Pipeline with @effect/platform](./content/published/patterns/schema/validating-api-responses/with-http-client.mdx) | 🟠 **Advanced** | undefined |
 
-## Parsing Ai Responses
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Handling Malformed AI Outputs](./content/published/patterns/schema/parsing-ai-responses/error-recovery.mdx) | 🟢 **Beginner** | undefined |
-| [Basic AI Response Parsing](./content/published/patterns/schema/parsing-ai-responses/basic.mdx) | 🟢 **Beginner** | undefined |
-| [Parsing Partial/Incomplete Responses](./content/published/patterns/schema/parsing-ai-responses/partial-responses.mdx) | 🟡 **Intermediate** | undefined |
-| [Retry Strategies for Parse Failures](./content/published/patterns/schema/parsing-ai-responses/retry-on-failure.mdx) | 🟡 **Intermediate** | undefined |
-| [Validating Streaming AI Responses](./content/published/patterns/schema/parsing-ai-responses/streaming-validation.mdx) | 🟠 **Advanced** | undefined |
-
-## Defining Ai Output Schemas
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Basic AI Output Schema](./content/published/patterns/schema/defining-ai-output-schemas/basic.mdx) | 🟢 **Beginner** | undefined |
-| [Adding Descriptions for AI Context](./content/published/patterns/schema/defining-ai-output-schemas/with-descriptions.mdx) | 🟢 **Beginner** | undefined |
-| [Union Types for Flexible Outputs](./content/published/patterns/schema/defining-ai-output-schemas/unions-for-ai.mdx) | 🟡 **Intermediate** | undefined |
-| [Enums and Literal Types](./content/published/patterns/schema/defining-ai-output-schemas/enums-and-literals.mdx) | 🟡 **Intermediate** | undefined |
-| [Nested Object Schemas](./content/published/patterns/schema/defining-ai-output-schemas/nested-structures.mdx) | 🟡 **Intermediate** | undefined |
-| [Integration with Vercel AI SDK](./content/published/patterns/schema/defining-ai-output-schemas/vercel-ai-sdk.mdx) | 🟠 **Advanced** | undefined |
-
 ## Web Standards Validation
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
@@ -468,22 +449,6 @@ This repository is designed to be a living document that helps developers move f
 | [Async Validation (Username Availability)](./content/published/patterns/schema/form-validation/async-validation.mdx) | 🟡 **Intermediate** | undefined |
 | [Nested Form Structures](./content/published/patterns/schema/form-validation/nested-forms.mdx) | 🟡 **Intermediate** | undefined |
 | [Dependent Field Validation](./content/published/patterns/schema/form-validation/dependent-fields.mdx) | 🟡 **Intermediate** | undefined |
-
-## Json File Validation
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Basic JSON File Validation](./content/published/patterns/schema/json-file-validation/basic.mdx) | 🟢 **Beginner** | undefined |
-| [Validating Config Files](./content/published/patterns/schema/json-file-validation/config-files.mdx) | 🟢 **Beginner** | undefined |
-| [Validating Multiple Config Files](./content/published/patterns/schema/json-file-validation/multiple-files.mdx) | 🟡 **Intermediate** | undefined |
-| [Schema with Default Values](./content/published/patterns/schema/json-file-validation/with-defaults.mdx) | 🟡 **Intermediate** | undefined |
-
-## Json Db Validation
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Validating JSON Database Columns](./content/published/patterns/schema/json-db-validation/basic.mdx) | 🟢 **Beginner** | undefined |
-| [Validating Partial Documents](./content/published/patterns/schema/json-db-validation/partial-validation.mdx) | 🟡 **Intermediate** | undefined |
-| [Handling Schema Evolution](./content/published/patterns/schema/json-db-validation/schema-evolution.mdx) | 🟡 **Intermediate** | undefined |
-| [PostgreSQL JSONB Validation](./content/published/patterns/schema/json-db-validation/postgres-jsonb.mdx) | 🟡 **Intermediate** | undefined |
 
 ## Environment Config
 | Pattern | Skill Level | Summary |
