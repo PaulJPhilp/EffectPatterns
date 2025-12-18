@@ -45,12 +45,8 @@ This repository is designed to be a living document that helps developers move f
 - [Control Flow](#control-flow)
 - [Data Types](#data-types)
 - [Pattern Matching](#pattern-matching)
-- [Concurrency Coordination](#concurrency-coordination)
-- [Concurrent State Management](#concurrent-state-management)
 - [Error Handling](#error-handling)
 - [Error Handling Resilience](#error-handling-resilience)
-- [Platform Integration](#platform-integration)
-- [Platform Specific Operations](#platform-specific-operations)
 - [Scheduling](#scheduling)
 - [Scheduling Periodic Tasks](#scheduling-periodic-tasks)
 - [Value Handling](#value-handling)
@@ -188,13 +184,21 @@ This repository is designed to be a living document that helps developers move f
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Race Concurrent Effects for the Fastest Result](./content/published/patterns/core/race-concurrent-effects.mdx) | 🟡 **Intermediate** | Use Effect.race to run multiple effects concurrently and proceed with the result of the one that succeeds first, automatically interrupting the others. |
+| [Concurrency Pattern 2: Rate Limit Concurrent Access with Semaphore](./content/published/patterns/core/concurrency-pattern-rate-limit-with-semaphore.mdx) | 🟡 **Intermediate** | Use Semaphore to limit the number of concurrent operations, enabling connection pooling, API rate limiting, and controlled resource access without overload. |
 | [Manage Shared State Safely with Ref](./content/published/patterns/core/manage-shared-state-with-ref.mdx) | 🟡 **Intermediate** | Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions. |
 | [Run Independent Effects in Parallel with Effect.all](./content/published/patterns/core/run-effects-in-parallel-with-all.mdx) | 🟡 **Intermediate** | Use Effect.all to run multiple independent effects concurrently and collect all their results into a single tuple. |
+| [Concurrency Pattern 3: Coordinate Multiple Fibers with Latch](./content/published/patterns/core/concurrency-pattern-coordinate-with-latch.mdx) | 🟡 **Intermediate** | Use Latch to synchronize multiple fibers, enabling patterns like coordinating N async tasks, fan-out/fan-in, and barrier synchronization. |
+| [Concurrency Pattern 5: Broadcast Events with PubSub](./content/published/patterns/core/concurrency-pattern-pubsub-event-broadcast.mdx) | 🟡 **Intermediate** | Use PubSub to broadcast events to multiple subscribers, enabling event-driven architectures and fan-out patterns without direct coupling. |
 | [Process a Collection in Parallel with Effect.forEach](./content/published/patterns/core/process-collection-in-parallel-with-foreach.mdx) | 🟡 **Intermediate** | Use Effect.forEach with the `concurrency` option to process a collection of items in parallel with a fixed limit, preventing resource exhaustion. |
+| [Concurrency Pattern 6: Race and Timeout Competing Effects](./content/published/patterns/core/concurrency-pattern-race-timeout.mdx) | 🟡 **Intermediate** | Use race and timeout to compete multiple effects and enforce deadlines, enabling timeout handling and choosing fastest result. |
+| [Concurrency Pattern 1: Coordinate Async Operations with Deferred](./content/published/patterns/core/concurrency-pattern-coordinate-with-deferred.mdx) | 🟡 **Intermediate** | Use Deferred to coordinate async operations where multiple fibers wait for a single event to complete, enabling producer-consumer patterns and async signaling without polling. |
+| [Concurrency Pattern 4: Distribute Work with Queue](./content/published/patterns/core/concurrency-pattern-queue-work-distribution.mdx) | 🟡 **Intermediate** | Use Queue to decouple producers and consumers, enabling work distribution, pipeline stages, and backpressure handling across concurrent fibers. |
 | [Add Caching by Wrapping a Layer](./content/published/patterns/core/add-caching-by-wrapping-a-layer.mdx) | 🟠 **Advanced** | Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service. |
+| [State Management Pattern 1: Synchronized Reference with SynchronizedRef](./content/published/patterns/core/state-management-pattern-synchronized-ref.mdx) | 🟠 **Advanced** | Use SynchronizedRef to safely share mutable state across concurrent fibers, with atomic updates and guaranteed consistency. |
 | [Manage Resource Lifecycles with Scope](./content/published/patterns/core/manage-resource-lifecycles-with-scope.mdx) | 🟠 **Advanced** | Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed. |
 | [Run Background Tasks with Effect.fork](./content/published/patterns/core/run-background-tasks-with-fork.mdx) | 🟠 **Advanced** | Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting. |
 | [Execute Long-Running Apps with Effect.runFork](./content/published/patterns/core/execute-long-running-apps-with-runfork.mdx) | 🟠 **Advanced** | Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown. |
+| [State Management Pattern 2: Observable State with SubscriptionRef](./content/published/patterns/core/state-management-pattern-subscription-ref.mdx) | 🟠 **Advanced** | Build observable state that notifies subscribers on changes, enabling reactive patterns and state-driven architecture. |
 | [Implement Graceful Shutdown for Your Application](./content/published/patterns/core/implement-graceful-shutdown.mdx) | 🟠 **Advanced** | Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released. |
 | [Decouple Fibers with Queues and PubSub](./content/published/patterns/core/decouple-fibers-with-queue-pubsub.mdx) | 🟠 **Advanced** | Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers. |
 | [Poll for Status Until a Task Completes](./content/published/patterns/core/poll-for-status-until-task-completes.mdx) | 🟠 **Advanced** | Use Effect.race to run a repeating polling effect alongside a main task, automatically stopping the polling when the main task finishes. |
@@ -279,22 +283,6 @@ This repository is designed to be a living document that helps developers move f
 | [Effectful Pattern Matching with matchEffect](./content/published/patterns/core/pattern-matcheffect.mdx) | 🟡 **Intermediate** | Use matchEffect to perform effectful branching based on success or failure, enabling rich workflows in the Effect world. |
 | [Handling Specific Errors with catchTag and catchTags](./content/published/patterns/core/pattern-catchtag.mdx) | 🟡 **Intermediate** | Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery. |
 
-## Concurrency Coordination
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Concurrency Pattern 2: Rate Limit Concurrent Access with Semaphore](./content/published/patterns/core/concurrency-pattern-rate-limit-with-semaphore.mdx) | 🟡 **Intermediate** | Use Semaphore to limit the number of concurrent operations, enabling connection pooling, API rate limiting, and controlled resource access without overload. |
-| [Concurrency Pattern 3: Coordinate Multiple Fibers with Latch](./content/published/patterns/core/concurrency-pattern-coordinate-with-latch.mdx) | 🟡 **Intermediate** | Use Latch to synchronize multiple fibers, enabling patterns like coordinating N async tasks, fan-out/fan-in, and barrier synchronization. |
-| [Concurrency Pattern 5: Broadcast Events with PubSub](./content/published/patterns/core/concurrency-pattern-pubsub-event-broadcast.mdx) | 🟡 **Intermediate** | Use PubSub to broadcast events to multiple subscribers, enabling event-driven architectures and fan-out patterns without direct coupling. |
-| [Concurrency Pattern 6: Race and Timeout Competing Effects](./content/published/patterns/core/concurrency-pattern-race-timeout.mdx) | 🟡 **Intermediate** | Use race and timeout to compete multiple effects and enforce deadlines, enabling timeout handling and choosing fastest result. |
-| [Concurrency Pattern 1: Coordinate Async Operations with Deferred](./content/published/patterns/core/concurrency-pattern-coordinate-with-deferred.mdx) | 🟡 **Intermediate** | Use Deferred to coordinate async operations where multiple fibers wait for a single event to complete, enabling producer-consumer patterns and async signaling without polling. |
-| [Concurrency Pattern 4: Distribute Work with Queue](./content/published/patterns/core/concurrency-pattern-queue-work-distribution.mdx) | 🟡 **Intermediate** | Use Queue to decouple producers and consumers, enabling work distribution, pipeline stages, and backpressure handling across concurrent fibers. |
-
-## Concurrent State Management
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [State Management Pattern 1: Synchronized Reference with SynchronizedRef](./content/published/patterns/core/state-management-pattern-synchronized-ref.mdx) | 🟠 **Advanced** | Use SynchronizedRef to safely share mutable state across concurrent fibers, with atomic updates and guaranteed consistency. |
-| [State Management Pattern 2: Observable State with SubscriptionRef](./content/published/patterns/core/state-management-pattern-subscription-ref.mdx) | 🟠 **Advanced** | Build observable state that notifies subscribers on changes, enabling reactive patterns and state-driven architecture. |
-
 ## Error Handling
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
@@ -306,20 +294,6 @@ This repository is designed to be a living document that helps developers move f
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Scheduling Pattern 2: Implement Exponential Backoff for Retries](./content/published/patterns/core/scheduling-pattern-exponential-backoff.mdx) | 🟡 **Intermediate** | Use exponential backoff with jitter to retry failed operations with increasing delays, preventing resource exhaustion and cascade failures in distributed systems. |
-
-## Platform Integration
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Platform Pattern 4: Interactive Terminal I/O](./content/published/patterns/core/platform-terminal-interactive.mdx) | 🟢 **Beginner** | Use Terminal module to read user input and write formatted output, enabling interactive CLI applications with proper buffering and encoding. |
-| [Platform Pattern 2: Filesystem Operations](./content/published/patterns/core/platform-filesystem-operations.mdx) | 🟢 **Beginner** | Use FileSystem module to read, write, list, and manage files with proper resource cleanup and error handling. |
-| [Platform Pattern 3: Persistent Key-Value Storage](./content/published/patterns/core/platform-keyvaluestore-persistence.mdx) | 🟡 **Intermediate** | Use KeyValueStore for simple persistent key-value storage, enabling caching, session management, and lightweight data persistence. |
-| [Platform Pattern 1: Execute Shell Commands](./content/published/patterns/core/platform-pattern-command-execution.mdx) | 🟡 **Intermediate** | Use Command module to execute shell commands, capture output, and handle exit codes, enabling integration with system tools and external programs. |
-
-## Platform Specific Operations
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Platform Pattern 5: Cross-Platform Path Manipulation](./content/published/patterns/core/platform-pattern-path-manipulation.mdx) | 🟡 **Intermediate** | Use platform-aware path operations to handle file system paths correctly across Windows, macOS, and Linux with proper resolution and normalization. |
-| [Platform Pattern 6: Advanced FileSystem Operations](./content/published/patterns/core/platform-pattern-advanced-filesystem.mdx) | 🟠 **Advanced** | Handle complex file system scenarios including watching files, recursive operations, atomic writes, and efficient bulk operations. |
 
 ## Scheduling
 | Pattern | Skill Level | Summary |
