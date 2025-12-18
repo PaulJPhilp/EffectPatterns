@@ -1,0 +1,89 @@
+---
+title: Your First Stream
+id: stream-hello-world
+skillLevel: beginner
+useCase: streams-getting-started
+summary: >-
+  Create your first Effect Stream and understand what makes streams different from regular arrays.
+tags:
+  - stream
+  - getting-started
+  - basics
+  - introduction
+rule:
+  description: Use Stream to process sequences of data lazily and efficiently.
+author: PaulJPhilp
+related:
+  - stream-vs-effect
+  - stream-collect-results
+---
+
+## Guideline
+
+A Stream is a lazy sequence of values that can be processed one at a time. Create streams with `Stream.make`, `Stream.fromIterable`, or `Stream.succeed`.
+
+---
+
+## Rationale
+
+Streams are Effect's answer to processing sequences of data. Unlike arrays which hold all values in memory at once, streams produce values on demand. This makes them ideal for:
+
+1. **Large datasets** - Process millions of records without loading everything into memory
+2. **Async data** - Handle data that arrives over time (files, APIs, events)
+3. **Composable pipelines** - Chain transformations that work element by element
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Stream } from "effect"
+
+// Create a stream from explicit values
+const numbers = Stream.make(1, 2, 3, 4, 5)
+
+// Create a stream from an array
+const fromArray = Stream.fromIterable([10, 20, 30])
+
+// Create a single-value stream
+const single = Stream.succeed("hello")
+
+// Transform and run the stream
+const program = numbers.pipe(
+  Stream.map((n) => n * 2),           // Double each number
+  Stream.filter((n) => n > 4),        // Keep only > 4
+  Stream.runCollect                    // Collect results
+)
+
+Effect.runPromise(program).then((chunk) => {
+  console.log([...chunk])  // [6, 8, 10]
+})
+```
+
+## Key Concepts
+
+| Concept | Explanation |
+|---------|-------------|
+| **Stream.make** | Create stream from explicit values |
+| **Stream.fromIterable** | Create stream from array/iterable |
+| **Stream.succeed** | Single-value stream |
+| **Stream.map** | Transform each element |
+| **Stream.filter** | Keep elements matching condition |
+| **Stream.runCollect** | Run stream, collect all results |
+
+## Anti-Pattern
+
+Don't use regular arrays when you need lazy processing or async operations:
+
+```typescript
+// Anti-pattern: Eager processing, all in memory
+const numbers = [1, 2, 3, 4, 5]
+const doubled = numbers.map((n) => n * 2)
+const filtered = doubled.filter((n) => n > 4)
+```
+
+This loads everything into memory immediately. Use Stream when:
+- Data is large or potentially infinite
+- Data arrives asynchronously
+- You need backpressure or resource management
+

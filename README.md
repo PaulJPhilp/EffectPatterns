@@ -53,11 +53,7 @@ This repository is designed to be a living document that helps developers move f
 - [Platform Specific Operations](#platform-specific-operations)
 - [Scheduling](#scheduling)
 - [Scheduling Periodic Tasks](#scheduling-periodic-tasks)
-- [Stream Error Handling](#stream-error-handling)
-- [Stream Persistence](#stream-persistence)
-- [Stream Processing](#stream-processing)
 - [Value Handling](#value-handling)
-- [Working With Streams](#working-with-streams)
 
 ### Schema Patterns
 
@@ -337,41 +333,11 @@ This repository is designed to be a living document that helps developers move f
 | [Scheduling Pattern 3: Schedule Tasks with Cron Expressions](./content/published/patterns/core/scheduling-pattern-cron-expressions.mdx) | 🟡 **Intermediate** | Use cron expressions to schedule tasks at specific times and intervals, enabling calendar-based scheduling with timezone support. |
 | [Scheduling Pattern 5: Advanced Retry Chains and Circuit Breakers](./content/published/patterns/core/scheduling-pattern-advanced-retry-chains.mdx) | 🟠 **Advanced** | Build sophisticated retry chains with circuit breakers, fallbacks, and complex failure patterns for production-grade reliability. |
 
-## Stream Error Handling
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Sink Pattern 5: Fall Back to Alternative Sink on Failure](./content/published/patterns/core/sink-pattern-fall-back-to-alternative-sink-on-failure.mdx) | 🟡 **Intermediate** | Use Sink to attempt writing to a primary destination, and automatically fall back to an alternative destination if the primary fails, enabling progressive degradation and high availability. |
-| [Sink Pattern 6: Retry Failed Stream Operations](./content/published/patterns/core/sink-pattern-retry-failed-stream-operations.mdx) | 🟡 **Intermediate** | Use Sink with configurable retry policies to automatically retry failed operations with exponential backoff, enabling recovery from transient failures without losing data. |
-
-## Stream Persistence
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Sink Pattern 1: Batch Insert Stream Records into Database](./content/published/patterns/core/batch-insert-stream-records-into-database.mdx) | 🟡 **Intermediate** | Use Sink to batch stream records and insert them efficiently into a database in groups, rather than one-by-one, for better performance and resource usage. |
-| [Sink Pattern 2: Write Stream Events to Event Log](./content/published/patterns/core/write-stream-events-to-event-log.mdx) | 🟡 **Intermediate** | Use Sink to append stream events to an event log with metadata and causal ordering, enabling event sourcing and audit trail patterns. |
-| [Sink Pattern 4: Send Stream Records to Message Queue](./content/published/patterns/core/sink-pattern-send-stream-records-to-message-queue.mdx) | 🟡 **Intermediate** | Use Sink to publish stream records to a message queue with partitioning, batching, and acknowledgment handling for distributed systems. |
-| [Sink Pattern 3: Write Stream Lines to File](./content/published/patterns/core/sink-pattern-write-stream-lines-to-file.mdx) | 🟡 **Intermediate** | Use Sink to write stream data as lines to a file with buffering for efficiency, supporting log files and line-oriented formats. |
-
-## Stream Processing
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Stream Pattern 1: Transform Streams with Map and Filter](./content/published/patterns/core/stream-pattern-map-filter-transformations.mdx) | 🟢 **Beginner** | Use Stream.map and Stream.filter to transform and select stream elements, enabling data pipelines that reshape and filter data in flight. |
-| [Stream Pattern 2: Merge and Combine Multiple Streams](./content/published/patterns/core/stream-pattern-merge-combine.mdx) | 🟡 **Intermediate** | Use Stream.merge, Stream.concat, and Stream.mergeAll to combine multiple streams into a single stream, enabling multi-source data aggregation. |
-| [Stream Pattern 3: Control Backpressure in Streams](./content/published/patterns/core/stream-pattern-backpressure-control.mdx) | 🟡 **Intermediate** | Use Stream throttling, buffering, and chunk operations to manage backpressure, preventing upstream from overwhelming downstream consumers. |
-| [Stream Pattern 4: Stateful Operations with Scan and Fold](./content/published/patterns/core/stream-pattern-stateful-operations.mdx) | 🟡 **Intermediate** | Use Stream.scan and Stream.fold to maintain state across stream elements, enabling cumulative operations, counters, aggregations, and stateful transformations. |
-
 ## Value Handling
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Optional Pattern 1: Handling None and Some Values](./content/published/patterns/core/optional-pattern-handling-none-some.mdx) | 🟡 **Intermediate** | Use Effect's Option type to safely handle values that may not exist, avoiding null/undefined bugs and enabling composable error handling. |
 | [Optional Pattern 2: Optional Chaining and Composition](./content/published/patterns/core/optional-pattern-optional-chains.mdx) | 🟠 **Advanced** | Chain optional values across multiple steps with composable operators, enabling elegant data flow through systems with missing values. |
-
-## Working With Streams
-| Pattern | Skill Level | Summary |
-| :--- | :--- | :--- |
-| [Stream Pattern 5: Grouping and Windowing Streams](./content/published/patterns/core/stream-pattern-grouping-windowing.mdx) | 🟠 **Advanced** | Use grouping and windowing to organize streams by key or time window, enabling batch operations and temporal aggregations. |
-| [Stream Pattern 6: Resource Management in Streams](./content/published/patterns/core/stream-pattern-resource-management.mdx) | 🟠 **Advanced** | Properly manage resources (connections, files, memory) in streams using acquire/release patterns and ensuring cleanup on error or completion. |
-| [Stream Pattern 7: Error Handling in Streams](./content/published/patterns/core/stream-pattern-error-handling.mdx) | 🟠 **Advanced** | Handle errors gracefully in streams with recovery strategies, resuming after failures, and maintaining stream integrity. |
-| [Stream Pattern 8: Advanced Stream Transformations](./content/published/patterns/core/stream-pattern-advanced-transformations.mdx) | 🟠 **Advanced** | Apply complex transformations across streams including custom operators, effect-based transformations, and composition patterns. |
 
 ## Composition
 | Pattern | Skill Level | Summary |
