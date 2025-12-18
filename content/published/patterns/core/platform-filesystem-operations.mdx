@@ -1,0 +1,378 @@
+---
+title: "Platform Pattern 2: Filesystem Operations"
+id: platform-filesystem-operations
+skillLevel: beginner
+useCase: platform-integration
+summary: >-
+  Use FileSystem module to read, write, list, and manage files with proper
+  resource cleanup and error handling.
+tags:
+  - platform
+  - filesystem
+  - file-io
+  - io-operations
+  - resource-management
+  - file-handling
+rule:
+  description: >-
+    Use FileSystem module for safe, resource-managed file operations with
+    proper error handling and cleanup.
+related:
+  - manage-resource-lifecycles-with-scope
+  - platform-pattern-command-execution
+  - stream-pattern-map-filter-transformations
+author: effect_website
+---
+
+## Guideline
+
+FileSystem operations:
+
+- **read**: Read file as string
+- **readDirectory**: List files in directory
+- **write**: Write string to file
+- **remove**: Delete file or directory
+- **stat**: Get file metadata
+
+Pattern: `FileSystem.read(path).pipe(...)`
+
+---
+
+## Rationale
+
+Direct file operations without FileSystem create issues:
+
+- **Resource leaks**: Files not closed on errors
+- **No error context**: Missing file names in errors
+- **Blocking**: No async/await integration
+- **Cross-platform**: Path handling differences
+
+FileSystem enables:
+
+- **Resource safety**: Automatic cleanup
+- **Error context**: Full error messages
+- **Async integration**: Effect-native
+- **Cross-platform**: Handles path separators
+
+Real-world example: Process log files
+- **Direct**: Open file, read, close, handle exceptions manually
+- **With FileSystem**: `FileSystem.read(path).pipe(...)`
+
+---
+
+## Good Example
+
+This example demonstrates reading, writing, and manipulating files.
+
+```typescript
+import { FileSystem, Effect, Stream } from "@effect/platform";
+import * as fs from "fs/promises";
+
+const program = Effect.gen(function* () {
+  console.log(`\n[FILESYSTEM] Demonstrating file operations\n`);
+
+  // Example 1: Write a file
+  console.log(`[1] Writing file:\n`);
+
+  const content = `Hello, Effect-TS!\nThis is a test file.\nCreated at ${new Date().toISOString()}`;
+
+  yield* FileSystem.writeFileUtf8("test.txt", content);
+
+  yield* Effect.log(`✓ File written: test.txt`);
+
+  // Example 2: Read the file
+  console.log(`\n[2] Reading file:\n`);
+
+  const readContent = yield* FileSystem.readFileUtf8("test.txt");
+
+  console.log(readContent);
+
+  // Example 3: Get file stats
+  console.log(`\n[3] File stats:\n`);
+
+  const stats = yield* FileSystem.stat("test.txt").pipe(
+    Effect.flatMap((stat) =>
+      Effect.succeed({
+        size: stat.size,
+        isFile: stat.isFile(),
+        modified: stat.mtimeMs,
+      })
+    )
+  );
+
+  console.log(`  Size: ${stats.size} bytes`);
+  console.log(`  Is file: ${stats.isFile}`);
+  console.log(`  Modified: ${new Date(stats.modified).toISOString()}`);
+
+  // Example 4: Create directory and write multiple files
+  console.log(`\n[4] Creating directory and files:\n`);
+
+  yield* FileSystem.mkdir("test-dir");
+
+  yield* Effect.all(
+    Array.from({ length: 3 }, (_, i) =>
+      FileSystem.writeFileUtf8(
+        `test-dir/file-${i + 1}.txt`,
+        `Content of file ${i + 1}`
+      )
+    )
+  );
+
+  yield* Effect.log(`✓ Created directory with 3 files`);
+
+  // Example 5: List directory contents
+  console.log(`\n[5] Listing directory:\n`);
+
+  const entries = yield* FileSystem.readDirectory("test-dir");
+
+  entries.forEach((entry) => {
+    console.log(`  - ${entry}`);
+  });
+
+  // Example 6: Append to file
+  console.log(`\n[6] Appending to file:\n`);
+
+  const appendContent = `\nAppended line at ${new Date().toISOString()}`;
+
+  yield* FileSystem.appendFileUtf8("test.txt", appendContent);
+
+  const finalContent = yield* FileSystem.readFileUtf8("test.txt");
+
+  console.log(`File now has ${finalContent.split("\n").length} lines`);
+
+  // Example 7: Clean up
+  console.log(`\n[7] Cleaning up:\n`);
+
+  yield* Effect.all(
+    Array.from({ length: 3 }, (_, i) =>
+      FileSystem.remove(`test-dir/file-${i + 1}.txt`)
+    )
+  );
+
+  yield* FileSystem.remove("test-dir");
+  yield* FileSystem.remove("test.txt");
+
+  yield* Effect.log(`✓ Cleanup complete`);
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+## Advanced: Stream Large Files
+
+Process files line-by-line without loading into memory:
+
+```typescript
+const processLargeFile = (filePath: string) =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[STREAMING] Processing large file: ${filePath}`);
+
+    // Read as stream
+    const fileStream = yield* FileSystem.readFileStream(filePath);
+
+    const lineStream = fileStream.pipe(
+      Stream.decodeText("utf8"),
+      Stream.splitLines,
+      Stream.filter((line) => line.trim().length > 0)
+    );
+
+    const lineCount = yield* lineStream.pipe(
+      Stream.runFold(0, (count) => count + 1)
+    );
+
+    yield* Effect.log(`File has ${lineCount} non-empty lines`);
+  });
+```
+
+---
+
+## Advanced: Process Multiple Files
+
+Read and process directory of files:
+
+```typescript
+const processDirFiles = (dirPath: string, extension: string) =>
+  Effect.gen(function* () {
+    const entries = yield* FileSystem.readDirectory(dirPath);
+
+    const files = entries.filter((f) => f.endsWith(extension));
+
+    const results = yield* Effect.all(
+      files.map((file) =>
+        FileSystem.readFileUtf8(`${dirPath}/${file}`).pipe(
+          Effect.map((content) => ({
+            file,
+            lines: content.split("\n").length,
+            size: content.length,
+          }))
+        )
+      )
+    );
+
+    results.forEach((result) => {
+      console.log(
+        `${result.file}: ${result.lines} lines, ${result.size} bytes`
+      );
+    });
+
+    return results;
+  });
+```
+
+---
+
+## Advanced: Transactional File Operations
+
+Atomic file writes with backup:
+
+```typescript
+const atomicWrite = (filePath: string, content: string) =>
+  Effect.gen(function* () {
+    const tempPath = `${filePath}.tmp`;
+    const backupPath = `${filePath}.bak`;
+
+    // Write to temp file
+    yield* FileSystem.writeFileUtf8(tempPath, content);
+
+    // Backup original if exists
+    const exists = yield* FileSystem.exists(filePath).pipe(
+      Effect.either
+    );
+
+    if (exists._tag === "Right" && exists.right) {
+      yield* FileSystem.copy(filePath, backupPath);
+    }
+
+    // Move temp to target (atomic on most systems)
+    yield* FileSystem.rename(tempPath, filePath);
+
+    yield* Effect.log(`✓ Atomically wrote: ${filePath}`);
+  });
+```
+
+---
+
+## Advanced: Watch File Changes
+
+Monitor file modifications:
+
+```typescript
+const watchFile = (filePath: string) =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[WATCH] Monitoring: ${filePath}`);
+
+    // Simple polling implementation (production would use fs.watch)
+    let lastModified = 0;
+
+    while (true) {
+      yield* Effect.sleep("1 second");
+
+      const stats = yield* FileSystem.stat(filePath).pipe(
+        Effect.either
+      );
+
+      if (stats._tag === "Right") {
+        const currentModified = stats.right.mtimeMs;
+
+        if (currentModified > lastModified) {
+          lastModified = currentModified;
+
+          const content = yield* FileSystem.readFileUtf8(filePath);
+
+          yield* Effect.log(
+            `[CHANGED] ${new Date(currentModified).toISOString()}`
+          );
+          yield* Effect.log(`Content: ${content.substring(0, 100)}...`);
+        }
+      }
+    }
+  });
+```
+
+---
+
+## Advanced: Recursive Directory Operations
+
+Traverse directory tree:
+
+```typescript
+const walkDirectory = (
+  dirPath: string
+): Effect.Effect<string[]> =>
+  Effect.gen(function* () {
+    const entries = yield* FileSystem.readDirectory(dirPath);
+    const allFiles: string[] = [];
+
+    for (const entry of entries) {
+      const fullPath = `${dirPath}/${entry}`;
+      const stat = yield* FileSystem.stat(fullPath);
+
+      if (stat.isFile()) {
+        allFiles.push(fullPath);
+      } else if (stat.isDirectory()) {
+        const subFiles = yield* walkDirectory(fullPath);
+        allFiles.push(...subFiles);
+      }
+    }
+
+    return allFiles;
+  });
+
+// Usage: Find all TypeScript files
+const findTypeScriptFiles = walkDirectory(".").pipe(
+  Effect.map((files) =>
+    files.filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"))
+  ),
+  Effect.tap((files) =>
+    Effect.log(`Found ${files.length} TypeScript files`)
+  )
+);
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use FileSystem when:**
+
+- Reading/writing files
+- Configuration file operations
+- Log file processing
+- Batch file operations
+- Cross-platform file handling
+- Managing file metadata
+
+⚠️ **Trade-offs:**
+
+- Disk I/O slower than memory
+- Path handling varies per OS
+- Large file operations can block
+- Permissions issues on restricted systems
+
+---
+
+## Security Considerations
+
+**Path traversal prevention:**
+```typescript
+// ❌ UNSAFE - User input can traverse directories
+FileSystem.read(`/data/${userInput}`)
+
+// ✅ SAFE - Validate and normalize paths
+const safePath = path.normalize(`/data/${userInput}`);
+if (!safePath.startsWith("/data/")) {
+  throw new Error("Path traversal attempt");
+}
+FileSystem.read(safePath)
+```
+
+---
+
+## See Also
+
+- [Platform Pattern 1: Command Execution](./platform-pattern-command-execution.mdx) - External commands
+- [Manage Resource Lifecycles with Scope](./manage-resource-lifecycles-with-scope.mdx) - Resource cleanup
+- [Stream Pattern 1: Map & Filter](./stream-pattern-map-filter-transformations.mdx) - Stream processing
+- [Handle Errors with Catch](./handle-errors-with-catch.mdx) - Error handling

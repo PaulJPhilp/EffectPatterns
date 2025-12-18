@@ -1,0 +1,339 @@
+---
+title: "Scheduling Patterns Learning Roadmap"
+description: "Master Effect Scheduling for repeating tasks, backoff strategies, and time-based operations"
+---
+
+# Module 13: Scheduling Patterns - From Simple Repetition to Complex Schedules
+
+**Status**: In Development  
+**Level**: Intermediate to Advanced  
+**Focus**: Master Effect Scheduling for repeating operations, backoff strategies, and time-based task coordination
+
+---
+
+## 🎯 Module Overview
+
+This module takes you from basic repetition to building sophisticated scheduling strategies. You'll learn how to:
+
+- Repeat effects on fixed intervals
+- Implement exponential backoff for retries
+- Schedule tasks with cron expressions
+- Combine multiple schedules with custom logic
+- Handle timing concerns in concurrent systems
+- Build resilient retry strategies
+- Coordinate time-based operations
+
+---
+
+## 📍 Stage 1: The Foundations - Why Scheduling Matters
+
+Learn why timing is critical and how Schedule abstracts timing concerns.
+
+### Conceptual Understanding
+
+- **1. Time in Distributed Systems** `(Intermediate)`
+  - 🟣 Why scheduling matters in concurrent systems
+  - 🟣 Schedule as an abstraction over time
+  - 🟣 Determinism in testing with Schedule
+
+- **2. Schedule Anatomy** `(Intermediate)`
+  - 🟣 How schedules represent timing
+  - 🟣 Recurrence vs. duration-based schedules
+  - 🟣 Decision trees in schedule evaluation
+
+- **3. Built-in Schedule Basics** `(Intermediate)`
+  - 🟣 `Schedule.recurs` for fixed repetitions
+  - 🟣 `Schedule.forever` for infinite repetition
+  - 🟣 `Schedule.once` for single execution
+
+---
+
+## 📍 Stage 2: Repetition Fundamentals - Repeating Effects
+
+Learn core patterns for repeating operations.
+
+### Fixed Interval Repetition
+
+- **4. Repeat an Effect on a Fixed Interval** `(Intermediate)`
+  - 🟣 Using `Schedule.fixed` for steady-state operations
+  - 🟣 Configurable delay between repetitions
+  - 🟣 Health checks and polling patterns
+
+- **5. Repeat Effect N Times** `(Intermediate)`
+  - 🟣 Using `Schedule.recurs` for bounded repetition
+  - 🟣 Collecting results from repeated runs
+  - 🟣 When to repeat vs. when to stream
+
+- **6. Repeat Until a Condition is Met** `(Intermediate)`
+  - 🟣 Using `Schedule.until` for conditional repetition
+  - 🟣 Polling with exit conditions
+  - 🟣 Status checking patterns
+
+### Timed Repetition
+
+- **7. Repeat Effect While Result Satisfies Condition** `(Intermediate)`
+  - 🟣 Using `Schedule.whileOutput` for predicate-based repetition
+  - 🟣 Deciding when to stop based on result
+  - 🟣 Exponential search patterns
+
+- **8. Repeat with Jittered Delay** `(Intermediate)`
+  - 🟣 Adding randomness to prevent thundering herd
+  - 🟣 Jitter algorithms (full, equal, decorrelated)
+  - 🟣 When jitter is essential
+
+---
+
+## 📍 Stage 3: Backoff Strategies - Handling Failures
+
+Learn sophisticated retry and backoff patterns.
+
+### Exponential Backoff
+
+- **9. Implement Exponential Backoff for Retries** `(Intermediate)`
+  - 🟣 Using `Schedule.exponential` for failure recovery
+  - 🟣 Tuning initial delay and backoff factor
+  - 🟣 Cap maximum delay to prevent extreme waits
+
+- **10. Linear Backoff with Ceiling** `(Intermediate)`
+  - 🟣 Using `Schedule.linear` for predictable delays
+  - 🟣 When linear beats exponential
+  - 🟣 Composing with caps and maximums
+
+### Advanced Backoff
+
+- **11. Fibonacci Backoff for Microservices** `(Intermediate)`
+  - 🟣 Using Fibonacci sequence for smooth progression
+  - 🟣 Reduced thundering herd vs. exponential
+  - 🟣 Integration patterns in distributed systems
+
+- **12. Backoff with Maximum Total Time** `(Intermediate)`
+  - 🟣 Limiting total retry duration
+  - 🟣 Using `Schedule.elapsed` to bound retries
+  - 🟣 Giving up after reasonable effort
+
+---
+
+## 📍 Stage 4: Time-Based Scheduling - Cron and Calendars
+
+Learn calendar-aware and cron-based scheduling.
+
+### Cron Expressions
+
+- **13. Schedule Tasks with Cron Expressions** `(Intermediate)`
+  - 🟣 Parsing and executing cron patterns
+  - 🟣 Common cron use cases (daily, hourly, weekly)
+  - 🟣 Timezone handling in scheduling
+
+- **14. Schedule Recurring Daily Tasks** `(Intermediate)`
+  - 🟣 Daily cleanup jobs, data exports, reports
+  - 🟣 Handling daylight saving time
+  - 🟣 Skipping execution if system was down
+
+### Calendar-Based Scheduling
+
+- **15. Schedule Based on Calendar Events** `(Intermediate)`
+  - 🟣 Business day vs. weekend logic
+  - 🟣 Holiday calendar integration
+  - 🟣 Month-end and quarter-end operations
+
+- **16. Schedule with Time Zones** `(Intermediate)`
+  - 🟣 Global application scheduling
+  - 🟣 Running at specific times in user timezones
+  - 🟣 DST transitions and edge cases
+
+---
+
+## 📍 Stage 5: Schedule Composition - Combining Schedules
+
+Learn to build complex schedules from simpler pieces.
+
+### Combining Schedules
+
+- **17. Combine Multiple Schedules with OR Logic** `(Intermediate)`
+  - 🟣 Using `Schedule.union` to try alternatives
+  - 🟣 Fallback schedules
+  - 🟣 Racing schedule decisions
+
+- **18. Combine Multiple Schedules with AND Logic** `(Intermediate)`
+  - 🟣 Using `Schedule.intersect` for strict requirements
+  - 🟣 Both conditions must be satisfied
+  - 🟣 Coordinating independent timing rules
+
+### Schedule Transformation
+
+- **19. Modify Schedule Delay Dynamically** `(Intermediate)`
+  - 🟣 Adjusting delays based on context
+  - 🟣 Adaptive scheduling based on load
+  - 🟣 Learning from outcomes
+
+- **20. Reset Schedule State Based on Events** `(Intermediate)`
+  - 🟣 Using `Schedule.resetAfter` to restart backoff
+  - 🟣 Circuit breaker patterns
+  - 🟣 Success-based resets
+
+---
+
+## 📍 Stage 6: Advanced Patterns - Building Sophisticated Schedulers
+
+Master advanced scheduling techniques.
+
+### Complex Retry Logic
+
+- **21. Retry with Different Strategies per Error Type** `(Advanced)`
+  - 🟣 Route to different schedules based on error
+  - 🟣 Permanent vs. transient error handling
+  - 🟣 Custom error classification
+
+- **22. Deadline-Aware Scheduling** `(Advanced)`
+  - 🟣 Retrying only within a deadline
+  - 🟣 Giving up before wasting time
+  - 🟣 Timeout + retry composition
+
+### Load-Aware Scheduling
+
+- **23. Adaptive Scheduling Based on System Load** `(Advanced)`
+  - 🟣 Adjusting frequency based on CPU/memory
+  - 🟣 Backing off when system is stressed
+  - 🟣 Resuming normal schedule on recovery
+
+- **24. Rate Limiting with Scheduling** `(Advanced)`
+  - 🟣 Throttling requests to external APIs
+  - 🟣 Budget-aware scheduling
+  - 🟣 Token bucket algorithms
+
+---
+
+## 📍 Stage 7: Integration - Scheduling in Context
+
+Combine scheduling with other Effect patterns.
+
+### With Services & Layers
+
+- **25. Schedule Recurring Service Operations** `(Advanced)`
+  - 🟣 Long-running background services
+  - 🟣 Scheduled database maintenance
+  - 🟣 Periodic cache refresh
+
+- **26. Compose Scheduled Tasks into Pipelines** `(Advanced)`
+  - 🟣 Building workflows from scheduled operations
+  - 🟣 Coordinating multiple schedules
+  - 🟣 Error propagation in chains
+
+### Testing & Verification
+
+- **27. Test Scheduled Operations Deterministically** `(Advanced)`
+  - 🟣 Using TestClock for deterministic time
+  - 🟣 Advancing time in tests
+  - 🟣 Verifying schedule behavior
+
+- **28. Observe Scheduled Task Execution** `(Advanced)`
+  - 🟣 Logging schedule decisions
+  - 🟣 Metrics for retry attempts
+  - 🟣 Distributed tracing of scheduled tasks
+
+---
+
+## 🎓 Learning Path by Job to be Done
+
+### Job: "Repeat an effect on a fixed interval"
+**Stages 2-3 Focus**
+- Stage 2: Basic repetition patterns
+- Patterns 4-8 address this job
+- Prerequisites: Understanding effects and streams
+
+### Job: "Implement exponential backoff for retries"
+**Stages 3-6 Focus**
+- Stage 3: Backoff strategies
+- Stage 6: Advanced retry logic
+- Patterns 9-12, 21-22 address this job
+- Prerequisites: Error handling basics
+
+### Job: "Schedule tasks with cron expressions"
+**Stages 4-5 Focus**
+- Stage 4: Time-based scheduling
+- Patterns 13-16 address this job
+- Prerequisites: Understanding Duration, DateTime
+
+### Job: "Combine multiple schedules with custom logic"
+**Stages 5-7 Focus**
+- Stage 5: Schedule composition
+- Stage 6: Advanced patterns
+- Patterns 17-24 address this job
+- Prerequisites: Understanding schedule basics
+
+---
+
+## 🔗 Cross-Module References
+
+### Prerequisites (Module 1: Core Concepts)
+- Duration and time concepts
+- Effect composition basics
+- Error handling
+
+### Synergies (Module 6: Concurrency)
+- Fibers and background tasks
+- Concurrent effect execution
+- Resource management
+
+### Building Blocks for (Module 12: Sinks)
+- Retry strategies for sink operations
+- Batching with time windows
+
+---
+
+## ✅ Knowledge Checkpoints
+
+### After Stage 2
+You can:
+- Create fixed-interval repetition
+- Repeat effects conditionally
+- Understand schedule basics
+
+### After Stage 4
+You can:
+- Use cron expressions for scheduling
+- Handle timezones and DST
+- Schedule calendar-based tasks
+
+### After Stage 6
+You can:
+- Implement sophisticated retry strategies
+- Build adaptive schedulers
+- Compose complex scheduling rules
+
+### After Stage 7
+You can:
+- Integrate schedules into services
+- Test schedule behavior deterministically
+- Monitor and observe scheduling
+
+---
+
+## 📊 Pattern Statistics
+
+- **Total Patterns in Module:** 28
+- **Intermediate Patterns:** 20
+- **Advanced Patterns:** 8
+- **Estimated Study Time:** 12-16 hours
+- **Hands-On Coding:** 6-8 hours
+- **Prerequisites:** Module 1 (Core Concepts), Module 6 (Concurrency)
+
+---
+
+## 🎯 Module Goals
+
+By completing this module, you will:
+
+1. ✅ Understand scheduling fundamentals and why it matters
+2. ✅ Implement all four core scheduling jobs
+3. ✅ Build resilient retry strategies with proper backoff
+4. ✅ Work with cron and calendar-based schedules
+5. ✅ Compose complex schedules from simpler pieces
+6. ✅ Test schedule behavior deterministically
+7. ✅ Integrate schedules into production applications
+
+---
+
+**Last Updated:** December 17, 2025  
+**Status:** Roadmap in Development  
+**Next Steps:** Implement pattern templates for each of the 28 patterns
