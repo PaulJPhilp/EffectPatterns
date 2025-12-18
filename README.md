@@ -390,6 +390,8 @@ Schedule and repeat effects with Schedule
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
+| [Retry Failed Operations](./content/published/patterns/scheduling/scheduling-retry-basics.mdx) | 🟢 **Beginner** | Use Effect.retry with Schedule to automatically retry operations that fail. |
+| [Your First Schedule](./content/published/patterns/scheduling/scheduling-hello-world.mdx) | 🟢 **Beginner** | Learn the basics of scheduling in Effect - retry operations and repeat them on intervals. |
 | [Scheduling Pattern 4: Debounce and Throttle Execution](./content/published/patterns/scheduling/scheduling-pattern-debounce-throttle.mdx) | 🟡 **Intermediate** | Use debouncing and throttling to limit how often effects execute, preventing runaway operations and handling rapid event sequences. |
 | [Scheduling Pattern 1: Repeat an Effect on a Fixed Interval](./content/published/patterns/scheduling/scheduling-pattern-repeat-effect-on-fixed-interval.mdx) | 🟡 **Intermediate** | Use Schedule.fixed to repeat an effect at regular intervals, enabling polling, health checks, and periodic background tasks without busy-waiting or manual timing logic. |
 | [Scheduling Pattern 3: Schedule Tasks with Cron Expressions](./content/published/patterns/scheduling/scheduling-pattern-cron-expressions.mdx) | 🟡 **Intermediate** | Use cron expressions to schedule tasks at specific times and intervals, enabling calendar-based scheduling with timezone support. |
@@ -451,6 +453,8 @@ HTTP client patterns with Effect
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
+| [Parse JSON Responses Safely](./content/published/patterns/making-http-requests/http-json-responses.mdx) | 🟢 **Beginner** | Use Effect Schema to validate and parse HTTP JSON responses with type safety. |
+| [Your First HTTP Request](./content/published/patterns/making-http-requests/http-hello-world.mdx) | 🟢 **Beginner** | Learn how to make HTTP requests using Effect's HttpClient with proper error handling. |
 | [Model Dependencies as Services](./content/published/patterns/making-http-requests/model-dependencies-as-services.mdx) | 🟡 **Intermediate** | Abstract external dependencies and capabilities into swappable, testable services using Effect's dependency injection system. |
 | [Create a Testable HTTP Client Service](./content/published/patterns/making-http-requests/create-a-testable-http-client-service.mdx) | 🟡 **Intermediate** | Define an HttpClient service with separate 'Live' and 'Test' layers to enable robust, testable interactions with external APIs. |
 | [Build a Basic HTTP Server](./content/published/patterns/making-http-requests/build-a-basic-http-server.mdx) | 🟠 **Advanced** | Combine Layer, Runtime, and Effect to create a simple, robust HTTP server using Node.js's built-in http module. |
@@ -473,6 +477,8 @@ Logging, tracing, and metrics
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
+| [Debug Effect Programs](./content/published/patterns/observability/observability-debugging.mdx) | 🟢 **Beginner** | Learn techniques for debugging Effect programs using logging, tap, and cause inspection. |
+| [Your First Logs](./content/published/patterns/observability/observability-hello-world.mdx) | 🟢 **Beginner** | Learn the basics of logging in Effect using the built-in structured logging system. |
 | [Instrument and Observe Function Calls with Effect.fn](./content/published/patterns/observability/observability-effect-fn.mdx) | 🟡 **Intermediate** | Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries. |
 | [Leverage Effect's Built-in Structured Logging](./content/published/patterns/observability/observability-structured-logging.mdx) | 🟡 **Intermediate** | Use Effect's built-in logging functions for structured, configurable, and context-aware logging. |
 | [Add Custom Metrics to Your Application](./content/published/patterns/observability/add-custom-metrics.mdx) | 🟡 **Intermediate** | Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators. |
@@ -486,6 +492,8 @@ Debug and profile Effect applications
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
+| [Read Effect Type Errors](./content/published/patterns/tooling-and-debugging/tooling-type-errors.mdx) | 🟢 **Beginner** | Learn how to read and understand Effect's TypeScript error messages. |
+| [Set Up Your Effect Development Environment](./content/published/patterns/tooling-and-debugging/tooling-hello-world.mdx) | 🟢 **Beginner** | Configure your editor and tools for the best Effect development experience. |
 | [Supercharge Your Editor with the Effect LSP](./content/published/patterns/tooling-and-debugging/supercharge-your-editor-with-the-effect-lsp.mdx) | 🟡 **Intermediate** | Install the Effect Language Server (LSP) extension for your editor to get rich, inline type information and enhanced error checking for your Effect code. |
 | [Teach your AI Agents Effect with the MCP Server](./content/published/patterns/tooling-and-debugging/teach-your-ai-agents-effect-with-the-mcp-server.mdx) | 🟠 **Advanced** | Use the Effect MCP server to provide live, contextual information about your application's structure directly to AI coding agents. |
 
