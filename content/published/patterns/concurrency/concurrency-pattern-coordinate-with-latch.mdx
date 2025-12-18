@@ -1,11 +1,11 @@
 ---
-title: "Concurrency Pattern 3: Coordinate Multiple Fibers with Latch"
+title: 'Concurrency Pattern 3: Coordinate Multiple Fibers with Latch'
 id: concurrency-pattern-coordinate-with-latch
 skillLevel: intermediate
 applicationPatternId: concurrency
 summary: >-
-  Use Latch to synchronize multiple fibers, enabling patterns like
-  coordinating N async tasks, fan-out/fan-in, and barrier synchronization.
+  Use Latch to synchronize multiple fibers, enabling patterns like coordinating
+  N async tasks, fan-out/fan-in, and barrier synchronization.
 tags:
   - concurrency
   - latch
@@ -15,13 +15,14 @@ tags:
   - multi-fiber
 rule:
   description: >-
-    Use Latch to coordinate multiple fibers awaiting a common completion
-    signal, enabling fan-out/fan-in and barrier synchronization patterns.
+    Use Latch to coordinate multiple fibers awaiting a common completion signal,
+    enabling fan-out/fan-in and barrier synchronization patterns.
 related:
   - concurrency-pattern-coordinate-with-deferred
   - concurrency-pattern-rate-limit-with-semaphore
   - run-background-tasks-with-fork
 author: effect_website
+lessonOrder: 4
 ---
 
 ## Guideline

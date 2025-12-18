@@ -3,19 +3,21 @@ title: Implement Dead Letter Queues
 id: pipeline-dead-letter-queue
 skillLevel: advanced
 applicationPatternId: building-data-pipelines
-summary: >-
-  Route failed items to a separate queue for later analysis and reprocessing.
+summary: Route failed items to a separate queue for later analysis and reprocessing.
 tags:
   - data-pipelines
   - dead-letter-queue
   - error-handling
   - resilience
 rule:
-  description: Capture failed items with context for debugging and retry instead of losing them.
+  description: >-
+    Capture failed items with context for debugging and retry instead of losing
+    them.
 author: PaulJPhilp
 related:
   - auto-retry
   - process-concurrently
+lessonOrder: 3
 ---
 
 ## Guideline
