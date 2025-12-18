@@ -1,0 +1,162 @@
+---
+id: schema-number-validation
+title: Number Validation and Refinements
+category: primitives
+skill: beginner
+tags:
+  - schema
+  - number
+  - validation
+  - refinements
+---
+
+# Problem
+
+Numbers need constraints: prices must be positive, ages must be integers, percentages must be 0-100. JavaScript's number type accepts any numeric value. You need runtime validation to catch invalid numbers at your system's boundaries.
+
+# Solution
+
+```typescript
+import { Schema } from "effect"
+
+// ============================================
+// BUILT-IN NUMBER REFINEMENTS
+// ============================================
+
+// Positive (> 0)
+const Positive = Schema.Positive
+// ✅ 42   → 42
+// ❌ 0    → ParseError
+// ❌ -5   → ParseError
+
+// Non-negative (>= 0)
+const NonNegative = Schema.NonNegative
+// ✅ 0    → 0
+// ✅ 42   → 42
+// ❌ -5   → ParseError
+
+// Integer (whole number)
+const Int = Schema.Int
+// ✅ 42   → 42
+// ❌ 3.14 → ParseError
+
+// ============================================
+// RANGE CONSTRAINTS
+// ============================================
+
+// Between values (inclusive)
+const Percentage = Schema.Number.pipe(
+  Schema.between(0, 100, {
+    message: () => "Percentage must be 0-100"
+  })
+)
+
+// Greater than
+const OverEighteen = Schema.Number.pipe(
+  Schema.greaterThan(18, {
+    message: () => "Must be over 18"
+  })
+)
+
+// Less than or equal
+const MaxItems = Schema.Number.pipe(
+  Schema.lessThanOrEqualTo(1000)
+)
+
+// ============================================
+// COMBINING REFINEMENTS
+// ============================================
+
+// Positive integer
+const PositiveInt = Schema.Number.pipe(
+  Schema.int(),
+  Schema.positive()
+)
+
+// Valid age
+const Age = Schema.Number.pipe(
+  Schema.int({ message: () => "Age must be a whole number" }),
+  Schema.between(0, 150, { message: () => "Invalid age" })
+)
+
+// Price (positive with 2 decimal places max)
+const Price = Schema.Number.pipe(
+  Schema.positive({ message: () => "Price must be positive" }),
+  Schema.filter(
+    (n) => Number.isFinite(n) && Math.round(n * 100) === n * 100,
+    { message: () => "Price must have at most 2 decimal places" }
+  )
+)
+
+// ============================================
+// SPECIAL NUMBERS
+// ============================================
+
+// Finite only (no Infinity)
+const Finite = Schema.Number.pipe(
+  Schema.finite({ message: () => "Must be a finite number" })
+)
+
+// ============================================
+// USING IN STRUCTS
+// ============================================
+
+const Product = Schema.Struct({
+  name: Schema.String,
+  price: Price,
+  quantity: PositiveInt,
+  discount: Schema.optional(Percentage),
+})
+
+const Order = Schema.Struct({
+  items: Schema.Array(Product),
+  customerAge: Age,
+})
+
+// Decode and validate
+const decode = Schema.decodeUnknownSync(Product)
+
+const validProduct = decode({
+  name: "Widget",
+  price: 29.99,
+  quantity: 5,
+  discount: 10,
+})
+console.log(`✅ ${validProduct.name}: $${validProduct.price}`)
+
+try {
+  decode({
+    name: "Bad Product",
+    price: -10,      // Negative!
+    quantity: 2.5,   // Not integer!
+  })
+} catch {
+  console.log("❌ Validation failed")
+}
+```
+
+# Why This Works
+
+| Refinement | Purpose |
+|------------|---------|
+| **positive** | Must be > 0 |
+| **nonNegative** | Must be >= 0 |
+| **int** | Must be whole number |
+| **between(min, max)** | Inclusive range |
+| **greaterThan/lessThan** | Open bounds |
+| **finite** | Exclude Infinity |
+| **filter** | Custom validation |
+
+# When to Use
+
+- Prices, quantities, counts
+- Ages, percentages, ratings
+- Coordinates, dimensions
+- Any numeric domain constraints
+
+# Related Patterns
+
+- [String Validation](./string-validation.md)
+- [Date Validation](./date-validation.md)
+- [Custom Refinements](./custom-refinements.md)
+

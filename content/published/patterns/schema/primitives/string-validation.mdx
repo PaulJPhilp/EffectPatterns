@@ -1,0 +1,136 @@
+---
+id: schema-string-validation
+title: String Validation and Refinements
+category: primitives
+skill: beginner
+tags:
+  - schema
+  - string
+  - validation
+  - refinements
+---
+
+# Problem
+
+Raw strings need constraints: minimum length for passwords, maximum length for tweets, email format, URL format. Without validation, invalid strings propagate through your system causing errors far from where the bad data entered.
+
+# Solution
+
+```typescript
+import { Schema } from "effect"
+
+// ============================================
+// BUILT-IN STRING REFINEMENTS
+// ============================================
+
+// Non-empty string
+const NonEmpty = Schema.NonEmptyString
+// ✅ "hello" → "hello"
+// ❌ ""      → ParseError
+
+// Trimmed (no leading/trailing whitespace)  
+const Trimmed = Schema.Trimmed
+// ✅ "hello"    → "hello"
+// ❌ "  hello " → ParseError
+
+// Min/max length
+const Username = Schema.String.pipe(
+  Schema.minLength(3),
+  Schema.maxLength(20)
+)
+
+// Exact length
+const ZipCode = Schema.String.pipe(Schema.length(5))
+
+// ============================================
+// PATTERN MATCHING (REGEX)
+// ============================================
+
+const Email = Schema.String.pipe(
+  Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
+    message: () => "Invalid email format"
+  })
+)
+
+const PhoneUS = Schema.String.pipe(
+  Schema.pattern(/^\d{3}-\d{3}-\d{4}$/, {
+    message: () => "Phone must be XXX-XXX-XXXX"
+  })
+)
+
+const Slug = Schema.String.pipe(
+  Schema.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+    message: () => "Slug must be lowercase with hyphens"
+  })
+)
+
+// ============================================
+// COMBINING REFINEMENTS
+// ============================================
+
+const Password = Schema.String.pipe(
+  Schema.minLength(8, { message: () => "Password must be at least 8 characters" }),
+  Schema.maxLength(100),
+  Schema.pattern(/[A-Z]/, { message: () => "Must contain uppercase letter" }),
+  Schema.pattern(/[a-z]/, { message: () => "Must contain lowercase letter" }),
+  Schema.pattern(/[0-9]/, { message: () => "Must contain a number" })
+)
+
+// ============================================
+// USING IN STRUCTS
+// ============================================
+
+const UserRegistration = Schema.Struct({
+  username: Username,
+  email: Email,
+  password: Password,
+  phone: Schema.optional(PhoneUS),
+})
+
+// Decode and validate
+const decode = Schema.decodeUnknownSync(UserRegistration)
+
+// Valid input
+const validUser = decode({
+  username: "alice123",
+  email: "alice@example.com",
+  password: "SecurePass1",
+})
+console.log("✅ Valid:", validUser.username)
+
+// Invalid input - shows specific error
+try {
+  decode({
+    username: "ab",  // Too short
+    email: "not-an-email",
+    password: "weak",
+  })
+} catch (error) {
+  console.log("❌ Validation failed")
+}
+```
+
+# Why This Works
+
+| Refinement | Purpose |
+|------------|---------|
+| **minLength/maxLength** | Constrain string length |
+| **length** | Exact length requirement |
+| **pattern** | Match regular expression |
+| **NonEmptyString** | Reject empty strings |
+| **Trimmed** | Reject strings with whitespace padding |
+| **Chaining (.pipe)** | Combine multiple constraints |
+
+# When to Use
+
+- Usernames, passwords, emails
+- Phone numbers, zip codes
+- URLs, slugs, identifiers
+- Any string with format requirements
+
+# Related Patterns
+
+- [Number Validation](./number-validation.md)
+- [Date Validation](./date-validation.md)
+- [Custom Error Messages](../error-handling/custom-messages.md)
+

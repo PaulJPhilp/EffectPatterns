@@ -1,0 +1,160 @@
+---
+id: schema-enums-literals
+title: Enums and Literal Types
+category: primitives
+skill: beginner
+tags:
+  - schema
+  - enum
+  - literal
+  - constants
+---
+
+# Problem
+
+Some fields only accept specific values: status is "active" or "inactive", role is "admin", "user", or "guest". Using Schema.String allows any string, letting invalid values slip through. You need to restrict fields to exact allowed values.
+
+# Solution
+
+```typescript
+import { Schema } from "effect"
+
+// ============================================
+// SINGLE LITERAL
+// ============================================
+
+// Exact value match
+const Active = Schema.Literal("active")
+// ✅ "active" → "active"
+// ❌ "Active" → ParseError
+// ❌ "inactive" → ParseError
+
+// ============================================
+// UNION OF LITERALS (ENUM-LIKE)
+// ============================================
+
+// Status enum
+const Status = Schema.Literal("active", "inactive", "pending")
+type Status = typeof Status.Type  // "active" | "inactive" | "pending"
+
+// Role enum
+const Role = Schema.Literal("admin", "user", "guest")
+type Role = typeof Role.Type  // "admin" | "user" | "guest"
+
+// HTTP methods
+const HttpMethod = Schema.Literal("GET", "POST", "PUT", "DELETE", "PATCH")
+type HttpMethod = typeof HttpMethod.Type
+
+// ============================================
+// NUMERIC LITERALS
+// ============================================
+
+// HTTP status codes
+const SuccessCode = Schema.Literal(200, 201, 204)
+const ErrorCode = Schema.Literal(400, 401, 403, 404, 500)
+
+// Priority levels
+const Priority = Schema.Literal(1, 2, 3)
+type Priority = typeof Priority.Type  // 1 | 2 | 3
+
+// ============================================
+// BOOLEAN AS LITERAL
+// ============================================
+
+const AlwaysTrue = Schema.Literal(true)
+const AlwaysFalse = Schema.Literal(false)
+
+// ============================================
+// USING IN STRUCTS
+// ============================================
+
+const User = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  status: Status,
+  role: Role,
+})
+
+const Task = Schema.Struct({
+  title: Schema.String,
+  priority: Priority,
+  completed: Schema.Boolean,
+})
+
+const ApiRequest = Schema.Struct({
+  method: HttpMethod,
+  path: Schema.String,
+  body: Schema.optional(Schema.Unknown),
+})
+
+// ============================================
+// DEMO
+// ============================================
+
+const decodeUser = Schema.decodeUnknownSync(User)
+const decodeTask = Schema.decodeUnknownSync(Task)
+
+// Valid user
+const user = decodeUser({
+  id: "user_123",
+  name: "Alice",
+  status: "active",
+  role: "admin",
+})
+console.log(`✅ User: ${user.name} (${user.role})`)
+
+// Valid task
+const task = decodeTask({
+  title: "Deploy to prod",
+  priority: 1,
+  completed: false,
+})
+console.log(`✅ Task: ${task.title} [P${task.priority}]`)
+
+// Invalid - wrong status value
+try {
+  decodeUser({
+    id: "user_456",
+    name: "Bob",
+    status: "enabled",  // Not "active" | "inactive" | "pending"
+    role: "user",
+  })
+} catch {
+  console.log("❌ Invalid status value")
+}
+
+// Invalid - wrong priority
+try {
+  decodeTask({
+    title: "Low priority",
+    priority: 5,  // Not 1 | 2 | 3
+    completed: false,
+  })
+} catch {
+  console.log("❌ Invalid priority value")
+}
+```
+
+# Why This Works
+
+| Schema | Purpose |
+|--------|---------|
+| **Literal("a")** | Exact single value |
+| **Literal("a", "b", "c")** | Union of exact values |
+| **typeof X.Type** | Extract TypeScript union type |
+| **Literals with numbers** | Numeric enums |
+
+# When to Use
+
+- Status fields (active/inactive/pending)
+- Role-based access (admin/user/guest)
+- HTTP methods, status codes
+- Priority levels, categories
+- Any fixed set of allowed values
+
+# Related Patterns
+
+- [Basic Unions](../unions/basic-unions.md)
+- [Discriminated Unions](../unions/discriminated-unions.md)
+- [Exhaustive Matching](../unions/exhaustive-matching.md)
+
