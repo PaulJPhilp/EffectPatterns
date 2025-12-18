@@ -1,0 +1,150 @@
+---
+title: "Retry a Failed Operation with Effect.retry"
+id: getting-started-retry-on-failure
+skillLevel: beginner
+useCase: getting-started
+summary: >-
+  Use Effect.retry with a Schedule to automatically retry failed operations
+  with customizable delays and limits.
+tags:
+  - getting-started
+  - retry
+  - schedule
+  - error-recovery
+  - beginner
+rule:
+  description: Retry failed operations with Effect.retry.
+related:
+  - getting-started-handle-errors
+  - control-repetition-with-schedule
+  - scheduling-pattern-exponential-backoff
+author: Paul Philp
+---
+
+# Retry a Failed Operation with Effect.retry
+
+## Guideline
+
+Use `Effect.retry` to automatically retry an Effect that fails. Combine it
+with a `Schedule` to control how many times to retry and how long to wait
+between attempts.
+
+## Rationale
+
+Network requests fail. Databases time out. Services go down temporarily.
+Instead of failing immediately, you often want to retry a few times.
+Effect makes this a one-liner.
+
+## Simple Retry
+
+```typescript
+import { Effect, Schedule } from "effect";
+
+// An operation that might fail
+const fetchData = Effect.tryPromise({
+  try: () => fetch("https://api.example.com/data"),
+  catch: () => new Error("Network error"),
+});
+
+// Retry up to 3 times
+const withRetry = Effect.retry(fetchData, Schedule.recurs(3));
+```
+
+## Retry with Delay
+
+```typescript
+import { Effect, Schedule } from "effect";
+
+const unreliableOperation = Effect.gen(function* () {
+  const random = Math.random();
+  if (random < 0.7) {
+    return yield* Effect.fail("Random failure");
+  }
+  return "Success!";
+});
+
+// Retry up to 3 times, waiting 1 second between attempts
+const withDelay = Effect.retry(
+  unreliableOperation,
+  Schedule.recurs(3).pipe(Schedule.addDelay(() => "1 second"))
+);
+```
+
+## Common Retry Patterns
+
+```typescript
+import { Effect, Schedule } from "effect";
+
+const operation = Effect.fail("temporary error");
+
+// Retry 5 times immediately
+const quick = Effect.retry(operation, Schedule.recurs(5));
+
+// Retry 3 times with 1 second between
+const spaced = Effect.retry(
+  operation, 
+  Schedule.spaced("1 second").pipe(Schedule.intersect(Schedule.recurs(3)))
+);
+
+// Retry with exponential backoff (1s, 2s, 4s, 8s...)
+const exponential = Effect.retry(
+  operation,
+  Schedule.exponential("1 second").pipe(Schedule.intersect(Schedule.recurs(5)))
+);
+```
+
+## Good Example: Retrying an API Call
+
+```typescript
+import { Effect, Schedule, pipe } from "effect";
+
+class ApiError {
+  readonly _tag = "ApiError";
+  constructor(readonly status: number) {}
+}
+
+const fetchUserData = (userId: string) =>
+  Effect.tryPromise({
+    try: async () => {
+      const response = await fetch(`/api/users/${userId}`);
+      if (!response.ok) throw new ApiError(response.status);
+      return response.json();
+    },
+    catch: (error) => error as ApiError,
+  });
+
+// Retry up to 3 times with 500ms between attempts
+const fetchWithRetry = (userId: string) =>
+  pipe(
+    fetchUserData(userId),
+    Effect.retry(
+      Schedule.recurs(3).pipe(Schedule.addDelay(() => "500 millis"))
+    ),
+    Effect.catchAll((error) =>
+      Effect.succeed({ error: `Failed after retries: ${error._tag}` })
+    )
+  );
+```
+
+## Quick Reference
+
+| Schedule | Behavior |
+|----------|----------|
+| `Schedule.recurs(3)` | Retry 3 times immediately |
+| `Schedule.spaced("1 second")` | Retry forever with 1s delay |
+| `Schedule.exponential("100 millis")` | Exponential backoff |
+| `Schedule.forever` | Retry indefinitely |
+
+## Key Points
+
+1. **Effect.retry** takes an Effect and a Schedule
+2. **Schedule controls** the retry timing and count
+3. **Combine schedules** with `.pipe()` for complex behavior
+4. **Still need error handling** - retries might all fail
+
+## What's Next?
+
+- Learn exponential backoff for production systems
+- Learn Schedule combinators for complex retry logic
+- Learn about circuit breakers for failing services
+
