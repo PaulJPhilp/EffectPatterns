@@ -152,9 +152,12 @@ Acquire and release resources safely with Scope
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
 | [Safely Bracket Resource Usage with `acquireRelease`](./content/published/patterns/resource-management/safely-bracket-resource-usage.mdx) | 🟢 **Beginner** | Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur. |
+| [Pool Resources for Reuse](./content/published/patterns/resource-management/resource-pooling.mdx) | 🟡 **Intermediate** | Create and manage a pool of reusable resources like database connections or workers. |
 | [Create a Service Layer from a Managed Resource](./content/published/patterns/resource-management/scoped-service-layer.mdx) | 🟡 **Intermediate** | Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service. |
 | [Compose Resource Lifecycles with `Layer.merge`](./content/published/patterns/resource-management/compose-scoped-layers.mdx) | 🟡 **Intermediate** | Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order. |
+| [Handle Resource Timeouts](./content/published/patterns/resource-management/resource-timeouts.mdx) | 🟡 **Intermediate** | Set timeouts on resource acquisition and usage to prevent hanging operations. |
 | [Manually Manage Lifecycles with `Scope`](./content/published/patterns/resource-management/manual-scope-management.mdx) | 🟠 **Advanced** | Use `Scope` directly to manage complex resource lifecycles or when building custom layers. |
+| [Manage Hierarchical Resources](./content/published/patterns/resource-management/resource-hierarchies.mdx) | 🟠 **Advanced** | Manage parent-child resource relationships where children must be released before parents. |
 | [Create a Managed Runtime for Scoped Resources](./content/published/patterns/resource-management/create-managed-runtime-for-scoped-resources.mdx) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
 
 ## Concurrency
@@ -427,10 +430,15 @@ Build HTTP APIs and services
 | [Send a JSON Response](./content/published/patterns/building-apis/send-json-response.mdx) | 🟢 **Beginner** | Create and send a structured JSON response with the correct headers and status code. |
 | [Extract Path Parameters](./content/published/patterns/building-apis/extract-path-parameters.mdx) | 🟢 **Beginner** | Capture and use dynamic segments from a request URL, such as a resource ID. |
 | [Create a Basic HTTP Server](./content/published/patterns/building-apis/launch-http-server.mdx) | 🟢 **Beginner** | Launch a simple, effect-native HTTP server to respond to incoming requests. |
+| [Add Rate Limiting to APIs](./content/published/patterns/building-apis/api-rate-limiting.mdx) | 🟡 **Intermediate** | Protect your API from abuse by limiting request rates per client. |
 | [Validate Request Body](./content/published/patterns/building-apis/validate-request-body.mdx) | 🟡 **Intermediate** | Safely parse and validate an incoming JSON request body against a predefined Schema. |
 | [Provide Dependencies to Routes](./content/published/patterns/building-apis/provide-dependencies-to-routes.mdx) | 🟡 **Intermediate** | Inject services like database connections into HTTP route handlers using Layer and Effect.Service. |
 | [Handle API Errors](./content/published/patterns/building-apis/handle-api-errors.mdx) | 🟡 **Intermediate** | Translate application-specific errors from the Effect failure channel into meaningful HTTP error responses. |
+| [Compose API Middleware](./content/published/patterns/building-apis/api-middleware.mdx) | 🟡 **Intermediate** | Build reusable middleware for logging, authentication, validation, and more. |
+| [Configure CORS for APIs](./content/published/patterns/building-apis/api-cors.mdx) | 🟡 **Intermediate** | Enable Cross-Origin Resource Sharing to allow browser clients from different domains. |
+| [Implement API Authentication](./content/published/patterns/building-apis/api-authentication.mdx) | 🟡 **Intermediate** | Add JWT or session-based authentication to protect your API endpoints. |
 | [Make an Outgoing HTTP Client Request](./content/published/patterns/building-apis/make-http-client-request.mdx) | 🟡 **Intermediate** | Use the built-in Effect HTTP client to make safe and composable requests to external services from within your API. |
+| [Generate OpenAPI Documentation](./content/published/patterns/building-apis/api-openapi.mdx) | 🟠 **Advanced** | Auto-generate OpenAPI/Swagger documentation from your Effect HTTP API definitions. |
 
 ## Building Data Pipelines
 Process and transform data at scale
