@@ -1,0 +1,177 @@
+---
+title: Test Effects with Services
+id: testing-with-services
+skillLevel: beginner
+applicationPatternId: testing
+summary: >-
+  Learn how to test Effect programs that depend on services by providing test implementations.
+tags:
+  - testing
+  - services
+  - dependency-injection
+  - getting-started
+rule:
+  description: Provide test implementations of services to make Effect programs testable.
+author: PaulJPhilp
+related:
+  - testing-hello-world
+  - testing-mock-dependencies
+---
+
+## Guideline
+
+When testing Effects that require services, provide test implementations using `Effect.provideService` or test layers.
+
+---
+
+## Rationale
+
+Effect's service pattern makes testing easy:
+
+1. **Declare dependencies** - Effects specify what they need
+2. **Inject test doubles** - Provide fake implementations for tests
+3. **No mocking libraries** - Just provide different service implementations
+4. **Type-safe** - Compiler ensures you provide all dependencies
+
+---
+
+## Good Example
+
+```typescript
+import { describe, it, expect } from "vitest"
+import { Effect, Context } from "effect"
+
+// ============================================
+// 1. Define a service
+// ============================================
+
+class UserRepository extends Context.Tag("UserRepository")<
+  UserRepository,
+  {
+    readonly findById: (id: string) => Effect.Effect<User | null>
+    readonly save: (user: User) => Effect.Effect<void>
+  }
+>() {}
+
+interface User {
+  id: string
+  name: string
+  email: string
+}
+
+// ============================================
+// 2. Code that uses the service
+// ============================================
+
+const getUser = (id: string) =>
+  Effect.gen(function* () {
+    const repo = yield* UserRepository
+    const user = yield* repo.findById(id)
+    
+    if (!user) {
+      return yield* Effect.fail(new Error(`User ${id} not found`))
+    }
+    
+    return user
+  })
+
+const createUser = (name: string, email: string) =>
+  Effect.gen(function* () {
+    const repo = yield* UserRepository
+    
+    const user: User = {
+      id: crypto.randomUUID(),
+      name,
+      email,
+    }
+    
+    yield* repo.save(user)
+    return user
+  })
+
+// ============================================
+// 3. Create a test implementation
+// ============================================
+
+const makeTestUserRepository = (initialUsers: User[] = []) => {
+  const users = new Map(initialUsers.map(u => [u.id, u]))
+  
+  return UserRepository.of({
+    findById: (id) => Effect.succeed(users.get(id) ?? null),
+    save: (user) => Effect.sync(() => { users.set(user.id, user) }),
+  })
+}
+
+// ============================================
+// 4. Write tests
+// ============================================
+
+describe("User Service Tests", () => {
+  it("should find an existing user", async () => {
+    const testUser: User = {
+      id: "123",
+      name: "Alice",
+      email: "alice@example.com",
+    }
+    
+    const testRepo = makeTestUserRepository([testUser])
+    
+    const result = await Effect.runPromise(
+      getUser("123").pipe(
+        Effect.provideService(UserRepository, testRepo)
+      )
+    )
+    
+    expect(result).toEqual(testUser)
+  })
+
+  it("should fail when user not found", async () => {
+    const testRepo = makeTestUserRepository([])
+    
+    await expect(
+      Effect.runPromise(
+        getUser("999").pipe(
+          Effect.provideService(UserRepository, testRepo)
+        )
+      )
+    ).rejects.toThrow("User 999 not found")
+  })
+
+  it("should create and save a user", async () => {
+    const savedUsers: User[] = []
+    
+    const trackingRepo = UserRepository.of({
+      findById: () => Effect.succeed(null),
+      save: (user) => Effect.sync(() => { savedUsers.push(user) }),
+    })
+    
+    const result = await Effect.runPromise(
+      createUser("Bob", "bob@example.com").pipe(
+        Effect.provideService(UserRepository, trackingRepo)
+      )
+    )
+    
+    expect(result.name).toBe("Bob")
+    expect(result.email).toBe("bob@example.com")
+    expect(savedUsers).toHaveLength(1)
+    expect(savedUsers[0].name).toBe("Bob")
+  })
+})
+```
+
+## Test Double Strategies
+
+| Strategy | When to Use |
+|----------|-------------|
+| **In-memory store** | Testing data operations |
+| **Tracking wrapper** | Verify methods were called |
+| **Stub returns** | Fixed responses for specific scenarios |
+| **Failing service** | Test error handling paths |
+
+## Key Points
+
+1. **Services are interfaces** - Easy to provide alternative implementations
+2. **No global mocks** - Each test provides its own dependencies
+3. **Type-safe** - Compiler ensures test doubles match service interface
+4. **Isolated tests** - Each test has its own service instance
+

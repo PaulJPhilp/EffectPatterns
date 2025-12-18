@@ -1,0 +1,140 @@
+---
+title: Your First Domain Model
+id: domain-modeling-hello-world
+skillLevel: beginner
+applicationPatternId: domain-modeling
+summary: >-
+  Create a simple domain model using TypeScript interfaces and Effect to represent your business entities.
+tags:
+  - domain-modeling
+  - getting-started
+  - types
+  - interfaces
+rule:
+  description: Start domain modeling by defining clear interfaces for your business entities.
+author: PaulJPhilp
+related:
+  - domain-modeling-with-brand
+  - domain-modeling-tagged-errors
+---
+
+## Guideline
+
+Start by defining TypeScript interfaces that represent your business entities. Use descriptive names that match your domain language.
+
+---
+
+## Rationale
+
+Good domain modeling:
+
+1. **Clarifies intent** - Types document what data means
+2. **Prevents errors** - Compiler catches wrong data usage
+3. **Enables tooling** - IDE autocompletion and refactoring
+4. **Communicates** - Code becomes documentation
+
+---
+
+## Good Example
+
+```typescript
+import { Effect } from "effect"
+
+// ============================================
+// 1. Define domain entities as interfaces
+// ============================================
+
+interface User {
+  readonly id: string
+  readonly email: string
+  readonly name: string
+  readonly createdAt: Date
+}
+
+interface Product {
+  readonly sku: string
+  readonly name: string
+  readonly price: number
+  readonly inStock: boolean
+}
+
+interface Order {
+  readonly id: string
+  readonly userId: string
+  readonly items: ReadonlyArray<OrderItem>
+  readonly total: number
+  readonly status: OrderStatus
+}
+
+interface OrderItem {
+  readonly productSku: string
+  readonly quantity: number
+  readonly unitPrice: number
+}
+
+type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered"
+
+// ============================================
+// 2. Create domain functions
+// ============================================
+
+const createUser = (email: string, name: string): User => ({
+  id: crypto.randomUUID(),
+  email,
+  name,
+  createdAt: new Date(),
+})
+
+const calculateOrderTotal = (items: ReadonlyArray<OrderItem>): number =>
+  items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+
+// ============================================
+// 3. Use in Effect programs
+// ============================================
+
+const program = Effect.gen(function* () {
+  const user = createUser("alice@example.com", "Alice")
+  yield* Effect.log(`Created user: ${user.name}`)
+
+  const items: OrderItem[] = [
+    { productSku: "WIDGET-001", quantity: 2, unitPrice: 29.99 },
+    { productSku: "GADGET-002", quantity: 1, unitPrice: 49.99 },
+  ]
+
+  const order: Order = {
+    id: crypto.randomUUID(),
+    userId: user.id,
+    items,
+    total: calculateOrderTotal(items),
+    status: "pending",
+  }
+
+  yield* Effect.log(`Order total: $${order.total.toFixed(2)}`)
+  return order
+})
+
+Effect.runPromise(program)
+```
+
+## Key Concepts
+
+| Concept | Explanation |
+|---------|-------------|
+| **Interfaces** | Define the shape of your domain entities |
+| **readonly** | Prevent accidental mutation |
+| **Union types** | Model finite states (OrderStatus) |
+| **Pure functions** | Create and transform entities |
+
+## Best Practices
+
+1. **Use `readonly`** - Immutable by default
+2. **Descriptive names** - Match your business language
+3. **Small interfaces** - Single responsibility
+4. **Union types** - For finite states
+
+## Related Patterns
+
+- [Branded Types](./brand-model-domain-type.mdx)
+- [Tagged Errors](./define-tagged-errors.mdx)
+- [Option for Missing Values](./model-optional-values-with-option.mdx)
+
