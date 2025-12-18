@@ -53,12 +53,12 @@ First steps with Effect - hello world, basic concepts
 
 | Pattern | Skill Level | Summary |
 | :--- | :--- | :--- |
-| [Retry a Failed Operation with Effect.retry](./content/published/patterns/getting-started/getting-started-retry-on-failure.mdx) | 🟢 **Beginner** | Use Effect.retry with a Schedule to automatically retry failed operations with customizable delays and limits. |
+| [Why Effect? Comparing Effect to Promise](./content/published/patterns/getting-started/getting-started-effect-vs-promise.mdx) | 🟢 **Beginner** | Understand what Effect gives you that Promise doesn't: type-safe errors, dependency injection, and composability. |
 | [Hello World: Your First Effect](./content/published/patterns/getting-started/getting-started-hello-world.mdx) | 🟢 **Beginner** | Create and run your very first Effect program using Effect.succeed and Effect.runSync. |
 | [Transform Values with Effect.map](./content/published/patterns/getting-started/getting-started-transform-with-map.mdx) | 🟢 **Beginner** | Use Effect.map to transform the success value of an Effect without changing its error or dependency types. |
 | [Handle Your First Error with Effect.fail and catchAll](./content/published/patterns/getting-started/getting-started-handle-errors.mdx) | 🟢 **Beginner** | Learn how to create Effects that can fail and how to recover from those failures using Effect.fail and Effect.catchAll. |
 | [Run Multiple Effects in Parallel with Effect.all](./content/published/patterns/getting-started/getting-started-run-in-parallel.mdx) | 🟢 **Beginner** | Use Effect.all to run multiple Effects at the same time and collect all their results. |
-| [Why Effect? Comparing Effect to Promise](./content/published/patterns/getting-started/getting-started-effect-vs-promise.mdx) | 🟢 **Beginner** | Understand what Effect gives you that Promise doesn't: type-safe errors, dependency injection, and composability. |
+| [Retry a Failed Operation with Effect.retry](./content/published/patterns/getting-started/getting-started-retry-on-failure.mdx) | 🟢 **Beginner** | Use Effect.retry with a Schedule to automatically retry failed operations with customizable delays and limits. |
 
 ## Core Concepts
 Fundamental Effect patterns - generators, pipes, dependencies
