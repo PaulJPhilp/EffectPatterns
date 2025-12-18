@@ -32,19 +32,21 @@ Application Pattern  ──►  Job  ──►  Effect Pattern
 | `description` | string | ✓ | What this application pattern covers |
 | `learningOrder` | number | ✓ | Suggested order for learning (1 = first) |
 | `effectModule` | string | | Primary Effect module (Schema, Stream, etc.) |
-| `hasGettingStarted` | boolean | | Whether beginner patterns exist |
-| `jobsDocument` | string | | Path to JTBD markdown file |
+| `subPatterns` | string[] | | Sub-directories for this AP |
+
+**Source:** `data/application-patterns.json`
 
 **Example:**
 
-```yaml
-id: concurrency
-name: Concurrency
-description: Run effects in parallel, manage fibers, coordinate async work
-learningOrder: 6
-effectModule: Effect
-hasGettingStarted: true
-jobsDocument: docs/CONCURRENCY_JOBS_TO_BE_DONE.md
+```json
+{
+  "id": "concurrency",
+  "name": "Concurrency",
+  "description": "Run effects in parallel, manage fibers, coordinate async work",
+  "learningOrder": 5,
+  "effectModule": "Effect",
+  "subPatterns": ["getting-started", "coordination", "state"]
+}
 ```
 
 ---
@@ -63,6 +65,8 @@ jobsDocument: docs/CONCURRENCY_JOBS_TO_BE_DONE.md
 | `category` | string | | Grouping within the Application Pattern |
 | `status` | enum | ✓ | `covered` \| `partial` \| `gap` |
 | `fulfilledBy` | string[] | | IDs of Effect Patterns that fulfill this job |
+
+**Source:** `docs/*_JOBS_TO_BE_DONE.md` files
 
 **Example:**
 
@@ -88,7 +92,7 @@ fulfilledBy:
 |-----------|------|----------|-------------|
 | `id` | string | ✓ | Unique identifier |
 | `title` | string | ✓ | Human-readable title |
-| `applicationPatternId` | string | ✓ | Parent Application Pattern (via `useCase`) |
+| `applicationPatternId` | string | ✓ | Parent Application Pattern |
 | `skillLevel` | enum | ✓ | `beginner` \| `intermediate` \| `advanced` |
 | `summary` | string | ✓ | Brief description |
 | `tags` | string[] | | Searchable tags |
@@ -97,12 +101,14 @@ fulfilledBy:
 | `author` | string | | Pattern author |
 | `path` | string | ✓ | File path to .mdx file |
 
+**Source:** `.mdx` files in `content/published/patterns/`
+
 **Example:**
 
 ```yaml
 id: concurrency-hello-world
 title: Your First Parallel Operation
-applicationPatternId: concurrency-getting-started
+applicationPatternId: concurrency
 skillLevel: beginner
 summary: Run multiple effects in parallel with Effect.all
 tags: [concurrency, parallel, effect-all, getting-started]
@@ -110,7 +116,7 @@ rule:
   description: Use Effect.all with concurrency option to run independent effects in parallel
 related: [concurrency-understanding-fibers, concurrency-race-timeout]
 author: PaulJPhilp
-path: content/published/patterns/core/concurrency-hello-world.mdx
+path: content/published/patterns/concurrency/getting-started/concurrency-hello-world.mdx
 ```
 
 ---
@@ -148,26 +154,27 @@ path: content/published/patterns/core/concurrency-hello-world.mdx
 
 ## Current Inventory
 
-### Application Patterns (Current)
+### Application Patterns
 
-| ID | Name | Jobs Doc | Effect Patterns | Beginner |
-|----|------|----------|-----------------|----------|
-| `schema` | Schema Validation | ✓ | 77 | 13 |
-| `streams` | Working with Streams | ✓ | 8 | 0 |
-| `streams-getting-started` | Streams Getting Started | ✓ | 4 | 4 |
-| `streams-sinks` | Stream Sinks | ✓ | 6 | 0 |
-| `concurrency` | Concurrency | ✓ | 20 | 0 |
-| `concurrency-getting-started` | Concurrency Getting Started | ✓ | 4 | 4 |
-| `platform` | Platform Operations | ✓ | 6 | 2 |
-| `platform-getting-started` | Platform Getting Started | ✓ | 2 | 2 |
-| `core-concepts` | Core Concepts | | 19 | 10 |
-| `getting-started` | Getting Started | | 6 | 6 |
-| `building-apis` | Building APIs | | 8 | 4 |
-| `building-data-pipelines` | Building Data Pipelines | | 10 | 3 |
-| `domain-modeling` | Domain Modeling | | 10 | 0 |
-| `error-management` | Error Management | | 8 | 0 |
-| `testing` | Testing | | 5 | 0 |
-| `resource-management` | Resource Management | | 5 | 1 |
+| ID | Name | Patterns | Beginner | Jobs Doc |
+|----|------|----------|----------|----------|
+| `getting-started` | Getting Started | 6 | 6 | |
+| `core-concepts` | Core Concepts | 55 | 29 | |
+| `error-management` | Error Management | 18 | 3 | |
+| `resource-management` | Resource Management | 5 | 1 | |
+| `concurrency` | Concurrency | 24 | 4 | ✓ |
+| `streams` | Streams | 18 | 5 | ✓ |
+| `schema` | Schema | 77 | 34 | ✓ |
+| `platform` | Platform | 8 | 4 | ✓ |
+| `scheduling` | Scheduling | 4 | 0 | |
+| `domain-modeling` | Domain Modeling | 12 | 0 | |
+| `building-apis` | Building APIs | 8 | 4 | |
+| `building-data-pipelines` | Building Data Pipelines | 10 | 3 | |
+| `making-http-requests` | Making HTTP Requests | 3 | 0 | |
+| `testing` | Testing | 5 | 0 | |
+| `observability` | Observability | 7 | 0 | |
+| `tooling-and-debugging` | Tooling and Debugging | 2 | 0 | |
+| **Total** | | **262** | **93** | |
 
 ### Jobs Coverage
 
@@ -179,22 +186,26 @@ path: content/published/patterns/core/concurrency-hello-world.mdx
 | Platform | 10 | 10 | 0 |
 | *Others* | TBD | TBD | TBD |
 
-### Effect Patterns by Skill Level
+### Beginner Coverage Gaps
 
-| Skill Level | Count | Percentage |
-|-------------|-------|------------|
-| Beginner | ~50 | ~19% |
-| Intermediate | ~120 | ~46% |
-| Advanced | ~50 | ~19% |
-| Unknown | ~42 | ~16% |
-| **Total** | **262** | 100% |
+| Application Pattern | Patterns | Beginner | Status |
+|---------------------|----------|----------|--------|
+| Domain Modeling | 12 | 0 | ❌ Needs work |
+| Testing | 5 | 0 | ❌ Needs work |
+| Scheduling | 4 | 0 | ❌ Needs work |
+| Observability | 7 | 0 | ❌ Needs work |
+| Making HTTP Requests | 3 | 0 | ❌ Needs work |
+| Tooling and Debugging | 2 | 0 | ❌ Needs work |
 
 ---
 
-## File Structure Mapping
+## File Structure
 
 ```
 Effect Patterns Repository
+│
+├── data/
+│   └── application-patterns.json        # Application Pattern definitions
 │
 ├── docs/
 │   ├── DATA_MODEL.md                    # This file
@@ -203,19 +214,32 @@ Effect Patterns Repository
 │   ├── CONCURRENCY_JOBS_TO_BE_DONE.md  # Jobs for Concurrency AP
 │   └── PLATFORM_JOBS_TO_BE_DONE.md     # Jobs for Platform AP
 │
-├── content/published/patterns/
-│   ├── core/                            # Effect Patterns (core module)
-│   │   ├── concurrency-hello-world.mdx
-│   │   ├── stream-hello-world.mdx
-│   │   └── ...
-│   │
-│   └── schema/                          # Effect Patterns (Schema module)
-│       ├── getting-started/
-│       ├── primitives/
-│       └── ...
-│
-└── data/
-    └── patterns-index.json              # Generated index
+└── content/published/patterns/
+    ├── getting-started/                 # (6 patterns)
+    ├── core-concepts/                   # (55 patterns)
+    ├── error-management/                # (18 patterns)
+    ├── resource-management/             # (5 patterns)
+    ├── concurrency/                     # (24 patterns)
+    │   └── getting-started/
+    ├── streams/                         # (18 patterns)
+    │   ├── getting-started/
+    │   └── sinks/
+    ├── schema/                          # (77 patterns)
+    │   ├── getting-started/
+    │   ├── primitives/
+    │   ├── objects/
+    │   ├── arrays/
+    │   └── ... (16 subdirs)
+    ├── platform/                        # (8 patterns)
+    │   └── getting-started/
+    ├── scheduling/                      # (4 patterns)
+    ├── domain-modeling/                 # (12 patterns)
+    ├── building-apis/                   # (8 patterns)
+    ├── building-data-pipelines/         # (10 patterns)
+    ├── making-http-requests/            # (3 patterns)
+    ├── testing/                         # (5 patterns)
+    ├── observability/                   # (7 patterns)
+    └── tooling-and-debugging/           # (2 patterns)
 ```
 
 ---
@@ -229,8 +253,7 @@ interface ApplicationPattern {
   description: string
   learningOrder: number
   effectModule?: string
-  hasGettingStarted: boolean
-  jobsDocument?: string
+  subPatterns: string[]
 }
 
 interface Job {
@@ -245,7 +268,7 @@ interface Job {
 interface EffectPattern {
   id: string
   title: string
-  applicationPatternId: string  // maps to useCase in frontmatter
+  applicationPatternId: string
   skillLevel: "beginner" | "intermediate" | "advanced"
   summary: string
   tags: string[]
@@ -260,9 +283,8 @@ interface EffectPattern {
 
 ## Future Considerations
 
-1. **Structured Data Files** - Consider moving from markdown JTBD docs to structured YAML/JSON
-2. **Validation** - Add schema validation for pattern frontmatter
-3. **Generated Index** - Auto-generate `data/application-patterns.json` from patterns
-4. **Coverage Reports** - Auto-calculate job coverage from pattern metadata
-5. **Learning Paths** - Define ordered sequences through Application Patterns
-
+1. **Structured Jobs** - Convert JTBD markdown docs to structured YAML/JSON
+2. **Validation** - Add Effect.Schema validation for pattern frontmatter
+3. **Coverage Reports** - Auto-calculate job coverage from pattern metadata
+4. **Learning Paths** - Define ordered sequences through Application Patterns
+5. **API** - Expose patterns via REST/GraphQL API
