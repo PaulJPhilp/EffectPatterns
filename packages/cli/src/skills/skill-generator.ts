@@ -15,7 +15,7 @@ export interface PatternContent {
   id: string;
   title: string;
   skillLevel: 'beginner' | 'intermediate' | 'advanced';
-  useCase: string | string[];
+  applicationPatternId: string;
   summary: string;
   rule?: { description: string };
   goodExample: string;
@@ -74,7 +74,7 @@ export async function readPattern(filePath: string): Promise<PatternContent> {
     id: (data as any).id,
     title: (data as any).title,
     skillLevel: (data as any).skillLevel,
-    useCase: (data as any).useCase,
+    applicationPatternId: (data as any).applicationPatternId,
     summary: (data as any).summary,
     rule: (data as any).rule,
     goodExample: extractSection(markdown, 'Good Example'),
@@ -90,10 +90,9 @@ export async function readPattern(filePath: string): Promise<PatternContent> {
 }
 
 /**
- * Group patterns by category (useCase)
+ * Group patterns by category (applicationPatternId)
  *
  * Normalizes category names to kebab-case for consistency.
- * A pattern can belong to multiple categories.
  */
 export function groupPatternsByCategory(
   patterns: PatternContent[]
@@ -101,22 +100,19 @@ export function groupPatternsByCategory(
   const categoryMap = new Map<string, PatternContent[]>();
 
   for (const pattern of patterns) {
-    const categories = Array.isArray(pattern.useCase)
-      ? pattern.useCase
-      : [pattern.useCase];
+    const category = pattern.applicationPatternId;
+    if (!category) continue;
 
-    for (const category of categories) {
-      // Normalize to kebab-case
-      const normalized = category
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
+    // Normalize to kebab-case
+    const normalized = category
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
 
-      if (!categoryMap.has(normalized)) {
-        categoryMap.set(normalized, []);
-      }
-      categoryMap.get(normalized)!.push(pattern);
+    if (!categoryMap.has(normalized)) {
+      categoryMap.set(normalized, []);
     }
+    categoryMap.get(normalized)!.push(pattern);
   }
 
   return categoryMap;

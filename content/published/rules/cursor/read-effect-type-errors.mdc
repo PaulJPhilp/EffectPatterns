@@ -1,0 +1,17 @@
+description: Effect errors are verbose but structured - learn to extract the key information.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Read Effect Type Errors
+**Rule:** Effect errors are verbose but structured - learn to extract the key information.
+
+**Explanation:**  
+Effect's type system catches many bugs at compile time, but:
+
+1. **Effect types are complex** - Three type parameters
+2. **Errors are nested** - Multiple layers of generics
+3. **Messages are verbose** - TypeScript shows everything
+
+Understanding the pattern makes errors manageable.
+
+---

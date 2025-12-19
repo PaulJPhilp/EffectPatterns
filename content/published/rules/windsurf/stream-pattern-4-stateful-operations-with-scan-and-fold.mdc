@@ -1,0 +1,151 @@
+description: Use scan for stateful element-by-element processing and fold for final aggregation, enabling complex stream analytics without buffering entire stream.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Stream Pattern 4: Stateful Operations with Scan and Fold
+**Rule:** Use scan for stateful element-by-element processing and fold for final aggregation, enabling complex stream analytics without buffering entire stream.
+
+### Example
+This example demonstrates maintaining statistics across a stream of measurements.
+
+```typescript
+import { Stream, Effect, Chunk } from "effect";
+
+interface Measurement {
+  readonly id: number;
+  readonly value: number;
+  readonly timestamp: Date;
+}
+
+interface RunningStats {
+  readonly count: number;
+  readonly sum: number;
+  readonly min: number;
+  readonly max: number;
+  readonly average: number;
+  readonly variance: number;
+  readonly lastValue: number;
+}
+
+// Create stream of measurements
+const createMeasurementStream = (): Stream.Stream<Measurement> =>
+  Stream.fromIterable([
+    { id: 1, value: 10, timestamp: new Date() },
+    { id: 2, value: 20, timestamp: new Date() },
+    { id: 3, value: 15, timestamp: new Date() },
+    { id: 4, value: 25, timestamp: new Date() },
+    { id: 5, value: 30, timestamp: new Date() },
+    { id: 6, value: 22, timestamp: new Date() },
+  ]);
+
+// Initial statistics state
+const initialStats: RunningStats = {
+  count: 0,
+  sum: 0,
+  min: Infinity,
+  max: -Infinity,
+  average: 0,
+  variance: 0,
+  lastValue: 0,
+};
+
+// Reducer: update stats for each measurement
+const updateStats = (
+  stats: RunningStats,
+  measurement: Measurement
+): RunningStats => {
+  const newCount = stats.count + 1;
+  const newSum = stats.sum + measurement.value;
+  const newAverage = newSum / newCount;
+
+  // Calculate variance incrementally
+  const delta = measurement.value - stats.average;
+  const delta2 = measurement.value - newAverage;
+  const newVariance = stats.variance + delta * delta2;
+
+  return {
+    count: newCount,
+    sum: newSum,
+    min: Math.min(stats.min, measurement.value),
+    max: Math.max(stats.max, measurement.value),
+    average: newAverage,
+    variance: newVariance / newCount,
+    lastValue: measurement.value,
+  };
+};
+
+// Main: demonstrate scan with statistics
+const program = Effect.gen(function* () {
+  console.log(`\n[SCAN] Running statistics stream:\n`);
+
+  // Use scan to emit intermediate statistics
+  const statsStream = createMeasurementStream().pipe(
+    Stream.scan(initialStats, (stats, measurement) => {
+      const newStats = updateStats(stats, measurement);
+
+      console.log(
+        `[MEASUREMENT ${measurement.id}] Value: ${measurement.value}`
+      );
+      console.log(
+        `  Count: ${newStats.count}, Avg: ${newStats.average.toFixed(2)}, ` +
+        `Min: ${newStats.min}, Max: ${newStats.max}, ` +
+        `Variance: ${newStats.variance.toFixed(2)}`
+      );
+
+      return newStats;
+    })
+  );
+
+  // Collect all intermediate stats
+  const allStats = yield* statsStream.pipe(Stream.runCollect);
+
+  // Final statistics
+  const finalStats = Chunk.last(allStats);
+
+  if (finalStats._tag === "Some") {
+    console.log(`\n[FINAL STATISTICS]`);
+    console.log(`  Total measurements: ${finalStats.value.count}`);
+    console.log(`  Average: ${finalStats.value.average.toFixed(2)}`);
+    console.log(`  Min: ${finalStats.value.min}`);
+    console.log(`  Max: ${finalStats.value.max}`);
+    console.log(
+      `  Std Dev: ${Math.sqrt(finalStats.value.variance).toFixed(2)}`
+    );
+  }
+
+  // Compare with fold (emit only final result)
+  console.log(`\n[FOLD] Final statistics only:\n`);
+
+  const finalResult = yield* createMeasurementStream().pipe(
+    Stream.fold(initialStats, updateStats),
+    Stream.tap((stats) =>
+      Effect.log(`Final: Count=${stats.count}, Avg=${stats.average.toFixed(2)}`)
+    )
+  );
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+**Explanation:**  
+Processing streams without scan/fold creates issues:
+
+- **Manual state tracking**: Ref or mutable variables outside stream
+- **Lost context**: Hard to correlate intermediate values
+- **Error-prone**: Easy to forget state updates
+- **Testing difficulty**: State spread across code
+
+Scan/fold enable:
+
+- **Declarative state**: State threaded through stream
+- **Intermediate values**: Emit state at each step (scan)
+- **Type-safe**: Accumulator type guaranteed
+- **Composable**: Chain stateful operations
+
+Real-world example: Running average of metrics
+- **Without scan**: Track count and sum manually, calculate average, emit
+- **With scan**: `stream.pipe(Stream.scan(initialState, updateAverage))`
+
+---

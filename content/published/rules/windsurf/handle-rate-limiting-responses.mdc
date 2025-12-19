@@ -1,0 +1,243 @@
+description: Detect 429 responses and automatically retry after the Retry-After period.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Handle Rate Limiting Responses
+**Rule:** Detect 429 responses and automatically retry after the Retry-After period.
+
+### Example
+```typescript
+import { Effect, Schedule, Duration, Data, Ref } from "effect"
+import { HttpClient, HttpClientResponse } from "@effect/platform"
+
+// ============================================
+// 1. Rate limit error type
+// ============================================
+
+class RateLimitedError extends Data.TaggedError("RateLimitedError")<{
+  readonly retryAfter: number
+  readonly limit: number | undefined
+  readonly remaining: number | undefined
+  readonly reset: number | undefined
+}> {}
+
+// ============================================
+// 2. Parse rate limit headers
+// ============================================
+
+interface RateLimitInfo {
+  readonly retryAfter: number
+  readonly limit?: number
+  readonly remaining?: number
+  readonly reset?: number
+}
+
+const parseRateLimitHeaders = (headers: Record<string, string>): RateLimitInfo => {
+  // Parse Retry-After (seconds or date)
+  const retryAfterHeader = headers["retry-after"]
+  let retryAfter = 60  // Default 60 seconds
+
+  if (retryAfterHeader) {
+    const parsed = parseInt(retryAfterHeader, 10)
+    if (!isNaN(parsed)) {
+      retryAfter = parsed
+    } else {
+      // Try parsing as date
+      const date = Date.parse(retryAfterHeader)
+      if (!isNaN(date)) {
+        retryAfter = Math.max(0, Math.ceil((date - Date.now()) / 1000))
+      }
+    }
+  }
+
+  return {
+    retryAfter,
+    limit: headers["x-ratelimit-limit"] ? parseInt(headers["x-ratelimit-limit"], 10) : undefined,
+    remaining: headers["x-ratelimit-remaining"] ? parseInt(headers["x-ratelimit-remaining"], 10) : undefined,
+    reset: headers["x-ratelimit-reset"] ? parseInt(headers["x-ratelimit-reset"], 10) : undefined,
+  }
+}
+
+// ============================================
+// 3. HTTP client with rate limit handling
+// ============================================
+
+const makeRateLimitAwareClient = Effect.gen(function* () {
+  const httpClient = yield* HttpClient.HttpClient
+
+  return {
+    get: <T>(url: string) =>
+      Effect.gen(function* () {
+        const response = yield* httpClient.get(url)
+
+        if (response.status === 429) {
+          const rateLimitInfo = parseRateLimitHeaders(response.headers)
+
+          yield* Effect.log(
+            `Rate limited. Retry after ${rateLimitInfo.retryAfter}s`
+          )
+
+          return yield* Effect.fail(new RateLimitedError({
+            retryAfter: rateLimitInfo.retryAfter,
+            limit: rateLimitInfo.limit,
+            remaining: rateLimitInfo.remaining,
+            reset: rateLimitInfo.reset,
+          }))
+        }
+
+        return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+      }).pipe(
+        Effect.retry({
+          schedule: Schedule.recurWhile<RateLimitedError>(
+            (e) => e._tag === "RateLimitedError"
+          ).pipe(
+            Schedule.intersect(Schedule.recurs(3)),
+            Schedule.delayed((_, error) =>
+              Duration.seconds(error.retryAfter + 1)  // Add 1s buffer
+            )
+          ),
+          while: (error) => error._tag === "RateLimitedError",
+        })
+      ),
+  }
+})
+
+// ============================================
+// 4. Proactive rate limiting (client-side)
+// ============================================
+
+interface RateLimiter {
+  readonly acquire: () => Effect.Effect<void>
+  readonly release: () => Effect.Effect<void>
+}
+
+const makeClientRateLimiter = (requestsPerSecond: number) =>
+  Effect.gen(function* () {
+    const tokens = yield* Ref.make(requestsPerSecond)
+    const interval = 1000 / requestsPerSecond
+
+    // Refill tokens periodically
+    yield* Effect.fork(
+      Effect.forever(
+        Effect.gen(function* () {
+          yield* Effect.sleep(Duration.millis(interval))
+          yield* Ref.update(tokens, (n) => Math.min(n + 1, requestsPerSecond))
+        })
+      )
+    )
+
+    const limiter: RateLimiter = {
+      acquire: () =>
+        Effect.gen(function* () {
+          let acquired = false
+          while (!acquired) {
+            const current = yield* Ref.get(tokens)
+            if (current > 0) {
+              yield* Ref.update(tokens, (n) => n - 1)
+              acquired = true
+            } else {
+              yield* Effect.sleep(Duration.millis(interval))
+            }
+          }
+        }),
+
+      release: () => Ref.update(tokens, (n) => Math.min(n + 1, requestsPerSecond)),
+    }
+
+    return limiter
+  })
+
+// ============================================
+// 5. Combined client
+// ============================================
+
+const makeRobustHttpClient = (requestsPerSecond: number) =>
+  Effect.gen(function* () {
+    const httpClient = yield* HttpClient.HttpClient
+    const rateLimiter = yield* makeClientRateLimiter(requestsPerSecond)
+
+    return {
+      get: <T>(url: string) =>
+        Effect.gen(function* () {
+          // Wait for rate limiter token
+          yield* rateLimiter.acquire()
+
+          const response = yield* httpClient.get(url)
+
+          if (response.status === 429) {
+            const info = parseRateLimitHeaders(response.headers)
+            yield* Effect.log(`Server rate limit hit, waiting ${info.retryAfter}s`)
+            yield* Effect.sleep(Duration.seconds(info.retryAfter))
+            return yield* Effect.fail(new Error("Rate limited"))
+          }
+
+          return yield* HttpClientResponse.json(response) as Effect.Effect<T>
+        }).pipe(
+          Effect.retry(
+            Schedule.exponential("1 second").pipe(
+              Schedule.intersect(Schedule.recurs(3))
+            )
+          )
+        ),
+    }
+  })
+
+// ============================================
+// 6. Batch requests to stay under limits
+// ============================================
+
+const batchRequests = <T>(
+  urls: string[],
+  requestsPerSecond: number
+) =>
+  Effect.gen(function* () {
+    const httpClient = yield* HttpClient.HttpClient
+    const results: T[] = []
+    const interval = 1000 / requestsPerSecond
+
+    for (const url of urls) {
+      const response = yield* httpClient.get(url)
+      const data = yield* HttpClientResponse.json(response) as Effect.Effect<T>
+      results.push(data)
+
+      // Wait between requests
+      if (urls.indexOf(url) < urls.length - 1) {
+        yield* Effect.sleep(Duration.millis(interval))
+      }
+    }
+
+    return results
+  })
+
+// ============================================
+// 7. Usage
+// ============================================
+
+const program = Effect.gen(function* () {
+  const client = yield* makeRateLimitAwareClient
+
+  yield* Effect.log("Making rate-limited request...")
+
+  const data = yield* client.get("https://api.example.com/data").pipe(
+    Effect.catchTag("RateLimitedError", (error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`Gave up after rate limiting. Limit: ${error.limit}`)
+        return { error: "rate_limited" }
+      })
+    )
+  )
+
+  yield* Effect.log(`Result: ${JSON.stringify(data)}`)
+})
+```
+
+**Explanation:**  
+Rate limits protect APIs:
+
+1. **Fair usage** - Share resources among clients
+2. **Stability** - Prevent overload
+3. **Quotas** - Enforce billing tiers
+
+Respecting limits prevents bans and ensures reliable access.
+
+---

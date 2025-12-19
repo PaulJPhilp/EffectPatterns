@@ -1,0 +1,351 @@
+description: Use retry chains with circuit breakers to handle complex failure scenarios, detect cascade failures early, and prevent resource exhaustion.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Scheduling Pattern 5: Advanced Retry Chains and Circuit Breakers
+**Rule:** Use retry chains with circuit breakers to handle complex failure scenarios, detect cascade failures early, and prevent resource exhaustion.
+
+### Example
+This example demonstrates circuit breaker and fallback chain patterns.
+
+```typescript
+import { Effect, Schedule, Ref, Data } from "effect";
+
+// Error classification
+class RetryableError extends Data.TaggedError("RetryableError")<{
+  message: string;
+  code: string;
+}> {}
+
+class NonRetryableError extends Data.TaggedError("NonRetryableError")<{
+  message: string;
+  code: string;
+}> {}
+
+class CircuitBreakerOpenError extends Data.TaggedError("CircuitBreakerOpenError")<{
+  message: string;
+}> {}
+
+// Circuit breaker state
+interface CircuitBreakerState {
+  status: "closed" | "open" | "half-open";
+  failureCount: number;
+  lastFailureTime: Date | null;
+  successCount: number;
+}
+
+// Create circuit breaker
+const createCircuitBreaker = (config: {
+  failureThreshold: number;
+  resetTimeoutMs: number;
+  halfOpenRequests: number;
+}) =>
+  Effect.gen(function* () {
+    const state = yield* Ref.make<CircuitBreakerState>({
+      status: "closed",
+      failureCount: 0,
+      lastFailureTime: null,
+      successCount: 0,
+    });
+
+    const recordSuccess = Effect.gen(function* () {
+      yield* Ref.modify(state, (s) => {
+        if (s.status === "half-open") {
+          return [
+            undefined,
+            {
+              ...s,
+              successCount: s.successCount + 1,
+              status: s.successCount + 1 >= config.halfOpenRequests
+                ? "closed"
+                : "half-open",
+              failureCount: 0,
+            },
+          ];
+        }
+        return [undefined, s];
+      });
+    });
+
+    const recordFailure = Effect.gen(function* () {
+      yield* Ref.modify(state, (s) => {
+        const newFailureCount = s.failureCount + 1;
+        const newStatus = newFailureCount >= config.failureThreshold
+          ? "open"
+          : s.status;
+
+        return [
+          undefined,
+          {
+            ...s,
+            failureCount: newFailureCount,
+            lastFailureTime: new Date(),
+            status: newStatus,
+          },
+        ];
+      });
+    });
+
+    const canExecute = Effect.gen(function* () {
+      const current = yield* Ref.get(state);
+
+      if (current.status === "closed") {
+        return true;
+      }
+
+      if (current.status === "open") {
+        const timeSinceFailure = Date.now() - (current.lastFailureTime?.getTime() ?? 0);
+
+        if (timeSinceFailure > config.resetTimeoutMs) {
+          yield* Ref.modify(state, (s) => [
+            undefined,
+            {
+              ...s,
+              status: "half-open",
+              failureCount: 0,
+              successCount: 0,
+            },
+          ]);
+          return true;
+        }
+
+        return false;
+      }
+
+      // half-open: allow limited requests
+      return true;
+    });
+
+    return { recordSuccess, recordFailure, canExecute, state };
+  });
+
+// Main example
+const program = Effect.gen(function* () {
+  console.log(`\n[ADVANCED RETRY] Circuit breaker and fallback chains\n`);
+
+  // Create circuit breaker
+  const cb = yield* createCircuitBreaker({
+    failureThreshold: 3,
+    resetTimeoutMs: 1000,
+    halfOpenRequests: 2,
+  });
+
+  // Example 1: Circuit breaker in action
+  console.log(`[1] Circuit breaker state transitions:\n`);
+
+  let requestCount = 0;
+
+  const callWithCircuitBreaker = (shouldFail: boolean) =>
+    Effect.gen(function* () {
+      const canExecute = yield* cb.canExecute;
+
+      if (!canExecute) {
+        yield* Effect.fail(
+          new CircuitBreakerOpenError({
+            message: "Circuit breaker is open",
+          })
+        );
+      }
+
+      requestCount++;
+
+      if (shouldFail) {
+        yield* cb.recordFailure;
+        yield* Effect.log(
+          `[REQUEST ${requestCount}] FAILED (Circuit: ${(yield* Ref.get(cb.state)).status})`
+        );
+        yield* Effect.fail(
+          new RetryableError({
+            message: "Service error",
+            code: "500",
+          })
+        );
+      } else {
+        yield* cb.recordSuccess;
+        yield* Effect.log(
+          `[REQUEST ${requestCount}] SUCCESS (Circuit: ${(yield* Ref.get(cb.state)).status})`
+        );
+        return "success";
+      }
+    });
+
+  // Simulate failures then recovery
+  const failSequence = [true, true, true, false, false, false];
+
+  for (const shouldFail of failSequence) {
+    yield* callWithCircuitBreaker(shouldFail).pipe(
+      Effect.catchAll((error) =>
+        Effect.gen(function* () {
+          if (error._tag === "CircuitBreakerOpenError") {
+            yield* Effect.log(
+              `[REQUEST ${requestCount + 1}] REJECTED (Circuit open)`
+            );
+          } else {
+            yield* Effect.log(
+              `[REQUEST ${requestCount + 1}] ERROR caught`
+            );
+          }
+        })
+      )
+    );
+
+    // Add delay between requests
+    yield* Effect.sleep("100 millis");
+  }
+
+  // Example 2: Fallback chain
+  console.log(`\n[2] Fallback chain (primary → secondary → cache):\n`);
+
+  const endpoints = {
+    primary: "https://api.primary.com/data",
+    secondary: "https://api.secondary.com/data",
+    cache: "cached-data",
+  };
+
+  const callEndpoint = (name: string, shouldFail: boolean) =>
+    Effect.gen(function* () {
+      yield* Effect.log(`[CALL] Trying ${name}`);
+
+      if (shouldFail) {
+        yield* Effect.sleep("50 millis");
+        yield* Effect.fail(
+          new RetryableError({
+            message: `${name} failed`,
+            code: "500",
+          })
+        );
+      }
+
+      yield* Effect.sleep("50 millis");
+      return `data-from-${name}`;
+    });
+
+  const fallbackChain = callEndpoint("primary", true).pipe(
+    Effect.orElse(() => callEndpoint("secondary", false)),
+    Effect.orElse(() => {
+      yield* Effect.log(`[FALLBACK] Using cached data`);
+      return Effect.succeed(endpoints.cache);
+    })
+  );
+
+  const result = yield* fallbackChain;
+
+  yield* Effect.log(`[RESULT] Got: ${result}\n`);
+
+  // Example 3: Error-specific retry strategy
+  console.log(`[3] Error classification and adaptive retry:\n`);
+
+  const classifyError = (code: string) => {
+    if (["502", "503", "504"].includes(code)) {
+      return "retryable-service-error";
+    }
+    if (["408", "429"].includes(code)) {
+      return "retryable-rate-limit";
+    }
+    if (["404", "401", "403"].includes(code)) {
+      return "non-retryable";
+    }
+    if (code === "timeout") {
+      return "retryable-network";
+    }
+    return "unknown";
+  };
+
+  const errorCodes = ["500", "404", "429", "503", "timeout"];
+
+  for (const code of errorCodes) {
+    const classification = classifyError(code);
+    const shouldRetry = !classification.startsWith("non-retryable");
+
+    yield* Effect.log(
+      `[ERROR ${code}] → ${classification} (Retry: ${shouldRetry})`
+    );
+  }
+
+  // Example 4: Bulkhead pattern
+  console.log(`\n[4] Bulkhead isolation (limit concurrency per endpoint):\n`);
+
+  const bulkheads = {
+    "primary-api": { maxConcurrent: 5, currentCount: 0 },
+    "secondary-api": { maxConcurrent: 3, currentCount: 0 },
+  };
+
+  const acquirePermit = (endpoint: string) =>
+    Effect.gen(function* () {
+      const bulkhead = bulkheads[endpoint as keyof typeof bulkheads];
+
+      if (!bulkhead) {
+        return false;
+      }
+
+      if (bulkhead.currentCount < bulkhead.maxConcurrent) {
+        bulkhead.currentCount++;
+        return true;
+      }
+
+      yield* Effect.log(
+        `[BULKHEAD] ${endpoint} at capacity (${bulkhead.currentCount}/${bulkhead.maxConcurrent})`
+      );
+
+      return false;
+    });
+
+  // Simulate requests
+  for (let i = 0; i < 10; i++) {
+    const endpoint = i < 6 ? "primary-api" : "secondary-api";
+    const acquired = yield* acquirePermit(endpoint);
+
+    if (acquired) {
+      yield* Effect.log(
+        `[REQUEST] Acquired permit for ${endpoint}`
+      );
+    }
+  }
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+**Explanation:**  
+Simple retry fails in production:
+
+**Scenario 1: Cascade Failure**
+- Service A calls Service B (down)
+- Retries pile up, consuming resources
+- A gets overloaded trying to recover B
+- System collapses
+
+**Scenario 2: Mixed Failures**
+- 404 (not found) - retrying won't help
+- 500 (server error) - retrying might help
+- Network timeout - retrying might help
+- Same retry strategy for all = inefficient
+
+**Scenario 3: Thundering Herd**
+- 10,000 clients all retrying at once
+- Server recovers, gets hammered again
+- Needs coordinated backoff + jitter
+
+Solutions:
+
+**Circuit breaker**:
+- Monitor error rate
+- Stop requests when high
+- Resume gradually
+- Prevent cascade failures
+
+**Fallback chain**:
+- Try primary endpoint
+- Try secondary endpoint
+- Use cache
+- Return degraded result
+
+**Adaptive retry**:
+- Classify error type
+- Use appropriate strategy
+- Skip unretryable errors
+- Adjust backoff dynamically
+
+---

@@ -3,7 +3,7 @@
 import { Effect } from "effect";
 import { EffectCLIRuntime } from "effect-cli-tui";
 
-import { createAdminProgram, runtimeLayerWithTUI } from "@effect-patterns/cli-core";
+import { createAdminProgram, runtimeLayerWithTUI } from "../../cli/src/index.js";
 
 const program = createAdminProgram(process.argv).pipe(
   Effect.provide(runtimeLayerWithTUI)

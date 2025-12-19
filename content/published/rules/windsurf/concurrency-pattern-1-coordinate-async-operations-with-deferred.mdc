@@ -1,0 +1,141 @@
+description: Use Deferred for one-time async coordination between fibers, enabling multiple consumers to wait for a single producer's result.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Concurrency Pattern 1: Coordinate Async Operations with Deferred
+**Rule:** Use Deferred for one-time async coordination between fibers, enabling multiple consumers to wait for a single producer's result.
+
+### Example
+This example demonstrates a service startup pattern where multiple workers wait for initialization to complete before starting processing.
+
+```typescript
+import { Effect, Deferred, Fiber } from "effect";
+
+interface ServiceConfig {
+  readonly name: string;
+  readonly port: number;
+}
+
+interface Service {
+  readonly name: string;
+  readonly isReady: Deferred.Deferred<void>;
+}
+
+// Simulate a service that takes time to initialize
+const createService = (config: ServiceConfig): Effect.Effect<Service> =>
+  Effect.gen(function* () {
+    const isReady = yield* Deferred.make<void>();
+
+    return { name: config.name, isReady };
+  });
+
+// Initialize the service (runs in background)
+const initializeService = (service: Service): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[${service.name}] Starting initialization...`);
+
+    // Simulate initialization work
+    yield* Effect.sleep("1 second");
+
+    yield* Effect.log(`[${service.name}] Initialization complete`);
+
+    // Signal that service is ready
+    yield* Deferred.succeed(service.isReady, undefined);
+  });
+
+// A worker that waits for service to be ready before starting
+const createWorker = (
+  id: number,
+  services: Service[]
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[Worker ${id}] Starting, waiting for services...`);
+
+    // Wait for all services to be ready
+    yield* Effect.all(
+      services.map((service) =>
+        Deferred.await(service.isReady).pipe(
+          Effect.tapError((error) =>
+            Effect.log(
+              `[Worker ${id}] Error waiting for ${service.name}: ${error}`
+            )
+          )
+        )
+      )
+    );
+
+    yield* Effect.log(`[Worker ${id}] All services ready, starting work`);
+
+    // Simulate worker processing
+    for (let i = 0; i < 3; i++) {
+      yield* Effect.sleep("500 millis");
+      yield* Effect.log(`[Worker ${id}] Processing task ${i + 1}`);
+    }
+
+    yield* Effect.log(`[Worker ${id}] Complete`);
+  });
+
+// Main program
+const program = Effect.gen(function* () {
+  // Create services
+  const apiService = yield* createService({ name: "API", port: 3000 });
+  const dbService = yield* createService({ name: "Database", port: 5432 });
+  const cacheService = yield* createService({ name: "Cache", port: 6379 });
+
+  const services = [apiService, dbService, cacheService];
+
+  // Start initializing services in background
+  const initFibers = yield* Effect.all(
+    services.map((service) => initializeService(service).pipe(Effect.fork))
+  );
+
+  // Start workers that wait for services
+  const workerFibers = yield* Effect.all(
+    [1, 2, 3].map((id) => createWorker(id, services).pipe(Effect.fork))
+  );
+
+  // Wait for all workers to complete
+  yield* Effect.all(workerFibers.map((fiber) => Fiber.join(fiber)));
+
+  // Cancel initialization fibers (they're done anyway)
+  yield* Effect.all(initFibers.map((fiber) => Fiber.interrupt(fiber)));
+
+  yield* Effect.log(`\n[MAIN] All workers completed`);
+});
+
+Effect.runPromise(program);
+```
+
+This pattern:
+
+1. **Creates Deferred instances** for each service's readiness
+2. **Starts initialization** in background fibers
+3. **Workers wait** for all services via `Deferred.await`
+4. **Service signals completion** via `Deferred.succeed`
+5. **Workers resume** when all dependencies ready
+
+---
+
+**Explanation:**  
+Many concurrent systems need to coordinate on events:
+
+- **Service initialization**: Wait for all services to start before accepting requests
+- **Data availability**: Wait for initial data load before processing
+- **External events**: Wait for webhook, signal, or message
+- **Startup gates**: All workers wait for leader to signal start
+
+Without Deferred:
+
+- Polling wastes CPU (check repeatedly)
+- Callbacks become complex (multiple consumers)
+- No clean semantics for "wait for this one thing"
+- Error propagation unclear
+
+With Deferred:
+
+- Non-blocking wait (fiber suspends)
+- One fiber produces, many consume
+- Clear completion or failure
+- Efficient wakeup when ready
+
+---

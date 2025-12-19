@@ -1,0 +1,139 @@
+description: Use Effect.tap and logging to inspect values without changing program flow.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Debug Effect Programs
+**Rule:** Use Effect.tap and logging to inspect values without changing program flow.
+
+### Example
+```typescript
+import { Effect, pipe } from "effect"
+
+// ============================================
+// 1. Using tap to inspect values
+// ============================================
+
+const fetchUser = (id: string) =>
+  Effect.succeed({ id, name: "Alice", email: "alice@example.com" })
+
+const processUser = (id: string) =>
+  fetchUser(id).pipe(
+    // tap runs an effect for its side effect, then continues with original value
+    Effect.tap((user) => Effect.log(`Fetched user: ${user.name}`)),
+    Effect.map((user) => ({ ...user, processed: true })),
+    Effect.tap((user) => Effect.log(`Processed: ${JSON.stringify(user)}`))
+  )
+
+// ============================================
+// 2. Debug a pipeline
+// ============================================
+
+const numbers = [1, 2, 3, 4, 5]
+
+const pipeline = Effect.gen(function* () {
+  yield* Effect.log("Starting pipeline")
+
+  const step1 = numbers.filter((n) => n % 2 === 0)
+  yield* Effect.log(`After filter (even): ${JSON.stringify(step1)}`)
+
+  const step2 = step1.map((n) => n * 10)
+  yield* Effect.log(`After map (*10): ${JSON.stringify(step2)}`)
+
+  const step3 = step2.reduce((a, b) => a + b, 0)
+  yield* Effect.log(`After reduce (sum): ${step3}`)
+
+  return step3
+})
+
+// ============================================
+// 3. Debug errors
+// ============================================
+
+const riskyOperation = (shouldFail: boolean) =>
+  Effect.gen(function* () {
+    yield* Effect.log("Starting risky operation")
+
+    if (shouldFail) {
+      yield* Effect.log("About to fail...")
+      return yield* Effect.fail(new Error("Something went wrong"))
+    }
+
+    yield* Effect.log("Success!")
+    return "result"
+  })
+
+const debugErrors = riskyOperation(true).pipe(
+  // Log when operation fails
+  Effect.tapError((error) => Effect.log(`Operation failed: ${error.message}`)),
+
+  // Provide a fallback
+  Effect.catchAll((error) => {
+    return Effect.succeed(`Recovered from: ${error.message}`)
+  })
+)
+
+// ============================================
+// 4. Trace execution flow
+// ============================================
+
+const step = (name: string, value: number) =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[${name}] Input: ${value}`)
+    const result = value * 2
+    yield* Effect.log(`[${name}] Output: ${result}`)
+    return result
+  })
+
+const tracedWorkflow = Effect.gen(function* () {
+  const a = yield* step("Step 1", 5)
+  const b = yield* step("Step 2", a)
+  const c = yield* step("Step 3", b)
+  yield* Effect.log(`Final result: ${c}`)
+  return c
+})
+
+// ============================================
+// 5. Quick debug with console
+// ============================================
+
+// Sometimes you just need console.log
+const quickDebug = Effect.gen(function* () {
+  const value = yield* Effect.succeed(42)
+  
+  // Effect.sync wraps side effects
+  yield* Effect.sync(() => console.log("Quick debug:", value))
+  
+  return value
+})
+
+// ============================================
+// 6. Run examples
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Tap Example ===")
+  yield* processUser("123")
+
+  yield* Effect.log("\n=== Pipeline Debug ===")
+  yield* pipeline
+
+  yield* Effect.log("\n=== Error Debug ===")
+  yield* debugErrors
+
+  yield* Effect.log("\n=== Traced Workflow ===")
+  yield* tracedWorkflow
+})
+
+Effect.runPromise(program)
+```
+
+**Explanation:**  
+Debugging Effect code differs from imperative code:
+
+1. **No breakpoints** - Effects are descriptions, not executions
+2. **Lazy evaluation** - Code runs later when you call `runPromise`
+3. **Composition** - Effects chain together
+
+`tap` and logging let you see inside without breaking the chain.
+
+---

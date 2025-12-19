@@ -14,8 +14,8 @@ import * as path from 'node:path';
 import matter from 'gray-matter';
 
 // --- CONFIGURATION ---
-const PUBLISHED_DIR = path.join(process.cwd(), 'content/published');
-const RULES_DIR = path.join(process.cwd(), 'rules');
+const PATTERNS_DIR = path.join(process.cwd(), 'content/published/patterns');
+const RULES_DIR = path.join(process.cwd(), 'content/published/rules');
 const USE_CASE_DIR = path.join(RULES_DIR, 'by-use-case');
 const CURSOR_DIR = path.join(RULES_DIR, 'cursor');
 const WINDSURF_DIR = path.join(RULES_DIR, 'windsurf');
@@ -56,17 +56,32 @@ const sanitizeName = (name: string) =>
     .replace(/[^a-z0-9-]/g, '');
 
 // --- EXTRACTION ---
+async function findMdxFiles(dir: string): Promise<string[]> {
+  const mdxFiles: string[] = [];
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const subFiles = await findMdxFiles(fullPath);
+      mdxFiles.push(...subFiles);
+    } else if (entry.name.endsWith('.mdx')) {
+      mdxFiles.push(fullPath);
+    }
+  }
+
+  return mdxFiles;
+}
+
 async function extractRules(): Promise<Rule[]> {
   console.log(
     colorize('📖 Extracting rules from published patterns...', 'cyan'),
   );
 
-  const files = await fs.readdir(PUBLISHED_DIR);
-  const mdxFiles = files.filter((file) => file.endsWith('.mdx'));
+  const mdxFiles = await findMdxFiles(PATTERNS_DIR);
   const rules: Rule[] = [];
 
-  for (const file of mdxFiles) {
-    const filePath = path.join(PUBLISHED_DIR, file);
+  for (const filePath of mdxFiles) {
     const fileContent = await fs.readFile(filePath, 'utf-8');
     const { data, content } = matter(fileContent);
 
@@ -78,14 +93,16 @@ async function extractRules(): Promise<Rule[]> {
       // Extract Explanation/Rationale section
       const explanation = extractSection(content, 'Explanation', 'Rationale');
 
+      // Use applicationPatternId instead of useCase
+      const applicationPatternId = (data as any).applicationPatternId;
+      const useCases = applicationPatternId ? [applicationPatternId] : [];
+
       rules.push({
         id: (data as any).id,
         title: (data as any).title,
         description: (data as any).rule.description,
         skillLevel: (data as any).skillLevel,
-        useCases: Array.isArray((data as any).useCase)
-          ? (data as any).useCase
-          : [(data as any).useCase],
+        useCases,
         example: goodExample,
         antiPattern,
         explanation,

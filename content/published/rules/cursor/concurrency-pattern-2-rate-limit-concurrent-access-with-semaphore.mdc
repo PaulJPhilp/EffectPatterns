@@ -1,0 +1,156 @@
+description: Use Semaphore to limit concurrent access to resources, preventing overload and enabling fair resource distribution.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Concurrency Pattern 2: Rate Limit Concurrent Access with Semaphore
+**Rule:** Use Semaphore to limit concurrent access to resources, preventing overload and enabling fair resource distribution.
+
+### Example
+This example demonstrates limiting concurrent database connections using a Semaphore, preventing connection pool exhaustion.
+
+```typescript
+import { Effect, Semaphore, Fiber } from "effect";
+
+interface QueryResult {
+  readonly id: number;
+  readonly result: string;
+  readonly duration: number;
+}
+
+// Simulate a database query that holds a connection
+const executeQuery = (
+  queryId: number,
+  connectionId: number,
+  durationMs: number
+): Effect.Effect<QueryResult> =>
+  Effect.gen(function* () {
+    const startTime = Date.now();
+
+    yield* Effect.log(
+      `[Query ${queryId}] Using connection ${connectionId}, duration: ${durationMs}ms`
+    );
+
+    // Simulate query execution
+    yield* Effect.sleep(`${durationMs} millis`);
+
+    const duration = Date.now() - startTime;
+
+    return {
+      id: queryId,
+      result: `Result from query ${queryId}`,
+      duration,
+    };
+  });
+
+// Pool configuration
+interface ConnectionPoolConfig {
+  readonly maxConnections: number;
+  readonly queryTimeout?: number;
+}
+
+// Create a rate-limited query executor
+const createRateLimitedQueryExecutor = (
+  config: ConnectionPoolConfig
+): Effect.Effect<
+  (queryId: number, durationMs: number) => Effect.Effect<QueryResult>
+> =>
+  Effect.gen(function* () {
+    const semaphore = yield* Semaphore.make(config.maxConnections);
+    let connectionCounter = 0;
+
+    return (queryId: number, durationMs: number) =>
+      Effect.gen(function* () {
+        // Acquire a permit (wait if none available)
+        yield* Semaphore.acquire(semaphore);
+
+        const connectionId = ++connectionCounter;
+
+        // Use try-finally to ensure permit is released
+        const result = yield* executeQuery(queryId, connectionId, durationMs).pipe(
+          Effect.ensuring(
+            Semaphore.release(semaphore).pipe(
+              Effect.tap(() =>
+                Effect.log(`[Query ${queryId}] Released connection ${connectionId}`)
+              )
+            )
+          )
+        );
+
+        return result;
+      });
+  });
+
+// Simulate multiple queries arriving
+const program = Effect.gen(function* () {
+  const executor = yield* createRateLimitedQueryExecutor({
+    maxConnections: 3, // Only 3 concurrent connections
+  });
+
+  // Generate 10 queries with varying durations
+  const queries = Array.from({ length: 10 }, (_, i) => ({
+    id: i + 1,
+    duration: 500 + Math.random() * 1500, // 500-2000ms
+  }));
+
+  console.log(`\n[POOL] Starting with max 3 concurrent connections\n`);
+
+  // Execute all queries with concurrency limit
+  const results = yield* Effect.all(
+    queries.map((q) =>
+      executor(q.id, Math.round(q.duration)).pipe(Effect.fork)
+    )
+  ).pipe(
+    Effect.andThen((fibers) =>
+      Effect.all(fibers.map((fiber) => Fiber.join(fiber)))
+    )
+  );
+
+  console.log(`\n[POOL] All queries completed\n`);
+
+  // Summary
+  const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
+  const avgDuration = totalDuration / results.length;
+
+  console.log(`[SUMMARY]`);
+  console.log(`  Total queries: ${results.length}`);
+  console.log(`  Avg duration: ${Math.round(avgDuration)}ms`);
+  console.log(`  Total time: ${Math.max(...results.map((r) => r.duration))}ms (parallel)`);
+});
+
+Effect.runPromise(program);
+```
+
+This pattern:
+
+1. **Creates a Semaphore** with fixed permit count
+2. **Acquires permit** before using connection
+3. **Executes operation** while holding permit
+4. **Releases permit** in finally block (guaranteed)
+5. **Fair queuing** of waiting queries
+
+---
+
+**Explanation:**  
+Resource constraints require limiting concurrency:
+
+- **Connection pools**: Database limited to N connections
+- **API rate limits**: Service allows only M requests per second
+- **Memory limits**: Large operations can't all run simultaneously
+- **CPU constraints**: Too many threads waste cycles on context switching
+- **Backpressure**: Prevent downstream from being overwhelmed
+
+Without Semaphore:
+
+- All operations run simultaneously, exhausting resources
+- Connection pool overflows, requests fail
+- Memory pressure causes garbage collection pauses
+- No fair ordering (first-come-first-served)
+
+With Semaphore:
+
+- Fixed concurrency limit
+- Fair queuing of waiting operations
+- Backpressure naturally flows upstream
+- Clear ownership of permits
+
+---

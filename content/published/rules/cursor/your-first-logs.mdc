@@ -1,0 +1,130 @@
+description: Use Effect.log and related functions for structured, contextual logging.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Your First Logs
+**Rule:** Use Effect.log and related functions for structured, contextual logging.
+
+### Example
+```typescript
+import { Effect, Logger, LogLevel } from "effect"
+
+// ============================================
+// 1. Basic logging
+// ============================================
+
+const basicLogging = Effect.gen(function* () {
+  // Different log levels
+  yield* Effect.logDebug("Debug message - for development")
+  yield* Effect.logInfo("Info message - normal operation")
+  yield* Effect.log("Default log - same as logInfo")
+  yield* Effect.logWarning("Warning - something unusual")
+  yield* Effect.logError("Error - something went wrong")
+})
+
+// ============================================
+// 2. Logging with context
+// ============================================
+
+const withContext = Effect.gen(function* () {
+  // Add structured data to logs
+  yield* Effect.log("User logged in").pipe(
+    Effect.annotateLogs({
+      userId: "user-123",
+      action: "login",
+      ipAddress: "192.168.1.1",
+    })
+  )
+
+  // Add a single annotation
+  yield* Effect.log("Processing request").pipe(
+    Effect.annotateLogs("requestId", "req-456")
+  )
+})
+
+// ============================================
+// 3. Log spans for timing
+// ============================================
+
+const withTiming = Effect.gen(function* () {
+  yield* Effect.log("Starting operation")
+
+  // withLogSpan adds timing information
+  yield* Effect.sleep("100 millis").pipe(
+    Effect.withLogSpan("database-query")
+  )
+
+  yield* Effect.log("Operation complete")
+})
+
+// ============================================
+// 4. Practical example
+// ============================================
+
+interface User {
+  id: string
+  email: string
+}
+
+const processOrder = (orderId: string, userId: string) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo("Processing order").pipe(
+      Effect.annotateLogs({ orderId, userId })
+    )
+
+    // Simulate work
+    yield* Effect.sleep("50 millis")
+
+    yield* Effect.logInfo("Order processed successfully").pipe(
+      Effect.annotateLogs({ orderId, status: "completed" })
+    )
+
+    return { orderId, status: "completed" }
+  }).pipe(
+    Effect.withLogSpan("processOrder")
+  )
+
+// ============================================
+// 5. Configure log level
+// ============================================
+
+const debugProgram = basicLogging.pipe(
+  // Show all logs including debug
+  Logger.withMinimumLogLevel(LogLevel.Debug)
+)
+
+const productionProgram = basicLogging.pipe(
+  // Only show warnings and errors
+  Logger.withMinimumLogLevel(LogLevel.Warning)
+)
+
+// ============================================
+// 6. Run
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Basic Logging ===")
+  yield* basicLogging
+
+  yield* Effect.log("\n=== With Context ===")
+  yield* withContext
+
+  yield* Effect.log("\n=== With Timing ===")
+  yield* withTiming
+
+  yield* Effect.log("\n=== Process Order ===")
+  yield* processOrder("order-789", "user-123")
+})
+
+Effect.runPromise(program)
+```
+
+**Explanation:**  
+Effect's logging is superior to `console.log`:
+
+1. **Structured** - Logs are data, not just strings
+2. **Contextual** - Automatically includes fiber info, timestamps
+3. **Configurable** - Change log levels, formats, destinations
+4. **Type-safe** - Part of the Effect type system
+
+---

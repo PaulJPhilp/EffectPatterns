@@ -1,0 +1,149 @@
+description: Use buffering and throttling to handle producers faster than consumers.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Implement Backpressure in Pipelines
+**Rule:** Use buffering and throttling to handle producers faster than consumers.
+
+### Example
+```typescript
+import { Effect, Stream, Schedule, Duration, Queue, Chunk } from "effect"
+
+// ============================================
+// 1. Stream with natural backpressure
+// ============================================
+
+// Streams have built-in backpressure - consumers pull data
+const fastProducer = Stream.fromIterable(Array.from({ length: 1000 }, (_, i) => i))
+
+const slowConsumer = fastProducer.pipe(
+  Stream.tap((n) =>
+    Effect.gen(function* () {
+      yield* Effect.sleep("10 millis")  // Slow processing
+      yield* Effect.log(`Processed: ${n}`)
+    })
+  ),
+  Stream.runDrain
+)
+
+// Producer automatically slows down to match consumer
+
+// ============================================
+// 2. Explicit buffer with drop strategy
+// ============================================
+
+const bufferedStream = (source: Stream.Stream<number>) =>
+  source.pipe(
+    // Buffer up to 100 items, drop oldest when full
+    Stream.buffer({ capacity: 100, strategy: "dropping" })
+  )
+
+// ============================================
+// 3. Throttling - limit rate
+// ============================================
+
+const throttledStream = (source: Stream.Stream<number>) =>
+  source.pipe(
+    // Process at most 10 items per second
+    Stream.throttle({
+      cost: () => 1,
+      units: 10,
+      duration: "1 second",
+      strategy: "enforce",
+    })
+  )
+
+// ============================================
+// 4. Debounce - wait for quiet period
+// ============================================
+
+const debouncedStream = (source: Stream.Stream<number>) =>
+  source.pipe(
+    // Wait 100ms of no new items before emitting
+    Stream.debounce("100 millis")
+  )
+
+// ============================================
+// 5. Bounded queue for producer-consumer
+// ============================================
+
+const boundedQueueExample = Effect.gen(function* () {
+  // Create bounded queue - blocks producer when full
+  const queue = yield* Queue.bounded<number>(10)
+
+  // Fast producer
+  const producer = Effect.gen(function* () {
+    for (let i = 0; i < 100; i++) {
+      yield* Queue.offer(queue, i)
+      yield* Effect.log(`Produced: ${i}`)
+    }
+    yield* Queue.shutdown(queue)
+  })
+
+  // Slow consumer
+  const consumer = Effect.gen(function* () {
+    let count = 0
+    while (true) {
+      const item = yield* Queue.take(queue).pipe(
+        Effect.catchTag("QueueShutdown", () => Effect.fail("done" as const))
+      )
+      if (item === "done") break
+      yield* Effect.sleep("50 millis")  // Slow processing
+      yield* Effect.log(`Consumed: ${item}`)
+      count++
+    }
+    return count
+  }).pipe(Effect.catchAll(() => Effect.succeed(0)))
+
+  // Run both - producer will block when queue is full
+  yield* Effect.all([producer, consumer], { concurrency: 2 })
+})
+
+// ============================================
+// 6. Sliding window - keep most recent
+// ============================================
+
+const slidingWindowStream = (source: Stream.Stream<number>) =>
+  source.pipe(
+    Stream.sliding(5),  // Keep last 5 items
+    Stream.map((window) => ({
+      items: window,
+      average: Chunk.reduce(window, 0, (a, b) => a + b) / Chunk.size(window),
+    }))
+  )
+
+// ============================================
+// 7. Run example
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Backpressure Demo ===")
+
+  // Throttled stream
+  const throttled = Stream.fromIterable([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).pipe(
+    Stream.tap((n) => Effect.log(`Emitting: ${n}`)),
+    Stream.throttle({
+      cost: () => 1,
+      units: 2,
+      duration: "1 second",
+      strategy: "enforce",
+    }),
+    Stream.tap((n) => Effect.log(`After throttle: ${n}`)),
+    Stream.runDrain
+  )
+
+  yield* throttled
+})
+
+Effect.runPromise(program)
+```
+
+**Explanation:**  
+Backpressure prevents system overload:
+
+1. **Memory safety** - Don't buffer unlimited data
+2. **Stability** - Slow consumers don't crash
+3. **Fairness** - Distribute load appropriately
+4. **Predictability** - Consistent performance
+
+---

@@ -1,4 +1,55 @@
-# Observability Patterns
+# observability Patterns
+
+## Add Custom Metrics to Your Application
+
+Use Metric.counter, Metric.gauge, and Metric.histogram to instrument code for monitoring.
+
+### Example
+
+This example creates a counter to track how many times a user is created and a histogram to track the duration of the database operation.
+
+```typescript
+import { Effect, Metric, Duration } from "effect"; // We don't need MetricBoundaries anymore
+
+// 1. Define your metrics
+const userRegisteredCounter = Metric.counter("users_registered_total", {
+  description: "A counter for how many users have been registered.",
+});
+
+const dbDurationTimer = Metric.timer(
+  "db_operation_duration",
+  "A timer for DB operation durations"
+);
+
+// 2. Simulated database call
+const saveUserToDb = Effect.succeed("user saved").pipe(
+  Effect.delay(Duration.millis(Math.random() * 100))
+);
+
+// 3. Instrument the business logic
+const createUser = Effect.gen(function* () {
+  // Time the operation
+  yield* saveUserToDb.pipe(Metric.trackDuration(dbDurationTimer));
+
+  // Increment the counter
+  yield* Metric.increment(userRegisteredCounter);
+
+  return { status: "success" };
+});
+
+// Run the Effect
+const programWithLogging = Effect.gen(function* () {
+  const result = yield* createUser;
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`);
+  return result;
+});
+
+Effect.runPromise(programWithLogging);
+```
+
+---
+
+---
 
 ## Add Custom Metrics to Your Application
 
@@ -42,6 +93,598 @@ const recordDuration = (duration: number) =>
 - `Metric.gauge` tracks a value that can go up or down (e.g., active users).
 - `Metric.histogram` tracks distributions (e.g., request durations).
 - `Effect.updateMetric` updates the metric in your workflow.
+
+---
+
+## Create Observability Dashboards
+
+Create focused dashboards that answer specific questions about system health.
+
+---
+
+## Debug Effect Programs
+
+Use Effect.tap and logging to inspect values without changing program flow.
+
+### Example
+
+```typescript
+import { Effect, pipe } from "effect"
+
+// ============================================
+// 1. Using tap to inspect values
+// ============================================
+
+const fetchUser = (id: string) =>
+  Effect.succeed({ id, name: "Alice", email: "alice@example.com" })
+
+const processUser = (id: string) =>
+  fetchUser(id).pipe(
+    // tap runs an effect for its side effect, then continues with original value
+    Effect.tap((user) => Effect.log(`Fetched user: ${user.name}`)),
+    Effect.map((user) => ({ ...user, processed: true })),
+    Effect.tap((user) => Effect.log(`Processed: ${JSON.stringify(user)}`))
+  )
+
+// ============================================
+// 2. Debug a pipeline
+// ============================================
+
+const numbers = [1, 2, 3, 4, 5]
+
+const pipeline = Effect.gen(function* () {
+  yield* Effect.log("Starting pipeline")
+
+  const step1 = numbers.filter((n) => n % 2 === 0)
+  yield* Effect.log(`After filter (even): ${JSON.stringify(step1)}`)
+
+  const step2 = step1.map((n) => n * 10)
+  yield* Effect.log(`After map (*10): ${JSON.stringify(step2)}`)
+
+  const step3 = step2.reduce((a, b) => a + b, 0)
+  yield* Effect.log(`After reduce (sum): ${step3}`)
+
+  return step3
+})
+
+// ============================================
+// 3. Debug errors
+// ============================================
+
+const riskyOperation = (shouldFail: boolean) =>
+  Effect.gen(function* () {
+    yield* Effect.log("Starting risky operation")
+
+    if (shouldFail) {
+      yield* Effect.log("About to fail...")
+      return yield* Effect.fail(new Error("Something went wrong"))
+    }
+
+    yield* Effect.log("Success!")
+    return "result"
+  })
+
+const debugErrors = riskyOperation(true).pipe(
+  // Log when operation fails
+  Effect.tapError((error) => Effect.log(`Operation failed: ${error.message}`)),
+
+  // Provide a fallback
+  Effect.catchAll((error) => {
+    return Effect.succeed(`Recovered from: ${error.message}`)
+  })
+)
+
+// ============================================
+// 4. Trace execution flow
+// ============================================
+
+const step = (name: string, value: number) =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[${name}] Input: ${value}`)
+    const result = value * 2
+    yield* Effect.log(`[${name}] Output: ${result}`)
+    return result
+  })
+
+const tracedWorkflow = Effect.gen(function* () {
+  const a = yield* step("Step 1", 5)
+  const b = yield* step("Step 2", a)
+  const c = yield* step("Step 3", b)
+  yield* Effect.log(`Final result: ${c}`)
+  return c
+})
+
+// ============================================
+// 5. Quick debug with console
+// ============================================
+
+// Sometimes you just need console.log
+const quickDebug = Effect.gen(function* () {
+  const value = yield* Effect.succeed(42)
+  
+  // Effect.sync wraps side effects
+  yield* Effect.sync(() => console.log("Quick debug:", value))
+  
+  return value
+})
+
+// ============================================
+// 6. Run examples
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Tap Example ===")
+  yield* processUser("123")
+
+  yield* Effect.log("\n=== Pipeline Debug ===")
+  yield* pipeline
+
+  yield* Effect.log("\n=== Error Debug ===")
+  yield* debugErrors
+
+  yield* Effect.log("\n=== Traced Workflow ===")
+  yield* tracedWorkflow
+})
+
+Effect.runPromise(program)
+```
+
+---
+
+## Export Metrics to Prometheus
+
+Use Effect metrics and expose a /metrics endpoint for Prometheus scraping.
+
+### Example
+
+```typescript
+import { Effect, Metric, MetricLabel, Duration } from "effect"
+import { HttpServerResponse } from "@effect/platform"
+
+// ============================================
+// 1. Define application metrics
+// ============================================
+
+// Counter - counts events
+const httpRequestsTotal = Metric.counter("http_requests_total", {
+  description: "Total number of HTTP requests",
+})
+
+// Counter with labels
+const httpRequestsByStatus = Metric.counter("http_requests_by_status", {
+  description: "HTTP requests by status code",
+})
+
+// Gauge - current value
+const activeConnections = Metric.gauge("active_connections", {
+  description: "Number of active connections",
+})
+
+// Histogram - distribution of values
+const requestDuration = Metric.histogram("http_request_duration_seconds", {
+  description: "HTTP request duration in seconds",
+  boundaries: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+})
+
+// Summary - percentiles
+const responseSizeBytes = Metric.summary("http_response_size_bytes", {
+  description: "HTTP response size in bytes",
+  maxAge: Duration.minutes(5),
+  maxSize: 100,
+  quantiles: [0.5, 0.9, 0.99],
+})
+
+// ============================================
+// 2. Instrument code with metrics
+// ============================================
+
+const handleRequest = (path: string, status: number) =>
+  Effect.gen(function* () {
+    const startTime = Date.now()
+
+    // Increment request counter
+    yield* Metric.increment(httpRequestsTotal)
+
+    // Increment with labels
+    yield* Metric.increment(
+      httpRequestsByStatus.pipe(
+        Metric.tagged("status", String(status)),
+        Metric.tagged("path", path)
+      )
+    )
+
+    // Track active connections
+    yield* Metric.increment(activeConnections)
+
+    // Simulate work
+    yield* Effect.sleep("100 millis")
+
+    // Record duration
+    const duration = (Date.now() - startTime) / 1000
+    yield* Metric.update(requestDuration, duration)
+
+    // Record response size
+    yield* Metric.update(responseSizeBytes, 1024)
+
+    // Decrement active connections
+    yield* Metric.decrement(activeConnections)
+  })
+
+// ============================================
+// 3. Prometheus text format exporter
+// ============================================
+
+interface MetricSnapshot {
+  name: string
+  type: "counter" | "gauge" | "histogram" | "summary"
+  help: string
+  values: Array<{
+    labels: Record<string, string>
+    value: number
+  }>
+  // For histograms
+  buckets?: Array<{
+    le: number
+    count: number
+    labels?: Record<string, string>
+  }>
+  sum?: number
+  count?: number
+}
+
+const formatPrometheusMetrics = (metrics: MetricSnapshot[]): string => {
+  const lines: string[] = []
+
+  for (const metric of metrics) {
+    // Help line
+    lines.push(`# HELP ${metric.name} ${metric.help}`)
+    lines.push(`# TYPE ${metric.name} ${metric.type}`)
+
+    // Values
+    for (const { labels, value } of metric.values) {
+      const labelStr = Object.entries(labels)
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(",")
+
+      if (labelStr) {
+        lines.push(`${metric.name}{${labelStr}} ${value}`)
+      } else {
+        lines.push(`${metric.name} ${value}`)
+      }
+    }
+
+    // Histogram buckets
+    if (metric.buckets) {
+      for (const bucket of metric.buckets) {
+        const labelStr = Object.entries(bucket.labels || {})
+          .map(([k, v]) => `${k}="${v}"`)
+          .concat([`le="${bucket.le}"`])
+          .join(",")
+        lines.push(`${metric.name}_bucket{${labelStr}} ${bucket.count}`)
+      }
+      lines.push(`${metric.name}_sum ${metric.sum}`)
+      lines.push(`${metric.name}_count ${metric.count}`)
+    }
+
+    lines.push("")
+  }
+
+  return lines.join("\n")
+}
+
+// ============================================
+// 4. /metrics endpoint handler
+// ============================================
+
+const metricsHandler = Effect.gen(function* () {
+  // In real implementation, read from Effect's MetricRegistry
+  const metrics: MetricSnapshot[] = [
+    {
+      name: "http_requests_total",
+      type: "counter",
+      help: "Total number of HTTP requests",
+      values: [{ labels: {}, value: 1234 }],
+    },
+    {
+      name: "http_requests_by_status",
+      type: "counter",
+      help: "HTTP requests by status code",
+      values: [
+        { labels: { status: "200", path: "/api/users" }, value: 1000 },
+        { labels: { status: "404", path: "/api/users" }, value: 50 },
+        { labels: { status: "500", path: "/api/users" }, value: 10 },
+      ],
+    },
+    {
+      name: "active_connections",
+      type: "gauge",
+      help: "Number of active connections",
+      values: [{ labels: {}, value: 42 }],
+    },
+    {
+      name: "http_request_duration_seconds",
+      type: "histogram",
+      help: "HTTP request duration in seconds",
+      values: [],
+      buckets: [
+        { le: 0.01, count: 100 },
+        { le: 0.05, count: 500 },
+        { le: 0.1, count: 800 },
+        { le: 0.25, count: 950 },
+        { le: 0.5, count: 990 },
+        { le: 1, count: 999 },
+        { le: Infinity, count: 1000 },
+      ],
+      sum: 123.456,
+      count: 1000,
+    },
+  ]
+
+  const body = formatPrometheusMetrics(metrics)
+
+  return HttpServerResponse.text(body, {
+    headers: {
+      "Content-Type": "text/plain; version=0.0.4; charset=utf-8",
+    },
+  })
+})
+
+// ============================================
+// 5. Example output
+// ============================================
+
+/*
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total 1234
+
+# HELP http_requests_by_status HTTP requests by status code
+# TYPE http_requests_by_status counter
+http_requests_by_status{status="200",path="/api/users"} 1000
+http_requests_by_status{status="404",path="/api/users"} 50
+http_requests_by_status{status="500",path="/api/users"} 10
+
+# HELP active_connections Number of active connections
+# TYPE active_connections gauge
+active_connections 42
+
+# HELP http_request_duration_seconds HTTP request duration in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{le="0.01"} 100
+http_request_duration_seconds_bucket{le="0.05"} 500
+http_request_duration_seconds_bucket{le="0.1"} 800
+http_request_duration_seconds_bucket{le="+Inf"} 1000
+http_request_duration_seconds_sum 123.456
+http_request_duration_seconds_count 1000
+*/
+```
+
+---
+
+## Implement Distributed Tracing
+
+Propagate trace context across service boundaries to correlate requests.
+
+### Example
+
+```typescript
+import { Effect, Context, Layer } from "effect"
+import { HttpClient, HttpClientRequest, HttpServerRequest, HttpServerResponse } from "@effect/platform"
+
+// ============================================
+// 1. Define trace context
+// ============================================
+
+interface TraceContext {
+  readonly traceId: string
+  readonly spanId: string
+  readonly parentSpanId?: string
+  readonly sampled: boolean
+}
+
+class CurrentTrace extends Context.Tag("CurrentTrace")<
+  CurrentTrace,
+  TraceContext
+>() {}
+
+// W3C Trace Context header names
+const TRACEPARENT_HEADER = "traceparent"
+const TRACESTATE_HEADER = "tracestate"
+
+// ============================================
+// 2. Generate trace IDs
+// ============================================
+
+const generateTraceId = (): string =>
+  Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+
+const generateSpanId = (): string =>
+  Array.from(crypto.getRandomValues(new Uint8Array(8)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+
+// ============================================
+// 3. Parse and format trace context
+// ============================================
+
+const parseTraceparent = (header: string): TraceContext | null => {
+  // Format: 00-traceId-spanId-flags
+  const parts = header.split("-")
+  if (parts.length !== 4) return null
+
+  return {
+    traceId: parts[1],
+    spanId: generateSpanId(),  // New span for this service
+    parentSpanId: parts[2],
+    sampled: parts[3] === "01",
+  }
+}
+
+const formatTraceparent = (ctx: TraceContext): string =>
+  `00-${ctx.traceId}-${ctx.spanId}-${ctx.sampled ? "01" : "00"}`
+
+// ============================================
+// 4. Extract trace from incoming request
+// ============================================
+
+const extractTraceContext = Effect.gen(function* () {
+  const request = yield* HttpServerRequest.HttpServerRequest
+
+  const traceparent = request.headers[TRACEPARENT_HEADER]
+
+  if (traceparent) {
+    const parsed = parseTraceparent(traceparent)
+    if (parsed) {
+      yield* Effect.log("Extracted trace context").pipe(
+        Effect.annotateLogs({
+          traceId: parsed.traceId,
+          parentSpanId: parsed.parentSpanId,
+        })
+      )
+      return parsed
+    }
+  }
+
+  // No incoming trace - start a new one
+  const newTrace: TraceContext = {
+    traceId: generateTraceId(),
+    spanId: generateSpanId(),
+    sampled: Math.random() < 0.1,  // 10% sampling
+  }
+
+  yield* Effect.log("Started new trace").pipe(
+    Effect.annotateLogs({ traceId: newTrace.traceId })
+  )
+
+  return newTrace
+})
+
+// ============================================
+// 5. Propagate trace to outgoing requests
+// ============================================
+
+const makeTracedHttpClient = Effect.gen(function* () {
+  const baseClient = yield* HttpClient.HttpClient
+  const trace = yield* CurrentTrace
+
+  return {
+    get: (url: string) =>
+      Effect.gen(function* () {
+        // Create child span for outgoing request
+        const childSpan: TraceContext = {
+          traceId: trace.traceId,
+          spanId: generateSpanId(),
+          parentSpanId: trace.spanId,
+          sampled: trace.sampled,
+        }
+
+        yield* Effect.log("Making traced HTTP request").pipe(
+          Effect.annotateLogs({
+            traceId: childSpan.traceId,
+            spanId: childSpan.spanId,
+            url,
+          })
+        )
+
+        const request = HttpClientRequest.get(url).pipe(
+          HttpClientRequest.setHeader(
+            TRACEPARENT_HEADER,
+            formatTraceparent(childSpan)
+          )
+        )
+
+        return yield* baseClient.execute(request)
+      }),
+  }
+})
+
+// ============================================
+// 6. Tracing middleware for HTTP server
+// ============================================
+
+const withTracing = <A, E, R>(
+  handler: Effect.Effect<A, E, R | CurrentTrace>
+): Effect.Effect<A, E, R | HttpServerRequest.HttpServerRequest> =>
+  Effect.gen(function* () {
+    const traceContext = yield* extractTraceContext
+
+    return yield* handler.pipe(
+      Effect.provideService(CurrentTrace, traceContext),
+      Effect.withLogSpan(`request-${traceContext.spanId}`),
+      Effect.annotateLogs({
+        "trace.id": traceContext.traceId,
+        "span.id": traceContext.spanId,
+        "parent.span.id": traceContext.parentSpanId ?? "none",
+      })
+    )
+  })
+
+// ============================================
+// 7. Example: Service A calls Service B
+// ============================================
+
+// Service B handler
+const serviceBHandler = withTracing(
+  Effect.gen(function* () {
+    const trace = yield* CurrentTrace
+    yield* Effect.log("Service B processing request")
+
+    // Simulate work
+    yield* Effect.sleep("50 millis")
+
+    return HttpServerResponse.json({
+      message: "Hello from Service B",
+      traceId: trace.traceId,
+    })
+  })
+)
+
+// Service A handler (calls Service B)
+const serviceAHandler = withTracing(
+  Effect.gen(function* () {
+    const trace = yield* CurrentTrace
+    yield* Effect.log("Service A processing request")
+
+    // Call Service B with trace propagation
+    const tracedClient = yield* makeTracedHttpClient
+    const response = yield* tracedClient.get("http://service-b/api/data")
+
+    yield* Effect.log("Service A received response from B")
+
+    return HttpServerResponse.json({
+      message: "Hello from Service A",
+      traceId: trace.traceId,
+    })
+  })
+)
+
+// ============================================
+// 8. Run and observe
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Distributed Tracing Demo ===")
+
+  // Simulate incoming request with trace
+  const incomingTrace: TraceContext = {
+    traceId: generateTraceId(),
+    spanId: generateSpanId(),
+    sampled: true,
+  }
+
+  yield* Effect.log("Processing traced request").pipe(
+    Effect.provideService(CurrentTrace, incomingTrace),
+    Effect.annotateLogs({
+      "trace.id": incomingTrace.traceId,
+      "span.id": incomingTrace.spanId,
+    })
+  )
+})
+
+Effect.runPromise(program)
+```
 
 ---
 
@@ -182,6 +825,281 @@ const workflow = Effect.gen(function* () {
 
 ---
 
+## Set Up Alerting
+
+Create alerts based on SLOs and symptoms, not causes.
+
+### Example
+
+```typescript
+import { Effect, Metric, Schedule, Duration, Ref } from "effect"
+
+// ============================================
+// 1. Define alertable conditions
+// ============================================
+
+interface Alert {
+  readonly name: string
+  readonly severity: "critical" | "warning" | "info"
+  readonly message: string
+  readonly timestamp: Date
+  readonly labels: Record<string, string>
+}
+
+interface AlertRule {
+  readonly name: string
+  readonly condition: Effect.Effect<boolean>
+  readonly severity: "critical" | "warning" | "info"
+  readonly message: string
+  readonly labels: Record<string, string>
+  readonly forDuration: Duration.DurationInput
+}
+
+// ============================================
+// 2. Define alert rules
+// ============================================
+
+const createAlertRules = (metrics: {
+  errorRate: () => Effect.Effect<number>
+  latencyP99: () => Effect.Effect<number>
+  availability: () => Effect.Effect<number>
+}): AlertRule[] => [
+  {
+    name: "HighErrorRate",
+    condition: metrics.errorRate().pipe(Effect.map((rate) => rate > 0.01)),
+    severity: "critical",
+    message: "Error rate exceeds 1%",
+    labels: { team: "backend", service: "api" },
+    forDuration: "5 minutes",
+  },
+  {
+    name: "HighLatency",
+    condition: metrics.latencyP99().pipe(Effect.map((p99) => p99 > 2)),
+    severity: "warning",
+    message: "P99 latency exceeds 2 seconds",
+    labels: { team: "backend", service: "api" },
+    forDuration: "10 minutes",
+  },
+  {
+    name: "LowAvailability",
+    condition: metrics.availability().pipe(Effect.map((avail) => avail < 99.9)),
+    severity: "critical",
+    message: "Availability below 99.9% SLO",
+    labels: { team: "backend", service: "api" },
+    forDuration: "5 minutes",
+  },
+  {
+    name: "ErrorBudgetLow",
+    condition: Effect.succeed(false), // Implement based on error budget calc
+    severity: "warning",
+    message: "Error budget below 25%",
+    labels: { team: "backend", service: "api" },
+    forDuration: "0 seconds",
+  },
+]
+
+// ============================================
+// 3. Alert manager
+// ============================================
+
+interface AlertState {
+  readonly firing: Map<string, { since: Date; alert: Alert }>
+  readonly resolved: Alert[]
+}
+
+const makeAlertManager = Effect.gen(function* () {
+  const state = yield* Ref.make<AlertState>({
+    firing: new Map(),
+    resolved: [],
+  })
+
+  const checkRule = (rule: AlertRule) =>
+    Effect.gen(function* () {
+      const isTriggered = yield* rule.condition
+
+      yield* Ref.modify(state, (s) => {
+        const firing = new Map(s.firing)
+        const resolved = [...s.resolved]
+        const key = rule.name
+
+        if (isTriggered) {
+          if (!firing.has(key)) {
+            // New alert
+            firing.set(key, {
+              since: new Date(),
+              alert: {
+                name: rule.name,
+                severity: rule.severity,
+                message: rule.message,
+                timestamp: new Date(),
+                labels: rule.labels,
+              },
+            })
+          }
+        } else {
+          if (firing.has(key)) {
+            // Alert resolved
+            const prev = firing.get(key)!
+            resolved.push({
+              ...prev.alert,
+              message: `[RESOLVED] ${prev.alert.message}`,
+              timestamp: new Date(),
+            })
+            firing.delete(key)
+          }
+        }
+
+        return [undefined, { firing, resolved }]
+      })
+    })
+
+  const getActiveAlerts = () =>
+    Ref.get(state).pipe(
+      Effect.map((s) => Array.from(s.firing.values()).map((f) => f.alert))
+    )
+
+  const getRecentResolved = () =>
+    Ref.get(state).pipe(Effect.map((s) => s.resolved.slice(-10)))
+
+  return {
+    checkRule,
+    getActiveAlerts,
+    getRecentResolved,
+  }
+})
+
+// ============================================
+// 4. Alert notification
+// ============================================
+
+interface NotificationChannel {
+  readonly send: (alert: Alert) => Effect.Effect<void>
+}
+
+const slackChannel: NotificationChannel = {
+  send: (alert) =>
+    Effect.gen(function* () {
+      const emoji =
+        alert.severity === "critical"
+          ? "🔴"
+          : alert.severity === "warning"
+            ? "🟡"
+            : "🔵"
+
+      yield* Effect.log(`${emoji} [${alert.severity.toUpperCase()}] ${alert.name}`).pipe(
+        Effect.annotateLogs({
+          message: alert.message,
+          labels: JSON.stringify(alert.labels),
+        })
+      )
+
+      // In real implementation: call Slack API
+    }),
+}
+
+const pagerDutyChannel: NotificationChannel = {
+  send: (alert) =>
+    Effect.gen(function* () {
+      if (alert.severity === "critical") {
+        yield* Effect.log("PagerDuty: Creating incident").pipe(
+          Effect.annotateLogs({ alert: alert.name })
+        )
+        // In real implementation: call PagerDuty API
+      }
+    }),
+}
+
+// ============================================
+// 5. Alert evaluation loop
+// ============================================
+
+const runAlertEvaluation = (
+  rules: AlertRule[],
+  channels: NotificationChannel[],
+  interval: Duration.DurationInput
+) =>
+  Effect.gen(function* () {
+    const alertManager = yield* makeAlertManager
+    const previousAlerts = yield* Ref.make(new Set<string>())
+
+    yield* Effect.forever(
+      Effect.gen(function* () {
+        // Check all rules
+        for (const rule of rules) {
+          yield* alertManager.checkRule(rule)
+        }
+
+        // Get current active alerts
+        const active = yield* alertManager.getActiveAlerts()
+        const current = new Set(active.map((a) => a.name))
+        const previous = yield* Ref.get(previousAlerts)
+
+        // Find newly firing alerts
+        for (const alert of active) {
+          if (!previous.has(alert.name)) {
+            // New alert - send notifications
+            for (const channel of channels) {
+              yield* channel.send(alert)
+            }
+          }
+        }
+
+        yield* Ref.set(previousAlerts, current)
+        yield* Effect.sleep(interval)
+      })
+    )
+  })
+
+// ============================================
+// 6. Prometheus alerting rules (YAML)
+// ============================================
+
+const prometheusAlertRules = `
+groups:
+  - name: effect-app-alerts
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_errors_total[5m]))
+          /
+          sum(rate(http_requests_total[5m]))
+          > 0.01
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }}"
+
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High P99 latency"
+          description: "P99 latency is {{ $value }}s"
+
+      - alert: SLOViolation
+        expr: |
+          sum(rate(http_requests_total{status!~"5.."}[30m]))
+          /
+          sum(rate(http_requests_total[30m]))
+          < 0.999
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SLO violation"
+          description: "Availability is {{ $value | humanizePercentage }}"
+`
+```
+
+---
+
 ## Trace Operations Across Services with Spans
 
 Use Effect.withSpan to create and annotate tracing spans for operations, enabling distributed tracing and performance analysis.
@@ -224,6 +1142,212 @@ const program = Effect.gen(function* () {
 - `Effect.withSpan` creates a tracing span around an operation.
 - Spans can be named and annotated with attributes for richer context.
 - Tracing enables distributed observability and performance analysis.
+
+---
+
+## Trace Operations Across Services with Spans
+
+Use Effect.withSpan to create custom tracing spans for important operations.
+
+### Example
+
+This example shows a multi-step operation. Each step, and the overall operation, is wrapped in a span. This creates a parent-child hierarchy in the trace that is easy to visualize.
+
+```typescript
+import { Effect, Duration } from "effect";
+
+const validateInput = (input: unknown) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo("Starting input validation...");
+    yield* Effect.sleep(Duration.millis(10));
+    const result = { email: "paul@example.com" };
+    yield* Effect.logInfo(`✅ Input validated: ${result.email}`);
+    return result;
+  }).pipe(
+    // This creates a child span
+    Effect.withSpan("validateInput")
+  );
+
+const saveToDatabase = (user: { email: string }) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo(`Saving user to database: ${user.email}`);
+    yield* Effect.sleep(Duration.millis(50));
+    const result = { id: 123, ...user };
+    yield* Effect.logInfo(`✅ User saved with ID: ${result.id}`);
+    return result;
+  }).pipe(
+    // This span includes useful attributes
+    Effect.withSpan("saveToDatabase", {
+      attributes: { "db.system": "postgresql", "db.user.email": user.email },
+    })
+  );
+
+const createUser = (input: unknown) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo("=== Creating User with Tracing ===");
+    yield* Effect.logInfo(
+      "This demonstrates how spans trace operations through the call stack"
+    );
+
+    const validated = yield* validateInput(input);
+    const user = yield* saveToDatabase(validated);
+
+    yield* Effect.logInfo(
+      `✅ User creation completed: ${JSON.stringify(user)}`
+    );
+    yield* Effect.logInfo(
+      "Note: In production, spans would be sent to a tracing system like Jaeger or Zipkin"
+    );
+
+    return user;
+  }).pipe(
+    // This is the parent span for the entire operation
+    Effect.withSpan("createUserOperation")
+  );
+
+// Demonstrate the tracing functionality
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("=== Trace Operations with Spans Demo ===");
+
+  // Create multiple users to show tracing in action
+  const user1 = yield* createUser({ email: "user1@example.com" });
+
+  yield* Effect.logInfo("\n--- Creating second user ---");
+  const user2 = yield* createUser({ email: "user2@example.com" });
+
+  yield* Effect.logInfo("\n=== Summary ===");
+  yield* Effect.logInfo("Created users with tracing spans:");
+  yield* Effect.logInfo(`User 1: ID ${user1.id}, Email: ${user1.email}`);
+  yield* Effect.logInfo(`User 2: ID ${user2.id}, Email: ${user2.email}`);
+});
+
+// When run with a tracing SDK, this will produce traces with root spans
+// "createUserOperation" and child spans: "validateInput" and "saveToDatabase".
+Effect.runPromise(program);
+```
+
+---
+
+---
+
+## Your First Logs
+
+Use Effect.log and related functions for structured, contextual logging.
+
+### Example
+
+```typescript
+import { Effect, Logger, LogLevel } from "effect"
+
+// ============================================
+// 1. Basic logging
+// ============================================
+
+const basicLogging = Effect.gen(function* () {
+  // Different log levels
+  yield* Effect.logDebug("Debug message - for development")
+  yield* Effect.logInfo("Info message - normal operation")
+  yield* Effect.log("Default log - same as logInfo")
+  yield* Effect.logWarning("Warning - something unusual")
+  yield* Effect.logError("Error - something went wrong")
+})
+
+// ============================================
+// 2. Logging with context
+// ============================================
+
+const withContext = Effect.gen(function* () {
+  // Add structured data to logs
+  yield* Effect.log("User logged in").pipe(
+    Effect.annotateLogs({
+      userId: "user-123",
+      action: "login",
+      ipAddress: "192.168.1.1",
+    })
+  )
+
+  // Add a single annotation
+  yield* Effect.log("Processing request").pipe(
+    Effect.annotateLogs("requestId", "req-456")
+  )
+})
+
+// ============================================
+// 3. Log spans for timing
+// ============================================
+
+const withTiming = Effect.gen(function* () {
+  yield* Effect.log("Starting operation")
+
+  // withLogSpan adds timing information
+  yield* Effect.sleep("100 millis").pipe(
+    Effect.withLogSpan("database-query")
+  )
+
+  yield* Effect.log("Operation complete")
+})
+
+// ============================================
+// 4. Practical example
+// ============================================
+
+interface User {
+  id: string
+  email: string
+}
+
+const processOrder = (orderId: string, userId: string) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo("Processing order").pipe(
+      Effect.annotateLogs({ orderId, userId })
+    )
+
+    // Simulate work
+    yield* Effect.sleep("50 millis")
+
+    yield* Effect.logInfo("Order processed successfully").pipe(
+      Effect.annotateLogs({ orderId, status: "completed" })
+    )
+
+    return { orderId, status: "completed" }
+  }).pipe(
+    Effect.withLogSpan("processOrder")
+  )
+
+// ============================================
+// 5. Configure log level
+// ============================================
+
+const debugProgram = basicLogging.pipe(
+  // Show all logs including debug
+  Logger.withMinimumLogLevel(LogLevel.Debug)
+)
+
+const productionProgram = basicLogging.pipe(
+  // Only show warnings and errors
+  Logger.withMinimumLogLevel(LogLevel.Warning)
+)
+
+// ============================================
+// 6. Run
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Basic Logging ===")
+  yield* basicLogging
+
+  yield* Effect.log("\n=== With Context ===")
+  yield* withContext
+
+  yield* Effect.log("\n=== With Timing ===")
+  yield* withTiming
+
+  yield* Effect.log("\n=== Process Order ===")
+  yield* processOrder("order-789", "user-123")
+})
+
+Effect.runPromise(program)
+```
 
 ---
 

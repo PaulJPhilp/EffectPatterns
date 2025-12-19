@@ -164,6 +164,266 @@ The `Effect.Service` helper creates the `Database` class, which acts as both the
 
 ---
 
+## Handle Resource Timeouts
+
+Always set timeouts on resource acquisition to prevent indefinite waits.
+
+### Example
+
+```typescript
+import { Effect, Duration, Scope } from "effect"
+
+// ============================================
+// 1. Define a resource with slow acquisition
+// ============================================
+
+interface Connection {
+  readonly id: string
+  readonly query: (sql: string) => Effect.Effect<unknown>
+}
+
+const acquireConnection = Effect.gen(function* () {
+  yield* Effect.log("Attempting to connect...")
+  
+  // Simulate slow connection
+  yield* Effect.sleep("2 seconds")
+  
+  const connection: Connection = {
+    id: crypto.randomUUID(),
+    query: (sql) => Effect.succeed({ rows: [] }),
+  }
+  
+  yield* Effect.log(`Connected: ${connection.id}`)
+  return connection
+})
+
+const releaseConnection = (conn: Connection) =>
+  Effect.log(`Released: ${conn.id}`)
+
+// ============================================
+// 2. Timeout on acquisition
+// ============================================
+
+const acquireWithTimeout = acquireConnection.pipe(
+  Effect.timeout("1 second"),
+  Effect.catchTag("TimeoutException", () =>
+    Effect.fail(new Error("Connection timeout - database unreachable"))
+  )
+)
+
+// ============================================
+// 3. Timeout on usage
+// ============================================
+
+const queryWithTimeout = (conn: Connection, sql: string) =>
+  conn.query(sql).pipe(
+    Effect.timeout("5 seconds"),
+    Effect.catchTag("TimeoutException", () =>
+      Effect.fail(new Error(`Query timeout: ${sql}`))
+    )
+  )
+
+// ============================================
+// 4. Full resource lifecycle with timeouts
+// ============================================
+
+const useConnectionWithTimeouts = Effect.acquireRelease(
+  acquireWithTimeout,
+  releaseConnection
+).pipe(
+  Effect.flatMap((conn) =>
+    Effect.gen(function* () {
+      yield* Effect.log("Running queries...")
+      
+      // Each query has its own timeout
+      const result1 = yield* queryWithTimeout(conn, "SELECT 1")
+      const result2 = yield* queryWithTimeout(conn, "SELECT 2")
+      
+      return [result1, result2]
+    })
+  ),
+  Effect.scoped
+)
+
+// ============================================
+// 5. Timeout on entire operation
+// ============================================
+
+const entireOperationWithTimeout = useConnectionWithTimeouts.pipe(
+  Effect.timeout("10 seconds"),
+  Effect.catchTag("TimeoutException", () =>
+    Effect.fail(new Error("Entire operation timed out"))
+  )
+)
+
+// ============================================
+// 6. Run with different scenarios
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Testing timeouts ===")
+  
+  const result = yield* entireOperationWithTimeout.pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.logError(`Failed: ${error.message}`)
+        return []
+      })
+    )
+  )
+  
+  yield* Effect.log(`Result: ${JSON.stringify(result)}`)
+})
+
+Effect.runPromise(program)
+```
+
+---
+
+## Manage Hierarchical Resources
+
+Use nested Scopes to manage resources with parent-child dependencies.
+
+### Example
+
+```typescript
+import { Effect, Scope, Exit } from "effect"
+
+// ============================================
+// 1. Define hierarchical resources
+// ============================================
+
+interface Database {
+  readonly name: string
+  readonly createConnection: () => Effect.Effect<Connection, never, Scope.Scope>
+}
+
+interface Connection {
+  readonly id: string
+  readonly database: string
+  readonly beginTransaction: () => Effect.Effect<Transaction, never, Scope.Scope>
+}
+
+interface Transaction {
+  readonly id: string
+  readonly connectionId: string
+  readonly execute: (sql: string) => Effect.Effect<void>
+}
+
+// ============================================
+// 2. Create resources with proper lifecycle
+// ============================================
+
+const makeDatabase = (name: string): Effect.Effect<Database, never, Scope.Scope> =>
+  Effect.acquireRelease(
+    Effect.gen(function* () {
+      yield* Effect.log(`Opening database: ${name}`)
+      
+      const db: Database = {
+        name,
+        createConnection: () => makeConnection(name),
+      }
+      
+      return db
+    }),
+    (db) => Effect.log(`Closing database: ${db.name}`)
+  )
+
+const makeConnection = (dbName: string): Effect.Effect<Connection, never, Scope.Scope> =>
+  Effect.acquireRelease(
+    Effect.gen(function* () {
+      const id = `conn-${crypto.randomUUID().slice(0, 8)}`
+      yield* Effect.log(`  Opening connection: ${id} to ${dbName}`)
+      
+      const conn: Connection = {
+        id,
+        database: dbName,
+        beginTransaction: () => makeTransaction(id),
+      }
+      
+      return conn
+    }),
+    (conn) => Effect.log(`  Closing connection: ${conn.id}`)
+  )
+
+const makeTransaction = (connId: string): Effect.Effect<Transaction, never, Scope.Scope> =>
+  Effect.acquireRelease(
+    Effect.gen(function* () {
+      const id = `tx-${crypto.randomUUID().slice(0, 8)}`
+      yield* Effect.log(`    Beginning transaction: ${id}`)
+      
+      const tx: Transaction = {
+        id,
+        connectionId: connId,
+        execute: (sql) => Effect.log(`      [${id}] ${sql}`),
+      }
+      
+      return tx
+    }),
+    (tx) => Effect.log(`    Committing transaction: ${tx.id}`)
+  )
+
+// ============================================
+// 3. Use hierarchical resources
+// ============================================
+
+const program = Effect.scoped(
+  Effect.gen(function* () {
+    yield* Effect.log("=== Starting hierarchical resource demo ===\n")
+    
+    // Level 1: Database
+    const db = yield* makeDatabase("myapp")
+    
+    // Level 2: Connection (child of database)
+    const conn = yield* db.createConnection()
+    
+    // Level 3: Transaction (child of connection)
+    const tx = yield* conn.beginTransaction()
+    
+    // Use the transaction
+    yield* tx.execute("INSERT INTO users (name) VALUES ('Alice')")
+    yield* tx.execute("INSERT INTO users (name) VALUES ('Bob')")
+    
+    yield* Effect.log("\n=== Work complete, releasing resources ===\n")
+    
+    // Resources released in reverse order:
+    // 1. Transaction committed
+    // 2. Connection closed
+    // 3. Database closed
+  })
+)
+
+Effect.runPromise(program)
+
+// ============================================
+// 4. Multiple children at same level
+// ============================================
+
+const multipleConnections = Effect.scoped(
+  Effect.gen(function* () {
+    const db = yield* makeDatabase("myapp")
+    
+    // Create multiple connections
+    const conn1 = yield* db.createConnection()
+    const conn2 = yield* db.createConnection()
+    
+    // Each connection can have transactions
+    const tx1 = yield* conn1.beginTransaction()
+    const tx2 = yield* conn2.beginTransaction()
+    
+    // Use both transactions
+    yield* Effect.all([
+      tx1.execute("UPDATE table1 SET x = 1"),
+      tx2.execute("UPDATE table2 SET y = 2"),
+    ])
+    
+    // All released in proper order
+  })
+)
+```
+
+---
+
 ## Manually Manage Lifecycles with `Scope`
 
 Use `Effect.scope` and `Scope.addFinalizer` for fine-grained control over resource cleanup.
@@ -217,6 +477,102 @@ Closed data.csv
 
 **Explanation:**
 `Effect.scope` creates a new `Scope` and provides it to the `program`. Inside `program`, we access this `Scope` and use `addFinalizer` to register cleanup actions immediately after acquiring each resource. When `Effect.scope` finishes executing `program`, it closes the scope, which in turn executes all registered finalizers in the reverse order of their addition.
+
+---
+
+## Pool Resources for Reuse
+
+Use Pool to manage expensive resources that can be reused across operations.
+
+### Example
+
+```typescript
+import { Effect, Pool, Scope, Duration } from "effect"
+
+// ============================================
+// 1. Define a poolable resource
+// ============================================
+
+interface DatabaseConnection {
+  readonly id: number
+  readonly query: (sql: string) => Effect.Effect<unknown[]>
+  readonly close: () => Effect.Effect<void>
+}
+
+let connectionId = 0
+
+const createConnection = Effect.gen(function* () {
+  const id = ++connectionId
+  yield* Effect.log(`Creating connection ${id}`)
+  
+  // Simulate connection setup time
+  yield* Effect.sleep("100 millis")
+  
+  const connection: DatabaseConnection = {
+    id,
+    query: (sql) => Effect.gen(function* () {
+      yield* Effect.log(`[Conn ${id}] Executing: ${sql}`)
+      return [{ result: "data" }]
+    }),
+    close: () => Effect.gen(function* () {
+      yield* Effect.log(`Closing connection ${id}`)
+    }),
+  }
+  
+  return connection
+})
+
+// ============================================
+// 2. Create a pool
+// ============================================
+
+const makeConnectionPool = Pool.make({
+  acquire: createConnection,
+  size: 5,  // Maximum 5 connections
+})
+
+// ============================================
+// 3. Use the pool
+// ============================================
+
+const runQuery = (pool: Pool.Pool<DatabaseConnection>, sql: string) =>
+  Effect.scoped(
+    Effect.gen(function* () {
+      // Get a connection from the pool
+      const connection = yield* pool.get
+      
+      // Use it
+      const results = yield* connection.query(sql)
+      
+      // Connection automatically returned to pool when scope ends
+      return results
+    })
+  )
+
+// ============================================
+// 4. Run multiple queries concurrently
+// ============================================
+
+const program = Effect.scoped(
+  Effect.gen(function* () {
+    const pool = yield* makeConnectionPool
+    
+    yield* Effect.log("Starting concurrent queries...")
+    
+    // Run 10 queries with only 5 connections
+    const queries = Array.from({ length: 10 }, (_, i) =>
+      runQuery(pool, `SELECT * FROM users WHERE id = ${i}`)
+    )
+    
+    const results = yield* Effect.all(queries, { concurrency: "unbounded" })
+    
+    yield* Effect.log(`Completed ${results.length} queries`)
+    return results
+  })
+)
+
+Effect.runPromise(program)
+```
 
 ---
 

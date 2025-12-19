@@ -1,5 +1,48 @@
 # error-management Patterns
 
+## Checking Option and Either Cases
+
+Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe conditional logic.
+
+### Example
+
+```typescript
+import { Option, Either } from "effect";
+
+// Option: Check if value is Some or None
+const option = Option.some(42);
+
+if (Option.isSome(option)) {
+  // option.value is available here
+  console.log("We have a value:", option.value);
+} else if (Option.isNone(option)) {
+  console.log("No value present");
+}
+
+// Either: Check if value is Right or Left
+const either = Either.left("error");
+
+if (Either.isRight(either)) {
+  // either.right is available here
+  console.log("Success:", either.right);
+} else if (Either.isLeft(either)) {
+  // either.left is available here
+  console.log("Failure:", either.left);
+}
+
+// Filtering a collection of Options
+const options = [Option.some(1), Option.none(), Option.some(3)];
+const presentValues = options.filter(Option.isSome).map((o) => o.value); // [1, 3]
+```
+
+**Explanation:**
+
+- `Option.isSome` and `Option.isNone` let you check for presence or absence.
+- `Either.isRight` and `Either.isLeft` let you check for success or failure.
+- These are especially useful for filtering or quick conditional logic.
+
+---
+
 ## Conditionally Branching Workflows
 
 Use predicate-based operators like Effect.filter and Effect.if to declaratively control workflow branching.
@@ -118,6 +161,31 @@ Effect.runPromise(program);
 ```
 
 ---
+
+---
+
+## Effectful Pattern Matching with matchEffect
+
+Use matchEffect to pattern match on the result of an Effect, running effectful logic for both success and failure cases.
+
+### Example
+
+```typescript
+import { Effect } from "effect";
+
+// Effect: Run different Effects on success or failure
+const effect = Effect.fail("Oops!").pipe(
+  Effect.matchEffect({
+    onFailure: (err) => Effect.logError(`Error: ${err}`),
+    onSuccess: (value) => Effect.log(`Success: ${value}`),
+  })
+); // Effect<void>
+```
+
+**Explanation:**
+
+- `matchEffect` allows you to run an Effect for both the success and failure cases.
+- This is useful for logging, cleanup, retries, or any effectful side effect that depends on the outcome.
 
 ---
 
@@ -674,6 +742,50 @@ failures, logging or escalating as appropriate.
 
 ---
 
+## Handling Specific Errors with catchTag and catchTags
+
+Use catchTag and catchTags to handle specific tagged error types in the Effect failure channel, providing targeted recovery logic.
+
+### Example
+
+```typescript
+import { Effect, Data } from "effect";
+
+// Define tagged error types
+class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
+
+type MyError = NotFoundError | ValidationError;
+
+// Effect: Handle only ValidationError, let others propagate
+const effect = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
+  Effect.catchTag("ValidationError", (err) =>
+    Effect.succeed(`Recovered from validation error: ${err.message}`)
+  )
+); // Effect<string>
+
+// Effect: Handle multiple error tags
+const effect2 = Effect.fail(new NotFoundError() as MyError).pipe(
+  Effect.catchTags({
+    NotFoundError: () => Effect.succeed("Handled not found!"),
+    ValidationError: (err) =>
+      Effect.succeed(`Handled validation: ${err.message}`),
+  })
+); // Effect<string>
+```
+
+**Explanation:**
+
+- `catchTag` lets you recover from a specific tagged error type.
+- `catchTags` lets you handle multiple tagged error types in one place.
+- Unhandled errors continue to propagate, preserving error safety.
+
+---
+
 ## Leverage Effect's Built-in Structured Logging
 
 Leverage Effect's built-in structured logging.
@@ -762,6 +874,177 @@ Effect.runPromise(program);
 ```
 
 ---
+
+---
+
+## Matching on Success and Failure with match
+
+Use match to pattern match on the result of an Effect, Option, or Either, handling both success and failure cases declaratively.
+
+### Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Handle both success and failure
+const effect = Effect.fail("Oops!").pipe(
+  Effect.match({
+    onFailure: (err) => `Error: ${err}`,
+    onSuccess: (value) => `Success: ${value}`,
+  })
+); // Effect<string>
+
+// Option: Handle Some and None cases
+const option = Option.some(42).pipe(
+  Option.match({
+    onNone: () => "No value",
+    onSome: (n) => `Value: ${n}`,
+  })
+); // string
+
+// Either: Handle Left and Right cases
+const either = Either.left("fail").pipe(
+  Either.match({
+    onLeft: (err) => `Error: ${err}`,
+    onRight: (value) => `Value: ${value}`,
+  })
+); // string
+```
+
+**Explanation:**
+
+- `Effect.match` lets you handle both the error and success channels in one place.
+- `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
+
+---
+
+## Matching Tagged Unions with matchTag and matchTags
+
+Use matchTag and matchTags to handle specific cases of tagged unions or custom error types in a declarative, type-safe way.
+
+### Example
+
+```typescript
+import { Data, Effect } from "effect";
+
+// Define a tagged error type
+class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  message: string;
+}> {}
+
+type MyError = NotFoundError | ValidationError;
+
+// Effect: Match on specific error tags
+const effect: Effect.Effect<string, never, never> = Effect.fail(
+  new ValidationError({ message: "Invalid input" }) as MyError
+).pipe(
+  Effect.catchTags({
+    NotFoundError: () => Effect.succeed("Not found!"),
+    ValidationError: (err) =>
+      Effect.succeed(`Validation failed: ${err.message}`),
+  })
+); // Effect<string>
+```
+
+**Explanation:**
+
+- `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
+- This is safer and more maintainable than using `instanceof` or manual property checks.
+
+---
+
+## Pattern Match on Option and Either
+
+Use Option.match() and Either.match() for declarative pattern matching on optional and error-prone values
+
+### Example
+
+### Basic Option Matching
+
+```typescript
+import { Option } from "effect";
+
+const getUserName = (id: number): Option.Option<string> => {
+  return id === 1 ? Option.some("Alice") : Option.none();
+};
+
+// Using .match() for declarative pattern matching
+const displayUser = (id: number): string =>
+  getUserName(id).pipe(
+    Option.match({
+      onNone: () => "Guest User",
+      onSome: (name) => `Hello, ${name}!`,
+    })
+  );
+
+console.log(displayUser(1));   // "Hello, Alice!"
+console.log(displayUser(999)); // "Guest User"
+```
+
+### Basic Either Matching
+
+```typescript
+import { Either } from "effect";
+
+const validateAge = (age: number): Either.Either<number, string> => {
+  return age >= 18
+    ? Either.right(age)
+    : Either.left("Must be 18 or older");
+};
+
+// Using .match() for error handling
+const processAge = (age: number): string =>
+  validateAge(age).pipe(
+    Either.match({
+      onLeft: (error) => `Validation failed: ${error}`,
+      onRight: (validAge) => `Age ${validAge} is valid`,
+    })
+  );
+
+console.log(processAge(25)); // "Age 25 is valid"
+console.log(processAge(15)); // "Validation failed: Must be 18 or older"
+```
+
+### Advanced: Nested Matching
+
+When dealing with nested Option and Either, use nested `.match()` calls:
+
+```typescript
+import { Option, Either } from "effect";
+
+interface UserProfile {
+  name: string;
+  age: number;
+}
+
+const getUserProfile = (
+  id: number
+): Option.Option<Either.Either<string, UserProfile>> => {
+  if (id === 0) return Option.none(); // User not found
+  if (id === 1) return Option.some(Either.left("Profile incomplete"));
+  return Option.some(Either.right({ name: "Bob", age: 25 }));
+};
+
+// Nested matching - first on Option, then on Either
+const displayProfile = (id: number): string =>
+  getUserProfile(id).pipe(
+    Option.match({
+      onNone: () => "User not found",
+      onSome: (result) =>
+        result.pipe(
+          Either.match({
+            onLeft: (error) => `Error: ${error}`,
+            onRight: (profile) => `${profile.name} (${profile.age})`,
+          })
+        ),
+    })
+  );
+
+console.log(displayProfile(0)); // "User not found"
+console.log(displayProfile(1)); // "Error: Profile incomplete"
+console.log(displayProfile(2)); // "Bob (25)"
+```
 
 ---
 
@@ -862,6 +1145,107 @@ Effect.runPromise(program.pipe(Effect.flatMap(() => demonstrateNotFound)));
 ```
 
 ---
+
+---
+
+## Your First Error Handler
+
+Use catchAll or catchTag to recover from errors and keep your program running.
+
+### Example
+
+```typescript
+import { Effect, Data } from "effect"
+
+// ============================================
+// 1. Define typed errors
+// ============================================
+
+class NetworkError extends Data.TaggedError("NetworkError")<{
+  readonly url: string
+}> {}
+
+class NotFoundError extends Data.TaggedError("NotFoundError")<{
+  readonly resource: string
+}> {}
+
+// ============================================
+// 2. Functions that can fail
+// ============================================
+
+const fetchData = (url: string): Effect.Effect<string, NetworkError> =>
+  url.startsWith("http")
+    ? Effect.succeed(`Data from ${url}`)
+    : Effect.fail(new NetworkError({ url }))
+
+const findUser = (id: string): Effect.Effect<{ id: string; name: string }, NotFoundError> =>
+  id === "123"
+    ? Effect.succeed({ id, name: "Alice" })
+    : Effect.fail(new NotFoundError({ resource: `user:${id}` }))
+
+// ============================================
+// 3. Handle ALL errors with catchAll
+// ============================================
+
+const withFallback = fetchData("invalid-url").pipe(
+  Effect.catchAll((error) => {
+    console.log(`Failed: ${error.url}, using fallback`)
+    return Effect.succeed("Fallback data")
+  })
+)
+
+// Result: "Fallback data"
+
+// ============================================
+// 4. Handle SPECIFIC errors with catchTag
+// ============================================
+
+const findUserOrDefault = (id: string) =>
+  findUser(id).pipe(
+    Effect.catchTag("NotFoundError", (error) => {
+      console.log(`User not found: ${error.resource}`)
+      return Effect.succeed({ id: "guest", name: "Guest User" })
+    })
+  )
+
+// ============================================
+// 5. Handle MULTIPLE error types
+// ============================================
+
+const fetchUser = (url: string, id: string) =>
+  Effect.gen(function* () {
+    yield* fetchData(url)
+    return yield* findUser(id)
+  })
+
+const robustFetchUser = (url: string, id: string) =>
+  fetchUser(url, id).pipe(
+    Effect.catchTags({
+      NetworkError: (e) => Effect.succeed({ id: "offline", name: `Offline (${e.url})` }),
+      NotFoundError: (e) => Effect.succeed({ id: "unknown", name: `Unknown (${e.resource})` }),
+    })
+  )
+
+// ============================================
+// 6. Run the examples
+// ============================================
+
+const program = Effect.gen(function* () {
+  // catchAll example
+  const data = yield* withFallback
+  yield* Effect.log(`Got data: ${data}`)
+
+  // catchTag example
+  const user = yield* findUserOrDefault("999")
+  yield* Effect.log(`Got user: ${user.name}`)
+
+  // Multiple error types
+  const result = yield* robustFetchUser("invalid", "999")
+  yield* Effect.log(`Robust result: ${result.name}`)
+})
+
+Effect.runPromise(program)
+```
 
 ---
 
