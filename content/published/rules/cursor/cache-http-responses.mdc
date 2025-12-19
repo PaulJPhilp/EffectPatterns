@@ -1,0 +1,258 @@
+description: Use an in-memory or persistent cache to store HTTP responses.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Cache HTTP Responses
+**Rule:** Use an in-memory or persistent cache to store HTTP responses.
+
+### Example
+```typescript
+import { Effect, Ref, HashMap, Option, Duration } from "effect"
+import { HttpClient, HttpClientResponse } from "@effect/platform"
+
+// ============================================
+// 1. Simple in-memory cache
+// ============================================
+
+interface CacheEntry<T> {
+  readonly data: T
+  readonly timestamp: number
+  readonly ttl: number
+}
+
+const makeCache = <T>() =>
+  Effect.gen(function* () {
+    const store = yield* Ref.make(HashMap.empty<string, CacheEntry<T>>())
+
+    const get = (key: string): Effect.Effect<Option.Option<T>> =>
+      Ref.get(store).pipe(
+        Effect.map((map) => {
+          const entry = HashMap.get(map, key)
+          if (entry._tag === "None") return Option.none()
+
+          const now = Date.now()
+          if (now > entry.value.timestamp + entry.value.ttl) {
+            return Option.none()  // Expired
+          }
+          return Option.some(entry.value.data)
+        })
+      )
+
+    const set = (key: string, data: T, ttl: number): Effect.Effect<void> =>
+      Ref.update(store, (map) =>
+        HashMap.set(map, key, {
+          data,
+          timestamp: Date.now(),
+          ttl,
+        })
+      )
+
+    const invalidate = (key: string): Effect.Effect<void> =>
+      Ref.update(store, (map) => HashMap.remove(map, key))
+
+    const clear = (): Effect.Effect<void> =>
+      Ref.set(store, HashMap.empty())
+
+    return { get, set, invalidate, clear }
+  })
+
+// ============================================
+// 2. Cached HTTP client
+// ============================================
+
+interface CachedHttpClient {
+  readonly get: <T>(
+    url: string,
+    options?: { ttl?: Duration.DurationInput }
+  ) => Effect.Effect<T, Error>
+  readonly invalidate: (url: string) => Effect.Effect<void>
+}
+
+const makeCachedHttpClient = Effect.gen(function* () {
+  const httpClient = yield* HttpClient.HttpClient
+  const cache = yield* makeCache<unknown>()
+
+  const client: CachedHttpClient = {
+    get: <T>(url: string, options?: { ttl?: Duration.DurationInput }) => {
+      const ttl = options?.ttl ? Duration.toMillis(Duration.decode(options.ttl)) : 60000
+
+      return Effect.gen(function* () {
+        // Check cache first
+        const cached = yield* cache.get(url)
+        if (Option.isSome(cached)) {
+          yield* Effect.log(`Cache hit: ${url}`)
+          return cached.value as T
+        }
+
+        yield* Effect.log(`Cache miss: ${url}`)
+
+        // Fetch from network
+        const response = yield* httpClient.get(url)
+        const data = yield* HttpClientResponse.json(response) as Effect.Effect<T>
+
+        // Store in cache
+        yield* cache.set(url, data, ttl)
+
+        return data
+      })
+    },
+
+    invalidate: (url) => cache.invalidate(url),
+  }
+
+  return client
+})
+
+// ============================================
+// 3. Stale-while-revalidate pattern
+// ============================================
+
+interface SWRCache<T> {
+  readonly data: T
+  readonly timestamp: number
+  readonly staleAfter: number
+  readonly expireAfter: number
+}
+
+const makeSWRClient = Effect.gen(function* () {
+  const httpClient = yield* HttpClient.HttpClient
+  const cache = yield* Ref.make(HashMap.empty<string, SWRCache<unknown>>())
+
+  return {
+    get: <T>(
+      url: string,
+      options: {
+        staleAfter: Duration.DurationInput
+        expireAfter: Duration.DurationInput
+      }
+    ) =>
+      Effect.gen(function* () {
+        const now = Date.now()
+        const staleMs = Duration.toMillis(Duration.decode(options.staleAfter))
+        const expireMs = Duration.toMillis(Duration.decode(options.expireAfter))
+
+        const cached = yield* Ref.get(cache).pipe(
+          Effect.map((map) => HashMap.get(map, url))
+        )
+
+        if (cached._tag === "Some") {
+          const entry = cached.value
+          const age = now - entry.timestamp
+
+          if (age < staleMs) {
+            // Fresh - return immediately
+            return entry.data as T
+          }
+
+          if (age < expireMs) {
+            // Stale - return cached, revalidate in background
+            yield* Effect.fork(
+              httpClient.get(url).pipe(
+                Effect.flatMap((r) => HttpClientResponse.json(r)),
+                Effect.flatMap((data) =>
+                  Ref.update(cache, (map) =>
+                    HashMap.set(map, url, {
+                      data,
+                      timestamp: Date.now(),
+                      staleAfter: staleMs,
+                      expireAfter: expireMs,
+                    })
+                  )
+                ),
+                Effect.catchAll(() => Effect.void)  // Ignore errors
+              )
+            )
+            return entry.data as T
+          }
+        }
+
+        // Expired or missing - fetch fresh
+        const response = yield* httpClient.get(url)
+        const data = yield* HttpClientResponse.json(response) as Effect.Effect<T>
+
+        yield* Ref.update(cache, (map) =>
+          HashMap.set(map, url, {
+            data,
+            timestamp: now,
+            staleAfter: staleMs,
+            expireAfter: expireMs,
+          })
+        )
+
+        return data
+      }),
+  }
+})
+
+// ============================================
+// 4. Cache with request deduplication
+// ============================================
+
+const makeDeduplicatedClient = Effect.gen(function* () {
+  const httpClient = yield* HttpClient.HttpClient
+  const inFlight = yield* Ref.make(HashMap.empty<string, Effect.Effect<unknown>>())
+  const cache = yield* makeCache<unknown>()
+
+  return {
+    get: <T>(url: string, ttl: number = 60000) =>
+      Effect.gen(function* () {
+        // Check cache
+        const cached = yield* cache.get(url)
+        if (Option.isSome(cached)) {
+          return cached.value as T
+        }
+
+        // Check if request already in flight
+        const pending = yield* Ref.get(inFlight).pipe(
+          Effect.map((map) => HashMap.get(map, url))
+        )
+
+        if (pending._tag === "Some") {
+          yield* Effect.log(`Deduplicating request: ${url}`)
+          return (yield* pending.value) as T
+        }
+
+        // Make the request
+        const request = httpClient.get(url).pipe(
+          Effect.flatMap((r) => HttpClientResponse.json(r)),
+          Effect.tap((data) => cache.set(url, data, ttl)),
+          Effect.ensuring(
+            Ref.update(inFlight, (map) => HashMap.remove(map, url))
+          )
+        )
+
+        // Store in-flight request
+        yield* Ref.update(inFlight, (map) => HashMap.set(map, url, request))
+
+        return (yield* request) as T
+      }),
+  }
+})
+
+// ============================================
+// 5. Usage
+// ============================================
+
+const program = Effect.gen(function* () {
+  const client = yield* makeCachedHttpClient
+
+  // First call - cache miss
+  yield* client.get("https://api.example.com/users/1", { ttl: "5 minutes" })
+
+  // Second call - cache hit
+  yield* client.get("https://api.example.com/users/1")
+
+  // Invalidate when data changes
+  yield* client.invalidate("https://api.example.com/users/1")
+})
+```
+
+**Explanation:**  
+Caching provides:
+
+1. **Performance** - Avoid redundant network calls
+2. **Cost reduction** - Fewer API calls
+3. **Resilience** - Serve stale data when API is down
+4. **Rate limit safety** - Stay under quotas
+
+---

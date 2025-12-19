@@ -137,6 +137,118 @@ Generators keep sequential logic readable and easy to maintain.
 
 ---
 
+## Create Type-Safe Errors
+
+Use Data.TaggedError to create typed, distinguishable errors for your domain.
+
+### Example
+
+```typescript
+import { Effect, Data } from "effect"
+
+// ============================================
+// 1. Define tagged errors for your domain
+// ============================================
+
+class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
+  readonly userId: string
+}> {}
+
+class InvalidEmailError extends Data.TaggedError("InvalidEmailError")<{
+  readonly email: string
+  readonly reason: string
+}> {}
+
+class DuplicateUserError extends Data.TaggedError("DuplicateUserError")<{
+  readonly email: string
+}> {}
+
+// ============================================
+// 2. Use in Effect functions
+// ============================================
+
+interface User {
+  id: string
+  email: string
+  name: string
+}
+
+const validateEmail = (email: string): Effect.Effect<string, InvalidEmailError> => {
+  if (!email.includes("@")) {
+    return Effect.fail(new InvalidEmailError({
+      email,
+      reason: "Missing @ symbol"
+    }))
+  }
+  return Effect.succeed(email)
+}
+
+const findUser = (id: string): Effect.Effect<User, UserNotFoundError> => {
+  // Simulate database lookup
+  if (id === "123") {
+    return Effect.succeed({ id, email: "alice@example.com", name: "Alice" })
+  }
+  return Effect.fail(new UserNotFoundError({ userId: id }))
+}
+
+const createUser = (
+  email: string,
+  name: string
+): Effect.Effect<User, InvalidEmailError | DuplicateUserError> =>
+  Effect.gen(function* () {
+    const validEmail = yield* validateEmail(email)
+
+    // Simulate duplicate check
+    if (validEmail === "taken@example.com") {
+      return yield* Effect.fail(new DuplicateUserError({ email: validEmail }))
+    }
+
+    return {
+      id: crypto.randomUUID(),
+      email: validEmail,
+      name,
+    }
+  })
+
+// ============================================
+// 3. Handle errors by tag
+// ============================================
+
+const program = createUser("alice@example.com", "Alice").pipe(
+  Effect.catchTag("InvalidEmailError", (error) =>
+    Effect.succeed({
+      id: "fallback",
+      email: "default@example.com",
+      name: `${error.email} was invalid: ${error.reason}`,
+    })
+  ),
+  Effect.catchTag("DuplicateUserError", (error) =>
+    Effect.fail(new Error(`Email ${error.email} already registered`))
+  )
+)
+
+// ============================================
+// 4. Match on all errors
+// ============================================
+
+const handleAllErrors = createUser("bad-email", "Bob").pipe(
+  Effect.catchTags({
+    InvalidEmailError: (e) => Effect.succeed(`Invalid: ${e.reason}`),
+    DuplicateUserError: (e) => Effect.succeed(`Duplicate: ${e.email}`),
+  })
+)
+
+// ============================================
+// 5. Run and see results
+// ============================================
+
+Effect.runPromise(program)
+  .then((user) => console.log("Created:", user))
+  .catch((error) => console.error("Failed:", error))
+```
+
+---
+
 ## Define Contracts Upfront with Schema
 
 Define contracts upfront with schema.
@@ -338,6 +450,116 @@ Effect.runPromise(
 
 ---
 
+## Handle Missing Values with Option
+
+Use Option instead of null/undefined to make missing values explicit and type-safe.
+
+### Example
+
+```typescript
+import { Option, Effect } from "effect"
+
+// ============================================
+// 1. Creating Options
+// ============================================
+
+// Some - a value is present
+const hasValue = Option.some(42)
+
+// None - no value
+const noValue = Option.none<number>()
+
+// From nullable - null/undefined becomes None
+const fromNull = Option.fromNullable(null)        // None
+const fromValue = Option.fromNullable("hello")    // Some("hello")
+
+// ============================================
+// 2. Checking and extracting values
+// ============================================
+
+const maybeUser = Option.some({ name: "Alice", age: 30 })
+
+// Check if value exists
+if (Option.isSome(maybeUser)) {
+  console.log(`User: ${maybeUser.value.name}`)
+}
+
+// Get with default
+const name = Option.getOrElse(
+  Option.map(maybeUser, u => u.name),
+  () => "Anonymous"
+)
+
+// ============================================
+// 3. Transforming Options
+// ============================================
+
+const maybeNumber = Option.some(5)
+
+// Map - transform the value if present
+const doubled = Option.map(maybeNumber, n => n * 2)  // Some(10)
+
+// FlatMap - chain operations that return Option
+const safeDivide = (a: number, b: number): Option.Option<number> =>
+  b === 0 ? Option.none() : Option.some(a / b)
+
+const result = Option.flatMap(maybeNumber, n => safeDivide(10, n))  // Some(2)
+
+// ============================================
+// 4. Domain modeling example
+// ============================================
+
+interface User {
+  readonly id: string
+  readonly name: string
+  readonly email: Option.Option<string>  // Email is optional
+  readonly phone: Option.Option<string>  // Phone is optional
+}
+
+const createUser = (name: string): User => ({
+  id: crypto.randomUUID(),
+  name,
+  email: Option.none(),
+  phone: Option.none(),
+})
+
+const addEmail = (user: User, email: string): User => ({
+  ...user,
+  email: Option.some(email),
+})
+
+const getContactInfo = (user: User): string => {
+  const email = Option.getOrElse(user.email, () => "no email")
+  const phone = Option.getOrElse(user.phone, () => "no phone")
+  return `${user.name}: ${email}, ${phone}`
+}
+
+// ============================================
+// 5. Use in Effects
+// ============================================
+
+const findUser = (id: string): Effect.Effect<Option.Option<User>> =>
+  Effect.succeed(
+    id === "123"
+      ? Option.some({ id, name: "Alice", email: Option.none(), phone: Option.none() })
+      : Option.none()
+  )
+
+const program = Effect.gen(function* () {
+  const maybeUser = yield* findUser("123")
+
+  if (Option.isSome(maybeUser)) {
+    yield* Effect.log(`Found: ${maybeUser.value.name}`)
+  } else {
+    yield* Effect.log("User not found")
+  }
+})
+
+Effect.runPromise(program)
+```
+
+---
+
 ## Model Optional Values Safely with Option
 
 Use Option<A> to explicitly model values that may be absent, avoiding null or undefined.
@@ -407,6 +629,38 @@ const sendEmail = (email: Email, body: string) => {
 **Explanation:**  
 Branding ensures that only validated values are used, reducing bugs and
 repetitive checks.
+
+---
+
+## Modeling Validated Domain Types with Brand
+
+Use Brand to define types like Email, UserId, or PositiveInt, ensuring only valid values can be constructed and used.
+
+### Example
+
+```typescript
+import { Brand } from "effect";
+
+// Define a branded type for Email
+type Email = string & Brand.Brand<"Email">;
+
+// Function that only accepts Email, not any string
+function sendWelcome(email: Email) {
+  // ...
+}
+
+// Constructing an Email value (unsafe, see next pattern for validation)
+const email = "user@example.com" as Email;
+
+sendWelcome(email); // OK
+// sendWelcome("not-an-email"); // Type error! (commented to allow compilation)
+```
+
+**Explanation:**
+
+- `Brand.Branded<T, Name>` creates a new type that is distinct from its base type.
+- Only values explicitly branded as `Email` can be used where an `Email` is required.
+- This prevents accidental mixing of domain types.
 
 ---
 
@@ -657,6 +911,135 @@ Effect.runPromise(program);
 **Explanation:**  
 `Effect.gen` allows you to express business logic in a clear, sequential style,
 improving maintainability.
+
+---
+
+## Validating and Parsing Branded Types
+
+Combine Schema and Brand to validate and parse branded types, guaranteeing only valid domain values are created at runtime.
+
+### Example
+
+```typescript
+import { Brand, Effect, Schema } from "effect";
+
+// Define a branded type for Email
+type Email = string & Brand.Brand<"Email">;
+
+// Create a Schema for Email validation
+const EmailSchema = Schema.String.pipe(
+  Schema.pattern(/^[^@]+@[^@]+\.[^@]+$/), // Simple email regex
+  Schema.brand("Email" as const) // Attach the brand
+);
+
+// Parse and validate an email at runtime
+const parseEmail = (input: string) =>
+  Effect.try({
+    try: () => Schema.decodeSync(EmailSchema)(input),
+    catch: (err) => `Invalid email: ${String(err)}`,
+  });
+
+// Usage
+parseEmail("user@example.com").pipe(
+  Effect.match({
+    onSuccess: (email) => console.log("Valid email:", email),
+    onFailure: (err) => console.error(err),
+  })
+);
+```
+
+**Explanation:**
+
+- `Schema` is used to define validation logic for the branded type.
+- `Brand.schema<Email>()` attaches the brand to the schema, so only validated values can be constructed as `Email`.
+- This pattern ensures both compile-time and runtime safety.
+
+---
+
+## Your First Domain Model
+
+Start domain modeling by defining clear interfaces for your business entities.
+
+### Example
+
+```typescript
+import { Effect } from "effect"
+
+// ============================================
+// 1. Define domain entities as interfaces
+// ============================================
+
+interface User {
+  readonly id: string
+  readonly email: string
+  readonly name: string
+  readonly createdAt: Date
+}
+
+interface Product {
+  readonly sku: string
+  readonly name: string
+  readonly price: number
+  readonly inStock: boolean
+}
+
+interface Order {
+  readonly id: string
+  readonly userId: string
+  readonly items: ReadonlyArray<OrderItem>
+  readonly total: number
+  readonly status: OrderStatus
+}
+
+interface OrderItem {
+  readonly productSku: string
+  readonly quantity: number
+  readonly unitPrice: number
+}
+
+type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered"
+
+// ============================================
+// 2. Create domain functions
+// ============================================
+
+const createUser = (email: string, name: string): User => ({
+  id: crypto.randomUUID(),
+  email,
+  name,
+  createdAt: new Date(),
+})
+
+const calculateOrderTotal = (items: ReadonlyArray<OrderItem>): number =>
+  items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+
+// ============================================
+// 3. Use in Effect programs
+// ============================================
+
+const program = Effect.gen(function* () {
+  const user = createUser("alice@example.com", "Alice")
+  yield* Effect.log(`Created user: ${user.name}`)
+
+  const items: OrderItem[] = [
+    { productSku: "WIDGET-001", quantity: 2, unitPrice: 29.99 },
+    { productSku: "GADGET-002", quantity: 1, unitPrice: 49.99 },
+  ]
+
+  const order: Order = {
+    id: crypto.randomUUID(),
+    userId: user.id,
+    items,
+    total: calculateOrderTotal(items),
+    status: "pending",
+  }
+
+  yield* Effect.log(`Order total: $${order.total.toFixed(2)}`)
+  return order
+})
+
+Effect.runPromise(program)
+```
 
 ---
 

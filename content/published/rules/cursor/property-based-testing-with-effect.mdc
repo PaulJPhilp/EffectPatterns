@@ -1,0 +1,226 @@
+description: Use property-based testing to find edge cases your example-based tests miss.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Property-Based Testing with Effect
+**Rule:** Use property-based testing to find edge cases your example-based tests miss.
+
+### Example
+```typescript
+import { describe, it, expect } from "vitest"
+import { Effect, Option, Either, Schema } from "effect"
+import * as fc from "fast-check"
+
+describe("Property-Based Testing with Effect", () => {
+  // ============================================
+  // 1. Test pure function properties
+  // ============================================
+
+  it("should satisfy array reverse properties", () => {
+    fc.assert(
+      fc.property(fc.array(fc.integer()), (arr) => {
+        // Reversing twice returns original
+        const reversed = arr.slice().reverse()
+        const doubleReversed = reversed.slice().reverse()
+
+        return JSON.stringify(arr) === JSON.stringify(doubleReversed)
+      })
+    )
+  })
+
+  it("should satisfy sort idempotence", () => {
+    fc.assert(
+      fc.property(fc.array(fc.integer()), (arr) => {
+        const sorted = arr.slice().sort((a, b) => a - b)
+        const sortedTwice = sorted.slice().sort((a, b) => a - b)
+
+        return JSON.stringify(sorted) === JSON.stringify(sortedTwice)
+      })
+    )
+  })
+
+  // ============================================
+  // 2. Test Effect operations
+  // ============================================
+
+  it("should map then flatMap equals flatMap with mapping", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.integer(), async (n) => {
+        const f = (x: number) => x * 2
+        const g = (x: number) => Effect.succeed(x + 1)
+
+        // map then flatMap
+        const result1 = await Effect.runPromise(
+          Effect.succeed(n).pipe(
+            Effect.map(f),
+            Effect.flatMap(g)
+          )
+        )
+
+        // flatMap with mapping inside
+        const result2 = await Effect.runPromise(
+          Effect.succeed(n).pipe(
+            Effect.flatMap((x) => g(f(x)))
+          )
+        )
+
+        return result1 === result2
+      })
+    )
+  })
+
+  // ============================================
+  // 3. Test Option properties
+  // ============================================
+
+  it("should satisfy Option map identity", () => {
+    fc.assert(
+      fc.property(fc.option(fc.integer(), { nil: undefined }), (maybeN) => {
+        const option = maybeN === undefined ? Option.none() : Option.some(maybeN)
+
+        // Mapping identity function returns same Option
+        const mapped = Option.map(option, (x) => x)
+
+        return Option.getOrElse(option, () => -1) ===
+               Option.getOrElse(mapped, () => -1)
+      })
+    )
+  })
+
+  // ============================================
+  // 4. Test Schema encode/decode roundtrip
+  // ============================================
+
+  it("should roundtrip through Schema", async () => {
+    const UserSchema = Schema.Struct({
+      name: Schema.String,
+      age: Schema.Number.pipe(Schema.int(), Schema.positive()),
+    })
+
+    const userArbitrary = fc.record({
+      name: fc.string({ minLength: 1 }),
+      age: fc.integer({ min: 1, max: 120 }),
+    })
+
+    await fc.assert(
+      fc.asyncProperty(userArbitrary, async (user) => {
+        const encode = Schema.encode(UserSchema)
+        const decode = Schema.decode(UserSchema)
+
+        // Encode then decode should return equivalent value
+        const encoded = await Effect.runPromise(encode(user))
+        const decoded = await Effect.runPromise(decode(encoded))
+
+        return decoded.name === user.name && decoded.age === user.age
+      })
+    )
+  })
+
+  // ============================================
+  // 5. Test error handling properties
+  // ============================================
+
+  it("should recover from any error", async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.string(),
+        fc.string(),
+        async (errorMsg, fallback) => {
+          const failing = Effect.fail(new Error(errorMsg))
+
+          const result = await Effect.runPromise(
+            failing.pipe(
+              Effect.catchAll(() => Effect.succeed(fallback))
+            )
+          )
+
+          return result === fallback
+        }
+      )
+    )
+  })
+
+  // ============================================
+  // 6. Custom generators for domain types
+  // ============================================
+
+  interface Email {
+    readonly _tag: "Email"
+    readonly value: string
+  }
+
+  const emailArbitrary = fc.emailAddress().map((value): Email => ({
+    _tag: "Email",
+    value,
+  }))
+
+  interface UserId {
+    readonly _tag: "UserId"
+    readonly value: string
+  }
+
+  const userIdArbitrary = fc.uuid().map((value): UserId => ({
+    _tag: "UserId",
+    value,
+  }))
+
+  it("should handle domain types correctly", () => {
+    fc.assert(
+      fc.property(emailArbitrary, userIdArbitrary, (email, userId) => {
+        // Test your domain functions with generated domain types
+        return email.value.includes("@") && userId.value.length > 0
+      })
+    )
+  })
+
+  // ============================================
+  // 7. Test algebraic properties
+  // ============================================
+
+  it("should satisfy monoid properties for string concat", () => {
+    const empty = ""
+    const concat = (a: string, b: string) => a + b
+
+    fc.assert(
+      fc.property(fc.string(), fc.string(), fc.string(), (a, b, c) => {
+        // Identity: empty + a = a = a + empty
+        const leftIdentity = concat(empty, a) === a
+        const rightIdentity = concat(a, empty) === a
+
+        // Associativity: (a + b) + c = a + (b + c)
+        const associative = concat(concat(a, b), c) === concat(a, concat(b, c))
+
+        return leftIdentity && rightIdentity && associative
+      })
+    )
+  })
+
+  // ============================================
+  // 8. Test with constraints
+  // ============================================
+
+  it("should handle positive numbers", () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 1, max: 1000000 }),
+        fc.integer({ min: 1, max: 1000000 }),
+        (a, b) => {
+          // Division of positives is positive
+          const result = a / b
+          return result > 0
+        }
+      )
+    )
+  })
+})
+```
+
+**Explanation:**  
+Property-based testing finds bugs that example tests miss:
+
+1. **Edge cases** - Empty arrays, negative numbers, unicode
+2. **Invariants** - Properties that should always hold
+3. **Shrinking** - Minimal failing examples
+4. **Coverage** - Many inputs from one test
+
+---

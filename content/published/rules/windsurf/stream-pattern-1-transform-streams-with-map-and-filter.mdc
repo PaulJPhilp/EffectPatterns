@@ -1,0 +1,154 @@
+description: Use map and filter combinators to transform stream elements declaratively, creating pipelines that reshape data without materializing intermediate results.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Stream Pattern 1: Transform Streams with Map and Filter
+**Rule:** Use map and filter combinators to transform stream elements declaratively, creating pipelines that reshape data without materializing intermediate results.
+
+### Example
+This example demonstrates transforming a stream of raw data through multiple stages.
+
+```typescript
+import { Stream, Effect, Chunk } from "effect";
+
+interface RawLogEntry {
+  readonly timestamp: string;
+  readonly level: string;
+  readonly message: string;
+}
+
+interface ProcessedLog {
+  readonly date: Date;
+  readonly severity: "low" | "medium" | "high";
+  readonly normalizedMessage: string;
+}
+
+// Create a stream of raw log entries
+const createLogStream = (): Stream.Stream<RawLogEntry> =>
+  Stream.fromIterable([
+    { timestamp: "2025-12-17T09:00:00Z", level: "DEBUG", message: "App starting" },
+    { timestamp: "2025-12-17T09:01:00Z", level: "INFO", message: "Connected to DB" },
+    { timestamp: "2025-12-17T09:02:00Z", level: "ERROR", message: "Query timeout" },
+    { timestamp: "2025-12-17T09:03:00Z", level: "DEBUG", message: "Retry initiated" },
+    { timestamp: "2025-12-17T09:04:00Z", level: "WARN", message: "Connection degraded" },
+    { timestamp: "2025-12-17T09:05:00Z", level: "INFO", message: "Recovered" },
+  ]);
+
+// Transform: Parse timestamp
+const parseTimestamp = (entry: RawLogEntry): RawLogEntry => ({
+  ...entry,
+  timestamp: entry.timestamp, // Already ISO, but could parse here
+});
+
+// Transform: Map log level to severity
+const mapSeverity = (level: string): "low" | "medium" | "high" => {
+  if (level === "DEBUG" || level === "INFO") return "low";
+  if (level === "WARN") return "medium";
+  return "high";
+};
+
+// Transform: Normalize message
+const normalizeMessage = (message: string): string =>
+  message.toLowerCase().trim();
+
+// Filter: Keep only important logs
+const isImportant = (entry: RawLogEntry): boolean => {
+  return entry.level !== "DEBUG";
+};
+
+// Main pipeline
+const program = Effect.gen(function* () {
+  console.log(`\n[STREAM] Processing log stream with map/filter\n`);
+
+  // Create and transform stream
+  const transformedStream = createLogStream().pipe(
+    // Filter: Keep only non-debug logs
+    Stream.filter((entry) => {
+      const important = isImportant(entry);
+      console.log(
+        `[FILTER] ${entry.level} → ${important ? "✓ kept" : "✗ filtered out"}`
+      );
+      return important;
+    }),
+
+    // Map: Extract date
+    Stream.map((entry) => {
+      const date = new Date(entry.timestamp);
+      console.log(`[MAP-1] Parsed date: ${date.toISOString()}`);
+      return { ...entry, parsedDate: date };
+    }),
+
+    // Map: Normalize and map severity
+    Stream.map((entry) => {
+      const processed: ProcessedLog = {
+        date: entry.parsedDate,
+        severity: mapSeverity(entry.level),
+        normalizedMessage: normalizeMessage(entry.message),
+      };
+      console.log(
+        `[MAP-2] Transformed: ${entry.level} → ${processed.severity}`
+      );
+      return processed;
+    })
+  );
+
+  // Collect all transformed logs
+  const results = yield* transformedStream.pipe(
+    Stream.runCollect
+  );
+
+  console.log(`\n[RESULTS]`);
+  console.log(`  Total logs: ${results.length}`);
+
+  Chunk.forEach(results, (log) => {
+    console.log(
+      `  - [${log.severity.toUpperCase()}] ${log.date.toISOString()}: ${log.normalizedMessage}`
+    );
+  });
+});
+
+Effect.runPromise(program);
+```
+
+Output shows lazy evaluation and filtering:
+```
+[STREAM] Processing log stream with map/filter
+
+[FILTER] DEBUG → ✗ filtered out
+[FILTER] INFO → ✓ kept
+[MAP-1] Parsed date: 2025-12-17T09:01:00.000Z
+[MAP-2] Transformed: INFO → low
+[FILTER] ERROR → ✓ kept
+[MAP-1] Parsed date: 2025-12-17T09:02:00.000Z
+[MAP-2] Transformed: ERROR → high
+...
+
+[RESULTS]
+  Total logs: 5
+  - [LOW] 2025-12-17T09:01:00.000Z: connected to db
+  - [HIGH] 2025-12-17T09:02:00.000Z: query timeout
+  ...
+```
+
+---
+
+**Explanation:**  
+Streaming data transformations without map/filter create problems:
+
+- **Buffering**: Must collect all data before transforming
+- **Code verbosity**: Manual loops for each transformation
+- **Memory usage**: Large intermediate arrays
+- **Composability**: Hard to chain operations
+
+Map/filter enable:
+
+- **Lazy evaluation**: Transform on-demand
+- **Composable**: Chain operations naturally
+- **Memory efficient**: No intermediate collections
+- **Expressive**: Declare intent clearly
+
+Real-world example: Processing logs
+- **Without map/filter**: Collect logs, filter by level, map to objects, transform fields
+- **With map/filter**: `logStream.pipe(Stream.filter(...), Stream.map(...))`
+
+---

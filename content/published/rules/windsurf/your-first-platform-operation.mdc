@@ -1,0 +1,58 @@
+description: Use @effect/platform for cross-platform system operations with Effect integration.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Your First Platform Operation
+**Rule:** Use @effect/platform for cross-platform system operations with Effect integration.
+
+### Example
+```typescript
+import { Effect } from "effect"
+import { FileSystem } from "@effect/platform"
+import { NodeContext, NodeRuntime } from "@effect/platform-node"
+
+// Read a file - returns Effect<string, PlatformError>
+const readConfig = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem
+  
+  // Read file as UTF-8 string
+  const content = yield* fs.readFileString("./config.json")
+  
+  return JSON.parse(content)
+})
+
+// Write a file
+const writeLog = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem
+  
+  yield* fs.writeFileString(
+    "./app.log",
+    `Started at ${new Date().toISOString()}\n`
+  )
+})
+
+// Combine operations
+const program = Effect.gen(function* () {
+  const config = yield* readConfig
+  yield* Effect.log(`Loaded config: ${config.appName}`)
+  
+  yield* writeLog
+  yield* Effect.log("Log file created")
+})
+
+// Run with Node.js platform
+program.pipe(
+  Effect.provide(NodeContext.layer),
+  NodeRuntime.runMain
+)
+```
+
+**Explanation:**  
+Platform wraps system operations in Effect, giving you:
+
+1. **Type safety** - File operations return `Effect<Content, PlatformError>`
+2. **Resource management** - Files are automatically closed
+3. **Cross-platform** - Same code works on Node.js, Bun, browser
+4. **Composability** - Chain file ops with other effects
+
+---

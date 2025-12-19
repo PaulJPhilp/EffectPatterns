@@ -1,354 +1,1016 @@
-# Error Handling Patterns
+# error-handling Patterns
 
-## Accumulate Multiple Errors with Either
+## Error Handling Pattern 1: Accumulating Multiple Errors
 
-Use Either to model computations that may fail, making errors explicit and type-safe.
-
-### Example
-
-```typescript
-import { Either } from "effect";
-
-// Create a Right (success) or Left (failure)
-const success = Either.right(42); // Either<never, number>
-const failure = Either.left("Something went wrong"); // Either<string, never>
-
-// Pattern match on Either
-const result = success.pipe(
-  Either.match({
-    onLeft: (err) => `Error: ${err}`,
-    onRight: (value) => `Value: ${value}`,
-  })
-); // string
-
-// Combine multiple Eithers and accumulate errors
-const e1 = Either.right(1);
-const e2 = Either.left("fail1");
-const e3 = Either.left("fail2");
-
-const all = [e1, e2, e3].filter(Either.isRight).map(Either.getRight); // [1]
-const errors = [e1, e2, e3].filter(Either.isLeft).map(Either.getLeft); // ["fail1", "fail2"]
-```
-
-**Explanation:**
-
-- `Either.right(value)` represents success.
-- `Either.left(error)` represents failure.
-- Pattern matching ensures all cases are handled.
-- You can accumulate errors or results from multiple Eithers.
-
----
-
-## Effectful Pattern Matching with matchEffect
-
-Use matchEffect to pattern match on the result of an Effect, running effectful logic for both success and failure cases.
+Use error accumulation to report all problems at once rather than failing early, critical for validation and batch operations.
 
 ### Example
 
-```typescript
-import { Effect } from "effect";
-
-// Effect: Run different Effects on success or failure
-const effect = Effect.fail("Oops!").pipe(
-  Effect.matchEffect({
-    onFailure: (err) => Effect.logError(`Error: ${err}`),
-    onSuccess: (value) => Effect.log(`Success: ${value}`),
-  })
-); // Effect<void>
-```
-
-**Explanation:**
-
-- `matchEffect` allows you to run an Effect for both the success and failure cases.
-- This is useful for logging, cleanup, retries, or any effectful side effect that depends on the outcome.
-
----
-
-## Handle Unexpected Errors by Inspecting the Cause
-
-Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions.
-
-### Example
+This example demonstrates error accumulation patterns.
 
 ```typescript
-import { Cause, Effect } from "effect";
+import { Effect, Data, Cause } from "effect";
 
-// An Effect that may fail with an error or defect
-const program = Effect.try({
-  try: () => {
-    throw new Error("Unexpected failure!");
-  },
-  catch: (err) => err,
-});
-
-// Catch all causes and inspect them
-const handled = program.pipe(
-  Effect.catchAllCause((cause) =>
-    Effect.sync(() => {
-      if (Cause.isDie(cause)) {
-        console.error("Defect (die):", Cause.pretty(cause));
-      } else if (Cause.isFailure(cause)) {
-        console.error("Expected error:", Cause.pretty(cause));
-      } else if (Cause.isInterrupted(cause)) {
-        console.error("Interrupted:", Cause.pretty(cause));
-      }
-      // Handle or rethrow as needed
-    })
-  )
-);
-```
-
-**Explanation:**
-
-- `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
-- Use `Cause.pretty` for human-readable error traces.
-- Enables advanced error handling and debugging.
-
----
-
-## Handling Errors with catchAll, orElse, and match
-
-Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way.
-
-### Example
-
-```typescript
-import { Effect, Option, Either } from "effect";
-
-// Effect: Recover from any error
-const effect = Effect.fail("fail!").pipe(
-  Effect.catchAll((err) => Effect.succeed(`Recovered from: ${err}`))
-); // Effect<string>
-
-// Option: Provide a fallback if value is None
-const option = Option.none().pipe(Option.orElse(() => Option.some("default"))); // Option<string>
-
-// Either: Provide a fallback if value is Left
-const either = Either.left("error").pipe(
-  Either.orElse(() => Either.right("fallback"))
-); // Either<never, string>
-
-// Effect: Pattern match on success or failure
-const matchEffect = Effect.fail("fail!").pipe(
-  Effect.match({
-    onFailure: (err) => `Error: ${err}`,
-    onSuccess: (value) => `Success: ${value}`,
-  })
-); // Effect<string>
-```
-
-**Explanation:**  
-These combinators let you handle errors, provide defaults, or transform error values in a way that is composable and type-safe.  
-You can recover from errors, provide alternative computations, or pattern match on success/failure.
-
----
-
-## Handling Specific Errors with catchTag and catchTags
-
-Use catchTag and catchTags to handle specific tagged error types in the Effect failure channel, providing targeted recovery logic.
-
-### Example
-
-```typescript
-import { Effect, Data } from "effect";
-
-// Define tagged error types
-class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
-class ValidationError extends Data.TaggedError("ValidationError")<{
+interface ValidationError {
+  field: string;
   message: string;
-}> {}
+  value?: unknown;
+}
 
-type MyError = NotFoundError | ValidationError;
+interface ProcessingResult<T> {
+  successes: T[];
+  errors: ValidationError[];
+}
 
-// Effect: Handle only ValidationError, let others propagate
-const effect = Effect.fail(
-  new ValidationError({ message: "Invalid input" }) as MyError
-).pipe(
-  Effect.catchTag("ValidationError", (err) =>
-    Effect.succeed(`Recovered from validation error: ${err.message}`)
-  )
-); // Effect<string>
+// Example 1: Form validation with error accumulation
+const program = Effect.gen(function* () {
+  console.log(`\n[ERROR ACCUMULATION] Collecting multiple errors\n`);
 
-// Effect: Handle multiple error tags
-const effect2 = Effect.fail(new NotFoundError() as MyError).pipe(
-  Effect.catchTags({
-    NotFoundError: () => Effect.succeed("Handled not found!"),
-    ValidationError: (err) =>
-      Effect.succeed(`Handled validation: ${err.message}`),
-  })
-); // Effect<string>
-```
+  // Form data
+  interface FormData {
+    name: string;
+    email: string;
+    age: number;
+    phone: string;
+  }
 
-**Explanation:**
+  const validateForm = (data: FormData): ValidationError[] => {
+    const errors: ValidationError[] = [];
 
-- `catchTag` lets you recover from a specific tagged error type.
-- `catchTags` lets you handle multiple tagged error types in one place.
-- Unhandled errors continue to propagate, preserving error safety.
+    // Validation 1: Name
+    if (!data.name || data.name.trim().length === 0) {
+      errors.push({
+        field: "name",
+        message: "Name is required",
+        value: data.name,
+      });
+    } else if (data.name.length < 2) {
+      errors.push({
+        field: "name",
+        message: "Name must be at least 2 characters",
+        value: data.name,
+      });
+    }
 
----
+    // Validation 2: Email
+    if (!data.email) {
+      errors.push({
+        field: "email",
+        message: "Email is required",
+        value: data.email,
+      });
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      errors.push({
+        field: "email",
+        message: "Email format invalid",
+        value: data.email,
+      });
+    }
 
-## Lifting Errors and Absence with fail, none, and left
+    // Validation 3: Age
+    if (data.age < 0 || data.age > 150) {
+      errors.push({
+        field: "age",
+        message: "Age must be between 0 and 150",
+        value: data.age,
+      });
+    }
 
-Use fail, none, and left to create Effect, Option, or Either that represent failure or absence.
+    // Validation 4: Phone
+    if (data.phone && !/^\d{3}-\d{3}-\d{4}$/.test(data.phone)) {
+      errors.push({
+        field: "phone",
+        message: "Phone must be in format XXX-XXX-XXXX",
+        value: data.phone,
+      });
+    }
 
-### Example
+    return errors;
+  };
 
-```typescript
-import { Effect, Option, Either } from "effect";
+  // Example 1: Form with multiple errors
+  console.log(`[1] Form validation with multiple errors:\n`);
 
-// Effect: Represent a failure with an error value
-const effect = Effect.fail("Something went wrong"); // Effect<string, never, never>
+  const invalidForm: FormData = {
+    name: "",
+    email: "not-an-email",
+    age: 200,
+    phone: "invalid",
+  };
 
-// Option: Represent absence of a value
-const option = Option.none(); // Option<never>
+  const validationErrors = validateForm(invalidForm);
 
-// Either: Represent a failure with a left value
-const either = Either.left("Invalid input"); // Either<string, never>
-```
+  yield* Effect.log(`[VALIDATION] Found ${validationErrors.length} errors:\n`);
 
-**Explanation:**
+  for (const error of validationErrors) {
+    yield* Effect.log(`  ✗ ${error.field}: ${error.message}`);
+  }
 
-- `Effect.fail(error)` creates an effect that always fails with `error`.
-- `Option.none()` creates an option that is always absent.
-- `Either.left(error)` creates an either that always represents failure.
+  // Example 2: Batch processing with partial success
+  console.log(`\n[2] Batch processing (accumulate successes and failures):\n`);
 
----
+  interface Record {
+    id: string;
+    data: string;
+  }
 
-## Matching on Success and Failure with match
+  const processRecord = (record: Record): Result<string> => {
+    if (record.id.length === 0) {
+      return { success: false, error: "Missing ID" };
+    }
 
-Use match to pattern match on the result of an Effect, Option, or Either, handling both success and failure cases declaratively.
+    if (record.data.includes("ERROR")) {
+      return { success: false, error: "Invalid data" };
+    }
 
-### Example
+    return { success: true, value: `processed-${record.id}` };
+  };
 
-```typescript
-import { Effect, Option, Either } from "effect";
+  interface Result<T> {
+    success: boolean;
+    value?: T;
+    error?: string;
+  }
 
-// Effect: Handle both success and failure
-const effect = Effect.fail("Oops!").pipe(
-  Effect.match({
-    onFailure: (err) => `Error: ${err}`,
-    onSuccess: (value) => `Success: ${value}`,
-  })
-); // Effect<string>
+  const records: Record[] = [
+    { id: "rec1", data: "ok" },
+    { id: "", data: "ok" }, // Error: missing ID
+    { id: "rec3", data: "ok" },
+    { id: "rec4", data: "ERROR" }, // Error: invalid data
+    { id: "rec5", data: "ok" },
+  ];
 
-// Option: Handle Some and None cases
-const option = Option.some(42).pipe(
-  Option.match({
-    onNone: () => "No value",
-    onSome: (n) => `Value: ${n}`,
-  })
-); // string
+  const results: ProcessingResult<string> = {
+    successes: [],
+    errors: [],
+  };
 
-// Either: Handle Left and Right cases
-const either = Either.left("fail").pipe(
-  Either.match({
-    onLeft: (err) => `Error: ${err}`,
-    onRight: (value) => `Value: ${value}`,
-  })
-); // string
-```
+  for (const record of records) {
+    const result = processRecord(record);
 
-**Explanation:**
+    if (result.success) {
+      results.successes.push(result.value!);
+    } else {
+      results.errors.push({
+        field: record.id || "unknown",
+        message: result.error!,
+      });
+    }
+  }
 
-- `Effect.match` lets you handle both the error and success channels in one place.
-- `Option.match` and `Either.match` let you handle all possible cases for these types, making your code exhaustive and safe.
+  yield* Effect.log(
+    `[BATCH] Processed ${records.length} records`
+  );
+  yield* Effect.log(`[BATCH] ✓ ${results.successes.length} succeeded`);
+  yield* Effect.log(`[BATCH] ✗ ${results.errors.length} failed\n`);
 
----
+  for (const success of results.successes) {
+    yield* Effect.log(`  ✓ ${success}`);
+  }
 
-## Matching Tagged Unions with matchTag and matchTags
+  for (const error of results.errors) {
+    yield* Effect.log(`  ✗ [${error.field}] ${error.message}`);
+  }
 
-Use matchTag and matchTags to handle specific cases of tagged unions or custom error types in a declarative, type-safe way.
+  // Example 3: Multi-step validation with error accumulation
+  console.log(`\n[3] Multi-step validation (all checks run):\n`);
 
-### Example
+  interface ServiceHealth {
+    diskSpace: boolean;
+    memory: boolean;
+    network: boolean;
+    database: boolean;
+  }
 
-```typescript
-import { Data, Effect } from "effect";
+  const diagnostics: ValidationError[] = [];
 
-// Define a tagged error type
-class NotFoundError extends Data.TaggedError("NotFoundError")<{}> {}
-class ValidationError extends Data.TaggedError("ValidationError")<{
-  message: string;
-}> {}
+  // Check 1: Disk space
+  const diskFree = 50; // MB
 
-type MyError = NotFoundError | ValidationError;
+  if (diskFree < 100) {
+    diagnostics.push({
+      field: "disk-space",
+      message: `Only ${diskFree}MB free (need 100MB)`,
+      value: diskFree,
+    });
+  }
 
-// Effect: Match on specific error tags
-const effect: Effect.Effect<string, never, never> = Effect.fail(
-  new ValidationError({ message: "Invalid input" }) as MyError
-).pipe(
-  Effect.catchTags({
-    NotFoundError: () => Effect.succeed("Not found!"),
-    ValidationError: (err) =>
-      Effect.succeed(`Validation failed: ${err.message}`),
-  })
-); // Effect<string>
-```
+  // Check 2: Memory
+  const memUsage = 95; // percent
 
-**Explanation:**
+  if (memUsage > 85) {
+    diagnostics.push({
+      field: "memory",
+      message: `Using ${memUsage}% (threshold: 85%)`,
+      value: memUsage,
+    });
+  }
 
-- `matchTag` lets you branch on the specific tag of a tagged union or custom error type.
-- This is safer and more maintainable than using `instanceof` or manual property checks.
+  // Check 3: Network
+  const latency = 500; // ms
 
----
+  if (latency > 200) {
+    diagnostics.push({
+      field: "network",
+      message: `Latency ${latency}ms (threshold: 200ms)`,
+      value: latency,
+    });
+  }
 
-## Modeling Effect Results with Exit
+  // Check 4: Database
+  const dbConnections = 95;
+  const dbMax = 100;
 
-Use Exit to capture the outcome of an Effect, including success, failure, and defects, for robust error handling and coordination.
+  if (dbConnections > dbMax * 0.8) {
+    diagnostics.push({
+      field: "database",
+      message: `${dbConnections}/${dbMax} connections (80% threshold)`,
+      value: dbConnections,
+    });
+  }
 
-### Example
+  if (diagnostics.length === 0) {
+    yield* Effect.log(`[HEALTH] ✓ All systems normal\n`);
+  } else {
+    yield* Effect.log(
+      `[HEALTH] ✗ ${diagnostics.length} issue(s) detected:\n`
+    );
 
-```typescript
-import { Effect, Exit } from "effect";
+    for (const diag of diagnostics) {
+      yield* Effect.log(`  ⚠ ${diag.field}: ${diag.message}`);
+    }
+  }
 
-// Run an Effect and capture its Exit value
-const program = Effect.succeed(42);
+  // Example 4: Error collection with retry decisions
+  console.log(`\n[4] Error collection for retry strategy:\n`);
 
-const runAndCapture = Effect.runPromiseExit(program); // Promise<Exit<never, number>>
+  interface ErrorWithContext {
+    operation: string;
+    error: string;
+    retryable: boolean;
+    timestamp: Date;
+  }
 
-// Pattern match on Exit
-runAndCapture.then((exit) => {
-  if (Exit.isSuccess(exit)) {
-    console.log("Success:", exit.value);
-  } else if (Exit.isFailure(exit)) {
-    console.error("Failure:", exit.cause);
+  const operationErrors: ErrorWithContext[] = [];
+
+  const operations = [
+    { name: "fetch-config", fail: false },
+    { name: "connect-db", fail: true },
+    { name: "load-cache", fail: true },
+    { name: "start-server", fail: false },
+  ];
+
+  for (const op of operations) {
+    if (op.fail) {
+      operationErrors.push({
+        operation: op.name,
+        error: "Operation failed",
+        retryable: op.name !== "fetch-config",
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  yield* Effect.log(`[OPERATIONS] ${operationErrors.length} errors:\n`);
+
+  for (const err of operationErrors) {
+    const status = err.retryable ? "🔄 retryable" : "❌ non-retryable";
+    yield* Effect.log(`  ${status}: ${err.operation}`);
+  }
+
+  if (operationErrors.every((e) => e.retryable)) {
+    yield* Effect.log(`\n[DECISION] All errors retryable, will retry\n`);
+  } else {
+    yield* Effect.log(`\n[DECISION] Some non-retryable errors, manual intervention needed\n`);
   }
 });
+
+Effect.runPromise(program);
 ```
-
-**Explanation:**
-
-- `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
-- Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
-- Pattern matching on `Exit` lets you handle all possible outcomes.
 
 ---
 
-## Wrapping Synchronous and Asynchronous Computations
+---
 
-Use try and tryPromise to lift code that may throw or reject into Effect, capturing errors in the failure channel.
+## Error Handling Pattern 2: Error Propagation and Chains
+
+Use error propagation to preserve context through effect chains, enabling debugging and recovery at the right abstraction level.
 
 ### Example
 
+This example demonstrates error propagation with context.
+
 ```typescript
-import { Effect } from "effect";
+import { Effect, Data, Cause } from "effect";
 
-// Synchronous: Wrap code that may throw
-const effectSync = Effect.try({
-  try: () => JSON.parse("{ invalid json }"),
-  catch: (error) => `Parse error: ${String(error)}`,
-}); // Effect<string, never, never>
+// Domain-specific errors with context
+class DatabaseError extends Data.TaggedError("DatabaseError")<{
+  query: string;
+  parameters: unknown[];
+  cause: Error;
+}> {}
 
-// Asynchronous: Wrap a promise that may reject
-const effectAsync = Effect.tryPromise({
-  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
-  catch: (error) => `Network error: ${String(error)}`,
-}); // Effect<string, any, never>
+class NetworkError extends Data.TaggedError("NetworkError")<{
+  endpoint: string;
+  method: string;
+  statusCode?: number;
+  cause: Error;
+}> {}
+
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  field: string;
+  value: unknown;
+  reason: string;
+}> {}
+
+class BusinessLogicError extends Data.TaggedError("BusinessLogicError")<{
+  operation: string;
+  context: Record<string, unknown>;
+  originalError: Error;
+}> {}
+
+const program = Effect.gen(function* () {
+  console.log(`\n[ERROR PROPAGATION] Error chains with context\n`);
+
+  // Example 1: Simple error propagation
+  console.log(`[1] Error propagation through layers:\n`);
+
+  const lowLevelOperation = Effect.gen(function* () {
+    yield* Effect.log(`[LAYER 1] Low-level operation starting`);
+
+    yield* Effect.fail(new Error("File not found"));
+  });
+
+  const midLevelOperation = lowLevelOperation.pipe(
+    Effect.mapError((error) =>
+      new DatabaseError({
+        query: "SELECT * FROM users",
+        parameters: ["id=123"],
+        cause: error instanceof Error ? error : new Error(String(error)),
+      })
+    )
+  );
+
+  const highLevelOperation = midLevelOperation.pipe(
+    Effect.catchTag("DatabaseError", (dbError) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[LAYER 3] Caught database error`);
+        yield* Effect.log(`[LAYER 3]   Query: ${dbError.query}`);
+        yield* Effect.log(`[LAYER 3]   Cause: ${dbError.cause.message}`);
+
+        // Recovery decision
+        return "fallback-value";
+      })
+    )
+  );
+
+  const result1 = yield* highLevelOperation;
+
+  yield* Effect.log(`[RESULT] Recovered with: ${result1}\n`);
+
+  // Example 2: Error context accumulation
+  console.log(`[2] Accumulating context through layers:\n`);
+
+  interface ErrorContext {
+    timestamp: Date;
+    operation: string;
+    userId?: string;
+    requestId: string;
+  }
+
+  const errorWithContext = (context: ErrorContext) =>
+    Effect.fail(
+      new BusinessLogicError({
+        operation: context.operation,
+        context: {
+          userId: context.userId,
+          timestamp: context.timestamp.toISOString(),
+          requestId: context.requestId,
+        },
+        originalError: new Error("Operation failed"),
+      })
+    );
+
+  const myContext: ErrorContext = {
+    timestamp: new Date(),
+    operation: "process-payment",
+    userId: "user-123",
+    requestId: "req-abc-def",
+  };
+
+  const withContextRecovery = errorWithContext(myContext).pipe(
+    Effect.mapError((error) => {
+      // Log complete context
+      return {
+        ...error,
+        enriched: true,
+        additionalInfo: {
+          serviceName: "payment-service",
+          environment: "production",
+          version: "1.2.3",
+        },
+      };
+    }),
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[ERROR CAUGHT] ${error.operation}`);
+        yield* Effect.log(`[CONTEXT] ${JSON.stringify(error.context, null, 2)}`);
+        return "recovered";
+      })
+    )
+  );
+
+  yield* withContextRecovery;
+
+  // Example 3: Network error with retry context
+  console.log(`\n[3] Network errors with retry context:\n`);
+
+  interface RetryContext {
+    attempt: number;
+    maxAttempts: number;
+    delay: number;
+  }
+
+  let attemptCount = 0;
+
+  const networkCall = Effect.gen(function* () {
+    attemptCount++;
+
+    yield* Effect.log(`[ATTEMPT] ${attemptCount}/3`);
+
+    if (attemptCount < 3) {
+      yield* Effect.fail(
+        new NetworkError({
+          endpoint: "https://api.example.com/data",
+          method: "GET",
+          statusCode: 503,
+          cause: new Error("Service Unavailable"),
+        })
+      );
+    }
+
+    return "success";
+  });
+
+  const withRetryContext = Effect.gen(function* () {
+    let lastError: NetworkError | null = null;
+
+    for (let i = 1; i <= 3; i++) {
+      const result = yield* networkCall.pipe(
+        Effect.catchTag("NetworkError", (error) => {
+          lastError = error;
+
+          yield* Effect.log(
+            `[RETRY] Attempt ${i} failed: ${error.statusCode}`
+          );
+
+          if (i < 3) {
+            yield* Effect.log(`[RETRY] Waiting before retry...`);
+          }
+
+          return Effect.fail(error);
+        })
+      ).pipe(
+        Effect.tap(() => Effect.log(`[SUCCESS] Connected on attempt ${i}`))
+      ).pipe(
+        Effect.catchAll(() => Effect.succeed(null))
+      );
+
+      if (result !== null) {
+        return result;
+      }
+    }
+
+    if (lastError) {
+      yield* Effect.fail(lastError);
+    }
+
+    return null;
+  });
+
+  const networkResult = yield* withRetryContext.pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[EXHAUSTED] All retries failed`);
+        return "fallback";
+      })
+    )
+  );
+
+  yield* Effect.log(`\n`);
+
+  // Example 4: Multi-layer error transformation
+  console.log(`[4] Error transformation between layers:\n`);
+
+  const layer1Error = Effect.gen(function* () {
+    yield* Effect.fail(new Error("Raw system error"));
+  });
+
+  // Layer 2: Convert to domain error
+  const layer2 = layer1Error.pipe(
+    Effect.mapError((error) =>
+      new DatabaseError({
+        query: "SELECT ...",
+        parameters: [],
+        cause: error instanceof Error ? error : new Error(String(error)),
+      })
+    )
+  );
+
+  // Layer 3: Convert to business error
+  const layer3 = layer2.pipe(
+    Effect.mapError((dbError) =>
+      new BusinessLogicError({
+        operation: "fetch-user-profile",
+        context: {
+          dbError: dbError.query,
+        },
+        originalError: dbError.cause,
+      })
+    )
+  );
+
+  // Layer 4: Return user-friendly error
+  const userFacingError = layer3.pipe(
+    Effect.mapError((bizError) => ({
+      message: "Unable to load profile",
+      code: "PROFILE_LOAD_FAILED",
+      originalError: bizError.originalError.message,
+    })),
+    Effect.catchAll((userError) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[USER MESSAGE] ${userError.message}`);
+        yield* Effect.log(`[CODE] ${userError.code}`);
+        yield* Effect.log(`[DEBUG] ${userError.originalError}`);
+        return null;
+      })
+    )
+  );
+
+  yield* userFacingError;
+
+  // Example 5: Error aggregation in concurrent operations
+  console.log(`\n[5] Error propagation in concurrent operations:\n`);
+
+  const operation = (id: number, shouldFail: boolean) =>
+    Effect.gen(function* () {
+      if (shouldFail) {
+        yield* Effect.fail(
+          new Error(`Operation ${id} failed`)
+        );
+      }
+
+      return `result-${id}`;
+    });
+
+  const concurrent = Effect.gen(function* () {
+    const results = yield* Effect.all(
+      [
+        operation(1, false),
+        operation(2, true),
+        operation(3, false),
+      ],
+      { concurrency: 3 }
+    ).pipe(
+      Effect.catchAll((errors) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`[CONCURRENT] Caught aggregated errors`);
+
+          // In real code, Cause provides error details
+          yield* Effect.log(`[ERROR] Errors encountered during concurrent execution`);
+
+          return [];
+        })
+      )
+    );
+
+    return results;
+  });
+
+  yield* concurrent;
+
+  yield* Effect.log(`\n[DEMO] Error propagation complete`);
+});
+
+Effect.runPromise(program);
 ```
 
-**Explanation:**
+---
 
-- `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
-- `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
+---
+
+## Error Handling Pattern 3: Custom Error Strategies
+
+Use tagged errors and custom error types to enable type-safe error handling and business-logic-aware recovery strategies.
+
+### Example
+
+This example demonstrates custom error strategies.
+
+```typescript
+import { Effect, Data, Schedule } from "effect";
+
+// Custom domain errors
+class NetworkError extends Data.TaggedError("NetworkError")<{
+  endpoint: string;
+  statusCode?: number;
+  retryable: boolean;
+}> {}
+
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  field: string;
+  reason: string;
+}> {}
+
+class AuthenticationError extends Data.TaggedError("AuthenticationError")<{
+  reason: "invalid-token" | "expired-token" | "missing-token";
+}> {}
+
+class PermissionError extends Data.TaggedError("PermissionError")<{
+  resource: string;
+  action: string;
+}> {}
+
+class RateLimitError extends Data.TaggedError("RateLimitError")<{
+  retryAfter: number; // milliseconds
+}> {}
+
+class NotFoundError extends Data.TaggedError("NotFoundError")<{
+  resource: string;
+  id: string;
+}> {}
+
+// Recovery strategy selector
+const selectRecoveryStrategy = (
+  error: Error
+): "retry" | "fallback" | "fail" | "user-message" => {
+  if (error instanceof NetworkError && error.retryable) {
+    return "retry";
+  }
+
+  if (error instanceof RateLimitError) {
+    return "retry"; // With backoff
+  }
+
+  if (error instanceof ValidationError) {
+    return "user-message"; // User can fix
+  }
+
+  if (error instanceof NotFoundError) {
+    return "fallback"; // Use empty result
+  }
+
+  if (
+    error instanceof AuthenticationError &&
+    error.reason === "expired-token"
+  ) {
+    return "retry"; // Refresh token
+  }
+
+  if (error instanceof PermissionError) {
+    return "fail"; // Don't retry
+  }
+
+  return "fail"; // Default: don't retry
+};
+
+const program = Effect.gen(function* () {
+  console.log(
+    `\n[CUSTOM ERROR STRATEGIES] Domain-aware error handling\n`
+  );
+
+  // Example 1: Type-safe error handling
+  console.log(`[1] Type-safe error catching:\n`);
+
+  const operation1 = Effect.fail(
+    new ValidationError({
+      field: "email",
+      reason: "Invalid format",
+    })
+  );
+
+  const handled1 = operation1.pipe(
+    Effect.catchTag("ValidationError", (error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[CAUGHT] Validation error`);
+        yield* Effect.log(`  Field: ${error.field}`);
+        yield* Effect.log(`  Reason: ${error.reason}\n`);
+
+        return "validation-failed";
+      })
+    )
+  );
+
+  yield* handled1;
+
+  // Example 2: Multiple error types with different recovery
+  console.log(`[2] Different recovery per error type:\n`);
+
+  interface ApiResponse {
+    status: number;
+    body?: unknown;
+  }
+
+  const callApi = (shouldFail: "network" | "validation" | "ratelimit" | "success") =>
+    Effect.gen(function* () {
+      switch (shouldFail) {
+        case "network":
+          yield* Effect.fail(
+            new NetworkError({
+              endpoint: "https://api.example.com/data",
+              statusCode: 503,
+              retryable: true,
+            })
+          );
+
+        case "validation":
+          yield* Effect.fail(
+            new ValidationError({
+              field: "id",
+              reason: "Must be numeric",
+            })
+          );
+
+        case "ratelimit":
+          yield* Effect.fail(
+            new RateLimitError({
+              retryAfter: 5000,
+            })
+          );
+
+        case "success":
+          return { status: 200, body: { id: 123 } };
+      }
+    });
+
+  // Test each error type
+  const testCases = ["network", "validation", "ratelimit", "success"] as const;
+
+  for (const testCase of testCases) {
+    const strategy = yield* callApi(testCase).pipe(
+      Effect.catchTag("NetworkError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[NETWORK] Retryable: ${error.retryable}, Status: ${error.statusCode}`
+          );
+
+          return "will-retry";
+        })
+      ),
+      Effect.catchTag("ValidationError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[VALIDATION] ${error.field}: ${error.reason} (no retry)`
+          );
+
+          return "user-must-fix";
+        })
+      ),
+      Effect.catchTag("RateLimitError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[RATE-LIMIT] Retry after ${error.retryAfter}ms`
+          );
+
+          return "retry-with-backoff";
+        })
+      ),
+      Effect.catchAll((error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`[SUCCESS] Got response`);
+
+          return "completed";
+        })
+      )
+    );
+
+    yield* Effect.log(`  Strategy: ${strategy}\n`);
+  }
+
+  // Example 3: Custom retry strategy based on error
+  console.log(`[3] Error-specific retry strategies:\n`);
+
+  let attemptCount = 0;
+
+  const networkOperation = Effect.gen(function* () {
+    attemptCount++;
+
+    yield* Effect.log(`[ATTEMPT] ${attemptCount}`);
+
+    if (attemptCount === 1) {
+      yield* Effect.fail(
+        new NetworkError({
+          endpoint: "api.example.com",
+          statusCode: 502,
+          retryable: true,
+        })
+      );
+    }
+
+    if (attemptCount === 2) {
+      yield* Effect.fail(
+        new RateLimitError({
+          retryAfter: 100,
+        })
+      );
+    }
+
+    return "success";
+  });
+
+  // Type-safe retry with error classification
+  let result3: string | null = null;
+
+  for (let i = 0; i < 3; i++) {
+    result3 = yield* networkOperation.pipe(
+      Effect.catchTag("NetworkError", (error) =>
+        Effect.gen(function* () {
+          if (error.retryable && i < 2) {
+            yield* Effect.log(`[RETRY] Network error is retryable`);
+
+            return null; // Signal to retry
+          }
+
+          yield* Effect.log(`[FAIL] Network error not retryable`);
+
+          return Effect.fail(error);
+        })
+      ),
+      Effect.catchTag("RateLimitError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[BACKOFF] Rate limited, waiting ${error.retryAfter}ms`
+          );
+
+          yield* Effect.sleep(`${error.retryAfter} millis`);
+
+          return null; // Signal to retry
+        })
+      ),
+      Effect.catchAll((error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`[ERROR] Unhandled: ${error}`);
+
+          return Effect.fail(error);
+        })
+      )
+    ).pipe(
+      Effect.catchAll(() => Effect.succeed(null))
+    );
+
+    if (result3 !== null) {
+      break;
+    }
+  }
+
+  yield* Effect.log(`\n[RESULT] ${result3}\n`);
+
+  // Example 4: Error-aware business logic
+  console.log(`[4] Business logic with error handling:\n`);
+
+  interface User {
+    id: string;
+    email: string;
+  }
+
+  const loadUser = (id: string): Effect.Effect<User, NetworkError | NotFoundError> =>
+    Effect.gen(function* () {
+      if (id === "invalid") {
+        yield* Effect.fail(
+          new NotFoundError({
+            resource: "user",
+            id,
+          })
+        );
+      }
+
+      if (id === "network-error") {
+        yield* Effect.fail(
+          new NetworkError({
+            endpoint: "/api/users",
+            retryable: true,
+          })
+        );
+      }
+
+      return { id, email: `user-${id}@example.com` };
+    });
+
+  const processUser = (id: string) =>
+    loadUser(id).pipe(
+      Effect.catchTag("NotFoundError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[BUSINESS] User not found: ${error.id}`
+          );
+
+          // Return default/empty user
+          return { id: "", email: "" };
+        })
+      ),
+      Effect.catchTag("NetworkError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(
+            `[BUSINESS] Network error, will retry from cache`
+          );
+
+          return { id, email: "cached@example.com" };
+        })
+      )
+    );
+
+  yield* processUser("valid-id");
+
+  yield* processUser("invalid");
+
+  yield* processUser("network-error");
+
+  // Example 5: Discriminated union for exhaustiveness
+  console.log(`\n[5] Exhaustiveness checking (compile-time safety):\n`);
+
+  const classifyError = (
+    error: NetworkError | ValidationError | AuthenticationError | PermissionError
+  ): string => {
+    switch (error._tag) {
+      case "NetworkError":
+        return `network: ${error.statusCode}`;
+
+      case "ValidationError":
+        return `validation: ${error.field}`;
+
+      case "AuthenticationError":
+        return `auth: ${error.reason}`;
+
+      case "PermissionError":
+        return `permission: ${error.action}`;
+
+      // TypeScript ensures all cases covered
+      default:
+        const _exhaustive: never = error;
+        return _exhaustive;
+    }
+  };
+
+  const testError = new ValidationError({
+    field: "age",
+    reason: "Must be >= 18",
+  });
+
+  const classification = classifyError(testError);
+
+  yield* Effect.log(`[CLASSIFY] ${classification}`);
+
+  // Example 6: Recovery strategy chains
+  console.log(`\n[6] Chained recovery strategies:\n`);
+
+  const resilientOperation = Effect.gen(function* () {
+    yield* Effect.fail(
+      new RateLimitError({
+        retryAfter: 50,
+      })
+    );
+  });
+
+  const withRecovery = resilientOperation.pipe(
+    Effect.catchTag("RateLimitError", (error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(
+          `[STEP 1] Caught rate limit, waiting ${error.retryAfter}ms`
+        );
+
+        yield* Effect.sleep(`${error.retryAfter} millis`);
+
+        // Try again
+        return yield* Effect.succeed("recovered");
+      })
+    ),
+    Effect.catchTag("NetworkError", (error) =>
+      Effect.gen(function* () {
+        if (error.retryable) {
+          yield* Effect.log(`[STEP 2] Network error, retrying...`);
+
+          return "retry";
+        }
+
+        return yield* Effect.fail(error);
+      })
+    ),
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[STEP 3] Final fallback`);
+
+        return "fallback";
+      })
+    )
+  );
+
+  yield* withRecovery;
+});
+
+Effect.runPromise(program);
+```
+
+---
 
 ---
 

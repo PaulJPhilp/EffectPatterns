@@ -1,0 +1,196 @@
+description: Use Effect's built-in debugging features and logging for development.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Use Effect DevTools
+**Rule:** Use Effect's built-in debugging features and logging for development.
+
+### Example
+### 1. Enable Debug Mode
+
+```typescript
+import { Effect, Logger, LogLevel, FiberRef, Cause } from "effect"
+
+// ============================================
+// 1. Verbose logging for development
+// ============================================
+
+const debugProgram = Effect.gen(function* () {
+  yield* Effect.logDebug("Starting operation")
+
+  const result = yield* someEffect.pipe(
+    Effect.tap((value) => Effect.logDebug(`Got value: ${value}`))
+  )
+
+  yield* Effect.logDebug("Operation complete")
+  return result
+})
+
+// Run with debug logging enabled
+const runWithDebug = debugProgram.pipe(
+  Logger.withMinimumLogLevel(LogLevel.Debug),
+  Effect.runPromise
+)
+
+// ============================================
+// 2. Fiber supervision and introspection
+// ============================================
+
+const inspectFibers = Effect.gen(function* () {
+  // Fork some fibers
+  const fiber1 = yield* Effect.fork(Effect.sleep("1 second"))
+  const fiber2 = yield* Effect.fork(Effect.sleep("2 seconds"))
+
+  // Get fiber IDs
+  yield* Effect.log(`Fiber 1 ID: ${fiber1.id()}`)
+  yield* Effect.log(`Fiber 2 ID: ${fiber2.id()}`)
+
+  // Check fiber status
+  const status1 = yield* fiber1.status
+  yield* Effect.log(`Fiber 1 status: ${status1._tag}`)
+})
+
+// ============================================
+// 3. Trace execution with spans
+// ============================================
+
+const tracedProgram = Effect.gen(function* () {
+  yield* Effect.log("=== Starting traced program ===")
+
+  yield* Effect.gen(function* () {
+    yield* Effect.log("Step 1: Initialize")
+    yield* Effect.sleep("100 millis")
+  }).pipe(Effect.withLogSpan("initialization"))
+
+  yield* Effect.gen(function* () {
+    yield* Effect.log("Step 2: Process")
+    yield* Effect.sleep("200 millis")
+  }).pipe(Effect.withLogSpan("processing"))
+
+  yield* Effect.gen(function* () {
+    yield* Effect.log("Step 3: Finalize")
+    yield* Effect.sleep("50 millis")
+  }).pipe(Effect.withLogSpan("finalization"))
+
+  yield* Effect.log("=== Program complete ===")
+})
+
+// ============================================
+// 4. Error cause inspection
+// ============================================
+
+const debugErrors = Effect.gen(function* () {
+  const failingEffect = Effect.gen(function* () {
+    yield* Effect.fail(new Error("Inner error"))
+  }).pipe(
+    Effect.flatMap(() => Effect.fail(new Error("Outer error")))
+  )
+
+  yield* failingEffect.pipe(
+    Effect.catchAllCause((cause) =>
+      Effect.gen(function* () {
+        yield* Effect.log("=== Error Cause Analysis ===")
+        yield* Effect.log(`Pretty printed:\n${Cause.pretty(cause)}`)
+        yield* Effect.log(`Is failure: ${Cause.isFailure(cause)}`)
+        yield* Effect.log(`Is interrupted: ${Cause.isInterrupted(cause)}`)
+
+        // Extract all failures
+        const failures = Cause.failures(cause)
+        yield* Effect.log(`Failures: ${JSON.stringify([...failures])}`)
+
+        return "recovered"
+      })
+    )
+  )
+})
+
+// ============================================
+// 5. Context inspection
+// ============================================
+
+import { Context } from "effect"
+
+class Config extends Context.Tag("Config")<Config, { debug: boolean }>() {}
+
+const inspectContext = Effect.gen(function* () {
+  const context = yield* Effect.context<Config>()
+
+  yield* Effect.log("=== Context Contents ===")
+  yield* Effect.log(`Has Config: ${Context.getOption(context, Config)._tag}`)
+})
+
+// ============================================
+// 6. Custom logger for development
+// ============================================
+
+const devLogger = Logger.make(({ logLevel, message, date, annotations, spans }) => {
+  const timestamp = date.toISOString()
+  const level = logLevel.label.padEnd(7)
+  const spanInfo = spans.length > 0
+    ? ` [${[...spans].map(([name]) => name).join(" > ")}]`
+    : ""
+  const annotationInfo = Object.keys(annotations).length > 0
+    ? ` ${JSON.stringify(Object.fromEntries(annotations))}`
+    : ""
+
+  console.log(`${timestamp} ${level}${spanInfo} ${message}${annotationInfo}`)
+})
+
+const withDevLogger = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+  effect.pipe(
+    Effect.provide(Logger.replace(Logger.defaultLogger, devLogger))
+  )
+
+// ============================================
+// 7. Runtime metrics
+// ============================================
+
+const showRuntimeMetrics = Effect.gen(function* () {
+  const runtime = yield* Effect.runtime()
+
+  yield* Effect.log("=== Runtime Info ===")
+  // Access runtime configuration
+  const fiberRefs = runtime.fiberRefs
+
+  yield* Effect.log("FiberRefs available")
+})
+
+// ============================================
+// 8. Putting it all together
+// ============================================
+
+const debugSession = Effect.gen(function* () {
+  yield* Effect.log("Starting debug session")
+
+  // Run with all debugging enabled
+  yield* tracedProgram.pipe(
+    withDevLogger,
+    Logger.withMinimumLogLevel(LogLevel.Debug)
+  )
+
+  yield* debugErrors
+
+  yield* Effect.log("Debug session complete")
+})
+
+Effect.runPromise(debugSession)
+```
+
+### Debug Output Example
+
+```
+2024-01-15T10:30:00.000Z DEBUG   [initialization] Step 1: Initialize
+2024-01-15T10:30:00.100Z DEBUG   [processing] Step 2: Process
+2024-01-15T10:30:00.300Z DEBUG   [finalization] Step 3: Finalize
+2024-01-15T10:30:00.350Z INFO    Program complete
+```
+
+**Explanation:**  
+Effect DevTools help you:
+
+1. **See fiber state** - What's running, blocked, completed
+2. **Trace execution** - Follow the flow of effects
+3. **Debug errors** - Understand failure chains
+4. **Profile performance** - Find slow operations
+
+---

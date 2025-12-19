@@ -1,0 +1,112 @@
+description: Choose the right Stream.run* method based on what you need from the results.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Running and Collecting Stream Results
+**Rule:** Choose the right Stream.run* method based on what you need from the results.
+
+### Example
+```typescript
+import { Effect, Stream, Option } from "effect"
+
+const numbers = Stream.make(1, 2, 3, 4, 5)
+
+// ============================================
+// runCollect - Get all results as a Chunk
+// ============================================
+
+const collectAll = numbers.pipe(
+  Stream.map((n) => n * 10),
+  Stream.runCollect
+)
+
+Effect.runPromise(collectAll).then((chunk) => {
+  console.log([...chunk])  // [10, 20, 30, 40, 50]
+})
+
+// ============================================
+// runForEach - Process each item
+// ============================================
+
+const processEach = numbers.pipe(
+  Stream.runForEach((n) =>
+    Effect.log(`Processing: ${n}`)
+  )
+)
+
+Effect.runPromise(processEach)
+// Logs: Processing: 1, Processing: 2, etc.
+
+// ============================================
+// runDrain - Run for side effects only
+// ============================================
+
+const withSideEffects = numbers.pipe(
+  Stream.tap((n) => Effect.log(`Saw: ${n}`)),
+  Stream.runDrain  // Discard values, just run
+)
+
+// ============================================
+// runHead - Get first value only
+// ============================================
+
+const getFirst = numbers.pipe(
+  Stream.runHead
+)
+
+Effect.runPromise(getFirst).then((option) => {
+  if (Option.isSome(option)) {
+    console.log(`First: ${option.value}`)  // First: 1
+  }
+})
+
+// ============================================
+// runLast - Get last value only
+// ============================================
+
+const getLast = numbers.pipe(
+  Stream.runLast
+)
+
+Effect.runPromise(getLast).then((option) => {
+  if (Option.isSome(option)) {
+    console.log(`Last: ${option.value}`)  // Last: 5
+  }
+})
+
+// ============================================
+// runFold - Accumulate into single result
+// ============================================
+
+const sum = numbers.pipe(
+  Stream.runFold(0, (acc, n) => acc + n)
+)
+
+Effect.runPromise(sum).then((total) => {
+  console.log(`Sum: ${total}`)  // Sum: 15
+})
+
+// ============================================
+// runCount - Count elements
+// ============================================
+
+const count = numbers.pipe(Stream.runCount)
+
+Effect.runPromise(count).then((n) => {
+  console.log(`Count: ${n}`)  // Count: 5
+})
+```
+
+**Explanation:**  
+Effect provides several ways to consume a stream, each optimized for different use cases:
+
+| Method | Returns | Use When |
+|--------|---------|----------|
+| **runCollect** | `Chunk<A>` | Need all results in memory |
+| **runForEach** | `void` | Process each item for side effects |
+| **runDrain** | `void` | Run for side effects, ignore values |
+| **runHead** | `Option<A>` | Only need first value |
+| **runLast** | `Option<A>` | Only need last value |
+| **runFold** | `S` | Accumulate into single result |
+
+---

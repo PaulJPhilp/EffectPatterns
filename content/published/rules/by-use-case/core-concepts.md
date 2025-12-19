@@ -32,6 +32,45 @@ By yielding the config object, you make your dependency explicit and leverage Ef
 
 ---
 
+## Accumulate Multiple Errors with Either
+
+Use Either to model computations that may fail, making errors explicit and type-safe.
+
+### Example
+
+```typescript
+import { Either } from "effect";
+
+// Create a Right (success) or Left (failure)
+const success = Either.right(42); // Either<never, number>
+const failure = Either.left("Something went wrong"); // Either<string, never>
+
+// Pattern match on Either
+const result = success.pipe(
+  Either.match({
+    onLeft: (err) => `Error: ${err}`,
+    onRight: (value) => `Value: ${value}`,
+  })
+); // string
+
+// Combine multiple Eithers and accumulate errors
+const e1 = Either.right(1);
+const e2 = Either.left("fail1");
+const e3 = Either.left("fail2");
+
+const all = [e1, e2, e3].filter(Either.isRight).map(Either.getRight); // [1]
+const errors = [e1, e2, e3].filter(Either.isLeft).map(Either.getLeft); // ["fail1", "fail2"]
+```
+
+**Explanation:**
+
+- `Either.right(value)` represents success.
+- `Either.left(error)` represents failure.
+- Pattern matching ensures all cases are handled.
+- You can accumulate errors or results from multiple Eithers.
+
+---
+
 ## Beyond the Date Type - Real World Dates, Times, and Timezones
 
 Use the Clock service for testable time-based logic and immutable primitives for timestamps.
@@ -85,6 +124,105 @@ Effect.runPromise(programWithErrorHandling);
 
 ---
 
+## Chaining Computations with flatMap
+
+Use flatMap to sequence computations, flattening nested structures and preserving error and context handling.
+
+### Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Chain two effectful computations
+const effect = Effect.succeed(2).pipe(
+  Effect.flatMap((n) => Effect.succeed(n * 10))
+); // Effect<number>
+
+// Option: Chain two optional computations
+const option = Option.some(2).pipe(Option.flatMap((n) => Option.some(n * 10))); // Option<number>
+
+// Either: Chain two computations that may fail
+const either = Either.right(2).pipe(
+  Either.flatMap((n) => Either.right(n * 10))
+); // Either<never, number>
+
+// Stream: Chain streams (flattening)
+const stream = Stream.fromIterable([1, 2]).pipe(
+  Stream.flatMap((n) => Stream.fromIterable([n, n * 10]))
+); // Stream<number>
+```
+
+**Explanation:**  
+`flatMap` lets you build pipelines where each step can depend on the result of the previous one, and the structure is always flattened—no `Option<Option<A>>` or `Effect<Effect<A>>`.
+
+---
+
+## Combining Values with zip
+
+Use zip to run two computations and combine their results into a tuple, preserving error and context handling.
+
+### Example
+
+```typescript
+import { Effect, Either, Option, Stream } from "effect";
+
+// Effect: Combine two effects and get both results
+const effectA = Effect.succeed(1);
+const effectB = Effect.succeed("hello");
+const zippedEffect = effectA.pipe(Effect.zip(effectB)); // Effect<[number, string]>
+
+// Option: Combine two options, only Some if both are Some
+const optionA = Option.some(1);
+const optionB = Option.some("hello");
+const zippedOption = Option.all([optionA, optionB]); // Option<[number, string]>
+
+// Either: Combine two eithers, only Right if both are Right
+const eitherA = Either.right(1);
+const eitherB = Either.right("hello");
+const zippedEither = Either.all([eitherA, eitherB]); // Either<never, [number, string]>
+
+// Stream: Pair up values from two streams
+const streamA = Stream.fromIterable([1, 2, 3]);
+const streamB = Stream.fromIterable(["a", "b", "c"]);
+const zippedStream = streamA.pipe(Stream.zip(streamB)); // Stream<[number, string]>
+```
+
+**Explanation:**  
+`zip` runs both computations and pairs their results.  
+If either computation fails (or is None/Left/empty), the result is a failure (or None/Left/empty).
+
+---
+
+## Comparing Data by Value with Data.struct
+
+Use Data.struct to define objects whose equality is based on their contents, enabling safe and predictable comparisons.
+
+### Example
+
+```typescript
+import { Data, Equal } from "effect";
+
+// Create two structurally equal objects
+const user1 = Data.struct({ id: 1, name: "Alice" });
+const user2 = Data.struct({ id: 1, name: "Alice" });
+
+// Compare by value, not reference
+const areEqual = Equal.equals(user1, user2); // true
+
+// Use in a HashSet or as keys in a Map
+import { HashSet } from "effect";
+const set = HashSet.make(user1);
+console.log(HashSet.has(set, user2)); // true
+```
+
+**Explanation:**
+
+- `Data.struct` creates immutable objects with value-based equality.
+- Use for domain entities, value objects, and when storing objects in sets or as map keys.
+- Avoids bugs from reference-based comparison.
+
+---
+
 ## Comparing Data by Value with Structural Equality
 
 Use Data.struct or implement the Equal interface for value-based comparison of objects and classes.
@@ -135,6 +273,37 @@ Effect.runPromise(program);
 
 ---
 
+## Conditional Branching with if, when, and cond
+
+Use combinators such as if, when, and cond to branch computations based on runtime conditions, without imperative if statements.
+
+### Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Branch based on a condition
+const effect = Effect.if(true, {
+  onTrue: () => Effect.succeed("yes"),
+  onFalse: () => Effect.succeed("no"),
+}); // Effect<string>
+
+// Option: Conditionally create an Option
+const option = true ? Option.some("yes") : Option.none(); // Option<string> (Some("yes"))
+
+// Either: Conditionally create an Either
+const either = true ? Either.right("yes") : Either.left("error"); // Either<string, string> (Right("yes"))
+
+// Stream: Conditionally emit a stream
+const stream = false ? Stream.fromIterable([1, 2]) : Stream.empty; // Stream<number> (empty)
+```
+
+**Explanation:**  
+These combinators let you branch your computation based on a boolean or predicate, without leaving the world of composable, type-safe code.  
+You can also use `when` to run an effect only if a condition is true, or `unless` to run it only if a condition is false.
+
+---
+
 ## Control Flow with Conditional Combinators
 
 Use conditional combinators for control flow.
@@ -176,6 +345,42 @@ Effect.runPromise(program);
 **Explanation:**  
 `Effect.if` and related combinators allow you to branch logic without leaving
 the Effect world or breaking the flow of composition.
+
+---
+
+## Converting from Nullable, Option, or Either
+
+Use fromNullable, fromOption, and fromEither to lift nullable values, Option, or Either into Effects or Streams for safe, typeful interop.
+
+### Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Option: Convert a nullable value to an Option
+const nullableValue: string | null = Math.random() > 0.5 ? "hello" : null;
+const option = Option.fromNullable(nullableValue); // Option<string>
+
+// Effect: Convert an Option to an Effect that may fail
+const someValue = Option.some(42);
+const effectFromOption = Option.match(someValue, {
+  onNone: () => Effect.fail("No value"),
+  onSome: (value) => Effect.succeed(value),
+}); // Effect<number, string, never>
+
+// Effect: Convert an Either to an Effect
+const either = Either.right("success");
+const effectFromEither = Either.match(either, {
+  onLeft: (error) => Effect.fail(error),
+  onRight: (value) => Effect.succeed(value),
+}); // Effect<string, never, never>
+```
+
+**Explanation:**
+
+- `Effect.fromNullable` lifts a nullable value into an Effect, failing if the value is `null` or `undefined`.
+- `Effect.fromOption` lifts an Option into an Effect, failing if the Option is `none`.
+- `Effect.fromEither` lifts an Either into an Effect, failing if the Either is `left`.
 
 ---
 
@@ -222,6 +427,73 @@ immediate, known errors.
 
 ---
 
+## Creating from Collections
+
+Use fromIterable and fromArray to lift collections into Streams or Effects for batch or streaming processing.
+
+### Example
+
+```typescript
+import { Stream, Effect } from "effect";
+
+// Stream: Create a stream from an array
+const numbers = [1, 2, 3, 4];
+const numberStream = Stream.fromIterable(numbers); // Stream<number>
+
+// Stream: Create a stream from any iterable
+function* gen() {
+  yield "a";
+  yield "b";
+}
+const letterStream = Stream.fromIterable(gen()); // Stream<string>
+
+// Effect: Create an effect from an array of effects (batch)
+const effects = [Effect.succeed(1), Effect.succeed(2)];
+const batchEffect = Effect.all(effects); // Effect<[1, 2]>
+```
+
+**Explanation:**
+
+- `Stream.fromIterable` creates a stream from any array or iterable, enabling streaming and batch operations.
+- `Effect.all` (covered elsewhere) can be used to process arrays of effects in batch.
+
+---
+
+## Creating from Synchronous and Callback Code
+
+Use sync and async to create Effects from synchronous or callback-based computations, making them composable and type-safe.
+
+### Example
+
+```typescript
+import { Effect } from "effect";
+
+// Synchronous: Wrap a computation that is guaranteed not to throw
+const effectSync = Effect.sync(() => Math.random()); // Effect<never, number, never>
+
+// Callback-based: Wrap a Node.js-style callback API
+function legacyReadFile(
+  path: string,
+  cb: (err: Error | null, data?: string) => void
+) {
+  setTimeout(() => cb(null, "file contents"), 10);
+}
+
+const effectAsync = Effect.async<string, Error>((resume) => {
+  legacyReadFile("file.txt", (err, data) => {
+    if (err) resume(Effect.fail(err));
+    else resume(Effect.succeed(data!));
+  });
+}); // Effect<string, Error, never>
+```
+
+**Explanation:**
+
+- `Effect.sync` is for synchronous computations that are guaranteed not to throw.
+- `Effect.async` is for integrating callback-based APIs, converting them into Effects.
+
+---
+
 ## Define a Type-Safe Configuration Schema
 
 Define a type-safe configuration schema.
@@ -258,6 +530,371 @@ Effect.runPromise(Effect.provide(program, Layer.setConfigProvider(TestConfig)));
 
 **Explanation:**  
 This schema ensures that both `host` and `port` are present and properly typed, and that their source is clearly defined.
+
+---
+
+## Filtering Results with filter
+
+Use filter to declaratively express conditional logic, keeping only values that satisfy a predicate.
+
+### Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Only succeed if the value is even, fail otherwise
+const effect = Effect.succeed(4).pipe(
+  Effect.filterOrFail(
+    (n): n is number => n % 2 === 0,
+    () => "Number is not even"
+  )
+); // Effect<number, string>
+
+// Option: Only keep the value if it is even
+const option = Option.some(4).pipe(
+  Option.filter((n): n is number => n % 2 === 0)
+); // Option<number>
+
+// Either: Use map and flatMap to filter
+const either = Either.right(4).pipe(
+  Either.flatMap((n) =>
+    n % 2 === 0 ? Either.right(n) : Either.left("Number is not even")
+  )
+); // Either<string, number>
+
+// Stream: Only emit even numbers
+const stream = Stream.fromIterable([1, 2, 3, 4]).pipe(
+  Stream.filter((n): n is number => n % 2 === 0)
+); // Stream<number>
+```
+
+**Explanation:**  
+`filter` applies a predicate to the value(s) inside the structure. If the predicate fails, the result is a failure (`Effect.fail`, `Either.left`), `Option.none`, or an empty stream.
+
+---
+
+## Handle Unexpected Errors by Inspecting the Cause
+
+Use Cause to inspect, analyze, and handle all possible failure modes of an Effect, including expected errors, defects, and interruptions.
+
+### Example
+
+```typescript
+import { Cause, Effect } from "effect";
+
+// An Effect that may fail with an error or defect
+const program = Effect.try({
+  try: () => {
+    throw new Error("Unexpected failure!");
+  },
+  catch: (err) => err,
+});
+
+// Catch all causes and inspect them
+const handled = program.pipe(
+  Effect.catchAllCause((cause) =>
+    Effect.sync(() => {
+      if (Cause.isDie(cause)) {
+        console.error("Defect (die):", Cause.pretty(cause));
+      } else if (Cause.isFailure(cause)) {
+        console.error("Expected error:", Cause.pretty(cause));
+      } else if (Cause.isInterrupted(cause)) {
+        console.error("Interrupted:", Cause.pretty(cause));
+      }
+      // Handle or rethrow as needed
+    })
+  )
+);
+```
+
+**Explanation:**
+
+- `Cause` distinguishes between expected errors (`fail`), defects (`die`), and interruptions.
+- Use `Cause.pretty` for human-readable error traces.
+- Enables advanced error handling and debugging.
+
+---
+
+## Handling Errors with catchAll, orElse, and match
+
+Use error handling combinators to recover from failures, provide fallback values, or transform errors in a composable way.
+
+### Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Recover from any error
+const effect = Effect.fail("fail!").pipe(
+  Effect.catchAll((err) => Effect.succeed(`Recovered from: ${err}`))
+); // Effect<string>
+
+// Option: Provide a fallback if value is None
+const option = Option.none().pipe(Option.orElse(() => Option.some("default"))); // Option<string>
+
+// Either: Provide a fallback if value is Left
+const either = Either.left("error").pipe(
+  Either.orElse(() => Either.right("fallback"))
+); // Either<never, string>
+
+// Effect: Pattern match on success or failure
+const matchEffect = Effect.fail("fail!").pipe(
+  Effect.match({
+    onFailure: (err) => `Error: ${err}`,
+    onSuccess: (value) => `Success: ${value}`,
+  })
+); // Effect<string>
+```
+
+**Explanation:**  
+These combinators let you handle errors, provide defaults, or transform error values in a way that is composable and type-safe.  
+You can recover from errors, provide alternative computations, or pattern match on success/failure.
+
+---
+
+## Lifting Errors and Absence with fail, none, and left
+
+Use fail, none, and left to create Effect, Option, or Either that represent failure or absence.
+
+### Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Represent a failure with an error value
+const effect = Effect.fail("Something went wrong"); // Effect<string, never, never>
+
+// Option: Represent absence of a value
+const option = Option.none(); // Option<never>
+
+// Either: Represent a failure with a left value
+const either = Either.left("Invalid input"); // Either<string, never>
+```
+
+**Explanation:**
+
+- `Effect.fail(error)` creates an effect that always fails with `error`.
+- `Option.none()` creates an option that is always absent.
+- `Either.left(error)` creates an either that always represents failure.
+
+---
+
+## Lifting Values with succeed, some, and right
+
+Use succeed, some, and right to create Effect, Option, or Either from plain values.
+
+### Example
+
+```typescript
+import { Effect, Option, Either } from "effect";
+
+// Effect: Lift a value into an Effect that always succeeds
+const effect = Effect.succeed(42); // Effect<never, number, never>
+
+// Option: Lift a value into an Option that is always Some
+const option = Option.some("hello"); // Option<string>
+
+// Either: Lift a value into an Either that is always Right
+const either = Either.right({ id: 1 }); // Either<never, { id: number }>
+```
+
+**Explanation:**
+
+- `Effect.succeed(value)` creates an effect that always succeeds with `value`.
+- `Option.some(value)` creates an option that is always present.
+- `Either.right(value)` creates an either that always represents success.
+
+---
+
+## Manage Shared State Safely with Ref
+
+Use Ref to safely manage shared, mutable state in concurrent and effectful programs.
+
+### Example
+
+```typescript
+import { Effect, Ref } from "effect";
+
+// Create a Ref with an initial value
+const makeCounter = Ref.make(0);
+
+// Increment the counter atomically
+const increment = makeCounter.pipe(
+  Effect.flatMap((counter) => Ref.update(counter, (n) => n + 1))
+);
+
+// Read the current value
+const getValue = makeCounter.pipe(
+  Effect.flatMap((counter) => Ref.get(counter))
+);
+
+// Use Ref in a workflow
+const program = Effect.gen(function* () {
+  const counter = yield* Ref.make(0);
+  yield* Ref.update(counter, (n) => n + 1);
+  const value = yield* Ref.get(counter);
+  yield* Effect.log(`Counter value: ${value}`);
+});
+```
+
+**Explanation:**
+
+- `Ref` is an atomic, mutable reference for effectful and concurrent code.
+- All operations are safe, composable, and free of race conditions.
+- Use `Ref` for counters, caches, or any shared mutable state.
+
+---
+
+## Mapping and Chaining over Collections with forEach and all
+
+Use forEach and all to process collections of values with effectful functions, collecting results in a type-safe and composable way.
+
+### Example
+
+```typescript
+import { Effect, Either, Option, Stream } from "effect";
+
+// Effect: Apply an effectful function to each item in an array
+const numbers = [1, 2, 3];
+const effect = Effect.forEach(numbers, (n) => Effect.succeed(n * 2));
+// Effect<number[]>
+
+// Effect: Run multiple effects in parallel and collect results
+const effects = [Effect.succeed(1), Effect.succeed(2)];
+const allEffect = Effect.all(effects, { concurrency: "unbounded" }); // Effect<[1, 2]>
+
+// Option: Map over a collection of options and collect only the Some values
+const options = [Option.some(1), Option.none(), Option.some(3)];
+const filtered = options.filter(Option.isSome).map((o) => o.value); // [1, 3]
+
+// Either: Collect all Right values from a collection of Eithers
+const eithers = [Either.right(1), Either.left("fail"), Either.right(3)];
+const rights = eithers.filter(Either.isRight); // [Either.Right(1), Either.Right(3)]
+
+// Stream: Map and flatten a stream of arrays
+const stream = Stream.fromIterable([
+  [1, 2],
+  [3, 4],
+]).pipe(Stream.flatMap((arr) => Stream.fromIterable(arr))); // Stream<number>
+```
+
+**Explanation:**  
+`forEach` and `all` let you process collections in a way that is composable, type-safe, and often parallel.  
+They handle errors and context automatically, and can be used for batch jobs, parallel requests, or data transformations.
+
+---
+
+## Model Optional Values Safely with Option
+
+Use Option to model values that may be present or absent, making absence explicit and type-safe.
+
+### Example
+
+```typescript
+import { Option } from "effect";
+
+// Create an Option from a value
+const someValue = Option.some(42); // Option<number>
+const noValue = Option.none(); // Option<never>
+
+// Safely convert a nullable value to Option
+const fromNullable = Option.fromNullable(Math.random() > 0.5 ? "hello" : null); // Option<string>
+
+// Pattern match on Option
+const result = someValue.pipe(
+  Option.match({
+    onNone: () => "No value",
+    onSome: (n) => `Value: ${n}`,
+  })
+); // string
+
+// Use Option in a workflow
+function findUser(id: number): Option.Option<{ id: number; name: string }> {
+  return id === 1 ? Option.some({ id, name: "Alice" }) : Option.none();
+}
+```
+
+**Explanation:**
+
+- `Option.some(value)` represents a present value.
+- `Option.none()` represents absence.
+- `Option.fromNullable` safely lifts nullable values into Option.
+- Pattern matching ensures all cases are handled.
+
+---
+
+## Modeling Effect Results with Exit
+
+Use Exit to capture the outcome of an Effect, including success, failure, and defects, for robust error handling and coordination.
+
+### Example
+
+```typescript
+import { Effect, Exit } from "effect";
+
+// Run an Effect and capture its Exit value
+const program = Effect.succeed(42);
+
+const runAndCapture = Effect.runPromiseExit(program); // Promise<Exit<never, number>>
+
+// Pattern match on Exit
+runAndCapture.then((exit) => {
+  if (Exit.isSuccess(exit)) {
+    console.log("Success:", exit.value);
+  } else if (Exit.isFailure(exit)) {
+    console.error("Failure:", exit.cause);
+  }
+});
+```
+
+**Explanation:**
+
+- `Exit` captures both success (`Exit.success(value)`) and failure (`Exit.failure(cause)`).
+- Use `Exit` for robust error handling, supervision, and coordination of concurrent effects.
+- Pattern matching on `Exit` lets you handle all possible outcomes.
+
+---
+
+## Modeling Tagged Unions with Data.case
+
+Use Data.case to define tagged unions (ADTs) for modeling domain-specific states and enabling exhaustive pattern matching.
+
+### Example
+
+```typescript
+import { Data } from "effect";
+
+// Define a tagged union for a simple state machine
+type State = Data.TaggedEnum<{
+  Loading: {};
+  Success: { data: string };
+  Failure: { error: string };
+}>;
+const { Loading, Success, Failure } = Data.taggedEnum<State>();
+
+// Create instances
+const state1: State = Loading();
+const state2: State = Success({ data: "Hello" });
+const state3: State = Failure({ error: "Oops" });
+
+// Pattern match on the state
+function handleState(state: State): string {
+  switch (state._tag) {
+    case "Loading":
+      return "Loading...";
+    case "Success":
+      return `Data: ${state.data}`;
+    case "Failure":
+      return `Error: ${state.error}`;
+  }
+}
+```
+
+**Explanation:**
+
+- `Data.case` creates tagged constructors for each state.
+- The `_tag` property enables exhaustive pattern matching.
+- Use for domain modeling, state machines, and error types.
 
 ---
 
@@ -374,6 +1011,67 @@ This approach makes configuration available contextually, supporting better test
 
 ---
 
+## Redact and Handle Sensitive Data
+
+Use Redacted to wrap sensitive values, preventing accidental exposure in logs or error messages.
+
+### Example
+
+```typescript
+import { Redacted } from "effect";
+
+// Wrap a sensitive value
+const secret = Redacted.make("super-secret-password");
+
+// Use the secret in your application logic
+function authenticate(user: string, password: Redacted.Redacted<string>) {
+  // ... authentication logic
+}
+
+// Logging or stringifying a Redacted value
+console.log(`Password: ${secret}`); // Output: Password: <redacted>
+console.log(String(secret)); // Output: <redacted>
+```
+
+**Explanation:**
+
+- `Redacted.make(value)` wraps a sensitive value.
+- When logged or stringified, the value is replaced with `<redacted>`.
+- Prevents accidental exposure of secrets in logs or error messages.
+
+---
+
+## Representing Time Spans with Duration
+
+Use Duration to model and manipulate time spans, enabling safe and expressive time-based logic.
+
+### Example
+
+```typescript
+import { Duration } from "effect";
+
+// Create durations using helpers
+const oneSecond = Duration.seconds(1);
+const fiveMinutes = Duration.minutes(5);
+const twoHours = Duration.hours(2);
+
+// Add, subtract, and compare durations
+const total = Duration.sum(oneSecond, fiveMinutes); // 5 min 1 sec
+const isLonger = Duration.greaterThan(twoHours, fiveMinutes); // true
+
+// Convert to milliseconds or ISO string
+const ms = Duration.toMillis(fiveMinutes); // 300000
+const iso = Duration.formatIso(oneSecond); // "PT1S"
+```
+
+**Explanation:**
+
+- `Duration` is immutable and type-safe.
+- Use helpers for common intervals and arithmetic for composition.
+- Prefer `Duration` over raw numbers for all time-based logic.
+
+---
+
 ## Representing Time Spans with Duration
 
 Use the Duration data type to represent time intervals instead of raw numbers.
@@ -432,6 +1130,51 @@ Effect.runPromise(demonstration);
 ```
 
 ---
+
+---
+
+## Sequencing with andThen, tap, and flatten
+
+Use sequencing combinators to run computations in order, perform side effects, or flatten nested structures, while preserving error and context handling.
+
+### Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// andThen: Run one effect, then another, ignore the first result
+const logThenCompute = Effect.log("Starting...").pipe(
+  Effect.andThen(Effect.succeed(42))
+); // Effect<number>
+
+// tap: Log the result of an effect, but keep the value
+const computeAndLog = Effect.succeed(42).pipe(
+  Effect.tap((n) => Effect.log(`Result is ${n}`))
+); // Effect<number>
+
+// flatten: Remove one level of nesting
+const nestedOption = Option.some(Option.some(1));
+const flatOption = Option.flatten(nestedOption); // Option<number>
+
+const nestedEffect = Effect.succeed(Effect.succeed(1));
+const flatEffect = Effect.flatten(nestedEffect); // Effect<number>
+
+// tapError: Log errors without handling them
+const mightFail = Effect.fail("fail!").pipe(
+  Effect.tapError((err) => Effect.logError(`Error: ${err}`))
+); // Effect<never>
+
+// Stream: tap for side effects on each element
+const stream = Stream.fromIterable([1, 2, 3]).pipe(
+  Stream.tap((n) => Effect.log(`Saw: ${n}`))
+); // Stream<number>
+```
+
+**Explanation:**
+
+- `andThen` is for sequencing when you don’t care about the first result.
+- `tap` is for running side effects (like logging) without changing the value.
+- `flatten` is for removing unnecessary nesting (e.g., `Option<Option<A>>` → `Option<A>`).
 
 ---
 
@@ -596,6 +1339,69 @@ Effect.runPromise(program);
 **Explanation:**  
 Use `flatMap` to chain effects that depend on each other, and `map` for
 simple value transformations.
+
+---
+
+## Transforming Values with map
+
+Use map to apply a pure function to the value inside an Effect, Stream, Option, or Either.
+
+### Example
+
+```typescript
+import { Effect, Stream, Option, Either } from "effect";
+
+// Effect: Transform the result of an effect
+const effect = Effect.succeed(2).pipe(Effect.map((n) => n * 10)); // Effect<number>
+
+// Option: Transform an optional value
+const option = Option.some(2).pipe(Option.map((n) => n * 10)); // Option<number>
+
+// Either: Transform a value that may be an error
+const either = Either.right(2).pipe(Either.map((n) => n * 10)); // Either<never, number>
+
+// Stream: Transform every value in a stream
+const stream = Stream.fromIterable([1, 2, 3]).pipe(Stream.map((n) => n * 10)); // Stream<number>
+```
+
+**Explanation:**  
+No matter which type you use, `map` lets you apply a function to the value inside, without changing the error or context.
+
+---
+
+## Type Classes for Equality, Ordering, and Hashing with Data.Class
+
+Use Data.Class to define and derive type classes for your data types, supporting composable equality, ordering, and hashing.
+
+### Example
+
+```typescript
+import { Data, Equal, HashSet } from "effect";
+
+// Define custom data types with structural equality
+const user1 = Data.struct({ id: 1, name: "Alice" });
+const user2 = Data.struct({ id: 1, name: "Alice" });
+const user3 = Data.struct({ id: 2, name: "Bob" });
+
+// Data.struct provides automatic structural equality
+console.log(Equal.equals(user1, user2)); // true (same structure)
+console.log(Equal.equals(user1, user3)); // false (different values)
+
+// Use in a HashSet (works because Data.struct implements Equal)
+const set = HashSet.make(user1);
+console.log(HashSet.has(set, user2)); // true (structural equality)
+
+// Create an array and use structural equality
+const users = [user1, user3];
+console.log(users.some((u) => Equal.equals(u, user2))); // true
+```
+
+**Explanation:**
+
+- `Data.Class.getEqual` derives an equality type class for your data type.
+- `Data.Class.getOrder` derives an ordering type class, useful for sorting.
+- `Data.Class.getHash` derives a hash function for use in sets and maps.
+- These type classes make your types fully compatible with Effect’s collections and algorithms.
 
 ---
 
@@ -812,6 +1618,38 @@ improving readability and maintainability.
 
 ## Use Chunk for High-Performance Collections
 
+Use Chunk to model immutable, high-performance collections for efficient data processing and transformation.
+
+### Example
+
+```typescript
+import { Chunk } from "effect";
+
+// Create a Chunk from an array
+const numbers = Chunk.fromIterable([1, 2, 3, 4]); // Chunk<number>
+
+// Map and filter over a Chunk
+const doubled = Chunk.map(numbers, (n) => n * 2); // Chunk<number>
+const evens = Chunk.filter(numbers, (n) => n % 2 === 0); // Chunk<number>
+
+// Concatenate Chunks
+const moreNumbers = Chunk.fromIterable([5, 6]);
+const allNumbers = Chunk.appendAll(numbers, moreNumbers); // Chunk<number>
+
+// Convert back to array
+const arr = Chunk.toArray(allNumbers); // number[]
+```
+
+**Explanation:**
+
+- `Chunk` is immutable and optimized for performance.
+- It supports efficient batch operations, concatenation, and transformation.
+- Use `Chunk` in data pipelines, streaming, and concurrent scenarios.
+
+---
+
+## Use Chunk for High-Performance Collections
+
 Prefer Chunk over Array for immutable collection operations within data processing pipelines for better performance.
 
 ### Example
@@ -840,6 +1678,179 @@ Effect.runSync(Effect.log(finalArray)); // [0, 1, 2]
 ```
 
 ---
+
+---
+
+## Work with Arbitrary-Precision Numbers using BigDecimal
+
+Use BigDecimal to represent and compute with decimal numbers that require arbitrary precision, such as in finance or scientific domains.
+
+### Example
+
+```typescript
+import { BigDecimal } from "effect";
+
+// Create BigDecimal values
+const a = BigDecimal.fromNumber(0.1);
+const b = BigDecimal.fromNumber(0.2);
+
+// Add, subtract, multiply, divide
+const sum = BigDecimal.sum(a, b); // BigDecimal(0.3)
+const product = BigDecimal.multiply(a, b); // BigDecimal(0.02)
+
+// Compare values
+const isEqual = BigDecimal.equals(sum, BigDecimal.fromNumber(0.3)); // true
+
+// Convert to string or number
+const asString = BigDecimal.format(BigDecimal.normalize(sum)); // "0.3"
+const asNumber = BigDecimal.unsafeToNumber(sum); // 0.3
+```
+
+**Explanation:**
+
+- `BigDecimal` is immutable and supports precise decimal arithmetic.
+- Use it for domains where rounding errors are unacceptable (e.g., finance, billing, scientific data).
+- Avoids the pitfalls of floating-point math in JavaScript.
+
+---
+
+## Work with Dates and Times using DateTime
+
+Use DateTime to represent and manipulate dates and times in a type-safe, immutable, and time-zone-aware way.
+
+### Example
+
+```typescript
+import { DateTime } from "effect";
+
+// Create a DateTime for the current instant (returns an Effect)
+import { Effect } from "effect";
+
+const program = Effect.gen(function* () {
+  const now = yield* DateTime.now; // DateTime.Utc
+
+  // Parse from ISO string
+  const parsed = DateTime.unsafeMakeZoned("2024-07-19T12:34:56Z"); // DateTime.Zoned
+
+  // Add or subtract durations
+  const inOneHour = DateTime.add(now, { hours: 1 });
+  const oneHourAgo = DateTime.subtract(now, { hours: 1 });
+
+  // Format as ISO string
+  const iso = DateTime.formatIso(now); // e.g., "2024-07-19T23:33:19.000Z"
+
+  // Compare DateTimes
+  const isBefore = DateTime.lessThan(oneHourAgo, now); // true
+
+  return { now, inOneHour, oneHourAgo, iso, isBefore };
+});
+```
+
+**Explanation:**
+
+- `DateTime` is immutable and time-zone-aware.
+- Supports parsing, formatting, arithmetic, and comparison.
+- Use for all date/time logic to avoid bugs with native `Date`.
+
+---
+
+## Work with Immutable Sets using HashSet
+
+Use HashSet to represent sets of unique values with efficient, immutable operations for membership, union, intersection, and difference.
+
+### Example
+
+```typescript
+import { HashSet } from "effect";
+
+// Create a HashSet from an array
+const setA = HashSet.fromIterable([1, 2, 3]);
+const setB = HashSet.fromIterable([3, 4, 5]);
+
+// Membership check
+const hasTwo = HashSet.has(setA, 2); // true
+
+// Union, intersection, difference
+const union = HashSet.union(setA, setB); // HashSet {1, 2, 3, 4, 5}
+const intersection = HashSet.intersection(setA, setB); // HashSet {3}
+const difference = HashSet.difference(setA, setB); // HashSet {1, 2}
+
+// Add and remove elements
+const withSix = HashSet.add(setA, 6); // HashSet {1, 2, 3, 6}
+const withoutOne = HashSet.remove(setA, 1); // HashSet {2, 3}
+```
+
+**Explanation:**
+
+- `HashSet` is immutable and supports efficient set operations.
+- Use it for membership checks, set algebra, and modeling unique collections.
+- Safe for concurrent and functional workflows.
+
+---
+
+## Working with Immutable Arrays using Data.array
+
+Use Data.array to define arrays whose equality is based on their contents, enabling safe, predictable comparisons and functional operations.
+
+### Example
+
+```typescript
+import { Data, Equal } from "effect";
+
+// Create two structurally equal arrays
+const arr1 = Data.array([1, 2, 3]);
+const arr2 = Data.array([1, 2, 3]);
+
+// Compare by value, not reference
+const areEqual = Equal.equals(arr1, arr2); // true
+
+// Use arrays as keys in a HashSet or Map
+import { HashSet } from "effect";
+const set = HashSet.make(arr1);
+console.log(HashSet.has(set, arr2)); // true
+
+// Functional operations (map, filter, etc.)
+const doubled = arr1.map((n) => n * 2); // Data.array([2, 4, 6])
+```
+
+**Explanation:**
+
+- `Data.array` creates immutable arrays with value-based equality.
+- Useful for modeling ordered collections in a safe, functional way.
+- Supports all standard array operations, but with immutability and structural equality.
+
+---
+
+## Working with Tuples using Data.tuple
+
+Use Data.tuple to define tuples whose equality is based on their contents, enabling safe and predictable comparisons and pattern matching.
+
+### Example
+
+```typescript
+import { Data, Equal } from "effect";
+
+// Create two structurally equal tuples
+const t1 = Data.tuple(1, "Alice");
+const t2 = Data.tuple(1, "Alice");
+
+// Compare by value, not reference
+const areEqual = Equal.equals(t1, t2); // true
+
+// Use tuples as keys in a HashSet or Map
+import { HashSet } from "effect";
+const set = HashSet.make(t1);
+console.log(HashSet.has(set, t2)); // true
+
+// Pattern matching on tuples
+const [id, name] = t1; // id: number, name: string
+```
+
+**Explanation:**
+
+- `Data.tuple` creates immutable tuples with value-based equality.
+- Useful for modeling pairs, coordinates, or any fixed-size, heterogeneous data.
+- Supports safe pattern matching and collection operations.
 
 ---
 
@@ -1063,6 +2074,35 @@ Effect.runPromise(program);
 **Explanation:**  
 Use `Effect.sync` for safe synchronous code, and `Effect.try` to safely
 handle exceptions from potentially unsafe code.
+
+---
+
+## Wrapping Synchronous and Asynchronous Computations
+
+Use try and tryPromise to lift code that may throw or reject into Effect, capturing errors in the failure channel.
+
+### Example
+
+```typescript
+import { Effect } from "effect";
+
+// Synchronous: Wrap code that may throw
+const effectSync = Effect.try({
+  try: () => JSON.parse("{ invalid json }"),
+  catch: (error) => `Parse error: ${String(error)}`,
+}); // Effect<string, never, never>
+
+// Asynchronous: Wrap a promise that may reject
+const effectAsync = Effect.tryPromise({
+  try: () => fetch("https://api.example.com/data").then((res) => res.json()),
+  catch: (error) => `Network error: ${String(error)}`,
+}); // Effect<string, any, never>
+```
+
+**Explanation:**
+
+- `Effect.try` wraps a synchronous computation that may throw, capturing the error in the failure channel.
+- `Effect.tryPromise` wraps an async computation (Promise) that may reject, capturing the rejection as a failure.
 
 ---
 

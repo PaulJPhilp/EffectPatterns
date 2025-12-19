@@ -1,5 +1,527 @@
 # building-apis Patterns
 
+## Add Rate Limiting to APIs
+
+Use a rate limiter service to enforce request quotas per client.
+
+### Example
+
+```typescript
+import { Effect, Context, Layer, Ref, HashMap, Data, Duration } from "effect"
+import { HttpServerRequest, HttpServerResponse } from "@effect/platform"
+
+// ============================================
+// 1. Define rate limit types
+// ============================================
+
+interface RateLimitConfig {
+  readonly maxRequests: number
+  readonly windowMs: number
+}
+
+interface RateLimitState {
+  readonly count: number
+  readonly resetAt: number
+}
+
+class RateLimitExceededError extends Data.TaggedError("RateLimitExceededError")<{
+  readonly retryAfter: number
+  readonly limit: number
+}> {}
+
+// ============================================
+// 2. Rate limiter service
+// ============================================
+
+interface RateLimiter {
+  readonly check: (key: string) => Effect.Effect<void, RateLimitExceededError>
+  readonly getStatus: (key: string) => Effect.Effect<{
+    remaining: number
+    resetAt: number
+  }>
+}
+
+class RateLimiterService extends Context.Tag("RateLimiter")<
+  RateLimiterService,
+  RateLimiter
+>() {}
+
+// ============================================
+// 3. In-memory rate limiter implementation
+// ============================================
+
+const makeRateLimiter = (config: RateLimitConfig) =>
+  Effect.gen(function* () {
+    const state = yield* Ref.make(HashMap.empty<string, RateLimitState>())
+
+    const getOrCreateState = (key: string, now: number) =>
+      Ref.modify(state, (map) => {
+        const existing = HashMap.get(map, key)
+
+        if (existing._tag === "Some") {
+          // Check if window expired
+          if (now >= existing.value.resetAt) {
+            // Start new window
+            const newState: RateLimitState = {
+              count: 0,
+              resetAt: now + config.windowMs,
+            }
+            return [newState, HashMap.set(map, key, newState)]
+          }
+          return [existing.value, map]
+        }
+
+        // Create new entry
+        const newState: RateLimitState = {
+          count: 0,
+          resetAt: now + config.windowMs,
+        }
+        return [newState, HashMap.set(map, key, newState)]
+      })
+
+    const incrementCount = (key: string) =>
+      Ref.modify(state, (map) => {
+        const existing = HashMap.get(map, key)
+        if (existing._tag === "Some") {
+          const updated = { ...existing.value, count: existing.value.count + 1 }
+          return [updated.count, HashMap.set(map, key, updated)]
+        }
+        return [1, map]
+      })
+
+    const limiter: RateLimiter = {
+      check: (key) =>
+        Effect.gen(function* () {
+          const now = Date.now()
+          const currentState = yield* getOrCreateState(key, now)
+
+          if (currentState.count >= config.maxRequests) {
+            const retryAfter = Math.ceil((currentState.resetAt - now) / 1000)
+            return yield* Effect.fail(
+              new RateLimitExceededError({
+                retryAfter,
+                limit: config.maxRequests,
+              })
+            )
+          }
+
+          yield* incrementCount(key)
+        }),
+
+      getStatus: (key) =>
+        Effect.gen(function* () {
+          const now = Date.now()
+          const currentState = yield* getOrCreateState(key, now)
+          return {
+            remaining: Math.max(0, config.maxRequests - currentState.count),
+            resetAt: currentState.resetAt,
+          }
+        }),
+    }
+
+    return limiter
+  })
+
+// ============================================
+// 4. Rate limit middleware
+// ============================================
+
+const withRateLimit = <A, E, R>(
+  handler: Effect.Effect<A, E, R>
+): Effect.Effect<
+  A | HttpServerResponse.HttpServerResponse,
+  E,
+  R | RateLimiterService | HttpServerRequest.HttpServerRequest
+> =>
+  Effect.gen(function* () {
+    const request = yield* HttpServerRequest.HttpServerRequest
+    const rateLimiter = yield* RateLimiterService
+
+    // Use IP address as key (in production, might use user ID or API key)
+    const clientKey = request.headers["x-forwarded-for"] || "unknown"
+
+    const result = yield* rateLimiter.check(clientKey).pipe(
+      Effect.matchEffect({
+        onFailure: (error) =>
+          Effect.succeed(
+            HttpServerResponse.json(
+              {
+                error: "Rate limit exceeded",
+                retryAfter: error.retryAfter,
+              },
+              {
+                status: 429,
+                headers: {
+                  "Retry-After": String(error.retryAfter),
+                  "X-RateLimit-Limit": String(error.limit),
+                  "X-RateLimit-Remaining": "0",
+                },
+              }
+            )
+          ),
+        onSuccess: () => handler,
+      })
+    )
+
+    return result
+  })
+
+// ============================================
+// 5. Usage example
+// ============================================
+
+const RateLimiterLive = Layer.effect(
+  RateLimiterService,
+  makeRateLimiter({
+    maxRequests: 100,      // 100 requests
+    windowMs: 60 * 1000,   // per minute
+  })
+)
+
+const apiEndpoint = withRateLimit(
+  Effect.gen(function* () {
+    // Your actual handler logic
+    return HttpServerResponse.json({ data: "Success!" })
+  })
+)
+```
+
+---
+
+## Compose API Middleware
+
+Use Effect composition to build a middleware pipeline that processes requests.
+
+### Example
+
+```typescript
+import { Effect, Context, Layer, Duration } from "effect"
+import { HttpServerRequest, HttpServerResponse } from "@effect/platform"
+
+// ============================================
+// 1. Define middleware type
+// ============================================
+
+type Handler<E, R> = Effect.Effect<HttpServerResponse.HttpServerResponse, E, R>
+
+type Middleware<E1, R1, E2 = E1, R2 = R1> = <E extends E1, R extends R1>(
+  handler: Handler<E, R>
+) => Handler<E | E2, R | R2>
+
+// ============================================
+// 2. Logging middleware
+// ============================================
+
+const withLogging: Middleware<never, HttpServerRequest.HttpServerRequest> =
+  (handler) =>
+    Effect.gen(function* () {
+      const request = yield* HttpServerRequest.HttpServerRequest
+      const startTime = Date.now()
+
+      yield* Effect.log(`→ ${request.method} ${request.url}`)
+
+      const response = yield* handler
+
+      const duration = Date.now() - startTime
+      yield* Effect.log(`← ${response.status} (${duration}ms)`)
+
+      return response
+    })
+
+// ============================================
+// 3. Timing middleware (adds header)
+// ============================================
+
+const withTiming: Middleware<never, never> = (handler) =>
+  Effect.gen(function* () {
+    const startTime = Date.now()
+    const response = yield* handler
+    const duration = Date.now() - startTime
+
+    return HttpServerResponse.setHeader(
+      response,
+      "X-Response-Time",
+      `${duration}ms`
+    )
+  })
+
+// ============================================
+// 4. Error handling middleware
+// ============================================
+
+const withErrorHandling: Middleware<unknown, never, never> = (handler) =>
+  handler.pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Effect.logError(`Unhandled error: ${error}`)
+
+        return HttpServerResponse.json(
+          { error: "Internal Server Error" },
+          { status: 500 }
+        )
+      })
+    )
+  )
+
+// ============================================
+// 5. Request ID middleware
+// ============================================
+
+class RequestId extends Context.Tag("RequestId")<RequestId, string>() {}
+
+const withRequestId: Middleware<never, never, never, RequestId> = (handler) =>
+  Effect.gen(function* () {
+    const requestId = crypto.randomUUID()
+
+    const response = yield* handler.pipe(
+      Effect.provideService(RequestId, requestId)
+    )
+
+    return HttpServerResponse.setHeader(response, "X-Request-Id", requestId)
+  })
+
+// ============================================
+// 6. Timeout middleware
+// ============================================
+
+const withTimeout = (duration: Duration.DurationInput): Middleware<never, never> =>
+  (handler) =>
+    handler.pipe(
+      Effect.timeout(duration),
+      Effect.catchTag("TimeoutException", () =>
+        Effect.succeed(
+          HttpServerResponse.json(
+            { error: "Request timeout" },
+            { status: 504 }
+          )
+        )
+      )
+    )
+
+// ============================================
+// 7. CORS middleware (see separate pattern)
+// ============================================
+
+const withCORS = (origin: string): Middleware<never, never> => (handler) =>
+  Effect.gen(function* () {
+    const response = yield* handler
+
+    return response.pipe(
+      HttpServerResponse.setHeader("Access-Control-Allow-Origin", origin),
+      HttpServerResponse.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE"),
+      HttpServerResponse.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    )
+  })
+
+// ============================================
+// 8. Compose middleware
+// ============================================
+
+const applyMiddleware = <E, R>(handler: Handler<E, R>) =>
+  handler.pipe(
+    withLogging,
+    withTiming,
+    withRequestId,
+    withTimeout("30 seconds"),
+    withCORS("*"),
+    withErrorHandling
+  )
+
+// ============================================
+// 9. Usage
+// ============================================
+
+const myHandler = Effect.gen(function* () {
+  const requestId = yield* RequestId
+  yield* Effect.log(`Processing request ${requestId}`)
+
+  return HttpServerResponse.json({ message: "Hello!" })
+})
+
+const protectedHandler = applyMiddleware(myHandler)
+```
+
+---
+
+## Configure CORS for APIs
+
+Configure CORS headers to allow legitimate cross-origin requests while blocking unauthorized ones.
+
+### Example
+
+```typescript
+import { Effect } from "effect"
+import { HttpServerRequest, HttpServerResponse } from "@effect/platform"
+
+// ============================================
+// 1. CORS configuration
+// ============================================
+
+interface CorsConfig {
+  readonly allowedOrigins: ReadonlyArray<string> | "*"
+  readonly allowedMethods: ReadonlyArray<string>
+  readonly allowedHeaders: ReadonlyArray<string>
+  readonly exposedHeaders?: ReadonlyArray<string>
+  readonly credentials?: boolean
+  readonly maxAge?: number
+}
+
+const defaultCorsConfig: CorsConfig = {
+  allowedOrigins: "*",
+  allowedMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
+  exposedHeaders: ["X-Request-Id", "X-Response-Time"],
+  credentials: false,
+  maxAge: 86400, // 24 hours
+}
+
+// ============================================
+// 2. Check if origin is allowed
+// ============================================
+
+const isOriginAllowed = (
+  origin: string | undefined,
+  allowedOrigins: ReadonlyArray<string> | "*"
+): boolean => {
+  if (!origin) return false
+  if (allowedOrigins === "*") return true
+  return allowedOrigins.includes(origin)
+}
+
+// ============================================
+// 3. Add CORS headers to response
+// ============================================
+
+const addCorsHeaders = (
+  response: HttpServerResponse.HttpServerResponse,
+  origin: string | undefined,
+  config: CorsConfig
+): HttpServerResponse.HttpServerResponse => {
+  let result = response
+
+  // Set allowed origin
+  if (config.allowedOrigins === "*") {
+    result = HttpServerResponse.setHeader(result, "Access-Control-Allow-Origin", "*")
+  } else if (origin && isOriginAllowed(origin, config.allowedOrigins)) {
+    result = HttpServerResponse.setHeader(result, "Access-Control-Allow-Origin", origin)
+    result = HttpServerResponse.setHeader(result, "Vary", "Origin")
+  }
+
+  // Set allowed methods
+  result = HttpServerResponse.setHeader(
+    result,
+    "Access-Control-Allow-Methods",
+    config.allowedMethods.join(", ")
+  )
+
+  // Set allowed headers
+  result = HttpServerResponse.setHeader(
+    result,
+    "Access-Control-Allow-Headers",
+    config.allowedHeaders.join(", ")
+  )
+
+  // Set exposed headers
+  if (config.exposedHeaders?.length) {
+    result = HttpServerResponse.setHeader(
+      result,
+      "Access-Control-Expose-Headers",
+      config.exposedHeaders.join(", ")
+    )
+  }
+
+  // Set credentials
+  if (config.credentials) {
+    result = HttpServerResponse.setHeader(
+      result,
+      "Access-Control-Allow-Credentials",
+      "true"
+    )
+  }
+
+  // Set max age for preflight cache
+  if (config.maxAge) {
+    result = HttpServerResponse.setHeader(
+      result,
+      "Access-Control-Max-Age",
+      String(config.maxAge)
+    )
+  }
+
+  return result
+}
+
+// ============================================
+// 4. CORS middleware
+// ============================================
+
+const withCors = (config: CorsConfig = defaultCorsConfig) =>
+  <E, R>(
+    handler: Effect.Effect<HttpServerResponse.HttpServerResponse, E, R>
+  ): Effect.Effect<
+    HttpServerResponse.HttpServerResponse,
+    E,
+    R | HttpServerRequest.HttpServerRequest
+  > =>
+    Effect.gen(function* () {
+      const request = yield* HttpServerRequest.HttpServerRequest
+      const origin = request.headers["origin"]
+
+      // Handle preflight OPTIONS request
+      if (request.method === "OPTIONS") {
+        const preflightResponse = HttpServerResponse.empty({ status: 204 })
+        return addCorsHeaders(preflightResponse, origin, config)
+      }
+
+      // Check if origin is allowed
+      if (
+        origin &&
+        config.allowedOrigins !== "*" &&
+        !isOriginAllowed(origin, config.allowedOrigins)
+      ) {
+        return HttpServerResponse.json(
+          { error: "CORS: Origin not allowed" },
+          { status: 403 }
+        )
+      }
+
+      // Process request and add CORS headers to response
+      const response = yield* handler
+      return addCorsHeaders(response, origin, config)
+    })
+
+// ============================================
+// 5. Usage examples
+// ============================================
+
+// Allow all origins (development)
+const devCors = withCors({
+  ...defaultCorsConfig,
+  allowedOrigins: "*",
+})
+
+// Specific origins (production)
+const prodCors = withCors({
+  allowedOrigins: [
+    "https://myapp.com",
+    "https://admin.myapp.com",
+  ],
+  allowedMethods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+  maxAge: 3600,
+})
+
+// Apply to handlers
+const myHandler = Effect.succeed(
+  HttpServerResponse.json({ message: "Hello!" })
+)
+
+const corsEnabledHandler = devCors(myHandler)
+```
+
+---
+
 ## Create a Basic HTTP Server
 
 Use Http.server.serve with a platform-specific layer to run an HTTP application.
@@ -187,6 +709,191 @@ const program = Effect.gen(function* () {
 });
 
 Effect.runPromise(Effect.provide(program, PathService.Default));
+```
+
+---
+
+## Generate OpenAPI Documentation
+
+Use Schema definitions to automatically generate OpenAPI documentation for your API.
+
+### Example
+
+```typescript
+import { Effect, Schema } from "effect"
+import {
+  HttpApi,
+  HttpApiBuilder,
+  HttpApiEndpoint,
+  HttpApiGroup,
+  HttpApiSwagger,
+  OpenApi,
+} from "@effect/platform"
+
+// ============================================
+// 1. Define schemas for request/response
+// ============================================
+
+const UserSchema = Schema.Struct({
+  id: Schema.String,
+  email: Schema.String.pipe(Schema.pattern(/@/)),
+  name: Schema.String,
+  createdAt: Schema.DateFromString,
+})
+
+const CreateUserSchema = Schema.Struct({
+  email: Schema.String.pipe(Schema.pattern(/@/)),
+  name: Schema.String,
+})
+
+const UserListSchema = Schema.Array(UserSchema)
+
+const ErrorSchema = Schema.Struct({
+  error: Schema.String,
+  code: Schema.String,
+})
+
+// ============================================
+// 2. Define API endpoints with schemas
+// ============================================
+
+const usersApi = HttpApiGroup.make("users")
+  .pipe(
+    HttpApiGroup.add(
+      HttpApiEndpoint.get("getUsers", "/users")
+        .pipe(
+          HttpApiEndpoint.setSuccess(UserListSchema),
+          HttpApiEndpoint.addError(ErrorSchema, { status: 500 })
+        )
+    ),
+    HttpApiGroup.add(
+      HttpApiEndpoint.get("getUser", "/users/:id")
+        .pipe(
+          HttpApiEndpoint.setPath(Schema.Struct({
+            id: Schema.String,
+          })),
+          HttpApiEndpoint.setSuccess(UserSchema),
+          HttpApiEndpoint.addError(ErrorSchema, { status: 404 }),
+          HttpApiEndpoint.addError(ErrorSchema, { status: 500 })
+        )
+    ),
+    HttpApiGroup.add(
+      HttpApiEndpoint.post("createUser", "/users")
+        .pipe(
+          HttpApiEndpoint.setPayload(CreateUserSchema),
+          HttpApiEndpoint.setSuccess(UserSchema, { status: 201 }),
+          HttpApiEndpoint.addError(ErrorSchema, { status: 400 }),
+          HttpApiEndpoint.addError(ErrorSchema, { status: 500 })
+        )
+    ),
+    HttpApiGroup.add(
+      HttpApiEndpoint.del("deleteUser", "/users/:id")
+        .pipe(
+          HttpApiEndpoint.setPath(Schema.Struct({
+            id: Schema.String,
+          })),
+          HttpApiEndpoint.setSuccess(Schema.Void, { status: 204 }),
+          HttpApiEndpoint.addError(ErrorSchema, { status: 404 }),
+          HttpApiEndpoint.addError(ErrorSchema, { status: 500 })
+        )
+    )
+  )
+
+// ============================================
+// 3. Create the API definition
+// ============================================
+
+const api = HttpApi.make("My API")
+  .pipe(
+    HttpApi.addGroup(usersApi),
+    OpenApi.annotate({
+      title: "My Effect API",
+      version: "1.0.0",
+      description: "A sample API built with Effect",
+    })
+  )
+
+// ============================================
+// 4. Implement the handlers
+// ============================================
+
+const usersHandlers = HttpApiBuilder.group(api, "users", (handlers) =>
+  handlers
+    .pipe(
+      HttpApiBuilder.handle("getUsers", () =>
+        Effect.succeed([
+          {
+            id: "1",
+            email: "alice@example.com",
+            name: "Alice",
+            createdAt: new Date(),
+          },
+        ])
+      ),
+      HttpApiBuilder.handle("getUser", ({ path }) =>
+        Effect.gen(function* () {
+          if (path.id === "not-found") {
+            return yield* Effect.fail({ error: "User not found", code: "NOT_FOUND" })
+          }
+          return {
+            id: path.id,
+            email: "user@example.com",
+            name: "User",
+            createdAt: new Date(),
+          }
+        })
+      ),
+      HttpApiBuilder.handle("createUser", ({ payload }) =>
+        Effect.succeed({
+          id: crypto.randomUUID(),
+          email: payload.email,
+          name: payload.name,
+          createdAt: new Date(),
+        })
+      ),
+      HttpApiBuilder.handle("deleteUser", ({ path }) =>
+        Effect.gen(function* () {
+          if (path.id === "not-found") {
+            return yield* Effect.fail({ error: "User not found", code: "NOT_FOUND" })
+          }
+          yield* Effect.log(`Deleted user ${path.id}`)
+        })
+      )
+    )
+)
+
+// ============================================
+// 5. Build the server with Swagger UI
+// ============================================
+
+const MyApiLive = HttpApiBuilder.api(api).pipe(
+  Layer.provide(usersHandlers)
+)
+
+const ServerLive = HttpApiBuilder.serve().pipe(
+  // Add Swagger UI at /docs
+  Layer.provide(HttpApiSwagger.layer({ path: "/docs" })),
+  Layer.provide(MyApiLive),
+  Layer.provide(NodeHttpServer.layer({ port: 3000 }))
+)
+
+// ============================================
+// 6. Export OpenAPI spec as JSON
+// ============================================
+
+const openApiSpec = OpenApi.fromApi(api)
+
+// Save to file for external tools
+import { NodeFileSystem } from "@effect/platform-node"
+
+const saveSpec = Effect.gen(function* () {
+  const fs = yield* FileSystem.FileSystem
+  yield* fs.writeFileString(
+    "openapi.json",
+    JSON.stringify(openApiSpec, null, 2)
+  )
+  yield* Effect.log("OpenAPI spec saved to openapi.json")
+})
 ```
 
 ---
@@ -544,6 +1251,181 @@ Effect.runPromise(
     UserRepository.Default
   )
 );
+```
+
+---
+
+## Implement API Authentication
+
+Use middleware to validate authentication tokens before handling requests.
+
+### Example
+
+```typescript
+import { Effect, Context, Layer, Data } from "effect"
+import { HttpServer, HttpServerRequest, HttpServerResponse } from "@effect/platform"
+
+// ============================================
+// 1. Define authentication types
+// ============================================
+
+interface User {
+  readonly id: string
+  readonly email: string
+  readonly roles: ReadonlyArray<string>
+}
+
+class AuthenticatedUser extends Context.Tag("AuthenticatedUser")<
+  AuthenticatedUser,
+  User
+>() {}
+
+class UnauthorizedError extends Data.TaggedError("UnauthorizedError")<{
+  readonly reason: string
+}> {}
+
+class ForbiddenError extends Data.TaggedError("ForbiddenError")<{
+  readonly requiredRole: string
+}> {}
+
+// ============================================
+// 2. JWT validation service
+// ============================================
+
+interface JwtService {
+  readonly verify: (token: string) => Effect.Effect<User, UnauthorizedError>
+}
+
+class Jwt extends Context.Tag("Jwt")<Jwt, JwtService>() {}
+
+const JwtLive = Layer.succeed(Jwt, {
+  verify: (token) =>
+    Effect.gen(function* () {
+      // In production: use a real JWT library
+      if (!token || token === "invalid") {
+        return yield* Effect.fail(new UnauthorizedError({ 
+          reason: "Invalid or expired token" 
+        }))
+      }
+
+      // Decode token (simplified)
+      if (token.startsWith("user-")) {
+        return {
+          id: token.replace("user-", ""),
+          email: "user@example.com",
+          roles: ["user"],
+        }
+      }
+
+      if (token.startsWith("admin-")) {
+        return {
+          id: token.replace("admin-", ""),
+          email: "admin@example.com",
+          roles: ["user", "admin"],
+        }
+      }
+
+      return yield* Effect.fail(new UnauthorizedError({ 
+        reason: "Malformed token" 
+      }))
+    }),
+})
+
+// ============================================
+// 3. Authentication middleware
+// ============================================
+
+const extractBearerToken = (header: string | undefined): string | null => {
+  if (!header?.startsWith("Bearer ")) return null
+  return header.slice(7)
+}
+
+const authenticate = <A, E, R>(
+  handler: Effect.Effect<A, E, R | AuthenticatedUser>
+): Effect.Effect<A, E | UnauthorizedError, R | Jwt | HttpServerRequest.HttpServerRequest> =>
+  Effect.gen(function* () {
+    const request = yield* HttpServerRequest.HttpServerRequest
+    const jwt = yield* Jwt
+
+    const authHeader = request.headers["authorization"]
+    const token = extractBearerToken(authHeader)
+
+    if (!token) {
+      return yield* Effect.fail(new UnauthorizedError({ 
+        reason: "Missing Authorization header" 
+      }))
+    }
+
+    const user = yield* jwt.verify(token)
+
+    return yield* handler.pipe(
+      Effect.provideService(AuthenticatedUser, user)
+    )
+  })
+
+// ============================================
+// 4. Role-based authorization
+// ============================================
+
+const requireRole = (role: string) =>
+  <A, E, R>(handler: Effect.Effect<A, E, R | AuthenticatedUser>) =>
+    Effect.gen(function* () {
+      const user = yield* AuthenticatedUser
+
+      if (!user.roles.includes(role)) {
+        return yield* Effect.fail(new ForbiddenError({ requiredRole: role }))
+      }
+
+      return yield* handler
+    })
+
+// ============================================
+// 5. Protected routes
+// ============================================
+
+const getProfile = authenticate(
+  Effect.gen(function* () {
+    const user = yield* AuthenticatedUser
+    return HttpServerResponse.json({
+      id: user.id,
+      email: user.email,
+      roles: user.roles,
+    })
+  })
+)
+
+const adminOnly = authenticate(
+  requireRole("admin")(
+    Effect.gen(function* () {
+      const user = yield* AuthenticatedUser
+      return HttpServerResponse.json({
+        message: `Welcome admin ${user.email}`,
+        users: ["user1", "user2", "user3"],
+      })
+    })
+  )
+)
+
+// ============================================
+// 6. Error handling
+// ============================================
+
+const handleAuthErrors = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+  effect.pipe(
+    Effect.catchTag("UnauthorizedError", (e) =>
+      Effect.succeed(
+        HttpServerResponse.json({ error: e.reason }, { status: 401 })
+      )
+    ),
+    Effect.catchTag("ForbiddenError", (e) =>
+      Effect.succeed(
+        HttpServerResponse.json(
+          { error: `Requires role: ${e.requiredRole}` },
+          { status: 403 }
+        )
+      )
+    )
+  )
 ```
 
 ---

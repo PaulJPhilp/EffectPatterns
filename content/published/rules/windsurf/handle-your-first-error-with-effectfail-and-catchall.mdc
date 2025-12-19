@@ -1,0 +1,37 @@
+description: Handle errors with Effect.fail and catchAll.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Handle Your First Error with Effect.fail and catchAll
+**Rule:** Handle errors with Effect.fail and catchAll.
+
+### Example
+```typescript
+import { Effect, pipe } from "effect";
+
+class UserNotFound {
+  readonly _tag = "UserNotFound";
+  constructor(readonly id: string) {}
+}
+
+const findUser = (id: string) =>
+  id === "123"
+    ? Effect.succeed({ id, name: "Alice" })
+    : Effect.fail(new UserNotFound(id));
+
+const program = pipe(
+  findUser("456"),
+  Effect.catchTag("UserNotFound", (e) =>
+    Effect.succeed({ id: e.id, name: "Guest" })
+  ),
+  Effect.map((user) => `Hello, ${user.name}!`)
+);
+
+const result = Effect.runSync(program);
+console.log(result); // "Hello, Guest!"
+```
+
+**Explanation:**  
+Real programs fail. Effect makes failures explicit in the type system so you
+can't forget to handle them. Unlike try/catch, Effect errors are tracked in
+types.

@@ -13,7 +13,7 @@ import * as path from 'node:path';
 import matter from 'gray-matter';
 
 // --- CONFIGURATION ---
-const PUBLISHED_DIR = path.join(process.cwd(), 'content/published/patterns/core');
+const PATTERNS_DIR = path.join(process.cwd(), 'content/published/patterns');
 const CLAUDE_MD_PATH = path.join(process.cwd(), 'CLAUDE.md');
 const OUTPUT_DIR = path.join(process.cwd(), 'content/published/rules/generated');
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'rules-for-claude.md');
@@ -78,6 +78,26 @@ function extractSection(content: string, ...sectionNames: string[]): string {
 }
 
 /**
+ * Recursively find all MDX files in a directory
+ */
+async function findMdxFiles(dir: string): Promise<string[]> {
+  const mdxFiles: string[] = [];
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const subFiles = await findMdxFiles(fullPath);
+      mdxFiles.push(...subFiles);
+    } else if (entry.name.endsWith('.mdx')) {
+      mdxFiles.push(fullPath);
+    }
+  }
+
+  return mdxFiles;
+}
+
+/**
  * Extract rules from all published MDX files
  */
 async function extractRules(): Promise<PatternRule[]> {
@@ -85,12 +105,10 @@ async function extractRules(): Promise<PatternRule[]> {
     colorize('📖 Extracting rules from published patterns...', 'cyan'),
   );
 
-  const files = await fs.readdir(PUBLISHED_DIR);
-  const mdxFiles = files.filter((file) => file.endsWith('.mdx'));
+  const mdxFiles = await findMdxFiles(PATTERNS_DIR);
   const rules: PatternRule[] = [];
 
-  for (const file of mdxFiles) {
-    const filePath = path.join(PUBLISHED_DIR, file);
+  for (const filePath of mdxFiles) {
     const fileContent = await fs.readFile(filePath, 'utf-8');
     const { data, content } = matter(fileContent);
 
@@ -103,14 +121,16 @@ async function extractRules(): Promise<PatternRule[]> {
       // Extract Rationale section
       const rationale = extractSection(content, 'Rationale', 'Explanation');
 
+      // Use applicationPatternId instead of useCase
+      const applicationPatternId = (data as any).applicationPatternId;
+      const useCases = applicationPatternId ? [applicationPatternId] : [];
+
       rules.push({
         id: (data as any).id,
         title: (data as any).title,
         description: (data as any).rule.description,
         skillLevel: (data as any).skillLevel,
-        useCases: Array.isArray((data as any).useCase)
-          ? (data as any).useCase
-          : [(data as any).useCase],
+        useCases,
         goodExample,
         antiPattern,
         rationale,

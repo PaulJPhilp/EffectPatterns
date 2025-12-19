@@ -68,6 +68,26 @@ const PROJECT_ROOT = getProjectRoot();
 // --- HELPER FUNCTIONS ---
 
 /**
+ * Recursively find all MDX files in a directory
+ */
+async function findMdxFiles(dir: string): Promise<string[]> {
+  const mdxFiles: string[] = [];
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const subFiles = await findMdxFiles(fullPath);
+      mdxFiles.push(...subFiles);
+    } else if (entry.name.endsWith('.mdx')) {
+      mdxFiles.push(fullPath);
+    }
+  }
+
+  return mdxFiles;
+}
+
+/**
  * Execute a script and stream its output to the console
  */
 const _executeScript = (scriptPath: string) =>
@@ -1813,33 +1833,32 @@ const installSkillsCommand = Command.make("skills", {
         colorize("\n🎓 Generating Skills from Effect Patterns\n", "bright")
       );
 
-      const publishedDir = path.join(PROJECT_ROOT, "content/published");
+      const patternsDir = path.join(PROJECT_ROOT, "content/published/patterns");
 
-      // Read all published patterns
+      // Read all published patterns recursively
       yield* Console.log(colorize("📖 Reading published patterns...", "cyan"));
-      const files = yield* Effect.tryPromise({
-        try: () => fs.readdir(publishedDir),
+      const mdxFiles = yield* Effect.tryPromise({
+        try: () => findMdxFiles(patternsDir),
         catch: (error) => new Error(`Failed to read patterns directory: ${error}`)
       });
 
-      const mdxFiles = files.filter((f) => f.endsWith(".mdx"));
       yield* Console.log(
         colorize(`✓ Found ${mdxFiles.length} patterns\n`, "green")
       );
 
       // Parse patterns
       const patterns: PatternContent[] = [];
-      for (const file of mdxFiles) {
-        const filePath = path.join(publishedDir, file);
+      for (const filePath of mdxFiles) {
+        const fileName = path.basename(filePath);
         const result = yield* Effect.tryPromise({
           try: () => readPattern(filePath),
-          catch: (error) => new Error(`Failed to parse ${file}`)
+          catch: (error) => new Error(`Failed to parse ${fileName}`)
         }).pipe(
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               yield* Console.log(
                 colorize(
-                  `⚠️  Skipped ${file}: ${error.message}`,
+                  `⚠️  Skipped ${fileName}: ${error.message}`,
                   "yellow"
                 )
               );

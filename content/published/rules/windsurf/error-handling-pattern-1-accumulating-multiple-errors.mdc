@@ -1,0 +1,338 @@
+description: Use error accumulation to report all problems at once rather than failing early, critical for validation and batch operations.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Error Handling Pattern 1: Accumulating Multiple Errors
+**Rule:** Use error accumulation to report all problems at once rather than failing early, critical for validation and batch operations.
+
+### Example
+This example demonstrates error accumulation patterns.
+
+```typescript
+import { Effect, Data, Cause } from "effect";
+
+interface ValidationError {
+  field: string;
+  message: string;
+  value?: unknown;
+}
+
+interface ProcessingResult<T> {
+  successes: T[];
+  errors: ValidationError[];
+}
+
+// Example 1: Form validation with error accumulation
+const program = Effect.gen(function* () {
+  console.log(`\n[ERROR ACCUMULATION] Collecting multiple errors\n`);
+
+  // Form data
+  interface FormData {
+    name: string;
+    email: string;
+    age: number;
+    phone: string;
+  }
+
+  const validateForm = (data: FormData): ValidationError[] => {
+    const errors: ValidationError[] = [];
+
+    // Validation 1: Name
+    if (!data.name || data.name.trim().length === 0) {
+      errors.push({
+        field: "name",
+        message: "Name is required",
+        value: data.name,
+      });
+    } else if (data.name.length < 2) {
+      errors.push({
+        field: "name",
+        message: "Name must be at least 2 characters",
+        value: data.name,
+      });
+    }
+
+    // Validation 2: Email
+    if (!data.email) {
+      errors.push({
+        field: "email",
+        message: "Email is required",
+        value: data.email,
+      });
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      errors.push({
+        field: "email",
+        message: "Email format invalid",
+        value: data.email,
+      });
+    }
+
+    // Validation 3: Age
+    if (data.age < 0 || data.age > 150) {
+      errors.push({
+        field: "age",
+        message: "Age must be between 0 and 150",
+        value: data.age,
+      });
+    }
+
+    // Validation 4: Phone
+    if (data.phone && !/^\d{3}-\d{3}-\d{4}$/.test(data.phone)) {
+      errors.push({
+        field: "phone",
+        message: "Phone must be in format XXX-XXX-XXXX",
+        value: data.phone,
+      });
+    }
+
+    return errors;
+  };
+
+  // Example 1: Form with multiple errors
+  console.log(`[1] Form validation with multiple errors:\n`);
+
+  const invalidForm: FormData = {
+    name: "",
+    email: "not-an-email",
+    age: 200,
+    phone: "invalid",
+  };
+
+  const validationErrors = validateForm(invalidForm);
+
+  yield* Effect.log(`[VALIDATION] Found ${validationErrors.length} errors:\n`);
+
+  for (const error of validationErrors) {
+    yield* Effect.log(`  ✗ ${error.field}: ${error.message}`);
+  }
+
+  // Example 2: Batch processing with partial success
+  console.log(`\n[2] Batch processing (accumulate successes and failures):\n`);
+
+  interface Record {
+    id: string;
+    data: string;
+  }
+
+  const processRecord = (record: Record): Result<string> => {
+    if (record.id.length === 0) {
+      return { success: false, error: "Missing ID" };
+    }
+
+    if (record.data.includes("ERROR")) {
+      return { success: false, error: "Invalid data" };
+    }
+
+    return { success: true, value: `processed-${record.id}` };
+  };
+
+  interface Result<T> {
+    success: boolean;
+    value?: T;
+    error?: string;
+  }
+
+  const records: Record[] = [
+    { id: "rec1", data: "ok" },
+    { id: "", data: "ok" }, // Error: missing ID
+    { id: "rec3", data: "ok" },
+    { id: "rec4", data: "ERROR" }, // Error: invalid data
+    { id: "rec5", data: "ok" },
+  ];
+
+  const results: ProcessingResult<string> = {
+    successes: [],
+    errors: [],
+  };
+
+  for (const record of records) {
+    const result = processRecord(record);
+
+    if (result.success) {
+      results.successes.push(result.value!);
+    } else {
+      results.errors.push({
+        field: record.id || "unknown",
+        message: result.error!,
+      });
+    }
+  }
+
+  yield* Effect.log(
+    `[BATCH] Processed ${records.length} records`
+  );
+  yield* Effect.log(`[BATCH] ✓ ${results.successes.length} succeeded`);
+  yield* Effect.log(`[BATCH] ✗ ${results.errors.length} failed\n`);
+
+  for (const success of results.successes) {
+    yield* Effect.log(`  ✓ ${success}`);
+  }
+
+  for (const error of results.errors) {
+    yield* Effect.log(`  ✗ [${error.field}] ${error.message}`);
+  }
+
+  // Example 3: Multi-step validation with error accumulation
+  console.log(`\n[3] Multi-step validation (all checks run):\n`);
+
+  interface ServiceHealth {
+    diskSpace: boolean;
+    memory: boolean;
+    network: boolean;
+    database: boolean;
+  }
+
+  const diagnostics: ValidationError[] = [];
+
+  // Check 1: Disk space
+  const diskFree = 50; // MB
+
+  if (diskFree < 100) {
+    diagnostics.push({
+      field: "disk-space",
+      message: `Only ${diskFree}MB free (need 100MB)`,
+      value: diskFree,
+    });
+  }
+
+  // Check 2: Memory
+  const memUsage = 95; // percent
+
+  if (memUsage > 85) {
+    diagnostics.push({
+      field: "memory",
+      message: `Using ${memUsage}% (threshold: 85%)`,
+      value: memUsage,
+    });
+  }
+
+  // Check 3: Network
+  const latency = 500; // ms
+
+  if (latency > 200) {
+    diagnostics.push({
+      field: "network",
+      message: `Latency ${latency}ms (threshold: 200ms)`,
+      value: latency,
+    });
+  }
+
+  // Check 4: Database
+  const dbConnections = 95;
+  const dbMax = 100;
+
+  if (dbConnections > dbMax * 0.8) {
+    diagnostics.push({
+      field: "database",
+      message: `${dbConnections}/${dbMax} connections (80% threshold)`,
+      value: dbConnections,
+    });
+  }
+
+  if (diagnostics.length === 0) {
+    yield* Effect.log(`[HEALTH] ✓ All systems normal\n`);
+  } else {
+    yield* Effect.log(
+      `[HEALTH] ✗ ${diagnostics.length} issue(s) detected:\n`
+    );
+
+    for (const diag of diagnostics) {
+      yield* Effect.log(`  ⚠ ${diag.field}: ${diag.message}`);
+    }
+  }
+
+  // Example 4: Error collection with retry decisions
+  console.log(`\n[4] Error collection for retry strategy:\n`);
+
+  interface ErrorWithContext {
+    operation: string;
+    error: string;
+    retryable: boolean;
+    timestamp: Date;
+  }
+
+  const operationErrors: ErrorWithContext[] = [];
+
+  const operations = [
+    { name: "fetch-config", fail: false },
+    { name: "connect-db", fail: true },
+    { name: "load-cache", fail: true },
+    { name: "start-server", fail: false },
+  ];
+
+  for (const op of operations) {
+    if (op.fail) {
+      operationErrors.push({
+        operation: op.name,
+        error: "Operation failed",
+        retryable: op.name !== "fetch-config",
+        timestamp: new Date(),
+      });
+    }
+  }
+
+  yield* Effect.log(`[OPERATIONS] ${operationErrors.length} errors:\n`);
+
+  for (const err of operationErrors) {
+    const status = err.retryable ? "🔄 retryable" : "❌ non-retryable";
+    yield* Effect.log(`  ${status}: ${err.operation}`);
+  }
+
+  if (operationErrors.every((e) => e.retryable)) {
+    yield* Effect.log(`\n[DECISION] All errors retryable, will retry\n`);
+  } else {
+    yield* Effect.log(`\n[DECISION] Some non-retryable errors, manual intervention needed\n`);
+  }
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+**Explanation:**  
+Failing fast causes problems:
+
+**Problem 1: Form validation**
+- User submits form with 10 field errors
+- Fail on first error: "Name required"
+- User fixes name, submits again
+- New error: "Email invalid"
+- User submits 10 times before fixing all errors
+- Frustration, reduced productivity
+
+**Problem 2: Batch processing**
+- Process 1000 records, fail on record 5
+- 995 records not processed
+- User manually retries
+- Repeats for each error type
+- Inefficient
+
+**Problem 3: System diagnostics**
+- Service health check fails
+- Report: "Check 1 failed"
+- Fix check 1, service still down
+- Hidden problem: checks 2, 3, and 4 also failed
+- Time wasted diagnosing
+
+Solutions:
+
+**Error accumulation**:
+- Run all validations
+- Collect errors
+- Report all problems
+- User fixes once, not 10 times
+
+**Partial success**:
+- Process all records
+- Track successes and failures
+- Return: "950 succeeded, 50 failed"
+- No re-processing
+
+**Comprehensive diagnostics**:
+- Run all checks
+- Report all failures
+- Quick root cause analysis
+- Faster resolution
+
+---

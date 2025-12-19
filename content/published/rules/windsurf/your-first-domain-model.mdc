@@ -1,0 +1,96 @@
+description: Start domain modeling by defining clear interfaces for your business entities.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Your First Domain Model
+**Rule:** Start domain modeling by defining clear interfaces for your business entities.
+
+### Example
+```typescript
+import { Effect } from "effect"
+
+// ============================================
+// 1. Define domain entities as interfaces
+// ============================================
+
+interface User {
+  readonly id: string
+  readonly email: string
+  readonly name: string
+  readonly createdAt: Date
+}
+
+interface Product {
+  readonly sku: string
+  readonly name: string
+  readonly price: number
+  readonly inStock: boolean
+}
+
+interface Order {
+  readonly id: string
+  readonly userId: string
+  readonly items: ReadonlyArray<OrderItem>
+  readonly total: number
+  readonly status: OrderStatus
+}
+
+interface OrderItem {
+  readonly productSku: string
+  readonly quantity: number
+  readonly unitPrice: number
+}
+
+type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered"
+
+// ============================================
+// 2. Create domain functions
+// ============================================
+
+const createUser = (email: string, name: string): User => ({
+  id: crypto.randomUUID(),
+  email,
+  name,
+  createdAt: new Date(),
+})
+
+const calculateOrderTotal = (items: ReadonlyArray<OrderItem>): number =>
+  items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+
+// ============================================
+// 3. Use in Effect programs
+// ============================================
+
+const program = Effect.gen(function* () {
+  const user = createUser("alice@example.com", "Alice")
+  yield* Effect.log(`Created user: ${user.name}`)
+
+  const items: OrderItem[] = [
+    { productSku: "WIDGET-001", quantity: 2, unitPrice: 29.99 },
+    { productSku: "GADGET-002", quantity: 1, unitPrice: 49.99 },
+  ]
+
+  const order: Order = {
+    id: crypto.randomUUID(),
+    userId: user.id,
+    items,
+    total: calculateOrderTotal(items),
+    status: "pending",
+  }
+
+  yield* Effect.log(`Order total: $${order.total.toFixed(2)}`)
+  return order
+})
+
+Effect.runPromise(program)
+```
+
+**Explanation:**  
+Good domain modeling:
+
+1. **Clarifies intent** - Types document what data means
+2. **Prevents errors** - Compiler catches wrong data usage
+3. **Enables tooling** - IDE autocompletion and refactoring
+4. **Communicates** - Code becomes documentation
+
+---

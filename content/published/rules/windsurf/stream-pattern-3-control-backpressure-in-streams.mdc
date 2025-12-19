@@ -1,0 +1,126 @@
+description: Use backpressure control to manage flow between fast producers and slow consumers, preventing memory exhaustion and resource overflow.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Stream Pattern 3: Control Backpressure in Streams
+**Rule:** Use backpressure control to manage flow between fast producers and slow consumers, preventing memory exhaustion and resource overflow.
+
+### Example
+This example demonstrates managing backpressure when consuming events at different rates.
+
+```typescript
+import { Stream, Effect, Chunk } from "effect";
+
+interface DataPoint {
+  readonly id: number;
+  readonly value: number;
+}
+
+// Fast producer: generates 100 items per second
+const fastProducer = (): Stream.Stream<DataPoint> =>
+  Stream.fromIterable(Array.from({ length: 100 }, (_, i) => ({ id: i, value: Math.random() }))).pipe(
+    Stream.tap(() => Effect.sleep("10 millis")) // 10ms per item = 100/sec
+  );
+
+// Slow consumer: processes 10 items per second
+const slowConsumer = (item: DataPoint): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.sleep("100 millis"); // 100ms per item = 10/sec
+  });
+
+// Without backpressure (DANGEROUS - queue grows unbounded)
+const unbufferedStream = (): Stream.Stream<DataPoint> =>
+  fastProducer().pipe(
+    Stream.tap((item) =>
+      Effect.log(`[UNBUFFERED] Produced item ${item.id}`)
+    )
+  );
+
+// With bounded buffer (backpressure kicks in)
+const bufferedStream = (bufferSize: number): Stream.Stream<DataPoint> =>
+  fastProducer().pipe(
+    // Buffer at most 10 items; if full, producer waits
+    Stream.buffer(bufferSize),
+    Stream.tap((item) =>
+      Effect.log(`[BUFFERED] Consumed item ${item.id}`)
+    )
+  );
+
+// With throttling (rate limit emission)
+const throttledStream = (): Stream.Stream<DataPoint> =>
+  fastProducer().pipe(
+    // Emit at most 1 item per 50ms (20/sec)
+    Stream.throttle(1, "50 millis"),
+    Stream.tap((item) =>
+      Effect.log(`[THROTTLED] Item ${item.id}`)
+    )
+  );
+
+// Main: compare approaches
+const program = Effect.gen(function* () {
+  console.log(`\n[START] Demonstrating backpressure management\n`);
+
+  // Test buffered approach
+  console.log(`[TEST 1] Buffered stream (buffer size 5):\n`);
+
+  const startBuffer = Date.now();
+
+  yield* bufferedStream(5).pipe(
+    Stream.take(20), // Take only 20 items
+    Stream.runForEach(slowConsumer)
+  );
+
+  const bufferTime = Date.now() - startBuffer;
+  console.log(`\n[RESULT] Buffered approach took ${bufferTime}ms\n`);
+
+  // Test throttled approach
+  console.log(`[TEST 2] Throttled stream (1 item per 50ms):\n`);
+
+  const startThrottle = Date.now();
+
+  yield* throttledStream().pipe(
+    Stream.take(20),
+    Stream.runForEach(slowConsumer)
+  );
+
+  const throttleTime = Date.now() - startThrottle;
+  console.log(`\n[RESULT] Throttled approach took ${throttleTime}ms\n`);
+
+  // Summary
+  console.log(`[SUMMARY]`);
+  console.log(`  Without backpressure control:`);
+  console.log(`    - Queue would grow to 100 items (memory risk)`);
+  console.log(`    - Producer/consumer operate independently`);
+  console.log(`  With buffering:`);
+  console.log(`    - Queue bounded to 5 items (safe)`);
+  console.log(`    - Producer waits when buffer full`);
+  console.log(`  With throttling:`);
+  console.log(`    - Production rate limited to 20/sec`);
+  console.log(`    - Smooth controlled flow`);
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+**Explanation:**  
+Without backpressure management, mismatched producer/consumer speeds cause:
+
+- **Memory exhaustion**: Producer faster than consumer → queue grows unbounded
+- **Garbage collection pauses**: Large buffers cause GC pressure
+- **Resource leaks**: Open connections/file handles accumulate
+- **Cascade failures**: One slow consumer blocks entire pipeline
+
+Backpressure enable:
+
+- **Memory safety**: Bounded buffers prevent overflow
+- **Resource efficiency**: Consumers pace producers naturally
+- **Performance**: Tuning buffer sizes improves throughput
+- **Observability**: Monitor backpressure as health indicator
+
+Real-world example: Reading large file vs. writing to database
+- **No backpressure**: Read entire file into memory, write slowly → memory exhaustion
+- **With backpressure**: Read 1000 lines, wait for database, read next batch
+
+---

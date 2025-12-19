@@ -1,0 +1,43 @@
+description: Run multiple Effects in parallel with Effect.all.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Run Multiple Effects in Parallel with Effect.all
+**Rule:** Run multiple Effects in parallel with Effect.all.
+
+### Example
+```typescript
+import { Effect, pipe } from "effect";
+
+// Simulate fetching data from different sources
+const fetchUser = Effect.succeed({ id: 1, name: "Alice" }).pipe(
+  Effect.delay("100 millis")
+);
+
+const fetchPosts = Effect.succeed([
+  { id: 1, title: "Hello World" },
+  { id: 2, title: "Effect is awesome" },
+]).pipe(Effect.delay("150 millis"));
+
+const fetchSettings = Effect.succeed({ theme: "dark" }).pipe(
+  Effect.delay("50 millis")
+);
+
+// Fetch all data in parallel
+const program = Effect.gen(function* () {
+  const [user, posts, settings] = yield* Effect.all(
+    [fetchUser, fetchPosts, fetchSettings],
+    { concurrency: "unbounded" }
+  );
+
+  yield* Effect.log(`Loaded ${user.name} with ${posts.length} posts`);
+  return { user, posts, settings };
+});
+
+Effect.runPromise(program);
+```
+
+**Explanation:**  
+Real applications often need to do multiple things at once - fetch data from
+several APIs, process multiple files, etc. `Effect.all` lets you express
+this naturally without callback hell or complex Promise.all patterns.

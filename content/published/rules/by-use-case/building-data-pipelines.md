@@ -167,6 +167,532 @@ Output:
 
 ---
 
+## Fan Out to Multiple Consumers
+
+Use broadcast or partition to send stream data to multiple consumers.
+
+### Example
+
+```typescript
+import { Effect, Stream, Queue, Fiber, Chunk } from "effect"
+
+// ============================================
+// 1. Broadcast to all consumers
+// ============================================
+
+const broadcastExample = Effect.scoped(
+  Effect.gen(function* () {
+    const source = Stream.fromIterable([1, 2, 3, 4, 5])
+
+    // Broadcast to 3 consumers - each gets all items
+    const [stream1, stream2, stream3] = yield* Stream.broadcast(source, 3)
+
+    // Consumer 1: Log items
+    const consumer1 = stream1.pipe(
+      Stream.tap((n) => Effect.log(`Consumer 1: ${n}`)),
+      Stream.runDrain
+    )
+
+    // Consumer 2: Sum items
+    const consumer2 = stream2.pipe(
+      Stream.runFold(0, (acc, n) => acc + n),
+      Effect.tap((sum) => Effect.log(`Consumer 2 sum: ${sum}`))
+    )
+
+    // Consumer 3: Collect to array
+    const consumer3 = stream3.pipe(
+      Stream.runCollect,
+      Effect.tap((items) => Effect.log(`Consumer 3 collected: ${Chunk.toReadonlyArray(items)}`))
+    )
+
+    // Run all consumers in parallel
+    yield* Effect.all([consumer1, consumer2, consumer3], { concurrency: 3 })
+  })
+)
+
+// ============================================
+// 2. Partition by predicate
+// ============================================
+
+const partitionExample = Effect.gen(function* () {
+  const numbers = Stream.fromIterable([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+  // Partition into even and odd
+  const [evens, odds] = yield* Stream.partition(
+    numbers,
+    (n) => n % 2 === 0
+  )
+
+  const processEvens = evens.pipe(
+    Stream.tap((n) => Effect.log(`Even: ${n}`)),
+    Stream.runDrain
+  )
+
+  const processOdds = odds.pipe(
+    Stream.tap((n) => Effect.log(`Odd: ${n}`)),
+    Stream.runDrain
+  )
+
+  yield* Effect.all([processEvens, processOdds], { concurrency: 2 })
+})
+
+// ============================================
+// 3. Partition into multiple buckets
+// ============================================
+
+interface Event {
+  type: "click" | "scroll" | "submit"
+  data: unknown
+}
+
+const multiPartitionExample = Effect.gen(function* () {
+  const events: Event[] = [
+    { type: "click", data: { x: 100 } },
+    { type: "scroll", data: { y: 200 } },
+    { type: "submit", data: { form: "login" } },
+    { type: "click", data: { x: 150 } },
+    { type: "scroll", data: { y: 300 } },
+  ]
+
+  const source = Stream.fromIterable(events)
+
+  // Group by type using groupByKey
+  const grouped = source.pipe(
+    Stream.groupByKey((event) => event.type, {
+      bufferSize: 16,
+    })
+  )
+
+  // Process each group
+  yield* grouped.pipe(
+    Stream.flatMap(([key, stream]) =>
+      stream.pipe(
+        Stream.tap((event) => Effect.log(`[${key}] Processing: ${JSON.stringify(event.data)}`)),
+        Stream.runDrain,
+        Stream.fromEffect
+      )
+    ),
+    Stream.runDrain
+  )
+})
+
+// ============================================
+// 4. Fan-out with queues (manual control)
+// ============================================
+
+const queueFanOut = Effect.gen(function* () {
+  const source = Stream.fromIterable([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+  // Create queues for each consumer
+  const queue1 = yield* Queue.unbounded<number>()
+  const queue2 = yield* Queue.unbounded<number>()
+  const queue3 = yield* Queue.unbounded<number>()
+
+  // Distribute items round-robin
+  const distributor = source.pipe(
+    Stream.zipWithIndex,
+    Stream.tap(([item, index]) => {
+      const queue = index % 3 === 0 ? queue1 : index % 3 === 1 ? queue2 : queue3
+      return Queue.offer(queue, item)
+    }),
+    Stream.runDrain,
+    Effect.tap(() => Effect.all([
+      Queue.shutdown(queue1),
+      Queue.shutdown(queue2),
+      Queue.shutdown(queue3),
+    ]))
+  )
+
+  // Consumers
+  const makeConsumer = (name: string, queue: Queue.Queue<number>) =>
+    Stream.fromQueue(queue).pipe(
+      Stream.tap((n) => Effect.log(`${name}: ${n}`)),
+      Stream.runDrain
+    )
+
+  yield* Effect.all([
+    distributor,
+    makeConsumer("Worker 1", queue1),
+    makeConsumer("Worker 2", queue2),
+    makeConsumer("Worker 3", queue3),
+  ], { concurrency: 4 })
+})
+
+// ============================================
+// 5. Run examples
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Broadcast Example ===")
+  yield* broadcastExample
+
+  yield* Effect.log("\n=== Partition Example ===")
+  yield* partitionExample
+})
+
+Effect.runPromise(program)
+```
+
+---
+
+## Implement Backpressure in Pipelines
+
+Use buffering and throttling to handle producers faster than consumers.
+
+### Example
+
+```typescript
+import { Effect, Stream, Schedule, Duration, Queue, Chunk } from "effect"
+
+// ============================================
+// 1. Stream with natural backpressure
+// ============================================
+
+// Streams have built-in backpressure - consumers pull data
+const fastProducer = Stream.fromIterable(Array.from({ length: 1000 }, (_, i) => i))
+
+const slowConsumer = fastProducer.pipe(
+  Stream.tap((n) =>
+    Effect.gen(function* () {
+      yield* Effect.sleep("10 millis")  // Slow processing
+      yield* Effect.log(`Processed: ${n}`)
+    })
+  ),
+  Stream.runDrain
+)
+
+// Producer automatically slows down to match consumer
+
+// ============================================
+// 2. Explicit buffer with drop strategy
+// ============================================
+
+const bufferedStream = (source: Stream.Stream<number>) =>
+  source.pipe(
+    // Buffer up to 100 items, drop oldest when full
+    Stream.buffer({ capacity: 100, strategy: "dropping" })
+  )
+
+// ============================================
+// 3. Throttling - limit rate
+// ============================================
+
+const throttledStream = (source: Stream.Stream<number>) =>
+  source.pipe(
+    // Process at most 10 items per second
+    Stream.throttle({
+      cost: () => 1,
+      units: 10,
+      duration: "1 second",
+      strategy: "enforce",
+    })
+  )
+
+// ============================================
+// 4. Debounce - wait for quiet period
+// ============================================
+
+const debouncedStream = (source: Stream.Stream<number>) =>
+  source.pipe(
+    // Wait 100ms of no new items before emitting
+    Stream.debounce("100 millis")
+  )
+
+// ============================================
+// 5. Bounded queue for producer-consumer
+// ============================================
+
+const boundedQueueExample = Effect.gen(function* () {
+  // Create bounded queue - blocks producer when full
+  const queue = yield* Queue.bounded<number>(10)
+
+  // Fast producer
+  const producer = Effect.gen(function* () {
+    for (let i = 0; i < 100; i++) {
+      yield* Queue.offer(queue, i)
+      yield* Effect.log(`Produced: ${i}`)
+    }
+    yield* Queue.shutdown(queue)
+  })
+
+  // Slow consumer
+  const consumer = Effect.gen(function* () {
+    let count = 0
+    while (true) {
+      const item = yield* Queue.take(queue).pipe(
+        Effect.catchTag("QueueShutdown", () => Effect.fail("done" as const))
+      )
+      if (item === "done") break
+      yield* Effect.sleep("50 millis")  // Slow processing
+      yield* Effect.log(`Consumed: ${item}`)
+      count++
+    }
+    return count
+  }).pipe(Effect.catchAll(() => Effect.succeed(0)))
+
+  // Run both - producer will block when queue is full
+  yield* Effect.all([producer, consumer], { concurrency: 2 })
+})
+
+// ============================================
+// 6. Sliding window - keep most recent
+// ============================================
+
+const slidingWindowStream = (source: Stream.Stream<number>) =>
+  source.pipe(
+    Stream.sliding(5),  // Keep last 5 items
+    Stream.map((window) => ({
+      items: window,
+      average: Chunk.reduce(window, 0, (a, b) => a + b) / Chunk.size(window),
+    }))
+  )
+
+// ============================================
+// 7. Run example
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Backpressure Demo ===")
+
+  // Throttled stream
+  const throttled = Stream.fromIterable([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).pipe(
+    Stream.tap((n) => Effect.log(`Emitting: ${n}`)),
+    Stream.throttle({
+      cost: () => 1,
+      units: 2,
+      duration: "1 second",
+      strategy: "enforce",
+    }),
+    Stream.tap((n) => Effect.log(`After throttle: ${n}`)),
+    Stream.runDrain
+  )
+
+  yield* throttled
+})
+
+Effect.runPromise(program)
+```
+
+---
+
+## Implement Dead Letter Queues
+
+Capture failed items with context for debugging and retry instead of losing them.
+
+### Example
+
+```typescript
+import { Effect, Stream, Queue, Chunk, Ref, Data } from "effect"
+
+// ============================================
+// 1. Define DLQ types
+// ============================================
+
+interface DeadLetterItem<T> {
+  readonly item: T
+  readonly error: unknown
+  readonly timestamp: Date
+  readonly attempts: number
+  readonly context: Record<string, unknown>
+}
+
+interface ProcessingResult<T, R> {
+  readonly _tag: "Success" | "Failure"
+}
+
+class Success<T, R> implements ProcessingResult<T, R> {
+  readonly _tag = "Success"
+  constructor(
+    readonly item: T,
+    readonly result: R
+  ) {}
+}
+
+class Failure<T> implements ProcessingResult<T, never> {
+  readonly _tag = "Failure"
+  constructor(
+    readonly item: T,
+    readonly error: unknown,
+    readonly attempts: number
+  ) {}
+}
+
+// ============================================
+// 2. Create a DLQ service
+// ============================================
+
+const makeDLQ = <T>() =>
+  Effect.gen(function* () {
+    const queue = yield* Queue.unbounded<DeadLetterItem<T>>()
+    const countRef = yield* Ref.make(0)
+
+    return {
+      send: (item: T, error: unknown, attempts: number, context: Record<string, unknown> = {}) =>
+        Effect.gen(function* () {
+          yield* Queue.offer(queue, {
+            item,
+            error,
+            timestamp: new Date(),
+            attempts,
+            context,
+          })
+          yield* Ref.update(countRef, (n) => n + 1)
+          yield* Effect.log(`DLQ: Added item (total: ${(yield* Ref.get(countRef))})`)
+        }),
+
+      getAll: () =>
+        Effect.gen(function* () {
+          const items: DeadLetterItem<T>[] = []
+          while (!(yield* Queue.isEmpty(queue))) {
+            const item = yield* Queue.poll(queue)
+            if (item._tag === "Some") {
+              items.push(item.value)
+            }
+          }
+          return items
+        }),
+
+      count: () => Ref.get(countRef),
+
+      queue,
+    }
+  })
+
+// ============================================
+// 3. Process with DLQ
+// ============================================
+
+interface Order {
+  id: string
+  amount: number
+}
+
+const processOrder = (order: Order): Effect.Effect<string, Error> =>
+  Effect.gen(function* () {
+    // Simulate random failures
+    if (order.amount < 0) {
+      return yield* Effect.fail(new Error("Invalid amount"))
+    }
+    if (order.id === "fail") {
+      return yield* Effect.fail(new Error("Processing failed"))
+    }
+    yield* Effect.sleep("10 millis")
+    return `Processed order ${order.id}: $${order.amount}`
+  })
+
+const processWithRetryAndDLQ = (
+  orders: Stream.Stream<Order>,
+  maxRetries: number = 3
+) =>
+  Effect.gen(function* () {
+    const dlq = yield* makeDLQ<Order>()
+
+    const results = yield* orders.pipe(
+      Stream.mapEffect((order) =>
+        Effect.gen(function* () {
+          let lastError: unknown
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            const result = yield* processOrder(order).pipe(
+              Effect.map((r) => new Success(order, r)),
+              Effect.catchAll((error) =>
+                Effect.gen(function* () {
+                  yield* Effect.log(`Attempt ${attempt}/${maxRetries} failed for ${order.id}`)
+                  lastError = error
+                  if (attempt < maxRetries) {
+                    yield* Effect.sleep("100 millis")  // Backoff
+                  }
+                  return new Failure(order, error, attempt) as ProcessingResult<Order, string>
+                })
+              )
+            )
+
+            if (result._tag === "Success") {
+              return result
+            }
+          }
+
+          // All retries exhausted - send to DLQ
+          yield* dlq.send(order, lastError, maxRetries, { orderId: order.id })
+          return new Failure(order, lastError, maxRetries)
+        })
+      ),
+      Stream.runCollect
+    )
+
+    const successful = Chunk.filter(results, (r): r is Success<Order, string> => r._tag === "Success")
+    const failed = Chunk.filter(results, (r): r is Failure<Order> => r._tag === "Failure")
+
+    yield* Effect.log(`\nResults: ${Chunk.size(successful)} success, ${Chunk.size(failed)} failed`)
+
+    // Get DLQ contents
+    const dlqItems = yield* dlq.getAll()
+    if (dlqItems.length > 0) {
+      yield* Effect.log("\n=== Dead Letter Queue Contents ===")
+      for (const item of dlqItems) {
+        yield* Effect.log(
+          `- Order ${item.item.id}: ${item.error} (attempts: ${item.attempts})`
+        )
+      }
+    }
+
+    return { successful, failed, dlqItems }
+  })
+
+// ============================================
+// 4. DLQ reprocessing
+// ============================================
+
+const reprocessDLQ = <T>(
+  dlqItems: DeadLetterItem<T>[],
+  processor: (item: T) => Effect.Effect<void, Error>
+) =>
+  Effect.gen(function* () {
+    yield* Effect.log(`Reprocessing ${dlqItems.length} DLQ items...`)
+
+    for (const dlqItem of dlqItems) {
+      const result = yield* processor(dlqItem.item).pipe(
+        Effect.map(() => "success" as const),
+        Effect.catchAll(() => Effect.succeed("failed" as const))
+      )
+
+      yield* Effect.log(
+        `Reprocess ${JSON.stringify(dlqItem.item)}: ${result}`
+      )
+    }
+  })
+
+// ============================================
+// 5. Run example
+// ============================================
+
+const program = Effect.gen(function* () {
+  const orders: Order[] = [
+    { id: "1", amount: 100 },
+    { id: "2", amount: 200 },
+    { id: "fail", amount: 50 },    // Will fail all retries
+    { id: "3", amount: 300 },
+    { id: "4", amount: -10 },       // Invalid amount
+    { id: "5", amount: 150 },
+  ]
+
+  yield* Effect.log("=== Processing Orders ===\n")
+  const { dlqItems } = yield* processWithRetryAndDLQ(Stream.fromIterable(orders), 3)
+
+  if (dlqItems.length > 0) {
+    yield* Effect.log("\n=== Attempting DLQ Reprocessing ===")
+    yield* reprocessDLQ(dlqItems, (order) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`Manual fix for order ${order.id}`)
+      })
+    )
+  }
+})
+
+Effect.runPromise(program)
+```
+
+---
+
 ## Manage Resources Safely in a Pipeline
 
 Use Stream.acquireRelease to safely manage the lifecycle of a resource within a pipeline.
@@ -256,6 +782,191 @@ Effect.runPromise(Effect.provide(program, FileService.Default)).catch(
     Effect.runSync(Effect.logError("Unexpected error: " + error));
   }
 );
+```
+
+---
+
+## Merge Multiple Streams
+
+Use merge, concat, or zip to combine multiple streams based on your requirements.
+
+### Example
+
+```typescript
+import { Effect, Stream, Duration, Chunk } from "effect"
+
+// ============================================
+// 1. Merge - interleave as items arrive
+// ============================================
+
+const mergeExample = Effect.gen(function* () {
+  // Two streams producing at different rates
+  const fast = Stream.fromIterable(["A1", "A2", "A3"]).pipe(
+    Stream.tap(() => Effect.sleep("100 millis"))
+  )
+
+  const slow = Stream.fromIterable(["B1", "B2", "B3"]).pipe(
+    Stream.tap(() => Effect.sleep("200 millis"))
+  )
+
+  // Merge interleaves based on arrival time
+  const merged = Stream.merge(fast, slow)
+
+  yield* merged.pipe(
+    Stream.tap((item) => Effect.log(`Received: ${item}`)),
+    Stream.runDrain
+  )
+  // Output order depends on timing: A1, B1, A2, A3, B2, B3 (approximately)
+})
+
+// ============================================
+// 2. Merge all - combine many streams
+// ============================================
+
+const mergeAllExample = Effect.gen(function* () {
+  const streams = [
+    Stream.fromIterable([1, 2, 3]),
+    Stream.fromIterable([10, 20, 30]),
+    Stream.fromIterable([100, 200, 300]),
+  ]
+
+  const merged = Stream.mergeAll(streams, { concurrency: 3 })
+
+  const results = yield* merged.pipe(Stream.runCollect)
+  yield* Effect.log(`Merged: ${Chunk.toReadonlyArray(results)}`)
+})
+
+// ============================================
+// 3. Concat - sequence streams
+// ============================================
+
+const concatExample = Effect.gen(function* () {
+  const first = Stream.fromIterable([1, 2, 3])
+  const second = Stream.fromIterable([4, 5, 6])
+  const third = Stream.fromIterable([7, 8, 9])
+
+  // Concat waits for each stream to complete
+  const sequential = Stream.concat(Stream.concat(first, second), third)
+
+  const results = yield* sequential.pipe(Stream.runCollect)
+  yield* Effect.log(`Concatenated: ${Chunk.toReadonlyArray(results)}`)
+  // Always: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+})
+
+// ============================================
+// 4. Zip - pair items from streams
+// ============================================
+
+const zipExample = Effect.gen(function* () {
+  const names = Stream.fromIterable(["Alice", "Bob", "Charlie"])
+  const ages = Stream.fromIterable([30, 25, 35])
+
+  // Zip pairs items by position
+  const zipped = Stream.zip(names, ages)
+
+  yield* zipped.pipe(
+    Stream.tap(([name, age]) => Effect.log(`${name} is ${age} years old`)),
+    Stream.runDrain
+  )
+})
+
+// ============================================
+// 5. ZipWith - pair and transform
+// ============================================
+
+const zipWithExample = Effect.gen(function* () {
+  const prices = Stream.fromIterable([100, 200, 150])
+  const quantities = Stream.fromIterable([2, 1, 3])
+
+  // Zip and calculate total
+  const totals = Stream.zipWith(prices, quantities, (price, qty) => ({
+    price,
+    quantity: qty,
+    total: price * qty,
+  }))
+
+  yield* totals.pipe(
+    Stream.tap((item) => Effect.log(`${item.quantity}x @ $${item.price} = $${item.total}`)),
+    Stream.runDrain
+  )
+})
+
+// ============================================
+// 6. ZipLatest - combine with latest values
+// ============================================
+
+const zipLatestExample = Effect.gen(function* () {
+  // Simulate different update rates
+  const temperature = Stream.fromIterable([20, 21, 22, 23]).pipe(
+    Stream.tap(() => Effect.sleep("100 millis"))
+  )
+
+  const humidity = Stream.fromIterable([50, 55, 60]).pipe(
+    Stream.tap(() => Effect.sleep("150 millis"))
+  )
+
+  // ZipLatest always uses the latest value from each stream
+  const combined = Stream.zipLatest(temperature, humidity)
+
+  yield* combined.pipe(
+    Stream.tap(([temp, hum]) => Effect.log(`Temp: ${temp}°C, Humidity: ${hum}%`)),
+    Stream.runDrain
+  )
+})
+
+// ============================================
+// 7. Practical example: Merge event sources
+// ============================================
+
+interface Event {
+  source: string
+  type: string
+  data: unknown
+}
+
+const mergeEventSources = Effect.gen(function* () {
+  // Simulate multiple event sources
+  const mouseEvents = Stream.fromIterable([
+    { source: "mouse", type: "click", data: { x: 100, y: 200 } },
+    { source: "mouse", type: "move", data: { x: 150, y: 250 } },
+  ] as Event[])
+
+  const keyboardEvents = Stream.fromIterable([
+    { source: "keyboard", type: "keydown", data: { key: "Enter" } },
+    { source: "keyboard", type: "keyup", data: { key: "Enter" } },
+  ] as Event[])
+
+  const networkEvents = Stream.fromIterable([
+    { source: "network", type: "response", data: { status: 200 } },
+  ] as Event[])
+
+  // Merge all event sources
+  const allEvents = Stream.mergeAll([mouseEvents, keyboardEvents, networkEvents])
+
+  yield* allEvents.pipe(
+    Stream.tap((event) =>
+      Effect.log(`[${event.source}] ${event.type}: ${JSON.stringify(event.data)}`)
+    ),
+    Stream.runDrain
+  )
+})
+
+// ============================================
+// 8. Run examples
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Merge Example ===")
+  yield* mergeExample
+
+  yield* Effect.log("\n=== Concat Example ===")
+  yield* concatExample
+
+  yield* Effect.log("\n=== Zip Example ===")
+  yield* zipExample
+})
+
+Effect.runPromise(program)
 ```
 
 ---
