@@ -38,6 +38,10 @@ import {
   writeSkill,
   type PatternContent,
 } from "./skills/skill-generator.js";
+import {
+  createDatabase,
+  createEffectPatternRepository,
+} from "@effect-patterns/toolkit";
 
 // --- PROJECT ROOT RESOLUTION ---
 // Find the project root by looking for package.json with "name": "effect-patterns-hub"
