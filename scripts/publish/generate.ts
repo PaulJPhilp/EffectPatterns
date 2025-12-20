@@ -85,7 +85,7 @@ async function findPatternPath(
 }
 
 async function generateReadme() {
-  console.log("Starting README generation...");
+  console.log('Starting README generation...');
 
   // Connect to database
   const { db, close } = createDatabase();
