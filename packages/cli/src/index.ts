@@ -41,6 +41,11 @@ import {
 import {
   createDatabase,
   createEffectPatternRepository,
+  createApplicationPatternRepository,
+  createJobRepository,
+  EffectPatternLockedError,
+  ApplicationPatternLockedError,
+  JobLockedError,
 } from "@effect-patterns/toolkit";
 
 // --- PROJECT ROOT RESOLUTION ---
