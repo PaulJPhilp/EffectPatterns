@@ -7,61 +7,55 @@
  * Prerequisites:
  * - docker-compose up -d postgres
  * - bun run db:push
+ *
+ * Environment:
+ * - TEST_DATABASE_URL (optional) - Test database URL
+ * - DATABASE_URL (optional) - Default database URL
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest"
-import { createDatabase } from "../db/client.js"
 import {
   createApplicationPatternRepository,
   createEffectPatternRepository,
   createJobRepository,
 } from "../repositories/index.js"
-import {
-  applicationPatterns,
-  effectPatterns,
-  jobs,
-  patternJobs,
-  patternRelations,
-  type NewApplicationPattern,
-  type NewEffectPattern,
-  type NewJob,
-} from "../db/schema/index.js"
 import { eq } from "drizzle-orm"
-import type { Database, DatabaseConnection } from "../db/client.js"
+import {
+  setupTestDatabase,
+  cleanDatabase,
+  getTestDatabaseUrl,
+} from "./db-helpers.js"
+import type { Database } from "../db/client.js"
 
 // Skip tests if no database available
-const DATABASE_URL =
-  process.env.DATABASE_URL ??
-  "postgresql://postgres:postgres@localhost:5432/effect_patterns"
+const TEST_DB_URL = getTestDatabaseUrl()
 
 describe("Repository Integration Tests", () => {
-  let connection: DatabaseConnection
   let db: Database
+  let close: () => Promise<void>
 
   beforeAll(async () => {
     try {
-      connection = createDatabase(DATABASE_URL)
-      db = connection.db
+      const connection = setupTestDatabase(TEST_DB_URL)
+      const setup = await connection
+      db = setup.db
+      close = setup.close
     } catch (error) {
       console.log("Skipping tests - database not available:", error)
     }
   })
 
   afterAll(async () => {
-    if (connection) {
-      await connection.close()
+    if (close) {
+      await close()
     }
   })
 
   beforeEach(async () => {
     if (!db) return
 
-    // Clean up test data
-    await db.delete(patternRelations)
-    await db.delete(patternJobs)
-    await db.delete(effectPatterns)
-    await db.delete(jobs)
-    await db.delete(applicationPatterns)
+    // Clean up test data before each test
+    await cleanDatabase(db)
   })
 
   describe("ApplicationPatterns Repository", () => {

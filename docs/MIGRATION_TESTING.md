@@ -128,7 +128,29 @@ const result = await program.pipe(
 console.log(`Found ${result.length} patterns`)
 ```
 
-## Step 6: Test MCP Server
+## Step 6: Test Database Functionality
+
+```bash
+# Run comprehensive database tests
+bun run test:db
+
+# Run repository integration tests
+bun run test:db:repositories
+
+# Run toolkit tests
+bun run --filter @effect-patterns/toolkit test
+```
+
+The test suite verifies:
+- Database connection
+- Schema tables exist
+- Repository CRUD operations
+- Search functionality
+- Data integrity (foreign keys, unique constraints)
+- Coverage statistics
+- Pattern relationships
+
+## Step 7: Test MCP Server
 
 ```bash
 # Start MCP server
@@ -140,6 +162,21 @@ curl http://localhost:3000/api/patterns?q=retry
 ```
 
 The MCP server should now use the database instead of loading from JSON files.
+
+## Step 8: Test CLI Commands
+
+```bash
+# Test search command
+bun run ep search retry
+
+# Test list command
+bun run ep list --difficulty beginner
+
+# Test show command
+bun run ep show concurrency-hello-world
+```
+
+All CLI commands should now query the database.
 
 ## Troubleshooting
 
