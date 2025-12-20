@@ -42,6 +42,10 @@ import {
   type PatternContent,
   type GeminiSkillContent,
 } from "./skills/skill-generator.js";
+import {
+  createDatabase,
+  createEffectPatternRepository,
+} from "@effect-patterns/toolkit";
 
 // --- PROJECT ROOT RESOLUTION ---
 // Find the project root by looking for package.json with "name": "effect-patterns-hub"
@@ -3062,46 +3066,38 @@ export const searchCommand = Command.make("search", {
           `\n🔍 Searching for patterns matching "${args.query}"...\n`
         );
 
-        // Load patterns from JSON
-        const patternsPath = path.join(
-          PROJECT_ROOT,
-          "services/mcp-server/data/patterns.json"
-        );
+        // Load patterns from database
+        const { db, close } = createDatabase();
+        try {
+          const repo = createEffectPatternRepository(db);
+          const dbPatterns = yield* Effect.tryPromise({
+            try: () =>
+              repo.search({
+                query: args.query,
+                limit: 10,
+              }),
+            catch: (error) =>
+              new Error(
+                `Failed to search patterns: ${error instanceof Error ? error.message : String(error)}`
+              ),
+          });
 
-        const content = yield* Effect.try({
-          try: () =>
-            require("fs").readFileSync(patternsPath, "utf-8"),
-          catch: (error: unknown) =>
-            new Error(
-              `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
-            ),
-        });
-
-        const json = JSON.parse(content);
-        const allPatterns = json.patterns || [];
-
-        // Simple search
-        const results = allPatterns
-          .filter((p: any) => {
-            const query = args.query.toLowerCase();
-            return (
-              p.title.toLowerCase().includes(query) ||
-              p.description.toLowerCase().includes(query) ||
-              p.id.toLowerCase().includes(query)
+          if (dbPatterns.length === 0) {
+            yield* Console.log(
+              `❌ No patterns found matching "${args.query}"\n`
             );
-          })
-          .slice(0, 10);
-
-        if (results.length === 0) {
-          yield* Console.log(
-            `❌ No patterns found matching "${args.query}"\n`
-          );
-        } else {
-          yield* Console.log(`✓ Found ${results.length} pattern(s):\n`);
-          for (const pattern of results) {
-            yield* Console.log(`  • ${pattern.title} (${pattern.id})`);
+          } else {
+            yield* Console.log(`✓ Found ${dbPatterns.length} pattern(s):\n`);
+            for (const pattern of dbPatterns) {
+              yield* Console.log(`  • ${pattern.title} (${pattern.slug})`);
+            }
+            yield* Console.log("");
           }
-          yield* Console.log("");
+        } finally {
+          yield* Effect.tryPromise({
+            try: () => close(),
+            catch: () => undefined,
+          });
         }
       })
     )
@@ -3134,41 +3130,51 @@ export const listCommand = Command.make("list", {
   .pipe(
     Command.withHandler(({ options }) =>
       Effect.gen(function* () {
-        // Load patterns from JSON
-        const patternsPath = path.join(
-          PROJECT_ROOT,
-          "services/mcp-server/data/patterns.json"
-        );
+        // Load patterns from database
+        const { db, close } = createDatabase();
+        try {
+          const repo = createEffectPatternRepository(db);
 
-        const content = yield* Effect.try({
-          try: () =>
-            require("fs").readFileSync(patternsPath, "utf-8"),
-          catch: (error: unknown) =>
-            new Error(
-              `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
-            ),
-        });
+          // Build search params
+          const searchParams: {
+            skillLevel?: "beginner" | "intermediate" | "advanced";
+            category?: string;
+          } = {};
 
-        const json = JSON.parse(content);
-        let patterns: any[] = json.patterns || [];
+          if (Option.isSome(options.difficulty)) {
+            const difficultyValue = (options.difficulty as Option.Some<string>)
+              .value.toLowerCase();
+            if (
+              difficultyValue === "beginner" ||
+              difficultyValue === "intermediate" ||
+              difficultyValue === "advanced"
+            ) {
+              searchParams.skillLevel = difficultyValue;
+            }
+          }
 
-        // Apply filters
-        if (Option.isSome(options.difficulty)) {
-          const difficultyValue = (options.difficulty as Option.Some<string>)
-            .value;
-          patterns = patterns.filter(
-            (p: any) =>
-              p.difficulty.toLowerCase() === difficultyValue.toLowerCase()
-          );
-        }
+          if (Option.isSome(options.category)) {
+            searchParams.category = (options.category as Option.Some<string>)
+              .value;
+          }
 
-        if (Option.isSome(options.category)) {
-          const categoryValue = (options.category as Option.Some<string>).value;
-          patterns = patterns.filter(
-            (p: any) =>
-              p.category.toLowerCase() === categoryValue.toLowerCase()
-          );
-        }
+          const dbPatterns = yield* Effect.tryPromise({
+            try: () => repo.search(searchParams),
+            catch: (error) =>
+              new Error(
+                `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
+              ),
+          });
+
+          // Convert to legacy format for compatibility
+          const patterns = dbPatterns.map((p) => ({
+            id: p.slug,
+            title: p.title,
+            description: p.summary,
+            difficulty: p.skillLevel,
+            category: p.category || "other",
+            tags: p.tags || [],
+          }));
 
         if (patterns.length === 0) {
           yield* Console.log("\n❌ No patterns match the filter criteria\n");
@@ -3240,6 +3246,12 @@ export const listCommand = Command.make("list", {
         yield* Console.log(
           `\n\n📈 Total: ${patterns.length} pattern(s)\n`
         );
+        } finally {
+          yield* Effect.tryPromise({
+            try: () => close(),
+            catch: () => undefined,
+          });
+        }
       })
     )
   );
@@ -3262,119 +3274,134 @@ export const showCommand = Command.make("show", {
   .pipe(
     Command.withHandler(({ args, options }) =>
       Effect.gen(function* () {
-        // Load patterns from JSON
-        const patternsPath = path.join(
-          PROJECT_ROOT,
-          "services/mcp-server/data/patterns.json"
-        );
+        // Load pattern from database
+        const { db, close } = createDatabase();
+        try {
+          const repo = createEffectPatternRepository(db);
+          const dbPattern = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.patternId),
+            catch: (error) =>
+              new Error(
+                `Failed to load pattern: ${error instanceof Error ? error.message : String(error)}`
+              ),
+          });
 
-        const content = yield* Effect.try({
-          try: () =>
-            require("fs").readFileSync(patternsPath, "utf-8"),
-          catch: (error: unknown) =>
-            new Error(
-              `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
-            ),
-        });
+          if (!dbPattern) {
+            yield* Console.log(
+              `\n❌ Pattern "${args.patternId}" not found\n`
+            );
 
-        const json = JSON.parse(content);
-        const allPatterns = json.patterns || [];
+            // Suggest similar patterns
+            const similarPatterns = yield* Effect.tryPromise({
+              try: () =>
+                repo.search({
+                  query: args.patternId,
+                  limit: 3,
+                }),
+              catch: () => [],
+            });
 
-        // Find pattern
-        const pattern = allPatterns.find(
-          (p: any) => p.id === args.patternId
-        );
-
-        if (!pattern) {
-          yield* Console.log(
-            `\n❌ Pattern "${args.patternId}" not found\n`
-          );
-
-          // Suggest similar patterns
-          const similar = allPatterns
-            .filter(
-              (p: any) =>
-                p.id.includes(args.patternId) ||
-                p.title.toLowerCase().includes(args.patternId.toLowerCase())
-            )
-            .slice(0, 3);
-
-          if (similar.length > 0) {
-            yield* Console.log("Did you mean one of these?\n");
-            for (const p of similar) {
-              yield* Console.log(`  • ${p.id}`);
+            if (similarPatterns.length > 0) {
+              yield* Console.log("Did you mean one of these?\n");
+              for (const p of similarPatterns) {
+                yield* Console.log(`  • ${p.slug}`);
+              }
+              yield* Console.log("");
             }
-            yield* Console.log("");
+            return;
           }
-          return;
-        }
 
-        // Display metadata panel
-        const metadata = `
+          // Convert to legacy format
+          const pattern = {
+            id: dbPattern.slug,
+            title: dbPattern.title,
+            description: dbPattern.summary,
+            difficulty: dbPattern.skillLevel,
+            category: dbPattern.category || "other",
+            tags: dbPattern.tags || [],
+            examples: dbPattern.examples || [],
+            useCases: dbPattern.useCases || [],
+            relatedPatterns: undefined, // Would need to query patternRelations
+          };
+
+          // Display metadata panel
+          const metadata = `
 ID: ${pattern.id}
 Title: ${pattern.title}
 Skill Level: ${pattern.difficulty}
 Category: ${pattern.category}
-Tags: ${pattern.tags ? pattern.tags.join(", ") : "None"}`.trim();
+Tags: ${pattern.tags.length > 0 ? pattern.tags.join(", ") : "None"}`.trim();
 
         yield* Console.log("\n" + "═".repeat(60));
         yield* Console.log("📋 PATTERN METADATA");
         yield* Console.log("═".repeat(60));
         yield* Console.log(metadata);
 
-        // Display summary
-        if (pattern.description) {
-          yield* Console.log(
-            "\n" + "─".repeat(60)
-          );
-          yield* Console.log("📝 DESCRIPTION");
-          yield* Console.log("─".repeat(60));
-          yield* Console.log(pattern.description);
+          // Display summary
+          if (pattern.description) {
+            yield* Console.log(
+              "\n" + "─".repeat(60)
+            );
+            yield* Console.log("📝 DESCRIPTION");
+            yield* Console.log("─".repeat(60));
+            yield* Console.log(pattern.description);
+          }
+
+          // Full format shows more
+          if (options.format === "full") {
+            // Display examples
+            if (pattern.examples && pattern.examples.length > 0) {
+              yield* Console.log(
+                "\n" + "─".repeat(60)
+              );
+              yield* Console.log("💡 EXAMPLES");
+              yield* Console.log("─".repeat(60));
+              for (let i = 0; i < pattern.examples.length; i++) {
+                const ex = pattern.examples[i];
+                yield* Console.log(
+                  `\nExample ${i + 1}: ${ex.description || "Code example"}`
+                );
+                yield* Console.log("─".repeat(40));
+                yield* Console.log(ex.code);
+              }
+            }
+
+            // Display use cases
+            if (pattern.useCases && pattern.useCases.length > 0) {
+              yield* Console.log(
+                "\n" + "─".repeat(60)
+              );
+              yield* Console.log("🎯 USE CASES");
+              yield* Console.log("─".repeat(60));
+              for (const useCase of pattern.useCases) {
+                yield* Console.log(`  • ${useCase}`);
+              }
+            }
+
+            // Get and display related patterns
+            const relatedPatterns = yield* Effect.tryPromise({
+              try: () => repo.getRelatedPatterns(dbPattern.id),
+              catch: () => [],
+            });
+            if (relatedPatterns.length > 0) {
+              yield* Console.log(
+                "\n" + "─".repeat(60)
+              );
+              yield* Console.log("🔗 RELATED PATTERNS");
+              yield* Console.log("─".repeat(60));
+              for (const related of relatedPatterns) {
+                yield* Console.log(`  • ${related.slug} - ${related.title}`);
+              }
+            }
+          }
+
+          yield* Console.log("\n" + "═".repeat(60) + "\n");
+        } finally {
+          yield* Effect.tryPromise({
+            try: () => close(),
+            catch: () => undefined,
+          });
         }
-
-        // Full format shows more
-        if (options.format === "full") {
-          // Display examples
-          if (pattern.examples && pattern.examples.length > 0) {
-            yield* Console.log(
-              "\n" + "─".repeat(60)
-            );
-            yield* Console.log("💡 EXAMPLES");
-            yield* Console.log("─".repeat(60));
-            for (let i = 0; i < pattern.examples.length; i++) {
-              const ex = pattern.examples[i];
-              yield* Console.log(`\nExample ${i + 1}: ${ex.description}`);
-              yield* Console.log("─".repeat(40));
-              yield* Console.log(ex.code);
-            }
-          }
-
-          // Display use cases
-          if (pattern.useCases && pattern.useCases.length > 0) {
-            yield* Console.log(
-              "\n" + "─".repeat(60)
-            );
-            yield* Console.log("🎯 USE CASES");
-            yield* Console.log("─".repeat(60));
-            for (const useCase of pattern.useCases) {
-              yield* Console.log(`  • ${useCase}`);
-            }
-          }
-
-          // Display related patterns
-          if (pattern.relatedPatterns && pattern.relatedPatterns.length > 0) {
-            yield* Console.log(
-              "\n" + "─".repeat(60)
-            );
-            yield* Console.log("🔗 RELATED PATTERNS");
-            yield* Console.log("─".repeat(60));
-            for (const related of pattern.relatedPatterns) {
-              yield* Console.log(`  • ${related}`);
-            }
-          }
-        }
-
-        yield* Console.log("\n" + "═".repeat(60) + "\n");
       })
     )
   );
