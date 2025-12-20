@@ -45,6 +45,11 @@ import {
 import {
   createDatabase,
   createEffectPatternRepository,
+  createApplicationPatternRepository,
+  createJobRepository,
+  EffectPatternLockedError,
+  ApplicationPatternLockedError,
+  JobLockedError,
 } from "@effect-patterns/toolkit";
 
 // --- PROJECT ROOT RESOLUTION ---
@@ -3435,6 +3440,331 @@ export const rulesCommand = Command.make("rules").pipe(
 );
 
 /**
+ * admin:lock - Lock (validate) an entity to make it readonly
+ */
+const lockCommand = Command.make("lock", {
+  options: {
+    type: Options.text("type").pipe(
+      Options.withDescription("Entity type: pattern, application-pattern, or job"),
+      Options.withDefault("pattern")
+    ),
+  },
+  args: {
+    identifier: Args.text({ name: "identifier" }),
+  },
+}).pipe(
+  Command.withDescription(
+    "Lock (validate) an entity to prevent modifications. Once locked, entities become readonly."
+  ),
+  Command.withHandler(({ args, options }) =>
+    Effect.gen(function* () {
+      const { db, close } = createDatabase();
+      try {
+        const entityType = options.type.toLowerCase();
+        let result;
+        let entityName: string;
+
+        if (entityType === "pattern" || entityType === "effect-pattern") {
+          const repo = createEffectPatternRepository(db);
+          // Try to find by slug first, then by id
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: () => null,
+          });
+          
+          if (!existing) {
+            // Try as ID
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: () => null,
+            });
+            if (!byId) {
+              yield* showError(
+                `Pattern "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock pattern: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock pattern: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          }
+          entityName = `Pattern "${existing?.slug || args.identifier}"`;
+        } else if (
+          entityType === "application-pattern" ||
+          entityType === "ap"
+        ) {
+          const repo = createApplicationPatternRepository(db);
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: () => null,
+          });
+
+          if (!existing) {
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: () => null,
+            });
+            if (!byId) {
+              yield* showError(
+                `Application pattern "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock application pattern: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock application pattern: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          }
+          entityName = `Application pattern "${existing?.slug || args.identifier}"`;
+        } else if (entityType === "job") {
+          const repo = createJobRepository(db);
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: () => null,
+          });
+
+          if (!existing) {
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: () => null,
+            });
+            if (!byId) {
+              yield* showError(
+                `Job "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock job: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock job: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          }
+          entityName = `Job "${existing?.slug || args.identifier}"`;
+        } else {
+          yield* showError(
+            `Invalid entity type: ${options.type}. Must be one of: pattern, application-pattern, job`
+          );
+          return;
+        }
+
+        if (!result) {
+          yield* showError(`Failed to lock ${entityName}`);
+          return;
+        }
+
+        yield* showSuccess(`${entityName} has been locked (validated)`);
+        yield* Console.log(
+          `  • Validated: ${result.validated ? "Yes" : "No"}`
+        );
+        if (result.validatedAt) {
+          yield* Console.log(
+            `  • Validated at: ${result.validatedAt.toISOString()}`
+          );
+        }
+      } finally {
+        yield* Effect.tryPromise({
+          try: () => close(),
+          catch: () => undefined,
+        });
+      }
+    })
+  )
+);
+
+/**
+ * admin:unlock - Unlock (unvalidate) an entity to allow modifications
+ */
+const unlockCommand = Command.make("unlock", {
+  options: {
+    type: Options.text("type").pipe(
+      Options.withDescription("Entity type: pattern, application-pattern, or job"),
+      Options.withDefault("pattern")
+    ),
+  },
+  args: {
+    identifier: Args.text({ name: "identifier" }),
+  },
+}).pipe(
+  Command.withDescription(
+    "Unlock (unvalidate) an entity to allow modifications again."
+  ),
+  Command.withHandler(({ args, options }) =>
+    Effect.gen(function* () {
+      const { db, close } = createDatabase();
+      try {
+        const entityType = options.type.toLowerCase();
+        let result;
+        let entityName: string;
+
+        if (entityType === "pattern" || entityType === "effect-pattern") {
+          const repo = createEffectPatternRepository(db);
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: () => null,
+          });
+
+          if (!existing) {
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: () => null,
+            });
+            if (!byId) {
+              yield* showError(
+                `Pattern "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock pattern: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock pattern: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          }
+          entityName = `Pattern "${existing?.slug || args.identifier}"`;
+        } else if (
+          entityType === "application-pattern" ||
+          entityType === "ap"
+        ) {
+          const repo = createApplicationPatternRepository(db);
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: () => null,
+          });
+
+          if (!existing) {
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: () => null,
+            });
+            if (!byId) {
+              yield* showError(
+                `Application pattern "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock application pattern: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock application pattern: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          }
+          entityName = `Application pattern "${existing?.slug || args.identifier}"`;
+        } else if (entityType === "job") {
+          const repo = createJobRepository(db);
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: () => null,
+          });
+
+          if (!existing) {
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: () => null,
+            });
+            if (!byId) {
+              yield* showError(
+                `Job "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock job: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock job: ${error instanceof Error ? error.message : String(error)}`
+                ),
+            });
+          }
+          entityName = `Job "${existing?.slug || args.identifier}"`;
+        } else {
+          yield* showError(
+            `Invalid entity type: ${options.type}. Must be one of: pattern, application-pattern, job`
+          );
+          return;
+        }
+
+        if (!result) {
+          yield* showError(`Failed to unlock ${entityName}`);
+          return;
+        }
+
+        yield* showSuccess(`${entityName} has been unlocked`);
+        yield* Console.log(
+          `  • Validated: ${result.validated ? "Yes" : "No"}`
+        );
+      } finally {
+        yield* Effect.tryPromise({
+          try: () => close(),
+          catch: () => undefined,
+        });
+      }
+    })
+  )
+);
+
+/**
  * admin - Administrative commands for repository management
  */
 const adminSubcommands = [
@@ -3445,6 +3775,8 @@ const adminSubcommands = [
   rulesCommand,
   releaseCommand,
   pipelineManagementCommand,
+  lockCommand,
+  unlockCommand,
 ] as const;
 
 export const userRootCommand = Command.make("ep").pipe(

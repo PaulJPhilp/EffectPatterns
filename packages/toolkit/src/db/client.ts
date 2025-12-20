@@ -5,7 +5,7 @@
  */
 
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import * as postgres from "postgres"
+import postgres from "postgres"
 import * as schema from "./schema/index.js"
 
 /**

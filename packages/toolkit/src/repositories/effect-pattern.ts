@@ -15,6 +15,13 @@ import {
 import type { Database } from "../db/client.js"
 
 /**
+ * Check if an effect pattern is locked (validated)
+ */
+function isLocked(pattern: EffectPattern): boolean {
+  return pattern.validated === true
+}
+
+/**
  * Repository error types
  */
 export class EffectPatternNotFoundError extends Error {
@@ -31,6 +38,13 @@ export class EffectPatternRepositoryError extends Error {
     readonly cause: unknown
   ) {
     super(`Effect pattern repository error during ${operation}: ${String(cause)}`)
+  }
+}
+
+export class EffectPatternLockedError extends Error {
+  readonly _tag = "EffectPatternLockedError"
+  constructor(readonly identifier: string) {
+    super(`Effect pattern is locked (validated) and cannot be modified: ${identifier}`)
   }
 }
 
@@ -189,11 +203,21 @@ export function createEffectPatternRepository(db: Database) {
 
     /**
      * Update an effect pattern
+     * Throws EffectPatternLockedError if the pattern is validated/locked
      */
     async update(
       id: string,
       data: Partial<NewEffectPattern>
     ): Promise<EffectPattern | null> {
+      // Check if pattern exists and is locked
+      const existing = await this.findById(id)
+      if (!existing) {
+        return null
+      }
+      if (isLocked(existing)) {
+        throw new EffectPatternLockedError(id)
+      }
+
       const results = await db
         .update(effectPatterns)
         .set({ ...data, updatedAt: new Date() })
@@ -205,8 +229,18 @@ export function createEffectPatternRepository(db: Database) {
 
     /**
      * Delete an effect pattern
+     * Throws EffectPatternLockedError if the pattern is validated/locked
      */
     async delete(id: string): Promise<boolean> {
+      // Check if pattern exists and is locked
+      const existing = await this.findById(id)
+      if (!existing) {
+        return false
+      }
+      if (isLocked(existing)) {
+        throw new EffectPatternLockedError(id)
+      }
+
       const results = await db
         .delete(effectPatterns)
         .where(eq(effectPatterns.id, id))
@@ -217,8 +251,17 @@ export function createEffectPatternRepository(db: Database) {
 
     /**
      * Upsert an effect pattern by slug
+     * Throws EffectPatternLockedError if the pattern is validated/locked
      */
     async upsert(data: NewEffectPattern): Promise<EffectPattern> {
+      // Check if pattern exists and is locked
+      if (data.slug) {
+        const existing = await this.findBySlug(data.slug)
+        if (existing && isLocked(existing)) {
+          throw new EffectPatternLockedError(data.slug)
+        }
+      }
+
       const results = await db
         .insert(effectPatterns)
         .values(data)
@@ -267,11 +310,21 @@ export function createEffectPatternRepository(db: Database) {
 
     /**
      * Set related patterns for a pattern
+     * Throws EffectPatternLockedError if the pattern is validated/locked
      */
     async setRelatedPatterns(
       patternId: string,
       relatedPatternIds: string[]
     ): Promise<void> {
+      // Check if pattern is locked
+      const existing = await this.findById(patternId)
+      if (!existing) {
+        throw new EffectPatternNotFoundError(patternId)
+      }
+      if (isLocked(existing)) {
+        throw new EffectPatternLockedError(patternId)
+      }
+
       // Delete existing relations
       await db
         .delete(patternRelations)
@@ -307,6 +360,50 @@ export function createEffectPatternRepository(db: Database) {
         }),
         { beginner: 0, intermediate: 0, advanced: 0 } as Record<SkillLevel, number>
       )
+    },
+
+    /**
+     * Lock (validate) an effect pattern
+     * Sets validated to true and validatedAt to current timestamp
+     */
+    async lock(id: string): Promise<EffectPattern | null> {
+      const results = await db
+        .update(effectPatterns)
+        .set({
+          validated: true,
+          validatedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(effectPatterns.id, id))
+        .returning()
+
+      return results[0] ?? null
+    },
+
+    /**
+     * Unlock (unvalidate) an effect pattern
+     * Sets validated to false and clears validatedAt
+     */
+    async unlock(id: string): Promise<EffectPattern | null> {
+      const results = await db
+        .update(effectPatterns)
+        .set({
+          validated: false,
+          validatedAt: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(effectPatterns.id, id))
+        .returning()
+
+      return results[0] ?? null
+    },
+
+    /**
+     * Check if a pattern is locked
+     */
+    async isLocked(id: string): Promise<boolean> {
+      const pattern = await this.findById(id)
+      return pattern ? isLocked(pattern) : false
     },
   }
 }

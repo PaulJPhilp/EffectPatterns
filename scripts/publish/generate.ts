@@ -5,17 +5,17 @@
  * Now uses PostgreSQL database as primary source of truth.
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import { createDatabase } from '../../packages/toolkit/src/db/client.js';
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import { createDatabase } from "../../packages/toolkit/src/db/client.js";
 import {
   createApplicationPatternRepository,
   createEffectPatternRepository,
-} from '../../packages/toolkit/src/repositories/index.js';
+} from "../../packages/toolkit/src/repositories/index.js";
 
 // --- CONFIGURATION ---
-const PUBLISHED_DIR = path.join(process.cwd(), 'content/published/patterns');
-const README_PATH = path.join(process.cwd(), 'README.md');
+const PUBLISHED_DIR = path.join(process.cwd(), "content/published/patterns");
+const README_PATH = path.join(process.cwd(), "README.md");
 
 interface PatternWithPath {
   id: string;
@@ -56,9 +56,7 @@ async function findPatternPath(
       const entries = await fs.readdir(apDir, { withFileTypes: true });
       for (const entry of entries) {
         if (entry.isDirectory()) {
-          candidates.push(
-            path.join(apDir, entry.name, `${slug}.mdx`)
-          );
+          candidates.push(path.join(apDir, entry.name, `${slug}.mdx`));
         }
       }
     } catch {
@@ -87,7 +85,7 @@ async function findPatternPath(
 }
 
 async function generateReadme() {
-  console.log('Starting README generation...');
+  console.log("Starting README generation...");
 
   // Connect to database
   const { db, close } = createDatabase();
@@ -96,23 +94,23 @@ async function generateReadme() {
 
   try {
     // Load Application Patterns from database
-    console.log('Loading application patterns from database...');
+    console.log("Loading application patterns from database...");
     const applicationPatterns = await apRepo.findAll();
     const sortedAPs = applicationPatterns.sort(
-      (a, b) => a.learningOrder - b.learningOrder,
+      (a, b) => a.learningOrder - b.learningOrder
     );
 
     // Load all Effect Patterns from database
-    console.log('Loading effect patterns from database...');
+    console.log("Loading effect patterns from database...");
     const allDbPatterns = await epRepo.findAll();
 
     // Create a map of application pattern IDs to slugs
     const apIdToSlug = new Map(
-      applicationPatterns.map((ap) => [ap.id, ap.slug]),
+      applicationPatterns.map((ap) => [ap.id, ap.slug])
     );
 
     // Convert database patterns to PatternWithPath
-    console.log('Finding file paths for patterns...');
+    console.log("Finding file paths for patterns...");
     const allPatterns: PatternWithPath[] = [];
 
     for (const dbPattern of allDbPatterns) {
@@ -125,14 +123,12 @@ async function generateReadme() {
       const patternPath = await findPatternPath(dbPattern.slug, apSlug);
 
       // Extract directory structure from path
-      const relPath = path.relative(
-        'content/published/patterns',
-        patternPath.replace('content/published/patterns/', ''),
-      );
+      // patternPath is already relative to process.cwd(), e.g., "content/published/patterns/getting-started/hello-world.mdx"
+      const relPath = patternPath.replace("content/published/patterns/", "");
       const parts = relPath.split(path.sep);
-      const directory = parts[0] || apSlug || 'unknown';
+      const directory = parts[0] || apSlug || "unknown";
       const subDirectory =
-        parts.length > 2 ? parts.slice(1, -1).join('/') : undefined;
+        parts.length > 2 ? parts.slice(1, -1).join("/") : undefined;
 
       allPatterns.push({
         id: dbPattern.slug,
@@ -148,11 +144,18 @@ async function generateReadme() {
       });
     }
 
-    // Group patterns by Application Pattern slug
+    // Group patterns by Application Pattern slug (from database relationship)
     const patternsByAP = new Map<string, PatternWithPath[]>();
 
     for (const pattern of allPatterns) {
-      const apSlug = pattern.directory;
+      // Use applicationPatternId to get the correct AP slug from database
+      const apSlug = pattern.applicationPatternId
+        ? apIdToSlug.get(pattern.applicationPatternId) || null
+        : null;
+
+      // Skip patterns without an application pattern association
+      if (!apSlug) continue;
+
       if (!patternsByAP.has(apSlug)) {
         patternsByAP.set(apSlug, []);
       }
@@ -164,17 +167,17 @@ async function generateReadme() {
     const toc: string[] = [];
 
     // Build TOC and sections in learning order
-    toc.push('### Effect Patterns\n');
+    toc.push("### Effect Patterns\n");
 
     for (const ap of sortedAPs) {
       const patterns = patternsByAP.get(ap.slug);
       if (!patterns || patterns.length === 0) continue;
 
-      const anchor = ap.slug.toLowerCase().replace(/\s+/g, '-');
+      const anchor = ap.slug.toLowerCase().replace(/\s+/g, "-");
       toc.push(`- [${ap.name}](#${anchor})`);
     }
 
-    toc.push('\n');
+    toc.push("\n");
 
     // Generate sections for each Application Pattern
     for (const ap of sortedAPs) {
@@ -202,7 +205,7 @@ async function generateReadme() {
       // Render patterns without sub-directory first
       if (noSubDir.length > 0) {
         sections.push(
-          '| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n',
+          "| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n"
         );
 
         const sortedPatterns = noSubDir.sort((a, b) => {
@@ -221,26 +224,26 @@ async function generateReadme() {
           const skillLevel = getSkillLevel(pattern.skillLevel);
           const skillEmoji =
             {
-              beginner: '🟢',
-              intermediate: '🟡',
-              advanced: '🟠',
-            }[skillLevel] || '⚪️';
+              beginner: "🟢",
+              intermediate: "🟡",
+              advanced: "🟠",
+            }[skillLevel] || "⚪️";
 
           sections.push(
             `| [${pattern.title}](./${pattern.path}) | ${skillEmoji} **${
               skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)
-            }** | ${pattern.summary || ''} |\n`,
+            }** | ${pattern.summary || ""} |\n`
           );
         }
 
-        sections.push('\n');
+        sections.push("\n");
       }
 
       // Render sub-directories
       const subDirOrder = [
-        'getting-started',
+        "getting-started",
         ...Array.from(bySubDir.keys())
-          .filter((k) => k !== 'getting-started')
+          .filter((k) => k !== "getting-started")
           .sort(),
       ];
 
@@ -249,13 +252,13 @@ async function generateReadme() {
         if (!subPatterns) continue;
 
         const subDisplayName = subDir
-          .split('-')
+          .split("-")
           .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(' ');
+          .join(" ");
 
         sections.push(`### ${subDisplayName}\n`);
         sections.push(
-          '| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n',
+          "| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n"
         );
 
         const sortedSubPatterns = subPatterns.sort((a, b) => {
@@ -274,19 +277,19 @@ async function generateReadme() {
           const skillLevel = getSkillLevel(pattern.skillLevel);
           const skillEmoji =
             {
-              beginner: '🟢',
-              intermediate: '🟡',
-              advanced: '🟠',
-            }[skillLevel] || '⚪️';
+              beginner: "🟢",
+              intermediate: "🟡",
+              advanced: "🟠",
+            }[skillLevel] || "⚪️";
 
           sections.push(
             `| [${pattern.title}](./${pattern.path}) | ${skillEmoji} **${
               skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)
-            }** | ${pattern.summary || ''} |\n`,
+            }** | ${pattern.summary || ""} |\n`
           );
         }
 
-        sections.push('\n');
+        sections.push("\n");
       }
     }
 
@@ -318,14 +321,14 @@ This repository is designed to be a living document that helps developers move f
 
 ## Table of Contents
 
-${toc.join('\n')}
+${toc.join("\n")}
 
 ---
 
-${sections.join('')}`;
+${sections.join("")}`;
 
     // Write README
-    await fs.writeFile(README_PATH, readme, 'utf-8');
+    await fs.writeFile(README_PATH, readme, "utf-8");
     console.log(`✅ Generated README.md at ${README_PATH}`);
     console.log(`   Loaded ${sortedAPs.length} application patterns`);
     console.log(`   Loaded ${allPatterns.length} effect patterns`);
@@ -335,6 +338,6 @@ ${sections.join('')}`;
 }
 
 generateReadme().catch((error) => {
-  console.error('Failed to generate README:', error);
+  console.error("Failed to generate README:", error);
   process.exit(1);
 });

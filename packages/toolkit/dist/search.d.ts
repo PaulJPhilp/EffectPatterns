@@ -3,8 +3,11 @@
  *
  * Pure functions for searching and filtering patterns using fuzzy
  * matching and filtering by category/difficulty.
+ *
+ * Supports both in-memory search (legacy) and database-backed search.
  */
-import type { Pattern, PatternSummary } from './schemas/pattern.js';
+import type { Pattern, PatternSummary } from "./schemas/pattern.js";
+import type { SkillLevel } from "./db/schema/index.js";
 /**
  * Parameters for searching patterns
  */
@@ -21,7 +24,7 @@ export interface SearchPatternsParams {
     limit?: number;
 }
 /**
- * Search patterns with fuzzy matching and filtering
+ * Search patterns with fuzzy matching and filtering (in-memory)
  *
  * @param params - Search parameters
  * @returns Matched patterns sorted by relevance
@@ -37,7 +40,7 @@ export interface SearchPatternsParams {
  */
 export declare function searchPatterns(params: SearchPatternsParams): Pattern[];
 /**
- * Get a single pattern by ID
+ * Get a single pattern by ID (in-memory)
  *
  * @param patterns - Array of patterns to search
  * @param id - Pattern ID
@@ -51,4 +54,42 @@ export declare function getPatternById(patterns: Pattern[], id: string): Pattern
  * @returns Pattern summary
  */
 export declare function toPatternSummary(pattern: Pattern): PatternSummary;
+/**
+ * Parameters for database search
+ */
+export interface DatabaseSearchParams {
+    /** Search query (optional) */
+    query?: string;
+    /** Filter by category (optional) */
+    category?: string;
+    /** Filter by skill level (optional) */
+    skillLevel?: SkillLevel;
+    /** Maximum number of results (default: no limit) */
+    limit?: number;
+    /** Offset for pagination */
+    offset?: number;
+}
+/**
+ * Search patterns using database
+ *
+ * @param params - Search parameters
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to matched patterns
+ */
+export declare function searchPatternsDb(params: DatabaseSearchParams, databaseUrl?: string): Promise<Pattern[]>;
+/**
+ * Get a pattern by ID/slug from database
+ *
+ * @param id - Pattern ID (slug)
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to the pattern or null
+ */
+export declare function getPatternByIdDb(id: string, databaseUrl?: string): Promise<Pattern | null>;
+/**
+ * Count patterns by skill level from database
+ *
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to counts by skill level
+ */
+export declare function countPatternsBySkillLevelDb(databaseUrl?: string): Promise<Record<SkillLevel, number>>;
 //# sourceMappingURL=search.d.ts.map

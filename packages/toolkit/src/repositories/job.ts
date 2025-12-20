@@ -17,6 +17,13 @@ import {
 import type { Database } from "../db/client.js"
 
 /**
+ * Check if a job is locked (validated)
+ */
+function isLocked(job: Job): boolean {
+  return job.validated === true
+}
+
+/**
  * Repository error types
  */
 export class JobNotFoundError extends Error {
@@ -33,6 +40,13 @@ export class JobRepositoryError extends Error {
     readonly cause: unknown
   ) {
     super(`Job repository error during ${operation}: ${String(cause)}`)
+  }
+}
+
+export class JobLockedError extends Error {
+  readonly _tag = "JobLockedError"
+  constructor(readonly identifier: string) {
+    super(`Job is locked (validated) and cannot be modified: ${identifier}`)
   }
 }
 
@@ -155,8 +169,18 @@ export function createJobRepository(db: Database) {
 
     /**
      * Update a job
+     * Throws JobLockedError if the job is validated/locked
      */
     async update(id: string, data: Partial<NewJob>): Promise<Job | null> {
+      // Check if job exists and is locked
+      const existing = await this.findById(id)
+      if (!existing) {
+        return null
+      }
+      if (isLocked(existing)) {
+        throw new JobLockedError(id)
+      }
+
       const results = await db
         .update(jobs)
         .set({ ...data, updatedAt: new Date() })
@@ -168,8 +192,18 @@ export function createJobRepository(db: Database) {
 
     /**
      * Delete a job
+     * Throws JobLockedError if the job is validated/locked
      */
     async delete(id: string): Promise<boolean> {
+      // Check if job exists and is locked
+      const existing = await this.findById(id)
+      if (!existing) {
+        return false
+      }
+      if (isLocked(existing)) {
+        throw new JobLockedError(id)
+      }
+
       const results = await db
         .delete(jobs)
         .where(eq(jobs.id, id))
@@ -180,8 +214,17 @@ export function createJobRepository(db: Database) {
 
     /**
      * Upsert a job by slug
+     * Throws JobLockedError if the job is validated/locked
      */
     async upsert(data: NewJob): Promise<Job> {
+      // Check if job exists and is locked
+      if (data.slug) {
+        const existing = await this.findBySlug(data.slug)
+        if (existing && isLocked(existing)) {
+          throw new JobLockedError(data.slug)
+        }
+      }
+
       const results = await db
         .insert(jobs)
         .values(data)
@@ -220,8 +263,18 @@ export function createJobRepository(db: Database) {
 
     /**
      * Set all patterns for a job (replaces existing links)
+     * Throws JobLockedError if the job is validated/locked
      */
     async setPatterns(jobId: string, patternIds: string[]): Promise<void> {
+      // Check if job is locked
+      const existing = await this.findById(jobId)
+      if (!existing) {
+        throw new JobNotFoundError(jobId)
+      }
+      if (isLocked(existing)) {
+        throw new JobLockedError(jobId)
+      }
+
       // Delete existing links
       await db.delete(patternJobs).where(eq(patternJobs.jobId, jobId))
 
@@ -307,6 +360,50 @@ export function createJobRepository(db: Database) {
       }
 
       return stats
+    },
+
+    /**
+     * Lock (validate) a job
+     * Sets validated to true and validatedAt to current timestamp
+     */
+    async lock(id: string): Promise<Job | null> {
+      const results = await db
+        .update(jobs)
+        .set({
+          validated: true,
+          validatedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(jobs.id, id))
+        .returning()
+
+      return results[0] ?? null
+    },
+
+    /**
+     * Unlock (unvalidate) a job
+     * Sets validated to false and clears validatedAt
+     */
+    async unlock(id: string): Promise<Job | null> {
+      const results = await db
+        .update(jobs)
+        .set({
+          validated: false,
+          validatedAt: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(jobs.id, id))
+        .returning()
+
+      return results[0] ?? null
+    },
+
+    /**
+     * Check if a job is locked
+     */
+    async isLocked(id: string): Promise<boolean> {
+      const job = await this.findById(id)
+      return job ? isLocked(job) : false
     },
   }
 }

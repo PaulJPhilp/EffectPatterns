@@ -4,7 +4,7 @@
  * Canonical domain types for Effect patterns, including full Pattern
  * representation and PatternSummary for list views.
  */
-import { Schema as S } from '@effect/schema';
+import { Schema as S } from "@effect/schema";
 /**
  * Pattern category enumeration
  */

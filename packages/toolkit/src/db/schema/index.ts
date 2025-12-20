@@ -16,6 +16,7 @@ import {
   text,
   integer,
   timestamp,
+  boolean,
   jsonb,
   primaryKey,
   index,
@@ -51,12 +52,15 @@ export const applicationPatterns = pgTable(
     learningOrder: integer("learning_order").notNull(),
     effectModule: varchar("effect_module", { length: 100 }),
     subPatterns: jsonb("sub_patterns").$type<string[]>().default([]),
+    validated: boolean("validated").default(false).notNull(),
+    validatedAt: timestamp("validated_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [
     uniqueIndex("application_patterns_slug_idx").on(table.slug),
     index("application_patterns_learning_order_idx").on(table.learningOrder),
+    index("application_patterns_validated_idx").on(table.validated),
   ]
 )
 
@@ -103,6 +107,8 @@ export const effectPatterns = pgTable(
       () => applicationPatterns.id,
       { onDelete: "set null" }
     ),
+    validated: boolean("validated").default(false).notNull(),
+    validatedAt: timestamp("validated_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -111,6 +117,7 @@ export const effectPatterns = pgTable(
     index("effect_patterns_skill_level_idx").on(table.skillLevel),
     index("effect_patterns_category_idx").on(table.category),
     index("effect_patterns_application_pattern_idx").on(table.applicationPatternId),
+    index("effect_patterns_validated_idx").on(table.validated),
   ]
 )
 
@@ -132,6 +139,8 @@ export const jobs = pgTable(
       () => applicationPatterns.id,
       { onDelete: "cascade" }
     ),
+    validated: boolean("validated").default(false).notNull(),
+    validatedAt: timestamp("validated_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -139,6 +148,7 @@ export const jobs = pgTable(
     uniqueIndex("jobs_slug_idx").on(table.slug),
     index("jobs_status_idx").on(table.status),
     index("jobs_application_pattern_idx").on(table.applicationPatternId),
+    index("jobs_validated_idx").on(table.validated),
   ]
 )
 

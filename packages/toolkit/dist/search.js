@@ -3,7 +3,14 @@
  *
  * Pure functions for searching and filtering patterns using fuzzy
  * matching and filtering by category/difficulty.
+ *
+ * Supports both in-memory search (legacy) and database-backed search.
  */
+import { createDatabase } from "./db/client.js";
+import { createEffectPatternRepository } from "./repositories/index.js";
+// ============================================
+// In-Memory Search (Legacy)
+// ============================================
 /**
  * Normalize separators in a string to spaces
  * Converts hyphens and underscores to spaces for consistent matching
@@ -11,7 +18,7 @@
  * @returns Normalized string
  */
 function normalizeSeparators(str) {
-    return str.replace(/[-_]+/g, ' ');
+    return str.replace(/[-_]+/g, " ");
 }
 /**
  * Simple fuzzy matching score calculator
@@ -38,7 +45,8 @@ function fuzzyScore(query, target) {
     let targetIndex = 0;
     let matches = 0;
     let consecutiveMatches = 0;
-    while (queryIndex < normalizedQuery.length && targetIndex < normalizedTarget.length) {
+    while (queryIndex < normalizedQuery.length &&
+        targetIndex < normalizedTarget.length) {
         if (normalizedQuery[queryIndex] === normalizedTarget[targetIndex]) {
             matches++;
             consecutiveMatches++;
@@ -85,7 +93,7 @@ function calculateRelevance(pattern, query) {
     return Math.max(...scores);
 }
 /**
- * Search patterns with fuzzy matching and filtering
+ * Search patterns with fuzzy matching and filtering (in-memory)
  *
  * @param params - Search parameters
  * @returns Matched patterns sorted by relevance
@@ -128,7 +136,7 @@ export function searchPatterns(params) {
     return results;
 }
 /**
- * Get a single pattern by ID
+ * Get a single pattern by ID (in-memory)
  *
  * @param patterns - Array of patterns to search
  * @param id - Pattern ID
@@ -152,5 +160,86 @@ export function toPatternSummary(pattern) {
         difficulty: pattern.difficulty,
         tags: pattern.tags,
     };
+}
+/**
+ * Search patterns using database
+ *
+ * @param params - Search parameters
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to matched patterns
+ */
+export async function searchPatternsDb(params, databaseUrl) {
+    const { db, close } = createDatabase(databaseUrl);
+    try {
+        const repo = createEffectPatternRepository(db);
+        const dbPatterns = await repo.search(params);
+        return dbPatterns.map((p) => ({
+            id: p.slug,
+            title: p.title,
+            description: p.summary,
+            category: p.category || "error-handling",
+            difficulty: p.skillLevel || "intermediate",
+            tags: p.tags || [],
+            examples: p.examples || [],
+            useCases: p.useCases || [],
+            relatedPatterns: undefined,
+            effectVersion: undefined,
+            createdAt: p.createdAt?.toISOString(),
+            updatedAt: p.updatedAt?.toISOString(),
+        }));
+    }
+    finally {
+        await close();
+    }
+}
+/**
+ * Get a pattern by ID/slug from database
+ *
+ * @param id - Pattern ID (slug)
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to the pattern or null
+ */
+export async function getPatternByIdDb(id, databaseUrl) {
+    const { db, close } = createDatabase(databaseUrl);
+    try {
+        const repo = createEffectPatternRepository(db);
+        const p = await repo.findBySlug(id);
+        if (!p) {
+            return null;
+        }
+        return {
+            id: p.slug,
+            title: p.title,
+            description: p.summary,
+            category: p.category || "error-handling",
+            difficulty: p.skillLevel || "intermediate",
+            tags: p.tags || [],
+            examples: p.examples || [],
+            useCases: p.useCases || [],
+            relatedPatterns: undefined,
+            effectVersion: undefined,
+            createdAt: p.createdAt?.toISOString(),
+            updatedAt: p.updatedAt?.toISOString(),
+        };
+    }
+    finally {
+        await close();
+    }
+}
+/**
+ * Count patterns by skill level from database
+ *
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to counts by skill level
+ */
+export async function countPatternsBySkillLevelDb(databaseUrl) {
+    const { db, close } = createDatabase(databaseUrl);
+    try {
+        const repo = createEffectPatternRepository(db);
+        return repo.countBySkillLevel();
+    }
+    finally {
+        await close();
+    }
 }
 //# sourceMappingURL=search.js.map

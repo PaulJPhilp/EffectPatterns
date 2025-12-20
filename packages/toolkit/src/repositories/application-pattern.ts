@@ -13,6 +13,13 @@ import {
 import type { Database } from "../db/client.js"
 
 /**
+ * Check if an application pattern is locked (validated)
+ */
+function isLocked(pattern: ApplicationPattern): boolean {
+  return pattern.validated === true
+}
+
+/**
  * Repository error types
  */
 export class ApplicationPatternNotFoundError extends Error {
@@ -31,6 +38,13 @@ export class ApplicationPatternRepositoryError extends Error {
     super(
       `Application pattern repository error during ${operation}: ${String(cause)}`
     )
+  }
+}
+
+export class ApplicationPatternLockedError extends Error {
+  readonly _tag = "ApplicationPatternLockedError"
+  constructor(readonly identifier: string) {
+    super(`Application pattern is locked (validated) and cannot be modified: ${identifier}`)
   }
 }
 
@@ -88,11 +102,21 @@ export function createApplicationPatternRepository(db: Database) {
 
     /**
      * Update an application pattern
+     * Throws ApplicationPatternLockedError if the pattern is validated/locked
      */
     async update(
       id: string,
       data: Partial<NewApplicationPattern>
     ): Promise<ApplicationPattern | null> {
+      // Check if pattern exists and is locked
+      const existing = await this.findById(id)
+      if (!existing) {
+        return null
+      }
+      if (isLocked(existing)) {
+        throw new ApplicationPatternLockedError(id)
+      }
+
       const results = await db
         .update(applicationPatterns)
         .set({ ...data, updatedAt: new Date() })
@@ -104,8 +128,18 @@ export function createApplicationPatternRepository(db: Database) {
 
     /**
      * Delete an application pattern
+     * Throws ApplicationPatternLockedError if the pattern is validated/locked
      */
     async delete(id: string): Promise<boolean> {
+      // Check if pattern exists and is locked
+      const existing = await this.findById(id)
+      if (!existing) {
+        return false
+      }
+      if (isLocked(existing)) {
+        throw new ApplicationPatternLockedError(id)
+      }
+
       const results = await db
         .delete(applicationPatterns)
         .where(eq(applicationPatterns.id, id))
@@ -116,8 +150,17 @@ export function createApplicationPatternRepository(db: Database) {
 
     /**
      * Upsert an application pattern by slug
+     * Throws ApplicationPatternLockedError if the pattern is validated/locked
      */
     async upsert(data: NewApplicationPattern): Promise<ApplicationPattern> {
+      // Check if pattern exists and is locked
+      if (data.slug) {
+        const existing = await this.findBySlug(data.slug)
+        if (existing && isLocked(existing)) {
+          throw new ApplicationPatternLockedError(data.slug)
+        }
+      }
+
       const results = await db
         .insert(applicationPatterns)
         .values(data)
@@ -134,6 +177,50 @@ export function createApplicationPatternRepository(db: Database) {
         })
         .returning()
       return results[0]
+    },
+
+    /**
+     * Lock (validate) an application pattern
+     * Sets validated to true and validatedAt to current timestamp
+     */
+    async lock(id: string): Promise<ApplicationPattern | null> {
+      const results = await db
+        .update(applicationPatterns)
+        .set({
+          validated: true,
+          validatedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(applicationPatterns.id, id))
+        .returning()
+
+      return results[0] ?? null
+    },
+
+    /**
+     * Unlock (unvalidate) an application pattern
+     * Sets validated to false and clears validatedAt
+     */
+    async unlock(id: string): Promise<ApplicationPattern | null> {
+      const results = await db
+        .update(applicationPatterns)
+        .set({
+          validated: false,
+          validatedAt: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(applicationPatterns.id, id))
+        .returning()
+
+      return results[0] ?? null
+    },
+
+    /**
+     * Check if a pattern is locked
+     */
+    async isLocked(id: string): Promise<boolean> {
+      const pattern = await this.findById(id)
+      return pattern ? isLocked(pattern) : false
     },
   }
 }
