@@ -49,7 +49,13 @@ interface PatternMetadata {
 
 interface PatternState {
   id: string;
-  status: 'draft' | 'in-progress' | 'ready' | 'blocked' | 'completed' | 'failed';
+  status:
+    | 'draft'
+    | 'in-progress'
+    | 'ready'
+    | 'blocked'
+    | 'completed'
+    | 'failed';
   currentStep: string;
   steps: Record<string, StepState>;
   metadata: PatternMetadata;
@@ -88,7 +94,7 @@ const WORKFLOW_STEPS = [
  * Create initial step state
  */
 function createInitialStepState(
-  status: StepState['status'] = 'pending'
+  status: StepState['status'] = 'pending',
 ): StepState {
   return {
     status,
@@ -103,7 +109,7 @@ function createInitialStepState(
  */
 function createCompletedPatternState(
   patternId: string,
-  metadata: PatternMetadata
+  metadata: PatternMetadata,
 ): PatternState {
   const now = new Date().toISOString();
 
@@ -171,7 +177,7 @@ async function migrateExistingPatterns(): Promise<void> {
       console.log('⚠️  State file already exists!');
       console.log('This migration script should only run once.');
       console.log(
-        '\nIf you want to reset the state, delete .pipeline-state.json and run again.'
+        '\nIf you want to reset the state, delete .pipeline-state.json and run again.',
       );
       console.log('Or backup your current state first:');
       console.log(`  cp ${STATE_FILE_PATH} ${STATE_FILE_PATH}.backup`);
@@ -219,9 +225,7 @@ async function migrateExistingPatterns(): Promise<void> {
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        console.error(
-          `❌ Failed to migrate ${patternId}: ${errorMessage}`
-        );
+        console.error(`❌ Failed to migrate ${patternId}: ${errorMessage}`);
         errorCount++;
       }
     }
@@ -241,7 +245,7 @@ async function migrateExistingPatterns(): Promise<void> {
     await fs.writeFile(
       STATE_FILE_PATH,
       JSON.stringify(pipelineState, null, 2),
-      'utf-8'
+      'utf-8',
     );
 
     // Summary
@@ -255,7 +259,9 @@ async function migrateExistingPatterns(): Promise<void> {
     console.log(`\nState file: ${STATE_FILE_PATH}`);
     console.log('\nNext steps:');
     console.log('  1. Verify .pipeline-state.json looks correct');
-    console.log('  2. Review using: bun packages/cli/dist/index.js ep-admin pipeline-state status');
+    console.log(
+      '  2. Review using: bun packages/cli/dist/index.js ep-admin pipeline-state status',
+    );
     console.log('  3. Commit the state file: git add .pipeline-state.json');
     console.log('  4. Continue adding new patterns normally\n');
   } catch (error) {

@@ -9,13 +9,13 @@
  * Usage: Called automatically by pipeline.ts
  */
 
-import { existsSync, readdirSync } from "node:fs"
-import * as path from "node:path"
+import { existsSync, readdirSync } from 'node:fs';
+import * as path from 'node:path';
 
 interface ValidationResult {
-  success: boolean
-  violations: string[]
-  message: string
+  success: boolean;
+  violations: string[];
+  message: string;
 }
 
 /**
@@ -23,26 +23,26 @@ interface ValidationResult {
  */
 function validatePipelineIntegrity(): ValidationResult {
   const forbiddenDirs = [
-    "patterns/",
-    "rules/",
-    ".claude/skills/",
-    ".gemini/skills/",
-    ".openai/skills/",
-  ]
+    'patterns/',
+    'rules/',
+    '.claude/skills/',
+    '.gemini/skills/',
+    '.openai/skills/',
+  ];
 
-  const violations: string[] = []
+  const violations: string[] = [];
 
   for (const dir of forbiddenDirs) {
-    const fullPath = path.join(process.cwd(), dir)
+    const fullPath = path.join(process.cwd(), dir);
     if (existsSync(fullPath)) {
       try {
-        const files = readdirSync(fullPath)
+        const files = readdirSync(fullPath);
         if (files.length > 0) {
-          violations.push(`${dir} (${files.length} files)`)
+          violations.push(`${dir} (${files.length} files)`);
         }
       } catch {
         // Directory exists but may not be readable, flag it anyway
-        violations.push(dir)
+        violations.push(dir);
       }
     }
   }
@@ -54,9 +54,9 @@ function validatePipelineIntegrity(): ValidationResult {
 
 Generation output detected OUTSIDE content/published/:
 
-`
+`;
     for (const v of violations) {
-      message += `  ✗ ${v}\n`
+      message += `  ✗ ${v}\n`;
     }
 
     message += `
@@ -85,27 +85,27 @@ The pre-commit hook will block any attempt to commit these files.
 For more info: docs/ARCHITECTURE.md and CONTRIBUTING.md
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-`
+`;
 
     return {
       success: false,
       violations,
       message,
-    }
+    };
   }
 
   return {
     success: true,
     violations: [],
-    message: "✅ Pipeline integrity check passed",
-  }
+    message: '✅ Pipeline integrity check passed',
+  };
 }
 
 // Main execution
-const result = validatePipelineIntegrity()
-console.log(result.message)
+const result = validatePipelineIntegrity();
+console.log(result.message);
 
 if (!result.success) {
-  console.error("")
-  process.exit(1)
+  console.error('');
+  process.exit(1);
 }

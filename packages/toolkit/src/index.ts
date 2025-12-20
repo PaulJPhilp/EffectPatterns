@@ -119,6 +119,30 @@ export {
 } from "./repositories/index.js"
 
 // ============================================
+// Database Services
+// ============================================
+
+export {
+  DatabaseService,
+  ApplicationPatternRepositoryService,
+  EffectPatternRepositoryService,
+  JobRepositoryService,
+  DatabaseServiceLive,
+  ApplicationPatternRepositoryLive,
+  EffectPatternRepositoryLive,
+  JobRepositoryLive,
+  DatabaseLayer,
+  findAllApplicationPatterns,
+  findApplicationPatternBySlug,
+  searchEffectPatterns,
+  findEffectPatternBySlug,
+  findPatternsByApplicationPattern,
+  findJobsByApplicationPattern,
+  getJobWithPatterns,
+  getCoverageStats,
+} from "./services/database.js"
+
+// ============================================
 // Utilities
 // ============================================
 

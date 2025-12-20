@@ -2,8 +2,8 @@
  * Generate Skills (Claude, Gemini, OpenAI) from published Effect patterns
  */
 
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import {
   readPattern,
   groupPatternsByCategory,
@@ -13,10 +13,10 @@ import {
   writeGeminiSkill,
   generateOpenAISkill,
   writeOpenAISkill,
-} from "../packages/cli/src/skills/skill-generator";
+} from '../packages/cli/src/skills/skill-generator';
 
 const PROJECT_ROOT = process.cwd();
-const PATTERNS_DIR = path.join(PROJECT_ROOT, "content/published/patterns");
+const PATTERNS_DIR = path.join(PROJECT_ROOT, 'content/published/patterns');
 
 async function findMdxFiles(dir: string): Promise<string[]> {
   const mdxFiles: string[] = [];
@@ -27,7 +27,7 @@ async function findMdxFiles(dir: string): Promise<string[]> {
     if (entry.isDirectory()) {
       const subFiles = await findMdxFiles(fullPath);
       mdxFiles.push(...subFiles);
-    } else if (entry.name.endsWith(".mdx")) {
+    } else if (entry.name.endsWith('.mdx')) {
       mdxFiles.push(fullPath);
     }
   }
@@ -36,10 +36,10 @@ async function findMdxFiles(dir: string): Promise<string[]> {
 }
 
 async function main() {
-  console.log("\n🎓 Generating Skills from Effect Patterns\n");
+  console.log('\n🎓 Generating Skills from Effect Patterns\n');
 
   // Read all pattern files
-  console.log("📖 Reading published patterns...");
+  console.log('📖 Reading published patterns...');
   const mdxFiles = await findMdxFiles(PATTERNS_DIR);
   console.log(`✓ Found ${mdxFiles.length} patterns\n`);
 
@@ -58,12 +58,12 @@ async function main() {
   console.log(`✓ Parsed ${patterns.length} patterns\n`);
 
   // Group by category
-  console.log("🗂️  Grouping patterns by category...");
+  console.log('🗂️  Grouping patterns by category...');
   const categoryMap = groupPatternsByCategory(patterns);
   console.log(`✓ Found ${categoryMap.size} categories\n`);
 
   // Generate all skills
-  console.log("📝 Generating skills...\n");
+  console.log('📝 Generating skills...\n');
 
   let claudeCount = 0;
   let geminiCount = 0;

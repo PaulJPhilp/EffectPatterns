@@ -217,7 +217,8 @@ async function validatePatterns(
     const warnCount = result.issues.filter((i) => i.type === 'warning').length;
 
     console.log(
-      `${status} ${pattern.id} ${errorCount > 0 ? colorize(`(${errorCount} errors)`, 'red') : ''
+      `${status} ${pattern.id} ${
+        errorCount > 0 ? colorize(`(${errorCount} errors)`, 'red') : ''
       } ${warnCount > 0 ? colorize(`(${warnCount} warnings)`, 'yellow') : ''}`,
     );
 
