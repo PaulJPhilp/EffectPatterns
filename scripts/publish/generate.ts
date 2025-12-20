@@ -85,7 +85,7 @@ async function findPatternPath(
 }
 
 async function generateReadme() {
-  console.log('Starting README generation...');
+  console.log("Starting README generation...");
 
   // Connect to database
   const { db, close } = createDatabase();
@@ -321,11 +321,11 @@ This repository is designed to be a living document that helps developers move f
 
 ## Table of Contents
 
-${toc.join('\n')}
+${toc.join("\n")}
 
 ---
 
-${sections.join('')}`;
+${sections.join("")}`;
 
     // Write README
     await fs.writeFile(README_PATH, readme, "utf-8");
@@ -338,6 +338,6 @@ ${sections.join('')}`;
 }
 
 generateReadme().catch((error) => {
-  console.error('Failed to generate README:', error);
+  console.error("Failed to generate README:", error);
   process.exit(1);
 });
