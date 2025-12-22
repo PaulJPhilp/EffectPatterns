@@ -6,7 +6,7 @@
       "name": "effect-patterns-hub",
       "dependencies": {
         "@effect/cli": "^0.69.2",
-        "@effect/platform": "^0.93.8",
+        "@effect/platform": "^0.94.0",
         "@effect/platform-node": "^0.100.0",
         "@langchain/openai": "^1.2.0",
         "@opentelemetry/api": "^1.9.0",
@@ -177,7 +177,7 @@
       },
       "dependencies": {
         "@effect/cli": "^0.40.8",
-        "@effect/platform": "^0.93.0",
+        "@effect/platform": "^0.94.0",
         "@effect/platform-node": "^0.59.1",
         "@effect/printer": "^0.47.0",
         "@effect/printer-ansi": "^0.47.0",
@@ -205,7 +205,7 @@
         "@effect-patterns/pipeline-state": "workspace:*",
         "@effect-patterns/toolkit": "workspace:*",
         "@effect/cli": "^0.69.2",
-        "@effect/platform": "^0.93.8",
+        "@effect/platform": "^0.94.0",
         "@effect/platform-node": "^0.98.4",
         "conventional-commits-parser": "^6.2.1",
         "conventional-recommended-bump": "^11.2.0",
@@ -242,7 +242,7 @@
       "name": "@effect-patterns/effect-discord",
       "version": "0.1.0",
       "dependencies": {
-        "@effect/platform": "^0.93.0",
+        "@effect/platform": "^0.94.0",
       },
       "devDependencies": {
         "typescript": "^5.5.3",
@@ -310,7 +310,7 @@
       "name": "@effect-patterns/toolkit",
       "version": "0.1.0",
       "dependencies": {
-        "@effect/platform": "^0.93.0",
+        "@effect/platform": "^0.94.0",
         "@effect/platform-node": "^0.103.0",
         "@effect/schema": "^0.75.5",
         "effect": "^3.18.2",
@@ -322,7 +322,7 @@
         "vitest": "^4.0.4",
       },
       "peerDependencies": {
-        "@effect/platform": "^0.93.0",
+        "@effect/platform": "^0.94.0",
         "@effect/platform-node": "^0.103.0",
         "@effect/schema": "^0.75.5",
         "effect": "^3.18.2",
@@ -334,7 +334,7 @@
       "dependencies": {
         "@effect-patterns/toolkit": "workspace:*",
         "@effect/opentelemetry": "^0.59.2",
-        "@effect/platform": "^0.93.0",
+        "@effect/platform": "^0.94.0",
         "@effect/platform-node": "^0.103.0",
         "@effect/schema": "^0.75.5",
         "@opentelemetry/api": "^1.9.0",
@@ -370,7 +370,7 @@
       },
       "dependencies": {
         "@effect-patterns/toolkit": "workspace:*",
-        "@effect/platform": "^0.93.0",
+        "@effect/platform": "^0.94.0",
         "@effect/platform-node": "^0.94.2",
         "@effect/schema": "^0.75.5",
         "@modelcontextprotocol/sdk": "^1.20.0",
@@ -578,7 +578,7 @@
 
     "@effect/opentelemetry": ["@effect/opentelemetry@0.59.2", "", { "peerDependencies": { "@effect/platform": "^0.93.6", "@opentelemetry/api": "^1.9", "@opentelemetry/resources": "^2.0.0", "@opentelemetry/sdk-logs": ">=0.203.0 <0.300.0", "@opentelemetry/sdk-metrics": "^2.0.0", "@opentelemetry/sdk-trace-base": "^2.0.0", "@opentelemetry/sdk-trace-node": "^2.0.0", "@opentelemetry/sdk-trace-web": "^2.0.0", "@opentelemetry/semantic-conventions": "^1.33.0", "effect": "^3.19.9" }, "optionalPeers": ["@opentelemetry/api", "@opentelemetry/resources", "@opentelemetry/sdk-logs", "@opentelemetry/sdk-metrics", "@opentelemetry/sdk-trace-base", "@opentelemetry/sdk-trace-node", "@opentelemetry/sdk-trace-web"] }, "sha512-yyBy+BQElgBwFOy72gCt8UHpiX0r0uPbwcC2ObLiK1Be1HfWQr0DTFdypYINiQ8QxsazfXS9HDzvV3GDjG1roQ=="],
 
-    "@effect/platform": ["@effect/platform@0.93.8", "", { "dependencies": { "find-my-way-ts": "^0.1.6", "msgpackr": "^1.11.4", "multipasta": "^0.2.7" }, "peerDependencies": { "effect": "^3.19.12" } }, "sha512-xTEy6fyTy4ijmFC3afKgtvYtn/JyPoIov4ZSUWJZUv3VeOcUPNGrrqG6IJlWkXs3NhvSywKv7wc1kw3epCQVZw=="],
+    "@effect/platform": ["@effect/platform@0.94.0", "", { "dependencies": { "find-my-way-ts": "^0.1.6", "msgpackr": "^1.11.4", "multipasta": "^0.2.7" }, "peerDependencies": { "effect": "^3.19.13" } }, "sha512-oIATd3M+RUe2q+bu0Qpgt4/qSbXBM9OEGBrRW7SvtwXGOWkCYkN+LfOPnmPrbMB7jYjpIb7808T1bONM1Nwgfg=="],
 
     "@effect/platform-node": ["@effect/platform-node@0.100.0", "", { "dependencies": { "@effect/platform-node-shared": "^0.53.0", "mime": "^3.0.0", "undici": "^7.10.0", "ws": "^8.18.2" }, "peerDependencies": { "@effect/cluster": "^0.52.0", "@effect/platform": "^0.93.0", "@effect/rpc": "^0.72.1", "@effect/sql": "^0.48.0", "effect": "^3.19.0" } }, "sha512-awfeW8zy5hgyRy+ml4bHK27DukTrTV5xvDhZioRF7USjJRwlZ+irdWhR6ExY+UOnAsmq0h8m/1s0l9pUcBi0bw=="],
 

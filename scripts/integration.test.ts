@@ -4,10 +4,10 @@
  * End-to-end integration tests for Pattern Server + CLI
  */
 
-import { FetchHttpClient, HttpClient } from '@effect/platform';
-import { Effect, Schema } from 'effect';
 import { type ChildProcess, spawn } from 'node:child_process';
 import * as fs from 'node:fs/promises';
+import { FetchHttpClient, HttpClient } from '@effect/platform';
+import { Effect, Schema } from 'effect';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 // --- SCHEMAS ---

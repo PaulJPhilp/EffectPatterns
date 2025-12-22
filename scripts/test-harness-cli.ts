@@ -9,17 +9,17 @@
  * Makes real API calls to LLM services (no mocking).
  */
 
-import { chatModels } from '../app/code-assistant/lib/ai/models';
-import ora from 'ora';
-import { TUIHandler } from 'effect-cli-tui';
-import * as Effect from 'effect/Effect';
-import { Layer } from 'effect';
-import { myProvider } from '../app/code-assistant/lib/ai/providers';
-import { systemPrompt } from '../app/code-assistant/lib/ai/prompts';
-import { convertToModelMessages } from 'ai';
-import { LLMService, LLMServiceLive } from '../services/llm-service';
 import { FetchHttpClient } from '@effect/platform';
-import { NodeContext, NodeRuntime } from '@effect/platform-node';
+import { NodeContext } from '@effect/platform-node';
+import { convertToModelMessages } from 'ai';
+import { Layer } from 'effect';
+import * as Effect from 'effect/Effect';
+import { TUIHandler } from 'effect-cli-tui';
+import ora from 'ora';
+import { chatModels } from '../app/code-assistant/lib/ai/models';
+import { systemPrompt } from '../app/code-assistant/lib/ai/prompts';
+import { myProvider } from '../app/code-assistant/lib/ai/providers';
+import { LLMService, LLMServiceLive } from '../services/llm-service';
 
 // --- TYPES ---
 
