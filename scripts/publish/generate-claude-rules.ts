@@ -15,7 +15,10 @@ import matter from 'gray-matter';
 // --- CONFIGURATION ---
 const PATTERNS_DIR = path.join(process.cwd(), 'content/published/patterns');
 const CLAUDE_MD_PATH = path.join(process.cwd(), 'CLAUDE.md');
-const OUTPUT_DIR = path.join(process.cwd(), 'content/published/rules/generated');
+const OUTPUT_DIR = path.join(
+  process.cwd(),
+  'content/published/rules/generated',
+);
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'rules-for-claude.md');
 
 // --- COLORS ---

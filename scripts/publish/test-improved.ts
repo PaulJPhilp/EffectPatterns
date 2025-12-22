@@ -30,9 +30,7 @@ function logCheckpoint(operation: string, data?: unknown) {
     timestamp,
     data,
   };
-  console.error(
-    `[CHECKPOINT] ${JSON.stringify(checkpoint)}`
-  );
+  console.error(`[CHECKPOINT] ${JSON.stringify(checkpoint)}`);
 }
 
 // --- CONFIGURATION ---
