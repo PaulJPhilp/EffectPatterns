@@ -24,7 +24,7 @@
   "dependencies": {
     "@effect/cli": "^0.69.2",
     "@effect/platform": "^0.93.8",
-    "@effect/platform-node": "^0.98.4",
+    "@effect/platform-node": "^0.104.0",
     "@effect-patterns/pipeline-state": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
     "conventional-commits-parser": "^6.2.1",
