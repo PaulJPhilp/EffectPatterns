@@ -4,12 +4,6 @@ import { Console, Context, Data, Effect, Layer } from 'effect';
 import { MdxService } from 'effect-mdx';
 
 // --- Configuration Service (Idiomatic Effect.Service pattern) ---
-// Define the AppConfig interface
-interface AppConfigService {
-  readonly srcDir: string;
-  readonly processedDir: string;
-}
-
 // Create the AppConfig service using Effect.Service pattern
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class AppConfig extends Effect.Service<AppConfig>()('AppConfig', {
@@ -19,7 +13,7 @@ class AppConfig extends Effect.Service<AppConfig>()('AppConfig', {
     processedDir:
       process.env.PROCESSED_DIR || `${process.cwd()}/content/new/processed`,
   }),
-}) { }
+}) {}
 
 // The AppConfigLive layer is now available as AppConfig.Default
 
@@ -33,7 +27,7 @@ class ExpectationPrompt extends Data.TaggedClass('ExpectationPrompt')<{
   readonly actualStderr: string;
   readonly actualErrorDetail: string; // Error message from execAsync if it threw
   readonly executionStatus: 'success' | 'failure';
-}> { }
+}> {}
 
 // Structured output expected from the LLM using Data.TaggedClass
 class GeneratedExpectations extends Data.TaggedClass('GeneratedExpectations')<{
@@ -42,7 +36,7 @@ class GeneratedExpectations extends Data.TaggedClass('GeneratedExpectations')<{
   readonly reasoning: string; // LLM's explanation for its decision
   readonly discrepancyFlag: boolean; // True if actuals didn't align with pattern intent
   readonly discrepancyReason?: string; // Why it didn't align
-}> { }
+}> {}
 
 // LLMService Tag (represents the dependency context for accessing the service)
 class LLMService extends Context.Tag('LLMService')<
@@ -52,7 +46,7 @@ class LLMService extends Context.Tag('LLMService')<
       prompt: ExpectationPrompt,
     ) => Effect.Effect<GeneratedExpectations, Error, never>; // LLM-related errors
   }
->() { }
+>() {}
 
 // Live implementation for LLMService (SIMULATED for demonstration)
 // This adheres to the service interface and returns an Effect.
@@ -65,7 +59,8 @@ const LLMLive = Layer.succeed(
       // Log the processing
       return Effect.succeed(
         Console.info(
-          `[LLM Sim] Processing prompt for status: ${prompt.executionStatus
+          `[LLM Sim] Processing prompt for status: ${
+            prompt.executionStatus
           } for pattern ${prompt.patternMdxContent
             .split('\n')[0]
             .substring(0, 50)}...`,
@@ -205,7 +200,8 @@ const processPatternFile = (mdxFilePath: string) =>
         actualStdout = executionResult.stdout.trim(); // Still capture stdout/stderr from child process if available on failure
         actualStderr = executionResult.stderr.trim();
         yield* Console.error(
-          `  Execution of ${baseName}.ts failed: ${actualErrorDetail.split('\n')[0]
+          `  Execution of ${baseName}.ts failed: ${
+            actualErrorDetail.split('\n')[0]
           }`,
         );
       }
