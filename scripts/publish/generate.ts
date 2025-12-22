@@ -5,14 +5,17 @@
  */
 
 // biome-ignore assist/source/organizeImports: <>
-import matter from "gray-matter";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import matter from 'gray-matter';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 // --- CONFIGURATION ---
-const PUBLISHED_DIR = path.join(process.cwd(), "content/published/patterns");
-const README_PATH = path.join(process.cwd(), "README.md");
-const AP_INDEX_PATH = path.join(process.cwd(), "data/application-patterns.json");
+const PUBLISHED_DIR = path.join(process.cwd(), 'content/published/patterns');
+const README_PATH = path.join(process.cwd(), 'README.md');
+const AP_INDEX_PATH = path.join(
+  process.cwd(),
+  'data/application-patterns.json',
+);
 
 interface ApplicationPattern {
   id: string;
@@ -40,16 +43,20 @@ interface PatternWithPath extends PatternFrontmatter {
 }
 
 function getSkillLevel(pattern: PatternFrontmatter): string {
-  return (pattern.skillLevel || pattern.skill || "intermediate").toLowerCase();
+  return (pattern.skillLevel || pattern.skill || 'intermediate').toLowerCase();
 }
 
 async function generateReadme() {
-  console.log("Starting README generation...");
+  console.log('Starting README generation...');
 
   // Load Application Patterns index
-  const apIndexContent = await fs.readFile(AP_INDEX_PATH, "utf-8");
-  const apIndex = JSON.parse(apIndexContent) as { applicationPatterns: ApplicationPattern[] };
-  const applicationPatterns = apIndex.applicationPatterns.sort((a, b) => a.learningOrder - b.learningOrder);
+  const apIndexContent = await fs.readFile(AP_INDEX_PATH, 'utf-8');
+  const apIndex = JSON.parse(apIndexContent) as {
+    applicationPatterns: ApplicationPattern[];
+  };
+  const applicationPatterns = apIndex.applicationPatterns.sort(
+    (a, b) => a.learningOrder - b.learningOrder,
+  );
 
   // Recursively find all MDX files
   async function findMdxFiles(dir: string): Promise<PatternWithPath[]> {
@@ -60,17 +67,18 @@ async function generateReadme() {
       const fullPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         files.push(...(await findMdxFiles(fullPath)));
-      } else if (entry.isFile() && entry.name.endsWith(".mdx")) {
-        const content = await fs.readFile(fullPath, "utf-8");
+      } else if (entry.isFile() && entry.name.endsWith('.mdx')) {
+        const content = await fs.readFile(fullPath, 'utf-8');
         const { data } = matter(content);
         const pattern = data as PatternFrontmatter;
-        
+
         // Extract directory structure
         const relPath = path.relative(PUBLISHED_DIR, fullPath);
         const parts = relPath.split(path.sep);
         const directory = parts[0]; // e.g., "concurrency", "schema"
-        const subDirectory = parts.length > 2 ? parts.slice(1, -1).join("/") : undefined;
-        
+        const subDirectory =
+          parts.length > 2 ? parts.slice(1, -1).join('/') : undefined;
+
         files.push({
           ...pattern,
           path: path.relative(process.cwd(), fullPath),
@@ -87,7 +95,7 @@ async function generateReadme() {
 
   // Group patterns by Application Pattern
   const patternsByAP = new Map<string, PatternWithPath[]>();
-  
+
   for (const pattern of allPatterns) {
     const apId = pattern.directory;
     if (!patternsByAP.has(apId)) {
@@ -101,17 +109,17 @@ async function generateReadme() {
   const toc: string[] = [];
 
   // Build TOC and sections in learning order
-  toc.push("### Effect Patterns\n");
+  toc.push('### Effect Patterns\n');
 
   for (const ap of applicationPatterns) {
     const patterns = patternsByAP.get(ap.id);
     if (!patterns || patterns.length === 0) continue;
 
-    const anchor = ap.id.toLowerCase().replace(/\s+/g, "-");
+    const anchor = ap.id.toLowerCase().replace(/\s+/g, '-');
     toc.push(`- [${ap.name}](#${anchor})`);
   }
 
-  toc.push("\n");
+  toc.push('\n');
 
   // Generate sections for each Application Pattern
   for (const ap of applicationPatterns) {
@@ -139,7 +147,7 @@ async function generateReadme() {
     // Render patterns without sub-directory first
     if (noSubDir.length > 0) {
       sections.push(
-        "| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n"
+        '| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n',
       );
 
       const sortedPatterns = noSubDir.sort((a, b) => {
@@ -158,36 +166,41 @@ async function generateReadme() {
         const skillLevel = getSkillLevel(pattern);
         const skillEmoji =
           {
-            beginner: "🟢",
-            intermediate: "🟡",
-            advanced: "🟠",
-          }[skillLevel] || "⚪️";
+            beginner: '🟢',
+            intermediate: '🟡',
+            advanced: '🟠',
+          }[skillLevel] || '⚪️';
 
         sections.push(
           `| [${pattern.title}](./${pattern.path}) | ${skillEmoji} **${
             skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)
-          }** | ${pattern.summary || ""} |\n`
+          }** | ${pattern.summary || ''} |\n`,
         );
       }
 
-      sections.push("\n");
+      sections.push('\n');
     }
 
     // Render sub-directories
-    const subDirOrder = ["getting-started", ...Array.from(bySubDir.keys()).filter(k => k !== "getting-started").sort()];
-    
+    const subDirOrder = [
+      'getting-started',
+      ...Array.from(bySubDir.keys())
+        .filter((k) => k !== 'getting-started')
+        .sort(),
+    ];
+
     for (const subDir of subDirOrder) {
       const subPatterns = bySubDir.get(subDir);
       if (!subPatterns) continue;
 
       const subDisplayName = subDir
-        .split("-")
+        .split('-')
         .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
+        .join(' ');
 
       sections.push(`### ${subDisplayName}\n`);
       sections.push(
-        "| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n"
+        '| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n',
       );
 
       const sortedSubPatterns = subPatterns.sort((a, b) => {
@@ -206,19 +219,19 @@ async function generateReadme() {
         const skillLevel = getSkillLevel(pattern);
         const skillEmoji =
           {
-            beginner: "🟢",
-            intermediate: "🟡",
-            advanced: "🟠",
-          }[skillLevel] || "⚪️";
+            beginner: '🟢',
+            intermediate: '🟡',
+            advanced: '🟠',
+          }[skillLevel] || '⚪️';
 
         sections.push(
           `| [${pattern.title}](./${pattern.path}) | ${skillEmoji} **${
             skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)
-          }** | ${pattern.summary || ""} |\n`
+          }** | ${pattern.summary || ''} |\n`,
         );
       }
 
-      sections.push("\n");
+      sections.push('\n');
     }
   }
 
@@ -250,18 +263,18 @@ This repository is designed to be a living document that helps developers move f
 
 ## Table of Contents
 
-${toc.join("\n")}
+${toc.join('\n')}
 
 ---
 
-${sections.join("")}`;
+${sections.join('')}`;
 
   // Write README
-  await fs.writeFile(README_PATH, readme, "utf-8");
+  await fs.writeFile(README_PATH, readme, 'utf-8');
   console.log(`✅ Generated README.md at ${README_PATH}`);
 }
 
 generateReadme().catch((error) => {
-  console.error("Failed to generate README:", error);
+  console.error('Failed to generate README:', error);
   process.exit(1);
 });

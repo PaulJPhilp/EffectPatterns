@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
 
-import { config } from 'dotenv';
-import { myProvider } from '../app/code-assistant/lib/ai/providers';
-import { chatModels } from '../app/code-assistant/lib/ai/models';
 import { generateText } from 'ai';
+import { config } from 'dotenv';
+import { chatModels } from '../app/code-assistant/lib/ai/models';
+import { myProvider } from '../app/code-assistant/lib/ai/providers';
 
 // Load environment variables
 config({ path: '../app/code-assistant/.env.local' });
