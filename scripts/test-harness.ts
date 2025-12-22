@@ -1,5 +1,4 @@
 import * as Effect from 'effect/Effect';
-import { TUIHandler } from 'effect-cli-tui';
 import { processChat } from '../app/code-assistant/lib/chat/engine';
 import { MockDbServiceLive } from './mock-db';
 
@@ -59,10 +58,11 @@ const program = Effect.gen(function* (_) {
     const fullResponse = yield* _(
       Effect.promise(async () => {
         const reader = stream.getReader();
-        let result;
         let responseText = '';
-        while (!(result = await reader.read()).done) {
+        let result: ReadableStreamReadResult<Uint8Array> = await reader.read();
+        while (!result.done) {
           responseText += new TextDecoder().decode(result.value);
+          result = await reader.read();
         }
         return responseText;
       }),

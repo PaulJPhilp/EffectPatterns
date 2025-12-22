@@ -25,9 +25,7 @@ function logCheckpoint(operation: string, data?: unknown) {
     timestamp,
     data,
   };
-  console.error(
-    `[CHECKPOINT] ${JSON.stringify(checkpoint)}`
-  );
+  console.error(`[CHECKPOINT] ${JSON.stringify(checkpoint)}`);
 }
 
 // --- CONFIGURATION ---
@@ -91,7 +89,8 @@ export async function publishPatterns() {
         path: outPath,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       console.error(`❌ Error processing ${mdxFile}:`, error);
       failedFiles.push({ file: mdxFile, error: errorMessage });
       errorCount++;
