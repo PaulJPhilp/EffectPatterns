@@ -8,7 +8,7 @@
  * in the OpenTelemetry trace.
  */
 
-import { searchPatterns, toPatternSummary } from "@effect-patterns/toolkit";
+import { toPatternSummary } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
@@ -45,15 +45,17 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
     limit: limit ? String(limit) : "default",
   });
 
-  // Get all patterns
-  const allPatterns = yield* patterns.getAllPatterns();
+  // Map difficulty to skillLevel
+  const skillLevel =
+    difficulty === "beginner" || difficulty === "intermediate" || difficulty === "advanced"
+      ? difficulty
+      : undefined;
 
-  // Search with filters (convert readonly to mutable for search function)
-  const results = searchPatterns({
-    patterns: [...allPatterns],
+  // Search patterns using database
+  const results = yield* patterns.searchPatterns({
     query,
     category,
-    difficulty,
+    skillLevel,
     limit,
   });
 

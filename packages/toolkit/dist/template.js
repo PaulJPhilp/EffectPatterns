@@ -13,9 +13,9 @@
  */
 export function sanitizeInput(input) {
     return input
-        .replace(/[<>]/g, '') // Remove angle brackets
-        .replace(/[`$]/g, '') // Remove backticks and dollar signs
-        .replace(/[\r\n]+/g, ' ') // Replace newlines with spaces
+        .replace(/[<>]/g, "") // Remove angle brackets
+        .replace(/[`$]/g, "") // Remove backticks and dollar signs
+        .replace(/[\r\n]+/g, " ") // Replace newlines with spaces
         .trim()
         .slice(0, 100); // Limit length
 }
@@ -25,8 +25,8 @@ export function sanitizeInput(input) {
  * @param moduleType - ESM or CJS
  * @returns Import/require statement
  */
-function generateImport(moduleType = 'esm') {
-    if (moduleType === 'cjs') {
+function generateImport(moduleType = "esm") {
+    if (moduleType === "cjs") {
         return `const { Effect, pipe } = require("effect");`;
     }
     return `import { Effect, pipe } from "effect";`;
@@ -38,8 +38,8 @@ function generateImport(moduleType = 'esm') {
  * @param name - Export name
  * @returns Export statement
  */
-function generateExport(name, moduleType = 'esm') {
-    if (moduleType === 'cjs') {
+function generateExport(name, moduleType = "esm") {
+    if (moduleType === "cjs") {
         return `module.exports = { ${name} };`;
     }
     return `export { ${name} };`;
@@ -63,45 +63,45 @@ function generateExport(name, moduleType = 'esm') {
  * ```
  */
 export function buildSnippet(params) {
-    const { pattern, customName, customInput, moduleType = 'esm', effectVersion, } = params;
-    const sanitizedName = customName ? sanitizeInput(customName) : 'example';
-    const sanitizedInput = customInput ? sanitizeInput(customInput) : 'input';
+    const { pattern, customName, customInput, moduleType = "esm", effectVersion, } = params;
+    const sanitizedName = customName ? sanitizeInput(customName) : "example";
+    const sanitizedInput = customInput ? sanitizeInput(customInput) : "input";
     // Use first example if available
     const example = pattern.examples?.[0];
     if (!example) {
         // Generate a minimal placeholder if no example exists
         const header = [
             `// ${pattern.title}`,
-            effectVersion ? `// Effect version: ${effectVersion}` : '',
+            effectVersion ? `// Effect version: ${effectVersion}` : "",
             `// Pattern ID: ${pattern.id}`,
-            '',
+            "",
             generateImport(moduleType),
-            '',
+            "",
             `// ${pattern.description}`,
-            '',
+            "",
             `const ${sanitizedName} = Effect.succeed("${sanitizedInput}");`,
-            '',
+            "",
             generateExport(sanitizedName, moduleType),
         ]
             .filter(Boolean)
-            .join('\n');
+            .join("\n");
         return header;
     }
     // Build snippet from example with header
     const header = [
         `// ${pattern.title}`,
-        effectVersion ? `// Effect version: ${effectVersion}` : '',
+        effectVersion ? `// Effect version: ${effectVersion}` : "",
         `// Pattern ID: ${pattern.id}`,
-        example.description ? `// ${example.description}` : '',
-        '',
+        example.description ? `// ${example.description}` : "",
+        "",
         generateImport(moduleType),
-        '',
+        "",
     ]
         .filter(Boolean)
-        .join('\n');
+        .join("\n");
     // Process the example code (sanitize but preserve structure)
     const processedCode = example.code
-        .split('\n')
+        .split("\n")
         .map((line) => {
         // Replace any template variables if present
         let processedLine = line;
@@ -113,7 +113,7 @@ export function buildSnippet(params) {
         }
         return processedLine;
     })
-        .join('\n');
+        .join("\n");
     return `${header}\n${processedCode}`;
 }
 /**
@@ -130,12 +130,12 @@ export function generateUsageExample(pattern) {
     return [
         `// ${pattern.title}`,
         `// ${pattern.description}`,
-        '',
-        example.description || '',
-        '',
+        "",
+        example.description || "",
+        "",
         example.code,
     ]
         .filter(Boolean)
-        .join('\n');
+        .join("\n");
 }
 //# sourceMappingURL=template.js.map

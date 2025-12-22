@@ -3,9 +3,18 @@
  *
  * Pure functions for searching and filtering patterns using fuzzy
  * matching and filtering by category/difficulty.
+ *
+ * Supports both in-memory search (legacy) and database-backed search.
  */
 
-import type { Pattern, PatternSummary } from "./schemas/pattern.js";
+import type { Pattern, PatternSummary } from "./schemas/pattern.js"
+import { createDatabase } from "./db/client.js"
+import { createEffectPatternRepository } from "./repositories/index.js"
+import type { SkillLevel } from "./db/schema/index.js"
+
+// ============================================
+// In-Memory Search (Legacy)
+// ============================================
 
 /**
  * Normalize separators in a string to spaces
@@ -14,7 +23,7 @@ import type { Pattern, PatternSummary } from "./schemas/pattern.js";
  * @returns Normalized string
  */
 function normalizeSeparators(str: string): string {
-  return str.replace(/[-_]+/g, " ");
+  return str.replace(/[-_]+/g, " ")
 }
 
 /**
@@ -31,38 +40,38 @@ function normalizeSeparators(str: string): string {
  * @returns Match score (0-1), or 0 if no match
  */
 function fuzzyScore(query: string, target: string): number {
-  if (!query) return 1;
-  if (!target) return 0;
+  if (!query) return 1
+  if (!target) return 0
 
   // Normalize separators to handle hyphen/underscore/space variations
-  const normalizedQuery = normalizeSeparators(query);
-  const normalizedTarget = normalizeSeparators(target);
+  const normalizedQuery = normalizeSeparators(query)
+  const normalizedTarget = normalizeSeparators(target)
 
-  let queryIndex = 0;
-  let targetIndex = 0;
-  let matches = 0;
-  let consecutiveMatches = 0;
+  let queryIndex = 0
+  let targetIndex = 0
+  let matches = 0
+  let consecutiveMatches = 0
 
   while (
     queryIndex < normalizedQuery.length &&
     targetIndex < normalizedTarget.length
   ) {
     if (normalizedQuery[queryIndex] === normalizedTarget[targetIndex]) {
-      matches++;
-      consecutiveMatches++;
-      queryIndex++;
+      matches++
+      consecutiveMatches++
+      queryIndex++
     } else {
-      consecutiveMatches = 0;
+      consecutiveMatches = 0
     }
-    targetIndex++;
+    targetIndex++
   }
 
-  if (queryIndex !== normalizedQuery.length) return 0;
+  if (queryIndex !== normalizedQuery.length) return 0
 
-  const baseScore = matches / normalizedQuery.length;
-  const consecutiveBonus = consecutiveMatches / normalizedQuery.length;
+  const baseScore = matches / normalizedQuery.length
+  const consecutiveBonus = consecutiveMatches / normalizedQuery.length
 
-  return baseScore * 0.7 + consecutiveBonus * 0.3;
+  return baseScore * 0.7 + consecutiveBonus * 0.3
 }
 
 /**
@@ -77,16 +86,16 @@ function fuzzyScore(query: string, target: string): number {
  * @returns Relevance score (0-1)
  */
 function calculateRelevance(pattern: Pattern, query: string): number {
-  const q = query.toLowerCase();
+  const q = query.toLowerCase()
 
   // Check all fields and collect scores with their weights
-  const titleScore = fuzzyScore(q, pattern.title.toLowerCase());
-  const descScore = fuzzyScore(q, pattern.description.toLowerCase());
+  const titleScore = fuzzyScore(q, pattern.title.toLowerCase())
+  const descScore = fuzzyScore(q, pattern.description.toLowerCase())
 
-  const tagScores = pattern.tags.map((tag) => fuzzyScore(q, tag.toLowerCase()));
-  const bestTagScore = Math.max(...tagScores, 0);
+  const tagScores = pattern.tags.map((tag) => fuzzyScore(q, tag.toLowerCase()))
+  const bestTagScore = Math.max(...tagScores, 0)
 
-  const categoryScore = fuzzyScore(q, pattern.category.toLowerCase());
+  const categoryScore = fuzzyScore(q, pattern.category.toLowerCase())
 
   // Apply weights and find the highest score
   // This ensures tags and categories can match even if title doesn't
@@ -95,9 +104,9 @@ function calculateRelevance(pattern: Pattern, query: string): number {
     descScore * 0.7, // Description: medium weight
     bestTagScore * 0.5, // Tags: lower weight
     categoryScore * 0.4, // Category: lowest weight
-  ];
+  ]
 
-  return Math.max(...scores);
+  return Math.max(...scores)
 }
 
 /**
@@ -105,19 +114,19 @@ function calculateRelevance(pattern: Pattern, query: string): number {
  */
 export interface SearchPatternsParams {
   /** Array of patterns to search */
-  patterns: Pattern[];
+  patterns: Pattern[]
   /** Search query (optional) */
-  query?: string;
+  query?: string
   /** Filter by category (optional) */
-  category?: string;
+  category?: string
   /** Filter by difficulty level (optional) */
-  difficulty?: string;
+  difficulty?: string
   /** Maximum number of results (default: no limit) */
-  limit?: number;
+  limit?: number
 }
 
 /**
- * Search patterns with fuzzy matching and filtering
+ * Search patterns with fuzzy matching and filtering (in-memory)
  *
  * @param params - Search parameters
  * @returns Matched patterns sorted by relevance
@@ -132,21 +141,21 @@ export interface SearchPatternsParams {
  * ```
  */
 export function searchPatterns(params: SearchPatternsParams): Pattern[] {
-  const { patterns, query, category, difficulty, limit } = params;
-  let results = [...patterns];
+  const { patterns, query, category, difficulty, limit } = params
+  let results = [...patterns]
 
   // Apply category filter
   if (category) {
     results = results.filter(
       (p) => p.category.toLowerCase() === category.toLowerCase()
-    );
+    )
   }
 
   // Apply difficulty filter
   if (difficulty) {
     results = results.filter(
       (p) => p.difficulty.toLowerCase() === difficulty.toLowerCase()
-    );
+    )
   }
 
   // Apply fuzzy search if query provided
@@ -157,21 +166,21 @@ export function searchPatterns(params: SearchPatternsParams): Pattern[] {
         score: calculateRelevance(pattern, query.trim()),
       }))
       .filter((item) => item.score > 0)
-      .sort((a, b) => b.score - a.score);
+      .sort((a, b) => b.score - a.score)
 
-    results = scored.map((item) => item.pattern);
+    results = scored.map((item) => item.pattern)
   }
 
   // Apply limit
   if (limit && limit > 0) {
-    results = results.slice(0, limit);
+    results = results.slice(0, limit)
   }
 
-  return results;
+  return results
 }
 
 /**
- * Get a single pattern by ID
+ * Get a single pattern by ID (in-memory)
  *
  * @param patterns - Array of patterns to search
  * @param id - Pattern ID
@@ -181,7 +190,7 @@ export function getPatternById(
   patterns: Pattern[],
   id: string
 ): Pattern | undefined {
-  return patterns.find((p) => p.id === id);
+  return patterns.find((p) => p.id === id)
 }
 
 /**
@@ -198,5 +207,120 @@ export function toPatternSummary(pattern: Pattern): PatternSummary {
     category: pattern.category,
     difficulty: pattern.difficulty,
     tags: pattern.tags,
-  };
+  }
+}
+
+// ============================================
+// Database-Backed Search
+// ============================================
+
+/**
+ * Parameters for database search
+ */
+export interface DatabaseSearchParams {
+  /** Search query (optional) */
+  query?: string
+  /** Filter by category (optional) */
+  category?: string
+  /** Filter by skill level (optional) */
+  skillLevel?: SkillLevel
+  /** Maximum number of results (default: no limit) */
+  limit?: number
+  /** Offset for pagination */
+  offset?: number
+}
+
+/**
+ * Search patterns using database
+ *
+ * @param params - Search parameters
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to matched patterns
+ */
+export async function searchPatternsDb(
+  params: DatabaseSearchParams,
+  databaseUrl?: string
+): Promise<Pattern[]> {
+  const { db, close } = createDatabase(databaseUrl)
+
+  try {
+    const repo = createEffectPatternRepository(db)
+    const dbPatterns = await repo.search(params)
+
+    return dbPatterns.map((p) => ({
+      id: p.slug,
+      title: p.title,
+      description: p.summary,
+      category: (p.category as Pattern["category"]) || "error-handling",
+      difficulty: (p.skillLevel as Pattern["difficulty"]) || "intermediate",
+      tags: (p.tags as string[]) || [],
+      examples: (p.examples as Pattern["examples"]) || [],
+      useCases: (p.useCases as string[]) || [],
+      relatedPatterns: undefined,
+      effectVersion: undefined,
+      createdAt: p.createdAt?.toISOString(),
+      updatedAt: p.updatedAt?.toISOString(),
+    }))
+  } finally {
+    await close()
+  }
+}
+
+/**
+ * Get a pattern by ID/slug from database
+ *
+ * @param id - Pattern ID (slug)
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to the pattern or null
+ */
+export async function getPatternByIdDb(
+  id: string,
+  databaseUrl?: string
+): Promise<Pattern | null> {
+  const { db, close } = createDatabase(databaseUrl)
+
+  try {
+    const repo = createEffectPatternRepository(db)
+    const p = await repo.findBySlug(id)
+
+    if (!p) {
+      return null
+    }
+
+    return {
+      id: p.slug,
+      title: p.title,
+      description: p.summary,
+      category: (p.category as Pattern["category"]) || "error-handling",
+      difficulty: (p.skillLevel as Pattern["difficulty"]) || "intermediate",
+      tags: (p.tags as string[]) || [],
+      examples: (p.examples as Pattern["examples"]) || [],
+      useCases: (p.useCases as string[]) || [],
+      relatedPatterns: undefined,
+      effectVersion: undefined,
+      createdAt: p.createdAt?.toISOString(),
+      updatedAt: p.updatedAt?.toISOString(),
+    }
+  } finally {
+    await close()
+  }
+}
+
+/**
+ * Count patterns by skill level from database
+ *
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to counts by skill level
+ */
+export async function countPatternsBySkillLevelDb(
+  databaseUrl?: string
+): Promise<Record<SkillLevel, number>> {
+  const { db, close } = createDatabase(databaseUrl)
+
+  try {
+    const repo = createEffectPatternRepository(db)
+    return repo.countBySkillLevel()
+  } finally {
+    await close()
+  }
 }

@@ -1,41 +1,60 @@
 /**
- * IO Operations using Effect
+ * IO Operations
  *
- * Effect-based file system operations for loading patterns data.
+ * Operations for loading patterns data from both
+ * file system (legacy) and PostgreSQL database (primary).
  */
-import type { FileSystem as FileSystemService } from '@effect/platform/FileSystem';
-import { Effect } from 'effect';
-import { type PatternsIndex as PatternsIndexData } from './schemas/pattern.js';
+import { type PatternsIndex as PatternsIndexData, type Pattern } from "./schemas/pattern.js";
+import type { SkillLevel } from "./db/schema/index.js";
 /**
- * Load and parse patterns from a JSON file
+ * Load and parse patterns from a JSON file (legacy, sync)
  *
  * @param filePath - Absolute path to patterns.json
- * @returns Effect that yields validated PatternsIndex
+ * @returns Validated PatternsIndex
+ * @throws Error if file cannot be read or parsed
+ * @deprecated Use loadPatternsFromDatabase for new code
  */
-export declare const loadPatternsFromJson: (filePath: string) => Effect.Effect<PatternsIndexData, Error, FileSystemService>;
+export declare function loadPatternsFromJsonSync(filePath: string): PatternsIndexData;
 /**
- * Runnable version with Node FileSystem layer
+ * Load and parse patterns from a JSON file (legacy, async)
+ *
+ * @param filePath - Absolute path to patterns.json
+ * @returns Promise that resolves to validated PatternsIndex
+ * @deprecated Use loadPatternsFromDatabase for new code
  */
-export declare const loadPatternsFromJsonRunnable: (filePath: string) => Effect.Effect<{
-    readonly patterns: readonly {
-        readonly effectVersion?: string | undefined;
-        readonly title: string;
-        readonly category: "error-handling" | "concurrency" | "data-transformation" | "testing" | "services" | "streams" | "caching" | "observability" | "scheduling" | "resource-management";
-        readonly difficulty: "beginner" | "intermediate" | "advanced";
-        readonly id: string;
-        readonly description: string;
-        readonly tags: readonly string[];
-        readonly examples: readonly {
-            readonly description?: string | undefined;
-            readonly language: string;
-            readonly code: string;
-        }[];
-        readonly useCases: readonly string[];
-        readonly relatedPatterns?: readonly string[] | undefined;
-        readonly createdAt?: string | undefined;
-        readonly updatedAt?: string | undefined;
-    }[];
-    readonly version?: string | undefined;
-    readonly lastUpdated?: string | undefined;
-}, Error, FileSystemService>;
+export declare function loadPatternsFromJson(filePath: string): Promise<PatternsIndexData>;
+/**
+ * Legacy alias for compatibility
+ * @deprecated Use loadPatternsFromJson
+ */
+export declare const loadPatternsFromJsonRunnable: typeof loadPatternsFromJson;
+/**
+ * Load all patterns from the database
+ *
+ * @param databaseUrl - Optional database URL
+ * @returns Promise that resolves to PatternsIndex
+ */
+export declare function loadPatternsFromDatabase(databaseUrl?: string): Promise<PatternsIndexData>;
+/**
+ * Search patterns in the database
+ *
+ * @param params - Search parameters
+ * @param databaseUrl - Optional database URL
+ * @returns Promise that resolves to matching patterns
+ */
+export declare function searchPatternsFromDatabase(params: {
+    query?: string;
+    category?: string;
+    skillLevel?: SkillLevel;
+    limit?: number;
+    offset?: number;
+}, databaseUrl?: string): Promise<Pattern[]>;
+/**
+ * Get a single pattern by ID/slug from the database
+ *
+ * @param id - Pattern ID (slug)
+ * @param databaseUrl - Optional database URL
+ * @returns Promise that resolves to the pattern or null
+ */
+export declare function getPatternFromDatabase(id: string, databaseUrl?: string): Promise<Pattern | null>;
 //# sourceMappingURL=io.d.ts.map

@@ -5,8 +5,8 @@
  * types and Effect versions. All generation is pure functions - no
  * code evaluation or execution.
  */
-import type { ModuleType } from './schemas/generate.js';
-import type { Pattern } from './schemas/pattern.js';
+import type { ModuleType } from "./schemas/generate.js";
+import type { Pattern } from "./schemas/pattern.js";
 /**
  * Sanitize user input to prevent template injection
  *
