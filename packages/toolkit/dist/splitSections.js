@@ -11,10 +11,10 @@
  * => ['# Title', 'One\ncontent', 'Two']
  */
 export function splitSections(content) {
-    if (!content || typeof content !== 'string')
+    if (!content || typeof content !== "string")
         return [];
     // Normalize newlines to \n to handle CRLF and other newline styles
-    const normalized = content.replace(/\r\n?/g, '\n');
+    const normalized = content.replace(/\r\n?/g, "\n");
     // Split on a newline followed by optional whitespace and a markdown heading
     // that starts with at least two hashes (##), or any heading level if desired.
     // We use a lookahead split: split at the boundary before a newline+hashes sequence.
@@ -26,7 +26,7 @@ export function splitSections(content) {
         .map((s) => s.trim())
         // Remove leading '##' (or more) heading markers from sections so that
         // '\n## One' becomes 'One'. Preserve single '#' (top-level title) if present.
-        .map((s) => s.replace(/^#{2,6}\s*/, ''))
+        .map((s) => s.replace(/^#{2,6}\s*/, ""))
         .filter((s) => s.length > 0));
 }
 //# sourceMappingURL=splitSections.js.map

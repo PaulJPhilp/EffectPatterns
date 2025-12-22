@@ -4,11 +4,11 @@
  * Schemas for the code generation API endpoints, including request
  * validation and response format.
  */
-import { Schema as S } from '@effect/schema';
+import { Schema as S } from "@effect/schema";
 /**
  * Module type for generated code
  */
-export const ModuleType = S.Literal('esm', 'cjs');
+export const ModuleType = S.Literal("esm", "cjs");
 /**
  * Generate snippet request
  */

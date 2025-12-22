@@ -2,7 +2,7 @@
  * Server Initialization - Effect Layer Composition
  *
  * Composes all Effect layers for the MCP server:
- * ConfigLayer -> TracingLayer -> PatternsLayer -> AppLayer
+ * ConfigLayer -> TracingLayer -> DatabaseLayer -> PatternsLayer -> AppLayer
  *
  * This module sets up the runtime and provides a singleton
  * for running Effects in Next.js route handlers.
@@ -10,15 +10,15 @@
 
 // biome-ignore assist/source/organizeImports: <>
 import {
-  loadPatternsFromJsonRunnable,
+  DatabaseLayer,
+  searchEffectPatterns,
+  findEffectPatternBySlug,
   type Pattern,
-  type PatternsIndex,
 } from "@effect-patterns/toolkit";
 import { NodeSdk } from "@effect/opentelemetry";
-import { Effect, Layer, Ref } from "effect";
+import { Effect, Layer } from "effect";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
-import * as path from "node:path";
 import { TracingLayerLive, type TracingService } from "../tracing/otlpLayer";
 
 /**
@@ -29,59 +29,53 @@ export class ConfigService extends Effect.Service<ConfigService>()(
   {
     sync: () => ({
       apiKey: process.env.PATTERN_API_KEY || "",
-      patternsPath:
-        process.env.PATTERNS_PATH ||
-        path.join(process.cwd(), "data", "patterns.json"),
+      databaseUrl: process.env.DATABASE_URL || undefined,
       nodeEnv: process.env.NODE_ENV || "development",
     }),
   }
 ) {}
 
 /**
- * Patterns service - provides in-memory pattern cache
+ * Patterns service - provides database-backed pattern access
  */
 const makePatternsService = Effect.gen(function* () {
-  const config = yield* ConfigService;
+  console.log("[Patterns] Initializing database-backed patterns service");
 
-  console.log(`[Patterns] Loading patterns from: ${config.patternsPath}`);
+  /**
+   * Get all patterns
+   */
+  const getAllPatterns = (): Effect.Effect<readonly Pattern[]> =>
+    searchEffectPatterns({});
 
-  // Load patterns at cold start, with empty index fallback
-  const fallbackIndex: PatternsIndex = {
-    version: "0.0.0",
-    patterns: [],
-    lastUpdated: new Date().toISOString(),
-  };
-
-  const patternsIndex: PatternsIndex = yield* Effect.matchEffect(
-    loadPatternsFromJsonRunnable(
-      config.patternsPath
-    ) as unknown as Effect.Effect<PatternsIndex>,
-    {
-      onFailure: () => Effect.succeed(fallbackIndex),
-      onSuccess: (idx) => Effect.succeed(idx as PatternsIndex),
-    }
-  );
-
-  console.log(`[Patterns] Loaded ${patternsIndex.patterns.length} patterns`);
-
-  // Create Ref to hold patterns in memory
-  const patternsRef = yield* Ref.make<readonly Pattern[]>(
-    patternsIndex.patterns
-  );
-
-  // Create service methods
-  const getAllPatterns = () => Ref.get(patternsRef);
-
+  /**
+   * Get pattern by ID/slug
+   */
   const getPatternById = (id: string): Effect.Effect<Pattern | undefined> =>
     Effect.gen(function* () {
-      const patterns: readonly Pattern[] = yield* Ref.get(patternsRef);
-      return patterns.find((p: Pattern) => p.id === id);
+      const pattern = yield* findEffectPatternBySlug(id);
+      return pattern ?? undefined;
+    });
+
+  /**
+   * Search patterns
+   */
+  const searchPatterns = (params: {
+    query?: string;
+    category?: string;
+    skillLevel?: "beginner" | "intermediate" | "advanced";
+    limit?: number;
+  }): Effect.Effect<readonly Pattern[]> =>
+    searchEffectPatterns({
+      query: params.query,
+      category: params.category,
+      skillLevel: params.skillLevel,
+      limit: params.limit,
     });
 
   return {
-    patterns: patternsRef,
     getAllPatterns,
     getPatternById,
+    searchPatterns,
   };
 });
 
@@ -89,14 +83,14 @@ export class PatternsService extends Effect.Service<PatternsService>()(
   "PatternsService",
   {
     scoped: makePatternsService,
-    dependencies: [ConfigService.Default],
+    dependencies: [DatabaseLayer],
   }
 ) {}
 
 /**
  * App Layer - Full application layer composition
  *
- * Composes: Config -> Tracing (with NodeSdk) -> Patterns
+ * Composes: Config -> Tracing (with NodeSdk) -> Database -> Patterns
  * Services are self-managed via Effect.Service pattern.
  * The NodeSdk layer enables automatic span creation via Effect.fn.
  */
@@ -122,6 +116,7 @@ const NodeSdkLayer = NodeSdk.layer(() => ({
 
 export const AppLayer = Layer.mergeAll(
   ConfigService.Default,
+  DatabaseLayer,
   PatternsService.Default,
   TracingLayerLive,
   NodeSdkLayer
@@ -134,7 +129,11 @@ export const AppLayer = Layer.mergeAll(
  * This provides all layers to the effect before running it.
  */
 export const runWithRuntime = <A, E>(
-  effect: Effect.Effect<A, E, PatternsService | ConfigService | TracingService>
+  effect: Effect.Effect<
+    A,
+    E,
+    PatternsService | ConfigService | TracingService
+  >
 ): Promise<A> =>
   effect.pipe(
     Effect.provide(AppLayer),

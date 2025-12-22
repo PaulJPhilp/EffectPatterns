@@ -34,7 +34,8 @@ Application Pattern  ──►  Job  ──►  Effect Pattern
 | `effectModule` | string | | Primary Effect module (Schema, Stream, etc.) |
 | `subPatterns` | string[] | | Sub-directories for this AP |
 
-**Source:** `data/application-patterns.json`
+**Source:** PostgreSQL database (`application_patterns` table)
+**Legacy:** `data/application-patterns.json` (deprecated, used only for initial migration)
 
 **Example:**
 
@@ -66,7 +67,8 @@ Application Pattern  ──►  Job  ──►  Effect Pattern
 | `status` | enum | ✓ | `covered` \| `partial` \| `gap` |
 | `fulfilledBy` | string[] | | IDs of Effect Patterns that fulfill this job |
 
-**Source:** `docs/*_JOBS_TO_BE_DONE.md` files
+**Source:** PostgreSQL database (`jobs` table)
+**Legacy:** `docs/*_JOBS_TO_BE_DONE.md` files (deprecated, used only for initial migration)
 
 **Example:**
 
@@ -101,7 +103,8 @@ fulfilledBy:
 | `author` | string | | Pattern author |
 | `path` | string | ✓ | File path to .mdx file |
 
-**Source:** `.mdx` files in `content/published/patterns/`
+**Source:** PostgreSQL database (`effect_patterns` table)
+**Content:** `.mdx` files in `content/published/patterns/` (content storage, metadata in DB)
 
 **Example:**
 
@@ -225,104 +228,181 @@ All 16 Application Patterns now have beginner entry points:
 
 ---
 
-## File Structure
+## Data Storage
+
+### Primary: PostgreSQL Database
+
+All pattern metadata is stored in PostgreSQL using Drizzle ORM:
+
+- **Application Patterns**: `application_patterns` table
+- **Effect Patterns**: `effect_patterns` table
+- **Jobs**: `jobs` table
+- **Relationships**: `pattern_jobs` and `pattern_relations` tables
+
+The database is the **primary source of truth** for all pattern metadata, relationships, and search functionality.
+
+### Legacy Files (Migration Sources)
+
+These files are maintained for reference and initial migration:
 
 ```
 Effect Patterns Repository
 │
 ├── data/
-│   └── application-patterns.json        # Application Pattern definitions
+│   ├── application-patterns.json        # Legacy: Used for initial migration
+│   └── patterns-index.json              # Legacy: Used for initial migration
 │
 ├── docs/
 │   ├── DATA_MODEL.md                    # This file
-│   ├── GETTING_STARTED_JOBS_TO_BE_DONE.md
+│   ├── GETTING_STARTED_JOBS_TO_BE_DONE.md  # Legacy: Used for initial migration
 │   ├── CORE_CONCEPTS_JOBS_TO_BE_DONE.md
-│   ├── ERROR_MANAGEMENT_JOBS_TO_BE_DONE.md
-│   ├── RESOURCE_MANAGEMENT_JOBS_TO_BE_DONE.md
-│   ├── CONCURRENCY_JOBS_TO_BE_DONE.md
-│   ├── STREAMS_JOBS_TO_BE_DONE.md
-│   ├── SCHEMA_JOBS_TO_BE_DONE.md
-│   ├── PLATFORM_JOBS_TO_BE_DONE.md
-│   ├── SCHEDULING_JOBS_TO_BE_DONE.md
-│   ├── DOMAIN_MODELING_JOBS_TO_BE_DONE.md
-│   ├── BUILDING_APIS_JOBS_TO_BE_DONE.md
-│   ├── BUILDING_DATA_PIPELINES_JOBS_TO_BE_DONE.md
-│   ├── MAKING_HTTP_REQUESTS_JOBS_TO_BE_DONE.md
-│   ├── TESTING_JOBS_TO_BE_DONE.md
-│   ├── OBSERVABILITY_JOBS_TO_BE_DONE.md
-│   └── TOOLING_AND_DEBUGGING_JOBS_TO_BE_DONE.md
+│   └── ... (other job files)
 │
 └── content/published/patterns/
-    ├── getting-started/                 # (6 patterns)
-    ├── core-concepts/                   # (55 patterns)
-    ├── error-management/                # (18 patterns)
-    ├── resource-management/             # (5 patterns)
-    ├── concurrency/                     # (24 patterns)
-    │   └── getting-started/
-    ├── streams/                         # (18 patterns)
-    │   ├── getting-started/
-    │   └── sinks/
-    ├── schema/                          # (77 patterns)
-    │   ├── getting-started/
-    │   ├── primitives/
-    │   ├── objects/
-    │   ├── arrays/
-    │   └── ... (16 subdirs)
-    ├── platform/                        # (8 patterns)
-    │   └── getting-started/
-    ├── scheduling/                      # (4 patterns)
-    ├── domain-modeling/                 # (12 patterns)
-    ├── building-apis/                   # (8 patterns)
-    ├── building-data-pipelines/         # (10 patterns)
-    ├── making-http-requests/            # (3 patterns)
-    ├── testing/                         # (5 patterns)
-    ├── observability/                   # (7 patterns)
-    └── tooling-and-debugging/           # (2 patterns)
+    └── ... (MDX files - content storage, metadata in DB)
 ```
+
+### Content Files
+
+MDX files in `content/published/patterns/` store the actual pattern content (markdown, code examples). Metadata is stored in the database, but file paths are maintained for README generation and direct file access.
 
 ---
 
-## Schema (TypeScript)
+## Database Schema
+
+The database schema is defined using Drizzle ORM in `packages/toolkit/src/db/schema/index.ts`.
+
+### Application Patterns Table
 
 ```typescript
 interface ApplicationPattern {
-  id: string
+  id: string              // UUID primary key
+  slug: string           // Unique identifier (kebab-case)
   name: string
   description: string
   learningOrder: number
   effectModule?: string
-  subPatterns: string[]
+  subPatterns: string[] // JSONB array
+  createdAt: Date
+  updatedAt: Date
 }
+```
 
+### Effect Patterns Table
+
+```typescript
+interface EffectPattern {
+  id: string              // UUID primary key
+  slug: string           // Unique identifier
+  title: string
+  summary: string
+  skillLevel: "beginner" | "intermediate" | "advanced"
+  category?: string
+  difficulty?: string
+  tags: string[]         // JSONB array
+  examples: CodeExample[] // JSONB array
+  useCases: string[]     // JSONB array
+  rule?: PatternRule     // JSONB object
+  content?: string       // Full MDX content
+  author?: string
+  lessonOrder?: number
+  applicationPatternId?: string // FK to application_patterns
+  createdAt: Date
+  updatedAt: Date
+}
+```
+
+### Jobs Table
+
+```typescript
 interface Job {
-  id: string
+  id: string              // UUID primary key
+  slug: string           // Unique identifier
   description: string
-  applicationPatternId: string
   category?: string
   status: "covered" | "partial" | "gap"
-  fulfilledBy: string[]
+  applicationPatternId?: string // FK to application_patterns
+  createdAt: Date
+  updatedAt: Date
 }
+```
 
-interface EffectPattern {
-  id: string
-  title: string
-  applicationPatternId: string
-  skillLevel: "beginner" | "intermediate" | "advanced"
-  summary: string
-  tags: string[]
-  rule?: { description: string }
-  related?: string[]
-  author?: string
-  path: string
-}
+### Relationship Tables
+
+- **pattern_jobs**: Many-to-many relationship between patterns and jobs
+- **pattern_relations**: Self-referential many-to-many for related patterns
+
+## Accessing Data
+
+### Using the Toolkit
+
+```typescript
+import { createDatabase, createEffectPatternRepository } from "@effect-patterns/toolkit"
+
+const { db, close } = createDatabase()
+const repo = createEffectPatternRepository(db)
+
+// Search patterns
+const patterns = await repo.search({ query: "retry", skillLevel: "intermediate" })
+
+// Get pattern by slug
+const pattern = await repo.findBySlug("concurrency-hello-world")
+
+await close()
+```
+
+### Using Effect Services
+
+```typescript
+import { Effect } from "effect"
+import { DatabaseLayer, searchEffectPatterns } from "@effect-patterns/toolkit"
+
+const program = Effect.gen(function* () {
+  const patterns = yield* searchEffectPatterns({ query: "error" })
+  return patterns
+})
+
+const result = await program.pipe(
+  Effect.provide(DatabaseLayer),
+  Effect.runPromise
+)
 ```
 
 ---
 
+## Database Migration
+
+The project migrated from file-based storage to PostgreSQL in December 2024. The migration:
+
+1. **Preserves all data** - All patterns, jobs, and application patterns are migrated
+2. **Maintains compatibility** - Legacy file-based functions still work but are deprecated
+3. **Enables new features** - Full-text search, complex queries, relationships
+
+### Migration Process
+
+```bash
+# 1. Start PostgreSQL
+docker-compose up -d postgres
+
+# 2. Push schema
+bun run db:push
+
+# 3. Migrate data
+bun run db:migrate
+
+# 4. Verify
+bun run db:verify
+```
+
+See [MIGRATION_TESTING.md](./MIGRATION_TESTING.md) for detailed migration guide.
+
 ## Future Considerations
 
-1. **Structured Jobs** - Convert JTBD markdown docs to structured YAML/JSON
-2. **Validation** - Add Effect.Schema validation for pattern frontmatter
-3. **Coverage Reports** - Auto-calculate job coverage from pattern metadata
-4. **Learning Paths** - Define ordered sequences through Application Patterns
-5. **API** - Expose patterns via REST/GraphQL API
+1. ✅ **Database Storage** - Migrated to PostgreSQL (December 2024)
+2. ✅ **Structured Jobs** - Jobs now stored in database
+3. ✅ **API** - MCP server uses database for pattern access
+4. **Validation** - Add Effect.Schema validation for database inserts
+5. **Coverage Reports** - Auto-calculate job coverage from database queries
+6. **Learning Paths** - Define ordered sequences through Application Patterns
+7. **Full-text Search** - Enhance search with PostgreSQL full-text search capabilities
+8. **Caching Layer** - Add Redis caching for frequently accessed patterns

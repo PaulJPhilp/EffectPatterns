@@ -5,55 +5,55 @@
  */
 
 // Re-export main service
-export { PipelineStateMachine, PipelineStateMachineLive } from "./state-machine.js";
+export { PipelineStateMachine } from "./state-machine.js";
 
 // Re-export state store
-export { StateStore, StateStoreLive } from "./state-store.js";
+export { StateStore } from "./state-store.js";
 
 // Re-export types and schemas
 export {
-  type WorkflowStep,
-  type WorkflowStatus,
-  type StepStatus,
-  type StepCheckpoint,
-  type StepState,
-  type PatternError,
-  type PatternMetadata,
-  type PatternState,
-  type PipelineStateFile,
-  WorkflowStepSchema,
-  WorkflowStatusSchema,
-  StepStatusSchema,
-  StepCheckpointSchema,
-  StepStateSchema,
   PatternErrorSchema,
   PatternMetadataSchema,
   PatternStateSchema,
   PipelineStateFileSchema,
+  StepCheckpointSchema,
+  StepStateSchema,
+  StepStatusSchema,
   WORKFLOW_STEPS,
-  createInitialStepState,
+  WorkflowStatusSchema,
+  WorkflowStepSchema,
   createInitialPatternState,
   createInitialPipelineState,
+  createInitialStepState,
+  type PatternError,
+  type PatternMetadata,
+  type PatternState,
+  type PipelineStateFile,
+  type StepCheckpoint,
+  type StepState,
+  type StepStatus,
+  type WorkflowStatus,
+  type WorkflowStep,
 } from "./schemas.js";
 
 // Re-export validators
 export {
-  validateTransition,
   canRetryStep,
-  isReadyForNextStep,
-  validatePatternState,
   getNextStep,
   isFinalStep,
+  isReadyForNextStep,
+  validatePatternState,
+  validateTransition,
 } from "./validators.js";
 
 // Re-export errors
 export {
-  InvalidTransitionError,
-  StateFileNotFoundError,
-  PatternNotFoundError,
-  StateFilePersistenceError,
-  InvalidStateError,
-  StepAlreadyCompletedError,
   CannotRetryError,
+  InvalidStateError,
+  InvalidTransitionError,
+  PatternNotFoundError,
+  StateFileNotFoundError,
+  StateFilePersistenceError,
+  StepAlreadyCompletedError,
   type StateError,
 } from "./errors.js";

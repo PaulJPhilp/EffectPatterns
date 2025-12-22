@@ -1,19 +1,13 @@
-import { Context, Effect, Layer } from "effect";
+import { Effect } from "effect";
+import { PatternMetadata, PatternState, WorkflowStep } from "./schemas.js";
+import { StateStore, StateStoreService } from "./state-store.js";
 import {
-  PatternState,
-  PatternMetadata,
-  WorkflowStep,
-  WORKFLOW_STEPS,
-} from "./schemas.js";
-import {
-  validateTransition,
   canRetryStep,
   getNextStep,
   isFinalStep,
   validatePatternState,
+  validateTransition,
 } from "./validators.js";
-import { StateStore, StateStoreService } from "./state-store.js";
-import { InvalidTransitionError, StateError } from "./errors.js";
 
 /**
  * PipelineStateMachine service interface
@@ -57,18 +51,14 @@ export interface PipelineStateMachineService {
     operation: string,
     data?: unknown
   ) => Effect.Effect<void, any>;
-  readonly getAllPatterns: () => Effect.Effect<Record<string, PatternState>, any>;
+  readonly getAllPatterns: () => Effect.Effect<
+    Record<string, PatternState>,
+    any
+  >;
   readonly getPatternsByStatus: (
     status: PatternState["status"]
   ) => Effect.Effect<PatternState[], any>;
 }
-
-/**
- * PipelineStateMachine context tag
- */
-export const PipelineStateMachine = Context.GenericTag<PipelineStateMachineService>(
-  "PipelineStateMachine"
-);
 
 /**
  * Make PipelineStateMachine service
@@ -86,7 +76,11 @@ const makePipelineStateMachine = (
       Effect.gen(function* () {
         const state = yield* store.getPatternState(patternId);
         yield* validatePatternState(state);
-        return yield* validateTransition(patternId, state.currentStep, toStep).pipe(
+        return yield* validateTransition(
+          patternId,
+          state.currentStep,
+          toStep
+        ).pipe(
           Effect.map(() => true),
           Effect.catchAll(() => Effect.succeed(false))
         );
@@ -159,12 +153,14 @@ const makePipelineStateMachine = (
 };
 
 /**
- * Live implementation layer for PipelineStateMachine
+ * PipelineStateMachine service using Effect.Service pattern
  */
-export const PipelineStateMachineLive = Layer.effect(
-  PipelineStateMachine,
-  Effect.gen(function* () {
-    const store = yield* StateStore;
-    return makePipelineStateMachine(store);
-  })
-);
+export class PipelineStateMachine extends Effect.Service<PipelineStateMachine>()(
+  "PipelineStateMachine",
+  {
+    effect: Effect.gen(function* () {
+      const store = yield* StateStore;
+      return makePipelineStateMachine(store);
+    }),
+  }
+) {}

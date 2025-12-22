@@ -7,20 +7,14 @@
  * - Resume capability: Continue from interruptions
  */
 
-import { Command, Args, Options } from "@effect/cli";
-import { Console, Effect, Option } from "effect";
 import {
   PipelineStateMachine,
-  PipelineStateMachineLive,
-  StateStoreLive,
+  StateStore,
   WORKFLOW_STEPS,
 } from "@effect-patterns/pipeline-state";
-import {
-  showTable,
-  showPanel,
-  showSuccess,
-  showInfo,
-} from "./services/display.js";
+import { Args, Command, Options } from "@effect/cli";
+import { Console, Effect, Option } from "effect";
+import { showInfo, showPanel, showTable } from "./services/display.js";
 
 /**
  * Status command: Show pipeline state for all patterns or a specific pattern
@@ -81,7 +75,7 @@ export const statusCommand: any = Command.make("status", {
       } else {
         // All patterns status
         const all = yield* sm.getAllPatterns();
-        const patterns = Object.values(all) as Array<typeof all[string]>;
+        const patterns = Object.values(all) as Array<(typeof all)[string]>;
 
         if (patterns.length === 0) {
           yield* showInfo("No patterns in pipeline.");
@@ -158,8 +152,8 @@ export const statusCommand: any = Command.make("status", {
         );
       }
     }).pipe(
-      Effect.provide(StateStoreLive),
-      Effect.provide(PipelineStateMachineLive)
+      Effect.provide(StateStore.Default),
+      Effect.provide(PipelineStateMachine.Default)
     )
   )
 );
@@ -205,13 +199,11 @@ export const retryCommand: any = Command.make("retry", {
           `\n🔄 Retried step "${args.step}" for: ${args.pattern.value}\n`
         );
       } else {
-        yield* Console.log(
-          "\n❌ Specify a pattern or use --all flag\n"
-        );
+        yield* Console.log("\n❌ Specify a pattern or use --all flag\n");
       }
     }).pipe(
-      Effect.provide(StateStoreLive),
-      Effect.provide(PipelineStateMachineLive)
+      Effect.provide(StateStore.Default),
+      Effect.provide(PipelineStateMachine.Default)
     )
   )
 );
@@ -246,9 +238,7 @@ export const resumeCommand: any = Command.make("resume", {
 
       for (const p of ready) {
         const next = getNextStep(p.currentStep);
-        yield* Console.log(
-          `   • ${p.metadata.title}`
-        );
+        yield* Console.log(`   • ${p.metadata.title}`);
         if (options.verbose) {
           yield* Console.log(
             `     Step: ${p.currentStep} → ${next || "finalized"}`
@@ -256,12 +246,10 @@ export const resumeCommand: any = Command.make("resume", {
         }
       }
 
-      yield* Console.log(
-        "\nRun 'ep-admin pipeline' to continue.\n"
-      );
+      yield* Console.log("\nRun 'ep-admin pipeline' to continue.\n");
     }).pipe(
-      Effect.provide(StateStoreLive),
-      Effect.provide(PipelineStateMachineLive)
+      Effect.provide(StateStore.Default),
+      Effect.provide(PipelineStateMachine.Default)
     )
   )
 );

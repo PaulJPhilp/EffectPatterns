@@ -12,8 +12,7 @@ import {
   readPattern,
   writeGeminiSkill,
   writeOpenAISkill,
-  writeSkill,
-} from '../packages/cli/src/skills/skill-generator.js';
+} from '../packages/cli/src/skills/skill-generator';
 
 const PROJECT_ROOT = process.cwd();
 const PATTERNS_DIR = path.join(PROJECT_ROOT, 'content/published/patterns');

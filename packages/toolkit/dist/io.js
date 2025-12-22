@@ -1,37 +1,139 @@
 /**
- * IO Operations using Effect
+ * IO Operations
  *
- * Effect-based file system operations for loading patterns data.
+ * Operations for loading patterns data from both
+ * file system (legacy) and PostgreSQL database (primary).
  */
-import { FileSystem } from '@effect/platform/FileSystem';
-import { layer as NodeFileSystemLayer } from '@effect/platform-node/NodeFileSystem';
-import { Schema as S } from '@effect/schema';
-import * as TreeFormatter from '@effect/schema/TreeFormatter';
-import { Effect } from 'effect';
-import { PatternsIndex as PatternsIndexSchema, } from './schemas/pattern.js';
+import { Schema as S } from "@effect/schema";
+import * as TreeFormatter from "@effect/schema/TreeFormatter";
+import * as fs from "node:fs";
+import { PatternsIndex as PatternsIndexSchema, } from "./schemas/pattern.js";
+import { createDatabase } from "./db/client.js";
+import { createEffectPatternRepository } from "./repositories/index.js";
+// ============================================
+// Legacy File-Based Loading
+// ============================================
 /**
- * Load and parse patterns from a JSON file
+ * Load and parse patterns from a JSON file (legacy, sync)
  *
  * @param filePath - Absolute path to patterns.json
- * @returns Effect that yields validated PatternsIndex
+ * @returns Validated PatternsIndex
+ * @throws Error if file cannot be read or parsed
+ * @deprecated Use loadPatternsFromDatabase for new code
  */
-export const loadPatternsFromJson = (filePath) => Effect.gen(function* () {
-    const fs = yield* FileSystem;
-    const content = yield* fs.readFileString(filePath).pipe(Effect.mapError((error) => new Error(String(error))));
-    const json = yield* Effect.try({
-        try: () => JSON.parse(content),
-        catch: (cause) => new Error(`Failed to parse patterns JSON: ${String(cause)}`),
-    });
+export function loadPatternsFromJsonSync(filePath) {
+    const content = fs.readFileSync(filePath, "utf-8");
+    const json = JSON.parse(content);
     const decodedEither = S.decodeUnknownEither(PatternsIndexSchema)(json);
-    if (decodedEither._tag === 'Left') {
+    if (decodedEither._tag === "Left") {
         const message = TreeFormatter.formatErrorSync(decodedEither.left);
-        return yield* Effect.fail(new Error(`Invalid patterns index: ${message}`));
+        throw new Error(`Invalid patterns index: ${message}`);
     }
-    const decoded = decodedEither.right;
-    return decoded;
-});
+    return decodedEither.right;
+}
 /**
- * Runnable version with Node FileSystem layer
+ * Load and parse patterns from a JSON file (legacy, async)
+ *
+ * @param filePath - Absolute path to patterns.json
+ * @returns Promise that resolves to validated PatternsIndex
+ * @deprecated Use loadPatternsFromDatabase for new code
  */
-export const loadPatternsFromJsonRunnable = (filePath) => Effect.provide(loadPatternsFromJson(filePath), NodeFileSystemLayer);
+export async function loadPatternsFromJson(filePath) {
+    const content = await fs.promises.readFile(filePath, "utf-8");
+    const json = JSON.parse(content);
+    const decodedEither = S.decodeUnknownEither(PatternsIndexSchema)(json);
+    if (decodedEither._tag === "Left") {
+        const message = TreeFormatter.formatErrorSync(decodedEither.left);
+        throw new Error(`Invalid patterns index: ${message}`);
+    }
+    return decodedEither.right;
+}
+/**
+ * Legacy alias for compatibility
+ * @deprecated Use loadPatternsFromJson
+ */
+export const loadPatternsFromJsonRunnable = loadPatternsFromJson;
+// ============================================
+// Database-Based Loading
+// ============================================
+/**
+ * Convert database EffectPattern to legacy Pattern format
+ */
+function dbPatternToLegacy(dbPattern) {
+    return {
+        id: dbPattern.slug,
+        title: dbPattern.title,
+        description: dbPattern.summary,
+        category: dbPattern.category || "error-handling",
+        difficulty: dbPattern.skillLevel || "intermediate",
+        tags: dbPattern.tags || [],
+        examples: dbPattern.examples || [],
+        useCases: dbPattern.useCases || [],
+        relatedPatterns: undefined,
+        effectVersion: undefined,
+        createdAt: dbPattern.createdAt?.toISOString(),
+        updatedAt: dbPattern.updatedAt?.toISOString(),
+    };
+}
+/**
+ * Load all patterns from the database
+ *
+ * @param databaseUrl - Optional database URL
+ * @returns Promise that resolves to PatternsIndex
+ */
+export async function loadPatternsFromDatabase(databaseUrl) {
+    const { db, close } = createDatabase(databaseUrl);
+    try {
+        const repo = createEffectPatternRepository(db);
+        const dbPatterns = await repo.findAll();
+        const patterns = dbPatterns.map(dbPatternToLegacy);
+        return {
+            patterns,
+            version: "1.0.0",
+            lastUpdated: new Date().toISOString(),
+        };
+    }
+    finally {
+        await close();
+    }
+}
+/**
+ * Search patterns in the database
+ *
+ * @param params - Search parameters
+ * @param databaseUrl - Optional database URL
+ * @returns Promise that resolves to matching patterns
+ */
+export async function searchPatternsFromDatabase(params, databaseUrl) {
+    const { db, close } = createDatabase(databaseUrl);
+    try {
+        const repo = createEffectPatternRepository(db);
+        const dbPatterns = await repo.search(params);
+        return dbPatterns.map(dbPatternToLegacy);
+    }
+    finally {
+        await close();
+    }
+}
+/**
+ * Get a single pattern by ID/slug from the database
+ *
+ * @param id - Pattern ID (slug)
+ * @param databaseUrl - Optional database URL
+ * @returns Promise that resolves to the pattern or null
+ */
+export async function getPatternFromDatabase(id, databaseUrl) {
+    const { db, close } = createDatabase(databaseUrl);
+    try {
+        const repo = createEffectPatternRepository(db);
+        const dbPattern = await repo.findBySlug(id);
+        if (!dbPattern) {
+            return null;
+        }
+        return dbPatternToLegacy(dbPattern);
+    }
+    finally {
+        await close();
+    }
+}
 //# sourceMappingURL=io.js.map

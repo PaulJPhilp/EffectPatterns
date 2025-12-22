@@ -51,7 +51,7 @@ async function main() {
 
   let updated = 0;
 
-  for (const [_dir, patterns] of byDir) {
+  for (const [dir, patterns] of byDir) {
     // Group by skill level within each directory
     const bySkill = new Map<string, Pattern[]>();
     for (const p of patterns) {

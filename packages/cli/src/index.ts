@@ -7,8 +7,15 @@
  * Built with @effect/cli for type-safe, composable command-line interfaces.
  */
 
+import { StateStore } from "@effect-patterns/pipeline-state";
+import {
+  createApplicationPatternRepository,
+  createDatabase,
+  createEffectPatternRepository,
+  createJobRepository,
+} from "@effect-patterns/toolkit";
 import { Args, Command, Options, Prompt } from "@effect/cli";
-import { FileSystem, HttpClient, type FileSystem as IFileSystem } from "@effect/platform";
+import { FileSystem, HttpClient } from "@effect/platform";
 import { NodeContext, NodeFileSystem } from "@effect/platform-node";
 import { Console, Effect, Layer, Option, Schema } from "effect";
 import { glob } from "glob";
@@ -18,29 +25,18 @@ import * as path from "node:path";
 import ora from "ora";
 import * as semver from "semver";
 import { pipelineManagementCommand } from "./pipeline-commands.js";
-import { StateStoreLive } from "@effect-patterns/pipeline-state";
+import { showError, showPanel, showSuccess } from "./services/display.js";
+import { executeScriptWithTUI } from "./services/execution.js";
 import {
-  executeScriptWithTUI,
-  executeScriptCapture,
-  withSpinner,
-} from "./services/execution.js";
-import {
-  showPanel,
-  showSuccess,
-  showError,
-  showTable,
-} from "./services/display.js";
-import {
-  readPattern,
-  groupPatternsByCategory,
   generateCategorySkill,
-  writeSkill,
   generateGeminiSkill,
-  writeGeminiSkill,
   generateOpenAISkill,
+  groupPatternsByCategory,
+  readPattern,
+  writeGeminiSkill,
   writeOpenAISkill,
+  writeSkill,
   type PatternContent,
-  type GeminiSkillContent,
 } from "./skills/skill-generator.js";
 
 // --- PROJECT ROOT RESOLUTION ---
@@ -79,7 +75,7 @@ async function findMdxFiles(dir: string): Promise<string[]> {
     if (entry.isDirectory()) {
       const subFiles = await findMdxFiles(fullPath);
       mdxFiles.push(...subFiles);
-    } else if (entry.name.endsWith('.mdx')) {
+    } else if (entry.name.endsWith(".mdx")) {
       mdxFiles.push(fullPath);
     }
   }
@@ -202,7 +198,9 @@ const execGitCommand = (
     },
     catch: (error) =>
       new Error(
-        `Git command failed: ${error instanceof Error ? error.message : String(error)}`
+        `Git command failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       ),
   });
 
@@ -898,8 +896,9 @@ function fixExplicitConcurrency(content: string, issue: LintIssue): string {
       // Found closing paren - insert concurrency option before it
       const before = lines[currentLineIndex].substring(0, closingIndex);
       const after = lines[currentLineIndex].substring(closingIndex);
-      lines[currentLineIndex] =
-        `${before}, { concurrency: "unbounded" }${after}`;
+      lines[
+        currentLineIndex
+      ] = `${before}, { concurrency: "unbounded" }${after}`;
       break;
     }
 
@@ -1131,7 +1130,9 @@ const analyzeRelease = () =>
       try: () => categorizeCommits(commits),
       catch: (error) =>
         new Error(
-          `Failed to categorize commits: ${error instanceof Error ? error.message : String(error)}`
+          `Failed to categorize commits: ${
+            error instanceof Error ? error.message : String(error)
+          }`
         ),
     });
 
@@ -1172,14 +1173,16 @@ const validateCommand = Command.make("validate", {
   Command.withDescription(
     "Validates all pattern files for correctness and consistency."
   ),
-  Command.withHandler(({ options }) =>
-    executeScriptWithTUI(
-      path.join(PROJECT_ROOT, "scripts/publish/validate-improved.ts"),
-      "Validating pattern files",
-      { verbose: options.verbose }
-    ).pipe(
-      Effect.andThen(() => showSuccess("All patterns are valid!"))
-    )
+  Command.withHandler(
+    ({ options }) =>
+      Effect.gen(function* () {
+        yield* executeScriptWithTUI(
+          path.join(PROJECT_ROOT, "scripts/publish/validate-improved.ts"),
+          "Validating pattern files",
+          { verbose: options.verbose }
+        );
+        yield* showSuccess("All patterns are valid!");
+      }) as any
   )
 );
 
@@ -1199,12 +1202,13 @@ const testCommand = Command.make("test", {
   Command.withDescription(
     "Runs all TypeScript example tests to ensure patterns execute correctly."
   ),
-  Command.withHandler(({ options }) =>
-    executeScriptWithProgress(
-      path.join(PROJECT_ROOT, "scripts/publish/test-improved.ts"),
-      "Running TypeScript example tests",
-      { verbose: options.verbose }
-    )
+  Command.withHandler(
+    ({ options }) =>
+      executeScriptWithProgress(
+        path.join(PROJECT_ROOT, "scripts/publish/test-improved.ts"),
+        "Running TypeScript example tests",
+        { verbose: options.verbose }
+      ) as any
   )
 );
 
@@ -1224,14 +1228,17 @@ const pipelineCommand = Command.make("pipeline", {
   Command.withDescription(
     "Runs the complete pattern publishing pipeline from test to rules generation."
   ),
-  Command.withHandler(({ options }) =>
-    executeScriptWithTUI(
-      path.join(PROJECT_ROOT, "scripts/publish/pipeline.ts"),
-      "Publishing pipeline",
-      { verbose: options.verbose }
-    ).pipe(
-      Effect.andThen(() => showSuccess("Publishing pipeline completed successfully!"))
-    )
+  Command.withHandler(
+    ({ options }) =>
+      executeScriptWithTUI(
+        path.join(PROJECT_ROOT, "scripts/publish/pipeline.ts"),
+        "Publishing pipeline",
+        { verbose: options.verbose }
+      ).pipe(
+        Effect.andThen(() =>
+          showSuccess("Publishing pipeline completed successfully!")
+        )
+      ) as any
   )
 );
 
@@ -1251,12 +1258,13 @@ const generateCommand = Command.make("generate", {
   Command.withDescription(
     "Generates the main project README.md file from pattern metadata."
   ),
-  Command.withHandler(({ options }) =>
-    executeScriptWithProgress(
-      path.join(PROJECT_ROOT, "scripts/publish/generate.ts"),
-      "Generating README.md",
-      { verbose: options.verbose }
-    )
+  Command.withHandler(
+    ({ options }) =>
+      executeScriptWithProgress(
+        path.join(PROJECT_ROOT, "scripts/publish/generate.ts"),
+        "Generating README.md",
+        { verbose: options.verbose }
+      ) as any
   )
 );
 
@@ -1446,7 +1454,7 @@ const formatRule = (rule: Rule): string => {
  */
 const injectRulesIntoFile = (filePath: string, rules: readonly Rule[]) =>
   Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
+    const fs = yield* FileSystem.FileSystem as any;
 
     const startMarker = "# --- BEGIN EFFECTPATTERNS RULES ---";
     const endMarker = "# --- END EFFECTPATTERNS RULES ---";
@@ -1523,163 +1531,168 @@ const installAddCommand = Command.make("add", {
   Command.withDescription(
     "Fetch rules from Pattern Server and inject them into AI tool configuration."
   ),
-  Command.withHandler(({ options }) =>
-    Effect.gen(function* () {
-      const tool = options.tool;
-      const serverUrl = options.serverUrl;
-      const skillLevelFilter = options.skillLevel;
-      const useCaseFilter = options.useCase;
+  Command.withHandler(
+    ({ options }) =>
+      Effect.gen(function* () {
+        const tool = options.tool;
+        const serverUrl = options.serverUrl;
+        const skillLevelFilter = options.skillLevel;
+        const useCaseFilter = options.useCase;
 
-      // Validate supported tools
-      const supportedTools = [
-        "cursor",
-        "agents",
-        "windsurf",
-        "gemini",
-        "claude",
-        "vscode",
-        "kilo",
-        "kira",
-        "trae",
-        "goose",
-      ];
-      if (!supportedTools.includes(tool)) {
-        yield* Console.error(
-          colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, "red")
-        );
-        yield* Console.error(
-          colorize("Currently supported tools:\n", "bright")
-        );
-        yield* Console.error("  • cursor - Cursor IDE (.cursor/rules.md)");
-        yield* Console.error("  • agents - AGENTS.md standard (AGENTS.md)");
-        yield* Console.error(
-          "  • windsurf - Windsurf IDE (.windsurf/rules.md)"
-        );
-        yield* Console.error("  • gemini - Gemini AI (GEMINI.md)");
-        yield* Console.error("  • claude - Claude AI (CLAUDE.md)");
-        yield* Console.error(
-          "  • vscode - VS Code / Continue.dev (.vscode/rules.md)"
-        );
-        yield* Console.error("  • kilo - Kilo IDE (.kilo/rules.md)");
-        yield* Console.error("  • kira - Kira IDE (.kira/rules.md)");
-        yield* Console.error("  • trae - Trae IDE (.trae/rules.md)");
-        yield* Console.error("  • goose - Goose AI (.goosehints)\n");
-        yield* Console.error(colorize("Coming soon:\n", "dim"));
-        yield* Console.error("  • codeium - Codeium\n");
-        yield* Console.error(colorize("Examples:\n", "bright"));
-        yield* Console.error(
-          colorize("  bun run ep install add --tool cursor\n", "cyan")
-        );
-        yield* Console.error(
-          colorize(
-            "  bun run ep install add --tool agents --skill-level beginner\n",
-            "cyan"
-          )
-        );
-        yield* Console.error(
-          colorize(
-            "  bun run ep install add --tool goose --use-case error-management\n",
-            "cyan"
-          )
-        );
-        return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
-      }
+        // Validate supported tools
+        const supportedTools = [
+          "cursor",
+          "agents",
+          "windsurf",
+          "gemini",
+          "claude",
+          "vscode",
+          "kilo",
+          "kira",
+          "trae",
+          "goose",
+        ];
+        if (!supportedTools.includes(tool)) {
+          yield* Console.error(
+            colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, "red")
+          );
+          yield* Console.error(
+            colorize("Currently supported tools:\n", "bright")
+          );
+          yield* Console.error("  • cursor - Cursor IDE (.cursor/rules.md)");
+          yield* Console.error("  • agents - AGENTS.md standard (AGENTS.md)");
+          yield* Console.error(
+            "  • windsurf - Windsurf IDE (.windsurf/rules.md)"
+          );
+          yield* Console.error("  • gemini - Gemini AI (GEMINI.md)");
+          yield* Console.error("  • claude - Claude AI (CLAUDE.md)");
+          yield* Console.error(
+            "  • vscode - VS Code / Continue.dev (.vscode/rules.md)"
+          );
+          yield* Console.error("  • kilo - Kilo IDE (.kilo/rules.md)");
+          yield* Console.error("  • kira - Kira IDE (.kira/rules.md)");
+          yield* Console.error("  • trae - Trae IDE (.trae/rules.md)");
+          yield* Console.error("  • goose - Goose AI (.goosehints)\n");
+          yield* Console.error(colorize("Coming soon:\n", "dim"));
+          yield* Console.error("  • codeium - Codeium\n");
+          yield* Console.error(colorize("Examples:\n", "bright"));
+          yield* Console.error(
+            colorize("  bun run ep install add --tool cursor\n", "cyan")
+          );
+          yield* Console.error(
+            colorize(
+              "  bun run ep install add --tool agents --skill-level beginner\n",
+              "cyan"
+            )
+          );
+          yield* Console.error(
+            colorize(
+              "  bun run ep install add --tool goose --use-case error-management\n",
+              "cyan"
+            )
+          );
+          return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
+        }
 
-      // Fetch rules from API
-      const allRules = yield* fetchRulesFromAPI(serverUrl);
+        // Fetch rules from API
+        const allRules = yield* fetchRulesFromAPI(serverUrl);
 
-      yield* Console.log(
-        `✓ Fetched ${allRules.length} rules from Pattern Server`
-      );
-
-      // Filter rules based on options
-      let rules = allRules;
-
-      if (Option.isSome(skillLevelFilter)) {
-        const level = skillLevelFilter.value;
-        rules = rules.filter(
-          (rule) => rule.skillLevel?.toLowerCase() === level.toLowerCase()
-        );
         yield* Console.log(
-          colorize(
-            `📊 Filtered to ${rules.length} rules with skill level: ${level}\n`,
-            "cyan"
+          `✓ Fetched ${allRules.length} rules from Pattern Server`
+        );
+
+        // Filter rules based on options
+        let rules = allRules;
+
+        if (Option.isSome(skillLevelFilter as any)) {
+          const level = (skillLevelFilter as any).value;
+          rules = rules.filter(
+            (rule) => rule.skillLevel?.toLowerCase() === level.toLowerCase()
+          );
+          yield* Console.log(
+            colorize(
+              `📊 Filtered to ${rules.length} rules with skill level: ${level}\n`,
+              "cyan"
+            )
+          );
+        }
+
+        if (Option.isSome(useCaseFilter as any)) {
+          const useCase = (useCaseFilter as any).value;
+          rules = rules.filter((rule) =>
+            rule.useCase?.some(
+              (uc) => uc.toLowerCase() === useCase.toLowerCase()
+            )
+          );
+          yield* Console.log(
+            colorize(
+              `📊 Filtered to ${rules.length} rules with use case: ${useCase}\n`,
+              "cyan"
+            )
+          );
+        }
+
+        if (rules.length === 0) {
+          yield* Console.log(
+            colorize("⚠️  No rules match the specified filters\n", "yellow")
+          );
+          return;
+        }
+
+        // Determine target file based on tool
+        let targetFile: string;
+        if (tool === "agents") {
+          targetFile = "AGENTS.md";
+        } else if (tool === "windsurf") {
+          targetFile = ".windsurf/rules.md";
+        } else if (tool === "gemini") {
+          targetFile = "GEMINI.md";
+        } else if (tool === "claude") {
+          targetFile = "CLAUDE.md";
+        } else if (tool === "vscode") {
+          targetFile = ".vscode/rules.md";
+        } else if (tool === "kilo") {
+          targetFile = ".kilo/rules.md";
+        } else if (tool === "kira") {
+          targetFile = ".kira/rules.md";
+        } else if (tool === "trae") {
+          targetFile = ".trae/rules.md";
+        } else if (tool === "goose") {
+          targetFile = ".goosehints";
+        } else {
+          targetFile = ".cursor/rules.md";
+        }
+
+        yield* Console.log(
+          colorize(`📝 Injecting rules into ${targetFile}...\n`, "cyan")
+        );
+
+        // Inject rules into file
+        const count = yield* injectRulesIntoFile(targetFile, rules).pipe(
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              yield* Console.log(
+                colorize("❌ Failed to inject rules\n", "red")
+              );
+              yield* Console.log(`Error: ${error}\n`);
+              return yield* Effect.fail(new Error("Failed to inject rules"));
+            })
           )
         );
-      }
 
-      if (Option.isSome(useCaseFilter)) {
-        const useCase = useCaseFilter.value;
-        rules = rules.filter((rule) =>
-          rule.useCase?.some((uc) => uc.toLowerCase() === useCase.toLowerCase())
-        );
-        yield* Console.log(
-          colorize(
-            `📊 Filtered to ${rules.length} rules with use case: ${useCase}\n`,
-            "cyan"
-          )
-        );
-      }
-
-      if (rules.length === 0) {
-        yield* Console.log(
-          colorize("⚠️  No rules match the specified filters\n", "yellow")
-        );
-        return;
-      }
-
-      // Determine target file based on tool
-      let targetFile: string;
-      if (tool === "agents") {
-        targetFile = "AGENTS.md";
-      } else if (tool === "windsurf") {
-        targetFile = ".windsurf/rules.md";
-      } else if (tool === "gemini") {
-        targetFile = "GEMINI.md";
-      } else if (tool === "claude") {
-        targetFile = "CLAUDE.md";
-      } else if (tool === "vscode") {
-        targetFile = ".vscode/rules.md";
-      } else if (tool === "kilo") {
-        targetFile = ".kilo/rules.md";
-      } else if (tool === "kira") {
-        targetFile = ".kira/rules.md";
-      } else if (tool === "trae") {
-        targetFile = ".trae/rules.md";
-      } else if (tool === "goose") {
-        targetFile = ".goosehints";
-      } else {
-        targetFile = ".cursor/rules.md";
-      }
-
-      yield* Console.log(
-        colorize(`📝 Injecting rules into ${targetFile}...\n`, "cyan")
-      );
-
-      // Inject rules into file
-      const count = yield* injectRulesIntoFile(targetFile, rules).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Console.log(colorize("❌ Failed to inject rules\n", "red"));
-            yield* Console.log(`Error: ${error}\n`);
-            return yield* Effect.fail(new Error("Failed to inject rules"));
-          })
-        )
-      );
-
-      // Display success with TUI panel
-      yield* showPanel(
-        `Successfully added ${count} rules to ${targetFile}
+        // Display success with TUI panel
+        yield* showPanel(
+          `Successfully added ${count} rules to ${targetFile}
 
 Tool: ${tool}
 File: ${targetFile}
 Rules Added: ${count}
 
 Your AI tool configuration has been updated with Effect patterns!`,
-        "Installation Complete",
-        { type: "success" }
-      );
-    })
+          "Installation Complete",
+          { type: "success" }
+        );
+      }) as any
   )
 );
 
@@ -1694,6 +1707,7 @@ const installListCommand = Command.make("list", {
     "List all supported AI tools and their configuration file paths."
   ),
   Command.withHandler(() =>
+    // @ts-expect-error - Multiple Effect versions cause type incompatibility
     Effect.gen(function* () {
       yield* Console.log(colorize("\n📋 Supported AI Tools\n", "bright"));
       yield* Console.log("═".repeat(60));
@@ -1755,6 +1769,7 @@ const rulesGenerateCommand = Command.make("generate", {
     "Generates AI coding rules (.mdc files) from all pattern files."
   ),
   Command.withHandler(({ options }) =>
+    // @ts-expect-error - Multiple Effect versions cause type incompatibility
     executeScriptWithProgress(
       path.join(PROJECT_ROOT, "scripts/publish/rules-improved.ts"),
       "Generating AI coding rules",
@@ -1773,7 +1788,9 @@ const installSkillsCommand = Command.make("skills", {
       Options.optional
     ),
     format: Options.text("format").pipe(
-      Options.withDescription("Output format: claude, gemini, openai, or both (default: both)"),
+      Options.withDescription(
+        "Output format: claude, gemini, openai, or both (default: both)"
+      ),
       Options.optional
     ),
   },
@@ -1784,7 +1801,9 @@ const installSkillsCommand = Command.make("skills", {
   ),
   Command.withHandler(({ options }) => {
     return Effect.gen(function* () {
-      const formatOption = Option.getOrElse(options.format, () => "both");
+      // Extract format option safely without type assertions
+      const formatOption: string =
+        options.format._tag === "Some" ? options.format.value : "both";
       const validOptions = ["claude", "gemini", "openai", "both"];
 
       // Parse format option: support individual formats, comma-separated, or "both"
@@ -1806,7 +1825,9 @@ const installSkillsCommand = Command.make("skills", {
           if (!validOptions.includes(fmt)) {
             yield* Console.error(
               colorize(
-                `\n❌ Invalid format: ${fmt}\nValid options: ${validOptions.join(", ")}\n`,
+                `\n❌ Invalid format: ${fmt}\nValid options: ${validOptions.join(
+                  ", "
+                )}\n`,
                 "red"
               )
             );
@@ -1822,7 +1843,9 @@ const installSkillsCommand = Command.make("skills", {
       if (!generateClaude && !generateGemini && !generateOpenAI) {
         yield* Console.error(
           colorize(
-            `\n❌ No formats specified. Valid options: ${validOptions.join(", ")}\n`,
+            `\n❌ No formats specified. Valid options: ${validOptions.join(
+              ", "
+            )}\n`,
             "red"
           )
         );
@@ -1837,9 +1860,10 @@ const installSkillsCommand = Command.make("skills", {
 
       // Read all published patterns recursively
       yield* Console.log(colorize("📖 Reading published patterns...", "cyan"));
-      const mdxFiles = yield* Effect.tryPromise({
+      const mdxFiles: string[] = yield* Effect.tryPromise({
         try: () => findMdxFiles(patternsDir),
-        catch: (error) => new Error(`Failed to read patterns directory: ${error}`)
+        catch: (error) =>
+          new Error(`Failed to read patterns directory: ${error}`),
       });
 
       yield* Console.log(
@@ -1852,15 +1876,12 @@ const installSkillsCommand = Command.make("skills", {
         const fileName = path.basename(filePath);
         const result = yield* Effect.tryPromise({
           try: () => readPattern(filePath),
-          catch: (error) => new Error(`Failed to parse ${fileName}`)
+          catch: (error) => new Error(`Failed to parse ${fileName}`),
         }).pipe(
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               yield* Console.log(
-                colorize(
-                  `⚠️  Skipped ${fileName}: ${error.message}`,
-                  "yellow"
-                )
+                colorize(`⚠️  Skipped ${fileName}: ${error.message}`, "yellow")
               );
               return null;
             })
@@ -1872,18 +1893,24 @@ const installSkillsCommand = Command.make("skills", {
         }
       }
 
-      yield* Console.log(colorize(`✓ Parsed ${patterns.length} patterns\n`, "green"));
+      yield* Console.log(
+        colorize(`✓ Parsed ${patterns.length} patterns\n`, "green")
+      );
 
       // Group by category
-      yield* Console.log(colorize("🗂️  Grouping patterns by category...", "cyan"));
+      yield* Console.log(
+        colorize("🗂️  Grouping patterns by category...", "cyan")
+      );
       const categoryMap = groupPatternsByCategory(patterns);
       yield* Console.log(
         colorize(`✓ Found ${categoryMap.size} categories\n`, "green")
       );
 
       // Handle --category flag
-      if (Option.isSome(options.category)) {
-        const category = options.category.value.toLowerCase().replace(/\s+/g, "-");
+      if (options.category._tag === "Some") {
+        const category = options.category.value
+          .toLowerCase()
+          .replace(/\s+/g, "-");
         const categoryPatterns = categoryMap.get(category);
 
         if (!categoryPatterns) {
@@ -1905,7 +1932,8 @@ const installSkillsCommand = Command.make("skills", {
 
           yield* Effect.tryPromise({
             try: () => writeSkill(skillName, content, PROJECT_ROOT),
-            catch: (error) => new Error(`Failed to write Claude skill: ${error}`)
+            catch: (error) =>
+              new Error(`Failed to write Claude skill: ${error}`),
           });
 
           yield* Console.log(
@@ -1919,11 +1947,15 @@ const installSkillsCommand = Command.make("skills", {
 
           yield* Effect.tryPromise({
             try: () => writeGeminiSkill(geminiSkill, PROJECT_ROOT),
-            catch: (error) => new Error(`Failed to write Gemini skill: ${error}`)
+            catch: (error) =>
+              new Error(`Failed to write Gemini skill: ${error}`),
           });
 
           yield* Console.log(
-            colorize(`✓ Generated Gemini skill: ${geminiSkill.skillId}\n`, "green")
+            colorize(
+              `✓ Generated Gemini skill: ${geminiSkill.skillId}\n`,
+              "green"
+            )
           );
         }
 
@@ -1934,7 +1966,8 @@ const installSkillsCommand = Command.make("skills", {
 
           yield* Effect.tryPromise({
             try: () => writeOpenAISkill(skillName, content, PROJECT_ROOT),
-            catch: (error) => new Error(`Failed to write OpenAI skill: ${error}`)
+            catch: (error) =>
+              new Error(`Failed to write OpenAI skill: ${error}`),
           });
 
           yield* Console.log(
@@ -1947,7 +1980,10 @@ const installSkillsCommand = Command.make("skills", {
 
       // Generate all category skills
       yield* Console.log(
-        colorize(`📝 Generating ${categoryMap.size} skills for ${formatOption}...\n`, "cyan")
+        colorize(
+          `📝 Generating ${categoryMap.size} skills for ${formatOption}...\n`,
+          "cyan"
+        )
       );
 
       let claudeCount = 0;
@@ -1962,13 +1998,12 @@ const installSkillsCommand = Command.make("skills", {
 
           const writeResult = yield* Effect.tryPromise({
             try: () => writeSkill(skillName, content, PROJECT_ROOT),
-            catch: (error) => new Error(`Failed to write ${skillName}: ${error}`)
+            catch: (error) =>
+              new Error(`Failed to write ${skillName}: ${error}`),
           }).pipe(
             Effect.catchAll((error) =>
               Effect.gen(function* () {
-                yield* Console.log(
-                  colorize(`⚠️  ${error.message}`, "yellow")
-                );
+                yield* Console.log(colorize(`⚠️  ${error.message}`, "yellow"));
                 return null;
               })
             )
@@ -1991,13 +2026,12 @@ const installSkillsCommand = Command.make("skills", {
 
           const writeResult = yield* Effect.tryPromise({
             try: () => writeGeminiSkill(geminiSkill, PROJECT_ROOT),
-            catch: (error) => new Error(`Failed to write Gemini skill: ${error}`)
+            catch: (error) =>
+              new Error(`Failed to write Gemini skill: ${error}`),
           }).pipe(
             Effect.catchAll((error) =>
               Effect.gen(function* () {
-                yield* Console.log(
-                  colorize(`⚠️  ${error.message}`, "yellow")
-                );
+                yield* Console.log(colorize(`⚠️  ${error.message}`, "yellow"));
                 return null;
               })
             )
@@ -2021,13 +2055,12 @@ const installSkillsCommand = Command.make("skills", {
 
           const writeResult = yield* Effect.tryPromise({
             try: () => writeOpenAISkill(skillName, content, PROJECT_ROOT),
-            catch: (error) => new Error(`Failed to write OpenAI skill: ${error}`)
+            catch: (error) =>
+              new Error(`Failed to write OpenAI skill: ${error}`),
           }).pipe(
             Effect.catchAll((error) =>
               Effect.gen(function* () {
-                yield* Console.log(
-                  colorize(`⚠️  ${error.message}`, "yellow")
-                );
+                yield* Console.log(colorize(`⚠️  ${error.message}`, "yellow"));
                 return null;
               })
             )
@@ -2049,18 +2082,30 @@ const installSkillsCommand = Command.make("skills", {
       const summaryParts: string[] = [];
 
       if (generateClaude && claudeCount > 0) {
-        summaryParts.push(`Generated ${claudeCount} Claude Skills from ${patterns.length} Effect patterns.`);
-        summaryParts.push(`Claude Skills Location: content/published/skills/claude/`);
+        summaryParts.push(
+          `Generated ${claudeCount} Claude Skills from ${patterns.length} Effect patterns.`
+        );
+        summaryParts.push(
+          `Claude Skills Location: content/published/skills/claude/`
+        );
       }
 
       if (generateGemini && geminiCount > 0) {
-        summaryParts.push(`Generated ${geminiCount} Gemini Skills from ${patterns.length} Effect patterns.`);
-        summaryParts.push(`Gemini Skills Location: content/published/skills/gemini/`);
+        summaryParts.push(
+          `Generated ${geminiCount} Gemini Skills from ${patterns.length} Effect patterns.`
+        );
+        summaryParts.push(
+          `Gemini Skills Location: content/published/skills/gemini/`
+        );
       }
 
       if (generateOpenAI && openaiCount > 0) {
-        summaryParts.push(`Generated ${openaiCount} OpenAI Skills from ${patterns.length} Effect patterns.`);
-        summaryParts.push(`OpenAI Skills Location: content/published/skills/openai/`);
+        summaryParts.push(
+          `Generated ${openaiCount} OpenAI Skills from ${patterns.length} Effect patterns.`
+        );
+        summaryParts.push(
+          `OpenAI Skills Location: content/published/skills/openai/`
+        );
       }
 
       summaryParts.push(
@@ -2076,7 +2121,7 @@ const installSkillsCommand = Command.make("skills", {
         "✨ Skills Generation Complete!",
         { type: "success" }
       );
-    });
+    }) as any;
   })
 );
 
@@ -2087,7 +2132,11 @@ export const installCommand = Command.make("install").pipe(
   Command.withDescription(
     "Install Effect patterns rules into AI tool configurations"
   ),
-  Command.withSubcommands([installAddCommand, installListCommand, installSkillsCommand])
+  Command.withSubcommands([
+    installAddCommand,
+    installListCommand,
+    installSkillsCommand,
+  ])
 );
 
 // --- TEMPORARILY DISABLED COMMANDS ---
@@ -2103,6 +2152,7 @@ if (false as any) {
   }).pipe(
     Command.withDescription("Initialize ep.json configuration file."),
     Command.withHandler(() =>
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility. This code is disabled.
       Effect.gen(function* () {
         yield* Console.log(
           colorize("\n🔧 Initializing ep.json configuration\n", "bright")
@@ -2158,7 +2208,7 @@ if (false as any) {
         yield* Console.log(
           "  ep lint <files>   # Override with specific files\n"
         );
-      })
+      }).pipe(Effect.asVoid)
     )
   );
 
@@ -2173,6 +2223,7 @@ if (false as any) {
       "Display all available linting rules and their configuration."
     ),
     Command.withHandler(() =>
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility
       Effect.gen(function* () {
         yield* Console.log(colorize("\n📋 Effect Linter Rules\n", "cyan"));
 
@@ -2205,7 +2256,10 @@ if (false as any) {
         yield* Console.log(colorize("Available Rules:", "bright"));
         yield* Console.log("─".repeat(100));
         yield* Console.log(
-          `${colorize("Rule Name", "bright").padEnd(45)} ${colorize("Severity", "bright").padEnd(20)} ${colorize("Description", "bright")}`
+          `${colorize("Rule Name", "bright").padEnd(45)} ${colorize(
+            "Severity",
+            "bright"
+          ).padEnd(20)} ${colorize("Description", "bright")}`
         );
         yield* Console.log("─".repeat(100));
 
@@ -2232,7 +2286,9 @@ if (false as any) {
             : "";
 
           yield* Console.log(
-            `${rule.name.padEnd(35)} ${(severityDisplay + overrideIndicator).padEnd(30)} ${rule.description}`
+            `${rule.name.padEnd(35)} ${(
+              severityDisplay + overrideIndicator
+            ).padEnd(30)} ${rule.description}`
           );
         }
 
@@ -2259,10 +2315,16 @@ if (false as any) {
 
         yield* Console.log("\nSeverity levels:");
         yield* Console.log(
-          `  ${colorize("error", "red")}    - Fails linting and exits with code 1`
+          `  ${colorize(
+            "error",
+            "red"
+          )}    - Fails linting and exits with code 1`
         );
         yield* Console.log(
-          `  ${colorize("warning", "yellow")}  - Shows warning but exits with code 0`
+          `  ${colorize(
+            "warning",
+            "yellow"
+          )}  - Shows warning but exits with code 0`
         );
         yield* Console.log(
           `  ${colorize("info", "blue")}     - Shows informational suggestion`
@@ -2293,6 +2355,7 @@ if (false as any) {
         "Lint TypeScript files for Effect-TS idioms and best practices."
       ),
       Command.withHandler(({ args, options }) =>
+        // @ts-expect-error - Multiple Effect versions cause type incompatibility
         Effect.gen(function* () {
           let filePatterns = args.files;
           const shouldApplyFixes = options.apply;
@@ -2340,7 +2403,9 @@ if (false as any) {
               try: () => JSON.parse(configContent),
               catch: (error) =>
                 new Error(
-                  `Failed to parse ep.json: ${error instanceof Error ? error.message : String(error)}`
+                  `Failed to parse ep.json: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
                 ),
             });
 
@@ -2391,7 +2456,9 @@ if (false as any) {
               try: () => glob(pattern, { absolute: true }),
               catch: (error) =>
                 new Error(
-                  `Failed to expand pattern "${pattern}": ${error instanceof Error ? error.message : String(error)}`
+                  `Failed to expand pattern "${pattern}": ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
                 ),
             });
 
@@ -2427,7 +2494,9 @@ if (false as any) {
             try: () => lintInParallel(uniqueFiles),
             catch: (error) =>
               new Error(
-                `Linting failed: ${error instanceof Error ? error.message : String(error)}`
+                `Linting failed: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
               ),
           });
 
@@ -2462,7 +2531,9 @@ if (false as any) {
                   try: () => applyFixes(filePath, result.issues),
                   catch: (error) =>
                     new Error(
-                      `Failed to apply fixes to ${result.file}: ${error instanceof Error ? error.message : String(error)}`
+                      `Failed to apply fixes to ${result.file}: ${
+                        error instanceof Error ? error.message : String(error)
+                      }`
                     ),
                 });
 
@@ -2472,7 +2543,9 @@ if (false as any) {
                     try: () => fs.writeFile(filePath, content, "utf-8"),
                     catch: (error) =>
                       new Error(
-                        `Failed to write fixes to ${result.file}: ${error instanceof Error ? error.message : String(error)}`
+                        `Failed to write fixes to ${result.file}: ${
+                          error instanceof Error ? error.message : String(error)
+                        }`
                       ),
                   });
 
@@ -2511,7 +2584,9 @@ if (false as any) {
                 for (const [_filePath, summary] of fixSummary) {
                   const rulesList = Array.from(summary.rules).join(", ");
                   yield* Console.log(
-                    `  - ${summary.file} (${summary.count} fix${summary.count > 1 ? "es" : ""}: ${rulesList})`
+                    `  - ${summary.file} (${summary.count} fix${
+                      summary.count > 1 ? "es" : ""
+                    }: ${rulesList})`
                   );
                 }
 
@@ -2549,6 +2624,7 @@ const releasePreviewCommand = Command.make("preview", {
     "Analyze commits and preview the next release version without making any changes."
   ),
   Command.withHandler(() =>
+    // @ts-expect-error - Multiple Effect versions cause type incompatibility
     Effect.gen(function* () {
       yield* Console.log("\n🔍 Analyzing commits for release preview...\n");
 
@@ -2634,6 +2710,7 @@ const releaseCreateCommand = Command.make("create", {
     "Create a new release with version bump, changelog, and git tag."
   ),
   Command.withHandler(() =>
+    // @ts-expect-error - Multiple Effect versions cause type incompatibility
     Effect.gen(function* () {
       yield* Console.log("\n🚀 Creating new release...\n");
 
@@ -2712,7 +2789,9 @@ const releaseCreateCommand = Command.make("create", {
       yield* Console.log("📝 Updating package.json...");
       const packageJsonPath = "package.json";
 
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility
       const packageJsonContent = yield* fs.readFileString(packageJsonPath).pipe(
+        // @ts-expect-error - Multiple Effect versions cause type incompatibility
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Console.error(
@@ -2749,12 +2828,14 @@ const releaseCreateCommand = Command.make("create", {
       );
 
       packageJson.version = nextVersion;
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility
       yield* fs
         .writeFileString(
           packageJsonPath,
           `${JSON.stringify(packageJson, null, 2)}\n`
         )
         .pipe(
+          // @ts-expect-error - Multiple Effect versions cause type incompatibility
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               yield* Console.error(
@@ -2833,6 +2914,7 @@ const patternNewCommand = Command.make("new", {
     "Create a new pattern with interactive wizard and scaffolded files."
   ),
   Command.withHandler(() =>
+    // @ts-expect-error - Multiple Effect versions cause type incompatibility
     Effect.gen(function* () {
       yield* Console.log("\n✨ Creating a new pattern\n");
 
@@ -2922,11 +3004,13 @@ const patternNewCommand = Command.make("new", {
       }
 
       // Ensure directories exist
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility
       yield* fs
         .makeDirectory(path.join(PROJECT_ROOT, "content/new/raw"), {
           recursive: true,
         })
         .pipe(
+          // @ts-expect-error - Multiple Effect versions cause type incompatibility
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               yield* Console.error(
@@ -2942,11 +3026,13 @@ const patternNewCommand = Command.make("new", {
           )
         );
 
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility
       yield* fs
         .makeDirectory(path.join(PROJECT_ROOT, "content/new/src"), {
           recursive: true,
         })
         .pipe(
+          // @ts-expect-error - Multiple Effect versions cause type incompatibility
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               yield* Console.error(
@@ -2978,7 +3064,9 @@ summary: '${summary}'
 ## Rationale
 `;
 
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility
       yield* fs.writeFileString(mdxPath, mdxContent).pipe(
+        // @ts-expect-error - Multiple Effect versions cause type incompatibility
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Console.error(
@@ -3001,7 +3089,9 @@ summary: '${summary}'
 Effect.runSync(Effect.succeed("Hello, World!"));
 `;
 
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility
       yield* fs.writeFileString(tsPath, tsContent).pipe(
+        // @ts-expect-error - Multiple Effect versions cause type incompatibility
         Effect.catchAll((error) =>
           Effect.gen(function* () {
             yield* Console.error(
@@ -3057,51 +3147,91 @@ export const searchCommand = Command.make("search", {
   .pipe(Command.withDescription("Search patterns by keyword"))
   .pipe(
     Command.withHandler(({ args }) =>
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility
       Effect.gen(function* () {
         yield* Console.log(
           `\n🔍 Searching for patterns matching "${args.query}"...\n`
         );
 
-        // Load patterns from JSON
-        const patternsPath = path.join(
-          PROJECT_ROOT,
-          "services/mcp-server/data/patterns.json"
-        );
+        // Load patterns from database
+        let db: ReturnType<typeof createDatabase> | null = null;
+        try {
+          db = createDatabase();
+          const repo = createEffectPatternRepository(db.db);
+          const dbPatterns = yield* Effect.tryPromise({
+            try: () =>
+              repo.search({
+                query: args.query,
+                limit: 10,
+              }),
+            catch: (error) => {
+              // Extract more detailed error information
+              const errorMessage =
+                error instanceof Error ? error.message : String(error);
 
-        const content = yield* Effect.try({
-          try: () =>
-            require("fs").readFileSync(patternsPath, "utf-8"),
-          catch: (error: unknown) =>
-            new Error(
-              `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
-            ),
-        });
+              // Check for postgres-specific error properties
+              const postgresError =
+                error && typeof error === "object" ? (error as any) : null;
+              const pgCode = postgresError?.code;
+              const pgMessage = postgresError?.message;
+              const pgDetail = postgresError?.detail;
+              const pgHint = postgresError?.hint;
 
-        const json = JSON.parse(content);
-        const allPatterns = json.patterns || [];
+              // Build detailed error message
+              let details = "";
+              if (pgCode) {
+                details += `\nPostgreSQL Error Code: ${pgCode}`;
+              }
+              if (pgMessage && pgMessage !== errorMessage) {
+                details += `\nPostgreSQL Message: ${pgMessage}`;
+              }
+              if (pgDetail) {
+                details += `\nDetail: ${pgDetail}`;
+              }
+              if (pgHint) {
+                details += `\nHint: ${pgHint}`;
+              }
+              if (!details && error instanceof Error && "cause" in error) {
+                details = `\nCause: ${String(error.cause)}`;
+              }
 
-        // Simple search
-        const results = allPatterns
-          .filter((p: any) => {
-            const query = args.query.toLowerCase();
-            return (
-              p.title.toLowerCase().includes(query) ||
-              p.description.toLowerCase().includes(query) ||
-              p.id.toLowerCase().includes(query)
+              return new Error(
+                `Failed to search patterns: ${errorMessage}${details}`
+              );
+            },
+          });
+
+          if (dbPatterns.length === 0) {
+            yield* Console.log(
+              `❌ No patterns found matching "${args.query}"\n`
             );
-          })
-          .slice(0, 10);
-
-        if (results.length === 0) {
-          yield* Console.log(
-            `❌ No patterns found matching "${args.query}"\n`
-          );
-        } else {
-          yield* Console.log(`✓ Found ${results.length} pattern(s):\n`);
-          for (const pattern of results) {
-            yield* Console.log(`  • ${pattern.title} (${pattern.id})`);
+          } else {
+            yield* Console.log(`✓ Found ${dbPatterns.length} pattern(s):\n`);
+            for (const pattern of dbPatterns) {
+              yield* Console.log(`  • ${pattern.title} (${pattern.slug})`);
+            }
+            yield* Console.log("");
           }
-          yield* Console.log("");
+        } catch (error) {
+          yield* showError(
+            `Database error: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+          yield* Console.log(
+            "\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL is set correctly.\n"
+          );
+          throw error;
+        } finally {
+          if (db) {
+            yield* Effect.tryPromise({
+              try: () => db!.close(),
+              catch: (error) => {
+                console.error("Failed to close database connection:", error);
+                return undefined;
+              },
+            });
+          }
         }
       })
     )
@@ -3115,7 +3245,9 @@ export const listCommand = Command.make("list", {
     difficulty: Options.optional(
       Options.text("difficulty").pipe(
         Options.withAlias("d"),
-        Options.withDescription("Filter by difficulty (beginner|intermediate|advanced)")
+        Options.withDescription(
+          "Filter by difficulty (beginner|intermediate|advanced)"
+        )
       )
     ),
     category: Options.optional(
@@ -3133,113 +3265,145 @@ export const listCommand = Command.make("list", {
   .pipe(Command.withDescription("List all patterns with optional filters"))
   .pipe(
     Command.withHandler(({ options }) =>
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility
       Effect.gen(function* () {
-        // Load patterns from JSON
-        const patternsPath = path.join(
-          PROJECT_ROOT,
-          "services/mcp-server/data/patterns.json"
-        );
+        // Load patterns from database
+        const { db, close } = createDatabase();
+        try {
+          const repo = createEffectPatternRepository(db);
 
-        const content = yield* Effect.try({
-          try: () =>
-            require("fs").readFileSync(patternsPath, "utf-8"),
-          catch: (error: unknown) =>
-            new Error(
-              `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
-            ),
-        });
+          // Build search params
+          const searchParams: {
+            skillLevel?: "beginner" | "intermediate" | "advanced";
+            category?: string;
+          } = {};
 
-        const json = JSON.parse(content);
-        let patterns: any[] = json.patterns || [];
-
-        // Apply filters
-        if (Option.isSome(options.difficulty)) {
-          const difficultyValue = (options.difficulty as Option.Some<string>)
-            .value;
-          patterns = patterns.filter(
-            (p: any) =>
-              p.difficulty.toLowerCase() === difficultyValue.toLowerCase()
-          );
-        }
-
-        if (Option.isSome(options.category)) {
-          const categoryValue = (options.category as Option.Some<string>).value;
-          patterns = patterns.filter(
-            (p: any) =>
-              p.category.toLowerCase() === categoryValue.toLowerCase()
-          );
-        }
-
-        if (patterns.length === 0) {
-          yield* Console.log("\n❌ No patterns match the filter criteria\n");
-          return;
-        }
-
-        // Group or display flat
-        if (options.groupBy === "category") {
-          // Group by category
-          const groups: Record<string, any[]> = {};
-          patterns.forEach((p: any) => {
-            const cat = p.category || "Other";
-            if (!groups[cat]) groups[cat] = [];
-            groups[cat].push(p);
-          });
-
-          yield* Console.log("\n📂 Patterns by Category:\n");
-          for (const [category, items] of Object.entries(groups)) {
-            yield* Console.log(`\n${category.toUpperCase()}`);
-            yield* Console.log("─".repeat(40));
-            for (const p of items) {
-              yield* Console.log(`  • ${p.title} (${p.id})`);
+          if (options.difficulty._tag === "Some") {
+            const difficultyValue = options.difficulty.value.toLowerCase();
+            if (
+              difficultyValue === "beginner" ||
+              difficultyValue === "intermediate" ||
+              difficultyValue === "advanced"
+            ) {
+              searchParams.skillLevel = difficultyValue;
             }
           }
-        } else if (options.groupBy === "difficulty") {
-          // Group by difficulty
-          const groups: Record<string, any[]> = {
-            beginner: [],
-            intermediate: [],
-            advanced: [],
-          };
-          patterns.forEach((p: any) => {
-            const diff = p.difficulty.toLowerCase() || "intermediate";
-            if (groups[diff]) groups[diff].push(p);
+
+          if (options.category._tag === "Some") {
+            searchParams.category = options.category.value;
+          }
+
+          const dbPatterns = yield* Effect.tryPromise({
+            try: () => repo.search(searchParams),
+            catch: (error) =>
+              new Error(
+                `Failed to load patterns: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              ),
           });
 
-          yield* Console.log("\n📊 Patterns by Difficulty Level:\n");
-          for (const [level, items] of Object.entries(groups)) {
-            if (items.length > 0) {
-              const emoji =
-                level === "beginner"
-                  ? "🟢"
-                  : level === "intermediate"
-                    ? "🟡"
-                    : "🔴";
-              yield* Console.log(`\n${emoji} ${level.toUpperCase()} (${items.length})`);
+          // Convert to legacy format for compatibility
+          const patterns = dbPatterns.map((p) => ({
+            id: p.slug,
+            title: p.title,
+            description: p.summary,
+            difficulty: p.skillLevel,
+            category: p.category || "other",
+            tags: p.tags || [],
+          }));
+
+          if (patterns.length === 0) {
+            yield* Console.log("\n❌ No patterns match the filter criteria\n");
+            return;
+          }
+
+          // Group or display flat
+          if (options.groupBy === "category") {
+            // Group by category
+            const groups: Record<string, any[]> = {};
+            patterns.forEach((p: any) => {
+              const cat = p.category || "Other";
+              if (!groups[cat]) groups[cat] = [];
+              groups[cat].push(p);
+            });
+
+            yield* Console.log("\n📂 Patterns by Category:\n");
+            for (const [category, items] of Object.entries(groups)) {
+              yield* Console.log(`\n${category.toUpperCase()}`);
               yield* Console.log("─".repeat(40));
               for (const p of items) {
                 yield* Console.log(`  • ${p.title} (${p.id})`);
               }
             }
-          }
-        } else {
-          // Flat list
-          yield* Console.log("\n📋 All Patterns:\n");
-          for (const p of patterns) {
-            const emoji =
-              p.difficulty === "beginner"
-                ? "🟢"
-                : p.difficulty === "intermediate"
+          } else if (options.groupBy === "difficulty") {
+            // Group by difficulty
+            const groups: Record<string, any[]> = {
+              beginner: [],
+              intermediate: [],
+              advanced: [],
+            };
+            patterns.forEach((p: any) => {
+              const diff = p.difficulty.toLowerCase() || "intermediate";
+              if (groups[diff]) groups[diff].push(p);
+            });
+
+            yield* Console.log("\n📊 Patterns by Difficulty Level:\n");
+            for (const [level, items] of Object.entries(groups)) {
+              if (items.length > 0) {
+                const emoji =
+                  level === "beginner"
+                    ? "🟢"
+                    : level === "intermediate"
+                    ? "🟡"
+                    : "🔴";
+                yield* Console.log(
+                  `\n${emoji} ${level.toUpperCase()} (${items.length})`
+                );
+                yield* Console.log("─".repeat(40));
+                for (const p of items) {
+                  yield* Console.log(`  • ${p.title} (${p.id})`);
+                }
+              }
+            }
+          } else {
+            // Flat list
+            yield* Console.log("\n📋 All Patterns:\n");
+            for (const p of patterns) {
+              const emoji =
+                p.difficulty === "beginner"
+                  ? "🟢"
+                  : p.difficulty === "intermediate"
                   ? "🟡"
                   : "🔴";
-            yield* Console.log(
-              `  ${emoji} ${p.title} (${p.id}) - ${p.category}`
-            );
+              yield* Console.log(
+                `  ${emoji} ${p.title} (${p.id}) - ${p.category}`
+              );
+            }
+          }
+
+          yield* Console.log(`\n\n📈 Total: ${patterns.length} pattern(s)\n`);
+        } catch (error) {
+          yield* showError(
+            `Database error: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+          yield* Console.log(
+            "\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL is set correctly.\n"
+          );
+          throw error;
+        } finally {
+          if (db) {
+            yield* Effect.tryPromise({
+              try: () => (db as any).close(),
+              catch: (error) => {
+                console.error("Failed to close database connection:", error);
+                return undefined;
+              },
+            });
           }
         }
-
-        yield* Console.log(
-          `\n\n📈 Total: ${patterns.length} pattern(s)\n`
-        );
       })
     )
   );
@@ -3261,120 +3425,144 @@ export const showCommand = Command.make("show", {
   .pipe(Command.withDescription("Show detailed pattern information"))
   .pipe(
     Command.withHandler(({ args, options }) =>
+      // @ts-expect-error - Multiple Effect versions cause type incompatibility
       Effect.gen(function* () {
-        // Load patterns from JSON
-        const patternsPath = path.join(
-          PROJECT_ROOT,
-          "services/mcp-server/data/patterns.json"
-        );
+        // Load pattern from database
+        let db: ReturnType<typeof createDatabase> | null = null;
+        try {
+          db = createDatabase();
+          const repo = createEffectPatternRepository(db.db);
+          const dbPattern = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.patternId),
+            catch: (error) =>
+              new Error(
+                `Failed to load pattern: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              ),
+          });
 
-        const content = yield* Effect.try({
-          try: () =>
-            require("fs").readFileSync(patternsPath, "utf-8"),
-          catch: (error: unknown) =>
-            new Error(
-              `Failed to load patterns: ${error instanceof Error ? error.message : String(error)}`
-            ),
-        });
+          if (!dbPattern) {
+            yield* Console.log(`\n❌ Pattern "${args.patternId}" not found\n`);
 
-        const json = JSON.parse(content);
-        const allPatterns = json.patterns || [];
+            // Suggest similar patterns
+            const similarPatterns = yield* Effect.tryPromise({
+              try: () =>
+                repo.search({
+                  query: args.patternId,
+                  limit: 3,
+                }),
+              catch: () => [],
+            });
 
-        // Find pattern
-        const pattern = allPatterns.find(
-          (p: any) => p.id === args.patternId
-        );
-
-        if (!pattern) {
-          yield* Console.log(
-            `\n❌ Pattern "${args.patternId}" not found\n`
-          );
-
-          // Suggest similar patterns
-          const similar = allPatterns
-            .filter(
-              (p: any) =>
-                p.id.includes(args.patternId) ||
-                p.title.toLowerCase().includes(args.patternId.toLowerCase())
-            )
-            .slice(0, 3);
-
-          if (similar.length > 0) {
-            yield* Console.log("Did you mean one of these?\n");
-            for (const p of similar) {
-              yield* Console.log(`  • ${p.id}`);
+            if (similarPatterns.length > 0) {
+              yield* Console.log("Did you mean one of these?\n");
+              for (const p of similarPatterns) {
+                yield* Console.log(`  • ${p.slug}`);
+              }
+              yield* Console.log("");
             }
-            yield* Console.log("");
+            return;
           }
-          return;
-        }
 
-        // Display metadata panel
-        const metadata = `
+          // Convert to legacy format
+          const pattern = {
+            id: dbPattern.slug,
+            title: dbPattern.title,
+            description: dbPattern.summary,
+            difficulty: dbPattern.skillLevel,
+            category: dbPattern.category || "other",
+            tags: dbPattern.tags || [],
+            examples: dbPattern.examples || [],
+            useCases: dbPattern.useCases || [],
+            relatedPatterns: undefined, // Would need to query patternRelations
+          };
+
+          // Display metadata panel
+          const metadata = `
 ID: ${pattern.id}
 Title: ${pattern.title}
 Skill Level: ${pattern.difficulty}
 Category: ${pattern.category}
-Tags: ${pattern.tags ? pattern.tags.join(", ") : "None"}`.trim();
+Tags: ${pattern.tags.length > 0 ? pattern.tags.join(", ") : "None"}`.trim();
 
-        yield* Console.log("\n" + "═".repeat(60));
-        yield* Console.log("📋 PATTERN METADATA");
-        yield* Console.log("═".repeat(60));
-        yield* Console.log(metadata);
+          yield* Console.log("\n" + "═".repeat(60));
+          yield* Console.log("📋 PATTERN METADATA");
+          yield* Console.log("═".repeat(60));
+          yield* Console.log(metadata);
 
-        // Display summary
-        if (pattern.description) {
-          yield* Console.log(
-            "\n" + "─".repeat(60)
+          // Display summary
+          if (pattern.description) {
+            yield* Console.log("\n" + "─".repeat(60));
+            yield* Console.log("📝 DESCRIPTION");
+            yield* Console.log("─".repeat(60));
+            yield* Console.log(pattern.description);
+          }
+
+          // Full format shows more
+          if (options.format === "full") {
+            // Display examples
+            if (pattern.examples && pattern.examples.length > 0) {
+              yield* Console.log("\n" + "─".repeat(60));
+              yield* Console.log("💡 EXAMPLES");
+              yield* Console.log("─".repeat(60));
+              for (let i = 0; i < pattern.examples.length; i++) {
+                const ex = pattern.examples[i];
+                yield* Console.log(
+                  `\nExample ${i + 1}: ${ex.description || "Code example"}`
+                );
+                yield* Console.log("─".repeat(40));
+                yield* Console.log(ex.code);
+              }
+            }
+
+            // Display use cases
+            if (pattern.useCases && pattern.useCases.length > 0) {
+              yield* Console.log("\n" + "─".repeat(60));
+              yield* Console.log("🎯 USE CASES");
+              yield* Console.log("─".repeat(60));
+              for (const useCase of pattern.useCases) {
+                yield* Console.log(`  • ${useCase}`);
+              }
+            }
+
+            // Get and display related patterns
+            const relatedPatterns = yield* Effect.tryPromise({
+              try: () => repo.getRelatedPatterns(dbPattern.id),
+              catch: () => [],
+            });
+            if (relatedPatterns.length > 0) {
+              yield* Console.log("\n" + "─".repeat(60));
+              yield* Console.log("🔗 RELATED PATTERNS");
+              yield* Console.log("─".repeat(60));
+              for (const related of relatedPatterns) {
+                yield* Console.log(`  • ${related.slug} - ${related.title}`);
+              }
+            }
+          }
+
+          yield* Console.log("\n" + "═".repeat(60) + "\n");
+        } catch (error) {
+          yield* showError(
+            `Database error: ${
+              error instanceof Error ? error.message : String(error)
+            }`
           );
-          yield* Console.log("📝 DESCRIPTION");
-          yield* Console.log("─".repeat(60));
-          yield* Console.log(pattern.description);
-        }
-
-        // Full format shows more
-        if (options.format === "full") {
-          // Display examples
-          if (pattern.examples && pattern.examples.length > 0) {
-            yield* Console.log(
-              "\n" + "─".repeat(60)
-            );
-            yield* Console.log("💡 EXAMPLES");
-            yield* Console.log("─".repeat(60));
-            for (let i = 0; i < pattern.examples.length; i++) {
-              const ex = pattern.examples[i];
-              yield* Console.log(`\nExample ${i + 1}: ${ex.description}`);
-              yield* Console.log("─".repeat(40));
-              yield* Console.log(ex.code);
-            }
-          }
-
-          // Display use cases
-          if (pattern.useCases && pattern.useCases.length > 0) {
-            yield* Console.log(
-              "\n" + "─".repeat(60)
-            );
-            yield* Console.log("🎯 USE CASES");
-            yield* Console.log("─".repeat(60));
-            for (const useCase of pattern.useCases) {
-              yield* Console.log(`  • ${useCase}`);
-            }
-          }
-
-          // Display related patterns
-          if (pattern.relatedPatterns && pattern.relatedPatterns.length > 0) {
-            yield* Console.log(
-              "\n" + "─".repeat(60)
-            );
-            yield* Console.log("🔗 RELATED PATTERNS");
-            yield* Console.log("─".repeat(60));
-            for (const related of pattern.relatedPatterns) {
-              yield* Console.log(`  • ${related}`);
-            }
+          yield* Console.log(
+            "\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL is set correctly.\n"
+          );
+          throw error;
+        } finally {
+          if (db) {
+            yield* Effect.tryPromise({
+              try: () => db!.close(),
+              catch: (error) => {
+                console.error("Failed to close database connection:", error);
+                return undefined;
+              },
+            });
           }
         }
-
-        yield* Console.log("\n" + "═".repeat(60) + "\n");
       })
     )
   );
@@ -3408,6 +3596,455 @@ export const rulesCommand = Command.make("rules").pipe(
 );
 
 /**
+ * admin:lock - Lock (validate) an entity to make it readonly
+ */
+const lockCommand = Command.make("lock", {
+  options: {
+    type: Options.text("type").pipe(
+      Options.withDescription(
+        "Entity type: pattern, application-pattern, or job"
+      ),
+      Options.withDefault("pattern")
+    ),
+  },
+  args: {
+    identifier: Args.text({ name: "identifier" }),
+  },
+}).pipe(
+  Command.withDescription(
+    "Lock (validate) an entity to prevent modifications. Once locked, entities become readonly."
+  ),
+  Command.withHandler(({ args, options }) =>
+    // @ts-expect-error - Multiple Effect versions cause type incompatibility
+    Effect.gen(function* () {
+      let db: ReturnType<typeof createDatabase> | null = null;
+      try {
+        db = createDatabase();
+        const entityType = options.type.toLowerCase();
+        let result;
+        let entityName: string;
+
+        if (entityType === "pattern" || entityType === "effect-pattern") {
+          const repo = createEffectPatternRepository(db.db);
+          // Try to find by slug first, then by id
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: (error) =>
+              new Error(
+                `Failed to search for pattern: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              ),
+          });
+
+          if (!existing) {
+            // Try as ID
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: (error) =>
+                new Error(
+                  `Failed to search for pattern by ID: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            if (!byId) {
+              yield* showError(
+                `Pattern "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock pattern: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Pattern "${byId.slug}"`;
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock pattern: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Pattern "${existing.slug}"`;
+          }
+        } else if (
+          entityType === "application-pattern" ||
+          entityType === "ap"
+        ) {
+          const repo = createApplicationPatternRepository(db.db);
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: (error) =>
+              new Error(
+                `Failed to search for application pattern: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              ),
+          });
+
+          if (!existing) {
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: (error) =>
+                new Error(
+                  `Failed to search for application pattern by ID: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            if (!byId) {
+              yield* showError(
+                `Application pattern "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock application pattern: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Application pattern "${byId.slug}"`;
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock application pattern: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Application pattern "${existing.slug}"`;
+          }
+        } else if (entityType === "job") {
+          const repo = createJobRepository(db.db);
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: (error) =>
+              new Error(
+                `Failed to search for job: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              ),
+          });
+
+          if (!existing) {
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: (error) =>
+                new Error(
+                  `Failed to search for job by ID: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            if (!byId) {
+              yield* showError(
+                `Job "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock job: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Job "${byId.slug}"`;
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.lock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to lock job: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Job "${existing.slug}"`;
+          }
+        } else {
+          yield* showError(
+            `Invalid entity type: ${options.type}. Must be one of: pattern, application-pattern, job`
+          );
+          return;
+        }
+
+        if (!result) {
+          yield* showError(`Failed to lock ${entityName}`);
+          return;
+        }
+
+        yield* showSuccess(`${entityName} has been locked (validated)`);
+        yield* Console.log(`  • Validated: ${result.validated ? "Yes" : "No"}`);
+        if (result.validatedAt) {
+          yield* Console.log(
+            `  • Validated at: ${result.validatedAt.toISOString()}`
+          );
+        }
+      } catch (error) {
+        yield* showError(
+          `Database error: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        yield* Console.log(
+          "\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL is set correctly.\n"
+        );
+        throw error;
+      } finally {
+        if (db) {
+          yield* Effect.tryPromise({
+            try: () => db!.close(),
+            catch: (error) => {
+              console.error("Failed to close database connection:", error);
+              return undefined;
+            },
+          });
+        }
+      }
+    })
+  )
+);
+
+/**
+ * admin:unlock - Unlock (unvalidate) an entity to allow modifications
+ */
+const unlockCommand = Command.make("unlock", {
+  options: {
+    type: Options.text("type").pipe(
+      Options.withDescription(
+        "Entity type: pattern, application-pattern, or job"
+      ),
+      Options.withDefault("pattern")
+    ),
+  },
+  args: {
+    identifier: Args.text({ name: "identifier" }),
+  },
+}).pipe(
+  Command.withDescription(
+    "Unlock (unvalidate) an entity to allow modifications again."
+  ),
+  Command.withHandler(({ args, options }) =>
+    // @ts-expect-error - Multiple Effect versions cause type incompatibility
+    Effect.gen(function* () {
+      let db: ReturnType<typeof createDatabase> | null = null;
+      try {
+        db = createDatabase();
+        const entityType = options.type.toLowerCase();
+        let result;
+        let entityName: string;
+
+        if (entityType === "pattern" || entityType === "effect-pattern") {
+          const repo = createEffectPatternRepository(db.db);
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: (error) =>
+              new Error(
+                `Failed to search for pattern: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              ),
+          });
+
+          if (!existing) {
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: (error) =>
+                new Error(
+                  `Failed to search for pattern by ID: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            if (!byId) {
+              yield* showError(
+                `Pattern "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock pattern: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Pattern "${byId.slug}"`;
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock pattern: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Pattern "${existing.slug}"`;
+          }
+        } else if (
+          entityType === "application-pattern" ||
+          entityType === "ap"
+        ) {
+          const repo = createApplicationPatternRepository(db.db);
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: (error) =>
+              new Error(
+                `Failed to search for application pattern: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              ),
+          });
+
+          if (!existing) {
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: (error) =>
+                new Error(
+                  `Failed to search for application pattern by ID: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            if (!byId) {
+              yield* showError(
+                `Application pattern "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock application pattern: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Application pattern "${byId.slug}"`;
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock application pattern: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Application pattern "${existing.slug}"`;
+          }
+        } else if (entityType === "job") {
+          const repo = createJobRepository(db.db);
+          const existing = yield* Effect.tryPromise({
+            try: () => repo.findBySlug(args.identifier),
+            catch: (error) =>
+              new Error(
+                `Failed to search for job: ${
+                  error instanceof Error ? error.message : String(error)
+                }`
+              ),
+          });
+
+          if (!existing) {
+            const byId = yield* Effect.tryPromise({
+              try: () => repo.findById(args.identifier),
+              catch: (error) =>
+                new Error(
+                  `Failed to search for job by ID: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            if (!byId) {
+              yield* showError(
+                `Job "${args.identifier}" not found (tried as slug and ID)`
+              );
+              return;
+            }
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(byId.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock job: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Job "${byId.slug}"`;
+          } else {
+            result = yield* Effect.tryPromise({
+              try: () => repo.unlock(existing.id),
+              catch: (error) =>
+                new Error(
+                  `Failed to unlock job: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                ),
+            });
+            entityName = `Job "${existing.slug}"`;
+          }
+        } else {
+          yield* showError(
+            `Invalid entity type: ${options.type}. Must be one of: pattern, application-pattern, job`
+          );
+          return;
+        }
+
+        if (!result) {
+          yield* showError(`Failed to unlock ${entityName}`);
+          return;
+        }
+
+        yield* showSuccess(`${entityName} has been unlocked`);
+        yield* Console.log(`  • Validated: ${result.validated ? "Yes" : "No"}`);
+      } catch (error) {
+        yield* showError(
+          `Database error: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        yield* Console.log(
+          "\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL is set correctly.\n"
+        );
+        throw error;
+      } finally {
+        if (db) {
+          yield* Effect.tryPromise({
+            try: () => db!.close(),
+            catch: (error) => {
+              console.error("Failed to close database connection:", error);
+              return undefined;
+            },
+          });
+        }
+      }
+    })
+  )
+);
+
+/**
  * admin - Administrative commands for repository management
  */
 const adminSubcommands = [
@@ -3418,6 +4055,8 @@ const adminSubcommands = [
   rulesCommand,
   releaseCommand,
   pipelineManagementCommand,
+  lockCommand,
+  unlockCommand,
 ] as const;
 
 export const userRootCommand = Command.make("ep").pipe(
@@ -3457,7 +4096,7 @@ export const fileSystemLayer = NodeFileSystem.layer.pipe(
 export const runtimeLayer = Layer.mergeAll(
   fileSystemLayer,
   FetchHttpClient.layer,
-  StateStoreLive
+  StateStore.Default
 ) as unknown as Layer.Layer<never, never, never>;
 
 // TUI-enabled runtime for ep-admin
@@ -3465,7 +4104,7 @@ export const runtimeLayerWithTUI: any = EffectCLITUILayer
   ? Layer.mergeAll(
       fileSystemLayer,
       FetchHttpClient.layer,
-      StateStoreLive,
+      StateStore.Default,
       EffectCLITUILayer
     )
   : runtimeLayer; // Fallback to standard runtime if TUI not available

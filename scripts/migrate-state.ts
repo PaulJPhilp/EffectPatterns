@@ -93,7 +93,7 @@ const WORKFLOW_STEPS = [
 /**
  * Create initial step state
  */
-function _createInitialStepState(
+function createInitialStepState(
   status: StepState['status'] = 'pending',
 ): StepState {
   return {
