@@ -32,9 +32,7 @@ function logCheckpoint(operation: string, data?: unknown) {
     timestamp,
     data,
   };
-  console.error(
-    `[CHECKPOINT] ${JSON.stringify(checkpoint)}`
-  );
+  console.error(`[CHECKPOINT] ${JSON.stringify(checkpoint)}`);
 }
 
 const PROJECT_ROOT = process.cwd();
@@ -298,9 +296,7 @@ async function main(): Promise<void> {
       total: report.moved.length,
       successful: report.moved.filter((r) => r.success).length,
       failed: report.moved.filter((r) => !r.success).length,
-      movedFiles: report.moved
-        .filter((r) => r.success)
-        .map((r) => r.file),
+      movedFiles: report.moved.filter((r) => r.success).map((r) => r.file),
     });
 
     // Step 2: Clean up working directories
