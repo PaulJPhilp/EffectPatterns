@@ -1,5 +1,5 @@
-import { NodeContext, NodeRuntime } from '@effect/platform-node';
 import { FileSystem } from '@effect/platform/FileSystem';
+import { NodeContext, NodeRuntime } from '@effect/platform-node';
 import { Config, Effect, Layer, Logger, LogLevel } from 'effect';
 import {
   Discord,
@@ -44,20 +44,22 @@ const program = Effect.gen(function* () {
   const userIdMap = new Map<string, string>();
   let userCounter = 1;
 
-  const anonymizedMessages = channelExport.messages.map((message: Record<string, unknown>) => {
-    const authorId = (message.author as Record<string, unknown>).id as string;
-    if (!userIdMap.has(authorId)) {
-      userIdMap.set(authorId, `user_${userCounter++}`);
-    }
-    return {
-      ...message,
-      author: {
-        ...(message.author as Record<string, unknown>),
-        id: userIdMap.get(authorId),
-        name: userIdMap.get(authorId),
-      },
-    };
-  });
+  const anonymizedMessages = channelExport.messages.map(
+    (message: Record<string, unknown>) => {
+      const authorId = (message.author as Record<string, unknown>).id as string;
+      if (!userIdMap.has(authorId)) {
+        userIdMap.set(authorId, `user_${userCounter++}`);
+      }
+      return {
+        ...message,
+        author: {
+          ...(message.author as Record<string, unknown>),
+          id: userIdMap.get(authorId),
+          name: userIdMap.get(authorId),
+        },
+      };
+    },
+  );
 
   // Define the output path for the curated dataset.
   const outputPath = 'content/discord/beginner-questions.json';

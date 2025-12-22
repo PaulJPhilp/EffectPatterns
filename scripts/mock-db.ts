@@ -1,5 +1,4 @@
-import { Context, Effect, Layer } from 'effect';
-import * as Queries from './queries'; // This will be the real queries, but we will mock them
+import { Layer } from 'effect';
 import { DbService } from '../app/code-assistant/lib/db/service'; // Import the DbService interface
 
 export const getChatById = async ({ id }: { id: string }) => {
