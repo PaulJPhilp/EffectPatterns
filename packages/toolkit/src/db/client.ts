@@ -33,12 +33,27 @@ export function createDatabase(url?: string): DatabaseConnection {
     process.env.DATABASE_URL ??
     "postgresql://postgres:postgres@localhost:5432/effect_patterns"
 
-  const client = postgres(databaseUrl)
+  const client = postgres(databaseUrl, {
+    max: 1, // Single connection for CLI usage
+    idle_timeout: 20, // Close idle connections after 20 seconds
+    connect_timeout: 10, // Connection timeout in seconds
+    onnotice: () => {
+      // Suppress notices in CLI
+    },
+  })
+
   const db = drizzle(client, { schema })
 
   return {
     db,
-    close: () => client.end(),
+    close: async () => {
+      try {
+        await client.end({ timeout: 5 })
+      } catch (error) {
+        // Log but don't throw - connection might already be closed
+        console.error("Error closing database connection:", error)
+      }
+    },
   }
 }
 

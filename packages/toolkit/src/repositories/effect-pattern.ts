@@ -114,11 +114,16 @@ export function createEffectPatternRepository(db: Database) {
       // Text search across title, summary, and tags
       if (params.query) {
         const searchTerm = `%${params.query}%`
+        // For JSONB tags column, we need to cast to text and use sql template
+        // Drizzle's ilike doesn't work directly with JSONB, so we use sql with direct interpolation
+        // Drizzle automatically parameterizes values interpolated into sql templates
+        // Using PostgreSQL's ::text cast syntax which is more idiomatic
+        const tagsCondition = sql`${effectPatterns.tags}::text ILIKE ${searchTerm}`
         conditions.push(
           or(
             ilike(effectPatterns.title, searchTerm),
             ilike(effectPatterns.summary, searchTerm),
-            sql`${effectPatterns.tags}::text ILIKE ${searchTerm}`
+            tagsCondition
           )
         )
       }

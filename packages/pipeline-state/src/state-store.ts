@@ -1,19 +1,16 @@
-import { Effect, Context, Layer } from "effect";
+import { Effect } from "effect";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { PatternNotFoundError, StateFilePersistenceError } from "./errors.js";
 import {
-  PipelineStateFile,
-  PatternState,
-  createInitialPipelineState,
-  createInitialPatternState,
   PatternMetadata,
-  WorkflowStep,
+  PatternState,
+  PipelineStateFile,
   StepCheckpoint,
+  WorkflowStep,
+  createInitialPatternState,
+  createInitialPipelineState,
 } from "./schemas.js";
-import {
-  StateFilePersistenceError,
-  PatternNotFoundError,
-} from "./errors.js";
 
 const STATE_FILE_PATH = path.join(process.cwd(), ".pipeline-state.json");
 
@@ -71,14 +68,7 @@ export interface StateStoreService {
 }
 
 /**
- * StateStore context tag
- */
-export const StateStore = Context.GenericTag<StateStoreService>(
-  "StateStore"
-);
-
-/**
- * Live implementation of StateStore
+ * StateStore service implementation
  */
 const makeStateStore = (): StateStoreService => {
   const loadState = (): Effect.Effect<
@@ -108,7 +98,9 @@ const makeStateStore = (): StateStoreService => {
       return parsed;
     });
 
-  const saveState = (state: PipelineStateFile): Effect.Effect<void, StateFilePersistenceError> =>
+  const saveState = (
+    state: PipelineStateFile
+  ): Effect.Effect<void, StateFilePersistenceError> =>
     Effect.gen(function* () {
       const updated = {
         ...state,
@@ -264,8 +256,7 @@ const makeStateStore = (): StateStoreService => {
         ? new Date(stepState.startedAt)
         : new Date();
       const completedAt = new Date();
-      const duration =
-        (completedAt.getTime() - startedAt.getTime()) / 1000;
+      const duration = (completedAt.getTime() - startedAt.getTime()) / 1000;
 
       const updated = {
         ...state,
@@ -402,6 +393,8 @@ const makeStateStore = (): StateStoreService => {
 };
 
 /**
- * Live implementation layer for StateStore
+ * StateStore service using Effect.Service pattern
  */
-export const StateStoreLive = Layer.succeed(StateStore, makeStateStore());
+export class StateStore extends Effect.Service<StateStore>()("StateStore", {
+  sync: () => makeStateStore(),
+}) {}

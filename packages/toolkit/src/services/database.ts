@@ -72,7 +72,10 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
       yield* Effect.addFinalizer(() =>
         Effect.gen(function* () {
           yield* logger.debug("Closing database connection")
-          await connection.close()
+          yield* Effect.tryPromise({
+            try: () => connection.close(),
+            catch: (error) => new Error(`Failed to close database connection: ${String(error)}`),
+          }).pipe(Effect.ignore)
         })
       )
 
