@@ -14,11 +14,11 @@
  * 8. Reporting - Generate detailed report
  */
 
-import matter from 'gray-matter';
 import { exec } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
+import matter from 'gray-matter';
 
 const execAsync = promisify(exec);
 
@@ -217,7 +217,8 @@ async function validatePatterns(
     const warnCount = result.issues.filter((i) => i.type === 'warning').length;
 
     console.log(
-      `${status} ${pattern.id} ${errorCount > 0 ? colorize(`(${errorCount} errors)`, 'red') : ''
+      `${status} ${pattern.id} ${
+        errorCount > 0 ? colorize(`(${errorCount} errors)`, 'red') : ''
       } ${warnCount > 0 ? colorize(`(${warnCount} warnings)`, 'yellow') : ''}`,
     );
 
