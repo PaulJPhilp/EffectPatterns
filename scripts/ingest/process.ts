@@ -52,7 +52,10 @@ function parseMdx(
   return { frontmatter, content };
 }
 
-function validateFrontMatter(filePath: string, fm: Record<string, unknown>): FrontMatter {
+function validateFrontMatter(
+  filePath: string,
+  fm: Record<string, unknown>,
+): FrontMatter {
   const required = ['id', 'title', 'skillLevel', 'useCase', 'summary'];
   for (const key of required) {
     if (!fm[key])
