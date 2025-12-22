@@ -9,9 +9,9 @@
  * - Supermemory integration
  */
 
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,8 +19,8 @@ const __dirname = dirname(__filename);
 // Load environment from code-assistant
 config({ path: resolve(__dirname, '../app/code-assistant/.env.local') });
 
-import { myProvider } from '../app/code-assistant/lib/ai/providers';
 import { generateText } from 'ai';
+import { myProvider } from '../app/code-assistant/lib/ai/providers';
 
 interface TestResult {
   name: string;
@@ -163,10 +163,10 @@ async function testModelAvailability() {
 
   for (const modelId of modelIds) {
     try {
-      const model = myProvider.languageModel(modelId);
+      const _model = myProvider.languageModel(modelId);
       availableModels.push(modelId);
       console.log(`   ✓ ${modelId}`);
-    } catch (error) {
+    } catch (_error) {
       console.log(`   ✗ ${modelId} (unavailable)`);
     }
   }

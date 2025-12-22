@@ -1,5 +1,4 @@
 import * as Effect from 'effect/Effect';
-import { TUIHandler } from 'effect-cli-tui';
 import { processChat } from '../app/code-assistant/lib/chat/engine';
 import { MockDbServiceLive } from './mock-db';
 
