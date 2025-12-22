@@ -26,11 +26,11 @@
  * Note: This is a scaffold. No file mutations are performed yet.
  */
 
-import dotenv from 'dotenv';
 import { exec as _exec } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import dotenv from 'dotenv';
 
 // Style gate uses Biome via bunx
 
