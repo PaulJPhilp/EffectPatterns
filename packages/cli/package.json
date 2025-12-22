@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@effect/cli": "^0.69.2",
-    "@effect/platform": "^0.93.8",
+    "@effect/platform": "^0.94.0",
     "@effect/platform-node": "^0.98.4",
     "@effect-patterns/pipeline-state": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
