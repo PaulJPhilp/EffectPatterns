@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 
+import path from 'node:path';
 import { loadPatternsFromJson, searchPatterns } from '@effect-patterns/toolkit';
 import { config } from 'dotenv';
-import path from 'node:path';
 
 // Load environment variables
 config({ path: '../app/code-assistant/.env.local' });

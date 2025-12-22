@@ -25,8 +25,8 @@
 
 import { exec } from 'node:child_process';
 import * as path from 'node:path';
-import { promisify } from 'node:util';
 import * as readline from 'node:readline';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
@@ -42,10 +42,10 @@ const WORKFLOW_STEPS = [
   'tested',
   'validated',
   'published',
-  'finalized'
+  'finalized',
 ] as const;
 
-type WorkflowStep = typeof WORKFLOW_STEPS[number];
+type WorkflowStep = (typeof WORKFLOW_STEPS)[number];
 
 // --- PIPELINE STEPS ---
 const STEPS = [
@@ -115,9 +115,13 @@ async function validatePipelineIntegrity(): Promise<void> {
 
   if (violations.length > 0) {
     console.error('\n❌ PIPELINE INTEGRITY CHECK FAILED');
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.error(
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    );
     console.error('\nGenerated files exist outside content/published/:');
-    violations.forEach((dir) => console.error(`  ✗ ${dir}`));
+    for (const dir of violations) {
+      console.error(`  ✗ ${dir}`);
+    }
     console.error('\nThis means generation bypassed the pipeline.');
     console.error('\nCORRECT WORKFLOW:');
     console.error('  1. Generate patterns → content/new/');
@@ -131,7 +135,9 @@ async function validatePipelineIntegrity(): Promise<void> {
     console.error('  ❌ .gemini/skills/');
     console.error('  ❌ .openai/skills/');
     console.error('\nFor more info: docs/PUBLISHING_PIPELINE.md');
-    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    console.error(
+      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n',
+    );
     process.exit(1);
   }
 }
@@ -139,7 +145,7 @@ async function validatePipelineIntegrity(): Promise<void> {
 /**
  * Prompt user for confirmation
  */
-async function confirm(message: string): Promise<boolean> {
+async function _confirm(message: string): Promise<boolean> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -158,7 +164,7 @@ async function confirm(message: string): Promise<boolean> {
  */
 async function runStep(
   step: (typeof STEPS)[0],
-  skipConfirmation: boolean = false
+  _skipConfirmation: boolean = false,
 ) {
   console.log(`\n🚀 ${step.name}`);
   console.log(step.description);
@@ -202,7 +208,9 @@ async function main() {
   await validatePipelineIntegrity();
   console.log('✅ Pipeline integrity check passed\n');
 
-  console.log('Workflow Steps: ingested → tested → validated → published → finalized\n');
+  console.log(
+    'Workflow Steps: ingested → tested → validated → published → finalized\n',
+  );
   const startTime = Date.now();
 
   try {
@@ -216,13 +224,17 @@ async function main() {
     console.log('\nNext steps:');
     console.log('  1. Review changes in git');
     console.log('  2. Commit and push if satisfied');
-    console.log('  3. Use "ep-admin pipeline-state status" to view pattern states');
+    console.log(
+      '  3. Use "ep-admin pipeline-state status" to view pattern states',
+    );
   } catch (_error) {
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     console.error(`\n❌ Pipeline failed after ${duration}s`);
     console.error('\nTo retry:');
     console.error('  1. Fix the error');
-    console.error('  2. Run "ep-admin pipeline-state retry <step> <pattern>" or');
+    console.error(
+      '  2. Run "ep-admin pipeline-state retry <step> <pattern>" or',
+    );
     console.error('  3. Run "ep-admin pipeline-state resume" to continue');
     process.exit(1);
   }
