@@ -14,11 +14,11 @@
  * 8. Reporting - Generate detailed report
  */
 
-import matter from 'gray-matter';
 import { exec } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
+import matter from 'gray-matter';
 
 const execAsync = promisify(exec);
 

@@ -1,5 +1,5 @@
-import { NodeContext, NodeRuntime } from '@effect/platform-node';
 import { FileSystem } from '@effect/platform/FileSystem';
+import { NodeContext, NodeRuntime } from '@effect/platform-node';
 import { Config, Effect, Layer, Logger, LogLevel } from 'effect';
 import {
   Discord,

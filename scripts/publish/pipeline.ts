@@ -25,8 +25,8 @@
 
 import { exec } from 'node:child_process';
 import * as path from 'node:path';
-import { promisify } from 'node:util';
 import * as readline from 'node:readline';
+import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
 
@@ -119,7 +119,9 @@ async function validatePipelineIntegrity(): Promise<void> {
       '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
     );
     console.error('\nGenerated files exist outside content/published/:');
-    violations.forEach((dir) => console.error(`  ✗ ${dir}`));
+    for (const dir of violations) {
+      console.error(`  ✗ ${dir}`);
+    }
     console.error('\nThis means generation bypassed the pipeline.');
     console.error('\nCORRECT WORKFLOW:');
     console.error('  1. Generate patterns → content/new/');
@@ -143,7 +145,7 @@ async function validatePipelineIntegrity(): Promise<void> {
 /**
  * Prompt user for confirmation
  */
-async function confirm(message: string): Promise<boolean> {
+async function _confirm(message: string): Promise<boolean> {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,

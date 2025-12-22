@@ -4,12 +4,6 @@ import { Console, Context, Data, Effect, Layer } from 'effect';
 import { MdxService } from 'effect-mdx';
 
 // --- Configuration Service (Idiomatic Effect.Service pattern) ---
-// Define the AppConfig interface
-interface AppConfigService {
-  readonly srcDir: string;
-  readonly processedDir: string;
-}
-
 // Create the AppConfig service using Effect.Service pattern
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 class AppConfig extends Effect.Service<AppConfig>()('AppConfig', {

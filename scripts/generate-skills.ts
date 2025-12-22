@@ -5,13 +5,12 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import {
-  readPattern,
-  groupPatternsByCategory,
   generateCategorySkill,
-  writeSkill,
   generateGeminiSkill,
-  writeGeminiSkill,
   generateOpenAISkill,
+  groupPatternsByCategory,
+  readPattern,
+  writeGeminiSkill,
   writeOpenAISkill,
 } from '../packages/cli/src/skills/skill-generator';
 

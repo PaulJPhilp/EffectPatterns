@@ -61,7 +61,7 @@ async function main() {
     }
 
     // Assign lessonOrder within each skill level
-    for (const [skill, skillPatterns] of bySkill) {
+    for (const [_skill, skillPatterns] of bySkill) {
       // Sort alphabetically by title for consistent ordering
       skillPatterns.sort((a, b) => {
         const titleA = (a.data.title as string) || '';
