@@ -5,7 +5,7 @@
  */
 
 // Client
-export { DatabaseService, DatabaseLive, createDatabase, type Database } from "./client.js"
+export { createDatabase, getDatabaseUrl, type Database } from "./client.js"
 
 // Schema
 export * from "./schema/index.js"

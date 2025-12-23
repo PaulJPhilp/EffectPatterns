@@ -82,13 +82,18 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    // Log error for debugging (in production, this goes to Vercel logs)
+    console.error("[Patterns API] Error:", error);
+    
     if (isAuthenticationError(error)) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
+    // Return structured error response instead of crashing
     return NextResponse.json(
       {
-        error: String(error),
+        error: error instanceof Error ? error.message : String(error),
+        type: error instanceof Error ? error.constructor.name : "UnknownError",
       },
       { status: 500 }
     );
