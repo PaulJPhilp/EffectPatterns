@@ -19,7 +19,11 @@ import {
   createEffectPatternRepository,
   createJobRepository,
 } from "../repositories/index.js"
-import { eq } from "drizzle-orm"
+import type {
+  NewApplicationPattern,
+  NewEffectPattern,
+  NewJob,
+} from "../db/schema/index.js"
 import {
   setupTestDatabase,
   cleanDatabase,

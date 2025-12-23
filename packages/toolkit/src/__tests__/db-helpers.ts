@@ -11,9 +11,6 @@ import {
   jobs,
   patternJobs,
   patternRelations,
-  type NewApplicationPattern,
-  type NewEffectPattern,
-  type NewJob,
 } from "../db/schema/index.js"
 import type { Database } from "../db/client.js"
 

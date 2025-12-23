@@ -2,69 +2,89 @@
  * Pattern Management Commands
  */
 
-import { Effect, Option } from "effect";
-import { Command, Options, Args } from "@effect/cli";
-import * as fs from "fs";
-import * as path from "path";
-import { loadConfig, saveConfig } from "../services/index.js";
-import { SupermemoryService } from "../services/index.js";
 import {
-  displayOutput,
-  displayJson,
-  displayError,
-  displaySuccess,
-} from "../helpers/index.js";
+  createDatabase,
+  createEffectPatternRepository,
+} from "@effect-patterns/toolkit";
+import { Command, Options } from "@effect/cli";
+import { Effect } from "effect";
 import {
   formatUploadResultsHuman,
   formatUploadResultsJson,
 } from "../formatters/index.js";
-import type { UploadResult, Pattern } from "../types.js";
+import { displayError, displayOutput } from "../helpers/index.js";
+import {
+  loadConfig,
+  makeSupermemoryService,
+  saveConfig,
+} from "../services/index.js";
+import type { Pattern, UploadResult } from "../types.js";
 
 /**
- * Load a single pattern from file
+ * Load a single pattern from database
  */
-function loadPattern(
-  patternId: string,
-  patternsDir: string
-): Effect.Effect<Pattern, Error> {
+function loadPattern(patternId: string): Effect.Effect<Pattern, Error> {
   return Effect.gen(function* () {
-    const filePath = path.join(patternsDir, `${patternId}.mdx`);
+    const { db, close } = createDatabase();
+    const repo = createEffectPatternRepository(db);
 
-    const exists = yield* Effect.sync(() => fs.existsSync(filePath));
-    if (!exists) {
-      return yield* Effect.fail(
-        new Error(`Pattern file not found: ${filePath}`)
-      );
+    try {
+      const dbPattern = yield* Effect.tryPromise({
+        try: () => repo.findBySlug(patternId),
+        catch: (error) => new Error(`Failed to load pattern: ${error}`),
+      });
+
+      if (!dbPattern) {
+        return yield* Effect.fail(new Error(`Pattern not found: ${patternId}`));
+      }
+
+      return {
+        id: dbPattern.slug,
+        title: dbPattern.title,
+        summary: dbPattern.summary,
+        skillLevel: dbPattern.skillLevel,
+        tags: (dbPattern.tags as string[]) || [],
+        useCase: (dbPattern.useCases as string[]) || [],
+        content: (dbPattern.content || "").substring(0, 10000),
+      } as Pattern;
+    } finally {
+      yield* Effect.tryPromise({
+        try: () => close(),
+        catch: () => undefined,
+      }).pipe(Effect.ignore);
     }
+  });
+}
 
-    const content = yield* Effect.tryPromise({
-      try: () => fs.promises.readFile(filePath, "utf-8"),
-      catch: (error) => new Error(`Failed to read pattern: ${error}`),
-    });
+/**
+ * Load all patterns from database
+ */
+function loadAllPatterns(): Effect.Effect<Pattern[], Error> {
+  return Effect.gen(function* () {
+    const { db, close } = createDatabase();
+    const repo = createEffectPatternRepository(db);
 
-    // Parse frontmatter (simplified - assumes YAML between ---)
-    const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-    if (!fmMatch) {
-      return yield* Effect.fail(
-        new Error("Invalid pattern format: missing frontmatter")
-      );
+    try {
+      const dbPatterns = yield* Effect.tryPromise({
+        try: () => repo.findAll(),
+        catch: (error) => new Error(`Failed to load patterns: ${error}`),
+      });
+
+      return dbPatterns.map((dbPattern) => ({
+        id: dbPattern.slug,
+        title: dbPattern.title,
+        summary: dbPattern.summary,
+        skillLevel: dbPattern.skillLevel,
+        tags: (dbPattern.tags as string[]) || [],
+        useCase: (dbPattern.useCases as string[]) || [],
+        content: (dbPattern.content || "").substring(0, 10000),
+      })) as Pattern[];
+    } finally {
+      yield* Effect.tryPromise({
+        try: () => close(),
+        catch: () => undefined,
+      }).pipe(Effect.ignore);
     }
-
-    // Parse YAML frontmatter (very simplified)
-    const fm = fmMatch[1];
-    const title = fm.match(/title:\s*(.+)/)?.[1] || patternId;
-    const summary = fm.match(/summary:\s*(.+)/)?.[1] || "";
-    const skillLevel = fm.match(/skillLevel:\s*(.+)/)?.[1] || "intermediate";
-
-    return {
-      id: patternId,
-      title: title.trim(),
-      summary: summary.trim(),
-      skillLevel: skillLevel.trim(),
-      tags: [],
-      useCase: [],
-      content: content.substring(0, 10000),
-    } as Pattern;
   });
 }
 
@@ -86,41 +106,29 @@ export const patternsUpload = Command.make(
     Effect.gen(function* () {
       const config = yield* loadConfig;
 
-      // Get patterns directory
-      const patternsDir = path.join(process.cwd(), "../../content/published");
-
       const results: UploadResult[] = [];
 
-      let supermemoryService: any;
-      try {
-        supermemoryService = yield* SupermemoryServiceLive(config.apiKey);
-      } catch (e) {
-        console.error("Failed to initialize Supermemory service:", e);
-        return;
-      }
+      const supermemoryService = yield* makeSupermemoryService(
+        config.apiKey
+      ).pipe(
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            yield* displayError(
+              `Failed to initialize Supermemory service: ${error.message}`
+            );
+            return yield* Effect.fail(error);
+          })
+        )
+      );
 
       if (options.all) {
-        // Upload all patterns
-        const files = yield* Effect.sync(() =>
-          fs.readdirSync(patternsDir).filter((f) => f.endsWith(".mdx"))
+        // Upload all patterns from database
+        const patterns = yield* loadAllPatterns().pipe(
+          Effect.catchAll(() => Effect.succeed([] as Pattern[]))
         );
 
-        for (const file of files) {
-          const patternId = file.replace(".mdx", "");
-
-          const pattern = yield* loadPattern(patternId, patternsDir).pipe(
-            Effect.catchAll(() => Effect.succeed(null as any))
-          );
-
-          if (!pattern) {
-            results.push({
-              patternId,
-              memoryId: "",
-              status: "error",
-              message: "Failed to load pattern file",
-            });
-            continue;
-          }
+        for (const pattern of patterns) {
+          const patternId = pattern.id;
 
           const memoryData = {
             type: "effect_pattern",
@@ -162,12 +170,12 @@ export const patternsUpload = Command.make(
         config.lastUpload = new Date().toISOString();
         yield* saveConfig(config);
       } else if (options.patternId !== undefined) {
-        // Upload single pattern
+        // Upload single pattern from database
         const patternIdValue =
           typeof options.patternId === "string"
             ? options.patternId
             : options.patternId.toString();
-        const pattern = yield* loadPattern(patternIdValue, patternsDir).pipe(
+        const pattern = yield* loadPattern(patternIdValue).pipe(
           Effect.catchAll(() => Effect.succeed(null as any))
         );
 

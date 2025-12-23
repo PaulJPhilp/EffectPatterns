@@ -70,7 +70,7 @@ This structure enables:
 
 **Purpose**: High-level domain classification representing a coherent approach to solving a class of problems with Effect.
 
-**Storage**: `data/application-patterns.json` (centralized JSON index)
+**Storage**: PostgreSQL database (`application_patterns` table). Legacy: `data/application-patterns.json` (used only for initial migration)
 
 **Schema**:
 
@@ -220,7 +220,7 @@ interface Job {
 
 **Purpose**: Concrete, executable code example demonstrating how to accomplish a job using Effect.
 
-**Storage**: `content/published/patterns/{applicationPatternId}/{subPattern?}/{pattern-id}.mdx`
+**Storage**: PostgreSQL database (`effect_patterns` table). Content stored in `content` field. Legacy: `content/published/patterns/{applicationPatternId}/{subPattern?}/{pattern-id}.mdx` (no longer exists - all patterns migrated to database)
 
 **Schema** (embedded in MDX frontmatter):
 
@@ -368,19 +368,20 @@ related:
 **Implementation**: `scripts/publish/generate.ts`
 
 **Key Operations**:
-1. **Recursive File Discovery**: Traverse `content/published/patterns/` directory tree
-2. **Frontmatter Parsing**: Extract YAML metadata using `gray-matter`
-3. **Application Pattern Matching**: Match directory structure to Application Pattern IDs
-4. **Validation**: Ensure `applicationPatternId` exists in index
-5. **Aggregation**: Group patterns by Application Pattern, skill level, sub-pattern
-6. **Output Generation**: Generate README, reports, indexes
+1. **Database Query**: Load all patterns from PostgreSQL `effect_patterns` table
+2. **Application Pattern Matching**: Match `applicationPatternId` to Application Pattern IDs
+3. **Validation**: Ensure `applicationPatternId` exists in database
+4. **Aggregation**: Group patterns by Application Pattern, skill level, sub-pattern
+5. **Output Generation**: Generate README, reports, indexes
+
+**Note**: Legacy file-based operations (recursive file discovery, frontmatter parsing) are no longer used. All patterns are stored in the database.
 
 ### 2. Relationship Resolution
 
 **Application Pattern → Effect Pattern**:
-- **Resolution**: Directory structure (`content/published/patterns/{apId}/`)
+- **Resolution**: Database foreign key (`effect_patterns.applicationPatternId` → `application_patterns.id`)
 - **Cardinality**: 1:N (one Application Pattern has many Effect Patterns)
-- **Validation**: Pattern's `applicationPatternId` must exist in Application Pattern index
+- **Validation**: Pattern's `applicationPatternId` must exist in `application_patterns` table
 
 **Application Pattern → Job**:
 - **Resolution**: File naming convention (`docs/{AP_ID}_JOBS_TO_BE_DONE.md`)
@@ -500,19 +501,9 @@ Effect-Patterns/
 │   ├── {AP_ID}_JOBS_TO_BE_DONE.md         # Job definitions (16 files)
 │   └── ...
 │
-├── content/published/patterns/
-│   ├── getting-started/                    # AP: getting-started
-│   │   └── *.mdx                           # Effect Patterns
-│   ├── core-concepts/                      # AP: core-concepts
-│   │   └── *.mdx
-│   ├── concurrency/                        # AP: concurrency
-│   │   ├── getting-started/               # Sub-pattern
-│   │   │   └── *.mdx
-│   │   ├── coordination/                  # Sub-pattern
-│   │   │   └── *.mdx
-│   │   └── state/                         # Sub-pattern
-│   │       └── *.mdx
-│   └── ...
+├── (No published pattern files - all patterns stored in PostgreSQL database)
+│   └── Effect Patterns are stored in `effect_patterns` table
+│       └── Content stored in `content` field (markdown, code examples)
 │
 └── scripts/publish/
     └── generate.ts                         # Content discovery & generation
@@ -533,7 +524,7 @@ Effect-Patterns/
 - Examples: `concurrency-parallel-execution`, `schema-validate-primitive`
 
 **File Names**:
-- Effect Patterns: `{pattern-id}.mdx`
+- Effect Patterns: Stored in PostgreSQL `effect_patterns` table (identified by `slug` field)
 - Jobs: `{AP_ID}_JOBS_TO_BE_DONE.md`
 
 ---

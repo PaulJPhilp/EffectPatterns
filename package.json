@@ -38,7 +38,6 @@
     "lint:effect": "bun run scripts/publish/lint-effect-patterns.ts",
     "lint:all": "bun run lint && bun run lint:effect",
     "rules": "bun run scripts/publish/rules-improved.ts",
-    "rules:simple": "bun run scripts/publish/rules.ts",
     "rules:claude": "bun run scripts/publish/generate-claude-rules.ts",
     "ingest": "bun run scripts/ingest/ingest-pipeline-improved.ts",
     "ingest:old": "bun run scripts/ingest/process.ts",

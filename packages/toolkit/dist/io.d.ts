@@ -1,33 +1,10 @@
 /**
  * IO Operations
  *
- * Operations for loading patterns data from both
- * file system (legacy) and PostgreSQL database (primary).
+ * Operations for loading patterns data from PostgreSQL database.
  */
-import { type PatternsIndex as PatternsIndexData, type Pattern } from "./schemas/pattern.js";
 import type { SkillLevel } from "./db/schema/index.js";
-/**
- * Load and parse patterns from a JSON file (legacy, sync)
- *
- * @param filePath - Absolute path to patterns.json
- * @returns Validated PatternsIndex
- * @throws Error if file cannot be read or parsed
- * @deprecated Use loadPatternsFromDatabase for new code
- */
-export declare function loadPatternsFromJsonSync(filePath: string): PatternsIndexData;
-/**
- * Load and parse patterns from a JSON file (legacy, async)
- *
- * @param filePath - Absolute path to patterns.json
- * @returns Promise that resolves to validated PatternsIndex
- * @deprecated Use loadPatternsFromDatabase for new code
- */
-export declare function loadPatternsFromJson(filePath: string): Promise<PatternsIndexData>;
-/**
- * Legacy alias for compatibility
- * @deprecated Use loadPatternsFromJson
- */
-export declare const loadPatternsFromJsonRunnable: typeof loadPatternsFromJson;
+import { type Pattern, type PatternsIndex as PatternsIndexData } from "./schemas/pattern.js";
 /**
  * Load all patterns from the database
  *

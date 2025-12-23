@@ -127,6 +127,10 @@ export const AppLayer = Layer.mergeAll(
  *
  * Use this in Next.js route handlers to execute Effects.
  * This provides all layers to the effect before running it.
+ * 
+ * Wraps the entire execution in a try-catch to prevent function crashes.
+ * All errors (including initialization errors) are caught and converted to
+ * proper Error instances that can be handled by route handlers.
  */
 export const runWithRuntime = <A, E>(
   effect: Effect.Effect<
@@ -134,15 +138,30 @@ export const runWithRuntime = <A, E>(
     E,
     PatternsService | ConfigService | TracingService
   >
-): Promise<A> =>
-  effect.pipe(
-    Effect.provide(AppLayer),
-    Effect.scoped,
-    Effect.runPromise as (
-      effect: Effect.Effect<
-        A,
-        E,
-        PatternsService | ConfigService | TracingService
-      >
-    ) => Promise<A>
-  );
+): Promise<A> => {
+  // Wrap in Promise to catch any synchronous errors or unhandled rejections
+  return new Promise((resolve, reject) => {
+    effect
+      .pipe(
+        Effect.provide(AppLayer),
+        Effect.scoped,
+        Effect.catchAll((error) =>
+          Effect.fail(
+            error instanceof Error
+              ? error
+              : new Error(`Runtime error: ${String(error)}`)
+          )
+        ),
+        Effect.runPromise
+      )
+      .then(resolve)
+      .catch((error) => {
+        // Ensure all errors are Error instances
+        const normalizedError =
+          error instanceof Error
+            ? error
+            : new Error(`Unhandled error: ${String(error)}`);
+        reject(normalizedError);
+      });
+  });
+};

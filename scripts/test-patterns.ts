@@ -1,95 +1,91 @@
 #!/usr/bin/env tsx
 
-import { loadPatternsFromJson, searchPatterns } from '@effect-patterns/toolkit';
-import { config } from 'dotenv';
-import path from 'node:path';
+import {
+  loadPatternsFromDatabase,
+  searchPatternsFromDatabase,
+} from "@effect-patterns/toolkit";
+import { config } from "dotenv";
 
 // Load environment variables
-config({ path: '../app/code-assistant/.env.local' });
+config();
 
 async function testPatterns() {
-  console.log('🧩 Testing Effect Patterns Integration');
-  console.log('='.repeat(50));
+  console.log("🧩 Testing Effect Patterns Integration");
+  console.log("=".repeat(50));
 
   try {
-    // Load patterns data
-    const patternsPath = path.join(
-      process.cwd(),
-      '../data/patterns-index.json',
-    );
-    console.log('📂 Loading patterns from:', patternsPath);
+    // Load patterns data from database
+    console.log("📂 Loading patterns from database...");
 
-    const patternsData = loadPatternsFromJson(patternsPath);
+    const patternsData = await loadPatternsFromDatabase();
     console.log(`✅ Loaded ${patternsData.patterns.length} patterns`);
 
     // Test basic search
-    console.log('\n🔍 Testing pattern search...');
+    console.log("\n🔍 Testing pattern search...");
 
-    const retryResults = searchPatterns({
-      patterns: patternsData.patterns,
-      query: 'retry',
+    const retryResults = await searchPatternsFromDatabase({
+      query: "retry",
       limit: 3,
     });
 
     console.log(`✅ Found ${retryResults.length} patterns for "retry"`);
     if (retryResults.length > 0) {
-      console.log('📝 Top result:', retryResults[0].title);
+      console.log("📝 Top result:", retryResults[0].title);
     }
 
     // Test category filter
-    const errorHandlingResults = searchPatterns({
-      patterns: patternsData.patterns,
-      category: 'error-handling',
+    const errorHandlingResults = await searchPatternsFromDatabase({
+      category: "error-handling",
       limit: 5,
     });
 
     console.log(
-      `✅ Found ${errorHandlingResults.length} error-handling patterns`,
+      `✅ Found ${errorHandlingResults.length} error-handling patterns`
     );
 
     // Test combined search
-    const advancedResults = searchPatterns({
-      patterns: patternsData.patterns,
-      query: 'concurrent',
-      category: 'concurrency',
-      difficulty: 'intermediate',
+    const advancedResults = await searchPatternsFromDatabase({
+      query: "concurrent",
+      category: "concurrency",
+      skillLevel: "intermediate",
       limit: 2,
     });
 
     console.log(
-      `✅ Found ${advancedResults.length} intermediate concurrency patterns`,
+      `✅ Found ${advancedResults.length} intermediate concurrency patterns`
     );
     if (advancedResults.length > 0) {
       console.log(
-        '📝 Results:',
-        advancedResults.map((p) => p.title),
+        "📝 Results:",
+        advancedResults.map((p) => p.title)
       );
     }
 
     // Test pattern categories
     const categories = [
-      'error-handling',
-      'concurrency',
-      'data-access',
-      'resource-management',
+      "error-handling",
+      "concurrency",
+      "data-access",
+      "resource-management",
     ];
-    console.log('\n📂 Pattern categories available:');
+    console.log("\n📂 Pattern categories available:");
     for (const category of categories) {
-      const count = patternsData.patterns.filter(
-        (p) => p.category === category,
-      ).length;
-      console.log(`  • ${category}: ${count} patterns`);
+      const categoryResults = await searchPatternsFromDatabase({
+        category,
+        limit: 1000,
+      });
+      console.log(`  • ${category}: ${categoryResults.length} patterns`);
     }
 
     console.log(
-      '\n🎉 Effect Patterns integration test completed successfully!',
+      "\n🎉 Effect Patterns integration test completed successfully!"
     );
-    console.log('🚀 Chat assistant can now help users find Effect patterns!');
+    console.log("🚀 Chat assistant can now help users find Effect patterns!");
   } catch (error) {
-    console.error('❌ Patterns test failed:');
+    console.error("❌ Patterns test failed:");
     console.error(
-      'Error:',
-      error instanceof Error ? error.message : String(error),
+      "Error:",
+      error instanceof Error ? error.message : String(error)
     );
     process.exit(1);
   }

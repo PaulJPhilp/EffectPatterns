@@ -2399,11 +2399,11 @@ const releaseCreateCommand = Command.make('create', {
 
       // 2. Update CHANGELOG.md
       yield* Console.log('📝 Updating CHANGELOG.md...');
-      const changelogPath = 'CHANGELOG.md';
+      const changelogPath = 'docs/CHANGELOG.md';
 
       // Check if CHANGELOG.md exists
       const changelogExists = yield* Effect.try({
-        try: () => execSync('test -f CHANGELOG.md', { stdio: 'ignore' }),
+        try: () => execSync('test -f docs/CHANGELOG.md', { stdio: 'ignore' }),
         catch: () => false,
       });
 
@@ -2418,7 +2418,7 @@ const releaseCreateCommand = Command.make('create', {
 
       // 3. Git add
       yield* Console.log('📦 Staging changes...');
-      yield* execGitCommand('add', ['package.json', 'CHANGELOG.md']);
+      yield* execGitCommand('add', ['package.json', 'docs/CHANGELOG.md']);
       yield* Console.log('   ✓ Files staged');
 
       // 4. Git commit
