@@ -446,5 +446,5 @@ MIT © Paul Philp
 For more information:
 
 - [Main Documentation](../../README.md)
-- [MCP Server](../../services/mcp-server/README.md)
+- [MCP Server](../../docs/services/mcp-server/README.md)
 - [CLI Tool](../../scripts/ep.ts)

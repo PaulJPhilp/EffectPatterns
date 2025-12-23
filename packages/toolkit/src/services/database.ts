@@ -6,7 +6,7 @@
  */
 
 import { Effect, Layer, Config } from "effect"
-import { createDatabase, getDatabaseUrl, type Database } from "../db/client.js"
+import { createDatabase, getDatabaseUrl } from "../db/client.js"
 import {
   createApplicationPatternRepository,
   createEffectPatternRepository,
@@ -18,18 +18,13 @@ import {
 } from "../repositories/index.js"
 import type {
   ApplicationPattern,
-  NewApplicationPattern,
   EffectPattern as DbEffectPattern,
-  NewEffectPattern,
   Job,
-  NewJob,
-  JobWithPatterns,
-  SkillLevel,
-  JobStatus,
 } from "../db/schema/index.js"
+import type { JobWithPatterns } from "../repositories/index.js"
 import type { Pattern } from "../schemas/pattern.js"
 import { ToolkitLogger, ToolkitLoggerLive } from "./logger.js"
-import { ToolkitConfig, ToolkitConfigLive } from "./config.js"
+import { ToolkitConfigLive } from "./config.js"
 
 /**
  * Convert database EffectPattern to legacy Pattern format
@@ -84,9 +79,17 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
         close: connection.close,
       }
     }),
-    dependencies: [ToolkitLoggerLive, ToolkitConfigLive],
+    dependencies: [ToolkitLoggerLive],
   }
 ) {}
+
+/**
+ * Database layer with all services
+ */
+export const DatabaseServiceLive = DatabaseService.Default.pipe(
+  Layer.provide(ToolkitLoggerLive),
+  Layer.provide(ToolkitConfigLive)
+)
 
 /**
  * Application Pattern Repository Service
@@ -95,10 +98,10 @@ export class ApplicationPatternRepositoryService extends Effect.Service<Applicat
   "ApplicationPatternRepositoryService",
   {
     effect: Effect.gen(function* () {
-      const { db } = yield* DatabaseService
-      return createApplicationPatternRepository(db)
+      const dbService = yield* DatabaseService
+      return createApplicationPatternRepository(dbService.db)
     }),
-    dependencies: [DatabaseService.Default],
+    dependencies: [DatabaseServiceLive],
   }
 ) {}
 
@@ -109,10 +112,10 @@ export class EffectPatternRepositoryService extends Effect.Service<EffectPattern
   "EffectPatternRepositoryService",
   {
     effect: Effect.gen(function* () {
-      const { db } = yield* DatabaseService
-      return createEffectPatternRepository(db)
+      const dbService = yield* DatabaseService
+      return createEffectPatternRepository(dbService.db)
     }),
-    dependencies: [DatabaseService.Default],
+    dependencies: [DatabaseServiceLive],
   }
 ) {}
 
@@ -123,35 +126,24 @@ export class JobRepositoryService extends Effect.Service<JobRepositoryService>()
   "JobRepositoryService",
   {
     effect: Effect.gen(function* () {
-      const { db } = yield* DatabaseService
-      return createJobRepository(db)
+      const dbService = yield* DatabaseService
+      return createJobRepository(dbService.db)
     }),
-    dependencies: [DatabaseService.Default],
+    dependencies: [DatabaseServiceLive],
   }
 ) {}
 
-/**
- * Database layer with all services
- */
-export const DatabaseServiceLive = Layer.effect(
-  DatabaseService,
-  DatabaseService.effect
-).pipe(Layer.provide(ToolkitLoggerLive), Layer.provide(ToolkitConfigLive))
+export const ApplicationPatternRepositoryLive = ApplicationPatternRepositoryService.Default.pipe(
+  Layer.provide(DatabaseServiceLive)
+)
 
-export const ApplicationPatternRepositoryLive = Layer.effect(
-  ApplicationPatternRepositoryService,
-  ApplicationPatternRepositoryService.effect
-).pipe(Layer.provide(DatabaseServiceLive))
+export const EffectPatternRepositoryLive = EffectPatternRepositoryService.Default.pipe(
+  Layer.provide(DatabaseServiceLive)
+)
 
-export const EffectPatternRepositoryLive = Layer.effect(
-  EffectPatternRepositoryService,
-  EffectPatternRepositoryService.effect
-).pipe(Layer.provide(DatabaseServiceLive))
-
-export const JobRepositoryLive = Layer.effect(
-  JobRepositoryService,
-  JobRepositoryService.effect
-).pipe(Layer.provide(DatabaseServiceLive))
+export const JobRepositoryLive = JobRepositoryService.Default.pipe(
+  Layer.provide(DatabaseServiceLive)
+)
 
 /**
  * Complete database layer with all repositories

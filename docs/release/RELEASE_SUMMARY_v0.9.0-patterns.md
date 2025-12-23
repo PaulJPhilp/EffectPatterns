@@ -248,9 +248,9 @@ OVERALL:          80%+
 
 ### Documentation
 
-- **Release Notes:** `RELEASE_NOTES_v0.9.0-patterns.md`
+- **Release Notes:** `docs/release/RELEASE_NOTES_v0.9.0-patterns.md`
 - **API Coverage Analysis:** `docs/API_COVERAGE_ANALYSIS.md`
-- **Changelog:** Updated `CHANGELOG.md` with release summary
+- **Changelog:** Updated `docs/CHANGELOG.md` with release summary
 - **Version:** Updated `package.json` to `0.9.0-patterns`
 
 ---
@@ -418,7 +418,7 @@ Message: Release v0.9.0-patterns: Comprehensive Core Pattern Library
 
 ## 📖 Documentation Links
 
-- [Release Notes](./RELEASE_NOTES_v0.9.0-patterns.md)
+- [Release Notes](./RELEASE_NOTES_v0.9.0-patterns.md) (in same directory)
 - [API Coverage Analysis](./docs/API_COVERAGE_ANALYSIS.md)
 - [QA Process](./docs/QA_PROCESS.md)
 - [All Patterns](./content/published/patterns/core/)

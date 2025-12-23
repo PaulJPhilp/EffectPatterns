@@ -9,27 +9,30 @@
  * - Better reporting
  */
 
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import matter from 'gray-matter';
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import { createDatabase } from "../../packages/toolkit/src/db/client.js";
+import {
+  createApplicationPatternRepository,
+  createEffectPatternRepository,
+} from "../../packages/toolkit/src/repositories/index.js";
 
 // --- CONFIGURATION ---
-const PATTERNS_DIR = path.join(process.cwd(), 'content/published/patterns');
-const RULES_DIR = path.join(process.cwd(), 'content/published/rules');
-const USE_CASE_DIR = path.join(RULES_DIR, 'by-use-case');
-const CURSOR_DIR = path.join(RULES_DIR, 'cursor');
-const WINDSURF_DIR = path.join(RULES_DIR, 'windsurf');
+const RULES_DIR = path.join(process.cwd(), "content/published/rules");
+const USE_CASE_DIR = path.join(RULES_DIR, "by-use-case");
+const CURSOR_DIR = path.join(RULES_DIR, "cursor");
+const WINDSURF_DIR = path.join(RULES_DIR, "windsurf");
 
 // --- COLORS ---
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m',
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  dim: "\x1b[2m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  cyan: "\x1b[36m",
 };
 
 function colorize(text: string, color: keyof typeof colors): string {
@@ -52,78 +55,79 @@ interface Rule {
 const sanitizeName = (name: string) =>
   name
     .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
 
 // --- EXTRACTION ---
-async function findMdxFiles(dir: string): Promise<string[]> {
-  const mdxFiles: string[] = [];
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      const subFiles = await findMdxFiles(fullPath);
-      mdxFiles.push(...subFiles);
-    } else if (entry.name.endsWith('.mdx')) {
-      mdxFiles.push(fullPath);
-    }
-  }
-
-  return mdxFiles;
-}
-
 async function extractRules(): Promise<Rule[]> {
-  console.log(
-    colorize('📖 Extracting rules from published patterns...', 'cyan'),
-  );
+  console.log(colorize("📖 Extracting rules from database...", "cyan"));
 
-  const mdxFiles = await findMdxFiles(PATTERNS_DIR);
-  const rules: Rule[] = [];
+  const { db, close } = createDatabase();
+  const epRepo = createEffectPatternRepository(db);
+  const apRepo = createApplicationPatternRepository(db);
 
-  for (const filePath of mdxFiles) {
-    const fileContent = await fs.readFile(filePath, 'utf-8');
-    const { data, content } = matter(fileContent);
+  try {
+    // Load all patterns from database
+    const dbPatterns = await epRepo.findAll();
 
-    if ((data as any).rule?.description) {
-      // Extract Good Example section
-      const goodExample = extractSection(content, 'Good Example');
-      // Extract Anti-Pattern section
-      const antiPattern = extractSection(content, 'Anti-Pattern');
-      // Extract Explanation/Rationale section
-      const explanation = extractSection(content, 'Explanation', 'Rationale');
+    // Load application patterns to map IDs to slugs
+    const applicationPatterns = await apRepo.findAll();
+    const apIdToSlug = new Map(
+      applicationPatterns.map((ap) => [ap.id, ap.slug])
+    );
 
-      // Use applicationPatternId instead of useCase
-      const applicationPatternId = (data as any).applicationPatternId;
-      const useCases = applicationPatternId ? [applicationPatternId] : [];
+    const rules: Rule[] = [];
 
-      rules.push({
-        id: (data as any).id,
-        title: (data as any).title,
-        description: (data as any).rule.description,
-        skillLevel: (data as any).skillLevel,
-        useCases,
-        example: goodExample,
-        antiPattern,
-        explanation,
-        content: content.trim(),
-      });
+    for (const dbPattern of dbPatterns) {
+      if (dbPattern.rule?.description) {
+        const content = dbPattern.content || "";
+
+        // Extract Good Example section
+        const goodExample = extractSection(content, "Good Example");
+        // Extract Anti-Pattern section
+        const antiPattern = extractSection(content, "Anti-Pattern");
+        // Extract Explanation/Rationale section
+        const explanation = extractSection(content, "Explanation", "Rationale");
+
+        // Use application pattern slug
+        const applicationPatternId = dbPattern.applicationPatternId;
+        const apSlug = applicationPatternId
+          ? apIdToSlug.get(applicationPatternId)
+          : null;
+        const useCases = apSlug ? [apSlug] : [];
+
+        rules.push({
+          id: dbPattern.slug,
+          title: dbPattern.title,
+          description: dbPattern.rule.description,
+          skillLevel: dbPattern.skillLevel,
+          useCases,
+          example: goodExample,
+          antiPattern,
+          explanation,
+          content: content.trim(),
+        });
+      }
     }
-  }
 
-  console.log(colorize(`Found ${rules.length} patterns with rules\n`, 'green'));
-  return rules.sort((a, b) => a.title.localeCompare(b.title));
+    console.log(
+      colorize(`Found ${rules.length} patterns with rules\n`, "green")
+    );
+    return rules.sort((a, b) => a.title.localeCompare(b.title));
+  } finally {
+    await close();
+  }
 }
 
 function extractSection(content: string, ...sectionNames: string[]): string {
-  const contentLines = content.split('\n');
+  const contentLines = content.split("\n");
   let inSection = false;
   const sectionLines: string[] = [];
 
   for (const line of contentLines) {
     // Check if we're entering the target section
     if (
-      sectionNames.some((name) => new RegExp(`^##\\s+${name}`, 'i').test(line))
+      sectionNames.some((name) => new RegExp(`^##\\s+${name}`, "i").test(line))
     ) {
       inSection = true;
       continue;
@@ -131,21 +135,21 @@ function extractSection(content: string, ...sectionNames: string[]): string {
 
     // If we're in the section, collect lines until the next section
     if (inSection) {
-      if (line.startsWith('## ')) {
+      if (line.startsWith("## ")) {
         break;
       }
       sectionLines.push(line);
     }
   }
 
-  return sectionLines.length > 0 ? sectionLines.join('\n').trim() : '';
+  return sectionLines.length > 0 ? sectionLines.join("\n").trim() : "";
 }
 
 // --- GENERATORS ---
 
 // 1. Full markdown rules
 async function generateFullRules(rules: Rule[]) {
-  const content = ['# Effect-TS Patterns - Complete Rules\n\n'];
+  const content = ["# Effect-TS Patterns - Complete Rules\n\n"];
 
   for (const rule of rules) {
     content.push(`## ${rule.title}\n\n`);
@@ -156,7 +160,7 @@ async function generateFullRules(rules: Rule[]) {
     }
 
     if (rule.useCases && rule.useCases.length > 0) {
-      content.push(`**Use Cases:** ${rule.useCases.join(', ')}\n\n`);
+      content.push(`**Use Cases:** ${rule.useCases.join(", ")}\n\n`);
     }
 
     if (rule.example) {
@@ -171,31 +175,31 @@ async function generateFullRules(rules: Rule[]) {
       content.push(`### Explanation\n\n${rule.explanation}\n\n`);
     }
 
-    content.push('---\n\n');
+    content.push("---\n\n");
   }
 
-  const filePath = path.join(RULES_DIR, 'rules.md');
-  await fs.writeFile(filePath, content.join(''), 'utf-8');
+  const filePath = path.join(RULES_DIR, "rules.md");
+  await fs.writeFile(filePath, content.join(""), "utf-8");
   return filePath;
 }
 
 // 2. Compact rules
 async function generateCompactRules(rules: Rule[]) {
-  const content = ['# Effect-TS Patterns - Compact Rules\n\n'];
+  const content = ["# Effect-TS Patterns - Compact Rules\n\n"];
 
   for (const rule of rules) {
     content.push(`- **${rule.title}**: ${rule.description}\n`);
   }
 
-  const filePath = path.join(RULES_DIR, 'rules-compact.md');
-  await fs.writeFile(filePath, content.join(''), 'utf-8');
+  const filePath = path.join(RULES_DIR, "rules-compact.md");
+  await fs.writeFile(filePath, content.join(""), "utf-8");
   return filePath;
 }
 
 // 3. JSON rules
 async function generateJsonRules(rules: Rule[]) {
-  const filePath = path.join(RULES_DIR, 'rules.json');
-  await fs.writeFile(filePath, JSON.stringify(rules, null, 2), 'utf-8');
+  const filePath = path.join(RULES_DIR, "rules.json");
+  await fs.writeFile(filePath, JSON.stringify(rules, null, 2), "utf-8");
   return filePath;
 }
 
@@ -228,12 +232,12 @@ async function generateUseCaseRules(rules: Rule[]): Promise<string[]> {
         content.push(`### Example\n\n${rule.example}\n\n`);
       }
 
-      content.push('---\n\n');
+      content.push("---\n\n");
     }
 
     const fileName = `${sanitizeName(useCase)}.md`;
     const filePath = path.join(USE_CASE_DIR, fileName);
-    await fs.writeFile(filePath, content.join(''), 'utf-8');
+    await fs.writeFile(filePath, content.join(""), "utf-8");
     generatedFiles.push(filePath);
   }
 
@@ -252,8 +256,8 @@ async function generateCursorRules(rules: Rule[]): Promise<string[]> {
     // Frontmatter
     content.push(`description: ${rule.description}\n`);
     content.push(`globs: "**/*.ts"\n`);
-    content.push('alwaysApply: true\n');
-    content.push('\n');
+    content.push("alwaysApply: true\n");
+    content.push("\n");
 
     // Title
     content.push(`# ${rule.title}\n`);
@@ -274,7 +278,7 @@ async function generateCursorRules(rules: Rule[]): Promise<string[]> {
 
     const fileName = `${sanitizeName(rule.title)}.mdc`;
     const filePath = path.join(CURSOR_DIR, fileName);
-    await fs.writeFile(filePath, content.join(''), 'utf-8');
+    await fs.writeFile(filePath, content.join(""), "utf-8");
     generatedFiles.push(filePath);
   }
 
@@ -293,8 +297,8 @@ async function generateWindsurfRules(rules: Rule[]): Promise<string[]> {
     // Frontmatter (same as Cursor)
     content.push(`description: ${rule.description}\n`);
     content.push(`globs: "**/*.ts"\n`);
-    content.push('alwaysApply: true\n');
-    content.push('\n');
+    content.push("alwaysApply: true\n");
+    content.push("\n");
 
     // Title
     content.push(`# ${rule.title}\n`);
@@ -319,7 +323,7 @@ async function generateWindsurfRules(rules: Rule[]): Promise<string[]> {
 
     const fileName = `${sanitizeName(rule.title)}.mdc`;
     const filePath = path.join(WINDSURF_DIR, fileName);
-    await fs.writeFile(filePath, content.join(''), 'utf-8');
+    await fs.writeFile(filePath, content.join(""), "utf-8");
     generatedFiles.push(filePath);
   }
 
@@ -328,33 +332,33 @@ async function generateWindsurfRules(rules: Rule[]): Promise<string[]> {
 
 // --- REPORTING ---
 function printResults(results: Record<string, number>) {
-  console.log(colorize('\n📊 Generation Results Summary', 'cyan'));
-  console.log('═'.repeat(60));
+  console.log(colorize("\n📊 Generation Results Summary", "cyan"));
+  console.log("═".repeat(60));
 
-  console.log(`${colorize('Full Rules:', 'bright')}        1 file`);
-  console.log(`${colorize('Compact Rules:', 'bright')}     1 file`);
-  console.log(`${colorize('JSON Rules:', 'bright')}        1 file`);
+  console.log(`${colorize("Full Rules:", "bright")}        1 file`);
+  console.log(`${colorize("Compact Rules:", "bright")}     1 file`);
+  console.log(`${colorize("JSON Rules:", "bright")}        1 file`);
   console.log(
-    `${colorize('Use Case Rules:', 'bright')}    ${results.useCase} files`,
+    `${colorize("Use Case Rules:", "bright")}    ${results.useCase} files`
   );
   console.log(
-    `${colorize('Cursor Rules:', 'bright')}      ${results.cursor} files`,
+    `${colorize("Cursor Rules:", "bright")}      ${results.cursor} files`
   );
   console.log(
-    `${colorize('Windsurf Rules:', 'bright')}    ${results.windsurf} files`,
+    `${colorize("Windsurf Rules:", "bright")}    ${results.windsurf} files`
   );
 
   const total = 3 + results.useCase + results.cursor + results.windsurf;
-  console.log(`\n${colorize(`Total Files: ${total}`, 'green')}`);
-  console.log('═'.repeat(60));
+  console.log(`\n${colorize(`Total Files: ${total}`, "green")}`);
+  console.log("═".repeat(60));
 }
 
 // --- MAIN ---
 async function main() {
   const startTime = Date.now();
 
-  console.log(colorize('\n🔧 Enhanced Rules Generation', 'bright'));
-  console.log(colorize('Generating all rule formats from patterns\n', 'dim'));
+  console.log(colorize("\n🔧 Enhanced Rules Generation", "bright"));
+  console.log(colorize("Generating all rule formats from patterns\n", "dim"));
 
   // Ensure directories exist
   await fs.mkdir(RULES_DIR, { recursive: true });
@@ -364,13 +368,13 @@ async function main() {
 
   if (rules.length === 0) {
     console.log(
-      colorize('\n⚠️  No rules found in published patterns', 'yellow'),
+      colorize("\n⚠️  No rules found in published patterns", "yellow")
     );
     return;
   }
 
   // Generate all formats
-  console.log(colorize('🎯 Generating rule formats...\n', 'cyan'));
+  console.log(colorize("🎯 Generating rule formats...\n", "cyan"));
 
   const [
     _fullPath,
@@ -400,22 +404,22 @@ async function main() {
   console.log(
     colorize(
       `\n✨ All rules generated successfully in ${duration}ms!\n`,
-      'green',
-    ),
+      "green"
+    )
   );
 
   // Show sample output locations
-  console.log(colorize('📂 Output Locations:', 'dim'));
-  console.log(colorize(`   ${RULES_DIR}/rules.md`, 'dim'));
-  console.log(colorize(`   ${RULES_DIR}/rules-compact.md`, 'dim'));
-  console.log(colorize(`   ${RULES_DIR}/rules.json`, 'dim'));
-  console.log(colorize(`   ${USE_CASE_DIR}/*.md`, 'dim'));
-  console.log(colorize(`   ${CURSOR_DIR}/*.mdc`, 'dim'));
-  console.log(colorize(`   ${WINDSURF_DIR}/*.mdc\n`, 'dim'));
+  console.log(colorize("📂 Output Locations:", "dim"));
+  console.log(colorize(`   ${RULES_DIR}/rules.md`, "dim"));
+  console.log(colorize(`   ${RULES_DIR}/rules-compact.md`, "dim"));
+  console.log(colorize(`   ${RULES_DIR}/rules.json`, "dim"));
+  console.log(colorize(`   ${USE_CASE_DIR}/*.md`, "dim"));
+  console.log(colorize(`   ${CURSOR_DIR}/*.mdc`, "dim"));
+  console.log(colorize(`   ${WINDSURF_DIR}/*.mdc\n`, "dim"));
 }
 
 main().catch((error) => {
-  console.error(colorize('\n💥 Fatal error:', 'red'));
+  console.error(colorize("\n💥 Fatal error:", "red"));
   console.error(error);
   process.exit(1);
 });

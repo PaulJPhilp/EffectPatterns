@@ -14,8 +14,22 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "@effect-patterns/cli-core": "workspace:*",
+    "@effect-patterns/pipeline-state": "workspace:*",
+    "@effect-patterns/toolkit": "workspace:*",
+    "@effect/cli": "^0.69.2",
+    "@effect/platform": "^0.93.8",
+    "@effect/platform-node": "^0.98.4",
+    "conventional-commits-parser": "^6.2.1",
+    "conventional-recommended-bump": "^11.2.0",
+    "dotenv": "^17.2.3",
     "effect": "^3.19.3",
-    "effect-cli-tui": "^2.0.0"
+    "effect-cli-tui": "^2.0.0",
+    "glob": "^11.0.3",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.1",
+    "liquidjs": "^10.24.0",
+    "ora": "^9.0.0",
+    "semver": "^7.7.3",
+    "yaml": "^2.8.1"
   }
 }
