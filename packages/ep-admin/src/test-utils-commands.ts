@@ -72,7 +72,7 @@ export const testUtilsHarnessCommand = Command.make("harness", {
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/test-harness.ts"),
                 "Running integration tests",
-                { verbose: options.verbose, suite: options.suite }
+                { verbose: options.verbose }
             );
 
             yield* showSuccess("Integration tests passed!");

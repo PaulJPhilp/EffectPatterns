@@ -24,6 +24,13 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import ora from "ora";
 import * as semver from "semver";
+import {
+  EP_ADMIN_COMMANDS,
+  generateCompletion,
+  getInstallInstructions,
+  installCompletion,
+  type Shell,
+} from "./completions.js";
 import { dbCommand } from "./db-commands.js";
 import { discordCommand } from "./discord-commands.js";
 import { ingestCommand } from "./ingest-commands.js";
@@ -3981,6 +3988,76 @@ const unlockCommand = Command.make("unlock", {
 /**
  * admin - Administrative commands for repository management
  */
+// --- COMPLETIONS COMMAND ---
+
+const completionsGenerateCommand = Command.make(
+  "generate",
+  {
+    shell: Args.text({ name: "shell" }).pipe(
+      Args.withDescription("Shell type: bash, zsh, or fish")
+    ),
+  },
+  ({ shell }) =>
+    Effect.gen(function* () {
+      const shellType = shell.toLowerCase() as Shell;
+      if (!["bash", "zsh", "fish"].includes(shellType)) {
+        yield* Console.error(
+          `Invalid shell: ${shell}. Must be one of: bash, zsh, fish`
+        );
+        return;
+      }
+
+      const script = generateCompletion(shellType, EP_ADMIN_COMMANDS);
+      yield* Console.log(script);
+    })
+).pipe(
+  Command.withDescription(
+    "Generate shell completion script (outputs to stdout)"
+  )
+);
+
+const completionsInstallCommand = Command.make(
+  "install",
+  {
+    shell: Args.text({ name: "shell" }).pipe(
+      Args.withDescription("Shell type: bash, zsh, or fish")
+    ),
+  },
+  ({ shell }) =>
+    Effect.gen(function* () {
+      const shellType = shell.toLowerCase() as Shell;
+      if (!["bash", "zsh", "fish"].includes(shellType)) {
+        yield* Console.error(
+          `Invalid shell: ${shell}. Must be one of: bash, zsh, fish`
+        );
+        return;
+      }
+
+      yield* Console.log(`Installing ${shellType} completions...`);
+
+      const result = yield* installCompletion(shellType, EP_ADMIN_COMMANDS).pipe(
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            yield* Console.error(`Failed to install completions: ${error.message}`);
+            return null;
+          })
+        )
+      );
+
+      if (result) {
+        yield* showSuccess(`Completions installed to: ${result}`);
+        yield* Console.log(getInstallInstructions(shellType, result));
+      }
+    })
+).pipe(Command.withDescription("Install shell completions to default location"));
+
+const completionsCommand = Command.make("completions").pipe(
+  Command.withDescription(
+    "Generate or install shell completions for bash, zsh, or fish"
+  ),
+  Command.withSubcommands([completionsGenerateCommand, completionsInstallCommand])
+);
+
 const adminSubcommands = [
   validateCommand,
   testCommand,
@@ -4000,6 +4077,7 @@ const adminSubcommands = [
   pipelineManagementCommand,
   lockCommand,
   unlockCommand,
+  completionsCommand,
 ] as const;
 
 export const adminRootCommand = Command.make("ep-admin").pipe(
@@ -4008,6 +4086,7 @@ export const adminRootCommand = Command.make("ep-admin").pipe(
 );
 
 import { FetchHttpClient } from "@effect/platform";
+import { LoggerDefault } from "./services/logger.js";
 
 // Import TUI layer for ep-admin (optional - lazy loaded)
 let EffectCLITUILayer: any = null;
@@ -4022,10 +4101,11 @@ export const fileSystemLayer = NodeFileSystem.layer.pipe(
   Layer.provide(NodeContext.layer)
 );
 
-// Standard runtime for ep-admin
+// Standard runtime for ep-admin (includes Logger service)
 export const runtimeLayer = Layer.mergeAll(
   fileSystemLayer,
   FetchHttpClient.layer,
+  LoggerDefault,
   (StateStore as any).Default
 ) as any;
 
@@ -4034,6 +4114,7 @@ export const runtimeLayerWithTUI: any = EffectCLITUILayer
   ? Layer.mergeAll(
     fileSystemLayer,
     FetchHttpClient.layer,
+    LoggerDefault,
     (StateStore as any).Default,
     EffectCLITUILayer
   )
@@ -4047,3 +4128,11 @@ const adminCliRunner = Command.run(adminRootCommand, {
 export const createAdminProgram = (
   argv: ReadonlyArray<string> = process.argv
 ) => adminCliRunner(argv);
+
+// Run CLI when executed directly
+import { NodeRuntime } from "@effect/platform-node";
+
+createAdminProgram(process.argv).pipe(
+  Effect.provide(runtimeLayer),
+  NodeRuntime.runMain
+);

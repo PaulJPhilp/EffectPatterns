@@ -71,7 +71,7 @@ export const opsRotateApiKeyCommand = Command.make("rotate-api-key", {
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/rotate-api-key.sh"),
                 "Rotating API key",
-                { verbose: options.verbose, backup: options.backup }
+                { verbose: options.verbose }
             );
 
             yield* showSuccess("API key rotated successfully!");
@@ -107,7 +107,7 @@ export const opsUpgradeBaselineCommand = Command.make("upgrade-baseline", {
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/upgrade-baseline.sh"),
                 "Upgrading test baseline",
-                { verbose: options.verbose, confirm: options.confirm }
+                { verbose: options.verbose }
             );
 
             yield* showSuccess("Test baseline upgraded!");
