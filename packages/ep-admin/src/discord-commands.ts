@@ -44,7 +44,7 @@ export const discordIngestCommand = Command.make("ingest", {
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/ingest-discord.ts"),
                 "Ingesting from Discord",
-                { verbose: options.verbose, channel: options.channel }
+                { verbose: options.verbose }
             );
 
             yield* showSuccess("Discord ingest completed!");

@@ -40,7 +40,7 @@ export const dbTestCommand = Command.make("test", {
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/test-db.ts"),
                 "Testing database",
-                { verbose: options.verbose, includePerf: options.includePerf }
+                { verbose: options.verbose }
             );
 
             yield* showSuccess("Database tests passed!");
@@ -100,7 +100,7 @@ export const dbVerifyMigrationCommand = Command.make("verify-migration", {
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/verify-migration.ts"),
                 "Verifying database migration",
-                { verbose: options.verbose, fix: options.fix }
+                { verbose: options.verbose }
             );
 
             yield* showSuccess("Database migration verified!");
@@ -132,7 +132,7 @@ export const dbMockCommand = Command.make("mock", {
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/mock-db.ts"),
                 "Creating mock database",
-                { verbose: options.verbose, seed: options.seed }
+                { verbose: options.verbose }
             );
 
             yield* showSuccess("Mock database created!");
