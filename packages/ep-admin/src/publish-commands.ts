@@ -12,6 +12,7 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { showError, showInfo, showSuccess } from "./services/display.js";
 import { executeScriptWithTUI } from "./services/execution.js";
 
@@ -37,11 +38,7 @@ const runScript = (
  */
 export const publishValidateCommand = Command.make("validate", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed validation output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         pattern: Options.optional(
             Options.text("pattern").pipe(
                 Options.withDescription("Validate specific pattern only")
@@ -54,6 +51,8 @@ export const publishValidateCommand = Command.make("validate", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* runScript(
                 path.join(PROJECT_ROOT, "scripts/publish/validate-improved.ts"),
                 "Validating patterns",
@@ -71,11 +70,7 @@ export const publishValidateCommand = Command.make("validate", {
  */
 export const publishTestCommand = Command.make("test", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed test output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         pattern: Options.optional(
             Options.text("pattern").pipe(
                 Options.withDescription("Test specific pattern only")
@@ -88,6 +83,8 @@ export const publishTestCommand = Command.make("test", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* runScript(
                 path.join(PROJECT_ROOT, "scripts/publish/test-improved.ts"),
                 "Running TypeScript examples",
@@ -105,11 +102,7 @@ export const publishTestCommand = Command.make("test", {
  */
 export const publishPublishCommand = Command.make("publish", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         pattern: Options.optional(
             Options.text("pattern").pipe(
                 Options.withDescription("Publish specific pattern only")
@@ -127,6 +120,8 @@ export const publishPublishCommand = Command.make("publish", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* runScript(
                 path.join(PROJECT_ROOT, "scripts/publish/publish.ts"),
                 "Publishing patterns",
@@ -144,11 +139,7 @@ export const publishPublishCommand = Command.make("publish", {
  */
 export const publishGenerateCommand = Command.make("generate", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed generation output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         readme: Options.boolean("readme").pipe(
             Options.withDescription("Generate README only"),
             Options.withDefault(false)
@@ -164,6 +155,8 @@ export const publishGenerateCommand = Command.make("generate", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             const generateReadme =
                 options.readme || (!options.readme && !options.rules);
             const generateRules =
@@ -197,11 +190,7 @@ export const publishGenerateCommand = Command.make("generate", {
  */
 export const publishLintCommand = Command.make("lint", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed linting output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         fix: Options.boolean("fix").pipe(
             Options.withDescription("Automatically fix linting issues"),
             Options.withDefault(false)
@@ -213,6 +202,8 @@ export const publishLintCommand = Command.make("lint", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* runScript(
                 path.join(PROJECT_ROOT, "scripts/publish/lint-effect-patterns.ts"),
                 "Linting patterns",
@@ -230,11 +221,7 @@ export const publishLintCommand = Command.make("lint", {
  */
 export const publishPipelineCommand = Command.make("pipeline", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed output from each step"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         skipValidation: Options.boolean("skip-validation").pipe(
             Options.withDescription("Skip validation step"),
             Options.withDefault(false)
@@ -250,6 +237,8 @@ export const publishPipelineCommand = Command.make("pipeline", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* showInfo("Starting publishing pipeline...");
 
             yield* runScript(

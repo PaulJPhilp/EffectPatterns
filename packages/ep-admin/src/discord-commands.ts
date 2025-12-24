@@ -10,6 +10,7 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { showInfo, showSuccess } from "./services/display.js";
 import { executeScriptWithTUI } from "./services/execution.js";
 
@@ -20,11 +21,7 @@ const PROJECT_ROOT = process.cwd();
  */
 export const discordIngestCommand = Command.make("ingest", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed ingest output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         channel: Options.optional(
             Options.text("channel").pipe(
                 Options.withDescription("Discord channel to ingest from (e.g., patterns, feedback)")
@@ -37,6 +34,8 @@ export const discordIngestCommand = Command.make("ingest", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             if (options.channel) {
                 yield* showInfo(`Ingesting from Discord channel: ${options.channel}`);
             }
@@ -57,11 +56,7 @@ export const discordIngestCommand = Command.make("ingest", {
  */
 export const discordTestCommand = Command.make("test", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed test output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
     },
 }).pipe(
     Command.withDescription(
@@ -69,6 +64,8 @@ export const discordTestCommand = Command.make("test", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/test-discord-simple.ts"),
                 "Testing Discord connection",

@@ -24,6 +24,7 @@ import {
   effectPatterns,
   jobs,
 } from "../packages/toolkit/src/db/schema/index.js"
+import { sql } from "drizzle-orm"
 
 interface TestResult {
   name: string
@@ -68,8 +69,8 @@ async function runAllTests() {
   try {
     // Test 1: Database Connection
     await runTest("Database Connection", async () => {
-      const result = await db.execute("SELECT 1 as test")
-      if (!result || (result as any)[0]?.test !== 1) {
+      const result = await db.execute("SELECT 1 as test") as Array<{ test: number }>
+      if (!result || result[0]?.test !== 1) {
         throw new Error("Database connection failed")
       }
     })
@@ -86,14 +87,13 @@ async function runAllTests() {
 
       for (const table of tables) {
         const result = await db.execute(
-          `SELECT EXISTS (
+          sql`SELECT EXISTS (
             SELECT FROM information_schema.tables 
             WHERE table_schema = 'public' 
-            AND table_name = $1
-          )`,
-          [table]
-        )
-        if (!result || !(result as any)[0]?.exists) {
+            AND table_name = ${table}
+          )`
+        ) as Array<{ exists: boolean }>
+        if (!result || !result[0]?.exists) {
           throw new Error(`Table ${table} does not exist`)
         }
       }

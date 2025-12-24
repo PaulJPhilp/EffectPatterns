@@ -11,6 +11,7 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { showSuccess } from "./services/display.js";
 import { executeScriptWithTUI } from "./services/execution.js";
 
@@ -21,11 +22,7 @@ const PROJECT_ROOT = process.cwd();
  */
 export const skillsGenerateCommand = Command.make("generate", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed generation output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         format: Options.choice("format", ["json", "markdown", "yaml"]).pipe(
             Options.withDescription("Output format"),
             Options.withDefault("json" as const)
@@ -37,6 +34,8 @@ export const skillsGenerateCommand = Command.make("generate", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/generate-skills.ts"),
                 "Generating skills",
@@ -53,11 +52,7 @@ export const skillsGenerateCommand = Command.make("generate", {
  */
 export const skillsSkillGeneratorCommand = Command.make("skill-generator", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
     },
 }).pipe(
     Command.withDescription(
@@ -65,6 +60,8 @@ export const skillsSkillGeneratorCommand = Command.make("skill-generator", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/skill-generator.ts"),
                 "Running skill generator",
@@ -81,11 +78,7 @@ export const skillsSkillGeneratorCommand = Command.make("skill-generator", {
  */
 export const skillsGenerateReadmeCommand = Command.make("generate-readme", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed generation output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         skillLevel: Options.optional(
             Options.text("skill-level").pipe(
                 Options.withDescription("Filter by skill level (beginner, intermediate, advanced)")
@@ -103,6 +96,8 @@ export const skillsGenerateReadmeCommand = Command.make("generate-readme", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/generate_readme_by_skill_usecase.ts"),
                 "Generating README",

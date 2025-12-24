@@ -17,7 +17,7 @@ import {
   writeGeminiSkill,
   writeOpenAISkill,
   writeSkill,
-} from "./skill-generator";
+} from "./skill-generator.js";
 
 const PROJECT_ROOT = process.cwd();
 

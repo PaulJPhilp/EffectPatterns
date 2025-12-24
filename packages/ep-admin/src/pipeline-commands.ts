@@ -14,6 +14,7 @@ import {
 } from "@effect-patterns/pipeline-state";
 import { Args, Command, Options } from "@effect/cli";
 import { Console, Effect, Option } from "effect";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { showInfo, showPanel, showTable } from "./services/display.js";
 
 /**
@@ -21,22 +22,20 @@ import { showInfo, showPanel, showTable } from "./services/display.js";
  */
 export const statusCommand: any = Command.make("status", {
   options: {
+    ...globalOptions,
     pattern: Options.optional(
       Options.text("pattern").pipe(
         Options.withAlias("p"),
         Options.withDescription("Show status for specific pattern")
       )
     ),
-    verbose: Options.boolean("verbose").pipe(
-      Options.withAlias("v"),
-      Options.withDescription("Show detailed step information"),
-      Options.withDefault(false)
-    ),
   },
 }).pipe(
   Command.withDescription("Show pipeline status for patterns"),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
+      yield* configureLoggerFromOptions(options);
+
       const sm = yield* PipelineStateMachine;
 
       // Check if pattern filter is provided
@@ -213,16 +212,14 @@ export const retryCommand: any = Command.make("retry", {
  */
 export const resumeCommand: any = Command.make("resume", {
   options: {
-    verbose: Options.boolean("verbose").pipe(
-      Options.withAlias("v"),
-      Options.withDescription("Show detailed information"),
-      Options.withDefault(false)
-    ),
+    ...globalOptions,
   },
 }).pipe(
   Command.withDescription("Show patterns ready to resume"),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
+      yield* configureLoggerFromOptions(options);
+
       const sm = yield* PipelineStateMachine;
       // Get patterns in "ready" status - these are ready to resume
       const ready = yield* sm.getPatternsByStatus("ready");
