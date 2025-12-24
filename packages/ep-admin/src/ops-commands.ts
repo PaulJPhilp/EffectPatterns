@@ -10,6 +10,7 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { showInfo, showSuccess } from "./services/display.js";
 import { executeScriptWithTUI } from "./services/execution.js";
 
@@ -20,11 +21,7 @@ const PROJECT_ROOT = process.cwd();
  */
 export const opsHealthCheckCommand = Command.make("health-check", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed health check output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
     },
 }).pipe(
     Command.withDescription(
@@ -32,6 +29,8 @@ export const opsHealthCheckCommand = Command.make("health-check", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/health-check.sh"),
                 "Running health check",
@@ -48,11 +47,7 @@ export const opsHealthCheckCommand = Command.make("health-check", {
  */
 export const opsRotateApiKeyCommand = Command.make("rotate-api-key", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         backup: Options.boolean("backup").pipe(
             Options.withDescription("Backup current key before rotation"),
             Options.withDefault(true)
@@ -64,6 +59,8 @@ export const opsRotateApiKeyCommand = Command.make("rotate-api-key", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             if (options.backup) {
                 yield* showInfo("Creating backup of current API key...");
             }
@@ -84,11 +81,7 @@ export const opsRotateApiKeyCommand = Command.make("rotate-api-key", {
  */
 export const opsUpgradeBaselineCommand = Command.make("upgrade-baseline", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         confirm: Options.boolean("confirm").pipe(
             Options.withDescription("Skip confirmation prompt"),
             Options.withDefault(false)
@@ -100,6 +93,8 @@ export const opsUpgradeBaselineCommand = Command.make("upgrade-baseline", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             if (!options.confirm) {
                 yield* showInfo("This will update all test baselines");
             }

@@ -14,6 +14,7 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { showInfo, showSuccess } from "./services/display.js";
 import { executeScriptWithTUI } from "./services/execution.js";
 
@@ -24,11 +25,7 @@ const PROJECT_ROOT = process.cwd();
  */
 export const qaProcessCommand = Command.make("process", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed QA output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         fix: Options.boolean("fix").pipe(
             Options.withDescription("Automatically fix issues found"),
             Options.withDefault(false)
@@ -40,6 +37,8 @@ export const qaProcessCommand = Command.make("process", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/qa/qa-process.sh"),
                 "Running QA pipeline",
@@ -56,11 +55,7 @@ export const qaProcessCommand = Command.make("process", {
  */
 export const qaStatusCommand = Command.make("status", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed status information"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
     },
 }).pipe(
     Command.withDescription(
@@ -68,6 +63,8 @@ export const qaStatusCommand = Command.make("status", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/qa/qa-status.ts"),
                 "Checking QA status",
@@ -84,11 +81,7 @@ export const qaStatusCommand = Command.make("status", {
  */
 export const qaReportCommand = Command.make("report", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed report output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         format: Options.choice("format", ["json", "markdown", "html"]).pipe(
             Options.withDescription("Output format for report"),
             Options.withDefault("markdown" as const)
@@ -100,6 +93,8 @@ export const qaReportCommand = Command.make("report", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/qa/qa-report.ts"),
                 "Generating QA report",
@@ -116,11 +111,7 @@ export const qaReportCommand = Command.make("report", {
  */
 export const qaRepairCommand = Command.make("repair", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed repair output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         dryRun: Options.boolean("dry-run").pipe(
             Options.withDescription("Preview changes without applying them"),
             Options.withDefault(false)
@@ -132,6 +123,8 @@ export const qaRepairCommand = Command.make("repair", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             if (options.dryRun) {
                 yield* showInfo("Running in dry-run mode (no changes will be applied)");
             }
@@ -152,11 +145,7 @@ export const qaRepairCommand = Command.make("repair", {
  */
 export const qaTestEnhancedCommand = Command.make("test-enhanced", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed test output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         pattern: Options.optional(
             Options.text("pattern").pipe(
                 Options.withDescription("Test specific pattern only")
@@ -169,6 +158,8 @@ export const qaTestEnhancedCommand = Command.make("test-enhanced", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/qa/test-enhanced-qa.ts"),
                 "Running enhanced QA tests",
@@ -190,11 +181,7 @@ export const qaTestSingleCommand = Command.make("test-single", {
         ),
     },
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed test output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
     },
 }).pipe(
     Command.withDescription(
@@ -202,6 +189,8 @@ export const qaTestSingleCommand = Command.make("test-single", {
     ),
     Command.withHandler(({ positional, options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/qa/test-single-pattern.sh"),
                 `Testing pattern: ${positional.patternFile}`,
@@ -218,11 +207,7 @@ export const qaTestSingleCommand = Command.make("test-single", {
  */
 export const qaFixPermissionsCommand = Command.make("fix-permissions", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
     },
 }).pipe(
     Command.withDescription(
@@ -230,6 +215,8 @@ export const qaFixPermissionsCommand = Command.make("fix-permissions", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/qa/permissions-fix.sh"),
                 "Fixing file permissions",
