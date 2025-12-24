@@ -40,7 +40,7 @@ export const skillsGenerateCommand = Command.make("generate", {
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/generate-skills.ts"),
                 "Generating skills",
-                { verbose: options.verbose, format: options.format }
+                { verbose: options.verbose }
             );
 
             yield* showSuccess("Skills generated successfully!");
@@ -108,8 +108,8 @@ export const skillsGenerateReadmeCommand = Command.make("generate-readme", {
                 "Generating README",
                 {
                     verbose: options.verbose,
-                    skillLevel: options.skillLevel,
-                    useCase: options.useCase
+                    ...(options.skillLevel && { skillLevel: options.skillLevel }),
+                    ...(options.useCase && { useCase: options.useCase })
                 }
             );
 

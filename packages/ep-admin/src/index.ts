@@ -27,11 +27,12 @@ import * as semver from "semver";
 import { dbCommand } from "./db-commands.js";
 import { discordCommand } from "./discord-commands.js";
 import { ingestCommand } from "./ingest-commands.js";
+import { migrateCommand } from "./migrate-commands.js";
+import { opsCommand } from "./ops-commands.js";
 import { pipelineManagementCommand } from "./pipeline-commands.js";
 import { publishCommand } from "./publish-commands.js";
 import { qaCommand } from "./qa-commands.js";
 import { showError, showPanel, showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
 import { skillsCommand } from "./skills-commands.js";
 import {
   generateCategorySkill,
@@ -44,6 +45,7 @@ import {
   writeSkill,
   type PatternContent,
 } from "./skills/skill-generator.js";
+import { testUtilsCommand } from "./test-utils-commands.js";
 
 // --- PROJECT ROOT RESOLUTION ---
 // Find the project root by looking for package.json with "name": "effect-patterns-hub"
@@ -3990,6 +3992,9 @@ const adminSubcommands = [
   dbCommand,
   discordCommand,
   skillsCommand,
+  migrateCommand,
+  opsCommand,
+  testUtilsCommand,
   rulesCommand,
   releaseCommand,
   pipelineManagementCommand,
