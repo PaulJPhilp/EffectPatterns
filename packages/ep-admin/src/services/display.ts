@@ -4,10 +4,16 @@
  * Automatically detects if TUI services are available and uses them,
  * falling back to console output when TUI is not available.
  * This allows both ep (user CLI) and ep-admin (with TUI) to use the same API.
+ *
+ * Integrates with the Logger service for consistent output formatting.
  */
 
-import { Effect } from "effect";
-import { Console } from "effect";
+import { Console, Effect, Option as Opt } from "effect";
+import {
+  Logger,
+  type LoggerConfig,
+  defaultLoggerConfig,
+} from "./logger.js";
 
 // Import TUI services - these will only be used if available
 let DisplayService: any = null;
@@ -34,9 +40,48 @@ try {
   // TUI not available, will use console fallback
 }
 
+// =============================================================================
+// ANSI Color Helpers (respects Logger config)
+// =============================================================================
+
+const COLORS = {
+  reset: "\x1b[0m",
+  green: "\x1b[32m",
+  red: "\x1b[31m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  cyan: "\x1b[36m",
+  dim: "\x1b[2m",
+} as const;
+
+/**
+ * Get current logger config, with fallback to defaults
+ */
+const getLoggerConfig = (): Effect.Effect<LoggerConfig> =>
+  Effect.gen(function* () {
+    const maybeLogger = yield* Effect.serviceOption(Logger);
+    if (Opt.isSome(maybeLogger)) {
+      return yield* maybeLogger.value.getConfig();
+    }
+    return defaultLoggerConfig;
+  });
+
+/**
+ * Apply color if enabled in config
+ */
+const colorize = (
+  text: string,
+  color: keyof typeof COLORS,
+  config: LoggerConfig
+): string => {
+  if (!config.useColors) return text;
+  return `${COLORS[color]}${text}${COLORS.reset}`;
+};
+
 /**
  * Display a success message
  * Uses TUI if available, console fallback otherwise
+ * Respects Logger config for colors
  */
 export const showSuccess = (message: string) =>
   Effect.gen(function* () {
@@ -47,13 +92,16 @@ export const showSuccess = (message: string) =>
         return;
       }
     }
-    // Fallback to console
-    yield* Console.log(`✓ ${message}`);
+    // Fallback to console with color support
+    const config = yield* getLoggerConfig();
+    const icon = colorize("✓", "green", config);
+    yield* Console.log(`${icon} ${message}`);
   });
 
 /**
  * Display an error message
  * Uses TUI if available, console fallback otherwise
+ * Respects Logger config for colors
  */
 export const showError = (message: string) =>
   Effect.gen(function* () {
@@ -64,13 +112,16 @@ export const showError = (message: string) =>
         return;
       }
     }
-    // Fallback to console
-    yield* Console.error(`✖ ${message}`);
+    // Fallback to console with color support
+    const config = yield* getLoggerConfig();
+    const icon = colorize("✖", "red", config);
+    yield* Console.error(`${icon} ${message}`);
   });
 
 /**
  * Display an info message
  * Uses TUI if available, console fallback otherwise
+ * Respects Logger config for colors
  */
 export const showInfo = (message: string) =>
   Effect.gen(function* () {
@@ -81,13 +132,16 @@ export const showInfo = (message: string) =>
         return;
       }
     }
-    // Fallback to console
-    yield* Console.log(`ℹ ${message}`);
+    // Fallback to console with color support
+    const config = yield* getLoggerConfig();
+    const icon = colorize("ℹ", "blue", config);
+    yield* Console.log(`${icon} ${message}`);
   });
 
 /**
  * Display a warning message
  * Uses TUI if available, console fallback otherwise
+ * Respects Logger config for colors
  */
 export const showWarning = (message: string) =>
   Effect.gen(function* () {
@@ -98,8 +152,10 @@ export const showWarning = (message: string) =>
         return;
       }
     }
-    // Fallback to console
-    yield* Console.log(`⚠ ${message}`);
+    // Fallback to console with color support
+    const config = yield* getLoggerConfig();
+    const icon = colorize("⚠", "yellow", config);
+    yield* Console.log(`${icon} ${message}`);
   });
 
 export interface PanelOptions {
