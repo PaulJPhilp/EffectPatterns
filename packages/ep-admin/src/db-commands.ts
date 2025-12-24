@@ -11,6 +11,7 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { showSuccess } from "./services/display.js";
 import { executeScriptWithTUI } from "./services/execution.js";
 
@@ -21,11 +22,7 @@ const PROJECT_ROOT = process.cwd();
  */
 export const dbTestCommand = Command.make("test", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed test output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         includePerf: Options.boolean("perf").pipe(
             Options.withDescription("Include performance tests"),
             Options.withDefault(false)
@@ -37,6 +34,8 @@ export const dbTestCommand = Command.make("test", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/test-db.ts"),
                 "Testing database",
@@ -53,11 +52,7 @@ export const dbTestCommand = Command.make("test", {
  */
 export const dbTestQuickCommand = Command.make("test-quick", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
     },
 }).pipe(
     Command.withDescription(
@@ -65,6 +60,8 @@ export const dbTestQuickCommand = Command.make("test-quick", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/test-db-quick.ts"),
                 "Quick testing database",
@@ -81,11 +78,7 @@ export const dbTestQuickCommand = Command.make("test-quick", {
  */
 export const dbVerifyMigrationCommand = Command.make("verify-migration", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed verification output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         fix: Options.boolean("fix").pipe(
             Options.withDescription("Automatically fix migration issues"),
             Options.withDefault(false)
@@ -97,6 +90,8 @@ export const dbVerifyMigrationCommand = Command.make("verify-migration", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/verify-migration.ts"),
                 "Verifying database migration",
@@ -113,11 +108,7 @@ export const dbVerifyMigrationCommand = Command.make("verify-migration", {
  */
 export const dbMockCommand = Command.make("mock", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         seed: Options.boolean("seed").pipe(
             Options.withDescription("Seed with test data"),
             Options.withDefault(false)
@@ -129,6 +120,8 @@ export const dbMockCommand = Command.make("mock", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/mock-db.ts"),
                 "Creating mock database",

@@ -9,6 +9,7 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { showInfo, showSuccess, showWarning } from "./services/display.js";
 import { executeScriptWithTUI } from "./services/execution.js";
 
@@ -19,11 +20,7 @@ const PROJECT_ROOT = process.cwd();
  */
 export const migrateStateCommand = Command.make("state", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed migration output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         backup: Options.boolean("backup").pipe(
             Options.withDescription("Create backup before migration"),
             Options.withDefault(true)
@@ -39,6 +36,8 @@ export const migrateStateCommand = Command.make("state", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             if (options.dryRun) {
                 yield* showInfo("Running in dry-run mode (no changes will be applied)");
             }
@@ -64,11 +63,7 @@ export const migrateStateCommand = Command.make("state", {
  */
 export const migratePostgresCommand = Command.make("postgres", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed migration output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         backup: Options.boolean("backup").pipe(
             Options.withDescription("Create backup before migration"),
             Options.withDefault(true)
@@ -84,6 +79,8 @@ export const migratePostgresCommand = Command.make("postgres", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             if (options.dryRun) {
                 yield* showInfo("Running in dry-run mode (no changes will be applied)");
             }

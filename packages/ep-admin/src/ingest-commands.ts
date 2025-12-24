@@ -14,6 +14,7 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { showInfo, showSuccess } from "./services/display.js";
 import { executeScriptWithTUI } from "./services/execution.js";
 
@@ -24,11 +25,7 @@ const PROJECT_ROOT = process.cwd();
  */
 export const ingestProcessCommand = Command.make("process", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed processing output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         clean: Options.boolean("clean").pipe(
             Options.withDescription("Clean processed files before processing"),
             Options.withDefault(false)
@@ -40,6 +37,8 @@ export const ingestProcessCommand = Command.make("process", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             if (options.clean) {
                 yield* showInfo("Cleaning processed patterns...");
             }
@@ -65,11 +64,7 @@ export const ingestProcessOneCommand = Command.make("process-one", {
         ),
     },
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed processing output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
     },
 }).pipe(
     Command.withDescription(
@@ -77,6 +72,8 @@ export const ingestProcessOneCommand = Command.make("process-one", {
     ),
     Command.withHandler(({ positional, options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/ingest/process-one.ts"),
                 `Processing pattern: ${positional.patternFile}`,
@@ -95,11 +92,7 @@ export const ingestProcessOneCommand = Command.make("process-one", {
  */
 export const ingestValidateCommand = Command.make("validate", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed validation output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         fix: Options.boolean("fix").pipe(
             Options.withDescription("Automatically fix common issues"),
             Options.withDefault(false)
@@ -111,6 +104,8 @@ export const ingestValidateCommand = Command.make("validate", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/ingest/validate.ts"),
                 "Validating ingest data",
@@ -127,11 +122,7 @@ export const ingestValidateCommand = Command.make("validate", {
  */
 export const ingestTestCommand = Command.make("test", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed test output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         publish: Options.boolean("publish").pipe(
             Options.withDescription("Test publishing of ingested patterns"),
             Options.withDefault(false)
@@ -143,6 +134,8 @@ export const ingestTestCommand = Command.make("test", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             const scriptPath = options.publish
                 ? "test-publish.ts"
                 : "test-new.ts";
@@ -163,11 +156,7 @@ export const ingestTestCommand = Command.make("test", {
  */
 export const ingestPopulateCommand = Command.make("populate", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed population output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         reset: Options.boolean("reset").pipe(
             Options.withDescription("Reset expectations before populating"),
             Options.withDefault(false)
@@ -179,6 +168,8 @@ export const ingestPopulateCommand = Command.make("populate", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/ingest/populate-expectations.ts"),
                 "Populating test expectations",
@@ -195,11 +186,7 @@ export const ingestPopulateCommand = Command.make("populate", {
  */
 export const ingestStatusCommand = Command.make("status", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed status output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
     },
 }).pipe(
     Command.withDescription(
@@ -207,6 +194,8 @@ export const ingestStatusCommand = Command.make("status", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/ingest/run.ts"),
                 "Checking ingest status",
@@ -223,11 +212,7 @@ export const ingestStatusCommand = Command.make("status", {
  */
 export const ingestPipelineCommand = Command.make("pipeline", {
     options: {
-        verbose: Options.boolean("verbose").pipe(
-            Options.withAlias("v"),
-            Options.withDescription("Show detailed pipeline output"),
-            Options.withDefault(false)
-        ),
+        ...globalOptions,
         test: Options.boolean("test").pipe(
             Options.withDescription("Run tests after processing"),
             Options.withDefault(false)
@@ -243,6 +228,8 @@ export const ingestPipelineCommand = Command.make("pipeline", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
             yield* executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/ingest/ingest-pipeline-improved.ts"),
                 "Running full ingest pipeline",
