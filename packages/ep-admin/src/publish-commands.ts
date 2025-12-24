@@ -12,10 +12,25 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
-import { showSuccess } from "./services/display.js";
+import { showError, showInfo, showSuccess } from "./services/display.js";
 import { executeScriptWithTUI } from "./services/execution.js";
 
 const PROJECT_ROOT = process.cwd();
+
+/**
+ * Helper to run a script with proper error logging
+ */
+const runScript = (
+    scriptPath: string,
+    taskName: string,
+    stepName: string,
+    options: { verbose?: boolean }
+) =>
+    executeScriptWithTUI(scriptPath, taskName, options).pipe(
+        Effect.tapError((error) =>
+            showError(`Step '${stepName}' failed: ${error.message}`)
+        )
+    );
 
 /**
  * publish:validate - Validate patterns before publishing
@@ -39,9 +54,10 @@ export const publishValidateCommand = Command.make("validate", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
-            yield* executeScriptWithTUI(
+            yield* runScript(
                 path.join(PROJECT_ROOT, "scripts/publish/validate-improved.ts"),
                 "Validating patterns",
+                "validate",
                 { verbose: options.verbose }
             );
 
@@ -72,9 +88,10 @@ export const publishTestCommand = Command.make("test", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
-            yield* executeScriptWithTUI(
+            yield* runScript(
                 path.join(PROJECT_ROOT, "scripts/publish/test-improved.ts"),
                 "Running TypeScript examples",
+                "test",
                 { verbose: options.verbose }
             );
 
@@ -110,9 +127,10 @@ export const publishPublishCommand = Command.make("publish", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
-            yield* executeScriptWithTUI(
+            yield* runScript(
                 path.join(PROJECT_ROOT, "scripts/publish/publish.ts"),
                 "Publishing patterns",
+                "publish",
                 { verbose: options.verbose }
             );
 
@@ -146,21 +164,25 @@ export const publishGenerateCommand = Command.make("generate", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
-            const generateReadme = options.readme || (!options.readme && !options.rules);
-            const generateRules = options.rules || (!options.readme && !options.rules);
+            const generateReadme =
+                options.readme || (!options.readme && !options.rules);
+            const generateRules =
+                options.rules || (!options.readme && !options.rules);
 
             if (generateReadme) {
-                yield* executeScriptWithTUI(
+                yield* runScript(
                     path.join(PROJECT_ROOT, "scripts/publish/generate.ts"),
                     "Generating README",
+                    "generate-readme",
                     { verbose: options.verbose }
                 );
             }
 
             if (generateRules) {
-                yield* executeScriptWithTUI(
+                yield* runScript(
                     path.join(PROJECT_ROOT, "scripts/publish/rules-improved.ts"),
                     "Generating rules",
+                    "generate-rules",
                     { verbose: options.verbose }
                 );
             }
@@ -191,9 +213,10 @@ export const publishLintCommand = Command.make("lint", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
-            yield* executeScriptWithTUI(
+            yield* runScript(
                 path.join(PROJECT_ROOT, "scripts/publish/lint-effect-patterns.ts"),
                 "Linting patterns",
+                "lint",
                 { verbose: options.verbose }
             );
 
@@ -227,15 +250,16 @@ export const publishPipelineCommand = Command.make("pipeline", {
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
-            yield* executeScriptWithTUI(
+            yield* showInfo("Starting publishing pipeline...");
+
+            yield* runScript(
                 path.join(PROJECT_ROOT, "scripts/publish/pipeline.ts"),
                 "Publishing pipeline",
+                "pipeline",
                 { verbose: options.verbose }
-            ).pipe(
-                Effect.andThen(() =>
-                    showSuccess("Publishing pipeline completed successfully!")
-                )
             );
+
+            yield* showSuccess("Publishing pipeline completed successfully!");
         }) as any
     )
 );

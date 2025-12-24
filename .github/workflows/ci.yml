@@ -94,6 +94,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
+        if: github.event_name == 'push' || secrets.CODECOV_TOKEN
         with:
           files: ./packages/toolkit/coverage/coverage-final.json
           flags: toolkit
