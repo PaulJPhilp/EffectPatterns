@@ -37,7 +37,7 @@ jobs:
       - name: Generate patterns
         run: |
           # Run the full publishing pipeline to validate and prepare patterns
-          bun run pipeline
+          bun run ep:admin publish pipeline
 
       - name: Verify patterns.json
         run: |

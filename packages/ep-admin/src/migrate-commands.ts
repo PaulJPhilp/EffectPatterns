@@ -50,9 +50,7 @@ export const migrateStateCommand = Command.make("state", {
                 path.join(PROJECT_ROOT, "scripts/migrate-state.ts"),
                 "Migrating pipeline state",
                 {
-                    verbose: options.verbose,
-                    backup: options.backup,
-                    dryRun: options.dryRun
+                    verbose: options.verbose
                 }
             );
 
@@ -97,9 +95,7 @@ export const migratePostgresCommand = Command.make("postgres", {
                 path.join(PROJECT_ROOT, "scripts/migrate-to-postgres.ts"),
                 "Migrating to PostgreSQL",
                 {
-                    verbose: options.verbose,
-                    backup: options.backup,
-                    dryRun: options.dryRun
+                    verbose: options.verbose
                 }
             );
 
