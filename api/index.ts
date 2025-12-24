@@ -3,22 +3,26 @@
  *
  * This adapts the Effect-based Pattern Server to work as a Vercel serverless function.
  * It handles incoming HTTP requests and routes them to the appropriate handlers.
+ * Uses PostgreSQL database for all pattern and rule data.
  */
 
-import * as path from "node:path";
-import { FileSystem } from "@effect/platform";
-import { NodeFileSystem } from "@effect/platform-node";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { Data, Effect, Schema } from "effect";
-import matter from "gray-matter";
+import { createDatabase } from "../packages/toolkit/src/db/client.js";
+import { createEffectPatternRepository } from "../packages/toolkit/src/repositories/index.js";
 
-const TITLE_HEADING_REGEX = /^#\s+(.+)$/;
 const RULE_PATH_REGEX = /^\/api\/v1\/rules\/([^/]+)$/;
 const HTTP_STATUS_OK = 200;
 const HTTP_STATUS_NOT_FOUND = 404;
 
 // --- SCHEMA DEFINITIONS ---
 
+/**
+ * Schema for API Rule response
+ * 
+ * Represents a pattern rule with metadata and content.
+ * All fields except id, title, description, and content are optional.
+ */
 const RuleSchema = Schema.Struct({
   id: Schema.String,
   title: Schema.String,
@@ -30,141 +34,120 @@ const RuleSchema = Schema.Struct({
 
 // --- ERROR TYPES ---
 
-class RuleLoadError extends Data.TaggedError("RuleLoadError")<{
-  readonly path: string;
+/**
+ * Error thrown when database operations fail
+ * @param cause - The underlying error from the database
+ */
+class DatabaseError extends Data.TaggedError("DatabaseError")<{
   readonly cause: unknown;
-}> {}
+}> { }
 
-class RuleParseError extends Data.TaggedError("RuleParseError")<{
-  readonly file: string;
-  readonly cause: unknown;
-}> {}
-
-class RulesDirectoryNotFoundError extends Data.TaggedError(
-  "RulesDirectoryNotFoundError"
-)<{
-  readonly path: string;
-}> {}
-
+/**
+ * Error thrown when a requested rule is not found
+ * @param id - The rule ID that was not found
+ */
 class RuleNotFoundError extends Data.TaggedError("RuleNotFoundError")<{
   readonly id: string;
-}> {}
+}> { }
 
 // --- HELPER FUNCTIONS ---
 
-const extractTitle = (content: string): string => {
-  const lines = content.split("\n");
-  for (const line of lines) {
-    const match = line.match(TITLE_HEADING_REGEX);
-    if (match) {
-      return match[1].trim();
-    }
+/**
+ * Load all rules from the database
+ * 
+ * Fetches all patterns that have a rule defined and transforms them
+ * into the API response format.
+ * 
+ * @returns Effect containing array of rules with metadata
+ * @throws DatabaseError if database connection fails
+ */
+const loadRulesFromDatabase = Effect.gen(function* () {
+  const { db, close } = createDatabase();
+
+  try {
+    const repo = createEffectPatternRepository(db);
+    const patterns = yield* Effect.try({
+      try: () => repo.findAll(),
+      catch: (error) => new DatabaseError({ cause: error }),
+    });
+
+    // Filter patterns that have a rule defined
+    const rules = patterns
+      .filter((p) => p.rule && p.title)
+      .map((p) => ({
+        id: p.slug,
+        title: p.title,
+        description: p.summary || "",
+        skillLevel: p.skillLevel,
+        useCase: (p.useCases as string[]) || undefined,
+        content: p.content || "",
+      }));
+
+    return rules;
+  } finally {
+    await close();
   }
-  return "Untitled Rule";
-};
+});
 
-const parseRuleFile = (
-  fs: FileSystem.FileSystem,
-  filePath: string,
-  fileId: string
-) =>
-  Effect.gen(function* () {
-    const content = yield* fs
-      .readFileString(filePath)
-      .pipe(
-        Effect.catchAll((error) =>
-          Effect.fail(new RuleLoadError({ path: filePath, cause: error }))
-        )
-      );
-
-    let parsed: { data: Record<string, unknown>; content: string };
-    try {
-      parsed = matter(content);
-    } catch (error) {
-      return yield* Effect.fail(
-        new RuleParseError({ file: filePath, cause: error })
-      );
-    }
-
-    const { data, content: markdownContent } = parsed;
-    const title = extractTitle(markdownContent);
-
-    const rawUseCase = data.useCase;
-    let useCase: string[] | undefined;
-    if (Array.isArray(rawUseCase)) {
-      useCase = rawUseCase.filter(
-        (value): value is string => typeof value === "string"
-      );
-    } else if (typeof rawUseCase === "string") {
-      useCase = [rawUseCase];
-    }
-
-    return {
-      id: fileId,
-      title,
-      description: (data.description as string) || "",
-      skillLevel: data.skillLevel as string | undefined,
-      useCase,
-      content: markdownContent,
-    };
-  });
-
+/**
+ * Load a single rule by ID from the database
+ * 
+ * @param id - The pattern slug/ID to retrieve
+ * @returns Effect containing the rule data
+ * @throws RuleNotFoundError if pattern doesn't exist or has no rule
+ * @throws DatabaseError if database connection fails
+ */
 const readRuleById = (id: string) =>
   Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const rulesDir = path.join(process.cwd(), "rules/cursor");
-    const filePath = path.join(rulesDir, `${id}.mdc`);
+    const { db, close } = createDatabase();
 
-    const fileExists = yield* fs.exists(filePath);
-    if (!fileExists) {
-      return yield* Effect.fail(new RuleNotFoundError({ id }));
+    try {
+      const repo = createEffectPatternRepository(db);
+      const pattern = yield* Effect.try({
+        try: () => repo.findBySlug(id),
+        catch: (error) => new DatabaseError({ cause: error }),
+      });
+
+      if (!pattern || !pattern.rule) {
+        return yield* Effect.fail(new RuleNotFoundError({ id }));
+      }
+
+      return {
+        id: pattern.slug,
+        title: pattern.title,
+        description: pattern.summary || "",
+        skillLevel: pattern.skillLevel,
+        useCase: (pattern.useCases as string[]) || undefined,
+        content: pattern.content || "",
+      };
+    } finally {
+      await close();
     }
-
-    return yield* parseRuleFile(fs, filePath, id);
   });
-
-const readAndParseRules = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem;
-  const rulesDir = path.join(process.cwd(), "rules/cursor");
-
-  const dirExists = yield* fs.exists(rulesDir);
-  if (!dirExists) {
-    return yield* Effect.fail(
-      new RulesDirectoryNotFoundError({ path: rulesDir })
-    );
-  }
-
-  const files = yield* fs
-    .readDirectory(rulesDir)
-    .pipe(
-      Effect.catchAll((error) =>
-        Effect.fail(new RuleLoadError({ path: rulesDir, cause: error }))
-      )
-    );
-
-  const mdcFiles = files.filter((file) => file.endsWith(".mdc"));
-
-  const rules = yield* Effect.forEach(
-    mdcFiles,
-    (file) => {
-      const filePath = path.join(rulesDir, file);
-      const fileId = path.basename(file, ".mdc");
-      return parseRuleFile(fs, filePath, fileId);
-    },
-    { concurrency: "unbounded" }
-  );
-
-  return rules;
-});
 
 // --- ROUTE HANDLERS ---
 
+/**
+ * Health check handler
+ * 
+ * Always succeeds with status "ok"
+ */
 const healthHandler = Effect.succeed({ status: "ok" });
 
+/**
+ * GET /api/v1/rules handler
+ * 
+ * Returns all patterns that have associated rules.
+ * Validates response against RuleSchema.
+ * 
+ * @returns Effect containing array of rules or error response
+ * - statusCode 200: Array of rule objects
+ * - statusCode 500: Database error
+ */
 const rulesHandler = Effect.gen(function* () {
   const rulesResult = yield* Effect.either(
     Effect.gen(function* () {
-      const rules = yield* readAndParseRules;
+      const rules = yield* loadRulesFromDatabase;
       const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
         rules
       );
@@ -174,7 +157,7 @@ const rulesHandler = Effect.gen(function* () {
 
   if (rulesResult._tag === "Left") {
     return {
-      error: "Failed to load rules",
+      error: "Failed to load rules from database",
       statusCode: 500,
     };
   }
@@ -185,6 +168,18 @@ const rulesHandler = Effect.gen(function* () {
   };
 });
 
+/**
+ * GET /api/v1/rules/{id} handler
+ * 
+ * Returns a single rule by ID (pattern slug).
+ * Validates response against RuleSchema.
+ * 
+ * @param id - The pattern slug to retrieve
+ * @returns Effect containing rule object or error response
+ * - statusCode 200: Single rule object
+ * - statusCode 404: Rule not found
+ * - statusCode 500: Database error
+ */
 const singleRuleHandler = (id: string) =>
   Effect.gen(function* () {
     const ruleResult = yield* Effect.either(
@@ -206,7 +201,7 @@ const singleRuleHandler = (id: string) =>
       }
 
       return {
-        error: "Failed to load rule",
+        error: "Failed to load rule from database",
         statusCode: 500,
       };
     }
@@ -219,6 +214,18 @@ const singleRuleHandler = (id: string) =>
 
 // --- VERCEL HANDLER ---
 
+/**
+ * Main request handler for Vercel serverless function
+ * 
+ * Routes HTTP requests to appropriate handlers based on URL:
+ * - GET / - API documentation
+ * - GET /health - Health check
+ * - GET /api/v1/rules - List all rules
+ * - GET /api/v1/rules/{id} - Get single rule by ID
+ * 
+ * @param req - Vercel request object
+ * @param res - Vercel response object
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { url } = req;
 
@@ -241,17 +248,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Health check
   if (url === "/health") {
-    const result = await Effect.runPromise(
-      healthHandler.pipe(Effect.provide(NodeFileSystem.layer))
-    );
+    const result = await Effect.runPromise(healthHandler);
     return res.status(HTTP_STATUS_OK).json(result);
   }
 
   // List all rules
   if (url === "/api/v1/rules") {
-    const result = await Effect.runPromise(
-      rulesHandler.pipe(Effect.provide(NodeFileSystem.layer))
-    );
+    const result = await Effect.runPromise(rulesHandler);
     if ("error" in result) {
       return res.status(result.statusCode).json({ error: result.error });
     }
@@ -262,9 +265,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const ruleMatch = url?.match(RULE_PATH_REGEX);
   if (ruleMatch) {
     const id = ruleMatch[1];
-    const result = await Effect.runPromise(
-      singleRuleHandler(id).pipe(Effect.provide(NodeFileSystem.layer))
-    );
+    const result = await Effect.runPromise(singleRuleHandler(id));
     if ("error" in result) {
       return res.status(result.statusCode).json({ error: result.error });
     }

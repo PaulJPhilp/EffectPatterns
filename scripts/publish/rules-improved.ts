@@ -1,12 +1,20 @@
 /**
  * rules-improved.ts
  *
- * Enhanced rules generation with:
- * - All existing formats (markdown, JSON, by-use-case)
- * - NEW: Cursor rules (.mdc files)
- * - NEW: Windsurf rules (.mdc files)
- * - Parallel generation for speed
- * - Better reporting
+ * Enhanced rules generation script (DEPRECATED - Rules now in database)
+ *
+ * ⚠️  This script is for reference only.
+ * Rules are now stored in the PostgreSQL database via the migration script.
+ *
+ * Previous outputs (archived in .archives/):
+ * - Cursor rules (.mdc files)
+ * - Windsurf rules (.mdc files)
+ * - Markdown and JSON formats
+ *
+ * Current approach:
+ * - All rules are stored in effect_patterns table with rule field
+ * - Use database queries to access rules
+ * - API endpoints: /api/v1/rules
  */
 
 import * as fs from "node:fs/promises";

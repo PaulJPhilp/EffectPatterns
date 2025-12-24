@@ -1,18 +1,15 @@
-#!/usr/bin/env node
-
 /**
  * Effect Patterns MCP Server
  *
  * Provides MCP tools for searching Effect patterns and generating code
  * snippets. Communicates via stdio following the Model Context Protocol.
+ * All pattern data is loaded from the PostgreSQL database.
  */
 
 import {
   buildSnippet,
-  type Pattern,
-  loadPatternsFromDatabase,
-  searchPatternsFromDatabase,
   getPatternFromDatabase,
+  searchPatternsFromDatabase
 } from "@effect-patterns/toolkit";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -21,11 +18,6 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-
-// Load patterns from database
-let patterns: Pattern[] = [];
-
-// Create MCP server
 const server = new Server(
   {
     name: "effect-patterns",
@@ -285,11 +277,8 @@ server.setRequestHandler(
 // Start server
 async function main() {
   try {
-    // Load patterns from database at startup
-    console.error("Loading patterns from database...");
-    const patternsData = await loadPatternsFromDatabase();
-    patterns = patternsData.patterns;
-    console.error(`Loaded ${patterns.length} patterns from database`);
+    console.error("Effect Patterns MCP Server starting...");
+    console.error("Connecting to database for patterns...");
 
     const transport = new StdioServerTransport();
     await server.connect(transport);
