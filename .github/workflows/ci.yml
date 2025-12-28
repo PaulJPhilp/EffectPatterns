@@ -94,12 +94,11 @@ jobs:
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
-        if: github.event_name == 'push' || secrets.CODECOV_TOKEN
+        if: github.event_name == 'push'
         with:
           files: ./packages/toolkit/coverage/coverage-final.json
           flags: toolkit
           name: toolkit-coverage
-          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
       - name: Upload coverage artifacts
