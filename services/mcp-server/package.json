@@ -23,7 +23,7 @@
   "dependencies": {
     "@effect-patterns/toolkit": "workspace:*",
     "@effect/opentelemetry": "^0.60.0",
-    "@effect/platform": "^0.93.0",
+    "@effect/platform": "^0.94.0",
     "@effect/platform-node": "^0.104.0",
     "@effect/schema": "^0.75.5",
     "@opentelemetry/api": "^1.9.0",
