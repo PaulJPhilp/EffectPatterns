@@ -107,7 +107,7 @@ export const ingestValidateCommand = Command.make("validate", {
             yield* configureLoggerFromOptions(options);
 
             yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/ingest/validate.ts"),
+                path.join(PROJECT_ROOT, "scripts/ingest/process.ts"),
                 "Validating ingest data",
                 { verbose: options.verbose }
             );
@@ -197,7 +197,7 @@ export const ingestStatusCommand = Command.make("status", {
             yield* configureLoggerFromOptions(options);
 
             yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/ingest/run.ts"),
+                path.join(PROJECT_ROOT, "scripts/ingest/ingest-pipeline-improved.ts"),
                 "Checking ingest status",
                 { verbose: options.verbose }
             );

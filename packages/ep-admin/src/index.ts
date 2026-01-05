@@ -41,6 +41,7 @@ import { pipelineManagementCommand } from "./pipeline-commands.js";
 import { publishCommand } from "./publish-commands.js";
 import { qaCommand } from "./qa-commands.js";
 import { showError, showPanel, showSuccess } from "./services/display.js";
+import { executeScriptWithTUI } from "./services/execution.js";
 import { skillsCommand } from "./skills-commands.js";
 import {
   generateCategorySkill,
