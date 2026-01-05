@@ -5,7 +5,6 @@
  * Skills are grouped by category (useCase) for better context efficiency.
  */
 
-import matter from "gray-matter";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
@@ -61,7 +60,7 @@ export function extractSection(
   return sectionLines.length > 0 ? sectionLines.join("\n").trim() : "";
 }
 
-import type { EffectPattern } from "@effect-patterns/toolkit";
+import type { DbEffectPattern as EffectPattern } from "@effect-patterns/toolkit";
 
 /**
  * Convert database EffectPattern to PatternContent
@@ -152,8 +151,7 @@ export function generateCategorySkill(
   // Header
   lines.push(`# Effect-TS Patterns: ${categoryTitle}\n`);
   lines.push(
-    `This skill provides ${
-      patterns.length
+    `This skill provides ${patterns.length
     } curated Effect-TS patterns for ${categoryTitle.toLowerCase()}.\n`
   );
   lines.push("Use this skill when working on tasks related to:\n");
@@ -307,8 +305,8 @@ export function generateGeminiSkill(
       pattern.skillLevel === "beginner"
         ? "BEGINNER"
         : pattern.skillLevel === "intermediate"
-        ? "INTERMEDIATE"
-        : "ADVANCED",
+          ? "INTERMEDIATE"
+          : "ADVANCED",
     codeExample: pattern.goodExample
       ? pattern.goodExample.substring(0, 500)
       : undefined,

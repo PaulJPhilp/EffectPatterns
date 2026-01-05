@@ -3,11 +3,11 @@
  * Now uses PostgreSQL database as the source of truth.
  */
 
-import { createDatabase } from "../packages/toolkit/src/db/client.js";
+import { createDatabase } from '../packages/toolkit/src/db/client.js';
 import {
   createApplicationPatternRepository,
   createEffectPatternRepository,
-} from "../packages/toolkit/src/repositories/index.js";
+} from '../packages/toolkit/src/repositories/index.js';
 import {
   generateCategorySkill,
   generateGeminiSkill,
@@ -23,7 +23,7 @@ import {
 const PROJECT_ROOT = process.cwd();
 
 async function main() {
-  console.log("\n🎓 Generating Skills from Effect Patterns\n");
+  console.log('\n🎓 Generating Skills from Effect Patterns\n');
 
   // Connect to database
   const { db, close } = createDatabase();
@@ -32,14 +32,14 @@ async function main() {
 
   try {
     // Load patterns from database
-    console.log("📖 Loading patterns from database...");
+    console.log('📖 Loading patterns from database...');
     const dbPatterns = await epRepo.findAll();
     console.log(`✓ Found ${dbPatterns.length} patterns\n`);
 
     // Load application patterns to map IDs to slugs
     const applicationPatterns = await apRepo.findAll();
     const apIdToSlug = new Map(
-      applicationPatterns.map((ap) => [ap.id, ap.slug])
+      applicationPatterns.map((ap) => [ap.id, ap.slug]),
     );
 
     // Convert database patterns to PatternContent
@@ -56,16 +56,16 @@ async function main() {
       }
     }
     console.log(
-      `✓ Processed ${patterns.length} patterns with application patterns\n`
+      `✓ Processed ${patterns.length} patterns with application patterns\n`,
     );
 
     // Group by category
-    console.log("🗂️  Grouping patterns by category...");
+    console.log('🗂️  Grouping patterns by category...');
     const categoryMap = groupPatternsByCategory(patterns);
     console.log(`✓ Found ${categoryMap.size} categories\n`);
 
     // Generate all skills
-    console.log("📝 Generating skills...\n");
+    console.log('📝 Generating skills...\n');
 
     let claudeCount = 0;
     let geminiCount = 0;

@@ -78,6 +78,36 @@ export const discordTestCommand = Command.make("test", {
 );
 
 /**
+ * discord:flatten - Flatten nested Discord messages
+ */
+export const discordFlattenCommand = Command.make("flatten", {
+    options: {
+        ...globalOptions,
+        file: Options.text("file").pipe(
+            Options.withDescription("Path to Discord QnA JSON file"),
+            Options.withDefault("packages/data/discord-qna.json")
+        ),
+    },
+}).pipe(
+    Command.withDescription(
+        "Flatten nested Discord messages into a single array"
+    ),
+    Command.withHandler(({ options }) =>
+        Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+
+            yield* executeScriptWithTUI(
+                path.join(PROJECT_ROOT, "scripts/flatten-discord-qna.js"),
+                "Flattening Discord messages",
+                { verbose: options.verbose }
+            );
+
+            yield* showSuccess("Discord messages flattened!");
+        }) as any
+    )
+);
+
+/**
  * Compose all Discord commands into a single command group
  */
 export const discordCommand = Command.make("discord").pipe(
@@ -85,5 +115,6 @@ export const discordCommand = Command.make("discord").pipe(
     Command.withSubcommands([
         discordIngestCommand,
         discordTestCommand,
+        discordFlattenCommand,
     ])
 );
