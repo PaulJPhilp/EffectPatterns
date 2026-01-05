@@ -24,6 +24,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import ora from "ora";
 import * as semver from "semver";
+import { autofixCommand } from "./autofix-commands.js";
 import {
   EP_ADMIN_COMMANDS,
   generateCompletion,
@@ -53,6 +54,7 @@ import {
   type PatternContent,
 } from "./skills/skill-generator.js";
 import { testUtilsCommand } from "./test-utils-commands.js";
+import { utilsCommand } from "./utils-commands.js";
 
 // --- PROJECT ROOT RESOLUTION ---
 // Find the project root by looking for package.json with "name": "effect-patterns-hub"
@@ -4072,6 +4074,8 @@ const adminSubcommands = [
   migrateCommand,
   opsCommand,
   testUtilsCommand,
+  utilsCommand,
+  autofixCommand,
   rulesCommand,
   releaseCommand,
   pipelineManagementCommand,

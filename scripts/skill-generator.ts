@@ -6,16 +6,16 @@
  * Now uses database as the source of truth.
  */
 
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import type { EffectPattern } from "../packages/toolkit/src/db/schema/index.js";
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import type { EffectPattern } from '../packages/toolkit/src/db/schema/index.js';
 
 // --- TYPE DEFINITIONS ---
 
 export interface PatternContent {
   id: string;
   title: string;
-  skillLevel: "beginner" | "intermediate" | "advanced";
+  skillLevel: 'beginner' | 'intermediate' | 'advanced';
   applicationPatternId: string;
   summary: string;
   rule?: { description: string };
@@ -37,14 +37,14 @@ export function extractSection(
   content: string,
   ...sectionNames: string[]
 ): string {
-  const contentLines = content.split("\n");
+  const contentLines = content.split('\n');
   let inSection = false;
   const sectionLines: string[] = [];
 
   for (const line of contentLines) {
     // Check if we're entering the target section
     if (
-      sectionNames.some((name) => new RegExp(`^##\\s+${name}`, "i").test(line))
+      sectionNames.some((name) => new RegExp(`^##\\s+${name}`, 'i').test(line))
     ) {
       inSection = true;
       continue;
@@ -52,14 +52,14 @@ export function extractSection(
 
     // If we're in the section, collect lines until the next section
     if (inSection) {
-      if (line.startsWith("## ")) {
+      if (line.startsWith('## ')) {
         break;
       }
       sectionLines.push(line);
     }
   }
 
-  return sectionLines.length > 0 ? sectionLines.join("\n").trim() : "";
+  return sectionLines.length > 0 ? sectionLines.join('\n').trim() : '';
 }
 
 /**
@@ -68,21 +68,21 @@ export function extractSection(
  * Extracts sections from the content field using regex.
  */
 export function patternFromDatabase(dbPattern: EffectPattern): PatternContent {
-  const content = dbPattern.content || "";
+  const content = dbPattern.content || '';
 
   return {
     id: dbPattern.slug,
     title: dbPattern.title,
     skillLevel: dbPattern.skillLevel as
-      | "beginner"
-      | "intermediate"
-      | "advanced",
-    applicationPatternId: dbPattern.applicationPatternId || "",
+      | 'beginner'
+      | 'intermediate'
+      | 'advanced',
+    applicationPatternId: dbPattern.applicationPatternId || '',
     summary: dbPattern.summary,
     rule: dbPattern.rule || undefined,
-    goodExample: extractSection(content, "Good Example"),
-    antiPattern: extractSection(content, "Anti-Pattern"),
-    rationale: extractSection(content, "Rationale", "Guideline", "Explanation"),
+    goodExample: extractSection(content, 'Good Example'),
+    antiPattern: extractSection(content, 'Anti-Pattern'),
+    rationale: extractSection(content, 'Rationale', 'Guideline', 'Explanation'),
     related: undefined, // Can be added if needed from patternRelations
   };
 }
@@ -93,7 +93,7 @@ export function patternFromDatabase(dbPattern: EffectPattern): PatternContent {
  * Normalizes category names to kebab-case for consistency.
  */
 export function groupPatternsByCategory(
-  patterns: PatternContent[]
+  patterns: PatternContent[],
 ): Map<string, PatternContent[]> {
   const categoryMap = new Map<string, PatternContent[]>();
 
@@ -104,8 +104,8 @@ export function groupPatternsByCategory(
     // Normalize to kebab-case
     const normalized = category
       .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
 
     if (!categoryMap.has(normalized)) {
       categoryMap.set(normalized, []);
@@ -124,78 +124,78 @@ export function groupPatternsByCategory(
  */
 export function generateCategorySkill(
   category: string,
-  patterns: PatternContent[]
+  patterns: PatternContent[],
 ): string {
   // Sort by skill level
   const levels = { beginner: 0, intermediate: 1, advanced: 2 };
   const sorted = patterns.sort(
-    (a, b) => levels[a.skillLevel] - levels[b.skillLevel]
+    (a, b) => levels[a.skillLevel] - levels[b.skillLevel],
   );
 
   // Format category name for display
   const categoryTitle = category
-    .split("-")
+    .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+    .join(' ');
 
   const lines: string[] = [];
 
   // YAML frontmatter
-  lines.push("---");
+  lines.push('---');
   lines.push(`name: effect-patterns-${category}`);
   lines.push(
-    `description: Effect-TS patterns for ${categoryTitle}. Use when working with ${categoryTitle.toLowerCase()} in Effect-TS applications.`
+    `description: Effect-TS patterns for ${categoryTitle}. Use when working with ${categoryTitle.toLowerCase()} in Effect-TS applications.`,
   );
-  lines.push("---\n");
+  lines.push('---\n');
 
   // Header
   lines.push(`# Effect-TS Patterns: ${categoryTitle}\n`);
   lines.push(
     `This skill provides ${
       patterns.length
-    } curated Effect-TS patterns for ${categoryTitle.toLowerCase()}.\n`
+    } curated Effect-TS patterns for ${categoryTitle.toLowerCase()}.\n`,
   );
-  lines.push("Use this skill when working on tasks related to:\n");
+  lines.push('Use this skill when working on tasks related to:\n');
   lines.push(`- ${categoryTitle.toLowerCase()}\n`);
   lines.push(`- Best practices in Effect-TS applications\n`);
   lines.push(`- Real-world patterns and solutions\n\n`);
-  lines.push("---\n\n");
+  lines.push('---\n\n');
 
   // Group by skill level for visual organization
   const byLevel = {
-    beginner: sorted.filter((p) => p.skillLevel === "beginner"),
-    intermediate: sorted.filter((p) => p.skillLevel === "intermediate"),
-    advanced: sorted.filter((p) => p.skillLevel === "advanced"),
+    beginner: sorted.filter((p) => p.skillLevel === 'beginner'),
+    intermediate: sorted.filter((p) => p.skillLevel === 'intermediate'),
+    advanced: sorted.filter((p) => p.skillLevel === 'advanced'),
   };
 
   // Beginner section
   if (byLevel.beginner.length > 0) {
-    lines.push("## 🟢 Beginner Patterns\n\n");
+    lines.push('## 🟢 Beginner Patterns\n\n');
     for (const pattern of byLevel.beginner) {
       lines.push(...formatPatternForSkill(pattern));
     }
-    lines.push("\n");
+    lines.push('\n');
   }
 
   // Intermediate section
   if (byLevel.intermediate.length > 0) {
-    lines.push("## 🟡 Intermediate Patterns\n\n");
+    lines.push('## 🟡 Intermediate Patterns\n\n');
     for (const pattern of byLevel.intermediate) {
       lines.push(...formatPatternForSkill(pattern));
     }
-    lines.push("\n");
+    lines.push('\n');
   }
 
   // Advanced section
   if (byLevel.advanced.length > 0) {
-    lines.push("## 🟠 Advanced Patterns\n\n");
+    lines.push('## 🟠 Advanced Patterns\n\n');
     for (const pattern of byLevel.advanced) {
       lines.push(...formatPatternForSkill(pattern));
     }
-    lines.push("\n");
+    lines.push('\n');
   }
 
-  return lines.join("");
+  return lines.join('');
 }
 
 /**
@@ -211,21 +211,21 @@ function formatPatternForSkill(pattern: PatternContent): string[] {
   }
 
   if (pattern.goodExample) {
-    lines.push("**Good Example:**\n\n");
+    lines.push('**Good Example:**\n\n');
     lines.push(`${pattern.goodExample}\n\n`);
   }
 
   if (pattern.antiPattern) {
-    lines.push("**Anti-Pattern:**\n\n");
+    lines.push('**Anti-Pattern:**\n\n');
     lines.push(`${pattern.antiPattern}\n\n`);
   }
 
   if (pattern.rationale) {
-    lines.push("**Rationale:**\n\n");
+    lines.push('**Rationale:**\n\n');
     lines.push(`${pattern.rationale}\n\n`);
   }
 
-  lines.push("---\n\n");
+  lines.push('---\n\n');
 
   return lines;
 }
@@ -238,17 +238,17 @@ function formatPatternForSkill(pattern: PatternContent): string[] {
 export async function writeSkill(
   skillName: string,
   content: string,
-  projectRoot: string
+  projectRoot: string,
 ): Promise<void> {
   const skillDir = path.join(
     projectRoot,
-    "content/published/skills/claude",
-    skillName
+    'content/published/skills/claude',
+    skillName,
   );
-  const skillFile = path.join(skillDir, "SKILL.md");
+  const skillFile = path.join(skillDir, 'SKILL.md');
 
   await fs.mkdir(skillDir, { recursive: true });
-  await fs.writeFile(skillFile, content, "utf-8");
+  await fs.writeFile(skillFile, content, 'utf-8');
 }
 
 /**
@@ -258,7 +258,7 @@ export interface GeminiSkillTool {
   name: string;
   description: string;
   displayName: string;
-  skillLevel: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+  skillLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   codeExample?: string;
   antiPattern?: string;
   rationale?: string;
@@ -283,31 +283,31 @@ export interface GeminiSkillContent {
  */
 export function generateGeminiSkill(
   category: string,
-  patterns: PatternContent[]
+  patterns: PatternContent[],
 ): GeminiSkillContent {
   // Format category name for display
   const categoryTitle = category
-    .split("-")
+    .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+    .join(' ');
 
   // Sort by skill level
   const levels = { beginner: 0, intermediate: 1, advanced: 2 };
   const sorted = patterns.sort(
-    (a, b) => levels[a.skillLevel] - levels[b.skillLevel]
+    (a, b) => levels[a.skillLevel] - levels[b.skillLevel],
   );
 
   // Convert patterns to Gemini tools
   const tools: GeminiSkillTool[] = sorted.map((pattern) => ({
-    name: pattern.id.replace(/-/g, "_"),
-    description: pattern.rule?.description || pattern.summary || "",
+    name: pattern.id.replace(/-/g, '_'),
+    description: pattern.rule?.description || pattern.summary || '',
     displayName: pattern.title,
     skillLevel:
-      pattern.skillLevel === "beginner"
-        ? "BEGINNER"
-        : pattern.skillLevel === "intermediate"
-        ? "INTERMEDIATE"
-        : "ADVANCED",
+      pattern.skillLevel === 'beginner'
+        ? 'BEGINNER'
+        : pattern.skillLevel === 'intermediate'
+          ? 'INTERMEDIATE'
+          : 'ADVANCED',
     codeExample: pattern.goodExample
       ? pattern.goodExample.substring(0, 500)
       : undefined,
@@ -324,7 +324,7 @@ export function generateGeminiSkill(
 
 When discussing ${categoryTitle.toLowerCase()} in Effect-TS applications, reference these patterns:
 
-${tools.map((tool) => `- ${tool.displayName}: ${tool.description}`).join("\n")}
+${tools.map((tool) => `- ${tool.displayName}: ${tool.description}`).join('\n')}
 
 Provide practical guidance on using Effect-TS effectively, citing relevant patterns from this skill.
 When users ask about ${categoryTitle.toLowerCase()}, recommend the most appropriate patterns based on their use case.
@@ -332,7 +332,7 @@ Include code examples and explain the rationale behind using Effect-TS patterns.
 
   return {
     skillName: `effect-patterns-${category}`,
-    skillId: `effect_patterns_${category.replace(/-/g, "_")}`,
+    skillId: `effect_patterns_${category.replace(/-/g, '_')}`,
     displayName: `Effect-TS Patterns: ${categoryTitle}`,
     description: `Expert patterns and best practices for ${categoryTitle.toLowerCase()} in Effect-TS applications`,
     category,
@@ -349,19 +349,19 @@ Include code examples and explain the rationale behind using Effect-TS patterns.
  */
 export async function writeGeminiSkill(
   skillContent: GeminiSkillContent,
-  projectRoot: string
+  projectRoot: string,
 ): Promise<void> {
   const skillDir = path.join(
     projectRoot,
-    "content/published/skills/gemini",
-    skillContent.skillId
+    'content/published/skills/gemini',
+    skillContent.skillId,
   );
-  const skillFile = path.join(skillDir, "skill.json");
-  const promptFile = path.join(skillDir, "system-prompt.txt");
+  const skillFile = path.join(skillDir, 'skill.json');
+  const promptFile = path.join(skillDir, 'system-prompt.txt');
 
   await fs.mkdir(skillDir, { recursive: true });
-  await fs.writeFile(skillFile, JSON.stringify(skillContent, null, 2), "utf-8");
-  await fs.writeFile(promptFile, skillContent.systemPrompt, "utf-8");
+  await fs.writeFile(skillFile, JSON.stringify(skillContent, null, 2), 'utf-8');
+  await fs.writeFile(promptFile, skillContent.systemPrompt, 'utf-8');
 }
 
 /**
@@ -371,7 +371,7 @@ export async function writeGeminiSkill(
  */
 export function generateOpenAISkill(
   category: string,
-  patterns: PatternContent[]
+  patterns: PatternContent[],
 ): string {
   // OpenAI uses the same SKILL.md format as Claude
   return generateCategorySkill(category, patterns);
@@ -385,15 +385,15 @@ export function generateOpenAISkill(
 export async function writeOpenAISkill(
   skillName: string,
   content: string,
-  projectRoot: string
+  projectRoot: string,
 ): Promise<void> {
   const skillDir = path.join(
     projectRoot,
-    "content/published/skills/openai",
-    skillName
+    'content/published/skills/openai',
+    skillName,
   );
-  const skillFile = path.join(skillDir, "SKILL.md");
+  const skillFile = path.join(skillDir, 'SKILL.md');
 
   await fs.mkdir(skillDir, { recursive: true });
-  await fs.writeFile(skillFile, content, "utf-8");
+  await fs.writeFile(skillFile, content, 'utf-8');
 }

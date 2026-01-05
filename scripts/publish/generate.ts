@@ -5,15 +5,15 @@
  * Now uses PostgreSQL database as primary source of truth.
  */
 
-import * as fs from "node:fs/promises";
-import { createDatabase } from "../../packages/toolkit/src/db/client.js";
+import * as fs from 'node:fs/promises';
+import { createDatabase } from '../../packages/toolkit/src/db/client.js';
 import {
   createApplicationPatternRepository,
   createEffectPatternRepository,
-} from "../../packages/toolkit/src/repositories/index.js";
+} from '../../packages/toolkit/src/repositories/index.js';
 
 // --- CONFIGURATION ---
-const README_PATH = "README.md";
+const README_PATH = 'README.md';
 
 interface PatternInfo {
   slug: string;
@@ -33,7 +33,7 @@ function getSkillLevel(skillLevel: string): string {
  */
 function generatePatternLink(
   slug: string,
-  applicationPatternSlug: string | null
+  applicationPatternSlug: string | null,
 ): string {
   // Generate a consistent URL structure based on slug
   // This can be updated to point to a docs site or API endpoint
@@ -44,7 +44,7 @@ function generatePatternLink(
 }
 
 async function generateReadme() {
-  console.log("Starting README generation...");
+  console.log('Starting README generation...');
 
   // Connect to database
   const { db, close } = createDatabase();
@@ -53,23 +53,23 @@ async function generateReadme() {
 
   try {
     // Load Application Patterns from database
-    console.log("Loading application patterns from database...");
+    console.log('Loading application patterns from database...');
     const applicationPatterns = await apRepo.findAll();
     const sortedAPs = applicationPatterns.sort(
-      (a, b) => a.learningOrder - b.learningOrder
+      (a, b) => a.learningOrder - b.learningOrder,
     );
 
     // Load all Effect Patterns from database
-    console.log("Loading effect patterns from database...");
+    console.log('Loading effect patterns from database...');
     const allDbPatterns = await epRepo.findAll();
 
     // Create a map of application pattern IDs to slugs
     const apIdToSlug = new Map(
-      applicationPatterns.map((ap) => [ap.id, ap.slug])
+      applicationPatterns.map((ap) => [ap.id, ap.slug]),
     );
 
     // Convert database patterns to PatternInfo
-    console.log("Processing patterns from database...");
+    console.log('Processing patterns from database...');
     const allPatterns: PatternInfo[] = [];
 
     for (const dbPattern of allDbPatterns) {
@@ -108,17 +108,17 @@ async function generateReadme() {
     const toc: string[] = [];
 
     // Build TOC and sections in learning order
-    toc.push("### Effect Patterns\n");
+    toc.push('### Effect Patterns\n');
 
     for (const ap of sortedAPs) {
       const patterns = patternsByAP.get(ap.slug);
       if (!patterns || patterns.length === 0) continue;
 
-      const anchor = ap.slug.toLowerCase().replace(/\s+/g, "-");
+      const anchor = ap.slug.toLowerCase().replace(/\s+/g, '-');
       toc.push(`- [${ap.name}](#${anchor})`);
     }
 
-    toc.push("\n");
+    toc.push('\n');
 
     // Generate sections for each Application Pattern
     for (const ap of sortedAPs) {
@@ -143,28 +143,28 @@ async function generateReadme() {
 
       // Render patterns table
       sections.push(
-        "| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n"
+        '| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n',
       );
 
       for (const pattern of sortedPatterns) {
         const skillLevel = getSkillLevel(pattern.skillLevel);
         const skillEmoji =
           {
-            beginner: "🟢",
-            intermediate: "🟡",
-            advanced: "🟠",
-          }[skillLevel] || "⚪️";
+            beginner: '🟢',
+            intermediate: '🟡',
+            advanced: '🟠',
+          }[skillLevel] || '⚪️';
 
         const link = generatePatternLink(pattern.slug, ap.slug);
 
         sections.push(
           `| [${pattern.title}](${link}) | ${skillEmoji} **${
             skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)
-          }** | ${pattern.summary || ""} |\n`
+          }** | ${pattern.summary || ''} |\n`,
         );
       }
 
-      sections.push("\n");
+      sections.push('\n');
     }
 
     // Generate full README
@@ -195,14 +195,14 @@ This repository is designed to be a living document that helps developers move f
 
 ## Table of Contents
 
-${toc.join("\n")}
+${toc.join('\n')}
 
 ---
 
-${sections.join("")}`;
+${sections.join('')}`;
 
     // Write README
-    await fs.writeFile(README_PATH, readme, "utf-8");
+    await fs.writeFile(README_PATH, readme, 'utf-8');
     console.log(`✅ Generated README.md at ${README_PATH}`);
     console.log(`   Loaded ${sortedAPs.length} application patterns`);
     console.log(`   Loaded ${allPatterns.length} effect patterns`);
@@ -212,6 +212,6 @@ ${sections.join("")}`;
 }
 
 generateReadme().catch((error) => {
-  console.error("Failed to generate README:", error);
+  console.error('Failed to generate README:', error);
   process.exit(1);
 });
