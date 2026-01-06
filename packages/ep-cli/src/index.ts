@@ -16,7 +16,7 @@ import {
 } from "@effect-patterns/toolkit";
 import { Args, Command, Options, Prompt } from "@effect/cli";
 import { FileSystem, HttpClient } from "@effect/platform";
-import { NodeContext, NodeFileSystem } from "@effect/platform-node";
+import { NodeContext, NodeFileSystem, NodeRuntime } from "@effect/platform-node";
 import { Console, Effect, Layer, Option, Schema } from "effect";
 import { glob } from "glob";
 import { execSync, spawn } from "node:child_process";
@@ -62,6 +62,35 @@ const PROJECT_ROOT = getProjectRoot();
 
 // --- HELPER FUNCTIONS ---
 
+const closeDatabaseSafely = (db: unknown) =>
+  Effect.tryPromise({
+    try: async () => {
+      if (!db || typeof db !== "object") return;
+
+      const maybeClose = (db as any).close;
+      const maybeEnd = (db as any).end;
+      const maybeClientEnd = (db as any)?.$client?.end;
+
+      if (typeof maybeClose === "function") {
+        await maybeClose.call(db);
+        return;
+      }
+
+      if (typeof maybeEnd === "function") {
+        await maybeEnd.call(db);
+        return;
+      }
+
+      if (typeof maybeClientEnd === "function") {
+        await maybeClientEnd.call((db as any).$client);
+      }
+    },
+    catch: (error) => {
+      console.error("Failed to close database connection:", error);
+      return undefined;
+    },
+  });
+
 /**
  * Execute a script and stream its output to the console
  */
@@ -99,9 +128,9 @@ const executeScriptWithProgress = (
 
     const spinner = shouldShowSpinner
       ? ora({
-          text: taskName,
-          stream: process.stderr, // Keep stdout clean for composability
-        }).start()
+        text: taskName,
+        stream: process.stderr, // Keep stdout clean for composability
+      }).start()
       : null;
 
     const child = spawn("bun", ["run", scriptPath], {
@@ -177,8 +206,7 @@ const execGitCommand = (
     },
     catch: (error) =>
       new Error(
-        `Git command failed: ${
-          error instanceof Error ? error.message : String(error)
+        `Git command failed: ${error instanceof Error ? error.message : String(error)
         }`
       ),
   });
@@ -200,17 +228,17 @@ const getLatestTag = (): Effect.Effect<string, Error> =>
       if (message.includes("No names found")) {
         return new Error(
           "No git tags found in this repository.\n\n" +
-            "This is likely the first release. Create an initial tag:\n" +
-            "  git tag v0.1.0\n" +
-            "  git push origin v0.1.0\n\n" +
-            "Or use conventional commits and run:\n" +
-            "  bun run ep release create"
+          "This is likely the first release. Create an initial tag:\n" +
+          "  git tag v0.1.0\n" +
+          "  git push origin v0.1.0\n\n" +
+          "Or use conventional commits and run:\n" +
+          "  bun run ep release create"
         );
       }
 
       return new Error(
         `Failed to get latest tag: ${message}\n\n` +
-          "Make sure you are in a git repository with at least one tag."
+        "Make sure you are in a git repository with at least one tag."
       );
     },
   });
@@ -233,13 +261,13 @@ const getCommitsSinceTag = (tag: string): Effect.Effect<string[], Error> =>
       const message = error instanceof Error ? error.message : String(error);
       return new Error(
         `Failed to get commits since tag ${tag}: ${message}\n\n` +
-          "Possible causes:\n" +
-          `  • Tag "${tag}" does not exist\n` +
-          "  • Not in a git repository\n" +
-          "  • Repository history is corrupted\n\n" +
-          "Try:\n" +
-          "  git tag -l    # List all tags\n" +
-          "  git log --oneline    # Verify git history"
+        "Possible causes:\n" +
+        `  • Tag "${tag}" does not exist\n` +
+        "  • Not in a git repository\n" +
+        "  • Repository history is corrupted\n\n" +
+        "Try:\n" +
+        "  git tag -l    # List all tags\n" +
+        "  git log --oneline    # Verify git history"
       );
     },
   });
@@ -1109,8 +1137,7 @@ const analyzeRelease = () =>
       try: () => categorizeCommits(commits),
       catch: (error) =>
         new Error(
-          `Failed to categorize commits: ${
-            error instanceof Error ? error.message : String(error)
+          `Failed to categorize commits: ${error instanceof Error ? error.message : String(error)
           }`
         ),
     });
@@ -1711,8 +1738,8 @@ const installListCommand = Command.make("list", {
       for (const tool of tools) {
         yield* Console.log(
           colorize(`  ${tool.name.padEnd(12)}`, "cyan") +
-            `${tool.desc.padEnd(30)}` +
-            colorize(tool.file, "dim")
+          `${tool.desc.padEnd(30)}` +
+          colorize(tool.file, "dim")
         );
       }
 
@@ -2387,8 +2414,7 @@ if (false as any) {
               try: () => JSON.parse(configContent),
               catch: (error) =>
                 new Error(
-                  `Failed to parse ep.json: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to parse ep.json: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -2440,8 +2466,7 @@ if (false as any) {
               try: () => glob(pattern, { absolute: true }),
               catch: (error) =>
                 new Error(
-                  `Failed to expand pattern "${pattern}": ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to expand pattern "${pattern}": ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -2478,8 +2503,7 @@ if (false as any) {
             try: () => lintInParallel(uniqueFiles),
             catch: (error) =>
               new Error(
-                `Linting failed: ${
-                  error instanceof Error ? error.message : String(error)
+                `Linting failed: ${error instanceof Error ? error.message : String(error)
                 }`
               ),
           });
@@ -2515,8 +2539,7 @@ if (false as any) {
                   try: () => applyFixes(filePath, result.issues),
                   catch: (error) =>
                     new Error(
-                      `Failed to apply fixes to ${result.file}: ${
-                        error instanceof Error ? error.message : String(error)
+                      `Failed to apply fixes to ${result.file}: ${error instanceof Error ? error.message : String(error)
                       }`
                     ),
                 });
@@ -2527,8 +2550,7 @@ if (false as any) {
                     try: () => fs.writeFile(filePath, content, "utf-8"),
                     catch: (error) =>
                       new Error(
-                        `Failed to write fixes to ${result.file}: ${
-                          error instanceof Error ? error.message : String(error)
+                        `Failed to write fixes to ${result.file}: ${error instanceof Error ? error.message : String(error)
                         }`
                       ),
                   });
@@ -2568,8 +2590,7 @@ if (false as any) {
                 for (const [_filePath, summary] of fixSummary) {
                   const rulesList = Array.from(summary.rules).join(", ");
                   yield* Console.log(
-                    `  - ${summary.file} (${summary.count} fix${
-                      summary.count > 1 ? "es" : ""
+                    `  - ${summary.file} (${summary.count} fix${summary.count > 1 ? "es" : ""
                     }: ${rulesList})`
                   );
                 }
@@ -2634,15 +2655,15 @@ const releasePreviewCommand = Command.make("preview", {
         yield* Console.log("  2. Use conventional commit messages:");
         yield* Console.log(
           colorize("     feat: add new feature     ", "dim") +
-            "(minor version bump)"
+          "(minor version bump)"
         );
         yield* Console.log(
           colorize("     fix: fix bug              ", "dim") +
-            "(patch version bump)"
+          "(patch version bump)"
         );
         yield* Console.log(
           colorize("     feat!: breaking change    ", "dim") +
-            "(major version bump)"
+          "(major version bump)"
         );
         yield* Console.log("  3. Run: bun run ep release preview\n");
         return;
@@ -2791,8 +2812,8 @@ const releaseCreateCommand = Command.make("create", {
         catch: (error) =>
           new Error(
             "Failed to parse package.json.\n" +
-              "The file may be corrupted or contain invalid JSON.\n\n" +
-              `Error: ${error instanceof Error ? error.message : String(error)}`
+            "The file may be corrupted or contain invalid JSON.\n\n" +
+            `Error: ${error instanceof Error ? error.message : String(error)}`
           ),
       }).pipe(
         Effect.catchAll((error) =>
@@ -3182,8 +3203,7 @@ export const searchCommand = Command.make("search", {
           }
         } catch (error) {
           yield* showError(
-            `Database error: ${
-              error instanceof Error ? error.message : String(error)
+            `Database error: ${error instanceof Error ? error.message : String(error)
             }`
           );
           yield* Console.log(
@@ -3192,13 +3212,7 @@ export const searchCommand = Command.make("search", {
           throw error;
         } finally {
           if (db) {
-            yield* Effect.tryPromise({
-              try: () => db!.close(),
-              catch: (error) => {
-                console.error("Failed to close database connection:", error);
-                return undefined;
-              },
-            });
+            yield* closeDatabaseSafely(db);
           }
         }
       })
@@ -3264,8 +3278,7 @@ export const listCommand = Command.make("list", {
             try: () => repo.search(searchParams),
             catch: (error) =>
               new Error(
-                `Failed to load patterns: ${
-                  error instanceof Error ? error.message : String(error)
+                `Failed to load patterns: ${error instanceof Error ? error.message : String(error)
                 }`
               ),
           });
@@ -3322,8 +3335,8 @@ export const listCommand = Command.make("list", {
                   level === "beginner"
                     ? "🟢"
                     : level === "intermediate"
-                    ? "🟡"
-                    : "🔴";
+                      ? "🟡"
+                      : "🔴";
                 yield* Console.log(
                   `\n${emoji} ${level.toUpperCase()} (${items.length})`
                 );
@@ -3341,8 +3354,8 @@ export const listCommand = Command.make("list", {
                 p.difficulty === "beginner"
                   ? "🟢"
                   : p.difficulty === "intermediate"
-                  ? "🟡"
-                  : "🔴";
+                    ? "🟡"
+                    : "🔴";
               yield* Console.log(
                 `  ${emoji} ${p.title} (${p.id}) - ${p.category}`
               );
@@ -3352,8 +3365,7 @@ export const listCommand = Command.make("list", {
           yield* Console.log(`\n\n📈 Total: ${patterns.length} pattern(s)\n`);
         } catch (error) {
           yield* showError(
-            `Database error: ${
-              error instanceof Error ? error.message : String(error)
+            `Database error: ${error instanceof Error ? error.message : String(error)
             }`
           );
           yield* Console.log(
@@ -3362,13 +3374,7 @@ export const listCommand = Command.make("list", {
           throw error;
         } finally {
           if (db) {
-            yield* Effect.tryPromise({
-              try: () => (db as any).close(),
-              catch: (error) => {
-                console.error("Failed to close database connection:", error);
-                return undefined;
-              },
-            });
+            yield* closeDatabaseSafely(db);
           }
         }
       })
@@ -3402,8 +3408,7 @@ export const showCommand = Command.make("show", {
             try: () => repo.findBySlug(args.patternId),
             catch: (error) =>
               new Error(
-                `Failed to load pattern: ${
-                  error instanceof Error ? error.message : String(error)
+                `Failed to load pattern: ${error instanceof Error ? error.message : String(error)
                 }`
               ),
           });
@@ -3510,8 +3515,7 @@ Tags: ${pattern.tags.length > 0 ? pattern.tags.join(", ") : "None"}`.trim();
           yield* Console.log("\n" + "═".repeat(60) + "\n");
         } catch (error) {
           yield* showError(
-            `Database error: ${
-              error instanceof Error ? error.message : String(error)
+            `Database error: ${error instanceof Error ? error.message : String(error)
             }`
           );
           yield* Console.log(
@@ -3520,13 +3524,7 @@ Tags: ${pattern.tags.length > 0 ? pattern.tags.join(", ") : "None"}`.trim();
           throw error;
         } finally {
           if (db) {
-            yield* Effect.tryPromise({
-              try: () => db!.close(),
-              catch: (error) => {
-                console.error("Failed to close database connection:", error);
-                return undefined;
-              },
-            });
+            yield* closeDatabaseSafely(db);
           }
         }
       })
@@ -3596,8 +3594,7 @@ const lockCommand = Command.make("lock", {
             try: () => repo.findBySlug(args.identifier),
             catch: (error) =>
               new Error(
-                `Failed to search for pattern: ${
-                  error instanceof Error ? error.message : String(error)
+                `Failed to search for pattern: ${error instanceof Error ? error.message : String(error)
                 }`
               ),
           });
@@ -3608,8 +3605,7 @@ const lockCommand = Command.make("lock", {
               try: () => repo.findById(args.identifier),
               catch: (error) =>
                 new Error(
-                  `Failed to search for pattern by ID: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to search for pattern by ID: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3623,8 +3619,7 @@ const lockCommand = Command.make("lock", {
               try: () => repo.lock(byId.id),
               catch: (error) =>
                 new Error(
-                  `Failed to lock pattern: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to lock pattern: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3634,8 +3629,7 @@ const lockCommand = Command.make("lock", {
               try: () => repo.lock(existing.id),
               catch: (error) =>
                 new Error(
-                  `Failed to lock pattern: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to lock pattern: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3650,8 +3644,7 @@ const lockCommand = Command.make("lock", {
             try: () => repo.findBySlug(args.identifier),
             catch: (error) =>
               new Error(
-                `Failed to search for application pattern: ${
-                  error instanceof Error ? error.message : String(error)
+                `Failed to search for application pattern: ${error instanceof Error ? error.message : String(error)
                 }`
               ),
           });
@@ -3661,8 +3654,7 @@ const lockCommand = Command.make("lock", {
               try: () => repo.findById(args.identifier),
               catch: (error) =>
                 new Error(
-                  `Failed to search for application pattern by ID: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to search for application pattern by ID: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3676,8 +3668,7 @@ const lockCommand = Command.make("lock", {
               try: () => repo.lock(byId.id),
               catch: (error) =>
                 new Error(
-                  `Failed to lock application pattern: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to lock application pattern: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3687,8 +3678,7 @@ const lockCommand = Command.make("lock", {
               try: () => repo.lock(existing.id),
               catch: (error) =>
                 new Error(
-                  `Failed to lock application pattern: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to lock application pattern: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3700,8 +3690,7 @@ const lockCommand = Command.make("lock", {
             try: () => repo.findBySlug(args.identifier),
             catch: (error) =>
               new Error(
-                `Failed to search for job: ${
-                  error instanceof Error ? error.message : String(error)
+                `Failed to search for job: ${error instanceof Error ? error.message : String(error)
                 }`
               ),
           });
@@ -3711,8 +3700,7 @@ const lockCommand = Command.make("lock", {
               try: () => repo.findById(args.identifier),
               catch: (error) =>
                 new Error(
-                  `Failed to search for job by ID: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to search for job by ID: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3726,8 +3714,7 @@ const lockCommand = Command.make("lock", {
               try: () => repo.lock(byId.id),
               catch: (error) =>
                 new Error(
-                  `Failed to lock job: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to lock job: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3737,8 +3724,7 @@ const lockCommand = Command.make("lock", {
               try: () => repo.lock(existing.id),
               catch: (error) =>
                 new Error(
-                  `Failed to lock job: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to lock job: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3765,8 +3751,7 @@ const lockCommand = Command.make("lock", {
         }
       } catch (error) {
         yield* showError(
-          `Database error: ${
-            error instanceof Error ? error.message : String(error)
+          `Database error: ${error instanceof Error ? error.message : String(error)
           }`
         );
         yield* Console.log(
@@ -3775,13 +3760,7 @@ const lockCommand = Command.make("lock", {
         throw error;
       } finally {
         if (db) {
-          yield* Effect.tryPromise({
-            try: () => db!.close(),
-            catch: (error) => {
-              console.error("Failed to close database connection:", error);
-              return undefined;
-            },
-          });
+          yield* closeDatabaseSafely(db);
         }
       }
     })
@@ -3822,8 +3801,7 @@ const unlockCommand = Command.make("unlock", {
             try: () => repo.findBySlug(args.identifier),
             catch: (error) =>
               new Error(
-                `Failed to search for pattern: ${
-                  error instanceof Error ? error.message : String(error)
+                `Failed to search for pattern: ${error instanceof Error ? error.message : String(error)
                 }`
               ),
           });
@@ -3833,8 +3811,7 @@ const unlockCommand = Command.make("unlock", {
               try: () => repo.findById(args.identifier),
               catch: (error) =>
                 new Error(
-                  `Failed to search for pattern by ID: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to search for pattern by ID: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3848,8 +3825,7 @@ const unlockCommand = Command.make("unlock", {
               try: () => repo.unlock(byId.id),
               catch: (error) =>
                 new Error(
-                  `Failed to unlock pattern: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to unlock pattern: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3859,8 +3835,7 @@ const unlockCommand = Command.make("unlock", {
               try: () => repo.unlock(existing.id),
               catch: (error) =>
                 new Error(
-                  `Failed to unlock pattern: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to unlock pattern: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3875,8 +3850,7 @@ const unlockCommand = Command.make("unlock", {
             try: () => repo.findBySlug(args.identifier),
             catch: (error) =>
               new Error(
-                `Failed to search for application pattern: ${
-                  error instanceof Error ? error.message : String(error)
+                `Failed to search for application pattern: ${error instanceof Error ? error.message : String(error)
                 }`
               ),
           });
@@ -3886,8 +3860,7 @@ const unlockCommand = Command.make("unlock", {
               try: () => repo.findById(args.identifier),
               catch: (error) =>
                 new Error(
-                  `Failed to search for application pattern by ID: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to search for application pattern by ID: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3901,8 +3874,7 @@ const unlockCommand = Command.make("unlock", {
               try: () => repo.unlock(byId.id),
               catch: (error) =>
                 new Error(
-                  `Failed to unlock application pattern: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to unlock application pattern: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3912,8 +3884,7 @@ const unlockCommand = Command.make("unlock", {
               try: () => repo.unlock(existing.id),
               catch: (error) =>
                 new Error(
-                  `Failed to unlock application pattern: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to unlock application pattern: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3925,8 +3896,7 @@ const unlockCommand = Command.make("unlock", {
             try: () => repo.findBySlug(args.identifier),
             catch: (error) =>
               new Error(
-                `Failed to search for job: ${
-                  error instanceof Error ? error.message : String(error)
+                `Failed to search for job: ${error instanceof Error ? error.message : String(error)
                 }`
               ),
           });
@@ -3936,8 +3906,7 @@ const unlockCommand = Command.make("unlock", {
               try: () => repo.findById(args.identifier),
               catch: (error) =>
                 new Error(
-                  `Failed to search for job by ID: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to search for job by ID: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3951,8 +3920,7 @@ const unlockCommand = Command.make("unlock", {
               try: () => repo.unlock(byId.id),
               catch: (error) =>
                 new Error(
-                  `Failed to unlock job: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to unlock job: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3962,8 +3930,7 @@ const unlockCommand = Command.make("unlock", {
               try: () => repo.unlock(existing.id),
               catch: (error) =>
                 new Error(
-                  `Failed to unlock job: ${
-                    error instanceof Error ? error.message : String(error)
+                  `Failed to unlock job: ${error instanceof Error ? error.message : String(error)
                   }`
                 ),
             });
@@ -3985,8 +3952,7 @@ const unlockCommand = Command.make("unlock", {
         yield* Console.log(`  • Validated: ${result.validated ? "Yes" : "No"}`);
       } catch (error) {
         yield* showError(
-          `Database error: ${
-            error instanceof Error ? error.message : String(error)
+          `Database error: ${error instanceof Error ? error.message : String(error)
           }`
         );
         yield* Console.log(
@@ -3995,13 +3961,7 @@ const unlockCommand = Command.make("unlock", {
         throw error;
       } finally {
         if (db) {
-          yield* Effect.tryPromise({
-            try: () => db!.close(),
-            catch: (error) => {
-              console.error("Failed to close database connection:", error);
-              return undefined;
-            },
-          });
+          yield* closeDatabaseSafely(db);
         }
       }
     })
@@ -4049,11 +4009,11 @@ export const runtimeLayer = Layer.mergeAll(
 // TUI-enabled runtime for ep-admin
 export const runtimeLayerWithTUI: any = EffectCLITUILayer
   ? Layer.mergeAll(
-      fileSystemLayer,
-      FetchHttpClient.layer,
-      (StateStore as any).Default,
-      EffectCLITUILayer
-    )
+    fileSystemLayer,
+    FetchHttpClient.layer,
+    (StateStore as any).Default,
+    EffectCLITUILayer
+  )
   : runtimeLayer; // Fallback to standard runtime if TUI not available
 
 const userCliRunner = Command.run(userRootCommand, {
@@ -4063,3 +4023,8 @@ const userCliRunner = Command.run(userRootCommand, {
 
 export const createUserProgram = (argv: ReadonlyArray<string> = process.argv) =>
   userCliRunner(argv);
+
+createUserProgram(process.argv).pipe(
+  Effect.provide(runtimeLayer),
+  NodeRuntime.runMain
+);

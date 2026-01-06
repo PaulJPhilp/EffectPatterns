@@ -451,3 +451,42 @@ These commands work but require specific files/state:
 2. [ ] Update MIGRATION_PROGRESS.md with results
 3. [ ] Create automated test suite (optional)
 4. [ ] Update CI/CD to use CLI commands
+
+---
+
+## ep (User CLI) Results (January 5, 2026)
+
+### ✅ Fix Applied
+
+The `ep` CLI entrypoint previously produced no output because it defined the
+runner but did not execute it when invoked.
+
+- Updated `packages/ep-cli/src/index.ts` to run `createUserProgram(process.argv)`
+  via `NodeRuntime.runMain`.
+
+### ✅ Help Tests
+
+All `--help` commands render successfully:
+
+- `ep --help`
+- `ep search --help`
+- `ep list --help`
+- `ep show --help`
+- `ep pattern --help`
+- `ep install --help`
+
+### ✅ Functional Smoke Tests
+
+- `ep list --group-by category` (works)
+- `ep list --difficulty beginner` (works)
+- `ep search scope` (works)
+- `ep show compose-scoped-layers` (works)
+
+### 🛠 Bug Found and Fixed
+
+- `ep list --category "Error Handling"` initially failed during cleanup with:
+  `TypeError: db.close is not a function`.
+
+Fix:
+- Added `closeDatabaseSafely` helper and replaced direct `db.close()` calls.
+- After fix, the same command exits successfully (prints “No patterns match”).
