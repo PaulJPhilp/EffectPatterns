@@ -2,6 +2,11 @@
 
 Complete guide for setting up and using the Effect Patterns Hub CLI.
 
+For full command documentation:
+
+- `docs/ep/EP_CLI.md` (user CLI: `ep`)
+- `docs/ep/EP_ADMIN.md` (admin CLI: `ep-admin`)
+
 ## Prerequisites
 
 - **Bun** v1.0+ - [Install Bun](https://bun.sh)
@@ -58,8 +63,8 @@ ep --help
 # List supported AI tools
 ep install list
 
-# Validate existing patterns (should pass)
-ep admin validate
+# Validate existing patterns (admin CLI)
+bun run ep:admin validate
 ```
 
 ## Installing Rules into AI Tools

@@ -4,6 +4,13 @@
 
 The `ep-admin` CLI provides a unified interface for managing Effect-Patterns operations. Built with [@effect/cli](https://effect.website/), it offers type-safe commands for publishing, ingesting, QA, database, Discord, skills, migrations, and operations management.
 
+## ep-admin User Guide
+
+For a complete, user-focused guide (setup, global flags, command reference,
+workflows, safety notes, and troubleshooting), see:
+
+- `docs/ep/EP_ADMIN.md`
+
 ## Quick Start
 
 ```bash
