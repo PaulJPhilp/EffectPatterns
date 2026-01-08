@@ -25,6 +25,7 @@
     "validate": "bun run scripts/publish/validate-improved.ts",
     "validate:simple": "bun run scripts/publish/validate.ts",
     "generate": "bun run scripts/publish/generate.ts",
+    "generate:skills": "bun run scripts/generate-skills.ts",
     "test": "bun run scripts/publish/test-improved.ts",
     "test:simple": "bun run scripts/publish/test.ts",
     "test:behavioral": "bun run scripts/publish/test-behavioral.ts",

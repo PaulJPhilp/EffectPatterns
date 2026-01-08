@@ -1,0 +1,8 @@
+{
+    "plugins": {
+      "effect-patterns": {
+        "type": "local",
+        "path": "./.claude-plugin/plugins/effect-patterns"
+      }
+    }
+  }
