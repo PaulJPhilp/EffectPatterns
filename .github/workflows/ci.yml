@@ -161,7 +161,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Download toolkit build artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: toolkit-dist
           path: packages/toolkit/dist/
@@ -195,7 +195,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Download toolkit build artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: toolkit-dist
           path: packages/toolkit/dist/
@@ -233,7 +233,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Download coverage artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: toolkit-coverage
 
