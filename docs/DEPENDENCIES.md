@@ -142,9 +142,6 @@ All dependencies are defined at root `package.json` and hoisted via Bun workspac
 - `effect`, `@effect/cli`
 - Admin CLI libraries
 
-**`packages/effect-discord/`:**
-- `effect`, `@effect/platform`, `@effect/platform-node`
-- Discord-specific: Discord.js or similar
 
 **`packages/design-system/`:**
 - `react`, `tailwindcss`

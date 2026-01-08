@@ -31,12 +31,12 @@
   "author": "Effect Patterns Team",
   "license": "MIT",
   "dependencies": {
-    "effect": "^3.18.0"
+    "effect": "^3.19.14"
   },
   "devDependencies": {
-    "@effect/schema": "^0.68.0",
-    "typescript": "^5.8.0",
-    "vitest": "^2.0.0"
+    "@effect/schema": "^0.68.27",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
   },
   "peerDependencies": {
     "@effect/schema": "^0.68.0"

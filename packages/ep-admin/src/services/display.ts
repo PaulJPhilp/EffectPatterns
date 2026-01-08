@@ -9,73 +9,69 @@
  */
 
 import { Console, Effect, Option as Opt } from "effect";
+import { colors } from "../utils.js";
 import {
   Logger,
-  type LoggerConfig,
-  defaultLoggerConfig,
+  type LoggerConfig
 } from "./logger.js";
 
-// Import TUI services - these will only be used if available
-let DisplayService: any = null;
-let displaySuccessTUI: any = null;
-let displayErrorTUI: any = null;
-let displayInfoTUI: any = null;
-let displayWarningTUI: any = null;
-let displayPanelTUI: any = null;
-let displayTableTUI: any = null;
-let displayHighlightTUI: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TUIModule = any;
 
-// Lazy load TUI imports to avoid issues when TUI not available
-try {
-  const tuiModule = require("effect-cli-tui");
-  DisplayService = tuiModule.DisplayService;
-  displaySuccessTUI = tuiModule.displaySuccess;
-  displayErrorTUI = tuiModule.displayError;
-  displayInfoTUI = tuiModule.displayInfo;
-  displayWarningTUI = tuiModule.displayWarning;
-  displayPanelTUI = tuiModule.displayPanel;
-  displayTableTUI = tuiModule.displayTable;
-  displayHighlightTUI = tuiModule.displayHighlight;
-} catch {
-  // TUI not available, will use console fallback
-}
+// TUI module state - loaded lazily on first use using SynchronizedRef
+// Stores: null (not attempted), false (attempted but failed), or the module
+let tuiModuleCache: TUIModule | false | null = null;
+
+// Lazy load TUI module - returns Effect that resolves to the module or null
+const ensureTUILoaded: Effect.Effect<TUIModule> = Effect.suspend(() => {
+  // Already attempted
+  if (tuiModuleCache !== null) {
+    return Effect.succeed(tuiModuleCache === false ? null : tuiModuleCache);
+  }
+
+  // First attempt - try to load TUI
+  return Effect.tryPromise({
+    try: async () => {
+      const mod = await import("effect-cli-tui");
+      tuiModuleCache = mod;
+      return mod;
+    },
+    catch: () => {
+      tuiModuleCache = false;
+      return null;
+    }
+  }).pipe(
+    Effect.catchAll(() => {
+      tuiModuleCache = false;
+      return Effect.succeed(null);
+    })
+  );
+});
 
 // =============================================================================
-// ANSI Color Helpers (respects Logger config)
+// Logger Config Helper
 // =============================================================================
-
-const COLORS = {
-  reset: "\x1b[0m",
-  green: "\x1b[32m",
-  red: "\x1b[31m",
-  yellow: "\x1b[33m",
-  blue: "\x1b[34m",
-  cyan: "\x1b[36m",
-  dim: "\x1b[2m",
-} as const;
 
 /**
- * Get current logger config, with fallback to defaults
+ * Get logger config from Logger service
  */
-const getLoggerConfig = (): Effect.Effect<LoggerConfig> =>
+const getLoggerConfig = () =>
   Effect.gen(function* () {
-    const maybeLogger = yield* Effect.serviceOption(Logger);
-    if (Opt.isSome(maybeLogger)) {
-      return yield* maybeLogger.value.getConfig();
-    }
-    return defaultLoggerConfig;
+    const logger = yield* Logger;
+    const config = yield* logger.getConfig();
+    return config;
   });
 
 /**
- * Apply color if enabled in config
+ * Apply color if enabled in config (respects Logger config)
  */
-const colorize = (
+const colorizeWithConfig = (
   text: string,
-  color: keyof typeof COLORS,
+  color: keyof typeof colors,
   config: LoggerConfig
 ): string => {
   if (!config.useColors) return text;
-  return `${COLORS[color]}${text}${COLORS.reset}`;
+  return `${colors[color]}${text}${colors.reset}`;
 };
 
 /**
@@ -85,16 +81,21 @@ const colorize = (
  */
 export const showSuccess = (message: string) =>
   Effect.gen(function* () {
-    if (DisplayService) {
-      const maybeDisplay = yield* Effect.serviceOption(DisplayService);
-      if (maybeDisplay._tag === "Some" && displaySuccessTUI) {
-        yield* displaySuccessTUI(message);
+    const tui = yield* ensureTUILoaded;
+
+    if (tui?.DisplayService && tui?.displaySuccess) {
+      const maybeDisplay = yield* Effect.serviceOption(
+        tui.DisplayService
+      );
+      if (Opt.isSome(maybeDisplay)) {
+        yield* tui.displaySuccess(message);
         return;
       }
     }
+
     // Fallback to console with color support
     const config = yield* getLoggerConfig();
-    const icon = colorize("✓", "green", config);
+    const icon = colorizeWithConfig("✓", "green", config);
     yield* Console.log(`${icon} ${message}`);
   });
 
@@ -105,16 +106,21 @@ export const showSuccess = (message: string) =>
  */
 export const showError = (message: string) =>
   Effect.gen(function* () {
-    if (DisplayService) {
-      const maybeDisplay = yield* Effect.serviceOption(DisplayService);
-      if (maybeDisplay._tag === "Some" && displayErrorTUI) {
-        yield* displayErrorTUI(message);
+    const tui = yield* ensureTUILoaded;
+
+    if (tui?.DisplayService && tui?.displayError) {
+      const maybeDisplay = yield* Effect.serviceOption(
+        tui.DisplayService
+      );
+      if (Opt.isSome(maybeDisplay)) {
+        yield* tui.displayError(message);
         return;
       }
     }
+
     // Fallback to console with color support
     const config = yield* getLoggerConfig();
-    const icon = colorize("✖", "red", config);
+    const icon = colorizeWithConfig("✖", "red", config);
     yield* Console.error(`${icon} ${message}`);
   });
 
@@ -125,16 +131,21 @@ export const showError = (message: string) =>
  */
 export const showInfo = (message: string) =>
   Effect.gen(function* () {
-    if (DisplayService) {
-      const maybeDisplay = yield* Effect.serviceOption(DisplayService);
-      if (maybeDisplay._tag === "Some" && displayInfoTUI) {
-        yield* displayInfoTUI(message);
+    const tui = yield* ensureTUILoaded;
+
+    if (tui?.DisplayService && tui?.displayInfo) {
+      const maybeDisplay = yield* Effect.serviceOption(
+        tui.DisplayService
+      );
+      if (Opt.isSome(maybeDisplay)) {
+        yield* tui.displayInfo(message);
         return;
       }
     }
+
     // Fallback to console with color support
     const config = yield* getLoggerConfig();
-    const icon = colorize("ℹ", "blue", config);
+    const icon = colorizeWithConfig("ℹ", "blue", config);
     yield* Console.log(`${icon} ${message}`);
   });
 
@@ -145,16 +156,21 @@ export const showInfo = (message: string) =>
  */
 export const showWarning = (message: string) =>
   Effect.gen(function* () {
-    if (DisplayService) {
-      const maybeDisplay = yield* Effect.serviceOption(DisplayService);
-      if (maybeDisplay._tag === "Some" && displayWarningTUI) {
-        yield* displayWarningTUI(message);
+    const tui = yield* ensureTUILoaded;
+
+    if (tui?.DisplayService && tui?.displayWarning) {
+      const maybeDisplay = yield* Effect.serviceOption(
+        tui.DisplayService
+      );
+      if (Opt.isSome(maybeDisplay)) {
+        yield* tui.displayWarning(message);
         return;
       }
     }
+
     // Fallback to console with color support
     const config = yield* getLoggerConfig();
-    const icon = colorize("⚠", "yellow", config);
+    const icon = colorizeWithConfig("⚠", "yellow", config);
     yield* Console.log(`${icon} ${message}`);
   });
 
@@ -172,15 +188,20 @@ export const showPanel = (
   options?: PanelOptions
 ) =>
   Effect.gen(function* () {
-    if (DisplayService) {
-      const maybeDisplay = yield* Effect.serviceOption(DisplayService);
-      if (maybeDisplay._tag === "Some" && displayPanelTUI) {
-        yield* displayPanelTUI(content, title, {
+    const tui = yield* ensureTUILoaded;
+
+    if (tui?.DisplayService && tui?.displayPanel) {
+      const maybeDisplay = yield* Effect.serviceOption(
+        tui.DisplayService
+      );
+      if (Opt.isSome(maybeDisplay)) {
+        yield* tui.displayPanel(content, title, {
           type: options?.type || "info",
         });
         return;
       }
     }
+
     // Fallback to console
     const border = "─".repeat(60);
     yield* Console.log(`\n${border}`);
@@ -213,10 +234,14 @@ export const showTable = <T extends Record<string, any>>(
   options: TableOptions<T>
 ) =>
   Effect.gen(function* () {
-    if (DisplayService) {
-      const maybeDisplay = yield* Effect.serviceOption(DisplayService);
-      if (maybeDisplay._tag === "Some" && displayTableTUI) {
-        yield* displayTableTUI(data, {
+    const tui = yield* ensureTUILoaded;
+
+    if (tui?.DisplayService && tui?.displayTable) {
+      const maybeDisplay = yield* Effect.serviceOption(
+        tui.DisplayService
+      );
+      if (Opt.isSome(maybeDisplay)) {
+        yield* tui.displayTable(data, {
           columns: options.columns.map((col) => ({
             key: String(col.key),
             header: col.header,
@@ -227,14 +252,12 @@ export const showTable = <T extends Record<string, any>>(
           bordered: options.bordered,
           head: options.head,
         });
-      } else {
-        // Fallback to console
-        console.table(data);
+        return;
       }
-    } else {
-      // Fallback to console
-      console.table(data);
     }
+
+    // Fallback to console
+    console.table(data);
   });
 
 /**
@@ -243,18 +266,20 @@ export const showTable = <T extends Record<string, any>>(
  */
 export const showHighlight = (message: string) =>
   Effect.gen(function* () {
-    if (DisplayService) {
-      const maybeDisplay = yield* Effect.serviceOption(DisplayService);
-      if (maybeDisplay._tag === "Some" && displayHighlightTUI) {
-        yield* displayHighlightTUI(message);
-      } else {
-        // Fallback to console
-        yield* Console.log(`\n📌 ${message}\n`);
+    const tui = yield* ensureTUILoaded;
+
+    if (tui?.DisplayService && tui?.displayHighlight) {
+      const maybeDisplay = yield* Effect.serviceOption(
+        tui.DisplayService
+      );
+      if (Opt.isSome(maybeDisplay)) {
+        yield* tui.displayHighlight(message);
+        return;
       }
-    } else {
-      // Fallback to console
-      yield* Console.log(`\n📌 ${message}\n`);
     }
+
+    // Fallback to console
+    yield* Console.log(`\n📌 ${message}\n`);
   });
 
 /**

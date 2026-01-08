@@ -81,7 +81,6 @@
     "test:db:repositories": "bun test packages/toolkit/src/__tests__/repositories.test.ts",
     "utils:add-seqid": "bun run ep:admin utils add-seqid",
     "utils:renumber-seqid": "bun run ep:admin utils renumber-seqid",
-    "discord:flatten": "bun run ep:admin discord flatten",
     "autofix:prepublish": "bun run ep:admin autofix prepublish",
     "test:harness": "bun run ep:admin test-utils harness",
     "test:harness-cli": "bun run ep:admin test-utils harness-cli",
@@ -113,12 +112,12 @@
     "glob": "^11.1.0",
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.1",
-    "langchain": "^1.2.3",
+    "langchain": "^1.2.6",
     "liquidjs": "^10.24.0",
     "ora": "^9.0.0",
-    "postgres": "^3.4.7",
+    "postgres": "^3.4.8",
     "semver": "^7.7.3",
-    "vercel": "^50.1.4",
+    "vercel": "^50.1.6",
     "yaml": "^2.8.2"
   },
   "devDependencies": {

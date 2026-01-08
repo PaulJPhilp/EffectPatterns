@@ -42,10 +42,6 @@ Generated: 2025-10-26
 - **search.test.ts** - Pattern search functionality
 - **split-sections.test.ts** - Content parsing
 
-### ✅ Effect Discord (`packages/effect-discord/`)
-
-- **integration.test.ts** - Discord integration
-- **parse.test.ts** - Message parsing
 
 ### ✅ Pattern Server (`server/`)
 
