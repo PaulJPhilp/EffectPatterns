@@ -22,18 +22,18 @@
     "conventional-commits-parser": "^6.2.1",
     "conventional-recommended-bump": "^11.2.0",
     "dotenv": "^17.2.3",
-    "effect": "^3.19.3",
-    "effect-cli-tui": "^2.0.0",
-    "glob": "^11.0.3",
+    "effect": "^3.19.14",
+    "effect-cli-tui": "^2.2.0",
+    "glob": "^11.1.0",
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.1",
     "liquidjs": "^10.24.0",
     "ora": "^9.0.0",
     "semver": "^7.7.3",
-    "yaml": "^2.8.1"
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
-    "tsx": "^4.20.6",
+    "tsx": "^4.21.0",
     "typescript": "5.9.3"
   }
 }

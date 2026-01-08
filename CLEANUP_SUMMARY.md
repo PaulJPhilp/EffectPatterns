@@ -48,7 +48,7 @@ Removed workspace references:
 
 Kept workspace references:
 - `app/*` - Contains sm-cli (Supermemory CLI)
-- `packages/*` - Contains ep-cli, ep-admin, toolkit, effect-discord, pipeline-state
+- `packages/*` - Contains ep-cli, ep-admin, toolkit, pipeline-state
 - `services/*` - Contains mcp-server (Next.js MCP backend), mcp-server-stdio (stdio MCP server)
 
 ## Retained Components
@@ -68,7 +68,6 @@ Kept workspace references:
 
 ### Core Packages
 - **packages/toolkit/** - Shared Effect-TS utilities and schemas
-- **packages/effect-discord/** - Discord integration utilities
 - **packages/pipeline-state/** - Pipeline state management
 
 ## Database Status
