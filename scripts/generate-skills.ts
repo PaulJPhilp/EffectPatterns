@@ -12,6 +12,8 @@ import {
   readPattern,
   writeGeminiSkill,
   writeOpenAISkill,
+  writePluginSkill,
+  writeSkill,
 } from '../packages/cli/src/skills/skill-generator';
 
 const PROJECT_ROOT = process.cwd();
@@ -74,6 +76,7 @@ async function main() {
     // Claude
     const claudeContent = generateCategorySkill(category, categoryPatterns);
     await writeSkill(skillName, claudeContent, PROJECT_ROOT);
+    await writePluginSkill(skillName, claudeContent, PROJECT_ROOT);
     claudeCount++;
 
     // Gemini
@@ -94,7 +97,7 @@ async function main() {
 ✨ Skills Generation Complete!
 ════════════════════════════════════════════════════════════
 
-Claude Skills:  ${claudeCount} (content/published/skills/claude/)
+Claude Skills:  ${claudeCount} (content/published/skills/claude/ AND .claude-plugin/plugins/effect-patterns/skills/)
 Gemini Skills:  ${geminiCount} (content/published/skills/gemini/)
 OpenAI Skills:  ${openaiCount} (content/published/skills/openai/)
 `);

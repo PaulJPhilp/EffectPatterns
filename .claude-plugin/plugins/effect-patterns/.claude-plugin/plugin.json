@@ -1,0 +1,10 @@
+{
+  "name": "effect-patterns",
+  "version": "0.0.1",
+  "description": "Effect-TS patterns and best practices. Includes 24 skills covering error handling, concurrency, streams, testing, and more.",
+  "author": {
+    "name": "Paul J Philp",
+    "url": "https://github.com/PaulJPhilp"
+  },
+  "commands": []
+}

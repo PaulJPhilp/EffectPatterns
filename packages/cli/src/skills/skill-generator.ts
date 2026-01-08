@@ -141,10 +141,10 @@ export function generateCategorySkill(
   const lines: string[] = [];
 
   // YAML frontmatter
-  lines.push('---');
-  lines.push(`name: effect-patterns-${category}`);
+  lines.push('---\n');
+  lines.push(`name: effect-patterns-${category}\n`);
   lines.push(
-    `description: Effect-TS patterns for ${categoryTitle}. Use when working with ${categoryTitle.toLowerCase()} in Effect-TS applications.`
+    `description: Effect-TS patterns for ${categoryTitle}. Use when working with ${categoryTitle.toLowerCase()} in Effect-TS applications.\n`
   );
   lines.push('---\n');
 
@@ -239,6 +239,28 @@ export async function writeSkill(
   projectRoot: string
 ): Promise<void> {
   const skillDir = path.join(projectRoot, 'content/published/skills/claude', skillName);
+  const skillFile = path.join(skillDir, 'SKILL.md');
+
+  await fs.mkdir(skillDir, { recursive: true });
+  await fs.writeFile(skillFile, content, 'utf-8');
+}
+
+/**
+ * Write a skill to the plugin directory
+ *
+ * Creates the .claude-plugin/plugins/effect-patterns/skills/{skillName}
+ * directory and writes SKILL.md
+ */
+export async function writePluginSkill(
+  skillName: string,
+  content: string,
+  projectRoot: string
+): Promise<void> {
+  const skillDir = path.join(
+    projectRoot,
+    '.claude-plugin/plugins/effect-patterns/skills',
+    skillName
+  );
   const skillFile = path.join(skillDir, 'SKILL.md');
 
   await fs.mkdir(skillDir, { recursive: true });
