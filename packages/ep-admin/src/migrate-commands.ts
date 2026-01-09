@@ -9,9 +9,14 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import {
+	MESSAGES,
+	SCRIPTS,
+	TASK_NAMES,
+} from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showInfo, showSuccess, showWarning } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -39,21 +44,21 @@ export const migrateStateCommand = Command.make("state", {
             yield* configureLoggerFromOptions(options);
 
             if (options.dryRun) {
-                yield* showInfo("Running in dry-run mode (no changes will be applied)");
+                yield* Display.showInfo(MESSAGES.INFO.DRY_RUN_MODE);
             }
             if (options.backup) {
-                yield* showInfo("Creating backup of state...");
+                yield* Display.showInfo("Creating backup of state...");
             }
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/migrate-state.ts"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.MIGRATE.STATE),
                 "Migrating pipeline state",
                 {
                     verbose: options.verbose
                 }
             );
 
-            yield* showSuccess("Pipeline state migrated successfully!");
+            yield* Display.showSuccess("Pipeline state migrated successfully!");
         }) as any
     )
 );
@@ -82,21 +87,21 @@ export const migratePostgresCommand = Command.make("postgres", {
             yield* configureLoggerFromOptions(options);
 
             if (options.dryRun) {
-                yield* showInfo("Running in dry-run mode (no changes will be applied)");
+                yield* Display.showInfo(MESSAGES.INFO.DRY_RUN_MODE);
             }
             if (options.backup) {
-                yield* showWarning("This will backup your current database before migration");
+                yield* Display.showWarning("This will backup your current database before migration");
             }
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/migrate-to-postgres.ts"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.MIGRATE.POSTGRES),
                 "Migrating to PostgreSQL",
                 {
                     verbose: options.verbose
                 }
             );
 
-            yield* showSuccess("PostgreSQL migration completed successfully!");
+            yield* Display.showSuccess("PostgreSQL migration completed successfully!");
         }) as any
     )
 );

@@ -10,9 +10,13 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import {
+	MESSAGES,
+	SCRIPTS,
+} from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showInfo, showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -37,16 +41,16 @@ export const discordIngestCommand = Command.make("ingest", {
             yield* configureLoggerFromOptions(options);
 
             if (options.channel) {
-                yield* showInfo(`Ingesting from Discord channel: ${options.channel}`);
+                yield* Display.showInfo(`Ingesting from Discord channel: ${options.channel}`);
             }
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/ingest-discord.ts"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.DISCORD.INGEST),
                 "Ingesting from Discord",
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Discord ingest completed!");
+            yield* Display.showSuccess("Discord ingest completed!");
         }) as any
     )
 );
@@ -66,13 +70,13 @@ export const discordTestCommand = Command.make("test", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
+            yield* Execution.executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/test-discord-simple.ts"),
                 "Testing Discord connection",
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Discord connection test passed!");
+            yield* Display.showSuccess("Discord connection test passed!");
         }) as any
     )
 );
@@ -96,13 +100,13 @@ export const discordFlattenCommand = Command.make("flatten", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/flatten-discord-qna.js"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.DISCORD.FLATTEN_QNA),
                 "Flattening Discord messages",
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Discord messages flattened!");
+            yield* Display.showSuccess("Discord messages flattened!");
         }) as any
     )
 );

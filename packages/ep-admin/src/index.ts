@@ -11,6 +11,7 @@ import { Args, Command } from "@effect/cli";
 import { FetchHttpClient } from "@effect/platform";
 import { NodeContext, NodeFileSystem, NodeRuntime } from "@effect/platform-node";
 import { Console, Effect, Layer } from "effect";
+import { CLI, SHELL_TYPES } from "./constants.js";
 
 // Import command modules
 import { autofixCommand } from "./autofix-commands.js";
@@ -47,10 +48,10 @@ const completionsGenerateCommand = Command.make(
 	Command.withHandler(({ shell }) =>
 		Effect.gen(function* () {
 			const shellType = shell.toLowerCase() as Shell;
-			if (!["bash", "zsh", "fish"].includes(shellType)) {
+			if (!SHELL_TYPES.includes(shellType as any)) {
 				yield* Effect.fail(
 					new Error(
-						`Invalid shell: ${shell}. Must be one of: bash, zsh, fish`
+						`Invalid shell: ${shell}. Must be one of: ${SHELL_TYPES.join(", ")}`
 					)
 				);
 			}
@@ -73,10 +74,10 @@ const completionsInstallCommand = Command.make(
 	Command.withHandler(({ shell }) =>
 		Effect.gen(function* () {
 			const shellType = shell.toLowerCase() as Shell;
-			if (!["bash", "zsh", "fish"].includes(shellType)) {
+			if (!SHELL_TYPES.includes(shellType as any)) {
 				yield* Effect.fail(
 					new Error(
-						`Invalid shell: ${shell}. Must be one of: bash, zsh, fish`
+						`Invalid shell: ${shell}. Must be one of: ${SHELL_TYPES.join(", ")}`
 					)
 				);
 			}
@@ -125,8 +126,8 @@ const adminSubcommands = [
 	searchCommand,
 ] as const;
 
-export const adminRootCommand = Command.make("ep-admin").pipe(
-	Command.withDescription("Administrative CLI for Effect Patterns maintainers"),
+export const adminRootCommand = Command.make(CLI.NAME).pipe(
+	Command.withDescription(CLI.DESCRIPTION),
 	Command.withSubcommands(adminSubcommands)
 );
 
@@ -170,8 +171,8 @@ export const runtimeLayerWithTUI = EffectCLITUILayer
 	: runtimeLayer; // Fallback to standard runtime if TUI not available
 
 const adminCliRunner = Command.run(adminRootCommand, {
-	name: "EffectPatterns Admin CLI",
-	version: "0.4.1",
+	name: CLI.RUNNER_NAME,
+	version: CLI.VERSION,
 });
 
 export const createAdminProgram = (

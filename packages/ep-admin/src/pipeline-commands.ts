@@ -20,7 +20,7 @@ import {
 import { Args, Command, Options } from "@effect/cli";
 import { Console, Effect, Option } from "effect";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showInfo, showPanel, showTable } from "./services/display.js";
+import { Display } from "./services/display/index.js";
 
 /**
  * Status command: Show pipeline state for all patterns or a specific pattern
@@ -82,7 +82,7 @@ export const statusCommand = Command.make("status", {
         const patterns = Object.values(all) as Array<(typeof all)[string]>;
 
         if (patterns.length === 0) {
-          yield* showInfo("No patterns in pipeline.");
+          yield* Display.showInfo("No patterns in pipeline.");
           return;
         }
 
@@ -113,7 +113,7 @@ export const statusCommand = Command.make("status", {
         );
 
         // Display table
-        yield* showTable(tableData, {
+        yield* Display.showTable(tableData, {
           columns: [
             {
               key: "title",
@@ -149,7 +149,7 @@ export const statusCommand = Command.make("status", {
           ready: patterns.filter((p) => p.status === "ready").length,
         };
 
-        yield* showPanel(
+        yield* Display.showPanel(
           `Total: ${summary.total} | ✨ Completed: ${summary.completed} | 🔄 In Progress: ${summary.inProgress} | ❌ Failed: ${summary.failed} | ✅ Ready: ${summary.ready}`,
           "Summary",
           { type: "info" }

@@ -12,9 +12,15 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import {
+	MESSAGES,
+	SCRIPTS,
+	STEP_NAMES,
+	TASK_NAMES,
+} from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showError, showInfo, showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -27,9 +33,9 @@ const runScript = (
     stepName: string,
     options: { verbose?: boolean }
 ) =>
-    executeScriptWithTUI(scriptPath, taskName, options).pipe(
+    Execution.executeScriptWithTUI(scriptPath, taskName, options).pipe(
         Effect.tapError((error) =>
-            showError(`Step '${stepName}' failed: ${error.message}`)
+            Display.showError(`Step '${stepName}' failed: ${error.message}`)
         )
     );
 
@@ -54,13 +60,13 @@ export const publishValidateCommand = Command.make("validate", {
             yield* configureLoggerFromOptions(options);
 
             yield* runScript(
-                path.join(PROJECT_ROOT, "scripts/publish/validate-improved.ts"),
-                "Validating patterns",
-                "validate",
+                path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.VALIDATE),
+                TASK_NAMES.VALIDATING_PATTERNS,
+                STEP_NAMES.VALIDATE,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("All patterns validated successfully!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_VALIDATED);
         }) as any
     )
 );
@@ -86,13 +92,13 @@ export const publishTestCommand = Command.make("test", {
             yield* configureLoggerFromOptions(options);
 
             yield* runScript(
-                path.join(PROJECT_ROOT, "scripts/publish/test-improved.ts"),
-                "Running TypeScript examples",
-                "test",
+                path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.TEST),
+                TASK_NAMES.RUNNING_TYPESCRIPT_EXAMPLES,
+                STEP_NAMES.TEST,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("All pattern examples passed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.ALL_EXAMPLES_PASSED);
         }) as any
     )
 );
@@ -123,13 +129,13 @@ export const publishPublishCommand = Command.make("publish", {
             yield* configureLoggerFromOptions(options);
 
             yield* runScript(
-                path.join(PROJECT_ROOT, "scripts/publish/publish.ts"),
-                "Publishing patterns",
-                "publish",
+                path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.PUBLISH),
+                TASK_NAMES.PUBLISH_PATTERNS,
+                STEP_NAMES.PUBLISH,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Patterns published successfully!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_PUBLISHED);
         }) as any
     )
 );
@@ -164,23 +170,23 @@ export const publishGenerateCommand = Command.make("generate", {
 
             if (generateReadme) {
                 yield* runScript(
-                    path.join(PROJECT_ROOT, "scripts/publish/generate.ts"),
-                    "Generating README",
-                    "generate-readme",
+                    path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.GENERATE),
+                    TASK_NAMES.GENERATING_README,
+                    STEP_NAMES.GENERATE_README,
                     { verbose: options.verbose }
                 );
             }
 
             if (generateRules) {
                 yield* runScript(
-                    path.join(PROJECT_ROOT, "scripts/publish/rules-improved.ts"),
+                    path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.RULES),
                     "Generating rules",
-                    "generate-rules",
+                    STEP_NAMES.GENERATE_RULES,
                     { verbose: options.verbose }
                 );
             }
 
-            yield* showSuccess("Documentation generated successfully!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.DOCUMENTATION_GENERATED);
         }) as any
     )
 );
@@ -205,13 +211,13 @@ export const publishLintCommand = Command.make("lint", {
             yield* configureLoggerFromOptions(options);
 
             yield* runScript(
-                path.join(PROJECT_ROOT, "scripts/publish/lint-effect-patterns.ts"),
+                path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.LINT),
                 "Linting patterns",
-                "lint",
+                STEP_NAMES.LINT,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Linting complete!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.LINTING_COMPLETE);
         }) as any
     )
 );
@@ -239,16 +245,16 @@ export const publishPipelineCommand = Command.make("pipeline", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* showInfo("Starting publishing pipeline...");
+            yield* Display.showInfo(MESSAGES.INFO.STARTING_PIPELINE);
 
             yield* runScript(
-                path.join(PROJECT_ROOT, "scripts/publish/pipeline.ts"),
-                "Publishing pipeline",
-                "pipeline",
+                path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.PIPELINE),
+                TASK_NAMES.PUBLISHING_PIPELINE,
+                STEP_NAMES.PIPELINE,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Publishing pipeline completed successfully!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.PIPELINE_COMPLETED);
         }) as any
     )
 );

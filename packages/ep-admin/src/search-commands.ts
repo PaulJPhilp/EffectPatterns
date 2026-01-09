@@ -8,7 +8,7 @@ import {
 } from "@effect-patterns/toolkit";
 import { Args, Command } from "@effect/cli";
 import { Console, Effect } from "effect";
-import { showError } from "./services/display.js";
+import { Display } from "./services/display/index.js";
 
 /**
  * search <query> - Search patterns by keyword
@@ -83,7 +83,7 @@ export const searchCommand = Command.make("search", {
 						yield* Console.log("");
 					}
 				} catch (error) {
-					yield* showError(
+					yield* Display.showError(
 						`Database error: ${error instanceof Error ? error.message : String(error)
 						}`
 					);

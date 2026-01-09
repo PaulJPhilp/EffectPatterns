@@ -8,9 +8,10 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { SCRIPTS } from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showInfo, showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -76,20 +77,20 @@ export const autofixPrepublishCommand = Command.make("prepublish", {
 			yield* configureLoggerFromOptions(options);
 
 			if (options.aiCall) {
-				yield* showInfo("AI-powered fixes will be generated and applied");
+				yield* Display.showInfo("AI-powered fixes will be generated and applied");
 			} else if (options.ai) {
-				yield* showInfo("AI prompt packs will be generated (no API calls)");
+				yield* Display.showInfo("AI prompt packs will be generated (no API calls)");
 			} else if (options.dryRun) {
-				yield* showInfo("Dry-run mode: showing summary only");
+				yield* Display.showInfo("Dry-run mode: showing summary only");
 			}
 
-			yield* executeScriptWithTUI(
-				path.join(PROJECT_ROOT, "scripts/autofix/prepublish-autofix.ts"),
+			yield* Execution.executeScriptWithTUI(
+				path.join(PROJECT_ROOT, SCRIPTS.AUTOFIX.PREPUBLISH),
 				"Running prepublish autofix",
 				{ verbose: options.verbose }
 			);
 
-			yield* showSuccess("Prepublish autofix completed!");
+			yield* Display.showSuccess("Prepublish autofix completed!");
 		}) as any
 	)
 );

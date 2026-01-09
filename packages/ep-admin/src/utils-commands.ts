@@ -9,9 +9,10 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { SCRIPTS } from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -58,13 +59,13 @@ export const utilsAddSeqIdCommand = Command.make("add-seqid", {
 			if (options.backup) args.push("--backup");
 			if (options.dryRun) args.push("--dry-run");
 
-			yield* executeScriptWithTUI(
-				path.join(PROJECT_ROOT, "scripts/add-seqid.js"),
+			yield* Execution.executeScriptWithTUI(
+				path.join(PROJECT_ROOT, SCRIPTS.UTILS.ADD_SEQID),
 				"Adding sequential IDs",
 				{ verbose: options.verbose }
 			);
 
-			yield* showSuccess("Sequential IDs added!");
+			yield* Display.showSuccess("Sequential IDs added!");
 		}) as any
 	)
 );
@@ -88,13 +89,13 @@ export const utilsRenumberSeqIdCommand = Command.make("renumber-seqid", {
 		Effect.gen(function* () {
 			yield* configureLoggerFromOptions(options);
 
-			yield* executeScriptWithTUI(
-				path.join(PROJECT_ROOT, "scripts/renumber-seqid.js"),
+			yield* Execution.executeScriptWithTUI(
+				path.join(PROJECT_ROOT, SCRIPTS.UTILS.RENUMBER_SEQID),
 				"Renumbering sequential IDs",
 				{ verbose: options.verbose }
 			);
 
-			yield* showSuccess("Sequential IDs renumbered!");
+			yield* Display.showSuccess("Sequential IDs renumbered!");
 		}) as any
 	)
 );

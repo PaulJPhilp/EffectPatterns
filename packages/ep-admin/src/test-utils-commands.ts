@@ -14,9 +14,13 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import {
+	MESSAGES,
+	SCRIPTS,
+} from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -35,13 +39,13 @@ export const testUtilsChatAppCommand = Command.make("chat-app", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/test-chat-app-core.ts"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.CHAT_APP),
                 "Testing chat application",
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Chat app tests passed!");
+            yield* Display.showSuccess("Chat app tests passed!");
         }) as any
     )
 );
@@ -66,13 +70,13 @@ export const testUtilsHarnessCommand = Command.make("harness", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/test-harness.ts"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.HARNESS),
                 "Running integration tests",
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Integration tests passed!");
+            yield* Display.showSuccess("Integration tests passed!");
         }) as any
     )
 );
@@ -92,13 +96,13 @@ export const testUtilsHarnessCliCommand = Command.make("harness-cli", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/test-harness-cli.ts"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.HARNESS_CLI),
                 "Testing CLI harness",
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("CLI harness tests passed!");
+            yield* Display.showSuccess("CLI harness tests passed!");
         }) as any
     )
 );
@@ -118,13 +122,13 @@ export const testUtilsLlmCommand = Command.make("llm", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/test-llm-service.ts"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.LLM),
                 "Testing LLM service",
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("LLM service tests passed!");
+            yield* Display.showSuccess("LLM service tests passed!");
         }) as any
     )
 );
@@ -144,13 +148,13 @@ export const testUtilsModelsCommand = Command.make("models", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/test-models.ts"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.MODELS),
                 "Testing ML models",
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("ML model tests passed!");
+            yield* Display.showSuccess("ML model tests passed!");
         }) as any
     )
 );
@@ -170,13 +174,13 @@ export const testUtilsPatternsCommand = Command.make("patterns", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/test-patterns.ts"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.PATTERNS),
                 "Testing pattern system",
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Pattern system tests passed!");
+            yield* Display.showSuccess("Pattern system tests passed!");
         }) as any
     )
 );
@@ -196,13 +200,13 @@ export const testUtilsSupermemoryCommand = Command.make("supermemory", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/test-supermemory.ts"),
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.SUPERMEMORY),
                 "Testing supermemory",
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Supermemory tests passed!");
+            yield* Display.showSuccess("Supermemory tests passed!");
         }) as any
     )
 );

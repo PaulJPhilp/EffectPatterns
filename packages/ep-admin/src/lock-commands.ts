@@ -12,7 +12,7 @@ import {
 } from "@effect-patterns/toolkit";
 import { Args, Command, Options } from "@effect/cli";
 import { Console, Effect } from "effect";
-import { showError, showSuccess } from "./services/display.js";
+import { Display } from "./services/display/index.js";
 
 // =============================================================================
 // Shared Entity Operations
@@ -129,7 +129,7 @@ const handleEntityOperation = (
 			const repo = getRepository(db.db, entityType);
 
 			if (!repo) {
-				yield* showError(
+				yield* Display.showError(
 					`Invalid entity type: ${options.type}. Must be one of: ` +
 					`pattern, application-pattern, job`
 				);
@@ -144,13 +144,13 @@ const handleEntityOperation = (
 			const result = yield* performEntityOperation(repo, entity.id, action, entityType);
 
 			if (!result) {
-				yield* showError(`Failed to ${action} ${entityName}`);
+				yield* Display.showError(`Failed to ${action} ${entityName}`);
 				return;
 			}
 
 			// Show success
 			const actionText = action === "lock" ? "locked (validated)" : "unlocked";
-			yield* showSuccess(`${entityName} has been ${actionText}`);
+			yield* Display.showSuccess(`${entityName} has been ${actionText}`);
 			yield* Console.log(`  • Validated: ${result.validated ? "Yes" : "No"}`);
 			if (action === "lock" && result.validatedAt) {
 				yield* Console.log(
@@ -158,7 +158,7 @@ const handleEntityOperation = (
 				);
 			}
 		} catch (error) {
-			yield* showError(
+			yield* Display.showError(
 				`Database error: ${error instanceof Error ? error.message : String(error)}`
 			);
 			yield* Console.log(

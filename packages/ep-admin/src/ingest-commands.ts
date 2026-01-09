@@ -14,9 +14,14 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import {
+	MESSAGES,
+	SCRIPTS,
+	TASK_NAMES,
+} from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showInfo, showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -40,16 +45,16 @@ export const ingestProcessCommand = Command.make("process", {
             yield* configureLoggerFromOptions(options);
 
             if (options.clean) {
-                yield* showInfo("Cleaning processed patterns...");
+                yield* Display.showInfo(MESSAGES.INFO.CLEANING_PATTERNS);
             }
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/ingest/process.ts"),
-                "Processing raw patterns",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.INGEST.PROCESS),
+                TASK_NAMES.PROCESSING_RAW_PATTERNS,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Patterns processed successfully!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_PROCESSED);
         }) as any
     )
 );
@@ -74,15 +79,15 @@ export const ingestProcessOneCommand = Command.make("process-one", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/ingest/process-one.ts"),
-                `Processing pattern: ${positional.patternFile}`,
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.INGEST.PROCESS_ONE),
+                `${TASK_NAMES.PROCESSING_PATTERN}: ${positional.patternFile}`,
                 {
                     verbose: options.verbose
                 }
             );
 
-            yield* showSuccess(`Pattern ${positional.patternFile} processed!`);
+            yield* Display.showSuccess(`Pattern ${positional.patternFile} processed!`);
         }) as any
     )
 );
@@ -106,13 +111,13 @@ export const ingestValidateCommand = Command.make("validate", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/ingest/process.ts"),
-                "Validating ingest data",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.INGEST.PROCESS),
+                TASK_NAMES.VALIDATING_INGEST_DATA,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Ingest validation complete!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_VALIDATION_COMPLETE);
         }) as any
     )
 );
@@ -137,16 +142,16 @@ export const ingestTestCommand = Command.make("test", {
             yield* configureLoggerFromOptions(options);
 
             const scriptPath = options.publish
-                ? "test-publish.ts"
-                : "test-new.ts";
+                ? SCRIPTS.INGEST.TEST_PUBLISH
+                : SCRIPTS.INGEST.TEST_NEW;
 
-            yield* executeScriptWithTUI(
+            yield* Execution.executeScriptWithTUI(
                 path.join(PROJECT_ROOT, "scripts/ingest", scriptPath),
-                "Testing ingest pipeline",
+                TASK_NAMES.TESTING_INGEST_PIPELINE,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Ingest pipeline tests passed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_TESTS_PASSED);
         }) as any
     )
 );
@@ -170,13 +175,13 @@ export const ingestPopulateCommand = Command.make("populate", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/ingest/populate-expectations.ts"),
-                "Populating test expectations",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.INGEST.POPULATE_EXPECTATIONS),
+                TASK_NAMES.POPULATING_EXPECTATIONS,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Test expectations populated!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.EXPECTATIONS_POPULATED);
         }) as any
     )
 );
@@ -196,13 +201,13 @@ export const ingestStatusCommand = Command.make("status", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/ingest/ingest-pipeline-improved.ts"),
-                "Checking ingest status",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.INGEST.PIPELINE),
+                TASK_NAMES.CHECKING_INGEST_STATUS,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Status check complete!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.STATUS_CHECK_COMPLETE);
         }) as any
     )
 );
@@ -230,15 +235,15 @@ export const ingestPipelineCommand = Command.make("pipeline", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/ingest/ingest-pipeline-improved.ts"),
-                "Running full ingest pipeline",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.INGEST.PIPELINE),
+                TASK_NAMES.RUNNING_INGEST_PIPELINE,
                 {
                     verbose: options.verbose
                 }
             );
 
-            yield* showSuccess("Ingest pipeline completed successfully!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_PIPELINE_COMPLETED);
         }) as any
     )
 );

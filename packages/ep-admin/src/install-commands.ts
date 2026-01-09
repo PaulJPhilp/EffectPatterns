@@ -13,7 +13,7 @@ import { Command, Options } from "@effect/cli";
 import { FileSystem, HttpClient } from "@effect/platform";
 import { Console, Effect, Option, Schema } from "effect";
 import * as path from "node:path";
-import { showPanel } from "./services/display.js";
+import { Display } from "./services/display/index.js";
 import {
 	generateCategorySkill,
 	generateGeminiSkill,
@@ -84,17 +84,17 @@ const fetchRulesFromAPI = (serverUrl: string) =>
 
 					if (!isServerUp) {
 						yield* Console.error(
-							colorize("\n❌ Cannot connect to Pattern Server\n", "red")
+							colorize("\n❌ Cannot connect to Pattern Server\n", "RED")
 						);
 						yield* Console.error(
 							`The Pattern Server at ${serverUrl} is not running.\n`
 						);
-						yield* Console.error(colorize("How to fix:\n", "bright"));
+						yield* Console.error(colorize("How to fix:\n", "BRIGHT"));
 						yield* Console.error("  1. Start the Pattern Server:");
-						yield* Console.error(colorize("     bun run server:dev\n", "cyan"));
+						yield* Console.error(colorize("     bun run server:dev\n", "CYAN"));
 						yield* Console.error("  2. Verify the server is running:");
 						yield* Console.error(
-							colorize(`     curl ${serverUrl}/health\n`, "cyan")
+							colorize(`     curl ${serverUrl}/health\n`, "CYAN")
 						);
 
 						return yield* Effect.fail(
@@ -103,7 +103,7 @@ const fetchRulesFromAPI = (serverUrl: string) =>
 					}
 
 					yield* Console.error(
-						colorize("\n❌ Failed to fetch rules\n", "red")
+						colorize("\n❌ Failed to fetch rules\n", "RED")
 					);
 					yield* Console.error(`Error: ${error}\n`);
 					return yield* Effect.fail(new Error("Failed to fetch rules"));
@@ -228,10 +228,10 @@ export const installAddCommand = Command.make("add", {
 
 				if (!supportedTools.includes(tool)) {
 					yield* Console.error(
-						colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, "red")
+						colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, "RED")
 					);
 					yield* Console.error(
-						colorize("Currently supported tools:\n", "bright")
+						colorize("Currently supported tools:\n", "BRIGHT")
 					);
 					for (const t of supportedTools) {
 						yield* Console.error(`  • ${t}`);
@@ -255,7 +255,7 @@ export const installAddCommand = Command.make("add", {
 						colorize(
 							`📊 Filtered to ${rules.length} rules with skill level: ` +
 							`${level}\n`,
-							"cyan"
+							"CYAN"
 						)
 					);
 				}
@@ -271,14 +271,14 @@ export const installAddCommand = Command.make("add", {
 						colorize(
 							`📊 Filtered to ${rules.length} rules with use case: ` +
 							`${useCase}\n`,
-							"cyan"
+							"CYAN"
 						)
 					);
 				}
 
 				if (rules.length === 0) {
 					yield* Console.log(
-						colorize("⚠️  No rules match the specified filters\n", "yellow")
+						colorize("⚠️  No rules match the specified filters\n", "YELLOW")
 					);
 					return;
 				}
@@ -299,20 +299,20 @@ export const installAddCommand = Command.make("add", {
 				const targetFile = toolFileMap[tool] || ".cursor/rules.md";
 
 				yield* Console.log(
-					colorize(`📝 Injecting rules into ${targetFile}...\n`, "cyan")
+					colorize(`📝 Injecting rules into ${targetFile}...\n`, "CYAN")
 				);
 
 				const count = yield* injectRulesIntoFile(targetFile, rules).pipe(
 					Effect.catchAll((error) =>
 						Effect.gen(function* () {
-							yield* Console.log(colorize("❌ Failed to inject rules\n", "red"));
+							yield* Console.log(colorize("❌ Failed to inject rules\n", "RED"));
 							yield* Console.log(`Error: ${error}\n`);
 							return yield* Effect.fail(new Error("Failed to inject rules"));
 						})
 					)
 				);
 
-				yield* showPanel(
+				yield* Display.showPanel(
 					`Successfully added ${count} rules to ${targetFile}
 
 Tool: ${tool}
@@ -339,7 +339,7 @@ export const installListCommand = Command.make("list", {
 	),
 	Command.withHandler(() =>
 		Effect.gen(function* () {
-			yield* Console.log(colorize("\n📋 Supported AI Tools\n", "bright"));
+			yield* Console.log(colorize("\n📋 Supported AI Tools\n", "BRIGHT"));
 			yield* Console.log("═".repeat(60));
 			yield* Console.log("");
 
@@ -362,17 +362,17 @@ export const installListCommand = Command.make("list", {
 
 			for (const tool of tools) {
 				yield* Console.log(
-					colorize(`  ${tool.name.padEnd(12)}`, "cyan") +
+					colorize(`  ${tool.name.padEnd(12)}`, "CYAN") +
 					`${tool.desc.padEnd(30)}` +
-					colorize(tool.file, "dim")
+					colorize(tool.file, "DIM")
 				);
 			}
 
 			yield* Console.log("");
 			yield* Console.log("═".repeat(60));
-			yield* Console.log(colorize("\n💡 Usage:\n", "bright"));
+			yield* Console.log(colorize("\n💡 Usage:\n", "BRIGHT"));
 			yield* Console.log(
-				colorize("  bun run ep install add --tool <name>\n", "cyan")
+				colorize("  bun run ep install add --tool <name>\n", "CYAN")
 			);
 		})
 	)
@@ -423,7 +423,7 @@ export const installSkillsCommand = Command.make("skills", {
 							colorize(
 								`\n❌ Invalid format: ${fmt}\nValid options: ` +
 								`${validOptions.join(", ")}\n`,
-								"red"
+								"RED"
 							)
 						);
 						return yield* Effect.fail(new Error("Invalid format option"));
@@ -440,14 +440,14 @@ export const installSkillsCommand = Command.make("skills", {
 					colorize(
 						`\n❌ No formats specified. Valid options: ` +
 						`${validOptions.join(", ")}\n`,
-						"red"
+						"RED"
 					)
 				);
 				return yield* Effect.fail(new Error("No format option"));
 			}
 
 			yield* Console.log(
-				colorize("\n🎓 Generating Skills from Effect Patterns\n", "bright")
+				colorize("\n🎓 Generating Skills from Effect Patterns\n", "BRIGHT")
 			);
 
 			const db = createDatabase().db;
@@ -455,7 +455,7 @@ export const installSkillsCommand = Command.make("skills", {
 			const epRepo = createEffectPatternRepository(db);
 
 			yield* Console.log(
-				colorize("📖 Loading patterns from database...", "cyan")
+				colorize("📖 Loading patterns from database...", "CYAN")
 			);
 			const dbPatterns = yield* Effect.tryPromise({
 				try: () => epRepo.findAll(),
@@ -464,7 +464,7 @@ export const installSkillsCommand = Command.make("skills", {
 			});
 
 			yield* Console.log(
-				colorize(`✓ Found ${dbPatterns.length} patterns\n`, "green")
+				colorize(`✓ Found ${dbPatterns.length} patterns\n`, "GREEN")
 			);
 
 			const applicationPatterns = yield* Effect.tryPromise({
@@ -493,16 +493,16 @@ export const installSkillsCommand = Command.make("skills", {
 				colorize(
 					`✓ Processed ${patterns.length} patterns with application ` +
 					`patterns\n`,
-					"green"
+					"GREEN"
 				)
 			);
 
 			yield* Console.log(
-				colorize("🗂️  Grouping patterns by category...", "cyan")
+				colorize("🗂️  Grouping patterns by category...", "CYAN")
 			);
 			const categoryMap = groupPatternsByCategory(patterns);
 			yield* Console.log(
-				colorize(`✓ Found ${categoryMap.size} categories\n`, "green")
+				colorize(`✓ Found ${categoryMap.size} categories\n`, "GREEN")
 			);
 
 			if (options.category._tag === "Some") {
@@ -513,9 +513,9 @@ export const installSkillsCommand = Command.make("skills", {
 
 				if (!categoryPatterns) {
 					yield* Console.error(
-						colorize(`\n❌ Category not found: ${category}\n`, "red")
+						colorize(`\n❌ Category not found: ${category}\n`, "RED")
 					);
-					yield* Console.log(colorize("Available categories:\n", "bright"));
+					yield* Console.log(colorize("Available categories:\n", "BRIGHT"));
 					const sortedCategories = Array.from(categoryMap.keys()).sort();
 					for (const cat of sortedCategories) {
 						yield* Console.log(`  • ${cat}`);
@@ -534,7 +534,7 @@ export const installSkillsCommand = Command.make("skills", {
 					});
 
 					yield* Console.log(
-						colorize(`✓ Generated Claude skill: ${skillName}\n`, "green")
+						colorize(`✓ Generated Claude skill: ${skillName}\n`, "GREEN")
 					);
 				}
 
@@ -550,7 +550,7 @@ export const installSkillsCommand = Command.make("skills", {
 					yield* Console.log(
 						colorize(
 							`✓ Generated Gemini skill: ${geminiSkill.skillId}\n`,
-							"green"
+							"GREEN"
 						)
 					);
 				}
@@ -566,7 +566,7 @@ export const installSkillsCommand = Command.make("skills", {
 					});
 
 					yield* Console.log(
-						colorize(`✓ Generated OpenAI skill: ${skillName}\n`, "green")
+						colorize(`✓ Generated OpenAI skill: ${skillName}\n`, "GREEN")
 					);
 				}
 
@@ -576,7 +576,7 @@ export const installSkillsCommand = Command.make("skills", {
 			yield* Console.log(
 				colorize(
 					`📝 Generating ${categoryMap.size} skills for ${formatOption}...\n`,
-					"cyan"
+					"CYAN"
 				)
 			);
 
@@ -596,7 +596,7 @@ export const installSkillsCommand = Command.make("skills", {
 					}).pipe(
 						Effect.catchAll((error) =>
 							Effect.gen(function* () {
-								yield* Console.log(colorize(`⚠️  ${error.message}`, "yellow"));
+								yield* Console.log(colorize(`⚠️  ${error.message}`, "YELLOW"));
 								return null;
 							})
 						)
@@ -606,7 +606,7 @@ export const installSkillsCommand = Command.make("skills", {
 						yield* Console.log(
 							colorize(
 								`  ✓ ${skillName} (${categoryPatterns.length} patterns)`,
-								"green"
+								"GREEN"
 							)
 						);
 						claudeCount++;
@@ -623,7 +623,7 @@ export const installSkillsCommand = Command.make("skills", {
 					}).pipe(
 						Effect.catchAll((error) =>
 							Effect.gen(function* () {
-								yield* Console.log(colorize(`⚠️  ${error.message}`, "yellow"));
+								yield* Console.log(colorize(`⚠️  ${error.message}`, "YELLOW"));
 								return null;
 							})
 						)
@@ -634,7 +634,7 @@ export const installSkillsCommand = Command.make("skills", {
 							colorize(
 								`  ✓ ${geminiSkill.skillId} (${categoryPatterns.length} ` +
 								`patterns)`,
-								"green"
+								"GREEN"
 							)
 						);
 						geminiCount++;
@@ -652,7 +652,7 @@ export const installSkillsCommand = Command.make("skills", {
 					}).pipe(
 						Effect.catchAll((error) =>
 							Effect.gen(function* () {
-								yield* Console.log(colorize(`⚠️  ${error.message}`, "yellow"));
+								yield* Console.log(colorize(`⚠️  ${error.message}`, "YELLOW"));
 								return null;
 							})
 						)
@@ -662,7 +662,7 @@ export const installSkillsCommand = Command.make("skills", {
 						yield* Console.log(
 							colorize(
 								`  ✓ ${skillName} (${categoryPatterns.length} patterns)`,
-								"green"
+								"GREEN"
 							)
 						);
 						openaiCount++;
@@ -710,7 +710,7 @@ export const installSkillsCommand = Command.make("skills", {
 - Skill level guidance (Beginner → Intermediate → Advanced)`
 			);
 
-			yield* showPanel(
+			yield* Display.showPanel(
 				summaryParts.join("\n"),
 				"✨ Skills Generation Complete!",
 				{ type: "success" }
@@ -740,12 +740,12 @@ export const rulesGenerateCommand = Command.make("generate", {
 			yield* Console.log(
 				colorize(
 					"\n⚠️  This command is deprecated. Use 'install' commands instead.\n",
-					"yellow"
+					"YELLOW"
 				)
 			);
 			yield* Console.log("Recommended alternatives:");
 			yield* Console.log(
-				colorize("  bun run ep install add --tool cursor\n", "cyan")
+				colorize("  bun run ep install add --tool cursor\n", "CYAN")
 			);
 		})
 	)

@@ -6,7 +6,8 @@
  */
 
 import { Options } from "@effect/cli";
-import { LOG_LEVEL_VALUES, type LogLevel, type OutputFormat } from "./services/logger.js";
+import { OUTPUT_FORMATS, type OutputFormat } from "./constants.js";
+import { LOG_LEVEL_VALUES, type LogLevel } from "./services/logger.js";
 
 // =============================================================================
 // Log Level Option
@@ -59,7 +60,7 @@ export const jsonOutputOption = Options.boolean("json").pipe(
  * Values: text, json
  * Default: text
  */
-export const formatOption = Options.choice("format", ["text", "json"] as const).pipe(
+export const formatOption = Options.choice("format", OUTPUT_FORMATS).pipe(
     Options.withDescription("Output format (text or json)"),
     Options.withDefault("text" as OutputFormat)
 );

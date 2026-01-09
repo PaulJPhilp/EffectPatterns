@@ -11,9 +11,14 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import {
+	MESSAGES,
+	SCRIPTS,
+	TASK_NAMES,
+} from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -36,13 +41,13 @@ export const skillsGenerateCommand = Command.make("generate", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/generate-skills.ts"),
-                "Generating skills",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.SKILLS.GENERATE),
+                TASK_NAMES.GENERATING_SKILLS,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Skills generated successfully!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.SKILLS_GENERATED);
         }) as any
     )
 );
@@ -62,13 +67,13 @@ export const skillsSkillGeneratorCommand = Command.make("skill-generator", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/skill-generator.ts"),
-                "Running skill generator",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.SKILLS.GENERATOR),
+                TASK_NAMES.RUNNING_SKILL_GENERATOR,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Skill generation completed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.SKILL_GENERATION_COMPLETED);
         }) as any
     )
 );
@@ -98,9 +103,9 @@ export const skillsGenerateReadmeCommand = Command.make("generate-readme", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/generate_readme_by_skill_usecase.ts"),
-                "Generating README",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.SKILLS.GENERATE_README),
+                TASK_NAMES.GENERATING_README_SKILLS,
                 {
                     verbose: options.verbose,
                     ...(options.skillLevel && { skillLevel: options.skillLevel }),
@@ -108,7 +113,7 @@ export const skillsGenerateReadmeCommand = Command.make("generate-readme", {
                 }
             );
 
-            yield* showSuccess("README generated!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.README_GENERATED);
         }) as any
     )
 );

@@ -9,12 +9,20 @@ import { Effect } from "effect";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import {
+	CLI,
+	COMPLETION_DIRS,
+	COMPLETION_EXTENSIONS,
+	COMPLETION_PREFIXES,
+	SHELL_TYPES,
+	type ShellType,
+} from "./constants.js";
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type Shell = "bash" | "zsh" | "fish";
+export type Shell = ShellType;
 
 export interface CompletionConfig {
     readonly name: string;
@@ -52,7 +60,7 @@ export interface ArgDef {
  * Complete command structure for ep-admin
  */
 export const EP_ADMIN_COMMANDS: CompletionConfig = {
-    name: "ep-admin",
+    name: CLI.NAME,
     globalOptions: [
         { name: "help", alias: "h", description: "Show help information" },
         { name: "version", description: "Show version information" },
@@ -431,11 +439,11 @@ export const getCompletionPath = (shell: Shell, name: string): string => {
 
     switch (shell) {
         case "bash":
-            return path.join(home, ".bash_completion.d", name);
+            return path.join(home, COMPLETION_DIRS.BASH, name);
         case "zsh":
-            return path.join(home, ".zsh", "completions", `_${name}`);
+            return path.join(home, COMPLETION_DIRS.ZSH, `${COMPLETION_PREFIXES.ZSH}${name}`);
         case "fish":
-            return path.join(home, ".config", "fish", "completions", `${name}.fish`);
+            return path.join(home, COMPLETION_DIRS.FISH, `${name}${COMPLETION_EXTENSIONS.FISH}`);
     }
 };
 

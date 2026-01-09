@@ -32,12 +32,12 @@ export const LogLevelPriority: Record<LogLevel, number> = {
 /**
  * Parse a string into a LogLevel
  */
-export const parseLogLevel = (value: string): LogLevel => {
-	const normalized = value.toLowerCase();
+export const parseLogLevel = (value: string): LogLevel | undefined => {
+	const normalized = value.trim().toLowerCase();
 	if (LOG_LEVEL_VALUES.includes(normalized as LogLevel)) {
 		return normalized as LogLevel;
 	}
-	return "info"; // default fallback
+	return undefined;
 };
 
 /**
