@@ -11,6 +11,8 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
