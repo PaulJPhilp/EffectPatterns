@@ -14,9 +14,14 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import {
+	MESSAGES,
+	SCRIPTS,
+	TASK_NAMES,
+} from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showInfo, showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -39,13 +44,13 @@ export const qaProcessCommand = Command.make("process", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/qa/qa-process.sh"),
-                "Running QA pipeline",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.QA.PROCESS),
+                TASK_NAMES.RUNNING_QA_PIPELINE,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("QA pipeline completed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.QA_PIPELINE_COMPLETED);
         }) as any
     )
 );
@@ -65,13 +70,13 @@ export const qaStatusCommand = Command.make("status", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/qa/qa-status.ts"),
-                "Checking QA status",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.QA.STATUS),
+                TASK_NAMES.CHECKING_QA_STATUS,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Status check complete!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.QA_STATUS_COMPLETE);
         }) as any
     )
 );
@@ -95,13 +100,13 @@ export const qaReportCommand = Command.make("report", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/qa/qa-report.ts"),
-                "Generating QA report",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.QA.REPORT),
+                TASK_NAMES.GENERATING_QA_REPORT,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess(`QA report generated (${options.format} format)!`);
+            yield* Display.showSuccess(`QA report generated (${options.format} format)!`);
         }) as any
     )
 );
@@ -126,16 +131,16 @@ export const qaRepairCommand = Command.make("repair", {
             yield* configureLoggerFromOptions(options);
 
             if (options.dryRun) {
-                yield* showInfo("Running in dry-run mode (no changes will be applied)");
+                yield* Display.showInfo(MESSAGES.INFO.DRY_RUN_MODE);
             }
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/qa/qa-repair.ts"),
-                "Repairing QA issues",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.QA.REPAIR),
+                TASK_NAMES.REPAIRING_QA_ISSUES,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Repair process completed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.QA_REPAIR_COMPLETED);
         }) as any
     )
 );
@@ -160,13 +165,13 @@ export const qaTestEnhancedCommand = Command.make("test-enhanced", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/qa/test-enhanced-qa.ts"),
-                "Running enhanced QA tests",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.QA.TEST_ENHANCED),
+                TASK_NAMES.RUNNING_ENHANCED_QA_TESTS,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Enhanced QA tests passed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.QA_ENHANCED_TESTS_PASSED);
         }) as any
     )
 );
@@ -191,13 +196,13 @@ export const qaTestSingleCommand = Command.make("test-single", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/qa/test-single-pattern.sh"),
-                `Testing pattern: ${positional.patternFile}`,
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.QA.TEST_SINGLE),
+                `${TASK_NAMES.TESTING_PATTERN}: ${positional.patternFile}`,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Pattern test passed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERN_TEST_PASSED);
         }) as any
     )
 );
@@ -217,13 +222,13 @@ export const qaFixPermissionsCommand = Command.make("fix-permissions", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/qa/permissions-fix.sh"),
-                "Fixing file permissions",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.QA.FIX_PERMISSIONS),
+                TASK_NAMES.FIXING_PERMISSIONS,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("File permissions fixed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.PERMISSIONS_FIXED);
         }) as any
     )
 );

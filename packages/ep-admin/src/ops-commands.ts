@@ -10,9 +10,14 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import {
+	MESSAGES,
+	SCRIPTS,
+	TASK_NAMES,
+} from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showInfo, showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -31,13 +36,13 @@ export const opsHealthCheckCommand = Command.make("health-check", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/health-check.sh"),
-                "Running health check",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.OPS.HEALTH_CHECK),
+                TASK_NAMES.RUNNING_HEALTH_CHECK,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Health check completed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.HEALTH_CHECK_COMPLETED);
         }) as any
     )
 );
@@ -62,16 +67,16 @@ export const opsRotateApiKeyCommand = Command.make("rotate-api-key", {
             yield* configureLoggerFromOptions(options);
 
             if (options.backup) {
-                yield* showInfo("Creating backup of current API key...");
+                yield* Display.showInfo(MESSAGES.INFO.CREATING_BACKUP);
             }
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/rotate-api-key.sh"),
-                "Rotating API key",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.OPS.ROTATE_API_KEY),
+                TASK_NAMES.ROTATING_API_KEY,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("API key rotated successfully!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.API_KEY_ROTATED);
         }) as any
     )
 );
@@ -96,16 +101,16 @@ export const opsUpgradeBaselineCommand = Command.make("upgrade-baseline", {
             yield* configureLoggerFromOptions(options);
 
             if (!options.confirm) {
-                yield* showInfo("This will update all test baselines");
+                yield* Display.showInfo(MESSAGES.INFO.UPDATING_BASELINES);
             }
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/upgrade-baseline.sh"),
-                "Upgrading test baseline",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.OPS.UPGRADE_BASELINE),
+                TASK_NAMES.UPGRADING_BASELINE,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Test baseline upgraded!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.BASELINE_UPGRADED);
         }) as any
     )
 );

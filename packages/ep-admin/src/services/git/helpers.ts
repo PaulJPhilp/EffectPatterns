@@ -1,19 +1,43 @@
 /**
- * Git operations service
- * 
- * Provides Effect-based wrappers for git commands
+ * Git service helpers
  */
 
 import { Effect } from "effect";
 import { execSync } from "node:child_process";
+import { GitCommandError, GitRepositoryError } from "./errors.js";
 
 /**
- * Execute a git command
+ * Execute a git command and return output
  */
 export const execGitCommand = (
 	command: string,
+	args: string[],
+	options: { capture?: boolean; encoding?: BufferEncoding } = {}
+): Effect.Effect<string, GitCommandError> =>
+	Effect.try({
+		try: () => {
+			const result = execSync(`git ${command} ${args.join(" ")}`, {
+				encoding: options.encoding || "utf-8",
+				stdio: options.capture ? "pipe" : "inherit",
+			});
+			return typeof result === "string" ? result.trim() : "";
+		},
+		catch: (error) =>
+			GitCommandError.make(
+				command,
+				args,
+				error instanceof Error ? error.message : String(error),
+				error
+			),
+	});
+
+/**
+ * Execute a git command without capturing output
+ */
+export const execGitCommandVoid = (
+	command: string,
 	args: string[]
-): Effect.Effect<void, Error> =>
+): Effect.Effect<void, GitCommandError> =>
 	Effect.try({
 		try: () => {
 			execSync(`git ${command} ${args.join(" ")}`, {
@@ -22,77 +46,106 @@ export const execGitCommand = (
 			});
 		},
 		catch: (error) =>
-			new Error(
-				`Git command failed: ${error instanceof Error ? error.message : String(error)
-				}`
+			GitCommandError.make(
+				command,
+				args,
+				error instanceof Error ? error.message : String(error),
+				error
 			),
 	});
 
 /**
+ * Parse git status output
+ */
+export const parseGitStatus = (output: string) => {
+	const lines = output.split("\n");
+	let staged = 0;
+	let unstaged = 0;
+	let untracked = 0;
+
+	for (const line of lines) {
+		if (line.startsWith("## ")) continue;
+		if (line.trim() === "") continue;
+
+		const statusCode = line.substring(0, 2);
+		if (statusCode[0] !== " " && statusCode[0] !== "?") staged++;
+		if (statusCode[1] !== " " && statusCode[1] !== "?") unstaged++;
+		if (statusCode.startsWith("??")) untracked++;
+	}
+
+	return { staged, unstaged, untracked };
+};
+
+/**
+ * Check if directory is a git repository
+ */
+export const isGitRepository = (path: string): Effect.Effect<boolean> =>
+	Effect.sync(() => {
+		try {
+			execSync("git rev-parse --git-dir", { cwd: path, stdio: "ignore" });
+			return true;
+		} catch {
+			return false;
+		}
+	});
+
+/**
+ * Get git repository root directory
+ */
+export const getGitRoot = (): Effect.Effect<string, GitCommandError> =>
+	execGitCommand("rev-parse", ["--show-toplevel"]);
+
+/**
  * Get the latest git tag
  */
-export const getLatestTag = (): Effect.Effect<string, Error> =>
-	Effect.try({
-		try: () => {
-			const tag = execSync("git describe --tags --abbrev=0", {
-				encoding: "utf-8",
-			}).trim();
-			return tag;
-		},
-		catch: (error) => {
-			const message = error instanceof Error ? error.message : String(error);
-
-			if (message.includes("No names found")) {
-				return new Error(
-					"No git tags found in this repository.\n\n" +
-					"This is likely the first release. Create an initial tag:\n" +
-					"  git tag v0.1.0\n" +
-					"  git push origin v0.1.0\n\n" +
-					"Or use conventional commits and run:\n" +
-					"  bun run ep release create"
+export const getLatestTag = (tagPrefix: string, initialTag: string): Effect.Effect<string, GitRepositoryError | GitCommandError> =>
+	Effect.gen(function* () {
+		try {
+			return yield* execGitCommand("describe", ["--tags", "--abbrev=0"], { capture: true });
+		} catch (error) {
+			if (error instanceof GitCommandError && error.message.includes("No names found")) {
+				throw GitRepositoryError.make(
+					`No git tags found in this repository.\n\n` +
+					`This is likely the first release. Create an initial tag:\n` +
+					`  git tag ${initialTag}\n` +
+					`  git push origin ${initialTag}\n\n` +
+					`Or use conventional commits and run:\n` +
+					`  bun run ep release create`
 				);
 			}
-
-			return new Error(
-				`Failed to get latest tag: ${message}\n\n` +
-				"Make sure you are in a git repository with at least one tag."
-			);
-		},
+			throw error;
+		}
 	});
 
 /**
  * Get commits since a specific tag
  */
 export const getCommitsSinceTag = (
-	tag: string
-): Effect.Effect<string[], Error> =>
-	Effect.try({
-		try: () => {
-			const commits = execSync(
-				`git log ${tag}..HEAD --format=%B%n==END==`,
-				{
-					encoding: "utf-8",
-				}
+	tag: string,
+	defaultBranch: string
+): Effect.Effect<string[], GitCommandError> =>
+	Effect.gen(function* () {
+		const output = yield* execGitCommand("log", [
+			`${tag}..${defaultBranch}`,
+			"--format=%B%n==END==",
+		], { capture: true });
+		
+		return output
+			.split("==END==")
+			.map((commit) => commit.trim())
+			.filter((commit) => commit.length > 0);
+	}).pipe(
+		Effect.catchAll((error) =>
+			Effect.fail(
+				GitCommandError.make(
+					"log",
+					[`${tag}..${defaultBranch}`, "--format=%B%n==END=="],
+					`Failed to get commits since tag ${tag}: ${error instanceof GitCommandError ? error.message : String(error)}`,
+					error
+				)
 			)
-				.split("==END==")
-				.map((commit) => commit.trim())
-				.filter((commit) => commit.length > 0);
-			return commits;
-		},
-		catch: (error) => {
-			const message = error instanceof Error ? error.message : String(error);
-			return new Error(
-				`Failed to get commits since tag ${tag}: ${message}\n\n` +
-				"Possible causes:\n" +
-				`  • Tag "${tag}" does not exist\n` +
-				"  • Not in a git repository\n" +
-				"  • Repository history is corrupted\n\n" +
-				"Try:\n" +
-				"  git tag -l    # List all tags\n" +
-				"  git log --oneline    # Verify git history"
-			);
-		},
-	});
+		)
+	);
 
 /**
  * Determine the recommended version bump based on conventional commits
@@ -101,7 +154,7 @@ export const getRecommendedBump = (
 	_commits: string[]
 ): Effect.Effect<
 	{ releaseType: "major" | "minor" | "patch"; reason: string },
-	Error
+	never
 > =>
 	Effect.succeed({
 		releaseType: "patch" as const,
@@ -112,7 +165,6 @@ export const getRecommendedBump = (
  * Parse commits and categorize them
  */
 export const categorizeCommits = async (commits: string[]) => {
-	// Handle both ESM and CommonJS exports; fall back to a simple parser
 	let parseCommit: (message: string) => any;
 
 	try {
@@ -129,10 +181,6 @@ export const categorizeCommits = async (commits: string[]) => {
 			);
 		}
 	} catch {
-		// Very small, test-friendly parser that understands the
-		// common "type: subject" / "type!: subject" forms. This is
-		// only used if the real parser is unavailable or has an
-		// unexpected shape.
 		parseCommit = (message: string) => {
 			const header = message.split("\n")[0] ?? message;
 			const match = header.match(

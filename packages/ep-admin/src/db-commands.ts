@@ -11,9 +11,14 @@
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
+import {
+	MESSAGES,
+	SCRIPTS,
+	TASK_NAMES,
+} from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
-import { showSuccess } from "./services/display.js";
-import { executeScriptWithTUI } from "./services/execution.js";
+import { Display } from "./services/display/index.js";
+import { Execution } from "./services/execution/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
@@ -36,13 +41,13 @@ export const dbTestCommand = Command.make("test", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/test-db.ts"),
-                "Testing database",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.DB.TEST),
+                TASK_NAMES.TESTING_DATABASE,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Database tests passed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.DATABASE_TESTS_PASSED);
         }) as any
     )
 );
@@ -62,13 +67,13 @@ export const dbTestQuickCommand = Command.make("test-quick", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/test-db-quick.ts"),
-                "Quick testing database",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.DB.TEST_QUICK),
+                TASK_NAMES.QUICK_TESTING_DATABASE,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Quick database test passed!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.QUICK_DB_TEST_PASSED);
         }) as any
     )
 );
@@ -92,13 +97,13 @@ export const dbVerifyMigrationCommand = Command.make("verify-migration", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/verify-migration.ts"),
-                "Verifying database migration",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.DB.VERIFY_MIGRATION),
+                TASK_NAMES.VERIFYING_MIGRATION,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Database migration verified!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.MIGRATION_VERIFIED);
         }) as any
     )
 );
@@ -122,13 +127,13 @@ export const dbMockCommand = Command.make("mock", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            yield* executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/mock-db.ts"),
-                "Creating mock database",
+            yield* Execution.executeScriptWithTUI(
+                path.join(PROJECT_ROOT, SCRIPTS.DB.MOCK),
+                TASK_NAMES.CREATING_MOCK_DB,
                 { verbose: options.verbose }
             );
 
-            yield* showSuccess("Mock database created!");
+            yield* Display.showSuccess(MESSAGES.SUCCESS.MOCK_DB_CREATED);
         }) as any
     )
 );

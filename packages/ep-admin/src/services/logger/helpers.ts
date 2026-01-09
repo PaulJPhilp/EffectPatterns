@@ -2,8 +2,7 @@
  * Logger service helpers
  */
 
-import { Effect } from "effect";
-import * as Console from "effect/Console";
+import { Console, Effect } from "effect";
 import { colors, levelColors } from "../../utils.js";
 import type { LogLevel, LoggerConfig } from "./types.js";
 
@@ -43,14 +42,14 @@ export const formatMessage = (
 	// Text format
 	const icon = ICONS[level] ?? "";
 	const color = config.useColors ? (levelColors[level] ?? "") : "";
-	const reset = config.useColors ? colors.reset : "";
+	const reset = config.useColors ? colors.RESET : "";
 
 	let output = `${color}${icon}${reset} ${message}`;
 
 	if (data !== undefined && config.verbose) {
 		const dataStr =
 			typeof data === "string" ? data : JSON.stringify(data, null, 2);
-		output += `\n${colors.dim}${dataStr}${reset}`;
+		output += `\n${colors.DIM}${dataStr}${reset}`;
 	}
 
 	return output;
@@ -65,6 +64,8 @@ export const writeOutput = (
 ): Effect.Effect<void> => {
 	if (level === "error") {
 		return Console.error(message);
+	} else if (level === "warn") {
+		return Console.warn(message);
 	} else {
 		return Console.log(message);
 	}
