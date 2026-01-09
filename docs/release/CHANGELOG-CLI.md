@@ -1,7 +1,111 @@
-````markdown
 # CLI Changelog
 
 Summary of all changes made to the Effect Patterns Hub CLI.
+
+## Version 0.7.3 - Linter Re-enablement (December 12, 2025)
+
+### 🎯 Major Features
+
+#### ✨ Effect-TS Linter Re-enabled
+The linter (444 lines of implementation) has been successfully re-enabled in the CLI.
+
+**New Commands:**
+- `ep init` - Initialize `ep.json` configuration file
+- `ep lint rules` - Display all 6 linter rules
+- `ep lint <files>` - Lint TypeScript files
+- `ep lint --apply` - Auto-fix violations
+
+**Linter Rules:**
+1. `effect-use-taperror` (warning)
+2. `effect-explicit-concurrency` (warning)
+3. `effect-deprecated-api` (error)
+4. `effect-prefer-pipe` (info)
+5. `effect-stream-memory` (error)
+6. `effect-error-model` (info)
+
+**Implementation Details:**
+- ✅ Parallel execution (10-worker pool)
+- ✅ Configuration file support (`ep.json`)
+- ✅ Auto-fix for select rules
+- ✅ Color-coded output
+- ✅ File globbing support
+
+### 🔧 Infrastructure
+
+#### CLI Code Changes
+- Removed `if (false as any)` wrapper from `packages/cli/src/index.ts`
+- Renamed `_initCommand` and `_lintCommand` to active exports
+- Added linter commands to `userRootCommand` subcommands
+- Built `@effect-patterns/cli-core` package successfully
+
+#### Pipeline Integration
+- Added linter step to publishing pipeline (after validation)
+- Uses existing `lint-effect-patterns.ts` implementation
+
+#### CI/CD Integration
+- New `lint-patterns` GitHub Actions job
+- Runs on all PRs and commits to main
+- Uses `continue-on-error: true` for non-blocking mode
+
+### 📖 Documentation
+
+**CLAUDE.md Updates:**
+- Added "Linting CLI" section with command examples
+
+**CONTRIBUTING.md Updates:**
+- New "Linting Guidelines" section
+- Comprehensive rule descriptions
+- Best practices for pattern authors
+- Auto-fix instructions
+
+### 🐛 Quality Improvements
+
+**Testing Results:**
+- 43 TypeScript files checked
+- 43 files passing (100%)
+- 0 violations remaining
+
+---
+
+## Version 0.6.1 - Patch Release (December 2025)
+
+### 🐛 Bug Fixes
+
+**Pattern Documentation**
+
+- Fixed `observability-effect-fn.mdx` pattern to correctly demonstrate `Effect.fn` usage
+  - The code example was using `Effect.gen` instead of `Effect.fn`
+  - Updated to properly show function instrumentation with observability integration
+  - Applied fix across all pattern file versions
+
+### 📚 Documentation Updates
+
+- Updated CLAUDE.md context guide for v0.6.1
+- Clarified CLI package structure (ep-cli, ep-admin)
+- Documented recent v0.6.0 restructuring changes
+- Added references to new packages and utilities
+- Updated project goals and roadmap sections
+
+---
+
+## Version 0.6.0 - CLI Restructuring Release (November 2025)
+
+### ♻️ Refactoring
+
+**CLI Package Structure**
+
+- Extracted CLI into dedicated `@effect-patterns/ep-cli` package
+- Added `@effect-patterns/ep-admin` admin tool package
+- Improved package organization with cli utilities and design-system packages
+
+### 🎉 New Features
+
+- Enhanced validation and rules generation scripts (`*-improved` variants)
+- LangGraph analysis agent moved to `agents/analyzer.ts`
+- Added `design-system` package for UI components
+- Improved `shared` utilities package
+
+---
 
 ## Version 0.4.0 - Production Release (October 2025)
 
@@ -326,5 +430,32 @@ ep admin validate
 
 # Run tests
 ep admin test
+
+# Generate docs
+ep admin generate
+
+# Preview release
+ep admin release preview
+
+# Create release
+ep admin release create
 ```
-````
+
+### ✅ Checklist for Users
+
+After upgrading to this version:
+
+- [ ] Run `bun install` to get latest dependencies
+- [ ] Run `bun link` to enable global `ep` command
+- [ ] Update any scripts using old command names
+- [ ] Test `ep --help` to verify installation
+- [ ] Review new filtering options with `ep install --help`
+- [ ] Update CI/CD workflows if applicable
+
+---
+
+For detailed information, see:
+
+- [SETUP.md](./SETUP.md) - Complete setup guide
+- [TESTING.md](./TESTING.md) - Testing documentation
+- [README.md](./README.md) - Quick start guide

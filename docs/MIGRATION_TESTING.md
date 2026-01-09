@@ -42,11 +42,13 @@ bun run db:migrate
 ```
 
 This script will:
-1. Load Application Patterns from `data/application-patterns.json`
-2. Load Effect Patterns from `data/patterns-index.json` and `content/published/patterns/*.mdx`
+1. Load Application Patterns from `data/application-patterns.json` (legacy migration source)
+2. Load Effect Patterns from `data/patterns-index.json` and `content/published/patterns/*.mdx` (legacy migration sources - patterns now stored in database)
 3. Load Jobs from `docs/*_JOBS_TO_BE_DONE.md`
 4. Create relationships between patterns, jobs, and application patterns
 5. Insert everything into PostgreSQL
+
+**Note:** After initial migration, all patterns are stored in PostgreSQL. The MDX files and JSON files are no longer used as the source of truth.
 
 Expected output:
 ```
@@ -199,10 +201,10 @@ psql postgresql://postgres:postgres@localhost:5432/effect_patterns -c "SELECT CO
 If migration fails:
 
 1. **Check logs** - The migration script outputs detailed error messages
-2. **Verify source files exist**:
-   - `data/application-patterns.json`
-   - `data/patterns-index.json` (optional)
-   - `content/published/patterns/*.mdx`
+2. **Verify source files exist** (for initial migration only):
+   - `data/application-patterns.json` (legacy)
+   - `data/patterns-index.json` (optional, legacy)
+   - `content/published/patterns/*.mdx` (legacy - no longer exists, patterns now in database)
    - `docs/*_JOBS_TO_BE_DONE.md`
 3. **Reset database** (if needed):
    ```bash

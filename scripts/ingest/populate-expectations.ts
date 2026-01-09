@@ -1,7 +1,8 @@
+/** biome-ignore-all assist/source/organizeImports: <> */
 import { Command, FileSystem, Path } from '@effect/platform';
 import { NodeContext } from '@effect/platform-node';
 import { Console, Context, Data, Effect, Layer } from 'effect';
-import { MdxService } from 'effect-mdx';
+import { MdxService, type Frontmatter } from 'effect-mdx';
 
 // --- Configuration Service (Idiomatic Effect.Service pattern) ---
 // Create the AppConfig service using Effect.Service pattern
@@ -120,14 +121,7 @@ const LLMLive = Layer.succeed(
 
 // --- Utility Types & Functions ---
 
-// Frontmatter interface with readonly properties and index signature
-// Using unknown for index signature to be compatible with effect-mdx JSONObject
-interface Frontmatter {
-  readonly expectedOutput?: string;
-  readonly expectedError?: string;
-  needsReview?: boolean; // Can be updated, so not readonly if it is to be written to.
-  readonly [key: string]: unknown; // Compatible with effect-mdx JSONValue
-}
+// Use Frontmatter type directly from effect-mdx for compatibility
 
 // --- Core Logic for Processing a Single Pattern File (Idiomatic Effect.gen) ---
 const processPatternFile = (mdxFilePath: string) =>
@@ -234,9 +228,13 @@ const processPatternFile = (mdxFilePath: string) =>
     // Create a new object with updated properties to respect readonly constraints
     let updatedFrontmatter: Frontmatter = {
       ...frontmatter,
-      expectedOutput: generatedExpectations.expectedOutput,
-      expectedError: generatedExpectations.expectedError,
-    };
+      ...(generatedExpectations.expectedOutput !== undefined && {
+        expectedOutput: generatedExpectations.expectedOutput,
+      }),
+      ...(generatedExpectations.expectedError !== undefined && {
+        expectedError: generatedExpectations.expectedError,
+      }),
+    } as Frontmatter;
 
     if (generatedExpectations.discrepancyFlag) {
       updatedFrontmatter.needsReview = true; // Set flag if LLM detected discrepancy

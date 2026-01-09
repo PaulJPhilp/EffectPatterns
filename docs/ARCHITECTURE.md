@@ -53,10 +53,6 @@ Effect-Patterns/
 │   │   │   └── index.ts   # Public API
 │   │   └── dist/          # Built toolkit (ESM + CJS)
 │   │
-│   ├── effect-discord/    # Discord integration service
-│   │   ├── src/
-│   │   │   ├── index.ts   # Service definitions and API
-│   │   │   └── layer.ts   # Live implementation
 │   │   ├── test/
 │   │   │   └── integration.test.ts
 │   │   ├── INTEGRATION_TESTS.md  # Test setup guide
@@ -159,7 +155,7 @@ The project uses **Bun workspaces** (configured in `package.json`):
 
 ### Root Workspace
 Core patterns, CLI, toolkit, MCP server, and automation scripts:
-- `packages/` - Shared libraries (toolkit, effect-discord, cli, design-system)
+- `packages/` - Shared libraries (toolkit, cli, design-system)
 - `services/mcp-server/` - REST API server
 - `scripts/` - Build and automation scripts
 - `content/` - Pattern data and TypeScript examples
@@ -190,12 +186,6 @@ Separate Next.js projects with independent configurations:
 - Code generation and schema validation
 - **Exports:** `searchEffectPatterns`, `findEffectPatternBySlug`, `DatabaseLayer`, repositories, validation schemas
 
-**@effect-patterns/effect-discord** (`packages/effect-discord/`)
-- Effect-native Discord integration service
-- Wraps DiscordChatExporter.Cli for data export
-- Secure token handling with Effect.Secret
-- Tagged errors and resource cleanup
-- **Usage:** Pattern discovery from Discord community
 
 **@effect-patterns/ep-cli** (`packages/ep-cli/`)
 - Main CLI entry point for end users

@@ -3,31 +3,31 @@ name: Pipeline Integrity Check
 on:
   pull_request:
     paths:
-      - 'content/new/**'
-      - 'scripts/publish/**'
-      - '.git/hooks/**'
-      - 'PIPELINE.md'
-      - 'PIPELINE-REVIEW.md'
+      - "content/new/**"
+      - "scripts/publish/**"
+      - ".git/hooks/**"
+      - "PIPELINE.md"
+      - "PIPELINE-REVIEW.md"
   push:
     branches:
       - main
     paths:
-      - 'content/new/**'
-      - 'scripts/publish/**'
-      - '.git/hooks/**'
+      - "content/new/**"
+      - "scripts/publish/**"
+      - ".git/hooks/**"
 
 jobs:
   pipeline-validation:
     name: Validate Pipeline Integrity
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
-      
+
       - name: Check forbidden directories don't exist
         run: |
           echo "🔍 Checking for forbidden directories..."
@@ -40,22 +40,22 @@ jobs:
             fi
           done
           echo "✅ No forbidden directories found"
-      
+
       - name: Install dependencies
         run: bun install
-      
+
       - name: Type check TypeScript examples
         run: |
           echo "🔍 Type checking patterns..."
-          bun run scripts/publish/test-improved.ts || exit 1
+          bun run ep:admin publish test || exit 1
           echo "✅ Type check passed"
-      
+
       - name: Run full pipeline
         run: |
           echo "🔍 Running publishing pipeline..."
-          bun run pipeline || exit 1
+          bun run ep:admin publish pipeline || exit 1
           echo "✅ Pipeline completed successfully"
-      
+
       - name: Verify README structure
         run: |
           echo "🔍 Verifying README structure..."
@@ -63,25 +63,25 @@ jobs:
             echo "❌ ERROR: README.md not generated"
             exit 1
           fi
-          
+
           grep -q "## Table of Contents" README.md || (echo "❌ Missing Table of Contents"; exit 1)
           grep -q "### Core Effect Patterns" README.md || (echo "❌ Missing Core section"; exit 1)
           grep -q "### Schema Patterns" README.md || (echo "❌ Missing Schema section"; exit 1)
-          
+
           # Verify core categories (12 expected)
           CORE_CATEGORIES=("resource-management" "concurrency" "core-concepts" "testing" "domain-modeling" "building-apis" "error-management" "building-data-pipelines" "making-http-requests" "tooling-and-debugging" "observability" "project-setup--execution")
           for category in "${CORE_CATEGORIES[@]}"; do
             grep -q "^## $category" README.md || (echo "❌ Missing core category: $category"; exit 1)
           done
-          
+
           # Verify schema categories (14 expected)
           SCHEMA_CATEGORIES=("Composition" "Transformations" "Unions" "Recursive" "Error Handling" "Async Validation" "Validating Api Responses" "Parsing Ai Responses" "Defining Ai Output Schemas" "Web Standards Validation" "Form Validation" "Json File Validation" "Json Db Validation" "Environment Config")
           for category in "${SCHEMA_CATEGORIES[@]}"; do
             grep -q "^## $category" README.md || (echo "❌ Missing schema category: $category"; exit 1)
           done
-          
+
           echo "✅ README structure verified (12 core + 14 schema categories)"
-      
+
       - name: Verify pattern counts
         run: |
           echo "🔍 Verifying pattern counts..."
@@ -90,11 +90,11 @@ jobs:
             echo "❌ Pattern count too low: $TOTAL (expected 195)"
             exit 1
           fi
-          
+
           CORE=$(find content/published/patterns/core -name "*.mdx" | wc -l)
           SCHEMA=$(find content/published/patterns/schema -name "*.mdx" | wc -l)
           echo "✅ Pattern count verified: $TOTAL total ($CORE core + $SCHEMA schema)"
-      
+
       - name: Verify rules generation
         run: |
           echo "🔍 Verifying rules generation..."
@@ -103,24 +103,24 @@ jobs:
           [ -f content/published/rules/rules-compact.md ] || (echo "❌ rules-compact.md not generated"; exit 1)
           [ -d content/published/rules/by-use-case ] || (echo "❌ by-use-case directory not generated"; exit 1)
           echo "✅ Rules generation verified (6 formats)"
-      
+
       - name: Verify skills generation
         run: |
           echo "🔍 Verifying skills generation..."
           [ -d content/published/skills/claude ] || (echo "❌ Claude skills not generated"; exit 1)
           [ -d content/published/skills/gemini ] || (echo "❌ Gemini skills not generated"; exit 1)
           [ -d content/published/skills/openai ] || (echo "❌ OpenAI skills not generated"; exit 1)
-          
+
           CLAUDE_COUNT=$(find content/published/skills/claude -name "*.md" | wc -l)
           GEMINI_COUNT=$(find content/published/skills/gemini -name "*.json" | wc -l)
           OPENAI_COUNT=$(find content/published/skills/openai -name "*.md" | wc -l)
-          
+
           echo "✅ Skills generation verified (Claude: $CLAUDE_COUNT, Gemini: $GEMINI_COUNT, OpenAI: $OPENAI_COUNT)"
-      
+
       - name: Ensure no generated files in git staging
         run: |
           echo "🔍 Checking for accidentally staged generated files..."
-          
+
           # Check if any forbidden paths appear in git diff
           if git diff --cached --name-only | grep -E "^(patterns/|rules/|\.claude/skills/|\.gemini/|\.openai/)" > /dev/null; then
             echo "❌ ERROR: Generated files appear in git staging area"
@@ -128,13 +128,13 @@ jobs:
             git diff --cached --name-only | grep -E "^(patterns/|rules/|\.claude/skills/|\.gemini/|\.openai/)"
             exit 1
           fi
-          
+
           echo "✅ No generated files in staging area"
-      
+
       - name: Validate pattern frontmatter
         run: |
           echo "🔍 Validating pattern frontmatter..."
-          
+
           INVALID_COUNT=0
           for file in content/published/patterns/**/*.mdx; do
             if [ -f "$file" ]; then
@@ -153,21 +153,21 @@ jobs:
               fi
             fi
           done
-          
+
           if [ "$INVALID_COUNT" -gt 0 ]; then
             echo "❌ Found $INVALID_COUNT patterns with invalid frontmatter"
             exit 1
           fi
-          
+
           echo "✅ All patterns have valid frontmatter"
-      
+
       - name: Check git hooks exist
         run: |
           echo "🔍 Checking git hooks..."
           [ -f .git/hooks/pre-commit ] || (echo "❌ pre-commit hook missing"; exit 1)
           [ -x .git/hooks/pre-commit ] || (echo "❌ pre-commit hook not executable"; exit 1)
           echo "✅ Git hooks verified"
-      
+
       - name: Pipeline integrity check passed
         run: |
           echo ""

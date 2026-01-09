@@ -1,20 +1,15 @@
-#!/usr/bin/env node
-
 /**
  * Effect Patterns MCP Server
  *
  * Provides MCP tools for searching Effect patterns and generating code
  * snippets. Communicates via stdio following the Model Context Protocol.
+ * All pattern data is loaded from the PostgreSQL database.
  */
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import {
   buildSnippet,
-  getPatternById,
-  type Pattern,
-  searchPatterns,
+  getPatternFromDatabase,
+  searchPatternsFromDatabase
 } from "@effect-patterns/toolkit";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -23,25 +18,6 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load patterns data
-const patternsPath = join(__dirname, "../../../data/patterns-index.json");
-let patterns: Pattern[] = [];
-
-try {
-  const data = readFileSync(patternsPath, "utf-8");
-  const parsed = JSON.parse(data);
-  patterns = parsed.patterns || [];
-  console.error(`Loaded ${patterns.length} patterns`);
-} catch (error) {
-  console.error("Failed to load patterns:", error);
-  process.exit(1);
-}
-
-// Create MCP server
 const server = new Server(
   {
     name: "effect-patterns",
@@ -176,11 +152,10 @@ server.setRequestHandler(
     try {
       switch (name) {
         case "search_patterns": {
-          const results = searchPatterns({
-            patterns,
+          const results = await searchPatternsFromDatabase({
             query: args.query as string | undefined,
             category: args.category as string | undefined,
-            difficulty: args.difficulty as string | undefined,
+            skillLevel: args.difficulty as "beginner" | "intermediate" | "advanced" | undefined,
             limit: args.limit as number | undefined,
           });
 
@@ -210,7 +185,7 @@ server.setRequestHandler(
 
         case "get_pattern": {
           const patternId = args.patternId as string;
-          const pattern = getPatternById(patterns, patternId);
+          const pattern = await getPatternFromDatabase(patternId);
 
           if (!pattern) {
             return {
@@ -238,7 +213,7 @@ server.setRequestHandler(
 
         case "generate_snippet": {
           const patternId = args.patternId as string;
-          const pattern = getPatternById(patterns, patternId);
+          const pattern = await getPatternFromDatabase(patternId);
 
           if (!pattern) {
             return {
@@ -301,9 +276,17 @@ server.setRequestHandler(
 
 // Start server
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Effect Patterns MCP Server running on stdio");
+  try {
+    console.error("Effect Patterns MCP Server starting...");
+    console.error("Connecting to database for patterns...");
+
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    console.error("Effect Patterns MCP Server running on stdio");
+  } catch (error) {
+    console.error("Failed to initialize server:", error);
+    process.exit(1);
+  }
 }
 
 main().catch((error) => {

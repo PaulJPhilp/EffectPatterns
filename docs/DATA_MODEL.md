@@ -101,10 +101,10 @@ fulfilledBy:
 | `rule` | object | | Actionable guideline |
 | `related` | string[] | | IDs of related patterns |
 | `author` | string | | Pattern author |
-| `path` | string | ✓ | File path to .mdx file |
+| `content` | string | ✓ | Full markdown content (stored in database) |
 
 **Source:** PostgreSQL database (`effect_patterns` table)
-**Content:** `.mdx` files in `content/published/patterns/` (content storage, metadata in DB)
+**Content:** Stored in the database `content` field (markdown, code examples, all sections)
 
 **Example:**
 
@@ -119,7 +119,7 @@ rule:
   description: Use Effect.all with concurrency option to run independent effects in parallel
 related: [concurrency-understanding-fibers, concurrency-race-timeout]
 author: PaulJPhilp
-path: content/published/patterns/concurrency/getting-started/concurrency-hello-world.mdx
+slug: concurrency-hello-world
 ```
 
 ---
@@ -258,13 +258,12 @@ Effect Patterns Repository
 │   ├── CORE_CONCEPTS_JOBS_TO_BE_DONE.md
 │   └── ... (other job files)
 │
-└── content/published/patterns/
-    └── ... (MDX files - content storage, metadata in DB)
+└── (No published pattern files - all content stored in database)
 ```
 
-### Content Files
+### Content Storage
 
-MDX files in `content/published/patterns/` store the actual pattern content (markdown, code examples). Metadata is stored in the database, but file paths are maintained for README generation and direct file access.
+All pattern content (markdown, code examples, sections like "Good Example", "Anti-Pattern", "Rationale") is stored in the PostgreSQL database `content` field of the `effect_patterns` table. The database is the single source of truth for both metadata and content.
 
 ---
 

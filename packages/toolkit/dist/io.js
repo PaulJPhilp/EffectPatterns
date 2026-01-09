@@ -1,61 +1,10 @@
 /**
  * IO Operations
  *
- * Operations for loading patterns data from both
- * file system (legacy) and PostgreSQL database (primary).
+ * Operations for loading patterns data from PostgreSQL database.
  */
-import { Schema as S } from "@effect/schema";
-import * as TreeFormatter from "@effect/schema/TreeFormatter";
-import * as fs from "node:fs";
-import { PatternsIndex as PatternsIndexSchema, } from "./schemas/pattern.js";
 import { createDatabase } from "./db/client.js";
 import { createEffectPatternRepository } from "./repositories/index.js";
-// ============================================
-// Legacy File-Based Loading
-// ============================================
-/**
- * Load and parse patterns from a JSON file (legacy, sync)
- *
- * @param filePath - Absolute path to patterns.json
- * @returns Validated PatternsIndex
- * @throws Error if file cannot be read or parsed
- * @deprecated Use loadPatternsFromDatabase for new code
- */
-export function loadPatternsFromJsonSync(filePath) {
-    const content = fs.readFileSync(filePath, "utf-8");
-    const json = JSON.parse(content);
-    const decodedEither = S.decodeUnknownEither(PatternsIndexSchema)(json);
-    if (decodedEither._tag === "Left") {
-        const message = TreeFormatter.formatErrorSync(decodedEither.left);
-        throw new Error(`Invalid patterns index: ${message}`);
-    }
-    return decodedEither.right;
-}
-/**
- * Load and parse patterns from a JSON file (legacy, async)
- *
- * @param filePath - Absolute path to patterns.json
- * @returns Promise that resolves to validated PatternsIndex
- * @deprecated Use loadPatternsFromDatabase for new code
- */
-export async function loadPatternsFromJson(filePath) {
-    const content = await fs.promises.readFile(filePath, "utf-8");
-    const json = JSON.parse(content);
-    const decodedEither = S.decodeUnknownEither(PatternsIndexSchema)(json);
-    if (decodedEither._tag === "Left") {
-        const message = TreeFormatter.formatErrorSync(decodedEither.left);
-        throw new Error(`Invalid patterns index: ${message}`);
-    }
-    return decodedEither.right;
-}
-/**
- * Legacy alias for compatibility
- * @deprecated Use loadPatternsFromJson
- */
-export const loadPatternsFromJsonRunnable = loadPatternsFromJson;
-// ============================================
-// Database-Based Loading
-// ============================================
 /**
  * Convert database EffectPattern to legacy Pattern format
  */

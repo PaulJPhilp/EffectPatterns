@@ -5,6 +5,43 @@ All notable changes to `@effect-patterns/toolkit` will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-01-15
+
+### Changed
+
+- **Database-first architecture**: All pattern loading now uses PostgreSQL database as the primary source of truth
+- Removed deprecated JSON file loading functions (`loadPatternsFromJson`, `loadPatternsFromJsonRunnable`, `loadPatternsFromJsonSync`)
+- Removed legacy `PatternLoader` service from `services/io.ts`
+- Updated all exports to use database-backed functions only
+
+### Removed
+
+- `loadPatternsFromJson` - Use `loadPatternsFromDatabase` instead
+- `loadPatternsFromJsonRunnable` - Use `loadPatternsFromDatabase` instead
+- `loadPatternsFromJsonSync` - Use `loadPatternsFromDatabase` instead
+- `PatternLoader` service - Database functions are now the standard approach
+- Legacy test file `tests/io.test.ts` - Tests for deprecated JSON loading removed
+
+### Migration Guide
+
+If you were using the deprecated JSON loading functions, update your code:
+
+**Before:**
+```typescript
+import { loadPatternsFromJson } from "@effect-patterns/toolkit";
+
+const patterns = await loadPatternsFromJson("./data/patterns.json");
+```
+
+**After:**
+```typescript
+import { loadPatternsFromDatabase } from "@effect-patterns/toolkit";
+
+const patterns = await loadPatternsFromDatabase();
+```
+
+The database functions automatically connect using the `DATABASE_URL` environment variable or default connection settings.
+
 ## [0.1.0] - 2025-10-15
 
 ### Added
@@ -144,7 +181,7 @@ None
 
 See [ROADMAP.md](../../ROADMAP.md) for planned features.
 
-### [0.2.0] - Planned
+### [0.3.0] - Planned
 
 Potential features:
 

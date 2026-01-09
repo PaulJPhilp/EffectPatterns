@@ -5,28 +5,23 @@ import { loadPatternsFromJson, searchPatterns } from '@effect-patterns/toolkit';
 import { config } from 'dotenv';
 
 // Load environment variables
-config({ path: '../app/code-assistant/.env.local' });
+config();
 
 async function testPatterns() {
   console.log('🧩 Testing Effect Patterns Integration');
   console.log('='.repeat(50));
 
   try {
-    // Load patterns data
-    const patternsPath = path.join(
-      process.cwd(),
-      '../data/patterns-index.json',
-    );
-    console.log('📂 Loading patterns from:', patternsPath);
+    // Load patterns data from database
+    console.log('📂 Loading patterns from database...');
 
-    const patternsData = loadPatternsFromJson(patternsPath);
+    const patternsData = await loadPatternsFromDatabase();
     console.log(`✅ Loaded ${patternsData.patterns.length} patterns`);
 
     // Test basic search
     console.log('\n🔍 Testing pattern search...');
 
-    const retryResults = searchPatterns({
-      patterns: patternsData.patterns,
+    const retryResults = await searchPatternsFromDatabase({
       query: 'retry',
       limit: 3,
     });
@@ -37,8 +32,7 @@ async function testPatterns() {
     }
 
     // Test category filter
-    const errorHandlingResults = searchPatterns({
-      patterns: patternsData.patterns,
+    const errorHandlingResults = await searchPatternsFromDatabase({
       category: 'error-handling',
       limit: 5,
     });
@@ -48,11 +42,10 @@ async function testPatterns() {
     );
 
     // Test combined search
-    const advancedResults = searchPatterns({
-      patterns: patternsData.patterns,
+    const advancedResults = await searchPatternsFromDatabase({
       query: 'concurrent',
       category: 'concurrency',
-      difficulty: 'intermediate',
+      skillLevel: 'intermediate',
       limit: 2,
     });
 
@@ -75,10 +68,11 @@ async function testPatterns() {
     ];
     console.log('\n📂 Pattern categories available:');
     for (const category of categories) {
-      const count = patternsData.patterns.filter(
-        (p) => p.category === category,
-      ).length;
-      console.log(`  • ${category}: ${count} patterns`);
+      const categoryResults = await searchPatternsFromDatabase({
+        category,
+        limit: 1000,
+      });
+      console.log(`  • ${category}: ${categoryResults.length} patterns`);
     }
 
     console.log(

@@ -1,6 +1,6 @@
 {
   "name": "@effect-patterns/toolkit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Type-safe Effect library for working with Effect-TS patterns - search, validate, and generate code from the Effect Patterns Hub",
   "main": "./dist/index.js",
@@ -35,7 +35,7 @@
     "@effect/platform": "^0.94.1",
     "@effect/platform-node": "^0.104.0",
     "@effect/schema": "^0.75.5",
-    "effect": "^3.18.2"
+    "effect": "^3.19.14"
   },
   "peerDependencies": {
     "@effect/platform": "^0.94.1",
@@ -44,10 +44,10 @@
     "effect": "^3.18.2"
   },
   "devDependencies": {
-    "@types/node": "^25.0.2",
-    "@vitest/coverage-v8": "^4.0.4",
+    "@types/node": "^25.0.3",
+    "@vitest/coverage-v8": "^4.0.16",
     "typescript": "5.9.3",
-    "vitest": "^4.0.4"
+    "vitest": "^4.0.16"
   },
   "keywords": [
     "effect",
