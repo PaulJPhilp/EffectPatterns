@@ -18,11 +18,13 @@ import { installCommand } from "./commands/install-commands.js";
 import { patternCommand } from "./commands/pattern-commands.js";
 import { listCommand, searchCommand, showCommand } from "./commands/pattern-repo-commands.js";
 import { releaseCommand } from "./commands/release-commands.js";
+import { skillsCommand } from "./commands/skills-commands.js";
 
 // Services
 import { Display } from "./services/display/index.js";
 import { Execution } from "./services/execution/index.js";
 import { Linter } from "./services/linter/index.js";
+import { Skills } from "./services/skills/service.js";
 import { LiveTUILoader } from "./services/tui-loader.js";
 
 /**
@@ -38,6 +40,7 @@ export const rootCommand = Command.make("ep").pipe(
     installCommand,
     releaseCommand,
     adminCommand,
+    skillsCommand,
   ])
 );
 
@@ -51,7 +54,8 @@ export const runtimeLayer = Layer.mergeAll(
   (StateStore as any).Default,
   LiveDisplay,
   LiveExecution,
-  Linter.Default
+  Linter.Default,
+  Skills.Default
 );
 
 const cliRunner = Command.run(rootCommand, {
