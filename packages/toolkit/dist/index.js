@@ -5,21 +5,17 @@
  * search, validate, and generate code from the Effect Patterns Hub
  */
 // ============================================
-// IO Operations (Legacy + Database)
+// IO Operations (Database)
 // ============================================
-export { 
-// Legacy file-based loading
-loadPatternsFromJson, loadPatternsFromJsonRunnable, 
-// Database-based loading
-loadPatternsFromDatabase, searchPatternsFromDatabase, getPatternFromDatabase, } from "./io.js";
+export { getPatternFromDatabase, loadPatternsFromDatabase, searchPatternsFromDatabase, } from "./io.js";
 // ============================================
 // Search Functions
 // ============================================
-export { 
+export { countPatternsBySkillLevelDb, getPatternById, getPatternByIdDb, 
 // In-memory search (legacy)
-searchPatterns, getPatternById, toPatternSummary, 
+searchPatterns, 
 // Database search
-searchPatternsDb, getPatternByIdDb, countPatternsBySkillLevelDb, } from "./search.js";
+searchPatternsDb, toPatternSummary, } from "./search.js";
 // ============================================
 // Code Generation
 // ============================================
@@ -27,23 +23,23 @@ export { buildSnippet, generateUsageExample, sanitizeInput, } from "./template.j
 // ============================================
 // Schemas
 // ============================================
-export { Pattern, PatternSummary, PatternCategory, DifficultyLevel, CodeExample, PatternsIndex, } from "./schemas/pattern.js";
+export { CodeExample, DifficultyLevel, Pattern, PatternCategory, PatternSummary, PatternsIndex, } from "./schemas/pattern.js";
 export { GenerateRequest, } from "./schemas/generate.js";
 // ============================================
 // Database Layer
 // ============================================
-export { createDatabase, getDatabaseUrl } from "./db/client.js";
+export { createDatabase, getDatabaseUrl, } from "./db/client.js";
 export { 
 // Schema types
-applicationPatterns, effectPatterns, jobs, patternJobs, patternRelations, skillLevels, jobStatuses, } from "./db/schema/index.js";
+applicationPatterns, effectPatterns, jobStatuses, jobs, patternJobs, patternRelations, skillLevels, } from "./db/schema/index.js";
 // ============================================
 // Repositories
 // ============================================
-export { createApplicationPatternRepository, ApplicationPatternNotFoundError, ApplicationPatternRepositoryError, ApplicationPatternLockedError, createEffectPatternRepository, EffectPatternNotFoundError, EffectPatternRepositoryError, EffectPatternLockedError, createJobRepository, JobNotFoundError, JobRepositoryError, JobLockedError, } from "./repositories/index.js";
+export { ApplicationPatternLockedError, ApplicationPatternNotFoundError, ApplicationPatternRepositoryError, EffectPatternLockedError, EffectPatternNotFoundError, EffectPatternRepositoryError, JobLockedError, JobNotFoundError, JobRepositoryError, createApplicationPatternRepository, createEffectPatternRepository, createJobRepository, } from "./repositories/index.js";
 // ============================================
 // Database Services
 // ============================================
-export { DatabaseService, ApplicationPatternRepositoryService, EffectPatternRepositoryService, JobRepositoryService, DatabaseServiceLive, ApplicationPatternRepositoryLive, EffectPatternRepositoryLive, JobRepositoryLive, DatabaseLayer, findAllApplicationPatterns, findApplicationPatternBySlug, searchEffectPatterns, findEffectPatternBySlug, findPatternsByApplicationPattern, findJobsByApplicationPattern, getJobWithPatterns, getCoverageStats, } from "./services/database.js";
+export { ApplicationPatternRepositoryLive, ApplicationPatternRepositoryService, DatabaseLayer, DatabaseService, DatabaseServiceLive, EffectPatternRepositoryLive, EffectPatternRepositoryService, JobRepositoryLive, JobRepositoryService, findAllApplicationPatterns, findApplicationPatternBySlug, findEffectPatternBySlug, findJobsByApplicationPattern, findPatternsByApplicationPattern, getCoverageStats, getJobWithPatterns, searchEffectPatterns, } from "./services/database.js";
 // ============================================
 // Utilities
 // ============================================
@@ -51,5 +47,5 @@ export { splitSections } from "./splitSections.js";
 // ============================================
 // Errors
 // ============================================
-export { PatternLoadError, PatternNotFoundError, PatternValidationError, SearchError, TemplateError, ConfigurationError, CacheError, ServiceUnavailableError, } from "./errors.js";
+export { CacheError, ConfigurationError, PatternLoadError, PatternNotFoundError, PatternValidationError, SearchError, ServiceUnavailableError, TemplateError, } from "./errors.js";
 //# sourceMappingURL=index.js.map

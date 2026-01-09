@@ -1,20 +1,31 @@
 /**
  * rules-improved.ts
  *
- * Enhanced rules generation with:
- * - All existing formats (markdown, JSON, by-use-case)
- * - NEW: Cursor rules (.mdc files)
- * - NEW: Windsurf rules (.mdc files)
- * - Parallel generation for speed
- * - Better reporting
+ * Enhanced rules generation script (DEPRECATED - Rules now in database)
+ *
+ * ⚠️  This script is for reference only.
+ * Rules are now stored in the PostgreSQL database via the migration script.
+ *
+ * Previous outputs (archived in .archives/):
+ * - Cursor rules (.mdc files)
+ * - Windsurf rules (.mdc files)
+ * - Markdown and JSON formats
+ *
+ * Current approach:
+ * - All rules are stored in effect_patterns table with rule field
+ * - Use database queries to access rules
+ * - API endpoints: /api/v1/rules
  */
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import matter from 'gray-matter';
+import { createDatabase } from '../../packages/toolkit/src/db/client.js';
+import {
+  createApplicationPatternRepository,
+  createEffectPatternRepository,
+} from '../../packages/toolkit/src/repositories/index.js';
 
 // --- CONFIGURATION ---
-const PATTERNS_DIR = path.join(process.cwd(), 'content/published/patterns');
 const RULES_DIR = path.join(process.cwd(), 'content/published/rules');
 const USE_CASE_DIR = path.join(RULES_DIR, 'by-use-case');
 const CURSOR_DIR = path.join(RULES_DIR, 'cursor');
@@ -56,63 +67,64 @@ const sanitizeName = (name: string) =>
     .replace(/[^a-z0-9-]/g, '');
 
 // --- EXTRACTION ---
-async function findMdxFiles(dir: string): Promise<string[]> {
-  const mdxFiles: string[] = [];
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      const subFiles = await findMdxFiles(fullPath);
-      mdxFiles.push(...subFiles);
-    } else if (entry.name.endsWith('.mdx')) {
-      mdxFiles.push(fullPath);
-    }
-  }
-
-  return mdxFiles;
-}
-
 async function extractRules(): Promise<Rule[]> {
-  console.log(
-    colorize('📖 Extracting rules from published patterns...', 'cyan'),
-  );
+  console.log(colorize('📖 Extracting rules from database...', 'cyan'));
 
-  const mdxFiles = await findMdxFiles(PATTERNS_DIR);
-  const rules: Rule[] = [];
+  const { db, close } = createDatabase();
+  const epRepo = createEffectPatternRepository(db);
+  const apRepo = createApplicationPatternRepository(db);
 
-  for (const filePath of mdxFiles) {
-    const fileContent = await fs.readFile(filePath, 'utf-8');
-    const { data, content } = matter(fileContent);
+  try {
+    // Load all patterns from database
+    const dbPatterns = await epRepo.findAll();
 
-    if ((data as any).rule?.description) {
-      // Extract Good Example section
-      const goodExample = extractSection(content, 'Good Example');
-      // Extract Anti-Pattern section
-      const antiPattern = extractSection(content, 'Anti-Pattern');
-      // Extract Explanation/Rationale section
-      const explanation = extractSection(content, 'Explanation', 'Rationale');
+    // Load application patterns to map IDs to slugs
+    const applicationPatterns = await apRepo.findAll();
+    const apIdToSlug = new Map(
+      applicationPatterns.map((ap) => [ap.id, ap.slug]),
+    );
 
-      // Use applicationPatternId instead of useCase
-      const applicationPatternId = (data as any).applicationPatternId;
-      const useCases = applicationPatternId ? [applicationPatternId] : [];
+    const rules: Rule[] = [];
 
-      rules.push({
-        id: (data as any).id,
-        title: (data as any).title,
-        description: (data as any).rule.description,
-        skillLevel: (data as any).skillLevel,
-        useCases,
-        example: goodExample,
-        antiPattern,
-        explanation,
-        content: content.trim(),
-      });
+    for (const dbPattern of dbPatterns) {
+      if (dbPattern.rule?.description) {
+        const content = dbPattern.content || '';
+
+        // Extract Good Example section
+        const goodExample = extractSection(content, 'Good Example');
+        // Extract Anti-Pattern section
+        const antiPattern = extractSection(content, 'Anti-Pattern');
+        // Extract Explanation/Rationale section
+        const explanation = extractSection(content, 'Explanation', 'Rationale');
+
+        // Use application pattern slug
+        const applicationPatternId = dbPattern.applicationPatternId;
+        const apSlug = applicationPatternId
+          ? apIdToSlug.get(applicationPatternId)
+          : null;
+        const useCases = apSlug ? [apSlug] : [];
+
+        rules.push({
+          id: dbPattern.slug,
+          title: dbPattern.title,
+          description: dbPattern.rule.description,
+          skillLevel: dbPattern.skillLevel,
+          useCases,
+          example: goodExample,
+          antiPattern,
+          explanation,
+          content: content.trim(),
+        });
+      }
     }
-  }
 
-  console.log(colorize(`Found ${rules.length} patterns with rules\n`, 'green'));
-  return rules.sort((a, b) => a.title.localeCompare(b.title));
+    console.log(
+      colorize(`Found ${rules.length} patterns with rules\n`, 'green'),
+    );
+    return rules.sort((a, b) => a.title.localeCompare(b.title));
+  } finally {
+    await close();
+  }
 }
 
 function extractSection(content: string, ...sectionNames: string[]): string {

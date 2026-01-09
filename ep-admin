@@ -1,0 +1,34 @@
+#!/usr/bin/env bun
+
+/**
+ * ep-admin
+ *
+ * Wrapper script for ep-admin CLI.
+ * Delegates to the @effect-patterns/ep-admin package.
+ */
+
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const packagePath = resolve(__dirname, "./packages/ep-admin/src/index.ts");
+
+// Forward all arguments to the package
+const args = process.argv.slice(2);
+
+const child = spawn("bun", ["run", packagePath, ...args], {
+  stdio: "inherit",
+  shell: true,
+});
+
+child.on("error", (error) => {
+  console.error("Failed to start ep-admin:", error);
+  process.exit(1);
+});
+
+child.on("exit", (code) => {
+  process.exit(code ?? 1);
+});

@@ -275,7 +275,7 @@ const program = Effect.gen(function* () {
 | `PATTERN_API_KEY`       | Yes      | -                                | API authentication key    |
 | `NODE_ENV`              | No       | `development`                    | Environment mode          |
 | `PORT`                  | No       | `3000`                           | Server port               |
-| `PATTERNS_PATH`         | No       | `../../data/patterns-index.json` | Pattern data file         |
+| `PATTERNS_PATH`         | No       | (deprecated)                      | Pattern data file (patterns now loaded from database) |
 | `PATTERNS_CACHE_TTL_MS` | No       | `300000`                         | Pattern cache TTL (5 min) |
 | `RATE_LIMIT_ENABLED`    | No       | `true`                           | Enable rate limiting      |
 | `RATE_LIMIT_REQUESTS`   | No       | `100`                            | Requests per window       |

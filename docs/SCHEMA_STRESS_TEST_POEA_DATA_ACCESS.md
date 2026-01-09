@@ -47,8 +47,8 @@ This document prototypes how PoEAA (Patterns of Enterprise Application Architect
   category: "abstraction",
   
   // Content
-  content: "...",                      // Full MDX content
-  contentPath: "content/published/patterns/data-access/repository.mdx",
+  content: "...",                      // Full MDX content (stored in database)
+  // Note: contentPath no longer used - content is stored in database
   
   // Code & Rules
   codeExamples: [
