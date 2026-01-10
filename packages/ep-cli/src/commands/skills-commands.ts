@@ -7,6 +7,7 @@
 import { Args, Command } from "@effect/cli";
 import { Console, Effect } from "effect";
 import { Display } from "../services/display/index.js";
+import { Logger } from "../services/logger/index.js";
 import * as SkillsAPI from "../services/skills/api.js";
 import { colorize } from "../utils/string.js";
 
@@ -134,6 +135,9 @@ export const skillsStatsCommand = Command.make("stats").pipe(
 	Command.withDescription("Show statistics about Claude Skills"),
 	Command.withHandler(() =>
 		Effect.gen(function* () {
+			const logger = yield* Logger;
+			yield* logger.debug("Fetching skills statistics...");
+
 			const stats = yield* SkillsAPI.getStats();
 
 			yield* Console.log(colorize("\n📊 Skills Statistics\n", "bright"));
