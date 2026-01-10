@@ -43,6 +43,16 @@ const CONCURRENCY = 10;
 const SHOW_PROGRESS = true;
 
 // --- TYPES ---
+interface Frontmatter {
+  id?: string;
+  title?: string;
+  skillLevel?: string;
+  useCase?: string | string[];
+  summary?: string;
+  tags?: string[];
+  [key: string]: unknown; // Allow additional properties
+}
+
 interface ValidationIssue {
   type: 'error' | 'warning';
   category:
@@ -197,7 +207,7 @@ const REQUIRED_SECTIONS = [
 ];
 
 function validateFrontmatter(
-  frontmatter: any,
+  frontmatter: Frontmatter,
   filename: string,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -424,7 +434,7 @@ async function validatePattern(filePath: string): Promise<ValidationResult> {
     // Read and parse file
     const content = await fs.readFile(filePath, 'utf-8');
 
-    let frontmatter: any;
+    let frontmatter: Frontmatter;
     try {
       const parsed = matter(content);
       frontmatter = parsed.data;

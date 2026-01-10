@@ -26,21 +26,6 @@ const TEST_PATTERNS = [
   'wrap-synchronous-computations.mdx', // Error handling idioms
 ];
 
-interface QAResult {
-  passed: boolean;
-  errors: string[];
-  warnings: string[];
-  suggestions: string[];
-  semantic_checks?: {
-    memory_behavior?: 'pass' | 'fail' | 'unknown';
-    concurrency_claims?: 'pass' | 'fail' | 'unknown';
-    effect_idioms?: 'pass' | 'fail' | 'unknown';
-    api_modernization?: 'pass' | 'fail' | 'unknown';
-  };
-  tokens: number;
-  cost: number;
-}
-
 async function testPattern(patternFile: string): Promise<void> {
   console.log(`\n📋 Testing: ${patternFile}`);
   console.log('─'.repeat(60));

@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /**
  * Verify Migration
  *
@@ -8,6 +9,7 @@
  *   bun run scripts/verify-migration.ts
  */
 
+import { count, eq } from 'drizzle-orm';
 import { createDatabase } from '../packages/toolkit/src/db/client.js';
 import {
   applicationPatterns,
@@ -16,7 +18,6 @@ import {
   patternJobs,
   patternRelations,
 } from '../packages/toolkit/src/db/schema/index.js';
-import { count, eq } from 'drizzle-orm';
 
 async function verify() {
   console.log('🔍 Verifying database migration...');

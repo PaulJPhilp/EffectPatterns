@@ -164,7 +164,7 @@ async function _confirm(message: string): Promise<boolean> {
  */
 async function runStep(
   step: (typeof STEPS)[0],
-  skipConfirmation: boolean = false,
+  _skipConfirmation: boolean = false,
 ) {
   console.log(`\n🚀 ${step.name}`);
   console.log(step.description);

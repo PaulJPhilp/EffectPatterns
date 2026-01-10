@@ -22,6 +22,23 @@ const RESULTS_DIR = path.join(QA_DIR, 'results');
 const REPORT_FILE = path.join(QA_DIR, 'qa-report.json');
 
 // --- INTERFACES ---
+interface QAResult {
+  passed: boolean;
+  patternId?: string;
+  fileName?: string;
+  tokens?: number;
+  cost?: number;
+  duration?: number;
+  metadata?: {
+    title?: string;
+    skillLevel?: string;
+    tags?: string[];
+  };
+  errors?: string[];
+  warnings?: string[];
+  suggestions?: string[];
+}
+
 interface QAReport {
   summary: {
     totalPatterns: number;
@@ -112,7 +129,7 @@ async function main() {
   }
 }
 
-async function generateReport(results: any[]): Promise<QAReport> {
+async function generateReport(results: QAResult[]): Promise<QAReport> {
   const total = results.length;
   const passed = results.filter((r) => r.passed).length;
   const failed = total - passed;
@@ -218,8 +235,8 @@ async function generateReport(results: any[]): Promise<QAReport> {
 }
 
 function generateRecommendations(
-  results: any[],
-  failedPatterns: any[],
+  results: QAResult[],
+  failedPatterns: QAResult[],
 ): string[] {
   const recommendations: string[] = [];
 
@@ -242,7 +259,7 @@ function generateRecommendations(
   return recommendations;
 }
 
-function analyzeCommonIssues(failedPatterns: any[]): string[] {
+function analyzeCommonIssues(failedPatterns: QAResult[]): string[] {
   const issues: string[] = [];
 
   // Collect all errors

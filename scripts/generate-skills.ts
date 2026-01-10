@@ -3,22 +3,21 @@
  * Now uses PostgreSQL database as the source of truth.
  */
 
-import { createDatabase } from '../packages/toolkit/src/db/client.js';
-import {
-  createApplicationPatternRepository,
-  createEffectPatternRepository,
-} from '../packages/toolkit/src/repositories/index.js';
 import {
   generateCategorySkill,
   generateGeminiSkill,
   generateOpenAISkill,
   groupPatternsByCategory,
-  readPattern,
+  patternFromDatabase,
   writeGeminiSkill,
   writeOpenAISkill,
-  writePluginSkill,
   writeSkill,
-} from '../packages/cli/src/skills/skill-generator';
+} from '../packages/ep-cli/src/skills/skill-generator.js';
+import { createDatabase } from '../packages/toolkit/src/db/client.js';
+import {
+  createApplicationPatternRepository,
+  createEffectPatternRepository,
+} from '../packages/toolkit/src/repositories/index.js';
 
 const PROJECT_ROOT = process.cwd();
 
@@ -74,11 +73,10 @@ async function main() {
     for (const [category, categoryPatterns] of categoryMap.entries()) {
       const skillName = `effect-patterns-${category}`;
 
-    // Claude
-    const claudeContent = generateCategorySkill(category, categoryPatterns);
-    await writeSkill(skillName, claudeContent, PROJECT_ROOT);
-    await writePluginSkill(skillName, claudeContent, PROJECT_ROOT);
-    claudeCount++;
+      // Claude
+      const claudeContent = generateCategorySkill(category, categoryPatterns);
+      await writeSkill(skillName, claudeContent, PROJECT_ROOT);
+      claudeCount++;
 
       // Gemini
       const geminiSkill = generateGeminiSkill(category, categoryPatterns);

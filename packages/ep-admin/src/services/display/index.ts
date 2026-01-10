@@ -17,7 +17,6 @@ export { DisplayError, TUIError } from "./errors.js";
 // Helpers
 export {
     colorizeWithConfig,
-    ensureTUILoaded,
     getLoggerConfig
 } from "./helpers.js";
 

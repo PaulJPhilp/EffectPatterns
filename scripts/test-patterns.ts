@@ -1,7 +1,5 @@
 #!/usr/bin/env tsx
 
-import path from 'node:path';
-import { loadPatternsFromJson, searchPatterns } from '@effect-patterns/toolkit';
 import { config } from 'dotenv';
 
 // Load environment variables
