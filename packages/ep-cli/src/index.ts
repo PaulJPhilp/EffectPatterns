@@ -7,7 +7,7 @@
  */
 
 import { StateStore } from "@effect-patterns/pipeline-state";
-import { Command } from "@effect/cli";
+import { Command, Options } from "@effect/cli";
 import { FetchHttpClient } from "@effect/platform";
 import { NodeContext, NodeFileSystem, NodeRuntime } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
@@ -27,13 +27,49 @@ import { Display } from "./services/display/index.js";
 import { LiveTUILoader, TUILoader } from "./services/display/tui-loader.js";
 import { Execution } from "./services/execution/index.js";
 import { Linter } from "./services/linter/index.js";
-import { Logger } from "./services/logger/index.js";
+import { Logger, LoggerLive, LOG_LEVEL_VALUES, parseLogLevel } from "./services/logger/index.js";
 import { Skills } from "./services/skills/index.js";
+
+// Parse global flags manually to configure logger
+const parseGlobalLoggerConfig = (argv: string[]) => {
+  const verbose = argv.includes("--verbose") || argv.includes("-v");
+  
+  let logLevelString: string | undefined;
+  const logLevelIndex = argv.indexOf("--log-level");
+  if (logLevelIndex !== -1 && logLevelIndex + 1 < argv.length) {
+    logLevelString = argv[logLevelIndex + 1];
+  } else {
+    const logLevelEq = argv.find(a => a.startsWith("--log-level="));
+    if (logLevelEq) {
+      logLevelString = logLevelEq.split("=")[1];
+    }
+  }
+
+  const parsedLevel = logLevelString ? parseLogLevel(logLevelString) : undefined;
+  const logLevel = verbose ? "debug" : (parsedLevel || "info");
+
+  return { logLevel, verbose };
+};
+
+const globalConfig = parseGlobalLoggerConfig(process.argv);
 
 /**
  * Unified Root Command
  */
-export const rootCommand = Command.make("ep").pipe(
+export const rootCommand = Command.make("ep", {
+  options: {
+    logLevel: Options.optional(
+      Options.choice("log-level", LOG_LEVEL_VALUES)
+    ).pipe(
+        Options.withDescription("Set the logging level")
+    ),
+    verbose: Options.boolean("verbose").pipe(
+      Options.withAlias("v"),
+      Options.withDefault(false),
+      Options.withDescription("Enable verbose logging (debug level)")
+    ),
+  },
+}).pipe(
   Command.withDescription(CLI.DESCRIPTION),
   Command.withSubcommands([
     searchCommand,
@@ -51,19 +87,25 @@ export const rootCommand = Command.make("ep").pipe(
 /**
  * Core runtime layer (Standard CLI)
  */
-export const runtimeLayer = Layer.mergeAll(
+const BaseLayer = Layer.mergeAll(
   NodeContext.layer,
   NodeFileSystem.layer,
   FetchHttpClient.layer,
-  Logger.Default,
+  LoggerLive(globalConfig),
   LiveTUILoader,
   (StateStore as any).Default as Layer.Layer<StateStore>
-).pipe(
-  Layer.provideMerge(Linter.Default),
-  Layer.provideMerge(Skills.Default),
-  Layer.provideMerge(Display.Default),
-  Layer.provideMerge(Execution.Default)
 );
+
+const ServiceLayer = Layer.mergeAll(
+  Linter.Default,
+  Skills.Default,
+  Display.Default,
+  Execution.Default
+).pipe(
+  Layer.provide(BaseLayer)
+);
+
+export const runtimeLayer = Layer.merge(BaseLayer, ServiceLayer);
 
 /**
  * Runtime layer with TUI support

@@ -4,10 +4,49 @@
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
+import { glob } from "glob";
 import path from "node:path";
 import { PROJECT_ROOT } from "../constants.js";
 import { Display } from "../services/display/index.js";
 import { Execution } from "../services/execution/index.js";
+import { Linter } from "../services/linter/index.js";
+
+/**
+ * admin:lint - Check patterns for Effect-TS best practices
+ */
+export const lintCommand = Command.make("lint", {
+  options: {
+    fix: Options.boolean("fix").pipe(
+      Options.withDescription("Auto-fix fixable issues"),
+      Options.withDefault(false)
+    ),
+  },
+}).pipe(
+  Command.withDescription("Check patterns for Effect-TS best practices"),
+  Command.withHandler(({ options }) =>
+    Effect.gen(function* () {
+      const linter = yield* Linter;
+      yield* Display.showInfo("Linting pattern source files...");
+
+      const patternSrcDir = path.join(PROJECT_ROOT, "content/new/src/**/*.ts");
+      const files = yield* Effect.tryPromise(() => glob(patternSrcDir));
+
+      if (files.length === 0) {
+        yield* Display.showWarning("No pattern source files found to lint.");
+        return;
+      }
+
+      const results = yield* linter.lintFiles(files);
+      const exitCode = yield* linter.printResults(results);
+
+      if (exitCode !== 0) {
+        return yield* Effect.fail(new Error("Linting failed with errors"));
+      }
+
+      yield* Display.showSuccess("Linting completed successfully!");
+    })
+  )
+);
 
 /**
  * admin:validate - Validates all pattern files
@@ -113,5 +152,6 @@ export const adminCommand = Command.make("admin").pipe(
     testCommand,
     pipelineCommand,
     generateCommand,
+    lintCommand,
   ])
 );

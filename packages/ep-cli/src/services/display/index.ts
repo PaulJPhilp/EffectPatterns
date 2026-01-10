@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import type { DisplayService } from "./api.js";
 import { Display } from "./service.js";
 
-export { LiveTUILoader, TUILoader } from "../tui-loader.js";
+export { LiveTUILoader, TUILoader } from "./tui-loader.js";
 export type { DisplayService } from "./api.js";
 export { Display } from "./service.js";
 export type { PanelOptions, TableColumn, TableOptions } from "./types.js";

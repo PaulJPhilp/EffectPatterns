@@ -12,7 +12,11 @@ import { closeDatabaseSafely } from "../utils/database.js";
  * search <query> - Search patterns
  */
 export const searchCommand = Command.make("search", {
-  args: { query: Args.text({ name: "query" }) },
+  args: { 
+    query: Args.text({ name: "query" }).pipe(
+      Args.withDescription("The search keyword")
+    ) 
+  },
 }).pipe(
   Command.withDescription("Search patterns by keyword"),
   Command.withHandler(({ args }) =>
@@ -45,8 +49,16 @@ export const searchCommand = Command.make("search", {
  */
 export const listCommand = Command.make("list", {
   options: {
-    difficulty: Options.optional(Options.text("difficulty")),
-    category: Options.optional(Options.text("category")),
+    difficulty: Options.optional(
+      Options.text("difficulty").pipe(
+        Options.withDescription("Filter by difficulty level")
+      )
+    ),
+    category: Options.optional(
+      Options.text("category").pipe(
+        Options.withDescription("Filter by category")
+      )
+    ),
   },
 }).pipe(
   Command.withDescription("List all patterns with optional filters"),

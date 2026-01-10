@@ -138,10 +138,35 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
     const printResults: LinterService["printResults"] = (results: LintResult[]) =>
       Effect.gen(function* () {
         yield* logger.info(colorize("\n📋 Effect Patterns Linter Results", "CYAN"));
-        
-        const totalErrors = results.reduce((sum, r) => sum + r.errors, 0);
-        yield* logger.info(`Total: ${results.length} files`);
-        yield* logger.info(`Errors: ${totalErrors}`);
+
+        let totalErrors = 0;
+        let totalWarnings = 0;
+
+        for (const result of results) {
+          totalErrors += result.errors;
+          totalWarnings += result.warnings;
+
+          if (result.issues.length > 0) {
+            yield* logger.info(colorize(`\n${result.file}:`, "BRIGHT"));
+            
+            for (const issue of result.issues) {
+              const location = colorize(`${issue.line}:${issue.column}`, "DIM");
+              const severityColor = issue.severity === "error" ? "RED" : issue.severity === "warning" ? "YELLOW" : "BLUE";
+              const severity = colorize(issue.severity.toUpperCase(), severityColor);
+              const rule = colorize(issue.rule, "DIM");
+              
+              yield* logger.info(`  ${location}  ${severity}  ${issue.message}  ${rule}`);
+              if (issue.suggestion) {
+                yield* logger.info(colorize(`    Suggestion: ${issue.suggestion}`, "GREEN"));
+              }
+            }
+          }
+        }
+
+        yield* logger.info(colorize("\nSummary:", "BRIGHT"));
+        yield* logger.info(`Checked:  ${results.length} files`);
+        yield* logger.info(`Errors:   ${totalErrors}`);
+        yield* logger.info(`Warnings: ${totalWarnings}`);
 
         return totalErrors > 0 ? 1 : 0;
       });
