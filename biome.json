@@ -13,6 +13,9 @@
         "useKeyWithClickEvents": "off",
         "useAnchorContent": "off",
         "useButtonType": "off"
+      },
+      "style": {
+        "noCommonJs": "error"
       }
     }
   },
