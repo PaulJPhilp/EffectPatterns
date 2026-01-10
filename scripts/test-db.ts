@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /**
  * Database Test Runner
  *
@@ -13,18 +14,13 @@
  *   - Schema pushed (bun run db:push)
  */
 
+import { sql } from 'drizzle-orm';
 import { createDatabase } from '../packages/toolkit/src/db/client.js';
 import {
   createApplicationPatternRepository,
   createEffectPatternRepository,
   createJobRepository,
 } from '../packages/toolkit/src/repositories/index.js';
-import {
-  applicationPatterns,
-  effectPatterns,
-  jobs,
-} from '../packages/toolkit/src/db/schema/index.js';
-import { sql } from 'drizzle-orm';
 
 interface TestResult {
   name: string;
@@ -208,7 +204,7 @@ async function runAllTests() {
     });
 
     // Print summary
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${'='.repeat(60)}`);
     console.log('📊 Test Summary');
     console.log('='.repeat(60));
 

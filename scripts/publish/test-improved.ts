@@ -103,12 +103,15 @@ async function runTypeCheck(): Promise<boolean> {
     const duration = Date.now() - startTime;
     console.log(colorize(`✅ Type check passed in ${duration}ms\n`, 'green'));
     return true;
-  } catch (error: any) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
     console.log(colorize(`❌ Type check failed in ${duration}ms\n`, 'red'));
 
     // Parse and display type errors
-    const output = error.stdout || error.stderr || '';
+    const output =
+      (error as { stdout?: string; stderr?: string }).stdout ||
+      (error as { stdout?: string; stderr?: string }).stderr ||
+      '';
     const lines = output.split('\n').filter((line: string) => line.trim());
 
     // Count errors
@@ -120,13 +123,13 @@ async function runTypeCheck(): Promise<boolean> {
 
     // Show first 20 errors
     const errorLines = lines.slice(0, 40);
-    errorLines.forEach((line: string) => {
+    for (const line of errorLines) {
       if (line.includes('error TS')) {
         console.log(colorize(line, 'red'));
       } else {
         console.log(colorize(line, 'dim'));
       }
-    });
+    }
 
     if (lines.length > 40) {
       console.log(colorize(`\n... and ${lines.length - 40} more lines`, 'dim'));
@@ -154,9 +157,10 @@ async function runTypeScriptFile(filePath: string): Promise<TestResult> {
       success: true,
       duration,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
-    const errorMessage = error.message || String(error);
+    const errorMessage =
+      (error as { message?: string }).message || String(error);
     const isExpectedError = expectedErrors.some((expected) =>
       errorMessage.includes(expected),
     );
@@ -249,11 +253,11 @@ function printResults(results: TestResult[]) {
       if (result.error) {
         // Extract relevant error info
         const errorLines = result.error.split('\n').slice(0, 10);
-        errorLines.forEach((line) => {
+        for (const line of errorLines) {
           if (line.trim()) {
             console.log(colorize(`   ${line}`, 'dim'));
           }
-        });
+        }
       }
     });
   }

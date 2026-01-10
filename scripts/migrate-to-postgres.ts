@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /**
  * Migrate to PostgreSQL
  *
@@ -15,7 +16,6 @@
  *   - DATABASE_URL environment variable set (optional, defaults to local)
  */
 
-import { Effect, Console } from 'effect';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import matter from 'gray-matter';
@@ -23,14 +23,14 @@ import { createDatabase } from '../packages/toolkit/src/db/client.js';
 import {
   applicationPatterns,
   effectPatterns,
+  type JobStatus,
   jobs,
-  patternRelations,
-  patternJobs,
   type NewApplicationPattern,
   type NewEffectPattern,
   type NewJob,
+  patternJobs,
+  patternRelations,
   type SkillLevel,
-  type JobStatus,
 } from '../packages/toolkit/src/db/schema/index.js';
 
 // ============================================
@@ -216,7 +216,9 @@ function parseJobsFromMarkdown(
     const line = lines[i];
 
     // Category headers (## 1. Getting Started with...)
-    const categoryMatch = line.match(/^##\s+\d+\.\s+(.+?)(?:\s+[✅❌⚠️].*)?$/);
+    const categoryMatch = line.match(
+      /^##\s+\d+\.\s+(.+?)(?:\s+(?:✅|❌|⚠️).*)?$/,
+    );
     if (categoryMatch) {
       currentCategory = categoryMatch[1].trim();
       currentPatterns = [];
