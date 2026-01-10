@@ -13,7 +13,7 @@ export const getProjectRoot = (): string => {
 	while (current !== "/") {
 		try {
 			const pkgPath = path.join(current, PATHS.PACKAGE_JSON);
-			const content = JSON.parse(require("fs").readFileSync(pkgPath, "utf-8"));
+			const content = JSON.parse(readFileSync(pkgPath, "utf-8"));
 			if (content.name === PATHS.PROJECT_PACKAGE_NAME) {
 				return current;
 			}

@@ -13,10 +13,10 @@ import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
 import * as path from "node:path";
 import {
-	MESSAGES,
-	SCRIPTS,
-	STEP_NAMES,
-	TASK_NAMES,
+    MESSAGES,
+    SCRIPTS,
+    STEP_NAMES,
+    TASK_NAMES,
 } from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";

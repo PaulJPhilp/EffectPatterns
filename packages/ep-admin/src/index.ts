@@ -9,7 +9,6 @@
 import { StateStore } from "@effect-patterns/pipeline-state";
 import { Args, Command } from "@effect/cli";
 import { FetchHttpClient } from "@effect/platform";
-import { NodeContext, NodeFileSystem, NodeRuntime } from "@effect/platform-node";
 import { Console, Effect, Layer } from "effect";
 import { CLI, SHELL_TYPES } from "./constants.js";
 
@@ -21,11 +20,9 @@ import { dbCommand } from "./db-commands.js";
 import { discordCommand } from "./discord-commands.js";
 import { ingestCommand } from "./ingest-commands.js";
 import { installCommand, rulesCommand } from "./install-commands.js";
-import { lockCommand, unlockCommand } from "./lock-commands.js";
 import { migrateCommand } from "./migrate-commands.js";
 import { opsCommand } from "./ops-commands.js";
-import { pipelineManagementCommand } from "./pipeline-commands.js";
-import { publishCommand } from "./publish-commands.js";
+// import { pipelineManagementCommand } from "./pipeline-commands.js";
 import { qaCommand } from "./qa-commands.js";
 import { patternNewCommand, releaseCommand } from "./release-commands.js";
 import { searchCommand } from "./search-commands.js";
@@ -104,7 +101,6 @@ const adminSubcommands = [
 	testCommand,
 	pipelineCommand,
 	generateCommand,
-	publishCommand,
 	ingestCommand,
 	qaCommand,
 	dbCommand,
@@ -117,9 +113,7 @@ const adminSubcommands = [
 	autofixCommand,
 	rulesCommand,
 	releaseCommand,
-	pipelineManagementCommand,
-	lockCommand,
-	unlockCommand,
+	// pipelineManagementCommand, // Temporarily disabled
 	completionsCommand,
 	installCommand,
 	patternNewCommand,
@@ -142,17 +136,10 @@ try {
 	// TUI not available, will use standard runtime
 }
 
-export const fileSystemLayer = NodeFileSystem.layer.pipe(
-	Layer.provide(NodeContext.layer)
-);
-
 // Standard runtime for ep-admin (includes Logger service)
 // Note: Type assertion needed due to cross-package layer type inference issues
 export const runtimeLayer = Layer.merge(
-	Layer.merge(
-		Layer.merge(fileSystemLayer, FetchHttpClient.layer),
-		Logger.Default
-	),
+	Layer.merge(FetchHttpClient.layer, Logger.Default),
 	StateStore.Default as unknown as Layer.Layer<StateStore>
 );
 
@@ -161,12 +148,11 @@ export const runtimeLayerWithTUI = EffectCLITUILayer
 	? Layer.merge(
 		Layer.merge(
 			Layer.merge(
-				Layer.merge(fileSystemLayer, FetchHttpClient.layer),
-				Logger.Default
+				Layer.merge(FetchHttpClient.layer, Logger.Default),
+				StateStore.Default as unknown as Layer.Layer<StateStore>
 			),
-			StateStore.Default as unknown as Layer.Layer<StateStore>
-		),
-		EffectCLITUILayer
+			EffectCLITUILayer
+		)
 	)
 	: runtimeLayer; // Fallback to standard runtime if TUI not available
 
@@ -183,5 +169,5 @@ export const createAdminProgram = (
 if (require.main === module) {
 	const program = createAdminProgram(process.argv);
 	const provided = Effect.provide(program, runtimeLayer) as Effect.Effect<void, unknown, never>;
-	void NodeRuntime.runMain(provided);
+	void Effect.runPromise(provided);
 }
