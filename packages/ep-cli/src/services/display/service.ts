@@ -3,10 +3,14 @@
  */
 
 import { Console, Effect, Option as Opt } from "effect";
-import { TUILoader } from "../tui-loader.js";
+import { Logger } from "../logger/index.js";
 import type { DisplayService } from "./api.js";
-import { ICONS } from "./helpers.js";
+import {
+    colorizeWithConfig,
+} from "./helpers.js";
 import type { PanelOptions, TableOptions } from "./types.js";
+
+import { TUILoader } from "./tui-loader.js";
 
 /**
  * Display service using Effect.Service pattern
@@ -14,6 +18,8 @@ import type { PanelOptions, TableOptions } from "./types.js";
 export class Display extends Effect.Service<Display>()("Display", {
 	accessors: true,
 	effect: Effect.gen(function* () {
+		const logger = yield* Logger;
+		const loggerConfig = yield* logger.getConfig();
 		const tuiLoader = yield* TUILoader;
 
 		const showSuccess: DisplayService["showSuccess"] = (message: string) =>
@@ -30,8 +36,9 @@ export class Display extends Effect.Service<Display>()("Display", {
 					}
 				}
 
-				// Fallback to console
-				yield* Console.log(`${ICONS.success} ${message}`);
+				// Fallback to console with color support
+				const icon = colorizeWithConfig("✓", "GREEN", loggerConfig);
+				yield* Console.log(`${icon} ${message}`);
 			}) as Effect.Effect<void, unknown>;
 
 		const showError: DisplayService["showError"] = (message: string) =>
@@ -48,8 +55,9 @@ export class Display extends Effect.Service<Display>()("Display", {
 					}
 				}
 
-				// Fallback to console
-				yield* Console.error(`${ICONS.error} ${message}`);
+				// Fallback to console with color support
+				const icon = colorizeWithConfig("✖", "RED", loggerConfig);
+				yield* Console.error(`${icon} ${message}`);
 			}) as Effect.Effect<void, unknown>;
 
 		const showInfo: DisplayService["showInfo"] = (message: string) =>
@@ -66,8 +74,9 @@ export class Display extends Effect.Service<Display>()("Display", {
 					}
 				}
 
-				// Fallback to console
-				yield* Console.log(`${ICONS.info} ${message}`);
+				// Fallback to console with color support
+				const icon = colorizeWithConfig("ℹ", "BLUE", loggerConfig);
+				yield* Console.log(`${icon} ${message}`);
 			}) as Effect.Effect<void, unknown>;
 
 		const showWarning: DisplayService["showWarning"] = (message: string) =>
@@ -84,8 +93,9 @@ export class Display extends Effect.Service<Display>()("Display", {
 					}
 				}
 
-				// Fallback to console
-				yield* Console.log(`${ICONS.warning} ${message}`);
+				// Fallback to console with color support
+				const icon = colorizeWithConfig("⚠", "YELLOW", loggerConfig);
+				yield* Console.log(`${icon} ${message}`);
 			}) as Effect.Effect<void, unknown>;
 
 		const showPanel: DisplayService["showPanel"] = (
@@ -165,7 +175,7 @@ export class Display extends Effect.Service<Display>()("Display", {
 				}
 
 				// Fallback to console
-				yield* Console.log(`\n${ICONS.highlight} ${message}\n`);
+				yield* Console.log(`\n📌 ${message}\n`);
 			}) as Effect.Effect<void, unknown>;
 
 		const showSeparator: DisplayService["showSeparator"] = () =>

@@ -2,25 +2,60 @@
  * Git service tests
  */
 
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock git helpers - must be before other imports that might use them
+vi.mock("../helpers.js", () => ({
+	execGitCommand: vi.fn(),
+	execGitCommandVoid: vi.fn(),
+	getGitRoot: vi.fn(),
+	isGitRepository: vi.fn(),
+	parseGitStatus: vi.fn((output: string) => {
+		const lines = output.split("\n");
+		let staged = 0;
+		let unstaged = 0;
+		let untracked = 0;
+		for (const line of lines) {
+			if (line.startsWith("## ")) continue;
+			if (line.trim() === "") continue;
+			const statusCode = line.substring(0, 2);
+			if (statusCode[0] !== " " && statusCode[0] !== "?") staged++;
+			if (statusCode[1] !== " " && statusCode[1] !== "?") unstaged++;
+			if (statusCode.startsWith("??")) untracked++;
+		}
+		return { staged, unstaged, untracked };
+	}),
+}));
+
+import { Display } from "../../display/service.js";
+import { TUILoader } from "../../display/tui-loader.js";
+import { Execution } from "../../execution/service.js";
+import { Logger } from "../../logger/service.js";
 import { GitCommandError } from "../errors.js";
 import * as helpers from "../helpers.js";
 import { Git } from "../service.js";
 
-// Mock the helpers module
-// Mock the helpers module
-vi.mock("../helpers.js", async () => {
-	const actual = await vi.importActual<typeof import("../helpers.js")>("../helpers.js");
-	return {
-		...actual,
-		execGitCommand: vi.fn(),
-		execGitCommandVoid: vi.fn(),
-		getGitRoot: vi.fn(),
-		isGitRepository: vi.fn(),
-		parseGitStatus: actual.parseGitStatus,
-	};
-});
+const MockTUILoader = Layer.succeed(
+	TUILoader,
+	TUILoader.of({ load: () => Effect.succeed(null) })
+);
+
+const DisplayTest = Display.Default.pipe(
+	Layer.provide(MockTUILoader),
+	Layer.provide(Logger.Default)
+);
+
+const TestLayer = Layer.mergeAll(
+	Git.Default,
+	Execution.Default,
+	Logger.Default,
+	DisplayTest
+);
+
+
+// Helpers are spied on in beforeEach
+
 
 describe("Git Service", () => {
 	beforeEach(() => {
@@ -45,8 +80,8 @@ describe("Git Service", () => {
 				return yield* git.getRepository();
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result.root).toBe("/path/to/repo");
@@ -74,8 +109,8 @@ describe("Git Service", () => {
 				return yield* git.getRepository();
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result.root).toBe("/path/to/repo");
@@ -93,8 +128,8 @@ describe("Git Service", () => {
 				return yield* git.getStatus();
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result.branch).toBe("main");
@@ -112,8 +147,8 @@ describe("Git Service", () => {
 				return yield* git.getStatus();
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result.clean).toBe(true);
@@ -129,8 +164,8 @@ describe("Git Service", () => {
 				return yield* git.getCurrentBranch();
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result).toBe("feature-branch");
@@ -146,8 +181,8 @@ describe("Git Service", () => {
 				return yield* git.getCurrentCommit();
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result).toBe("abc123def456");
@@ -165,8 +200,8 @@ describe("Git Service", () => {
 				return yield* git.getLatestTag();
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result).toBe("v1.0.0");
@@ -184,7 +219,7 @@ describe("Git Service", () => {
 			});
 
 			await expect(
-				 (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))))
+				 Effect.runPromise(program.pipe(Effect.provide(TestLayer)))
 			).rejects.toThrow();
 		});
 
@@ -206,8 +241,8 @@ describe("Git Service", () => {
 				return yield* git.getAllTags();
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result).toHaveLength(2);
@@ -225,8 +260,8 @@ describe("Git Service", () => {
 				return yield* git.getAllTags();
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result).toHaveLength(0);
@@ -240,7 +275,7 @@ describe("Git Service", () => {
 				return yield* git.createTag("v1.0.0", "Release version 1.0.0");
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("tag", [
 				"-a",
@@ -258,7 +293,7 @@ describe("Git Service", () => {
 				return yield* git.createTag("v1.0.0");
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("tag", [
 				"-a",
@@ -274,7 +309,7 @@ describe("Git Service", () => {
 				return yield* git.pushTag("v1.0.0");
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("push", [
 				"origin",
@@ -294,8 +329,8 @@ describe("Git Service", () => {
 				return yield* git.getCommitHistory(2);
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result).toHaveLength(2);
@@ -313,8 +348,8 @@ describe("Git Service", () => {
 				return yield* git.getCommitHistory();
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(helpers.execGitCommand).toHaveBeenCalledWith("log", [
@@ -332,7 +367,7 @@ describe("Git Service", () => {
 				return yield* git.add(["file1.ts", "file2.ts"]);
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("add", [
 				"file1.ts",
@@ -348,7 +383,7 @@ describe("Git Service", () => {
 				return yield* git.commit("feat: add new feature");
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("commit", [
 				"-m",
@@ -364,7 +399,7 @@ describe("Git Service", () => {
 				return yield* git.push();
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("push", [
 				"origin",
@@ -380,7 +415,7 @@ describe("Git Service", () => {
 				return yield* git.push("upstream", "main");
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("push", [
 				"upstream",
@@ -398,7 +433,7 @@ describe("Git Service", () => {
 				return yield* git.createBranch("feature-branch");
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("branch", [
 				"feature-branch",
@@ -413,7 +448,7 @@ describe("Git Service", () => {
 				return yield* git.checkoutBranch("feature-branch");
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("checkout", [
 				"feature-branch",
@@ -428,7 +463,7 @@ describe("Git Service", () => {
 				return yield* git.deleteBranch("feature-branch");
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("branch", [
 				"-D",
@@ -448,8 +483,8 @@ describe("Git Service", () => {
 				return yield* git.exec("log", ["--oneline"]);
 			});
 
-			const result = await  (Effect.runPromise as any)(
-				program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default)))
+			const result = await  Effect.runPromise(
+				program.pipe(Effect.provide(TestLayer))
 			);
 
 			expect(result).toBe("output");
@@ -464,7 +499,7 @@ describe("Git Service", () => {
 				return yield* git.execVoid("reset", ["--hard"]);
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("reset", [
 				"--hard",
@@ -485,7 +520,7 @@ describe("Git Service", () => {
 			// Effect wraps errors in FiberFailure, so we need to check the cause
 			let caughtError: any;
 			try {
-				await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.mergeAll(Git.Default, Execution.Default, Display.Default, Logger.Default))));
+				await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 			} catch (fiberFailure: any) {
 				caughtError = fiberFailure;
 			}

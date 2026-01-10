@@ -7,6 +7,19 @@ import { spawn } from "node:child_process";
 import { ExecutionError } from "./errors.js";
 import type { ExecutionOptions } from "./types.js";
 
+// Import TUI spinner if available
+let spinnerEffectTUI: any = null;
+let InkService: any = null;
+
+try {
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
+	const tuiModule = require("effect-cli-tui");
+	spinnerEffectTUI = tuiModule.spinnerEffect;
+	InkService = tuiModule.InkService;
+} catch {
+	// TUI not available, will use console fallback
+}
+
 /**
  * Convert child process spawn to Effect
  * Returns void on success, ExecutionError on failure
@@ -26,12 +39,10 @@ export const spawnEffect = (
 
 		if (!options?.verbose) {
 			child.stdout?.on("data", (data) => {
-				const chunk = data.toString();
-				output += chunk;
+				output += data.toString();
 			});
 			child.stderr?.on("data", (data) => {
-				const chunk = data.toString();
-				output += chunk;
+				output += data.toString();
 			});
 		}
 
@@ -59,6 +70,13 @@ export const spawnEffect = (
 			}
 		});
 	});
+
+/**
+ * Get TUI spinner effect if available
+ */
+export const getTUISpinner = () => {
+	return { spinnerEffectTUI, InkService };
+};
 
 /**
  * Wrap any Effect with a console spinner

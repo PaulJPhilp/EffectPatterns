@@ -1,6 +1,6 @@
 import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { LiveTUILoader, TUILoader, _resetTuiModuleCache } from "../tui-loader.js";
+import { LiveTUILoader, TUILoader, _resetTuiModuleCache } from "../display/tui-loader.js";
 
 // Mock the dynamic import
 vi.mock("effect-cli-tui", () => ({

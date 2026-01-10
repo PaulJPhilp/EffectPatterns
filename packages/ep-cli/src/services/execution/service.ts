@@ -4,7 +4,9 @@
 
 import { Console, Effect, Option as Opt } from "effect";
 import { spawn } from "node:child_process";
-import { TUILoader } from "../tui-loader.js";
+import { colorizeWithConfig } from "../display/helpers.js";
+import { TUILoader } from "../display/tui-loader.js";
+import { Logger } from "../logger/index.js";
 import type { ExecutionService } from "./api.js";
 import { ExecutionError, ScriptExecutionError } from "./errors.js";
 import { spawnEffect, withSpinner } from "./helpers.js";
@@ -16,6 +18,8 @@ import type { ExecutionOptions } from "./types.js";
 export class Execution extends Effect.Service<Execution>()("Execution", {
 	accessors: true,
 	effect: Effect.gen(function* () {
+		const logger = yield* Logger;
+		const loggerConfig = yield* logger.getConfig();
 		const tuiLoader = yield* TUILoader;
 
 		const executeScriptWithTUI: ExecutionService["executeScriptWithTUI"] = (
@@ -42,23 +46,31 @@ export class Execution extends Effect.Service<Execution>()("Execution", {
 
 				// Fallback to console with ora-style output
 				if (!options?.verbose) {
-					yield* Console.log(`⣾ ${taskName}...`);
+					const icon = colorizeWithConfig("⣾", "CYAN", loggerConfig);
+					yield* Console.log(`${icon} ${taskName}...`);
 				}
 
 				yield* task.pipe(
-					Effect.catchAll((error: any) => {
-						if (error && error._tag === "ExecutionError" && error.scriptOutput) {
+					Effect.catchAll((error) => {
+						// Enhance error with script output if available
+						if (error instanceof ExecutionError && error.scriptOutput) {
 							const msg = `${error.message}\n\nScript output:\n${error.scriptOutput}`;
 							return Effect.fail(
 								ExecutionError.make(msg, error.scriptOutput, error)
 							);
 						}
-						return Effect.fail(error);
+						if (error instanceof ExecutionError) {
+							return Effect.fail(error);
+						}
+						return Effect.fail(
+							ExecutionError.make(String(error), undefined, error)
+						);
 					})
 				);
 
 				if (!options?.verbose) {
-					yield* Console.log(`✓ ${taskName} completed`);
+					const icon = colorizeWithConfig("✓", "GREEN", loggerConfig);
+					yield* Console.log(`${icon} ${taskName} completed`);
 				}
 			});
 

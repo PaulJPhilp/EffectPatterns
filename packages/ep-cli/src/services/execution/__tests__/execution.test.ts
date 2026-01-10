@@ -2,7 +2,8 @@ import { Context, Effect, Exit, Layer } from "effect";
 import { spawn } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TUILoader } from "../../tui-loader.js";
+import { TUILoader } from "../../display/tui-loader.js";
+import { Logger } from "../../logger/index.js";
 import { Execution } from "../service.js";
 
 // --- Mocking ---
@@ -58,6 +59,7 @@ describe("Execution Service", () => {
       
       const program = Execution.executeScriptCapture("test-script.ts").pipe(
         Effect.provide(Execution.Default),
+        Effect.provide(Logger.Default),
         Effect.provide(makeMockTUILoader(null))
       );
       
@@ -70,6 +72,7 @@ describe("Execution Service", () => {
       
       const program = Execution.executeScriptCapture("test-script.ts").pipe(
         Effect.provide(Execution.Default),
+        Effect.provide(Logger.Default),
         Effect.provide(makeMockTUILoader(null))
       );
       
@@ -88,6 +91,7 @@ describe("Execution Service", () => {
       
       const program = Execution.executeScriptCapture("test-script.ts").pipe(
         Effect.provide(Execution.Default),
+        Effect.provide(Logger.Default),
         Effect.provide(makeMockTUILoader(null))
       );
       
@@ -101,6 +105,7 @@ describe("Execution Service", () => {
       
       const program = Execution.executeScriptStream("test-script.ts").pipe(
         Effect.provide(Execution.Default),
+        Effect.provide(Logger.Default),
         Effect.provide(makeMockTUILoader(null))
       );
       
@@ -112,6 +117,7 @@ describe("Execution Service", () => {
       
       const program = Execution.executeScriptStream("test-script.ts").pipe(
         Effect.provide(Execution.Default),
+        Effect.provide(Logger.Default),
         Effect.provide(makeMockTUILoader(null))
       );
       
@@ -126,6 +132,7 @@ describe("Execution Service", () => {
       
       const program = Execution.executeScriptWithTUI("test-script.ts", "Task").pipe(
         Effect.provide(Execution.Default),
+        Effect.provide(Logger.Default),
         Effect.provide(makeMockTUILoader(null))
       );
       
@@ -139,6 +146,7 @@ describe("Execution Service", () => {
       
       const program = Execution.executeScriptWithTUI("test-script.ts", "Task").pipe(
         Effect.provide(Execution.Default),
+        Effect.provide(Logger.Default),
         Effect.provide(makeMockTUILoader(null))
       );
       
@@ -164,6 +172,7 @@ describe("Execution Service", () => {
 
       const program = Execution.executeScriptWithTUI("test-script.ts", "TUI Task").pipe(
         Effect.provide(Execution.Default),
+        Effect.provide(Logger.Default),
         Effect.provide(makeMockTUILoader(tuiModule)),
         Effect.provideService(MockInkTag, {})
       );
@@ -179,6 +188,7 @@ describe("Execution Service", () => {
       
       const program = Execution.withSpinner("Spinning", Effect.succeed("Done")).pipe(
         Effect.provide(Execution.Default),
+        Effect.provide(Logger.Default),
         Effect.provide(makeMockTUILoader(null))
       );
       

@@ -2,20 +2,25 @@
  * Execution service tests
  */
 
-import { Effect } from "effect";
-import * as Console from "effect/Console";
+import { Console, Effect, Layer } from "effect";
 import { spawn, type ChildProcess } from "node:child_process";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Logger } from "../../logger/index.js";
 import { ExecutionError } from "../errors.js";
 import * as helpers from "../helpers.js";
 import { Execution } from "../service.js";
 
-// Mock the effect/Console module
-vi.mock("effect/Console", async () => {
+// Mock the effect Console module
+vi.mock("effect", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("effect")>();
     return {
-        log: vi.fn(() => Effect.void),
-        error: vi.fn(() => Effect.void),
-        warn: vi.fn(() => Effect.void),
+        ...actual,
+        Console: {
+            ...actual.Console,
+            log: vi.fn(() => Effect.void),
+            error: vi.fn(() => Effect.void),
+            warn: vi.fn(() => Effect.void),
+        }
     };
 });
 
@@ -24,21 +29,16 @@ vi.mock("node:child_process", () => ({
 	spawn: vi.fn(),
 }));
 
-// Mock helpers
-vi.mock("../helpers.js", async () => {
-	const actual = await vi.importActual<typeof import("../helpers.js")>("../helpers.js");
-	return {
-		...actual,
-		spawnEffect: vi.fn(),
-		getTUISpinner: vi.fn(),
-	};
-});
-
 describe("Execution Service", () => {
 	let mockChildProcess: Partial<ChildProcess>;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.spyOn(helpers, "spawnEffect").mockReturnValue(Effect.void as any);
+		vi.spyOn(helpers, "getTUISpinner").mockReturnValue({
+			spinnerEffectTUI: null,
+			InkService: null,
+		});
 		mockChildProcess = {
 			stdout: { on: vi.fn() } as any,
 			stderr: { on: vi.fn() } as any,
@@ -71,7 +71,7 @@ describe("Execution Service", () => {
 				expect(execution.withSpinner).toBeDefined();
 			}).pipe(
 				Effect.provide(Layer.merge(Execution.Default, Logger.Default)),
-				(Effect.runPromise as any)
+				Effect.runPromise
 			));
 	});
 
@@ -89,7 +89,7 @@ describe("Execution Service", () => {
 				);
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))));
 
 			expect(Console.log).toHaveBeenCalled();
 			expect(helpers.spawnEffect).toHaveBeenCalledWith("script.ts", {
@@ -110,7 +110,7 @@ describe("Execution Service", () => {
 				);
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))));
 
 			expect(Console.log).not.toHaveBeenCalled();
 		});
@@ -128,7 +128,7 @@ describe("Execution Service", () => {
 			});
 
 			await expect(
-				 (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
+				 Effect.runPromise(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
 			).rejects.toThrow();
 		});
 
@@ -145,7 +145,7 @@ describe("Execution Service", () => {
 			});
 
 			await expect(
-				 (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
+				 Effect.runPromise(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
 			).rejects.toThrow();
 		});
 	});
@@ -175,7 +175,7 @@ describe("Execution Service", () => {
 				return yield* execution.executeScriptCapture("script.ts");
 			});
 
-			const result = await  (Effect.runPromise as any)(
+			const result = await  Effect.runPromise(
 				program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default)))
 			);
 
@@ -207,7 +207,7 @@ describe("Execution Service", () => {
 			});
 
 			await expect(
-				 (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
+				 Effect.runPromise(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
 			).rejects.toThrow();
 		});
 
@@ -230,7 +230,7 @@ describe("Execution Service", () => {
 			});
 
 			await expect(
-				 (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
+				 Effect.runPromise(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
 			).rejects.toThrow();
 		});
 	});
@@ -252,7 +252,7 @@ describe("Execution Service", () => {
 				return yield* execution.executeScriptStream("script.ts");
 			});
 
-			await  (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))));
+			await  Effect.runPromise(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))));
 
 			expect(spawn).toHaveBeenCalledWith("bun", ["run", "script.ts"], {
 				stdio: "inherit",
@@ -278,7 +278,7 @@ describe("Execution Service", () => {
 			});
 
 			await expect(
-				 (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
+				 Effect.runPromise(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
 			).rejects.toThrow();
 		});
 
@@ -299,7 +299,7 @@ describe("Execution Service", () => {
 			});
 
 			await expect(
-				 (Effect.runPromise as any)(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
+				 Effect.runPromise(program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default))))
 			).rejects.toThrow();
 		});
 	});
@@ -317,13 +317,13 @@ describe("Execution Service", () => {
 				return result;
 			});
 
-			const result = await  (Effect.runPromise as any)(
+			const result = await  Effect.runPromise(
 				program.pipe(Effect.provide(Layer.merge(Execution.Default, Logger.Default)))
 			);
 
 			expect(result).toBe("test result");
 			expect(Console.log).toHaveBeenCalledTimes(2);
-			const calls = vi.mocked(Console.log).mock.calls;
+			const calls = (Console.log as any).mock.calls;
 			expect(calls[0]?.[0]).toContain("Test task...");
 			expect(calls[1]?.[0]).toContain("Test task completed");
 		});

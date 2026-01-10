@@ -2,8 +2,7 @@
  * Execution service helper tests
  */
 
-import { Effect } from "effect";
-import * as Console from "effect/Console";
+import { Console, Effect } from "effect";
 import { spawn, type ChildProcess } from "node:child_process";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getTUISpinner, spawnEffect, withSpinner } from "../helpers.js";
@@ -12,12 +11,17 @@ vi.mock("node:child_process", () => ({
 	spawn: vi.fn(),
 }));
 
-// Mock the effect/Console module
-vi.mock("effect/Console", async () => {
+// Mock the effect Console module
+vi.mock("effect", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("effect")>();
     return {
-        log: vi.fn(() => Effect.void),
-        error: vi.fn(() => Effect.void),
-        warn: vi.fn(() => Effect.void),
+        ...actual,
+        Console: {
+            ...actual.Console,
+            log: vi.fn(() => Effect.void),
+            error: vi.fn(() => Effect.void),
+            warn: vi.fn(() => Effect.void),
+        }
     };
 });
 
@@ -166,7 +170,7 @@ describe("Execution Helpers", () => {
 
 			expect(result).toBe("result");
 			expect(Console.log).toHaveBeenCalledTimes(2);
-			const calls = vi.mocked(Console.log).mock.calls;
+			const calls = (Console.log as any).mock.calls;
 			expect(calls[0]?.[0]).toContain("Test task...");
 			expect(calls[1]?.[0]).toContain("Test task completed");
 		});

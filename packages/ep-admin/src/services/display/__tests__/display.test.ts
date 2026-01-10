@@ -2,7 +2,7 @@
  * Display service tests
  */
 
-import { Context, Effect, Layer } from "effect";
+import { Console, Context, Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { Logger, defaultLoggerConfig } from "../../logger/index.js";
 import { Display } from "../service.js";
@@ -50,24 +50,15 @@ const runTest = <A, E>(
     tuiModule: any | null, 
     useColors: boolean = true
 ) => {
-    // We capture console.log directly as Effect's Console service replacement 
-    // is tricky due to potential tag mismatches in test environment.
     const logs: string[] = [];
     
-    // Create spies
-    const logSpy = vi.spyOn(console, "log").mockImplementation((msg) => {
-        logs.push(String(msg));
-    });
-    const errorSpy = vi.spyOn(console, "error").mockImplementation((msg) => {
-        logs.push(String(msg));
-    });
-    
-    // Cleanup function
-    const cleanup = () => {
-        logSpy.mockRestore();
-        errorSpy.mockRestore();
-    };
-    
+    // Create a mock Console service
+    const mockConsole = {
+        log: (msg: any) => Effect.sync(() => { logs.push(String(msg)); }),
+        error: (msg: any) => Effect.sync(() => { logs.push(String(msg)); }),
+        warn: (msg: any) => Effect.sync(() => { logs.push(String(msg)); }),
+    } as any;
+
     const testConsoleService = {
         logs: Effect.sync(() => [...logs])
     };
@@ -79,9 +70,10 @@ const runTest = <A, E>(
 
     return program.pipe(
         Effect.provide(displayLayer),
+        Effect.provide(Console.setConsole(mockConsole)),
         Effect.provideService(TestConsole, testConsoleService),
         Effect.runPromise
-    ).finally(cleanup);
+    );
 };
 
 describe("Display Service", () => {

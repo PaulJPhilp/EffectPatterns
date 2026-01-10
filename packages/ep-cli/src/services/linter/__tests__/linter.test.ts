@@ -1,6 +1,7 @@
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import fs from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Logger } from "../../logger/index.js";
 import { Linter } from "../service.js";
 
 // --- Mocking ---
@@ -11,6 +12,8 @@ vi.mock("node:fs/promises", () => ({
     writeFile: vi.fn(),
   },
 }));
+
+const TestLayer = Linter.Default.pipe(Layer.provide(Logger.Default));
 
 // --- Tests ---
 
@@ -25,7 +28,7 @@ describe("Linter Service", () => {
       (fs.readFile as any).mockResolvedValue(content);
       
       const program = Linter.lintFiles(["test.ts"]).pipe(
-        Effect.provide(Linter.Default)
+        Effect.provide(TestLayer)
       );
       
       const results = await Effect.runPromise(program);
@@ -39,7 +42,7 @@ describe("Linter Service", () => {
       (fs.readFile as any).mockResolvedValue(content);
       
       const program = Linter.lintFiles(["test.ts"]).pipe(
-        Effect.provide(Linter.Default)
+        Effect.provide(TestLayer)
       );
       
       const results = await Effect.runPromise(program);
@@ -53,7 +56,7 @@ describe("Linter Service", () => {
       (fs.readFile as any).mockResolvedValue(content);
       
       const program = Linter.lintFiles(["test.ts"]).pipe(
-        Effect.provide(Linter.Default)
+        Effect.provide(TestLayer)
       );
       
       const results = await Effect.runPromise(program);
@@ -65,7 +68,7 @@ describe("Linter Service", () => {
       (fs.readFile as any).mockResolvedValue(content);
       
       const program = Linter.lintFiles(["test.ts"]).pipe(
-        Effect.provide(Linter.Default)
+        Effect.provide(TestLayer)
       );
       
       const results = await Effect.runPromise(program);
@@ -78,7 +81,7 @@ describe("Linter Service", () => {
       (fs.readFile as any).mockRejectedValue(new Error("Disk failure"));
       
       const program = Linter.lintFiles(["test.ts"]).pipe(
-        Effect.provide(Linter.Default)
+        Effect.provide(TestLayer)
       );
       
       await expect(Effect.runPromise(program)).rejects.toThrow("Disk failure");
@@ -97,7 +100,7 @@ describe("Linter Service", () => {
       }];
       
       const program = Linter.printResults(results).pipe(
-        Effect.provide(Linter.Default)
+        Effect.provide(TestLayer)
       );
       
       const exitCode = await Effect.runPromise(program);
@@ -115,7 +118,7 @@ describe("Linter Service", () => {
       }];
       
       const program = Linter.printResults(results).pipe(
-        Effect.provide(Linter.Default)
+        Effect.provide(TestLayer)
       );
       
       const exitCode = await Effect.runPromise(program);
