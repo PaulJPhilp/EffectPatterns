@@ -1,26 +1,28 @@
 /**
- * Skills Service
- *
- * Provides validation, preview, and statistics for Claude Skills
+ * Skills Service implementation
  */
 
-import { FileSystem, Path } from "@effect/platform";
+import { FileSystem } from "@effect/platform";
 import { Effect } from "effect";
 import * as path from "node:path";
+import type { SkillsService } from "./api.js";
 import {
-	SkillNotFoundError,
-	SkillsDirectoryNotFoundError
+    SkillNotFoundError,
+    SkillsDirectoryNotFoundError
 } from "./errors.js";
 import type {
-	SkillMetadata,
-	SkillStats,
-	ValidationIssue
+    SkillMetadata,
+    SkillStats,
+    ValidationIssue
 } from "./types.js";
 
+/**
+ * Skills service using Effect.Service pattern
+ */
 export class Skills extends Effect.Service<Skills>()("Skills", {
+	accessors: true,
 	effect: Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
-		const pathService = yield* Path.Path;
 
 		const getSkillsDirectory = Effect.gen(function* () {
 			const cwd = yield* Effect.sync(() => process.cwd());
@@ -193,6 +195,6 @@ export class Skills extends Effect.Service<Skills>()("Skills", {
 			validate: validateSkill,
 			validateAll: validateAllSkills,
 			getStats,
-		} as const;
+		} as SkillsService;
 	}),
 }) { }

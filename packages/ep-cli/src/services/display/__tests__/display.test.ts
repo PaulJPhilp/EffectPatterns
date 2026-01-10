@@ -1,8 +1,9 @@
 import { Context, Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TUILoader } from "../../tui-loader.js";
+import { Logger } from "../../logger/index.js";
 import { ICONS } from "../helpers.js";
 import { Display } from "../service.js";
+import { TUILoader } from "../tui-loader.js";
 
 // --- Test Utilities ---
 
@@ -26,10 +27,13 @@ const makeMockTUILoader = (tuiModule: any | null) =>
   Layer.succeed(TUILoader, TUILoader.of({ load: () => Effect.succeed(tuiModule) }));
 
 const runTest = <A, E>(
-  program: Effect.Effect<A, E, Display | TestConsole>,
+  program: Effect.Effect<A, E, Display | TestConsole | Logger>,
   tuiModule: any | null
 ) => {
-  const displayLayer = Layer.provide(Display.Default, makeMockTUILoader(tuiModule));
+  const displayLayer = Display.Default.pipe(
+    Layer.provide(makeMockTUILoader(tuiModule)),
+    Layer.provide(Logger.Default)
+  );
   
   return Effect.gen(function* () {
     const tc = yield* TestConsole;
@@ -38,6 +42,7 @@ const runTest = <A, E>(
   }).pipe(
     Effect.provide(displayLayer),
     Effect.provide(LiveTestConsole),
+    Effect.provide(Logger.Default),
     Effect.runPromise
   );
 };

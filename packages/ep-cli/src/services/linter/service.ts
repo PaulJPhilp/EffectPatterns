@@ -1,13 +1,11 @@
-/**
- * Linter service implementation
- */
-
-import { Console, Effect } from "effect";
+import { Effect } from "effect";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { LINT_RULES } from "../../constants.js";
-import { colorize } from "../../utils/string.js";
-import type { LinterService, LintIssue, LintResult } from "./api.js";
+import { colorize } from "../../utils.js";
+import { Logger } from "../logger/index.js";
+import type { LinterService } from "./api.js";
+import type { LintIssue, LintResult } from "./types.js";
 
 /**
  * Linter service using Effect.Service pattern
@@ -15,6 +13,8 @@ import type { LinterService, LintIssue, LintResult } from "./api.js";
 export class Linter extends Effect.Service<Linter>()("Linter", {
   accessors: true,
   effect: Effect.gen(function* () {
+    const logger = yield* Logger;
+
     const checkUseTapError = (content: string, filePath: string): LintIssue[] => {
       const issues: LintIssue[] = [];
       const lines = content.split("\n");
@@ -94,7 +94,6 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
           catch: (error) => new Error(`Failed to read file ${filePath}: ${error}`),
         });
 
-        const fileName = path.basename(filePath);
         const allIssues: LintIssue[] = [
           ...checkUseTapError(content, filePath),
           ...checkExplicitConcurrency(content, filePath),
@@ -104,7 +103,7 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
         allIssues.sort((a, b) => a.line - b.line);
 
         return {
-          file: fileName,
+          file: path.basename(filePath),
           issues: allIssues,
           errors: allIssues.filter((i) => i.severity === "error").length,
           warnings: allIssues.filter((i) => i.severity === "warning").length,
@@ -117,7 +116,7 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
 
     const applyFixes: LinterService["applyFixes"] = (filePath: string, issues: LintIssue[]) =>
       Effect.gen(function* () {
-        let content = yield* Effect.tryPromise({
+        const content = yield* Effect.tryPromise({
           try: () => fs.readFile(filePath, "utf-8"),
           catch: (error) => new Error(`Failed to read file ${filePath}: ${error}`),
         });
@@ -129,8 +128,7 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
           const rule = LINT_RULES.find((r) => r.name === issue.rule);
           if (!rule?.canFix) continue;
 
-          // Placeholder for actual fix logic (simplified from index.ts)
-          // In a real implementation, we'd use the fix* functions from index.ts
+          // Placeholder for actual fix logic
           fixedCount++;
         }
 
@@ -139,11 +137,11 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
 
     const printResults: LinterService["printResults"] = (results: LintResult[]) =>
       Effect.gen(function* () {
-        yield* Console.log(colorize("\n📋 Effect Patterns Linter Results", "cyan"));
-        // Simplified printing logic
+        yield* logger.info(colorize("\n📋 Effect Patterns Linter Results", "CYAN"));
+        
         const totalErrors = results.reduce((sum, r) => sum + r.errors, 0);
-        yield* Console.log(`Total: ${results.length} files`);
-        yield* Console.log(`Errors: ${totalErrors}`);
+        yield* logger.info(`Total: ${results.length} files`);
+        yield* logger.info(`Errors: ${totalErrors}`);
 
         return totalErrors > 0 ? 1 : 0;
       });

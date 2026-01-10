@@ -2,20 +2,24 @@
  * Logger service tests
  */
 
-import { Effect } from "effect";
-import * as Console from "effect/Console";
+import { Console, Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { formatMessage, ICONS, writeOutput } from "../helpers.js";
 import { Logger, LoggerDefault, LoggerLive } from "../index.js";
 import type { LoggerConfig, LogLevel } from "../types.js";
 import { defaultLoggerConfig } from "../types.js";
 
-// Mock the effect/Console module
-vi.mock("effect/Console", async () => {
+// Mock the effect Console module
+vi.mock("effect", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("effect")>();
     return {
-        log: vi.fn(() => Effect.void),
-        error: vi.fn(() => Effect.void),
-        warn: vi.fn(() => Effect.void),
+        ...actual,
+        Console: {
+            ...actual.Console,
+            log: vi.fn(() => Effect.void),
+            error: vi.fn(() => Effect.void),
+            warn: vi.fn(() => Effect.void),
+        }
     };
 });
 
@@ -178,7 +182,7 @@ describe("Logger Service", () => {
 
 
 			expect(Console.log).toHaveBeenCalled();
-			const call = vi.mocked(Console.log).mock.calls[0]?.[0];
+			const call = (Console.log as any).mock.calls[0]?.[0];
 			expect(call).toContain("Debug message");
 		});
 
@@ -193,7 +197,7 @@ describe("Logger Service", () => {
 
 
 			expect(Console.log).toHaveBeenCalled();
-			const call = vi.mocked(Console.log).mock.calls[0]?.[0];
+			const call = (Console.log as any).mock.calls[0]?.[0];
 			expect(call).toContain("Info message");
 		});
 
@@ -208,7 +212,7 @@ describe("Logger Service", () => {
 
 
 			expect(Console.warn).toHaveBeenCalled();
-			const call = vi.mocked(Console.warn).mock.calls[0]?.[0];
+			const call = (Console.warn as any).mock.calls[0]?.[0];
 			expect(call).toContain("Warning message");
 		});
 
@@ -223,7 +227,7 @@ describe("Logger Service", () => {
 
 
 			expect(Console.error).toHaveBeenCalled();
-			const call = vi.mocked(Console.error).mock.calls[0]?.[0];
+			const call = (Console.error as any).mock.calls[0]?.[0];
 			expect(call).toContain("Error message");
 		});
 
@@ -238,7 +242,7 @@ describe("Logger Service", () => {
 
 
 			expect(Console.log).toHaveBeenCalled();
-			const call = vi.mocked(Console.log).mock.calls[0]?.[0];
+			const call = (Console.log as any).mock.calls[0]?.[0];
 			expect(call).toContain("Success message");
 		});
 
@@ -253,7 +257,7 @@ describe("Logger Service", () => {
 			await Effect.runPromise(program.pipe(Effect.provide(LoggerDefault)));
 
 			expect(Console.log).toHaveBeenCalled();
-			const call = vi.mocked(Console.log).mock.calls[0]?.[0];
+			const call = (Console.log as any).mock.calls[0]?.[0];
 			expect(call).toContain("Info message");
 			expect(call).toContain("key");
 			expect(call).toContain("value");
@@ -273,7 +277,7 @@ describe("Logger Service", () => {
 
 			expect(Console.log).not.toHaveBeenCalled();
 			expect(Console.warn).toHaveBeenCalledTimes(1);
-			const call = vi.mocked(Console.warn).mock.calls[0]?.[0];
+			const call = (Console.warn as any).mock.calls[0]?.[0];
 			expect(call).toContain("Warning message");
 			expect(call).not.toContain("Debug message");
 			expect(call).not.toContain("Info message");

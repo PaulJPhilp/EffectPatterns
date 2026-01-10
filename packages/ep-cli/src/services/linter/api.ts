@@ -1,26 +1,5 @@
-/**
- * Linter service API
- */
-
 import { Effect } from "effect";
-
-export interface LintIssue {
-  file: string;
-  line: number;
-  column: number;
-  rule: string;
-  severity: "error" | "warning" | "info" | "off";
-  message: string;
-  suggestion?: string;
-}
-
-export interface LintResult {
-  file: string;
-  issues: LintIssue[];
-  errors: number;
-  warnings: number;
-  info: number;
-}
+import type { LintIssue, LintResult } from "./types.js";
 
 export interface LinterService {
   readonly lintFiles: (files: string[]) => Effect.Effect<LintResult[], Error>;

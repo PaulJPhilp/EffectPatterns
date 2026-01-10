@@ -7,16 +7,40 @@
 import type { PlatformError } from "@effect/platform/Error";
 import { Effect } from "effect";
 import {
-	SkillNotFoundError,
-	SkillsDirectoryNotFoundError,
+    SkillNotFoundError,
+    SkillsDirectoryNotFoundError,
 } from "./errors.js";
 import { Skills } from "./service.js";
 import type {
-	SkillContent,
-	SkillMetadata,
-	SkillStats,
-	ValidationIssue
+    SkillContent,
+    SkillMetadata,
+    SkillStats,
+    ValidationIssue
 } from "./types.js";
+
+/**
+ * Skills service interface
+ */
+export interface SkillsService {
+	readonly listAll: Effect.Effect<
+		readonly SkillMetadata[],
+		SkillsDirectoryNotFoundError | PlatformError
+	>;
+	readonly getByCategory: (
+		category: string
+	) => Effect.Effect<SkillContent, SkillNotFoundError | PlatformError>;
+	readonly validate: (
+		category: string
+	) => Effect.Effect<readonly ValidationIssue[], SkillNotFoundError | PlatformError>;
+	readonly validateAll: Effect.Effect<
+		readonly ValidationIssue[],
+		SkillsDirectoryNotFoundError | SkillNotFoundError | PlatformError
+	>;
+	readonly getStats: Effect.Effect<
+		SkillStats,
+		SkillsDirectoryNotFoundError | PlatformError
+	>;
+}
 
 /**
  * List all available skills
