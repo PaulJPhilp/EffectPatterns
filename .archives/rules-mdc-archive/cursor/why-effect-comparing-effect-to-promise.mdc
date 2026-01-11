@@ -1,9 +1,0 @@
-description: Understand why Effect is better than raw Promises.
-globs: "**/*.ts"
-alwaysApply: true
-
-# Why Effect? Comparing Effect to Promise
-**Rule:** Understand why Effect is better than raw Promises.
-
-**Explanation:**  
-Understand why Effect is better than raw Promises.
