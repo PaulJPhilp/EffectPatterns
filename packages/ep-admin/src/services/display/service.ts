@@ -4,7 +4,7 @@
 
 import { Console, Effect, Option as Opt } from "effect";
 import { Logger } from "../logger/index.js";
-import type { DisplayService } from "./api.js";
+import type { DisplayService, DisplayServiceError } from "./api.js";
 import { DisplayError } from "./errors.js";
 import {
 	colorizeWithConfig,
@@ -41,10 +41,8 @@ export class Display extends Effect.Service<Display>()("Display", {
 				const icon = colorizeWithConfig("✓", "GREEN", loggerConfig);
 				yield* Console.log(`${icon} ${message}`);
 			}).pipe(
-				Effect.catchAll((error) => Effect.fail(
-					DisplayError.make(`Failed to show success message: ${message}`, error)
-				))
-			);
+				Effect.mapError((error) => DisplayError.make(`Failed to show success message: ${message}`, error))
+			) as Effect.Effect<void, DisplayServiceError>;
 
 		const showError: DisplayService["showError"] = (message: string) =>
 			Effect.gen(function* () {
@@ -64,10 +62,8 @@ export class Display extends Effect.Service<Display>()("Display", {
 				const icon = colorizeWithConfig("✖", "RED", loggerConfig);
 				yield* Console.error(`${icon} ${message}`);
 			}).pipe(
-				Effect.catchAll((error) => Effect.fail(
-					DisplayError.make(`Failed to show error message: ${message}`, error)
-				))
-			);
+				Effect.mapError((error) => DisplayError.make(`Failed to show error message: ${message}`, error))
+			) as Effect.Effect<void, DisplayServiceError>;
 
 		const showInfo: DisplayService["showInfo"] = (message: string) =>
 			Effect.gen(function* () {
@@ -87,10 +83,8 @@ export class Display extends Effect.Service<Display>()("Display", {
 				const icon = colorizeWithConfig("ℹ", "BLUE", loggerConfig);
 				yield* Console.log(`${icon} ${message}`);
 			}).pipe(
-				Effect.catchAll((error) => Effect.fail(
-					DisplayError.make(`Failed to show info message: ${message}`, error)
-				))
-			);
+				Effect.mapError((error) => DisplayError.make(`Failed to show info message: ${message}`, error))
+			) as Effect.Effect<void, DisplayServiceError>;
 
 		const showWarning: DisplayService["showWarning"] = (message: string) =>
 			Effect.gen(function* () {
@@ -110,10 +104,8 @@ export class Display extends Effect.Service<Display>()("Display", {
 				const icon = colorizeWithConfig("⚠", "YELLOW", loggerConfig);
 				yield* Console.log(`${icon} ${message}`);
 			}).pipe(
-				Effect.catchAll((error) => Effect.fail(
-					DisplayError.make(`Failed to show warning message: ${message}`, error)
-				))
-			);
+				Effect.mapError((error) => DisplayError.make(`Failed to show warning message: ${message}`, error))
+			) as Effect.Effect<void, DisplayServiceError>;
 
 		const showPanel: DisplayService["showPanel"] = (
 			content: string,
@@ -143,10 +135,8 @@ export class Display extends Effect.Service<Display>()("Display", {
 				yield* Console.log(content);
 				yield* Console.log(`${border}\n`);
 			}).pipe(
-				Effect.catchAll((error) => Effect.fail(
-					DisplayError.make(`Failed to show panel: ${title}`, error)
-				))
-			);
+				Effect.mapError((error) => DisplayError.make(`Failed to show panel: ${title}`, error))
+			) as Effect.Effect<void, DisplayServiceError>;
 
 		const showTable: DisplayService["showTable"] = <
 			T extends Record<string, unknown>,
@@ -191,10 +181,8 @@ export class Display extends Effect.Service<Display>()("Display", {
 				yield* Console.log("─".repeat(headers.length));
 				rows.forEach((row) => Console.log(row));
 			}).pipe(
-				Effect.catchAll((error) => Effect.fail(
-					DisplayError.make(`Failed to show table`, error)
-				))
-			);
+				Effect.mapError((error) => DisplayError.make(`Failed to show table`, error))
+			) as Effect.Effect<void, DisplayServiceError>;
 
 		const showHighlight: DisplayService["showHighlight"] = (message: string) =>
 			Effect.gen(function* () {
@@ -211,12 +199,10 @@ export class Display extends Effect.Service<Display>()("Display", {
 				}
 
 				// Fallback to console
-				yield* Console.log(`� ${message}`);
+				yield* Console.log(`🔹 ${message}`);
 			}).pipe(
-				Effect.catchAll((error) => Effect.fail(
-					DisplayError.make(`Failed to show highlight: ${message}`, error)
-				))
-			);
+				Effect.mapError((error) => DisplayError.make(`Failed to show highlight: ${message}`, error))
+			) as Effect.Effect<void, DisplayServiceError>;
 
 		const showSeparator: DisplayService["showSeparator"] = () =>
 			Effect.gen(function* () {
@@ -235,10 +221,8 @@ export class Display extends Effect.Service<Display>()("Display", {
 				// Fallback to console
 				yield* Console.log("─".repeat(80));
 			}).pipe(
-				Effect.catchAll((error) => Effect.fail(
-					DisplayError.make(`Failed to show separator`, error)
-				))
-			);
+				Effect.mapError((error) => DisplayError.make(`Failed to show separator`, error))
+			) as Effect.Effect<void, DisplayServiceError>;
 
 		return {
 			showSuccess,
