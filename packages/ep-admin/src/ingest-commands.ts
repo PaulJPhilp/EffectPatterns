@@ -14,7 +14,6 @@
  */
 
 import { Command, Options } from "@effect/cli";
-import { NodeContext } from "@effect/platform-node";
 import { Effect } from "effect";
 import {
     CONTENT_DIRS,
@@ -84,9 +83,7 @@ export const ingestProcessCommand = Command.make("process", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_PROCESSED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -124,9 +121,7 @@ export const ingestProcessOneCommand = Command.make("process-one", {
                 );
                 return yield* Effect.fail(new Error(result.error));
             }
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -173,9 +168,7 @@ export const ingestValidateCommand = Command.make("validate", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_VALIDATION_COMPLETE);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -219,9 +212,7 @@ export const ingestTestCommand = Command.make("test", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_TESTS_PASSED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -254,9 +245,7 @@ export const ingestPopulateCommand = Command.make("populate", {
             );
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.EXPECTATIONS_POPULATED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -291,9 +280,7 @@ export const ingestStatusCommand = Command.make("status", {
             yield* Display.showInfo(`  Invalid: ${invalid}`);
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.STATUS_CHECK_COMPLETE);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -339,9 +326,7 @@ export const ingestPipelineCommand = Command.make("pipeline", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_PIPELINE_COMPLETED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 

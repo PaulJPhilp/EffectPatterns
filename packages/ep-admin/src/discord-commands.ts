@@ -11,7 +11,6 @@
 
 import { Command, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
-import { NodeContext } from "@effect/platform-node";
 import { Effect } from "effect";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
@@ -62,9 +61,7 @@ export const discordIngestCommand = Command.make("ingest", {
             }
 
             yield* Display.showSuccess("Discord ingest check completed!");
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -96,9 +93,7 @@ export const discordTestCommand = Command.make("test", {
             }
 
             yield* Display.showSuccess("Discord test completed!");
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -155,9 +150,7 @@ export const discordFlattenCommand = Command.make("flatten", {
             yield* Display.showInfo(`Flattened ${flattened.length} messages`);
             yield* Display.showInfo(`Output: ${outputPath}`);
             yield* Display.showSuccess("Discord messages flattened!");
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 

@@ -7,7 +7,6 @@
  */
 
 import { Command, Options } from "@effect/cli";
-import { NodeContext } from "@effect/platform-node";
 import { Effect } from "effect";
 import { CONTENT_DIRS, MESSAGES } from "./constants.js";
 import { Display } from "./services/display/index.js";
@@ -96,9 +95,7 @@ export const validateCommand = Command.make("validate", {
 				}
 
 				yield* Display.showSuccess(MESSAGES.SUCCESS.ALL_PATTERNS_VALID);
-			}).pipe(
-				Effect.provide(NodeContext.layer)
-			) as any
+			})
 	)
 );
 
@@ -136,9 +133,7 @@ export const testCommand = Command.make("test", {
 			}
 
 			yield* Display.showSuccess("All tests passed!");
-		}).pipe(
-			Effect.provide(NodeContext.layer)
-		) as any
+		})
 	)
 );
 
@@ -173,9 +168,7 @@ export const pipelineCommand = Command.make("pipeline", {
 				yield* Display.showInfo(`  Published: ${result.publishing.summary.published}`);
 
 				yield* Display.showSuccess(MESSAGES.SUCCESS.PIPELINE_COMPLETED);
-			}).pipe(
-				Effect.provide(NodeContext.layer)
-			) as any
+			})
 	)
 );
 
@@ -203,8 +196,6 @@ export const generateCommand = Command.make("generate", {
 			yield* generateReadme(config);
 
 			yield* Display.showSuccess("README.md generated!");
-		}).pipe(
-			Effect.provide(NodeContext.layer)
-		) as any
+		})
 	)
 );

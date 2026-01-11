@@ -16,7 +16,6 @@ import {
 } from "@effect-patterns/toolkit";
 import { Command, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
-import { NodeContext } from "@effect/platform-node";
 import { Effect, Option } from "effect";
 import {
     MESSAGES,
@@ -87,9 +86,7 @@ export const skillsGenerateCommand = Command.make("generate", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.SKILLS_GENERATED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -117,9 +114,7 @@ export const skillsSkillGeneratorCommand = Command.make("skill-generator", {
             );
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.SKILL_GENERATION_COMPLETED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -201,9 +196,7 @@ export const skillsGenerateReadmeCommand = Command.make("generate-readme", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.README_GENERATED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
