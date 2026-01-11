@@ -9,8 +9,12 @@
     "forceConsistentCasingInFileNames": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "lib": ["ES2020"],
-    "types": ["node"],
+    "lib": [
+      "ES2020"
+    ],
+    "types": [
+      "node"
+    ],
     "downlevelIteration": true,
     "moduleDetection": "force",
     "allowSyntheticDefaultImports": true,
@@ -29,32 +33,22 @@
     ]
   },
   "include": [
-    "scripts/publish/**/*.ts",
-    "scripts/qa/**/*.ts",
-    "scripts/*.ts",
+    "api/**/*.ts",
+    "app/**/*.ts",
+    "server/**/*.ts",
+    "packages/**/*.ts",
     "content/src/**/*.ts",
     "content/new/src/**/*.ts",
     "content/new/processed/**/*.ts",
     "content/new/raw/**/*.ts",
-    "cli/src/**/*.ts",
-    "agents/**/*.ts"
+    "types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "build",
-    "archive/**",
     "content/backups/**",
     "content-backup-*/**",
-    "scripts/autofix/ai/suggestions/**",
-    "scripts/mock-db.ts",
-    "scripts/test-chat-app-core.ts",
-    "scripts/test-harness.ts",
-    "scripts/test-harness-cli.ts",
-    "scripts/test-llm-service.ts",
-    "scripts/test-models.ts",
-    "scripts/test-patterns.ts",
-    "scripts/test-supermemory.ts",
     "content/new/src/observability-custom-metrics.ts",
     "content/new/src/observability-effect-fn.ts",
     "content/new/src/observability-opentelemetry.ts",
@@ -82,8 +76,6 @@
     "content/new/src/data-readonly-array.ts",
     "content/new/src/data-redacted.ts",
     "content/new/src/data-duration.ts",
-    "content/new/src/data-option.ts",
-    "scripts/ingest-discord.ts",
-    "scripts/ingest/**/*.ts"
+    "content/new/src/data-option.ts"
   ]
 }
