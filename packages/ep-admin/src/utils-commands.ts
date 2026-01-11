@@ -10,7 +10,6 @@
 
 import { Command, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
-import { NodeContext } from "@effect/platform-node";
 import { Effect } from "effect";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
@@ -96,9 +95,7 @@ export const utilsAddSeqIdCommand = Command.make("add-seqid", {
 			}
 
 			yield* Display.showSuccess("Sequential IDs added!");
-		}).pipe(
-			Effect.provide(NodeContext.layer)
-		) as any
+		})
 	)
 );
 
@@ -151,9 +148,7 @@ export const utilsRenumberSeqIdCommand = Command.make("renumber-seqid", {
 
 			yield* Display.showInfo(`Renumbered ${data.length} items`);
 			yield* Display.showSuccess("Sequential IDs renumbered!");
-		}).pipe(
-			Effect.provide(NodeContext.layer)
-		) as any
+		})
 	)
 );
 

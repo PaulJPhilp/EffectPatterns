@@ -12,7 +12,6 @@
  */
 
 import { Command, Options } from "@effect/cli";
-import { NodeContext } from "@effect/platform-node";
 import { Effect } from "effect";
 import {
     CONTENT_DIRS,
@@ -125,9 +124,7 @@ export const publishValidateCommand = Command.make("validate", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_VALIDATED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -167,9 +164,7 @@ export const publishTestCommand = Command.make("test", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.ALL_EXAMPLES_PASSED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -215,9 +210,7 @@ export const publishPublishCommand = Command.make("publish", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_PUBLISHED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -264,9 +257,7 @@ export const publishGenerateCommand = Command.make("generate", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.DOCUMENTATION_GENERATED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -309,9 +300,7 @@ export const publishLintCommand = Command.make("lint", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.LINTING_COMPLETE);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -366,9 +355,7 @@ export const publishPipelineCommand = Command.make("pipeline", {
             yield* Display.showInfo(`Duration: ${result.duration}ms`);
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PIPELINE_COMPLETED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 

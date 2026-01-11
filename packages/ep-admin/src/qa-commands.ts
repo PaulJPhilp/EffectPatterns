@@ -14,7 +14,6 @@
  */
 
 import { Command, Options } from "@effect/cli";
-import { NodeContext } from "@effect/platform-node";
 import { Effect } from "effect";
 import {
     CONTENT_DIRS,
@@ -97,9 +96,7 @@ export const qaProcessCommand = Command.make("process", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.QA_PIPELINE_COMPLETED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -159,9 +156,7 @@ export const qaStatusCommand = Command.make("status", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.QA_STATUS_COMPLETE);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -214,9 +209,7 @@ export const qaReportCommand = Command.make("report", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.QA_REPORT_GENERATED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -265,9 +258,7 @@ export const qaRepairCommand = Command.make("repair", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.QA_REPAIR_COMPLETED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -311,9 +302,7 @@ export const qaTestEnhancedCommand = Command.make("test-enhanced", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.QA_ENHANCED_TESTS_PASSED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -345,9 +334,7 @@ export const qaTestSingleCommand = Command.make("test-single", {
             );
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERN_TEST_PASSED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 
@@ -375,9 +362,7 @@ export const qaFixPermissionsCommand = Command.make("fix-permissions", {
             );
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PERMISSIONS_FIXED);
-        }).pipe(
-            Effect.provide(NodeContext.layer)
-        ) as any
+        })
     )
 );
 

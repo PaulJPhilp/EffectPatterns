@@ -1,20 +1,6 @@
 {
   "name": "@effect-patterns/ep-admin",
   "version": "0.1.0",
-  "description": "Administrative CLI for Effect Patterns maintainers",
-  "type": "module",
-  "private": true,
-  "bin": {
-    "ep-admin": "./dist/index.js"
-  },
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "prepublishOnly": "bun run build"
-  },
   "dependencies": {
     "@effect-patterns/pipeline-state": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
@@ -32,5 +18,19 @@
     "ora": "^9.0.0",
     "semver": "^7.7.3",
     "yaml": "^2.8.2"
-  }
+  },
+  "bin": {
+    "ep-admin": "./dist/index.js"
+  },
+  "description": "Administrative CLI for Effect Patterns maintainers",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "bun run build"
+  },
+  "type": "module"
 }

@@ -6,10 +6,8 @@
  * Built with @effect/cli for type-safe, composable command-line interfaces.
  */
 
-import { StateStore } from "@effect-patterns/pipeline-state";
 import { Args, Command } from "@effect/cli";
-import { FetchHttpClient } from "@effect/platform";
-import { Console, Effect, Layer } from "effect";
+import { Console, Effect } from "effect";
 import { CLI, SHELL_TYPES } from "./constants.js";
 
 // Import command modules
@@ -26,7 +24,6 @@ import { opsCommand } from "./ops-commands.js";
 import { qaCommand } from "./qa-commands.js";
 import { patternNewCommand, releaseCommand } from "./release-commands.js";
 import { searchCommand } from "./search-commands.js";
-import { Logger } from "./services/logger.js";
 import { skillsCommand } from "./skills-commands.js";
 import { testUtilsCommand } from "./test-utils-commands.js";
 import { utilsCommand } from "./utils-commands.js";
@@ -127,34 +124,10 @@ export const adminRootCommand = Command.make(CLI.NAME).pipe(
 
 // --- RUNTIME SETUP ---
 
-// Import TUI layer for ep-admin (optional - lazy loaded)
-let EffectCLITUILayer: any = null;
-try {
-	const tuiModule = require("effect-cli-tui");
-	EffectCLITUILayer = tuiModule.EffectCLITUILayer;
-} catch {
-	// TUI not available, will use standard runtime
-}
+import { ProductionLayer } from "./runtime/production.js";
 
-// Standard runtime for ep-admin (includes Logger service)
-// Note: Type assertion needed due to cross-package layer type inference issues
-export const runtimeLayer = Layer.merge(
-	Layer.merge(FetchHttpClient.layer, Logger.Default),
-	StateStore.Default as unknown as Layer.Layer<StateStore>
-);
-
-// TUI-enabled runtime for ep-admin
-export const runtimeLayerWithTUI = EffectCLITUILayer
-	? Layer.merge(
-		Layer.merge(
-			Layer.merge(
-				Layer.merge(FetchHttpClient.layer, Logger.Default),
-				StateStore.Default as unknown as Layer.Layer<StateStore>
-			),
-			EffectCLITUILayer
-		)
-	)
-	: runtimeLayer; // Fallback to standard runtime if TUI not available
+// Re-export for backward compatibility
+export const runtimeLayer = ProductionLayer;
 
 const adminCliRunner = Command.run(adminRootCommand, {
 	name: CLI.RUNNER_NAME,
@@ -168,6 +141,6 @@ export const createAdminProgram = (
 // Run CLI when executed directly
 if (require.main === module) {
 	const program = createAdminProgram(process.argv);
-	const provided = Effect.provide(program, runtimeLayer) as Effect.Effect<void, unknown, never>;
+	const provided = Effect.provide(program, ProductionLayer) as Effect.Effect<void, unknown, never>;
 	void Effect.runPromise(provided);
 }
