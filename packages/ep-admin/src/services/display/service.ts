@@ -5,6 +5,7 @@
 import { Console, Effect, Option as Opt } from "effect";
 import { Logger } from "../logger/index.js";
 import type { DisplayService } from "./api.js";
+import { DisplayError } from "./errors.js";
 import {
 	colorizeWithConfig,
 } from "./helpers.js";
@@ -39,7 +40,11 @@ export class Display extends Effect.Service<Display>()("Display", {
 				// Fallback to console with color support
 				const icon = colorizeWithConfig("✓", "GREEN", loggerConfig);
 				yield* Console.log(`${icon} ${message}`);
-			}) as Effect.Effect<void, unknown>;
+			}).pipe(
+				Effect.catchAll((error) => Effect.fail(
+					DisplayError.make(`Failed to show success message: ${message}`, error)
+				))
+			);
 
 		const showError: DisplayService["showError"] = (message: string) =>
 			Effect.gen(function* () {
@@ -58,7 +63,11 @@ export class Display extends Effect.Service<Display>()("Display", {
 				// Fallback to console with color support
 				const icon = colorizeWithConfig("✖", "RED", loggerConfig);
 				yield* Console.error(`${icon} ${message}`);
-			}) as Effect.Effect<void, unknown>;
+			}).pipe(
+				Effect.catchAll((error) => Effect.fail(
+					DisplayError.make(`Failed to show error message: ${message}`, error)
+				))
+			);
 
 		const showInfo: DisplayService["showInfo"] = (message: string) =>
 			Effect.gen(function* () {
@@ -77,7 +86,11 @@ export class Display extends Effect.Service<Display>()("Display", {
 				// Fallback to console with color support
 				const icon = colorizeWithConfig("ℹ", "BLUE", loggerConfig);
 				yield* Console.log(`${icon} ${message}`);
-			}) as Effect.Effect<void, unknown>;
+			}).pipe(
+				Effect.catchAll((error) => Effect.fail(
+					DisplayError.make(`Failed to show info message: ${message}`, error)
+				))
+			);
 
 		const showWarning: DisplayService["showWarning"] = (message: string) =>
 			Effect.gen(function* () {
@@ -96,7 +109,11 @@ export class Display extends Effect.Service<Display>()("Display", {
 				// Fallback to console with color support
 				const icon = colorizeWithConfig("⚠", "YELLOW", loggerConfig);
 				yield* Console.log(`${icon} ${message}`);
-			}) as Effect.Effect<void, unknown>;
+			}).pipe(
+				Effect.catchAll((error) => Effect.fail(
+					DisplayError.make(`Failed to show warning message: ${message}`, error)
+				))
+			);
 
 		const showPanel: DisplayService["showPanel"] = (
 			content: string,
@@ -125,7 +142,11 @@ export class Display extends Effect.Service<Display>()("Display", {
 				yield* Console.log(border);
 				yield* Console.log(content);
 				yield* Console.log(`${border}\n`);
-			}) as Effect.Effect<void, unknown>;
+			}).pipe(
+				Effect.catchAll((error) => Effect.fail(
+					DisplayError.make(`Failed to show panel: ${title}`, error)
+				))
+			);
 
 		const showTable: DisplayService["showTable"] = <
 			T extends Record<string, unknown>,
@@ -156,9 +177,24 @@ export class Display extends Effect.Service<Display>()("Display", {
 					}
 				}
 
-				// Fallback to console
-				console.table(data);
-			}) as Effect.Effect<void, unknown>;
+				// Fallback to console table
+				const headers = options.columns
+					.map((col) => col.header)
+					.join(" | ");
+				const rows = data.map((row) =>
+					options.columns
+						.map((col) => String(row[col.key] ?? ""))
+						.join(" | ")
+				);
+
+				yield* Console.log(headers);
+				yield* Console.log("─".repeat(headers.length));
+				rows.forEach((row) => Console.log(row));
+			}).pipe(
+				Effect.catchAll((error) => Effect.fail(
+					DisplayError.make(`Failed to show table`, error)
+				))
+			);
 
 		const showHighlight: DisplayService["showHighlight"] = (message: string) =>
 			Effect.gen(function* () {
@@ -175,13 +211,34 @@ export class Display extends Effect.Service<Display>()("Display", {
 				}
 
 				// Fallback to console
-				yield* Console.log(`\n📌 ${message}\n`);
-			}) as Effect.Effect<void, unknown>;
+				yield* Console.log(`� ${message}`);
+			}).pipe(
+				Effect.catchAll((error) => Effect.fail(
+					DisplayError.make(`Failed to show highlight: ${message}`, error)
+				))
+			);
 
 		const showSeparator: DisplayService["showSeparator"] = () =>
 			Effect.gen(function* () {
-				yield* Console.log("─".repeat(60));
-			}) as Effect.Effect<void, unknown>;
+				const tui = yield* tuiLoader.load();
+
+				if (tui?.DisplayService && tui?.displaySeparator) {
+					const maybeDisplay = yield* Effect.serviceOption(
+						tui.DisplayService
+					);
+					if (Opt.isSome(maybeDisplay)) {
+						yield* tui.displaySeparator();
+						return;
+					}
+				}
+
+				// Fallback to console
+				yield* Console.log("─".repeat(80));
+			}).pipe(
+				Effect.catchAll((error) => Effect.fail(
+					DisplayError.make(`Failed to show separator`, error)
+				))
+			);
 
 		return {
 			showSuccess,
@@ -194,4 +251,4 @@ export class Display extends Effect.Service<Display>()("Display", {
 			showSeparator,
 		};
 	}),
-}) {}
+}) { }
