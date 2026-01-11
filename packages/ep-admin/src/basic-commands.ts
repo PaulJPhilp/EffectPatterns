@@ -2,17 +2,62 @@
  * Basic administrative commands
  * 
  * validate, test, pipeline, generate
+ *
+ * NOTE: These are convenience aliases that delegate to publish commands.
  */
 
 import { Command, Options } from "@effect/cli";
+import { NodeContext } from "@effect/platform-node";
 import { Effect } from "effect";
-import * as path from "node:path";
-import { SCRIPTS, TASK_NAMES, MESSAGES } from "./constants.js";
+import { CONTENT_DIRS, MESSAGES } from "./constants.js";
 import { Display } from "./services/display/index.js";
-import { Execution } from "./services/execution/index.js";
-import { getProjectRoot } from "./utils.js";
+import {
+	generateReadme,
+	runFullPipeline,
+	summarizeTestResults,
+	summarizeValidationResults,
+	testAllPatterns,
+	validateAllPatterns,
+	type GeneratorConfig,
+	type PipelineConfig,
+	type TesterConfig,
+	type ValidatorConfig,
+} from "./services/publish/index.js";
 
-const PROJECT_ROOT = getProjectRoot();
+const PROJECT_ROOT = process.cwd();
+
+const getValidatorConfig = (): ValidatorConfig => ({
+	publishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
+	srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
+	concurrency: 10,
+});
+
+const getTesterConfig = (): TesterConfig => ({
+	srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
+	concurrency: 10,
+	enableTypeCheck: true,
+	timeout: 30_000,
+	expectedErrors: new Map(),
+});
+
+const getGeneratorConfig = (): GeneratorConfig => ({
+	readmePath: `${PROJECT_ROOT}/README.md`,
+});
+
+const getPipelineConfig = (): PipelineConfig => ({
+	validator: getValidatorConfig(),
+	tester: getTesterConfig(),
+	publisher: {
+		processedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
+		publishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.PUBLISHED}`,
+		srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
+	},
+	generator: getGeneratorConfig(),
+	linter: {
+		srcDirs: [`${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`],
+		concurrency: 10,
+	},
+});
 
 /**
  * admin:validate - Validates all pattern files
@@ -33,13 +78,27 @@ export const validateCommand = Command.make("validate", {
 	Command.withHandler(
 		({ options }) =>
 			Effect.gen(function* () {
-				yield* Execution.executeScriptWithTUI(
-					path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.VALIDATE),
-					TASK_NAMES.VALIDATE_PATTERNS,
-					{ verbose: options.verbose }
+				yield* Display.showInfo("Validating patterns...");
+
+				const config = getValidatorConfig();
+				const results = yield* validateAllPatterns(config);
+				const summary = summarizeValidationResults(results);
+
+				yield* Display.showInfo(
+					`Validated ${summary.total} patterns: ${summary.valid} valid, ${summary.invalid} invalid`
 				);
+
+				if (summary.totalErrors > 0) {
+					yield* Display.showError(
+						`Found ${summary.totalErrors} errors and ${summary.totalWarnings} warnings`
+					);
+					return yield* Effect.fail(new Error("Validation failed"));
+				}
+
 				yield* Display.showSuccess(MESSAGES.SUCCESS.ALL_PATTERNS_VALID);
-			}) as any
+			}).pipe(
+				Effect.provide(NodeContext.layer)
+			) as any
 	)
 );
 
@@ -60,11 +119,26 @@ export const testCommand = Command.make("test", {
 		"Runs all TypeScript example tests to ensure patterns execute correctly."
 	),
 	Command.withHandler(({ options }) =>
-		Execution.executeScriptWithTUI(
-			path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.TEST),
-			TASK_NAMES.RUN_TESTS,
-			{ verbose: options.verbose }
-		)
+		Effect.gen(function* () {
+			yield* Display.showInfo("Running pattern tests...");
+
+			const config = getTesterConfig();
+			const results = yield* testAllPatterns(config);
+			const summary = summarizeTestResults(results);
+
+			yield* Display.showInfo(
+				`Tested ${summary.total} patterns: ${summary.passed} passed, ${summary.failed} failed`
+			);
+
+			if (summary.failed > 0) {
+				yield* Display.showError(`${summary.failed} tests failed`);
+				return yield* Effect.fail(new Error("Tests failed"));
+			}
+
+			yield* Display.showSuccess("All tests passed!");
+		}).pipe(
+			Effect.provide(NodeContext.layer)
+		) as any
 	)
 );
 
@@ -87,14 +161,20 @@ export const pipelineCommand = Command.make("pipeline", {
 	),
 	Command.withHandler(
 		({ options }) =>
-			Execution.executeScriptWithTUI(
-				path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.PIPELINE),
-				TASK_NAMES.PUBLISHING_PIPELINE,
-				{ verbose: options.verbose }
-			).pipe(
-				Effect.andThen(() =>
-					Display.showSuccess(MESSAGES.SUCCESS.PIPELINE_COMPLETED)
-				)
+			Effect.gen(function* () {
+				yield* Display.showInfo("Running full publishing pipeline...");
+
+				const config = getPipelineConfig();
+				const result = yield* runFullPipeline(config);
+
+				yield* Display.showInfo(`\nPipeline Results:`);
+				yield* Display.showInfo(`  Validated: ${result.validation.summary.valid}/${result.validation.summary.total}`);
+				yield* Display.showInfo(`  Tests Passed: ${result.testing.summary.passed}/${result.testing.summary.total}`);
+				yield* Display.showInfo(`  Published: ${result.publishing.summary.published}`);
+
+				yield* Display.showSuccess(MESSAGES.SUCCESS.PIPELINE_COMPLETED);
+			}).pipe(
+				Effect.provide(NodeContext.layer)
 			) as any
 	)
 );
@@ -116,10 +196,15 @@ export const generateCommand = Command.make("generate", {
 		"Generates the main project README.md file from pattern metadata."
 	),
 	Command.withHandler(({ options }) =>
-		Execution.executeScriptWithTUI(
-			path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.GENERATE),
-			TASK_NAMES.GENERATING_README,
-			{ verbose: options.verbose }
-		)
+		Effect.gen(function* () {
+			yield* Display.showInfo("Generating README.md...");
+
+			const config = getGeneratorConfig();
+			yield* generateReadme(config);
+
+			yield* Display.showSuccess("README.md generated!");
+		}).pipe(
+			Effect.provide(NodeContext.layer)
+		) as any
 	)
 );

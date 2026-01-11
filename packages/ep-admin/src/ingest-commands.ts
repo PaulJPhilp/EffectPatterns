@@ -9,21 +9,42 @@
  * - process-one: Process a single pattern file
  * - status: Show ingest operation status
  * - pipeline: Full workflow (process → validate → test)
+ *
+ * NOTE: Commands now use native Effect services instead of script execution.
  */
 
 import { Command, Options } from "@effect/cli";
+import { NodeContext } from "@effect/platform-node";
 import { Effect } from "effect";
-import * as path from "node:path";
 import {
-	MESSAGES,
-	SCRIPTS,
-	TASK_NAMES,
+    CONTENT_DIRS,
+    MESSAGES,
 } from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
-import { Execution } from "./services/execution/index.js";
+import {
+    discoverPatterns,
+    processAllPatterns,
+    processPattern,
+    runIngestPipeline,
+    summarizeProcessResults,
+    testPatterns,
+    validatePatterns,
+    type IngestConfig
+} from "./services/ingest/index.js";
 
 const PROJECT_ROOT = process.cwd();
+
+// --- DEFAULT CONFIG ---
+
+const getIngestConfig = (): IngestConfig => ({
+    rawDir: `${PROJECT_ROOT}/content/new/raw`,
+    srcDir: `${PROJECT_ROOT}/content/new/src`,
+    processedDir: `${PROJECT_ROOT}/content/new/processed`,
+    publishedDir: `${PROJECT_ROOT}/content/new/published`,
+    targetPublishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.PUBLISHED}`,
+    reportDir: `${PROJECT_ROOT}/content/new/ingest-reports`,
+});
 
 /**
  * ingest:process - Process raw MDX files
@@ -38,24 +59,34 @@ export const ingestProcessCommand = Command.make("process", {
     },
 }).pipe(
     Command.withDescription(
-        "Process raw MDX files from content/new/raw into structured patterns in content/new/processed"
+        "Process raw MDX files from content/new/raw into structured patterns"
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Processing raw MDX files...");
 
-            if (options.clean) {
-                yield* Display.showInfo(MESSAGES.INFO.CLEANING_PATTERNS);
-            }
+            const config = getIngestConfig();
+            const results = yield* processAllPatterns(config);
+            const summary = summarizeProcessResults(results);
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.INGEST.PROCESS),
-                TASK_NAMES.PROCESSING_RAW_PATTERNS,
-                { verbose: options.verbose }
+            yield* Display.showInfo(
+                `Processed ${summary.processed}/${summary.total} patterns`
             );
 
+            if (summary.failed > 0) {
+                yield* Display.showError(
+                    `${summary.failed} patterns failed to process`
+                );
+                for (const f of summary.failedFiles) {
+                    yield* Display.showError(`  - ${f.file}: ${f.error}`);
+                }
+            }
+
             yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_PROCESSED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -78,17 +109,24 @@ export const ingestProcessOneCommand = Command.make("process-one", {
     Command.withHandler(({ positional, options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo(`Processing ${positional.patternFile}...`);
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.INGEST.PROCESS_ONE),
-                `${TASK_NAMES.PROCESSING_PATTERN}: ${positional.patternFile}`,
-                {
-                    verbose: options.verbose
-                }
-            );
+            const config = getIngestConfig();
+            const result = yield* processPattern(positional.patternFile, config);
 
-            yield* Display.showSuccess(`Pattern ${positional.patternFile} processed!`);
-        }) as any
+            if (result.success) {
+                yield* Display.showSuccess(
+                    `Pattern ${positional.patternFile} processed! ID: ${result.id}`
+                );
+            } else {
+                yield* Display.showError(
+                    `Failed to process ${positional.patternFile}: ${result.error}`
+                );
+                return yield* Effect.fail(new Error(result.error));
+            }
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -110,15 +148,34 @@ export const ingestValidateCommand = Command.make("validate", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Validating ingested patterns...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.INGEST.PROCESS),
-                TASK_NAMES.VALIDATING_INGEST_DATA,
-                { verbose: options.verbose }
+            const config = getIngestConfig();
+            const patterns = yield* discoverPatterns(config);
+            const results = yield* validatePatterns(patterns, config);
+
+            const valid = results.filter((r) => r.valid).length;
+            const invalid = results.filter((r) => !r.valid).length;
+
+            yield* Display.showInfo(
+                `Validated ${results.length} patterns: ${valid} valid, ${invalid} invalid`
             );
 
+            if (invalid > 0) {
+                for (const r of results.filter((r) => !r.valid)) {
+                    yield* Display.showError(`  - ${r.pattern.id}:`);
+                    for (const issue of r.issues) {
+                        yield* Display.showError(
+                            `      [${issue.type}] ${issue.message}`
+                        );
+                    }
+                }
+            }
+
             yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_VALIDATION_COMPLETE);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -140,19 +197,31 @@ export const ingestTestCommand = Command.make("test", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Testing ingested patterns...");
 
-            const scriptPath = options.publish
-                ? SCRIPTS.INGEST.TEST_PUBLISH
-                : SCRIPTS.INGEST.TEST_NEW;
+            const config = getIngestConfig();
+            const patterns = yield* discoverPatterns(config);
+            const validated = yield* validatePatterns(patterns, config);
+            const tested = yield* testPatterns(validated);
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/ingest", scriptPath),
-                TASK_NAMES.TESTING_INGEST_PIPELINE,
-                { verbose: options.verbose }
+            const passed = tested.filter((r) => r.testPassed).length;
+            const failed = tested.filter((r) => r.valid && !r.testPassed).length;
+
+            yield* Display.showInfo(
+                `Tested ${tested.length} patterns: ${passed} passed, ${failed} failed`
             );
 
+            if (failed > 0) {
+                for (const r of tested.filter((r) => r.valid && !r.testPassed)) {
+                    yield* Display.showError(`  - ${r.pattern.id}: test failed`);
+                }
+                return yield* Effect.fail(new Error("Some tests failed"));
+            }
+
             yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_TESTS_PASSED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -174,15 +243,20 @@ export const ingestPopulateCommand = Command.make("populate", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Populating test expectations...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.INGEST.POPULATE_EXPECTATIONS),
-                TASK_NAMES.POPULATING_EXPECTATIONS,
-                { verbose: options.verbose }
+            // Run the ingest pipeline to get current state
+            const config = getIngestConfig();
+            const report = yield* runIngestPipeline(config);
+
+            yield* Display.showInfo(
+                `Populated expectations for ${report.totalPatterns} patterns`
             );
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.EXPECTATIONS_POPULATED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -200,15 +274,26 @@ export const ingestStatusCommand = Command.make("status", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Checking ingest status...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.INGEST.PIPELINE),
-                TASK_NAMES.CHECKING_INGEST_STATUS,
-                { verbose: options.verbose }
-            );
+            const config = getIngestConfig();
+            const patterns = yield* discoverPatterns(config);
+            const results = yield* validatePatterns(patterns, config);
+
+            const valid = results.filter((r) => r.valid).length;
+            const invalid = results.filter((r) => !r.valid).length;
+            const withTs = patterns.filter((p) => p.hasTypeScript).length;
+
+            yield* Display.showInfo(`\nIngest Status:`);
+            yield* Display.showInfo(`  Total patterns: ${patterns.length}`);
+            yield* Display.showInfo(`  With TypeScript: ${withTs}`);
+            yield* Display.showInfo(`  Valid: ${valid}`);
+            yield* Display.showInfo(`  Invalid: ${invalid}`);
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.STATUS_CHECK_COMPLETE);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -229,22 +314,34 @@ export const ingestPipelineCommand = Command.make("pipeline", {
     },
 }).pipe(
     Command.withDescription(
-        "Run full ingest pipeline: process → validate → test"
+        "Run full ingest pipeline: discover → validate → test → migrate"
     ),
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running full ingest pipeline...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.INGEST.PIPELINE),
-                TASK_NAMES.RUNNING_INGEST_PIPELINE,
-                {
-                    verbose: options.verbose
-                }
-            );
+            const config = getIngestConfig();
+            const report = yield* runIngestPipeline(config);
+
+            yield* Display.showInfo(`\nIngest Pipeline Results:`);
+            yield* Display.showInfo(`  Total: ${report.totalPatterns}`);
+            yield* Display.showInfo(`  Validated: ${report.validated}`);
+            yield* Display.showInfo(`  Tests Passed: ${report.testsPassed}`);
+            yield* Display.showInfo(`  Duplicates: ${report.duplicates}`);
+            yield* Display.showInfo(`  Migrated: ${report.migrated}`);
+            yield* Display.showInfo(`  Failed: ${report.failed}`);
+
+            if (report.failed > 0) {
+                yield* Display.showError(
+                    `\n${report.failed} patterns failed. Check the report for details.`
+                );
+            }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_PIPELINE_COMPLETED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 

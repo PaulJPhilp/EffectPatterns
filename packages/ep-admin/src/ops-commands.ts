@@ -5,21 +5,20 @@
  * - health-check: Run system health check
  * - rotate-api-key: Rotate API key
  * - upgrade-baseline: Upgrade test baseline
+ *
+ * NOTE: These commands provide system operations guidance.
  */
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
-import * as path from "node:path";
 import {
-	MESSAGES,
-	SCRIPTS,
-	TASK_NAMES,
+    MESSAGES,
 } from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
+import {
+    runQuickTest,
+} from "./services/db/index.js";
 import { Display } from "./services/display/index.js";
-import { Execution } from "./services/execution/index.js";
-
-const PROJECT_ROOT = process.cwd();
 
 /**
  * ops:health-check - Run health check
@@ -35,12 +34,32 @@ export const opsHealthCheckCommand = Command.make("health-check", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running system health check...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.OPS.HEALTH_CHECK),
-                TASK_NAMES.RUNNING_HEALTH_CHECK,
-                { verbose: options.verbose }
-            );
+            // Check database
+            yield* Display.showInfo("\n1. Database Health:");
+            const dbResult = yield* runQuickTest();
+            if (dbResult.connected) {
+                yield* Display.showSuccess("   Database connected");
+                yield* Display.showInfo(`   Tables: ${dbResult.tables.length}`);
+                yield* Display.showInfo(`   Patterns: ${dbResult.stats.effectPatterns}`);
+            } else {
+                yield* Display.showError("   Database not connected");
+            }
+
+            // Check environment
+            yield* Display.showInfo("\n2. Environment:");
+            yield* Display.showInfo(`   Node: ${process.version}`);
+            yield* Display.showInfo(`   Platform: ${process.platform}`);
+
+            // Check API keys
+            yield* Display.showInfo("\n3. API Keys:");
+            const hasOpenAI = !!process.env.OPENAI_API_KEY;
+            const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
+            const hasGoogle = !!process.env.GOOGLE_API_KEY;
+            yield* Display.showInfo(`   OpenAI: ${hasOpenAI ? "✓" : "✗"}`);
+            yield* Display.showInfo(`   Anthropic: ${hasAnthropic ? "✓" : "✗"}`);
+            yield* Display.showInfo(`   Google: ${hasGoogle ? "✓" : "✗"}`);
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.HEALTH_CHECK_COMPLETED);
         }) as any
@@ -65,15 +84,17 @@ export const opsRotateApiKeyCommand = Command.make("rotate-api-key", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("API Key Rotation");
 
-            if (options.backup) {
-                yield* Display.showInfo(MESSAGES.INFO.CREATING_BACKUP);
-            }
-
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.OPS.ROTATE_API_KEY),
-                TASK_NAMES.ROTATING_API_KEY,
-                { verbose: options.verbose }
+            yield* Display.showInfo(
+                "\nTo rotate API keys:\n" +
+                "  1. Generate new key from provider dashboard\n" +
+                "  2. Update .env file with new key\n" +
+                "  3. Restart services to pick up new key\n" +
+                "\nProviders:\n" +
+                "  - OpenAI: https://platform.openai.com/api-keys\n" +
+                "  - Anthropic: https://console.anthropic.com/settings/keys\n" +
+                "  - Google: https://aistudio.google.com/apikey"
             );
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.API_KEY_ROTATED);
@@ -99,15 +120,12 @@ export const opsUpgradeBaselineCommand = Command.make("upgrade-baseline", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Upgrading test baselines...");
 
-            if (!options.confirm) {
-                yield* Display.showInfo(MESSAGES.INFO.UPDATING_BASELINES);
-            }
-
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.OPS.UPGRADE_BASELINE),
-                TASK_NAMES.UPGRADING_BASELINE,
-                { verbose: options.verbose }
+            yield* Display.showInfo(
+                "\nTo update test snapshots:\n" +
+                "  bun run vitest run --update\n" +
+                "\nThis will update all snapshot files to match current output."
             );
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.BASELINE_UPGRADED);

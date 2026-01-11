@@ -7,37 +7,84 @@
  * - publish: Move patterns to published directory
  * - generate: Create README and rules documentation
  * - pipeline: Full workflow (validate → test → publish → generate)
+ *
+ * NOTE: Commands now use native Effect services instead of script execution.
  */
 
 import { Command, Options } from "@effect/cli";
+import { NodeContext } from "@effect/platform-node";
 import { Effect } from "effect";
-import * as path from "node:path";
 import {
+    CONTENT_DIRS,
     MESSAGES,
-    SCRIPTS,
-    STEP_NAMES,
-    TASK_NAMES,
 } from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
-import { Execution } from "./services/execution/index.js";
+import {
+    generateReadme,
+    lintAllFiles,
+    publishAllPatterns,
+    runFullPipeline,
+    summarizeLintResults,
+    summarizePublishResults,
+    summarizeTestResults,
+    summarizeValidationResults,
+    testAllPatterns,
+    validateAllPatterns,
+    type GeneratorConfig,
+    type LinterConfig,
+    type PipelineConfig,
+    type PublisherConfig,
+    type TesterConfig,
+    type ValidatorConfig,
+} from "./services/publish/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
-/**
- * Helper to run a script with proper error logging
- */
-const runScript = (
-    scriptPath: string,
-    taskName: string,
-    stepName: string,
-    options: { verbose?: boolean }
-) =>
-    Execution.executeScriptWithTUI(scriptPath, taskName, options).pipe(
-        Effect.tapError((error) =>
-            Display.showError(`Step '${stepName}' failed: ${error.message}`)
-        )
-    );
+// --- DEFAULT CONFIGS ---
+
+const getValidatorConfig = (): ValidatorConfig => ({
+    publishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
+    srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
+    concurrency: 10,
+});
+
+const getTesterConfig = (): TesterConfig => ({
+    srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
+    concurrency: 10,
+    enableTypeCheck: true,
+    timeout: 30_000,
+    expectedErrors: new Map([
+        ["write-tests-that-adapt-to-application-code", ["NotFoundError"]],
+        ["control-repetition-with-schedule", ["Transient error"]],
+    ]),
+});
+
+const getPublisherConfig = (): PublisherConfig => ({
+    processedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
+    publishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.PUBLISHED}`,
+    srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
+});
+
+const getGeneratorConfig = (): GeneratorConfig => ({
+    readmePath: `${PROJECT_ROOT}/README.md`,
+});
+
+const getLinterConfig = (): LinterConfig => ({
+    srcDirs: [
+        `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
+        `${PROJECT_ROOT}/content/src`,
+    ],
+    concurrency: 10,
+});
+
+const getPipelineConfig = (): PipelineConfig => ({
+    validator: getValidatorConfig(),
+    tester: getTesterConfig(),
+    publisher: getPublisherConfig(),
+    generator: getGeneratorConfig(),
+    linter: getLinterConfig(),
+});
 
 /**
  * publish:validate - Validate patterns before publishing
@@ -58,16 +105,29 @@ export const publishValidateCommand = Command.make("validate", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Validating patterns...");
 
-            yield* runScript(
-                path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.VALIDATE),
-                TASK_NAMES.VALIDATING_PATTERNS,
-                STEP_NAMES.VALIDATE,
-                { verbose: options.verbose }
+            const config = getValidatorConfig();
+            const results = yield* validateAllPatterns(config);
+            const summary = summarizeValidationResults(results);
+
+            yield* Display.showInfo(
+                `Validated ${summary.total} patterns: ` +
+                `${summary.valid} valid, ${summary.invalid} invalid`
             );
 
+            if (summary.totalErrors > 0) {
+                yield* Display.showError(
+                    `Found ${summary.totalErrors} errors and ` +
+                    `${summary.totalWarnings} warnings`
+                );
+                return yield* Effect.fail(new Error("Validation failed"));
+            }
+
             yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_VALIDATED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -90,16 +150,26 @@ export const publishTestCommand = Command.make("test", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running TypeScript examples...");
 
-            yield* runScript(
-                path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.TEST),
-                TASK_NAMES.RUNNING_TYPESCRIPT_EXAMPLES,
-                STEP_NAMES.TEST,
-                { verbose: options.verbose }
+            const config = getTesterConfig();
+            const results = yield* testAllPatterns(config);
+            const summary = summarizeTestResults(results);
+
+            yield* Display.showInfo(
+                `Tested ${summary.total} files: ` +
+                `${summary.passed} passed, ${summary.failed} failed`
             );
 
+            if (summary.failed > 0) {
+                yield* Display.showError(`${summary.failed} tests failed`);
+                return yield* Effect.fail(new Error("Tests failed"));
+            }
+
             yield* Display.showSuccess(MESSAGES.SUCCESS.ALL_EXAMPLES_PASSED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -127,16 +197,27 @@ export const publishPublishCommand = Command.make("publish", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Publishing patterns...");
 
-            yield* runScript(
-                path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.PUBLISH),
-                TASK_NAMES.PUBLISH_PATTERNS,
-                STEP_NAMES.PUBLISH,
-                { verbose: options.verbose }
+            const config = getPublisherConfig();
+            const results = yield* publishAllPatterns(config);
+            const summary = summarizePublishResults(results);
+
+            yield* Display.showInfo(
+                `Published ${summary.published}/${summary.total} patterns`
             );
 
+            if (summary.failed > 0) {
+                yield* Display.showError(
+                    `${summary.failed} patterns failed to publish`
+                );
+                return yield* Effect.fail(new Error("Publishing failed"));
+            }
+
             yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_PUBLISHED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -163,31 +244,29 @@ export const publishGenerateCommand = Command.make("generate", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
 
-            const generateReadme =
+            const shouldGenerateReadme =
                 options.readme || (!options.readme && !options.rules);
-            const generateRules =
+            const shouldGenerateRules =
                 options.rules || (!options.readme && !options.rules);
 
-            if (generateReadme) {
-                yield* runScript(
-                    path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.GENERATE),
-                    TASK_NAMES.GENERATING_README,
-                    STEP_NAMES.GENERATE_README,
-                    { verbose: options.verbose }
-                );
+            if (shouldGenerateReadme) {
+                yield* Display.showInfo("Generating README.md...");
+                const config = getGeneratorConfig();
+                yield* generateReadme(config);
+                yield* Display.showSuccess("README.md generated!");
             }
 
-            if (generateRules) {
-                yield* runScript(
-                    path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.RULES),
-                    "Generating rules",
-                    STEP_NAMES.GENERATE_RULES,
-                    { verbose: options.verbose }
+            if (shouldGenerateRules) {
+                yield* Display.showInfo(
+                    "Rules generation is now handled via database. " +
+                    "Use 'ep-admin rules generate' instead."
                 );
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.DOCUMENTATION_GENERATED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -209,16 +288,30 @@ export const publishLintCommand = Command.make("lint", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Linting patterns...");
 
-            yield* runScript(
-                path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.LINT),
-                "Linting patterns",
-                STEP_NAMES.LINT,
-                { verbose: options.verbose }
+            const config = getLinterConfig();
+            const results = yield* lintAllFiles(config);
+            const summary = summarizeLintResults(results);
+
+            yield* Display.showInfo(
+                `Linted ${summary.totalFiles} files: ` +
+                `${summary.totalErrors} errors, ` +
+                `${summary.totalWarnings} warnings, ` +
+                `${summary.totalInfo} suggestions`
             );
 
+            if (summary.totalErrors > 0) {
+                yield* Display.showError(
+                    `Found ${summary.totalErrors} linting errors`
+                );
+                return yield* Effect.fail(new Error("Linting failed"));
+            }
+
             yield* Display.showSuccess(MESSAGES.SUCCESS.LINTING_COMPLETE);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -244,18 +337,38 @@ export const publishPipelineCommand = Command.make("pipeline", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-
             yield* Display.showInfo(MESSAGES.INFO.STARTING_PIPELINE);
 
-            yield* runScript(
-                path.join(PROJECT_ROOT, SCRIPTS.PUBLISH.PIPELINE),
-                TASK_NAMES.PUBLISHING_PIPELINE,
-                STEP_NAMES.PIPELINE,
-                { verbose: options.verbose }
+            const config = getPipelineConfig();
+            const result = yield* runFullPipeline(config);
+
+            // Show results
+            yield* Display.showInfo(
+                `Validation: ${result.validation.summary.valid}/` +
+                `${result.validation.summary.total} valid`
             );
+            yield* Display.showInfo(
+                `Testing: ${result.testing.summary.passed}/` +
+                `${result.testing.summary.total} passed`
+            );
+            yield* Display.showInfo(
+                `Publishing: ${result.publishing.summary.published}/` +
+                `${result.publishing.summary.total} published`
+            );
+            yield* Display.showInfo(
+                `Generation: ${result.generation.applicationPatterns} APs, ` +
+                `${result.generation.effectPatterns} EPs`
+            );
+            yield* Display.showInfo(
+                `Linting: ${result.linting.summary.totalErrors} errors, ` +
+                `${result.linting.summary.totalWarnings} warnings`
+            );
+            yield* Display.showInfo(`Duration: ${result.duration}ms`);
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PIPELINE_COMPLETED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 

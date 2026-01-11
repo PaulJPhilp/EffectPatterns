@@ -9,20 +9,29 @@
  * - test-models: Test ML models
  * - test-patterns: Test pattern system
  * - test-supermemory: Test supermemory integration
+ *
+ * NOTE: These commands run vitest for the respective test suites.
  */
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
-import * as path from "node:path";
-import {
-	MESSAGES,
-	SCRIPTS,
-} from "./constants.js";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
-import { Execution } from "./services/execution/index.js";
 
-const PROJECT_ROOT = process.cwd();
+const execAsync = promisify(exec);
+
+const runVitest = (pattern: string): Effect.Effect<void, Error> =>
+    Effect.tryPromise({
+        try: async () => {
+            await execAsync(`bun run vitest run ${pattern}`, {
+                timeout: 120_000,
+                maxBuffer: 10 * 1024 * 1024,
+            });
+        },
+        catch: (error) => new Error(`Test failed: ${error}`),
+    });
 
 /**
  * test-utils:chat-app - Test chat application
@@ -38,12 +47,9 @@ export const testUtilsChatAppCommand = Command.make("chat-app", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running chat app tests...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.CHAT_APP),
-                "Testing chat application",
-                { verbose: options.verbose }
-            );
+            yield* runVitest("chat");
 
             yield* Display.showSuccess("Chat app tests passed!");
         }) as any
@@ -69,12 +75,9 @@ export const testUtilsHarnessCommand = Command.make("harness", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running integration test harness...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.HARNESS),
-                "Running integration tests",
-                { verbose: options.verbose }
-            );
+            yield* runVitest("integration");
 
             yield* Display.showSuccess("Integration tests passed!");
         }) as any
@@ -95,12 +98,9 @@ export const testUtilsHarnessCliCommand = Command.make("harness-cli", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running CLI harness tests...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.HARNESS_CLI),
-                "Testing CLI harness",
-                { verbose: options.verbose }
-            );
+            yield* runVitest("cli");
 
             yield* Display.showSuccess("CLI harness tests passed!");
         }) as any
@@ -121,12 +121,9 @@ export const testUtilsLlmCommand = Command.make("llm", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running LLM service tests...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.LLM),
-                "Testing LLM service",
-                { verbose: options.verbose }
-            );
+            yield* runVitest("llm");
 
             yield* Display.showSuccess("LLM service tests passed!");
         }) as any
@@ -147,12 +144,9 @@ export const testUtilsModelsCommand = Command.make("models", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running ML model tests...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.MODELS),
-                "Testing ML models",
-                { verbose: options.verbose }
-            );
+            yield* runVitest("models");
 
             yield* Display.showSuccess("ML model tests passed!");
         }) as any
@@ -173,12 +167,9 @@ export const testUtilsPatternsCommand = Command.make("patterns", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running pattern system tests...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.PATTERNS),
-                "Testing pattern system",
-                { verbose: options.verbose }
-            );
+            yield* runVitest("patterns");
 
             yield* Display.showSuccess("Pattern system tests passed!");
         }) as any
@@ -199,12 +190,9 @@ export const testUtilsSupermemoryCommand = Command.make("supermemory", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running supermemory tests...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.TEST_UTILS.SUPERMEMORY),
-                "Testing supermemory",
-                { verbose: options.verbose }
-            );
+            yield* runVitest("supermemory");
 
             yield* Display.showSuccess("Supermemory tests passed!");
         }) as any
