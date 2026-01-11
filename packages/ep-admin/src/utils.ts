@@ -2,6 +2,7 @@
  * Utility functions shared across commands
  */
 
+import { readFileSync } from "node:fs";
 import * as path from "node:path";
 import { ANSI_COLORS, LOG_LEVEL_COLORS, PATHS } from "./constants.js";
 

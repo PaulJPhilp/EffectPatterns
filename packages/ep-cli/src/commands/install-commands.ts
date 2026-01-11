@@ -4,8 +4,7 @@
 
 import { Args, Command, Options, Prompt } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
-import { Console, Effect, Schema } from "effect";
-import path from "node:path";
+import { Console, Effect, Option, Schema } from "effect";
 import { Display } from "../services/display/index.js";
 import { colorize } from "../utils/string.js";
 
@@ -63,7 +62,7 @@ const loadInstalledRules = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const exists = yield* fs.exists(INSTALLED_STATE_FILE);
   if (!exists) return [];
-  
+
   const content = yield* fs.readFileString(INSTALLED_STATE_FILE);
   try {
     return JSON.parse(content) as InstalledRule[];
@@ -128,10 +127,13 @@ export const installAddCommand = Command.make("add", {
       } else {
         // Mock default behavior
         rulesToInstall = MOCK_RULES;
-        if (options.skillLevel) {
-          rulesToInstall = rulesToInstall.filter(
-            (r) => r.skillLevel === options.skillLevel.value
-          );
+        if (Option.isSome(options.skillLevel)) {
+          const skillLevel = Option.getOrUndefined(options.skillLevel);
+          if (skillLevel) {
+            rulesToInstall = rulesToInstall.filter(
+              (r) => r.skillLevel === skillLevel
+            );
+          }
         }
       }
 
@@ -172,8 +174,8 @@ export const installRemoveCommand = Command.make("remove", {
   }
 }).pipe(
   Command.withDescription("Remove installed rules"),
-  Command.withHandler(({ args }) => 
-    Effect.gen(function*() {
+  Command.withHandler(({ args }) =>
+    Effect.gen(function* () {
       const current = yield* loadInstalledRules;
       if (current.length === 0) {
         yield* Display.showWarning("No rules installed.");
@@ -191,7 +193,7 @@ export const installRemoveCommand = Command.make("remove", {
           value: r.id,
           description: r.description
         }));
-        
+
         toRemoveIds = yield* Prompt.multiSelect({
           message: "Select rules to remove:",
           choices
@@ -217,11 +219,11 @@ export const installDiffCommand = Command.make("diff", {
   }
 }).pipe(
   Command.withDescription("Compare installed rule with latest version"),
-  Command.withHandler(({ args }) => 
-    Effect.gen(function*() {
+  Command.withHandler(({ args }) =>
+    Effect.gen(function* () {
       const current = yield* loadInstalledRules;
       const installed = current.find(r => r.id === args.ruleId);
-      
+
       if (!installed) {
         yield* Display.showError(`Rule '${args.ruleId}' is not installed.`);
         return;
@@ -236,7 +238,7 @@ export const installDiffCommand = Command.make("diff", {
       yield* Console.log(colorize(`\nDiff for ${installed.title}:\n`, "bright"));
       yield* Console.log(`Installed Version: ${installed.version}`);
       yield* Console.log(`Latest Version:    1.0.0`); // Mock version
-      
+
       if (installed.content === latest.content) {
         yield* Display.showSuccess("Content is up to date.");
       } else {
@@ -267,11 +269,11 @@ export const installListCommand = Command.make("list", {
           return;
         }
         yield* Console.log(colorize("\n📦 Installed Rules\n", "bright"));
-        console.table(rules.map(r => ({ 
-          ID: r.id, 
-          Title: r.title, 
-          Tool: r.tool, 
-          Installed: r.installedAt 
+        console.table(rules.map(r => ({
+          ID: r.id,
+          Title: r.title,
+          Tool: r.tool,
+          Installed: r.installedAt
         })));
       } else {
         yield* Console.log(colorize("\n📋 Supported AI Tools\n", "bright"));
@@ -289,7 +291,7 @@ export const installListCommand = Command.make("list", {
 export const installCommand = Command.make("install").pipe(
   Command.withDescription("Install Effect patterns rules into AI tool configurations"),
   Command.withSubcommands([
-    installAddCommand, 
+    installAddCommand,
     installListCommand,
     installRemoveCommand,
     installDiffCommand
