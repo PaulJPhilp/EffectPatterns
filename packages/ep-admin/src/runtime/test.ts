@@ -7,7 +7,7 @@
 
 import { StateStore } from "@effect-patterns/pipeline-state";
 import { Effect, Layer, ManagedRuntime } from "effect";
-import { Logger } from "../services/logger.js";
+import { Logger } from "../services/logger/index.js";
 
 /**
  * Test layer with minimal dependencies

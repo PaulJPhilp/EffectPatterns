@@ -13,7 +13,7 @@ import {
     shouldUseColors,
     type GlobalOptions,
 } from "../global-options.js";
-import { Logger, LoggerLive } from "../services/logger.js";
+import { Logger, LoggerLive } from "../services/logger/index.js";
 
 describe("Global CLI Options", () => {
     describe("globalOptions object", () => {
