@@ -66,10 +66,9 @@ const loadRulesFromDatabase = Effect.gen(function* () {
 
   try {
     const repo = createEffectPatternRepository(db);
-    const patterns = yield* Effect.try({
-      try: () => repo.findAll(),
-      catch: (error) => new DatabaseError({ cause: error }),
-    });
+    const patterns = yield* Effect.promise(() => repo.findAll()).pipe(
+      Effect.mapError((error) => new DatabaseError({ cause: error }))
+    );
 
     // Filter patterns that have a rule defined
     const rules = patterns
@@ -85,7 +84,7 @@ const loadRulesFromDatabase = Effect.gen(function* () {
 
     return rules;
   } finally {
-    await close();
+    yield* Effect.promise(() => close());
   }
 });
 
@@ -103,10 +102,9 @@ const readRuleById = (id: string) =>
 
     try {
       const repo = createEffectPatternRepository(db);
-      const pattern = yield* Effect.try({
-        try: () => repo.findBySlug(id),
-        catch: (error) => new DatabaseError({ cause: error }),
-      });
+      const pattern = yield* Effect.promise(() => repo.findBySlug(id)).pipe(
+        Effect.mapError((error) => new DatabaseError({ cause: error }))
+      );
 
       if (!pattern || !pattern.rule) {
         return yield* Effect.fail(new RuleNotFoundError({ id }));
@@ -121,7 +119,7 @@ const readRuleById = (id: string) =>
         content: pattern.content || "",
       };
     } finally {
-      await close();
+      yield* Effect.promise(() => close());
     }
   });
 
