@@ -13,7 +13,7 @@ Centralized logging service for the ep-admin CLI with configurable log levels, c
 ## Usage
 
 ```typescript
-import { Logger } from "./services/logger.js";
+import { Logger } from "./index.js";
 
 // Basic logging
 yield* Logger.info("Application started");

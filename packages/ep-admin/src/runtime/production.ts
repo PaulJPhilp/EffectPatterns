@@ -12,7 +12,7 @@
 import { StateStore } from "@effect-patterns/pipeline-state";
 import { FetchHttpClient } from "@effect/platform";
 import { Effect, Layer, ManagedRuntime } from "effect";
-import { Logger } from "../services/logger.js";
+import { Logger } from "../services/logger/index.js";
 
 /**
  * Production layer combining all required services

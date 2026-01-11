@@ -7,7 +7,7 @@
 
 import { Options } from "@effect/cli";
 import { OUTPUT_FORMATS, type OutputFormat } from "./constants.js";
-import { LOG_LEVEL_VALUES, type LogLevel } from "./services/logger.js";
+import { LOG_LEVEL_VALUES, type LogLevel } from "./services/logger/index.js";
 
 // =============================================================================
 // Log Level Option
@@ -195,7 +195,7 @@ export const shouldUseColors = (options: Partial<GlobalOptions>): boolean => {
 // =============================================================================
 
 import { Effect } from "effect";
-import { Logger, type LoggerConfig } from "./services/logger.js";
+import { Logger, type LoggerConfig } from "./services/logger/index.js";
 
 /**
  * Configure the Logger service based on global CLI options

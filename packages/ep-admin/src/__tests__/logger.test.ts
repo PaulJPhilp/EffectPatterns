@@ -19,7 +19,7 @@ import {
     makeLogger,
     parseLogLevel,
     type LoggerConfig
-} from "../services/logger.js";
+} from "../services/logger/index.js";
 
 describe("Logger Service", () => {
     // Capture console output
