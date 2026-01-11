@@ -5,20 +5,16 @@
  * - ingest: Ingest patterns from Discord
  * - test: Test Discord connection
  * - sync: Sync patterns with Discord
+ *
+ * NOTE: Discord integration requires external API configuration.
  */
 
 import { Command, Options } from "@effect/cli";
+import { FileSystem } from "@effect/platform";
+import { NodeContext } from "@effect/platform-node";
 import { Effect } from "effect";
-import * as path from "node:path";
-import {
-	MESSAGES,
-	SCRIPTS,
-} from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
-import { Execution } from "./services/execution/index.js";
-
-const PROJECT_ROOT = process.cwd();
 
 /**
  * discord:ingest - Ingest from Discord
@@ -28,7 +24,7 @@ export const discordIngestCommand = Command.make("ingest", {
         ...globalOptions,
         channel: Options.optional(
             Options.text("channel").pipe(
-                Options.withDescription("Discord channel to ingest from (e.g., patterns, feedback)")
+                Options.withDescription("Discord channel to ingest from")
             )
         ),
     },
@@ -39,19 +35,36 @@ export const discordIngestCommand = Command.make("ingest", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Discord Ingest");
 
             if (options.channel) {
-                yield* Display.showInfo(`Ingesting from Discord channel: ${options.channel}`);
+                yield* Display.showInfo(`Channel: ${options.channel}`);
             }
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.DISCORD.INGEST),
-                "Ingesting from Discord",
-                { verbose: options.verbose }
-            );
+            // Check for Discord data file
+            const fs = yield* FileSystem.FileSystem;
+            const dataPath = "content/discord/beginner-questions.json";
+            const exists = yield* fs.exists(dataPath);
 
-            yield* Display.showSuccess("Discord ingest completed!");
-        }) as any
+            if (exists) {
+                const content = yield* fs.readFileString(dataPath);
+                const data = JSON.parse(content);
+                const count = Array.isArray(data) ? data.length : 0;
+                yield* Display.showInfo(`Found ${count} Discord entries`);
+            } else {
+                yield* Display.showInfo("No Discord data file found.");
+                yield* Display.showInfo(
+                    "To ingest Discord data:\n" +
+                    "  1. Export Discord messages to JSON\n" +
+                    "  2. Place in content/discord/\n" +
+                    "  3. Run this command again"
+                );
+            }
+
+            yield* Display.showSuccess("Discord ingest check completed!");
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -69,15 +82,23 @@ export const discordTestCommand = Command.make("test", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Discord Connection Test");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, "scripts/test-discord-simple.ts"),
-                "Testing Discord connection",
-                { verbose: options.verbose }
-            );
+            // Check for Discord token
+            const token = process.env.DISCORD_TOKEN;
+            if (token) {
+                yield* Display.showSuccess("Discord token found in environment");
+            } else {
+                yield* Display.showError("Discord token not found");
+                yield* Display.showInfo(
+                    "Set DISCORD_TOKEN environment variable to enable Discord integration"
+                );
+            }
 
-            yield* Display.showSuccess("Discord connection test passed!");
-        }) as any
+            yield* Display.showSuccess("Discord test completed!");
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -89,7 +110,7 @@ export const discordFlattenCommand = Command.make("flatten", {
         ...globalOptions,
         file: Options.text("file").pipe(
             Options.withDescription("Path to Discord QnA JSON file"),
-            Options.withDefault("packages/data/discord-qna.json")
+            Options.withDefault("content/discord/beginner-questions.json")
         ),
     },
 }).pipe(
@@ -99,15 +120,44 @@ export const discordFlattenCommand = Command.make("flatten", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo(`Flattening Discord messages from: ${options.file}`);
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.DISCORD.FLATTEN_QNA),
-                "Flattening Discord messages",
-                { verbose: options.verbose }
-            );
+            const fs = yield* FileSystem.FileSystem;
+            const exists = yield* fs.exists(options.file);
 
+            if (!exists) {
+                yield* Display.showError(`File not found: ${options.file}`);
+                return yield* Effect.fail(new Error("File not found"));
+            }
+
+            const content = yield* fs.readFileString(options.file);
+            const data = JSON.parse(content);
+
+            // Flatten nested structure
+            const flattened: unknown[] = [];
+            const flatten = (items: unknown[]): void => {
+                for (const item of items) {
+                    if (Array.isArray(item)) {
+                        flatten(item);
+                    } else {
+                        flattened.push(item);
+                    }
+                }
+            };
+
+            if (Array.isArray(data)) {
+                flatten(data);
+            }
+
+            const outputPath = options.file.replace(".json", "-flat.json");
+            yield* fs.writeFileString(outputPath, JSON.stringify(flattened, null, 2));
+
+            yield* Display.showInfo(`Flattened ${flattened.length} messages`);
+            yield* Display.showInfo(`Output: ${outputPath}`);
             yield* Display.showSuccess("Discord messages flattened!");
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 

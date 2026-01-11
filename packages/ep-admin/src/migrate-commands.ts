@@ -4,21 +4,17 @@
  * Orchestrates database and state migrations:
  * - migrate-state: Migrate pipeline state to new format
  * - migrate-postgres: Migrate data to PostgreSQL database
+ *
+ * NOTE: These commands provide migration guidance.
  */
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
-import * as path from "node:path";
 import {
-	MESSAGES,
-	SCRIPTS,
-	TASK_NAMES,
+    MESSAGES,
 } from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
-import { Execution } from "./services/execution/index.js";
-
-const PROJECT_ROOT = process.cwd();
 
 /**
  * migrate:state - Migrate pipeline state
@@ -46,19 +42,20 @@ export const migrateStateCommand = Command.make("state", {
             if (options.dryRun) {
                 yield* Display.showInfo(MESSAGES.INFO.DRY_RUN_MODE);
             }
-            if (options.backup) {
-                yield* Display.showInfo("Creating backup of state...");
-            }
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.MIGRATE.STATE),
-                "Migrating pipeline state",
-                {
-                    verbose: options.verbose
-                }
+            yield* Display.showInfo("Pipeline State Migration");
+            yield* Display.showInfo(
+                "\nThe pipeline state is stored in .pipeline-state.json\n" +
+                "\nTo migrate state:\n" +
+                "  1. Backup: cp .pipeline-state.json .pipeline-state.json.bak\n" +
+                "  2. State is automatically migrated on next pipeline run\n" +
+                "\nState tracking includes:\n" +
+                "  - Pattern processing checkpoints\n" +
+                "  - Validation results\n" +
+                "  - Test outcomes"
             );
 
-            yield* Display.showSuccess("Pipeline state migrated successfully!");
+            yield* Display.showSuccess("Pipeline state info displayed!");
         }) as any
     )
 );
@@ -89,19 +86,18 @@ export const migratePostgresCommand = Command.make("postgres", {
             if (options.dryRun) {
                 yield* Display.showInfo(MESSAGES.INFO.DRY_RUN_MODE);
             }
-            if (options.backup) {
-                yield* Display.showWarning("This will backup your current database before migration");
-            }
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.MIGRATE.POSTGRES),
-                "Migrating to PostgreSQL",
-                {
-                    verbose: options.verbose
-                }
+            yield* Display.showInfo("PostgreSQL Migration");
+            yield* Display.showInfo(
+                "\nTo migrate to PostgreSQL:\n" +
+                "  1. Start PostgreSQL: docker-compose up -d postgres\n" +
+                "  2. Push schema: bun run db:push\n" +
+                "  3. Run migrations: bun run db:migrate\n" +
+                "  4. Verify: ep-admin db test-quick\n" +
+                "\nDatabase configuration is in drizzle.config.ts"
             );
 
-            yield* Display.showSuccess("PostgreSQL migration completed successfully!");
+            yield* Display.showSuccess("PostgreSQL migration info displayed!");
         }) as any
     )
 );

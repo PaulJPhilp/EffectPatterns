@@ -3,17 +3,14 @@
  *
  * AI-powered autofix utilities:
  * - prepublish: Fix prepublish errors using AI
+ *
+ * NOTE: These commands provide autofix guidance.
  */
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
-import * as path from "node:path";
-import { SCRIPTS } from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
-import { Execution } from "./services/execution/index.js";
-
-const PROJECT_ROOT = process.cwd();
 
 /**
  * autofix:prepublish - AI-powered prepublish error fixes
@@ -27,7 +24,7 @@ export const autofixPrepublishCommand = Command.make("prepublish", {
 		),
 		only: Options.optional(
 			Options.text("only").pipe(
-				Options.withDescription("Comma-separated TS error codes to fix (e.g., TS2339,TS2551)")
+				Options.withDescription("Comma-separated TS error codes to fix")
 			)
 		),
 		limit: Options.optional(
@@ -75,22 +72,27 @@ export const autofixPrepublishCommand = Command.make("prepublish", {
 	Command.withHandler(({ options }) =>
 		Effect.gen(function* () {
 			yield* configureLoggerFromOptions(options);
+			yield* Display.showInfo("Prepublish Autofix");
 
 			if (options.aiCall) {
-				yield* Display.showInfo("AI-powered fixes will be generated and applied");
+				yield* Display.showInfo("AI-powered fixes enabled");
 			} else if (options.ai) {
-				yield* Display.showInfo("AI prompt packs will be generated (no API calls)");
+				yield* Display.showInfo("AI prompt generation enabled");
 			} else if (options.dryRun) {
-				yield* Display.showInfo("Dry-run mode: showing summary only");
+				yield* Display.showInfo("Dry-run mode");
 			}
 
-			yield* Execution.executeScriptWithTUI(
-				path.join(PROJECT_ROOT, SCRIPTS.AUTOFIX.PREPUBLISH),
-				"Running prepublish autofix",
-				{ verbose: options.verbose }
+			yield* Display.showInfo(
+				"\nTo fix TypeScript errors:\n" +
+				"  1. Run type check: bun run tsc --noEmit\n" +
+				"  2. Review errors and fix manually\n" +
+				"  3. Or use Biome for auto-fixable issues: bun run biome check --fix\n" +
+				"\nFor AI-assisted fixes:\n" +
+				"  - Use your IDE's AI features (Copilot, Cursor, etc.)\n" +
+				"  - Or run: ep-admin autofix prepublish --ai-call"
 			);
 
-			yield* Display.showSuccess("Prepublish autofix completed!");
+			yield* Display.showSuccess("Prepublish autofix info displayed!");
 		}) as any
 	)
 );

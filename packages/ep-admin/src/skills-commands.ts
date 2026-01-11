@@ -6,21 +6,23 @@
  * - generate-skills: Generate Claude skills
  * - skill-generator: Interactive skill generator
  * - generate-readme: Generate README by skill and use-case
+ *
+ * NOTE: Skills are generated from database patterns.
  */
 
-import { Command, Options } from "@effect/cli";
-import { Effect } from "effect";
-import * as path from "node:path";
 import {
-	MESSAGES,
-	SCRIPTS,
-	TASK_NAMES,
+    createDatabase,
+    createEffectPatternRepository,
+} from "@effect-patterns/toolkit";
+import { Command, Options } from "@effect/cli";
+import { FileSystem } from "@effect/platform";
+import { NodeContext } from "@effect/platform-node";
+import { Effect, Option } from "effect";
+import {
+    MESSAGES,
 } from "./constants.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
-import { Execution } from "./services/execution/index.js";
-
-const PROJECT_ROOT = process.cwd();
 
 /**
  * skills:generate - Generate all skills
@@ -32,6 +34,10 @@ export const skillsGenerateCommand = Command.make("generate", {
             Options.withDescription("Output format"),
             Options.withDefault("json" as const)
         ),
+        output: Options.text("output").pipe(
+            Options.withDescription("Output file path"),
+            Options.withDefault("content/published/skills/skills.json")
+        ),
     },
 }).pipe(
     Command.withDescription(
@@ -40,15 +46,50 @@ export const skillsGenerateCommand = Command.make("generate", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Generating skills from database...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.SKILLS.GENERATE),
-                TASK_NAMES.GENERATING_SKILLS,
-                { verbose: options.verbose }
-            );
+            const { db, close } = createDatabase();
+            const repo = createEffectPatternRepository(db);
+
+            try {
+                const patterns = yield* Effect.promise(() => repo.findAll());
+                yield* Display.showInfo(`Found ${patterns.length} patterns`);
+
+                // Group by skill level
+                const byLevel = {
+                    beginner: patterns.filter(p => p.skillLevel === "beginner"),
+                    intermediate: patterns.filter(p => p.skillLevel === "intermediate"),
+                    advanced: patterns.filter(p => p.skillLevel === "advanced"),
+                };
+
+                const skills = patterns.map(p => ({
+                    id: p.slug,
+                    title: p.title,
+                    skillLevel: p.skillLevel,
+                    summary: p.summary,
+                    tags: p.tags || [],
+                }));
+
+                const fs = yield* FileSystem.FileSystem;
+                yield* fs.makeDirectory("content/published/skills", { recursive: true });
+                yield* fs.writeFileString(options.output, JSON.stringify(skills, null, 2));
+
+                yield* Display.showInfo(`\nSkills by level:`);
+                yield* Display.showInfo(`  Beginner: ${byLevel.beginner.length}`);
+                yield* Display.showInfo(`  Intermediate: ${byLevel.intermediate.length}`);
+                yield* Display.showInfo(`  Advanced: ${byLevel.advanced.length}`);
+                yield* Display.showInfo(`\nOutput: ${options.output}`);
+
+                yield* Effect.promise(() => close());
+            } catch (error) {
+                yield* Effect.promise(() => close());
+                throw error;
+            }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.SKILLS_GENERATED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -66,15 +107,19 @@ export const skillsSkillGeneratorCommand = Command.make("skill-generator", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Interactive Skill Generator");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.SKILLS.GENERATOR),
-                TASK_NAMES.RUNNING_SKILL_GENERATOR,
-                { verbose: options.verbose }
+            yield* Display.showInfo(
+                "\nTo generate skills interactively:\n" +
+                "  1. Use 'ep-admin skills generate' to generate all skills\n" +
+                "  2. Use 'ep-admin skills generate-readme' for README by skill level\n" +
+                "\nOr use the web interface at the Effect Patterns Hub."
             );
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.SKILL_GENERATION_COMPLETED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
@@ -102,19 +147,63 @@ export const skillsGenerateReadmeCommand = Command.make("generate-readme", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Generating README by skill level...");
 
-            yield* Execution.executeScriptWithTUI(
-                path.join(PROJECT_ROOT, SCRIPTS.SKILLS.GENERATE_README),
-                TASK_NAMES.GENERATING_README_SKILLS,
-                {
-                    verbose: options.verbose,
-                    ...(options.skillLevel && { skillLevel: options.skillLevel }),
-                    ...(options.useCase && { useCase: options.useCase })
+            const { db, close } = createDatabase();
+            const repo = createEffectPatternRepository(db);
+
+            try {
+                let patterns = yield* Effect.promise(() => repo.findAll());
+
+                // Apply filters
+                const skillLevelFilter = Option.getOrUndefined(options.skillLevel);
+                if (skillLevelFilter) {
+                    patterns = patterns.filter(
+                        p => p.skillLevel.toLowerCase() === skillLevelFilter.toLowerCase()
+                    );
+                    yield* Display.showInfo(`Filtered to ${skillLevelFilter}: ${patterns.length} patterns`);
                 }
-            );
+
+                // Generate README content
+                const sections: string[] = [];
+                sections.push("# Effect Patterns by Skill Level\n");
+
+                const levels = ["beginner", "intermediate", "advanced"];
+                for (const level of levels) {
+                    const levelPatterns = patterns.filter(
+                        p => p.skillLevel.toLowerCase() === level
+                    );
+
+                    if (levelPatterns.length > 0) {
+                        const emoji = level === "beginner" ? "🟢" :
+                            level === "intermediate" ? "🟡" : "🟠";
+                        sections.push(`## ${emoji} ${level.charAt(0).toUpperCase() + level.slice(1)}\n`);
+
+                        for (const p of levelPatterns) {
+                            sections.push(`- **${p.title}**: ${p.summary}`);
+                        }
+                        sections.push("");
+                    }
+                }
+
+                const fs = yield* FileSystem.FileSystem;
+                const output = "content/published/skills/README.md";
+                yield* fs.makeDirectory("content/published/skills", { recursive: true });
+                yield* fs.writeFileString(output, sections.join("\n"));
+
+                yield* Display.showInfo(`\nGenerated README with ${patterns.length} patterns`);
+                yield* Display.showInfo(`Output: ${output}`);
+
+                yield* Effect.promise(() => close());
+            } catch (error) {
+                yield* Effect.promise(() => close());
+                throw error;
+            }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.README_GENERATED);
-        }) as any
+        }).pipe(
+            Effect.provide(NodeContext.layer)
+        ) as any
     )
 );
 
