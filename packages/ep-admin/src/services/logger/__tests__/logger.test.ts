@@ -10,17 +10,21 @@ import type { LoggerConfig, LogLevel } from "../types.js";
 import { defaultLoggerConfig } from "../types.js";
 
 // Mock the effect Console module
+const mockConsoleLog = vi.fn(() => Effect.void);
+const mockConsoleError = vi.fn(() => Effect.void);
+const mockConsoleWarn = vi.fn(() => Effect.void);
+
 vi.mock("effect", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("effect")>();
-    return {
-        ...actual,
-        Console: {
-            ...actual.Console,
-            log: vi.fn(() => Effect.void),
-            error: vi.fn(() => Effect.void),
-            warn: vi.fn(() => Effect.void),
-        }
-    };
+	const actual = await importOriginal<typeof import("effect")>();
+	return {
+		...actual,
+		Console: {
+			...actual.Console,
+			log: mockConsoleLog,
+			error: mockConsoleError,
+			warn: mockConsoleWarn,
+		}
+	};
 });
 
 describe("Logger Service", () => {
@@ -181,8 +185,8 @@ describe("Logger Service", () => {
 			await Effect.runPromise(program.pipe(Effect.provide(LoggerDefault)));
 
 
-			expect(Console.log).toHaveBeenCalled();
-			const call = (Console.log as any).mock.calls[0]?.[0];
+			expect(mockConsoleLog).toHaveBeenCalled();
+			const call = mockConsoleLog.mock.calls[0]?.[0] || "";
 			expect(call).toContain("Debug message");
 		});
 
@@ -196,8 +200,8 @@ describe("Logger Service", () => {
 			await Effect.runPromise(program.pipe(Effect.provide(LoggerDefault)));
 
 
-			expect(Console.log).toHaveBeenCalled();
-			const call = (Console.log as any).mock.calls[0]?.[0];
+			expect(mockConsoleLog).toHaveBeenCalled();
+			const call = mockConsoleLog.mock.calls[0]?.[0] || "";
 			expect(call).toContain("Info message");
 		});
 
@@ -241,8 +245,8 @@ describe("Logger Service", () => {
 			await Effect.runPromise(program.pipe(Effect.provide(LoggerDefault)));
 
 
-			expect(Console.log).toHaveBeenCalled();
-			const call = (Console.log as any).mock.calls[0]?.[0];
+			expect(mockConsoleLog).toHaveBeenCalled();
+			const call = mockConsoleLog.mock.calls[0]?.[0] || "";
 			expect(call).toContain("Success message");
 		});
 
@@ -256,8 +260,8 @@ describe("Logger Service", () => {
 
 			await Effect.runPromise(program.pipe(Effect.provide(LoggerDefault)));
 
-			expect(Console.log).toHaveBeenCalled();
-			const call = (Console.log as any).mock.calls[0]?.[0];
+			expect(mockConsoleLog).toHaveBeenCalled();
+			const call = mockConsoleLog.mock.calls[0]?.[0] || "";
 			expect(call).toContain("Info message");
 			expect(call).toContain("key");
 			expect(call).toContain("value");
@@ -275,9 +279,9 @@ describe("Logger Service", () => {
 
 			await Effect.runPromise(program.pipe(Effect.provide(LoggerDefault)));
 
-			expect(Console.log).not.toHaveBeenCalled();
-			expect(Console.warn).toHaveBeenCalledTimes(1);
-			const call = (Console.warn as any).mock.calls[0]?.[0];
+			expect(mockConsoleLog).not.toHaveBeenCalled();
+			expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
+			const call = mockConsoleWarn.mock.calls[0]?.[0] || "";
 			expect(call).toContain("Warning message");
 			expect(call).not.toContain("Debug message");
 			expect(call).not.toContain("Info message");
@@ -419,21 +423,21 @@ describe("Logger Service", () => {
 
 				await Effect.runPromise(writeOutput("error", "Error message"));
 
-				expect(Console.error).toHaveBeenCalledWith("Error message");
+				expect(mockConsoleError).toHaveBeenCalledWith("Error message");
 			});
 
 			it("should write non-error messages to log stream", async () => {
 
 				await Effect.runPromise(writeOutput("info", "Info message"));
 
-				expect(Console.log).toHaveBeenCalledWith("Info message");
+				expect(mockConsoleLog).toHaveBeenCalledWith("Info message");
 			});
 
 			it("should write success messages to log stream", async () => {
 
 				await Effect.runPromise(writeOutput("success", "Success message"));
 
-				expect(Console.log).toHaveBeenCalledWith("Success message");
+				expect(mockConsoleLog).toHaveBeenCalledWith("Success message");
 			});
 		});
 	});
@@ -472,7 +476,7 @@ describe("Logger Service", () => {
 
 			await Effect.runPromise(program.pipe(Effect.provide(LoggerDefault)));
 
-			expect(Console.log).toHaveBeenCalled();
+			expect(mockConsoleLog).toHaveBeenCalled();
 		});
 	});
 });

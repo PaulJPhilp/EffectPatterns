@@ -129,7 +129,7 @@ export const getCommitsSinceTag = (
 			`${tag}..${defaultBranch}`,
 			"--format=%B%n==END==",
 		], { capture: true });
-		
+
 		return output
 			.split("==END==")
 			.map((commit) => commit.trim())
@@ -171,10 +171,15 @@ export const categorizeCommits = async (commits: string[]) => {
 		const module = await import("conventional-commits-parser");
 		const maybeDefault = (module as any).default;
 
-		if (typeof maybeDefault === "function") {
-			parseCommit = maybeDefault as (message: string) => any;
-		} else if (typeof module === "function") {
-			parseCommit = module as unknown as (message: string) => any;
+		// Type guard for commit parser function
+		const isCommitParser = (fn: unknown): fn is (message: string) => any => {
+			return typeof fn === "function";
+		};
+
+		if (isCommitParser(maybeDefault)) {
+			parseCommit = maybeDefault;
+		} else if (isCommitParser(module)) {
+			parseCommit = module;
 		} else {
 			throw new Error(
 				"No callable export found in conventional-commits-parser"

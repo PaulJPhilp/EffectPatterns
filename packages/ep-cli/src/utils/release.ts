@@ -30,10 +30,16 @@ export const categorizeCommits = async (commits: string[]) => {
   try {
     const module = await import("conventional-commits-parser");
     const maybeDefault = (module as any).default;
-    if (typeof maybeDefault === "function") {
-      parseCommit = maybeDefault as (message: string) => any;
-    } else if (typeof (module as any) === "function") {
-      parseCommit = module as unknown as (message: string) => any;
+
+    // Type guard for commit parser function
+    const isCommitParser = (fn: unknown): fn is (message: string) => any => {
+      return typeof fn === "function";
+    };
+
+    if (isCommitParser(maybeDefault)) {
+      parseCommit = maybeDefault;
+    } else if (isCommitParser(module)) {
+      parseCommit = module;
     } else {
       throw new Error("No callable export found in conventional-commits-parser");
     }

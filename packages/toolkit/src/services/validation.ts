@@ -45,14 +45,14 @@ export class ValidationServiceError extends Data.TaggedError(
   operation: string;
   schema?: string;
   cause?: unknown;
-}> {}
+}> { }
 
 export class SchemaValidationError extends Data.TaggedError(
   "SchemaValidationError"
 )<{
   errors: ValidationError[];
   input?: unknown;
-}> {}
+}> { }
 
 /**
  * Validation service with production features
@@ -66,18 +66,45 @@ export class ValidationService extends Effect.Service<ValidationService>()(
 
       const isLoggingEnabled = yield* config.isLoggingEnabled();
       // Use a sensible default timeout for validation operations
-      const validationTimeoutMs = 5000; // 5 seconds
+      const validationTimeoutMs: number = 5000; // 5 seconds
 
       /**
        * Convert Effect Schema errors to our ValidationError format
        */
-      const convertSchemaErrors = (errors: any[]): ValidationError[] => {
-        return errors.map((error) => ({
-          path: Array.isArray(error.path) ? error.path : [],
-          message: error.message || "Validation error",
-          actual: error.actual,
-        }));
-      }; /**
+      const convertSchemaErrors = (errors: ParseResult.ParseError[]): ValidationError[] => {
+        return errors.map((error) => {
+          // Extract path from the error issue
+          const extractPath = (issue: ParseResult.ParseIssue): string[] => {
+            // Handle different types of ParseIssue
+            if (issue._tag === "Pointer") {
+              // ParseResult.Path can be a single property key or array of keys
+              const path = issue.path || [];
+              return Array.isArray(path) ? path.map(String) : [String(path)];
+            }
+            // For other issue types, try to extract path if available
+            const fallbackPath = (issue as any).path;
+            return fallbackPath ? (Array.isArray(fallbackPath) ? fallbackPath : [fallbackPath]) : [];
+          };
+
+          // Extract actual value from the error issue
+          const extractActual = (issue: ParseResult.ParseIssue): unknown => {
+            // Different issue types may store the actual value differently
+            if (issue._tag === "Pointer") {
+              return (issue as any).actual;
+            }
+            // Try to get actual from other issue types
+            return (issue as any).actual;
+          };
+
+          return {
+            path: extractPath(error.issue),
+            message: error.message || "Validation error",
+            actual: extractActual(error.issue),
+          };
+        });
+      };
+
+      /**
        * Validate data against a schema with timeout and error handling
        */
       const validate = <I, A>(
@@ -407,7 +434,7 @@ export class ValidationService extends Effect.Service<ValidationService>()(
       };
     }),
   }
-) {}
+) { }
 
 /**
  * Default validation service layer

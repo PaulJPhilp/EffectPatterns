@@ -8,8 +8,8 @@ import { ExecutionError } from "./errors.js";
 import type { ExecutionOptions } from "./types.js";
 
 // Import TUI spinner if available
-let spinnerEffectTUI: any = null;
-let InkService: any = null;
+let spinnerEffectTUI: unknown = null;
+let InkService: unknown = null;
 
 try {
 	// eslint-disable-next-line @typescript-eslint/no-require-imports

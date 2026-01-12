@@ -145,6 +145,6 @@ const provided = program.pipe(
       yield* logger.error("Fatal Error", { cause });
     }).pipe(Effect.provide(runtimeLayer))
   )
-) as unknown as Effect.Effect<void, unknown, never>;
+);
 
-void Effect.runPromise(provided);
+void Effect.runPromise(provided as Effect.Effect<void, never, never>);
