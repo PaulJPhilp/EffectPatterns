@@ -11,6 +11,7 @@
 
 import { FileSystem } from "@effect/platform";
 import { Effect } from "effect";
+import { MdxService } from "effect-mdx";
 import {
 	type GeneratorConfig,
 	generateReadmeWithStats,
@@ -80,7 +81,7 @@ export interface PipelineResult {
 
 export const runValidationStep = (
 	config: ValidatorConfig,
-): Effect.Effect<ValidationResult[], Error, FileSystem.FileSystem> =>
+) =>
 	Effect.gen(function* () {
 		const results = yield* validateAllPatterns(config);
 		return results;
@@ -130,7 +131,7 @@ export const runLintingStep = (
 
 export const runFullPipeline = (
 	config: PipelineConfig,
-): Effect.Effect<PipelineResult, Error, FileSystem.FileSystem> =>
+) =>
 	Effect.gen(function* () {
 		const startTime = Date.now();
 
@@ -205,14 +206,7 @@ export const runFullPipeline = (
 
 export const runValidateAndTest = (
 	config: Pick<PipelineConfig, "validator" | "tester">,
-): Effect.Effect<
-	{
-		validation: ValidationResult[];
-		testing: { typeCheckPassed: boolean; testResults: TestResult[] };
-	},
-	Error,
-	FileSystem.FileSystem
-> =>
+) =>
 	Effect.gen(function* () {
 		const validation = yield* runValidationStep(config.validator);
 		const testing = yield* runTestingStep(config.tester);
@@ -222,14 +216,7 @@ export const runValidateAndTest = (
 
 export const runPublishAndGenerate = (
 	config: Pick<PipelineConfig, "publisher" | "generator">,
-): Effect.Effect<
-	{
-		publishing: PublishResult[];
-		generation: { applicationPatterns: number; effectPatterns: number };
-	},
-	Error,
-	FileSystem.FileSystem
-> =>
+) =>
 	Effect.gen(function* () {
 		const publishing = yield* runPublishingStep(config.publisher);
 		const generation = yield* runGenerationStep(config.generator);

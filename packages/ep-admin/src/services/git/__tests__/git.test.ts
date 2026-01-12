@@ -85,7 +85,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result.root).toBe("/path/to/repo");
@@ -114,7 +114,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result.root).toBe("/path/to/repo");
@@ -133,7 +133,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result.branch).toBe("main");
@@ -152,7 +152,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result.clean).toBe(true);
@@ -169,7 +169,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result).toBe("feature-branch");
@@ -186,7 +186,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result).toBe("abc123def456");
@@ -205,7 +205,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result).toBe("v1.0.0");
@@ -223,7 +223,7 @@ describe("Git Service", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(TestLayer)))
+				Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)))
 			).rejects.toThrow();
 		});
 
@@ -246,7 +246,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result).toHaveLength(2);
@@ -265,7 +265,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result).toHaveLength(0);
@@ -279,7 +279,7 @@ describe("Git Service", () => {
 				return yield* git.createTag("v1.0.0", "Release version 1.0.0");
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("tag", [
 				"-a",
@@ -297,7 +297,7 @@ describe("Git Service", () => {
 				return yield* git.createTag("v1.0.0");
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("tag", [
 				"-a",
@@ -313,7 +313,7 @@ describe("Git Service", () => {
 				return yield* git.pushTag("v1.0.0");
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("push", [
 				"origin",
@@ -334,7 +334,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result).toHaveLength(2);
@@ -353,7 +353,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(helpers.execGitCommand).toHaveBeenCalledWith("log", [
@@ -371,7 +371,7 @@ describe("Git Service", () => {
 				return yield* git.add(["file1.ts", "file2.ts"]);
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("add", [
 				"file1.ts",
@@ -387,7 +387,7 @@ describe("Git Service", () => {
 				return yield* git.commit("feat: add new feature");
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("commit", [
 				"-m",
@@ -403,7 +403,7 @@ describe("Git Service", () => {
 				return yield* git.push();
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("push", [
 				"origin",
@@ -419,7 +419,7 @@ describe("Git Service", () => {
 				return yield* git.push("upstream", "main");
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("push", [
 				"upstream",
@@ -437,7 +437,7 @@ describe("Git Service", () => {
 				return yield* git.createBranch("feature-branch");
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("branch", [
 				"feature-branch",
@@ -452,7 +452,7 @@ describe("Git Service", () => {
 				return yield* git.checkoutBranch("feature-branch");
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("checkout", [
 				"feature-branch",
@@ -467,7 +467,7 @@ describe("Git Service", () => {
 				return yield* git.deleteBranch("feature-branch");
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("branch", [
 				"-D",
@@ -488,7 +488,7 @@ describe("Git Service", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(TestLayer))
+				program.pipe(Effect.provide(TestLayer as any)) as any
 			);
 
 			expect(result).toBe("output");
@@ -503,7 +503,7 @@ describe("Git Service", () => {
 				return yield* git.execVoid("reset", ["--hard"]);
 			});
 
-			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("reset", [
 				"--hard",
@@ -524,7 +524,7 @@ describe("Git Service", () => {
 			// Effect wraps errors in FiberFailure, so we need to check the cause
 			let caughtError: any;
 			try {
-				await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+				await Effect.runPromise(program.pipe(Effect.provide(TestLayer as any)));
 			} catch (fiberFailure: any) {
 				caughtError = fiberFailure;
 			}

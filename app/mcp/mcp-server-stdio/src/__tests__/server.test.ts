@@ -8,7 +8,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 describe("MCP Server Integration", () => {
-  let patterns: Pattern[];
+  let patterns: readonly Pattern[];
 
   it("should load patterns from database", async () => {
     const patternsData = await loadPatternsFromDatabase();

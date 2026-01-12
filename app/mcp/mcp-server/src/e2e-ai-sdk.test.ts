@@ -75,7 +75,7 @@ const searchPatternsTool = {
       );
     }
 
-    return await response.json();
+    return (await response.json()) as any;
   },
 }; /**
  * Tool for getting a specific pattern by ID
@@ -109,7 +109,7 @@ const getPatternTool = {
       );
     }
 
-    return await response.json();
+    return (await response.json()) as any;
   },
 };
 
@@ -131,7 +131,7 @@ const healthCheckTool = {
       );
     }
 
-    return await response.json();
+    return (await response.json()) as any;
   },
 };
 
@@ -159,7 +159,7 @@ describe("AI SDK End-to-End Tests", () => {
         const response = await fetch(`${TEST_SERVER_URL}/health`);
         expect(response.ok).toBe(true);
 
-        const health = await response.json();
+        const health: any = await response.json();
         expect(health).toHaveProperty("status");
         expect(health.status).toBe("ok");
       });
@@ -175,7 +175,7 @@ describe("AI SDK End-to-End Tests", () => {
         );
 
         expect(response.ok).toBe(true);
-        const patterns = await response.json();
+        const patterns: any = await response.json();
         expect(Array.isArray(patterns)).toBe(true);
         expect(patterns.length).toBeGreaterThan(0);
       });
@@ -192,7 +192,7 @@ describe("AI SDK End-to-End Tests", () => {
         );
 
         expect(searchResponse.ok).toBe(true);
-        const patterns = await searchResponse.json();
+        const patterns: any = await searchResponse.json();
         expect(patterns.length).toBeGreaterThan(0);
 
         const patternId = patterns[0].id;
@@ -208,7 +208,7 @@ describe("AI SDK End-to-End Tests", () => {
         );
 
         expect(detailResponse.ok).toBe(true);
-        const pattern = await detailResponse.json();
+        const pattern: any = await detailResponse.json();
         expect(pattern).toHaveProperty("id");
         expect(pattern).toHaveProperty("title");
         expect(pattern).toHaveProperty("content");

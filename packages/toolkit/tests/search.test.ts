@@ -583,14 +583,14 @@ describe("REGRESSION TESTS: Fix #2 - Early Returns Removal", () => {
         id: "title-match",
         title: "Retry Pattern",
         description: "Description",
-        category: "other",
+        category: "other" as any,
         tags: ["something"],
       }),
       createMockPattern({
         id: "tag-match",
         title: "Other Pattern",
         description: "Description",
-        category: "other",
+        category: "other" as any,
         tags: ["retry"],
       }),
     ];

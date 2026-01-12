@@ -6,7 +6,7 @@ import {
   createInitialPatternState,
   PatternMetadata,
   StateError,
-} from "../src/index";
+} from "../src/index.js";
 
 describe("PipelineStateMachine", () => {
   const testMetadata: PatternMetadata = {

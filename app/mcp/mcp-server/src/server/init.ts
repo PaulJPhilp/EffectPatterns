@@ -11,11 +11,13 @@
 // biome-ignore assist/source/organizeImports: <>
 import {
   DatabaseLayer,
+  EffectPatternRepositoryService,
   findEffectPatternBySlug,
   searchEffectPatterns,
   type Pattern,
 } from "@effect-patterns/toolkit";
 import { NodeSdk } from "@effect/opentelemetry";
+import { FileSystem } from "@effect/platform";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { Effect, Layer } from "effect";
@@ -44,13 +46,13 @@ const makePatternsService = Effect.gen(function* () {
   /**
    * Get all patterns
    */
-  const getAllPatterns = (): Effect.Effect<readonly Pattern[]> =>
+  const getAllPatterns = () =>
     searchEffectPatterns({});
 
   /**
    * Get pattern by ID/slug
    */
-  const getPatternById = (id: string): Effect.Effect<Pattern | undefined> =>
+  const getPatternById = (id: string) =>
     Effect.gen(function* () {
       const pattern = yield* findEffectPatternBySlug(id);
       return pattern ?? undefined;
@@ -64,7 +66,7 @@ const makePatternsService = Effect.gen(function* () {
     category?: string;
     skillLevel?: "beginner" | "intermediate" | "advanced";
     limit?: number;
-  }): Effect.Effect<readonly Pattern[]> =>
+  }) =>
     searchEffectPatterns({
       query: params.query,
       category: params.category,
@@ -136,7 +138,7 @@ export const runWithRuntime = <A, E>(
   effect: Effect.Effect<
     A,
     E,
-    PatternsService | ConfigService | TracingService
+    any
   >
 ): Promise<A> => {
   // Wrap in Promise to catch any synchronous errors or unhandled rejections
@@ -152,7 +154,7 @@ export const runWithRuntime = <A, E>(
               : new Error(`Runtime error: ${String(error)}`)
           )
         ),
-        Effect.runPromise
+        (e) => Effect.runPromise(e as Effect.Effect<A, Error, never>)
       )
       .then(resolve)
       .catch((error) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { splitSections } from "../src/splitSections";
+import { splitSections } from "../src/splitSections.js";
 
 describe("splitSections", () => {
   it("splits basic content with two headings", () => {
@@ -16,7 +16,6 @@ describe("splitSections", () => {
 
   it("returns empty array for empty or non-string input", () => {
     expect(splitSections("")).toEqual([]);
-    // @ts-expect-error test non-string
-    expect(splitSections(null)).toEqual([]);
+    expect(splitSections(null as any)).toEqual([]);
   });
 });

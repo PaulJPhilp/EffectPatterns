@@ -28,7 +28,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displaySuccess) {
-					yield* Effect.provide(tui.displaySuccess(message), NodeContext.layer);
+					yield* Effect.promise(() => tui.displaySuccess(message));
 					return;
 				}
 
@@ -44,7 +44,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayError) {
-					yield* Effect.provide(tui.displayError(message), NodeContext.layer);
+					yield* Effect.promise(() => tui.displayError(message));
 					return;
 				}
 
@@ -60,7 +60,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayInfo) {
-					yield* Effect.provide(tui.displayInfo(message), NodeContext.layer);
+					yield* Effect.promise(() => tui.displayInfo(message));
 					return;
 				}
 
@@ -76,7 +76,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayWarning) {
-					yield* Effect.provide(tui.displayWarning(message), NodeContext.layer);
+					yield* Effect.promise(() => tui.displayWarning(message));
 					return;
 				}
 
@@ -96,9 +96,9 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayPanel) {
-					yield* Effect.provide(tui.displayPanel(content, title, {
+					yield* Effect.promise(() => tui.displayPanel(content, title, {
 						type: options?.type || "info",
-					}), NodeContext.layer);
+					}));
 					return;
 				}
 
@@ -123,7 +123,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayTable) {
-					yield* Effect.provide(tui.displayTable(data, {
+					yield* Effect.promise(() => tui.displayTable(data, {
 						columns: options.columns.map((col: any) => ({
 							key: String(col.key),
 							header: col.header,
@@ -131,7 +131,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 							align: col.align,
 						})),
 						bordered: options.bordered,
-					} as any), NodeContext.layer);
+					} as any));
 					return;
 				}
 
@@ -157,7 +157,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayHighlight) {
-					yield* Effect.provide(tui.displayHighlight(message), NodeContext.layer);
+					yield* Effect.promise(() => tui.displayHighlight(message));
 					return;
 				}
 
