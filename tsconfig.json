@@ -13,7 +13,8 @@
       "ES2020"
     ],
     "types": [
-      "node"
+      "node",
+      "next"
     ],
     "downlevelIteration": true,
     "moduleDetection": "force",
@@ -32,29 +33,16 @@
       }
     ],
     "paths": {
-      "@effect-patterns/toolkit": [
-        "./packages/toolkit/src/index.ts"
-      ],
-      "@effect-patterns/ep-cli": [
-        "./packages/ep-cli/src/index.ts"
-      ],
-      "@effect-patterns/ep-admin": [
-        "./packages/ep-admin/src/index.ts"
-      ],
-      "@effect-patterns/pipeline-state": [
-        "./packages/pipeline-state/src/index.ts"
-      ],
-      "@effect-patterns/shared-services": [
-        "./packages/ep-shared-services/src/index.ts"
-      ],
       "next/*": [
         "./node_modules/next/*"
+      ],
+      "next/server": [
+        "./node_modules/next/server.js"
       ]
     }
   },
   "include": [
     "api/**/*.ts",
-    "app/**/*.ts",
     "server/**/*.ts",
     "packages/**/*.ts",
     "content/src/**/*.ts",
