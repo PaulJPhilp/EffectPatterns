@@ -37,7 +37,7 @@
   "devDependencies": {
     "@effect/schema": "^0.68.27",
     "typescript": "^5.9.3",
-    "vitest": "^2.1.9"
+    "vitest": "^4.0.17"
   },
   "peerDependencies": {
     "@effect/schema": "^0.68.0"
