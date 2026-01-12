@@ -47,7 +47,7 @@
   "dependencies": {
     "effect": "^3.19.14",
     "@effect/platform": "0.94.1",
-    "@effect/platform-node": "0.98.4"
+    "@effect/platform-node": "0.104.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
