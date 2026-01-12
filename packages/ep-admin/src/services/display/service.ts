@@ -2,7 +2,6 @@
  * Display service implementation
  */
 
-import { NodeContext } from "@effect/platform-node";
 import { Console, Effect } from "effect";
 import { Logger } from "../logger/index.js";
 import { TUIService } from "../tui/service.js";
@@ -28,7 +27,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displaySuccess) {
-					yield* Effect.promise(() => tui.displaySuccess(message));
+					yield* Effect.promise(async () => tui.displaySuccess(message));
 					return;
 				}
 
@@ -44,7 +43,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayError) {
-					yield* Effect.promise(() => tui.displayError(message));
+					yield* Effect.promise(async () => tui.displayError(message));
 					return;
 				}
 
@@ -60,7 +59,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayInfo) {
-					yield* Effect.promise(() => tui.displayInfo(message));
+					yield* Effect.promise(async () => tui.displayInfo(message));
 					return;
 				}
 
@@ -76,7 +75,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayWarning) {
-					yield* Effect.promise(() => tui.displayWarning(message));
+					yield* Effect.promise(async () => tui.displayWarning(message));
 					return;
 				}
 
@@ -96,7 +95,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayPanel) {
-					yield* Effect.promise(() => tui.displayPanel(content, title, {
+					yield* Effect.promise(async () => tui.displayPanel(content, title, {
 						type: options?.type || "info",
 					}));
 					return;
@@ -123,7 +122,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayTable) {
-					yield* Effect.promise(() => tui.displayTable(data, {
+					yield* Effect.promise(async () => tui.displayTable(data, {
 						columns: options.columns.map((col: any) => ({
 							key: String(col.key),
 							header: col.header,
@@ -157,7 +156,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayHighlight) {
-					yield* Effect.promise(() => tui.displayHighlight(message));
+					yield* Effect.promise(async () => tui.displayHighlight(message));
 					return;
 				}
 

@@ -21,6 +21,7 @@ The Effect Patterns project provides a Model Context Protocol (MCP) server that 
 - **Real-time Pattern Search**: Search 700+ Effect-TS patterns
 - **Context-Aware Suggestions**: Get pattern recommendations based on your code
 - **Direct Integration**: Patterns appear directly in Claude Code
+- **Pattern Generation**: Generate Effect-TS code patterns with AI assistance
 
 ### Documentation
 
@@ -32,12 +33,34 @@ For complete details about agents and integration, see:
 - **Production**: `https://effect-patterns-mcp.vercel.app`
 - **Staging**: `https://effect-patterns-mcp-staging.vercel.app`
 - **Source**: `app/mcp/mcp-server/`
+- **STDIO Version**: `app/mcp/mcp-server-stdio/` (for local development)
 
 ### API Key
 
 Get your API key from the project maintainers or check your environment configuration:
 ```bash
 PATTERN_API_KEY_PRODUCTION=your_key_here
+```
+
+### Development Setup
+
+The project uses npm workspaces for package resolution. No TypeScript path aliases are used - packages resolve via `workspace:*` dependencies.
+
+```bash
+# Install dependencies
+bun install
+
+# Build workspace packages
+bun run --filter @effect-patterns/toolkit build
+bun run --filter @effect-patterns/pipeline-state build
+bun run --filter @effect-patterns/ep-shared-services build
+
+# Run MCP server locally
+cd app/mcp/mcp-server
+bun run dev
+
+# Test MCP connection
+bun run smoke-test
 ```
 
 ### Support
