@@ -1,6 +1,0 @@
-{
-  "version": 2,
-  "buildCommand": "bun run --filter @effect-patterns/toolkit build && bun run --filter @effect-patterns/ep-admin build && bun run --filter @effect-patterns/ep-cli build",
-  "installCommand": "bun install --frozen-lockfile",
-  "regions": ["iad1"]
-}
