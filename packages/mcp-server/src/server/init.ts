@@ -11,17 +11,14 @@
 // biome-ignore assist/source/organizeImports: <>
 import {
   DatabaseLayer,
-  EffectPatternRepositoryService,
   findEffectPatternBySlug,
-  searchEffectPatterns,
-  type Pattern,
+  searchEffectPatterns
 } from "@effect-patterns/toolkit";
 import { NodeSdk } from "@effect/opentelemetry";
-import { FileSystem } from "@effect/platform";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { Effect, Layer } from "effect";
-import { TracingLayerLive, type TracingService } from "../tracing/otlpLayer.js";
+import { TracingLayerLive } from "../tracing/otlpLayer.js";
 
 /**
  * Config service - provides environment configuration
@@ -108,7 +105,7 @@ const NodeSdkLayer = NodeSdk.layer(() => ({
         ? Object.fromEntries(
           process.env.OTLP_HEADERS.split(",").map((pair) => {
             const [key, value] = pair.split("=");
-            return [key.trim(), value.trim()];
+            return [key?.trim() || "", value?.trim() || ""];
           })
         )
         : {},
