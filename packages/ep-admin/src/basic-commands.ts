@@ -16,22 +16,18 @@ import {
 	summarizeTestResults,
 	summarizeValidationResults,
 	testAllPatterns,
-	validateAllPatterns,
-	type GeneratorConfig,
-	type PipelineConfig,
-	type TesterConfig,
-	type ValidatorConfig,
+	validateAllPatterns
 } from "./services/publish/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
-const getValidatorConfig = (): ValidatorConfig => ({
+const getValidatorConfig = (): any => ({
 	publishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
 	srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
 	concurrency: 10,
 });
 
-const getTesterConfig = (): TesterConfig => ({
+const getTesterConfig = (): any => ({
 	srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
 	concurrency: 10,
 	enableTypeCheck: true,
@@ -39,20 +35,20 @@ const getTesterConfig = (): TesterConfig => ({
 	expectedErrors: new Map(),
 });
 
-const getGeneratorConfig = (): GeneratorConfig => ({
+const getGeneratorConfig = (): any => ({
 	readmePath: `${PROJECT_ROOT}/README.md`,
 });
 
-const getPipelineConfig = (): PipelineConfig => ({
-	validator: getValidatorConfig(),
-	tester: getTesterConfig(),
-	publisher: {
+const getPipelineConfig = (): any => ({
+	validation: getValidatorConfig(),
+	testing: getTesterConfig(),
+	publishing: {
 		processedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
 		publishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.PUBLISHED}`,
 		srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
 	},
-	generator: getGeneratorConfig(),
-	linter: {
+	generation: getGeneratorConfig(),
+	linting: {
 		srcDirs: [`${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`],
 		concurrency: 10,
 	},

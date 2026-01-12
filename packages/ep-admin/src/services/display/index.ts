@@ -1,22 +1,12 @@
 /**
  * Display service barrel exports
+ * 
+ * Re-exporting shared Display service with ep-admin specific TUI adapter
  */
 
-// Service
-export { Display } from "./service.js";
+// Re-export everything from shared services
+export * from "@effect-patterns/ep-shared-services/display";
 
-// Types
-export type { PanelOptions, TableColumn, TableOptions } from "./types.js";
-
-// API
-export type { DisplayService } from "./api.js";
-
-// Errors
-export { DisplayError, TUIError } from "./errors.js";
-
-// Helpers
-export {
-    colorizeWithConfig,
-    getLoggerConfig
-} from "./helpers.js";
+// Export ep-admin specific TUI adapter
+export { EpAdminTUIAdapter } from "./tui-adapter.js";
 

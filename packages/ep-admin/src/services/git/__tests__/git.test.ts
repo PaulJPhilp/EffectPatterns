@@ -29,20 +29,24 @@ vi.mock("../helpers.js", () => ({
 }));
 
 import { Display } from "../../display/service.js";
-import { TUILoader } from "../../display/tui-loader.js";
 import { Execution } from "../../execution/service.js";
 import { Logger } from "../../logger/service.js";
+import { TUIService } from "../../tui/service.js";
 import { GitCommandError } from "../errors.js";
 import * as helpers from "../helpers.js";
 import { Git } from "../service.js";
 
-const MockTUILoader = Layer.succeed(
-	TUILoader,
-	TUILoader.of({ load: () => Effect.succeed(null) })
+const MockTUIService = Layer.succeed(
+	TUIService,
+	TUIService.of({
+		load: () => Effect.succeed(null),
+		isAvailable: () => Effect.succeed(false),
+		clearCache: () => Effect.void,
+	})
 );
 
 const DisplayTest = Display.Default.pipe(
-	Layer.provide(MockTUILoader),
+	Layer.provide(MockTUIService),
 	Layer.provide(Logger.Default)
 );
 
@@ -80,7 +84,7 @@ describe("Git Service", () => {
 				return yield* git.getRepository();
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -109,7 +113,7 @@ describe("Git Service", () => {
 				return yield* git.getRepository();
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -128,7 +132,7 @@ describe("Git Service", () => {
 				return yield* git.getStatus();
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -147,7 +151,7 @@ describe("Git Service", () => {
 				return yield* git.getStatus();
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -164,7 +168,7 @@ describe("Git Service", () => {
 				return yield* git.getCurrentBranch();
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -181,7 +185,7 @@ describe("Git Service", () => {
 				return yield* git.getCurrentCommit();
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -200,7 +204,7 @@ describe("Git Service", () => {
 				return yield* git.getLatestTag();
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -219,7 +223,7 @@ describe("Git Service", () => {
 			});
 
 			await expect(
-				 Effect.runPromise(program.pipe(Effect.provide(TestLayer)))
+				Effect.runPromise(program.pipe(Effect.provide(TestLayer)))
 			).rejects.toThrow();
 		});
 
@@ -241,7 +245,7 @@ describe("Git Service", () => {
 				return yield* git.getAllTags();
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -260,7 +264,7 @@ describe("Git Service", () => {
 				return yield* git.getAllTags();
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -275,7 +279,7 @@ describe("Git Service", () => {
 				return yield* git.createTag("v1.0.0", "Release version 1.0.0");
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("tag", [
 				"-a",
@@ -293,7 +297,7 @@ describe("Git Service", () => {
 				return yield* git.createTag("v1.0.0");
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("tag", [
 				"-a",
@@ -309,7 +313,7 @@ describe("Git Service", () => {
 				return yield* git.pushTag("v1.0.0");
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("push", [
 				"origin",
@@ -329,7 +333,7 @@ describe("Git Service", () => {
 				return yield* git.getCommitHistory(2);
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -348,7 +352,7 @@ describe("Git Service", () => {
 				return yield* git.getCommitHistory();
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -367,7 +371,7 @@ describe("Git Service", () => {
 				return yield* git.add(["file1.ts", "file2.ts"]);
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("add", [
 				"file1.ts",
@@ -383,7 +387,7 @@ describe("Git Service", () => {
 				return yield* git.commit("feat: add new feature");
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("commit", [
 				"-m",
@@ -399,7 +403,7 @@ describe("Git Service", () => {
 				return yield* git.push();
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("push", [
 				"origin",
@@ -415,7 +419,7 @@ describe("Git Service", () => {
 				return yield* git.push("upstream", "main");
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("push", [
 				"upstream",
@@ -433,7 +437,7 @@ describe("Git Service", () => {
 				return yield* git.createBranch("feature-branch");
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("branch", [
 				"feature-branch",
@@ -448,7 +452,7 @@ describe("Git Service", () => {
 				return yield* git.checkoutBranch("feature-branch");
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("checkout", [
 				"feature-branch",
@@ -463,7 +467,7 @@ describe("Git Service", () => {
 				return yield* git.deleteBranch("feature-branch");
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("branch", [
 				"-D",
@@ -483,7 +487,7 @@ describe("Git Service", () => {
 				return yield* git.exec("log", ["--oneline"]);
 			});
 
-			const result = await  Effect.runPromise(
+			const result = await Effect.runPromise(
 				program.pipe(Effect.provide(TestLayer))
 			);
 
@@ -499,7 +503,7 @@ describe("Git Service", () => {
 				return yield* git.execVoid("reset", ["--hard"]);
 			});
 
-			await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+			await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 
 			expect(helpers.execGitCommandVoid).toHaveBeenCalledWith("reset", [
 				"--hard",
@@ -520,7 +524,7 @@ describe("Git Service", () => {
 			// Effect wraps errors in FiberFailure, so we need to check the cause
 			let caughtError: any;
 			try {
-				await  Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
+				await Effect.runPromise(program.pipe(Effect.provide(TestLayer)));
 			} catch (fiberFailure: any) {
 				caughtError = fiberFailure;
 			}

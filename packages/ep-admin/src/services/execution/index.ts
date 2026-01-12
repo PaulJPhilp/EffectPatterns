@@ -1,18 +1,11 @@
 /**
  * Execution service barrel exports
+ * 
+ * Re-exporting shared Execution service for backward compatibility
  */
 
-// Service
-export { Execution } from "./service.js";
+// Re-export everything from shared services
+export * from "@effect-patterns/ep-shared-services/execution";
 
-// Types
-export type { ExecutionOptions } from "./types.js";
-
-// API
-export type { ExecutionService } from "./api.js";
-
-// Errors
-export { ExecutionError, ScriptExecutionError, TimeoutError } from "./errors.js";
-
-// Helpers
-export { getTUISpinner, spawnEffect, withSpinner } from "./helpers.js";
+// Export ep-admin specific TUI adapter
+export { EpAdminExecutionTUIAdapter } from "./tui-adapter.js";

@@ -2,8 +2,9 @@
  * Display service implementation
  */
 
-import { Console, Effect, Option as Opt } from "effect";
+import { Console, Effect } from "effect";
 import { Logger } from "../logger/index.js";
+import { TUIService } from "../tui/service.js";
 import type { DisplayService, DisplayServiceError } from "./api.js";
 import { DisplayError } from "./errors.js";
 import {
@@ -11,30 +12,23 @@ import {
 } from "./helpers.js";
 import type { PanelOptions, TableOptions } from "./types.js";
 
-import { TUILoader } from "./tui-loader.js";
-
 /**
  * Display service using Effect.Service pattern
  */
-export class Display extends Effect.Service<Display>()("Display", {
+export const Display = Effect.Service<DisplayService>()("Display", {
 	accessors: true,
 	effect: Effect.gen(function* () {
 		const logger = yield* Logger;
 		const loggerConfig = yield* logger.getConfig();
-		const tuiLoader = yield* TUILoader;
+		const tuiService = yield* TUIService;
 
 		const showSuccess: DisplayService["showSuccess"] = (message: string) =>
 			Effect.gen(function* () {
-				const tui = yield* tuiLoader.load();
+				const tui = yield* tuiService.load();
 
-				if (tui?.DisplayService && tui?.displaySuccess) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displaySuccess(message);
-						return;
-					}
+				if (tui?.displaySuccess) {
+					yield* tui.displaySuccess(message);
+					return;
 				}
 
 				// Fallback to console with color support
@@ -46,16 +40,11 @@ export class Display extends Effect.Service<Display>()("Display", {
 
 		const showError: DisplayService["showError"] = (message: string) =>
 			Effect.gen(function* () {
-				const tui = yield* tuiLoader.load();
+				const tui = yield* tuiService.load();
 
-				if (tui?.DisplayService && tui?.displayError) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayError(message);
-						return;
-					}
+				if (tui?.displayError) {
+					yield* tui.displayError(message);
+					return;
 				}
 
 				// Fallback to console with color support
@@ -67,16 +56,11 @@ export class Display extends Effect.Service<Display>()("Display", {
 
 		const showInfo: DisplayService["showInfo"] = (message: string) =>
 			Effect.gen(function* () {
-				const tui = yield* tuiLoader.load();
+				const tui = yield* tuiService.load();
 
-				if (tui?.DisplayService && tui?.displayInfo) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayInfo(message);
-						return;
-					}
+				if (tui?.displayInfo) {
+					yield* tui.displayInfo(message);
+					return;
 				}
 
 				// Fallback to console with color support
@@ -88,16 +72,11 @@ export class Display extends Effect.Service<Display>()("Display", {
 
 		const showWarning: DisplayService["showWarning"] = (message: string) =>
 			Effect.gen(function* () {
-				const tui = yield* tuiLoader.load();
+				const tui = yield* tuiService.load();
 
-				if (tui?.DisplayService && tui?.displayWarning) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayWarning(message);
-						return;
-					}
+				if (tui?.displayWarning) {
+					yield* tui.displayWarning(message);
+					return;
 				}
 
 				// Fallback to console with color support
@@ -113,18 +92,13 @@ export class Display extends Effect.Service<Display>()("Display", {
 			options?: PanelOptions
 		) =>
 			Effect.gen(function* () {
-				const tui = yield* tuiLoader.load();
+				const tui = yield* tuiService.load();
 
-				if (tui?.DisplayService && tui?.displayPanel) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayPanel(content, title, {
-							type: options?.type || "info",
-						});
-						return;
-					}
+				if (tui?.displayPanel) {
+					yield* tui.displayPanel(content, title, {
+						type: options?.type || "info",
+					});
+					return;
 				}
 
 				// Fallback to console
@@ -145,26 +119,19 @@ export class Display extends Effect.Service<Display>()("Display", {
 			options: TableOptions<T>
 		) =>
 			Effect.gen(function* () {
-				const tui = yield* tuiLoader.load();
+				const tui = yield* tuiService.load();
 
-				if (tui?.DisplayService && tui?.displayTable) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayTable(data, {
-							columns: options.columns.map((col: any) => ({
-								key: String(col.key),
-								header: col.header,
-								width: col.width,
-								align: col.align,
-								formatter: col.formatter,
-							})),
-							bordered: options.bordered,
-							head: options.head,
-						});
-						return;
-					}
+				if (tui?.displayTable) {
+					yield* tui.displayTable(data, {
+						columns: options.columns.map((col: any) => ({
+							key: String(col.key),
+							header: col.header,
+							width: col.width,
+							align: col.align,
+						})),
+						bordered: options.bordered,
+					} as any);
+					return;
 				}
 
 				// Fallback to console table
@@ -186,16 +153,11 @@ export class Display extends Effect.Service<Display>()("Display", {
 
 		const showHighlight: DisplayService["showHighlight"] = (message: string) =>
 			Effect.gen(function* () {
-				const tui = yield* tuiLoader.load();
+				const tui = yield* tuiService.load();
 
-				if (tui?.DisplayService && tui?.displayHighlight) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayHighlight(message);
-						return;
-					}
+				if (tui?.displayHighlight) {
+					yield* tui.displayHighlight(message);
+					return;
 				}
 
 				// Fallback to console
@@ -206,19 +168,7 @@ export class Display extends Effect.Service<Display>()("Display", {
 
 		const showSeparator: DisplayService["showSeparator"] = () =>
 			Effect.gen(function* () {
-				const tui = yield* tuiLoader.load();
-
-				if (tui?.DisplayService && tui?.displaySeparator) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displaySeparator();
-						return;
-					}
-				}
-
-				// Fallback to console
+				// Always use console fallback for separators since TUI doesn't have this method
 				yield* Console.log("─".repeat(80));
 			}).pipe(
 				Effect.mapError((error) => DisplayError.make(`Failed to show separator`, error))
@@ -235,4 +185,4 @@ export class Display extends Effect.Service<Display>()("Display", {
 			showSeparator,
 		};
 	}),
-}) { }
+});

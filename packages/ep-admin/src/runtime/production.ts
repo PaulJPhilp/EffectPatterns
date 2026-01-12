@@ -3,15 +3,21 @@
  * 
  * Runtime with essential dependencies:
  * - FetchHttpClient for HTTP requests
+ * - FileSystem for file operations
  * - StateStore for pipeline state management
  * - Logger for structured logging
+ * - Display for output formatting
+ * - Execution for script execution
  * 
  * NOTE: We avoid @effect/platform-node to prevent @effect/cluster dependency.
  */
 
 import { StateStore } from "@effect-patterns/pipeline-state";
 import { FetchHttpClient } from "@effect/platform";
+import { layer as NodeFileSystemLayer } from "@effect/platform-node/NodeFileSystem";
 import { Effect, Layer, ManagedRuntime } from "effect";
+import { Display } from "../services/display/index.js";
+import { Execution } from "../services/execution/index.js";
 import { Logger } from "../services/logger/index.js";
 
 /**
@@ -19,7 +25,10 @@ import { Logger } from "../services/logger/index.js";
  */
 export const ProductionLayer = Layer.mergeAll(
 	FetchHttpClient.layer,
+	NodeFileSystemLayer,
 	Logger.Default,
+	Layer.provide(Display.Default, Logger.Default),
+	Layer.provide(Execution.Default, Logger.Default),
 	StateStore.Default as unknown as Layer.Layer<StateStore>
 );
 
