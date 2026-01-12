@@ -46,7 +46,7 @@
   "license": "MIT",
   "dependencies": {
     "effect": "^3.19.14",
-    "@effect/platform": "0.93.8",
+    "@effect/platform": "0.94.1",
     "@effect/platform-node": "0.98.4"
   },
   "devDependencies": {

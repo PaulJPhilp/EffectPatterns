@@ -6,7 +6,7 @@
     "@effect-patterns/pipeline-state": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
     "@effect/cli": "0.69.2",
-    "@effect/platform": "0.93.8",
+    "@effect/platform": "0.94.1",
     "@effect/platform-node": "0.98.4",
     "conventional-commits-parser": "^6.2.1",
     "conventional-recommended-bump": "^11.2.0",
