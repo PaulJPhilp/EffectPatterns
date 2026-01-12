@@ -47,8 +47,15 @@ export async function GET() {
 		})
 	} catch (error) {
 		console.error("Database test error:", error)
+		const errorMessage = error instanceof Error ? error.message : String(error)
+		const errorStack = error instanceof Error ? error.stack : undefined
 		return NextResponse.json(
-			{ success: false, error: "Database connection failed" },
+			{
+				success: false,
+				error: "Database connection failed",
+				details: errorMessage,
+				stack: errorStack?.split('\n').slice(0, 5)
+			},
 			{ status: 500 }
 		)
 	}
