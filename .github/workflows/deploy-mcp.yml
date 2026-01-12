@@ -27,8 +27,8 @@ jobs:
         
       - name: Build MCP server
         run: |
-          cd packages/mcp-server
-          bun run build
+          bun run --filter @effect-patterns/toolkit build
+          bun run --filter @effect-patterns/mcp-server build
           
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
