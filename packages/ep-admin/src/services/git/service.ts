@@ -7,10 +7,10 @@ import { GIT } from "../../constants.js";
 import type { GitService } from "./api.js";
 import { GitCommandError, GitRepositoryError } from "./errors.js";
 import {
-    execGitCommand,
-    execGitCommandVoid,
-    getGitRoot,
-    parseGitStatus
+	execGitCommand,
+	execGitCommandVoid,
+	getGitRoot,
+	parseGitStatus
 } from "./helpers.js";
 import type { GitTag } from "./types.js";
 
@@ -90,19 +90,23 @@ export class Git extends Effect.Service<Git>()("Git", {
 
 				const tagDetails: GitTag[] = [];
 				for (const tag of tags) {
-					try {
-						const commit = yield* execGitCommand("rev-list", [...GIT.COMMANDS.REV_LIST_ONE.split(" "), tag]);
-						const date = yield* execGitCommand("log", GIT.COMMANDS.LOG_FORMAT_DATE.split(" ").concat([tag]));
-						const message = yield* execGitCommand("tag", [...GIT.COMMANDS.TAG_FORMAT_CONTENTS.split(" "), tag]);
+					const result = yield* Effect.all([
+						execGitCommand("rev-list", [...GIT.COMMANDS.REV_LIST_ONE.split(" "), tag]),
+						execGitCommand("log", GIT.COMMANDS.LOG_FORMAT_DATE.split(" ").concat([tag])),
+						execGitCommand("tag", [...GIT.COMMANDS.TAG_FORMAT_CONTENTS.split(" "), tag])
+					]).pipe(
+						Effect.catchAll(() => Effect.succeed([null, null, null]))
+					);
 
+					const [commit, date, message] = result;
+
+					if (commit && date && message) {
 						tagDetails.push({
 							name: tag,
 							commit: commit.trim(),
 							date: date.trim(),
 							message: message.trim() || undefined,
 						});
-					} catch {
-						// Skip tags that can't be processed
 					}
 				}
 

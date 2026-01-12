@@ -36,119 +36,112 @@ export const runQuickTest = (): Effect.Effect<DBQuickTestResult, Error> =>
 	Effect.gen(function* () {
 		const { db, close } = createDatabase();
 
-		try {
-			// Test connection
-			const connected = yield* Effect.tryPromise({
-				try: () => db.execute("SELECT 1"),
-				catch: () => new Error("Connection failed"),
-			}).pipe(
-				Effect.map(() => true),
-				Effect.catchAll(() => Effect.succeed(false))
-			);
+		// Test connection
+		const connected = yield* Effect.tryPromise({
+			try: () => db.execute("SELECT 1"),
+			catch: () => new Error("Connection failed"),
+		}).pipe(
+			Effect.map(() => true),
+			Effect.catchAll(() => Effect.succeed(false))
+		);
 
-			if (!connected) {
-				return {
-					connected: false,
-					tablesExist: false,
-					tables: [],
-					stats: {
-						applicationPatterns: 0,
-						effectPatterns: 0,
-						jobs: 0,
-						tables: [],
-					},
-					searchWorks: false,
-					repositoriesWork: false,
-				};
-			}
-
-			// Check tables
-			const tables = yield* Effect.forEach(REQUIRED_TABLES, (table) =>
-				Effect.tryPromise({
-					try: () => db.execute(
-						`SELECT EXISTS (
-							SELECT FROM information_schema.tables 
-							WHERE table_schema = 'public' 
-							AND table_name = '${table}'
-						)`,
-					),
-					catch: () => new Error(`Failed to check table ${table}`),
-				}).pipe(
-					Effect.map((result) => {
-						const rows = result as unknown as Array<{ exists: boolean }>;
-						const exists = rows[0]?.exists;
-						return { name: table, exists: !!exists };
-					}),
-					Effect.catchAll(() => Effect.succeed({ name: table, exists: false }))
-				)
-			);
-
-			const tablesExist = tables.every((t) => t.exists);
-
-			// Get stats
-			const apRepo = createApplicationPatternRepository(db);
-			const epRepo = createEffectPatternRepository(db);
-			const jobRepo = createJobRepository(db);
-
-			const stats = yield* Effect.all([
-				Effect.tryPromise({
-					try: () => apRepo.findAll(),
-					catch: () => [],
-				}),
-				Effect.tryPromise({
-					try: () => epRepo.findAll(),
-					catch: () => [],
-				}),
-				Effect.tryPromise({
-					try: () => jobRepo.findAll(),
-					catch: () => [],
-				}),
-			]).pipe(
-				Effect.map(([aps, eps, jobs]) => ({
-					applicationPatterns: aps.length,
-					effectPatterns: eps.length,
-					jobs: jobs.length,
-					tables: REQUIRED_TABLES,
-				}))
-			);
-
-			// Test search
-			const searchWorks = yield* Effect.tryPromise({
-				try: () => epRepo.search({ query: "effect", limit: 5 }),
-				catch: () => new Error("Search failed"),
-			}).pipe(
-				Effect.map(() => true),
-				Effect.catchAll(() => Effect.succeed(false))
-			);
-
-			// Test repositories
-			const repositoriesWork = yield* Effect.tryPromise({
-				try: async () => {
-					const aps = await apRepo.findAll();
-					if (aps.length > 0) {
-						await apRepo.findBySlug(aps[0].slug);
-						return true;
-					} else {
-						return true; // No data to test with
-					}
-				},
-				catch: () => false,
-			});
-
+		if (!connected) {
 			return {
-				connected,
-				tablesExist,
-				tables,
-				stats,
-				searchWorks,
-				repositoriesWork,
+				connected: false,
+				tablesExist: false,
+				tables: [],
+				stats: {
+					applicationPatterns: 0,
+					effectPatterns: 0,
+					jobs: 0,
+					tables: [],
+				},
+				searchWorks: false,
+				repositoriesWork: false,
 			};
-		} finally {
-			yield* Effect.tryPromise({
-				try: () => close(),
-				catch: (error) => console.error('Failed to close database:', error),
-			});
 		}
+
+		// Check tables
+		const tables = yield* Effect.forEach(REQUIRED_TABLES, (table) =>
+			Effect.tryPromise({
+				try: () => db.execute(
+					`SELECT EXISTS (
+						SELECT FROM information_schema.tables 
+						WHERE table_schema = 'public' 
+						AND table_name = '${table}'
+					)`,
+				),
+				catch: () => new Error(`Failed to check table ${table}`),
+			}).pipe(
+				Effect.map((result) => {
+					const rows = result as unknown as Array<{ exists: boolean }>;
+					const exists = rows[0]?.exists;
+					return { name: table, exists: !!exists };
+				}),
+				Effect.catchAll(() => Effect.succeed({ name: table, exists: false }))
+			)
+		);
+
+		const tablesExist = tables.every((t) => t.exists);
+
+		// Get stats
+		const apRepo = createApplicationPatternRepository(db);
+		const epRepo = createEffectPatternRepository(db);
+		const jobRepo = createJobRepository(db);
+
+		const stats = yield* Effect.all([
+			Effect.tryPromise({
+				try: () => apRepo.findAll(),
+				catch: () => [],
+			}),
+			Effect.tryPromise({
+				try: () => epRepo.findAll(),
+				catch: () => [],
+			}),
+			Effect.tryPromise({
+				try: () => jobRepo.findAll(),
+				catch: () => [],
+			}),
+		]).pipe(
+			Effect.map(([aps, eps, jobs]) => ({
+				applicationPatterns: aps.length,
+				effectPatterns: eps.length,
+				jobs: jobs.length,
+				tables: REQUIRED_TABLES,
+			}))
+		);
+
+		// Test search
+		const searchWorks = yield* Effect.tryPromise({
+			try: () => epRepo.search({ query: "effect", limit: 5 }),
+			catch: () => new Error("Search failed"),
+		}).pipe(
+			Effect.map(() => true),
+			Effect.catchAll(() => Effect.succeed(false))
+		);
+
+		// Test repositories
+		const repositoriesWork = yield* Effect.tryPromise({
+			try: async () => {
+				const aps = await apRepo.findAll();
+				if (aps.length > 0) {
+					await apRepo.findBySlug(aps[0].slug);
+					return true;
+				} else {
+					return true; // No data to test with
+				}
+			},
+			catch: () => false,
+		});
+
+		return {
+			connected,
+			tablesExist,
+			tables,
+			stats,
+			searchWorks,
+			repositoriesWork,
+		};
 	}).pipe(
 		Effect.catchAll((error) => Effect.fail(new Error(`Database test failed: ${error}`)))
 	);
@@ -308,39 +301,32 @@ export const verifySchema = (): Effect.Effect<
 	Effect.gen(function* () {
 		const { db, close } = createDatabase();
 
-		try {
-			const tableResults = yield* Effect.forEach(REQUIRED_TABLES, (table) =>
-				Effect.tryPromise({
-					try: () => db.execute(
-						`SELECT EXISTS (
-							SELECT FROM information_schema.tables 
-							WHERE table_schema = 'public' 
-							AND table_name = '${table}'
-						)`,
-					),
-					catch: () => new Error(`Failed to check table ${table}`),
-				}).pipe(
-					Effect.map((result) => {
-						const schemaRows = result as unknown as Array<{ exists: boolean }>;
-						return { table, exists: !!schemaRows[0]?.exists };
-					})
-				)
-			);
+		const tableResults = yield* Effect.forEach(REQUIRED_TABLES, (table) =>
+			Effect.tryPromise({
+				try: () => db.execute(
+					`SELECT EXISTS (
+						SELECT FROM information_schema.tables 
+						WHERE table_schema = 'public' 
+						AND table_name = '${table}'
+					)`,
+				),
+				catch: () => new Error(`Failed to check table ${table}`),
+			}).pipe(
+				Effect.map((result) => {
+					const schemaRows = result as unknown as Array<{ exists: boolean }>;
+					return { table, exists: !!schemaRows[0]?.exists };
+				})
+			)
+		);
 
-			const missingTables = tableResults
-				.filter(({ exists }) => !exists)
-				.map(({ table }) => table);
+		const missingTables = tableResults
+			.filter(({ exists }) => !exists)
+			.map(({ table }) => table);
 
-			return {
-				valid: missingTables.length === 0,
-				missingTables,
-			};
-		} finally {
-			yield* Effect.tryPromise({
-				try: () => close(),
-				catch: (error) => console.error('Failed to close database:', error),
-			});
-		}
+		return {
+			valid: missingTables.length === 0,
+			missingTables,
+		};
 	}).pipe(
 		Effect.catchAll((error) => Effect.fail(new Error(`Schema verification failed: ${error}`)))
 	);

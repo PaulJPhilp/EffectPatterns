@@ -94,10 +94,10 @@ const completionsCommand = Command.make("completions").pipe(
 // --- COMMAND COMPOSITION ---
 
 const adminSubcommands = [
-	validateCommand,
-	testCommand,
 	pipelineCommand,
 	generateCommand,
+	validateCommand,
+	testCommand,
 	ingestCommand,
 	qaCommand,
 	dbCommand,
@@ -115,6 +115,7 @@ const adminSubcommands = [
 	installCommand,
 	patternNewCommand,
 	searchCommand,
+	testExecutionCommand,
 ] as const;
 
 export const adminRootCommand = Command.make(CLI.NAME).pipe(
@@ -125,6 +126,7 @@ export const adminRootCommand = Command.make(CLI.NAME).pipe(
 // --- RUNTIME SETUP ---
 
 import { ProductionLayer } from "./runtime/production.js";
+import { testExecutionCommand } from "./test-execution-command.js";
 
 // Re-export for backward compatibility
 export const runtimeLayer = ProductionLayer;

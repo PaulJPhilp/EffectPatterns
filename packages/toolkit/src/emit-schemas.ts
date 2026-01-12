@@ -5,11 +5,12 @@
  * schemas for LLM tool-call function parameter specifications.
  */
 
+import { JSONSchema, type Schema as S } from "@effect/schema";
+import { Effect } from "effect";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { stderr, stdout } from "node:process";
 import { fileURLToPath } from "node:url";
-import { JSONSchema, type Schema as S } from "@effect/schema";
 import {
   ExplainPatternRequest,
   GenerateRequest,
@@ -26,40 +27,52 @@ function emitSchema<A, I, R>(
   schema: S.Schema<A, I, R>,
   name: string,
   outputDir: string
-): void {
-  try {
-    const jsonSchema = JSONSchema.make(schema);
+): Effect.Effect<void, string> {
+  return Effect.gen(function* () {
+    const jsonSchema = yield* Effect.try({
+      try: () => JSONSchema.make(schema),
+      catch: (error) => `Failed to create JSON schema for ${name}: ${String(error)}`
+    });
 
     const outputPath = join(outputDir, `${name}.json`);
 
-    writeFileSync(outputPath, JSON.stringify(jsonSchema, null, 2), "utf-8");
+    yield* Effect.try({
+      try: () => writeFileSync(outputPath, JSON.stringify(jsonSchema, null, 2), "utf-8"),
+      catch: (error) => `Failed to write schema file ${name}: ${String(error)}`
+    });
 
-    stdout.write(`✓ Emitted ${name}.json\n`);
-  } catch (error) {
-    stderr.write(`✗ Failed to emit ${name}: ${String(error)}\n`);
-    process.exit(1);
-  }
+    yield* Effect.sync(() => stdout.write(`✓ Emitted ${name}.json\n`));
+  });
 }
 
 /**
  * Main emitter function
  */
-function main(): void {
-  stdout.write("Emitting JSON Schemas for LLM tool calls...\n\n");
+function main(): Effect.Effect<void, string> {
+  return Effect.gen(function* () {
+    yield* Effect.sync(() => stdout.write("Emitting JSON Schemas for LLM tool calls...\n\n"));
 
-  const outputDir = join(__dirname, "../dist/schemas");
+    const outputDir = join(__dirname, "../dist/schemas");
 
-  // Ensure output directory exists
-  if (!existsSync(outputDir)) {
-    mkdirSync(outputDir, { recursive: true });
-  }
+    // Ensure output directory exists
+    if (!existsSync(outputDir)) {
+      yield* Effect.try({
+        try: () => mkdirSync(outputDir, { recursive: true }),
+        catch: (error) => `Failed to create output directory: ${String(error)}`
+      });
+    }
 
-  // Emit schemas for tool-call functions
-  emitSchema(GenerateRequest, "generate-request", outputDir);
-  emitSchema(SearchPatternsRequest, "search-patterns-request", outputDir);
-  emitSchema(ExplainPatternRequest, "explain-pattern-request", outputDir);
+    // Emit schemas for tool-call functions
+    yield* emitSchema(GenerateRequest, "generate-request", outputDir);
+    yield* emitSchema(SearchPatternsRequest, "search-patterns-request", outputDir);
+    yield* emitSchema(ExplainPatternRequest, "explain-pattern-request", outputDir);
 
-  stdout.write("\nAll schemas emitted successfully!\n");
+    yield* Effect.sync(() => stdout.write("\nAll schemas emitted successfully!\n"));
+  });
 }
 
-main();
+// Run the main function
+Effect.runPromise(main()).catch((error) => {
+  stderr.write(`✗ Failed to emit schemas: ${String(error)}\n`);
+  process.exit(1);
+});

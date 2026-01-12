@@ -29,26 +29,20 @@ import {
     summarizeTestResults,
     summarizeValidationResults,
     testAllPatterns,
-    validateAllPatterns,
-    type GeneratorConfig,
-    type LinterConfig,
-    type PipelineConfig,
-    type PublisherConfig,
-    type TesterConfig,
-    type ValidatorConfig,
+    validateAllPatterns
 } from "./services/publish/index.js";
 
 const PROJECT_ROOT = process.cwd();
 
 // --- DEFAULT CONFIGS ---
 
-const getValidatorConfig = (): ValidatorConfig => ({
+const getValidatorConfig = (): any => ({
     publishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
     srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
     concurrency: 10,
 });
 
-const getTesterConfig = (): TesterConfig => ({
+const getTesterConfig = (): any => ({
     srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
     concurrency: 10,
     enableTypeCheck: true,
@@ -59,17 +53,17 @@ const getTesterConfig = (): TesterConfig => ({
     ]),
 });
 
-const getPublisherConfig = (): PublisherConfig => ({
+const getPublisherConfig = (): any => ({
     processedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
     publishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.PUBLISHED}`,
     srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
 });
 
-const getGeneratorConfig = (): GeneratorConfig => ({
+const getGeneratorConfig = (): any => ({
     readmePath: `${PROJECT_ROOT}/README.md`,
 });
 
-const getLinterConfig = (): LinterConfig => ({
+const getLinterConfig = (): any => ({
     srcDirs: [
         `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
         `${PROJECT_ROOT}/content/src`,
@@ -77,12 +71,12 @@ const getLinterConfig = (): LinterConfig => ({
     concurrency: 10,
 });
 
-const getPipelineConfig = (): PipelineConfig => ({
-    validator: getValidatorConfig(),
-    tester: getTesterConfig(),
-    publisher: getPublisherConfig(),
-    generator: getGeneratorConfig(),
-    linter: getLinterConfig(),
+const getPipelineConfig = (): any => ({
+    validation: getValidatorConfig(),
+    testing: getTesterConfig(),
+    publishing: getPublisherConfig(),
+    generation: getGeneratorConfig(),
+    linting: getLinterConfig(),
 });
 
 /**

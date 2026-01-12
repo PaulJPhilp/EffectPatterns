@@ -1,0 +1,69 @@
+{
+  "name": "@effect-patterns/ep-shared-services",
+  "version": "1.0.0",
+  "description": "Shared services for Effect Patterns CLI tools",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./tui": {
+      "types": "./dist/tui/index.d.ts",
+      "import": "./dist/tui/index.js"
+    },
+    "./logger": {
+      "types": "./dist/logger/index.d.ts",
+      "import": "./dist/logger/index.js"
+    },
+    "./display": {
+      "types": "./dist/display/index.d.ts",
+      "import": "./dist/display/index.js"
+    },
+    "./execution": {
+      "types": "./dist/execution/index.d.ts",
+      "import": "./dist/execution/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "biome check .",
+    "lint:fix": "biome check . --write",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "keywords": [
+    "effect",
+    "effect-ts",
+    "cli",
+    "services",
+    "shared"
+  ],
+  "author": "Effect Patterns",
+  "license": "MIT",
+  "dependencies": {
+    "effect": "^3.8.0",
+    "@effect/platform": "^0.55.0",
+    "@effect/platform-node": "^0.56.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  },
+  "peerDependencies": {
+    "effect-cli-tui": "^1.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -122,62 +122,57 @@ const handleEntityOperation = (
 	action: "lock" | "unlock"
 ) =>
 	Effect.gen(function* () {
-		let db: ReturnType<typeof createDatabase> | null = null;
-		try {
-			db = createDatabase();
-			const entityType = options.type.toLowerCase();
-			const repo = getRepository(db.db, entityType);
+		const db = yield* Effect.try({
+			try: () => createDatabase(),
+			catch: (error) => new Error(`Failed to create database connection: ${error instanceof Error ? error.message : String(error)}`)
+		});
 
-			if (!repo) {
-				yield* Display.showError(
-					`Invalid entity type: ${options.type}. Must be one of: ` +
-					`pattern, application-pattern, job`
-				);
-				return;
-			}
+		const entityType = options.type.toLowerCase();
+		const repo = getRepository(db.db, entityType);
 
-			// Find the entity
-			const entity = yield* findEntity(repo, args.identifier, entityType);
-			const entityName = getEntityDisplayName(entityType, entity.slug);
-
-			// Perform the operation
-			const result = yield* performEntityOperation(repo, entity.id, action, entityType);
-
-			if (!result) {
-				yield* Display.showError(`Failed to ${action} ${entityName}`);
-				return;
-			}
-
-			// Show success
-			const actionText = action === "lock" ? "locked (validated)" : "unlocked";
-			yield* Display.showSuccess(`${entityName} has been ${actionText}`);
-			yield* Console.log(`  • Validated: ${result.validated ? "Yes" : "No"}`);
-			if (action === "lock" && result.validatedAt) {
-				yield* Console.log(
-					`  • Validated at: ${result.validatedAt.toISOString()}`
-				);
-			}
-		} catch (error) {
+		if (!repo) {
 			yield* Display.showError(
-				`Database error: ${error instanceof Error ? error.message : String(error)}`
+				`Invalid entity type: ${options.type}. Must be one of: ` +
+				`pattern, application-pattern, job`
 			);
-			yield* Console.log(
-				"\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL " +
-				"is set correctly.\n"
-			);
-			throw error;
-		} finally {
-			if (db) {
-				yield* Effect.tryPromise({
-					try: () => db!.close(),
-					catch: (error) => {
-						console.error("Failed to close database connection:", error);
-						return undefined;
-					},
-				});
-			}
+			return;
 		}
-	});
+
+		// Find the entity
+		const entity = yield* findEntity(repo, args.identifier, entityType);
+		const entityName = getEntityDisplayName(entityType, entity.slug);
+
+		// Perform the operation
+		const result = yield* performEntityOperation(repo, entity.id, action, entityType);
+
+		if (!result) {
+			yield* Display.showError(`Failed to ${action} ${entityName}`);
+			return;
+		}
+
+		// Show success
+		const actionText = action === "lock" ? "locked (validated)" : "unlocked";
+		yield* Display.showSuccess(`${entityName} has been ${actionText}`);
+		yield* Console.log(`  • Validated: ${result.validated ? "Yes" : "No"}`);
+		if (action === "lock" && result.validatedAt) {
+			yield* Console.log(
+				`  • Validated at: ${result.validatedAt.toISOString()}`
+			);
+		}
+	}).pipe(
+		Effect.catchAll((error) =>
+			Effect.gen(function* () {
+				yield* Display.showError(
+					`Database error: ${error instanceof Error ? error.message : String(error)}`
+				);
+				yield* Console.log(
+					"\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL " +
+					"is set correctly.\n"
+				);
+				return Effect.fail(error);
+			})
+		)
+	);
 
 /**
  * admin:lock - Lock (validate) an entity

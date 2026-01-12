@@ -16,6 +16,7 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
+    "@effect-patterns/ep-shared-services": "workspace:*",
     "@effect-patterns/pipeline-state": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
     "@effect/cli": "^0.69.2",

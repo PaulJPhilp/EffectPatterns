@@ -5,16 +5,18 @@
 import { Console, Context, Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { Logger, defaultLoggerConfig } from "../../logger/index.js";
+import { TUIService } from "../../tui/service.js";
 import { Display } from "../service.js";
-import { TUILoader } from "../tui-loader.js";
 
 // --- Test Configuration ---
 
-const makeTestTUILoader = (tuiModule: any | null) =>
+const makeTestTUIService = (tuiModule: any | null) =>
 	Layer.succeed(
-		TUILoader,
-		TUILoader.of({
+		TUIService,
+		TUIService.of({
 			load: () => Effect.succeed(tuiModule),
+			isAvailable: () => Effect.suspend(() => Effect.succeed(tuiModule !== null)),
+			clearCache: () => Effect.suspend(() => Effect.void),
 		})
 	);
 
@@ -43,37 +45,38 @@ const makeLoggerLayer = (useColors: boolean = true) =>
 class TestConsole extends Context.Tag("TestConsole")<
 	TestConsole,
 	{ logs: Effect.Effect<string[]> }
->() {}
+>() { }
 
 const runTest = <A, E>(
-    program: Effect.Effect<A, E, Display | TestConsole>,
-    tuiModule: any | null, 
-    useColors: boolean = true
+	program: Effect.Effect<A, E, any>,
+	tuiModule: any | null,
+	useColors: boolean = true
 ) => {
-    const logs: string[] = [];
-    
-    // Create a mock Console service
-    const mockConsole = {
-        log: (msg: any) => Effect.sync(() => { logs.push(String(msg)); }),
-        error: (msg: any) => Effect.sync(() => { logs.push(String(msg)); }),
-        warn: (msg: any) => Effect.sync(() => { logs.push(String(msg)); }),
-    } as any;
+	const logs: string[] = [];
 
-    const testConsoleService = {
-        logs: Effect.sync(() => [...logs])
-    };
+	// Create a mock Console service
+	const mockConsole = {
+		log: (msg: any) => Effect.sync(() => { logs.push(String(msg)); }),
+		error: (msg: any) => Effect.sync(() => { logs.push(String(msg)); }),
+		warn: (msg: any) => Effect.sync(() => { logs.push(String(msg)); }),
+	} as any;
 
-    const displayLayer = Display.Default.pipe(
-        Layer.provide(makeTestTUILoader(tuiModule)),
-        Layer.provide(makeLoggerLayer(useColors))
-    );
+	const testConsoleService = {
+		logs: Effect.sync(() => [...logs])
+	};
 
-    return program.pipe(
-        Effect.provide(displayLayer),
-        Effect.provide(Console.setConsole(mockConsole)),
-        Effect.provideService(TestConsole, testConsoleService),
-        Effect.runPromise
-    );
+	const displayLayer = Display.Default.pipe(
+		Layer.provide(makeTestTUIService(tuiModule)),
+		Layer.provide(makeLoggerLayer(useColors))
+	);
+
+	return Effect.runPromise(
+		program.pipe(
+			Effect.provide(displayLayer),
+			Effect.provide(Console.setConsole(mockConsole)),
+			Effect.provideService(TestConsole, testConsoleService)
+		) as Effect.Effect<A, E, never>
+	);
 };
 
 describe("Display Service", () => {
@@ -82,10 +85,10 @@ describe("Display Service", () => {
 			runTest(Effect.gen(function* () {
 				const display = yield* Display;
 				yield* display.showSuccess("Success message");
-				
+
 				const tc = yield* TestConsole;
 				const output = yield* tc.logs;
-				
+
 				expect(output.length).toBeGreaterThan(0);
 				expect(output[0]).toContain("Success message");
 			}), null, true));
@@ -94,10 +97,10 @@ describe("Display Service", () => {
 			runTest(Effect.gen(function* () {
 				const display = yield* Display;
 				yield* display.showError("Error message");
-				
+
 				const tc = yield* TestConsole;
-                const output = yield* tc.logs;
-                
+				const output = yield* tc.logs;
+
 				expect(output.length).toBeGreaterThan(0);
 				expect(output[0]).toContain("Error message");
 			}), null, true));
@@ -106,10 +109,10 @@ describe("Display Service", () => {
 			runTest(Effect.gen(function* () {
 				const display = yield* Display;
 				yield* display.showSuccess("Plain message");
-				
+
 				const tc = yield* TestConsole;
-                const output = yield* tc.logs;
-                
+				const output = yield* tc.logs;
+
 				expect(output[0]).toContain("Plain message");
 			}), null, false));
 	});
@@ -119,7 +122,7 @@ describe("Display Service", () => {
 		class MockDisplayTag extends Context.Tag("MockDisplayTag")<
 			MockDisplayTag,
 			unknown
-		>() {}
+		>() { }
 
 		it("should use TUI service when available", () => {
 			const displaySuccessSpy = vi.fn().mockImplementation(() => Effect.void);

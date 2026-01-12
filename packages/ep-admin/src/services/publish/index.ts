@@ -6,11 +6,9 @@
 
 // Types
 export type {
-	Frontmatter, GeneratorConfig, LintIssue,
-	LintResult,
-	LinterConfig,
-	PatternInfo, PipelineConfig,
-	PipelineResult, PublishResult, PublishSummary, PublisherConfig, TestResult, TestSummary, TesterConfig, ValidationIssue,
+	Frontmatter, GeneratorConfig, LinterConfig, LintIssue,
+	LintResult, PatternInfo, PipelineConfig,
+	PipelineResult, PublisherConfig, PublishResult, PublishSummary, TesterConfig, TestResult, TestSummary, ValidationIssue,
 	ValidationResult,
 	ValidatorConfig
 } from "./types.js";
@@ -29,8 +27,8 @@ export { PublishServiceLive } from "./service.js";
 
 // Helpers
 export {
-	calculateLintStats, calculatePublishStats, calculateTestStats, countValidationIssues, executeCommand, extractPatternInfo, fileExists, generatePatternLink, getFailedPublishes, getFailedTests, getFailedValidations, getFilesWithIssues, getMdxFiles, getSlowestTests, getTsFiles, groupLintIssuesByRule, groupValidationIssuesByCategory, readFileContent, runTypeScriptCheck,
-	runTypeScriptFile, sortPatterns, writeFileContent
+	calculateLintStats, calculatePublishStats, calculateTestStats, countValidationIssues, executeCommand, extractPatternInfo, fileExists, generatePatternLink, getFailedValidations, getFilesWithIssues, getMdxFiles, getTsFiles, groupLintIssuesByRule, groupValidationIssuesByCategory, readFileContent, runTypeScriptCheck,
+	sortPatterns, writeFileContent
 } from "./helpers.js";
 
 // Legacy exports (keeping existing functionality)
@@ -44,11 +42,11 @@ export {
 export {
 	defaultTesterConfig, getFailedTests,
 	getSlowestTests, runFullTestSuite, runTypeCheck,
-	runTypeScriptFile, summarizeResults as summarizeTestResults, testAllPatterns, type TestResult as LegacyTestResult, type TestSummary as LegacyTestSummary, type TesterConfig as LegacyTesterConfig
+	runTypeScriptFile, summarizeResults as summarizeTestResults, testAllPatterns, type TesterConfig as LegacyTesterConfig, type TestResult as LegacyTestResult, type TestSummary as LegacyTestSummary
 } from "./tester.js";
 
 export {
-	getFailedPublishes, publishAllPatterns, publishPattern, summarizePublishResults, type PublishResult as LegacyPublishResult, type PublishSummary as LegacyPublishSummary, type PublisherConfig as LegacyPublisherConfig
+	getFailedPublishes, publishAllPatterns, publishPattern, summarizePublishResults, type PublisherConfig as LegacyPublisherConfig, type PublishResult as LegacyPublishResult, type PublishSummary as LegacyPublishSummary
 } from "./publisher.js";
 
 export {
@@ -57,8 +55,8 @@ export {
 } from "./generator.js";
 
 export {
-	getFilesWithIssues as LegacyGetFilesWithIssues, lintAllFiles, lintFile, summarizeLintResults, type LintIssue as LegacyLintIssue,
-	type LintResult as LegacyLintResult, type LinterConfig as LegacyLinterConfig
+	getFilesWithIssues as LegacyGetFilesWithIssues, lintAllFiles, lintFile, summarizeLintResults, type LinterConfig as LegacyLinterConfig, type LintIssue as LegacyLintIssue,
+	type LintResult as LegacyLintResult
 } from "./linter.js";
 
 export {
