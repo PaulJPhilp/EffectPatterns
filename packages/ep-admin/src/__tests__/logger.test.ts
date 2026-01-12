@@ -166,10 +166,10 @@ describe("Logger Service", () => {
                     const logger = yield* makeLogger({ ...defaultLoggerConfig, logLevel: "warn" });
 
                     return {
-                        debug: logger.shouldLog("debug"),
-                        info: logger.shouldLog("info"),
-                        warn: logger.shouldLog("warn"),
-                        error: logger.shouldLog("error"),
+                        debug: yield* logger.shouldLog("debug"),
+                        info: yield* logger.shouldLog("info"),
+                        warn: yield* logger.shouldLog("warn"),
+                        error: yield* logger.shouldLog("error"),
                     };
                 })
             );

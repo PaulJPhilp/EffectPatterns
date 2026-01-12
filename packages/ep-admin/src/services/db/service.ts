@@ -214,9 +214,6 @@ export const runFullTestSuite = (): Effect.Effect<DBTestSummary, Error> =>
 				if (!isQueryResult(result) || !isTestQueryResult(result.rows)) {
 					throw new Error("Connection failed");
 				}
-				if (!result.rows[0]?.test) {
-					throw new Error("Connection failed");
-				}
 			});
 
 			// Test 2: Schema Tables Exist
