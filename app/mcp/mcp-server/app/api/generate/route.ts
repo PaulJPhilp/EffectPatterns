@@ -31,7 +31,7 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
 
   // Parse and validate request body
   const body = yield* Effect.tryPromise(() => request.json());
-  const generateRequest = yield* S.decode(GenerateRequest)(body);
+  const generateRequest = yield* S.decode(GenerateRequest)(body as any);
 
   // Annotate span with request details
   yield* Effect.annotateCurrentSpan({
