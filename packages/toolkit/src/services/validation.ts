@@ -442,8 +442,10 @@ export class ValidationService extends Effect.Service<ValidationService>()(
 export const ValidationServiceLive = ValidationService.Default;
 
 /**
- * Legacy compatibility functions
- * These will be deprecated in favor of the service-based approach
+ * @deprecated Use ValidationService.validate() instead.
+ * This function will be removed in the next major version.
+ * 
+ * Legacy compatibility function for synchronous validation.
  */
 export function validateData<T>(
   schema: Schema.Schema<unknown, T>,
@@ -475,6 +477,12 @@ export function validateData<T>(
   }
 }
 
+/**
+ * @deprecated Use ValidationService.validateString() instead.
+ * This function will be removed in the next major version.
+ * 
+ * Legacy compatibility function for synchronous string validation.
+ */
 export function validateString(
   input: unknown,
   options?: {

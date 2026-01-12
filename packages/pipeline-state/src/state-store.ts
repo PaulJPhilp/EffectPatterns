@@ -1,6 +1,5 @@
+import { FileSystem } from "@effect/platform";
 import { Effect } from "effect";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
 import { PatternNotFoundError, StateFilePersistenceError } from "./errors.js";
 import {
   PatternMetadata,
@@ -12,110 +11,61 @@ import {
   createInitialPipelineState,
 } from "./schemas.js";
 
-const STATE_FILE_PATH = path.join(process.cwd(), ".pipeline-state.json");
+const STATE_FILE_NAME = ".pipeline-state.json";
 
 /**
- * StateStore service interface
+ * StateStore service implementation using @effect/platform FileSystem
  */
-export interface StateStoreService {
-  readonly loadState: () => Effect.Effect<
-    PipelineStateFile,
-    StateFilePersistenceError
-  >;
-  readonly saveState: (
-    state: PipelineStateFile
-  ) => Effect.Effect<void, StateFilePersistenceError>;
-  readonly getPatternState: (
-    patternId: string
-  ) => Effect.Effect<
-    PatternState,
-    PatternNotFoundError | StateFilePersistenceError
-  >;
-  readonly initializePattern: (
-    patternId: string,
-    metadata: PatternMetadata
-  ) => Effect.Effect<PatternState, StateFilePersistenceError>;
-  readonly updatePatternStatus: (
-    patternId: string,
-    currentStep: WorkflowStep,
-    status: PatternState["status"]
-  ) => Effect.Effect<void, StateFilePersistenceError | PatternNotFoundError>;
-  readonly markStepRunning: (
-    patternId: string,
-    step: WorkflowStep
-  ) => Effect.Effect<void, StateFilePersistenceError | PatternNotFoundError>;
-  readonly markStepCompleted: (
-    patternId: string,
-    step: WorkflowStep
-  ) => Effect.Effect<void, StateFilePersistenceError | PatternNotFoundError>;
-  readonly markStepFailed: (
-    patternId: string,
-    step: WorkflowStep,
-    error: string
-  ) => Effect.Effect<void, StateFilePersistenceError | PatternNotFoundError>;
-  readonly addCheckpoint: (
-    patternId: string,
-    step: WorkflowStep,
-    checkpoint: StepCheckpoint
-  ) => Effect.Effect<void, StateFilePersistenceError | PatternNotFoundError>;
-  readonly getAllPatterns: () => Effect.Effect<
-    Record<string, PatternState>,
-    StateFilePersistenceError
-  >;
-  readonly getPatternsByStatus: (
-    status: PatternState["status"]
-  ) => Effect.Effect<PatternState[], StateFilePersistenceError>;
-}
-
-/**
- * StateStore service implementation
- */
-const makeStateStore = (): StateStoreService => {
-  const loadState = (): Effect.Effect<
-    PipelineStateFile,
-    StateFilePersistenceError
-  > =>
+const makeStateStore = () => {
+  const getStateFilePath = () =>
     Effect.gen(function* () {
-      const content = yield* Effect.tryPromise(() =>
-        fs.readFile(STATE_FILE_PATH, "utf-8")
-      ).pipe(
+      return `${process.cwd()}/${STATE_FILE_NAME}`;
+    });
+
+  const loadState = () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const filePath = yield* getStateFilePath();
+
+      const exists = yield* fs.exists(filePath);
+      if (!exists) {
+        return createInitialPipelineState();
+      }
+
+      const content = yield* fs.readFileString(filePath).pipe(
         Effect.catchAll((error) => {
-          const message =
-            error instanceof Error ? error.message : String(error);
-          if (message.includes("ENOENT")) {
-            return Effect.succeed(JSON.stringify(createInitialPipelineState()));
-          }
+          const message = error instanceof Error ? error.message : String(error);
           return Effect.fail(
             new StateFilePersistenceError({
-              filePath: STATE_FILE_PATH,
+              filePath,
               operation: "read",
               reason: `Failed to read state file: ${message}`,
             })
           );
         })
       );
+
       const parsed = JSON.parse(content) as PipelineStateFile;
       return parsed;
     });
 
-  const saveState = (
-    state: PipelineStateFile
-  ): Effect.Effect<void, StateFilePersistenceError> =>
+  const saveState = (state: PipelineStateFile) =>
     Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const filePath = yield* getStateFilePath();
+
       const updated = {
         ...state,
         lastUpdated: new Date().toISOString(),
       };
       const content = JSON.stringify(updated, null, 2);
-      yield* Effect.tryPromise(() =>
-        fs.writeFile(STATE_FILE_PATH, content, "utf-8")
-      ).pipe(
+
+      yield* fs.writeFileString(filePath, content).pipe(
         Effect.catchAll((error) => {
-          const message =
-            error instanceof Error ? error.message : String(error);
+          const message = error instanceof Error ? error.message : String(error);
           return Effect.fail(
             new StateFilePersistenceError({
-              filePath: STATE_FILE_PATH,
+              filePath,
               operation: "write",
               reason: `Failed to write state file: ${message}`,
             })
@@ -124,12 +74,7 @@ const makeStateStore = (): StateStoreService => {
       );
     });
 
-  const getPatternState = (
-    patternId: string
-  ): Effect.Effect<
-    PatternState,
-    PatternNotFoundError | StateFilePersistenceError
-  > =>
+  const getPatternState = (patternId: string) =>
     Effect.gen(function* () {
       const state = yield* loadState();
       const pattern = state.patterns[patternId];
@@ -144,10 +89,7 @@ const makeStateStore = (): StateStoreService => {
       return pattern;
     });
 
-  const initializePattern = (
-    patternId: string,
-    metadata: PatternMetadata
-  ): Effect.Effect<PatternState, StateFilePersistenceError> =>
+  const initializePattern = (patternId: string, metadata: PatternMetadata) =>
     Effect.gen(function* () {
       const state = yield* loadState();
       const patternState = createInitialPatternState(patternId, metadata);
@@ -166,7 +108,7 @@ const makeStateStore = (): StateStoreService => {
     patternId: string,
     currentStep: WorkflowStep,
     status: PatternState["status"]
-  ): Effect.Effect<void, StateFilePersistenceError | PatternNotFoundError> =>
+  ) =>
     Effect.gen(function* () {
       const state = yield* loadState();
       const pattern = state.patterns[patternId];
@@ -194,10 +136,7 @@ const makeStateStore = (): StateStoreService => {
       yield* saveState(updated);
     });
 
-  const markStepRunning = (
-    patternId: string,
-    step: WorkflowStep
-  ): Effect.Effect<void, StateFilePersistenceError | PatternNotFoundError> =>
+  const markStepRunning = (patternId: string, step: WorkflowStep) =>
     Effect.gen(function* () {
       const state = yield* loadState();
       const pattern = state.patterns[patternId];
@@ -235,10 +174,7 @@ const makeStateStore = (): StateStoreService => {
       yield* saveState(updated);
     });
 
-  const markStepCompleted = (
-    patternId: string,
-    step: WorkflowStep
-  ): Effect.Effect<void, StateFilePersistenceError | PatternNotFoundError> =>
+  const markStepCompleted = (patternId: string, step: WorkflowStep) =>
     Effect.gen(function* () {
       const state = yield* loadState();
       const pattern = state.patterns[patternId];
@@ -284,7 +220,7 @@ const makeStateStore = (): StateStoreService => {
     patternId: string,
     step: WorkflowStep,
     error: string
-  ): Effect.Effect<void, StateFilePersistenceError | PatternNotFoundError> =>
+  ) =>
     Effect.gen(function* () {
       const state = yield* loadState();
       const pattern = state.patterns[patternId];
@@ -326,7 +262,7 @@ const makeStateStore = (): StateStoreService => {
     patternId: string,
     step: WorkflowStep,
     checkpoint: StepCheckpoint
-  ): Effect.Effect<void, StateFilePersistenceError | PatternNotFoundError> =>
+  ) =>
     Effect.gen(function* () {
       const state = yield* loadState();
       const pattern = state.patterns[patternId];
@@ -360,18 +296,13 @@ const makeStateStore = (): StateStoreService => {
       yield* saveState(updated);
     });
 
-  const getAllPatterns = (): Effect.Effect<
-    Record<string, PatternState>,
-    StateFilePersistenceError
-  > =>
+  const getAllPatterns = () =>
     Effect.gen(function* () {
       const state = yield* loadState();
       return state.patterns;
     });
 
-  const getPatternsByStatus = (
-    status: PatternState["status"]
-  ): Effect.Effect<PatternState[], StateFilePersistenceError> =>
+  const getPatternsByStatus = (status: PatternState["status"]) =>
     Effect.gen(function* () {
       const patterns = yield* getAllPatterns();
       return Object.values(patterns).filter((p) => p.status === status);
@@ -397,4 +328,4 @@ const makeStateStore = (): StateStoreService => {
  */
 export class StateStore extends Effect.Service<StateStore>()("StateStore", {
   sync: () => makeStateStore(),
-}) {}
+}) { }

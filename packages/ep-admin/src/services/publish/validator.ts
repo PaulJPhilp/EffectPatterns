@@ -11,7 +11,7 @@
 
 import { FileSystem } from "@effect/platform";
 import { Effect } from "effect";
-import matter from "gray-matter";
+import { MdxService } from "effect-mdx";
 
 // --- TYPES ---
 
@@ -263,9 +263,10 @@ function validateStructure(content: string): ValidationIssue[] {
 export const validatePattern = (
 	filePath: string,
 	config: ValidatorConfig,
-): Effect.Effect<ValidationResult, Error, FileSystem.FileSystem> =>
+) =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
+		const mdx = yield* MdxService;
 
 		// Extract filename from path
 		const fileName = filePath
@@ -274,15 +275,15 @@ export const validatePattern = (
 			?.replace(".mdx", "") || "unknown";
 		const issues: ValidationIssue[] = [];
 
-		const content = yield* fs.readFileString(filePath);
-		const parsed = matter(content);
-		const frontmatter = parsed.data as Frontmatter;
+		const { frontmatter: rawFrontmatter, mdxBody } =
+			yield* mdx.readMdxAndFrontmatter(filePath);
+		const frontmatter = rawFrontmatter as Frontmatter;
 
 		// Validate frontmatter
 		issues.push(...validateFrontmatter(frontmatter, fileName));
 
 		// Validate structure
-		issues.push(...validateStructure(parsed.content));
+		issues.push(...validateStructure(mdxBody));
 
 		// Check for corresponding TypeScript file
 		const tsPath = `${config.srcDir}/${fileName}.ts`;
@@ -326,7 +327,7 @@ export const validatePattern = (
 
 export const validateAllPatterns = (
 	config: ValidatorConfig,
-): Effect.Effect<ValidationResult[], Error, FileSystem.FileSystem> =>
+) =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 
