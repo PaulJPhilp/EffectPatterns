@@ -112,7 +112,7 @@ async function runSmokeTests() {
     const response = await fetch(`${baseUrl}/api/health`);
     assertEquals(response.status, 200);
 
-    const data = await response.json();
+    const data: any = await response.json();
     assertEquals(data.ok, true);
     assertEquals(data.service, "effect-patterns-mcp-server");
     assertNotNull(data.version);
@@ -150,7 +150,7 @@ async function runSmokeTests() {
       });
       assertEquals(response.status, 200);
 
-      const data = await response.json();
+      const data: any = await response.json();
       assertNotNull(data.patterns);
       assert(Array.isArray(data.patterns), "Patterns should be an array");
       assert(data.patterns.length > 0, "Should return at least one pattern");
@@ -164,7 +164,7 @@ async function runSmokeTests() {
     const response = await fetch(`${baseUrl}/api/patterns?key=${API_KEY}`);
     assertEquals(response.status, 200);
 
-    const data = await response.json();
+    const data: any = await response.json();
     assertNotNull(data.patterns);
     assert(data.count > 0, "Count should be greater than 0");
   });
@@ -176,7 +176,7 @@ async function runSmokeTests() {
     });
     assertEquals(response.status, 200);
 
-    const data = await response.json();
+    const data: any = await response.json();
     assertNotNull(data.patterns);
   });
 
@@ -190,7 +190,7 @@ async function runSmokeTests() {
     );
     assertEquals(response.status, 200);
 
-    const data = await response.json();
+    const data: any = await response.json();
     assertNotNull(data.patterns);
 
     // All patterns should match category
@@ -212,7 +212,7 @@ async function runSmokeTests() {
     });
     assertEquals(response.status, 200);
 
-    const data = await response.json();
+    const data: any = await response.json();
     assert(data.patterns.length <= 1, "Should return at most 1 pattern");
   });
 
@@ -232,7 +232,7 @@ async function runSmokeTests() {
     );
     assertEquals(response.status, 404);
 
-    const data = await response.json();
+    const data: any = await response.json();
     assertNotNull(data.error);
   });
 
@@ -264,7 +264,7 @@ async function runSmokeTests() {
     );
 
     if (response.status === 200) {
-      const data = await response.json();
+      const data: any = await response.json();
       assertNotNull(data.snippet);
       assertNotNull(data.traceId);
       assertEquals(data.patternId, "retry-with-backoff");
@@ -286,7 +286,7 @@ async function runSmokeTests() {
     });
 
     if (response.status === 200) {
-      const data = await response.json();
+      const data: any = await response.json();
       assertContains(data.snippet, "myRetry");
     } else {
       assertEquals(response.status, 404); // Pattern doesn't exist
@@ -308,7 +308,7 @@ async function runSmokeTests() {
     });
 
     if (response.status === 200) {
-      const data = await response.json();
+      const data: any = await response.json();
       assertContains(data.snippet, "require");
     } else {
       assertEquals(response.status, 404);
@@ -327,7 +327,7 @@ async function runSmokeTests() {
     });
     assertEquals(response.status, 400);
 
-    const data = await response.json();
+    const data: any = await response.json();
     assertNotNull(data.error);
   });
 
@@ -344,7 +344,7 @@ async function runSmokeTests() {
     });
     assertEquals(response.status, 200);
 
-    const data = await response.json();
+    const data: any = await response.json();
     assertNotNull(data.effectNodeSdk);
     assertNotNull(data.effectWithSpan);
     assertNotNull(data.langgraphPython);
@@ -357,7 +357,7 @@ async function runSmokeTests() {
     const response = await fetch(`${baseUrl}/api/trace-wiring`, {
       headers: { "x-api-key": API_KEY },
     });
-    const data = await response.json();
+    const data: any = await response.json();
     assertContains(data.effectNodeSdk, "Effect");
     assertContains(data.effectNodeSdk, "@opentelemetry/api");
   });
@@ -383,7 +383,7 @@ async function runSmokeTests() {
     const response = await fetch(`${baseUrl}/api/patterns`, {
       headers: { "x-api-key": API_KEY },
     });
-    const data = await response.json();
+    const data: any = await response.json();
     const headerTraceId = response.headers.get("x-trace-id");
 
     assertEquals(

@@ -119,7 +119,7 @@ describe("Pattern Server", { sequential: true }, () => {
     it("should return 200 OK with status", async () => {
       const program = Effect.gen(function* () {
         const response = yield* makeRequest("/health");
-        const json = yield* getJson(response);
+        const json: any = yield* getJson(response);
 
         // Health endpoint returns wrapped response with status in data
         expect(json.success).toBe(true);
@@ -136,7 +136,7 @@ describe("Pattern Server", { sequential: true }, () => {
     it("should return array of rules", async () => {
       const program = Effect.gen(function* () {
         const response = yield* makeRequest("/api/v1/rules");
-        const json = yield* getJson(response);
+        const json: any = yield* getJson(response);
 
         // Rules endpoint returns wrapped response
         expect(json.success).toBe(true);
@@ -151,7 +151,7 @@ describe("Pattern Server", { sequential: true }, () => {
     it("should return rules with correct schema", async () => {
       const program = Effect.gen(function* () {
         const response = yield* makeRequest("/api/v1/rules");
-        const json = yield* getJson(response);
+        const json: any = yield* getJson(response);
 
         // Unwrap the response and validate the data array against schema
         const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(json);
@@ -173,7 +173,7 @@ describe("Pattern Server", { sequential: true }, () => {
     it("should return valid rule IDs", async () => {
       const program = Effect.gen(function* () {
         const response = yield* makeRequest("/api/v1/rules");
-        const json = yield* getJson(response);
+        const json: any = yield* getJson(response);
         const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(json);
         const validated = parsed.data;
 
@@ -190,7 +190,7 @@ describe("Pattern Server", { sequential: true }, () => {
     it("should return rules with content", async () => {
       const program = Effect.gen(function* () {
         const response = yield* makeRequest("/api/v1/rules");
-        const json = yield* getJson(response);
+        const json: any = yield* getJson(response);
         const parsed = yield* Schema.decodeUnknown(ApiResponseSchema)(json);
         const validated = parsed.data;
 
@@ -210,7 +210,7 @@ describe("Pattern Server", { sequential: true }, () => {
         const response = yield* makeRequest(
           "/api/v1/rules/use-effect-gen-for-business-logic"
         );
-        const json = yield* getJson(response);
+        const json: any = yield* getJson(response);
 
         // Single rule endpoint also wraps response
         const singleRuleSchema = Schema.Struct({
@@ -244,7 +244,7 @@ describe("Pattern Server", { sequential: true }, () => {
           const response = result.right;
           expect(response.status).toBe(404);
 
-          const json = yield* getJson(response);
+          const json: any = yield* getJson(response);
           expect(json).toHaveProperty("success");
           expect(json.success).toBe(false);
           expect(json).toHaveProperty("error");
@@ -270,7 +270,7 @@ describe("Pattern Server", { sequential: true }, () => {
 
         // Fetch it by ID
         const response = yield* makeRequest(`/api/v1/rules/${randomRule.id}`);
-        const json = yield* getJson(response);
+        const json: any = yield* getJson(response);
         const singleRuleSchema = Schema.Struct({
           success: Schema.Boolean,
           data: RuleSchema,

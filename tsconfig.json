@@ -30,7 +30,27 @@
           "tryCatchInGen": "warning"
         }
       }
-    ]
+    ],
+    "paths": {
+      "@effect-patterns/toolkit": [
+        "./packages/toolkit/src/index.ts"
+      ],
+      "@effect-patterns/ep-cli": [
+        "./packages/ep-cli/src/index.ts"
+      ],
+      "@effect-patterns/ep-admin": [
+        "./packages/ep-admin/src/index.ts"
+      ],
+      "@effect-patterns/pipeline-state": [
+        "./packages/pipeline-state/src/index.ts"
+      ],
+      "@effect-patterns/shared-services": [
+        "./packages/ep-shared-services/src/index.ts"
+      ],
+      "next/*": [
+        "./node_modules/next/*"
+      ]
+    }
   },
   "include": [
     "api/**/*.ts",
