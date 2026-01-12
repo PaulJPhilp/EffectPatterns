@@ -53,7 +53,7 @@
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^20.19.28",
     "typescript": "^5.9.3",
-    "vitest": "^2.1.9"
+    "vitest": "^4.0.17"
   },
   "peerDependencies": {
     "effect-cli-tui": "^2.2.0"
