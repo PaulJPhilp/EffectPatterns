@@ -35,7 +35,7 @@ jobs:
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: packages/mcp-server
+          vercel-project-id: prj_K0k6ucjZh8AWzFT08yTs7csox6c3
+          working-directory: .
           vercel-args: '--prod'
           scope: buddybuilder
