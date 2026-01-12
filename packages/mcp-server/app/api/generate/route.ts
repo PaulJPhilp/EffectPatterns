@@ -8,16 +8,16 @@
  * in the OpenTelemetry trace.
  */
 
-import { Schema as S } from "@effect/schema";
 import { buildSnippet, GenerateRequest } from "@effect-patterns/toolkit";
+import { Schema as S } from "@effect/schema";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
   isAuthenticationError,
   validateApiKey,
-} from "../../../src/auth/apiKey.js";
-import { PatternsService, runWithRuntime } from "../../../src/server/init.js";
-import { TracingService } from "../../../src/tracing/otlpLayer.js";
+} from "../../../src/auth/apiKey";
+import { PatternsService, runWithRuntime } from "../../../src/server/init";
+import { TracingService } from "../../../src/tracing/otlpLayer";
 
 // Handler implementation with automatic span creation via Effect.fn
 const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (

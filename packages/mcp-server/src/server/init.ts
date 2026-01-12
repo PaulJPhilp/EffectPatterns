@@ -18,7 +18,7 @@ import { NodeSdk } from "@effect/opentelemetry";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { Effect, Layer } from "effect";
-import { TracingLayerLive } from "../tracing/otlpLayer.js";
+import { TracingLayerLive } from "../tracing/otlpLayer";
 
 /**
  * Config service - provides environment configuration

@@ -10,9 +10,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   isAuthenticationError,
   validateApiKey,
-} from "../../../src/auth/apiKey.js";
-import { runWithRuntime } from "../../../src/server/init.js";
-import { TracingService } from "../../../src/tracing/otlpLayer.js";
+} from "../../../src/auth/apiKey";
+import { runWithRuntime } from "../../../src/server/init";
+import { TracingService } from "../../../src/tracing/otlpLayer";
 
 const EFFECT_NODE_SDK_EXAMPLE = `
 // Effect + OpenTelemetry Node SDK Example
