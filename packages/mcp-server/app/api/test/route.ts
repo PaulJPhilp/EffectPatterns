@@ -2,10 +2,9 @@
  * Simple test endpoint to verify database connection
  */
 
+import { createDatabase, effectPatterns } from "@effect-patterns/toolkit"
 import { Effect } from "effect"
 import { NextResponse } from "next/server"
-import { createDatabase } from "../../../../packages/toolkit/src/db/client.js"
-import { effectPatterns } from "../../../../packages/toolkit/src/db/schema/index.js"
 
 export async function GET() {
 	try {
@@ -30,7 +29,7 @@ export async function GET() {
 		return NextResponse.json({
 			success: true,
 			count: result.length,
-			patterns: result.map(p => ({
+			patterns: result.map((p: any) => ({
 				id: p.id,
 				title: p.title,
 				skillLevel: p.skillLevel,
