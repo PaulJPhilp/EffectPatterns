@@ -19,7 +19,7 @@ export interface LoggerService {
 	readonly success: (message: string, data?: unknown) => Effect.Effect<void>;
 
 	// Configuration methods
-	readonly shouldLog: (level: LogLevel) => boolean;
+	readonly shouldLog: (level: LogLevel) => Effect.Effect<boolean>;
 	readonly updateConfig: (update: Partial<LoggerConfig>) => Effect.Effect<void>;
 	readonly getConfig: () => Effect.Effect<LoggerConfig>;
 }

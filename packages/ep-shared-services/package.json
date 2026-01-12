@@ -45,18 +45,18 @@
   "author": "Effect Patterns",
   "license": "MIT",
   "dependencies": {
-    "effect": "^3.8.0",
-    "@effect/platform": "^0.55.0",
-    "@effect/platform-node": "^0.56.0"
+    "effect": "^3.19.14",
+    "@effect/platform": "0.93.8",
+    "@effect/platform-node": "0.98.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.0",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.5.0",
-    "vitest": "^2.0.0"
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^20.19.28",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
   },
   "peerDependencies": {
-    "effect-cli-tui": "^1.0.0"
+    "effect-cli-tui": "^2.2.0"
   },
   "files": [
     "dist",

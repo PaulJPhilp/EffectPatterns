@@ -54,8 +54,7 @@ export class Logger extends Effect.Service<Logger>()("Logger", {
 			success: (message: string, data?: unknown) =>
 				log("success", message, data),
 
-			shouldLog: (level: LogLevel) =>
-				Effect.runSync(shouldLogCheck(level)),
+			shouldLog: (level: LogLevel) => shouldLogCheck(level),
 
 			updateConfig: (update: Partial<LoggerConfig>) =>
 				Ref.update(configRef, (current) => ({ ...current, ...update })),
@@ -118,8 +117,7 @@ export const makeLogger = (
 			success: (message: string, data?: unknown) =>
 				log("success", message, data),
 
-			shouldLog: (level: LogLevel) =>
-				Effect.runSync(shouldLogCheck(level)),
+			shouldLog: (level: LogLevel) => shouldLogCheck(level),
 
 			updateConfig: (update: Partial<LoggerConfig>) =>
 				Ref.update(configRef, (current) => ({ ...current, ...update })),
@@ -177,8 +175,7 @@ export const LoggerLive = (config?: Partial<LoggerConfig>): Layer.Layer<Logger> 
 				success: (message: string, data?: unknown) =>
 					log("success", message, data),
 
-				shouldLog: (level: LogLevel) =>
-					Effect.runSync(shouldLogCheck(level)),
+				shouldLog: (level: LogLevel) => shouldLogCheck(level),
 
 				updateConfig: (update: Partial<LoggerConfig>) =>
 					Ref.update(configRef, (cur) => ({ ...cur, ...update })),
