@@ -1,0 +1,377 @@
+---
+title: "Sinks Patterns Learning Roadmap"
+description: "Master Effect Sinks for consuming streams into results and managing data flow"
+---
+
+# Module 12: Sinks Patterns - From Understanding to Production
+
+**Status**: In Development  
+**Level**: Intermediate to Advanced  
+**Focus**: Master Effect Sinks for consuming streams efficiently and safely
+
+---
+
+## 🎯 Module Overview
+
+This module takes you from understanding what Sinks are to building sophisticated, production-ready stream consumption patterns. You'll learn how to:
+
+- Consume streams into final results
+- Write streaming data to persistent storage
+- Handle errors that occur during stream consumption
+- Batch stream elements for efficient processing
+- Deduplicate elements coming from a stream
+- Compose multiple sinks together
+- Build resilient stream consumers
+
+---
+
+## 📍 Stage 1: The Foundations - What Are Sinks?
+
+Learn why Sinks matter and how they differ from Streams.
+
+### Conceptual Understanding
+
+- **1. Streams vs. Sinks** `(Intermediate)`
+  - 🟣 Understanding the Stream/Sink duality
+  - 🟣 When to use Sinks vs. other patterns
+  - 🟣 The "consumer" pattern in Effect
+
+- **2. Sink Anatomy** `(Intermediate)`
+  - 🟣 How Sinks process stream elements
+  - 🟣 Sink state and accumulation
+  - 🟣 Left-over handling
+
+- **3. Basic Sink Operations** `(Intermediate)`
+  - 🟣 Running a sink with a stream
+  - 🟣 Extracting the final result
+  - 🟣 Understanding Sink composition
+
+---
+
+## 📍 Stage 2: Consumption Fundamentals - Getting Results from Streams
+
+Learn the core patterns for turning streams into usable results.
+
+### Basic Collection
+
+- **4. Collect Stream Elements into a Collection** `(Intermediate)`
+  - 🟣 Using `Sink.collectAll` for simple gathering
+  - 🟣 Collecting into arrays, sets, and custom collections
+  - 🟣 Understanding element ordering in results
+
+- **5. Reduce a Stream to a Single Value** `(Intermediate)`
+  - 🟣 Using `Sink.fold` for aggregation
+  - 🟣 Computing sums, products, counts from streams
+  - 🟣 Maintaining state across elements
+
+- **6. Partition Stream Elements** `(Intermediate)`
+  - 🟣 Splitting streams into groups
+  - 🟣 Grouping by criteria during consumption
+  - 🟣 Creating multi-partition results
+
+---
+
+## 📍 Stage 3: Persistence - Write Streaming Data to Persistent Storage
+
+Learn how to safely write stream data to databases, files, and external systems.
+
+### Database Persistence
+
+- **7. Batch Insert Stream Records into Database** `(Intermediate)`
+  - 🟣 [Collecting records and batching for DB inserts](./content/published/patterns/core/stream-from-paginated-api.mdx)
+  - 🟣 Configurable batch sizes for performance
+  - 🟣 Handling partial batch failures
+  - 🟣 Transaction semantics for inserts
+
+- **8. Write Stream Events to Event Log** `(Intermediate)`
+  - 🟣 Append-only writes for event sourcing
+  - 🟣 Maintaining causal ordering
+  - 🟣 Managing event metadata
+
+### File I/O
+
+- **9. Write Stream Lines to File** `(Intermediate)`
+  - 🟣 Line-based streaming writes
+  - 🟣 Buffering for I/O efficiency
+  - 🟣 File rotation and rollover
+
+- **10. Append to Append-Only Log** `(Intermediate)`
+  - 🟣 Sequential append operations
+  - 🟣 Log file management
+  - 🟣 Read-after-write guarantees
+
+### External Systems
+
+- **11. Send Stream Records to Message Queue** `(Intermediate)`
+  - 🟣 Publishing to Kafka, RabbitMQ, etc.
+  - 🟣 Partitioning across queue topics
+  - 🟣 Acknowledgment and retry semantics
+
+---
+
+## 📍 Stage 4: Error Handling - Handle Errors During Stream Consumption
+
+Learn resilient patterns for dealing with failures during stream processing.
+
+### Error Recovery
+
+- **12. Fall Back to Alternative Sink on Failure** `(Intermediate)`
+  - 🟣 Try primary sink, use fallback on error
+  - 🟣 Progressive degradation patterns
+  - 🟣 Error type-based routing
+
+- **13. Retry Failed Stream Operations** `(Intermediate)`
+  - 🟣 Retrying with exponential backoff
+  - 🟣 Configurable retry policies
+  - 🟣 Exhaustion handling
+
+### Error Capture
+
+- **14. Capture Errors to Dead Letter Queue** `(Intermediate)`
+  - 🟣 Collecting failed elements separately
+  - 🟣 Error metadata capture
+  - 🟣 Inspection and replay of failures
+
+- **15. Continue Despite Partial Failures** `(Intermediate)`
+  - 🟣 Partial success in batch operations
+  - 🟣 Tracking successes vs. failures
+  - 🟣 Summary statistics on completion
+
+---
+
+## 📍 Stage 5: Efficiency - Batch Stream Elements for Efficient Processing
+
+Learn optimization patterns for high-performance stream consumption.
+
+### Batching Strategies
+
+- **16. Batch Elements by Size** `(Intermediate)`
+  - 🟣 Collecting N elements before processing
+  - 🟣 Trade-offs between latency and throughput
+  - 🟣 Configurable batch sizes
+
+- **17. Batch Elements by Time Window** `(Intermediate)`
+  - 🟣 Collecting elements within a time period
+  - 🟣 Mixed time and size-based batching
+  - 🟣 Flushing partial batches at deadline
+
+### Performance Optimization
+
+- **18. Drain Stream with Minimal Allocations** `(Intermediate)`
+  - 🟣 Resource-conscious consumption
+  - 🟣 Garbage collection considerations
+  - 🟣 Memory-efficient aggregation
+
+- **19. Parallelize Sink Operations** `(Intermediate)`
+  - 🟣 Processing batches concurrently
+  - 🟣 Thread pool sizing
+  - 🟣 Maintaining ordering guarantees where needed
+
+---
+
+## 📍 Stage 6: Quality - Deduplicate Elements Coming from a Stream
+
+Learn patterns for handling duplicates and ensuring data quality.
+
+### Deduplication Techniques
+
+- **20. Deduplicate by Element Equality** `(Intermediate)`
+  - 🟣 Removing exact duplicate elements
+  - 🟣 Set-based deduplication
+  - 🟣 Memory overhead considerations
+
+- **21. Deduplicate by Key** `(Intermediate)`
+  - 🟣 Using a key function to identify duplicates
+  - 🟣 Keeping first/last occurrence
+  - 🟣 Duplicate metrics and tracking
+
+### Windowed Deduplication
+
+- **22. Deduplicate Within Time Window** `(Intermediate)`
+  - 🟣 Sliding window deduplication
+  - 🟣 Forgetting old elements after window
+  - 🟣 Handling duplicates arriving out-of-order
+
+- **23. Deduplicate with Correlation ID** `(Intermediate)`
+  - 🟣 Idempotency key tracking
+  - 🟣 Exactly-once semantics
+  - 🟣 Distributed deduplication
+
+---
+
+## 📍 Stage 7: Advanced Patterns - Building Sophisticated Stream Consumers
+
+Master advanced Sink techniques for complex domains.
+
+### Composition & Transformation
+
+- **24. Chain Multiple Sinks Together** `(Advanced)`
+  - 🟣 Sink composition and sequencing
+  - 🟣 Conditional sink selection
+  - 🟣 Pipeline construction
+
+- **25. Transform Data During Consumption** `(Advanced)`
+  - 🟣 Mapping elements before sink operation
+  - 🟣 Validation during consumption
+  - 🟣 Schema enforcement
+
+### Distribution
+
+- **26. Distribute Stream to Multiple Sinks** `(Advanced)`
+  - 🟣 Fan-out patterns
+  - 🟣 Broadcasting to parallel sinks
+  - 🟣 Synchronization between sinks
+
+- **27. Route Elements to Different Sinks** `(Advanced)`
+  - 🟣 Conditional routing based on content
+  - 🟣 Dynamic sink selection
+  - 🟣 Maintaining ordering within routes
+
+### Observability
+
+- **28. Observe Sink Operations with Tracing** `(Advanced)`
+  - 🟣 Distributed tracing for sink spans
+  - 🟣 Timing and duration tracking
+  - 🟣 OpenTelemetry integration
+
+- **29. Emit Metrics from Sink Processing** `(Advanced)`
+  - 🟣 Counting elements processed
+  - 🟣 Recording latencies and throughput
+  - 🟣 Error rate metrics
+
+---
+
+## 📍 Stage 8: Integration - Sinks in Context
+
+Combine Sinks with other Effect patterns for complete solutions.
+
+### With Services & Layers
+
+- **30. Use Sinks in Service Implementations** `(Advanced)`
+  - 🟣 Sinks as service boundaries
+  - 🟣 Dependency injection for sink providers
+  - 🟣 Testing sink-based services
+
+- **31. Compose Sinks into Reusable Layers** `(Advanced)`
+  - 🟣 Creating sink libraries
+  - 🟣 Sharing sink implementations
+  - 🟣 Configurable sink factories
+
+### Testing & Verification
+
+- **32. Verify Sink Behavior in Tests** `(Advanced)`
+  - 🟣 Capturing sink results for assertions
+  - 🟣 Mocking sinks in tests
+  - 🟣 Property-based testing of sinks
+
+- **33. Debug Sink Operations** `(Advanced)`
+  - 🟣 Logging intermediary results
+  - 🟣 Inspecting sink state
+  - 🟣 Tracing element flow through sinks
+
+---
+
+## 🎓 Learning Path by Job to be Done
+
+### Job: "Write streaming data to persistent storage"
+**Stages 3-4 Focus**
+- Stage 3: Database, File, and Queue persistence patterns
+- Stage 4: Error handling for failed writes
+- Patterns 7-15 address this job
+- Prerequisites: Understanding streams, basic sink operations
+
+### Job: "Handle errors that occur during stream consumption"
+**Stages 4-7 Focus**
+- Stage 4: Error recovery and capture
+- Stage 7: Advanced observability for errors
+- Patterns 12-15, 28-29 address this job
+- Prerequisites: Error handling fundamentals
+
+### Job: "Batch stream elements for efficient processing"
+**Stages 5-6 Focus**
+- Stage 5: Batching strategies and performance
+- Stage 6: Quality control in batches
+- Patterns 16-19 address this job
+- Prerequisites: Stream consumption basics
+
+### Job: "Deduplicate elements coming from a stream"
+**Stages 6-7 Focus**
+- Stage 6: Core deduplication patterns
+- Stage 7: Advanced distributed deduplication
+- Patterns 20-23 address this job
+- Prerequisites: Stream concepts, state management
+
+---
+
+## 🔗 Cross-Module References
+
+### Prerequisites (Module 11: Schema)
+- Pattern 25 builds on schema validation
+- Pattern validation semantics
+
+### Synergies (Module 10: Error Management)
+- Patterns 12-15 extend error handling to streams
+- Error recovery strategies
+
+### Building Blocks (Module 9: Streams)
+- Patterns consume what Streams produce
+- Complementary APIs and concepts
+
+---
+
+## ✅ Knowledge Checkpoints
+
+### After Stage 2
+You can:
+- Explain the Stream/Sink duality
+- Create basic sinks that collect results
+- Run sinks with streams and extract results
+
+### After Stage 4
+You can:
+- Write stream data to persistent storage safely
+- Implement error recovery patterns
+- Choose appropriate fallback strategies
+
+### After Stage 6
+You can:
+- Optimize sink performance with batching
+- Implement deduplication correctly
+- Handle quality concerns in high-volume streams
+
+### After Stage 8
+You can:
+- Build production-ready stream consumption systems
+- Test sink implementations thoroughly
+- Integrate sinks into larger applications
+
+---
+
+## 📊 Pattern Statistics
+
+- **Total Patterns in Module:** 33
+- **Intermediate Patterns:** 25
+- **Advanced Patterns:** 8
+- **Estimated Study Time:** 15-20 hours
+- **Hands-On Coding:** 8-10 hours
+- **Prerequisites:** Module 9 (Streams), Module 10 (Error Management)
+
+---
+
+## 🎯 Module Goals
+
+By completing this module, you will:
+
+1. ✅ Understand when and how to use Sinks for stream consumption
+2. ✅ Implement patterns for all four core jobs
+3. ✅ Write production-ready stream consumers
+4. ✅ Handle errors and edge cases in stream processing
+5. ✅ Optimize for performance and correctness
+6. ✅ Test and debug sink-based systems
+7. ✅ Integrate sinks into larger Effect applications
+
+---
+
+**Last Updated:** December 17, 2025  
+**Status:** Roadmap in Development  
+**Next Steps:** Implement pattern templates for each of the 33 patterns

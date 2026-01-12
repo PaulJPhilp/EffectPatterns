@@ -1,0 +1,339 @@
+---
+title: "Schema Patterns Learning Roadmap"
+description: "Master Effect Schema for type-safe data validation, parsing, and transformation"
+---
+
+# Module 11: Schema Patterns - From Data Contracts to Production Validation
+
+**Status**: Complete  
+**Level**: Intermediate to Advanced  
+**Focus**: Master Effect Schema for defining, validating, and transforming data safely
+
+---
+
+## 🎯 Module Overview
+
+This module takes you from understanding the fundamentals of data validation to building sophisticated, production-ready validation pipelines using Effect Schema. You'll learn how to:
+
+- Define clear, type-safe data contracts upfront
+- Validate and parse unknown data at runtime
+- Handle validation errors gracefully
+- Transform data during the validation process
+- Build reusable schema combinators
+- Validate complex domain models
+- Implement form validation and API request validation
+- Create self-documenting validation rules
+
+---
+
+## 📍 Stage 1: The Foundations - Why Schema Matters
+
+Learn why runtime validation is critical and how Schema provides a unified approach to type safety.
+
+### Conceptual Understanding
+
+- **1. The Problem with Implicit Types** `(Intermediate)`
+  - 🟣 Understanding why runtime validation is necessary
+  - 🟣 Schema as a bridge between TypeScript types and runtime reality
+  - 🟣 The cost of invalid data in production
+
+- **2. Schema's Three Superpowers** `(Intermediate)`
+  - 🟣 **Validation**: Check data matches expectations
+  - 🟣 **Transformation**: Convert data to the right format
+  - 🟣 **Documentation**: Self-documenting contracts
+
+- **3. The Schema → Effect Integration** `(Intermediate)`
+  - 🟣 How Schema.decode returns an Effect
+  - 🟣 Error handling built into the validation pipeline
+  - 🟣 Composing validation with other Effect operations
+
+---
+
+## 📍 Stage 2: Building Blocks - Defining Schemas
+
+Learn to compose primitive types into complex, reusable schemas.
+
+### Basic Types & Constructors
+
+- **4. Primitive Schemas** `(Intermediate)`
+  - 🟣 [String, Number, Boolean schemas](./content/published/patterns/core/define-contracts-with-schema.mdx)
+  - 🟣 Literal types for constrained values
+  - 🟣 Array and Tuple schemas
+  - 🟣 Record and Struct schemas
+
+- **5. Struct Schemas - Your Data Models** `(Intermediate)`
+  - 🟣 Defining `Schema.Struct` for domain objects
+  - 🟣 Making fields optional with `Schema.optional`
+  - 🟣 Providing default values
+  - 🟣 Nested struct composition
+
+- **6. Union Schemas - Multiple Possibilities** `(Intermediate)`
+  - 🟣 Using `Schema.Union` for alternatives
+  - 🟣 Discriminated unions for type-safe patterns
+  - 🟣 Handling "one of many" scenarios
+  - 🟣 Combining Literals with Unions
+
+- **7. Composing Complex Schemas** `(Intermediate)`
+  - 🟣 Nested schemas for hierarchical data
+  - 🟣 Reusable schema fragments
+  - 🟣 Schema composition patterns
+  - 🟣 Building domain-specific validators
+
+---
+
+## 📍 Stage 3: Validation Constraints - Refining Schemas
+
+Add constraints and refinements to ensure data correctness.
+
+### String Constraints
+
+- **8. String Length & Format** `(Intermediate)`
+  - 🟣 `minLength` and `maxLength` for text bounds
+  - 🟣 `pattern` for regex validation
+  - 🟣 `trimmed` for whitespace handling
+  - 🟣 Pre-built patterns (email, URL, etc.)
+
+### Numeric Constraints
+
+- **9. Numeric Ranges & Precision** `(Intermediate)`
+  - 🟣 `between` for inclusive ranges
+  - 🟣 `greaterThan` and `lessThan`
+  - 🟣 `int` and `parseNumber` for type coercion
+  - 🟣 Decimal precision handling
+
+### Collection Constraints
+
+- **10. Array & Record Validation** `(Intermediate)`
+  - 🟣 `minItems` and `maxItems` for array bounds
+  - 🟣 Filtering arrays with predicates
+  - 🟣 Record key/value constraints
+  - 🟣 Unique elements in arrays
+
+### Custom Constraints
+
+- **11. Filter & Refinement** `(Intermediate)`
+  - 🟣 `Schema.filter` for custom predicates
+  - 🟣 Cross-field validation
+  - 🟣 Complex business rule validation
+  - 🟣 Error messages for failed constraints
+
+---
+
+## 📍 Stage 4: Parsing & Transformation - Data Conversion
+
+Transform data during validation to get exactly what you need.
+
+### Parsing Operations
+
+- **12. Parse and Validate with Schema.decode** `(Intermediate)`
+  - 🟣 [Using Schema.decode](./content/published/patterns/core/parse-with-schema-decode.mdx)
+  - 🟣 `Schema.decodeUnknown` for untrusted data
+  - 🟣 `Schema.validate` for validation without parsing
+  - 🟣 Error handling in the parse pipeline
+
+### Transformation
+
+- **13. Transform Data During Validation** `(Intermediate)`
+  - 🟣 [Schema.transform for data conversion](./content/published/patterns/core/transform-data-with-schema.mdx)
+  - 🟣 String to Date conversion
+  - 🟣 Creating Branded types from raw data
+  - 🟣 Normalizing data formats
+
+- **14. Coercion & Type Conversion** `(Intermediate)`
+  - 🟣 `String.pipe(parseNumber())` for "3" → 3
+  - 🟣 Boolean parsing from string/number
+  - 🟣 Date parsing from ISO strings
+  - 🟣 Enum creation from values
+
+### Composition
+
+- **15. Building Transformation Pipelines** `(Intermediate)`
+  - 🟣 Chaining multiple transformations
+  - 🟣 Reusable transformation functions
+  - 🟣 Performance considerations
+  - 🟣 When to transform vs. when to leave raw
+
+---
+
+## 📍 Stage 5: Error Handling - Making Validation Friendly
+
+Handle validation failures gracefully and inform users clearly.
+
+### Error Collection
+
+- **16. Collecting All Validation Errors** `(Intermediate)`
+  - 🟣 [Aggregating multiple validation failures](./content/published/patterns/schema/error-handling/error-aggregation.mdx)
+  - 🟣 Field-level error reporting
+  - 🟣 Human-readable error messages
+  - 🟣 Error formatting for APIs vs. UIs
+
+### Error Mapping
+
+- **17. Converting Schema Errors to Domain Errors** `(Intermediate)`
+  - 🟣 Mapping `ParseError` to domain exceptions
+  - 🟣 Creating tagged errors for validation
+  - 🟣 Structured error responses
+  - 🟣 Error recovery strategies
+
+### Async Validation
+
+- **18. Async Validation with Effects** `(Intermediate)`
+  - 🟣 Combining Schema validation with async checks
+  - 🟣 Database lookups during validation
+  - 🟣 Rate limiting and availability checks
+  - 🟣 Complex async validations
+
+---
+
+## 📍 Stage 6: Real-World Scenarios - From Forms to APIs
+
+Apply Schema patterns to common development challenges.
+
+### Form Validation
+
+- **19. Client-Side Form Validation** `(Intermediate)`
+  - 🟣 [Basic form validation patterns](./content/published/patterns/schema/form-validation/basic.mdx)
+  - 🟣 Field-specific validation feedback
+  - 🟣 Dependent field validation (password confirmation)
+  - 🟣 Multi-step form validation
+
+- **20. Server-Side Form Processing** `(Intermediate)`
+  - 🟣 Validating form submissions with Schema
+  - 🟣 Preventing common exploits
+  - 🟣 Normalizing user input
+  - 🟣 Returning validation errors to clients
+
+### API Validation
+
+- **21. Request Body Validation** `(Intermediate)`
+  - 🟣 Validating HTTP request bodies
+  - 🟣 Different validation per endpoint
+  - 🟣 Rejecting invalid requests early
+  - 🟣 API versioning and schema evolution
+
+- **22. Response Validation** `(Intermediate)`
+  - 🟣 Validating external API responses
+  - 🟣 Defensive coding against breaking changes
+  - 🟣 Creating type-safe API clients
+  - 🟣 Handling API response variations
+
+### Configuration Validation
+
+- **23. Environment Variable Validation** `(Intermediate)`
+  - 🟣 [Validating environment configuration](./content/published/patterns/schema/environment-config/env-variables.mdx)
+  - 🟣 Type coercion for env vars
+  - 🟣 Enforcing required vs. optional config
+  - 🟣 Startup validation and errors
+
+---
+
+## 📍 Stage 7: Advanced Patterns - Building Sophisticated Validators
+
+Master advanced Schema techniques for complex domains.
+
+### Domain Modeling
+
+- **24. Branded Types with Schema** `(Advanced)`
+  - 🟣 Creating validated domain types
+  - 🟣 UserId, Email, NonEmptyString patterns
+  - 🟣 Type safety with branded types
+  - 🟣 Preventing invalid states at compile-time
+
+- **25. Refinement Chains** `(Advanced)`
+  - 🟣 Building multi-step validation
+  - 🟣 Dependent field constraints
+  - 🟣 State machine validation
+  - 🟣 Complex business rules
+
+### Schema Composition
+
+- **26. Reusable Schema Combinators** `(Advanced)`
+  - 🟣 Building a schema library for your domain
+  - 🟣 Shared validation across services
+  - 🟣 Schema versioning and migration
+  - 🟣 Schema documentation generation
+
+- **27. Polymorphic Schemas** `(Advanced)`
+  - 🟣 Validating different data types based on tags
+  - 🟣 Discriminated unions in validation
+  - 🟣 Type-safe pattern matching on results
+  - 🟣 Dynamic schema selection
+
+### Performance & Caching
+
+- **28. Optimizing Validation Performance** `(Advanced)`
+  - 🟣 Lazy vs. eager validation strategies
+  - 🟣 Caching schema instances
+  - 🟣 Early exit on validation failure
+  - 🟣 Profiling validation bottlenecks
+
+---
+
+## 📍 Stage 8: Integration - Schema in Context
+
+Combine Schema with other Effect patterns for complete solutions.
+
+### With Services
+
+- **29. Schema in Service Implementations** `(Advanced)`
+  - 🟣 Validating at service boundaries
+  - 🟣 Making schemas part of service contracts
+  - 🟣 Testing services with schema validation
+  - 🟣 Schema-driven service design
+
+### With HTTP Servers
+
+- **30. Middleware for Request Validation** `(Advanced)`
+  - 🟣 Building validation middleware
+  - 🟣 Validating before route handlers
+  - 🟣 Composing validation into pipelines
+  - 🟣 Error responses from validation
+
+### With Streams
+
+- **31. Validating Stream Data** `(Advanced)`
+  - 🟣 Validating items in streams
+  - 🟣 Filtering invalid data
+  - 🟣 Collecting validation errors from streams
+  - 🟣 Backpressure with validation
+
+### With Layers & Context
+
+- **32. Schema as a Service** `(Advanced)`
+  - 🟣 Creating a validation service layer
+  - 🟣 Dependency injection for schemas
+  - 🟣 Testing with mock schemas
+  - 🟣 Schema configuration per environment
+
+---
+
+## 🚀 Next Steps: From Patterns to Applications
+
+With these Schema patterns mastered, you're ready to:
+
+1. **Build Robust APIs** - Validate all inputs and outputs
+2. **Create Domain Models** - Use Branded types to encode business rules
+3. **Implement Safety** - Make invalid states unrepresentable
+4. **Scale Validation** - Use schemas across microservices
+5. **Contribute Patterns** - Share your domain-specific validators
+
+---
+
+## 📚 Learning Resources
+
+- [Schema Documentation](https://effect.website/docs/schema/)
+- [Schema Examples](./content/published/patterns/schema/)
+- [Toolkit Schema Reference](./packages/toolkit/README.md#schema-validation)
+- [Real-World Examples](./services/mcp-server/src/)
+
+---
+
+## 🎓 Knowledge Checkpoints
+
+**After Stage 2**: You can define basic schemas and structs  
+**After Stage 3**: You can add constraints and validate data  
+**After Stage 4**: You can transform data during validation  
+**After Stage 5**: You can handle validation errors gracefully  
+**After Stage 6**: You can validate forms and APIs  
+**After Stage 7**: You can build sophisticated validators  
+**After Stage 8**: You can integrate Schema throughout your application

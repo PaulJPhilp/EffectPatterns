@@ -1,0 +1,2814 @@
+{
+  "version": "1.0.0",
+  "patterns": [
+    {
+      "id": "getting-started-effect-vs-promise",
+      "title": "Why Effect? Comparing Effect to Promise",
+      "description": "Understand what Effect gives you that Promise doesn't: type-safe errors, dependency injection, and composability.",
+      "category": "getting started",
+      "difficulty": "beginner",
+      "tags": [
+        "getting started"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "getting-started-hello-world",
+      "title": "Hello World: Your First Effect",
+      "description": "Create and run your very first Effect program using Effect.succeed and Effect.runSync.",
+      "category": "getting started",
+      "difficulty": "beginner",
+      "tags": [
+        "getting started"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "getting-started-transform-with-map",
+      "title": "Transform Values with Effect.map",
+      "description": "Use Effect.map to transform the success value of an Effect without changing its error or dependency types.",
+      "category": "getting started",
+      "difficulty": "beginner",
+      "tags": [
+        "getting started"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "getting-started-handle-errors",
+      "title": "Handle Your First Error with Effect.fail and catchAll",
+      "description": "Learn how to create Effects that can fail and how to recover from those failures using Effect.fail and Effect.catchAll.",
+      "category": "getting started",
+      "difficulty": "beginner",
+      "tags": [
+        "getting started"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "getting-started-run-in-parallel",
+      "title": "Run Multiple Effects in Parallel with Effect.all",
+      "description": "Use Effect.all to run multiple Effects at the same time and collect all their results.",
+      "category": "getting started",
+      "difficulty": "beginner",
+      "tags": [
+        "getting started"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "getting-started-retry-on-failure",
+      "title": "Retry a Failed Operation with Effect.retry",
+      "description": "Use Effect.retry with a Schedule to automatically retry failed operations with customizable delays and limits.",
+      "category": "getting started",
+      "difficulty": "beginner",
+      "tags": [
+        "getting started"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-either",
+      "title": "Accumulate Multiple Errors with Either",
+      "description": "Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "combinator-flatmap",
+      "title": "Chaining Computations with flatMap",
+      "description": "Use flatMap to chain together computations where each step may itself be effectful, optional, or error-prone.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "combinator-zip",
+      "title": "Combining Values with zip",
+      "description": "Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-struct",
+      "title": "Comparing Data by Value with Data.struct",
+      "description": "Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "comparing-data-by-value-with-structural-equality",
+      "title": "Comparing Data by Value with Structural Equality",
+      "description": "Use Data.struct and Equal.equals to safely compare objects by their value instead of their reference, avoiding common JavaScript pitfalls.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "combinator-conditional",
+      "title": "Conditional Branching with if, when, and cond",
+      "description": "Use combinators like if, when, and cond to express conditional logic declaratively across Effect, Stream, Option, and Either.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "constructor-from-nullable-option-either",
+      "title": "Converting from Nullable, Option, or Either",
+      "description": "Use fromNullable, fromOption, and fromEither to convert nullable values, Option, or Either into Effects or Streams, enabling safe and composable interop.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "create-pre-resolved-effect",
+      "title": "Create Pre-resolved Effects with succeed and fail",
+      "description": "Use Effect.succeed(value) to create an Effect that immediately succeeds with a value, and Effect.fail(error) for an Effect that immediately fails.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "constructor-from-iterable",
+      "title": "Creating from Collections",
+      "description": "Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "constructor-sync-async",
+      "title": "Creating from Synchronous and Callback Code",
+      "description": "Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "combinator-filter",
+      "title": "Filtering Results with filter",
+      "description": "Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "constructor-fail-none-left",
+      "title": "Lifting Errors and Absence with fail, none, and left",
+      "description": "Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "constructor-succeed-some-right",
+      "title": "Lifting Values with succeed, some, and right",
+      "description": "Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-option",
+      "title": "Model Optional Values Safely with Option",
+      "description": "Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "solve-promise-problems-with-effect",
+      "title": "Solve Promise Problems with Effect",
+      "description": "Understand how Effect solves the fundamental problems of native Promises, such as untyped errors, lack of dependency injection, and no built-in cancellation.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "transform-effect-values",
+      "title": "Transform Effect Values with map and flatMap",
+      "description": "Use Effect.map for synchronous transformations and Effect.flatMap to chain operations that return another Effect.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "combinator-map",
+      "title": "Transforming Values with map",
+      "description": "Use map to transform the result of an Effect, Stream, Option, or Either in a declarative, type-safe way.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "effects-are-lazy",
+      "title": "Understand that Effects are Lazy Blueprints",
+      "description": "An Effect is a lazy, immutable blueprint describing a computation, which does nothing until it is explicitly executed by a runtime.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "understand-effect-channels",
+      "title": "Understand the Three Effect Channels (A, E, R)",
+      "description": "Learn about the three generic parameters of an Effect: the success value (A), the failure error (E), and the context requirements (R).",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "use-pipe-for-composition",
+      "title": "Use .pipe for Composition",
+      "description": "Use the .pipe() method to chain multiple operations onto an Effect in a readable, top-to-bottom sequence.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-array",
+      "title": "Working with Immutable Arrays using Data.array",
+      "description": "Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-tuple",
+      "title": "Working with Tuples using Data.tuple",
+      "description": "Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "wrap-asynchronous-computations",
+      "title": "Wrap Asynchronous Computations with tryPromise",
+      "description": "Use Effect.tryPromise to safely convert a function that returns a Promise into an Effect, capturing rejections in the error channel.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "wrap-synchronous-computations",
+      "title": "Wrap Synchronous Computations with sync and try",
+      "description": "Use Effect.sync for non-throwing synchronous code and Effect.try for synchronous code that might throw an exception.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "constructor-try-trypromise",
+      "title": "Wrapping Synchronous and Asynchronous Computations",
+      "description": "Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "write-sequential-code-with-gen",
+      "title": "Write Sequential Code with Effect.gen",
+      "description": "Use Effect.gen with yield* to write sequential, asynchronous code in a style that looks and feels like familiar async/await.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "access-config-in-context",
+      "title": "Access Configuration from the Context",
+      "description": "Access your type-safe configuration within an Effect.gen block by yielding the Config object you defined.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "beyond-the-date-type",
+      "title": "Beyond the Date Type - Real World Dates, Times, and Timezones",
+      "description": "Use the Clock service for testable access to the current time and prefer immutable primitives for storing and passing timestamps.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "control-flow-with-combinators",
+      "title": "Control Flow with Conditional Combinators",
+      "description": "Use combinators like Effect.if, Effect.when, and Effect.cond to handle conditional logic in a declarative, composable way.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "define-config-schema",
+      "title": "Define a Type-Safe Configuration Schema",
+      "description": "Use Effect.Config primitives to define a schema for your application's configuration, ensuring type-safety and separation from code.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "combinator-error-handling",
+      "title": "Handling Errors with catchAll, orElse, and match",
+      "description": "Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-ref",
+      "title": "Manage Shared State Safely with Ref",
+      "description": "Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "combinator-foreach-all",
+      "title": "Mapping and Chaining over Collections with forEach and all",
+      "description": "Use forEach and all to apply effectful functions to collections and combine the results, enabling batch and parallel processing.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-exit",
+      "title": "Modeling Effect Results with Exit",
+      "description": "Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-case",
+      "title": "Modeling Tagged Unions with Data.case",
+      "description": "Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "process-streaming-data-with-stream",
+      "title": "Process Streaming Data with Stream",
+      "description": "Use Stream<A, E, R> to represent and process data that arrives over time, such as file reads, WebSocket messages, or paginated API results.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "provide-config-layer",
+      "title": "Provide Configuration to Your App via a Layer",
+      "description": "Use Config.layer(schema) to create a Layer that provides your configuration schema to the application's context.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-redacted",
+      "title": "Redact and Handle Sensitive Data",
+      "description": "Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-duration",
+      "title": "Representing Time Spans with Duration",
+      "description": "Use Duration to represent time intervals in a type-safe, human-readable, and composable way.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "representing-time-spans-with-duration",
+      "title": "Representing Time Spans with Duration",
+      "description": "Use the Duration data type to represent time intervals in a type-safe, human-readable, and composable way.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "combinator-sequencing",
+      "title": "Sequencing with andThen, tap, and flatten",
+      "description": "Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-class",
+      "title": "Type Classes for Equality, Ordering, and Hashing with Data.Class",
+      "description": "Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "understand-layers-for-dependency-injection",
+      "title": "Understand Layers for Dependency Injection",
+      "description": "A Layer is a blueprint that describes how to build a service, detailing its own requirements and any potential errors during its construction.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-chunk",
+      "title": "Use Chunk for High-Performance Collections",
+      "description": "Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "use-chunk-for-high-performance-collections",
+      "title": "Use Chunk for High-Performance Collections",
+      "description": "Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-bigdecimal",
+      "title": "Work with Arbitrary-Precision Numbers using BigDecimal",
+      "description": "Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-datetime",
+      "title": "Work with Dates and Times using DateTime",
+      "description": "Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-hashset",
+      "title": "Work with Immutable Sets using HashSet",
+      "description": "Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations.",
+      "category": "core concepts",
+      "difficulty": "intermediate",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "data-cause",
+      "title": "Handle Unexpected Errors by Inspecting the Cause",
+      "description": "Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces.",
+      "category": "core concepts",
+      "difficulty": "advanced",
+      "tags": [
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "pattern-option-either-checks",
+      "title": "Checking Option and Either Cases",
+      "description": "Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching.",
+      "category": "error management",
+      "difficulty": "beginner",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "pattern-match",
+      "title": "Matching on Success and Failure with match",
+      "description": "Use match to handle both success and failure cases in a single, declarative place for Effect, Option, and Either.",
+      "category": "error management",
+      "difficulty": "beginner",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "pattern-option-either-match",
+      "title": "Pattern Match on Option and Either",
+      "description": "Use declarative match() combinators to handle optional and error-prone values",
+      "category": "error management",
+      "difficulty": "beginner",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "error-management-hello-world",
+      "title": "Your First Error Handler",
+      "description": "Learn the basics of handling errors in Effect with catchAll and catchTag.",
+      "category": "error management",
+      "difficulty": "beginner",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "conditionally-branching-workflows",
+      "title": "Conditionally Branching Workflows",
+      "description": "Use predicate-based operators like Effect.filter and Effect.if to make decisions and control the flow of your application based on runtime values.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "control-repetition-with-schedule",
+      "title": "Control Repetition with Schedule",
+      "description": "Use Schedule to create composable, stateful policies that define precisely how an effect should be repeated or retried.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "pattern-matcheffect",
+      "title": "Effectful Pattern Matching with matchEffect",
+      "description": "Use matchEffect to perform effectful branching based on success or failure, enabling rich workflows in the Effect world.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "handle-errors-with-catch",
+      "title": "Handle Errors with catchTag, catchTags, and catchAll",
+      "description": "Use catchTag for type-safe recovery from specific tagged errors, and catchAll to recover from any possible failure.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "handle-flaky-operations-with-retry-timeout",
+      "title": "Handle Flaky Operations with Retries and Timeouts",
+      "description": "Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing operations, such as network requests.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "pattern-catchtag",
+      "title": "Handling Specific Errors with catchTag and catchTags",
+      "description": "Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "leverage-structured-logging",
+      "title": "Leverage Effect's Built-in Structured Logging",
+      "description": "Use Effect's built-in logging functions (Effect.log, Effect.logInfo, etc.) for structured, configurable, and context-aware logging.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "mapping-errors-to-fit-your-domain",
+      "title": "Mapping Errors to Fit Your Domain",
+      "description": "Use Effect.mapError to transform specific, low-level errors into more general domain errors, creating clean architectural boundaries.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "pattern-matchtag",
+      "title": "Matching Tagged Unions with matchTag and matchTags",
+      "description": "Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "retry-based-on-specific-errors",
+      "title": "Retry Operations Based on Specific Errors",
+      "description": "Use Effect.retry and predicate functions to selectively retry an operation only when specific, recoverable errors occur.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "handle-unexpected-errors-with-cause",
+      "title": "Handle Unexpected Errors by Inspecting the Cause",
+      "description": "Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die).",
+      "category": "error management",
+      "difficulty": "advanced",
+      "tags": [
+        "error management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "safely-bracket-resource-usage",
+      "title": "Safely Bracket Resource Usage with `acquireRelease`",
+      "description": "Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur.",
+      "category": "resource management",
+      "difficulty": "beginner",
+      "tags": [
+        "resource management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "compose-scoped-layers",
+      "title": "Compose Resource Lifecycles with `Layer.merge`",
+      "description": "Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order.",
+      "category": "resource management",
+      "difficulty": "intermediate",
+      "tags": [
+        "resource management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "scoped-service-layer",
+      "title": "Create a Service Layer from a Managed Resource",
+      "description": "Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service.",
+      "category": "resource management",
+      "difficulty": "intermediate",
+      "tags": [
+        "resource management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "resource-timeouts",
+      "title": "Handle Resource Timeouts",
+      "description": "Set timeouts on resource acquisition and usage to prevent hanging operations.",
+      "category": "resource management",
+      "difficulty": "intermediate",
+      "tags": [
+        "resource management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "resource-pooling",
+      "title": "Pool Resources for Reuse",
+      "description": "Create and manage a pool of reusable resources like database connections or workers.",
+      "category": "resource management",
+      "difficulty": "intermediate",
+      "tags": [
+        "resource management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "create-managed-runtime-for-scoped-resources",
+      "title": "Create a Managed Runtime for Scoped Resources",
+      "description": "Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run.",
+      "category": "resource management",
+      "difficulty": "advanced",
+      "tags": [
+        "resource management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "resource-hierarchies",
+      "title": "Manage Hierarchical Resources",
+      "description": "Manage parent-child resource relationships where children must be released before parents.",
+      "category": "resource management",
+      "difficulty": "advanced",
+      "tags": [
+        "resource management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "manual-scope-management",
+      "title": "Manually Manage Lifecycles with `Scope`",
+      "description": "Use `Scope` directly to manage complex resource lifecycles or when building custom layers.",
+      "category": "resource management",
+      "difficulty": "advanced",
+      "tags": [
+        "resource management"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "concurrency-race-timeout",
+      "title": "Race Effects and Handle Timeouts",
+      "description": "Race multiple effects to get the fastest result, or add timeouts to prevent hanging operations.",
+      "category": "concurrency",
+      "difficulty": "beginner",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "concurrency-understanding-fibers",
+      "title": "Understanding Fibers",
+      "description": "Learn what fibers are, how they differ from threads, and why they make Effect powerful for concurrent programming.",
+      "category": "concurrency",
+      "difficulty": "beginner",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "concurrency-hello-world",
+      "title": "Your First Parallel Operation",
+      "description": "Run multiple effects in parallel with Effect.all and understand when to use parallel vs sequential execution.",
+      "category": "concurrency",
+      "difficulty": "beginner",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "concurrency-pattern-coordinate-with-deferred",
+      "title": "Concurrency Pattern 1: Coordinate Async Operations with Deferred",
+      "description": "Use Deferred to coordinate async operations where multiple fibers wait for a single event to complete, enabling producer-consumer patterns and async signaling without polling.",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "concurrency-pattern-rate-limit-with-semaphore",
+      "title": "Concurrency Pattern 2: Rate Limit Concurrent Access with Semaphore",
+      "description": "Use Semaphore to limit the number of concurrent operations, enabling connection pooling, API rate limiting, and controlled resource access without overload.",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "concurrency-pattern-coordinate-with-latch",
+      "title": "Concurrency Pattern 3: Coordinate Multiple Fibers with Latch",
+      "description": "Use Latch to synchronize multiple fibers, enabling patterns like coordinating N async tasks, fan-out/fan-in, and barrier synchronization.",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "concurrency-pattern-queue-work-distribution",
+      "title": "Concurrency Pattern 4: Distribute Work with Queue",
+      "description": "Use Queue to decouple producers and consumers, enabling work distribution, pipeline stages, and backpressure handling across concurrent fibers.",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "concurrency-pattern-pubsub-event-broadcast",
+      "title": "Concurrency Pattern 5: Broadcast Events with PubSub",
+      "description": "Use PubSub to broadcast events to multiple subscribers, enabling event-driven architectures and fan-out patterns without direct coupling.",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "concurrency-pattern-race-timeout",
+      "title": "Concurrency Pattern 6: Race and Timeout Competing Effects",
+      "description": "Use race and timeout to compete multiple effects and enforce deadlines, enabling timeout handling and choosing fastest result.",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "manage-shared-state-with-ref",
+      "title": "Manage Shared State Safely with Ref",
+      "description": "Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions.",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "process-collection-in-parallel-with-foreach",
+      "title": "Process a Collection in Parallel with Effect.forEach",
+      "description": "Use Effect.forEach with the `concurrency` option to process a collection of items in parallel with a fixed limit, preventing resource exhaustion.",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "race-concurrent-effects",
+      "title": "Race Concurrent Effects for the Fastest Result",
+      "description": "Use Effect.race to run multiple effects concurrently and proceed with the result of the one that succeeds first, automatically interrupting the others.",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "run-effects-in-parallel-with-all",
+      "title": "Run Independent Effects in Parallel with Effect.all",
+      "description": "Use Effect.all to run multiple independent effects concurrently and collect all their results into a single tuple.",
+      "category": "concurrency",
+      "difficulty": "intermediate",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "add-caching-by-wrapping-a-layer",
+      "title": "Add Caching by Wrapping a Layer",
+      "description": "Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service.",
+      "category": "concurrency",
+      "difficulty": "advanced",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "decouple-fibers-with-queue-pubsub",
+      "title": "Decouple Fibers with Queues and PubSub",
+      "description": "Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers.",
+      "category": "concurrency",
+      "difficulty": "advanced",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "execute-long-running-apps-with-runfork",
+      "title": "Execute Long-Running Apps with Effect.runFork",
+      "description": "Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown.",
+      "category": "concurrency",
+      "difficulty": "advanced",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "implement-graceful-shutdown",
+      "title": "Implement Graceful Shutdown for Your Application",
+      "description": "Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released.",
+      "category": "concurrency",
+      "difficulty": "advanced",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "manage-resource-lifecycles-with-scope",
+      "title": "Manage Resource Lifecycles with Scope",
+      "description": "Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed.",
+      "category": "concurrency",
+      "difficulty": "advanced",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "poll-for-status-until-task-completes",
+      "title": "Poll for Status Until a Task Completes",
+      "description": "Use Effect.race to run a repeating polling effect alongside a main task, automatically stopping the polling when the main task finishes.",
+      "category": "concurrency",
+      "difficulty": "advanced",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "run-background-tasks-with-fork",
+      "title": "Run Background Tasks with Effect.fork",
+      "description": "Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting.",
+      "category": "concurrency",
+      "difficulty": "advanced",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "state-management-pattern-synchronized-ref",
+      "title": "State Management Pattern 1: Synchronized Reference with SynchronizedRef",
+      "description": "Use SynchronizedRef to safely share mutable state across concurrent fibers, with atomic updates and guaranteed consistency.",
+      "category": "concurrency",
+      "difficulty": "advanced",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "state-management-pattern-subscription-ref",
+      "title": "State Management Pattern 2: Observable State with SubscriptionRef",
+      "description": "Build observable state that notifies subscribers on changes, enabling reactive patterns and state-driven architecture.",
+      "category": "concurrency",
+      "difficulty": "advanced",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "understand-fibers-as-lightweight-threads",
+      "title": "Understand Fibers as Lightweight Threads",
+      "description": "A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading.",
+      "category": "concurrency",
+      "difficulty": "advanced",
+      "tags": [
+        "concurrency"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-running-collecting",
+      "title": "Running and Collecting Stream Results",
+      "description": "Learn the different ways to run a stream and collect its results: runCollect, runForEach, runDrain, and more.",
+      "category": "streams",
+      "difficulty": "beginner",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-pattern-map-filter-transformations",
+      "title": "Stream Pattern 1: Transform Streams with Map and Filter",
+      "description": "Use Stream.map and Stream.filter to transform and select stream elements, enabling data pipelines that reshape and filter data in flight.",
+      "category": "streams",
+      "difficulty": "beginner",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-vs-effect",
+      "title": "Stream vs Effect - When to Use Which",
+      "description": "Understand when to use Effect (single value) vs Stream (sequence of values) for your use case.",
+      "category": "streams",
+      "difficulty": "beginner",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-take-drop",
+      "title": "Take and Drop Stream Elements",
+      "description": "Control how many stream elements to process using take, drop, takeWhile, and dropWhile.",
+      "category": "streams",
+      "difficulty": "beginner",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-hello-world",
+      "title": "Your First Stream",
+      "description": "Create your first Effect Stream and understand what makes streams different from regular arrays.",
+      "category": "streams",
+      "difficulty": "beginner",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "sink-pattern-batch-insert-stream-records-into-database",
+      "title": "Sink Pattern 1: Batch Insert Stream Records into Database",
+      "description": "Use Sink to batch stream records and insert them efficiently into a database in groups, rather than one-by-one, for better performance and resource usage.",
+      "category": "streams",
+      "difficulty": "intermediate",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "sink-pattern-write-stream-events-to-event-log",
+      "title": "Sink Pattern 2: Write Stream Events to Event Log",
+      "description": "Use Sink to append stream events to an event log with metadata and causal ordering, enabling event sourcing and audit trail patterns.",
+      "category": "streams",
+      "difficulty": "intermediate",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "sink-pattern-write-stream-lines-to-file",
+      "title": "Sink Pattern 3: Write Stream Lines to File",
+      "description": "Use Sink to write stream data as lines to a file with buffering for efficiency, supporting log files and line-oriented formats.",
+      "category": "streams",
+      "difficulty": "intermediate",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "sink-pattern-send-stream-records-to-message-queue",
+      "title": "Sink Pattern 4: Send Stream Records to Message Queue",
+      "description": "Use Sink to publish stream records to a message queue with partitioning, batching, and acknowledgment handling for distributed systems.",
+      "category": "streams",
+      "difficulty": "intermediate",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "sink-pattern-fall-back-to-alternative-sink-on-failure",
+      "title": "Sink Pattern 5: Fall Back to Alternative Sink on Failure",
+      "description": "Use Sink to attempt writing to a primary destination, and automatically fall back to an alternative destination if the primary fails, enabling progressive degradation and high availability.",
+      "category": "streams",
+      "difficulty": "intermediate",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "sink-pattern-retry-failed-stream-operations",
+      "title": "Sink Pattern 6: Retry Failed Stream Operations",
+      "description": "Use Sink with configurable retry policies to automatically retry failed operations with exponential backoff, enabling recovery from transient failures without losing data.",
+      "category": "streams",
+      "difficulty": "intermediate",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-pattern-merge-combine",
+      "title": "Stream Pattern 2: Merge and Combine Multiple Streams",
+      "description": "Use Stream.merge, Stream.concat, and Stream.mergeAll to combine multiple streams into a single stream, enabling multi-source data aggregation.",
+      "category": "streams",
+      "difficulty": "intermediate",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-pattern-backpressure-control",
+      "title": "Stream Pattern 3: Control Backpressure in Streams",
+      "description": "Use Stream throttling, buffering, and chunk operations to manage backpressure, preventing upstream from overwhelming downstream consumers.",
+      "category": "streams",
+      "difficulty": "intermediate",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-pattern-stateful-operations",
+      "title": "Stream Pattern 4: Stateful Operations with Scan and Fold",
+      "description": "Use Stream.scan and Stream.fold to maintain state across stream elements, enabling cumulative operations, counters, aggregations, and stateful transformations.",
+      "category": "streams",
+      "difficulty": "intermediate",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-pattern-grouping-windowing",
+      "title": "Stream Pattern 5: Grouping and Windowing Streams",
+      "description": "Use grouping and windowing to organize streams by key or time window, enabling batch operations and temporal aggregations.",
+      "category": "streams",
+      "difficulty": "advanced",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-pattern-resource-management",
+      "title": "Stream Pattern 6: Resource Management in Streams",
+      "description": "Properly manage resources (connections, files, memory) in streams using acquire/release patterns and ensuring cleanup on error or completion.",
+      "category": "streams",
+      "difficulty": "advanced",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-pattern-error-handling",
+      "title": "Stream Pattern 7: Error Handling in Streams",
+      "description": "Handle errors gracefully in streams with recovery strategies, resuming after failures, and maintaining stream integrity.",
+      "category": "streams",
+      "difficulty": "advanced",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-pattern-advanced-transformations",
+      "title": "Stream Pattern 8: Advanced Stream Transformations",
+      "description": "Apply complex transformations across streams including custom operators, effect-based transformations, and composition patterns.",
+      "category": "streams",
+      "difficulty": "advanced",
+      "tags": [
+        "streams"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "platform-environment-variables",
+      "title": "Access Environment Variables",
+      "description": "Read environment variables safely with Effect Platform, handling missing values gracefully.",
+      "category": "platform",
+      "difficulty": "beginner",
+      "tags": [
+        "platform"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "platform-filesystem-operations",
+      "title": "Platform Pattern 2: Filesystem Operations",
+      "description": "Use FileSystem module to read, write, list, and manage files with proper resource cleanup and error handling.",
+      "category": "platform",
+      "difficulty": "beginner",
+      "tags": [
+        "platform"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "platform-terminal-interactive",
+      "title": "Platform Pattern 4: Interactive Terminal I/O",
+      "description": "Use Terminal module to read user input and write formatted output, enabling interactive CLI applications with proper buffering and encoding.",
+      "category": "platform",
+      "difficulty": "beginner",
+      "tags": [
+        "platform"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "platform-hello-world",
+      "title": "Your First Platform Operation",
+      "description": "Get started with Effect Platform by reading a file and understanding how Platform differs from Node.js APIs.",
+      "category": "platform",
+      "difficulty": "beginner",
+      "tags": [
+        "platform"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "platform-pattern-command-execution",
+      "title": "Platform Pattern 1: Execute Shell Commands",
+      "description": "Use Command module to execute shell commands, capture output, and handle exit codes, enabling integration with system tools and external programs.",
+      "category": "platform",
+      "difficulty": "intermediate",
+      "tags": [
+        "platform"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "platform-keyvaluestore-persistence",
+      "title": "Platform Pattern 3: Persistent Key-Value Storage",
+      "description": "Use KeyValueStore for simple persistent key-value storage, enabling caching, session management, and lightweight data persistence.",
+      "category": "platform",
+      "difficulty": "intermediate",
+      "tags": [
+        "platform"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "platform-pattern-path-manipulation",
+      "title": "Platform Pattern 5: Cross-Platform Path Manipulation",
+      "description": "Use platform-aware path operations to handle file system paths correctly across Windows, macOS, and Linux with proper resolution and normalization.",
+      "category": "platform",
+      "difficulty": "intermediate",
+      "tags": [
+        "platform"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "platform-pattern-advanced-filesystem",
+      "title": "Platform Pattern 6: Advanced FileSystem Operations",
+      "description": "Handle complex file system scenarios including watching files, recursive operations, atomic writes, and efficient bulk operations.",
+      "category": "platform",
+      "difficulty": "advanced",
+      "tags": [
+        "platform"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "scheduling-retry-basics",
+      "title": "Retry Failed Operations",
+      "description": "Use Effect.retry with Schedule to automatically retry operations that fail.",
+      "category": "scheduling",
+      "difficulty": "beginner",
+      "tags": [
+        "scheduling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "scheduling-hello-world",
+      "title": "Your First Schedule",
+      "description": "Learn the basics of scheduling in Effect - retry operations and repeat them on intervals.",
+      "category": "scheduling",
+      "difficulty": "beginner",
+      "tags": [
+        "scheduling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "scheduling-pattern-repeat-effect-on-fixed-interval",
+      "title": "Scheduling Pattern 1: Repeat an Effect on a Fixed Interval",
+      "description": "Use Schedule.fixed to repeat an effect at regular intervals, enabling polling, health checks, and periodic background tasks without busy-waiting or manual timing logic.",
+      "category": "scheduling",
+      "difficulty": "intermediate",
+      "tags": [
+        "scheduling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "scheduling-pattern-cron-expressions",
+      "title": "Scheduling Pattern 3: Schedule Tasks with Cron Expressions",
+      "description": "Use cron expressions to schedule tasks at specific times and intervals, enabling calendar-based scheduling with timezone support.",
+      "category": "scheduling",
+      "difficulty": "intermediate",
+      "tags": [
+        "scheduling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "scheduling-pattern-debounce-throttle",
+      "title": "Scheduling Pattern 4: Debounce and Throttle Execution",
+      "description": "Use debouncing and throttling to limit how often effects execute, preventing runaway operations and handling rapid event sequences.",
+      "category": "scheduling",
+      "difficulty": "intermediate",
+      "tags": [
+        "scheduling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "scheduling-pattern-advanced-retry-chains",
+      "title": "Scheduling Pattern 5: Advanced Retry Chains and Circuit Breakers",
+      "description": "Build sophisticated retry chains with circuit breakers, fallbacks, and complex failure patterns for production-grade reliability.",
+      "category": "scheduling",
+      "difficulty": "advanced",
+      "tags": [
+        "scheduling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "domain-modeling-tagged-errors",
+      "title": "Create Type-Safe Errors",
+      "description": "Define domain-specific errors using Data.TaggedError for type-safe error handling.",
+      "category": "domain modeling",
+      "difficulty": "beginner",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "domain-modeling-option-basics",
+      "title": "Handle Missing Values with Option",
+      "description": "Use Option to explicitly model values that might not exist, avoiding null/undefined bugs.",
+      "category": "domain modeling",
+      "difficulty": "beginner",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "domain-modeling-hello-world",
+      "title": "Your First Domain Model",
+      "description": "Create a simple domain model using TypeScript interfaces and Effect to represent your business entities.",
+      "category": "domain modeling",
+      "difficulty": "beginner",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "accumulate-multiple-errors-with-either",
+      "title": "Accumulate Multiple Errors with Either",
+      "description": "Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "avoid-long-andthen-chains",
+      "title": "Avoid Long Chains of .andThen; Use Generators Instead",
+      "description": "Prefer Effect.gen over long chains of .andThen for sequential logic to improve readability and maintainability.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "define-contracts-with-schema",
+      "title": "Define Contracts Upfront with Schema",
+      "description": "Use Schema to define the types for your data models and function signatures before writing the implementation, creating clear, type-safe contracts.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "define-tagged-errors",
+      "title": "Define Type-Safe Errors with Data.TaggedError",
+      "description": "Create custom, type-safe error classes by extending Data.TaggedError to make error handling robust, predictable, and self-documenting.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "distinguish-not-found-from-errors",
+      "title": "Distinguish 'Not Found' from Errors",
+      "description": "Use Effect<Option<A>> to clearly distinguish between a recoverable 'not found' case (None) and a true failure (Fail).",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "model-optional-values-with-option",
+      "title": "Model Optional Values Safely with Option",
+      "description": "Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "model-validated-domain-types-with-brand",
+      "title": "Model Validated Domain Types with Brand",
+      "description": "Use Brand to turn primitive types like string or number into specific, validated domain types like Email or PositiveInt, making illegal states unrepresentable.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "brand-model-domain-type",
+      "title": "Modeling Validated Domain Types with Brand",
+      "description": "Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "parse-with-schema-decode",
+      "title": "Parse and Validate Data with Schema.decode",
+      "description": "Use Schema.decode(schema) to create an Effect that parses and validates unknown data, which integrates seamlessly with Effect's error handling.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "transform-data-with-schema",
+      "title": "Transform Data During Validation with Schema",
+      "description": "Use Schema.transform to safely convert data from one type to another during the parsing phase, such as from a string to a Date.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "use-gen-for-business-logic",
+      "title": "Use Effect.gen for Business Logic",
+      "description": "Encapsulate sequential business logic, control flow, and dependency access within Effect.gen for improved readability and maintainability.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "brand-validate-parse",
+      "title": "Validating and Parsing Branded Types",
+      "description": "Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed.",
+      "category": "domain modeling",
+      "difficulty": "intermediate",
+      "tags": [
+        "domain modeling"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "launch-http-server",
+      "title": "Create a Basic HTTP Server",
+      "description": "Launch a simple, effect-native HTTP server to respond to incoming requests.",
+      "category": "building apis",
+      "difficulty": "beginner",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "extract-path-parameters",
+      "title": "Extract Path Parameters",
+      "description": "Capture and use dynamic segments from a request URL, such as a resource ID.",
+      "category": "building apis",
+      "difficulty": "beginner",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "handle-get-request",
+      "title": "Handle a GET Request",
+      "description": "Define a route that responds to a specific HTTP GET request path.",
+      "category": "building apis",
+      "difficulty": "beginner",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "send-json-response",
+      "title": "Send a JSON Response",
+      "description": "Create and send a structured JSON response with the correct headers and status code.",
+      "category": "building apis",
+      "difficulty": "beginner",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "api-rate-limiting",
+      "title": "Add Rate Limiting to APIs",
+      "description": "Protect your API from abuse by limiting request rates per client.",
+      "category": "building apis",
+      "difficulty": "intermediate",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "api-middleware",
+      "title": "Compose API Middleware",
+      "description": "Build reusable middleware for logging, authentication, validation, and more.",
+      "category": "building apis",
+      "difficulty": "intermediate",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "api-cors",
+      "title": "Configure CORS for APIs",
+      "description": "Enable Cross-Origin Resource Sharing to allow browser clients from different domains.",
+      "category": "building apis",
+      "difficulty": "intermediate",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "handle-api-errors",
+      "title": "Handle API Errors",
+      "description": "Translate application-specific errors from the Effect failure channel into meaningful HTTP error responses.",
+      "category": "building apis",
+      "difficulty": "intermediate",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "api-authentication",
+      "title": "Implement API Authentication",
+      "description": "Add JWT or session-based authentication to protect your API endpoints.",
+      "category": "building apis",
+      "difficulty": "intermediate",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "make-http-client-request",
+      "title": "Make an Outgoing HTTP Client Request",
+      "description": "Use the built-in Effect HTTP client to make safe and composable requests to external services from within your API.",
+      "category": "building apis",
+      "difficulty": "intermediate",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "provide-dependencies-to-routes",
+      "title": "Provide Dependencies to Routes",
+      "description": "Inject services like database connections into HTTP route handlers using Layer and Effect.Service.",
+      "category": "building apis",
+      "difficulty": "intermediate",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "validate-request-body",
+      "title": "Validate Request Body",
+      "description": "Safely parse and validate an incoming JSON request body against a predefined Schema.",
+      "category": "building apis",
+      "difficulty": "intermediate",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "api-openapi",
+      "title": "Generate OpenAPI Documentation",
+      "description": "Auto-generate OpenAPI/Swagger documentation from your Effect HTTP API definitions.",
+      "category": "building apis",
+      "difficulty": "advanced",
+      "tags": [
+        "building apis"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-collect-results",
+      "title": "Collect All Results into a List",
+      "description": "Run a pipeline and gather all of its results into an in-memory array.",
+      "category": "building data pipelines",
+      "difficulty": "beginner",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-from-iterable",
+      "title": "Create a Stream from a List",
+      "description": "Turn a simple in-memory array or list into a foundational data pipeline using Stream.",
+      "category": "building data pipelines",
+      "difficulty": "beginner",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-run-for-effects",
+      "title": "Run a Pipeline for its Side Effects",
+      "description": "Execute a pipeline for its effects without collecting the results, saving memory.",
+      "category": "building data pipelines",
+      "difficulty": "beginner",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-retry-on-failure",
+      "title": "Automatically Retry Failed Operations",
+      "description": "Build a self-healing pipeline that can automatically retry failed processing steps using a configurable backoff strategy.",
+      "category": "building data pipelines",
+      "difficulty": "intermediate",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "pipeline-merge",
+      "title": "Merge Multiple Streams",
+      "description": "Combine data from multiple streams into a single unified stream.",
+      "category": "building data pipelines",
+      "difficulty": "intermediate",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-from-file",
+      "title": "Process a Large File with Constant Memory",
+      "description": "Create a data pipeline from a file on disk, processing it line-by-line without loading the entire file into memory.",
+      "category": "building data pipelines",
+      "difficulty": "intermediate",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "process-a-collection-of-data-asynchronously",
+      "title": "Process collections of data asynchronously",
+      "description": "Process collections of data asynchronously in a lazy, composable, and resource-safe manner using Effect's Stream.",
+      "category": "building data pipelines",
+      "difficulty": "intermediate",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-process-concurrently",
+      "title": "Process Items Concurrently",
+      "description": "Perform an asynchronous action for each item in a stream with controlled parallelism to dramatically improve performance.",
+      "category": "building data pipelines",
+      "difficulty": "intermediate",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-process-in-batches",
+      "title": "Process Items in Batches",
+      "description": "Group items into chunks for efficient bulk operations, like database inserts or batch API calls.",
+      "category": "building data pipelines",
+      "difficulty": "intermediate",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-from-paginated-api",
+      "title": "Turn a Paginated API into a Single Stream",
+      "description": "Convert a paginated API into a continuous, easy-to-use stream, abstracting away the complexity of fetching page by page.",
+      "category": "building data pipelines",
+      "difficulty": "intermediate",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "pipeline-fan-out",
+      "title": "Fan Out to Multiple Consumers",
+      "description": "Distribute stream data to multiple parallel consumers for processing.",
+      "category": "building data pipelines",
+      "difficulty": "advanced",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "pipeline-backpressure",
+      "title": "Implement Backpressure in Pipelines",
+      "description": "Control data flow rates to prevent overwhelming slow consumers.",
+      "category": "building data pipelines",
+      "difficulty": "advanced",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "pipeline-dead-letter-queue",
+      "title": "Implement Dead Letter Queues",
+      "description": "Route failed items to a separate queue for later analysis and reprocessing.",
+      "category": "building data pipelines",
+      "difficulty": "advanced",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "stream-manage-resources",
+      "title": "Manage Resources Safely in a Pipeline",
+      "description": "Ensure resources like file handles or connections are safely acquired at the start of a pipeline and always released at the end, even on failure.",
+      "category": "building data pipelines",
+      "difficulty": "advanced",
+      "tags": [
+        "building data pipelines"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "http-json-responses",
+      "title": "Parse JSON Responses Safely",
+      "description": "Use Effect Schema to validate and parse HTTP JSON responses with type safety.",
+      "category": "making http requests",
+      "difficulty": "beginner",
+      "tags": [
+        "making http requests"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "http-hello-world",
+      "title": "Your First HTTP Request",
+      "description": "Learn how to make HTTP requests using Effect's HttpClient with proper error handling.",
+      "category": "making http requests",
+      "difficulty": "beginner",
+      "tags": [
+        "making http requests"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "http-timeouts",
+      "title": "Add Timeouts to HTTP Requests",
+      "description": "Set timeouts on HTTP requests to prevent hanging operations.",
+      "category": "making http requests",
+      "difficulty": "intermediate",
+      "tags": [
+        "making http requests"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "http-caching",
+      "title": "Cache HTTP Responses",
+      "description": "Implement response caching to reduce API calls and improve performance.",
+      "category": "making http requests",
+      "difficulty": "intermediate",
+      "tags": [
+        "making http requests"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "create-a-testable-http-client-service",
+      "title": "Create a Testable HTTP Client Service",
+      "description": "Define an HttpClient service with separate 'Live' and 'Test' layers to enable robust, testable interactions with external APIs.",
+      "category": "making http requests",
+      "difficulty": "intermediate",
+      "tags": [
+        "making http requests"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "http-rate-limit-handling",
+      "title": "Handle Rate Limiting Responses",
+      "description": "Gracefully handle 429 responses and respect API rate limits.",
+      "category": "making http requests",
+      "difficulty": "intermediate",
+      "tags": [
+        "making http requests"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "http-logging",
+      "title": "Log HTTP Requests and Responses",
+      "description": "Add request/response logging for debugging and observability.",
+      "category": "making http requests",
+      "difficulty": "intermediate",
+      "tags": [
+        "making http requests"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "model-dependencies-as-services",
+      "title": "Model Dependencies as Services",
+      "description": "Abstract external dependencies and capabilities into swappable, testable services using Effect's dependency injection system.",
+      "category": "making http requests",
+      "difficulty": "intermediate",
+      "tags": [
+        "making http requests"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "http-retries",
+      "title": "Retry HTTP Requests with Backoff",
+      "description": "Implement robust retry logic for HTTP requests with exponential backoff.",
+      "category": "making http requests",
+      "difficulty": "intermediate",
+      "tags": [
+        "making http requests"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "build-a-basic-http-server",
+      "title": "Build a Basic HTTP Server",
+      "description": "Combine Layer, Runtime, and Effect to create a simple, robust HTTP server using Node.js's built-in http module.",
+      "category": "making http requests",
+      "difficulty": "advanced",
+      "tags": [
+        "making http requests"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "testing-with-services",
+      "title": "Test Effects with Services",
+      "description": "Learn how to test Effect programs that depend on services by providing test implementations.",
+      "category": "testing",
+      "difficulty": "beginner",
+      "tags": [
+        "testing"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "testing-hello-world",
+      "title": "Your First Effect Test",
+      "description": "Write your first test for an Effect program using Vitest and Effect's testing utilities.",
+      "category": "testing",
+      "difficulty": "beginner",
+      "tags": [
+        "testing"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "accessing-current-time-with-clock",
+      "title": "Accessing the Current Time with Clock",
+      "description": "Use the Clock service to access the current time in a testable, deterministic way, avoiding direct calls to Date.now().",
+      "category": "testing",
+      "difficulty": "intermediate",
+      "tags": [
+        "testing"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "mocking-dependencies-in-tests",
+      "title": "Mocking Dependencies in Tests",
+      "description": "Use a test-specific Layer to provide mock implementations of services your code depends on, enabling isolated and deterministic unit tests.",
+      "category": "testing",
+      "difficulty": "intermediate",
+      "tags": [
+        "testing"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "use-default-layer-for-tests",
+      "title": "Use the Auto-Generated .Default Layer in Tests",
+      "description": "When testing, always use the MyService.Default layer that is automatically generated by the Effect.Service class for dependency injection.",
+      "category": "testing",
+      "difficulty": "intermediate",
+      "tags": [
+        "testing"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "write-tests-that-adapt-to-application-code",
+      "title": "Write Tests That Adapt to Application Code",
+      "description": "A cardinal rule of testing: Tests must adapt to the application's interface, not the other way around. Never modify application code solely to make a test pass.",
+      "category": "testing",
+      "difficulty": "intermediate",
+      "tags": [
+        "testing"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "organize-layers-into-composable-modules",
+      "title": "Organize Layers into Composable Modules",
+      "description": "Structure a large application by grouping related services into 'module' layers, which are then composed together with a shared base layer.",
+      "category": "testing",
+      "difficulty": "advanced",
+      "tags": [
+        "testing"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "testing-property-based",
+      "title": "Property-Based Testing with Effect",
+      "description": "Use fast-check with Effect for property-based testing of pure functions and effects.",
+      "category": "testing",
+      "difficulty": "advanced",
+      "tags": [
+        "testing"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "testing-concurrent-code",
+      "title": "Test Concurrent Code",
+      "description": "Test race conditions, parallelism, and concurrent behavior in Effect programs.",
+      "category": "testing",
+      "difficulty": "advanced",
+      "tags": [
+        "testing"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "testing-streams",
+      "title": "Test Streaming Effects",
+      "description": "Write tests for Stream operations, transformations, and error handling.",
+      "category": "testing",
+      "difficulty": "advanced",
+      "tags": [
+        "testing"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-debugging",
+      "title": "Debug Effect Programs",
+      "description": "Learn techniques for debugging Effect programs using logging, tap, and cause inspection.",
+      "category": "observability",
+      "difficulty": "beginner",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-hello-world",
+      "title": "Your First Logs",
+      "description": "Learn the basics of logging in Effect using the built-in structured logging system.",
+      "category": "observability",
+      "difficulty": "beginner",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "add-custom-metrics",
+      "title": "Add Custom Metrics to Your Application",
+      "description": "Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators.",
+      "category": "observability",
+      "difficulty": "intermediate",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-custom-metrics",
+      "title": "Add Custom Metrics to Your Application",
+      "description": "Use Effect's Metric module to instrument your code with counters, gauges, and histograms to track key business and performance indicators.",
+      "category": "observability",
+      "difficulty": "intermediate",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-effect-fn",
+      "title": "Instrument and Observe Function Calls with Effect.fn",
+      "description": "Use Effect.fn to wrap, instrument, and observe function calls, enabling composable logging, metrics, and tracing at function boundaries.",
+      "category": "observability",
+      "difficulty": "intermediate",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-structured-logging",
+      "title": "Leverage Effect's Built-in Structured Logging",
+      "description": "Use Effect's built-in logging functions for structured, configurable, and context-aware logging.",
+      "category": "observability",
+      "difficulty": "intermediate",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-tracing-spans",
+      "title": "Trace Operations Across Services with Spans",
+      "description": "Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations.",
+      "category": "observability",
+      "difficulty": "intermediate",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "trace-operations-with-spans",
+      "title": "Trace Operations Across Services with Spans",
+      "description": "Use Effect.withSpan to create custom tracing spans, providing detailed visibility into the performance and flow of your application's operations.",
+      "category": "observability",
+      "difficulty": "intermediate",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-dashboards",
+      "title": "Create Observability Dashboards",
+      "description": "Design effective dashboards to visualize your Effect application metrics.",
+      "category": "observability",
+      "difficulty": "advanced",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-prometheus",
+      "title": "Export Metrics to Prometheus",
+      "description": "Expose application metrics in Prometheus format for monitoring and alerting.",
+      "category": "observability",
+      "difficulty": "advanced",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-distributed-tracing",
+      "title": "Implement Distributed Tracing",
+      "description": "Set up end-to-end distributed tracing across services with trace context propagation.",
+      "category": "observability",
+      "difficulty": "advanced",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-opentelemetry",
+      "title": "Integrate Effect Tracing with OpenTelemetry",
+      "description": "Connect Effect's tracing spans to OpenTelemetry for end-to-end distributed tracing and visualization.",
+      "category": "observability",
+      "difficulty": "advanced",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-alerting",
+      "title": "Set Up Alerting",
+      "description": "Configure alerts to notify you when your Effect application has problems.",
+      "category": "observability",
+      "difficulty": "advanced",
+      "tags": [
+        "observability"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "tooling-type-errors",
+      "title": "Read Effect Type Errors",
+      "description": "Learn how to read and understand Effect's TypeScript error messages.",
+      "category": "tooling and debugging",
+      "difficulty": "beginner",
+      "tags": [
+        "tooling and debugging"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "tooling-hello-world",
+      "title": "Set Up Your Effect Development Environment",
+      "description": "Configure your editor and tools for the best Effect development experience.",
+      "category": "tooling and debugging",
+      "difficulty": "beginner",
+      "tags": [
+        "tooling and debugging"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "tooling-linting",
+      "title": "Configure Linting for Effect",
+      "description": "Set up Biome or ESLint with Effect-specific rules for code quality.",
+      "category": "tooling and debugging",
+      "difficulty": "intermediate",
+      "tags": [
+        "tooling and debugging"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "tooling-ci-cd",
+      "title": "Set Up CI/CD for Effect Projects",
+      "description": "Configure GitHub Actions to build, test, and deploy Effect applications.",
+      "category": "tooling and debugging",
+      "difficulty": "intermediate",
+      "tags": [
+        "tooling and debugging"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "supercharge-your-editor-with-the-effect-lsp",
+      "title": "Supercharge Your Editor with the Effect LSP",
+      "description": "Install the Effect Language Server (LSP) extension for your editor to get rich, inline type information and enhanced error checking for your Effect code.",
+      "category": "tooling and debugging",
+      "difficulty": "intermediate",
+      "tags": [
+        "tooling and debugging"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "tooling-devtools",
+      "title": "Use Effect DevTools",
+      "description": "Debug Effect applications with specialized developer tools.",
+      "category": "tooling and debugging",
+      "difficulty": "intermediate",
+      "tags": [
+        "tooling and debugging"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "tooling-profiling",
+      "title": "Profile Effect Applications",
+      "description": "Measure and optimize performance of Effect applications.",
+      "category": "tooling and debugging",
+      "difficulty": "advanced",
+      "tags": [
+        "tooling and debugging"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "teach-your-ai-agents-effect-with-the-mcp-server",
+      "title": "Teach your AI Agents Effect with the MCP Server",
+      "description": "Use the Effect MCP server to provide live, contextual information about your application's structure directly to AI coding agents.",
+      "category": "tooling and debugging",
+      "difficulty": "advanced",
+      "tags": [
+        "tooling and debugging"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    }
+  ],
+  "lastUpdated": "2026-01-12T19:09:03.867Z"
+}

@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     // Log error for debugging (in production, this goes to Vercel logs)
     console.error("[Patterns API] Error:", error);
-    
+
     if (isAuthenticationError(error)) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
