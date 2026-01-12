@@ -20,10 +20,8 @@ import type {
 	DBTestSummary
 } from "./types.js";
 
-// Type guard for database query results
-interface QueryResult {
-	rows: unknown[];
-}
+// Type guard for database query results  
+interface QueryResult extends Array<unknown> { }
 
 interface ExistsQueryResult {
 	exists: boolean;
@@ -33,8 +31,8 @@ interface TestQueryResult {
 	test: number;
 }
 
-const isQueryResult = (result: unknown): result is QueryResult => {
-	return typeof result === "object" && result !== null && "rows" in result;
+const isQueryResult = (result: unknown): result is unknown[] => {
+	return Array.isArray(result);
 };
 
 const isExistsQueryResult = (rows: unknown[]): rows is ExistsQueryResult[] => {
@@ -99,10 +97,10 @@ export const runQuickTest = (): Effect.Effect<DBQuickTestResult, Error> =>
 				catch: () => new Error(`Failed to check table ${table}`),
 			}).pipe(
 				Effect.map((result) => {
-					if (!isQueryResult(result) || !isExistsQueryResult(result.rows)) {
+					if (!isQueryResult(result) || !isExistsQueryResult(result)) {
 						return { name: table, exists: false };
 					}
-					const exists = result.rows[0]?.exists;
+					const exists = result[0]?.exists;
 					return { name: table, exists: !!exists };
 				}),
 				Effect.catchAll(() => Effect.succeed({ name: table, exists: false }))
@@ -211,7 +209,7 @@ export const runFullTestSuite = (): Effect.Effect<DBTestSummary, Error> =>
 			// Test 1: Database Connection
 			yield* runTest("Database Connection", async () => {
 				const result = await db.execute("SELECT 1 as test");
-				if (!isQueryResult(result) || !isTestQueryResult(result.rows)) {
+				if (!isQueryResult(result) || !isTestQueryResult(result)) {
 					throw new Error("Connection failed");
 				}
 			});
@@ -226,10 +224,10 @@ export const runFullTestSuite = (): Effect.Effect<DBTestSummary, Error> =>
 							AND table_name = '${table}'
 						)`,
 					);
-					if (!isQueryResult(result) || !isExistsQueryResult(result.rows)) {
+					if (!isQueryResult(result) || !isExistsQueryResult(result)) {
 						throw new Error(`Table ${table} does not exist`);
 					}
-					if (!result.rows[0]?.exists) {
+					if (!result[0]?.exists) {
 						throw new Error(`Table ${table} does not exist`);
 					}
 				}
@@ -341,10 +339,10 @@ export const verifySchema = (): Effect.Effect<
 				catch: () => new Error(`Failed to check table ${table}`),
 			}).pipe(
 				Effect.map((result) => {
-					if (!isQueryResult(result) || !isExistsQueryResult(result.rows)) {
+					if (!isQueryResult(result) || !isExistsQueryResult(result)) {
 						return { table, exists: false };
 					}
-					return { table, exists: !!result.rows[0]?.exists };
+					return { table, exists: !!result[0]?.exists };
 				})
 			)
 		);
