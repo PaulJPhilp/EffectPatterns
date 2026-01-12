@@ -8,9 +8,18 @@ import { NextResponse } from "next/server"
 
 export async function GET() {
 	try {
+		const dbUrl = process.env.DATABASE_URL
+		if (!dbUrl) {
+			return NextResponse.json({
+				success: false,
+				error: "DATABASE_URL not set",
+				envKeys: Object.keys(process.env).filter(k => k.includes("DATABASE") || k.includes("POSTGRES"))
+			}, { status: 500 })
+		}
+
 		const result = await Effect.runPromise(
 			Effect.gen(function* () {
-				const { db, close } = createDatabase()
+				const { db, close } = createDatabase(dbUrl)
 
 				const patterns = yield* Effect.tryPromise(async () => {
 					return await db.select({
