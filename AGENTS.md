@@ -6,6 +6,8 @@ This document describes the AI agents and automation tools used in the Effect Pa
 
 The Effect Patterns project uses AI agents for various tasks including content generation, pattern analysis, and automated testing. These agents are designed to work with the Effect-TS ecosystem and follow established patterns.
 
+**Note**: The project uses npm workspaces for package resolution. All cross-package imports use `workspace:*` dependencies rather than TypeScript path aliases.
+
 ## Current Agents
 
 ### 1. Pattern Analyzer Agent
@@ -30,11 +32,17 @@ The Effect Patterns project uses AI agents for various tasks including content g
 - Serves patterns to Claude Code IDE
 - Real-time pattern search and retrieval
 - Context-aware pattern suggestions
+- Pattern generation with AI assistance
 - API key authentication
 
 **Deployment**: 
 - Staging: `https://effect-patterns-mcp-staging.vercel.app`
 - Production: `https://effect-patterns-mcp.vercel.app`
+
+**Dependencies**:
+- `@effect-patterns/toolkit` (workspace:*)
+- Next.js for web interface
+- Effect-TS for service composition
 
 ### 3. MCP Server STDIO
 **Location**: `app/mcp/mcp-server-stdio/`
@@ -45,6 +53,11 @@ The Effect Patterns project uses AI agents for various tasks including content g
 - Local MCP server instance
 - Direct CLI integration
 - Development and testing
+- Pattern search and generation
+
+**Dependencies**:
+- `@effect-patterns/toolkit` (workspace:*)
+- Model Context Protocol SDK
 
 ## Agent Architecture
 
@@ -74,20 +87,28 @@ agents/
 
 ### CLI Integration
 Agents integrate with the `ep-admin` CLI through:
-- Service composition
-- Shared configuration
-- Common error handling
-- Unified logging
+- Service composition using Effect layers
+- Shared configuration via workspace packages
+- Common error handling with Effect error types
+- Unified logging through structured logging
 
 ### Database Integration
 - PostgreSQL for pattern storage
-- Effect repositories for data access
-- Connection pooling and management
+- Effect repositories from `@effect-patterns/toolkit`
+- Connection pooling and management via platform services
 
 ### API Integration
 - RESTful endpoints for external access
 - MCP protocol for IDE integration
 - Authentication and authorization
+- Workspace-based package resolution
+
+### Package Resolution
+The project uses npm workspaces for dependency management:
+- Cross-package imports use `workspace:*` dependencies
+- No TypeScript path aliases - packages resolve via npm
+- Each package has its own tsconfig.json with appropriate module resolution
+- Apps have independent tsconfig configurations
 
 ## Development Guidelines
 
@@ -169,12 +190,24 @@ Deployed to Vercel with automatic scaling:
 
 ### Local Development
 ```bash
+# Install dependencies
+bun install
+
+# Build workspace packages
+bun run --filter @effect-patterns/toolkit build
+bun run --filter @effect-patterns/pipeline-state build
+bun run --filter @effect-patterns/ep-shared-services build
+
 # Run MCP server locally
 cd app/mcp/mcp-server
 bun run dev
 
 # Test MCP connection
 bun run smoke-test
+
+# Run STDIO server locally
+cd app/mcp/mcp-server-stdio
+bun run dev
 ```
 
 ## Security
@@ -246,3 +279,11 @@ When contributing to agents:
 ---
 
 *Last updated: January 2026*
+
+## Recent Changes
+
+### Path Alias Migration (January 2026)
+- Removed TypeScript path aliases from tsconfig.json
+- Packages now resolve via npm workspaces (`workspace:*` dependencies)
+- Each app has independent tsconfig.json configuration
+- Improved build reliability and standard monorepo practices
