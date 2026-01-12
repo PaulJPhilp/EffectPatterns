@@ -1,89 +1,14 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "lib": [
-      "ES2020"
-    ],
-    "types": [
-      "node",
-      "next"
-    ],
-    "downlevelIteration": true,
-    "moduleDetection": "force",
-    "allowSyntheticDefaultImports": true,
-    "resolvePackageJsonExports": true,
-    "resolvePackageJsonImports": true,
-    "plugins": [
-      {
-        "name": "@effect/language-service",
-        "transform": "@effect/language-service/transform",
-        "diagnosticSeverity": {
-          "floatingEffect": "error",
-          "unnecessaryGen": "warning",
-          "tryCatchInGen": "warning"
-        }
-      }
-    ],
-    "paths": {
-      "next/*": [
-        "./node_modules/next/*"
-      ],
-      "next/server": [
-        "./node_modules/next/server.js"
-      ]
-    }
+    "noEmit": true
   },
   "include": [
-    "api/**/*.ts",
-    "server/**/*.ts",
-    "packages/**/*.ts",
-    "content/src/**/*.ts",
-    "content/new/src/**/*.ts",
-    "content/new/processed/**/*.ts",
-    "content/new/raw/**/*.ts",
-    "types/**/*.ts"
+    "packages/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "build",
-    "content/backups/**",
-    "content-backup-*/**",
-    "content/new/src/observability-custom-metrics.ts",
-    "content/new/src/observability-effect-fn.ts",
-    "content/new/src/observability-opentelemetry.ts",
-    "content/new/src/observability-structured-logging.ts",
-    "content/new/src/observability-tracing-spans.ts",
-    "content/new/src/constructor-fail-none-left.ts",
-    "content/new/src/constructor-from-iterable.ts",
-    "content/new/src/constructor-from-nullable-option-either.ts",
-    "content/new/src/constructor-succeed-some-right.ts",
-    "content/new/src/constructor-sync-async.ts",
-    "content/new/src/constructor-try-trypromise.ts",
-    "content/new/src/combinator-foreach-all.ts",
-    "content/new/src/brand-validate-parse.ts",
-    "content/new/src/brand-model-domain-type.ts",
-    "content/new/src/combinator-conditional.ts",
-    "content/new/src/combinator-filter.ts",
-    "content/new/src/data-class.ts",
-    "content/new/src/data-either.ts",
-    "content/new/src/pattern-option-either-match.ts",
-    "content/new/src/data-bigdecimal.ts",
-    "content/new/src/data-case.ts",
-    "content/new/src/data-cause.ts",
-    "content/new/src/data-chunk.ts",
-    "content/new/src/data-datetime.ts",
-    "content/new/src/data-readonly-array.ts",
-    "content/new/src/data-redacted.ts",
-    "content/new/src/data-duration.ts",
-    "content/new/src/data-option.ts"
+    "**/node_modules",
+    "**/dist"
   ]
 }

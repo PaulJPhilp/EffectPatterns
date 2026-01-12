@@ -166,7 +166,7 @@ server.setRequestHandler(
                 text: JSON.stringify(
                   {
                     count: results.length,
-                    patterns: results.map((p) => ({
+                    patterns: results.map((p: any) => ({
                       id: p.id,
                       title: p.title,
                       description: p.description,

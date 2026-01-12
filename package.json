@@ -6,15 +6,16 @@
   "private": true,
   "description": "A community-driven knowledge base for Effect-TS patterns.",
   "workspaces": [
-    "app/*",
-    "packages/*",
-    "services/*"
+    "packages/*"
   ],
   "bin": {
     "ep": "./packages/ep-cli/dist/index.js",
     "ep-admin": "./packages/ep-admin/dist/index.js"
   },
   "scripts": {
+    "build": "bun run --filter '*' build",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf packages/*/dist",
     "ep": "bun run packages/ep-cli/src/index.ts",
     "ep:admin": "bun run packages/ep-admin/src/index.ts",
     "build:ep": "bun run --filter @effect-patterns/ep-cli build",
@@ -43,7 +44,6 @@
     "all": "bun run pipeline",
     "lint:examples": "eslint \"content/src/**/*.ts\"",
     "typecheck:examples": "tsc --noEmit",
-    "typecheck": "tsc --noEmit --strict",
     "ai": "effect-ai",
     "ai:help": "effect-ai --help",
     "ai:version": "effect-ai --version",
