@@ -38,6 +38,6 @@ describe("Database Service", () => {
 
 		// Basic structure validation
 		expect(typeof result.valid).toBe("boolean");
-		expect(Array.isArray(result.missingTables)).toBe("true");
+		expect(Array.isArray(result.missingTables)).toBe(true);
 	});
 });

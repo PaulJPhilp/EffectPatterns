@@ -146,25 +146,17 @@ describe("Display Service", () => {
 			);
 		});
 
-		it("should fallback if TUI service tag is not in context", () => {
-			const displaySuccessSpy = vi.fn().mockReturnValue(Effect.void);
-			const mockTUI = {
-				DisplayService: MockDisplayTag,
-				displaySuccess: displaySuccessSpy,
-			};
-
+		it("should fallback if TUI service returns null", () => {
 			return runTest(
 				Effect.gen(function* () {
 					const display = yield* Display;
 					yield* display.showSuccess("Fallback Message");
 
-					expect(displaySuccessSpy).not.toHaveBeenCalled();
-
 					const tc = yield* TestConsole;
 					const output = yield* tc.logs;
 					expect(output[0]).toContain("Fallback Message");
 				}),
-				mockTUI,
+				null, // TUI module is null, should fallback to console
 				true
 			);
 		});
