@@ -3,6 +3,7 @@
  */
 
 import { createDatabase } from "@effect-patterns/toolkit"
+import { sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { NextResponse } from "next/server"
 
@@ -23,7 +24,7 @@ export async function GET() {
 
 				// Test basic connection with a simple query
 				const testQuery = yield* Effect.tryPromise(async () => {
-					return await db.execute`SELECT 1 as test`
+					return await db.execute(sql`SELECT 1 as test`)
 				})
 
 				yield* Effect.promise(() => close())
