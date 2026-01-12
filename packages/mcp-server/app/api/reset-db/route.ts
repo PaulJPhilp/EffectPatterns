@@ -23,7 +23,7 @@ export async function POST() {
 		await db.execute(sql`DROP TABLE IF EXISTS application_patterns CASCADE`)
 
 		// Create effect_patterns table with full schema
-		await db.execute(sql`
+		await db.execute(sql.raw(`
 			CREATE TABLE effect_patterns (
 				id UUID PRIMARY KEY,
 				slug VARCHAR(255) NOT NULL UNIQUE,
@@ -45,10 +45,10 @@ export async function POST() {
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)
-		`)
+		`))
 
 		// Create application_patterns table with full schema
-		await db.execute(sql`
+		await db.execute(sql.raw(`
 			CREATE TABLE application_patterns (
 				id UUID PRIMARY KEY,
 				slug VARCHAR(255) NOT NULL UNIQUE,
@@ -62,7 +62,7 @@ export async function POST() {
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			)
-		`)
+		`))
 
 		await close()
 
