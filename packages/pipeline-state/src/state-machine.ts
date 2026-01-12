@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import { PatternMetadata, PatternState, WorkflowStep } from "./schemas.js";
-import { StateStore, StateStoreService } from "./state-store.js";
+import { StateStore } from "./state-store.js";
 import {
   canRetryStep,
   getNextStep,
@@ -23,48 +23,48 @@ export interface PipelineStateMachineService {
   readonly canTransition: (
     patternId: string,
     toStep: WorkflowStep
-  ) => Effect.Effect<boolean, any>;
+  ) => Effect.Effect<boolean, unknown, unknown>;
   readonly transitionToStep: (
     patternId: string,
     toStep: WorkflowStep
-  ) => Effect.Effect<void, any>;
+  ) => Effect.Effect<void, unknown, unknown>;
   readonly startStep: (
     patternId: string,
     step: WorkflowStep
-  ) => Effect.Effect<void, any>;
+  ) => Effect.Effect<void, unknown, unknown>;
   readonly completeStep: (
     patternId: string,
     step: WorkflowStep
-  ) => Effect.Effect<void, any>;
+  ) => Effect.Effect<void, unknown, unknown>;
   readonly failStep: (
     patternId: string,
     step: WorkflowStep,
     error: string
-  ) => Effect.Effect<void, any>;
+  ) => Effect.Effect<void, unknown, unknown>;
   readonly retryStep: (
     patternId: string,
     step: WorkflowStep
-  ) => Effect.Effect<void, any>;
+  ) => Effect.Effect<void, unknown, unknown>;
   readonly addCheckpoint: (
     patternId: string,
     step: WorkflowStep,
     operation: string,
     data?: unknown
-  ) => Effect.Effect<void, any>;
+  ) => Effect.Effect<void, unknown, unknown>;
   readonly getAllPatterns: () => Effect.Effect<
     Record<string, PatternState>,
-    any
+    unknown, unknown
   >;
   readonly getPatternsByStatus: (
     status: PatternState["status"]
-  ) => Effect.Effect<PatternState[], any>;
+  ) => Effect.Effect<PatternState[], unknown, unknown>;
 }
 
 /**
  * Make PipelineStateMachine service
  */
 const makePipelineStateMachine = (
-  store: StateStoreService
+  store: any
 ): PipelineStateMachineService => {
   return {
     initializePattern: (patternId, metadata) =>
@@ -82,7 +82,7 @@ const makePipelineStateMachine = (
           toStep
         ).pipe(
           Effect.map(() => true),
-          Effect.catchAll(() => Effect.succeed(false))
+          Effect.orElse(() => Effect.succeed(false))
         );
       }),
 
@@ -163,4 +163,4 @@ export class PipelineStateMachine extends Effect.Service<PipelineStateMachine>()
       return makePipelineStateMachine(store);
     }),
   }
-) {}
+) { }

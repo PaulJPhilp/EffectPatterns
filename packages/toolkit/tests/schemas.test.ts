@@ -36,7 +36,7 @@ describe("Pattern schemas", () => {
         "observability",
         "scheduling",
         "resource-management",
-      ];
+      ] as const;
 
       for (const category of validCategories) {
         const result = await Effect.runPromise(
@@ -48,14 +48,14 @@ describe("Pattern schemas", () => {
 
     it("should reject invalid categories", async () => {
       await expect(
-        Effect.runPromise(S.decode(PatternCategory)("invalid-category"))
+        Effect.runPromise(S.decode(PatternCategory)("invalid-category" as any))
       ).rejects.toThrow();
     });
   });
 
   describe("DifficultyLevel", () => {
     it("should accept valid difficulty levels", async () => {
-      const validLevels = ["beginner", "intermediate", "advanced"];
+      const validLevels = ["beginner", "intermediate", "advanced"] as const;
 
       for (const level of validLevels) {
         const result = await Effect.runPromise(
@@ -67,7 +67,7 @@ describe("Pattern schemas", () => {
 
     it("should reject invalid difficulty levels", async () => {
       await expect(
-        Effect.runPromise(S.decode(DifficultyLevel)("expert"))
+        Effect.runPromise(S.decode(DifficultyLevel)("expert" as any))
       ).rejects.toThrow();
     });
   });
@@ -101,7 +101,7 @@ describe("Pattern schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(CodeExample)(invalid))
+        Effect.runPromise(S.decode(CodeExample)(invalid as any))
       ).rejects.toThrow();
     });
 
@@ -111,7 +111,7 @@ describe("Pattern schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(CodeExample)(invalid))
+        Effect.runPromise(S.decode(CodeExample)(invalid as any))
       ).rejects.toThrow();
     });
   });
@@ -121,8 +121,8 @@ describe("Pattern schemas", () => {
       id: "test-pattern",
       title: "Test Pattern",
       description: "A test pattern",
-      category: "error-handling",
-      difficulty: "beginner",
+      category: "error-handling" as const,
+      difficulty: "beginner" as const,
       tags: ["test"],
       examples: [
         {
@@ -163,7 +163,7 @@ describe("Pattern schemas", () => {
       delete (invalid as any).id;
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(invalid))
+        Effect.runPromise(S.decode(Pattern)(invalid as any))
       ).rejects.toThrow();
     });
 
@@ -172,7 +172,7 @@ describe("Pattern schemas", () => {
       delete (invalid as any).title;
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(invalid))
+        Effect.runPromise(S.decode(Pattern)(invalid as any))
       ).rejects.toThrow();
     });
 
@@ -181,7 +181,7 @@ describe("Pattern schemas", () => {
       delete (invalid as any).category;
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(invalid))
+        Effect.runPromise(S.decode(Pattern)(invalid as any))
       ).rejects.toThrow();
     });
 
@@ -192,7 +192,7 @@ describe("Pattern schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(invalid))
+        Effect.runPromise(S.decode(Pattern)(invalid as any))
       ).rejects.toThrow();
     });
 
@@ -203,7 +203,7 @@ describe("Pattern schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(invalid))
+        Effect.runPromise(S.decode(Pattern)(invalid as any))
       ).rejects.toThrow();
     });
 
@@ -219,7 +219,7 @@ describe("Pattern schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(Pattern)(withInvalidExample))
+        Effect.runPromise(S.decode(Pattern)(withInvalidExample as any))
       ).rejects.toThrow();
     });
   });
@@ -229,8 +229,8 @@ describe("Pattern schemas", () => {
       id: "test",
       title: "Test",
       description: "Test description",
-      category: "error-handling",
-      difficulty: "beginner",
+      category: "error-handling" as const,
+      difficulty: "beginner" as const,
       tags: ["test"],
     };
 
@@ -272,8 +272,8 @@ describe("Pattern schemas", () => {
           id: "test",
           title: "Test",
           description: "Test",
-          category: "error-handling",
-          difficulty: "beginner",
+          category: "error-handling" as const,
+          difficulty: "beginner" as const,
           tags: [],
           examples: [],
           useCases: [],
@@ -306,7 +306,7 @@ describe("Pattern schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(PatternsIndex)(invalid))
+        Effect.runPromise(S.decode(PatternsIndex)(invalid as any))
       ).rejects.toThrow();
     });
 
@@ -316,7 +316,7 @@ describe("Pattern schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(PatternsIndex)(invalid))
+        Effect.runPromise(S.decode(PatternsIndex)(invalid as any))
       ).rejects.toThrow();
     });
 
@@ -345,7 +345,7 @@ describe("Generate schemas", () => {
 
     it("should reject invalid module types", async () => {
       await expect(
-        Effect.runPromise(S.decode(ModuleType)("amd"))
+        Effect.runPromise(S.decode(ModuleType)("amd" as any))
       ).rejects.toThrow();
     });
   });
@@ -395,7 +395,7 @@ describe("Generate schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(GenerateRequest)(invalid))
+        Effect.runPromise(S.decode(GenerateRequest)(invalid as any))
       ).rejects.toThrow();
     });
 
@@ -406,7 +406,7 @@ describe("Generate schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(GenerateRequest)(invalid))
+        Effect.runPromise(S.decode(GenerateRequest)(invalid as any))
       ).rejects.toThrow();
     });
   });
@@ -449,7 +449,7 @@ describe("Generate schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(GenerateResponse)(invalid))
+        Effect.runPromise(S.decode(GenerateResponse)(invalid as any))
       ).rejects.toThrow();
     });
 
@@ -461,7 +461,7 @@ describe("Generate schemas", () => {
       };
 
       await expect(
-        Effect.runPromise(S.decode(GenerateResponse)(invalid))
+        Effect.runPromise(S.decode(GenerateResponse)(invalid as any))
       ).rejects.toThrow();
     });
   });
@@ -479,8 +479,8 @@ describe("Generate schemas", () => {
     it("should validate complete request", async () => {
       const request = {
         q: "retry",
-        category: "error-handling",
-        difficulty: "beginner",
+        category: "error-handling" as const,
+        difficulty: "beginner" as const,
         limit: "10",
       };
 
@@ -523,8 +523,8 @@ describe("Schema edge cases", () => {
       id: "test",
       title: "Test",
       description: "Test",
-      category: "error-handling",
-      difficulty: "beginner",
+      category: "error-handling" as const,
+      difficulty: "beginner" as const,
       tags: [],
       examples: [],
       useCases: [],
@@ -533,7 +533,7 @@ describe("Schema edge cases", () => {
 
     // Schema should handle or reject null based on its definition
     await expect(
-      Effect.runPromise(S.decode(Pattern)(withNull))
+      Effect.runPromise(S.decode(Pattern)(withNull as any))
     ).rejects.toThrow();
   });
 
@@ -542,8 +542,8 @@ describe("Schema edge cases", () => {
       id: "test",
       title: "Test",
       description: "Test",
-      category: "error-handling",
-      difficulty: "beginner",
+      category: "error-handling" as const,
+      difficulty: "beginner" as const,
       tags: [],
       examples: [],
       useCases: [],

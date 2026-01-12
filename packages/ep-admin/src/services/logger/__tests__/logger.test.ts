@@ -186,7 +186,7 @@ describe("Logger Service", () => {
 
 
 			expect(mockConsoleLog).toHaveBeenCalled();
-			const call = mockConsoleLog.mock.calls[0]?.[0] || "";
+			const call = (mockConsoleLog.mock.calls[0] as any)?.[0] ?? "";
 			expect(call).toContain("Debug message");
 		});
 
@@ -201,7 +201,7 @@ describe("Logger Service", () => {
 
 
 			expect(mockConsoleLog).toHaveBeenCalled();
-			const call = mockConsoleLog.mock.calls[0]?.[0] || "";
+			const call = (mockConsoleLog.mock.calls[0] as any)?.[0] ?? "";
 			expect(call).toContain("Info message");
 		});
 
@@ -216,7 +216,8 @@ describe("Logger Service", () => {
 
 
 			expect(Console.warn).toHaveBeenCalled();
-			const call = (Console.warn as any).mock.calls[0]?.[0];
+			const [firstCall] = (Console.warn as any).mock.calls;
+			const call = firstCall?.[0] ?? "";
 			expect(call).toContain("Warning message");
 		});
 
@@ -231,7 +232,8 @@ describe("Logger Service", () => {
 
 
 			expect(Console.error).toHaveBeenCalled();
-			const call = (Console.error as any).mock.calls[0]?.[0];
+			const [firstCall] = (Console.error as any).mock.calls;
+			const call = firstCall?.[0] ?? "";
 			expect(call).toContain("Error message");
 		});
 
@@ -246,7 +248,7 @@ describe("Logger Service", () => {
 
 
 			expect(mockConsoleLog).toHaveBeenCalled();
-			const call = mockConsoleLog.mock.calls[0]?.[0] || "";
+			const call = (mockConsoleLog.mock.calls[0] as any)?.[0] ?? "";
 			expect(call).toContain("Success message");
 		});
 
@@ -261,7 +263,7 @@ describe("Logger Service", () => {
 			await Effect.runPromise(program.pipe(Effect.provide(LoggerDefault)));
 
 			expect(mockConsoleLog).toHaveBeenCalled();
-			const call = mockConsoleLog.mock.calls[0]?.[0] || "";
+			const call = (mockConsoleLog.mock.calls[0] as any)?.[0] ?? "";
 			expect(call).toContain("Info message");
 			expect(call).toContain("key");
 			expect(call).toContain("value");
@@ -281,7 +283,7 @@ describe("Logger Service", () => {
 
 			expect(mockConsoleLog).not.toHaveBeenCalled();
 			expect(mockConsoleWarn).toHaveBeenCalledTimes(1);
-			const call = mockConsoleWarn.mock.calls[0]?.[0] || "";
+			const call = (mockConsoleWarn.mock.calls[0] as any)?.[0] ?? "";
 			expect(call).toContain("Warning message");
 			expect(call).not.toContain("Debug message");
 			expect(call).not.toContain("Info message");
