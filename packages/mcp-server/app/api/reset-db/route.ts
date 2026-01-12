@@ -25,7 +25,7 @@ export async function POST() {
 		// Create effect_patterns table with full schema
 		await db.execute(sql`
 			CREATE TABLE effect_patterns (
-				id UUID PRIMARY KEY DEFAULT (uuid_generate_v4()),
+				id UUID PRIMARY KEY,
 				slug VARCHAR(255) NOT NULL UNIQUE,
 				title VARCHAR(500) NOT NULL,
 				summary TEXT NOT NULL,
@@ -50,7 +50,7 @@ export async function POST() {
 		// Create application_patterns table with full schema
 		await db.execute(sql`
 			CREATE TABLE application_patterns (
-				id UUID PRIMARY KEY DEFAULT (uuid_generate_v4()),
+				id UUID PRIMARY KEY,
 				slug VARCHAR(255) NOT NULL UNIQUE,
 				name VARCHAR(255) NOT NULL,
 				description TEXT NOT NULL,
