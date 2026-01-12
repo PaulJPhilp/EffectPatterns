@@ -6,6 +6,21 @@
 
 import { Effect } from "effect";
 import type { PublishService } from "./api.js";
+import type {
+	GeneratorConfig,
+	LinterConfig,
+	LintResult,
+	PatternInfo,
+	PipelineConfig,
+	PipelineResult,
+	PublisherConfig,
+	PublishResult,
+	TesterConfig,
+	TestResult,
+	TestSummary,
+	ValidationResult,
+	ValidatorConfig
+} from "./types.js";
 
 /**
  * Publish Service Effect.Service implementation
@@ -20,8 +35,8 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 */
 				validatePattern: (
 					patternPath: string,
-					config: any,
-				): Effect.Effect<any, Error> =>
+					config: ValidatorConfig,
+				): Effect.Effect<ValidationResult, Error> =>
 					Effect.succeed({
 						file: patternPath,
 						valid: true,
@@ -34,8 +49,8 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 * Validate all patterns
 				 */
 				validateAllPatterns: (
-					config: any,
-				): Effect.Effect<any[], Error> =>
+					config: ValidatorConfig,
+				): Effect.Effect<ValidationResult[], Error> =>
 					Effect.succeed([]),
 
 				/**
@@ -43,11 +58,12 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 */
 				testPattern: (
 					patternPath: string,
-					config: any,
-				): Effect.Effect<any, Error> =>
+					config: TesterConfig,
+				): Effect.Effect<TestResult, Error> =>
 					Effect.succeed({
 						file: patternPath,
 						success: true,
+						output: "",
 						duration: 0,
 					}),
 
@@ -55,8 +71,8 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 * Test all patterns
 				 */
 				testAllPatterns: (
-					config: any,
-				): Effect.Effect<any[], Error> =>
+					config: TesterConfig,
+				): Effect.Effect<TestResult[], Error> =>
 					Effect.succeed([]),
 
 				/**
@@ -71,8 +87,8 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 * Run full test suite
 				 */
 				runFullTestSuite: (
-					config: any,
-				): Effect.Effect<any, Error> =>
+					config: TesterConfig,
+				): Effect.Effect<TestSummary, Error> =>
 					Effect.succeed({
 						total: 0,
 						passed: 0,
@@ -89,8 +105,8 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 */
 				publishPattern: (
 					patternPath: string,
-					config: any,
-				): Effect.Effect<any, Error> =>
+					config: PublisherConfig,
+				): Effect.Effect<PublishResult, Error> =>
 					Effect.succeed({
 						file: patternPath,
 						success: true,
@@ -101,8 +117,8 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 * Publish all patterns
 				 */
 				publishAllPatterns: (
-					config: any,
-				): Effect.Effect<any[], Error> =>
+					config: PublisherConfig,
+				): Effect.Effect<PublishResult[], Error> =>
 					Effect.succeed([]),
 
 				/**
@@ -110,8 +126,8 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 */
 				lintFile: (
 					filePath: string,
-					config: any,
-				): Effect.Effect<any, Error> =>
+					config: LinterConfig,
+				): Effect.Effect<LintResult, Error> =>
 					Effect.succeed({
 						file: filePath,
 						success: true,
@@ -125,15 +141,15 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 * Lint all files
 				 */
 				lintAllFiles: (
-					config: any,
-				): Effect.Effect<any[], Error> =>
+					config: LinterConfig,
+				): Effect.Effect<LintResult[], Error> =>
 					Effect.succeed([]),
 
 				/**
 				 * Generate README
 				 */
 				generateReadme: (
-					config: any,
+					config: GeneratorConfig,
 				): Effect.Effect<string, Error> =>
 					Effect.succeed("# Generated README"),
 
@@ -141,8 +157,8 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 * Generate README with stats
 				 */
 				generateReadmeWithStats: (
-					config: any,
-				): Effect.Effect<{ readme: string; stats: any[] }, Error> =>
+					config: GeneratorConfig,
+				): Effect.Effect<{ readme: string; stats: PatternInfo[] }, Error> =>
 					Effect.succeed({
 						readme: "# Generated README",
 						stats: [],
@@ -152,39 +168,39 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 * Run validation step
 				 */
 				runValidationStep: (
-					config: any,
-				): Effect.Effect<any[], Error> =>
+					config: PipelineConfig,
+				): Effect.Effect<ValidationResult[], Error> =>
 					Effect.succeed([]),
 
 				/**
 				 * Run testing step
 				 */
 				runTestingStep: (
-					config: any,
-				): Effect.Effect<any[], Error> =>
+					config: PipelineConfig,
+				): Effect.Effect<TestResult[], Error> =>
 					Effect.succeed([]),
 
 				/**
 				 * Run linting step
 				 */
 				runLintingStep: (
-					config: any,
-				): Effect.Effect<any[], Error> =>
+					config: PipelineConfig,
+				): Effect.Effect<LintResult[], Error> =>
 					Effect.succeed([]),
 
 				/**
 				 * Run publishing step
 				 */
 				runPublishingStep: (
-					config: any,
-				): Effect.Effect<any[], Error> =>
+					config: PipelineConfig,
+				): Effect.Effect<PublishResult[], Error> =>
 					Effect.succeed([]),
 
 				/**
 				 * Run generation step
 				 */
 				runGenerationStep: (
-					config: any,
+					config: PipelineConfig,
 				): Effect.Effect<string, Error> =>
 					Effect.succeed("# Generated README"),
 
@@ -192,23 +208,28 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 * Run full pipeline
 				 */
 				runFullPipeline: (
-					config: any,
-				): Effect.Effect<any, Error> =>
+					config: PipelineConfig,
+				): Effect.Effect<PipelineResult, Error> =>
 					Effect.succeed({
 						validation: { enabled: false, results: [], summary: { total: 0, passed: 0, failed: 0, duration: 0 } },
 						testing: { enabled: false, results: [], summary: { total: 0, passed: 0, failed: 0, expectedErrors: 0, totalDuration: 0, avgDuration: 0, minDuration: 0, maxDuration: 0 } },
 						linting: { enabled: false, results: [], summary: { total: 0, passed: 0, failed: 0, duration: 0 } },
 						publishing: { enabled: false, results: [], summary: { total: 0, published: 0, failed: 0, totalDuration: 0, avgDuration: 0 } },
-						generation: { enabled: false, readme: "" },
-						overall: { totalDuration: 0, success: true, stepsCompleted: [], stepsFailed: [] },
+						generation: { enabled: false, readme: "", stats: [] },
+						overall: {
+							totalDuration: 0,
+							success: true,
+							stepsCompleted: [],
+							stepsFailed: [],
+						},
 					}),
 
 				/**
 				 * Run validate and test
 				 */
 				runValidateAndTest: (
-					config: any,
-				): Effect.Effect<{ validation: any[]; testing: any[] }, Error> =>
+					config: PipelineConfig,
+				): Effect.Effect<{ validation: ValidationResult[]; testing: TestResult[] }, Error> =>
 					Effect.succeed({
 						validation: [],
 						testing: [],
@@ -218,8 +239,8 @@ export const PublishServiceLive = Effect.Service<PublishService>()(
 				 * Run publish and generate
 				 */
 				runPublishAndGenerate: (
-					config: any,
-				): Effect.Effect<{ publishing: any[]; generation: string }, Error> =>
+					config: PipelineConfig,
+				): Effect.Effect<{ publishing: PublishResult[]; generation: string }, Error> =>
 					Effect.succeed({
 						publishing: [],
 						generation: "# Generated README",

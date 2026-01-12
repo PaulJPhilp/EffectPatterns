@@ -68,8 +68,8 @@ describe("Database Service Helpers", () => {
 	describe("Helper Function Behavior", () => {
 		it("should test database connectivity with success", async () => {
 			const mockDb = {
-				execute: () => Promise.resolve([{ test: 1 }])
-			};
+				execute: () => Promise.resolve({ rows: [{ test: 1 }] })
+			} as any;
 
 			const program = testDatabaseConnectivity(mockDb);
 			const result = await Effect.runPromise(program);
@@ -80,7 +80,7 @@ describe("Database Service Helpers", () => {
 		it("should test database connectivity with failure", async () => {
 			const mockDb = {
 				execute: () => Promise.reject(new Error("Connection failed"))
-			};
+			} as any;
 
 			const program = testDatabaseConnectivity(mockDb);
 
@@ -95,8 +95,8 @@ describe("Database Service Helpers", () => {
 
 		it("should check table exists with success", async () => {
 			const mockDb = {
-				execute: () => Promise.resolve([{ exists: true }])
-			};
+				execute: () => Promise.resolve({ rows: [{ exists: true }] })
+			} as any;
 
 			const program = checkTableExists(mockDb, "test_table");
 			const result = await Effect.runPromise(program);
@@ -106,8 +106,8 @@ describe("Database Service Helpers", () => {
 
 		it("should check table exists with failure", async () => {
 			const mockDb = {
-				execute: () => Promise.resolve([{ exists: false }])
-			};
+				execute: () => Promise.resolve({ rows: [{ exists: false }] })
+			} as any;
 
 			const program = checkTableExists(mockDb, "missing_table");
 			const result = await Effect.runPromise(program);

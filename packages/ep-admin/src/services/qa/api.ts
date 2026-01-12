@@ -8,9 +8,10 @@ import { Effect } from "effect";
 import type {
 	QAConfig,
 	QAReport,
+	QAResult,
 	QAStatus,
 	RepairResult,
-	RepairSummary,
+	RepairSummary
 } from "./types.js";
 
 /**
@@ -53,7 +54,7 @@ export interface QAService {
 	 */
 	readonly loadQAResults: (
 		config: QAConfig,
-	) => Effect.Effect<any[], Error>;
+	) => Effect.Effect<QAResult[], Error>;
 
 	/**
 	 * Categorize QA errors by type
@@ -63,5 +64,5 @@ export interface QAService {
 	/**
 	 * Generate repair recommendations
 	 */
-	readonly generateRecommendations: (results: any[]) => string[];
+	readonly generateRecommendations: (results: QAResult[]) => string[];
 }

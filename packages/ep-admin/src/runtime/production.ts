@@ -29,7 +29,8 @@ export const ProductionLayer = Layer.mergeAll(
 	Logger.Default,
 	Layer.provide(Display.Default, Logger.Default),
 	Layer.provide(Execution.Default, Logger.Default),
-	StateStore.Default as unknown as Layer.Layer<StateStore>
+	// Use Layer.provide to properly type the StateStore layer
+	Layer.provide(StateStore.Default, Layer.mergeAll(Logger.Default))
 );
 
 /**

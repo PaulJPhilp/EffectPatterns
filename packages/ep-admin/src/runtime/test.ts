@@ -15,7 +15,8 @@ import { Logger } from "../services/logger/index.js";
  */
 export const TestLayer = Layer.mergeAll(
 	Logger.Default,
-	StateStore.Default as unknown as Layer.Layer<StateStore>
+	// Use Layer.provide to properly type the StateStore layer
+	Layer.provide(StateStore.Default, Logger.Default)
 );
 
 /**

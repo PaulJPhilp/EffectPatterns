@@ -217,7 +217,7 @@ describe("QA Service Helpers", () => {
 
 			const recommendations = generateRecommendations(results);
 
-			expect(recommendations).toContain("Overall pass rate is 25.0%");
+			expect(recommendations).toContain("Overall pass rate is 25.0%. Consider reviewing patterns with common issues.");
 		});
 
 		it("should generate high pass rate recommendations", () => {
