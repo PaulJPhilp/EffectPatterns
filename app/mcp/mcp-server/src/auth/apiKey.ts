@@ -7,7 +7,7 @@
 
 import { Effect } from "effect";
 import type { NextRequest } from "next/server";
-import { ConfigService } from "../server/init";
+import { ConfigService } from "../server/init.js";
 
 /**
  * Authentication error

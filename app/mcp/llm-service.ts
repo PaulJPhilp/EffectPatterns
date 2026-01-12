@@ -1,13 +1,12 @@
-import * as Effect from "effect/Effect";
-import { Data, Context, Layer } from "effect";
 import {
-  streamText,
-  generateText,
-  type LanguageModel,
+  generateText as aiGenerateText,
+  streamText as aiStreamText,
   type CoreMessage,
-  type ToolSet,
-  type UIMessage,
+  type LanguageModel,
+  type ToolSet
 } from "ai";
+import { Data } from "effect";
+import * as Effect from "effect/Effect";
 
 // --- TYPES ---
 
@@ -37,7 +36,7 @@ export interface LLMResponse {
 export class LLMError extends Data.TaggedError("LLMError")<{
   cause: unknown;
   message: string;
-}> {}
+}> { }
 
 // --- SERVICE DEFINITION ---
 
@@ -51,11 +50,10 @@ export class LLMService extends Effect.Service<LLMService>()("LLMService", {
         Effect.gen(function* () {
           try {
             const result = yield* Effect.promise(() =>
-              generateText({
+              aiGenerateText({
                 model: request.model,
                 messages: request.messages,
                 system: request.system,
-                maxTokens: request.maxTokens,
                 temperature: request.temperature,
               })
             );
@@ -81,22 +79,22 @@ export class LLMService extends Effect.Service<LLMService>()("LLMService", {
       ): Effect.Effect<any, LLMError> =>
         Effect.gen(function* () {
           try {
-            const result = yield* Effect.promise(() =>
-              streamText({
-                model: request.model,
-                messages: request.messages,
-                system: request.system,
-                tools: request.tools,
-                maxTokens: request.maxTokens,
-                temperature: request.temperature,
-                experimental_transform: request.experimental_transform,
-                experimental_activeTools: request.experimental_activeTools,
-                stopWhen: request.stopWhen,
-                onFinish: request.onFinish
-                  ? (result) => Effect.runPromise(request.onFinish!(result))
-                  : undefined,
-              })
-            );
+            // aiStreamText returns a StreamTextResult directly, not a Promise
+            const result = aiStreamText({
+              model: request.model,
+              messages: request.messages,
+              system: request.system,
+              tools: request.tools,
+              temperature: request.temperature,
+              onFinish: request.onFinish
+                ? (result) => {
+                  // Convert the Effect callback to a Promise for the AI library
+                  Effect.runPromise(request.onFinish!(result)).catch(() => {
+                    // Ignore errors in onFinish callback
+                  });
+                }
+                : undefined,
+            });
 
             return result;
           } catch (error) {
@@ -112,7 +110,7 @@ export class LLMService extends Effect.Service<LLMService>()("LLMService", {
   }),
 
   dependencies: [],
-}) {}
+}) { }
 
 // --- LIVE IMPLEMENTATION ---
 

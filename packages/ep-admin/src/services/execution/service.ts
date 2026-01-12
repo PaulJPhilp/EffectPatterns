@@ -26,13 +26,15 @@ export class Execution extends Effect.Service<Execution>()("Execution", {
 
 				// Try to use TUI spinner if available
 				if (InkService && spinnerEffectTUI) {
-					const maybeInk = yield* Effect.serviceOption(InkService);
+					const maybeInk = yield* Effect.serviceOption(InkService as any);
 					if (Opt.isSome(maybeInk) && !options?.verbose) {
 						// Use TUI spinner
-						yield* (spinnerEffectTUI(taskName, task, {
-							type: "dots",
-							color: "cyan",
-						}) as Effect.Effect<void, ExecutionError>);
+						yield* Effect.promise(() =>
+							(spinnerEffectTUI as any)(taskName, task, {
+								type: "dots",
+								color: "cyan",
+							})
+						);
 						return;
 					}
 				}
@@ -159,4 +161,4 @@ export class Execution extends Effect.Service<Execution>()("Execution", {
 			withSpinner: withSpinnerMethod,
 		};
 	}),
-}) {}
+}) { }

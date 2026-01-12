@@ -11,15 +11,15 @@
 // biome-ignore assist/source/organizeImports: <>
 import {
   DatabaseLayer,
-  searchEffectPatterns,
   findEffectPatternBySlug,
+  searchEffectPatterns,
   type Pattern,
 } from "@effect-patterns/toolkit";
 import { NodeSdk } from "@effect/opentelemetry";
-import { Effect, Layer } from "effect";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { TracingLayerLive, type TracingService } from "../tracing/otlpLayer";
+import { Effect, Layer } from "effect";
+import { TracingLayerLive, type TracingService } from "../tracing/otlpLayer.js";
 
 /**
  * Config service - provides environment configuration
@@ -33,7 +33,7 @@ export class ConfigService extends Effect.Service<ConfigService>()(
       nodeEnv: process.env.NODE_ENV || "development",
     }),
   }
-) {}
+) { }
 
 /**
  * Patterns service - provides database-backed pattern access
@@ -85,7 +85,7 @@ export class PatternsService extends Effect.Service<PatternsService>()(
     scoped: makePatternsService,
     dependencies: [DatabaseLayer],
   }
-) {}
+) { }
 
 /**
  * App Layer - Full application layer composition
@@ -104,11 +104,11 @@ const NodeSdkLayer = NodeSdk.layer(() => ({
       url: process.env.OTLP_ENDPOINT || "http://localhost:4318/v1/traces",
       headers: process.env.OTLP_HEADERS
         ? Object.fromEntries(
-            process.env.OTLP_HEADERS.split(",").map((pair) => {
-              const [key, value] = pair.split("=");
-              return [key.trim(), value.trim()];
-            })
-          )
+          process.env.OTLP_HEADERS.split(",").map((pair) => {
+            const [key, value] = pair.split("=");
+            return [key.trim(), value.trim()];
+          })
+        )
         : {},
     })
   ),
