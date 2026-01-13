@@ -7,19 +7,8 @@
 
 import { Effect } from "effect";
 import type { NextRequest } from "next/server";
-import { ConfigService } from "../server/init";
-
-/**
- * Authentication error
- */
-export class AuthenticationError extends Error {
-  readonly _tag = "AuthenticationError";
-
-  constructor(message: string) {
-    super(message);
-    this.name = "AuthenticationError";
-  }
-}
+import { AuthenticationError } from "../errors.js";
+import { MCPConfigService } from "../services/config.js";
 
 /**
  * Extract API key from request
@@ -49,20 +38,22 @@ function extractApiKey(request: NextRequest): string | null {
  */
 export const validateApiKey = (
   request: NextRequest
-): Effect.Effect<void, AuthenticationError, ConfigService> =>
+): Effect.Effect<void, AuthenticationError, MCPConfigService> =>
   Effect.gen(function* () {
-    const config = yield* ConfigService;
+    const config = yield* MCPConfigService;
+    const apiKey = yield* config.getApiKey();
+    const nodeEnv = yield* config.getNodeEnv();
 
     // If no API key is configured, skip validation (dev mode)
-    if (!config.apiKey || config.apiKey.trim() === "") {
-      if (config.nodeEnv === "development") {
+    if (!apiKey || apiKey.trim() === "") {
+      if (nodeEnv === "development") {
         console.warn(
           "[Auth] No PATTERN_API_KEY configured - running in open mode"
         );
         return;
       }
       return yield* Effect.fail(
-        new AuthenticationError("API key not configured on server")
+        new AuthenticationError({ message: "API key not configured on server" })
       );
     }
 
@@ -70,12 +61,19 @@ export const validateApiKey = (
     const providedKey = extractApiKey(request);
 
     if (!providedKey) {
-      return yield* Effect.fail(new AuthenticationError("Missing API key"));
+      return yield* Effect.fail(
+        new AuthenticationError({ message: "Missing API key" })
+      );
     }
 
     // Validate key
-    if (providedKey !== config.apiKey) {
-      return yield* Effect.fail(new AuthenticationError("Invalid API key"));
+    if (providedKey !== apiKey) {
+      return yield* Effect.fail(
+        new AuthenticationError({
+          message: "Invalid API key",
+          providedKey
+        })
+      );
     }
 
     // Success - auth passed
@@ -89,10 +87,9 @@ export function isAuthenticationError(
   error: unknown
 ): error is AuthenticationError {
   return (
-    error instanceof AuthenticationError ||
-    (typeof error === "object" &&
-      error !== null &&
-      "_tag" in error &&
-      error._tag === "AuthenticationError")
+    typeof error === "object" &&
+    error !== null &&
+    "_tag" in error &&
+    error._tag === "AuthenticationError"
   );
 }

@@ -19,40 +19,137 @@ import {
 	validateAllPatterns
 } from "./services/publish/index.js";
 
-const PROJECT_ROOT = process.cwd();
+// Configuration types for better type safety
+interface ValidatorConfig {
+	readonly publishedDir: string;
+	readonly srcDir: string;
+	readonly concurrency: number;
+}
 
-const getValidatorConfig = (): any => ({
-	publishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
-	srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
-	concurrency: 10,
-});
+interface TesterConfig {
+	readonly srcDir: string;
+	readonly concurrency: number;
+	readonly enableTypeCheck: boolean;
+	readonly timeout: number;
+	readonly expectedErrors: Map<string, string[]>;
+}
 
-const getTesterConfig = (): any => ({
-	srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
-	concurrency: 10,
-	enableTypeCheck: true,
-	timeout: 30_000,
-	expectedErrors: new Map(),
-});
+interface GeneratorConfig {
+	readonly readmePath: string;
+}
 
-const getGeneratorConfig = (): any => ({
-	readmePath: `${PROJECT_ROOT}/README.md`,
-});
+interface PipelineConfig {
+	readonly validator: ValidatorConfig;
+	readonly tester: TesterConfig;
+	readonly publisher: {
+		readonly processedDir: string;
+		readonly publishedDir: string;
+		readonly srcDir: string;
+	};
+	readonly generator: GeneratorConfig;
+	readonly linter: {
+		readonly srcDirs: string[];
+		readonly concurrency: number;
+	};
+}
 
-const getPipelineConfig = (): any => ({
-	validation: getValidatorConfig(),
-	testing: getTesterConfig(),
-	publishing: {
-		processedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
-		publishedDir: `${PROJECT_ROOT}/${CONTENT_DIRS.PUBLISHED}`,
-		srcDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`,
-	},
-	generation: getGeneratorConfig(),
-	linting: {
-		srcDirs: [`${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`],
-		concurrency: 10,
-	},
-});
+// Validation functions using Effect patterns
+const validateConcurrency = (value: number): Effect.Effect<number, Error> =>
+	Effect.succeed(value).pipe(
+		Effect.filterOrFail(
+			(n) => n >= 1 && n <= 20,
+			() => new Error("Concurrency must be between 1 and 20")
+		)
+	);
+
+const validateTimeout = (value: number): Effect.Effect<number, Error> =>
+	Effect.succeed(value).pipe(
+		Effect.filterOrFail(
+			(n) => n >= 1000 && n <= 300000,
+			() => new Error("Timeout must be between 1s and 5 minutes")
+		)
+	);
+
+const validateDirectory = (path: string): Effect.Effect<string, Error> =>
+	Effect.succeed(path).pipe(
+		Effect.filterOrFail(
+			(dir) => dir.length > 0,
+			() => new Error("Directory path cannot be empty")
+		)
+	);
+
+// Configuration builders with validation
+const getValidatorConfig = (concurrency: number = 10): Effect.Effect<ValidatorConfig, Error> =>
+	Effect.gen(function* () {
+		const PROJECT_ROOT = process.cwd();
+		const validatedConcurrency = yield* validateConcurrency(concurrency);
+		const validatedPublishedDir = yield* validateDirectory(`${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`);
+		const validatedSrcDir = yield* validateDirectory(`${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`);
+
+		return {
+			publishedDir: validatedPublishedDir,
+			srcDir: validatedSrcDir,
+			concurrency: validatedConcurrency,
+		};
+	});
+
+const getTesterConfig = (concurrency: number = 10, timeout: number = 30_000): Effect.Effect<TesterConfig, Error> =>
+	Effect.gen(function* () {
+		const PROJECT_ROOT = process.cwd();
+		const validatedConcurrency = yield* validateConcurrency(concurrency);
+		const validatedTimeout = yield* validateTimeout(timeout);
+		const validatedSrcDir = yield* validateDirectory(`${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`);
+
+		return {
+			srcDir: validatedSrcDir,
+			concurrency: validatedConcurrency,
+			enableTypeCheck: true,
+			timeout: validatedTimeout,
+			expectedErrors: new Map(),
+		};
+	});
+
+const getGeneratorConfig = (): Effect.Effect<GeneratorConfig, Error> =>
+	Effect.gen(function* () {
+		const PROJECT_ROOT = process.cwd();
+		const validatedReadmePath = yield* validateDirectory(`${PROJECT_ROOT}/README.md`);
+
+		return {
+			readmePath: validatedReadmePath,
+		};
+	});
+
+const getPipelineConfig = (
+	concurrency: number = 10,
+	timeout: number = 30_000
+): Effect.Effect<PipelineConfig, Error> =>
+	Effect.gen(function* () {
+		const [validationConfig, testingConfig, generationConfig] = yield* Effect.all([
+			getValidatorConfig(concurrency),
+			getTesterConfig(concurrency, timeout),
+			getGeneratorConfig()
+		]);
+
+		const PROJECT_ROOT = process.cwd();
+		const validatedProcessedDir = yield* validateDirectory(`${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`);
+		const validatedPublishedDir = yield* validateDirectory(`${PROJECT_ROOT}/${CONTENT_DIRS.PUBLISHED}`);
+		const validatedSrcDir = yield* validateDirectory(`${PROJECT_ROOT}/${CONTENT_DIRS.NEW_SRC}`);
+
+		return {
+			validator: validationConfig,
+			tester: testingConfig,
+			publisher: {
+				processedDir: validatedProcessedDir,
+				publishedDir: validatedPublishedDir,
+				srcDir: validatedSrcDir,
+			},
+			generator: generationConfig,
+			linter: {
+				srcDirs: [validatedSrcDir],
+				concurrency: validationConfig.concurrency,
+			},
+		};
+	});
 
 /**
  * admin:validate - Validates all pattern files
@@ -63,6 +160,12 @@ export const validateCommand = Command.make("validate", {
 			Options.withAlias("v"),
 			Options.withDescription("Show detailed validation output"),
 			Options.withDefault(false)
+		),
+		concurrency: Options.optional(
+			Options.integer("concurrency").pipe(
+				Options.withDescription("Number of patterns to validate concurrently"),
+				Options.withDefault(10)
+			)
 		),
 	},
 	args: {},
@@ -75,7 +178,17 @@ export const validateCommand = Command.make("validate", {
 			Effect.gen(function* () {
 				yield* Display.showInfo("Validating patterns...");
 
-				const config = getValidatorConfig();
+				// Validate and build configuration
+				const concurrency = options.concurrency._tag === "Some" ? options.concurrency.value : 10;
+				const config = yield* getValidatorConfig(concurrency);
+
+				// Show configuration if verbose
+				if (options.verbose) {
+					yield* Display.showInfo(
+						`Configuration:\n  Source: ${config.srcDir}\n  Published: ${config.publishedDir}\n  Concurrency: ${config.concurrency}`
+					);
+				}
+
 				const results = yield* validateAllPatterns(config);
 				const summary = summarizeValidationResults(results);
 
@@ -105,6 +218,18 @@ export const testCommand = Command.make("test", {
 			Options.withDescription("Show detailed test output"),
 			Options.withDefault(false)
 		),
+		concurrency: Options.optional(
+			Options.integer("concurrency").pipe(
+				Options.withDescription("Number of tests to run concurrently"),
+				Options.withDefault(10)
+			)
+		),
+		timeout: Options.optional(
+			Options.integer("timeout").pipe(
+				Options.withDescription("Test timeout in milliseconds"),
+				Options.withDefault(30_000)
+			)
+		),
 	},
 	args: {},
 }).pipe(
@@ -115,7 +240,18 @@ export const testCommand = Command.make("test", {
 		Effect.gen(function* () {
 			yield* Display.showInfo("Running pattern tests...");
 
-			const config = getTesterConfig();
+			// Validate and build configuration
+			const concurrency = options.concurrency._tag === "Some" ? options.concurrency.value : 10;
+			const timeout = options.timeout._tag === "Some" ? options.timeout.value : 30_000;
+			const config = yield* getTesterConfig(concurrency, timeout);
+
+			// Show configuration if verbose
+			if (options.verbose) {
+				yield* Display.showInfo(
+					`Configuration:\n  Source: ${config.srcDir}\n  Concurrency: ${config.concurrency}\n  Timeout: ${config.timeout}ms`
+				);
+			}
+
 			const results = yield* testAllPatterns(config);
 			const summary = summarizeTestResults(results);
 
@@ -143,6 +279,18 @@ export const pipelineCommand = Command.make("pipeline", {
 			Options.withDescription("Show detailed output from each step"),
 			Options.withDefault(false)
 		),
+		concurrency: Options.optional(
+			Options.integer("concurrency").pipe(
+				Options.withDescription("Number of operations to run concurrently"),
+				Options.withDefault(10)
+			)
+		),
+		timeout: Options.optional(
+			Options.integer("timeout").pipe(
+				Options.withDescription("Test timeout in milliseconds"),
+				Options.withDefault(30_000)
+			)
+		),
 	},
 	args: {},
 }).pipe(
@@ -155,7 +303,18 @@ export const pipelineCommand = Command.make("pipeline", {
 			Effect.gen(function* () {
 				yield* Display.showInfo("Running full publishing pipeline...");
 
-				const config = getPipelineConfig();
+				// Validate and build configuration
+				const concurrency = options.concurrency._tag === "Some" ? options.concurrency.value : 10;
+				const timeout = options.timeout._tag === "Some" ? options.timeout.value : 30_000;
+				const config = yield* getPipelineConfig(concurrency, timeout);
+
+				// Show configuration if verbose
+				if (options.verbose) {
+					yield* Display.showInfo(
+						`Configuration:\n  Concurrency: ${config.validator.concurrency}\n  Timeout: ${config.tester.timeout}ms\n  Source: ${config.validator.srcDir}`
+					);
+				}
+
 				const result = yield* runFullPipeline(config);
 
 				yield* Display.showInfo(`\nPipeline Results:`);
@@ -178,6 +337,12 @@ export const generateCommand = Command.make("generate", {
 			Options.withDescription("Show detailed generation output"),
 			Options.withDefault(false)
 		),
+		output: Options.optional(
+			Options.text("output").pipe(
+				Options.withDescription("Output file path for README"),
+				Options.withDefault("README.md")
+			)
+		),
 	},
 	args: {},
 }).pipe(
@@ -188,10 +353,24 @@ export const generateCommand = Command.make("generate", {
 		Effect.gen(function* () {
 			yield* Display.showInfo("Generating README.md...");
 
-			const config = getGeneratorConfig();
+			// Validate and build configuration
+			const outputPath = options.output._tag === "Some" ? options.output.value : "README.md";
+			const config = yield* Effect.gen(function* () {
+				const PROJECT_ROOT = process.cwd();
+				const validatedPath = yield* validateDirectory(`${PROJECT_ROOT}/${outputPath}`);
+				return { readmePath: validatedPath };
+			});
+
+			// Show configuration if verbose
+			if (options.verbose) {
+				yield* Display.showInfo(
+					`Configuration:\n  Output: ${config.readmePath}`
+				);
+			}
+
 			yield* generateReadme(config);
 
-			yield* Display.showSuccess("README.md generated!");
+			yield* Display.showSuccess(`${config.readmePath} generated!`);
 		})
 	)
 );

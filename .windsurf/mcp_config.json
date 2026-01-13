@@ -1,0 +1,37 @@
+{
+	"mcpServers": {
+		"next-devtools": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"next-devtools-mcp@latest"
+			]
+		},
+		"effect-patterns": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"tsx",
+				"/Users/paul/Projects/Public/Effect-Patterns/packages/mcp-server-stdio/src/index.ts"
+			],
+			"env": {
+				"DATABASE_URL": "${DATABASE_URL}",
+				"PATTERN_API_KEY": "${PATTERN_API_KEY}"
+			}
+		},
+		"effect-docs": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"effect-mcp"
+			],
+			"env": {}
+		},
+		"context7": {
+			"serverUrl": "https://mcp.context7.com/mcp",
+			"headers": {
+				"CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+			}
+		}
+	}
+}

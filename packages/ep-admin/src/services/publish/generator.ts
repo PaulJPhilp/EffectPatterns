@@ -169,8 +169,8 @@ export const generateReadme = (
   Any manual edits will be overwritten when the pipeline runs.
 
   To modify this file:
-  - Run: bun run pipeline
-  - Or edit: scripts/publish/generate.ts
+  - Run: bun run admin pipeline
+  - Or modify the generator service in src/services/publish/generator.ts
 
   For project information, see ABOUT.md
 -->
