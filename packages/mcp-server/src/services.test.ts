@@ -40,8 +40,20 @@ import {
 
 // Import error types
 import {
+  AuthenticationError,
+  AuthorizationError,
+  CacheError,
   ConfigurationError,
+  MetricsError,
+  PatternLoadError,
+  PatternNotFoundError,
+  PatternValidationError,
   RateLimitError,
+  RequestValidationError,
+  ResponseError,
+  ServerError,
+  TimeoutError,
+  TracingError,
   ValidationError,
 } from "./errors.js";
 
@@ -486,6 +498,249 @@ describe("MCP Server Services", () => {
     });
   });
 
+  describe("MCPCacheService", () => {
+    it("should set and get values", async () => {
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const cache = yield* MCPCacheService;
+
+          // Set a value
+          yield* cache.set("test-key", "test-value");
+
+          // Get the value
+          const result = yield* cache.get("test-key");
+
+          expect(result.hit).toBe(true);
+          expect(result.value).toBe("test-value");
+
+          return true;
+        }).pipe(Effect.provide(TestFullLayer))
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it("should return miss for non-existent keys", async () => {
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const cache = yield* MCPCacheService;
+
+          const result = yield* cache.get("non-existent-key");
+
+          expect(result.hit).toBe(false);
+          expect(result.value).toBeUndefined();
+
+          return true;
+        }).pipe(Effect.provide(TestFullLayer))
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it("should check if key exists", async () => {
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const cache = yield* MCPCacheService;
+
+          // Initially should not exist
+          const exists1 = yield* cache.has("test-key");
+          expect(exists1).toBe(false);
+
+          // Set a value
+          yield* cache.set("test-key", "test-value");
+
+          // Should exist now
+          const exists2 = yield* cache.has("test-key");
+          expect(exists2).toBe(true);
+
+          return true;
+        }).pipe(Effect.provide(TestFullLayer))
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it("should delete keys", async () => {
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const cache = yield* MCPCacheService;
+
+          // Set a value
+          yield* cache.set("test-key", "test-value");
+
+          // Verify it exists
+          const exists1 = yield* cache.has("test-key");
+          expect(exists1).toBe(true);
+
+          // Delete the key
+          const deleted = yield* cache.del("test-key");
+          expect(deleted).toBe(true);
+
+          // Verify it's gone
+          const exists2 = yield* cache.has("test-key");
+          expect(exists2).toBe(false);
+
+          return true;
+        }).pipe(Effect.provide(TestFullLayer))
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it("should clear all keys", async () => {
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const cache = yield* MCPCacheService;
+
+          // Set multiple values
+          yield* cache.set("key1", "value1");
+          yield* cache.set("key2", "value2");
+          yield* cache.set("key3", "value3");
+
+          // Clear all
+          yield* cache.clear();
+
+          // Verify they're all gone
+          expect(yield* cache.has("key1")).toBe(false);
+          expect(yield* cache.has("key2")).toBe(false);
+          expect(yield* cache.has("key3")).toBe(false);
+
+          return true;
+        }).pipe(Effect.provide(TestFullLayer))
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it("should handle TTL expiration", async () => {
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const cache = yield* MCPCacheService;
+
+          // Set a value with very short TTL (50ms)
+          yield* cache.set("ttl-key", "ttl-value", 50);
+
+          // Should be available immediately
+          const result1 = yield* cache.get("ttl-key");
+          expect(result1.hit).toBe(true);
+
+          // Wait for expiration
+          yield* Effect.sleep(100);
+
+          // Should be expired now
+          const result2 = yield* cache.get("ttl-key");
+          expect(result2.hit).toBe(false);
+
+          return true;
+        }).pipe(Effect.provide(TestFullLayer))
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it("should use getOrSet", async () => {
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const cache = yield* MCPCacheService;
+
+          // First call - key doesn't exist, should set new value
+          const result1 = yield* cache.getOrSet(
+            "get-or-set-key",
+            () => Effect.succeed("computed-value")
+          );
+          expect(result1).toBe("computed-value");
+
+          // Second call - key exists, should return cached value
+          const result2 = yield* cache.getOrSet(
+            "get-or-set-key",
+            () => Effect.succeed("should-not-be-called")
+          );
+          expect(result2).toBe("computed-value");
+
+          return true;
+        }).pipe(Effect.provide(TestFullLayer))
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it("should provide cache statistics", async () => {
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const cache = yield* MCPCacheService;
+
+          // Get initial stats
+          const stats1 = yield* cache.getStats();
+          expect(stats1.hits).toBe(0);
+          expect(stats1.misses).toBe(0);
+
+          // Perform operations
+          yield* cache.get("miss-key"); // miss
+          yield* cache.set("test-key", "test-value"); // set
+          yield* cache.get("test-key"); // hit
+          yield* cache.del("test-key"); // delete
+
+          // Get updated stats
+          const stats2 = yield* cache.getStats();
+          expect(stats2.hits).toBe(1);
+          expect(stats2.misses).toBe(1);
+
+          return true;
+        }).pipe(Effect.provide(TestFullLayer))
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it("should warm up cache with initial data", async () => {
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const cache = yield* MCPCacheService;
+
+          // Warm up with initial data
+          yield* cache.warmup(
+            ["warm-key-1", "warm-key-2", "warm-key-3"],
+            (key) => Effect.succeed(`warm-value-${key.split("-")[2]}`)
+          );
+
+          // Verify warm-up data exists
+          const result1 = yield* cache.get("warm-key-1");
+          const result2 = yield* cache.get("warm-key-2");
+          const result3 = yield* cache.get("warm-key-3");
+
+          expect(result1.hit).toBe(true);
+          expect(result1.value).toBe("warm-value-1");
+          expect(result2.hit).toBe(true);
+          expect(result2.value).toBe("warm-value-2");
+          expect(result3.hit).toBe(true);
+          expect(result3.value).toBe("warm-value-3");
+
+          return true;
+        }).pipe(Effect.provide(TestFullLayer))
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it("should check if cache is enabled", async () => {
+      const result = await Effect.runPromise(
+        Effect.gen(function* () {
+          const cache = yield* MCPCacheService;
+          const config = yield* MCPConfigService;
+
+          const enabled = yield* cache.isEnabled();
+          const configEnabled = yield* config.isCacheEnabled();
+
+          expect(enabled).toBe(configEnabled);
+
+          return true;
+        }).pipe(Effect.provide(TestFullLayer))
+      );
+
+      expect(result).toBe(true);
+    });
+  });
+
   describe("MCPMetricsService", () => {
     it("should increment counters", async () => {
       const result = await Effect.runPromise(
@@ -663,6 +918,150 @@ describe("MCP Server Services", () => {
       expect(error.key).toBe("test-field");
       expect(error.expected).toBe("expected-value");
       expect(error.received).toBe("invalid-value");
+    });
+
+    it("should create AuthenticationError correctly", () => {
+      const error = new AuthenticationError({
+        message: "Invalid API key",
+        providedKey: "test-key",
+      });
+
+      expect(error._tag).toBe("AuthenticationError");
+      expect(error.message).toBe("Invalid API key");
+      expect(error.providedKey).toBe("test-key");
+    });
+
+    it("should create AuthorizationError correctly", () => {
+      const error = new AuthorizationError({
+        message: "Insufficient permissions",
+        userId: "user-123",
+        requiredRole: "admin",
+      });
+
+      expect(error._tag).toBe("AuthorizationError");
+      expect(error.message).toBe("Insufficient permissions");
+      expect(error.userId).toBe("user-123");
+      expect(error.requiredRole).toBe("admin");
+    });
+
+    it("should create PatternNotFoundError correctly", () => {
+      const error = new PatternNotFoundError({
+        patternId: "non-existent-pattern",
+      });
+
+      expect(error._tag).toBe("PatternNotFoundError");
+      expect(error.patternId).toBe("non-existent-pattern");
+    });
+
+    it("should create PatternLoadError correctly", () => {
+      const cause = new Error("File not found");
+      const error = new PatternLoadError({
+        filePath: "/path/to/pattern.json",
+        cause,
+      });
+
+      expect(error._tag).toBe("PatternLoadError");
+      expect(error.filePath).toBe("/path/to/pattern.json");
+      expect(error.cause).toBe(cause);
+    });
+
+    it("should create PatternValidationError correctly", () => {
+      const errors = [
+        { field: "title", message: "Required", actual: undefined },
+        { field: "category", message: "Invalid", actual: "invalid" },
+      ];
+
+      const error = new PatternValidationError({
+        patternId: "test-pattern",
+        errors,
+      });
+
+      expect(error._tag).toBe("PatternValidationError");
+      expect(error.patternId).toBe("test-pattern");
+      expect(error.errors).toEqual(errors);
+    });
+
+    it("should create RequestValidationError correctly", () => {
+      const errors = [
+        { field: "query", message: "Missing required parameter", actual: undefined }
+      ];
+
+      const error = new RequestValidationError({
+        endpoint: "/api/patterns",
+        errors,
+      });
+
+      expect(error._tag).toBe("RequestValidationError");
+      expect(error.endpoint).toBe("/api/patterns");
+      expect(error.errors).toEqual(errors);
+    });
+
+    it("should create ResponseError correctly", () => {
+      const error = new ResponseError({
+        statusCode: 500,
+        message: "Internal server error",
+      });
+
+      expect(error._tag).toBe("ResponseError");
+      expect(error.statusCode).toBe(500);
+      expect(error.message).toBe("Internal server error");
+    });
+
+    it("should create TracingError correctly", () => {
+      const error = new TracingError({
+        operation: "trace-operation",
+        cause: new Error("Tracing service unavailable"),
+      });
+
+      expect(error._tag).toBe("TracingError");
+      expect(error.operation).toBe("trace-operation");
+      expect(error.cause).toBeInstanceOf(Error);
+    });
+
+    it("should create CacheError correctly", () => {
+      const error = new CacheError({
+        operation: "get",
+        key: "test-key",
+        cause: new Error("Cache service unavailable"),
+      });
+
+      expect(error._tag).toBe("CacheError");
+      expect(error.operation).toBe("get");
+      expect(error.key).toBe("test-key");
+      expect(error.cause).toBeInstanceOf(Error);
+    });
+
+    it("should create MetricsError correctly", () => {
+      const error = new MetricsError({
+        operation: "increment-counter",
+        cause: new Error("Metrics service unavailable"),
+      });
+
+      expect(error._tag).toBe("MetricsError");
+      expect(error.operation).toBe("increment-counter");
+      expect(error.cause).toBeInstanceOf(Error);
+    });
+
+    it("should create ServerError correctly", () => {
+      const error = new ServerError({
+        message: "Database connection failed",
+        cause: new Error("Connection timeout"),
+      });
+
+      expect(error._tag).toBe("ServerError");
+      expect(error.message).toBe("Database connection failed");
+      expect(error.cause).toBeInstanceOf(Error);
+    });
+
+    it("should create TimeoutError correctly", () => {
+      const error = new TimeoutError({
+        operation: "database-query",
+        timeoutMs: 5000,
+      });
+
+      expect(error._tag).toBe("TimeoutError");
+      expect(error.operation).toBe("database-query");
+      expect(error.timeoutMs).toBe(5000);
     });
   });
 

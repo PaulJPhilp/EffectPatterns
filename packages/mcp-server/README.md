@@ -5,7 +5,7 @@ API server for the Effect Patterns Claude Code Plugin, providing pattern search,
 ## Features
 
 - **Pattern Search**: Search Effect-TS patterns by category, skill level, and keywords
-- **Code Analysis**: TypeScript code analysis with Effect-TS best practices recommendations
+- **Code Analysis**: TypeScript analysis with Effect-TS best practices and anti-pattern detection
 - **Pattern Generation**: Generate customized Effect-TS code from templates
 - **Consistency Analysis**: Detect code inconsistencies across multiple files
 - **Refactoring Engine**: Apply automated refactoring patterns
@@ -209,6 +209,15 @@ Content-Type: application/json
 ```
 
 Analyze TypeScript code for Effect-TS best practices.
+
+The analyzer also detects common anti-patterns in Effect-ish code, such as:
+
+- **try/catch in Effect logic** (prefer `Effect.try` / `Effect.tryPromise`)
+- **catch blocks that log and continue** (avoid swallowing failures)
+- **throw inside Effect code** (prefer `Effect.fail` with tagged errors)
+
+For `app/api/**/route.ts` files, `try/catch` is treated as boundary
+guidance (low severity).
 
 **Parameters:**
 - `source` (string): Source code to analyze
