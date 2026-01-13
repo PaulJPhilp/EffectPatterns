@@ -356,21 +356,30 @@ export const groupLintIssuesByRule = (results: LintResult[]): Record<string, Lin
 export const extractPatternInfo = (
 	filePath: string,
 	frontmatter: Record<string, unknown>,
-): Effect.Effect<PatternInfo, Error> =>
-	Effect.gen(function* () {
-		const validatedPath = yield* validateFilePath(filePath);
+): PatternInfo => {
+	if (filePath.length === 0 || filePath.includes("..")) {
+		throw new Error(`Invalid file path: ${filePath}`);
+	}
 
-		const pattern = {
-			id: String(frontmatter.id || validatedPath.replace(".mdx", "")),
-			title: String(frontmatter.title || "Unknown"),
-			skillLevel: String(frontmatter.skillLevel || "unknown"),
-			useCase: frontmatter.useCase as string | string[] || "unknown",
-			tags: (frontmatter.tags as string[]) || [],
-			filePath: validatedPath,
-		};
+	const validatedPath = filePath;
+	const pattern: PatternInfo = {
+		id: String(frontmatter.id || validatedPath.replace(".mdx", "")),
+		title: String(frontmatter.title || "Unknown"),
+		skillLevel: String(frontmatter.skillLevel || "unknown"),
+		useCase: (frontmatter.useCase as string | string[]) || "unknown",
+		tags: (frontmatter.tags as string[]) || [],
+		filePath: validatedPath,
+	};
 
-		return yield* validatePatternInfo(pattern);
-	});
+	if (!pattern.id || pattern.id.length === 0) {
+		throw new Error("Pattern ID cannot be empty");
+	}
+	if (!pattern.title || pattern.title.length === 0) {
+		throw new Error("Pattern title cannot be empty");
+	}
+
+	return pattern;
+};
 
 /**
  * Generate pattern link for README

@@ -21,6 +21,7 @@ import { installCommand, rulesCommand } from "./install-commands.js";
 import { migrateCommand } from "./migrate-commands.js";
 import { opsCommand } from "./ops-commands.js";
 // import { pipelineManagementCommand } from "./pipeline-commands.js";
+import { mcpCommand } from "./mcp-commands.js";
 import { qaCommand } from "./qa-commands.js";
 import { patternNewCommand, releaseCommand } from "./release-commands.js";
 import { searchCommand } from "./search-commands.js";
@@ -101,6 +102,7 @@ const adminSubcommands = [
 	ingestCommand,
 	qaCommand,
 	dbCommand,
+	mcpCommand,
 	discordCommand,
 	skillsCommand,
 	migrateCommand,

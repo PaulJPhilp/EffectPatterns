@@ -19,16 +19,22 @@ import { Effect, Layer, ManagedRuntime } from "effect";
 import { Display } from "../services/display/index.js";
 import { Execution } from "../services/execution/index.js";
 import { Logger } from "../services/logger/index.js";
+import { McpService } from "../services/mcp/service.js";
 
 /**
  * Production layer combining all required services
  */
+const McpLayer = Layer.provide(
+	McpService.Default,
+	FetchHttpClient.layer
+) as Layer.Layer<McpService, never, never>;
+
 export const ProductionLayer = Layer.mergeAll(
-	FetchHttpClient.layer,
 	NodeFileSystemLayer,
 	Logger.Default,
 	Layer.provide(Display.Default, Logger.Default),
 	Layer.provide(Execution.Default, Logger.Default),
+	McpLayer,
 	// Use Layer.provide to properly type the StateStore layer
 	Layer.provide(StateStore.Default, Layer.mergeAll(Logger.Default))
 );
