@@ -1,47 +1,34 @@
-import { Effect, Schema as S } from "effect";
+import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
 	isAuthenticationError,
 	validateApiKey,
 } from "../../../src/auth/apiKey";
 import { runWithRuntime } from "../../../src/server/init";
-import { CodeAnalyzerService } from "../../../src/services/code-analyzer";
-import {
-	AnalyzeCodeRequest,
-	AnalyzeCodeResponse,
-} from "../../../src/tools/schemas";
+import { RuleRegistryService } from "../../../src/services/rule-registry";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
-const handleAnalyzeCode = Effect.fn("analyze-code")(function* (
+const handleListRules = Effect.fn("list-rules")(function* (
 	request: NextRequest
 ) {
 	const tracing = yield* TracingService;
-	const analyzer = yield* CodeAnalyzerService;
+	const registry = yield* RuleRegistryService;
 
 	yield* validateApiKey(request);
 
-	const body = yield* Effect.tryPromise(() => request.json());
-	const decoded = yield* S.decode(AnalyzeCodeRequest)(body as any);
-
-	const result = yield* analyzer.analyze({
-		source: decoded.source,
-		filename: decoded.filename,
-		analysisType: decoded.analysisType ?? "all",
-	});
-
+	const rules = yield* registry.listRules();
 	const traceId = tracing.getTraceId() ?? "";
 
 	return {
-		suggestions: result.suggestions,
-		findings: result.findings,
+		rules,
 		traceId,
 		timestamp: new Date().toISOString(),
-	} satisfies typeof AnalyzeCodeResponse.Type;
+	};
 });
 
 export async function POST(request: NextRequest) {
 	try {
-		const result = await runWithRuntime(handleAnalyzeCode(request));
+		const result = await runWithRuntime(handleListRules(request));
 
 		return NextResponse.json(result, {
 			status: 200,

@@ -1,13 +1,12 @@
 import { Effect } from "effect";
+import type { FixId } from "../tools/ids";
 
 export interface RefactorFile {
 	readonly filename: string;
 	readonly source: string;
 }
 
-export type RefactoringId =
-	| "replace-node-fs"
-	| "add-filter-or-fail-validator";
+export type RefactoringId = FixId;
 
 export interface ApplyRefactoringInput {
 	readonly refactoringId: RefactoringId;
