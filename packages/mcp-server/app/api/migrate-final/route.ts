@@ -55,6 +55,8 @@ export async function POST() {
 			"author" varchar(255),
 			"lesson_order" integer,
 			"application_pattern_id" uuid,
+			"validated" boolean DEFAULT false NOT NULL,
+			"validated_at" timestamp,
 			"created_at" timestamp DEFAULT now() NOT NULL,
 			"updated_at" timestamp DEFAULT now() NOT NULL,
 			CONSTRAINT "effect_patterns_slug_unique" UNIQUE("slug")
