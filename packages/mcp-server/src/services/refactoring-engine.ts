@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import ts from "typescript";
 import type { FixId } from "../tools/ids";
 
 export interface RefactorFile {
@@ -60,6 +61,75 @@ const applyAddValidator = (file: RefactorFile): FileChange | null => {
 	return { filename: file.filename, before, after };
 };
 
+const applyWrapEffectMapCallback = (file: RefactorFile): FileChange | null => {
+	const before = file.source;
+	const sourceFile = ts.createSourceFile(
+		file.filename,
+		before,
+		ts.ScriptTarget.Latest,
+		true,
+		file.filename.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+	);
+
+	let changed = false;
+	const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
+		const visit: ts.Visitor = (node) => {
+			if (ts.isCallExpression(node) && node.arguments.length === 1) {
+				const [arg] = node.arguments;
+				if (
+					ts.isPropertyAccessExpression(node.expression) &&
+					ts.isIdentifier(node.expression.expression) &&
+					node.expression.expression.text === "Effect" &&
+					node.expression.name.text === "map" &&
+					ts.isIdentifier(arg)
+				) {
+					changed = true;
+					const param = ts.factory.createParameterDeclaration(
+						undefined,
+						undefined,
+						"x",
+						undefined,
+						undefined,
+						undefined
+					);
+					const body = ts.factory.createCallExpression(
+						arg,
+						undefined,
+						[ts.factory.createIdentifier("x")]
+					);
+					const arrow = ts.factory.createArrowFunction(
+						undefined,
+						undefined,
+						[param],
+						undefined,
+						ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+						body
+					);
+					return ts.factory.updateCallExpression(
+						node,
+						node.expression,
+						node.typeArguments,
+						[arrow]
+					);
+				}
+			}
+			return ts.visitEachChild(node, visit, context);
+		};
+		return (sf) => ts.visitNode(sf, visit) as ts.SourceFile;
+	};
+
+	const result = ts.transform(sourceFile, [transformer]);
+	const transformed = result.transformed[0];
+	result.dispose();
+
+	if (!changed) return null;
+
+	const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
+	const after = printer.printFile(transformed);
+	if (after === before) return null;
+	return { filename: file.filename, before, after };
+};
+
 const applyOne = (
 	id: RefactoringId,
 	file: RefactorFile
@@ -69,7 +139,11 @@ const applyOne = (
 			return applyReplaceNodeFs(file);
 		case "add-filter-or-fail-validator":
 			return applyAddValidator(file);
+		case "wrap-effect-map-callback":
+			return applyWrapEffectMapCallback(file);
 	}
+
+	return null;
 };
 
 export class RefactoringEngineService extends Effect.Service<
