@@ -145,4 +145,33 @@ export const program = Effect.gen(function* () {
 			"throw-in-effect-code"
 		);
 	});
+
+	it("flags Effect.map(functionReference) and links the wrap-effect-map-callback fix", async () => {
+		const source = `
+import { Effect } from "effect";
+
+const myFn = (n: number) => n + 1;
+
+export const program = Effect.succeed(1).pipe(Effect.map(myFn));
+`;
+
+		const result = await Effect.gen(function* () {
+			const analyzer = yield* CodeAnalyzerService;
+			return yield* analyzer.analyze({
+				source,
+				filename: "src/services/my-service.ts",
+				analysisType: "all",
+			});
+		}).pipe(Effect.provide(CodeAnalyzerService.Default), Effect.runPromise);
+
+		expect(result.suggestions.map((s) => s.id)).toContain(
+			"effect-map-fn-reference"
+		);
+
+		const finding = result.findings.find(
+			(f) => f.ruleId === "effect-map-fn-reference"
+		);
+		expect(finding).toBeDefined();
+		expect(finding?.refactoringIds).toContain("wrap-effect-map-callback");
+	});
 });

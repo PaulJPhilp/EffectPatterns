@@ -81,6 +81,11 @@ const ruleIdToRange = (input: AnalyzeCodeInput, ruleId: RuleId): SourceRange => 
 	switch (ruleId) {
 		case "async-await":
 			return firstRange(source, /\bawait\b|\basync\b/);
+		case "effect-map-fn-reference":
+			return firstRange(
+				source,
+				/Effect\.map\(\s*[A-Za-z_$][\w$]*\s*\)/
+			);
 		case "node-fs":
 			return firstRange(
 				source,
@@ -104,6 +109,8 @@ const ruleIdToRange = (input: AnalyzeCodeInput, ruleId: RuleId): SourceRange => 
 		case "yield-star-non-effect":
 			return firstRange(source, /yield\*\s+\w+\.dirname\(/);
 		case "non-typescript":
+			return { startLine: 1, startCol: 1, endLine: 1, endCol: 1 };
+		default:
 			return { startLine: 1, startCol: 1, endLine: 1, endCol: 1 };
 	}
 };
@@ -163,6 +170,14 @@ const detectRuleIds = (
 	if (/export\s+const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*Effect\.gen/.test(source)) {
 		if (!/filterOrFail\(/.test(source)) {
 			ruleIds.push("missing-validation");
+		}
+	}
+
+	// Prefer explicit callback: Effect.map((x) => fn(x)) over Effect.map(fn)
+	// MVP: only when the file already looks like Effect code.
+	if (looksLikeEffectCode(source)) {
+		if (/Effect\.map\(\s*[A-Za-z_$][\w$]*\s*\)/.test(source)) {
+			ruleIds.push("effect-map-fn-reference");
 		}
 	}
 

@@ -130,6 +130,16 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 		fixIds: ["add-filter-or-fail-validator"],
 	},
 	{
+		id: "effect-map-fn-reference",
+		title: "Avoid passing function references to Effect.map",
+		message:
+			"Prefer an explicit callback: Effect.map((x) => myFn(x)). This improves " +
+			"readability and makes parameter usage clear.",
+		severity: "low",
+		category: "style",
+		fixIds: ["wrap-effect-map-callback"],
+	},
+	{
 		id: "any-type",
 		title: "Avoid any",
 		message:
