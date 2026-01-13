@@ -37,6 +37,12 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		title: "Add Effect.filterOrFail validator",
 		description: "Adds a simple input validation helper.",
 	},
+	{
+		id: "wrap-effect-map-callback",
+		title: "Wrap Effect.map callback",
+		description:
+			"Rewrites Effect.map(myFn) to Effect.map((x) => myFn(x)) for clarity and consistency.",
+	},
 ];
 
 const Rules: ReadonlyArray<RuleDefinition> = [

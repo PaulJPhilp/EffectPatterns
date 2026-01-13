@@ -107,6 +107,61 @@ describe("RefactoringEngineService", () => {
 		expect(result.changes).toHaveLength(0);
 	});
 
+	it("should wrap Effect.map callback when passed a function reference", async () => {
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const engine = yield* RefactoringEngineService;
+				const output = yield* engine.apply({
+					refactoringId: "wrap-effect-map-callback",
+					files: [
+						{
+							filename: "test.ts",
+							source:
+								"import { Effect } from \"effect\";\n" +
+								"const myFn = (n: number) => n + 1;\n" +
+								"const program = Effect.succeed(1).pipe(Effect.map(myFn));\n",
+						},
+					],
+					preview: true,
+				});
+
+				return output;
+			}).pipe(Effect.provide(TestLayer))
+		);
+
+		expect(result.applied).toBe(false);
+		expect(result.changes).toHaveLength(1);
+		expect(result.changes[0].after).toMatch(
+			/Effect\.map\(\(?x\)?\s*=>\s*myFn\(x\)\)/
+		);
+	});
+
+	it("should not change Effect.map when callback is already an arrow", async () => {
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const engine = yield* RefactoringEngineService;
+				const output = yield* engine.apply({
+					refactoringId: "wrap-effect-map-callback",
+					files: [
+						{
+							filename: "test.ts",
+							source:
+								"import { Effect } from \"effect\";\n" +
+								"const myFn = (n: number) => n + 1;\n" +
+								"const program = Effect.succeed(1).pipe(Effect.map((x) => myFn(x)));\n",
+						},
+					],
+					preview: true,
+				});
+
+				return output;
+			}).pipe(Effect.provide(TestLayer))
+		);
+
+		expect(result.applied).toBe(false);
+		expect(result.changes).toHaveLength(0);
+	});
+
 	it("should handle empty file list", async () => {
 		const result = await Effect.runPromise(
 			Effect.gen(function* () {
