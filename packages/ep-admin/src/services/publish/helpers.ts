@@ -4,7 +4,8 @@
  * Helper functions for the complete publishing pipeline
  */
 
-import { FileSystem } from "@effect/platform";
+import { FileSystem, Path } from "@effect/platform";
+import type { PlatformError } from "@effect/platform/Error";
 import { Effect } from "effect";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
@@ -20,7 +21,36 @@ import type {
 
 const execAsync = promisify(exec);
 
-// --- FILE SYSTEM HELPERS ---
+// --- VALIDATION HELPERS ---
+
+// Validation functions using Effect patterns
+const validateFilePath = (filePath: string): Effect.Effect<string, Error> =>
+	Effect.succeed(filePath).pipe(
+		Effect.filterOrFail(
+			(path) => path.length > 0 && !path.includes(".."),
+			() => new Error(`Invalid file path: ${filePath}`)
+		)
+	);
+
+const validateTimeout = (timeout: number): Effect.Effect<number, Error> =>
+	Effect.succeed(timeout).pipe(
+		Effect.filterOrFail(
+			(t) => t >= 1000 && t <= 300000,
+			() => new Error(`Timeout must be between 1s and 5 minutes (1000ms to 300000ms)`)
+		)
+	);
+
+const validatePatternInfo = (pattern: PatternInfo): Effect.Effect<PatternInfo, Error> =>
+	Effect.succeed(pattern).pipe(
+		Effect.filterOrFail(
+			(p): p is PatternInfo => Boolean(p.id && p.id.length > 0),
+			() => new Error("Pattern ID cannot be empty")
+		),
+		Effect.filterOrFail(
+			(p): p is PatternInfo => Boolean(p.title && p.title.length > 0),
+			() => new Error("Pattern title cannot be empty")
+		)
+	);
 
 /**
  * Check if file exists
@@ -29,8 +59,9 @@ export const fileExists = (
 	filePath: string,
 ): Effect.Effect<boolean, Error, FileSystem.FileSystem> =>
 	Effect.gen(function* () {
+		const validatedPath = yield* validateFilePath(filePath);
 		const fs = yield* FileSystem.FileSystem;
-		return yield* fs.exists(filePath);
+		return yield* fs.exists(validatedPath);
 	});
 
 /**
@@ -40,8 +71,9 @@ export const readFileContent = (
 	filePath: string,
 ): Effect.Effect<string, Error, FileSystem.FileSystem> =>
 	Effect.gen(function* () {
+		const validatedPath = yield* validateFilePath(filePath);
 		const fs = yield* FileSystem.FileSystem;
-		return yield* fs.readFileString(filePath);
+		return yield* fs.readFileString(validatedPath);
 	});
 
 /**
@@ -50,13 +82,17 @@ export const readFileContent = (
 export const writeFileContent = (
 	filePath: string,
 	content: string,
-): Effect.Effect<void, Error, FileSystem.FileSystem> =>
+): Effect.Effect<void, Error, FileSystem.FileSystem | Path.Path> =>
 	Effect.gen(function* () {
+		const validatedPath = yield* validateFilePath(filePath);
 		const fs = yield* FileSystem.FileSystem;
-		yield* fs.makeDirectory(filePath.split("/").slice(0, -1).join("/"), {
-			recursive: true,
-		});
-		yield* fs.writeFileString(filePath, content);
+		const pathService = yield* Path.Path;
+
+		// Ensure directory exists
+		const dir = pathService.dirname(validatedPath);
+		yield* fs.makeDirectory(dir, { recursive: true });
+
+		yield* fs.writeFileString(validatedPath, content);
 	});
 
 /**
@@ -66,8 +102,9 @@ export const getMdxFiles = (
 	directory: string,
 ): Effect.Effect<string[], Error, FileSystem.FileSystem> =>
 	Effect.gen(function* () {
+		const validatedDir = yield* validateFilePath(directory);
 		const fs = yield* FileSystem.FileSystem;
-		const files = yield* fs.readDirectory(directory);
+		const files = yield* fs.readDirectory(validatedDir);
 		return files.filter((file) => file.endsWith(".mdx"));
 	});
 
@@ -78,8 +115,9 @@ export const getTsFiles = (
 	directory: string,
 ): Effect.Effect<string[], Error, FileSystem.FileSystem> =>
 	Effect.gen(function* () {
+		const validatedDir = yield* validateFilePath(directory);
 		const fs = yield* FileSystem.FileSystem;
-		const files = yield* fs.readDirectory(directory);
+		const files = yield* fs.readDirectory(validatedDir);
 		return files.filter((file) => file.endsWith(".ts"));
 	});
 
@@ -91,12 +129,17 @@ export const getTsFiles = (
 export const executeCommand = (
 	command: string,
 	timeout: number = 30000,
-): Effect.Effect<{ stdout: string; stderr: string }, Error> =>
-	Effect.tryPromise({
-		try: async () => {
-			return await execAsync(command, { timeout, maxBuffer: 1024 * 1024 });
-		},
-		catch: (error) => new Error(`Command execution failed: ${error}`),
+): Effect.Effect<{ stdout: string; stderr: string }, Error | PlatformError> =>
+	Effect.gen(function* () {
+		const validatedTimeout = yield* validateTimeout(timeout);
+
+		return yield* Effect.tryPromise({
+			try: async () => {
+				const execAsync = promisify(exec);
+				return await execAsync(command, { timeout: validatedTimeout, maxBuffer: 1024 * 1024 });
+			},
+			catch: (error) => new Error(`Command execution failed: ${error}`)
+		});
 	});
 
 /**
@@ -104,10 +147,12 @@ export const executeCommand = (
  */
 export const runTypeScriptCheck = (
 	filePath: string,
-): Effect.Effect<boolean, Error> =>
+): Effect.Effect<boolean, Error | PlatformError> =>
 	Effect.gen(function* () {
+		const validatedPath = yield* validateFilePath(filePath);
+
 		try {
-			const result = yield* executeCommand(`npx tsc --noEmit "${filePath}"`, 10000);
+			const result = yield* executeCommand(`npx tsc --noEmit "${validatedPath}"`, 10000);
 			return result.stderr.length === 0;
 		} catch {
 			return false;
@@ -120,10 +165,13 @@ export const runTypeScriptCheck = (
 export const runTypeScriptFile = (
 	filePath: string,
 	timeout: number = 10000,
-): Effect.Effect<{ success: boolean; output: string; error?: string }, Error> =>
+): Effect.Effect<{ success: boolean; output: string; error?: string }, Error | PlatformError> =>
 	Effect.gen(function* () {
+		const validatedPath = yield* validateFilePath(filePath);
+		const validatedTimeout = yield* validateTimeout(timeout);
+
 		try {
-			const result = yield* executeCommand(`bun run "${filePath}"`, timeout);
+			const result = yield* executeCommand(`bun run "${validatedPath}"`, validatedTimeout);
 			return {
 				success: true,
 				output: result.stdout,
@@ -308,16 +356,21 @@ export const groupLintIssuesByRule = (results: LintResult[]): Record<string, Lin
 export const extractPatternInfo = (
 	filePath: string,
 	frontmatter: Record<string, unknown>,
-): PatternInfo => {
-	return {
-		id: String(frontmatter.id || filePath.replace(".mdx", "")),
-		title: String(frontmatter.title || "Unknown"),
-		skillLevel: String(frontmatter.skillLevel || "unknown"),
-		useCase: frontmatter.useCase as string | string[] || "unknown",
-		tags: (frontmatter.tags as string[]) || [],
-		filePath,
-	};
-};
+): Effect.Effect<PatternInfo, Error> =>
+	Effect.gen(function* () {
+		const validatedPath = yield* validateFilePath(filePath);
+
+		const pattern = {
+			id: String(frontmatter.id || validatedPath.replace(".mdx", "")),
+			title: String(frontmatter.title || "Unknown"),
+			skillLevel: String(frontmatter.skillLevel || "unknown"),
+			useCase: frontmatter.useCase as string | string[] || "unknown",
+			tags: (frontmatter.tags as string[]) || [],
+			filePath: validatedPath,
+		};
+
+		return yield* validatePatternInfo(pattern);
+	});
 
 /**
  * Generate pattern link for README
@@ -344,4 +397,27 @@ export const sortPatterns = (patterns: PatternInfo[]): PatternInfo[] => {
 
 		return a.title.localeCompare(b.title);
 	});
+};
+
+// --- UTILITY HELPERS ---
+
+/**
+ * Create a safe filename from a string
+ */
+export const createSafeFilename = (input: string): string => {
+	return input
+		.toLowerCase()
+		.replace(/[^a-z0-9]/g, "-")
+		.replace(/-+/g, "-")
+		.replace(/^-|-$/g, "");
+};
+
+/**
+ * Format duration in human readable format
+ */
+export const formatDuration = (ms: number): string => {
+	if (ms < 1000) return `${ms}ms`;
+	if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+	if (ms < 3600000) return `${(ms / 60000).toFixed(1)}m`;
+	return `${(ms / 3600000).toFixed(1)}h`;
 };

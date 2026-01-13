@@ -5,24 +5,55 @@
  * These scripts enable tab-completion for commands, options, and arguments.
  */
 
+import { FileSystem, Path } from "@effect/platform";
+import type { PlatformError } from "@effect/platform/Error";
 import { Effect } from "effect";
-import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+
 import {
-	CLI,
-	COMPLETION_DIRS,
-	COMPLETION_EXTENSIONS,
-	COMPLETION_PREFIXES,
-	SHELL_TYPES,
-	type ShellType,
+    CLI,
+    COMPLETION_DIRS,
+    COMPLETION_EXTENSIONS,
+    COMPLETION_PREFIXES,
+    SHELL_TYPES,
+    ShellType,
 } from "./constants.js";
+
+// Validation functions using Effect patterns
+const validateShell = (shell: string): Effect.Effect<ShellType, Error> =>
+    Effect.succeed(shell as ShellType).pipe(
+        Effect.filterOrFail(
+            (s): s is ShellType => SHELL_TYPES.includes(s),
+            () => new Error(`Invalid shell: ${shell}. Must be: ${SHELL_TYPES.join(", ")}`)
+        )
+    );
+
+const validateCompletionConfig = (config: CompletionConfig): Effect.Effect<CompletionConfig, Error> =>
+    Effect.succeed(config).pipe(
+        Effect.filterOrFail(
+            (c) => c.name.length > 0,
+            () => new Error("Completion config name cannot be empty")
+        ),
+        Effect.filterOrFail(
+            (c) => c.commands.length > 0,
+            () => new Error("Completion config must have at least one command")
+        )
+    );
+
+const validateFilePath = (filePath: string): Effect.Effect<string, Error> =>
+    Effect.succeed(filePath).pipe(
+        Effect.filterOrFail(
+            (path) => path.length > 0 && !path.includes(".."),
+            () => new Error(`Invalid file path: ${filePath}`)
+        )
+    );
+
+export type Shell = ShellType;
 
 // =============================================================================
 // Types
 // =============================================================================
-
-export type Shell = ShellType;
 
 export interface CompletionConfig {
     readonly name: string;
@@ -418,9 +449,17 @@ complete -c ${name} -f
  * Generate shell completion script for the specified shell
  */
 export const generateCompletion = (
-    shell: Shell,
+    shell: ShellType,
     config: CompletionConfig = EP_ADMIN_COMMANDS
 ): string => {
+    // Simple validation
+    if (!SHELL_TYPES.includes(shell)) {
+        throw new Error(`Invalid shell: ${shell}. Must be: ${SHELL_TYPES.join(", ")}`);
+    }
+    if (!config.name || config.commands.length === 0) {
+        throw new Error("Invalid completion config");
+    }
+
     switch (shell) {
         case "bash":
             return generateBashCompletion(config);
@@ -434,16 +473,35 @@ export const generateCompletion = (
 /**
  * Get the default installation path for completions
  */
-export const getCompletionPath = (shell: Shell, name: string): string => {
+export const getCompletionPath = (
+    shell: ShellType,
+    name: string
+): string => {
+    // Simple validation without Effect complexity
+    if (!SHELL_TYPES.includes(shell)) {
+        throw new Error(`Invalid shell: ${shell}. Must be: ${SHELL_TYPES.join(", ")}`);
+    }
+    if (!name || name.includes("..")) {
+        throw new Error(`Invalid file path: ${name}`);
+    }
+
     const home = os.homedir();
 
     switch (shell) {
         case "bash":
             return path.join(home, COMPLETION_DIRS.BASH, name);
         case "zsh":
-            return path.join(home, COMPLETION_DIRS.ZSH, `${COMPLETION_PREFIXES.ZSH}${name}`);
+            return path.join(
+                home,
+                COMPLETION_DIRS.ZSH,
+                `${COMPLETION_PREFIXES.ZSH}${name}`
+            );
         case "fish":
-            return path.join(home, COMPLETION_DIRS.FISH, `${name}${COMPLETION_EXTENSIONS.FISH}`);
+            return path.join(
+                home,
+                COMPLETION_DIRS.FISH,
+                `${name}${COMPLETION_EXTENSIONS.FISH}`
+            );
     }
 };
 
@@ -451,25 +509,28 @@ export const getCompletionPath = (shell: Shell, name: string): string => {
  * Install completion script to the default location
  */
 export const installCompletion = (
-    shell: Shell,
+    shell: ShellType,
     config: CompletionConfig = EP_ADMIN_COMMANDS
-): Effect.Effect<string, Error> =>
+): Effect.Effect<
+    string,
+    PlatformError,
+    FileSystem.FileSystem | Path.Path
+> =>
     Effect.gen(function* () {
+        // Generate completion script
         const script = generateCompletion(shell, config);
         const filePath = getCompletionPath(shell, config.name);
-        const dir = path.dirname(filePath);
+
+        // Use Effect.sync for simple operations to avoid type inference issues
+        const fileSystem = yield* FileSystem.FileSystem;
+        const pathService = yield* Path.Path;
 
         // Ensure directory exists
-        yield* Effect.tryPromise({
-            try: () => fs.mkdir(dir, { recursive: true }),
-            catch: (e) => new Error(`Failed to create directory: ${e}`),
-        });
+        const dir = pathService.dirname(filePath);
+        yield* fileSystem.makeDirectory(dir, { recursive: true });
 
         // Write completion script
-        yield* Effect.tryPromise({
-            try: () => fs.writeFile(filePath, script, "utf-8"),
-            catch: (e) => new Error(`Failed to write completion script: ${e}`),
-        });
+        yield* fileSystem.writeFile(filePath, new TextEncoder().encode(script));
 
         return filePath;
     });
@@ -477,7 +538,18 @@ export const installCompletion = (
 /**
  * Get shell-specific instructions for enabling completions
  */
-export const getInstallInstructions = (shell: Shell, filePath: string): string => {
+export const getInstallInstructions = (
+    shell: ShellType,
+    filePath: string
+): string => {
+    // Simple validation
+    if (!SHELL_TYPES.includes(shell)) {
+        throw new Error(`Invalid shell: ${shell}. Must be: ${SHELL_TYPES.join(", ")}`);
+    }
+    if (!filePath || filePath.includes("..")) {
+        throw new Error(`Invalid file path: ${filePath}`);
+    }
+
     switch (shell) {
         case "bash":
             return `

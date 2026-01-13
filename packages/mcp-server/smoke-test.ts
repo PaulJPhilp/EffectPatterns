@@ -393,6 +393,157 @@ async function runSmokeTests() {
     );
   });
 
+  // Test 22: Analyze Code Requires Auth
+  await runTest("Analyze code endpoint requires authentication", async () => {
+    const response = await fetch(`${baseUrl}/api/analyze-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source: "const x = 1;" }),
+    });
+    assertEquals(response.status, 401);
+  });
+
+  // Test 23: Analyze Code
+  await runTest("Analyze code endpoint analyzes TypeScript", async () => {
+    const response = await fetch(`${baseUrl}/api/analyze-code`, {
+      method: "POST",
+      headers: {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        source: 'import { readFile } from "node:fs/promises"; const x = 1;',
+        filename: "example.ts",
+        analysisType: "all",
+      }),
+    });
+    assertEquals(response.status, 200);
+
+    const data: any = await response.json();
+    assertNotNull(data.suggestions, "suggestions should not be null");
+    assert(Array.isArray(data.suggestions), "suggestions should be an array");
+    assertNotNull(data.traceId, "traceId should not be null");
+    assertNotNull(data.timestamp, "timestamp should not be null");
+  });
+
+  // Test 24: Generate Pattern Requires Auth
+  await runTest("Generate pattern endpoint requires authentication", async () => {
+    const response = await fetch(`${baseUrl}/api/generate-pattern`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        patternId: "validation-filter-or-fail",
+        variables: { Name: "FilePath", paramName: "path", paramType: "string", shortName: "p", condition: "p.length > 0", errorMessage: "Path cannot be empty" },
+      }),
+    });
+    assertEquals(response.status, 401);
+  });
+
+  // Test 25: Generate Pattern
+  await runTest("Generate pattern endpoint generates code", async () => {
+    const response = await fetch(`${baseUrl}/api/generate-pattern`, {
+      method: "POST",
+      headers: {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        patternId: "validation-filter-or-fail",
+        variables: { Name: "FilePath", paramName: "path", paramType: "string", shortName: "p", condition: "p.length > 0", errorMessage: "Path cannot be empty" },
+      }),
+    });
+    assertEquals(response.status, 200);
+
+    const data: any = await response.json();
+    assertEquals(data.patternId, "validation-filter-or-fail");
+    assertNotNull(data.name, "name should not be null");
+    assertNotNull(data.code, "code should not be null");
+    assert(Array.isArray(data.imports), "imports should be an array");
+    assertContains(data.code, "validateFilePath");
+    assertContains(data.code, "Effect.filterOrFail");
+    assertNotNull(data.traceId, "traceId should not be null");
+    assertNotNull(data.timestamp, "timestamp should not be null");
+  });
+
+  // Test 26: Analyze Consistency Requires Auth
+  await runTest("Analyze consistency endpoint requires authentication", async () => {
+    const response = await fetch(`${baseUrl}/api/analyze-consistency`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        files: [{ filename: "a.ts", source: "const x = 1;" }],
+      }),
+    });
+    assertEquals(response.status, 401);
+  });
+
+  // Test 27: Analyze Consistency
+  await runTest("Analyze consistency endpoint detects issues", async () => {
+    const response = await fetch(`${baseUrl}/api/analyze-consistency`, {
+      method: "POST",
+      headers: {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        files: [
+          { filename: "a.ts", source: 'import { readFile } from "node:fs/promises";' },
+          { filename: "b.ts", source: 'import { FileSystem } from "@effect/platform";' },
+        ],
+      }),
+    });
+    assertEquals(response.status, 200);
+
+    const data: any = await response.json();
+    assertNotNull(data.issues, "issues should not be null");
+    assert(Array.isArray(data.issues), "issues should be an array");
+    assertNotNull(data.traceId, "traceId should not be null");
+    assertNotNull(data.timestamp, "timestamp should not be null");
+  });
+
+  // Test 28: Apply Refactoring Requires Auth
+  await runTest("Apply refactoring endpoint requires authentication", async () => {
+    const response = await fetch(`${baseUrl}/api/apply-refactoring`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        refactoringId: "replace-node-fs",
+        files: [{ filename: "a.ts", source: 'import { readFile } from "node:fs/promises";' }],
+      }),
+    });
+    assertEquals(response.status, 401);
+  });
+
+  // Test 29: Apply Refactoring (Preview)
+  await runTest("Apply refactoring endpoint returns preview (preview-only)", async () => {
+    const response = await fetch(`${baseUrl}/api/apply-refactoring`, {
+      method: "POST",
+      headers: {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        refactoringId: "replace-node-fs",
+        files: [{ filename: "a.ts", source: 'import { readFile } from "node:fs/promises";' }],
+        preview: true,
+      }),
+    });
+    assertEquals(response.status, 200);
+
+    const data: any = await response.json();
+    assertEquals(data.applied, false, "Should be preview-only");
+    assertNotNull(data.changes, "changes should not be null");
+    assert(Array.isArray(data.changes), "changes should be an array");
+    if (data.changes.length > 0) {
+      const change = data.changes[0];
+      assertEquals(change.filename, "a.ts");
+      assertContains(change.before, 'from "node:fs/promises"');
+      assertContains(change.after, 'from "@effect/platform"');
+    }
+    assertNotNull(data.traceId, "traceId should not be null");
+    assertNotNull(data.timestamp, "timestamp should not be null");
+  });
+
   // Print summary
   printHeader("Test Summary");
   console.log(`Total Tests: ${testsRun}`);

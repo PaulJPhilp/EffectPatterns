@@ -4,6 +4,10 @@ export default defineConfig({
 	test: {
 		// Run tests sequentially to avoid port conflicts
 		fileParallelism: false,
+		// Only run source tests (avoid stale compiled tests in dist/)
+		exclude: [
+			"dist/**",
+		],
 		// Increase timeout for integration tests
 		testTimeout: 30_000,
 		hookTimeout: 30_000,

@@ -23,6 +23,30 @@ import {
 } from "./services/db/index.js";
 import { Display } from "./services/display/index.js";
 
+type McpDbCheckResponse = {
+    success: boolean;
+    message?: string;
+    error?: string;
+    details?: string;
+};
+
+type McpMigrateResponse = {
+    success: boolean;
+    message?: string;
+    error?: string;
+    details?: string;
+    tablesCreated?: number;
+};
+
+const isRecord = (u: unknown): u is Record<string, unknown> =>
+    typeof u === "object" && u !== null;
+
+const isMcpDbCheckResponse = (u: unknown): u is McpDbCheckResponse =>
+    isRecord(u) && typeof u["success"] === "boolean";
+
+const isMcpMigrateResponse = (u: unknown): u is McpMigrateResponse =>
+    isRecord(u) && typeof u["success"] === "boolean";
+
 /**
  * db:test - Test database
  */
@@ -64,7 +88,7 @@ export const dbTestCommand = Command.make("test", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.DATABASE_TESTS_PASSED);
-        }) as any
+        })
     )
 );
 
@@ -132,7 +156,7 @@ export const dbTestQuickCommand = Command.make("test-quick", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.QUICK_DB_TEST_PASSED);
-        }) as any
+        })
     )
 );
 
@@ -174,7 +198,7 @@ export const dbVerifyMigrationCommand = Command.make("verify-migration", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.MIGRATION_VERIFIED);
-        }) as any
+        })
     )
 );
 
@@ -212,7 +236,150 @@ export const dbMockCommand = Command.make("mock", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.MOCK_DB_CREATED);
-        }) as any
+        })
+    )
+);
+
+/**
+ * db:status - Check database status via MCP server
+ */
+export const dbStatusCommand = Command.make("status", {
+    options: {
+        ...globalOptions,
+    },
+}).pipe(
+    Command.withDescription(
+        "Check database status using MCP server API"
+    ),
+    Command.withHandler(({ options }) =>
+        Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Checking database status via MCP server...");
+
+            try {
+                const response = yield* Effect.tryPromise({
+                    try: () => fetch("http://localhost:3000/api/db-check"),
+                    catch: () => new Error("Failed to fetch")
+                });
+
+                const result = yield* Effect.tryPromise({
+                    try: () => response.json(),
+                    catch: () => new Error("Failed to parse JSON")
+                });
+
+                if (!isMcpDbCheckResponse(result)) {
+                    yield* Display.showError("Unexpected response from MCP server");
+                    return yield* Effect.fail(
+                        new Error("Invalid MCP response shape")
+                    );
+                }
+
+                if (result.success) {
+                    yield* Display.showSuccess(
+                        "✓ Database connection successful"
+                    );
+                    if (result.message) {
+                        yield* Display.showInfo(
+                            `Message: ${result.message}`
+                        );
+                    }
+                } else {
+                    yield* Display.showError("✗ Database connection failed");
+                    if (result.error) {
+                        yield* Display.showError(
+                            `Error: ${result.error}`
+                        );
+                    }
+                    if (result.details) {
+                        yield* Display.showError(
+                            `Details: ${result.details}`
+                        );
+                    }
+                    return yield* Effect.fail(
+                        new Error("MCP db-check failed")
+                    );
+                }
+            } catch (error) {
+                yield* Display.showError("Failed to connect to MCP server");
+                yield* Display.showError(`Make sure MCP server is running on localhost:3000`);
+                return yield* Effect.fail(new Error("MCP server connection failed"));
+            }
+        })
+    )
+);
+
+/**
+ * db:migrate-remote - Run migration via MCP server
+ */
+export const dbMigrateRemoteCommand = Command.make("migrate-remote", {
+    options: {
+        ...globalOptions,
+    },
+}).pipe(
+    Command.withDescription(
+        "Run database migration using MCP server API"
+    ),
+    Command.withHandler(({ options }) =>
+        Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Running migration via MCP server...");
+
+            try {
+                const response = yield* Effect.tryPromise({
+                    try: () => fetch("http://localhost:3000/api/migrate", {
+                        method: "POST"
+                    }),
+                    catch: () => new Error("Failed to fetch")
+                });
+
+                const result = yield* Effect.tryPromise({
+                    try: () => response.json(),
+                    catch: () => new Error("Failed to parse JSON")
+                });
+
+                if (!isMcpMigrateResponse(result)) {
+                    yield* Display.showError("Unexpected response from MCP server");
+                    return yield* Effect.fail(
+                        new Error("Invalid MCP response shape")
+                    );
+                }
+
+                if (result.success) {
+                    yield* Display.showSuccess(
+                        "✓ Migration completed successfully"
+                    );
+                    if (result.message) {
+                        yield* Display.showInfo(
+                            `Message: ${result.message}`
+                        );
+                    }
+                    if (typeof result.tablesCreated === "number") {
+                        yield* Display.showInfo(
+                            `Tables created: ${result.tablesCreated}`
+                        );
+                    }
+                } else {
+                    yield* Display.showError("✗ Migration failed");
+                    if (result.error) {
+                        yield* Display.showError(
+                            `Error: ${result.error}`
+                        );
+                    }
+                    if (result.details) {
+                        yield* Display.showError(
+                            `Details: ${result.details}`
+                        );
+                    }
+                    return yield* Effect.fail(
+                        new Error("MCP migrate failed")
+                    );
+                }
+            } catch (error) {
+                yield* Display.showError("Failed to connect to MCP server");
+                yield* Display.showError(`Make sure MCP server is running on localhost:3000`);
+                return yield* Effect.fail(new Error("MCP server connection failed"));
+            }
+        })
     )
 );
 
@@ -226,5 +393,7 @@ export const dbCommand = Command.make("db").pipe(
         dbTestQuickCommand,
         dbVerifyMigrationCommand,
         dbMockCommand,
+        dbStatusCommand,
+        dbMigrateRemoteCommand,
     ])
 );

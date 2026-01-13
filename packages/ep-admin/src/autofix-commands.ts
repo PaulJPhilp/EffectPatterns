@@ -12,6 +12,27 @@ import { Effect } from "effect";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
 
+// Validated provider type
+type AiProvider = "google" | "openai" | "anthropic";
+
+// Provider validation using Effect patterns
+const validateProvider = (provider: string): Effect.Effect<AiProvider, Error> =>
+	Effect.succeed(provider as AiProvider).pipe(
+		Effect.filterOrFail(
+			(p): p is AiProvider => ["google", "openai", "anthropic"].includes(p),
+			() => new Error(`Invalid provider: ${provider}. Must be: google, openai, or anthropic`)
+		)
+	);
+
+// Validate report file exists
+const validateReportFile = (reportPath: string): Effect.Effect<string, Error> =>
+	Effect.succeed(reportPath).pipe(
+		Effect.filterOrFail(
+			(path) => path.endsWith(".json"),
+			() => new Error(`Report file must be a JSON file: ${reportPath}`)
+		)
+	);
+
 /**
  * autofix:prepublish - AI-powered prepublish error fixes
  */
@@ -74,6 +95,42 @@ export const autofixPrepublishCommand = Command.make("prepublish", {
 			yield* configureLoggerFromOptions(options);
 			yield* Display.showInfo("Prepublish Autofix");
 
+			// Validate inputs using Effect patterns
+			const validatedProvider = yield* validateProvider(options.provider);
+			const validatedReport = yield* validateReportFile(options.report);
+
+			// Validate numeric inputs
+			if (options.limit._tag === "Some" && options.limit.value <= 0) {
+				yield* Display.showError("Limit must be greater than 0");
+				return;
+			}
+
+			if (options.attempts < 1 || options.attempts > 5) {
+				yield* Display.showError("Attempts must be between 1 and 5");
+				return;
+			}
+
+			// Validate option combinations
+			if (options.aiCall && !options.ai) {
+				yield* Display.showWarning("AI call enabled but AI prompts disabled - enabling AI prompts");
+			}
+
+			if (options.write && options.dryRun) {
+				yield* Display.showWarning("Write mode conflicts with dry-run - dry-run will be ignored");
+			}
+
+			// Show configuration summary
+			const limitDisplay = options.limit._tag === "Some" ? options.limit.value : "unlimited";
+			yield* Display.showInfo(`Configuration:
+  Provider: ${validatedProvider}
+  Model: ${options.model}
+  Report: ${validatedReport}
+  AI Call: ${options.aiCall}
+  Dry Run: ${options.dryRun}
+  Write: ${options.write}
+  Attempts: ${options.attempts}
+  Limit: ${limitDisplay}`);
+
 			if (options.aiCall) {
 				yield* Display.showInfo("AI-powered fixes enabled");
 			} else if (options.ai) {
@@ -93,7 +150,7 @@ export const autofixPrepublishCommand = Command.make("prepublish", {
 			);
 
 			yield* Display.showSuccess("Prepublish autofix info displayed!");
-		}) as any
+		})
 	)
 );
 
