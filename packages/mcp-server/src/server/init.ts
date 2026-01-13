@@ -14,16 +14,17 @@ import {
   findEffectPatternBySlug,
   searchEffectPatterns
 } from "@effect-patterns/toolkit";
-import { NodeSdk } from "@effect/opentelemetry";
+import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { Effect, Layer } from "effect";
+import { Cause, Effect, Exit, Layer, Option } from "effect";
 import { CodeAnalyzerService } from "../services/code-analyzer";
 import { MCPConfigService } from "../services/config";
 import { ConsistencyAnalyzerService } from "../services/consistency-analyzer";
 import { MCPLoggerService } from "../services/logger";
 import { PatternGeneratorService } from "../services/pattern-generator";
 import { RefactoringEngineService } from "../services/refactoring-engine";
+import { RuleRegistryService } from "../services/rule-registry";
 import { TracingLayerLive } from "../tracing/otlpLayer";
 
 /**
@@ -115,7 +116,8 @@ export const AppLayer = Layer.mergeAll(
   CodeAnalyzerService.Default,
   PatternGeneratorService.Default,
   ConsistencyAnalyzerService.Default,
-  RefactoringEngineService.Default
+  RefactoringEngineService.Default,
+  RuleRegistryService.Default
 );
 
 /**
@@ -135,29 +137,28 @@ export const runWithRuntime = <A, E>(
     any
   >
 ): Promise<A> => {
-  // Wrap in Promise to catch any synchronous errors or unhandled rejections
-  return new Promise((resolve, reject) => {
-    effect
-      .pipe(
-        Effect.provide(AppLayer),
-        Effect.scoped,
-        Effect.catchAll((error) =>
-          Effect.fail(
-            error instanceof Error
-              ? error
-              : new Error(`Runtime error: ${String(error)}`)
-          )
-        ),
-        (e) => Effect.runPromise(e as Effect.Effect<A, Error, never>)
-      )
-      .then(resolve)
-      .catch((error) => {
-        // Ensure all errors are Error instances
-        const normalizedError =
-          error instanceof Error
-            ? error
-            : new Error(`Unhandled error: ${String(error)}`);
-        reject(normalizedError);
-      });
+  const runnable = effect.pipe(
+    Effect.provide(AppLayer),
+    Effect.scoped
+  ) as Effect.Effect<A, E, never>;
+
+  return Effect.runPromiseExit(runnable).then((exit) => {
+    if (Exit.isSuccess(exit)) {
+      return exit.value;
+    }
+
+    const failure = Option.getOrUndefined(
+      Cause.failureOption(exit.cause)
+    );
+    if (failure !== undefined) {
+      return Promise.reject(failure);
+    }
+
+    const defect = Cause.squash(exit.cause);
+    return Promise.reject(
+      defect instanceof Error
+        ? defect
+        : new Error(`Runtime error: ${String(defect)}`)
+    );
   });
 };
