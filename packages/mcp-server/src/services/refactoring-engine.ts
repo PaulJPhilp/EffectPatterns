@@ -10,7 +10,8 @@ export interface RefactorFile {
 export type RefactoringId = FixId;
 
 export interface ApplyRefactoringInput {
-	readonly refactoringId: RefactoringId;
+	readonly refactoringId?: RefactoringId;
+	readonly refactoringIds?: readonly RefactoringId[];
 	readonly files: readonly RefactorFile[];
 	readonly preview?: boolean;
 }
@@ -143,7 +144,34 @@ const applyOne = (
 			return applyWrapEffectMapCallback(file);
 	}
 
-	return null;
+};
+
+const normalizeIds = (input: ApplyRefactoringInput): readonly RefactoringId[] => {
+	if (input.refactoringIds && input.refactoringIds.length > 0) {
+		return input.refactoringIds;
+	}
+	if (input.refactoringId) {
+		return [input.refactoringId];
+	}
+	return [];
+};
+
+const applyManyToFile = (
+	ids: readonly RefactoringId[],
+	file: RefactorFile
+): FileChange | null => {
+	const before = file.source;
+	let current = before;
+
+	for (const id of ids) {
+		const change = applyOne(id, { filename: file.filename, source: current });
+		if (change) {
+			current = change.after;
+		}
+	}
+
+	if (current === before) return null;
+	return { filename: file.filename, before, after: current };
 };
 
 export class RefactoringEngineService extends Effect.Service<
@@ -153,8 +181,9 @@ export class RefactoringEngineService extends Effect.Service<
 		const apply = (
 			input: ApplyRefactoringInput
 		): Effect.Effect<ApplyRefactoringOutput, never> => {
+			const ids = normalizeIds(input);
 			const changes = input.files
-				.map((f) => applyOne(input.refactoringId, f))
+				.map((f) => applyManyToFile(ids, f))
 				.filter((c): c is FileChange => c !== null);
 
 			return Effect.succeed({

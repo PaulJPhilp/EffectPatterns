@@ -124,7 +124,8 @@ export const RefactoringId = FixId;
 export type RefactoringId = typeof RefactoringId.Type;
 
 export const ApplyRefactoringRequest = S.Struct({
-	refactoringId: RefactoringId,
+	refactoringId: S.optional(RefactoringId),
+	refactoringIds: S.optional(S.Array(RefactoringId)),
 	files: S.Array(SourceFile),
 	preview: S.optional(S.Boolean),
 });
