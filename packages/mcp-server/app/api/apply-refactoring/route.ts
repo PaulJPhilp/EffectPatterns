@@ -25,6 +25,7 @@ const handleApplyRefactoring = Effect.fn("apply-refactoring")(function* (
 
 	const output = yield* engine.apply({
 		refactoringId: decoded.refactoringId,
+		refactoringIds: decoded.refactoringIds,
 		files: decoded.files,
 		preview: true,
 	});
