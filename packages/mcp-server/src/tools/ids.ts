@@ -10,6 +10,7 @@ export const RuleIdValues = [
 	"async-await",
 	"node-fs",
 	"missing-validation",
+	"effect-map-fn-reference",
 	"try-catch-in-effect",
 	"try-catch-boundary-ok",
 	"catch-log-and-swallow",
