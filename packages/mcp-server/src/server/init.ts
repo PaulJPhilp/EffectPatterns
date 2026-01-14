@@ -9,6 +9,7 @@
  */
 
 // biome-ignore assist/source/organizeImports: <>
+import { AnalysisServiceLive } from "@effect-patterns/analysis-core";
 import {
   DatabaseLayer,
   findEffectPatternBySlug,
@@ -18,13 +19,9 @@ import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { Cause, Effect, Exit, Layer, Option } from "effect";
-import { CodeAnalyzerService } from "../services/code-analyzer";
 import { MCPConfigService } from "../services/config";
-import { ConsistencyAnalyzerService } from "../services/consistency-analyzer";
 import { MCPLoggerService } from "../services/logger";
 import { PatternGeneratorService } from "../services/pattern-generator";
-import { RefactoringEngineService } from "../services/refactoring-engine";
-import { RuleRegistryService } from "../services/rule-registry";
 import { TracingLayerLive } from "../tracing/otlpLayer";
 
 /**
@@ -113,11 +110,8 @@ export const AppLayer = Layer.mergeAll(
   PatternsService.Default,
   TracingLayerLive,
   NodeSdkLayer,
-  CodeAnalyzerService.Default,
-  PatternGeneratorService.Default,
-  ConsistencyAnalyzerService.Default,
-  RefactoringEngineService.Default,
-  RuleRegistryService.Default
+  AnalysisServiceLive,
+  PatternGeneratorService.Default
 );
 
 /**
