@@ -619,12 +619,84 @@ The MCP server currently provides:
 
 ---
 
-## Next Steps
+## Implementation Status
 
-1. Review and approve this plan
-2. Set up development environment
-3. Begin Phase 1: Architecture definition
-4. Create tracking issues for each phase
+### Completed ✅
+
+**Phase 1: Architecture** - Complete
+- Tool interfaces defined in `src/tools/schemas.ts`
+- Pattern library schema in `src/tools/patterns.ts`
+
+**Phase 2: Context-Aware Analysis** - Complete
+- `CodeAnalyzerService` with 20 detection rules
+- AST-based analysis using TypeScript compiler API
+- Rules cover: async/await, node:fs, try/catch, Context.Tag, Promise.all, console.log, Effect.runSync, Schema validation, and more
+
+**Phase 3: Pattern Library** - Complete
+- 200+ patterns in database accessible via `PatternsService`
+- `PatternGeneratorService` supports both:
+  - Database patterns via `generateFromDatabase()` function
+  - Template patterns via `generateFromTemplate()` method
+- `buildSnippet` from toolkit generates code from database patterns
+
+**Template Scaffolding (supplemental)**
+- `src/tools/patterns.ts` includes a small set of scaffolding templates for
+  quick generation (currently 8 templates, including error handling, layers,
+  resource management, streams, and HttpClient)
+
+**Phase 4: Automated Refactoring** - Complete
+- `RefactoringEngineService` with 7 automated fixes
+- Write mode enabled: set `preview: false` to apply changes
+- Fixes include: replace-node-fs, replace-context-tag, replace-promise-all, replace-console-log, add-schema-decode
+
+**Refactoring Safety**
+- Refactorings are implemented using TypeScript AST transforms for safety
+  (call expression rewrites, import rewrites, and comment injection)
+- Remaining work: convert `add-filter-or-fail-validator` from string-append to
+  AST insertion once insertion strategy is finalized
+
+**Phase 5: Cross-File Consistency** - Complete
+- `ConsistencyAnalyzerService` detects mixed patterns across files
+
+**Phase 6: Testing** - Complete
+- 142 tests passing across analysis-core and mcp-server
+- Integration tests for API routes
+
+### API Usage
+
+**Generate from Database Pattern:**
+```typescript
+import { generateFromDatabase } from "./services/pattern-generator";
+
+const result = yield* generateFromDatabase({
+  patternId: "effect-service-pattern",
+  customName: "MyService",
+  moduleType: "esm",
+});
+```
+
+**Generate from Template:**
+```typescript
+const generator = yield* PatternGeneratorService;
+const result = yield* generator.generate({
+  patternId: "validation-filter-or-fail",
+  variables: { Name: "FilePath", paramName: "path", ... },
+});
+```
+
+**Apply Refactoring (Preview):**
+```bash
+curl -X POST /api/apply-refactoring \
+  -H "x-api-key: $API_KEY" \
+  -d '{"refactoringId": "replace-node-fs", "files": [...], "preview": true}'
+```
+
+**Apply Refactoring (Write):**
+```bash
+curl -X POST /api/apply-refactoring \
+  -H "x-api-key: $API_KEY" \
+  -d '{"refactoringId": "replace-node-fs", "files": [...], "preview": false}'
+```
 
 ---
 

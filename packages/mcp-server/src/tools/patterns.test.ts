@@ -20,6 +20,13 @@ describe("tools/patterns", () => {
 		expect(pattern.id).toBe("validation-filter-or-fail");
 	});
 
+	it("getPattern should return newly added pattern", async () => {
+		const pattern = await Effect.runPromise(
+			getPattern("error-tagged-error")
+		);
+		expect(pattern.id).toBe("error-tagged-error");
+	});
+
 	it("getPattern should fail for unknown pattern", async () => {
 		await expect(
 			Effect.runPromise(getPattern("does-not-exist"))
@@ -29,6 +36,19 @@ describe("tools/patterns", () => {
 	it("renderTemplate should replace tokens", () => {
 		const out = renderTemplate("Hello {{Name}}", { Name: "World" });
 		expect(out).toBe("Hello World");
+	});
+
+	it("renderTemplate should work for a full template", async () => {
+		const pattern = await Effect.runPromise(
+			getPattern("resource-acquire-release")
+		);
+		const out = renderTemplate(pattern.template, {
+			name: "withConn",
+			acquire: "Effect.succeed(conn)",
+			release: "Effect.succeed(undefined)",
+		});
+		expect(out).toContain("Effect.acquireRelease");
+		expect(out).toContain("withConn");
 	});
 
 	it("validateVariables should succeed when all variables present", async () => {

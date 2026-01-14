@@ -1,7 +1,7 @@
 import { Effect } from "effect";
 import ts from "typescript";
-import type { FixId, RuleId } from "../tools/ids";
 import { ASTUtils } from "../tools/ast-utils";
+import type { FixId, RuleId } from "../tools/ids";
 import { RuleRegistryService } from "./rule-registry";
 
 /**
@@ -111,11 +111,22 @@ const visitNode = (node: ts.Node, ctx: AnalysisContext, rules: Map<RuleId, any>)
 	const isBoundary = isBoundaryFile(ctx.filename);
 
 	// 1. async/await checks
-	if (ts.isAwaitExpression(node) || (ts.isFunctionLike(node) && node.modifiers?.some(m => m.kind === ts.SyntaxKind.AsyncKeyword))) {
-		// Heuristic: If it's a boundary file, async is often OK. 
+	const isAsyncFunction =
+		ts.isFunctionDeclaration(node) ||
+		ts.isFunctionExpression(node) ||
+		ts.isArrowFunction(node) ||
+		ts.isMethodDeclaration(node);
+	const hasAsyncModifier =
+		isAsyncFunction &&
+		ts.canHaveModifiers(node) &&
+		ts.getModifiers(node)?.some(
+			(m: ts.Modifier) => m.kind === ts.SyntaxKind.AsyncKeyword
+		);
+	if (ts.isAwaitExpression(node) || hasAsyncModifier) {
+		// Heuristic: If it's a boundary file, async is often OK.
 		// If it's a service or core logic, prefer Effect.
 		if (!isBoundary && looksLikeEffectCode(ctx.source)) {
-			// We only flag if we are in an Effect context to avoid flagging generic TS code
+			// We only flag if we are in an Effect context
 			createFinding(ctx, node, "async-await", rules);
 		}
 	}
@@ -149,7 +160,7 @@ const visitNode = (node: ts.Node, ctx: AnalysisContext, rules: Map<RuleId, any>)
 				}
 				return false;
 			});
-			
+
 			const hasReturn = stmts.some(s => ts.isReturnStatement(s));
 			const hasThrow = stmts.some(s => ts.isThrowStatement(s));
 			const hasEffectFail = stmts.some(s => {
@@ -193,14 +204,116 @@ const visitNode = (node: ts.Node, ctx: AnalysisContext, rules: Map<RuleId, any>)
 	// 7. yield* on pure values (heuristic)
 	if (ts.isYieldExpression(node) && node.asteriskToken) {
 		if (node.expression && ts.isCallExpression(node.expression)) {
-			// Check for known pure functions like Path.dirname
-			// This is weak without type checker, but we can match common patterns
 			const expr = node.expression.expression;
 			if (ts.isPropertyAccessExpression(expr)) {
-				// e.g. Path.dirname, path.join
-				if (expr.name.text === "dirname" || expr.name.text === "join" || expr.name.text === "basename") {
+				const methodName = expr.name.text;
+				if (
+					methodName === "dirname" ||
+					methodName === "join" ||
+					methodName === "basename"
+				) {
 					createFinding(ctx, node, "yield-star-non-effect", rules);
 				}
+			}
+		}
+	}
+
+	// 8. Context.Tag / Context.GenericTag anti-pattern
+	if (ts.isCallExpression(node)) {
+		if (
+			ASTUtils.isMethodCall(node, "Context", "Tag") ||
+			ASTUtils.isMethodCall(node, "Context", "GenericTag")
+		) {
+			createFinding(ctx, node, "context-tag-anti-pattern", rules);
+		}
+	}
+
+	// 9. Promise.all in Effect code
+	if (ts.isCallExpression(node)) {
+		if (ASTUtils.isMethodCall(node, "Promise", "all")) {
+			if (looksLikeEffectCode(ctx.source)) {
+				createFinding(ctx, node, "promise-all-in-effect", rules);
+			}
+		}
+	}
+
+	// 10. Mutable refs (let) inside Effect.gen
+	if (ts.isVariableStatement(node)) {
+		const decl = node.declarationList;
+		if (decl.flags & ts.NodeFlags.Let) {
+			if (looksLikeEffectCode(ctx.source) && isInsideEffectGen(node)) {
+				createFinding(ctx, node, "mutable-ref-in-effect", rules);
+			}
+		}
+	}
+
+	// 11. console.log/warn/error in Effect code
+	if (ts.isCallExpression(node)) {
+		const expr = node.expression;
+		if (ts.isPropertyAccessExpression(expr)) {
+			if (
+				ts.isIdentifier(expr.expression) &&
+				expr.expression.text === "console"
+			) {
+				const method = expr.name.text;
+				if (
+					method === "log" ||
+					method === "warn" ||
+					method === "error" ||
+					method === "info"
+				) {
+					if (looksLikeEffectCode(ctx.source)) {
+						createFinding(ctx, node, "console-log-in-effect", rules);
+					}
+				}
+			}
+		}
+	}
+
+	// 12. Effect.runSync usage
+	if (ts.isCallExpression(node)) {
+		if (ASTUtils.isMethodCall(node, "Effect", "runSync")) {
+			if (!isBoundary) {
+				createFinding(ctx, node, "effect-runSync-unsafe", rules);
+			}
+		}
+	}
+
+	// 13. Layer.provide inside service (anti-pattern)
+	if (ts.isCallExpression(node)) {
+		if (ASTUtils.isMethodCall(node, "Layer", "provide")) {
+			if (isInsideServiceDefinition(node, ctx.sourceFile)) {
+				createFinding(ctx, node, "layer-provide-anti-pattern", rules);
+			}
+		}
+	}
+
+	// 14. Effect.gen without yield*
+	if (ts.isCallExpression(node)) {
+		if (ASTUtils.isMethodCall(node, "Effect", "gen")) {
+			if (node.arguments.length > 0) {
+				const arg = node.arguments[0];
+				if (
+					ts.isFunctionExpression(arg) ||
+					ts.isArrowFunction(arg)
+				) {
+					const body = arg.body;
+					if (ts.isBlock(body)) {
+						const hasYieldStar = containsYieldStar(body);
+						if (!hasYieldStar) {
+							createFinding(ctx, node, "effect-gen-no-yield", rules);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 15. JSON.parse without Schema validation
+	if (ts.isCallExpression(node)) {
+		if (ASTUtils.isMethodCall(node, "JSON", "parse")) {
+			if (looksLikeEffectCode(ctx.source) && !hasSchemaImport(ctx.sourceFile)) {
+				createFinding(ctx, node, "schema-decode-unknown", rules);
 			}
 		}
 	}
@@ -208,6 +321,83 @@ const visitNode = (node: ts.Node, ctx: AnalysisContext, rules: Map<RuleId, any>)
 	ts.forEachChild(node, (child) => visitNode(child, ctx, rules));
 };
 
+// Helper: Check if node is inside Effect.gen
+const isInsideEffectGen = (node: ts.Node): boolean => {
+	let parent = node.parent;
+	while (parent) {
+		if (ts.isCallExpression(parent)) {
+			if (ASTUtils.isMethodCall(parent, "Effect", "gen")) {
+				return true;
+			}
+		}
+		parent = parent.parent;
+	}
+	return false;
+};
+
+// Helper: Check if node is inside a service definition (Effect.Service or class)
+const isInsideServiceDefinition = (
+	node: ts.Node,
+	_sourceFile: ts.SourceFile
+): boolean => {
+	let parent = node.parent;
+	while (parent) {
+		if (ts.isClassDeclaration(parent)) {
+			return true;
+		}
+		if (ts.isCallExpression(parent)) {
+			if (ASTUtils.isMethodCall(parent, "Effect", "Service")) {
+				return true;
+			}
+		}
+		parent = parent.parent;
+	}
+	return false;
+};
+
+// Helper: Check if block contains yield*
+const containsYieldStar = (block: ts.Block): boolean => {
+	let found = false;
+	const visit = (n: ts.Node) => {
+		if (found) return;
+		if (ts.isYieldExpression(n) && n.asteriskToken) {
+			found = true;
+			return;
+		}
+		ts.forEachChild(n, visit);
+	};
+	ts.forEachChild(block, visit);
+	return found;
+};
+
+// Helper: Check if file imports Schema (from @effect/schema or named from effect)
+const hasSchemaImport = (sourceFile: ts.SourceFile): boolean => {
+	let found = false;
+	ts.forEachChild(sourceFile, (node) => {
+		if (ts.isImportDeclaration(node) && node.importClause) {
+			const specifier = node.moduleSpecifier;
+			if (ts.isStringLiteral(specifier)) {
+				// Check for @effect/schema import
+				if (specifier.text === "@effect/schema") {
+					found = true;
+					return;
+				}
+				// Check for named Schema import from "effect"
+				if (specifier.text === "effect" && node.importClause.namedBindings) {
+					if (ts.isNamedImports(node.importClause.namedBindings)) {
+						for (const el of node.importClause.namedBindings.elements) {
+							if (el.name.text === "Schema") {
+								found = true;
+								return;
+							}
+						}
+					}
+				}
+			}
+		}
+	});
+	return found;
+};
 
 /**
  * Service for analyzing code and detecting potential issues.
@@ -225,8 +415,11 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 			): Effect.Effect<AnalyzeCodeOutput, never> =>
 				Effect.gen(function* () {
 					const filename = input.filename ?? "anonymous.ts";
-					const sourceFile = ASTUtils.createSourceFile(filename, input.source);
-					
+					const sourceFile = ASTUtils.createSourceFile(
+						filename,
+						input.source
+					);
+
 					const ctx: AnalysisContext = {
 						sourceFile,
 						filename,
@@ -236,7 +429,11 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 					};
 
 					// Check for non-ts
-					if (filename && !filename.endsWith(".ts") && !filename.endsWith(".tsx")) {
+					if (
+						filename &&
+						!filename.endsWith(".ts") &&
+						!filename.endsWith(".tsx")
+					) {
 						createFinding(ctx, sourceFile, "non-typescript", ruleById);
 					} else {
 						// Traverse AST
@@ -244,7 +441,7 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 					}
 
 					// Map suggestions
-					const suggestions = Array.from(ctx.suggestions).map(id => {
+					const suggestions = Array.from(ctx.suggestions).map((id) => {
 						const rule = ruleById.get(id);
 						return {
 							id,
