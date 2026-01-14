@@ -3,6 +3,7 @@ import ts from "typescript";
 import type { AnalysisConfig } from "../config/types";
 import { ASTUtils } from "../tools/ast-utils";
 import type { FixId, RuleId } from "../tools/ids";
+import type { RuleDefinition } from "./rule-registry";
 import { RuleRegistryService } from "./rule-registry";
 
 /**
@@ -71,7 +72,7 @@ const createFinding = (
 	ctx: AnalysisContext,
 	node: ts.Node,
 	ruleId: RuleId,
-	rules: Map<RuleId, any>
+	rules: Map<RuleId, RuleDefinition>
 ): void => {
 	const rule = rules.get(ruleId);
 	if (!rule) return;
@@ -132,7 +133,11 @@ const categoriesForAnalysisType = (
 	}
 };
 
-const visitNode = (node: ts.Node, ctx: AnalysisContext, rules: Map<RuleId, any>) => {
+const visitNode = (
+	node: ts.Node,
+	ctx: AnalysisContext,
+	rules: Map<RuleId, RuleDefinition>
+) => {
 	const isBoundary = isBoundaryFile(ctx.filename);
 
 	// 1. async/await checks
@@ -438,7 +443,9 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 			): Effect.Effect<AnalyzeCodeOutput, never> =>
 				Effect.gen(function* () {
 					const rulesList = yield* registry.listRules(input.config);
-					const ruleById = new Map(rulesList.map((r) => [r.id, r] as const));
+					const ruleById: Map<RuleId, RuleDefinition> = new Map(
+						rulesList.map((r) => [r.id, r] as const)
+					);
 
 					const filename = input.filename ?? "anonymous.ts";
 					const sourceFile = ASTUtils.createSourceFile(
@@ -457,7 +464,7 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 					const allowedCategories = categoriesForAnalysisType(
 						input.analysisType ?? "all"
 					);
-					const filteredRuleById = new Map(
+					const filteredRuleById: Map<RuleId, RuleDefinition> = new Map(
 						Array.from(ruleById.entries()).filter(([, rule]) =>
 							allowedCategories.includes(rule.category)
 						)

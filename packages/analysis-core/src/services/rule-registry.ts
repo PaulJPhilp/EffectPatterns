@@ -40,6 +40,13 @@ export interface FixDefinition {
 	readonly description: string;
 }
 
+export interface RuleRegistryServiceApi {
+	readonly listRules: (
+		config?: AnalysisConfig
+	) => Effect.Effect<readonly RuleDefinition[], never>;
+	readonly listFixes: () => Effect.Effect<readonly FixDefinition[], never>;
+}
+
 const Fixes: ReadonlyArray<FixDefinition> = [
 	{
 		id: "replace-node-fs",
@@ -310,7 +317,7 @@ export class RuleRegistryService extends Effect.Service<RuleRegistryService>()(
 	{
 		dependencies: [ConfigService.Default],
 		effect: Effect.gen(function* () {
-			const config = yield ConfigService;
+			const config = yield* ConfigService;
 			const listRules = (cfg?: AnalysisConfig) =>
 				Effect.succeed(config.applyConfigToRules(Rules, cfg));
 			const listFixes = () => Effect.succeed(Fixes);
@@ -318,7 +325,7 @@ export class RuleRegistryService extends Effect.Service<RuleRegistryService>()(
 			return {
 				listRules,
 				listFixes,
-			};
+			} satisfies RuleRegistryServiceApi;
 		}),
 	}
 ) { }
