@@ -21,6 +21,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@effect-patterns/analysis-core": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
     "@effect/opentelemetry": "^0.60.0",
     "@effect/platform": "^0.94.1",

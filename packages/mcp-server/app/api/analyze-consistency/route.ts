@@ -1,3 +1,4 @@
+import { AnalysisService } from "@effect-patterns/analysis-core";
 import { Effect, Schema as S } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
@@ -5,7 +6,6 @@ import {
 	validateApiKey,
 } from "../../../src/auth/apiKey";
 import { runWithRuntime } from "../../../src/server/init";
-import { ConsistencyAnalyzerService } from "../../../src/services/consistency-analyzer";
 import {
 	AnalyzeConsistencyRequest,
 	AnalyzeConsistencyResponse,
@@ -16,19 +16,19 @@ const handleAnalyzeConsistency = Effect.fn("analyze-consistency")(function* (
 	request: NextRequest
 ) {
 	const tracing = yield* TracingService;
-	const analyzer = yield* ConsistencyAnalyzerService;
+	const analysis = yield* AnalysisService;
 
 	yield* validateApiKey(request);
 
 	const body = yield* Effect.tryPromise(() => request.json());
 	const decoded = yield* S.decode(AnalyzeConsistencyRequest)(body as any);
 
-	const analysis = yield* analyzer.analyze({ files: decoded.files });
+	const issues = yield* analysis.analyzeConsistency(decoded.files);
 
 	const traceId = tracing.getTraceId() ?? "";
 
 	return {
-		issues: analysis.issues,
+		issues,
 		traceId,
 		timestamp: new Date().toISOString(),
 	} satisfies typeof AnalyzeConsistencyResponse.Type;

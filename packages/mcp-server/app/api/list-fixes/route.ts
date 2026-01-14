@@ -1,3 +1,4 @@
+import { AnalysisService } from "@effect-patterns/analysis-core";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
@@ -5,18 +6,17 @@ import {
 	validateApiKey,
 } from "../../../src/auth/apiKey";
 import { runWithRuntime } from "../../../src/server/init";
-import { RuleRegistryService } from "../../../src/services/rule-registry";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
 const handleListFixes = Effect.fn("list-fixes")(function* (
 	request: NextRequest
 ) {
 	const tracing = yield* TracingService;
-	const registry = yield* RuleRegistryService;
+	const analysis = yield* AnalysisService;
 
 	yield* validateApiKey(request);
 
-	const fixes = yield* registry.listFixes();
+	const fixes = yield* analysis.listFixes();
 	const traceId = tracing.getTraceId() ?? "";
 
 	return {

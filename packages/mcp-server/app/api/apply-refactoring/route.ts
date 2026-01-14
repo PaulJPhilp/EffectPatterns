@@ -1,3 +1,4 @@
+import { AnalysisService } from "@effect-patterns/analysis-core";
 import { Effect, Schema as S } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
@@ -5,7 +6,6 @@ import {
 	validateApiKey,
 } from "../../../src/auth/apiKey";
 import { runWithRuntime } from "../../../src/server/init";
-import { RefactoringEngineService } from "../../../src/services/refactoring-engine";
 import {
 	ApplyRefactoringRequest,
 	ApplyRefactoringResponse,
@@ -16,25 +16,30 @@ const handleApplyRefactoring = Effect.fn("apply-refactoring")(function* (
 	request: NextRequest
 ) {
 	const tracing = yield* TracingService;
-	const engine = yield* RefactoringEngineService;
+	const analysis = yield* AnalysisService;
 
 	yield* validateApiKey(request);
 
 	const body = yield* Effect.tryPromise(() => request.json());
 	const decoded = yield* S.decode(ApplyRefactoringRequest)(body as any);
 
-	const output = yield* engine.apply({
-		refactoringId: decoded.refactoringId,
-		refactoringIds: decoded.refactoringIds,
-		files: decoded.files,
-		preview: true,
-	});
+	const refactoringIds =
+		decoded.refactoringIds && decoded.refactoringIds.length > 0
+			? decoded.refactoringIds
+			: decoded.refactoringId
+				? [decoded.refactoringId]
+				: [];
+
+	const changes = yield* analysis.applyRefactorings(
+		refactoringIds,
+		decoded.files
+	);
 
 	const traceId = tracing.getTraceId() ?? "";
 
 	return {
-		applied: output.applied,
-		changes: output.changes,
+		applied: false,
+		changes,
 		traceId,
 		timestamp: new Date().toISOString(),
 	} satisfies typeof ApplyRefactoringResponse.Type;
