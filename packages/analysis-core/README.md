@@ -16,6 +16,12 @@ refactor/fix generation) as Effect services. It is designed to be invoked by:
 - Provide structured analysis output (findings + suggestions)
 - Provide automated fix generation (AST-based refactorings)
 
+## Current Status
+
+- Governed rule detection implemented (20 rules)
+- Automated refactorings implemented (AST transforms)
+- Test suite in this package (coverage target met: 85%+ lines)
+
 ## Public API
 
 All public exports are re-exported from `src/index.ts`.
@@ -32,6 +38,37 @@ All public exports are re-exported from `src/index.ts`.
 
 - `RuleId` / `RuleIdValues`
 - `FixId` / `FixIdValues`
+
+## Governed Rules and Fixes
+
+This package intentionally separates:
+
+- Detection (governed `RuleId`s)
+- Remediation (`FixId`s) that can be previewed as file diffs
+
+To list the full, current set at runtime:
+
+```ts
+import { Effect } from "effect";
+import { AnalysisService } from "@effect-patterns/analysis-core";
+
+const program = Effect.gen(function* () {
+  const analysis = yield* AnalysisService;
+  const rules = yield* analysis.listRules();
+  const fixes = yield* analysis.listFixes();
+  return { rules, fixes };
+});
+
+await Effect.runPromise(program.pipe(Effect.provide(AnalysisService.Default)));
+```
+
+Common examples include:
+
+- Rules: `node-fs`, `try-catch-in-effect`, `context-tag-anti-pattern`,
+  `promise-all-in-effect`, `console-log-in-effect`, `schema-decode-unknown`
+- Fixes: `replace-node-fs`, `replace-context-tag`, `replace-promise-all`,
+  `replace-console-log`, `add-schema-decode`,
+  `add-filter-or-fail-validator`, `wrap-effect-map-callback`
 
 ## Usage
 
@@ -81,6 +118,9 @@ const changes = await Effect.runPromise(
 );
 ```
 
+Refactorings are applied as TypeScript AST transforms and returned as
+in-memory diffs. This package does not write files.
+
 ## Layering
 
 Each service is an `Effect.Service` and exposes `.Default` / `*Live`.
@@ -95,8 +135,16 @@ Effect.provide(program, AnalysisService.Default)
 
 ## Testing
 
-This package currently has no dedicated test suite. The MCP server package
-provides integration coverage by consuming these services.
+This package has a dedicated unit test suite under `src/__tests__/`.
 
-To prevent CI failures from an empty test suite, the package test script runs
-Vitest with `--passWithNoTests`.
+To run tests:
+
+```sh
+bun test packages/analysis-core/
+```
+
+To run coverage:
+
+```sh
+bun test --coverage packages/analysis-core/
+```

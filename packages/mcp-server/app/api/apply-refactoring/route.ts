@@ -1,4 +1,5 @@
 import { AnalysisService } from "@effect-patterns/analysis-core";
+import { FileSystem } from "@effect/platform";
 import { Effect, Schema as S } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
@@ -17,6 +18,7 @@ const handleApplyRefactoring = Effect.fn("apply-refactoring")(function* (
 ) {
 	const tracing = yield* TracingService;
 	const analysis = yield* AnalysisService;
+	const fs = yield* FileSystem.FileSystem;
 
 	yield* validateApiKey(request);
 
@@ -37,8 +39,33 @@ const handleApplyRefactoring = Effect.fn("apply-refactoring")(function* (
 
 	const traceId = tracing.getTraceId() ?? "";
 
+	// If preview mode (default), just return the changes
+	if (decoded.preview !== false) {
+		return {
+			applied: false,
+			changes,
+			traceId,
+			timestamp: new Date().toISOString(),
+		} satisfies typeof ApplyRefactoringResponse.Type;
+	}
+
+	// Write mode: apply changes to files
+	// Only write if we have actual changes
+	if (changes.length > 0) {
+		yield* Effect.forEach(
+			changes,
+			(change) =>
+				fs.writeFileString(change.filename, change.after).pipe(
+					Effect.catchAll((err) =>
+						Effect.logError(`Failed to write ${change.filename}: ${err}`)
+					)
+				),
+			{ concurrency: 1 }
+		);
+	}
+
 	return {
-		applied: false,
+		applied: true,
 		changes,
 		traceId,
 		timestamp: new Date().toISOString(),

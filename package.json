@@ -116,7 +116,7 @@
     "ora": "^9.0.0",
     "postgres": "^3.4.8",
     "semver": "^7.7.3",
-    "vercel": "^50.3.1",
+    "vercel": "^50.3.2",
     "yaml": "^2.8.2"
   },
   "devDependencies": {
@@ -135,7 +135,7 @@
     "@types/semver": "^7.7.1",
     "@typescript-eslint/eslint-plugin": "^8.53.0",
     "@typescript-eslint/parser": "^8.53.0",
-    "@vercel/node": "^5.5.18",
+    "@vercel/node": "^5.5.19",
     "@vitest/coverage-v8": "^3.2.4",
     "ai": "^5.0.121",
     "drizzle-kit": "^0.31.8",

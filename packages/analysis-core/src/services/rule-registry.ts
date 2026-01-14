@@ -53,7 +53,35 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		id: "wrap-effect-map-callback",
 		title: "Wrap Effect.map callback",
 		description:
-			"Rewrites Effect.map(myFn) to Effect.map((x) => myFn(x)) for clarity and consistency.",
+			"Rewrites Effect.map(myFn) to Effect.map((x) => myFn(x)) " +
+			"for clarity and consistency.",
+	},
+	{
+		id: "replace-context-tag",
+		title: "Replace Context.Tag with Effect.Service",
+		description:
+			"Converts Context.Tag/Context.GenericTag to the modern " +
+			"Effect.Service pattern.",
+	},
+	{
+		id: "replace-promise-all",
+		title: "Replace Promise.all with Effect.all",
+		description:
+			"Converts Promise.all([...]) to Effect.all([...]) for proper " +
+			"Effect composition.",
+	},
+	{
+		id: "replace-console-log",
+		title: "Replace console.log with Effect logging",
+		description:
+			"Converts console.log/warn/error to Effect.log/logWarning/logError.",
+	},
+	{
+		id: "add-schema-decode",
+		title: "Add Schema.decodeUnknown validation",
+		description:
+			"Wraps external data parsing with Schema.decodeUnknown for " +
+			"type-safe validation.",
 	},
 ];
 
@@ -170,6 +198,105 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 		severity: "medium",
 		category: "style",
 		fixIds: [],
+	},
+	{
+		id: "context-tag-anti-pattern",
+		title: "Use Effect.Service instead of Context.Tag",
+		message:
+			"Context.Tag and Context.GenericTag are deprecated patterns. " +
+			"Use Effect.Service for service definitions to get automatic " +
+			"layer creation and better type inference.",
+		severity: "high",
+		category: "dependency-injection",
+		fixIds: ["replace-context-tag"],
+	},
+	{
+		id: "promise-all-in-effect",
+		title: "Use Effect.all instead of Promise.all",
+		message:
+			"Promise.all bypasses Effect's error channel and concurrency " +
+			"controls. Use Effect.all with { concurrency: 'unbounded' } " +
+			"for parallel execution within Effect.",
+		severity: "high",
+		category: "async",
+		fixIds: ["replace-promise-all"],
+	},
+	{
+		id: "mutable-ref-in-effect",
+		title: "Avoid mutable refs in Effect code",
+		message:
+			"Mutable variables (let) inside Effect.gen can cause subtle bugs. " +
+			"Use Effect.Ref for managed mutable state or restructure to use " +
+			"immutable patterns.",
+		severity: "medium",
+		category: "style",
+		fixIds: [],
+	},
+	{
+		id: "console-log-in-effect",
+		title: "Use Effect logging instead of console",
+		message:
+			"console.log/warn/error bypass Effect's logging infrastructure. " +
+			"Use Effect.log, Effect.logWarning, or Effect.logError for " +
+			"structured, composable logging.",
+		severity: "medium",
+		category: "style",
+		fixIds: ["replace-console-log"],
+	},
+	{
+		id: "effect-runSync-unsafe",
+		title: "Avoid Effect.runSync in production code",
+		message:
+			"Effect.runSync throws on async operations and bypasses proper " +
+			"resource management. Use Effect.runPromise or provide effects " +
+			"to a managed runtime instead.",
+		severity: "high",
+		category: "async",
+		fixIds: [],
+	},
+	{
+		id: "missing-error-channel",
+		title: "Effect may fail but error type is never",
+		message:
+			"This Effect can fail at runtime but declares never as its error " +
+			"type. Add proper error handling with Effect.catchAll or declare " +
+			"the error type explicitly.",
+		severity: "high",
+		category: "errors",
+		fixIds: [],
+	},
+	{
+		id: "layer-provide-anti-pattern",
+		title: "Provide layers at composition root",
+		message:
+			"Calling Layer.provide inside service implementations couples " +
+			"services tightly. Provide layers at the application composition " +
+			"root for better testability.",
+		severity: "medium",
+		category: "dependency-injection",
+		fixIds: [],
+	},
+	{
+		id: "effect-gen-no-yield",
+		title: "Effect.gen without yield* is wasteful",
+		message:
+			"Effect.gen(function* () { return value }) can be simplified to " +
+			"Effect.succeed(value). Use Effect.gen only when you need to " +
+			"yield* other effects.",
+		severity: "low",
+		category: "style",
+		fixIds: [],
+	},
+	{
+		id: "schema-decode-unknown",
+		title: "Use Schema.decodeUnknown for external data",
+		message:
+			"Parsing external data (JSON.parse, request.json()) without " +
+			"validation is unsafe. Use Schema.decodeUnknown to validate " +
+			"and type external inputs.",
+		severity: "high",
+		category: "validation",
+		fixIds: ["add-schema-decode"],
 	},
 ];
 

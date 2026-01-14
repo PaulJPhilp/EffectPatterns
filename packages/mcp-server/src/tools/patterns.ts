@@ -62,6 +62,94 @@ const PatternLibrary: Record<string, PatternDefinition> = {
 		imports: ["import { Effect } from \"effect\";"],
 		variables: ["ServiceName", "methodName", "params", "defaultReturn"],
 	},
+	"error-tagged-error": {
+		id: "error-tagged-error",
+		name: "Data.TaggedError Skeleton",
+		category: "error-handling",
+		description: "Create a Data.TaggedError for typed failures",
+		template:
+			"import { Data } from \"effect\";\n\n" +
+			"export class {{ErrorName}} extends Data.TaggedError(\"{{Tag}}\")<" +
+			"{\n" +
+			"  readonly {{fieldName}}: {{fieldType}};\n" +
+			"}> {}\n",
+		imports: ["import { Data } from \"effect\";"],
+		variables: ["ErrorName", "Tag", "fieldName", "fieldType"],
+	},
+	"effect-try-promise": {
+		id: "effect-try-promise",
+		name: "Effect.tryPromise Skeleton",
+		category: "error-handling",
+		description: "Wrap a Promise-returning call in Effect.tryPromise",
+		template:
+			"export const {{name}} = ({{params}}): Effect.Effect<{{A}}, {{E}}> =>\n" +
+			"  Effect.tryPromise({\n" +
+			"    try: () => {{promiseExpr}},\n" +
+			"    catch: (cause) => new {{ErrorName}}({ {{fieldName}}: String(cause) }),\n" +
+			"  });\n",
+		imports: ["import { Effect } from \"effect\";"],
+		variables: [
+			"name",
+			"params",
+			"A",
+			"E",
+			"promiseExpr",
+			"ErrorName",
+			"fieldName",
+		],
+	},
+	"layer-from-effect-service": {
+		id: "layer-from-effect-service",
+		name: "Layer.succeed for Service",
+		category: "composition",
+		description: "Create a Layer from an Effect.Service instance",
+		template:
+			"export const {{LayerName}} = Layer.succeed({{ServiceName}}, " +
+			"{{ServiceName}}.Default);\n",
+		imports: ["import { Layer } from \"effect\";"],
+		variables: ["LayerName", "ServiceName"],
+	},
+	"resource-acquire-release": {
+		id: "resource-acquire-release",
+		name: "Effect.acquireRelease Skeleton",
+		category: "composition",
+		description: "Acquire and release a resource safely",
+		template:
+			"export const {{name}} = Effect.acquireRelease(\n" +
+			"  {{acquire}},\n" +
+			"  (resource) => {{release}}\n" +
+			");\n",
+		imports: ["import { Effect } from \"effect\";"],
+		variables: ["name", "acquire", "release"],
+	},
+	"stream-from-effect": {
+		id: "stream-from-effect",
+		name: "Stream.fromEffect Skeleton",
+		category: "composition",
+		description: "Lift an Effect into a Stream",
+		template:
+			"export const {{name}} = Stream.fromEffect({{effectExpr}});\n",
+		imports: ["import { Stream } from \"effect\";"],
+		variables: ["name", "effectExpr"],
+	},
+	"http-client-request": {
+		id: "http-client-request",
+		name: "HttpClient.request Skeleton",
+		category: "composition",
+		description: "Make an HTTP request with @effect/platform HttpClient",
+		template:
+			"export const {{name}} = Effect.gen(function* () {\n" +
+			"  const client = yield* HttpClient.HttpClient;\n" +
+			"  const request = HttpClientRequest.{{method}}(\"{{url}}\");\n" +
+			"  const response = yield* client.execute(request);\n" +
+			"  return response;\n" +
+			"});\n",
+		imports: [
+			"import { HttpClient, HttpClientRequest } from \"@effect/platform\";",
+			"import { Effect } from \"effect\";",
+		],
+		variables: ["name", "method", "url"],
+	},
 };
 
 export const listPatterns = (): readonly PatternDefinition[] =>
