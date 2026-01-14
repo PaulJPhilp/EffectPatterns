@@ -16,7 +16,7 @@ The Effect Patterns project supports Google Gemini for various AI-powered featur
 2. **Inject Rules into GEMINI.md**
    ```bash
    # Add Effect patterns to this file for Gemini's context
-   bun run ep-admin install add --tool gemini
+   ./ep-admin install add --tool gemini
    ```
 
 3. **Use with CLI Commands**
@@ -51,21 +51,21 @@ Create and analyze Effect-TS patterns using Gemini's reasoning capabilities.
 Automatically fix TypeScript errors in patterns before publishing.
 ```bash
 # Call Gemini to generate fixes for prepublish errors
-bun run ep-admin autofix prepublish --ai-call --provider google
+./ep-admin autofix prepublish --ai-call --provider google
 ```
 
 ### 3. Gemini Skills Generation
 Generate structured "Skills" that enhance Gemini's understanding of specific Effect-TS categories.
 ```bash
 # Generate Gemini skills for all categories
-bun run ep-admin install skills --format gemini
+./ep-admin install skills --format gemini
 ```
 *Skills are generated in `content/published/skills/gemini/` as `skill.json` and `system-prompt.txt`.*
 
 ### 4. Rule Injection
 Inject curated Effect-TS rules directly into your environment or project-level `GEMINI.md`.
 ```bash
-bun run ep-admin install add --tool gemini --skill-level beginner
+./ep-admin install add --tool gemini --skill-level beginner
 ```
 
 ## Configuration
@@ -81,16 +81,16 @@ GOOGLE_REGION=us-central1
 
 | Command | Description |
 |---------|-------------|
-| `ep-admin install add --tool gemini` | Inject patterns into GEMINI.md |
-| `ep-admin install skills --format gemini` | Generate Gemini-compatible skills |
-| `ep-admin autofix prepublish --ai-call` | Fix errors using Gemini |
-| `ep-admin generate --provider google` | Generate new patterns |
-| `ep-admin qa process --ai-provider google` | Run QA suite with Gemini |
+| `./ep-admin install add --tool gemini` | Inject patterns into GEMINI.md |
+| `./ep-admin install skills --format gemini` | Generate Gemini-compatible skills |
+| `./ep-admin autofix prepublish --ai-call` | Fix errors using Gemini |
+| `./ep-admin generate --provider google` | Generate new patterns |
+| `./ep-admin qa process --ai-provider google` | Run QA suite with Gemini |
 
 ## Best Practices
 
 1. **Use Gemini 2.5 Flash**: It provides the best performance/cost ratio for agentic workflows in 2026.
-2. **Inject Rules**: Always run `ep-admin install add --tool gemini` in your project to give Gemini the latest context.
+2. **Inject Rules**: Always run `./ep-admin install add --tool gemini` in your project to give Gemini the latest context.
 3. **Review AI Fixes**: When using `autofix`, always review the generated changes before committing.
 4. **Skills for Context**: Use the generated `system-prompt.txt` from skills to prime Gemini for specific tasks (e.g., error management).
 
@@ -98,7 +98,7 @@ GOOGLE_REGION=us-central1
 
 1. **API Key Issues**: Verify your `GOOGLE_API_KEY` in your `.env` or environment.
 2. **Model Availability**: If `gemini-2.5-flash` is unavailable, fall back to `gemini-2.0-flash`.
-3. **Rate Limiting**: Free tier is limited to 60 RPM. Use `ep-admin`'s built-in batching where available.
+3. **Rate Limiting**: Free tier is limited to 60 RPM. Use `./ep-admin`'s built-in batching where available.
 
 ---
 

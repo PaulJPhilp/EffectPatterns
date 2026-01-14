@@ -24,7 +24,7 @@ The Effect Patterns project uses AI agents for various tasks including content g
 **Status**: Archived - functionality integrated into CLI tools
 
 ### 2. MCP (Model Context Protocol) Server
-**Location**: `app/mcp/mcp-server/`
+**Location**: `packages/mcp-server/`
 
 **Purpose**: Provides Effect Patterns to Claude Code via MCP protocol.
 
@@ -45,7 +45,7 @@ The Effect Patterns project uses AI agents for various tasks including content g
 - Effect-TS for service composition
 
 ### 3. MCP Server STDIO
-**Location**: `app/mcp/mcp-server-stdio/`
+**Location**: `packages/mcp-server-stdio/`
 
 **Purpose**: STDIO-based MCP server for local development.
 
@@ -176,7 +176,7 @@ bun run test:e2e
 
 ### MCP Server Tests
 ```bash
-cd app/mcp/mcp-server
+cd packages/mcp-server
 bun run smoke-test
 ```
 
@@ -199,14 +199,14 @@ bun run --filter @effect-patterns/pipeline-state build
 bun run --filter @effect-patterns/ep-shared-services build
 
 # Run MCP server locally
-cd app/mcp/mcp-server
+cd packages/mcp-server
 bun run dev
 
 # Test MCP connection
 bun run smoke-test
 
 # Run STDIO server locally
-cd app/mcp/mcp-server-stdio
+cd packages/mcp-server-stdio
 bun run dev
 ```
 
