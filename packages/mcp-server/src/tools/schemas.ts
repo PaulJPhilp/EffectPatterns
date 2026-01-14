@@ -18,13 +18,62 @@ export const AnalysisType = S.Literal(
 
 export type AnalysisType = typeof AnalysisType.Type;
 
+export const RuleSeverity = S.Literal("low", "medium", "high");
+
+export type RuleSeverity = typeof RuleSeverity.Type;
+
+export const RuleCategory = S.Literal(
+	"async",
+	"errors",
+	"validation",
+	"resources",
+	"dependency-injection",
+	"style"
+);
+
+export type RuleCategory = typeof RuleCategory.Type;
+
+export const RuleLevel = S.Literal("off", "warn", "error");
+
+export type RuleLevel = typeof RuleLevel.Type;
+
+export const RuleOverrides = S.Struct({
+	severity: S.optional(RuleSeverity),
+	options: S.optional(S.Record({ key: S.String, value: S.Unknown })),
+});
+
+export type RuleOverrides = typeof RuleOverrides.Type;
+
+export const RuleConfig = S.Union(
+	RuleLevel,
+	S.Tuple(S.Literal("warn", "error"), RuleOverrides)
+);
+
+export type RuleConfig = typeof RuleConfig.Type;
+
+export const AnalysisConfig = S.Struct({
+	rules: S.optional(S.Record({ key: S.String, value: RuleConfig })),
+	extends: S.optional(S.Array(S.String)),
+	ignore: S.optional(S.Array(S.String)),
+	include: S.optional(S.Array(S.String)),
+});
+
+export type AnalysisConfig = typeof AnalysisConfig.Type;
+
 export const AnalyzeCodeRequest = S.Struct({
 	source: S.String,
 	filename: S.optional(S.String),
 	analysisType: S.optional(AnalysisType),
+	config: S.optional(AnalysisConfig),
 });
 
 export type AnalyzeCodeRequest = typeof AnalyzeCodeRequest.Type;
+
+export const ListRulesRequest = S.Struct({
+	config: S.optional(AnalysisConfig),
+});
+
+export type ListRulesRequest = typeof ListRulesRequest.Type;
 
 export const GeneratePatternRequest = S.Struct({
 	patternId: S.String,
@@ -148,21 +197,6 @@ export const ApplyRefactoringResponse = S.Struct({
 });
 
 export type ApplyRefactoringResponse = typeof ApplyRefactoringResponse.Type;
-
-export const RuleSeverity = S.Literal("low", "medium", "high");
-
-export type RuleSeverity = typeof RuleSeverity.Type;
-
-export const RuleCategory = S.Literal(
-	"async",
-	"errors",
-	"validation",
-	"resources",
-	"dependency-injection",
-	"style"
-);
-
-export type RuleCategory = typeof RuleCategory.Type;
 
 export const RuleDefinition = S.Struct({
 	id: RuleId,

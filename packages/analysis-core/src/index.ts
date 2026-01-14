@@ -7,6 +7,8 @@
 
 export * from "./tools/ids";
 
+export * from "./config";
+
 export * from "./services/analysis-service";
 export * from "./services/code-analyzer";
 export * from "./services/consistency-analyzer";

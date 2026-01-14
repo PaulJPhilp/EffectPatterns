@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    setupFiles: ["src/test/setup-env.ts"],
     // Only run unit tests in src/ directory (exclude integration tests)
     include: ["src/**/*.test.ts"],
     exclude: [

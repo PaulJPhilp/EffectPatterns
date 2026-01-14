@@ -2,6 +2,10 @@
 
 The Effect Patterns MCP server provides AI-powered development assistance for Effect-TS projects through Claude Code integration. This document outlines the primary use cases and scenarios where the MCP server adds value.
 
+For request / response schemas and canonical examples, see:
+
+- `docs/mcp-server-api-reference.md`
+
 ## Primary Use Cases
 
 ### 1. Pattern Discovery & Learning
@@ -59,6 +63,34 @@ POST /api/analyze-code
 }
 ```
 
+**Use Case**: Run category-scoped analysis (fast feedback).
+
+```bash
+POST /api/analyze-code
+{
+  "filename": "src/foo.ts",
+  "source": "import { Effect } from \"effect\";\nconst foo = async () => Effect.succeed(1);\n",
+  "analysisType": "patterns"
+}
+```
+
+**Use Case**: Per-project / per-team rule config (disable noisy rules, override severity).
+
+```bash
+POST /api/analyze-code
+{
+  "filename": "src/foo.ts",
+  "source": "import { Effect } from \"effect\";\nconst foo = async () => Effect.succeed(1);\n",
+  "analysisType": "all",
+  "config": {
+    "rules": {
+      "async-await": "off",
+      "try-catch-in-effect": ["warn", { "severity": "low" }]
+    }
+  }
+}
+```
+
 **Value**:
 - Identifies anti-patterns and common mistakes
 - Suggests improvements for better Effect-TS usage
@@ -107,6 +139,21 @@ POST /api/apply-refactoring
 }
 ```
 
+**Use Case**: Batch multiple refactorings in a single request.
+
+```bash
+POST /api/apply-refactoring
+{
+  "refactoringIds": [
+    "replace-node-fs",
+    "replace-console-log",
+    "replace-promise-all"
+  ],
+  "files": [{"filename": "old.ts", "source": "..."}],
+  "preview": true
+}
+```
+
 **Value**:
 - Safe refactoring with preview mode
 - Applies proven transformation patterns
@@ -145,6 +192,28 @@ GET /api/env-check # with auth
 - Monitoring and alerting integration
 - Deployment verification
 - Troubleshooting support
+
+### 8. Rule Governance & Configuration
+
+**Scenario**: A team wants their analysis rules to reflect local conventions.
+
+**Use Case**: List governed rules and apply an optional config to preview what would be enabled.
+
+```bash
+POST /api/list-rules
+{
+  "config": {
+    "rules": {
+      "async-await": "off"
+    }
+  }
+}
+```
+
+**Value**:
+- Enables incremental adoption (turn rules on/off as teams mature)
+- Makes severity tuning explicit (warn vs error, low vs high)
+- Supports consistent enforcement in CI and local tooling
 
 ## Target Users
 

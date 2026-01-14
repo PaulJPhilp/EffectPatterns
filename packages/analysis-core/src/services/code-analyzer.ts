@@ -104,11 +104,9 @@ const isBoundaryFile = (filename: string): boolean => {
 	return filename.includes("app/api/") && filename.endsWith("route.ts");
 };
 
-// Check if file looks like it uses Effect (imports or usage)
-const looksLikeEffectCode = (source: string): boolean =>
-	/\bEffect\.gen\b/.test(source) ||
-	/\byield\*\b/.test(source) ||
-	/from\s+"effect"/.test(source);
+// Use AST-based detection from ASTUtils
+const looksLikeEffectCode = (sourceFile: ts.SourceFile): boolean =>
+	ASTUtils.looksLikeEffectCode(sourceFile);
 
 const categoriesForAnalysisType = (
 	analysisType: AnalyzeCodeInput["analysisType"]
@@ -155,7 +153,7 @@ const visitNode = (
 	if (ts.isAwaitExpression(node) || hasAsyncModifier) {
 		// Heuristic: If it's a boundary file, async is often OK.
 		// If it's a service or core logic, prefer Effect.
-		if (!isBoundary && looksLikeEffectCode(ctx.source)) {
+		if (!isBoundary && looksLikeEffectCode(ctx.sourceFile)) {
 			// We only flag if we are in an Effect context
 			createFinding(ctx, node, "async-await", rules);
 		}
@@ -174,7 +172,7 @@ const visitNode = (
 	if (ts.isTryStatement(node)) {
 		if (isBoundary) {
 			createFinding(ctx, node, "try-catch-boundary-ok", rules);
-		} else if (looksLikeEffectCode(ctx.source)) {
+		} else if (looksLikeEffectCode(ctx.sourceFile)) {
 			createFinding(ctx, node, "try-catch-in-effect", rules);
 		}
 
@@ -204,7 +202,7 @@ const visitNode = (
 				return false;
 			});
 
-			if (hasLog && hasReturn && !hasThrow && !hasEffectFail && looksLikeEffectCode(ctx.source)) {
+			if (hasLog && hasReturn && !hasThrow && !hasEffectFail && looksLikeEffectCode(ctx.sourceFile)) {
 				createFinding(ctx, node, "catch-log-and-swallow", rules);
 			}
 		}
@@ -212,7 +210,7 @@ const visitNode = (
 
 	// 4. throw
 	if (ts.isThrowStatement(node)) {
-		if (looksLikeEffectCode(ctx.source)) {
+		if (looksLikeEffectCode(ctx.sourceFile)) {
 			createFinding(ctx, node, "throw-in-effect-code", rules);
 		}
 	}
@@ -261,7 +259,7 @@ const visitNode = (
 	// 9. Promise.all in Effect code
 	if (ts.isCallExpression(node)) {
 		if (ASTUtils.isMethodCall(node, "Promise", "all")) {
-			if (looksLikeEffectCode(ctx.source)) {
+			if (looksLikeEffectCode(ctx.sourceFile)) {
 				createFinding(ctx, node, "promise-all-in-effect", rules);
 			}
 		}
@@ -271,7 +269,7 @@ const visitNode = (
 	if (ts.isVariableStatement(node)) {
 		const decl = node.declarationList;
 		if (decl.flags & ts.NodeFlags.Let) {
-			if (looksLikeEffectCode(ctx.source) && isInsideEffectGen(node)) {
+			if (looksLikeEffectCode(ctx.sourceFile) && isInsideEffectGen(node)) {
 				createFinding(ctx, node, "mutable-ref-in-effect", rules);
 			}
 		}
@@ -292,7 +290,7 @@ const visitNode = (
 					method === "error" ||
 					method === "info"
 				) {
-					if (looksLikeEffectCode(ctx.source)) {
+					if (looksLikeEffectCode(ctx.sourceFile)) {
 						createFinding(ctx, node, "console-log-in-effect", rules);
 					}
 				}
@@ -342,7 +340,7 @@ const visitNode = (
 	// 15. JSON.parse without Schema validation
 	if (ts.isCallExpression(node)) {
 		if (ASTUtils.isMethodCall(node, "JSON", "parse")) {
-			if (looksLikeEffectCode(ctx.source) && !hasSchemaImport(ctx.sourceFile)) {
+			if (looksLikeEffectCode(ctx.sourceFile) && !hasSchemaImport(ctx.sourceFile)) {
 				createFinding(ctx, node, "schema-decode-unknown", rules);
 			}
 		}

@@ -8,11 +8,12 @@ export interface RuleOverrides {
 	readonly options?: Record<string, unknown>;
 }
 
-export type RuleConfig = RuleLevel | [Exclude<RuleLevel, "off">, RuleOverrides];
+export type RuleConfig =
+	| RuleLevel
+	| readonly [Exclude<RuleLevel, "off">, RuleOverrides];
 
 export interface AnalysisConfig {
 	readonly rules?: Partial<Record<RuleId, RuleConfig>>;
-	readonly extends?: readonly string[];
 	readonly ignore?: readonly string[];
 	readonly include?: readonly string[];
 }

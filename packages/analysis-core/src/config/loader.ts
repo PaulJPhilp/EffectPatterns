@@ -26,17 +26,6 @@ export const parseConfigJson = (
 			const obj = raw as Record<string, unknown>;
 			let config: AnalysisConfig = {};
 
-			if (obj.extends !== undefined) {
-				if (!Array.isArray(obj.extends) || obj.extends.some((x) => typeof x !== "string")) {
-					return Effect.fail(
-						new ConfigParseError({
-							message: "analysis config: extends must be an array of strings",
-						})
-					);
-				}
-				config = { ...config, extends: obj.extends as string[] };
-			}
-
 			if (obj.ignore !== undefined) {
 				if (!Array.isArray(obj.ignore) || obj.ignore.some((x) => typeof x !== "string")) {
 					return Effect.fail(

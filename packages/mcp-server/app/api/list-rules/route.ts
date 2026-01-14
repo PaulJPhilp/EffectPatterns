@@ -1,11 +1,12 @@
 import { AnalysisService } from "@effect-patterns/analysis-core";
-import { Effect } from "effect";
+import { Effect, Schema as S } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
 	isAuthenticationError,
 	validateApiKey,
 } from "../../../src/auth/apiKey";
 import { runWithRuntime } from "../../../src/server/init";
+import { ListRulesRequest } from "../../../src/tools/schemas";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
 const handleListRules = Effect.fn("list-rules")(function* (
@@ -16,7 +17,12 @@ const handleListRules = Effect.fn("list-rules")(function* (
 
 	yield* validateApiKey(request);
 
-	const rules = yield* analysis.listRules();
+	const body = yield* Effect.tryPromise(() => request.json()).pipe(
+		Effect.catchAll(() => Effect.succeed({}))
+	);
+	const decoded = yield* S.decode(ListRulesRequest)(body as any);
+
+	const rules = yield* analysis.listRules(decoded.config);
 	const traceId = tracing.getTraceId() ?? "";
 
 	return {

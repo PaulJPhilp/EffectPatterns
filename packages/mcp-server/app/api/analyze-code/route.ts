@@ -25,7 +25,11 @@ const handleAnalyzeCode = Effect.fn("analyze-code")(function* (
 
 	const result = yield* analysis.analyzeFile(
 		decoded.filename ?? "unknown.ts",
-		decoded.source
+		decoded.source,
+		{
+			analysisType: decoded.analysisType,
+			config: decoded.config,
+		}
 	);
 
 	const traceId = tracing.getTraceId() ?? "";

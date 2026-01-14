@@ -1,24 +1,24 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 import { parseConfigJson } from "../config/loader";
-import { resolveConfig, applyConfigToRules } from "../config/service";
+import { applyConfigToRules, resolveConfig } from "../config/service";
 import type { RuleDefinition } from "../services/rule-registry";
 
 const mockRules: RuleDefinition[] = [
 	{
-		id: "rule-1" as any,
-		title: "Rule 1",
-		message: "Message 1",
+		id: "async-await",
+		title: "Async/Await Usage",
+		message: "Use Effect instead of async/await",
 		severity: "medium",
-		category: "style",
+		category: "async",
 		fixIds: [],
 	},
 	{
-		id: "rule-2" as any,
-		title: "Rule 2",
-		message: "Message 2",
+		id: "node-fs",
+		title: "Node.js File System",
+		message: "Use @effect/platform FileSystem instead",
 		severity: "high",
-		category: "errors",
+		category: "resources",
 		fixIds: [],
 	},
 ];
@@ -27,18 +27,17 @@ describe("Config Module", () => {
 	describe("loader", () => {
 		it("parses valid config JSON", async () => {
 			const json = JSON.stringify({
-				extends: ["base"],
 				ignore: ["**/test.ts"],
 				include: ["src/**/*.ts"],
 				rules: {
-					"rule-1": "error",
-					"rule-2": ["warn", { severity: "low" }],
+					"async-await": "error",
+					"node-fs": ["warn", { severity: "low" }],
 				},
 			});
 
 			const result = await Effect.runPromise(parseConfigJson(json));
-			expect(result.extends).toEqual(["base"]);
-			expect(result.rules?.["rule-1"]).toBe("error");
+			expect(result.ignore).toEqual(["**/test.ts"]);
+			expect(result.rules?.["async-await"]).toBe("error");
 		});
 
 		it("fails on invalid JSON", async () => {
@@ -53,8 +52,8 @@ describe("Config Module", () => {
 			expect(result._tag).toBe("Failure");
 		});
 
-		it("fails if extends is not a string array", async () => {
-			const json = JSON.stringify({ extends: [1] });
+		it("fails if ignore is not a string array", async () => {
+			const json = JSON.stringify({ ignore: [1] });
 			const result = await Effect.runPromiseExit(parseConfigJson(json));
 			expect(result._tag).toBe("Failure");
 		});
@@ -66,7 +65,7 @@ describe("Config Module", () => {
 		});
 
 		it("fails if rule config is invalid", async () => {
-			const json = JSON.stringify({ rules: { "rule-1": 123 } });
+			const json = JSON.stringify({ rules: { "async-await": 123 } });
 			const result = await Effect.runPromiseExit(parseConfigJson(json));
 			expect(result._tag).toBe("Failure");
 		});
@@ -75,47 +74,47 @@ describe("Config Module", () => {
 	describe("service", () => {
 		it("resolves default config when no config provided", () => {
 			const resolved = resolveConfig(mockRules);
-			expect(resolved.rules["rule-1" as any].enabled).toBe(true);
-			expect(resolved.rules["rule-1" as any].severity).toBe("medium");
+			expect(resolved.rules["async-await"].enabled).toBe(true);
+			expect(resolved.rules["async-await"].severity).toBe("medium");
 		});
 
 		it("resolves rule with 'off' level", () => {
 			const resolved = resolveConfig(mockRules, {
-				rules: { "rule-1": "off" } as any,
+				rules: { "async-await": "off" },
 			});
-			expect(resolved.rules["rule-1" as any].enabled).toBe(false);
+			expect(resolved.rules["async-await"].enabled).toBe(false);
 		});
 
 		it("resolves rule with 'warn' level", () => {
 			const resolved = resolveConfig(mockRules, {
-				rules: { "rule-1": "warn" } as any,
+				rules: { "async-await": "warn" },
 			});
-			expect(resolved.rules["rule-1" as any].enabled).toBe(true);
-			expect(resolved.rules["rule-1" as any].severity).toBe("medium");
+			expect(resolved.rules["async-await"].enabled).toBe(true);
+			expect(resolved.rules["async-await"].severity).toBe("medium");
 		});
 
 		it("resolves rule with 'error' level", () => {
 			const resolved = resolveConfig(mockRules, {
-				rules: { "rule-1": "error" } as any,
+				rules: { "async-await": "error" },
 			});
-			expect(resolved.rules["rule-1" as any].enabled).toBe(true);
-			expect(resolved.rules["rule-1" as any].severity).toBe("high");
+			expect(resolved.rules["async-await"].enabled).toBe(true);
+			expect(resolved.rules["async-await"].severity).toBe("high");
 		});
 
 		it("resolves rule with overrides", () => {
 			const resolved = resolveConfig(mockRules, {
-				rules: { "rule-1": ["error", { severity: "low" }] } as any,
+				rules: { "async-await": ["error", { severity: "low" }] },
 			});
-			expect(resolved.rules["rule-1" as any].enabled).toBe(true);
-			expect(resolved.rules["rule-1" as any].severity).toBe("low");
+			expect(resolved.rules["async-await"].enabled).toBe(true);
+			expect(resolved.rules["async-await"].severity).toBe("low");
 		});
 
 		it("applies config to rules", () => {
 			const filtered = applyConfigToRules(mockRules, {
-				rules: { "rule-1": "off" } as any,
+				rules: { "async-await": "off" },
 			});
 			expect(filtered).toHaveLength(1);
-			expect(filtered[0].id).toBe("rule-2");
+			expect(filtered[0].id).toBe("node-fs");
 		});
 	});
 });

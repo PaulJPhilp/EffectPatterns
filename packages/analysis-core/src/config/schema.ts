@@ -24,16 +24,3 @@ export const isRuleConfig = (u: unknown): u is RuleConfig => {
 	}
 	return true;
 };
-
-export const AnalysisConfigSchema = {
-	rules: (u: unknown): u is Record<string, RuleConfig> => {
-		if (!isObject(u)) return false;
-		for (const key in u) {
-			if (!isRuleConfig(u[key])) return false;
-		}
-		return true;
-	},
-	extends: (u: unknown): u is string[] => Array.isArray(u) && u.every((v) => typeof v === "string"),
-	ignore: (u: unknown): u is string[] => Array.isArray(u) && u.every((v) => typeof v === "string"),
-	include: (u: unknown): u is string[] => Array.isArray(u) && u.every((v) => typeof v === "string"),
-};
