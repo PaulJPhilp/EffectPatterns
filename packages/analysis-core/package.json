@@ -1,0 +1,24 @@
+{
+	"name": "@effect-patterns/analysis-core",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		}
+	},
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.threshold=80"
+	},
+	"dependencies": {
+		"effect": "^3.19.14",
+		"typescript": "^5.5.0"
+	}
+}
