@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import type { FixId, RuleId } from "../tools/ids";
+import type { AnalysisConfig } from "../config/types";
 import type {
 	AnalyzeCodeOutput,
 	CodeFinding,
@@ -55,10 +56,16 @@ export interface GenerateFixOutput {
 export interface AnalysisServiceApi {
 	readonly analyzeFile: (
 		filename: string,
-		content: string
+		content: string,
+		options?: {
+			readonly analysisType?: "validation" | "patterns" | "errors" | "all";
+			readonly config?: AnalysisConfig;
+		}
 	) => Effect.Effect<AnalysisReport, never>;
 
-	readonly listRules: () => Effect.Effect<readonly {
+	readonly listRules: (
+		config?: AnalysisConfig
+	) => Effect.Effect<readonly {
 		id: RuleId;
 		title: string;
 		message: string;
@@ -74,7 +81,8 @@ export interface AnalysisServiceApi {
 	}[], never>;
 
 	readonly generateFix: (
-		input: GenerateFixInput
+		input: GenerateFixInput,
+		options?: { readonly config?: AnalysisConfig }
 	) => Effect.Effect<GenerateFixOutput, never>;
 
 	readonly applyRefactorings: (
@@ -114,13 +122,18 @@ export class AnalysisService extends Effect.Service<AnalysisService>()(
 
 			const analyzeFile = (
 				filename: string,
-				content: string
+				content: string,
+				options?: {
+					readonly analysisType?: "validation" | "patterns" | "errors" | "all";
+					readonly config?: AnalysisConfig;
+				}
 			): Effect.Effect<AnalysisReport, never> =>
 				Effect.gen(function* () {
 					const result: AnalyzeCodeOutput = yield* analyzer.analyze({
 						source: content,
 						filename,
-						analysisType: "all",
+						analysisType: options?.analysisType ?? "all",
+						config: options?.config,
 					});
 
 					return {
@@ -131,15 +144,16 @@ export class AnalysisService extends Effect.Service<AnalysisService>()(
 					};
 				});
 
-			const listRules = () => rules.listRules();
+			const listRules = (config?: AnalysisConfig) => rules.listRules(config);
 
 			const listFixes = () => rules.listFixes();
 
 			const generateFix = (
-				input: GenerateFixInput
+				input: GenerateFixInput,
+				options?: { readonly config?: AnalysisConfig }
 			): Effect.Effect<GenerateFixOutput, never> =>
 				Effect.gen(function* () {
-					const allRules = yield* rules.listRules();
+					const allRules = yield* rules.listRules(options?.config);
 					const rule = allRules.find((r) => r.id === input.ruleId);
 
 					if (!rule || rule.fixIds.length === 0) {

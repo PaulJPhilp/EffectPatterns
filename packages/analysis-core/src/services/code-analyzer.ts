@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import ts from "typescript";
+import type { AnalysisConfig } from "../config/types";
 import { ASTUtils } from "../tools/ast-utils";
 import type { FixId, RuleId } from "../tools/ids";
 import { RuleRegistryService } from "./rule-registry";
@@ -45,6 +46,7 @@ export interface AnalyzeCodeInput {
 	readonly source: string;
 	readonly filename?: string;
 	readonly analysisType?: "validation" | "patterns" | "errors" | "all";
+	readonly config?: AnalysisConfig;
 }
 
 /**
@@ -106,6 +108,29 @@ const looksLikeEffectCode = (source: string): boolean =>
 	/\bEffect\.gen\b/.test(source) ||
 	/\byield\*\b/.test(source) ||
 	/from\s+"effect"/.test(source);
+
+const categoriesForAnalysisType = (
+	analysisType: AnalyzeCodeInput["analysisType"]
+): readonly string[] => {
+	switch (analysisType) {
+		case "validation":
+			return ["validation"];
+		case "patterns":
+			return ["style", "dependency-injection", "resources"];
+		case "errors":
+			return ["errors", "async"];
+		case "all":
+		default:
+			return [
+				"async",
+				"errors",
+				"validation",
+				"resources",
+				"dependency-injection",
+				"style",
+			];
+	}
+};
 
 const visitNode = (node: ts.Node, ctx: AnalysisContext, rules: Map<RuleId, any>) => {
 	const isBoundary = isBoundaryFile(ctx.filename);
@@ -407,18 +432,19 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 	{
 		effect: Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			const rulesList = yield* registry.listRules();
-			const ruleById = new Map(rulesList.map((r) => [r.id, r] as const));
 
 			const analyze = (
 				input: AnalyzeCodeInput
 			): Effect.Effect<AnalyzeCodeOutput, never> =>
 				Effect.gen(function* () {
+					const rulesList = yield* registry.listRules(input.config);
+					const ruleById = new Map(rulesList.map((r) => [r.id, r] as const));
+
 					const filename = input.filename ?? "anonymous.ts";
 					const sourceFile = ASTUtils.createSourceFile(
 						filename,
 						input.source
-					).compilerNode;
+					);
 
 					const ctx: AnalysisContext = {
 						sourceFile,
@@ -428,21 +454,35 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 						suggestions: new Set(),
 					};
 
+					const allowedCategories = categoriesForAnalysisType(
+						input.analysisType ?? "all"
+					);
+					const filteredRuleById = new Map(
+						Array.from(ruleById.entries()).filter(([, rule]) =>
+							allowedCategories.includes(rule.category)
+						)
+					);
+
 					// Check for non-ts
 					if (
 						filename &&
 						!filename.endsWith(".ts") &&
 						!filename.endsWith(".tsx")
 					) {
-						createFinding(ctx, sourceFile, "non-typescript", ruleById);
+						createFinding(
+							ctx,
+							sourceFile,
+							"non-typescript",
+							filteredRuleById
+						);
 					} else {
 						// Traverse AST
-						visitNode(sourceFile, ctx, ruleById);
+						visitNode(sourceFile, ctx, filteredRuleById);
 					}
 
 					// Map suggestions
 					const suggestions = Array.from(ctx.suggestions).map((id) => {
-						const rule = ruleById.get(id);
+						const rule = filteredRuleById.get(id) ?? ruleById.get(id);
 						return {
 							id,
 							title: rule?.title ?? "",
