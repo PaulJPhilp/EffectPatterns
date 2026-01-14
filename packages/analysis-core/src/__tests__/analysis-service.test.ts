@@ -54,22 +54,50 @@ describe("AnalysisService", () => {
 	});
 
 	it("applyRefactorings returns changes for known fix", async () => {
-		const output = await Effect.runPromise(
+		const source = "import fs from \"node:fs\";\n";
+		const changes = await Effect.runPromise(
 			Effect.gen(function* () {
-				const service = yield* AnalysisService;
-				return yield* service.applyRefactorings(
+				const analysis = yield* AnalysisService;
+				return yield* analysis.applyRefactorings(
 					["replace-node-fs"],
-					[
-						{
-							filename: "a.ts",
-							source: "import { readFile } from \"node:fs/promises\";\n",
-						},
-					]
+					[{ filename: "a.ts", source }]
 				);
 			}).pipe(Effect.provide(AnalysisService.Default))
 		);
 
-		expect(output).toHaveLength(1);
-		expect(output[0].after).toContain("@effect/platform");
+		expect(changes).toHaveLength(1);
+		expect(changes[0].after).toContain("@effect/platform");
+	});
+
+	it("analyzeConsistency detects cross-file issues", async () => {
+		const files = [
+			{ filename: "a.ts", source: "import fs from \"node:fs\";" },
+			{ filename: "b.ts", source: "import { FileSystem } from \"@effect/platform\";" },
+		];
+
+		const issues = await Effect.runPromise(
+			Effect.gen(function* () {
+				const analysis = yield* AnalysisService;
+				return yield* analysis.analyzeConsistency(files);
+			}).pipe(Effect.provide(AnalysisService.Default))
+		);
+
+		expect(issues).toHaveLength(1);
+		expect(issues[0].id).toBe("mixed-fs");
+	});
+
+	it("generateFix returns empty for unknown rule", async () => {
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const analysis = yield* AnalysisService;
+				return yield* analysis.generateFix({
+					ruleId: "unknown-rule" as any,
+					filename: "a.ts",
+					source: "const x = 1;",
+				});
+			}).pipe(Effect.provide(AnalysisService.Default))
+		);
+
+		expect(result.changes).toHaveLength(0);
 	});
 });

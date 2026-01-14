@@ -180,4 +180,56 @@ describe("CodeAnalyzerService - branch coverage", () => {
 
 		expect(result.findings.some(f => f.ruleId === "throw-in-effect-code")).toBe(false);
 	});
+
+	it("detects mutable refs inside Effect.gen", async () => {
+		const source = `
+import { Effect } from "effect";
+const program = Effect.gen(function* () {
+  let x = 1;
+  yield* Effect.log(x);
+});
+`;
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const analyzer = yield* CodeAnalyzerService;
+				return yield* analyzer.analyze({ source, filename: "a.ts" });
+			}).pipe(Effect.provide(CodeAnalyzerService.Default))
+		);
+		expect(result.findings.some(f => f.ruleId === "mutable-ref-in-effect")).toBe(true);
+	});
+
+	it("detects Layer.provide inside a service definition", async () => {
+		const source = `
+import { Effect, Layer } from "effect";
+class MyService extends Effect.Service<MyService>()("MyService", {
+  sync: () => {
+    Layer.provide(Layer.succeed(1, 1));
+    return {};
+  }
+}) {}
+`;
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const analyzer = yield* CodeAnalyzerService;
+				return yield* analyzer.analyze({ source, filename: "a.ts" });
+			}).pipe(Effect.provide(CodeAnalyzerService.Default))
+		);
+		expect(result.findings.some(f => f.ruleId === "layer-provide-anti-pattern")).toBe(true);
+	});
+
+	it("detects Effect.gen without yield*", async () => {
+		const source = `
+import { Effect } from "effect";
+const program = Effect.gen(function* () {
+  return 42;
+});
+`;
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const analyzer = yield* CodeAnalyzerService;
+				return yield* analyzer.analyze({ source, filename: "a.ts" });
+			}).pipe(Effect.provide(CodeAnalyzerService.Default))
+		);
+		expect(result.findings.some(f => f.ruleId === "effect-gen-no-yield")).toBe(true);
+	});
 });

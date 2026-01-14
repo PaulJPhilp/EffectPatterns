@@ -1,4 +1,6 @@
 import { Effect } from "effect";
+import { ConfigService } from "../config/service";
+import type { AnalysisConfig } from "../config/types";
 import type { FixId, RuleId } from "../tools/ids";
 
 /**
@@ -306,15 +308,18 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 export class RuleRegistryService extends Effect.Service<RuleRegistryService>()(
 	"RuleRegistryService",
 	{
-		sync: () => {
-			const listRules = () => Effect.succeed(Rules);
+		dependencies: [ConfigService.Default],
+		effect: Effect.gen(function* () {
+			const config = yield ConfigService;
+			const listRules = (cfg?: AnalysisConfig) =>
+				Effect.succeed(config.applyConfigToRules(Rules, cfg));
 			const listFixes = () => Effect.succeed(Fixes);
 
 			return {
 				listRules,
 				listFixes,
 			};
-		},
+		}),
 	}
 ) { }
 
