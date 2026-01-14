@@ -418,7 +418,7 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 					const sourceFile = ASTUtils.createSourceFile(
 						filename,
 						input.source
-					);
+					).compilerNode;
 
 					const ctx: AnalysisContext = {
 						sourceFile,
