@@ -44,21 +44,6 @@ The Effect Patterns project uses AI agents for various tasks including content g
 - Next.js for web interface
 - Effect-TS for service composition
 
-### 3. MCP Server STDIO
-**Location**: `packages/mcp-server-stdio/`
-
-**Purpose**: STDIO-based MCP server for local development.
-
-**Features**:
-- Local MCP server instance
-- Direct CLI integration
-- Development and testing
-- Pattern search and generation
-
-**Dependencies**:
-- `@effect-patterns/toolkit` (workspace:*)
-- Model Context Protocol SDK
-
 ## Agent Architecture
 
 ### Common Patterns
@@ -203,12 +188,10 @@ cd packages/mcp-server
 bun run dev
 
 # Test MCP connection
+
 bun run smoke-test
 
-# Run STDIO server locally
-cd packages/mcp-server-stdio
-bun run dev
-```
+
 
 ## Security
 

@@ -33,7 +33,6 @@ For complete details about agents and integration, see:
 - **Production**: `https://effect-patterns-mcp.vercel.app`
 - **Staging**: `https://effect-patterns-mcp-staging.vercel.app`
 - **Source**: `packages/mcp-server/`
-- **STDIO Version**: `packages/mcp-server-stdio/` (for local development)
 
 ### API Key
 

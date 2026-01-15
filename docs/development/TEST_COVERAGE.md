@@ -57,10 +57,6 @@ Generated: 2025-10-26
   - Category filtering
   - Difficulty filtering
 
-### ✅ MCP Server STDIO (`services/mcp-server-stdio/`)
-
-- **server.test.ts** - STDIO protocol tests
-
 ### ✅ Web Application (`app/web/`)
 
 - **catalog.test.ts** - Pattern catalog
