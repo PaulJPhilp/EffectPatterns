@@ -15,8 +15,7 @@
 				"/Users/paul/Projects/Public/Effect-Patterns/packages/mcp-server-stdio/src/index.ts"
 			],
 			"env": {
-				"DATABASE_URL": "${DATABASE_URL}",
-				"PATTERN_API_KEY": "${PATTERN_API_KEY}"
+				"DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/effect_patterns"
 			}
 		},
 		"effect-docs": {

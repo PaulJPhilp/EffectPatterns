@@ -60,10 +60,10 @@ Update `CodeAnalyzerService.analyze()` to filter rules by category:
 ```typescript
 const categoryMap: Record<AnalysisType, RuleCategory[]> = {
   validation: ["validation"],
-  patterns: ["style", "dependency-injection"],
-  errors: ["errors", "async"],
+  patterns: ["style", "dependency-injection", "resources", "types"],
+  errors: ["errors", "async", "concurrency", "platform"],
   all: ["async", "errors", "validation", "resources", 
-        "dependency-injection", "style"],
+        "dependency-injection", "style", "concurrency", "platform", "types"],
 };
 ```
 

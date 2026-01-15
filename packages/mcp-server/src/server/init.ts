@@ -22,7 +22,9 @@ import { Cause, Effect, Exit, Layer, Option } from "effect";
 import { MCPConfigService } from "../services/config";
 import { MCPLoggerService } from "../services/logger";
 import { PatternGeneratorService } from "../services/pattern-generator";
+import { MCPTierService } from "../services/tier";
 import { TracingLayerLive } from "../tracing/otlpLayer";
+import { ReviewCodeService } from "@/services/review-code";
 
 /**
  * Patterns service - provides database-backed pattern access
@@ -106,12 +108,14 @@ const NodeSdkLayer = NodeSdk.layer(() => ({
 export const AppLayer = Layer.mergeAll(
   MCPConfigService.Default,
   MCPLoggerService.Default,
+  MCPTierService.Default,
   DatabaseLayer,
   PatternsService.Default,
   TracingLayerLive,
   NodeSdkLayer,
   AnalysisServiceLive,
-  PatternGeneratorService.Default
+  PatternGeneratorService.Default,
+  ReviewCodeService.Default
 );
 
 /**

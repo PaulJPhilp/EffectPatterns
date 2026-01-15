@@ -8,6 +8,7 @@
  * in the OpenTelemetry trace.
  */
 
+import { isTierAccessError, validateTierAccess } from "@/auth/tierAccess";
 import { buildSnippet, GenerateRequest } from "@effect-patterns/toolkit";
 import { Schema as S } from "@effect/schema";
 import { Effect } from "effect";
@@ -29,8 +30,14 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
   // Validate API key
   yield* validateApiKey(request);
 
+  // Validate tier access
+  yield* validateTierAccess(request);
+
   // Parse and validate request body
-  const body = yield* Effect.tryPromise(() => request.json());
+  const body = yield* Effect.tryPromise({
+    try: () => request.json(),
+    catch: (error) => new Error(`Invalid JSON: ${error}`),
+  });
   const generateRequest = yield* S.decode(GenerateRequest)(body as any);
 
   // Annotate span with request details
@@ -71,29 +78,50 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
 });
 
 export async function POST(request: NextRequest) {
-  try {
-    const result = await runWithRuntime(handleGenerateSnippet(request));
+  const result = await runWithRuntime(
+    handleGenerateSnippet(request).pipe(
+      Effect.catchAll((error) => {
+        if (isAuthenticationError(error)) {
+          return Effect.succeed(
+            NextResponse.json({ error: error.message }, { status: 401 })
+          );
+        }
 
-    return NextResponse.json(result, {
-      status: 200,
-      headers: {
-        "x-trace-id": result.traceId || "",
-      },
-    });
-  } catch (error) {
-    if (isAuthenticationError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
-    }
+        if (isTierAccessError(error)) {
+          return Effect.succeed(
+            NextResponse.json(
+              {
+                error: error.message,
+                tier: error.tierMode,
+                upgradeMessage: error.upgradeMessage,
+              },
+              {
+                status: 402,
+                headers: {
+                  "X-Tier-Error": "feature-gated",
+                },
+              }
+            )
+          );
+        }
 
-    if (error instanceof Error && error.message.includes("not found")) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
+        if (error instanceof Error && error.message.includes("not found")) {
+          return Effect.succeed(
+            NextResponse.json({ error: error.message }, { status: 404 })
+          );
+        }
 
-    return NextResponse.json(
-      {
-        error: String(error),
-      },
-      { status: 400 }
-    );
-  }
+        return Effect.succeed(
+          NextResponse.json(
+            {
+              error: String(error),
+            },
+            { status: 400 }
+          )
+        );
+      })
+    )
+  );
+
+  return result;
 }

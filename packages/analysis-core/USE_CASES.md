@@ -249,7 +249,7 @@ suggestions or user choice mechanism.
 - `message`: Detailed explanation
 - `severity`: `"low"` | `"medium"` | `"high"`
 - `category`: `"async"` | `"errors"` | `"validation"` | `"resources"` |
-  `"dependency-injection"` | `"style"`
+  `"dependency-injection"` | `"style"` | `"concurrency"` | `"platform"` | `"types"`
 - `fixIds[]`: Available automated fixes
 
 **API**: `AnalysisService.listRules()`

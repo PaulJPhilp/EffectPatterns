@@ -544,6 +544,93 @@ async function runSmokeTests() {
     assertNotNull(data.timestamp, "timestamp should not be null");
   });
 
+  // Test 30: Review Code Requires Auth
+  await runTest("Review code endpoint requires authentication", async () => {
+    const response = await fetch(`${baseUrl}/api/review-code`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: "const x: any = 1;",
+        filePath: "test.ts",
+      }),
+    });
+    assertEquals(response.status, 401);
+  });
+
+  // Test 31: Review Code Returns Top 3 Recommendations
+  await runTest("Review code returns top 3 recommendations with Markdown", async () => {
+    const response = await fetch(`${baseUrl}/api/review-code`, {
+      method: "POST",
+      headers: {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code: "const a: any = 1;\nconst b: any = 2;\nconst c: any = 3;\nconst d: any = 4;",
+        filePath: "test.ts",
+      }),
+    });
+    assertEquals(response.status, 200);
+
+    const data: any = await response.json();
+    assertNotNull(data.recommendations, "recommendations should not be null");
+    assert(Array.isArray(data.recommendations), "recommendations should be an array");
+    assert(data.recommendations.length <= 3, "Should return max 3 recommendations");
+
+    if (data.recommendations.length > 0) {
+      const rec = data.recommendations[0];
+      assertNotNull(rec.severity, "severity should not be null");
+      assertNotNull(rec.title, "title should not be null");
+      assertNotNull(rec.line, "line should not be null");
+      assertNotNull(rec.message, "message should not be null");
+    }
+
+    assertNotNull(data.meta, "meta should not be null");
+    assertNotNull(data.meta.totalFound, "totalFound should not be null");
+    assertNotNull(data.meta.hiddenCount, "hiddenCount should not be null");
+
+    assertNotNull(data.markdown, "markdown should not be null");
+    assertContains(data.markdown, "# Code Review Results");
+
+    assertNotNull(data.traceId, "traceId should not be null");
+    assertNotNull(data.timestamp, "timestamp should not be null");
+  });
+
+  // Test 32: Review Code Rejects Large Files
+  await runTest("Review code rejects files larger than 100KB", async () => {
+    const largeCode = "x".repeat(101 * 1024);
+    const response = await fetch(`${baseUrl}/api/review-code`, {
+      method: "POST",
+      headers: {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code: largeCode,
+        filePath: "test.ts",
+      }),
+    });
+    assertEquals(response.status, 413);
+  });
+
+  // Test 33: Review Code Rejects Non-TypeScript Files
+  await runTest("Review code rejects non-TypeScript files", async () => {
+    const response = await fetch(`${baseUrl}/api/review-code`, {
+      method: "POST",
+      headers: {
+        "x-api-key": API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code: "const x = 1;",
+        filePath: "test.js",
+      }),
+    });
+    assertEquals(response.status, 400);
+    const data: any = await response.json();
+    assertContains(data.error, "TypeScript");
+  });
+
   // Print summary
   printHeader("Test Summary");
   console.log(`Total Tests: ${testsRun}`);

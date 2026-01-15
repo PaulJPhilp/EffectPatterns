@@ -7,8 +7,8 @@
 
 import { Effect } from "effect";
 import type { NextRequest } from "next/server";
-import { AuthenticationError } from "../errors.js";
-import { MCPConfigService } from "../services/config.js";
+import { AuthenticationError } from "../errors";
+import { MCPConfigService } from "../services/config";
 
 /**
  * Extract API key from request

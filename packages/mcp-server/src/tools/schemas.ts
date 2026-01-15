@@ -232,3 +232,37 @@ export const ListFixesResponse = S.Struct({
 });
 
 export type ListFixesResponse = typeof ListFixesResponse.Type;
+
+export const ReviewCodeRequest = S.Struct({
+	code: S.String,
+	filePath: S.optional(S.String),
+});
+
+export type ReviewCodeRequest = typeof ReviewCodeRequest.Type;
+
+export const CodeRecommendation = S.Struct({
+	severity: SuggestionSeverity,
+	title: S.String,
+	line: S.Number,
+	message: S.String,
+});
+
+export type CodeRecommendation = typeof CodeRecommendation.Type;
+
+export const ReviewCodeMeta = S.Struct({
+	totalFound: S.Number,
+	hiddenCount: S.Number,
+	upgradeMessage: S.optional(S.String),
+});
+
+export type ReviewCodeMeta = typeof ReviewCodeMeta.Type;
+
+export const ReviewCodeResponse = S.Struct({
+	recommendations: S.Array(CodeRecommendation),
+	meta: ReviewCodeMeta,
+	markdown: S.String,
+	traceId: S.String,
+	timestamp: S.String,
+});
+
+export type ReviewCodeResponse = typeof ReviewCodeResponse.Type;

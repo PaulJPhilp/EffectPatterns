@@ -814,6 +814,7 @@ const applyOne = (id: RefactoringId, file: RefactorFile): FileChange | null => {
 		case "add-schema-decode":
 			return applyAddSchemaDecode(file);
 	}
+	return null;
 };
 
 const normalizeIds = (input: ApplyRefactoringInput): readonly RefactoringId[] => {

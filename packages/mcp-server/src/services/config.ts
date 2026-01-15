@@ -7,7 +7,7 @@
 
 import { Effect } from "effect";
 import * as path from "node:path";
-import { ConfigurationError } from "../errors.js";
+import { ConfigurationError } from "../errors";
 
 /**
  * MCP Server configuration interface
@@ -17,6 +17,7 @@ export interface MCPConfig {
   readonly apiKey: string;
   readonly nodeEnv: "development" | "production" | "test";
   readonly port: number;
+  readonly tierMode: "free" | "paid";
 
   // Pattern Configuration
   readonly patternsPath: string;
@@ -59,6 +60,7 @@ export interface MCPConfig {
  */
 const DEFAULT_CONFIG: Omit<MCPConfig, "apiKey" | "nodeEnv"> = {
   port: 3000,
+  tierMode: "free",
   patternsPath: path.join(process.cwd(), "data", "patterns.json"),
   patternsCacheTtlMs: 300000, // 5 minutes
   patternsLoadTimeoutMs: 10000, // 10 seconds
@@ -210,6 +212,7 @@ function loadConfig(): Effect.Effect<MCPConfig, ConfigurationError> {
       apiKey: process.env.PATTERN_API_KEY || "",
       nodeEnv: (process.env.NODE_ENV as MCPConfig["nodeEnv"]) || "development",
       port: parseInt(process.env.PORT || "") || DEFAULT_CONFIG.port,
+      tierMode: (process.env.TIER_MODE as MCPConfig["tierMode"]) || DEFAULT_CONFIG.tierMode,
 
       // Pattern Configuration
       patternsPath: process.env.PATTERNS_PATH || DEFAULT_CONFIG.patternsPath,
@@ -294,6 +297,7 @@ export class MCPConfigService extends Effect.Service<MCPConfigService>()(
         getApiKey: () => Effect.succeed(config.apiKey),
         getNodeEnv: () => Effect.succeed(config.nodeEnv),
         getPort: () => Effect.succeed(config.port),
+        getTierMode: () => Effect.succeed(config.tierMode),
 
         // Pattern Configuration
         getPatternsPath: () => Effect.succeed(config.patternsPath),
@@ -334,7 +338,7 @@ export class MCPConfigService extends Effect.Service<MCPConfigService>()(
       };
     }),
   }
-) {}
+) { }
 
 /**
  * Default MCP configuration service layer

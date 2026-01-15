@@ -4,6 +4,9 @@ import {
 	isAuthenticationError,
 	validateApiKey,
 } from "../../../src/auth/apiKey";
+import {
+	validateTierAccess
+} from "../../../src/auth/tierAccess";
 import { runWithRuntime } from "../../../src/server/init";
 import { PatternGeneratorService } from "../../../src/services/pattern-generator";
 import {
@@ -19,8 +22,12 @@ const handleGeneratePattern = Effect.fn("generate-pattern")(function* (
 	const generator = yield* PatternGeneratorService;
 
 	yield* validateApiKey(request);
+	yield* validateTierAccess(request);
 
-	const body = yield* Effect.tryPromise(() => request.json());
+	const body = yield* Effect.tryPromise({
+		try: () => request.json(),
+		catch: (error) => new Error(`Invalid JSON: ${error}`),
+	});
 	const decoded = yield* S.decode(GeneratePatternRequest)(body as any);
 
 	const generated = yield* generator.generate({
@@ -41,21 +48,42 @@ const handleGeneratePattern = Effect.fn("generate-pattern")(function* (
 });
 
 export async function POST(request: NextRequest) {
-	try {
-		const result = await runWithRuntime(handleGeneratePattern(request));
+	const result = await runWithRuntime(
+		handleGeneratePattern(request).pipe(
+			Effect.catchAll((error) => {
+				if (isAuthenticationError(error)) {
+					return Effect.succeed(
+						NextResponse.json({ error: error.message }, { status: 401 })
+					);
+				}
 
-		return NextResponse.json(result, {
-			status: 200,
-			headers: { "x-trace-id": result.traceId || "" },
-		});
-	} catch (error) {
-		if (isAuthenticationError(error)) {
-			return NextResponse.json({ error: error.message }, { status: 401 });
-		}
+				if (isTierAccessError(error)) {
+					return Effect.succeed(
+						NextResponse.json(
+							{
+								error: error.message,
+								tier: error.tierMode,
+								upgradeMessage: error.upgradeMessage,
+							},
+							{
+								status: 402,
+								headers: {
+									"X-Tier-Error": "feature-gated",
+								},
+							}
+						)
+					);
+				}
 
-		return NextResponse.json(
-			{ error: error instanceof Error ? error.message : String(error) },
-			{ status: 400 }
-		);
-	}
+				return Effect.succeed(
+					NextResponse.json(
+						{ error: error instanceof Error ? error.message : String(error) },
+						{ status: 400 }
+					)
+				);
+			})
+		)
+	);
+
+	return result;
 }
