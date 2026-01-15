@@ -8,15 +8,15 @@
  * in the OpenTelemetry trace.
  */
 
-import { isTierAccessError, validateTierAccess } from "@/auth/tierAccess";
+import { validateTierAccess } from "@/auth/tierAccess";
 import { buildSnippet, GenerateRequest } from "@effect-patterns/toolkit";
 import { Schema as S } from "@effect/schema";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
-  isAuthenticationError,
   validateApiKey,
 } from "../../../src/auth/apiKey";
+import { errorHandler } from "../../../src/server/errorHandler";
 import { PatternsService, runWithRuntime } from "../../../src/server/init";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
@@ -80,48 +80,18 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
 export async function POST(request: NextRequest) {
   const result = await runWithRuntime(
     handleGenerateSnippet(request).pipe(
-      Effect.catchAll((error) => {
-        if (isAuthenticationError(error)) {
-          return Effect.succeed(
-            NextResponse.json({ error: error.message }, { status: 401 })
-          );
-        }
-
-        if (isTierAccessError(error)) {
-          return Effect.succeed(
-            NextResponse.json(
-              {
-                error: error.message,
-                tier: error.tierMode,
-                upgradeMessage: error.upgradeMessage,
-              },
-              {
-                status: 402,
-                headers: {
-                  "X-Tier-Error": "feature-gated",
-                },
-              }
-            )
-          );
-        }
-
-        if (error instanceof Error && error.message.includes("not found")) {
-          return Effect.succeed(
-            NextResponse.json({ error: error.message }, { status: 404 })
-          );
-        }
-
-        return Effect.succeed(
-          NextResponse.json(
-            {
-              error: String(error),
-            },
-            { status: 400 }
-          )
-        );
-      })
+      Effect.catchAll((error) => errorHandler(error))
     )
   );
 
-  return result;
+  if (result instanceof Response) {
+    return result;
+  }
+
+  return NextResponse.json(result, {
+    status: 200,
+    headers: {
+      "x-trace-id": result.traceId || "",
+    },
+  });
 }

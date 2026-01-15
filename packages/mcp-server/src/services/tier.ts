@@ -74,7 +74,10 @@ const FREE_TIER_FEATURES: TierFeatures = {
 };
 
 /**
- * Paid tier features (includes all features)
+ * Paid tier features (includes all features except admin operations)
+ *
+ * Note: Admin endpoints (/api/db-check, /api/migrate, /api/reset-db, etc.)
+ * are NOT tier-gated. They require separate admin authentication via ADMIN_API_KEY.
  */
 const PAID_TIER_FEATURES: TierFeatures = {
 	tier: "paid",
@@ -92,14 +95,6 @@ const PAID_TIER_FEATURES: TierFeatures = {
 		"/api/apply-refactoring",
 		"/api/list-fixes",
 		"/api/trace-wiring",
-		// Admin features
-		"/api/db-check",
-		"/api/env-check",
-		"/api/migrate",
-		"/api/migrate-final",
-		"/api/reset-db",
-		"/api/simple-reset",
-		"/api/final-reset",
 	],
 	featureCategories: [
 		// Free tier categories
@@ -125,21 +120,22 @@ const PAID_TIER_FEATURES: TierFeatures = {
 			description: "Setup examples for different tracing frameworks",
 			endpoints: ["/api/trace-wiring"],
 		},
-		{
-			name: "Administration",
-			description: "Database operations and environment checks",
-			endpoints: [
-				"/api/db-check",
-				"/api/env-check",
-				"/api/migrate",
-				"/api/migrate-final",
-				"/api/reset-db",
-				"/api/simple-reset",
-				"/api/final-reset",
-			],
-		},
 	],
 };
+
+/**
+ * Admin-only endpoints (require ADMIN_API_KEY, not tier-gated)
+ */
+export const ADMIN_ENDPOINTS = [
+	"/api/db-check",
+	"/api/env-check",
+	"/api/migrate",
+	"/api/migrate-final",
+	"/api/reset-db",
+	"/api/simple-reset",
+	"/api/final-reset",
+	"/api/test",
+];
 
 /**
  * Load tier configuration from environment

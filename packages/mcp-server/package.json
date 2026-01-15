@@ -34,6 +34,7 @@
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.2.0",
     "@opentelemetry/semantic-conventions": "^1.38.0",
+    "@vercel/kv": "^1.0.1",
     "effect": "^3.19.11",
     "next": "^16.0.10",
     "react": "^19.2.3",

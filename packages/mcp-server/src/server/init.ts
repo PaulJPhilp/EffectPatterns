@@ -18,9 +18,13 @@ import {
 import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { TraceIdRatioBasedSampler } from "@opentelemetry/sdk-trace-node";
 import { Cause, Effect, Exit, Layer, Option } from "effect";
 import { MCPConfigService } from "../services/config";
 import { MCPLoggerService } from "../services/logger";
+import { MCRateLimitService } from "../services/rate-limit";
+import { MCPValidationService } from "../services/validation";
+import { MCPCacheService } from "../services/cache";
 import { PatternGeneratorService } from "../services/pattern-generator";
 import { MCPTierService } from "../services/tier";
 import { TracingLayerLive } from "../tracing/otlpLayer";
@@ -85,30 +89,43 @@ export class PatternsService extends Effect.Service<PatternsService>()(
  * Services are self-managed via Effect.Service pattern.
  * The NodeSdk layer enables automatic span creation via Effect.fn.
  */
-const NodeSdkLayer = NodeSdk.layer(() => ({
-  resource: {
-    serviceName: process.env.SERVICE_NAME || "effect-patterns-mcp-server",
-    serviceVersion: process.env.SERVICE_VERSION || "0.5.0",
-  },
-  spanProcessor: new BatchSpanProcessor(
-    new OTLPTraceExporter({
-      url: process.env.OTLP_ENDPOINT || "http://localhost:4318/v1/traces",
-      headers: process.env.OTLP_HEADERS
-        ? Object.fromEntries(
-          process.env.OTLP_HEADERS.split(",").map((pair) => {
-            const [key, value] = pair.split("=");
-            return [key?.trim() || "", value?.trim() || ""];
-          })
-        )
-        : {},
-    })
-  ),
-}));
+/**
+ * Create NodeSdk layer with configurable sampling
+ */
+const createNodeSdkLayer = Effect.gen(function* () {
+  const config = yield* MCPConfigService;
+  const samplingRate = yield* config.getTracingSamplingRate();
+  const otlpEndpoint = yield* config.getOtlpEndpoint();
+  const otlpHeaders = yield* config.getOtlpHeaders();
+  const serviceName = yield* config.getServiceName();
+  const serviceVersion = yield* config.getServiceVersion();
+
+  const layer = NodeSdk.layer(() => ({
+    resource: {
+      serviceName,
+      serviceVersion,
+    },
+    sampler: new TraceIdRatioBasedSampler(samplingRate),
+    spanProcessor: new BatchSpanProcessor(
+      new OTLPTraceExporter({
+        url: otlpEndpoint,
+        headers: otlpHeaders,
+      })
+    ),
+  }));
+
+  return layer;
+});
+
+const NodeSdkLayer = Layer.effectDiscard(createNodeSdkLayer);
 
 export const AppLayer = Layer.mergeAll(
   MCPConfigService.Default,
   MCPLoggerService.Default,
   MCPTierService.Default,
+  MCPValidationService.Default,
+  MCRateLimitService.Default,
+  MCPCacheService.Default,
   DatabaseLayer,
   PatternsService.Default,
   TracingLayerLive,

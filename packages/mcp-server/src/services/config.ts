@@ -53,6 +53,7 @@ export interface MCPConfig {
   readonly otlpHeaders: Record<string, string>;
   readonly serviceName: string;
   readonly serviceVersion: string;
+  readonly tracingSamplingRate: number; // 0.0 to 1.0, default 0.1 (10%)
 }
 
 /**
@@ -82,6 +83,7 @@ const DEFAULT_CONFIG: Omit<MCPConfig, "apiKey" | "nodeEnv"> = {
   otlpHeaders: {},
   serviceName: "effect-patterns-mcp-server",
   serviceVersion: "1.0.0",
+  tracingSamplingRate: 0.1, // 10% sampling by default
 };
 
 /**
@@ -199,6 +201,17 @@ function validateConfig(
         })
       );
     }
+
+    // Tracing sampling rate validation
+    if (config.tracingSamplingRate < 0 || config.tracingSamplingRate > 1) {
+      yield* Effect.fail(
+        new ConfigurationError({
+          key: "tracingSamplingRate",
+          expected: "number between 0.0 and 1.0",
+          received: config.tracingSamplingRate,
+        })
+      );
+    }
   });
 }
 
@@ -271,6 +284,9 @@ function loadConfig(): Effect.Effect<MCPConfig, ConfigurationError> {
       serviceName: process.env.SERVICE_NAME || DEFAULT_CONFIG.serviceName,
       serviceVersion:
         process.env.SERVICE_VERSION || DEFAULT_CONFIG.serviceVersion,
+      tracingSamplingRate:
+        parseFloat(process.env.TRACING_SAMPLING_RATE || "") ||
+        DEFAULT_CONFIG.tracingSamplingRate,
     };
 
     // Validate configuration
@@ -335,6 +351,7 @@ export class MCPConfigService extends Effect.Service<MCPConfigService>()(
         getOtlpHeaders: () => Effect.succeed(config.otlpHeaders),
         getServiceName: () => Effect.succeed(config.serviceName),
         getServiceVersion: () => Effect.succeed(config.serviceVersion),
+        getTracingSamplingRate: () => Effect.succeed(config.tracingSamplingRate),
       };
     }),
   }

@@ -9,12 +9,13 @@ import { Data } from "effect";
 
 /**
  * Authentication errors
+ *
+ * Never includes the provided API key in the error for security reasons.
  */
 export class AuthenticationError extends Data.TaggedError(
   "AuthenticationError"
 )<{
   readonly message: string;
-  readonly providedKey?: string;
 }> { }
 
 /**
@@ -148,10 +149,9 @@ export class TimeoutError extends Data.TaggedError("TimeoutError")<{
  * These functions help migrate from the old Error-based approach
  */
 export function createAuthenticationError(
-  message: string,
-  providedKey?: string
+  message: string
 ): AuthenticationError {
-  return new AuthenticationError({ message, providedKey });
+  return new AuthenticationError({ message });
 }
 
 export function createPatternNotFoundError(

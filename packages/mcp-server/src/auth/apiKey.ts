@@ -70,8 +70,7 @@ export const validateApiKey = (
     if (providedKey !== apiKey) {
       return yield* Effect.fail(
         new AuthenticationError({
-          message: "Invalid API key",
-          providedKey
+          message: "Invalid API key"
         })
       );
     }

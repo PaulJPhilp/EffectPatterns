@@ -5,7 +5,8 @@ import {
 	validateApiKey,
 } from "../../../src/auth/apiKey";
 import {
-	validateTierAccess
+	validateTierAccess,
+	isTierAccessError
 } from "../../../src/auth/tierAccess";
 import { runWithRuntime } from "../../../src/server/init";
 import { PatternGeneratorService } from "../../../src/services/pattern-generator";
