@@ -42,6 +42,8 @@ tools/
 
 !packages/mcp-server/src/tools/
 !packages/mcp-server/src/tools/**
+!packages/analysis-core/src/tools/
+!packages/analysis-core/src/tools/**
 
 content/backups/
 

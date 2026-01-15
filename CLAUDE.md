@@ -69,6 +69,12 @@ For issues or questions:
 2. Review the MCP server logs
 3. Contact the project maintainers
 
+## Debugging Guidelines
+
+- **Debug Scripts**: Always create and run debug scripts from the **project root** directory.
+- **Dependency Resolution**: Running from the root ensures `node_modules` are accessible and relative import paths resolve correctly.
+- **Rule Verification**: Use scripts like `scripts/debug-blocking.ts` to verify anti-pattern detection rules against specific code snippets.
+
 ---
 
 *See [AGENTS.md](./AGENTS.md) for complete agent documentation.*

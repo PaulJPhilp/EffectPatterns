@@ -295,8 +295,8 @@ const visitNode = (
 			// Check swallow-failures-without-logging
 			// Check catch-log-and-swallow
 			// Check generic-error-type
-			if (node.arguments.length > 0) {
-				const callback = isCatchAll ? node.arguments[0] : node.arguments[1];
+			if ((node as ts.CallExpression).arguments.length > 0) {
+				const callback = isCatchAll ? (node as ts.CallExpression).arguments[0] : (node as ts.CallExpression).arguments[1];
 				if (callback && (ts.isArrowFunction(callback) || ts.isFunctionExpression(callback))) {
 					// 1. generic-error-type
 					if (callback.parameters.length > 0) {
@@ -319,11 +319,14 @@ const visitNode = (
 							if (ASTUtils.isMethodCall(n, "Effect", "log") ||
 								ASTUtils.isMethodCall(n, "Effect", "logInfo") ||
 								ASTUtils.isMethodCall(n, "Effect", "logWarning") ||
-								ASTUtils.isMethodCall(n, "Effect", "logError") ||
-								(ts.isPropertyAccessExpression(n.expression) &&
-									ts.isIdentifier(n.expression.expression) &&
-									n.expression.expression.text === "console")
-							) {
+								ASTUtils.isMethodCall(n, "Effect", "logError")) {
+								hasLog = true;
+							}
+
+							// Check for console.log calls
+							if (ts.isPropertyAccessExpression(n.expression) &&
+								ts.isIdentifier(n.expression.expression) &&
+								n.expression.expression.text === "console") {
 								hasLog = true;
 							}
 
@@ -1569,9 +1572,9 @@ const hasBooleanControllingBehavior = (node: ts.Node): boolean => {
 	let parameters: ts.ParameterDeclaration[] = [];
 
 	if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node)) {
-		parameters = node.parameters;
+		parameters = [...node.parameters];
 	} else if (ts.isMethodDeclaration(node)) {
-		parameters = node.parameters;
+		parameters = [...node.parameters];
 	}
 
 	// Look for boolean parameters that start with "is" or control flow

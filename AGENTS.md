@@ -103,7 +103,8 @@ The project uses npm workspaces for dependency management:
 2. **Type Safety**: Define schemas with @effect/schema
 3. **Error Handling**: Use Effect's error types
 4. **Testing**: Comprehensive test coverage
-5. **Documentation**: Clear API docs and examples
+5. **Debug Scripts**: Create and run debug scripts from the project root (e.g., `scripts/debug-blocking.ts`) to ensure proper module resolution and access to `node_modules`.
+6. **Documentation**: Clear API docs and examples
 
 ### Example Agent Structure
 
