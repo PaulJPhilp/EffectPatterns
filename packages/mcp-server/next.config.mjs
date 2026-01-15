@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@effect-patterns/toolkit'],
+  transpilePackages: ['@effect-patterns/toolkit', '@effect-patterns/analysis-core'],
   turbopack: {}, // Enable turbopack with empty config
   webpack: (config) => {
     config.resolve.alias = {
