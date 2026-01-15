@@ -495,10 +495,10 @@ const visitNode = (
 			ASTUtils.isMethodCall(node, "Effect", "runSync") ||
 			ASTUtils.isMethodCall(node, "Effect", "runFork")
 		) {
-			// Check if this might be running with open resources
-			if (hasResourceCreationInScope(node, ctx.sourceFile)) {
-				createFinding(ctx, node, "effect-run-with-open-resources", rules);
-			}
+		        // Check if this might be running with open resources
+		        if (hasResourceCreationInScope(node)) {
+		                createFinding(ctx, node, "effect-run-with-open-resources", rules);
+		        }
 		}
 	}
 
@@ -512,7 +512,7 @@ const visitNode = (
 	// 16.4 Effect.succeed wrapping resources
 	if (ts.isCallExpression(node)) {
 		if (ASTUtils.isMethodCall(node, "Effect", "succeed")) {
-			if (isReturningResource(node, ctx.sourceFile)) {
+			if (isReturningResource(node)) {
 				createFinding(ctx, node, "returning-resources-instead-of-effects", rules);
 			}
 		}
@@ -869,7 +869,6 @@ const visitNode = (
 				// Assuming the rule wants to enforce HANDLING the timeout.
 				// We check if the result is used in `catchTag` or `match`.
 
-				const parent = node.parent;
 				let isHandled = false;
 
 				// Walk up the AST to find a pipe call
@@ -1329,7 +1328,7 @@ const isAtModuleLevel = (node: ts.Node): boolean => {
 };
 
 // Helper: Check if there's resource creation in the current scope
-const hasResourceCreationInScope = (node: ts.Node, sourceFile: ts.SourceFile): boolean => {
+const hasResourceCreationInScope = (node: ts.Node): boolean => {
 	// Simple heuristic: look for common resource creation patterns
 	let found = false;
 	const visit = (n: ts.Node) => {
@@ -1385,7 +1384,7 @@ const hasResourceCreationInScope = (node: ts.Node, sourceFile: ts.SourceFile): b
 };
 
 // Helper: Check if Effect.succeed is wrapping a resource
-const isReturningResource = (node: ts.Node, sourceFile: ts.SourceFile): boolean => {
+const isReturningResource = (node: ts.Node): boolean => {
 	if (ts.isCallExpression(node) && node.arguments.length > 0) {
 		const arg = node.arguments[0];
 

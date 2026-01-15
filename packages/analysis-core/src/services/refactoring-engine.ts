@@ -462,7 +462,7 @@ const applyReplaceContextTag = (file: RefactorFile): FileChange | null => {
 	);
 
 	let changed = false;
-	const transformer: ts.TransformerFactory<ts.SourceFile> = (context) => {
+	const transformer: ts.TransformerFactory<ts.SourceFile> = () => {
 		const visitStatement = (stmt: ts.Statement): ts.Statement => {
 			// Update `import { Context } from "effect"` -> add `Effect`
 			if (ts.isImportDeclaration(stmt) && ts.isStringLiteral(stmt.moduleSpecifier)) {
