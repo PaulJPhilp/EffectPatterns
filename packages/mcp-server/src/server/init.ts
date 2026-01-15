@@ -129,7 +129,7 @@ export const AppLayer = Layer.mergeAll(
   DatabaseLayer,
   PatternsService.Default,
   TracingLayerLive,
-  NodeSdkLayer,
+  // NodeSdkLayer, // Disabled - OTLP endpoint not available locally
   AnalysisServiceLive,
   PatternGeneratorService.Default,
   ReviewCodeService.Default
