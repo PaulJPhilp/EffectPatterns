@@ -1,31 +1,30 @@
 {
-	"mcpServers": {
-		"next-devtools": {
-			"command": "npx",
-			"args": [
-				"-y",
-				"next-devtools-mcp@latest"
-			]
-		},
-		"effect-patterns": {
-			"serverUrl": "http://localhost:3002",
-			"headers": {
-				"x-api-key": "ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84"
-			}
-		},
-		"effect-docs": {
-			"command": "npx",
-			"args": [
-				"-y",
-				"effect-mcp"
-			],
-			"env": {}
-		},
-		"context7": {
-			"serverUrl": "https://mcp.context7.com/mcp",
-			"headers": {
-				"CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
-			}
-		}
-	}
+  "mcpServers": {
+    "next-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "next-devtools-mcp@latest"
+      ]
+    },
+    "effect-patterns": {
+      "command": "bun",
+      "args": [
+        "run",
+        "mcp"
+      ],
+      "cwd": "/Users/paul/Projects/Public/Effect-Patterns/packages/mcp-server",
+      "env": {
+        "PATTERN_API_KEY": "ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84",
+        "EFFECT_PATTERNS_API_URL": "http://localhost:3000"
+      }
+    },
+    "effect-docs": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "effect-mcp"
+      ]
+    }
+  }
 }
