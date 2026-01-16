@@ -23,16 +23,19 @@ const GUIDANCE_MAP: Record<string, string> = {
 	"generic-error-type": "generic-error-type",
 	"missing-error-channel": "missing-error-channel",
 	"schema-validation": "schema-validation",
+	"catching-errors-too-early": "catching-errors-too-early",
 
 	// Concurrency patterns
 	"promise-all-in-effect": "promise-all-in-effect",
 	"unbounded-parallelism": "unbounded-parallelism",
 	"no-floating-promises": "no-floating-promises",
+	"fire-and-forget-fork": "fire-and-forget-fork",
 
 	// Resource management patterns
 	"leaking-scopes": "leaking-scopes",
 	"connection-pool-awareness": "connection-pool-awareness",
 	"layer-dependency-cycle": "layer-dependency-cycle",
+	"blocking-calls-in-effect": "blocking-calls-in-effect",
 
 	// Resilience patterns
 	"retry-backoff-timeouts": "retry-backoff-timeouts",
@@ -41,6 +44,7 @@ const GUIDANCE_MAP: Record<string, string> = {
 	"hidden-effect-execution": "hidden-effect-execution",
 	"logging-discipline": "logging-discipline",
 	"avoid-console-log": "avoid-console-log",
+	"global-singletons-instead-of-layers": "global-singletons-instead-of-layers",
 
 	// Core Effect idioms
 	"avoid-effect-run-sync": "avoid-effect-run-sync",
