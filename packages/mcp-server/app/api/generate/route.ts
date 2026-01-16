@@ -17,6 +17,7 @@ import {
   validateApiKey,
 } from "../../../src/auth/apiKey";
 import { errorHandler } from "../../../src/server/errorHandler";
+import { PatternNotFoundError } from "../../../src/errors";
 import { PatternsService, runWithRuntime } from "../../../src/server/init";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
@@ -53,7 +54,9 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
 
   if (!pattern) {
     return yield* Effect.fail(
-      new Error(`Pattern not found: ${generateRequest.patternId}`)
+      new PatternNotFoundError({
+        patternId: generateRequest.patternId,
+      })
     );
   }
 

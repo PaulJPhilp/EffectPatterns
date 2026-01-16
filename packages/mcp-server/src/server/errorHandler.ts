@@ -26,6 +26,24 @@ import type {
 /**
  * Guard functions for each error type
  */
+function isFileSizeError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "_tag" in error &&
+    error._tag === "FileSizeError"
+  );
+}
+
+function isNonTypeScriptError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "_tag" in error &&
+    error._tag === "NonTypeScriptError"
+  );
+}
+
 function isAuthorizationError(
   error: unknown
 ): error is AuthorizationError {
@@ -129,6 +147,32 @@ export function errorToResponse(
   const baseHeaders: Record<string, string> = {};
   if (traceId) {
     baseHeaders["x-trace-id"] = traceId;
+  }
+
+  // File size errors (413 Payload Too Large)
+  if (isFileSizeError(error)) {
+    const response: ApiErrorResponse = {
+      error: error instanceof Error ? error.message : String(error),
+      status: "payload_too_large",
+      maxSize: (error as any).maxSize,
+      actualSize: (error as any).size,
+    };
+    return NextResponse.json(response, {
+      status: 413,
+      headers: baseHeaders,
+    });
+  }
+
+  // Non-TypeScript file errors (400 Bad Request)
+  if (isNonTypeScriptError(error)) {
+    const response: ApiErrorResponse = {
+      error: error instanceof Error ? error.message : String(error),
+      status: "non_typescript_file",
+    };
+    return NextResponse.json(response, {
+      status: 400,
+      headers: baseHeaders,
+    });
   }
 
   // Authentication errors (401)
@@ -245,6 +289,18 @@ export function errorToResponse(
       const response: ApiErrorResponse = {
         error: error.message,
         status: "invalid_json",
+      };
+      return NextResponse.json(response, {
+        status: 400,
+        headers: baseHeaders,
+      });
+    }
+
+    // Check for schema validation errors from @effect/schema
+    if (error.message.includes("is missing") || error.message.includes("└─")) {
+      const response: ApiErrorResponse = {
+        error: error.message,
+        status: "validation_failed",
       };
       return NextResponse.json(response, {
         status: 400,

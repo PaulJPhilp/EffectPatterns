@@ -51,6 +51,9 @@ const handleGeneratePattern = Effect.fn("generate-pattern")(function* (
 export async function POST(request: NextRequest) {
 	const result = await runWithRuntime(
 		handleGeneratePattern(request).pipe(
+			Effect.map((data) =>
+				NextResponse.json(data, { status: 200 })
+			),
 			Effect.catchAll((error) => {
 				if (isAuthenticationError(error)) {
 					return Effect.succeed(
