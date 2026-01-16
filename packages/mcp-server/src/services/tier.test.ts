@@ -1,7 +1,7 @@
 import { Effect, Either } from "effect";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { ConfigurationError } from "../errors.js";
-import { MCPTierService } from "./tier.js";
+import { ConfigurationError } from "../errors";
+import { MCPTierService } from "./tier";
 
 describe("MCPTierService", () => {
 	const originalEnv = { ...process.env };

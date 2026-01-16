@@ -1,45 +1,79 @@
 # Claude Integration
 
-This document provides information about Claude Code integration with the Effect Patterns project.
+This document provides information about Claude Code and Windsurf integration with the Effect Patterns project.
 
-## MCP Server Integration
+## MCP Server - Code Review Tool
 
-The Effect Patterns project provides a Model Context Protocol (MCP) server that serves patterns directly to Claude Code IDE.
+The Effect Patterns project provides a Model Context Protocol (MCP) server with a **`review_code` tool** that analyzes your TypeScript code for architectural issues and best practices.
 
-### Quick Start
+### Using the Code Review Tool
 
-1. **Install the Claude Code Plugin**
-   - Plugin URL: `https://effect-patterns-mcp.vercel.app`
-   - Requires API key authentication
+**In your editor chat** (Windsurf, Claude Code, etc.), you can invoke code review in two ways:
 
-2. **Configure in Claude Code**
-   - Add the MCP server to your Claude Code configuration
-   - Use your API key for authentication
+#### 1. Paste Code Directly
+```
+Review this TypeScript code for Effect anti-patterns:
 
-### Features
+export const MyService = Effect.gen(function* () {
+  // ... your code ...
+});
+```
 
-- **Real-time Pattern Search**: Search 700+ Effect-TS patterns
-- **Context-Aware Suggestions**: Get pattern recommendations based on your code
-- **Direct Integration**: Patterns appear directly in Claude Code
-- **Pattern Generation**: Generate Effect-TS code patterns with AI assistance
+#### 2. Reference a File
+```
+Review this file for architectural issues: src/services/user.ts
+```
 
-### Documentation
+The tool will:
+- Analyze the code for Effect-TS anti-patterns
+- Return top 3 high-impact recommendations (free tier)
+- Show severity levels: 🔴 high, 🟡 medium, 🔵 low
+- Provide detailed explanations for each finding
 
-For complete details about agents and integration, see:
+### Example Prompts
+
+- "Analyze this service for error handling patterns"
+- "What architectural improvements would you suggest for this code?"
+- "Check this Effect composition for performance issues"
+- "Review this file for best practices: src/handlers/api.ts"
+
+### What Gets Analyzed
+
+The code review tool checks for:
+- **Error Handling**: Missing error boundaries, unhandled rejections
+- **Anti-Patterns**: Common Effect-TS mistakes and inefficiencies
+- **Architecture**: Composition patterns, dependency handling
+- **Performance**: Potential bottlenecks and optimization opportunities
+- **Best Practices**: Idiomatic Effect-TS code style
+
+### Free Tier Limits
+
+- Max 100KB per file
+- Top 3 recommendations shown (sorted by severity)
+- `.ts` and `.tsx` files only
+- Results include upgrade messaging if more issues detected
+
+### More Tools Available
+
+The MCP server also provides:
+- `search_patterns` - Search 700+ Effect-TS patterns
+- `get_pattern` - Get full pattern details
+- `analyze_code` - Deeper analysis (all findings)
+- `list_analysis_rules` - See all detection rules
+- `generate_pattern_code` - Generate code from templates
+
+### Configuration
+
+For local development setup, see:
+- **[MCP_CONFIG.md](./MCP_CONFIG.md)** - Complete MCP server configuration guide
 - **[AGENTS.md](./AGENTS.md)** - Full agent documentation
 
-### MCP Server Details
+### MCP Server Locations
 
+- **Source**: `packages/mcp-server/`
+- **Local Development**: Port 3000 (with `bun run dev`)
 - **Production**: `https://effect-patterns-mcp.vercel.app`
 - **Staging**: `https://effect-patterns-mcp-staging.vercel.app`
-- **Source**: `packages/mcp-server/`
-
-### API Key
-
-Get your API key from the project maintainers or check your environment configuration:
-```bash
-PATTERN_API_KEY_PRODUCTION=your_key_here
-```
 
 ### Development Setup
 

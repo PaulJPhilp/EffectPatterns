@@ -9,9 +9,9 @@
 
 import { Effect } from "effect";
 import { kv } from "@vercel/kv";
-import { RateLimitError } from "../errors.js";
-import { MCPConfigService } from "./config.js";
-import { MCPLoggerService } from "./logger.js";
+import { RateLimitError } from "../errors";
+import { MCPConfigService } from "./config";
+import { MCPLoggerService } from "./logger";
 
 /**
  * Rate limit entry

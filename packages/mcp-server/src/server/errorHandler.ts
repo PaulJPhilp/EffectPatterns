@@ -6,23 +6,18 @@
  */
 
 import { Effect } from "effect";
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import {
   isAuthenticationError,
-  isAuthorizationError,
 } from "../auth/apiKey";
 import {
   isTierAccessError,
 } from "../auth/tierAccess";
 import type {
-  AuthenticationError,
   AuthorizationError,
-  TierAccessError,
   PatternNotFoundError,
   ValidationError,
   RateLimitError,
-  FileSizeError,
-  NonTypeScriptError,
   RequestValidationError,
   PatternValidationError,
   PatternLoadError,
@@ -31,6 +26,17 @@ import type {
 /**
  * Guard functions for each error type
  */
+function isAuthorizationError(
+  error: unknown
+): error is AuthorizationError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "_tag" in error &&
+    error._tag === "AuthorizationError"
+  );
+}
+
 function isPatternNotFoundError(
   error: unknown
 ): error is PatternNotFoundError {
@@ -72,28 +78,6 @@ function isRateLimitError(
     error !== null &&
     "_tag" in error &&
     error._tag === "RateLimitError"
-  );
-}
-
-function isFileSizeError(
-  error: unknown
-): error is FileSizeError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "FileSizeError"
-  );
-}
-
-function isNonTypeScriptError(
-  error: unknown
-): error is NonTypeScriptError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "NonTypeScriptError"
   );
 }
 
@@ -196,32 +180,6 @@ export function errorToResponse(
     };
     return NextResponse.json(response, {
       status: 404,
-      headers: baseHeaders,
-    });
-  }
-
-  // File size errors (413 Payload Too Large)
-  if (isFileSizeError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "payload_too_large",
-      maxSize: (error as any).maxSize,
-      actualSize: (error as any).actualSize,
-    };
-    return NextResponse.json(response, {
-      status: 413,
-      headers: baseHeaders,
-    });
-  }
-
-  // Non-TypeScript file errors (400 Bad Request)
-  if (isNonTypeScriptError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "invalid_file_type",
-    };
-    return NextResponse.json(response, {
-      status: 400,
       headers: baseHeaders,
     });
   }

@@ -1,0 +1,1 @@
+{"version": 2, "framework": "nextjs", "outputDirectory": "packages/mcp-server/.next", "buildCommand": "cd packages/mcp-server && bun run build", "installCommand": "bun install --frozen-lockfile", "regions": ["iad1"], "functions": {"app/api/**/*.ts": {"memory": 1024, "maxDuration": 10}}}

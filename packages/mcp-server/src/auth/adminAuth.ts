@@ -54,6 +54,15 @@ export const validateAdminKey = (
         new Promise<string | undefined>((resolve) => {
           resolve(process.env.ADMIN_API_KEY);
         })
+    ).pipe(
+      Effect.catchAll(() =>
+        Effect.fail(
+          new AuthorizationError({
+            message: "Failed to retrieve admin credentials",
+            requiredRole: "admin",
+          })
+        )
+      )
     );
 
     // If no admin key is configured

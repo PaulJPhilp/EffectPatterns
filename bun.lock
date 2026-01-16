@@ -175,7 +175,7 @@
         "next": "^16.0.10",
         "react": "^19.2.3",
         "react-dom": "^19.2.3",
-        "vercel": "^50.4.0",
+        "vercel": "^50.4.4",
       },
       "devDependencies": {
         "@ai-sdk/openai": "^3.0.2",
@@ -2707,6 +2707,8 @@
 
     "@effect-patterns/mcp-server/ai": ["ai@6.0.27", "", { "dependencies": { "@ai-sdk/gateway": "3.0.11", "@ai-sdk/provider": "3.0.2", "@ai-sdk/provider-utils": "4.0.4", "@opentelemetry/api": "1.9.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-a4ToMt5+4xOzHuYdoTy2GQXuNa2/Tpuhxfs5QESHtEV/Vf2HAzSwmTwikrIs8CDKPuMWV1I9YqAvaN5xexMCiQ=="],
 
+    "@effect-patterns/mcp-server/vercel": ["vercel@50.4.4", "", { "dependencies": { "@vercel/backends": "0.0.22", "@vercel/blob": "1.0.2", "@vercel/build-utils": "13.2.10", "@vercel/detect-agent": "1.0.0", "@vercel/elysia": "0.1.21", "@vercel/express": "0.1.28", "@vercel/fastify": "0.1.24", "@vercel/fun": "1.2.1", "@vercel/go": "3.3.1", "@vercel/h3": "0.1.30", "@vercel/hono": "0.2.24", "@vercel/hydrogen": "1.3.5", "@vercel/koa": "0.1.4", "@vercel/nestjs": "0.2.25", "@vercel/next": "4.15.15", "@vercel/node": "5.5.22", "@vercel/python": "6.1.6", "@vercel/redwood": "2.4.9", "@vercel/remix-builder": "5.5.9", "@vercel/ruby": "2.2.4", "@vercel/rust": "1.0.4", "@vercel/static-build": "2.8.22", "chokidar": "4.0.0", "esbuild": "0.27.0", "form-data": "^4.0.0", "jose": "5.9.6" }, "bin": { "vc": "dist/vc.js", "vercel": "dist/vc.js" } }, "sha512-EPaLw4/wUigZmbNQIQSVQG8ZHeIueAb52Y+HZi7kGm8qnBm+lCd/SME6ZhhPBLJrBiw1nYyyAPf1/kizHjWnZw=="],
+
     "@effect-patterns/pipeline-state/@effect/schema": ["@effect/schema@0.68.27", "", { "dependencies": { "fast-check": "^3.20.0" }, "peerDependencies": { "effect": "^3.5.7" } }, "sha512-/rmIb+4QaQTecdTfeYSZtNikIV+BeIbYDl/hpgBTaS96en7pKNW5hcygFQhdocjKguIL7Y/be+oUrVafWV60ew=="],
 
     "@effect-patterns/toolkit/@vitest/coverage-v8": ["@vitest/coverage-v8@4.0.16", "", { "dependencies": { "@bcoe/v8-coverage": "^1.0.2", "@vitest/utils": "4.0.16", "ast-v8-to-istanbul": "^0.3.8", "istanbul-lib-coverage": "^3.2.2", "istanbul-lib-report": "^3.0.1", "istanbul-lib-source-maps": "^5.0.6", "istanbul-reports": "^3.2.0", "magicast": "^0.5.1", "obug": "^2.1.1", "std-env": "^3.10.0", "tinyrainbow": "^3.0.3" }, "peerDependencies": { "@vitest/browser": "4.0.16", "vitest": "4.0.16" }, "optionalPeers": ["@vitest/browser"] }, "sha512-2rNdjEIsPRzsdu6/9Eq0AYAzYdpP6Bx9cje9tL3FE5XzXRQF1fNU9pe/1yE8fCrS0HD+fBtt6gLPh6LI57tX7A=="],
@@ -3281,6 +3283,12 @@
 
     "@effect-patterns/mcp-server/ai/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@4.0.4", "", { "dependencies": { "@ai-sdk/provider": "3.0.2", "@standard-schema/spec": "^1.1.0", "eventsource-parser": "^3.0.6" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-VxhX0B/dWGbpNHxrKCWUAJKXIXV015J4e7qYjdIU9lLWeptk0KMLGcqkB4wFxff5Njqur8dt8wRi1MN9lZtDqg=="],
 
+    "@effect-patterns/mcp-server/vercel/@vercel/go": ["@vercel/go@3.3.1", "", {}, "sha512-vRFeVsaNKJaf0tgferWz6ULMsI950hDkw69WQg0x3MxuQMRQo1wMOO38TayMeU76ZEgHTchxWhbaPmguslZgZA=="],
+
+    "@effect-patterns/mcp-server/vercel/@vercel/static-build": ["@vercel/static-build@2.8.22", "", { "dependencies": { "@vercel/gatsby-plugin-vercel-analytics": "1.0.11", "@vercel/gatsby-plugin-vercel-builder": "2.0.121", "@vercel/static-config": "3.1.2", "ts-morph": "12.0.0" } }, "sha512-bbnRoWbKX7vOU274ZWjpUFnnQ/Fk3dOqFW3MTqMz6O/TxeMQX7jnhI/M7hLDeBchY4CJ4UkmzrmhmHxAaNWpxw=="],
+
+    "@effect-patterns/mcp-server/vercel/jose": ["jose@5.9.6", "", {}, "sha512-AMlnetc9+CV9asI19zHmrgS/WYsWUwCn2R7RzlbJWD7F9eWYUTGyBmU9o6PxngtLGOiDGPRu+Uc4fhKzbpteZQ=="],
+
     "@effect-patterns/toolkit/@vitest/coverage-v8/@vitest/utils": ["@vitest/utils@4.0.16", "", { "dependencies": { "@vitest/pretty-format": "4.0.16", "tinyrainbow": "^3.0.3" } }, "sha512-h8z9yYhV3e1LEfaQ3zdypIrnAg/9hguReGZoS7Gl0aBG5xgA410zBqECqmaF/+RkTggRsfnzc1XaAHA6bmUufA=="],
 
     "@effect-patterns/toolkit/@vitest/coverage-v8/magicast": ["magicast@0.5.1", "", { "dependencies": { "@babel/parser": "^7.28.5", "@babel/types": "^7.28.5", "source-map-js": "^1.2.1" } }, "sha512-xrHS24IxaLrvuo613F719wvOIv9xPHFWQHuvGUBmPnCA/3MQxKI3b+r7n1jAoDHmsbC5bRhTZYR77invLAxVnw=="],
@@ -3702,6 +3710,8 @@
     "@effect-patterns/mcp-server/@opentelemetry/sdk-node/@opentelemetry/sdk-trace-node/@opentelemetry/context-async-hooks": ["@opentelemetry/context-async-hooks@2.2.0", "", { "peerDependencies": { "@opentelemetry/api": ">=1.0.0 <1.10.0" } }, "sha512-qRkLWiUEZNAmYapZ7KGS5C4OmBLcP/H2foXeOEaowYCR0wi89fHejrfYfbuLVCMLp/dWZXKvQusdbUEZjERfwQ=="],
 
     "@effect-patterns/mcp-server/@vitest/coverage-v8/@vitest/utils/@vitest/pretty-format": ["@vitest/pretty-format@4.0.16", "", { "dependencies": { "tinyrainbow": "^3.0.3" } }, "sha512-eNCYNsSty9xJKi/UdVD8Ou16alu7AYiS2fCPRs0b1OdhJiV89buAXQLpTbe+X8V9L6qrs9CqyvU7OaAopJYPsA=="],
+
+    "@effect-patterns/mcp-server/vercel/@vercel/static-build/@vercel/gatsby-plugin-vercel-builder": ["@vercel/gatsby-plugin-vercel-builder@2.0.121", "", { "dependencies": { "@sinclair/typebox": "0.25.24", "@vercel/build-utils": "13.2.10", "esbuild": "0.27.0", "etag": "1.8.1", "fs-extra": "11.1.0" } }, "sha512-DD6+LCgfZl362i3YrUNeqESKH9m9lt0hOV25pzIYHH9TTIA9iXp/1rGJyLXYzpjzEv+70wMYrr0Rms6W8pKGEg=="],
 
     "@effect-patterns/toolkit/@vitest/coverage-v8/@vitest/utils/@vitest/pretty-format": ["@vitest/pretty-format@4.0.16", "", { "dependencies": { "tinyrainbow": "^3.0.3" } }, "sha512-eNCYNsSty9xJKi/UdVD8Ou16alu7AYiS2fCPRs0b1OdhJiV89buAXQLpTbe+X8V9L6qrs9CqyvU7OaAopJYPsA=="],
 

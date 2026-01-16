@@ -9,26 +9,22 @@
  */
 
 // biome-ignore assist/source/organizeImports: <>
+import { ReviewCodeService } from "@/services/review-code";
 import { AnalysisServiceLive } from "@effect-patterns/analysis-core";
 import {
   DatabaseLayer,
   findEffectPatternBySlug,
   searchEffectPatterns
 } from "@effect-patterns/toolkit";
-import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { TraceIdRatioBasedSampler } from "@opentelemetry/sdk-trace-node";
 import { Cause, Effect, Exit, Layer, Option } from "effect";
+import { MCPCacheService } from "../services/cache";
 import { MCPConfigService } from "../services/config";
 import { MCPLoggerService } from "../services/logger";
-import { MCRateLimitService } from "../services/rate-limit";
-import { MCPValidationService } from "../services/validation";
-import { MCPCacheService } from "../services/cache";
 import { PatternGeneratorService } from "../services/pattern-generator";
+import { MCRateLimitService } from "../services/rate-limit";
 import { MCPTierService } from "../services/tier";
+import { MCPValidationService } from "../services/validation";
 import { TracingLayerLive } from "../tracing/otlpLayer";
-import { ReviewCodeService } from "@/services/review-code";
 
 /**
  * Patterns service - provides database-backed pattern access
@@ -85,40 +81,9 @@ export class PatternsService extends Effect.Service<PatternsService>()(
 /**
  * App Layer - Full application layer composition
  *
- * Composes: Config -> Tracing (with NodeSdk) -> Database -> Patterns
+ * Composes: Config -> Tracing -> Database -> Patterns
  * Services are self-managed via Effect.Service pattern.
- * The NodeSdk layer enables automatic span creation via Effect.fn.
  */
-/**
- * Create NodeSdk layer with configurable sampling
- */
-const createNodeSdkLayer = Effect.gen(function* () {
-  const config = yield* MCPConfigService;
-  const samplingRate = yield* config.getTracingSamplingRate();
-  const otlpEndpoint = yield* config.getOtlpEndpoint();
-  const otlpHeaders = yield* config.getOtlpHeaders();
-  const serviceName = yield* config.getServiceName();
-  const serviceVersion = yield* config.getServiceVersion();
-
-  const layer = NodeSdk.layer(() => ({
-    resource: {
-      serviceName,
-      serviceVersion,
-    },
-    sampler: new TraceIdRatioBasedSampler(samplingRate),
-    spanProcessor: new BatchSpanProcessor(
-      new OTLPTraceExporter({
-        url: otlpEndpoint,
-        headers: otlpHeaders,
-      })
-    ),
-  }));
-
-  return layer;
-});
-
-const NodeSdkLayer = Layer.effectDiscard(createNodeSdkLayer);
-
 export const AppLayer = Layer.mergeAll(
   MCPConfigService.Default,
   MCPLoggerService.Default,

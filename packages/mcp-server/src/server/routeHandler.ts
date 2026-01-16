@@ -12,6 +12,7 @@ import { validateApiKey } from "../auth/apiKey";
 import { validateTierAccess } from "../auth/tierAccess";
 import { validateAdminKey } from "../auth/adminAuth";
 import { errorHandler } from "./errorHandler";
+import { runWithRuntime } from "./init";
 import { TracingService } from "../tracing/otlpLayer";
 
 /**
@@ -112,10 +113,8 @@ export function createRouteHandler<T, E>(
     });
 
     // Execute with error handling
-    const result = await Effect.runPromise(
-      effect
-        .pipe(Effect.catchAll((error) => errorHandler(error)))
-        .pipe(Effect.provide(Effect.succeed({})))
+    const result = await runWithRuntime(
+      effect.pipe(Effect.catchAll((error) => errorHandler(error)))
     );
 
     // Handle Response objects (from error handler)
@@ -159,7 +158,7 @@ export function createPublicHandler<T, E>(
       };
     });
 
-    const result = await Effect.runPromise(
+    const result = await runWithRuntime(
       effect.pipe(Effect.catchAll((error) => errorHandler(error)))
     );
 
@@ -221,7 +220,7 @@ export function createSimpleHandler<T, E>(
       return { data, traceId };
     });
 
-    const result = await Effect.runPromise(
+    const result = await runWithRuntime(
       effect.pipe(Effect.catchAll((error) => errorHandler(error)))
     );
 

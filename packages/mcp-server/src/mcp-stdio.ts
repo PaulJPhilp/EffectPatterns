@@ -121,9 +121,9 @@ server.registerTool(
           description: "Maximum number of results to return",
         },
       },
-    },
+    } as any,
   },
-  async (args) => {
+  (async (args: any) => {
     log("Tool called: search_patterns", args);
     try {
       const searchParams = new URLSearchParams();
@@ -133,15 +133,19 @@ server.registerTool(
       if (args.limit) searchParams.append("limit", String(args.limit));
       const result = await callApi(`/patterns?${searchParams}`);
       return {
-        type: "text",
-        text: JSON.stringify(result, null, 2),
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       log("Tool error: search_patterns", msg);
       throw new Error(`search_patterns failed: ${msg}`);
     }
-  }
+  }) as any
 );
 
 server.registerTool(
@@ -154,22 +158,26 @@ server.registerTool(
         id: { type: "string", description: "Pattern identifier (e.g., 'effect-service')" },
       },
       required: ["id"],
-    },
+    } as any,
   },
-  async (args) => {
+  (async (args: any) => {
     log("Tool called: get_pattern", args);
     try {
       const result = await callApi(`/patterns/${encodeURIComponent(args.id)}`);
       return {
-        type: "text",
-        text: JSON.stringify(result, null, 2),
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       log("Tool error: get_pattern", msg);
       throw new Error(`get_pattern failed: ${msg}`);
     }
-  }
+  }) as any
 );
 
 server.registerTool(
@@ -179,22 +187,26 @@ server.registerTool(
     inputSchema: {
       type: "object",
       properties: {},
-    },
+    } as any,
   },
-  async () => {
+  (async (_args: any) => {
     log("Tool called: list_analysis_rules");
     try {
       const result = await callApi("/list-rules", "POST", {});
       return {
-        type: "text",
-        text: JSON.stringify(result, null, 2),
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       log("Tool error: list_analysis_rules", msg);
       throw new Error(`list_analysis_rules failed: ${msg}`);
     }
-  }
+  }) as any
 );
 
 server.registerTool(
@@ -214,9 +226,9 @@ server.registerTool(
         },
       },
       required: ["source"],
-    },
+    } as any,
   },
-  async (args) => {
+  (async (args: any) => {
     log("Tool called: analyze_code", args);
     try {
       const result = await callApi("/analyze-code", "POST", {
@@ -225,15 +237,19 @@ server.registerTool(
         analysisType: args.analysisType || "all",
       });
       return {
-        type: "text",
-        text: JSON.stringify(result, null, 2),
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       log("Tool error: analyze_code", msg);
       throw new Error(`analyze_code failed: ${msg}`);
     }
-  }
+  }) as any
 );
 
 server.registerTool(
@@ -247,9 +263,9 @@ server.registerTool(
         filePath: { type: "string", description: "File path for context (e.g., 'src/services/user.ts')" },
       },
       required: ["code"],
-    },
+    } as any,
   },
-  async (args) => {
+  (async (args: any) => {
     log("Tool called: review_code", args);
     try {
       const result = await callApi("/review-code", "POST", {
@@ -257,15 +273,19 @@ server.registerTool(
         filePath: args.filePath,
       });
       return {
-        type: "text",
-        text: JSON.stringify(result, null, 2),
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       log("Tool error: review_code", msg);
       throw new Error(`review_code failed: ${msg}`);
     }
-  }
+  }) as any
 );
 
 server.registerTool(
@@ -283,9 +303,9 @@ server.registerTool(
         },
       },
       required: ["patternId"],
-    },
+    } as any,
   },
-  async (args) => {
+  (async (args: any) => {
     log("Tool called: generate_pattern_code", args);
     try {
       const result = await callApi("/generate-pattern", "POST", {
@@ -293,15 +313,19 @@ server.registerTool(
         variables: args.variables || {},
       });
       return {
-        type: "text",
-        text: JSON.stringify(result, null, 2),
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       log("Tool error: generate_pattern_code", msg);
       throw new Error(`generate_pattern_code failed: ${msg}`);
     }
-  }
+  }) as any
 );
 
 server.registerTool(
@@ -325,24 +349,28 @@ server.registerTool(
         },
       },
       required: ["files"],
-    },
+    } as any,
   },
-  async (args) => {
+  (async (args: any) => {
     log("Tool called: analyze_consistency", args);
     try {
       const result = await callApi("/analyze-consistency", "POST", {
         files: args.files,
       });
       return {
-        type: "text",
-        text: JSON.stringify(result, null, 2),
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       log("Tool error: analyze_consistency", msg);
       throw new Error(`analyze_consistency failed: ${msg}`);
     }
-  }
+  }) as any
 );
 
 server.registerTool(
@@ -376,9 +404,9 @@ server.registerTool(
         },
       },
       required: ["refactoringIds", "files"],
-    },
+    } as any,
   },
-  async (args) => {
+  (async (args: any) => {
     log("Tool called: apply_refactoring", args);
     try {
       const result = await callApi("/apply-refactoring", "POST", {
@@ -387,15 +415,19 @@ server.registerTool(
         preview: args.preview !== false,
       });
       return {
-        type: "text",
-        text: JSON.stringify(result, null, 2),
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       log("Tool error: apply_refactoring", msg);
       throw new Error(`apply_refactoring failed: ${msg}`);
     }
-  }
+  }) as any
 );
 
 // ============================================================================

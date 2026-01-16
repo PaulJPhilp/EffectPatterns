@@ -13,8 +13,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   validateApiKey,
 } from "../../../../src/auth/apiKey";
+import { PatternNotFoundError } from "../../../../src/errors";
 import { errorHandler } from "../../../../src/server/errorHandler";
-import { MCPCacheService } from "../../../../src/services/cache";
 import { PatternsService, runWithRuntime } from "../../../../src/server/init";
 import { TracingService } from "../../../../src/tracing/otlpLayer";
 
@@ -25,7 +25,6 @@ const handleGetPattern = Effect.fn("get-pattern")(function* (
 ) {
   const tracing = yield* TracingService;
   const patternsService = yield* PatternsService;
-  const cache = yield* MCPCacheService;
 
   // Validate API key
   yield* validateApiKey(request);
@@ -35,22 +34,14 @@ const handleGetPattern = Effect.fn("get-pattern")(function* (
     patternId,
   });
 
-  // Fetch pattern with caching
-  const pattern = yield* cache.getOrSet(
-    `pattern:${patternId}`,
-    Effect.gen(function* () {
-      const result = yield* patternsService.getPatternById(patternId);
+  // Fetch pattern
+  const result = yield* patternsService.getPatternById(patternId);
 
-      if (!result) {
-        return yield* Effect.fail(
-          new Error(`Pattern not found: ${patternId}`)
-        );
-      }
+  if (!result) {
+    return yield* Effect.fail(new PatternNotFoundError({ patternId }));
+  }
 
-      return result;
-    }),
-    600000 // 10 minute TTL for individual patterns
-  );
+  const pattern = result;
 
   const traceId = tracing.getTraceId();
 

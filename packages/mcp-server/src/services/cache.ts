@@ -6,8 +6,8 @@
  */
 
 import { Effect } from "effect";
-import { MCPConfigService } from "./config.js";
-import { MCPLoggerService } from "./logger.js";
+import { MCPConfigService } from "./config";
+import { MCPLoggerService } from "./logger";
 
 /**
  * Cache entry with metadata

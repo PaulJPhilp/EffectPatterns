@@ -22,21 +22,21 @@ import { Effect, Layer } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 // Import services
-import { MCPCacheService, MCPCacheServiceLive } from "./services/cache.js";
-import { MCPConfigService, MCPConfigServiceLive } from "./services/config.js";
-import { MCPLoggerService, MCPLoggerServiceLive } from "./services/logger.js";
+import { MCPCacheService, MCPCacheServiceLive } from "./services/cache";
+import { MCPConfigService, MCPConfigServiceLive } from "./services/config";
+import { MCPLoggerService, MCPLoggerServiceLive } from "./services/logger";
 import {
   MCPMetricsService,
   MCPMetricsServiceLive,
-} from "./services/metrics.js";
+} from "./services/metrics";
 import {
   MCRateLimitService,
   MCRateLimitServiceLive,
-} from "./services/rate-limit.js";
+} from "./services/rate-limit";
 import {
   MCPValidationService,
   MCPValidationServiceLive,
-} from "./services/validation.js";
+} from "./services/validation";
 
 // Import error types
 import {
@@ -55,7 +55,7 @@ import {
   TimeoutError,
   TracingError,
   ValidationError,
-} from "./errors.js";
+} from "./errors";
 
 // Create combined test layers
 const TestBaseLayer = MCPConfigServiceLive;

@@ -15,28 +15,8 @@ import {
   validateApiKey,
 } from "../../../src/auth/apiKey";
 import { errorHandler } from "../../../src/server/errorHandler";
-import { MCPCacheService } from "../../../src/services/cache";
 import { PatternsService, runWithRuntime } from "../../../src/server/init";
 import { TracingService } from "../../../src/tracing/otlpLayer";
-
-/**
- * Create cache key from search parameters
- */
-function createCacheKey(
-  query?: string,
-  category?: string,
-  difficulty?: string,
-  limit?: number
-): string {
-  const parts = [
-    "patterns",
-    query || "all",
-    category || "all",
-    difficulty || "all",
-    limit || "50",
-  ];
-  return parts.join(":");
-}
 
 // Handler implementation with automatic span creation via Effect.fn
 const handleSearchPatterns = Effect.fn("search-patterns")(function* (
@@ -44,7 +24,6 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
 ) {
   const tracing = yield* TracingService;
   const patterns = yield* PatternsService;
-  const cache = yield* MCPCacheService;
 
   // Validate API key
   yield* validateApiKey(request);
@@ -72,24 +51,16 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
       ? difficulty
       : undefined;
 
-  // Create cache key and use cache with getOrSet
-  const cacheKey = createCacheKey(query, category, difficulty, limit);
-  const summaries = yield* cache.getOrSet(
-    cacheKey,
-    Effect.gen(function* () {
-      // Cache miss - fetch from database
-      const results = yield* patterns.searchPatterns({
-        query,
-        category,
-        skillLevel,
-        limit,
-      });
+  // Fetch patterns from database
+  const results = yield* patterns.searchPatterns({
+    query,
+    category,
+    skillLevel,
+    limit,
+  });
 
-      // Convert to summaries
-      return results.map(toPatternSummary);
-    }),
-    300000 // 5 minute TTL for pattern searches
-  );
+  // Convert to summaries
+  const summaries = results.map(toPatternSummary);
 
   const traceId = tracing.getTraceId();
 
