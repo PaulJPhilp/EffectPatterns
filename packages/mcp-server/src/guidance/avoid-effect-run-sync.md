@@ -3,19 +3,19 @@
 **Goal: Non-blocking, supervised execution.**
 
 ## Use when
-- Never in application logic.
-- Only in tiny scripts where you are 100% certain no async work (promises, scheduling) will ever happen.
+- You are in a synchronous-only script (e.g., a simple CLI calculator) where you are 100% certain no async work (promises, intervals, or timeouts) will ever be triggered.
 
 ## Avoid when
-- Running any normal Effect program.
-- In tests (use `runPromise` or `runFork`).
+- Executing any standard Effect program.
+- Inside any function that might eventually touch a database, file system, or network API.
+- In tests where you should be using `runPromise`.
 
 ## Decision rule
-`runSync` throws if the effect attempts to suspend (e.g., waiting for a promise/sleep). Since most useful programs are async, `runSync` is a ticking time bomb.
-Use `runPromise` or `runFork`.
+`runSync` will throw a runtime error if the Effect suspends (waits for async work). Since most production Effects are async, `runSync` is a "ticking time bomb" for crashes. Use `runPromise` or `runFork` instead.
 
 ## Simplifier
-`runSync` is for calculators. `runPromise` is for programs.
+- `runSync` = "Only for math and pure data."
+- `runPromise` = "For real-world programs."
 
 ## Implementation prompt
-"Implement the Fix Plan for this finding: Replace `Effect.runSync` with `Effect.runPromise` (if awaiting the result) or `Effect.runFork` (if fire-and-forget)."
+"Implement the Fix Plan for this finding: Replace `Effect.runSync` with `Effect.runPromise` and ensure the calling function is updated to handle the resulting Promise."

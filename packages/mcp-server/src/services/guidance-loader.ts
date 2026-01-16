@@ -22,10 +22,12 @@ const GUIDANCE_MAP: Record<string, string> = {
 	"try-catch-in-effect": "try-catch-in-effect",
 	"generic-error-type": "generic-error-type",
 	"missing-error-channel": "missing-error-channel",
+	"schema-validation": "schema-validation",
 
 	// Concurrency patterns
 	"promise-all-in-effect": "promise-all-in-effect",
 	"unbounded-parallelism": "unbounded-parallelism",
+	"no-floating-promises": "no-floating-promises",
 
 	// Resource management patterns
 	"leaking-scopes": "leaking-scopes",
@@ -37,6 +39,10 @@ const GUIDANCE_MAP: Record<string, string> = {
 	// Testing & observability patterns
 	"hidden-effect-execution": "hidden-effect-execution",
 	"logging-discipline": "logging-discipline",
+
+	// Core Effect idioms
+	"avoid-effect-run-sync": "avoid-effect-run-sync",
+	"prefer-effect-gen": "prefer-effect-gen",
 };
 
 /**

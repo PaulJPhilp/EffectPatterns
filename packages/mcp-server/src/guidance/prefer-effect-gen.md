@@ -1,22 +1,22 @@
-# Pattern Guidance: Prefer Effect.gen over pipe/flatMap chains
+# Pattern Guidance: Prefer Effect.gen over pipe/flatMap
 
 **Goal: Readable, sequential control flow.**
 
 ## Use when
-- You have more than one step in your logic.
-- You need access to variables from previous steps (avoids closure hell).
-- You are writing business logic, services, or tests.
+- Your logic has more than one step.
+- You need to access variables from earlier steps without complex nesting.
+- You are writing business logic or service implementations.
 
 ## Avoid when
-- You have a single, simple transformation (e.g., `pipe(effect, Effect.map(fn))`).
-- You are defining a tiny helper function that is purely point-free.
+- You have a single, simple transformation (e.g., a single `Effect.map`).
 
 ## Decision rule
-- Multiple steps or variable dependencies? → `Effect.gen`.
-- Single transformation? → `pipe` is acceptable.
+- Multiple steps? → `Effect.gen` + `yield*`.
+- Complex closures? → `Effect.gen`.
+- Single mapping? → `pipe` is fine.
 
 ## Simplifier
-`Effect.gen` writes like synchronous code but runs like a workflow.
+`Effect.gen` makes async logic read like a simple story.
 
 ## Implementation prompt
-"Implement the Fix Plan for this finding: Refactor the `pipe` or `flatMap` chain into an `Effect.gen` block. Assign intermediate results to variables using `yield*` and flatten the control flow."
+"Implement the Fix Plan for this finding: Refactor the `pipe` or `flatMap` chain into an `Effect.gen` block. Use `yield*` to bind intermediate results to variables."

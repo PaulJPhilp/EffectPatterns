@@ -3,20 +3,20 @@
 **Goal: Trust boundaries are explicit and enforced.**
 
 ## Use when
-- Receiving data from an API, database, or user input.
-- Sending data out to an external system.
+- Receiving data from external sources (API, Database, File System, User Input).
+- Sending data to external systems where the contract must be guaranteed.
 
 ## Avoid when
-- Using `any` or `as MyType` to bypass validation.
-- "Trusting" external JSON to match internal interfaces.
+- Using `as MyType` or `any` to "force" a type onto unknown data.
+- Assuming external JSON will always match your TypeScript interfaces.
 
 ## Decision rule
-If data crosses a process boundary, it must be validated by `@effect/schema`.
-- Ingress: Parse/Decode.
-- Egress: Encode.
+If data originates outside your system, it is untrusted. Use `@effect/schema` to parse and validate it before it enters your domain logic.
+- Parse/Decode at the gate.
+- Encode at the exit.
 
 ## Simplifier
-Validation is the bouncer. Nothing gets in without ID.
+Validation is the bouncer. No ID, no entry.
 
 ## Implementation prompt
-"Implement the Fix Plan for this finding: Define a Schema for the external data structure. Use `Schema.decodeUnknown` (or similar) to validate the input before using it."
+"Implement the Fix Plan for this finding: Define an `@effect/schema` for this data. Use `Schema.decodeUnknown` to validate the input and handle the potential parse error in the Effect error channel."
