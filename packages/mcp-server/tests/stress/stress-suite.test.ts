@@ -4,8 +4,6 @@
  */
 
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
-import { createReportGenerator, TestResult, CheckResult } from './utils/report-generator';
-import { createMetricsCollector } from './utils/metrics-collector';
 import { getThresholds } from './config/thresholds';
 
 /**
@@ -31,7 +29,6 @@ import { getThresholds } from './config/thresholds';
 
 describe('Stress Testing Suite - review_code Tool', () => {
   const thresholds = getThresholds('strict');
-  const reportGenerator = createReportGenerator();
 
   beforeAll(() => {
     console.log('\n╔═══════════════════════════════════════════════════════════╗');
@@ -89,7 +86,7 @@ describe('Stress Testing Suite - review_code Tool', () => {
       console.log('\n  Large file (90KB):');
       console.log(`    Expected p95: < 3s`);
       console.log(`    Expected throughput: > 10 req/s`);
-      console.log('\n  Near-limit file (98KB):`);
+      console.log('\n  Near-limit file (98KB):');
       console.log(`    Expected total time: < 5s`);
       console.log(`    Expected memory peak: < 200MB`);
 

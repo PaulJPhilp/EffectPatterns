@@ -1,10 +1,23 @@
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
 
-import { AnalysisService, AnalysisServiceLive } from "../../services/analysis-service";
+import { AnalysisService } from "../../services/analysis-service";
+import { CodeAnalyzerService } from "../../services/code-analyzer";
+import { ConsistencyAnalyzerService } from "../../services/consistency-analyzer";
+import { RefactoringEngineService } from "../../services/refactoring-engine";
 import { RuleRegistryService } from "../../services/rule-registry";
+import type { CodeFinding } from "../../services/code-analyzer";
 
 describe("Analysis Engine Integration Tests", () => {
+	// Complete test layer with all dependencies
+	const TestLayer = Layer.mergeAll(
+		RuleRegistryService.Default,
+		CodeAnalyzerService.Default,
+		RefactoringEngineService.Default,
+		ConsistencyAnalyzerService.Default,
+		AnalysisService.Default
+	);
+
 	it("analyzes code that triggers multiple rules across categories", async () => {
 		const multiViolationCode = `
 import { Effect } from "effect";
@@ -24,13 +37,13 @@ Effect.gen(function* () {
 });
 `;
 
-		// Use AnalysisServiceLive which includes all dependencies
+		// Use complete test layer with all dependencies
 		const result = await Effect.runPromise(
 			Effect.gen(function* () {
 				const analysisService = yield* AnalysisService;
 				return yield* analysisService.analyzeFile("test.ts", multiViolationCode);
 			}).pipe(
-				Effect.provide(AnalysisServiceLive)
+				Effect.provide(TestLayer)
 			) as Effect.Effect<any, never, never>
 		);
 
@@ -39,7 +52,7 @@ Effect.gen(function* () {
 
 		// Should include expected high-severity findings
 		const highSeverityFindings = result.findings.filter(
-			(f) => f.severity === "high"
+			(f: CodeFinding) => f.severity === "high"
 		);
 		expect(highSeverityFindings.length).toBeGreaterThan(0);
 	});
@@ -60,8 +73,8 @@ Effect.gen(function* () {
 				const analysisService = yield* AnalysisService;
 				return yield* analysisService.analyzeFile("test.ts", testCode);
 			}).pipe(
-				Effect.provide(AnalysisService.Default)
-			)
+				Effect.provide(TestLayer)
+			) as Effect.Effect<any, never, never>
 		);
 
 		if (result.findings.length > 1) {
@@ -90,7 +103,7 @@ Effect.gen(function* () {
 				const analysisService = yield* AnalysisService;
 				return yield* analysisService.analyzeFile("empty.ts", "");
 			}).pipe(
-				Effect.provide(AnalysisService.Default)
+				Effect.provide(TestLayer)
 			) as Effect.Effect<any, never, never>
 		);
 
@@ -107,7 +120,7 @@ Effect.gen(function* () {
 					fixes: yield* registry.listFixes(),
 				};
 			}).pipe(
-				Effect.provide(RuleRegistryService.Default)
+				Effect.provide(TestLayer)
 			) as Effect.Effect<any, never, never>
 		);
 
@@ -131,7 +144,7 @@ Effect.gen(function* () {
 				const analysisService = yield* AnalysisService;
 				return yield* analysisService.analyzeFile("test.ts", testCode);
 			}).pipe(
-				Effect.provide(AnalysisService.Default)
+				Effect.provide(TestLayer)
 			) as Effect.Effect<any, never, never>
 		);
 

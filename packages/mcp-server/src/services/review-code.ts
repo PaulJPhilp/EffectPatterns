@@ -9,7 +9,7 @@
 import { AnalysisService } from "@effect-patterns/analysis-core";
 import { Effect } from "effect";
 import * as ts from "typescript";
-import type { Finding, RuleDefinition, RuleId } from "../tools/schemas";
+import type { Finding, RuleDefinition, RuleId, FixDefinition } from "../tools/schemas";
 import { calculateConfidence } from "./confidence-calculator";
 import { generateFixPlan } from "./fix-plan-generator";
 import { extractSnippet } from "./snippet-extractor";
@@ -397,7 +397,8 @@ function buildEnhancedRecommendation(
 ): EnhancedCodeRecommendation {
 	const confidence = calculateConfidence(finding, sourceFile, rule);
 	const evidence = extractSnippet(finding, code);
-	const fixPlan = generateFixPlan(finding, rule, allFixes);
+	// Cast allFixes to FixDefinition[] (safe because placeholder fixes follow the same shape)
+	const fixPlan = generateFixPlan(finding, rule, allFixes as never as readonly FixDefinition[]);
 
 	return {
 		severity: finding.severity,
