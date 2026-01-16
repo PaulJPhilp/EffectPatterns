@@ -34,6 +34,8 @@ const handleReviewCode = Effect.fn("review-code")(function* (
 
 	return {
 		recommendations: result.recommendations,
+		enhancedRecommendations: result.enhancedRecommendations,
+		summary: result.summary,
 		meta: result.meta,
 		markdown: result.markdown,
 		traceId,

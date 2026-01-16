@@ -16,6 +16,7 @@ import {
   findEffectPatternBySlug,
   searchEffectPatterns
 } from "@effect-patterns/toolkit";
+import { NodeContext } from "@effect/platform-node";
 import { Cause, Effect, Exit, Layer, Option } from "effect";
 import { MCPCacheService } from "../services/cache";
 import { MCPConfigService } from "../services/config";
@@ -85,6 +86,7 @@ export class PatternsService extends Effect.Service<PatternsService>()(
  * Services are self-managed via Effect.Service pattern.
  */
 export const AppLayer = Layer.mergeAll(
+  NodeContext.layer,
   MCPConfigService.Default,
   MCPLoggerService.Default,
   MCPTierService.Default,

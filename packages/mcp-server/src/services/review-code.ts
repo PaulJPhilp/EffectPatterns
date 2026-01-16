@@ -8,7 +8,11 @@
 
 import { AnalysisService } from "@effect-patterns/analysis-core";
 import { Effect } from "effect";
-import type { Finding } from "../tools/schemas";
+import * as ts from "typescript";
+import type { Finding, RuleDefinition, RuleId } from "../tools/schemas";
+import { calculateConfidence } from "./confidence-calculator";
+import { generateFixPlan } from "./fix-plan-generator";
+import { extractSnippet } from "./snippet-extractor";
 
 /**
  * Maximum number of recommendations to return in Free Tier
@@ -49,10 +53,96 @@ export interface ReviewCodeMeta {
 }
 
 /**
+ * Confidence level for a finding (high/medium/low)
+ */
+export type ConfidenceLevel = "high" | "medium" | "low";
+
+/**
+ * Confidence score with reasoning
+ */
+export interface ConfidenceScore {
+	readonly level: ConfidenceLevel;
+	readonly score: number; // 0.0 - 1.0
+	readonly factors: readonly string[]; // Explanation of confidence factors
+}
+
+/**
+ * Code snippet extracted from source, showing context around issue
+ */
+export interface CodeSnippet {
+	readonly beforeContext: readonly string[]; // Lines before issue
+	readonly targetLines: readonly string[]; // The problematic lines
+	readonly afterContext: readonly string[]; // Lines after issue
+	readonly startLine: number; // 1-based line number
+	readonly endLine: number; // 1-based line number
+}
+
+/**
+ * Single step in the fix plan
+ */
+export interface FixStep {
+	readonly order: number;
+	readonly action: string; // e.g. "Replace X with Y"
+	readonly detail: string; // Additional explanation
+}
+
+/**
+ * Description of what will change when fix is applied
+ */
+export interface ChangeDescription {
+	readonly type: "add" | "modify" | "remove" | "refactor";
+	readonly scope: string; // e.g. "This file", "3 imports", "Service layer"
+	readonly description: string; // What changes
+}
+
+/**
+ * Plan to fix a finding (actionable but not copy-paste)
+ */
+export interface FixPlan {
+	readonly steps: readonly FixStep[]; // 3-5 action items
+	readonly changes: readonly ChangeDescription[]; // 2-4 changes
+	readonly risks: readonly string[]; // 1-3 watch-outs
+}
+
+/**
+ * Enhanced recommendation with confidence, evidence, and fix plan
+ */
+export interface EnhancedCodeRecommendation {
+	readonly severity: "high" | "medium" | "low";
+	readonly title: string;
+	readonly line: number;
+	readonly message: string;
+	readonly ruleId: RuleId; // e.g. "errors/avoid-generic-error"
+	readonly category: string; // From rule definition
+	readonly confidence: ConfidenceScore;
+	readonly evidence: CodeSnippet;
+	readonly fixPlan: FixPlan;
+}
+
+/**
+ * Machine-readable summary of analysis results
+ */
+export interface MachineSummary {
+	readonly findingsByLevel: Readonly<{
+		high: number;
+		medium: number;
+		low: number;
+	}>;
+	readonly topIssueRuleIds: readonly RuleId[];
+	readonly confidenceDistribution: Readonly<{
+		high: number;
+		medium: number;
+		low: number;
+	}>;
+}
+
+/**
  * Complete review code response
  */
 export interface ReviewCodeResult {
 	readonly recommendations: readonly CodeRecommendation[];
+	readonly enhancedRecommendations: readonly EnhancedCodeRecommendation[];
+	readonly summary: MachineSummary;
 	readonly meta: ReviewCodeMeta;
 	readonly markdown: string;
 }
@@ -131,66 +221,195 @@ function sortFindings(findings: readonly Finding[]): readonly Finding[] {
 	});
 }
 
+
 /**
- * Transform Finding to CodeRecommendation
+ * Get emoji for severity level
  */
-function toRecommendation(finding: Finding): CodeRecommendation {
-	return {
-		severity: finding.severity,
-		title: finding.title,
-		line: finding.range.startLine,
-		message: finding.message,
-	};
+function getSeverityEmoji(severity: "high" | "medium" | "low"): string {
+	switch (severity) {
+		case "high":
+			return "🔴";
+		case "medium":
+			return "🟡";
+		case "low":
+			return "🔵";
+	}
 }
 
 /**
- * Generate Markdown output for recommendations
+ * Extract one-line summary from a longer message
  */
-function generateMarkdown(
-	recommendations: readonly CodeRecommendation[],
+function extractOneLineSummary(message: string): string {
+	const sentences = message.split(/[.!?]\s+/);
+	return (sentences[0] || message).slice(0, 100) + (sentences[0].length > 100 ? "..." : "");
+}
+
+/**
+ * Format code snippet for markdown with highlighting
+ */
+function formatCodeSnippet(evidence: {
+	beforeContext: readonly string[];
+	targetLines: readonly string[];
+	afterContext: readonly string[];
+	startLine: number;
+	endLine: number;
+}): string {
+	const lines: string[] = [];
+
+	lines.push("```typescript");
+	lines.push(`// Line ${evidence.startLine}${evidence.startLine !== evidence.endLine ? `-${evidence.endLine}` : ""}`);
+
+	// Add before context
+	evidence.beforeContext.forEach((line) => {
+		lines.push(line);
+	});
+
+	// Add target lines with highlighting
+	evidence.targetLines.forEach((line) => {
+		lines.push(`>> ${line}  // ← Issue detected here`);
+	});
+
+	// Add after context
+	evidence.afterContext.forEach((line) => {
+		lines.push(line);
+	});
+
+	lines.push("```");
+
+	return lines.join("\n");
+}
+
+/**
+ * Generate enhanced markdown output for recommendations
+ */
+function generateEnhancedMarkdown(
+	enhancedRecommendations: readonly EnhancedCodeRecommendation[],
+	summary: MachineSummary,
 	meta: ReviewCodeMeta
 ): string {
 	const lines: string[] = [];
 
 	lines.push("# Code Review Results\n");
 
-	if (recommendations.length === 0) {
+	if (enhancedRecommendations.length === 0) {
 		lines.push("✅ No issues found. Your code looks good!\n");
 		return lines.join("\n");
 	}
 
+	// Machine summary section
+	lines.push("## Summary");
 	lines.push(
-		`Found ${meta.totalFound} issue${meta.totalFound === 1 ? "" : "s"}.`
+		`**Findings:** ${summary.findingsByLevel.high} high / ${summary.findingsByLevel.medium} medium / ${summary.findingsByLevel.low} low`
 	);
+	lines.push(
+		`**Top Issues:** ${summary.topIssueRuleIds.slice(0, 3).join(", ")}`
+	);
+	lines.push(
+		`**Confidence:** High (${summary.confidenceDistribution.high} findings) / Medium (${summary.confidenceDistribution.medium} findings)`
+	);
+	lines.push("\n---\n");
 
-	if (meta.hiddenCount > 0) {
+	// Enhanced findings
+	enhancedRecommendations.forEach((rec, index) => {
+		const emoji = getSeverityEmoji(rec.severity);
+
+		lines.push(`## ${index + 1}. ${emoji} ${rec.title}\n`);
 		lines.push(
-			`Showing top ${recommendations.length} highest-priority issues.\n`
+			`**Rule:** \`${rec.ruleId}\` (severity: ${rec.severity}, confidence: ${rec.confidence.level})`
 		);
-	} else {
-		lines.push("");
-	}
+		lines.push(`**Why it matters:** ${extractOneLineSummary(rec.message)}\n`);
 
-	recommendations.forEach((rec, index) => {
-		const emoji =
-			rec.severity === "high"
-				? "🔴"
-				: rec.severity === "medium"
-					? "🟡"
-					: "🔵";
-
-		lines.push(`## ${index + 1}. ${emoji} ${rec.title}`);
-		lines.push(`**Line ${rec.line}** • Severity: ${rec.severity}\n`);
-		lines.push(rec.message);
+		// Evidence
+		lines.push("### Evidence");
+		lines.push(formatCodeSnippet(rec.evidence));
 		lines.push("");
+
+		// Fix Plan
+		lines.push("### Fix Plan\n");
+		lines.push("**Steps:**");
+		rec.fixPlan.steps.forEach((step) => {
+			lines.push(`${step.order}. ${step.action}`);
+		});
+		lines.push("");
+
+		lines.push("**What will change:**");
+		rec.fixPlan.changes.forEach((change) => {
+			lines.push(
+				`- ${change.type}: ${change.description} (${change.scope})`
+			);
+		});
+		lines.push("");
+
+		if (rec.fixPlan.risks.length > 0) {
+			lines.push("**Risks:**");
+			rec.fixPlan.risks.forEach((risk) => {
+				lines.push(`- ${risk}`);
+			});
+			lines.push("");
+		}
+
+		lines.push("---\n");
 	});
 
+	// Upgrade message
 	if (meta.upgradeMessage) {
-		lines.push("---\n");
 		lines.push(`💡 **${meta.upgradeMessage}**`);
 	}
 
 	return lines.join("\n");
+}
+
+/**
+ * Helper: Count findings by severity
+ */
+function countBySeverity(
+	findings: readonly EnhancedCodeRecommendation[]
+): Readonly<{ high: number; medium: number; low: number }> {
+	const counts = { high: 0, medium: 0, low: 0 };
+	findings.forEach((f) => {
+		counts[f.severity]++;
+	});
+	return counts;
+}
+
+/**
+ * Helper: Count findings by confidence level
+ */
+function countByConfidence(
+	findings: readonly EnhancedCodeRecommendation[]
+): Readonly<{ high: number; medium: number; low: number }> {
+	const counts = { high: 0, medium: 0, low: 0 };
+	findings.forEach((f) => {
+		counts[f.confidence.level]++;
+	});
+	return counts;
+}
+
+/**
+ * Helper: Build enhanced recommendation from finding
+ */
+function buildEnhancedRecommendation(
+	finding: Finding,
+	rule: RuleDefinition,
+	code: string,
+	sourceFile: ts.SourceFile,
+	allFixes: readonly { id: string; description: string; title: string }[]
+): EnhancedCodeRecommendation {
+	const confidence = calculateConfidence(finding, sourceFile, rule);
+	const evidence = extractSnippet(finding, code);
+	const fixPlan = generateFixPlan(finding, rule, allFixes);
+
+	return {
+		severity: finding.severity,
+		title: finding.title,
+		line: finding.range.startLine,
+		message: finding.message,
+		ruleId: finding.ruleId,
+		category: rule.category,
+		confidence,
+		evidence,
+		fixPlan,
+	};
 }
 
 /**
@@ -204,7 +423,7 @@ export class ReviewCodeService extends Effect.Service<ReviewCodeService>()(
 
 			return {
 				/**
-				 * Review code and return top 3 recommendations
+				 * Review code and return top 3 recommendations with enhanced details
 				 */
 				reviewCode: (
 					code: string,
@@ -228,16 +447,77 @@ export class ReviewCodeService extends Effect.Service<ReviewCodeService>()(
 
 						const sortedFindings = sortFindings(result.findings);
 						const totalFound = sortedFindings.length;
-						const topFindings = sortedFindings.slice(
-							0,
-							MAX_FREE_TIER_RECOMMENDATIONS
-						);
 						const hiddenCount = Math.max(
 							0,
 							totalFound - MAX_FREE_TIER_RECOMMENDATIONS
 						);
 
-						const recommendations = topFindings.map(toRecommendation);
+						// Build source file for AST analysis (used in confidence calculation)
+						const sourceFile = ts.createSourceFile(
+							filename,
+							code,
+							ts.ScriptTarget.Latest,
+							true
+						);
+
+						// Prepare rules and fixes for enhancement (placeholder - normally from registry)
+						// In a full implementation, these would come from RuleRegistryService
+						const rulesMap = new Map<string, RuleDefinition>();
+						const allFixes: { id: string; description: string; title: string }[] = [];
+
+						// For now, we'll create a minimal rule definition for each finding
+						// In production, these would come from RuleRegistryService
+						sortedFindings.forEach((finding) => {
+							if (!rulesMap.has(finding.ruleId)) {
+								rulesMap.set(finding.ruleId, {
+									id: finding.ruleId,
+									title: finding.title,
+									message: finding.message,
+									severity: finding.severity,
+									category: "validation", // Default category
+									fixIds: [],
+								});
+							}
+						});
+
+						// Build enhanced recommendations for all findings
+						const allEnhancedFindings = sortedFindings.map((finding) => {
+							const rule = rulesMap.get(finding.ruleId)!;
+							return buildEnhancedRecommendation(
+								finding,
+								rule,
+								code,
+								sourceFile,
+								allFixes
+							);
+						});
+
+						// Take top 3 for free tier
+						const topEnhancedFindings = allEnhancedFindings.slice(
+							0,
+							MAX_FREE_TIER_RECOMMENDATIONS
+						);
+
+						// Build machine summary
+						const summary: MachineSummary = {
+							findingsByLevel: countBySeverity(allEnhancedFindings),
+							topIssueRuleIds: allEnhancedFindings
+								.slice(0, 5)
+								.map((f) => f.ruleId),
+							confidenceDistribution: countByConfidence(
+								allEnhancedFindings
+							),
+						};
+
+						// Build backward-compatible recommendations
+						const recommendations = topEnhancedFindings.map(
+							(f): CodeRecommendation => ({
+								severity: f.severity,
+								title: f.title,
+								line: f.line,
+								message: f.message,
+							})
+						);
 
 						const upgradeMessage =
 							hiddenCount > 0
@@ -250,10 +530,17 @@ export class ReviewCodeService extends Effect.Service<ReviewCodeService>()(
 							upgradeMessage,
 						};
 
-						const markdown = generateMarkdown(recommendations, meta);
+						// Generate enhanced markdown
+						const markdown = generateEnhancedMarkdown(
+							topEnhancedFindings,
+							summary,
+							meta
+						);
 
 						return {
 							recommendations,
+							enhancedRecommendations: topEnhancedFindings,
+							summary,
 							meta,
 							markdown,
 						};

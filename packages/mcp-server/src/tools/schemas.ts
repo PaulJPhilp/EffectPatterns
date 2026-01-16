@@ -257,8 +257,86 @@ export const ReviewCodeMeta = S.Struct({
 
 export type ReviewCodeMeta = typeof ReviewCodeMeta.Type;
 
+export const ConfidenceLevel = S.Literal("high", "medium", "low");
+
+export type ConfidenceLevel = typeof ConfidenceLevel.Type;
+
+export const ConfidenceScore = S.Struct({
+	level: ConfidenceLevel,
+	score: S.Number,
+	factors: S.Array(S.String),
+});
+
+export type ConfidenceScore = typeof ConfidenceScore.Type;
+
+export const CodeSnippet = S.Struct({
+	beforeContext: S.Array(S.String),
+	targetLines: S.Array(S.String),
+	afterContext: S.Array(S.String),
+	startLine: S.Number,
+	endLine: S.Number,
+});
+
+export type CodeSnippet = typeof CodeSnippet.Type;
+
+export const FixStep = S.Struct({
+	order: S.Number,
+	action: S.String,
+	detail: S.String,
+});
+
+export type FixStep = typeof FixStep.Type;
+
+export const ChangeDescription = S.Struct({
+	type: S.Literal("add", "modify", "remove", "refactor"),
+	scope: S.String,
+	description: S.String,
+});
+
+export type ChangeDescription = typeof ChangeDescription.Type;
+
+export const FixPlan = S.Struct({
+	steps: S.Array(FixStep),
+	changes: S.Array(ChangeDescription),
+	risks: S.Array(S.String),
+});
+
+export type FixPlan = typeof FixPlan.Type;
+
+export const EnhancedCodeRecommendation = S.Struct({
+	severity: SuggestionSeverity,
+	title: S.String,
+	line: S.Number,
+	message: S.String,
+	ruleId: RuleId,
+	category: S.String,
+	confidence: ConfidenceScore,
+	evidence: CodeSnippet,
+	fixPlan: FixPlan,
+});
+
+export type EnhancedCodeRecommendation = typeof EnhancedCodeRecommendation.Type;
+
+export const MachineSummary = S.Struct({
+	findingsByLevel: S.Struct({
+		high: S.Number,
+		medium: S.Number,
+		low: S.Number,
+	}),
+	topIssueRuleIds: S.Array(RuleId),
+	confidenceDistribution: S.Struct({
+		high: S.Number,
+		medium: S.Number,
+		low: S.Number,
+	}),
+});
+
+export type MachineSummary = typeof MachineSummary.Type;
+
 export const ReviewCodeResponse = S.Struct({
 	recommendations: S.Array(CodeRecommendation),
+	enhancedRecommendations: S.Array(EnhancedCodeRecommendation),
+	summary: MachineSummary,
 	meta: ReviewCodeMeta,
 	markdown: S.String,
 	traceId: S.String,
