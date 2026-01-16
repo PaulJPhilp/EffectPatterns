@@ -96,11 +96,12 @@ describe("MCPTierService", () => {
 				}).pipe(Effect.provide(MCPTierService.Default))
 			);
 
-			expect(categories).toHaveLength(4); // health, patterns, analysis, infrastructure
+			expect(categories).toHaveLength(5); // patterns, retrieval, analysis, review, infrastructure
 			expect(categories.map((c: any) => c.name)).toEqual([
 				"Pattern Search",
 				"Pattern Retrieval",
 				"Read-Only Analysis",
+				"Code Review",
 				"Infrastructure",
 			]);
 		});
@@ -134,7 +135,7 @@ describe("MCPTierService", () => {
 				"/api/analyze-consistency",
 				"/api/apply-refactoring",
 				"/api/trace-wiring",
-				"/api/db-check",
+				"/api/generate-pattern",
 			];
 
 			for (const endpoint of allEndpoints) {
@@ -272,6 +273,7 @@ describe("MCPTierService", () => {
 				"Pattern Search",
 				"Pattern Retrieval",
 				"Read-Only Analysis",
+				"Code Review",
 				"Infrastructure",
 			];
 

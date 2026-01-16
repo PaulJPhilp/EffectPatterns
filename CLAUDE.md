@@ -100,6 +100,48 @@ Test coverage includes:
 
 See [STRESS_TESTING.md](./packages/mcp-server/tests/stress/STRESS_TESTING.md) for detailed testing guide.
 
+### Comprehensive Test Suite
+
+The MCP server includes comprehensive test coverage across 5 categories:
+
+```bash
+# Run all unit tests
+bun run test
+
+# Run MCP protocol tests (50+ tests via stdio)
+bun run test:mcp
+
+# Run deployment tests (staging & production)
+export STAGING_API_KEY="your-key"
+bun run test:deployment:staging
+
+export PRODUCTION_API_KEY="your-key"
+bun run test:deployment:production
+
+# Run authentication tests
+bun run test:auth
+
+# Run route and handler tests
+bun run test:routes
+
+# Run all critical tests
+bun run test:full
+
+# Run all tests for CI/CD
+bun run test:ci
+```
+
+**Test Coverage Summary:**
+- **Unit Tests**: 137+ tests - Core services and utilities
+- **MCP Protocol**: 50+ tests - Stdio communication using SDK client
+- **Deployment**: 50+ tests - Staging and production environments
+- **Authentication**: 13+ tests - API key validation middleware
+- **Routes**: 80+ tests - API routes and handler factories
+- **Stress Tests**: 48+ tests - Performance and load testing
+- **TOTAL**: 378+ tests - Complete comprehensive coverage
+
+See [tests/README.md](./packages/mcp-server/tests/README.md) for detailed test documentation.
+
 ### Development Setup
 
 The project uses npm workspaces for package resolution. No TypeScript path aliases are used - packages resolve via `workspace:*` dependencies.

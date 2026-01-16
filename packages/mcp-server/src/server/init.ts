@@ -9,7 +9,7 @@
  */
 
 // biome-ignore assist/source/organizeImports: <>
-import { ReviewCodeService } from "@/services/review-code";
+import { ReviewCodeService } from "../services/review-code";
 import { AnalysisServiceLive } from "@effect-patterns/analysis-core";
 import {
   DatabaseLayer,

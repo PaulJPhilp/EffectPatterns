@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { Effect } from "effect";
-import { readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { Effect } from 'effect';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 /**
  * Extract all patterns from README.md and create a comprehensive patterns JSON file
@@ -38,7 +38,9 @@ const extractPatternsProgram = Effect.gen(function* () {
 
   // Read README file
   const readmePath = join(process.cwd(), 'README.md');
-  const readmeContent = yield* Effect.tryPromise(() => readFile(readmePath, 'utf-8'));
+  const readmeContent = yield* Effect.tryPromise(() =>
+    readFile(readmePath, 'utf-8'),
+  );
 
   // Parse patterns from markdown tables
   const patterns: PatternData[] = [];
@@ -155,7 +157,7 @@ const extractPatternsProgram = Effect.gen(function* () {
 
   for (const [category, count] of Object.entries(distribution)) {
     console.log(`  ${category}: ${count} patterns`);
-  };
+  }
 
   return patterns.length;
 });

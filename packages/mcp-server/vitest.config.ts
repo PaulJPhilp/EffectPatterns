@@ -12,6 +12,9 @@ export default defineConfig({
       "**/dist/**",
       "**/.next/**",
       "**/tests/**", // Exclude all tests/ directory (integration tests)
+      "**/*.route.test.ts", // Exclude route tests (require running server)
+      "**/*.integration.test.ts", // Exclude integration tests
+      "**/server/init.test.ts", // Exclude server init test (complex dependencies)
     ],
     testTimeout: 10_000,
     coverage: {

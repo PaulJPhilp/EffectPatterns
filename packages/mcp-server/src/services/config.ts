@@ -63,17 +63,17 @@ const DEFAULT_CONFIG: Omit<MCPConfig, "apiKey" | "nodeEnv"> = {
   port: 3000,
   tierMode: "free",
   patternsPath: path.join(process.cwd(), "data", "patterns.json"),
-  patternsCacheTtlMs: 300000, // 5 minutes
-  patternsLoadTimeoutMs: 10000, // 10 seconds
-  requestTimeoutMs: 30000, // 30 seconds
-  maxRequestBodySize: 1048576, // 1MB
-  maxSearchResults: 50,
+  patternsCacheTtlMs: 600000, // 10 minutes (increased for 31 patterns)
+  patternsLoadTimeoutMs: 15000, // 15 seconds (increased for larger pattern set)
+  requestTimeoutMs: 45000, // 45 seconds (increased for complex analysis)
+  maxRequestBodySize: 2097152, // 2MB (increased for larger code files)
+  maxSearchResults: 100, // Increased to handle more patterns
   rateLimitEnabled: true,
-  rateLimitRequests: 100,
+  rateLimitRequests: 150, // Increased rate limit for better UX
   rateLimitWindowMs: 60000, // 1 minute
   cacheEnabled: true,
-  cacheDefaultTtlMs: 300000, // 5 minutes
-  cacheMaxEntries: 1000,
+  cacheDefaultTtlMs: 600000, // 10 minutes (increased for better performance)
+  cacheMaxEntries: 2000, // Increased cache size for 31 patterns
   cacheCleanupIntervalMs: 300000, // 5 minutes
   loggingEnabled: true,
   logLevel: "info",
@@ -82,8 +82,8 @@ const DEFAULT_CONFIG: Omit<MCPConfig, "apiKey" | "nodeEnv"> = {
   otlpEndpoint: "http://localhost:4318/v1/traces",
   otlpHeaders: {},
   serviceName: "effect-patterns-mcp-server",
-  serviceVersion: "1.0.0",
-  tracingSamplingRate: 0.1, // 10% sampling by default
+  serviceVersion: "1.1.0", // Updated version
+  tracingSamplingRate: 0.05, // Reduced to 5% for production efficiency
 };
 
 /**

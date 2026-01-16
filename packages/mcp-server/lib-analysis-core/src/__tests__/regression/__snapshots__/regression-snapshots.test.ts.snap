@@ -5,3 +5,9 @@ exports[`Regression Snapshot Tests > snapshot: findings ruleIds are stable for a
   "node-fs",
 ]
 `;
+
+exports[`Regression Snapshot Tests snapshot: findings ruleIds are stable for a known input 1`] = `
+[
+  "node-fs",
+]
+`;

@@ -8,10 +8,25 @@
  */
 
 import { Effect } from "effect";
-import { kv } from "@vercel/kv";
 import { RateLimitError } from "../errors";
 import { MCPConfigService } from "./config";
 import { MCPLoggerService } from "./logger";
+
+// Safely import kv with fallback for missing environment variables
+let kv: any = null;
+try {
+  // Only try to import kv if environment variables are properly configured
+  const kvUrl = process.env.KV_REST_API_URL;
+  const kvToken = process.env.KV_REST_API_TOKEN;
+
+  if (kvUrl && kvToken && kvUrl.trim() !== "" && kvToken.trim() !== "") {
+    const kvModule = require("@vercel/kv");
+    kv = kvModule.kv;
+  }
+} catch (e) {
+  // KV not available (likely missing environment variables in tests/dev)
+  kv = null;
+}
 
 /**
  * Rate limit entry

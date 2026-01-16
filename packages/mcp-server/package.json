@@ -27,6 +27,17 @@
     "test:stress:spike": "bunx vitest run --config vitest.stress.config.ts tests/stress/scenarios/spike-test.ts",
     "test:stress:endurance": "bunx vitest run --config vitest.stress.config.ts tests/stress/scenarios/endurance-test.ts",
     "test:stress:all": "bun run test:stress",
+    "test:mcp": "bunx vitest run --config vitest.mcp.config.ts",
+    "test:mcp:watch": "bunx vitest --config vitest.mcp.config.ts",
+    "test:deployment": "bunx vitest run --config vitest.deployment.config.ts",
+    "test:deployment:staging": "DEPLOYMENT_ENV=staging bunx vitest run tests/deployment/staging.test.ts",
+    "test:deployment:production": "DEPLOYMENT_ENV=production bunx vitest run tests/deployment/production.test.ts",
+    "test:auth": "bunx vitest run src/auth/__tests__/",
+    "test:routes": "bunx vitest run --config vitest.routes.config.ts",
+    "test:routes:watch": "bunx vitest --config vitest.routes.config.ts",
+    "test:routes:coverage": "bunx vitest run --config vitest.routes.config.ts --coverage",
+    "test:full": "bun run test && bun run test:auth && bun run test:routes",
+    "test:ci": "bun run test && bun run test:auth && bun run test:routes && bun run test:stress:edge",
     "typecheck": "tsc --noEmit",
     "lint": "next lint"
   },
@@ -52,7 +63,8 @@
     "postgres": "^3.4.8",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "vercel": "^50.4.4"
+    "vercel": "^50.4.4",
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@ai-sdk/openai": "^3.0.2",
