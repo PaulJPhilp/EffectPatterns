@@ -32,6 +32,7 @@ const GUIDANCE_MAP: Record<string, string> = {
 	// Resource management patterns
 	"leaking-scopes": "leaking-scopes",
 	"connection-pool-awareness": "connection-pool-awareness",
+	"layer-dependency-cycle": "layer-dependency-cycle",
 
 	// Resilience patterns
 	"retry-backoff-timeouts": "retry-backoff-timeouts",
@@ -39,10 +40,17 @@ const GUIDANCE_MAP: Record<string, string> = {
 	// Testing & observability patterns
 	"hidden-effect-execution": "hidden-effect-execution",
 	"logging-discipline": "logging-discipline",
+	"avoid-console-log": "avoid-console-log",
 
 	// Core Effect idioms
 	"avoid-effect-run-sync": "avoid-effect-run-sync",
 	"prefer-effect-gen": "prefer-effect-gen",
+	"prefer-match-over-if": "prefer-match-over-if",
+	"no-nested-gen": "no-nested-gen",
+	"service-definition-style": "service-definition-style",
+
+	// Application configuration patterns
+	"config-handling": "config-handling",
 };
 
 /**
