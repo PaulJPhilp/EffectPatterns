@@ -21,9 +21,14 @@ const GUIDANCE_MAP: Record<string, string> = {
 	"throw-in-effect-code": "throw-in-effect-code",
 	"try-catch-in-effect": "try-catch-in-effect",
 	"generic-error-type": "generic-error-type",
+	"missing-error-channel": "missing-error-channel",
 
 	// Concurrency patterns
 	"promise-all-in-effect": "promise-all-in-effect",
+	"unbounded-parallelism": "unbounded-parallelism",
+
+	// Resource management patterns
+	"leaking-scopes": "leaking-scopes",
 };
 
 /**
