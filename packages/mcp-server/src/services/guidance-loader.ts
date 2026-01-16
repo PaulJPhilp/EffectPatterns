@@ -24,12 +24,16 @@ const GUIDANCE_MAP: Record<string, string> = {
 	"missing-error-channel": "missing-error-channel",
 	"schema-validation": "schema-validation",
 	"catching-errors-too-early": "catching-errors-too-early",
+	"swallowing-errors-in-catchall": "swallowing-errors-in-catchall",
+	"or-die-outside-boundaries": "or-die-outside-boundaries",
 
 	// Concurrency patterns
 	"promise-all-in-effect": "promise-all-in-effect",
 	"unbounded-parallelism": "unbounded-parallelism",
 	"no-floating-promises": "no-floating-promises",
 	"fire-and-forget-fork": "fire-and-forget-fork",
+	"forking-inside-loops": "forking-inside-loops",
+	"mutable-ref-in-effect": "mutable-ref-in-effect",
 
 	// Resource management patterns
 	"leaking-scopes": "leaking-scopes",
@@ -55,6 +59,9 @@ const GUIDANCE_MAP: Record<string, string> = {
 
 	// Application configuration patterns
 	"config-handling": "config-handling",
+
+	// Domain modeling patterns
+	"primitives-for-domain-concepts": "primitives-for-domain-concepts",
 };
 
 /**
