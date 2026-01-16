@@ -9,30 +9,35 @@ When you use generic `Error`, you force callers to handle "everything could fail
 ---
 
 ## Use when
-- your function can fail in multiple *distinct* ways (validation, timeout, auth, resource exhaustion)
-- callers need to decide behavior based on *which* error occurred
-- you're in your Effect domain layer (services, handlers, business logic)
-- you want error handling at call sites to be exhaustive/type-safe
+Use tagged errors when:
+- a function can fail in distinct ways (validation, auth, timeout, missing resource)
+- callers should behave differently depending on the failure
+- you're in core Effect logic (services, handlers, business logic)
+- you want exhaustive, type-safe recovery (`catchTag`)
 
 ---
 
 ## Avoid when
-- the error is a true accident / defect (use `Cause` / `sandbox` instead)
-- you're at the HTTP boundary (errors should be pre-mapped to status codes before reaching the response serializer)
-- the error is a third-party library exception you're just bubbling up (wrap it in a domain error first)
+Avoid adding tagged domain errors when:
+- it's a true defect/bug (use `Cause`/`sandbox` and log/terminate at the boundary)
+- you're at the HTTP boundary *and should be mapping domain errors to status codes there* (don't leak raw exceptions to the serializer)
+- you're dealing with third-party exceptions—wrap them first, don't bubble them as generic `Error`
 
 ---
 
-## Decision rule (reduces ambiguity)
-**Decision rule:**
-For every code path that can fail, ask: "What does the caller do differently based on *why* it failed?"
+## Decision rule
+For each failure path ask: "What does the caller do differently because of why it failed?"
+- If "different recovery," create a tagged error.
+- If "log and crash," treat it as a defect.
+- If "convert to HTTP status," handle it at the boundary by mapping tagged errors to responses.
 
-- If the answer is "different recovery logic," create a tagged error.
-- If the answer is "log it and propagate," it's a defect (sandbox it).
-- If the answer is "convert to HTTP status," it's a boundary error (map post-hoc).
+**Simplifier**
+Errors are data. Tag them so code can match on them.
 
-**Simplifier:**
-Errors are *data*. Tag them so your code can pattern-match on them.
+---
+
+## Goal
+Keep failures typed, supervised, and recoverable.
 
 ---
 
@@ -49,10 +54,8 @@ Errors are *data*. Tag them so your code can pattern-match on them.
 
 ---
 
-## Implementation prompt (for your workflow)
-Use this *verbatim* as the follow-up instruction to a coding assistant:
-
-**"Implement the Fix Plan for this finding: Identify all code paths in this function that can fail. For each path, create a tagged error type (e.g., `UserNotFound | InvalidCredentials | DatabaseTimeout`). Replace generic `Error` with this union. Update the function signature. Update all call sites to use `catchTag` for targeted recovery."**
+## Implementation prompt
+"Implement the Fix Plan for this finding: identify the main failure paths in this function. Create tagged errors for those paths, replace `Error` with a tagged union, update the function signature, and update call sites to use `catchTag` for targeted recovery."
 
 ---
 

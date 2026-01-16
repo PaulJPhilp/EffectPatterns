@@ -10,13 +10,19 @@ import { join } from "node:path";
 
 /**
  * Mapping from ruleId to guidance filename (without .md extension).
+ * Filenames use semantic namespace (e.g., "errors/avoid-throw", "async/avoid-async-await").
  * Add entries here as guidance files are created.
  */
 const GUIDANCE_MAP: Record<string, string> = {
+	// Async patterns
 	"async-await": "async-await-in-effect",
+
+	// Error handling patterns
 	"throw-in-effect-code": "throw-in-effect-code",
 	"try-catch-in-effect": "try-catch-in-effect",
 	"generic-error-type": "generic-error-type",
+
+	// Concurrency patterns
 	"promise-all-in-effect": "promise-all-in-effect",
 };
 

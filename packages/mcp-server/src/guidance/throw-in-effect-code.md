@@ -9,33 +9,37 @@ When you `throw` inside an Effect, you bypass Effect's typed error channel. The 
 ---
 
 ## Use when
-**Use `throw` only:**
-- outside your Effect program entirely (in synchronous initialization code)
-- inside `Effect.die(new MyError())` to explicitly mark something as unrecoverable (a **defect**, not a domain error)
+Use `throw` only:
+- outside your Effect program (synchronous code that runs *before* you return an `Effect`)
+- when you intentionally mark something as unrecoverable (a defect), using `Effect.die(...)`
 
-**Rule of thumb:** If code returns `Effect`, use `Effect.fail()` or `Effect.die()`, never `throw`.
+Rule of thumb: If code returns `Effect`, use `Effect.fail` or `Effect.die`, not `throw`.
 
 ---
 
 ## Avoid when
 Avoid `throw` when:
 - you're inside `Effect.gen` / `Effect.flatMap` / any Effect pipeline
-- the error is *recoverable* (part of domain logic)
-- the error has semantic meaning that callers need to handle (e.g., ValidationError, NotFound)
-- you use `catchTag`, `catchAll`, or retry logic (these don't see thrown exceptions)
+- the error is recoverable (part of domain logic)
+- callers need to handle it explicitly (e.g., `ValidationError`, `NotFound`)
+- you expect `catchTag`, `catchAll`, or retry logic to handle it
 
 ---
 
-## Decision rule (reduces ambiguity)
-**Decision rule:**
-- **Thrown exception** → untracked defect, stops supervision and typed error recovery
-- **Effect.fail(error)** → typed error, entered into the effect's error channel, recoverable
-- **Effect.die(error)** → explicitly *un*recoverable defect (for bugs, not domain logic)
+## Decision rule
+- `throw` → bypasses the typed error channel; recovery becomes unreliable/implicit
+- `Effect.fail(error)` → typed failure; recoverable through Effect error handling
+- `Effect.die(error)` → explicit defect (use for bugs, not business errors)
 
-**Simplifier:**
-- "`throw` in Effect = "error escapes supervision"
-- "`Effect.fail` in Effect = "error is tracked and recoverable"
-- "`Effect.die` in Effect = "explicitly tell the runtime: this is a bug, not a business error"
+**Simplifier**
+- "throw inside Effect code = error escapes the error channel"
+- "Effect.fail = tracked and recoverable"
+- "Effect.die = explicitly unrecoverable"
+
+---
+
+## Goal
+Keep failures typed, supervised, and recoverable.
 
 ---
 
@@ -53,10 +57,8 @@ Avoid `throw` when:
 
 ---
 
-## Implementation prompt (for your workflow)
-Use this *verbatim* as the follow-up instruction to a coding assistant:
-
-**"Implement the Fix Plan for this finding: Replace all `throw` statements with `Effect.fail(error)` inside this function. Ensure the function's return type reflects the new error types in the Effect's error channel (e.g., `Effect<Result, ValidationError | NotFound>`). Update call sites to use `catchTag` or `match` for recovery."**
+## Implementation prompt
+"Implement the Fix Plan for this finding: replace `throw` with `Effect.fail(...)` in this function. Update the return type to include the new error union, and update call sites to use `catchTag`/`match` for recovery."
 
 ---
 

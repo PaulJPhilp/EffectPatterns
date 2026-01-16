@@ -9,36 +9,35 @@
 ---
 
 ## Use when
-**Use `async/await` only at the boundary**, for example:
-- you are writing a very thin adapter around a third‑party promise API **and immediately** wrapping it into Effect (`Effect.tryPromise`, etc.)
-- you are in a file that is explicitly not part of your Effect program (e.g., a tiny bootstrapping script), and the `async` function ends at the boundary
+Use `async/await` only at the boundary, for example:
+- a thin adapter around a third‑party Promise API that you immediately wrap into Effect (e.g., `Effect.tryPromise` with error mapping)
+- a small bootstrap entry point that runs an Effect program (the `async` ends at the boundary)
 
-**Rule of thumb:** If the function returns `Effect`, do not make it `async`.
+Rule of thumb: If a function returns `Effect`, do not mark it `async`.
 
 ---
 
 ## Avoid when
 Avoid `async/await` when:
 - you're inside `Effect.gen` / `Effect.flatMap` / any Effect pipeline
-- the function is part of "core logic" (domain, services, commands)
-- you need *any* of these Effect guarantees:
-  - typed error channel
-  - cancellation / interruption
-  - retry/backoff schedules
-  - scoped resource cleanup
-  - controlled concurrency
+- the function is part of core logic (domain, services, commands)
+- you need Effect guarantees: typed errors, interruption, retry/backoff, scoped cleanup, controlled concurrency
 
 ---
 
-## Decision rule (reduces ambiguity)
-**Decision rule:**
-If the desired result is an `Effect`, use **Effect composition**:
-- prefer `Effect.gen` + `yield*` for sequencing
-- prefer `Effect.tryPromise` at the boundary for promise interop
+## Decision rule
+If the desired result is an `Effect`, use Effect composition:
+- `Effect.gen` + `yield*` for sequencing
+- `Effect.tryPromise` at the boundary for Promise interop
 
-**Simplifier:**
+**Simplifier**
 - "`await` sequences promises."
 - "`yield*` sequences effects."
+
+---
+
+## Goal
+Keep failures typed, supervised, and recoverable.
 
 ---
 
@@ -54,10 +53,8 @@ If the desired result is an `Effect`, use **Effect composition**:
 
 ---
 
-## Implementation prompt (for your workflow)
-Use this *verbatim* as the follow-up instruction to a coding assistant:
-
-**"Implement the Fix Plan for this finding: Convert this function from `async/await` to Effect composition. Replace `await` with `yield*` inside `Effect.gen` (or use `Effect.flatMap`), and wrap any promise-returning calls using `Effect.tryPromise` at the boundary with explicit error mapping."**
+## Implementation prompt
+"Implement the Fix Plan for this finding: remove `async/await`. Rewrite as `Effect.gen` (or `flatMap`), replace `await` with `yield*`, and wrap Promise calls at the boundary with `Effect.tryPromise` + explicit error mapping."
 
 ---
 
