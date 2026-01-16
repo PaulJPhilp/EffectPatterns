@@ -75,6 +75,31 @@ For local development setup, see:
 - **Production**: `https://effect-patterns-mcp.vercel.app`
 - **Staging**: `https://effect-patterns-mcp-staging.vercel.app`
 
+### Stress Testing
+
+The MCP server includes a comprehensive stress testing suite to validate performance under various load conditions:
+
+```bash
+# Run individual stress test suites
+bun run test:stress:edge      # Edge cases (2.9s) - 19 tests
+bun run test:stress:volume    # Volume tests (3.4s) - 14 tests
+bun run test:stress:load      # Load tests (~300s) - 5 tests
+bun run test:stress:spike     # Spike tests (~380s) - 6 tests
+bun run test:stress:endurance # Endurance (40+ min) - 4 tests
+
+# Run all stress tests
+bun run test:stress:all
+```
+
+Test coverage includes:
+- **Edge Cases**: Boundary conditions, malformed input, error handling
+- **Volume**: Large files (98KB), complex code, deep nesting, consistency
+- **Load**: Concurrent requests, baseline/normal/peak/saturation
+- **Spike**: Traffic bursts, ramps, oscillation, flash crowds
+- **Endurance**: 40+ minute sustained load, memory leak detection
+
+See [STRESS_TESTING.md](./packages/mcp-server/tests/stress/STRESS_TESTING.md) for detailed testing guide.
+
 ### Development Setup
 
 The project uses npm workspaces for package resolution. No TypeScript path aliases are used - packages resolve via `workspace:*` dependencies.
@@ -94,6 +119,9 @@ bun run dev
 
 # Test MCP connection
 bun run smoke-test
+
+# Run stress tests to validate performance
+bun run test:stress:all
 ```
 
 ### Support
