@@ -33,6 +33,10 @@ const GUIDANCE_MAP: Record<string, string> = {
 
 	// Resilience patterns
 	"retry-backoff-timeouts": "retry-backoff-timeouts",
+
+	// Testing & observability patterns
+	"hidden-effect-execution": "hidden-effect-execution",
+	"logging-discipline": "logging-discipline",
 };
 
 /**
