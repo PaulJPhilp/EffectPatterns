@@ -29,6 +29,10 @@ const GUIDANCE_MAP: Record<string, string> = {
 
 	// Resource management patterns
 	"leaking-scopes": "leaking-scopes",
+	"connection-pool-awareness": "connection-pool-awareness",
+
+	// Resilience patterns
+	"retry-backoff-timeouts": "retry-backoff-timeouts",
 };
 
 /**
