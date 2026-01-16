@@ -13,6 +13,7 @@ import type { Finding, RuleDefinition, RuleId, FixDefinition } from "../tools/sc
 import { calculateConfidence } from "./confidence-calculator";
 import { generateFixPlan } from "./fix-plan-generator";
 import { extractSnippet } from "./snippet-extractor";
+import { loadGuidance, getGuidanceKey } from "./guidance-loader";
 
 /**
  * Maximum number of recommendations to return in Free Tier
@@ -117,6 +118,8 @@ export interface EnhancedCodeRecommendation {
 	readonly confidence: ConfidenceScore;
 	readonly evidence: CodeSnippet;
 	readonly fixPlan: FixPlan;
+	readonly guidanceKey?: string; // e.g. "async-await-in-effect" (optional, if guidance exists)
+	readonly guidance?: string; // Full guidance markdown (optional, if guidance exists)
 }
 
 /**
@@ -348,6 +351,13 @@ function generateEnhancedMarkdown(
 			lines.push("");
 		}
 
+		// Include pattern guidance if available
+		if (rec.guidance) {
+			lines.push("### Pattern Guidance");
+			lines.push(rec.guidance);
+			lines.push("");
+		}
+
 		lines.push("---\n");
 	});
 
@@ -400,6 +410,10 @@ function buildEnhancedRecommendation(
 	// Cast allFixes to FixDefinition[] (safe because placeholder fixes follow the same shape)
 	const fixPlan = generateFixPlan(finding, rule, allFixes as never as readonly FixDefinition[]);
 
+	// Load guidance if available for this rule
+	const guidanceKey = getGuidanceKey(finding.ruleId);
+	const guidance = guidanceKey ? loadGuidance(finding.ruleId) : undefined;
+
 	return {
 		severity: finding.severity,
 		title: finding.title,
@@ -410,6 +424,8 @@ function buildEnhancedRecommendation(
 		confidence,
 		evidence,
 		fixPlan,
+		guidanceKey,
+		guidance,
 	};
 }
 
