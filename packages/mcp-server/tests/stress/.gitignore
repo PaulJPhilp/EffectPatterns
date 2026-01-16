@@ -1,0 +1,18 @@
+# Generated reports
+reports/
+*.json
+latest.json
+
+# Node modules
+node_modules/
+.node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
