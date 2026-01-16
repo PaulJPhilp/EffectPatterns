@@ -9,7 +9,6 @@ import {
   startServer,
   stopServer,
   getServerUrl,
-  isServerRunning,
 } from '../utils/server-control';
 import { generateTypeScriptFile, PRESET_CONFIGS } from '../generators/code-generator';
 import { getThresholds } from '../config/thresholds';

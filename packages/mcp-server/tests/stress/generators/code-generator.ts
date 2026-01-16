@@ -226,7 +226,7 @@ function generateIfBlock(rng: SeededRandom): string {
 /**
  * Generate switch block
  */
-function generateSwitchBlock(rng: SeededRandom): string {
+function generateSwitchBlock(_rng: SeededRandom): string {
   return `switch (config?.mode) {
     case "strict":
       return { mode: "strict", level: 1 };
@@ -242,7 +242,7 @@ function generateSwitchBlock(rng: SeededRandom): string {
 /**
  * Generate try-catch block
  */
-function generateTryCatchBlock(rng: SeededRandom): string {
+function generateTryCatchBlock(_rng: SeededRandom): string {
   return `try {
     const result = JSON.parse(config?.json || "{}");
     return { success: true, data: result };

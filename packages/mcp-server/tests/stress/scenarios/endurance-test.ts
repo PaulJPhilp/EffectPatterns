@@ -218,7 +218,6 @@ describe('Endurance Test - Long-Running Stability', () => {
       let requestCount = 0;
       const startTime = Date.now();
       const pauseDetections: number[] = [];
-      let lastGCCheck = Date.now();
 
       for (let i = 0; i < totalRequests; i++) {
         const code = generateTypeScriptFile(PRESET_CONFIGS.small());

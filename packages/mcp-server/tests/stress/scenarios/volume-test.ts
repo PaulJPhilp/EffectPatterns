@@ -13,8 +13,6 @@ import {
 import { generateTypeScriptFile, PRESET_CONFIGS } from '../generators/code-generator';
 import {
   generateFlawedCodeFile,
-  PATTERN_PRESETS,
-  countExpectedFindings,
 } from '../generators/anti-pattern-generator';
 import { getThresholds } from '../config/thresholds';
 import { createMetricsCollector } from '../utils/metrics-collector';
@@ -42,7 +40,6 @@ describe('Volume Test - Large File Handling', () => {
       expect(code.length).toBeLessThanOrEqual(100000);
 
       const startTime = performance.now();
-      const parseStart = performance.now();
 
       const response = await fetch(getServerUrl('/api/review-code'), {
         method: 'POST',
@@ -250,7 +247,7 @@ describe('Volume Test - Large File Handling', () => {
 
       // Accept 200 (ok), 401 (auth required), or 413 (payload too large)
       expect([200, 401, 413]).toContain(response.status);
-      expect(duration).toBeLessThan(thresholds.nearLimitFile.analysisTime);
+      expect(duration).toBeLessThan(thresholds.nearLimitFile.analysisTime!);
 
       metrics.recordRequest({
         duration,

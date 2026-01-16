@@ -20,7 +20,7 @@ export default defineConfig({
 
     // Run tests sequentially for accurate metrics
     // Running in parallel would interfere with measurements
-    singleThread: true,
+    fileParallelism: false,
 
     // Reporting
     reporters: ['default', 'json'],
@@ -29,6 +29,5 @@ export default defineConfig({
     },
 
     // Silence some noise but keep important output
-    silenceDeprecationWarnings: true,
   },
 });

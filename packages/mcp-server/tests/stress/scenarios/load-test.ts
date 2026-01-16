@@ -78,7 +78,7 @@ describe('Load Test - Concurrent Request Handling', () => {
   ): Promise<void> {
     const code = generateTestCode(filePreset);
     const totalRequests = requestsPerSecond * durationSeconds;
-    const requests: Promise<void>[] = [];
+    const requests: Promise<any>[] = [];
 
     console.log(`  Running: ${requestsPerSecond} req/s for ${durationSeconds}s (${totalRequests} total requests)`);
 
@@ -94,7 +94,11 @@ describe('Load Test - Concurrent Request Handling', () => {
         }, delay);
       });
 
-      requests.push(requestPromise);
+      // Wrap promise to return itself so we can remove it from the list
+      // We cast to any because we're returning the promise itself
+      const wrappedPromise: Promise<any> = requestPromise.then(() => wrappedPromise);
+
+      requests.push(wrappedPromise);
 
       // Keep max 50 concurrent requests
       if (requests.length >= 50) {

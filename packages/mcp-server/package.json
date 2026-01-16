@@ -31,8 +31,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@effect-patterns/analysis-core": "workspace:*",
-    "@effect-patterns/toolkit": "workspace:*",
+    "@effect-patterns/analysis-core": "file:./lib-analysis-core",
+    "@effect-patterns/toolkit": "file:./lib-toolkit",
     "@effect/opentelemetry": "^0.60.0",
     "@effect/platform": "^0.94.1",
     "@effect/platform-node": "^0.104.0",
@@ -46,8 +46,10 @@
     "@opentelemetry/sdk-trace-node": "^2.2.0",
     "@opentelemetry/semantic-conventions": "^1.38.0",
     "@vercel/kv": "^1.0.1",
+    "drizzle-orm": "^0.45.1",
     "effect": "^3.19.11",
     "next": "^16.0.10",
+    "postgres": "^3.4.8",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "vercel": "^50.4.4"

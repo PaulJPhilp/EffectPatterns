@@ -1,0 +1,7 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Regression Snapshot Tests > snapshot: findings ruleIds are stable for a known input 1`] = `
+[
+  "node-fs",
+]
+`;

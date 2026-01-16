@@ -11,7 +11,6 @@ import {
   getServerUrl,
 } from '../utils/server-control';
 import { generateTypeScriptFile, PRESET_CONFIGS } from '../generators/code-generator';
-import { getComplexPreset } from '../generators/complex-code-generator';
 import { getThresholds } from '../config/thresholds';
 import { createMetricsCollector, RequestMetrics } from '../utils/metrics-collector';
 
