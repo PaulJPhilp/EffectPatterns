@@ -179,11 +179,27 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				Effect.mapError((error) => DisplayError.make(`Failed to show separator`, error))
 			) as Effect.Effect<void, DisplayServiceError>;
 
+		const showText: DisplayService["showText"] = (text: string) =>
+			Effect.gen(function* () {
+				const tui = yield* tuiAdapter.load();
+
+				if (tui?.displayText) {
+					yield* tui.displayText(text);
+					return;
+				}
+
+				// Fallback to console - raw output without decoration
+				yield* Console.log(text);
+			}).pipe(
+				Effect.mapError((error) => DisplayError.make(`Failed to show text`, error))
+			) as Effect.Effect<void, DisplayServiceError>;
+
 		return {
 			showSuccess,
 			showError,
 			showInfo,
 			showWarning,
+			showText,
 			showPanel,
 			showTable,
 			showHighlight,

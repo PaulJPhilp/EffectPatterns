@@ -9,8 +9,9 @@
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import { Args, Command } from "@effect/cli";
-import { Console, Effect } from "effect";
+import { Effect } from "effect";
 import { CLI, SHELL_TYPES } from "./constants.js";
+import { Display } from "./services/display/index.js";
 
 // Import command modules
 import { autofixCommand } from "./autofix-commands.js";
@@ -54,7 +55,8 @@ const completionsGenerateCommand = Command.make(
 			}
 
 			const completion = generateCompletion(shellType, EP_ADMIN_COMMANDS);
-			yield* Console.log(completion);
+			const display = yield* Display;
+			yield* display.showText(completion);
 		})
 	)
 );
@@ -82,7 +84,8 @@ const completionsInstallCommand = Command.make(
 			const filePath = yield* installCompletion(shellType, EP_ADMIN_COMMANDS);
 
 			const instructions = getInstallInstructions(shellType, filePath);
-			yield* Console.log(instructions);
+			const display = yield* Display;
+			yield* display.showText(instructions);
 		})
 	)
 );

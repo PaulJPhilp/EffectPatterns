@@ -18,6 +18,7 @@ export interface TUIDisplayMethods {
 	readonly displayError?: (message: string) => Effect.Effect<void>;
 	readonly displayInfo?: (message: string) => Effect.Effect<void>;
 	readonly displayWarning?: (message: string) => Effect.Effect<void>;
+	readonly displayText?: (text: string) => Effect.Effect<void>;
 	readonly displayPanel?: (
 		content: string,
 		title: string,
