@@ -1,0 +1,91 @@
+{
+    "name": "@effect-patterns/effect-talk",
+    "version": "0.1.0",
+    "description": "EffectTalk - A next-generation application harness for wrapping CLI tools and processes into structured UI",
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./components": {
+            "types": "./dist/components/index.d.ts",
+            "import": "./dist/components/index.js"
+        },
+        "./services": {
+            "types": "./dist/services/index.d.ts",
+            "import": "./dist/services/index.js"
+        },
+        "./hooks": {
+            "types": "./dist/hooks/index.d.ts",
+            "import": "./dist/hooks/index.js"
+        }
+    },
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview",
+        "test": "vitest",
+        "test:coverage": "vitest --coverage",
+        "type-check": "tsc --noEmit",
+        "lint": "eslint src",
+        "lint:fix": "eslint src --fix"
+    },
+    "dependencies": {
+        "effect": "^3.12.0",
+        "@effect/platform": "^0.65.0",
+        "@effect/schema": "^0.72.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "zustand": "^5.0.0",
+        "immer": "^10.1.0",
+        "markdown-it": "^14.1.0",
+        "markdown-it-attrs": "^4.1.6",
+        "shiki": "^1.22.0",
+        "diff": "^6.0.0",
+        "react-diff-viewer": "^3.1.1"
+    },
+    "devDependencies": {
+        "@effect-patterns/toolkit": "workspace:*",
+        "@effect-patterns/ep-shared-services": "workspace:*",
+        "@types/node": "^22.10.0",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "@types/markdown-it": "^14.1.0",
+        "@types/diff": "^6.0.0",
+        "typescript": "^5.7.0",
+        "vite": "^6.2.0",
+        "@vitejs/plugin-react": "^4.4.0",
+        "tailwindcss": "^4.0.0",
+        "postcss": "^8.4.47",
+        "autoprefixer": "^10.4.20",
+        "shadcn-ui": "^0.8.0",
+        "@radix-ui/react-accordion": "^1.2.0",
+        "@radix-ui/react-alert-dialog": "^1.1.1",
+        "@radix-ui/react-dialog": "^1.1.2",
+        "@radix-ui/react-dropdown-menu": "^2.1.1",
+        "@radix-ui/react-popover": "^1.1.1",
+        "@radix-ui/react-scroll-area": "^1.1.0",
+        "@radix-ui/react-separator": "^1.1.0",
+        "@radix-ui/react-tabs": "^1.1.0",
+        "@radix-ui/react-tooltip": "^1.1.2",
+        "vitest": "^2.1.0",
+        "@vitest/ui": "^2.1.0",
+        "@testing-library/react": "^16.0.0",
+        "@testing-library/jest-dom": "^6.6.0",
+        "@testing-library/user-event": "^14.5.2"
+    },
+    "keywords": [
+        "effect-ts",
+        "tui",
+        "cli",
+        "react",
+        "typescript",
+        "blocks",
+        "persistence",
+        "markdown"
+    ],
+    "license": "MIT"
+}
