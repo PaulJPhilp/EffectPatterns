@@ -13,24 +13,19 @@ import { Effect } from "effect";
 import { CLI, SHELL_TYPES } from "./constants.js";
 import { Display } from "./services/display/index.js";
 
-// Import command modules
-import { autofixCommand } from "./autofix-commands.js";
-import { generateCommand, pipelineCommand, testCommand, validateCommand } from "./basic-commands.js";
+// Import command modules - Hierarchical organization
+import {
+	patternGroup,
+	dataGroup,
+	dbGroup,
+	devGroup,
+	opsGroup,
+	configGroup,
+	pipelineGroup,
+	rootLevelCommands,
+} from "./command-groups.js";
+import { publishCommand } from "./publish-commands.js";
 import { EP_ADMIN_COMMANDS, generateCompletion, getInstallInstructions, installCompletion, type Shell } from "./completions.js";
-import { dbCommand } from "./db-commands.js";
-import { discordCommand } from "./discord-commands.js";
-import { ingestCommand } from "./ingest-commands.js";
-import { installCommand, rulesCommand } from "./install-commands.js";
-import { migrateCommand } from "./migrate-commands.js";
-import { opsCommand } from "./ops-commands.js";
-// import { pipelineManagementCommand } from "./pipeline-commands.js";
-import { mcpCommand } from "./mcp-commands.js";
-import { qaCommand } from "./qa-commands.js";
-import { patternNewCommand, releaseCommand } from "./release-commands.js";
-import { searchCommand } from "./search-commands.js";
-import { skillsCommand } from "./skills-commands.js";
-import { testUtilsCommand } from "./test-utils-commands.js";
-import { utilsCommand } from "./utils-commands.js";
 
 // --- COMPLETIONS COMMAND ---
 
@@ -99,30 +94,24 @@ const completionsCommand = Command.make("completions").pipe(
 
 // --- COMMAND COMPOSITION ---
 
+// Build system group with completions command
+const systemGroup = Command.make("system").pipe(
+	Command.withDescription("System utilities"),
+	Command.withSubcommands([completionsCommand])
+);
+
+// Hierarchical command structure (organized by domain/function)
 const adminSubcommands = [
-	pipelineCommand,
-	generateCommand,
-	validateCommand,
-	testCommand,
-	ingestCommand,
-	qaCommand,
-	dbCommand,
-	mcpCommand,
-	discordCommand,
-	skillsCommand,
-	migrateCommand,
-	opsCommand,
-	testUtilsCommand,
-	utilsCommand,
-	autofixCommand,
-	rulesCommand,
-	releaseCommand,
-	// pipelineManagementCommand, // Temporarily disabled
-	completionsCommand,
-	installCommand,
-	patternNewCommand,
-	searchCommand,
-	testExecutionCommand,
+	publishCommand,         // Pattern publishing workflow
+	patternGroup,          // Pattern discovery and management
+	dataGroup,             // Data ingestion and quality assurance
+	dbGroup,               // Database operations and migrations
+	devGroup,              // Development tools and utilities
+	opsGroup,              // Operations and infrastructure
+	configGroup,           // Configuration, setup, and entity management
+	pipelineGroup,         // Pipeline management and monitoring
+	systemGroup,           // System utilities (completions)
+	...rootLevelCommands,  // Root-level commands (release)
 ] as const;
 
 export const adminRootCommand = Command.make(CLI.NAME).pipe(
