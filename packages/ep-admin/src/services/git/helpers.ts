@@ -99,23 +99,23 @@ export const getGitRoot = (): Effect.Effect<string, GitCommandError> =>
  * Get the latest git tag
  */
 export const getLatestTag = (tagPrefix: string, initialTag: string): Effect.Effect<string, GitRepositoryError | GitCommandError> =>
-	Effect.gen(function* () {
-		try {
-			return yield* execGitCommand("describe", ["--tags", "--abbrev=0"], { capture: true });
-		} catch (error) {
-			if (error instanceof GitCommandError && error.message.includes("No names found")) {
-				throw GitRepositoryError.make(
-					`No git tags found in this repository.\n\n` +
-					`This is likely the first release. Create an initial tag:\n` +
-					`  git tag ${initialTag}\n` +
-					`  git push origin ${initialTag}\n\n` +
-					`Or use conventional commits and run:\n` +
-					`  bun run ep release create`
+	execGitCommand("describe", ["--tags", "--abbrev=0"], { capture: true }).pipe(
+		Effect.catchAll((error): Effect.Effect<string, GitRepositoryError | GitCommandError> => {
+			if (error._tag === "GitCommandError" && String(error.message).includes("No names found")) {
+				return Effect.fail(
+					GitRepositoryError.make(
+						`No git tags found in this repository.\n\n` +
+						`This is likely the first release. Create an initial tag:\n` +
+						`  git tag ${initialTag}\n` +
+						`  git push origin ${initialTag}\n\n` +
+						`Or use conventional commits and run:\n` +
+						`  bun run ep release create`
+					)
 				);
 			}
-			throw error;
-		}
-	});
+			return Effect.fail(error);
+		})
+	);
 
 /**
  * Get commits since a specific tag

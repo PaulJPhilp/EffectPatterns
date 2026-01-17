@@ -1,116 +1,103 @@
 /**
- * Ingest Pipeline Tests
+ * Ingest Pipeline tests
  */
 
-import { Effect } from "effect";
+import { FileSystem } from "@effect/platform";
+import { Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
-import {
-	discoverPatterns,
-	generateReport,
-	runIngestPipeline,
-	testPattern,
-	validatePattern
-} from "../pipeline.js";
+import { checkDuplicates, discoverPatterns, generateReport, validatePattern } from "../pipeline.js";
 import type { IngestConfig } from "../types.js";
 
-const mockConfig: IngestConfig = {
-	rawDir: "/test/raw",
-	srcDir: "/test/src",
-	processedDir: "/test/processed",
-	publishedDir: "/test/published",
-	targetPublishedDir: "/test/target-published",
-	reportDir: "/test/reports",
-};
-
 describe("Ingest Pipeline", () => {
-	it("should discover patterns from directory", async () => {
-		const program = discoverPatterns(mockConfig);
+	const mockConfig: IngestConfig = {
+		srcDir: "src",
+		rawDir: "raw",
+		processedDir: "proc",
+		targetPublishedDir: "pub",
+		publishedDir: "pub",
+		reportDir: "reports"
+	};
 
-		// This test would need a mock filesystem with test data
-		// For now, just test the effect structure
-		expect(program).toBeDefined();
+	describe("discoverPatterns", () => {
+		it("should discover patterns and extract TypeScript", async () => {
+			const mockFS = Layer.succeed(FileSystem.FileSystem, {
+				makeDirectory: () => Effect.void,
+				readDirectory: () => Effect.succeed(["pattern.mdx"]),
+				readFileString: () => Effect.succeed("---\ntitle: Test\n---\n## Good Example\n```typescript\nconst x = 1;\n```"),
+				writeFileString: () => Effect.void
+			} as any);
+
+			const patterns = await Effect.runPromise(
+				discoverPatterns(mockConfig).pipe(Effect.provide(mockFS))
+			);
+
+			expect(patterns).toHaveLength(1);
+			expect(patterns[0].id).toBe("pattern");
+			expect(patterns[0].hasTypeScript).toBe(true);
+		});
 	});
 
-	it("should validate pattern structure", async () => {
-		const mockPattern = {
-			id: "test-pattern",
-			title: "Test Pattern",
-			rawPath: "/test/raw/test-pattern.mdx",
-			srcPath: "/test/src/test-pattern.ts",
-			processedPath: "/test/processed/test-pattern.mdx",
-			frontmatter: {
-				id: "test-pattern",
-				title: "Test Pattern",
-				skillLevel: "beginner",
-				useCase: "testing",
-				summary: "A test pattern",
-			},
-			hasTypeScript: true,
-		};
+	describe("validatePattern", () => {
+		it("should validate a pattern with issues", async () => {
+			const pattern = {
+				id: "test",
+				frontmatter: { title: "T" },
+				hasTypeScript: false,
+				rawPath: "raw/test.mdx"
+			};
 
-		const program = validatePattern(mockPattern, mockConfig);
+			const mockFS = Layer.succeed(FileSystem.FileSystem, {
+				readFileString: () => Effect.succeed("## Good Example")
+			} as any);
 
-		// Test that the effect is properly structured
-		expect(program).toBeDefined();
+			const result = await Effect.runPromise(
+				validatePattern(pattern as any, mockConfig).pipe(Effect.provide(mockFS))
+			);
 
-		// Note: Would need FileSystem service to actually run the effect
-		// For now, just test the effect structure
+			expect(result.valid).toBe(false);
+			expect(result.issues.length).toBeGreaterThan(0);
+		});
+
+		it("should handle file read failures comfortably", async () => {
+			const pattern = { id: "test", rawPath: "fail.mdx", frontmatter: {} };
+			const mockFS = Layer.succeed(FileSystem.FileSystem, {
+				readFileString: () => Effect.fail(new Error("Read error"))
+			} as any);
+
+			const result = await Effect.runPromise(
+				validatePattern(pattern as any, mockConfig).pipe(Effect.provide(mockFS))
+			);
+
+			expect(result.valid).toBe(false);
+			expect(result.issues[0].message).toContain("Failed to read pattern file");
+		});
 	});
 
-	it("should test pattern TypeScript code", async () => {
-		const mockResult = {
-			pattern: {
-				id: "test-pattern",
-				title: "Test Pattern",
-				rawPath: "/test/raw/test-pattern.mdx",
-				srcPath: "/test/src/test-pattern.ts",
-				processedPath: "/test/processed/test-pattern.mdx",
-				frontmatter: {},
-				hasTypeScript: true,
-			},
-			valid: true,
-			issues: [],
-		};
+	describe("checkDuplicates", () => {
+		it("should detect existing patterns", async () => {
+			const results = [{ pattern: { id: "existing" } }];
+			const mockFS = Layer.succeed(FileSystem.FileSystem, {
+				readDirectory: () => Effect.succeed(["existing.mdx"])
+			} as any);
 
-		const program = testPattern(mockResult);
-		const result = await Effect.runPromise(program);
+			const checked = await Effect.runPromise(
+				checkDuplicates(results as any, mockConfig).pipe(Effect.provide(mockFS))
+			);
 
-		expect(result.pattern.id).toBe("test-pattern");
-		expect(typeof result.testPassed).toBe("boolean");
+			expect(checked[0].isDuplicate).toBe(true);
+		});
 	});
 
-	it("should generate ingest report", () => {
-		const mockResults = [
-			{
-				pattern: {
-					id: "test-pattern",
-					title: "Test Pattern",
-					rawPath: "/test/raw/test-pattern.mdx",
-					srcPath: "/test/src/test-pattern.ts",
-					processedPath: "/test/processed/test-pattern.mdx",
-					frontmatter: {},
-					hasTypeScript: true,
-				},
-				valid: true,
-				issues: [],
-				testPassed: true,
-			},
-		];
-
-		const report = generateReport(mockResults);
-
-		expect(report.totalPatterns).toBe(1);
-		expect(report.validated).toBe(1);
-		expect(report.testsPassed).toBe(1);
-		expect(report.migrated).toBe(1);
-		expect(report.failed).toBe(0);
-		expect(Array.isArray(report.results)).toBe(true);
-	});
-
-	it("should run complete ingest pipeline", async () => {
-		const program = runIngestPipeline(mockConfig);
-
-		// Test that the pipeline effect is properly structured
-		expect(program).toBeDefined();
+	describe("generateReport", () => {
+		it("should generate a correct report", () => {
+			const results = [
+				{ valid: true, testPassed: true, isDuplicate: false },
+				{ valid: false, testPassed: false, isDuplicate: false }
+			];
+			const report = generateReport(results as any);
+			expect(report.totalPatterns).toBe(2);
+			expect(report.migrated).toBe(1);
+			expect(report.failed).toBe(1);
+		});
 	});
 });

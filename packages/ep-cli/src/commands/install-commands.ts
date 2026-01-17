@@ -3,79 +3,10 @@
  */
 
 import { Args, Command, Options, Prompt } from "@effect/cli";
-import { FileSystem } from "@effect/platform";
-import { Console, Effect, Option, Schema } from "effect";
+import { Console, Effect, Option } from "effect";
 import { Display } from "../services/display/index.js";
+import { Install, InstalledRule } from "../services/install/index.js";
 import { colorize } from "../utils/string.js";
-
-// State File
-const INSTALLED_STATE_FILE = ".ep-installed.json";
-
-// Rules Schema
-const RuleSchema = Schema.Struct({
-  id: Schema.String,
-  title: Schema.String,
-  description: Schema.String,
-  skillLevel: Schema.optional(Schema.String),
-  useCase: Schema.optional(Schema.Array(Schema.String)),
-  content: Schema.String,
-});
-
-type Rule = typeof RuleSchema.Type;
-
-interface InstalledRule extends Rule {
-  installedAt: string;
-  tool: string;
-  version: string;
-}
-
-// Mock Rules for Interactive Mode
-const MOCK_RULES: Rule[] = [
-  {
-    id: "error-management",
-    title: "Error Recovery Pattern",
-    description: "Best practices for handling errors in Effect",
-    skillLevel: "beginner",
-    useCase: ["error-management"],
-    content: "Content v1.0",
-  },
-  {
-    id: "concurrency",
-    title: "Concurrency Control",
-    description: "Managing concurrent tasks safely",
-    skillLevel: "intermediate",
-    useCase: ["concurrency"],
-    content: "Content v1.0",
-  },
-  {
-    id: "resource-management",
-    title: "Resource Management",
-    description: "Safe acquisition and release of resources",
-    skillLevel: "advanced",
-    useCase: ["resource-management"],
-    content: "Content v1.0",
-  },
-];
-
-// Helpers
-const loadInstalledRules = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem;
-  const exists = yield* fs.exists(INSTALLED_STATE_FILE);
-  if (!exists) return [];
-
-  const content = yield* fs.readFileString(INSTALLED_STATE_FILE);
-  try {
-    return JSON.parse(content) as InstalledRule[];
-  } catch {
-    return [];
-  }
-});
-
-const saveInstalledRules = (rules: InstalledRule[]) =>
-  Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    yield* fs.writeFileString(INSTALLED_STATE_FILE, JSON.stringify(rules, null, 2));
-  });
 
 /**
  * install:add - Add rules to AI tool configuration
@@ -109,12 +40,17 @@ export const installAddCommand = Command.make("add", {
   Command.withDescription("Fetch rules from Pattern Server and inject them into AI tool configuration."),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
+      const { fetchRule, loadInstalledRules, saveInstalledRules, searchRules } = yield* Install;
+      
       yield* Console.log(colorize("\n🚀 Installing rules for " + options.tool + "...\n", "cyan"));
 
-      let rulesToInstall: Rule[] = [];
+      let rulesToInstall = yield* searchRules({
+        skillLevel: Option.getOrUndefined(options.skillLevel),
+        useCase: Option.getOrUndefined(options.useCase),
+      });
 
       if (options.interactive) {
-        const choices = MOCK_RULES.map((rule) => ({
+        const choices = rulesToInstall.map((rule) => ({
           title: `${rule.title} (${rule.skillLevel || "general"})`,
           value: rule,
           description: rule.description,
@@ -124,17 +60,6 @@ export const installAddCommand = Command.make("add", {
           message: "Select rules to install:",
           choices,
         });
-      } else {
-        // Mock default behavior
-        rulesToInstall = MOCK_RULES;
-        if (Option.isSome(options.skillLevel)) {
-          const skillLevel = Option.getOrUndefined(options.skillLevel);
-          if (skillLevel) {
-            rulesToInstall = rulesToInstall.filter(
-              (r) => r.skillLevel === skillLevel
-            );
-          }
-        }
       }
 
       if (rulesToInstall.length === 0) {
@@ -143,7 +68,7 @@ export const installAddCommand = Command.make("add", {
       }
 
       // Save to state
-      const current = yield* loadInstalledRules;
+      const current = yield* loadInstalledRules();
       const newRules: InstalledRule[] = rulesToInstall.map(r => ({
         ...r,
         installedAt: new Date().toISOString(),
@@ -176,7 +101,9 @@ export const installRemoveCommand = Command.make("remove", {
   Command.withDescription("Remove installed rules"),
   Command.withHandler(({ args }) =>
     Effect.gen(function* () {
-      const current = yield* loadInstalledRules;
+      const { loadInstalledRules, saveInstalledRules } = yield* Install;
+      const current = yield* loadInstalledRules();
+      
       if (current.length === 0) {
         yield* Display.showWarning("No rules installed.");
         return;
@@ -184,7 +111,7 @@ export const installRemoveCommand = Command.make("remove", {
 
       let toRemoveIds: string[] = [];
 
-      if (args.ruleId._tag === "Some") {
+      if (Option.isSome(args.ruleId)) {
         toRemoveIds = [args.ruleId.value];
       } else {
         // Interactive removal
@@ -221,7 +148,8 @@ export const installDiffCommand = Command.make("diff", {
   Command.withDescription("Compare installed rule with latest version"),
   Command.withHandler(({ args }) =>
     Effect.gen(function* () {
-      const current = yield* loadInstalledRules;
+      const { fetchRule, loadInstalledRules } = yield* Install;
+      const current = yield* loadInstalledRules();
       const installed = current.find(r => r.id === args.ruleId);
 
       if (!installed) {
@@ -229,11 +157,7 @@ export const installDiffCommand = Command.make("diff", {
         return;
       }
 
-      const latest = MOCK_RULES.find(r => r.id === args.ruleId);
-      if (!latest) {
-        yield* Display.showWarning(`Rule '${args.ruleId}' no longer exists in registry.`);
-        return;
-      }
+      const latest = yield* fetchRule(args.ruleId);
 
       yield* Console.log(colorize(`\nDiff for ${installed.title}:\n`, "bright"));
       yield* Console.log(`Installed Version: ${installed.version}`);
@@ -262,8 +186,10 @@ export const installListCommand = Command.make("list", {
   Command.withDescription("List supported AI tools or installed rules."),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
+      const { loadInstalledRules } = yield* Install;
+      
       if (options.installed) {
-        const rules = yield* loadInstalledRules;
+        const rules = yield* loadInstalledRules();
         if (rules.length === 0) {
           yield* Console.log("No rules installed.");
           return;

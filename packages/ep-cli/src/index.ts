@@ -9,7 +9,6 @@
 import { StateStore } from "@effect-patterns/pipeline-state";
 import { Command } from "@effect/cli";
 import { FetchHttpClient } from "@effect/platform";
-import { layerNoop } from "@effect/platform/FileSystem";
 import { Effect, Layer } from "effect";
 
 import { CLI } from "./constants.js";
@@ -23,9 +22,11 @@ import { releaseCommand } from "./commands/release-commands.js";
 import { skillsCommand } from "./commands/skills-commands.js";
 
 // Services
+import { NodeFileSystem } from "@effect/platform-node";
 import { Display } from "./services/display/index.js";
 import { LiveTUILoader, TUILoader } from "./services/display/tui-loader.js";
 import { Execution } from "./services/execution/index.js";
+import { InstallLive } from "./services/install/index.js";
 import { Linter } from "./services/linter/index.js";
 import { Logger, LoggerLive, parseLogLevel } from "./services/logger/index.js";
 import { Skills } from "./services/skills/index.js";
@@ -90,14 +91,7 @@ export const rootCommand = Command.make("ep").pipe(
  */
 const BaseLayer = Layer.mergeAll(
   FetchHttpClient.layer,
-  layerNoop({
-    readFileString: () => Effect.die("FileSystem not available"),
-    writeFileString: () => Effect.die("FileSystem not available"),
-    exists: () => Effect.die("FileSystem not available"),
-    remove: () => Effect.die("FileSystem not available"),
-    copy: () => Effect.die("FileSystem not available"),
-    makeDirectory: () => Effect.die("FileSystem not available"),
-  }),
+  NodeFileSystem.layer,
   LoggerLive(globalConfig),
   LiveTUILoader,
   (StateStore as any).Default as Layer.Layer<StateStore>
@@ -107,6 +101,7 @@ const ServiceLayer = Layer.mergeAll(
   Linter.Default,
   Skills.Default,
   Display.Default,
+  InstallLive,
   Layer.provide(Execution.Default, Logger.Default)
 ).pipe(
   Layer.provide(BaseLayer)
