@@ -2,10 +2,12 @@
 
 /**
  * ep-admin CLI - Administrative CLI for Effect Patterns maintainers
- * 
+ *
  * Built with @effect/cli for type-safe, composable command-line interfaces.
  */
 
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 import { Args, Command } from "@effect/cli";
 import { Console, Effect } from "effect";
 import { CLI, SHELL_TYPES } from "./constants.js";
@@ -142,8 +144,37 @@ export const createAdminProgram = (
 	argv: ReadonlyArray<string> = process.argv
 ) => adminCliRunner(argv);
 
-// Run CLI when executed directly
-if (require.main === module) {
+/**
+ * Run CLI when executed directly.
+ *
+ * ESM-compatible check that works with both direct execution and when imported.
+ * Checks if the current module's file path matches the executed argv[1].
+ */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Determine if this module is being run directly
+const isDirectExecution = (() => {
+	const executedFile = process.argv[1];
+	if (!executedFile) return false;
+
+	// Handle direct execution (bun run index.ts)
+	if (executedFile === __filename) return true;
+
+	// Handle execution through wrapper script (ep-admin binary)
+	if (executedFile.endsWith("ep-admin") || executedFile.endsWith("ep-admin.js")) {
+		return true;
+	}
+
+	// Handle execution in development (bun dist/index.js)
+	if (executedFile.includes("dist") && executedFile.includes("index.js")) {
+		return true;
+	}
+
+	return false;
+})();
+
+if (isDirectExecution) {
 	const program = createAdminProgram(process.argv);
 	const provided = Effect.provide(program, ProductionLayer) as Effect.Effect<void, unknown, never>;
 	void Effect.runPromise(provided);
