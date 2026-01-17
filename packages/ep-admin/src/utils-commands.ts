@@ -13,6 +13,7 @@ import { Effect } from "effect";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
 import { EnhancedFileSystem } from "./services/filesystem/index.js";
+import { ValidationService, runValidations } from "./services/validation/index.js";
 import { FileNotFoundError, FileOperationError } from "./errors.js";
 
 /**
@@ -49,6 +50,30 @@ export const utilsAddSeqIdCommand = Command.make("add-seqid", {
 	Command.withHandler(({ options }) =>
 		Effect.gen(function* () {
 			yield* configureLoggerFromOptions(options);
+
+			// Pre-validate arguments before processing
+			const validator = yield* ValidationService;
+			const validationResult = yield* runValidations([
+				validator.validateFilePath(options.file, "file"),
+				validator.validateFileExists(options.file, "file"),
+				validator.validateNumberRange(options.start, 1, 999999, "start"),
+			]);
+
+			// If validation failed, show errors and stop
+			if (!validationResult.isValid) {
+				yield* Display.showError(
+					`Validation failed - ${validationResult.errors.length} error(s):`
+				);
+				for (const error of validationResult.errors) {
+					if ("formattedMessage" in error) {
+						yield* Display.showText(`  • ${error.formattedMessage}`);
+					} else {
+						yield* Display.showText(`  • ${String(error)}`);
+					}
+				}
+				return yield* Effect.fail(new Error("Validation failed"));
+			}
+
 			yield* Display.showInfo(`Adding sequential IDs to ${options.file}...`);
 
 			const efs = yield* EnhancedFileSystem;
@@ -170,6 +195,29 @@ export const utilsRenumberSeqIdCommand = Command.make("renumber-seqid", {
 	Command.withHandler(({ options }) =>
 		Effect.gen(function* () {
 			yield* configureLoggerFromOptions(options);
+
+			// Pre-validate arguments before processing
+			const validator = yield* ValidationService;
+			const validationResult = yield* runValidations([
+				validator.validateFilePath(options.file, "file"),
+				validator.validateFileExists(options.file, "file"),
+			]);
+
+			// If validation failed, show errors and stop
+			if (!validationResult.isValid) {
+				yield* Display.showError(
+					`Validation failed - ${validationResult.errors.length} error(s):`
+				);
+				for (const error of validationResult.errors) {
+					if ("formattedMessage" in error) {
+						yield* Display.showText(`  • ${error.formattedMessage}`);
+					} else {
+						yield* Display.showText(`  • ${String(error)}`);
+					}
+				}
+				return yield* Effect.fail(new Error("Validation failed"));
+			}
+
 			yield* Display.showInfo(`Renumbering seqIds in ${options.file}...`);
 
 			const efs = yield* EnhancedFileSystem;

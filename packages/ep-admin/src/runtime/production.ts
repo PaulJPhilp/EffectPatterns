@@ -21,6 +21,7 @@ import { EnhancedFileSystem } from "../services/filesystem/index.js";
 import { Execution } from "../services/execution/index.js";
 import { Logger } from "../services/logger/index.js";
 import { McpService } from "../services/mcp/service.js";
+import { ValidationService } from "../services/validation/index.js";
 
 /**
  * Production layer combining all required services
@@ -36,6 +37,7 @@ export const ProductionLayer = Layer.mergeAll(
 	Layer.provide(Display.Default, Logger.Default),
 	Layer.provide(Execution.Default, Logger.Default),
 	Layer.provide(EnhancedFileSystem.Default, NodeFileSystemLayer),
+	Layer.provide(ValidationService.Default, NodeFileSystemLayer),
 	McpLayer,
 	// Use Layer.provide to properly type the StateStore layer
 	Layer.provide(StateStore.Default, Layer.mergeAll(Logger.Default))
