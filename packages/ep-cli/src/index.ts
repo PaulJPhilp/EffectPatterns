@@ -7,7 +7,7 @@
  */
 
 import { StateStore } from "@effect-patterns/pipeline-state";
-import { Command, Options } from "@effect/cli";
+import { Command } from "@effect/cli";
 import { FetchHttpClient } from "@effect/platform";
 import { layerNoop } from "@effect/platform/FileSystem";
 import { Effect, Layer } from "effect";
@@ -27,49 +27,50 @@ import { Display } from "./services/display/index.js";
 import { LiveTUILoader, TUILoader } from "./services/display/tui-loader.js";
 import { Execution } from "./services/execution/index.js";
 import { Linter } from "./services/linter/index.js";
-import { LOG_LEVEL_VALUES, Logger, LoggerLive, parseLogLevel } from "./services/logger/index.js";
+import { Logger, LoggerLive, parseLogLevel } from "./services/logger/index.js";
 import { Skills } from "./services/skills/index.js";
 
-// Parse global flags manually to configure logger
-const parseGlobalLoggerConfig = (argv: string[]) => {
-  const verbose = argv.includes("--verbose") || argv.includes("-v");
+/**
+ * Resolve logger configuration from environment variables.
+ *
+ * Logger configuration is resolved from the following sources (in priority order):
+ * 1. LOG_LEVEL environment variable (e.g., LOG_LEVEL=debug)
+ * 2. DEBUG environment variable (if set, enables debug logging)
+ * 3. VERBOSE environment variable (if set, enables debug logging)
+ * 4. Default: "info" level
+ *
+ * Environment variables are used instead of CLI options to avoid duplicating
+ * the @effect/cli parsing logic. Logger configuration happens during layer
+ * initialization before CLI argument parsing, so CLI options cannot be used.
+ * This approach also follows Unix principles and simplifies the architecture.
+ *
+ * @returns Logger configuration object with logLevel
+ */
+const resolveLoggerConfig = () => {
+  const logLevelEnv = process.env.LOG_LEVEL;
+  const debugEnv = process.env.DEBUG;
+  const verboseEnv = process.env.VERBOSE;
 
-  let logLevelString: string | undefined;
-  const logLevelIndex = argv.indexOf("--log-level");
-  if (logLevelIndex !== -1 && logLevelIndex + 1 < argv.length) {
-    logLevelString = argv[logLevelIndex + 1];
-  } else {
-    const logLevelEq = argv.find(a => a.startsWith("--log-level="));
-    if (logLevelEq) {
-      logLevelString = logLevelEq.split("=")[1];
-    }
-  }
+  // Priority: explicit LOG_LEVEL > DEBUG > VERBOSE > default
+  const logLevel =
+    (logLevelEnv && parseLogLevel(logLevelEnv)) ||
+    (debugEnv && "debug") ||
+    (verboseEnv && "debug") ||
+    "info";
 
-  const parsedLevel = logLevelString ? parseLogLevel(logLevelString) : undefined;
-  const logLevel = verbose ? "debug" : (parsedLevel || "info");
-
-  return { logLevel, verbose };
+  return { logLevel, verbose: logLevel === "debug" };
 };
 
-const globalConfig = parseGlobalLoggerConfig(process.argv);
+const globalConfig = resolveLoggerConfig();
 
 /**
  * Unified Root Command
+ *
+ * Note: Logger configuration is done via environment variables (LOG_LEVEL, DEBUG, VERBOSE)
+ * rather than CLI options to avoid duplicating the @effect/cli parsing logic.
+ * This provides a cleaner separation of concerns and follows Unix principles.
  */
-export const rootCommand = Command.make("ep", {
-  options: {
-    logLevel: Options.optional(
-      Options.choice("log-level", LOG_LEVEL_VALUES)
-    ).pipe(
-      Options.withDescription("Set the logging level")
-    ),
-    verbose: Options.boolean("verbose").pipe(
-      Options.withAlias("v"),
-      Options.withDefault(false),
-      Options.withDescription("Enable verbose logging (debug level)")
-    ),
-  },
-}).pipe(
+export const rootCommand = Command.make("ep").pipe(
   Command.withDescription(CLI.DESCRIPTION),
   Command.withSubcommands([
     searchCommand,
