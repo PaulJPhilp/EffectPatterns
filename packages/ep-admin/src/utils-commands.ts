@@ -9,10 +9,11 @@
  */
 
 import { Command, Options } from "@effect/cli";
-import { FileSystem } from "@effect/platform";
 import { Effect } from "effect";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
+import { EnhancedFileSystem } from "./services/filesystem/index.js";
+import { FileNotFoundError, FileOperationError } from "./errors.js";
 
 /**
  * utils:add-seqid - Add sequential IDs to messages
@@ -50,16 +51,42 @@ export const utilsAddSeqIdCommand = Command.make("add-seqid", {
 			yield* configureLoggerFromOptions(options);
 			yield* Display.showInfo(`Adding sequential IDs to ${options.file}...`);
 
-			const fs = yield* FileSystem.FileSystem;
-			const exists = yield* fs.exists(options.file);
+			const efs = yield* EnhancedFileSystem;
 
-			if (!exists) {
-				yield* Display.showError(`File not found: ${options.file}`);
-				return yield* Effect.fail(new Error("File not found"));
+			// Read file with error handling
+			const content = yield* efs
+				.readFile(options.file, "add-seqid")
+				.pipe(
+					Effect.catchAll((error) =>
+						Effect.gen(function* () {
+							if (error instanceof FileNotFoundError) {
+								yield* Display.showError(error.formattedMessage);
+							} else if (error instanceof FileOperationError) {
+								yield* Display.showError(error.formattedMessage);
+								if (typeof error.cause === "string") {
+									yield* Display.showText(`  💡 ${error.cause}`);
+								}
+							}
+							return yield* Effect.fail(error);
+						})
+					)
+				);
+
+			// Parse JSON with validation
+			let data: Array<{ seqId?: number }>;
+			try {
+				data = JSON.parse(content) as Array<{ seqId?: number }>;
+			} catch (parseError) {
+				yield* Display.showError(
+					`Invalid JSON in ${options.file}`
+				);
+				yield* Display.showText(
+					`  Error: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+				);
+				return yield* Effect.fail(
+					new Error(`JSON parse error in ${options.file}`)
+				);
 			}
-
-			const content = yield* fs.readFileString(options.file);
-			const data = JSON.parse(content) as Array<{ seqId?: number }>;
 
 			if (!Array.isArray(data)) {
 				yield* Display.showError("File must contain a JSON array");
@@ -82,16 +109,42 @@ export const utilsAddSeqIdCommand = Command.make("add-seqid", {
 				yield* Display.showInfo("Dry run - no changes written");
 			} else {
 				if (options.backup) {
-					yield* fs.writeFileString(
-						`${options.file}.bak`,
-						content
-					);
+					yield* efs
+						.writeFile(`${options.file}.bak`, content, "backup")
+						.pipe(
+							Effect.catchAll((error) =>
+								Effect.gen(function* () {
+									if (error instanceof FileOperationError) {
+										yield* Display.showWarning(
+											`Could not create backup: ${error.formattedMessage}`
+										);
+										if (typeof error.cause === "string") {
+											yield* Display.showText(`  ${error.cause}`);
+										}
+									}
+									return yield* Effect.succeed(undefined);
+								})
+							)
+						);
+
 					yield* Display.showInfo("Backup created");
 				}
-				yield* fs.writeFileString(
-					options.file,
-					JSON.stringify(data, null, 2)
-				);
+
+				yield* efs
+					.writeFile(options.file, JSON.stringify(data, null, 2), "add-seqid")
+					.pipe(
+						Effect.catchAll((error) =>
+							Effect.gen(function* () {
+								if (error instanceof FileOperationError) {
+									yield* Display.showError(error.formattedMessage);
+									if (typeof error.cause === "string") {
+										yield* Display.showText(`  💡 ${error.cause}`);
+									}
+								}
+								return yield* Effect.fail(error);
+							})
+						)
+					);
 			}
 
 			yield* Display.showSuccess("Sequential IDs added!");
@@ -119,16 +172,42 @@ export const utilsRenumberSeqIdCommand = Command.make("renumber-seqid", {
 			yield* configureLoggerFromOptions(options);
 			yield* Display.showInfo(`Renumbering seqIds in ${options.file}...`);
 
-			const fs = yield* FileSystem.FileSystem;
-			const exists = yield* fs.exists(options.file);
+			const efs = yield* EnhancedFileSystem;
 
-			if (!exists) {
-				yield* Display.showError(`File not found: ${options.file}`);
-				return yield* Effect.fail(new Error("File not found"));
+			// Read file with error handling
+			const content = yield* efs
+				.readFile(options.file, "renumber-seqid")
+				.pipe(
+					Effect.catchAll((error) =>
+						Effect.gen(function* () {
+							if (error instanceof FileNotFoundError) {
+								yield* Display.showError(error.formattedMessage);
+							} else if (error instanceof FileOperationError) {
+								yield* Display.showError(error.formattedMessage);
+								if (typeof error.cause === "string") {
+									yield* Display.showText(`  💡 ${error.cause}`);
+								}
+							}
+							return yield* Effect.fail(error);
+						})
+					)
+				);
+
+			// Parse JSON with validation
+			let data: Array<{ seqId?: number }>;
+			try {
+				data = JSON.parse(content) as Array<{ seqId?: number }>;
+			} catch (parseError) {
+				yield* Display.showError(
+					`Invalid JSON in ${options.file}`
+				);
+				yield* Display.showText(
+					`  Error: ${parseError instanceof Error ? parseError.message : String(parseError)}`
+				);
+				return yield* Effect.fail(
+					new Error(`JSON parse error in ${options.file}`)
+				);
 			}
-
-			const content = yield* fs.readFileString(options.file);
-			const data = JSON.parse(content) as Array<{ seqId?: number }>;
 
 			if (!Array.isArray(data)) {
 				yield* Display.showError("File must contain a JSON array");
@@ -141,10 +220,21 @@ export const utilsRenumberSeqIdCommand = Command.make("renumber-seqid", {
 				item.seqId = seqId++;
 			}
 
-			yield* fs.writeFileString(
-				options.file,
-				JSON.stringify(data, null, 2)
-			);
+			yield* efs
+				.writeFile(options.file, JSON.stringify(data, null, 2), "renumber-seqid")
+				.pipe(
+					Effect.catchAll((error) =>
+						Effect.gen(function* () {
+							if (error instanceof FileOperationError) {
+								yield* Display.showError(error.formattedMessage);
+								if (typeof error.cause === "string") {
+									yield* Display.showText(`  💡 ${error.cause}`);
+								}
+							}
+							return yield* Effect.fail(error);
+						})
+					)
+				);
 
 			yield* Display.showInfo(`Renumbered ${data.length} items`);
 			yield* Display.showSuccess("Sequential IDs renumbered!");

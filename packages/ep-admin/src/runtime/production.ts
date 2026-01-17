@@ -17,6 +17,7 @@ import { FetchHttpClient } from "@effect/platform";
 import { layer as NodeFileSystemLayer } from "@effect/platform-node/NodeFileSystem";
 import { Effect, Layer, ManagedRuntime } from "effect";
 import { Display } from "../services/display/index.js";
+import { EnhancedFileSystem } from "../services/filesystem/index.js";
 import { Execution } from "../services/execution/index.js";
 import { Logger } from "../services/logger/index.js";
 import { McpService } from "../services/mcp/service.js";
@@ -34,6 +35,7 @@ export const ProductionLayer = Layer.mergeAll(
 	Logger.Default,
 	Layer.provide(Display.Default, Logger.Default),
 	Layer.provide(Execution.Default, Logger.Default),
+	Layer.provide(EnhancedFileSystem.Default, NodeFileSystemLayer),
 	McpLayer,
 	// Use Layer.provide to properly type the StateStore layer
 	Layer.provide(StateStore.Default, Layer.mergeAll(Logger.Default))
