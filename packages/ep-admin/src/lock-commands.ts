@@ -116,7 +116,7 @@ const getEntityDisplayName = (entityType: string, slug: string): string => {
 /**
  * Generic entity operation handler
  */
-const handleEntityOperation = (
+export const handleEntityOperation = (
 	args: { identifier: string },
 	options: { type: string },
 	action: "lock" | "unlock"
