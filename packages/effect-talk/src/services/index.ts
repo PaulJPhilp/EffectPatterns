@@ -5,6 +5,7 @@ import { ErrorRecoveryService } from "./ErrorRecoveryService";
 import { LoggerService } from "./LoggerService";
 import { PersistenceService } from "./PersistenceService";
 import { ProcessService } from "./ProcessService";
+import { ResourceManagement } from "./ResourceManagement";
 import { StructuredLoggingService } from "./StructuredLoggingService";
 import { ConfigService, SessionStore } from "./SessionStore";
 
@@ -14,6 +15,7 @@ export { ErrorRecoveryService } from "./ErrorRecoveryService";
 export { LoggerService } from "./LoggerService";
 export { PersistenceService } from "./PersistenceService";
 export { ProcessService, type ProcessHandle } from "./ProcessService";
+export { ResourceManagement } from "./ResourceManagement";
 export { StructuredLoggingService } from "./StructuredLoggingService";
 export { createEffectRunner } from "./ReactIntegrationService";
 export { ConfigService, SessionStore } from "./SessionStore";
