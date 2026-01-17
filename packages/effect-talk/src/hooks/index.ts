@@ -49,12 +49,20 @@ export function useSessions() {
     const [currentSession, setCurrentSession] = useState<Session | null>(null);
 
     const createSession = useCallback(() => {
+        // Safely convert process.env to Record<string, string>
+        const environment: Record<string, string> = {};
+        for (const [key, value] of Object.entries(process.env)) {
+            if (typeof value === "string") {
+                environment[key] = value;
+            }
+        }
+
         const session: Session = {
             id: generateId(),
             blocks: [],
             activeBlockId: null,
             workingDirectory: process.cwd(),
-            environment: process.env as Record<string, string>,
+            environment,
             createdAt: Date.now(),
             lastModified: Date.now(),
         };

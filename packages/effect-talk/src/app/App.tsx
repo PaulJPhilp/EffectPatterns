@@ -1,66 +1,116 @@
-import { useEffect } from "react";
 import { BlockList } from "../components/BlockList";
 import { CommandInput } from "../components/CommandInput";
 import { Layout } from "../components/Layout";
 import { Sidebar } from "../components/Sidebar";
-import { useAsyncCommand, useBlocks, useSessions } from "../hooks";
+import { ErrorBoundary } from "../components/ErrorBoundary";
+import { EffectProvider, useEffectTalk } from "../contexts/EffectProvider";
+import { generateId } from "../types";
+import type { Block } from "../types";
 import "./App.css";
 
 /**
- * Main EffectTalk application component
+ * AppContent component that uses EffectTalk context
+ * Separated from App to allow EffectProvider wrapping
  */
-export function App() {
-  const { blocks, addBlock, updateBlock } = useBlocks();
-  const { currentSession, createSession, updateSession } = useSessions();
-  const { executeCommand, isLoading } = useAsyncCommand();
-
-  // Initialize session on mount
-  useEffect(() => {
-    createSession();
-  }, []);
+function AppContent() {
+  const {
+    session,
+    isLoading,
+    error,
+    executeCommand,
+    addBlock,
+    updateBlock,
+    setActiveBlock,
+    clearBlocks,
+    saveSession,
+  } = useEffectTalk();
 
   const handleCommandSubmit = async (command: string) => {
-    if (!currentSession) return;
+    if (!session) return;
 
     // Create new block
-    const block = { ...addBlock(command) };
-    updateBlock(block.id, { status: "running" });
-    updateSession({ activeBlockId: block.id });
+    const newBlock: Block = {
+      id: generateId(),
+      command,
+      status: "running",
+      stdout: "",
+      stderr: "",
+      startTime: Date.now(),
+      metadata: {},
+    };
+
+    // Add block and set as active
+    await addBlock(newBlock);
+    await setActiveBlock(newBlock.id);
 
     // Execute command with session context
-    const result = await executeCommand(
-      command,
-      currentSession.workingDirectory,
-      currentSession.environment,
-    );
+    try {
+      await executeCommand(
+        command,
+        session.workingDirectory,
+        session.environment
+      );
 
-    // Update block with result
-    if (result.success) {
-      updateBlock(block.id, {
+      // Update block on success
+      await updateBlock(newBlock.id, {
         status: "success",
-        stdout: "Command executed successfully",
         exitCode: 0,
         endTime: Date.now(),
       });
-    } else {
-      updateBlock(block.id, {
+    } catch (err) {
+      // Update block on failure
+      const errorMessage =
+        err instanceof Error ? err.message : "Command failed";
+      await updateBlock(newBlock.id, {
         status: "failure",
-        stderr: result.error || "Command failed",
+        stderr: errorMessage,
         exitCode: 1,
         endTime: Date.now(),
       });
+    } finally {
+      // Save session
+      await saveSession();
     }
   };
 
-  const handleInterrupt = () => {
-    if (currentSession?.activeBlockId) {
-      updateBlock(currentSession.activeBlockId, {
+  const handleInterrupt = async () => {
+    if (session?.activeBlockId) {
+      await updateBlock(session.activeBlockId, {
         status: "interrupted",
         endTime: Date.now(),
       });
-      updateSession({ activeBlockId: null });
+      await setActiveBlock(null);
     }
   };
+
+  if (!session) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          backgroundColor: "#1e1e1e",
+          color: "#d4d4d4",
+          fontFamily: "monospace",
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "24px", marginBottom: "10px" }}>
+            Loading EffectTalk...
+          </div>
+          {error && (
+            <div style={{ color: "#f48771", fontSize: "12px" }}>
+              Error: {error}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const blocks = session.blocks || [];
 
   return (
     <Layout
@@ -75,20 +125,32 @@ export function App() {
           <h1 style={{ margin: 0, fontSize: "16px" }}>EffectTalk</h1>
           <div style={{ fontSize: "12px", color: "#888" }}>
             Blocks: {blocks.length} | Status:{" "}
-            {currentSession?.activeBlockId ? "Running" : "Ready"}
+            {session.activeBlockId ? "Running" : "Ready"}
+            {error && <span style={{ color: "#f48771" }}> | Error</span>}
           </div>
         </div>
       }
-      sidebar={
-        currentSession ? <Sidebar session={currentSession} /> : undefined
-      }
+      sidebar={<Sidebar session={session} />}
       main={
         <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+          {error && (
+            <div
+              style={{
+                backgroundColor: "#5c2222",
+                color: "#f48771",
+                padding: "10px",
+                fontSize: "12px",
+                borderBottom: "1px solid #3e3e3e",
+              }}
+            >
+              Error: {error}
+            </div>
+          )}
           <BlockList
             blocks={blocks}
-            activeBlockId={currentSession?.activeBlockId}
+            activeBlockId={session.activeBlockId || undefined}
             onBlockSelect={(blockId) => {
-              updateSession({ activeBlockId: blockId });
+              setActiveBlock(blockId);
             }}
           />
           <CommandInput
@@ -106,6 +168,20 @@ export function App() {
         </div>
       }
     />
+  );
+}
+
+/**
+ * Main EffectTalk application component
+ * Wrapped with EffectProvider and ErrorBoundary
+ */
+export function App() {
+  return (
+    <ErrorBoundary>
+      <EffectProvider autoRestore={true}>
+        <AppContent />
+      </EffectProvider>
+    </ErrorBoundary>
   );
 }
 

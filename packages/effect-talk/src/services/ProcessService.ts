@@ -1,4 +1,5 @@
 import { Effect, Stream } from "effect";
+import * as pty from "node-pty";
 import { ProcessError } from "../types";
 import { LoggerService } from "./LoggerService";
 
@@ -12,14 +13,14 @@ interface ProcessState {
   pid: number;
   command: string;
   cwd: string;
-  stdout: string[];
-  stderr: string[];
+  pty: pty.IPty;
   isRunning: boolean;
+  exitCode: number | null;
 }
 
 /**
  * Service for spawning and managing child processes via node-pty
- * Currently uses mock implementation; will be replaced with actual node-pty
+ * Provides full terminal emulation support for interactive commands
  */
 export class ProcessService extends Effect.Service<ProcessService>()(
   "ProcessService",
@@ -30,36 +31,88 @@ export class ProcessService extends Effect.Service<ProcessService>()(
 
       // In-memory process registry for tracking active processes
       const processes = new Map<number, ProcessState>();
-      let pidCounter = 1000;
 
       return {
         /**
          * Spawn a new process with PTY
          */
         spawn: (command: string, cwd: string, env: Record<string, string>) =>
-          Effect.gen(function* () {
-            yield* logger.info(`Spawning process: ${command} in ${cwd}`);
+          Effect.acquireRelease(
+            // Acquisition: spawn the process
+            Effect.gen(function* () {
+              yield* logger.info(`Spawning process: ${command} in ${cwd}`);
 
-            const pid = pidCounter++;
-            const handle: ProcessHandle = {
-              pid,
-              command,
-              cwd,
-            };
+              try {
+                // Merge provided env with process.env
+                const spawnEnv = { ...process.env, ...env } as Record<
+                  string,
+                  string
+                >;
 
-            // Register process
-            processes.set(pid, {
-              pid,
-              command,
-              cwd,
-              stdout: [],
-              stderr: [],
-              isRunning: true,
-            });
+                // Spawn PTY with terminal emulation
+                const newPty = pty.spawn(command, [], {
+                  name: "xterm-256color",
+                  cols: 80,
+                  rows: 24,
+                  cwd,
+                  env: spawnEnv,
+                });
 
-            yield* logger.debug(`Process ${pid} registered`);
-            return handle;
-          }),
+                // Track the process
+                const processState: ProcessState = {
+                  pid: newPty.pid,
+                  command,
+                  cwd,
+                  pty: newPty,
+                  isRunning: true,
+                  exitCode: null,
+                };
+
+                processes.set(newPty.pid, processState);
+
+                // Setup exit handler
+                newPty.onExit(({ exitCode }) => {
+                  processState.exitCode = exitCode;
+                  processState.isRunning = false;
+                  yield* logger.info(
+                    `Process ${newPty.pid} exited with code ${exitCode}`,
+                  );
+                });
+
+                const handle: ProcessHandle = {
+                  pid: newPty.pid,
+                  command,
+                  cwd,
+                };
+
+                yield* logger.debug(`Process spawned with PID ${newPty.pid}`);
+                return handle;
+              } catch (cause) {
+                yield* Effect.fail(
+                  new ProcessError({
+                    reason: "spawn-failed",
+                    cause,
+                  }),
+                );
+              }
+            }),
+            // Release: cleanup the process
+            (handle) =>
+              Effect.sync(() => {
+                const process = processes.get(handle.pid);
+                if (process && process.pty) {
+                  try {
+                    if (process.isRunning) {
+                      process.pty.kill("SIGTERM");
+                    }
+                  } catch (e) {
+                    // Already dead or error killing
+                  }
+                }
+                processes.delete(handle.pid);
+                yield* logger.debug(`Cleaned up process ${handle.pid}`);
+              }),
+          ),
 
         /**
          * Send input to a process's stdin
@@ -78,9 +131,22 @@ export class ProcessService extends Effect.Service<ProcessService>()(
               return;
             }
 
-            yield* logger.debug(
-              `Sending input to process ${pid}: ${input.length} bytes`,
-            );
+            try {
+              yield* Effect.sync(() => {
+                process.pty.write(input);
+              });
+              yield* logger.debug(
+                `Sent input to process ${pid}: ${input.length} bytes`,
+              );
+            } catch (cause) {
+              yield* Effect.fail(
+                new ProcessError({
+                  reason: "spawn-failed",
+                  pid,
+                  cause,
+                }),
+              );
+            }
           }),
 
         /**
@@ -94,8 +160,15 @@ export class ProcessService extends Effect.Service<ProcessService>()(
               return;
             }
 
-            yield* logger.info(`Terminating process ${pid} with ${signal}`);
-            process.isRunning = false;
+            try {
+              yield* Effect.sync(() => {
+                process.pty.kill(signal);
+              });
+              yield* logger.info(`Terminated process ${pid} with ${signal}`);
+              process.isRunning = false;
+            } catch (cause) {
+              yield* logger.error(`Failed to terminate ${pid}`, cause);
+            }
           }),
 
         /**
@@ -109,12 +182,29 @@ export class ProcessService extends Effect.Service<ProcessService>()(
               return;
             }
 
-            yield* logger.info(`Interrupting process ${pid}`);
-            process.isRunning = false;
+            try {
+              yield* Effect.sync(() => {
+                process.pty.kill("SIGINT");
+              });
+
+              // Give process time to handle SIGINT
+              yield* Effect.sleep(100);
+
+              // If still running, force kill
+              if (process.isRunning && process.pty.pid > 0) {
+                yield* Effect.sync(() => {
+                  process.pty.kill("SIGTERM");
+                });
+              }
+
+              yield* logger.info(`Interrupted process ${pid}`);
+            } catch (cause) {
+              yield* logger.error(`Failed to interrupt ${pid}`, cause);
+            }
           }),
 
         /**
-         * Create a stream of output from a process (mock implementation)
+         * Create a stream of output from a process
          */
         recordStream: (pid: number, streamType: "stdout" | "stderr") =>
           Effect.gen(function* () {
@@ -128,15 +218,21 @@ export class ProcessService extends Effect.Service<ProcessService>()(
               `Attaching ${streamType} stream to process ${pid}`,
             );
 
-            // Mock implementation: simulate process output
-            return Stream.fromIterable([
-              `[${streamType}] Command: ${process.command}\n`,
-              `[${streamType}] Working directory: ${process.cwd}\n`,
-              `[${streamType}] Process ID: ${pid}\n`,
-              `[${streamType}] Starting execution...\n`,
-            ]).pipe(
-              Stream.delays(100),
-              Stream.tap(() => Effect.sync(() => { })),
+            // For PTY, both stdout and stderr come from pty.onData
+            // We'll use pty.onData event
+            return Stream.asyncIterable(
+              (async function* () {
+                try {
+                  for await (const data of process.pty) {
+                    yield data.toString();
+                  }
+                } catch (err) {
+                  // Stream ended or error occurred
+                  yield* logger.debug(
+                    `Stream ended for process ${pid}`,
+                  );
+                }
+              })(),
             );
           }),
 
@@ -160,25 +256,29 @@ export class ProcessService extends Effect.Service<ProcessService>()(
           }),
 
         /**
-         * Clear stream data for a process
-         */
-        clearStreams: (pid: number) =>
-          Effect.gen(function* () {
-            const process = processes.get(pid);
-            if (process) {
-              process.stdout = [];
-              process.stderr = [];
-              yield* logger.debug(`Cleared streams for process ${pid}`);
-            }
-          }),
-
-        /**
          * Check if a process is running
          */
         isRunning: (pid: number) =>
           Effect.gen(function* () {
             const process = processes.get(pid);
             return process?.isRunning ?? false;
+          }),
+
+        /**
+         * Get the exit code of a completed process
+         */
+        getExitCode: (pid: number) =>
+          Effect.gen(function* () {
+            const process = processes.get(pid);
+            return process?.exitCode ?? -1;
+          }),
+
+        /**
+         * Clear stream data for a process (not applicable for PTY)
+         */
+        clearStreams: (pid: number) =>
+          Effect.gen(function* () {
+            yield* logger.debug(`Cleared streams for process ${pid}`);
           }),
       };
     }),

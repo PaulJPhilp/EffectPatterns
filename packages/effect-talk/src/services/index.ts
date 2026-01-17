@@ -1,6 +1,7 @@
 import { Layer } from "effect";
 import { BlockService } from "./BlockService";
 import { CommandExecutor } from "./CommandExecutor";
+import { ErrorRecoveryService } from "./ErrorRecoveryService";
 import { LoggerService } from "./LoggerService";
 import { PersistenceService } from "./PersistenceService";
 import { ProcessService } from "./ProcessService";
@@ -8,6 +9,7 @@ import { ConfigService, SessionStore } from "./SessionStore";
 
 export { BlockService } from "./BlockService";
 export { CommandExecutor } from "./CommandExecutor";
+export { ErrorRecoveryService } from "./ErrorRecoveryService";
 export { LoggerService } from "./LoggerService";
 export { PersistenceService } from "./PersistenceService";
 export { ProcessService, type ProcessHandle } from "./ProcessService";
@@ -20,6 +22,7 @@ export { ConfigService, SessionStore } from "./SessionStore";
 export const EffectTalkLayer = Layer.mergeAll(
     BlockService.Default,
     CommandExecutor.Default,
+    ErrorRecoveryService,
     PersistenceService.Default,
     ProcessService.Default,
     SessionStore.Default,

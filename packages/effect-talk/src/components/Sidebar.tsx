@@ -79,5 +79,3 @@ export const Sidebar: React.FC<SidebarProps> = ({ session }) => {
 };
 
 export default Sidebar;
-
-export default Sidebar;

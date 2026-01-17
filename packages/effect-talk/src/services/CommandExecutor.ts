@@ -1,5 +1,6 @@
 import { Effect, Stream } from "effect";
 import type { Block } from "../types";
+import { generateId } from "../types";
 import { LoggerService } from "./LoggerService";
 import { ProcessService } from "./ProcessService";
 import { SessionStore } from "./SessionStore";
@@ -184,7 +185,3 @@ export class CommandExecutor extends Effect.Service<CommandExecutor>()(
         ],
     },
 ) { }
-
-function generateId(): string {
-    return Math.random().toString(36).substring(2, 15);
-}
