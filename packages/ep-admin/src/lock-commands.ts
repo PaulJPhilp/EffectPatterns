@@ -1,6 +1,6 @@
 /**
  * Lock/unlock commands for entity validation
- * 
+ *
  * Lock entities to mark them as validated, unlock to allow modifications
  */
 
@@ -11,7 +11,7 @@ import {
 	createJobRepository,
 } from "@effect-patterns/toolkit";
 import { Args, Command, Options } from "@effect/cli";
-import { Console, Effect } from "effect";
+import { Effect } from "effect";
 import { Display } from "./services/display/index.js";
 
 // =============================================================================
@@ -116,7 +116,7 @@ const getEntityDisplayName = (entityType: string, slug: string): string => {
 /**
  * Generic entity operation handler
  */
-const handleEntityOperation = (
+export const handleEntityOperation = (
 	args: { identifier: string },
 	options: { type: string },
 	action: "lock" | "unlock"
@@ -153,9 +153,9 @@ const handleEntityOperation = (
 		// Show success
 		const actionText = action === "lock" ? "locked (validated)" : "unlocked";
 		yield* Display.showSuccess(`${entityName} has been ${actionText}`);
-		yield* Console.log(`  • Validated: ${result.validated ? "Yes" : "No"}`);
+		yield* Display.showText(`  • Validated: ${result.validated ? "Yes" : "No"}`);
 		if (action === "lock" && result.validatedAt) {
-			yield* Console.log(
+			yield* Display.showText(
 				`  • Validated at: ${result.validatedAt.toISOString()}`
 			);
 		}
@@ -165,7 +165,7 @@ const handleEntityOperation = (
 				yield* Display.showError(
 					`Database error: ${error instanceof Error ? error.message : String(error)}`
 				);
-				yield* Console.log(
+				yield* Display.showText(
 					"\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL " +
 					"is set correctly.\n"
 				);

@@ -11,9 +11,10 @@
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
-  isAuthenticationError,
   validateApiKey,
 } from "../../../../src/auth/apiKey";
+import { PatternNotFoundError } from "../../../../src/errors";
+import { errorHandler } from "../../../../src/server/errorHandler";
 import { PatternsService, runWithRuntime } from "../../../../src/server/init";
 import { TracingService } from "../../../../src/tracing/otlpLayer";
 
@@ -34,11 +35,13 @@ const handleGetPattern = Effect.fn("get-pattern")(function* (
   });
 
   // Fetch pattern
-  const pattern = yield* patternsService.getPatternById(patternId);
+  const result = yield* patternsService.getPatternById(patternId);
 
-  if (!pattern) {
-    return yield* Effect.fail(new Error(`Pattern not found: ${patternId}`));
+  if (!result) {
+    return yield* Effect.fail(new PatternNotFoundError({ patternId }));
   }
+
+  const pattern = result;
 
   const traceId = tracing.getTraceId();
 
@@ -52,30 +55,21 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const { id } = await params;
-    const result = await runWithRuntime(handleGetPattern(request, id));
+  const { id } = await params;
+  const result = await runWithRuntime(
+    handleGetPattern(request, id).pipe(
+      Effect.catchAll((error) => errorHandler(error))
+    )
+  );
 
-    return NextResponse.json(result, {
-      status: 200,
-      headers: {
-        "x-trace-id": result.traceId || "",
-      },
-    });
-  } catch (error) {
-    if (isAuthenticationError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
-    }
-
-    if (error instanceof Error && error.message.includes("not found")) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-
-    return NextResponse.json(
-      {
-        error: String(error),
-      },
-      { status: 500 }
-    );
+  if (result instanceof Response) {
+    return result;
   }
+
+  return NextResponse.json(result, {
+    status: 200,
+    headers: {
+      "x-trace-id": result.traceId || "",
+    },
+  });
 }

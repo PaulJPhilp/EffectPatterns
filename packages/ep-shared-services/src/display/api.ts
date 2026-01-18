@@ -21,6 +21,9 @@ export interface DisplayService {
 	readonly showInfo: (message: string) => Effect.Effect<void, DisplayServiceError>;
 	readonly showWarning: (message: string) => Effect.Effect<void, DisplayServiceError>;
 
+	// Raw text output (no decoration)
+	readonly showText: (text: string) => Effect.Effect<void, DisplayServiceError>;
+
 	// Advanced display
 	readonly showPanel: (
 		content: string,

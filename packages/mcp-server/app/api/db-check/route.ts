@@ -1,52 +1,58 @@
 /**
- * Database connection test endpoint
+ * Database connection test endpoint (Admin only)
+ *
+ * Requires ADMIN_API_KEY for authentication.
+ * Returns database connection status and test results.
  */
 
 import { createDatabase } from "@effect-patterns/toolkit"
 import { sql } from "drizzle-orm"
 import { Effect } from "effect"
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { validateAdminKey } from "../../../src/auth/adminAuth"
+import { runWithRuntime } from "../../../src/server/init"
+import { errorHandler } from "../../../src/server/errorHandler"
 
-export async function GET() {
-	try {
-		const dbUrl = process.env.DATABASE_URL
-		if (!dbUrl) {
-			return NextResponse.json({
-				success: false,
-				error: "DATABASE_URL not set"
-			}, { status: 500 })
-		}
+const handleDbCheck = Effect.fn("db-check")(function* (request: NextRequest) {
+	yield* validateAdminKey(request)
 
-		// Just test database connection without querying tables
-		const result = await Effect.runPromise(
-			Effect.gen(function* () {
-				const { db, close } = createDatabase(dbUrl)
-
-				// Test basic connection with a simple query
-				const testQuery = yield* Effect.tryPromise(async () => {
-					return await db.execute(sql`SELECT 1 as test`)
-				})
-
-				yield* Effect.promise(() => close())
-				return testQuery
-			})
-		)
-
-		return NextResponse.json({
-			success: true,
-			message: "Database connection successful",
-			testResult: result
-		})
-	} catch (error) {
-		console.error("Database connection test error:", error)
-		const errorMessage = error instanceof Error ? error.message : String(error)
-		return NextResponse.json(
-			{
-				success: false,
-				error: "Database connection failed",
-				details: errorMessage
-			},
-			{ status: 500 }
+	const dbUrl = process.env.DATABASE_URL
+	if (!dbUrl) {
+		return yield* Effect.fail(
+			new Error("DATABASE_URL not configured on server")
 		)
 	}
+
+	// Test database connection
+	const result = yield* Effect.gen(function* () {
+		const { db, close } = createDatabase(dbUrl)
+
+		// Test basic connection with a simple query
+		const testQuery = yield* Effect.tryPromise(async () => {
+			return await db.execute(sql`SELECT 1 as test`)
+		})
+
+		yield* Effect.promise(() => close())
+		return testQuery
+	})
+
+	return {
+		success: true,
+		message: "Database connection successful",
+		testResult: result
+	}
+})
+
+export async function GET(request: NextRequest) {
+	const result = await runWithRuntime(
+		handleDbCheck(request).pipe(
+			Effect.catchAll((error) => errorHandler(error))
+		)
+	)
+
+	if (result instanceof Response) {
+		return result
+	}
+
+	return NextResponse.json(result, { status: 200 })
 }

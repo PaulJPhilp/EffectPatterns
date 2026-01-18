@@ -2,32 +2,30 @@
 
 /**
  * ep-admin CLI - Administrative CLI for Effect Patterns maintainers
- * 
+ *
  * Built with @effect/cli for type-safe, composable command-line interfaces.
  */
 
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 import { Args, Command } from "@effect/cli";
-import { Console, Effect } from "effect";
+import { Effect } from "effect";
 import { CLI, SHELL_TYPES } from "./constants.js";
+import { Display } from "./services/display/index.js";
 
-// Import command modules
-import { autofixCommand } from "./autofix-commands.js";
-import { generateCommand, pipelineCommand, testCommand, validateCommand } from "./basic-commands.js";
+// Import command modules - Hierarchical organization
+import {
+	patternGroup,
+	dataGroup,
+	dbGroup,
+	devGroup,
+	opsGroup,
+	configGroup,
+	pipelineGroup,
+	rootLevelCommands,
+} from "./command-groups.js";
+import { publishCommand } from "./publish-commands.js";
 import { EP_ADMIN_COMMANDS, generateCompletion, getInstallInstructions, installCompletion, type Shell } from "./completions.js";
-import { dbCommand } from "./db-commands.js";
-import { discordCommand } from "./discord-commands.js";
-import { ingestCommand } from "./ingest-commands.js";
-import { installCommand, rulesCommand } from "./install-commands.js";
-import { migrateCommand } from "./migrate-commands.js";
-import { opsCommand } from "./ops-commands.js";
-// import { pipelineManagementCommand } from "./pipeline-commands.js";
-import { mcpCommand } from "./mcp-commands.js";
-import { qaCommand } from "./qa-commands.js";
-import { patternNewCommand, releaseCommand } from "./release-commands.js";
-import { searchCommand } from "./search-commands.js";
-import { skillsCommand } from "./skills-commands.js";
-import { testUtilsCommand } from "./test-utils-commands.js";
-import { utilsCommand } from "./utils-commands.js";
 
 // --- COMPLETIONS COMMAND ---
 
@@ -52,7 +50,8 @@ const completionsGenerateCommand = Command.make(
 			}
 
 			const completion = generateCompletion(shellType, EP_ADMIN_COMMANDS);
-			yield* Console.log(completion);
+			const display = yield* Display;
+			yield* display.showText(completion);
 		})
 	)
 );
@@ -80,7 +79,8 @@ const completionsInstallCommand = Command.make(
 			const filePath = yield* installCompletion(shellType, EP_ADMIN_COMMANDS);
 
 			const instructions = getInstallInstructions(shellType, filePath);
-			yield* Console.log(instructions);
+			const display = yield* Display;
+			yield* display.showText(instructions);
 		})
 	)
 );
@@ -94,30 +94,24 @@ const completionsCommand = Command.make("completions").pipe(
 
 // --- COMMAND COMPOSITION ---
 
+// Build system group with completions command
+const systemGroup = Command.make("system").pipe(
+	Command.withDescription("System utilities"),
+	Command.withSubcommands([completionsCommand])
+);
+
+// Hierarchical command structure (organized by domain/function)
 const adminSubcommands = [
-	pipelineCommand,
-	generateCommand,
-	validateCommand,
-	testCommand,
-	ingestCommand,
-	qaCommand,
-	dbCommand,
-	mcpCommand,
-	discordCommand,
-	skillsCommand,
-	migrateCommand,
-	opsCommand,
-	testUtilsCommand,
-	utilsCommand,
-	autofixCommand,
-	rulesCommand,
-	releaseCommand,
-	// pipelineManagementCommand, // Temporarily disabled
-	completionsCommand,
-	installCommand,
-	patternNewCommand,
-	searchCommand,
-	testExecutionCommand,
+	publishCommand,         // Pattern publishing workflow
+	patternGroup,          // Pattern discovery and management
+	dataGroup,             // Data ingestion and quality assurance
+	dbGroup,               // Database operations and migrations
+	devGroup,              // Development tools and utilities
+	opsGroup,              // Operations and infrastructure
+	configGroup,           // Configuration, setup, and entity management
+	pipelineGroup,         // Pipeline management and monitoring
+	systemGroup,           // System utilities (completions)
+	...rootLevelCommands,  // Root-level commands (release)
 ] as const;
 
 export const adminRootCommand = Command.make(CLI.NAME).pipe(
@@ -142,8 +136,37 @@ export const createAdminProgram = (
 	argv: ReadonlyArray<string> = process.argv
 ) => adminCliRunner(argv);
 
-// Run CLI when executed directly
-if (require.main === module) {
+/**
+ * Run CLI when executed directly.
+ *
+ * ESM-compatible check that works with both direct execution and when imported.
+ * Checks if the current module's file path matches the executed argv[1].
+ */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Determine if this module is being run directly
+const isDirectExecution = (() => {
+	const executedFile = process.argv[1];
+	if (!executedFile) return false;
+
+	// Handle direct execution (bun run index.ts)
+	if (executedFile === __filename) return true;
+
+	// Handle execution through wrapper script (ep-admin binary)
+	if (executedFile.endsWith("ep-admin") || executedFile.endsWith("ep-admin.js")) {
+		return true;
+	}
+
+	// Handle execution in development (bun dist/index.js)
+	if (executedFile.includes("dist") && executedFile.includes("index.js")) {
+		return true;
+	}
+
+	return false;
+})();
+
+if (isDirectExecution) {
 	const program = createAdminProgram(process.argv);
 	const provided = Effect.provide(program, ProductionLayer) as Effect.Effect<void, unknown, never>;
 	void Effect.runPromise(provided);

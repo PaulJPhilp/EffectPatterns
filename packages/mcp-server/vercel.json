@@ -1,15 +1,1 @@
-{
-  "version": 2,
-  "framework": "nextjs",
-  "buildCommand": "cd ../.. && bun run --filter @effect-patterns/toolkit build && bun run --filter @effect-patterns/mcp-server build",
-  "installCommand": "cd ../.. && bun install --frozen-lockfile",
-  "regions": [
-    "iad1"
-  ],
-  "functions": {
-    "app/api/**/*.ts": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  }
-}
+{"$schema": "https://openapi.vercel.sh/vercel.json", "bunVersion": "1.x", "framework": "nextjs", "buildCommand": "cd ../.. && bun run --filter @effect-patterns/mcp-server build", "outputDirectory": "packages/mcp-server/.next", "regions": ["iad1"], "rootDirectory": "packages/mcp-server"}

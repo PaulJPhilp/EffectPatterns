@@ -2,6 +2,7 @@
   "name": "@effect-patterns/ep-shared-services",
   "version": "1.0.0",
   "description": "Shared services for Effect Patterns CLI tools",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

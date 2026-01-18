@@ -6,9 +6,9 @@
  */
 
 import { Effect, Schema } from "effect";
-import { ValidationError } from "../errors.js";
-import { MCPConfigService } from "./config.js";
-import { MCPLoggerService } from "./logger.js";
+import { ValidationError } from "../errors";
+import { MCPConfigService } from "./config";
+import { MCPLoggerService } from "./logger";
 
 /**
  * Validation result

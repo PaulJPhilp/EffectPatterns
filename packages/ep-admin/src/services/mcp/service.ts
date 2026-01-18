@@ -2,11 +2,14 @@
  * MCP Service
  *
  * Service for interacting with the Effect Patterns MCP server
- * to perform remote database operations
+ * to perform remote database operations.
+ *
+ * All requests are wrapped with retry/backoff logic to handle transient failures.
  */
 
 import { HttpBody, HttpClient, HttpClientRequest } from "@effect/platform";
 import { Effect } from "effect";
+import { withRetry } from "../retry/index.js";
 
 // Types for MCP API responses
 interface DatabaseCheckResponse {
@@ -85,79 +88,95 @@ export const McpService = Effect.Service<McpService>()("McpService", {
 		const makeGetRequest = <T>(
 			endpoint: string
 		): Effect.Effect<T, McpConnectionError | McpApiError> =>
-			Effect.gen(function* () {
-				const url = `${baseUrl}${endpoint}`;
-				const response = yield* httpClient.get(url).pipe(
-					Effect.mapError((error) => new McpConnectionError(`Failed to connect to MCP server: ${error.message || String(error)}`))
-				);
-
-				if (response.status >= 400) {
-					const text = yield* response.text.pipe(
-						Effect.mapError((error) => new McpApiError(`Failed to read response: ${String(error)}`))
+			withRetry(
+				Effect.gen(function* () {
+					const url = `${baseUrl}${endpoint}`;
+					const response = yield* httpClient.get(url).pipe(
+						Effect.mapError((error) => new McpConnectionError(`Failed to connect to MCP server: ${error.message || String(error)}`))
 					);
-					return yield* Effect.fail(new McpApiError(
-						`MCP API error: ${response.status} ${text}`,
-						response.status
-					));
-				}
 
-				const json = yield* response.json.pipe(
-					Effect.mapError((error) => new McpApiError(`Failed to parse response: ${String(error)}`))
-				);
-				return json as T;
-			});
+					if (response.status >= 400) {
+						const text = yield* response.text.pipe(
+							Effect.mapError((error) => new McpApiError(`Failed to read response: ${String(error)}`))
+						);
+						const error = new McpApiError(
+							`MCP API error: ${response.status} ${text}`,
+							response.status
+						);
+						// Attach status code for retry logic
+						Object.defineProperty(error, 'status', {
+							value: response.status,
+							enumerable: true,
+						});
+						return yield* Effect.fail(error);
+					}
+
+					const json = yield* response.json.pipe(
+						Effect.mapError((error) => new McpApiError(`Failed to parse response: ${String(error)}`))
+					);
+					return json as T;
+				}),
+				{ maxRetries: 3, initialDelayMs: 100, verbose: false }
+			);
 
 		const makeAuthedPostRequest = <T>(
 			endpoint: string,
 			body: unknown
 		): Effect.Effect<T, McpConnectionError | McpApiError> =>
-			Effect.gen(function* () {
-				if (!apiKey) {
-					return yield* Effect.fail(
-						new McpApiError(
-							"Missing MCP_API_KEY for authenticated MCP endpoint"
-						)
-					);
-				}
-
-				const url = `${baseUrl}${endpoint}`;
-				const request = HttpClientRequest.post(url, {
-					body: HttpBody.unsafeJson(body),
-				}).pipe(HttpClientRequest.setHeader("x-api-key", apiKey));
-				const response = yield* httpClient.execute(request).pipe(
-					Effect.mapError(
-						(error) =>
-							new McpConnectionError(
-								`Failed to connect to MCP server: ${error.message || String(error)}`
+			withRetry(
+				Effect.gen(function* () {
+					if (!apiKey) {
+						return yield* Effect.fail(
+							new McpApiError(
+								"Missing MCP_API_KEY for authenticated MCP endpoint"
 							)
-					)
-				);
+						);
+					}
 
-				if (response.status >= 400) {
-					const text = yield* response.text.pipe(
+					const url = `${baseUrl}${endpoint}`;
+					const request = HttpClientRequest.post(url, {
+						body: HttpBody.unsafeJson(body),
+					}).pipe(HttpClientRequest.setHeader("x-api-key", apiKey));
+					const response = yield* httpClient.execute(request).pipe(
 						Effect.mapError(
 							(error) =>
-								new McpApiError(
-									`Failed to read response: ${String(error)}`
+								new McpConnectionError(
+									`Failed to connect to MCP server: ${error.message || String(error)}`
 								)
 						)
 					);
-					return yield* Effect.fail(
-						new McpApiError(
+
+					if (response.status >= 400) {
+						const text = yield* response.text.pipe(
+							Effect.mapError(
+								(error) =>
+									new McpApiError(
+										`Failed to read response: ${String(error)}`
+									)
+							)
+						);
+						const error = new McpApiError(
 							`MCP API error: ${response.status} ${text}`,
 							response.status
+						);
+						// Attach status code for retry logic
+						Object.defineProperty(error, 'status', {
+							value: response.status,
+							enumerable: true,
+						});
+						return yield* Effect.fail(error);
+					}
+
+					const json = yield* response.json.pipe(
+						Effect.mapError(
+							(error) =>
+								new McpApiError(`Failed to parse response: ${String(error)}`)
 						)
 					);
-				}
-
-				const json = yield* response.json.pipe(
-					Effect.mapError(
-						(error) =>
-							new McpApiError(`Failed to parse response: ${String(error)}`)
-					)
-				);
-				return json as T;
-			});
+					return json as T;
+				}),
+				{ maxRetries: 3, initialDelayMs: 100, verbose: false }
+			);
 
 		return {
 			checkDatabase: () => makeGetRequest<DatabaseCheckResponse>("/api/db-check"),

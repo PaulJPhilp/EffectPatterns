@@ -4,16 +4,15 @@ This guide covers deployment of the Effect Patterns MCP (Model Context Protocol)
 
 ## Overview
 
-The project includes two MCP servers:
+The project includes an MCP server:
 
 1. **mcp-server** - Next.js web API server (deployed to Vercel)
-2. **mcp-server-stdio** - STDIO-based CLI server (for local development)
 
-Both servers provide the same MCP tools and APIs, just with different deployment targets.
+The server provides MCP tools and APIs for both remote and local usage.
 
 ## Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - Bun package manager
 - Effect Patterns repository access
 - API key for authentication
@@ -88,13 +87,6 @@ bun run ep:admin ingest pipeline
 ```
 
 ### 4. Run Servers
-
-#### STDIO Server (for local CLI testing)
-
-```bash
-cd packages/mcp-server-stdio
-bun run dev
-```
 
 #### Web API Server (Next.js)
 
@@ -193,55 +185,6 @@ gcloud run deploy effect-patterns-mcp \
   --region us-central1 \
   --allow-unauthenticated \
   --set-env-vars DATABASE_URL=...,PATTERN_API_KEY_PRODUCTION=...
-```
-
-## STDIO Server Deployment
-
-The STDIO server is typically used for local development or CLI integration:
-
-### 1. Build Binary
-
-```bash
-cd packages/mcp-server-stdio
-bun run build
-```
-
-### 2. Install Globally
-
-```bash
-# From project root
-npm install -g ./packages/mcp-server-stdio
-
-# Or link for development
-npm link ./packages/mcp-server-stdio
-```
-
-### 3. Run as CLI
-
-```bash
-# Direct execution
-effect-patterns-mcp
-
-# With environment variables
-DATABASE_URL="..." PATTERN_API_KEY_PRODUCTION="..." effect-patterns-mcp
-```
-
-### 4. Claude Code Integration
-
-Add to Claude Code configuration:
-
-```json
-{
-  "mcpServers": {
-    "effect-patterns": {
-      "command": "effect-patterns-mcp",
-      "env": {
-        "DATABASE_URL": "postgresql://...",
-        "PATTERN_API_KEY_PRODUCTION": "your_api_key"
-      }
-    }
-  }
-}
 ```
 
 ## Monitoring and Observability
@@ -491,8 +434,8 @@ vercel --prod
 ### Contact Information
 
 - **Maintainer**: Paul Philp
-- **Repository**: https://github.com/PaulJPhilp/EffectPatterns
-- **Documentation**: https://effect-patterns.vercel.app
+- **Repository**: <https://github.com/PaulJPhilp/EffectPatterns>
+- **Documentation**: <https://github.com/PaulJPhilp/EffectPatterns/blob/main/README.md>
 - **Support**: Create GitHub issue with detailed description
 
 ---

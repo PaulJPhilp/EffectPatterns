@@ -8,9 +8,9 @@
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
-  isAuthenticationError,
   validateApiKey,
 } from "../../../src/auth/apiKey";
+import { errorHandler } from "../../../src/server/errorHandler";
 import { runWithRuntime } from "../../../src/server/init";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
@@ -124,25 +124,20 @@ const handleTraceWiring = Effect.fn("trace-wiring")(function* (
 });
 
 export async function GET(request: NextRequest) {
-  try {
-    const result = await runWithRuntime(handleTraceWiring(request));
+  const result = await runWithRuntime(
+    handleTraceWiring(request).pipe(
+      Effect.catchAll((error) => errorHandler(error))
+    )
+  );
 
-    return NextResponse.json(result, {
-      status: 200,
-      headers: {
-        "x-trace-id": result.traceId || "",
-      },
-    });
-  } catch (error) {
-    if (isAuthenticationError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
-    }
-
-    return NextResponse.json(
-      {
-        error: String(error),
-      },
-      { status: 500 }
-    );
+  if (result instanceof Response) {
+    return result;
   }
+
+  return NextResponse.json(result, {
+    status: 200,
+    headers: {
+      "x-trace-id": result.traceId || "",
+    },
+  });
 }

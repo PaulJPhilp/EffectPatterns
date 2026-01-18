@@ -9,13 +9,15 @@ import { Data } from "effect";
 
 /**
  * Authentication errors
+ *
+ * Never includes the provided API key in the error for security reasons.
  */
 export class AuthenticationError extends Data.TaggedError(
   "AuthenticationError"
 )<{
   readonly message: string;
   readonly providedKey?: string;
-}> {}
+}> { }
 
 /**
  * Authorization errors
@@ -24,7 +26,17 @@ export class AuthorizationError extends Data.TaggedError("AuthorizationError")<{
   readonly message: string;
   readonly userId?: string;
   readonly requiredRole?: string;
-}> {}
+}> { }
+
+/**
+ * Tier access errors
+ */
+export class TierAccessError extends Data.TaggedError("TierAccessError")<{
+  readonly endpoint: string;
+  readonly tierMode: "free" | "paid";
+  readonly message: string;
+  readonly upgradeMessage: string;
+}> { }
 
 /**
  * Pattern-related errors
@@ -33,12 +45,12 @@ export class PatternNotFoundError extends Data.TaggedError(
   "PatternNotFoundError"
 )<{
   readonly patternId: string;
-}> {}
+}> { }
 
 export class PatternLoadError extends Data.TaggedError("PatternLoadError")<{
   readonly filePath: string;
   readonly cause: unknown;
-}> {}
+}> { }
 
 export class PatternValidationError extends Data.TaggedError(
   "PatternValidationError"
@@ -49,7 +61,7 @@ export class PatternValidationError extends Data.TaggedError(
     message: string;
     actual?: unknown;
   }>;
-}> {}
+}> { }
 
 /**
  * Validation errors
@@ -58,7 +70,7 @@ export class ValidationError extends Data.TaggedError("ValidationError")<{
   readonly field: string;
   readonly message: string;
   readonly value?: unknown;
-}> {}
+}> { }
 export class RequestValidationError extends Data.TaggedError(
   "RequestValidationError"
 )<{
@@ -68,13 +80,13 @@ export class RequestValidationError extends Data.TaggedError(
     message: string;
     actual?: unknown;
   }>;
-}> {}
+}> { }
 
 export class ResponseError extends Data.TaggedError("ResponseError")<{
   readonly statusCode: number;
   readonly message: string;
   readonly cause?: unknown;
-}> {}
+}> { }
 
 /**
  * Configuration errors
@@ -83,7 +95,7 @@ export class ConfigurationError extends Data.TaggedError("ConfigurationError")<{
   readonly key: string;
   readonly expected: string;
   readonly received: unknown;
-}> {}
+}> { }
 
 /**
  * Tracing/monitoring errors
@@ -91,7 +103,7 @@ export class ConfigurationError extends Data.TaggedError("ConfigurationError")<{
 export class TracingError extends Data.TaggedError("TracingError")<{
   readonly operation: string;
   readonly cause: unknown;
-}> {}
+}> { }
 
 /**
  * Rate limiting errors
@@ -101,7 +113,7 @@ export class RateLimitError extends Data.TaggedError("RateLimitError")<{
   readonly limit: number;
   readonly windowMs: number;
   readonly resetTime: Date;
-}> {}
+}> { }
 
 /**
  * Cache errors
@@ -110,7 +122,7 @@ export class CacheError extends Data.TaggedError("CacheError")<{
   readonly operation: string;
   readonly key?: string;
   readonly cause: unknown;
-}> {}
+}> { }
 
 /**
  * Metrics errors
@@ -118,7 +130,7 @@ export class CacheError extends Data.TaggedError("CacheError")<{
 export class MetricsError extends Data.TaggedError("MetricsError")<{
   readonly operation: string;
   readonly cause: unknown;
-}> {}
+}> { }
 
 /**
  * General server errors
@@ -126,22 +138,21 @@ export class MetricsError extends Data.TaggedError("MetricsError")<{
 export class ServerError extends Data.TaggedError("ServerError")<{
   readonly message: string;
   readonly cause?: unknown;
-}> {}
+}> { }
 
 export class TimeoutError extends Data.TaggedError("TimeoutError")<{
   readonly operation: string;
   readonly timeoutMs: number;
-}> {}
+}> { }
 
 /**
  * Legacy error compatibility
  * These functions help migrate from the old Error-based approach
  */
 export function createAuthenticationError(
-  message: string,
-  providedKey?: string
+  message: string
 ): AuthenticationError {
-  return new AuthenticationError({ message, providedKey });
+  return new AuthenticationError({ message });
 }
 
 export function createPatternNotFoundError(

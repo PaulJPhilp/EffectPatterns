@@ -13,9 +13,11 @@ import { Schema as S } from "@effect/schema";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
-  isAuthenticationError,
-  validateApiKey,
+    validateApiKey,
 } from "../../../src/auth/apiKey";
+import { validateTierAccess } from "../../../src/auth/tierAccess";
+import { PatternNotFoundError } from "../../../src/errors";
+import { errorHandler } from "../../../src/server/errorHandler";
 import { PatternsService, runWithRuntime } from "../../../src/server/init";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
@@ -29,8 +31,14 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
   // Validate API key
   yield* validateApiKey(request);
 
+  // Validate tier access
+  yield* validateTierAccess(request);
+
   // Parse and validate request body
-  const body = yield* Effect.tryPromise(() => request.json());
+  const body = yield* Effect.tryPromise({
+    try: () => request.json(),
+    catch: (error) => new Error(`Invalid JSON: ${error}`),
+  });
   const generateRequest = yield* S.decode(GenerateRequest)(body as any);
 
   // Annotate span with request details
@@ -46,7 +54,9 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
 
   if (!pattern) {
     return yield* Effect.fail(
-      new Error(`Pattern not found: ${generateRequest.patternId}`)
+      new PatternNotFoundError({
+        patternId: generateRequest.patternId,
+      })
     );
   }
 
@@ -71,29 +81,20 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
 });
 
 export async function POST(request: NextRequest) {
-  try {
-    const result = await runWithRuntime(handleGenerateSnippet(request));
+  const result = await runWithRuntime(
+    handleGenerateSnippet(request).pipe(
+      Effect.catchAll((error) => errorHandler(error))
+    )
+  );
 
-    return NextResponse.json(result, {
-      status: 200,
-      headers: {
-        "x-trace-id": result.traceId || "",
-      },
-    });
-  } catch (error) {
-    if (isAuthenticationError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
-    }
-
-    if (error instanceof Error && error.message.includes("not found")) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
-    }
-
-    return NextResponse.json(
-      {
-        error: String(error),
-      },
-      { status: 400 }
-    );
+  if (result instanceof Response) {
+    return result;
   }
+
+  return NextResponse.json(result, {
+    status: 200,
+    headers: {
+      "x-trace-id": result.traceId || "",
+    },
+  });
 }

@@ -240,6 +240,71 @@ guidance (low severity).
 }
 ```
 
+#### Review Code (Free Tier)
+
+```http
+POST /api/review-code
+Content-Type: application/json
+
+{
+  "code": "const x: any = 1;\nasync function foo() { return 1; }",
+  "filePath": "example.ts"
+}
+```
+
+Get high-fidelity architectural recommendations for Effect codebases. 
+Returns the top 3 highest-priority issues with actionable guidance.
+
+**Free Tier Features:**
+- Top 3 recommendations per request (sorted by severity, then line number)
+- Unlimited queries
+- Markdown-formatted output
+- Upgrade message when more issues are found
+
+**Validation:**
+- Maximum file size: 100KB
+- TypeScript files only (.ts, .tsx)
+- Returns 413 for oversized files
+- Returns 400 for non-TypeScript files
+
+**Parameters:**
+- `code` (string): Source code to review
+- `filePath` (string, optional): File path for context and validation
+
+**Response:**
+```json
+{
+  "recommendations": [
+    {
+      "severity": "high",
+      "title": "Raw Promise Usage",
+      "line": 42,
+      "message": "Direct usage of 'new Promise' bypasses Effect's interruption model. Wrap in 'Effect.async' or 'Effect.tryPromise'."
+    },
+    {
+      "severity": "medium",
+      "title": "Missing Error Type",
+      "line": 15,
+      "message": "Service method returns generic 'Error'. Define a specific schema for better observability."
+    },
+    {
+      "severity": "medium",
+      "title": "Legacy Import",
+      "line": 2,
+      "message": "Importing from 'node:fs' creates a hard dependency. Use '@effect/platform/FileSystem' for testability."
+    }
+  ],
+  "meta": {
+    "totalFound": 12,
+    "hiddenCount": 9,
+    "upgradeMessage": "9 more architectural issues found. Upgrade to Pro to see all issues and auto-fix them."
+  },
+  "markdown": "# Code Review Results\n\nFound 12 issues...",
+  "traceId": "trace-123",
+  "timestamp": "2024-01-13T12:00:00.000Z"
+}
+```
+
 #### Analyze Consistency
 
 ```http

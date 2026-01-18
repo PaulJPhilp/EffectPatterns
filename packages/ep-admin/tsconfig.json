@@ -9,6 +9,9 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "**/*.test.ts",
+    "**/*.integration.test.ts",
+    "**/__tests__/**"
   ]
 }

@@ -6,7 +6,7 @@
  */
 
 import { Effect } from "effect";
-import { MCPConfigService } from "./config.js";
+import { MCPConfigService } from "./config";
 
 /**
  * Log levels
@@ -333,7 +333,7 @@ export class MCPLoggerService extends Effect.Service<MCPLoggerService>()(
       };
     }),
   }
-) {}
+) { }
 
 /**
  * Default MCP logger service layer

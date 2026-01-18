@@ -8,22 +8,33 @@
  * to avoid crashes during cold starts or connection issues.
  */
 
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
+    // Generate a trace ID for this request
+    const traceId = randomUUID();
+
     // Simple synchronous health check - no external dependencies
     const result = {
       ok: true,
       version: "0.5.0",
       service: "effect-patterns-mcp-server",
       timestamp: new Date().toISOString(),
+      traceId,
     };
 
     return NextResponse.json(result, {
       status: 200,
+      headers: {
+        "x-trace-id": traceId,
+      },
     });
   } catch (error) {
+    // Generate a trace ID for error response
+    const traceId = randomUUID();
+
     // Return error response instead of crashing
     return NextResponse.json(
       {
@@ -32,8 +43,14 @@ export async function GET() {
         version: "0.5.0",
         service: "effect-patterns-mcp-server",
         timestamp: new Date().toISOString(),
+        traceId,
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "x-trace-id": traceId,
+        },
+      }
     );
   }
 }

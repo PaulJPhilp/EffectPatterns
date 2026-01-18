@@ -1,7 +1,7 @@
 import { Effect, Either } from "effect";
 import { describe, expect, it } from "vitest";
-import { ConfigurationError } from "../errors.js";
-import { MCPConfigService } from "./config.js";
+import { ConfigurationError } from "../errors";
+import { MCPConfigService } from "./config";
 
 describe("MCPConfigService", () => {
 	const originalEnv = { ...process.env };

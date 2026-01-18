@@ -1,11 +1,12 @@
 import { AnalysisService } from "@effect-patterns/analysis-core";
-import { Effect } from "effect";
+import { Effect, Schema as S } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
-	isAuthenticationError,
 	validateApiKey,
 } from "../../../src/auth/apiKey";
+import { errorHandler } from "../../../src/server/errorHandler";
 import { runWithRuntime } from "../../../src/server/init";
+import { ListRulesRequest } from "../../../src/tools/schemas";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
 const handleListRules = Effect.fn("list-rules")(function* (
@@ -16,7 +17,12 @@ const handleListRules = Effect.fn("list-rules")(function* (
 
 	yield* validateApiKey(request);
 
-	const rules = yield* analysis.listRules();
+	const body = yield* Effect.tryPromise(() => request.json()).pipe(
+		Effect.catchAll(() => Effect.succeed({}))
+	);
+	const decoded = yield* S.decode(ListRulesRequest)(body as any);
+
+	const rules = yield* analysis.listRules(decoded.config);
 	const traceId = tracing.getTraceId() ?? "";
 
 	return {
@@ -27,21 +33,18 @@ const handleListRules = Effect.fn("list-rules")(function* (
 });
 
 export async function POST(request: NextRequest) {
-	try {
-		const result = await runWithRuntime(handleListRules(request));
+	const result = await runWithRuntime(
+		handleListRules(request).pipe(
+			Effect.catchAll((error) => errorHandler(error))
+		)
+	);
 
-		return NextResponse.json(result, {
-			status: 200,
-			headers: { "x-trace-id": result.traceId || "" },
-		});
-	} catch (error) {
-		if (isAuthenticationError(error)) {
-			return NextResponse.json({ error: error.message }, { status: 401 });
-		}
-
-		return NextResponse.json(
-			{ error: error instanceof Error ? error.message : String(error) },
-			{ status: 400 }
-		);
+	if (result instanceof Response) {
+		return result;
 	}
+
+	return NextResponse.json(result, {
+		status: 200,
+		headers: { "x-trace-id": result.traceId || "" },
+	});
 }

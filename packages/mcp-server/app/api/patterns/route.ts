@@ -12,9 +12,9 @@ import { toPatternSummary } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
-  isAuthenticationError,
   validateApiKey,
 } from "../../../src/auth/apiKey";
+import { errorHandler } from "../../../src/server/errorHandler";
 import { PatternsService, runWithRuntime } from "../../../src/server/init";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
@@ -51,7 +51,7 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
       ? difficulty
       : undefined;
 
-  // Search patterns using database
+  // Fetch patterns from database
   const results = yield* patterns.searchPatterns({
     query,
     category,
@@ -72,30 +72,20 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
 });
 
 export async function GET(request: NextRequest) {
-  try {
-    const result = await runWithRuntime(handleSearchPatterns(request));
+  const result = await runWithRuntime(
+    handleSearchPatterns(request).pipe(
+      Effect.catchAll((error) => errorHandler(error))
+    )
+  );
 
-    return NextResponse.json(result, {
-      status: 200,
-      headers: {
-        "x-trace-id": result.traceId || "",
-      },
-    });
-  } catch (error) {
-    // Log error for debugging (in production, this goes to Vercel logs)
-    console.error("[Patterns API] Error:", error);
-
-    if (isAuthenticationError(error)) {
-      return NextResponse.json({ error: error.message }, { status: 401 });
-    }
-
-    // Return structured error response instead of crashing
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : String(error),
-        type: error instanceof Error ? error.constructor.name : "UnknownError",
-      },
-      { status: 500 }
-    );
+  if (result instanceof Response) {
+    return result;
   }
+
+  return NextResponse.json(result, {
+    status: 200,
+    headers: {
+      "x-trace-id": result.traceId || "",
+    },
+  });
 }

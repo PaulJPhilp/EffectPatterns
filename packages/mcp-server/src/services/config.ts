@@ -7,7 +7,7 @@
 
 import { Effect } from "effect";
 import * as path from "node:path";
-import { ConfigurationError } from "../errors.js";
+import { ConfigurationError } from "../errors";
 
 /**
  * MCP Server configuration interface
@@ -17,6 +17,7 @@ export interface MCPConfig {
   readonly apiKey: string;
   readonly nodeEnv: "development" | "production" | "test";
   readonly port: number;
+  readonly tierMode: "free" | "paid";
 
   // Pattern Configuration
   readonly patternsPath: string;
@@ -52,6 +53,7 @@ export interface MCPConfig {
   readonly otlpHeaders: Record<string, string>;
   readonly serviceName: string;
   readonly serviceVersion: string;
+  readonly tracingSamplingRate: number; // 0.0 to 1.0, default 0.1 (10%)
 }
 
 /**
@@ -59,18 +61,19 @@ export interface MCPConfig {
  */
 const DEFAULT_CONFIG: Omit<MCPConfig, "apiKey" | "nodeEnv"> = {
   port: 3000,
+  tierMode: "free",
   patternsPath: path.join(process.cwd(), "data", "patterns.json"),
-  patternsCacheTtlMs: 300000, // 5 minutes
-  patternsLoadTimeoutMs: 10000, // 10 seconds
-  requestTimeoutMs: 30000, // 30 seconds
-  maxRequestBodySize: 1048576, // 1MB
-  maxSearchResults: 50,
+  patternsCacheTtlMs: 600000, // 10 minutes (increased for 31 patterns)
+  patternsLoadTimeoutMs: 15000, // 15 seconds (increased for larger pattern set)
+  requestTimeoutMs: 45000, // 45 seconds (increased for complex analysis)
+  maxRequestBodySize: 2097152, // 2MB (increased for larger code files)
+  maxSearchResults: 100, // Increased to handle more patterns
   rateLimitEnabled: true,
-  rateLimitRequests: 100,
+  rateLimitRequests: 150, // Increased rate limit for better UX
   rateLimitWindowMs: 60000, // 1 minute
   cacheEnabled: true,
-  cacheDefaultTtlMs: 300000, // 5 minutes
-  cacheMaxEntries: 1000,
+  cacheDefaultTtlMs: 600000, // 10 minutes (increased for better performance)
+  cacheMaxEntries: 2000, // Increased cache size for 31 patterns
   cacheCleanupIntervalMs: 300000, // 5 minutes
   loggingEnabled: true,
   logLevel: "info",
@@ -79,7 +82,8 @@ const DEFAULT_CONFIG: Omit<MCPConfig, "apiKey" | "nodeEnv"> = {
   otlpEndpoint: "http://localhost:4318/v1/traces",
   otlpHeaders: {},
   serviceName: "effect-patterns-mcp-server",
-  serviceVersion: "1.0.0",
+  serviceVersion: "1.1.0", // Updated version
+  tracingSamplingRate: 0.05, // Reduced to 5% for production efficiency
 };
 
 /**
@@ -197,6 +201,17 @@ function validateConfig(
         })
       );
     }
+
+    // Tracing sampling rate validation
+    if (config.tracingSamplingRate < 0 || config.tracingSamplingRate > 1) {
+      yield* Effect.fail(
+        new ConfigurationError({
+          key: "tracingSamplingRate",
+          expected: "number between 0.0 and 1.0",
+          received: config.tracingSamplingRate,
+        })
+      );
+    }
   });
 }
 
@@ -210,6 +225,7 @@ function loadConfig(): Effect.Effect<MCPConfig, ConfigurationError> {
       apiKey: process.env.PATTERN_API_KEY || "",
       nodeEnv: (process.env.NODE_ENV as MCPConfig["nodeEnv"]) || "development",
       port: parseInt(process.env.PORT || "") || DEFAULT_CONFIG.port,
+      tierMode: (process.env.TIER_MODE as MCPConfig["tierMode"]) || DEFAULT_CONFIG.tierMode,
 
       // Pattern Configuration
       patternsPath: process.env.PATTERNS_PATH || DEFAULT_CONFIG.patternsPath,
@@ -268,6 +284,9 @@ function loadConfig(): Effect.Effect<MCPConfig, ConfigurationError> {
       serviceName: process.env.SERVICE_NAME || DEFAULT_CONFIG.serviceName,
       serviceVersion:
         process.env.SERVICE_VERSION || DEFAULT_CONFIG.serviceVersion,
+      tracingSamplingRate:
+        parseFloat(process.env.TRACING_SAMPLING_RATE || "") ||
+        DEFAULT_CONFIG.tracingSamplingRate,
     };
 
     // Validate configuration
@@ -294,6 +313,7 @@ export class MCPConfigService extends Effect.Service<MCPConfigService>()(
         getApiKey: () => Effect.succeed(config.apiKey),
         getNodeEnv: () => Effect.succeed(config.nodeEnv),
         getPort: () => Effect.succeed(config.port),
+        getTierMode: () => Effect.succeed(config.tierMode),
 
         // Pattern Configuration
         getPatternsPath: () => Effect.succeed(config.patternsPath),
@@ -331,10 +351,11 @@ export class MCPConfigService extends Effect.Service<MCPConfigService>()(
         getOtlpHeaders: () => Effect.succeed(config.otlpHeaders),
         getServiceName: () => Effect.succeed(config.serviceName),
         getServiceVersion: () => Effect.succeed(config.serviceVersion),
+        getTracingSamplingRate: () => Effect.succeed(config.tracingSamplingRate),
       };
     }),
   }
-) {}
+) { }
 
 /**
  * Default MCP configuration service layer

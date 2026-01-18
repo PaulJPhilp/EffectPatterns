@@ -9,19 +9,22 @@
  */
 
 // biome-ignore assist/source/organizeImports: <>
+import { ReviewCodeService } from "../services/review-code";
 import { AnalysisServiceLive } from "@effect-patterns/analysis-core";
 import {
   DatabaseLayer,
   findEffectPatternBySlug,
   searchEffectPatterns
 } from "@effect-patterns/toolkit";
-import * as NodeSdk from "@effect/opentelemetry/NodeSdk";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
-import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
+import { NodeContext } from "@effect/platform-node";
 import { Cause, Effect, Exit, Layer, Option } from "effect";
+import { MCPCacheService } from "../services/cache";
 import { MCPConfigService } from "../services/config";
 import { MCPLoggerService } from "../services/logger";
 import { PatternGeneratorService } from "../services/pattern-generator";
+import { MCRateLimitService } from "../services/rate-limit";
+import { MCPTierService } from "../services/tier";
+import { MCPValidationService } from "../services/validation";
 import { TracingLayerLive } from "../tracing/otlpLayer";
 
 /**
@@ -79,39 +82,24 @@ export class PatternsService extends Effect.Service<PatternsService>()(
 /**
  * App Layer - Full application layer composition
  *
- * Composes: Config -> Tracing (with NodeSdk) -> Database -> Patterns
+ * Composes: Config -> Tracing -> Database -> Patterns
  * Services are self-managed via Effect.Service pattern.
- * The NodeSdk layer enables automatic span creation via Effect.fn.
  */
-const NodeSdkLayer = NodeSdk.layer(() => ({
-  resource: {
-    serviceName: process.env.SERVICE_NAME || "effect-patterns-mcp-server",
-    serviceVersion: process.env.SERVICE_VERSION || "0.5.0",
-  },
-  spanProcessor: new BatchSpanProcessor(
-    new OTLPTraceExporter({
-      url: process.env.OTLP_ENDPOINT || "http://localhost:4318/v1/traces",
-      headers: process.env.OTLP_HEADERS
-        ? Object.fromEntries(
-          process.env.OTLP_HEADERS.split(",").map((pair) => {
-            const [key, value] = pair.split("=");
-            return [key?.trim() || "", value?.trim() || ""];
-          })
-        )
-        : {},
-    })
-  ),
-}));
-
 export const AppLayer = Layer.mergeAll(
+  NodeContext.layer,
   MCPConfigService.Default,
   MCPLoggerService.Default,
+  MCPTierService.Default,
+  MCPValidationService.Default,
+  MCRateLimitService.Default,
+  MCPCacheService.Default,
   DatabaseLayer,
   PatternsService.Default,
   TracingLayerLive,
-  NodeSdkLayer,
+  // NodeSdkLayer, // Disabled - OTLP endpoint not available locally
   AnalysisServiceLive,
-  PatternGeneratorService.Default
+  PatternGeneratorService.Default,
+  ReviewCodeService.Default
 );
 
 /**

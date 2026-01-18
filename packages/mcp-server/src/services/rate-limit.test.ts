@@ -1,15 +1,15 @@
 import { Effect, Either, Layer } from "effect";
 import { describe, expect, it } from "vitest";
-import { RateLimitError } from "../errors.js";
-import { MCPConfigService } from "./config.js";
-import { MCPLoggerService } from "./logger.js";
+import { RateLimitError } from "../errors";
+import { MCPConfigService } from "./config";
+import { MCPLoggerService } from "./logger";
 import {
 	MCRateLimitService,
 	MCRateLimitServiceLive,
 	createRateLimitKey,
 	getRemainingRequests,
 	getResetTime,
-} from "./rate-limit.js";
+} from "./rate-limit";
 
 process.env.PATTERN_API_KEY = "test-api-key";
 process.env.RATE_LIMIT_ENABLED = "true";
