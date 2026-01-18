@@ -59,24 +59,6 @@ First steps with Effect - hello world, basic concepts
 | [Run Multiple Effects in Parallel with Effect.all](#getting-started-run-in-parallel) | 🟢 **Beginner** | Use Effect.all to run multiple Effects at the same time and collect all their results. |
 | [Retry a Failed Operation with Effect.retry](#getting-started-retry-on-failure) | 🟢 **Beginner** | Use Effect.retry with a Schedule to automatically retry failed operations with customizable delays and limits. |
 
-### Why Effect? Comparing Effect to Promise {#getting-started-effect-vs-promise}
-Understand what Effect gives you that Promise doesn't: type-safe errors, dependency injection, and composability.
-
-### Hello World: Your First Effect {#getting-started-hello-world}
-Create and run your very first Effect program using Effect.succeed and Effect.runSync.
-
-### Transform Values with Effect.map {#getting-started-transform-with-map}
-Use Effect.map to transform the success value of an Effect without changing its error or dependency types.
-
-### Handle Your First Error with Effect.fail and catchAll {#getting-started-handle-errors}
-Learn how to create Effects that can fail and how to recover from those failures using Effect.fail and Effect.catchAll.
-
-### Run Multiple Effects in Parallel with Effect.all {#getting-started-run-in-parallel}
-Use Effect.all to run multiple Effects at the same time and collect all their results.
-
-### Retry a Failed Operation with Effect.retry {#getting-started-retry-on-failure}
-Use Effect.retry with a Schedule to automatically retry failed operations with customizable delays and limits.
-
 ## Core Concepts
 Fundamental Effect patterns - generators, pipes, dependencies
 
@@ -132,153 +114,6 @@ Fundamental Effect patterns - generators, pipes, dependencies
 | [Work with Immutable Sets using HashSet](#data-hashset) | 🟡 **Intermediate** | Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations. |
 | [Handle Unexpected Errors by Inspecting the Cause](#data-cause) | 🟠 **Advanced** | Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces. |
 
-### Accumulate Multiple Errors with Either {#data-either}
-Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one.
-
-### Chaining Computations with flatMap {#combinator-flatmap}
-Use flatMap to chain together computations where each step may itself be effectful, optional, or error-prone.
-
-### Combining Values with zip {#combinator-zip}
-Use zip to combine two computations, pairing their results together in Effect, Stream, Option, or Either.
-
-### Comparing Data by Value with Data.struct {#data-struct}
-Use Data.struct to create immutable, structurally-typed objects that can be compared by value, not by reference.
-
-### Comparing Data by Value with Structural Equality {#comparing-data-by-value-with-structural-equality}
-Use Data.struct and Equal.equals to safely compare objects by their value instead of their reference, avoiding common JavaScript pitfalls.
-
-### Conditional Branching with if, when, and cond {#combinator-conditional}
-Use combinators like if, when, and cond to express conditional logic declaratively across Effect, Stream, Option, and Either.
-
-### Converting from Nullable, Option, or Either {#constructor-from-nullable-option-either}
-Use fromNullable, fromOption, and fromEither to convert nullable values, Option, or Either into Effects or Streams, enabling safe and composable interop.
-
-### Create Pre-resolved Effects with succeed and fail {#create-pre-resolved-effect}
-Use Effect.succeed(value) to create an Effect that immediately succeeds with a value, and Effect.fail(error) for an Effect that immediately fails.
-
-### Creating from Collections {#constructor-from-iterable}
-Use fromIterable and fromArray to create Streams or Effects from arrays, iterables, or other collections, enabling batch and streaming operations.
-
-### Creating from Synchronous and Callback Code {#constructor-sync-async}
-Use sync and async to lift synchronous or callback-based computations into Effect, enabling safe and composable interop with legacy code.
-
-### Filtering Results with filter {#combinator-filter}
-Use filter to keep or discard results based on a predicate, across Effect, Stream, Option, and Either.
-
-### Lifting Errors and Absence with fail, none, and left {#constructor-fail-none-left}
-Use fail, none, and left to represent errors or absence in Effect, Option, or Either, making failures explicit and type-safe.
-
-### Lifting Values with succeed, some, and right {#constructor-succeed-some-right}
-Use succeed, some, and right to lift plain values into Effect, Option, or Either, making them composable and type-safe.
-
-### Model Optional Values Safely with Option {#data-option}
-Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors.
-
-### Solve Promise Problems with Effect {#solve-promise-problems-with-effect}
-Understand how Effect solves the fundamental problems of native Promises, such as untyped errors, lack of dependency injection, and no built-in cancellation.
-
-### Transform Effect Values with map and flatMap {#transform-effect-values}
-Use Effect.map for synchronous transformations and Effect.flatMap to chain operations that return another Effect.
-
-### Transforming Values with map {#combinator-map}
-Use map to transform the result of an Effect, Stream, Option, or Either in a declarative, type-safe way.
-
-### Understand that Effects are Lazy Blueprints {#effects-are-lazy}
-An Effect is a lazy, immutable blueprint describing a computation, which does nothing until it is explicitly executed by a runtime.
-
-### Understand the Three Effect Channels (A, E, R) {#understand-effect-channels}
-Learn about the three generic parameters of an Effect: the success value (A), the failure error (E), and the context requirements (R).
-
-### Use .pipe for Composition {#use-pipe-for-composition}
-Use the .pipe() method to chain multiple operations onto an Effect in a readable, top-to-bottom sequence.
-
-### Working with Immutable Arrays using Data.array {#data-array}
-Use Data.array to create immutable, type-safe arrays that support value-based equality and safe functional operations.
-
-### Working with Tuples using Data.tuple {#data-tuple}
-Use Data.tuple to create immutable, type-safe tuples that support value-based equality and pattern matching.
-
-### Wrap Asynchronous Computations with tryPromise {#wrap-asynchronous-computations}
-Use Effect.tryPromise to safely convert a function that returns a Promise into an Effect, capturing rejections in the error channel.
-
-### Wrap Synchronous Computations with sync and try {#wrap-synchronous-computations}
-Use Effect.sync for non-throwing synchronous code and Effect.try for synchronous code that might throw an exception.
-
-### Wrapping Synchronous and Asynchronous Computations {#constructor-try-trypromise}
-Use try and tryPromise to safely wrap synchronous or asynchronous computations that may throw or reject, capturing errors in the Effect world.
-
-### Write Sequential Code with Effect.gen {#write-sequential-code-with-gen}
-Use Effect.gen with yield* to write sequential, asynchronous code in a style that looks and feels like familiar async/await.
-
-### Access Configuration from the Context {#access-config-in-context}
-Access your type-safe configuration within an Effect.gen block by yielding the Config object you defined.
-
-### Beyond the Date Type - Real World Dates, Times, and Timezones {#beyond-the-date-type}
-Use the Clock service for testable access to the current time and prefer immutable primitives for storing and passing timestamps.
-
-### Control Flow with Conditional Combinators {#control-flow-with-combinators}
-Use combinators like Effect.if, Effect.when, and Effect.cond to handle conditional logic in a declarative, composable way.
-
-### Define a Type-Safe Configuration Schema {#define-config-schema}
-Use Effect.Config primitives to define a schema for your application's configuration, ensuring type-safety and separation from code.
-
-### Handling Errors with catchAll, orElse, and match {#combinator-error-handling}
-Use catchAll, orElse, and match to recover from errors, provide fallbacks, or transform errors in Effect, Either, and Option.
-
-### Manage Shared State Safely with Ref {#data-ref}
-Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions.
-
-### Mapping and Chaining over Collections with forEach and all {#combinator-foreach-all}
-Use forEach and all to apply effectful functions to collections and combine the results, enabling batch and parallel processing.
-
-### Modeling Effect Results with Exit {#data-exit}
-Use Exit<E, A> to represent the result of running an Effect, capturing both success and failure (including defects) in a type-safe way.
-
-### Modeling Tagged Unions with Data.case {#data-case}
-Use Data.case to create tagged unions (algebraic data types) for robust, type-safe domain modeling and pattern matching.
-
-### Process Streaming Data with Stream {#process-streaming-data-with-stream}
-Use Stream<A, E, R> to represent and process data that arrives over time, such as file reads, WebSocket messages, or paginated API results.
-
-### Provide Configuration to Your App via a Layer {#provide-config-layer}
-Use Config.layer(schema) to create a Layer that provides your configuration schema to the application's context.
-
-### Redact and Handle Sensitive Data {#data-redacted}
-Use Redacted to securely handle sensitive data, ensuring secrets are not accidentally logged or exposed.
-
-### Representing Time Spans with Duration {#data-duration}
-Use Duration to represent time intervals in a type-safe, human-readable, and composable way.
-
-### Representing Time Spans with Duration {#representing-time-spans-with-duration}
-Use the Duration data type to represent time intervals in a type-safe, human-readable, and composable way.
-
-### Sequencing with andThen, tap, and flatten {#combinator-sequencing}
-Use andThen, tap, and flatten to sequence computations, run side effects, and flatten nested structures in Effect, Stream, Option, and Either.
-
-### Type Classes for Equality, Ordering, and Hashing with Data.Class {#data-class}
-Use Data.Class to derive and implement type classes for equality, ordering, and hashing, enabling composable and type-safe abstractions.
-
-### Understand Layers for Dependency Injection {#understand-layers-for-dependency-injection}
-A Layer is a blueprint that describes how to build a service, detailing its own requirements and any potential errors during its construction.
-
-### Use Chunk for High-Performance Collections {#data-chunk}
-Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines.
-
-### Use Chunk for High-Performance Collections {#use-chunk-for-high-performance-collections}
-Use Chunk<A> as a high-performance, immutable alternative to JavaScript's Array, especially for data processing pipelines.
-
-### Work with Arbitrary-Precision Numbers using BigDecimal {#data-bigdecimal}
-Use BigDecimal for arbitrary-precision decimal arithmetic, avoiding rounding errors and loss of precision in financial or scientific calculations.
-
-### Work with Dates and Times using DateTime {#data-datetime}
-Use DateTime for immutable, time-zone-aware date and time values, enabling safe and precise time calculations.
-
-### Work with Immutable Sets using HashSet {#data-hashset}
-Use HashSet<A> to model immutable, high-performance sets for efficient membership checks and set operations.
-
-### Handle Unexpected Errors by Inspecting the Cause {#data-cause}
-Use Cause<E> to get rich, structured information about errors and failures, including defects, interruptions, and error traces.
-
 ## Error Management
 Handle errors, create typed errors, recovery strategies
 
@@ -300,51 +135,6 @@ Handle errors, create typed errors, recovery strategies
 | [Retry Operations Based on Specific Errors](#retry-based-on-specific-errors) | 🟡 **Intermediate** | Use Effect.retry and predicate functions to selectively retry an operation only when specific, recoverable errors occur. |
 | [Handle Unexpected Errors by Inspecting the Cause](#handle-unexpected-errors-with-cause) | 🟠 **Advanced** | Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die). |
 
-### Checking Option and Either Cases {#pattern-option-either-checks}
-Use isSome, isNone, isLeft, and isRight to check Option and Either cases for simple, type-safe branching.
-
-### Matching on Success and Failure with match {#pattern-match}
-Use match to handle both success and failure cases in a single, declarative place for Effect, Option, and Either.
-
-### Pattern Match on Option and Either {#pattern-option-either-match}
-Use declarative match() combinators to handle optional and error-prone values.
-
-### Your First Error Handler {#error-management-hello-world}
-Learn the basics of handling errors in Effect with catchAll and catchTag.
-
-### Conditionally Branching Workflows {#conditionally-branching-workflows}
-Use predicate-based operators like Effect.filter and Effect.if to make decisions and control the flow of your application based on runtime values.
-
-### Control Repetition with Schedule {#control-repetition-with-schedule}
-Use Schedule to create composable, stateful policies that define precisely how an effect should be repeated or retried.
-
-### Effectful Pattern Matching with matchEffect {#pattern-matcheffect}
-Use matchEffect to perform effectful branching based on success or failure, enabling rich workflows in the Effect world.
-
-### Handle Errors with catchTag, catchTags, and catchAll {#handle-errors-with-catch}
-Use catchTag for type-safe recovery from specific tagged errors, and catchAll to recover from any possible failure.
-
-### Handle Flaky Operations with Retries and Timeouts {#handle-flaky-operations-with-retry-timeout}
-Use Effect.retry and Effect.timeout to build resilience against slow or intermittently failing operations, such as network requests.
-
-### Handling Specific Errors with catchTag and catchTags {#pattern-catchtag}
-Use catchTag and catchTags to recover from or handle specific error types in the Effect failure channel, enabling precise and type-safe error recovery.
-
-### Leverage Effect's Built-in Structured Logging {#leverage-structured-logging}
-Use Effect's built-in logging functions (Effect.log, Effect.logInfo, etc.) for structured, configurable, and context-aware logging.
-
-### Mapping Errors to Fit Your Domain {#mapping-errors-to-fit-your-domain}
-Use Effect.mapError to transform specific, low-level errors into more general domain errors, creating clean architectural boundaries.
-
-### Matching Tagged Unions with matchTag and matchTags {#pattern-matchtag}
-Use matchTag and matchTags to pattern match on specific tagged union cases, enabling precise and type-safe branching.
-
-### Retry Operations Based on Specific Errors {#retry-based-on-specific-errors}
-Use Effect.retry and predicate functions to selectively retry an operation only when specific, recoverable errors occur.
-
-### Handle Unexpected Errors by Inspecting the Cause {#handle-unexpected-errors-with-cause}
-Use Effect.catchAllCause or Effect.runFork to inspect the Cause of a failure, distinguishing between expected errors (Fail) and unexpected defects (Die).
-
 ## Resource Management
 Acquire and release resources safely with Scope
 
@@ -358,31 +148,6 @@ Acquire and release resources safely with Scope
 | [Create a Managed Runtime for Scoped Resources](#create-managed-runtime-for-scoped-resources) | 🟠 **Advanced** | Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run. |
 | [Manage Hierarchical Resources](#resource-hierarchies) | 🟠 **Advanced** | Manage parent-child resource relationships where children must be released before parents. |
 | [Manually Manage Lifecycles with `Scope`](#manual-scope-management) | 🟠 **Advanced** | Use `Scope` directly to manage complex resource lifecycles or when building custom layers. |
-
-### Safely Bracket Resource Usage with `acquireRelease` {#safely-bracket-resource-usage}
-Use `Effect.acquireRelease` to guarantee a resource's cleanup logic runs, even if errors or interruptions occur.
-
-### Compose Resource Lifecycles with `Layer.merge` {#compose-scoped-layers}
-Combine multiple resource-managing layers, letting Effect automatically handle the acquisition and release order.
-
-### Create a Service Layer from a Managed Resource {#scoped-service-layer}
-Use `Layer.scoped` with `Effect.Service` to transform a managed resource into a shareable, application-wide service.
-
-### Handle Resource Timeouts {#resource-timeouts}
-Set timeouts on resource acquisition and usage to prevent hanging operations.
-
-### Pool Resources for Reuse {#resource-pooling}
-Create and manage a pool of reusable resources like database connections or workers.
-
-### Create a Managed Runtime for Scoped Resources {#create-managed-runtime-for-scoped-resources}
-Use Layer.launch to safely manage the lifecycle of layers containing scoped resources, ensuring finalizers are always run.
-
-### Manage Hierarchical Resources {#resource-hierarchies}
-Manage parent-child resource relationships where children must be released before parents.
-
-### Manually Manage Lifecycles with `Scope` {#manual-scope-management}
-Use `Scope` directly to manage complex resource lifecycles or when building custom layers.
-
 
 ## Concurrency
 Run effects in parallel, manage fibers, coordinate async work
@@ -413,75 +178,6 @@ Run effects in parallel, manage fibers, coordinate async work
 | [State Management Pattern 2: Observable State with SubscriptionRef](#state-management-pattern-subscription-ref) | 🟠 **Advanced** | Build observable state that notifies subscribers on changes, enabling reactive patterns and state-driven architecture. |
 | [Understand Fibers as Lightweight Threads](#understand-fibers-as-lightweight-threads) | 🟠 **Advanced** | A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading. |
 
-### Race Effects and Handle Timeouts {#concurrency-race-timeout}
-Race multiple effects to get the fastest result, or add timeouts to prevent hanging operations.
-
-### Understanding Fibers {#concurrency-understanding-fibers}
-Learn what fibers are, how they differ from threads, and why they make Effect powerful for concurrent programming.
-
-### Your First Parallel Operation {#concurrency-hello-world}
-Run multiple effects in parallel with Effect.all and understand when to use parallel vs sequential execution.
-
-### Concurrency Pattern 1: Coordinate Async Operations with Deferred {#concurrency-pattern-coordinate-with-deferred}
-Use Deferred to coordinate async operations where multiple fibers wait for a single event to complete, enabling producer-consumer patterns and async signaling without polling.
-
-### Concurrency Pattern 2: Rate Limit Concurrent Access with Semaphore {#concurrency-pattern-rate-limit-with-semaphore}
-Use Semaphore to limit the number of concurrent operations, enabling connection pooling, API rate limiting, and controlled resource access without overload.
-
-### Concurrency Pattern 3: Coordinate Multiple Fibers with Latch {#concurrency-pattern-coordinate-with-latch}
-Use Latch to synchronize multiple fibers, enabling patterns like coordinating N async tasks, fan-out/fan-in, and barrier synchronization.
-
-### Concurrency Pattern 4: Distribute Work with Queue {#concurrency-pattern-queue-work-distribution}
-Use Queue to decouple producers and consumers, enabling work distribution, pipeline stages, and backpressure handling across concurrent fibers.
-
-### Concurrency Pattern 5: Broadcast Events with PubSub {#concurrency-pattern-pubsub-event-broadcast}
-Use PubSub to broadcast events to multiple subscribers, enabling event-driven architectures and fan-out patterns without direct coupling.
-
-### Concurrency Pattern 6: Race and Timeout Competing Effects {#concurrency-pattern-race-timeout}
-Use race and timeout to compete multiple effects and enforce deadlines, enabling timeout handling and choosing fastest result.
-
-### Manage Shared State Safely with Ref {#manage-shared-state-with-ref}
-Use Ref<A> to model shared, mutable state in a concurrent environment, ensuring all updates are atomic and free of race conditions.
-
-### Process a Collection in Parallel with Effect.forEach {#process-collection-in-parallel-with-foreach}
-Use Effect.forEach with the `concurrency` option to process a collection of items in parallel with a fixed limit, preventing resource exhaustion.
-
-### Race Concurrent Effects for the Fastest Result {#race-concurrent-effects}
-Use Effect.race to run multiple effects concurrently and proceed with the result of the one that succeeds first, automatically interrupting the others.
-
-### Run Independent Effects in Parallel with Effect.all {#run-effects-in-parallel-with-all}
-Use Effect.all to run multiple independent effects concurrently and collect all their results into a single tuple.
-
-### Add Caching by Wrapping a Layer {#add-caching-by-wrapping-a-layer}
-Implement caching by creating a new layer that wraps a live service, intercepting method calls to add caching logic without modifying the original service.
-
-### Decouple Fibers with Queues and PubSub {#decouple-fibers-with-queue-pubsub}
-Use Queue for point-to-point work distribution and PubSub for broadcast messaging to enable safe, decoupled communication between concurrent fibers.
-
-### Execute Long-Running Apps with Effect.runFork {#execute-long-running-apps-with-runfork}
-Use Effect.runFork at the application's entry point to launch a long-running process as a detached fiber, allowing for graceful shutdown.
-
-### Implement Graceful Shutdown for Your Application {#implement-graceful-shutdown}
-Use Effect.runFork and listen for OS signals (SIGINT, SIGTERM) to trigger a Fiber.interrupt, ensuring all resources are safely released.
-
-### Manage Resource Lifecycles with Scope {#manage-resource-lifecycles-with-scope}
-Use Scope for fine-grained, manual control over resource lifecycles, ensuring cleanup logic (finalizers) is always executed.
-
-### Poll for Status Until a Task Completes {#poll-for-status-until-task-completes}
-Use Effect.race to run a repeating polling effect alongside a main task, automatically stopping the polling when the main task finishes.
-
-### Run Background Tasks with Effect.fork {#run-background-tasks-with-fork}
-Use Effect.fork to start a computation in a background fiber, allowing the parent fiber to continue its work without waiting.
-
-### State Management Pattern 1: Synchronized Reference with SynchronizedRef {#state-management-pattern-synchronized-ref}
-Use SynchronizedRef to safely share mutable state across concurrent fibers, with atomic updates and guaranteed consistency.
-
-### State Management Pattern 2: Observable State with SubscriptionRef {#state-management-pattern-subscription-ref}
-Build observable state that notifies subscribers on changes, enabling reactive patterns and state-driven architecture.
-
-### Understand Fibers as Lightweight Threads {#understand-fibers-as-lightweight-threads}
-A Fiber is a lightweight, virtual thread managed by the Effect runtime, enabling massive concurrency on a single OS thread without the overhead of traditional threading.
-
 ## Streams
 Process sequences of data with Stream
 
@@ -505,60 +201,6 @@ Process sequences of data with Stream
 | [Stream Pattern 6: Resource Management in Streams](#stream-pattern-resource-management) | 🟠 **Advanced** | Properly manage resources (connections, files, memory) in streams using acquire/release patterns and ensuring cleanup on error or completion. |
 | [Stream Pattern 7: Error Handling in Streams](#stream-pattern-error-handling) | 🟠 **Advanced** | Handle errors gracefully in streams with recovery strategies, resuming after failures, and maintaining stream integrity. |
 | [Stream Pattern 8: Advanced Stream Transformations](#stream-pattern-advanced-transformations) | 🟠 **Advanced** | Apply complex transformations across streams including custom operators, effect-based transformations, and composition patterns. |
-
-### Running and Collecting Stream Results {#stream-running-collecting}
-Learn the different ways to run a stream and collect its results: runCollect, runForEach, runDrain, and more.
-
-### Stream Pattern 1: Transform Streams with Map and Filter {#stream-pattern-map-filter-transformations}
-Use Stream.map and Stream.filter to transform and select stream elements, enabling data pipelines that reshape and filter data in flight.
-
-### Stream vs Effect - When to Use Which {#stream-vs-effect}
-Understand when to use Effect (single value) vs Stream (sequence of values) for your use case.
-
-### Take and Drop Stream Elements {#stream-take-drop}
-Control how many stream elements to process using take, drop, takeWhile, and dropWhile.
-
-### Your First Stream {#stream-hello-world}
-Create your first Effect Stream and understand what makes streams different from regular arrays.
-
-### Sink Pattern 1: Batch Insert Stream Records into Database {#sink-pattern-batch-insert-stream-records-into-database}
-Use Sink to batch stream records and insert them efficiently into a database in groups, rather than one-by-one, for better performance and resource usage.
-
-### Sink Pattern 2: Write Stream Events to Event Log {#sink-pattern-write-stream-events-to-event-log}
-Use Sink to append stream events to an event log with metadata and causal ordering, enabling event sourcing and audit trail patterns.
-
-### Sink Pattern 3: Write Stream Lines to File {#sink-pattern-write-stream-lines-to-file}
-Use Sink to write stream data as lines to a file with buffering for efficiency, supporting log files and line-oriented formats.
-
-### Sink Pattern 4: Send Stream Records to Message Queue {#sink-pattern-send-stream-records-to-message-queue}
-Use Sink to publish stream records to a message queue with partitioning, batching, and acknowledgment handling for distributed systems.
-
-### Sink Pattern 5: Fall Back to Alternative Sink on Failure {#sink-pattern-fall-back-to-alternative-sink-on-failure}
-Use Sink to attempt writing to a primary destination, and automatically fall back to an alternative destination if the primary fails, enabling progressive degradation and high availability.
-
-### Sink Pattern 6: Retry Failed Stream Operations {#sink-pattern-retry-failed-stream-operations}
-Use Sink with configurable retry policies to automatically retry failed operations with exponential backoff, enabling recovery from transient failures without losing data.
-
-### Stream Pattern 2: Merge and Combine Multiple Streams {#stream-pattern-merge-combine}
-Use Stream.merge, Stream.concat, and Stream.mergeAll to combine multiple streams into a single stream, enabling multi-source data aggregation.
-
-### Stream Pattern 3: Control Backpressure in Streams {#stream-pattern-backpressure-control}
-Use Stream throttling, buffering, and chunk operations to manage backpressure, preventing upstream from overwhelming downstream consumers.
-
-### Stream Pattern 4: Stateful Operations with Scan and Fold {#stream-pattern-stateful-operations}
-Use Stream.scan and Stream.fold to maintain state across stream elements, enabling cumulative operations, counters, aggregations, and stateful transformations.
-
-### Stream Pattern 5: Grouping and Windowing Streams {#stream-pattern-grouping-windowing}
-Use grouping and windowing to organize streams by key or time window, enabling batch operations and temporal aggregations.
-
-### Stream Pattern 6: Resource Management in Streams {#stream-pattern-resource-management}
-Properly manage resources (connections, files, memory) in streams using acquire/release patterns and ensuring cleanup on error or completion.
-
-### Stream Pattern 7: Error Handling in Streams {#stream-pattern-error-handling}
-Handle errors gracefully in streams with recovery strategies, resuming after failures, and maintaining stream integrity.
-
-### Stream Pattern 8: Advanced Stream Transformations {#stream-pattern-advanced-transformations}
-Apply complex transformations across streams including custom operators, effect-based transformations, and composition patterns.
 
 ## Platform
 System operations - files, commands, environment
@@ -606,51 +248,6 @@ Model business domains with branded types and services
 | [Transform Data During Validation with Schema](#transform-data-with-schema) | 🟡 **Intermediate** | Use Schema.transform to safely convert data from one type to another during the parsing phase, such as from a string to a Date. |
 | [Use Effect.gen for Business Logic](#use-gen-for-business-logic) | 🟡 **Intermediate** | Encapsulate sequential business logic, control flow, and dependency access within Effect.gen for improved readability and maintainability. |
 | [Validating and Parsing Branded Types](#brand-validate-parse) | 🟡 **Intermediate** | Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed. |
-
-### Create Type-Safe Errors {#domain-modeling-tagged-errors}
-Define domain-specific errors using Data.TaggedError for type-safe error handling.
-
-### Handle Missing Values with Option {#domain-modeling-option-basics}
-Use Option to explicitly model values that might not exist, avoiding null/undefined bugs.
-
-### Your First Domain Model {#domain-modeling-hello-world}
-Create a simple domain model using TypeScript interfaces and Effect to represent your business entities.
-
-### Accumulate Multiple Errors with Either {#accumulate-multiple-errors-with-either}
-Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one.
-
-### Avoid Long Chains of .andThen; Use Generators Instead {#avoid-long-andthen-chains}
-Prefer Effect.gen over long chains of .andThen for sequential logic to improve readability and maintainability.
-
-### Define Contracts Upfront with Schema {#define-contracts-with-schema}
-Use Schema to define the types for your data models and function signatures before writing the implementation, creating clear, type-safe contracts.
-
-### Define Type-Safe Errors with Data.TaggedError {#define-tagged-errors}
-Create custom, type-safe error classes by extending Data.TaggedError to make error handling robust, predictable, and self-documenting.
-
-### Distinguish 'Not Found' from Errors {#distinguish-not-found-from-errors}
-Use Effect<Option<A>> to clearly distinguish between a recoverable 'not found' case (None) and a true failure (Fail).
-
-### Model Optional Values Safely with Option {#model-optional-values-with-option}
-Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors.
-
-### Model Validated Domain Types with Brand {#model-validated-domain-types-with-brand}
-Use Brand to turn primitive types like string or number into specific, validated domain types like Email or PositiveInt, making illegal states unrepresentable.
-
-### Modeling Validated Domain Types with Brand {#brand-model-domain-type}
-Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse.
-
-### Parse and Validate Data with Schema.decode {#parse-with-schema-decode}
-Use Schema.decode(schema) to create an Effect that parses and validates unknown data, which integrates seamlessly with Effect's error handling.
-
-### Transform Data During Validation with Schema {#transform-data-with-schema}
-Use Schema.transform to safely convert data from one type to another during the parsing phase, such as from a string to a Date.
-
-### Use Effect.gen for Business Logic {#use-gen-for-business-logic}
-Encapsulate sequential business logic, control flow, and dependency access within Effect.gen for improved readability and maintainability.
-
-### Validating and Parsing Branded Types {#brand-validate-parse}
-Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed.
 
 ## Building APIs
 Build HTTP APIs and services
