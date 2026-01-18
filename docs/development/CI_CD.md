@@ -136,11 +136,13 @@ Add to README.md:
 ### Deployments
 
 **Automatic Deployments:**
-- **Production:** Push to `main` branch
-  - Deployed to: `https://effect-patterns.vercel.app`
+- **MCP Server:** Push to `main` branch
+  - Deployed to: `https://effect-patterns-mcp.vercel.app`
   - Domain: Custom domain if configured
 - **Preview:** Create Pull Request
-  - Deployed to: `https://effect-patterns-{pr-number}.vercel.app`
+  - Deployed to: `https://effect-patterns-mcp-{pr-number}.vercel.app`
+
+**Note:** The main Effect Patterns website is currently under development. The MCP server provides the API endpoints for pattern access.
 
 **Manual Deployments:**
 ```bash
@@ -217,11 +219,11 @@ bun start              # Production (if configured)
 curl http://localhost:3000/api/health
 
 # Production
-curl https://effect-patterns.vercel.app/api/health
+curl https://effect-patterns-mcp.vercel.app/api/health
 
 # With authentication
 curl -H "x-api-key: YOUR_KEY" \
-  https://effect-patterns.vercel.app/api/health
+  https://effect-patterns-mcp.vercel.app/api/health
 ```
 
 **Response:**

@@ -435,7 +435,7 @@ vercel --prod
 
 - **Maintainer**: Paul Philp
 - **Repository**: https://github.com/PaulJPhilp/EffectPatterns
-- **Documentation**: https://effect-patterns.vercel.app
+- **Documentation**: https://github.com/PaulJPhilp/EffectPatterns/blob/main/README.md
 - **Support**: Create GitHub issue with detailed description
 
 ---
