@@ -36,7 +36,7 @@ export class DeploymentClient {
    */
   async request<T = unknown>(
     endpoint: string,
-    options: RequestOptions = {}
+    options: RequestOptions = {},
   ): Promise<ApiResponse<T>> {
     const url = `${this.config.baseUrl}${endpoint}`;
     const method = options.method || "GET";
@@ -91,7 +91,9 @@ export class DeploymentClient {
       const duration = Date.now() - startTime;
 
       if (error instanceof TypeError && error.message.includes("fetch")) {
-        throw new Error(`Failed to connect to ${this.config.name}: ${error.message}`);
+        throw new Error(
+          `Failed to connect to ${this.config.name} after ${duration}ms: ${error.message}`,
+        );
       }
 
       if (error instanceof Error && error.name === "AbortError") {
@@ -107,7 +109,7 @@ export class DeploymentClient {
    */
   async get<T = unknown>(
     endpoint: string,
-    options?: Omit<RequestOptions, "method" | "body">
+    options?: Omit<RequestOptions, "method" | "body">,
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: "GET" });
   }
@@ -118,7 +120,7 @@ export class DeploymentClient {
   async post<T = unknown>(
     endpoint: string,
     body?: unknown,
-    options?: Omit<RequestOptions, "method" | "body">
+    options?: Omit<RequestOptions, "method" | "body">,
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...options, method: "POST", body });
   }
@@ -138,7 +140,10 @@ export class DeploymentClient {
   /**
    * Search patterns
    */
-  async searchPatterns(query: string, limit: number = 10): Promise<ApiResponse> {
+  async searchPatterns(
+    query: string,
+    limit: number = 10,
+  ): Promise<ApiResponse> {
     const params = new URLSearchParams();
     if (query) params.append("q", query);
     params.append("limit", String(limit));
@@ -186,7 +191,7 @@ export class DeploymentClient {
    */
   async generatePattern(
     patternId: string,
-    variables?: Record<string, string>
+    variables?: Record<string, string>,
   ): Promise<ApiResponse> {
     return this.post("/api/generate-pattern", {
       patternId,
@@ -198,7 +203,7 @@ export class DeploymentClient {
    * Analyze consistency across files
    */
   async analyzeConsistency(
-    files: Array<{ filename: string; source: string }>
+    files: Array<{ filename: string; source: string }>,
   ): Promise<ApiResponse> {
     return this.post("/api/analyze-consistency", { files });
   }
@@ -209,7 +214,7 @@ export class DeploymentClient {
   async applyRefactoring(
     refactoringIds: string[],
     files: Array<{ filename: string; source: string }>,
-    preview: boolean = true
+    preview: boolean = true,
   ): Promise<ApiResponse> {
     return this.post("/api/apply-refactoring", {
       refactoringIds,
@@ -233,6 +238,8 @@ export class DeploymentClient {
 /**
  * Create deployment client for given config
  */
-export function createDeploymentClient(config: DeploymentConfig): DeploymentClient {
+export function createDeploymentClient(
+  config: DeploymentConfig,
+): DeploymentClient {
   return new DeploymentClient(config);
 }
