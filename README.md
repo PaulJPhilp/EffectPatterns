@@ -249,6 +249,51 @@ Model business domains with branded types and services
 | [Use Effect.gen for Business Logic](#use-gen-for-business-logic) | 🟡 **Intermediate** | Encapsulate sequential business logic, control flow, and dependency access within Effect.gen for improved readability and maintainability. |
 | [Validating and Parsing Branded Types](#brand-validate-parse) | 🟡 **Intermediate** | Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed. |
 
+### Create Type-Safe Errors {#domain-modeling-tagged-errors}
+Define domain-specific errors using Data.TaggedError for type-safe error handling.
+
+### Handle Missing Values with Option {#domain-modeling-option-basics}
+Use Option to explicitly model values that might not exist, avoiding null/undefined bugs.
+
+### Your First Domain Model {#domain-modeling-hello-world}
+Create a simple domain model using TypeScript interfaces and Effect to represent your business entities.
+
+### Accumulate Multiple Errors with Either {#accumulate-multiple-errors-with-either}
+Use Either<E, A> to represent computations that can fail, allowing you to accumulate multiple errors instead of short-circuiting on the first one.
+
+### Avoid Long Chains of .andThen; Use Generators Instead {#avoid-long-andthen-chains}
+Prefer Effect.gen over long chains of .andThen for sequential logic to improve readability and maintainability.
+
+### Define Contracts Upfront with Schema {#define-contracts-with-schema}
+Use Schema to define the types for your data models and function signatures before writing the implementation, creating clear, type-safe contracts.
+
+### Define Type-Safe Errors with Data.TaggedError {#define-tagged-errors}
+Create custom, type-safe error classes by extending Data.TaggedError to make error handling robust, predictable, and self-documenting.
+
+### Distinguish 'Not Found' from Errors {#distinguish-not-found-from-errors}
+Use Effect<Option<A>> to clearly distinguish between a recoverable 'not found' case (None) and a true failure (Fail).
+
+### Model Optional Values Safely with Option {#model-optional-values-with-option}
+Use Option<A> to explicitly represent a value that may or may not exist, eliminating null and undefined errors.
+
+### Model Validated Domain Types with Brand {#model-validated-domain-types-with-brand}
+Use Brand to turn primitive types like string or number into specific, validated domain types like Email or PositiveInt, making illegal states unrepresentable.
+
+### Modeling Validated Domain Types with Brand {#brand-model-domain-type}
+Use Brand to create domain-specific types from primitives, making illegal states unrepresentable and preventing accidental misuse.
+
+### Parse and Validate Data with Schema.decode {#parse-with-schema-decode}
+Use Schema.decode(schema) to create an Effect that parses and validates unknown data, which integrates seamlessly with Effect's error handling.
+
+### Transform Data During Validation with Schema {#transform-data-with-schema}
+Use Schema.transform to safely convert data from one type to another during the parsing phase, such as from a string to a Date.
+
+### Use Effect.gen for Business Logic {#use-gen-for-business-logic}
+Encapsulate sequential business logic, control flow, and dependency access within Effect.gen for improved readability and maintainability.
+
+### Validating and Parsing Branded Types {#brand-validate-parse}
+Use Schema and Brand together to validate and parse branded types at runtime, ensuring only valid values are constructed.
+
 ## Building APIs
 Build HTTP APIs and services
 
