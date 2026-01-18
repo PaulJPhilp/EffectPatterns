@@ -1,0 +1,459 @@
+---
+title: 'Platform Pattern 5: Cross-Platform Path Manipulation'
+id: platform-pattern-path-manipulation
+skillLevel: intermediate
+applicationPatternId: platform
+summary: >-
+  Use platform-aware path operations to handle file system paths correctly
+  across Windows, macOS, and Linux with proper resolution and normalization.
+tags:
+  - platform
+  - path-manipulation
+  - filesystem
+  - cross-platform
+  - path-resolution
+  - environment-variables
+rule:
+  description: >-
+    Use Effect's platform-aware path utilities to handle separators,
+    absolute/relative paths, and environment variables consistently.
+related:
+  - platform-pattern-filesystem-operations
+  - platform-terminal-interactive
+  - error-handling-pattern-custom-strategies
+author: effect_website
+lessonOrder: 3
+---
+
+## Guideline
+
+Path manipulation requires platform awareness:
+
+- **Separators**: Windows uses `\`, Unix uses `/`
+- **Absolute vs relative**: `/root` vs `./file`
+- **Environment variables**: `$HOME`, `%APPDATA%`
+- **Resolution**: Normalize, resolve symlinks
+- **Validation**: Prevent path traversal attacks
+
+Pattern: Avoid string concatenation, use `path.join()`, `path.resolve()`
+
+---
+
+## Rationale
+
+String-based path handling causes problems:
+
+**Problem 1: Platform inconsistency**
+- Write path: `"C:\data\file.txt"` (Windows)
+- Ship to Linux, gets interpreted as literal "C:\data\file.txt"
+- File not found errors, production outage
+
+**Problem 2: Path traversal attacks**
+- User supplies path: `"../../../../etc/passwd"`
+- No validation → reads sensitive files
+- Security vulnerability
+
+**Problem 3: Environment variable expansion**
+- User's config: `"$HOME/myapp/data"`
+- Without expansion: literal `$HOME` in path
+- Can't find files
+
+**Problem 4: Symlink resolution**
+- File at `/etc/ssl/certs/ca-bundle.crt` (symlink)
+- Real file at `/usr/share/ca-certificates/ca-bundle.crt`
+- Both point to same file, but string equality fails
+
+Solutions:
+
+**Platform-aware API**:
+- `path.join()` handles separators
+- `path.resolve()` creates absolute paths
+- `path.parse()` components
+- Auto-handles platform differences
+
+**Variable expansion**:
+- `$HOME`, `~` → user home
+- `$USER` → username
+- `$PWD` → current directory
+
+**Validation**:
+- Reject paths with `..`
+- Reject absolute paths from untrusted input
+- Contain paths within base directory
+
+---
+
+## Good Example
+
+This example demonstrates cross-platform path manipulation.
+
+```typescript
+import { Effect, FileSystem } from "@effect/platform";
+import * as Path from "node:path";
+import * as OS from "node:os";
+
+interface PathOperation {
+  readonly input: string;
+  readonly description: string;
+}
+
+// Platform info
+const getPlatformInfo = () =>
+  Effect.gen(function* () {
+    const platform = process.platform;
+    const separator = Path.sep;
+    const delimiter = Path.delimiter;
+    const homeDir = OS.homedir();
+
+    yield* Effect.log(
+      `[PLATFORM] OS: ${platform}, Separator: "${separator}", Home: ${homeDir}`
+    );
+
+    return { platform, separator, delimiter, homeDir };
+  });
+
+const program = Effect.gen(function* () {
+  console.log(`\n[PATH MANIPULATION] Cross-platform path operations\n`);
+
+  const platformInfo = yield* getPlatformInfo();
+
+  // Example 1: Path joining (handles separators)
+  console.log(`\n[1] Joining paths (handles separators automatically):\n`);
+
+  const segments = ["data", "reports", "2024"];
+
+  const joinedPath = Path.join(...segments);
+
+  yield* Effect.log(`[JOIN] Input: ${segments.join(" + ")}`);
+  yield* Effect.log(`[JOIN] Output: ${joinedPath}`);
+
+  // Example 2: Resolving to absolute paths
+  console.log(`\n[2] Resolving relative → absolute:\n`);
+
+  const relativePath = "./config/settings.json";
+
+  const absolutePath = Path.resolve(relativePath);
+
+  yield* Effect.log(`[RESOLVE] Relative: ${relativePath}`);
+  yield* Effect.log(`[RESOLVE] Absolute: ${absolutePath}`);
+
+  // Example 3: Path parsing
+  console.log(`\n[3] Parsing path components:\n`);
+
+  const filePath = "/home/user/documents/report.pdf";
+
+  const parsed = Path.parse(filePath);
+
+  yield* Effect.log(`[PARSE] Input: ${filePath}`);
+  yield* Effect.log(`  root: ${parsed.root}`);
+  yield* Effect.log(`  dir: ${parsed.dir}`);
+  yield* Effect.log(`  base: ${parsed.base}`);
+  yield* Effect.log(`  name: ${parsed.name}`);
+  yield* Effect.log(`  ext: ${parsed.ext}`);
+
+  // Example 4: Environment variable expansion
+  console.log(`\n[4] Environment variable expansion:\n`);
+
+  const expandPath = (pathStr: string): string => {
+    let result = pathStr;
+
+    // Expand common variables
+    result = result.replace("$HOME", OS.homedir());
+    result = result.replace("~", OS.homedir());
+    result = result.replace("$USER", process.env.USER || "user");
+    result = result.replace("$PWD", process.cwd());
+
+    // Handle Windows-style env vars
+    result = result.replace(/%USERPROFILE%/g, OS.homedir());
+    result = result.replace(/%USERNAME%/g, process.env.USERNAME || "user");
+    result = result.replace(/%TEMP%/g, OS.tmpdir());
+
+    return result;
+  };
+
+  const envPaths = [
+    "$HOME/myapp/data",
+    "~/documents/file.txt",
+    "$PWD/config",
+    "/var/log/app.log",
+  ];
+
+  for (const envPath of envPaths) {
+    const expanded = expandPath(envPath);
+
+    yield* Effect.log(
+      `[EXPAND] ${envPath} → ${expanded}`
+    );
+  }
+
+  // Example 5: Path normalization (remove redundant separators)
+  console.log(`\n[5] Path normalization:\n`);
+
+  const messyPaths = [
+    "/home//user///documents",
+    "C:\\Users\\\\documents\\\\file.txt",
+    "./config/../config/./settings",
+    "../data/../../root",
+  ];
+
+  for (const messy of messyPaths) {
+    const normalized = Path.normalize(messy);
+
+    yield* Effect.log(
+      `[NORMALIZE] ${messy}`
+    );
+    yield* Effect.log(
+      `[NORMALIZE]   → ${normalized}`
+    );
+  }
+
+  // Example 6: Safe path construction with base directory
+  console.log(`\n[6] Safe path construction (path traversal prevention):\n`);
+
+  const baseDir = "/var/app/data";
+
+  const safeJoin = (base: string, userPath: string): Result<string> => {
+    // Reject absolute paths from untrusted input
+    if (Path.isAbsolute(userPath)) {
+      return { success: false, reason: "Absolute paths not allowed" };
+    }
+
+    // Reject paths with ..
+    if (userPath.includes("..")) {
+      return { success: false, reason: "Path traversal attempt detected" };
+    }
+
+    // Resolve and verify within base
+    const fullPath = Path.resolve(base, userPath);
+
+    if (!fullPath.startsWith(base)) {
+      return { success: false, reason: "Path escapes base directory" };
+    }
+
+    return { success: true, path: fullPath };
+  };
+
+  interface Result<T> {
+    success: boolean;
+    reason?: string;
+    path?: T;
+  }
+
+  const testPaths = [
+    "reports/2024.json",
+    "/etc/passwd",
+    "../../../root",
+    "data/file.txt",
+  ];
+
+  for (const test of testPaths) {
+    const result = safeJoin(baseDir, test);
+
+    if (result.success) {
+      yield* Effect.log(`[SAFE] ✓ ${test} → ${result.path}`);
+    } else {
+      yield* Effect.log(`[SAFE] ✗ ${test} (${result.reason})`);
+    }
+  }
+
+  // Example 7: Relative path calculation
+  console.log(`\n[7] Computing relative paths:\n`);
+
+  const fromDir = "/home/user/projects/myapp";
+  const toPath = "/home/user/data/config.json";
+
+  const relativePath2 = Path.relative(fromDir, toPath);
+
+  yield* Effect.log(`[RELATIVE] From: ${fromDir}`);
+  yield* Effect.log(`[RELATIVE] To: ${toPath}`);
+  yield* Effect.log(`[RELATIVE] Relative: ${relativePath2}`);
+
+  // Example 8: Common path patterns
+  console.log(`\n[8] Common patterns:\n`);
+
+  // Get file extension
+  const fileName = "document.tar.gz";
+  const ext = Path.extname(fileName);
+  const baseName = Path.basename(fileName);
+  const dirName = Path.dirname("/home/user/file.txt");
+
+  yield* Effect.log(`[PATTERNS] File: ${fileName}`);
+  yield* Effect.log(`  basename: ${baseName}`);
+  yield* Effect.log(`  dirname: ${dirName}`);
+  yield* Effect.log(`  extname: ${ext}`);
+
+  // Example 9: Path segments array
+  console.log(`\n[9] Path segments:\n`);
+
+  const segmentPath = "/home/user/documents/report.pdf";
+
+  const segments2 = segmentPath.split(Path.sep).filter((s) => s);
+
+  yield* Effect.log(`[SEGMENTS] ${segmentPath}`);
+  yield* Effect.log(`[SEGMENTS] → [${segments2.map((s) => `"${s}"`).join(", ")}]`);
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+## Advanced: Path Configuration Management
+
+Build config with environment-aware paths:
+
+```typescript
+interface AppConfig {
+  dataDir: string;
+  logsDir: string;
+  configFile: string;
+  cacheDir: string;
+}
+
+const resolveAppConfig = (): Effect.Effect<AppConfig> =>
+  Effect.gen(function* () {
+    const baseDir = process.env.APP_HOME ||
+      Path.join(OS.homedir(), ".myapp");
+
+    return {
+      dataDir: Path.join(baseDir, "data"),
+      logsDir: Path.join(baseDir, "logs"),
+      configFile: Path.join(baseDir, "config", "settings.json"),
+      cacheDir: Path.join(OS.tmpdir(), "myapp-cache"),
+    };
+  });
+
+// Usage
+const config = resolveAppConfig();
+```
+
+---
+
+## Advanced: Glob Pattern Matching
+
+Find files matching patterns:
+
+```typescript
+const findFilesMatching = (baseDir: string, pattern: string) =>
+  Effect.gen(function* () {
+    // Pattern examples:
+    // "*.txt" - all .txt files
+    // "**/*.ts" - all .ts files recursively
+    // "src/**/test/**" - nested pattern
+
+    // In real code, use 'glob' package
+    yield* Effect.log(`[GLOB] Pattern: ${pattern}`);
+    yield* Effect.log(`[GLOB] Base: ${baseDir}`);
+
+    // Would return matching paths
+    return [
+      Path.join(baseDir, "file1.txt"),
+      Path.join(baseDir, "file2.txt"),
+    ];
+  });
+```
+
+---
+
+## Advanced: Safe Symbolic Link Resolution
+
+Handle symlinks safely:
+
+```typescript
+const resolvePath = (input: string) =>
+  Effect.gen(function* () {
+    // Normalize path
+    let normalized = Path.normalize(input);
+
+    // Expand environment variables
+    normalized = normalized.replace("$HOME", OS.homedir());
+    normalized = normalized.replace("~", OS.homedir());
+
+    // Resolve to absolute
+    const absolute = Path.resolve(normalized);
+
+    // Check for symlinks (in real code, use fs.readlink)
+    const isSymlink = false; // Placeholder
+
+    if (isSymlink) {
+      yield* Effect.log(
+        `[SYMLINK] ${input} → ${absolute} (symlink detected)`
+      );
+    }
+
+    return absolute;
+  });
+```
+
+---
+
+## Platform Differences
+
+| Aspect | Windows | Unix/Linux | macOS |
+| --- | --- | --- | --- |
+| **Separator** | `\` | `/` | `/` |
+| **Absolute** | `C:\` | `/` | `/` |
+| **Home** | `C:\Users\user` | `/home/user` | `/Users/user` |
+| **Env var** | `%VAR%` | `$VAR` | `$VAR` |
+| **Temp** | `%TEMP%` | `/tmp` | `/var/tmp` |
+
+---
+
+## When to Use This Pattern
+
+✅ **Use platform-aware paths when:**
+- Cross-platform applications
+- Config file locations
+- User data directories
+- Build output paths
+- Log file locations
+
+✅ **Use safe joining when:**
+- User-supplied paths
+- Config-based paths
+- Preventing traversal
+- Security-sensitive
+
+⚠️ **Trade-offs:**
+- Platform abstraction cost
+- Environment-specific behavior
+- Testing complexity
+- Debugging symlink issues
+
+---
+
+## Path Validation Checklist
+
+- ✅ Reject absolute paths from untrusted input
+- ✅ Reject paths with `..` components
+- ✅ Verify paths stay within base directory
+- ✅ Normalize paths before validation
+- ✅ Log suspicious paths for audit
+- ✅ Handle symlinks safely
+- ✅ Test on all target platforms
+- ✅ Document path requirements
+
+---
+
+## Common Mistakes
+
+❌ String concatenation: `"/home/user/" + userPath`
+✅ Use `Path.join()`: `Path.join("/home/user", userPath)`
+
+❌ Hardcoded separators: `"data\\file.txt"`
+✅ Use `Path.join()`: `Path.join("data", "file.txt")`
+
+❌ No variable expansion: `"$HOME/data"`
+✅ Expand variables: `"$HOME/data".replace("$HOME", os.homedir())`
+
+❌ Trust user paths: `Path.resolve(userInput)`
+✅ Validate first: `safeJoin(baseDir, userInput)`
+
+---
+
+## See Also
+
+- [Platform Pattern 2: FileSystem Operations](./platform-filesystem-operations.mdx) - File I/O patterns
+- [Platform Pattern 4: Terminal I/O](./platform-terminal-interactive.mdx) - User input patterns
+- [Error Handling Pattern 2: Propagation](./error-handling-pattern-propagation.mdx) - Error safety
+- [Error Handling Pattern 3: Custom Strategies](./error-handling-pattern-custom-strategies.mdx) - Validation errors

@@ -1,0 +1,149 @@
+---
+id: schema-basic-objects
+title: Basic Object Schemas
+category: objects
+skillLevel: beginner
+tags:
+  - schema
+  - object
+  - struct
+  - basics
+lessonOrder: 9
+---
+
+# Problem
+
+Most real data is objects with named fields. You need to define the expected shape, validate each field has the right type, and get a typed result. Without schema validation, you access properties that might not exist or have the wrong type.
+
+# Solution
+
+```typescript
+import { Schema } from "effect"
+
+// ============================================
+// BASIC STRUCT DEFINITION
+// ============================================
+
+const User = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  age: Schema.Number,
+  isActive: Schema.Boolean,
+})
+
+// Extract TypeScript type
+type User = typeof User.Type
+
+// Decode unknown data
+const decode = Schema.decodeUnknownSync(User)
+
+const user = decode({
+  id: "user_123",
+  name: "Alice",
+  age: 30,
+  isActive: true,
+})
+
+console.log(`✅ ${user.name}, age ${user.age}`)
+
+// ============================================
+// MULTIPLE STRUCTS
+// ============================================
+
+const Address = Schema.Struct({
+  street: Schema.String,
+  city: Schema.String,
+  zipCode: Schema.String,
+  country: Schema.String,
+})
+
+const Product = Schema.Struct({
+  sku: Schema.String,
+  name: Schema.String,
+  price: Schema.Number,
+  inStock: Schema.Boolean,
+})
+
+const Order = Schema.Struct({
+  orderId: Schema.String,
+  total: Schema.Number,
+  itemCount: Schema.Number,
+})
+
+type Address = typeof Address.Type
+type Product = typeof Product.Type
+type Order = typeof Order.Type
+
+// ============================================
+// VALIDATION IN ACTION
+// ============================================
+
+const decodeAddress = Schema.decodeUnknownSync(Address)
+const decodeProduct = Schema.decodeUnknownSync(Product)
+
+// Valid address
+const address = decodeAddress({
+  street: "123 Main St",
+  city: "Springfield",
+  zipCode: "12345",
+  country: "USA",
+})
+console.log(`✅ ${address.city}, ${address.country}`)
+
+// Valid product
+const product = decodeProduct({
+  sku: "WIDGET-001",
+  name: "Super Widget",
+  price: 29.99,
+  inStock: true,
+})
+console.log(`✅ ${product.name}: $${product.price}`)
+
+// Invalid - missing field
+try {
+  decodeAddress({
+    street: "123 Main St",
+    city: "Springfield",
+    // Missing zipCode and country!
+  })
+} catch {
+  console.log("❌ Missing required fields")
+}
+
+// Invalid - wrong type
+try {
+  decodeProduct({
+    sku: "WIDGET-001",
+    name: "Super Widget",
+    price: "twenty-nine",  // Should be number!
+    inStock: true,
+  })
+} catch {
+  console.log("❌ Price must be a number")
+}
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Schema.Struct** | Define object shape with named fields |
+| **Field schemas** | Each field validated independently |
+| **Type inference** | TypeScript type extracted automatically |
+| **All fields required** | Missing fields cause ParseError |
+| **Type checking** | Wrong types cause ParseError |
+
+# When to Use
+
+- API request/response bodies
+- Form data validation
+- Config file parsing
+- Database record validation
+- Any structured object data
+
+# Related Patterns
+
+- [Optional Fields](./optional-fields.md)
+- [Nested Objects](./nested-objects.md)
+- [Default Values](./default-values.md)
+

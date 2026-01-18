@@ -1,0 +1,201 @@
+---
+id: schema-form-nested-forms
+title: Nested Form Structures
+category: form-validation
+skillLevel: intermediate
+tags:
+  - schema
+  - form
+  - validation
+  - nested
+  - composition
+  - arrays
+lessonOrder: 24
+---
+
+# Problem
+
+Complex forms have nested data: a user form with multiple addresses, an order with line items, a profile with emergency contacts. These nested structures need validation at each level—addresses must have valid zipcodes, line items must have positive quantities. Standard validation gets messy with nested conditionals. You need composable schema validation that handles arbitrary nesting.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// 1. Define reusable sub-schemas
+const Address = Schema.Struct({
+  street: Schema.String.pipe(Schema.minLength(1)),
+  city: Schema.String.pipe(Schema.minLength(1)),
+  state: Schema.String.pipe(Schema.length(2)),
+  zipCode: Schema.String.pipe(
+    Schema.pattern(/^\d{5}(-\d{4})?$/)
+  ),
+})
+
+type Address = typeof Address.Type
+
+const LineItem = Schema.Struct({
+  productId: Schema.String,
+  quantity: Schema.Number.pipe(
+    Schema.int(),
+    Schema.positive()
+  ),
+  price: Schema.Number.pipe(Schema.positive()),
+})
+
+type LineItem = typeof LineItem.Type
+
+// 2. Compose into higher-level schemas
+const Order = Schema.Struct({
+  orderId: Schema.String,
+  customer: Schema.Struct({
+    name: Schema.String,
+    email: Schema.String,
+    billingAddress: Address,
+    shippingAddress: Address,
+  }),
+  items: Schema.Array(LineItem).pipe(
+    Schema.minItems(1),
+    Schema.annotations({
+      description: "Order must have at least one item",
+    })
+  ),
+  total: Schema.Number.pipe(Schema.positive()),
+})
+
+type Order = typeof Order.Type
+
+// 3. Validate entire nested structure
+const validateOrder = (input: unknown) =>
+  Effect.gen(function* () {
+    const order = yield* Schema.decodeUnknown(Order)(
+      input
+    ).pipe(
+      Effect.mapError((error) => ({
+        _tag: "ValidationError" as const,
+        message: `Invalid order: ${error.message}`,
+      }))
+    )
+
+    // Additional cross-validation
+    const itemTotal = order.items.reduce(
+      (sum, item) => sum + item.quantity * item.price,
+      0
+    )
+
+    if (Math.abs(itemTotal - order.total) > 0.01) {
+      return yield* Effect.fail({
+        _tag: "CalculationError" as const,
+        message: `Total mismatch: expected ${itemTotal}, got ${order.total}`,
+      })
+    }
+
+    return order
+  })
+
+// 4. Handle nested array validation
+const UserProfile = Schema.Struct({
+  username: Schema.String,
+  email: Schema.String,
+  addresses: Schema.Array(Address).pipe(
+    Schema.minItems(1),
+    Schema.maxItems(5)
+  ),
+  emergencyContacts: Schema.Array(
+    Schema.Struct({
+      name: Schema.String,
+      phone: Schema.String.pipe(
+        Schema.pattern(/^\d{10}$/)
+      ),
+      relationship: Schema.Literal(
+        "spouse",
+        "parent",
+        "sibling",
+        "other"
+      ),
+    })
+  ).pipe(Schema.optional),
+})
+
+type UserProfile = typeof UserProfile.Type
+
+// 5. Format nested errors for UI
+const flattenErrors = (error: any, prefix = ""): Record<string, string> => {
+  const errors: Record<string, string> = {}
+
+  for (const e of error.errors || []) {
+    const path = [...(e.path || [])].join(".")
+    const key = prefix ? `${prefix}.${path}` : path
+    errors[key] = e.message || "Validation failed"
+  }
+
+  return errors
+}
+
+// 6. Usage: Order validation
+const orderData = {
+  orderId: "ORD-001",
+  customer: {
+    name: "Alice Smith",
+    email: "alice@example.com",
+    billingAddress: {
+      street: "123 Main St",
+      city: "Springfield",
+      state: "IL",
+      zipCode: "62701",
+    },
+    shippingAddress: {
+      street: "456 Oak Ave",
+      city: "Chicago",
+      state: "IL",
+      zipCode: "60601-1234",
+    },
+  },
+  items: [
+    { productId: "PROD-1", quantity: 2, price: 29.99 },
+    { productId: "PROD-2", quantity: 1, price: 49.99 },
+  ],
+  total: 109.97,
+}
+
+Effect.runPromise(validateOrder(orderData))
+  .then((order) => {
+    console.log(
+      `✅ Order ${order.orderId} valid!`
+    )
+    console.log(
+      `  Shipping to: ${order.customer.shippingAddress.city}`
+    )
+  })
+  .catch((error) => {
+    console.error(`❌ Error:`, error.message)
+  })
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| Compose schemas | `Address` reused in multiple places |
+| `Schema.Array` | Validate arrays of objects with constraints |
+| `Schema.minItems/maxItems` | Enforce array length |
+| Nested validation | Each level validated automatically |
+| Type safety | `Order.items[0]` is known to be `LineItem` |
+| Cross-validation | Check calculated totals after all parts validate |
+| Flattened error paths | Map nested errors to UI field paths |
+
+# When to Use
+
+- Multi-address order checkout
+- User profiles with multiple contacts
+- Invoice/receipt with line items
+- Product with variants and options
+- Form wizards with nested sections
+- Any hierarchical data structure
+
+# Related Patterns
+
+- [Basic Form Validation](./basic.md)
+- [Collecting All Validation Errors](./collect-all-errors.md)
+- [Dependent Field Validation](./dependent-fields.md)
+- [Async Validation](./async-validation.md)

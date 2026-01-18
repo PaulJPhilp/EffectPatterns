@@ -1,0 +1,456 @@
+---
+title: 'Concurrency Pattern 2: Rate Limit Concurrent Access with Semaphore'
+id: concurrency-pattern-rate-limit-with-semaphore
+skillLevel: intermediate
+applicationPatternId: concurrency
+summary: >-
+  Use Semaphore to limit the number of concurrent operations, enabling
+  connection pooling, API rate limiting, and controlled resource access without
+  overload.
+tags:
+  - concurrency
+  - semaphore
+  - rate-limiting
+  - resource-management
+  - connection-pool
+  - backpressure
+rule:
+  description: >-
+    Use Semaphore to limit concurrent access to resources, preventing overload
+    and enabling fair resource distribution.
+related:
+  - run-background-tasks-with-fork
+  - understand-fibers-as-lightweight-threads
+  - process-collection-in-parallel-with-foreach
+author: effect_website
+lessonOrder: 3
+---
+
+## Guideline
+
+When you need to limit how many operations can run concurrently (e.g., max 10 database connections, max 5 API calls per second), use `Semaphore`. A Semaphore tracks a pool of permits; operations acquire a permit before proceeding and release it when done. Waiting operations are queued fairly.
+
+---
+
+## Rationale
+
+Resource constraints require limiting concurrency:
+
+- **Connection pools**: Database limited to N connections
+- **API rate limits**: Service allows only M requests per second
+- **Memory limits**: Large operations can't all run simultaneously
+- **CPU constraints**: Too many threads waste cycles on context switching
+- **Backpressure**: Prevent downstream from being overwhelmed
+
+Without Semaphore:
+
+- All operations run simultaneously, exhausting resources
+- Connection pool overflows, requests fail
+- Memory pressure causes garbage collection pauses
+- No fair ordering (first-come-first-served)
+
+With Semaphore:
+
+- Fixed concurrency limit
+- Fair queuing of waiting operations
+- Backpressure naturally flows upstream
+- Clear ownership of permits
+
+---
+
+## Good Example
+
+This example demonstrates limiting concurrent database connections using a Semaphore, preventing connection pool exhaustion.
+
+```typescript
+import { Effect, Semaphore, Fiber } from "effect";
+
+interface QueryResult {
+  readonly id: number;
+  readonly result: string;
+  readonly duration: number;
+}
+
+// Simulate a database query that holds a connection
+const executeQuery = (
+  queryId: number,
+  connectionId: number,
+  durationMs: number
+): Effect.Effect<QueryResult> =>
+  Effect.gen(function* () {
+    const startTime = Date.now();
+
+    yield* Effect.log(
+      `[Query ${queryId}] Using connection ${connectionId}, duration: ${durationMs}ms`
+    );
+
+    // Simulate query execution
+    yield* Effect.sleep(`${durationMs} millis`);
+
+    const duration = Date.now() - startTime;
+
+    return {
+      id: queryId,
+      result: `Result from query ${queryId}`,
+      duration,
+    };
+  });
+
+// Pool configuration
+interface ConnectionPoolConfig {
+  readonly maxConnections: number;
+  readonly queryTimeout?: number;
+}
+
+// Create a rate-limited query executor
+const createRateLimitedQueryExecutor = (
+  config: ConnectionPoolConfig
+): Effect.Effect<
+  (queryId: number, durationMs: number) => Effect.Effect<QueryResult>
+> =>
+  Effect.gen(function* () {
+    const semaphore = yield* Semaphore.make(config.maxConnections);
+    let connectionCounter = 0;
+
+    return (queryId: number, durationMs: number) =>
+      Effect.gen(function* () {
+        // Acquire a permit (wait if none available)
+        yield* Semaphore.acquire(semaphore);
+
+        const connectionId = ++connectionCounter;
+
+        // Use try-finally to ensure permit is released
+        const result = yield* executeQuery(queryId, connectionId, durationMs).pipe(
+          Effect.ensuring(
+            Semaphore.release(semaphore).pipe(
+              Effect.tap(() =>
+                Effect.log(`[Query ${queryId}] Released connection ${connectionId}`)
+              )
+            )
+          )
+        );
+
+        return result;
+      });
+  });
+
+// Simulate multiple queries arriving
+const program = Effect.gen(function* () {
+  const executor = yield* createRateLimitedQueryExecutor({
+    maxConnections: 3, // Only 3 concurrent connections
+  });
+
+  // Generate 10 queries with varying durations
+  const queries = Array.from({ length: 10 }, (_, i) => ({
+    id: i + 1,
+    duration: 500 + Math.random() * 1500, // 500-2000ms
+  }));
+
+  console.log(`\n[POOL] Starting with max 3 concurrent connections\n`);
+
+  // Execute all queries with concurrency limit
+  const results = yield* Effect.all(
+    queries.map((q) =>
+      executor(q.id, Math.round(q.duration)).pipe(Effect.fork)
+    )
+  ).pipe(
+    Effect.andThen((fibers) =>
+      Effect.all(fibers.map((fiber) => Fiber.join(fiber)))
+    )
+  );
+
+  console.log(`\n[POOL] All queries completed\n`);
+
+  // Summary
+  const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
+  const avgDuration = totalDuration / results.length;
+
+  console.log(`[SUMMARY]`);
+  console.log(`  Total queries: ${results.length}`);
+  console.log(`  Avg duration: ${Math.round(avgDuration)}ms`);
+  console.log(`  Total time: ${Math.max(...results.map((r) => r.duration))}ms (parallel)`);
+});
+
+Effect.runPromise(program);
+```
+
+This pattern:
+
+1. **Creates a Semaphore** with fixed permit count
+2. **Acquires permit** before using connection
+3. **Executes operation** while holding permit
+4. **Releases permit** in finally block (guaranteed)
+5. **Fair queuing** of waiting queries
+
+---
+
+## Advanced: Semaphore with Timeout
+
+Handle cases where permits aren't available within deadline:
+
+```typescript
+const createTimedRateLimitedExecutor = (
+  config: ConnectionPoolConfig & { readonly acquireTimeoutMs: number }
+): Effect.Effect<
+  (queryId: number, durationMs: number) => Effect.Effect<QueryResult>
+> =>
+  Effect.gen(function* () {
+    const semaphore = yield* Semaphore.make(config.maxConnections);
+    let connectionCounter = 0;
+
+    return (queryId: number, durationMs: number) =>
+      Effect.gen(function* () {
+        yield* Effect.log(
+          `[Query ${queryId}] Attempting to acquire connection (timeout: ${config.acquireTimeoutMs}ms)`
+        );
+
+        // Try to acquire with timeout
+        const acquired = yield* Semaphore.acquire(semaphore).pipe(
+          Effect.timeout(`${config.acquireTimeoutMs} millis`),
+          Effect.either
+        );
+
+        if (acquired._tag === "Left") {
+          yield* Effect.log(
+            `[Query ${queryId}] ❌ No connection available within timeout`
+          );
+          yield* Effect.fail(
+            new Error(
+              `Failed to acquire connection for query ${queryId} within ${config.acquireTimeoutMs}ms`
+            )
+          );
+        }
+
+        const connectionId = ++connectionCounter;
+
+        return yield* executeQuery(queryId, connectionId, durationMs).pipe(
+          Effect.ensuring(Semaphore.release(semaphore))
+        );
+      });
+  });
+```
+
+---
+
+## Advanced: Priority Semaphore
+
+Give priority to certain queries:
+
+```typescript
+interface PrioritizedQuery {
+  readonly queryId: number;
+  readonly duration: number;
+  readonly priority: number; // Higher = more important
+}
+
+const createPrioritySemaphore = (
+  maxPermits: number
+): Effect.Effect<{
+  acquire: (priority: number) => Effect.Effect<void>;
+  release: () => Effect.Effect<void>;
+}> =>
+  Effect.gen(function* () {
+    const semaphore = yield* Semaphore.make(maxPermits);
+    const waitingQueue: Array<{
+      priority: number;
+      resolve: () => void;
+    }> = [];
+
+    return {
+      acquire: (priority: number) =>
+        Effect.gen(function* () {
+          // Try immediate acquisition
+          const available = yield* semaphore.pipe(
+            Effect.flatMap(() => Effect.succeed(true)),
+            Effect.catchAll(() => Effect.succeed(false))
+          );
+
+          if (available) {
+            yield* Semaphore.acquire(semaphore);
+            return;
+          }
+
+          // Add to priority queue
+          yield* new Promise<void>((resolve) => {
+            waitingQueue.push({ priority, resolve });
+            waitingQueue.sort((a, b) => b.priority - a.priority);
+
+            // Check if we can dequeue
+            setImmediate(() => {
+              const next = waitingQueue.shift();
+              if (next) {
+                next.resolve();
+              }
+            });
+          });
+        }),
+
+      release: () =>
+        Effect.gen(function* () {
+          yield* Semaphore.release(semaphore);
+
+          // Dequeue next waiting operation
+          const next = waitingQueue.shift();
+          if (next) {
+            next.resolve();
+          }
+        }),
+    };
+  });
+```
+
+---
+
+## Advanced: Adaptive Concurrency Based on Success Rate
+
+Adjust permit count based on failure rates:
+
+```typescript
+interface AdaptiveConfig extends ConnectionPoolConfig {
+  readonly initialConnections: number;
+  readonly minConnections: number;
+  readonly maxConnectionsAllowed: number;
+  readonly failureThreshold: number;
+}
+
+const createAdaptiveSemaphore = (
+  config: AdaptiveConfig
+): Effect.Effect<{
+  acquire: () => Effect.Effect<void>;
+  release: (success: boolean) => Effect.Effect<void>;
+}> =>
+  Effect.gen(function* () {
+    const semaphore = yield* Semaphore.make(config.initialConnections);
+    let totalOperations = 0;
+    let failedOperations = 0;
+    let currentPermits = config.initialConnections;
+
+    return {
+      acquire: () => Semaphore.acquire(semaphore),
+
+      release: (success: boolean) =>
+        Effect.gen(function* () {
+          totalOperations++;
+          if (!success) failedOperations++;
+
+          yield* Semaphore.release(semaphore);
+
+          // Adjust permits every 100 operations
+          if (totalOperations % 100 === 0) {
+            const failureRate = failedOperations / totalOperations;
+
+            if (failureRate > config.failureThreshold) {
+              // Too many failures, reduce concurrency
+              if (currentPermits > config.minConnections) {
+                currentPermits--;
+                yield* Effect.log(
+                  `[ADAPTIVE] High failure rate (${(failureRate * 100).toFixed(1)}%), reducing to ${currentPermits} permits`
+                );
+              }
+            } else if (failureRate < config.failureThreshold * 0.5) {
+              // Low failure rate, can increase concurrency
+              if (currentPermits < config.maxConnectionsAllowed) {
+                currentPermits++;
+                yield* Effect.log(
+                  `[ADAPTIVE] Low failure rate (${(failureRate * 100).toFixed(1)}%), increasing to ${currentPermits} permits`
+                );
+              }
+            }
+
+            // Reset counters
+            totalOperations = 0;
+            failedOperations = 0;
+          }
+        }),
+    };
+  });
+```
+
+---
+
+## Advanced: Metrics and Monitoring
+
+Track semaphore usage for observability:
+
+```typescript
+interface SemaphoreMetrics {
+  readonly acquiredCount: number;
+  readonly waitingCount: number;
+  readonly totalAcquisitions: number;
+  readonly totalWaitTime: number;
+  readonly avgWaitTime: number;
+}
+
+const createMonitoredSemaphore = (
+  maxPermits: number
+): Effect.Effect<{
+  acquire: () => Effect.Effect<void>;
+  release: () => Effect.Effect<void>;
+  metrics: () => SemaphoreMetrics;
+}> =>
+  Effect.gen(function* () {
+    const semaphore = yield* Semaphore.make(maxPermits);
+    const metrics = {
+      acquiredCount: 0,
+      waitingCount: 0,
+      totalAcquisitions: 0,
+      totalWaitTime: 0,
+      avgWaitTime: 0,
+    };
+
+    return {
+      acquire: () =>
+        Effect.gen(function* () {
+          const startWait = Date.now();
+          metrics.waitingCount++;
+
+          yield* Semaphore.acquire(semaphore);
+
+          const waitTime = Date.now() - startWait;
+          metrics.acquiredCount++;
+          metrics.waitingCount--;
+          metrics.totalAcquisitions++;
+          metrics.totalWaitTime += waitTime;
+          metrics.avgWaitTime =
+            metrics.totalWaitTime / metrics.totalAcquisitions;
+        }),
+
+      release: () =>
+        Effect.gen(function* () {
+          yield* Semaphore.release(semaphore);
+          metrics.acquiredCount--;
+        }),
+
+      metrics: () => ({ ...metrics }),
+    };
+  });
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use Semaphore when:**
+
+- Need to limit concurrent resource usage (connections, threads)
+- Implementing connection pools
+- Rate limiting API calls or requests
+- Preventing resource exhaustion
+- Coordinating fair access to limited resources
+- Need FIFO or priority-based queuing
+
+⚠️ **Trade-offs:**
+
+- Waiting fibers are queued (adds latency)
+- Must remember to release permits (use try-finally)
+- Tuning permit count requires experimentation
+- Doesn't prevent thundering herd on availability
+
+---
+
+## See Also
+
+- [Run Background Tasks with Fork](./run-background-tasks-with-fork.mdx) - Background fiber execution
+- [Process Collection in Parallel with Foreach](./process-collection-in-parallel-with-foreach.mdx) - Parallel iteration
+- [Understand Fibers as Lightweight Threads](./understand-fibers-as-lightweight-threads.mdx) - Fiber concurrency
+- [Concurrency Pattern 1: Coordinate with Deferred](./concurrency-pattern-coordinate-with-deferred.mdx) - Async signaling

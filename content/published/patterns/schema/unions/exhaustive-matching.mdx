@@ -1,0 +1,326 @@
+---
+id: schema-exhaustive-matching
+title: Exhaustive Pattern Matching and Never Types
+category: unions
+skillLevel: intermediate
+tags:
+  - schema
+  - exhaustive-matching
+  - pattern-matching
+  - type-safety
+  - never-types
+lessonOrder: 14
+---
+
+# Problem
+
+A union has 5 variants. Developer writes a switch with 4 cases and forgets one. Code compiles. Six months later, a user hits the missing case and the app crashes. Without compiler checks, exhaustiveness is impossible to enforce. You need the type system to guarantee you've handled every variant—any missing case should be a compile error, not a runtime bug.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// ============================================
+// 1. Define comprehensive union
+// ============================================
+
+const OrderStatusEvent = Schema.Union(
+  Schema.Struct({
+    _tag: Schema.Literal("OrderCreated"),
+    orderId: Schema.String,
+    customerId: Schema.String,
+  }),
+  Schema.Struct({
+    _tag: Schema.Literal("OrderConfirmed"),
+    orderId: Schema.String,
+    confirmationCode: Schema.String,
+  }),
+  Schema.Struct({
+    _tag: Schema.Literal("OrderShipped"),
+    orderId: Schema.String,
+    trackingNumber: Schema.String,
+  }),
+  Schema.Struct({
+    _tag: Schema.Literal("OrderDelivered"),
+    orderId: Schema.String,
+    deliveryDate: Schema.Date,
+  }),
+  Schema.Struct({
+    _tag: Schema.Literal("OrderCancelled"),
+    orderId: Schema.String,
+    reason: Schema.String,
+  })
+)
+
+type OrderStatusEvent = typeof OrderStatusEvent.Type
+
+// ============================================
+// 2. Exhaustive handler pattern - requires all cases
+// ============================================
+
+// This function MUST handle all OrderStatusEvent variants
+// Missing a case = TypeScript error
+const handleOrderEvent = (event: OrderStatusEvent): string => {
+  // TypeScript ensures we handle every case
+  const result: string = (() => {
+    switch (event._tag) {
+      case "OrderCreated":
+        return `📝 Order created: ${event.orderId} for customer ${event.customerId}`
+
+      case "OrderConfirmed":
+        return `✅ Order confirmed: ${event.confirmationCode}`
+
+      case "OrderShipped":
+        return `🚚 Shipped with tracking: ${event.trackingNumber}`
+
+      case "OrderDelivered":
+        return `📦 Delivered on ${event.deliveryDate.toDateString()}`
+
+      case "OrderCancelled":
+        return `❌ Cancelled: ${event.reason}`
+
+      // If we forgot a case above, this exhaustion check catches it:
+      // (This will be unreachable if all cases are handled)
+      default:
+        const _exhaustive: never = event
+        return _exhaustive
+    }
+  })()
+
+  return result
+}
+
+// ============================================
+// 3. Effect-based exhaustive handler
+// ============================================
+
+const processOrderEventEffect = (
+  event: OrderStatusEvent
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    // Exhaustive match ensures all cases handled
+    switch (event._tag) {
+      case "OrderCreated": {
+        yield* Effect.log(`Recording order creation`)
+        yield* Effect.log(`Customer: ${event.customerId}`)
+        break
+      }
+
+      case "OrderConfirmed": {
+        yield* Effect.log(`Sending confirmation email`)
+        yield* Effect.log(`Confirmation code: ${event.confirmationCode}`)
+        break
+      }
+
+      case "OrderShipped": {
+        yield* Effect.log(`Updating shipping status`)
+        yield* Effect.log(`Notifying customer of tracking number`)
+        break
+      }
+
+      case "OrderDelivered": {
+        yield* Effect.log(`Recording delivery`)
+        yield* Effect.log(`Delivery date: ${event.deliveryDate.toISOString()}`)
+        break
+      }
+
+      case "OrderCancelled": {
+        yield* Effect.log(`Processing cancellation`)
+        yield* Effect.log(`Reason: ${event.reason}`)
+        break
+      }
+
+      // TypeScript ensures this never executes if all cases handled:
+      default:
+        const _exhaustive: never = event
+        yield* Effect.fail(_exhaustive)
+    }
+  })
+
+// ============================================
+// 4. Exhaustiveness helper function
+// ============================================
+
+// This function only accepts "never" type
+// If you pass anything else, it's a compile error
+const assertNever = (value: never): never => {
+  throw new Error(`Unhandled value: ${value}`)
+}
+
+// Alternative exhaustive handler using assertNever
+const handleWithAssertNever = (event: OrderStatusEvent): string => {
+  switch (event._tag) {
+    case "OrderCreated":
+      return `Order created: ${event.orderId}`
+
+    case "OrderConfirmed":
+      return `Order confirmed: ${event.confirmationCode}`
+
+    case "OrderShipped":
+      return `Order shipped: ${event.trackingNumber}`
+
+    case "OrderDelivered":
+      return `Order delivered: ${event.deliveryDate.toDateString()}`
+
+    case "OrderCancelled":
+      return `Order cancelled: ${event.reason}`
+
+    default:
+      // If a new variant is added and we don't handle it,
+      // TypeScript error: "Type '...' is not assignable to type 'never'"
+      return assertNever(event)
+  }
+}
+
+// ============================================
+// 5. Pattern matching with Effect.match
+// ============================================
+
+const orderEventMatcher = (event: OrderStatusEvent): string =>
+  Effect.match(event, {
+    onOrderCreated: (e) => `Created: ${e.orderId}`,
+    onOrderConfirmed: (e) => `Confirmed: ${e.confirmationCode}`,
+    onOrderShipped: (e) => `Shipped: ${e.trackingNumber}`,
+    onOrderDelivered: (e) => `Delivered: ${e.deliveryDate.toDateString()}`,
+    onOrderCancelled: (e) => `Cancelled: ${e.reason}`,
+  })
+
+// ============================================
+// 6. Stateful event processor
+// ============================================
+
+class OrderProcessor {
+  private states = new Map<string, OrderStatusEvent[]>()
+
+  process(event: OrderStatusEvent): void {
+    const orderId = (() => {
+      // Exhaustive access to orderId from all variants
+      switch (event._tag) {
+        case "OrderCreated":
+          return event.orderId
+        case "OrderConfirmed":
+          return event.orderId
+        case "OrderShipped":
+          return event.orderId
+        case "OrderDelivered":
+          return event.orderId
+        case "OrderCancelled":
+          return event.orderId
+        default:
+          const _: never = event
+          return _
+      }
+    })()
+
+    if (!this.states.has(orderId)) {
+      this.states.set(orderId, [])
+    }
+
+    this.states.get(orderId)!.push(event)
+    console.log(handleOrderEvent(event))
+  }
+
+  getHistory(orderId: string): OrderStatusEvent[] {
+    return this.states.get(orderId) || []
+  }
+}
+
+// ============================================
+// 7. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  console.log("=== Exhaustive Pattern Matching ===\n")
+
+  const processor = new OrderProcessor()
+
+  // All possible variants
+  const events: OrderStatusEvent[] = [
+    {
+      _tag: "OrderCreated",
+      orderId: "ord_123",
+      customerId: "cust_456",
+    },
+    {
+      _tag: "OrderConfirmed",
+      orderId: "ord_123",
+      confirmationCode: "CONF_ABC123",
+    },
+    {
+      _tag: "OrderShipped",
+      orderId: "ord_123",
+      trackingNumber: "1Z999AA10123456784",
+    },
+    {
+      _tag: "OrderDelivered",
+      orderId: "ord_123",
+      deliveryDate: new Date("2025-12-20"),
+    },
+  ]
+
+  console.log("Processing events with exhaustive matching:\n")
+
+  for (const event of events) {
+    processor.process(event)
+    // All these functions enforce exhaustiveness:
+    yield* Effect.log(`Handler: ${handleOrderEvent(event)}`)
+    yield* Effect.log(`AssertNever: ${handleWithAssertNever(event)}`)
+    yield* processOrderEventEffect(event)
+  }
+
+  console.log("\n=== Order History ===\n")
+
+  const history = processor.getHistory("ord_123")
+  console.log(`${history.length} events for order ord_123:`)
+  for (const event of history) {
+    console.log(`  ${event._tag}`)
+  }
+
+  // Show what happens if we add a new variant:
+  console.log("\n=== Adding New Variant ===")
+  console.log("If you add a new _tag to OrderStatusEvent:")
+  console.log("- TypeScript ERROR in handleOrderEvent (missing case)")
+  console.log("- TypeScript ERROR in handleWithAssertNever (missing case)")
+  console.log("- TypeScript ERROR in processOrderEventEffect (missing case)")
+  console.log("- COMPILE FAILS until all handlers updated ✅")
+
+  return history
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Exhaustive matching complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Never type** | `const x: never` catches missing variants at compile time |
+| **Exhaustive checks** | TypeScript error if switch doesn't cover all cases |
+| **Impossible to forget** | Adding variant forces updates to all handlers |
+| **Type narrowing** | After each case, TypeScript knows exact type |
+| **assertNever pattern** | Runtime check that never executes if exhaustive |
+| **Default case trap** | `default: never` ensures no unhandled variants |
+| **Refactoring safety** | Rename/add variant → immediate compiler errors |
+| **Documentation** | Code shows all possible states at a glance |
+
+# When to Use
+
+- State machines with fixed set of states
+- Event sourcing systems
+- Domain models with variants
+- Domain-driven design discriminated unions
+- Message/command handlers
+- Feature flag handling with multiple options
+- Request/response parsing with variants
+- Workflow engines with state transitions
+
+# Related Patterns
+
+- [Basic Unions](./basic-unions.md)
+- [Discriminated Unions](./discriminated-unions.md)
+- [Polymorphic APIs](./polymorphic-apis.md)
+- [Error Aggregation](../error-handling/error-aggregation.md)

@@ -1,0 +1,179 @@
+---
+title: Read Effect Type Errors
+id: tooling-type-errors
+skillLevel: beginner
+applicationPatternId: tooling-and-debugging
+summary: Learn how to read and understand Effect's TypeScript error messages.
+tags:
+  - tooling
+  - debugging
+  - typescript
+  - errors
+  - getting-started
+rule:
+  description: >-
+    Effect errors are verbose but structured - learn to extract the key
+    information.
+author: PaulJPhilp
+related:
+  - tooling-hello-world
+  - error-management-hello-world
+lessonOrder: 1
+---
+
+## Guideline
+
+Effect type errors can be long, but they follow a pattern. Learn to scan for the key parts.
+
+---
+
+## Rationale
+
+Effect's type system catches many bugs at compile time, but:
+
+1. **Effect types are complex** - Three type parameters
+2. **Errors are nested** - Multiple layers of generics
+3. **Messages are verbose** - TypeScript shows everything
+
+Understanding the pattern makes errors manageable.
+
+---
+
+## Common Type Errors
+
+### 1. Missing Service Dependency
+
+**Error:**
+```
+Type 'Effect<User, never, UserService>' is not assignable to type 'Effect<User, never, never>'.
+  Type 'UserService' is not assignable to type 'never'.
+```
+
+**What it means:** You're using a service but not providing it.
+
+**Fix:**
+```typescript
+// Before - service not provided
+const result = Effect.runPromise(getUser("123"))  // ❌
+
+// After - provide the service
+const result = Effect.runPromise(
+  getUser("123").pipe(
+    Effect.provideService(UserService, myUserService)
+  )
+)  // ✅
+```
+
+### 2. Unhandled Error Type
+
+**Error:**
+```
+Type 'Effect<User, NotFoundError, never>' is not assignable to type 'Effect<User, never, never>'.
+  Type 'NotFoundError' is not assignable to type 'never'.
+```
+
+**What it means:** The effect can fail, but you're treating it as if it can't.
+
+**Fix:**
+```typescript
+// Before - error not handled
+const result = Effect.runPromise(findUser("123"))  // ❌
+
+// After - handle the error
+const result = Effect.runPromise(
+  findUser("123").pipe(
+    Effect.catchAll(() => Effect.succeed(defaultUser))
+  )
+)  // ✅
+```
+
+### 3. Wrong Return Type
+
+**Error:**
+```
+Type 'string' is not assignable to type 'Effect<string, never, never>'.
+```
+
+**What it means:** You returned a plain value where an Effect was expected.
+
+**Fix:**
+```typescript
+// Before - plain return
+const getName = () => "Alice"  // ❌
+
+// After - wrap in Effect
+const getName = () => Effect.succeed("Alice")  // ✅
+```
+
+### 4. Generator Yield Type Mismatch
+
+**Error:**
+```
+Type 'Effect<number, Error, never>' is not assignable to parameter of type 'Effect<number, never, never>'.
+```
+
+**What it means:** In a generator, one effect has an error type that others don't.
+
+**Fix:**
+```typescript
+// Before - mixing error types
+const program = Effect.gen(function* () {
+  const a = yield* Effect.succeed(1)
+  const b = yield* mayFail()  // Has Error type
+  return a + b  // ❌ Types don't match
+})
+
+// After - handle or propagate consistently
+const program = Effect.gen(function* () {
+  const a = yield* Effect.succeed(1)
+  const b = yield* mayFail().pipe(
+    Effect.catchAll(() => Effect.succeed(0))
+  )
+  return a + b  // ✅
+})
+```
+
+---
+
+## Reading Effect Type Signatures
+
+Effect has three type parameters:
+
+```typescript
+Effect<Success, Error, Requirements>
+//      ^        ^       ^
+//      |        |       What services it needs
+//      |        What errors it can fail with
+//      What it returns on success
+```
+
+### Examples:
+
+| Type | Meaning |
+|------|---------|
+| `Effect<number, never, never>` | Returns number, can't fail, no dependencies |
+| `Effect<User, NotFoundError, never>` | Returns User, can fail with NotFoundError |
+| `Effect<void, never, Database>` | Needs Database service, returns nothing |
+| `Effect<string, Error, Config \| Logger>` | Needs Config and Logger, can fail |
+
+---
+
+## Tips for Reading Errors
+
+1. **Scroll to the end** - The most specific error is usually last
+2. **Look for your types** - Your domain types point to the problem
+3. **Check the three positions** - Success, Error, Requirements
+4. **Compare what is vs what's expected** - The error shows both
+5. **Use the Effect extension** - It simplifies type display
+
+---
+
+## Quick Fixes
+
+| Problem | Typical Fix |
+|---------|-------------|
+| `X is not assignable to never` (Error position) | Handle the error |
+| `X is not assignable to never` (Requirements) | Provide the service |
+| `Type 'X' is not assignable to 'Effect<...>'` | Wrap with Effect.succeed |
+| Generator type mismatch | Ensure all yields have compatible types |
+

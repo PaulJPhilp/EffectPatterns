@@ -1,0 +1,257 @@
+description: Implement retry strategies in sinks to handle transient failures and improve resilience without manual intervention.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Sink Pattern 6: Retry Failed Stream Operations
+**Rule:** Implement retry strategies in sinks to handle transient failures and improve resilience without manual intervention.
+
+### Example
+This example demonstrates retrying database writes with exponential backoff, tracking attempts, and falling back on permanent failures.
+
+```typescript
+import { Effect, Stream, Sink, Chunk, Duration, Schedule } from "effect";
+
+interface UserRecord {
+  readonly userId: string;
+  readonly name: string;
+  readonly email: string;
+}
+
+class WriteError extends Error {
+  readonly isTransient: boolean;
+
+  constructor(message: string, isTransient: boolean = true) {
+    super(message);
+    this.name = "WriteError";
+    this.isTransient = isTransient;
+  }
+}
+
+// Mock database that occasionally fails
+const database = {
+  failureRate: 0.3, // 30% transient failure rate
+  permanentFailureRate: 0.05, // 5% permanent failure rate
+
+  insertUser: (user: UserRecord): Effect.Effect<void, WriteError> =>
+    Effect.gen(function* () {
+      const rand = Math.random();
+
+      // Permanent failure (e.g., constraint violation)
+      if (rand < database.permanentFailureRate) {
+        throw new WriteError(
+          `Permanent: User ${user.userId} already exists`,
+          false
+        );
+      }
+
+      // Transient failure (e.g., connection timeout)
+      if (rand < database.permanentFailureRate + database.failureRate) {
+        throw new WriteError(
+          `Transient: Connection timeout writing ${user.userId}`,
+          true
+        );
+      }
+
+      // Success
+      console.log(`✓ Wrote user ${user.userId}`);
+    }),
+};
+
+// Retry configuration
+interface RetryConfig {
+  readonly maxAttempts: number;
+  readonly initialDelayMs: number;
+  readonly maxDelayMs: number;
+  readonly backoffFactor: number;
+}
+
+const defaultRetryConfig: RetryConfig = {
+  maxAttempts: 5,
+  initialDelayMs: 100, // Start with 100ms
+  maxDelayMs: 5000, // Cap at 5 seconds
+  backoffFactor: 2, // Double each time
+};
+
+// Result tracking
+interface OperationResult {
+  readonly succeeded: number;
+  readonly transientFailures: number;
+  readonly permanentFailures: number;
+  readonly detailedStats: Array<{
+    readonly userId: string;
+    readonly attempts: number;
+    readonly status: "success" | "transient-failed" | "permanent-failed";
+  }>;
+}
+
+// Create a sink with retry logic
+const createRetrySink = (config: RetryConfig): Sink.Sink<OperationResult, never, UserRecord> =>
+  Sink.fold(
+    {
+      succeeded: 0,
+      transientFailures: 0,
+      permanentFailures: 0,
+      detailedStats: [],
+    },
+    (state, user) =>
+      Effect.gen(function* () {
+        let lastError: WriteError | null = null;
+        let attempts = 0;
+
+        // Retry loop
+        for (attempts = 1; attempts <= config.maxAttempts; attempts++) {
+          try {
+            yield* database.insertUser(user);
+
+            // Success!
+            console.log(
+              `[${user.userId}] Success on attempt ${attempts}/${config.maxAttempts}`
+            );
+
+            return {
+              ...state,
+              succeeded: state.succeeded + 1,
+              detailedStats: [
+                ...state.detailedStats,
+                {
+                  userId: user.userId,
+                  attempts,
+                  status: "success",
+                },
+              ],
+            };
+          } catch (error) {
+            lastError = error as WriteError;
+
+            if (!lastError.isTransient) {
+              // Permanent failure, don't retry
+              console.log(
+                `[${user.userId}] Permanent failure: ${lastError.message}`
+              );
+
+              return {
+                ...state,
+                permanentFailures: state.permanentFailures + 1,
+                detailedStats: [
+                  ...state.detailedStats,
+                  {
+                    userId: user.userId,
+                    attempts,
+                    status: "permanent-failed",
+                  },
+                ],
+              };
+            }
+
+            // Transient failure, retry if attempts remain
+            if (attempts < config.maxAttempts) {
+              // Calculate delay with exponential backoff
+              let delayMs = config.initialDelayMs * Math.pow(config.backoffFactor, attempts - 1);
+              delayMs = Math.min(delayMs, config.maxDelayMs);
+
+              // Add jitter (±10%)
+              const jitter = delayMs * 0.1;
+              delayMs = delayMs + (Math.random() - 0.5) * 2 * jitter;
+
+              console.log(
+                `[${user.userId}] Transient failure (attempt ${attempts}/${config.maxAttempts}): ${lastError.message}`
+              );
+              console.log(`  Retrying in ${Math.round(delayMs)}ms...`);
+
+              yield* Effect.sleep(Duration.millis(Math.round(delayMs)));
+            }
+          }
+        }
+
+        // All retries exhausted
+        console.log(
+          `[${user.userId}] Failed after ${config.maxAttempts} attempts`
+        );
+
+        return {
+          ...state,
+          transientFailures: state.transientFailures + 1,
+          detailedStats: [
+            ...state.detailedStats,
+            {
+              userId: user.userId,
+              attempts: config.maxAttempts,
+              status: "transient-failed",
+            },
+          ],
+        };
+      }),
+    (state) =>
+      Effect.gen(function* () {
+        console.log(`\n[SUMMARY]`);
+        console.log(`  Succeeded:           ${state.succeeded}`);
+        console.log(`  Transient Failures:  ${state.transientFailures}`);
+        console.log(`  Permanent Failures:  ${state.permanentFailures}`);
+        console.log(`  Total:               ${state.detailedStats.length}`);
+
+        // Show detailed stats
+        const failed = state.detailedStats.filter((s) => s.status !== "success");
+        if (failed.length > 0) {
+          console.log(`\n[FAILURES]`);
+          failed.forEach((stat) => {
+            console.log(
+              `  ${stat.userId}: ${stat.attempts} attempts (${stat.status})`
+            );
+          });
+        }
+
+        return state;
+      })
+  );
+
+// Simulate a stream of users to insert
+const userStream: Stream.Stream<UserRecord> = Stream.fromIterable([
+  { userId: "user-1", name: "Alice", email: "alice@example.com" },
+  { userId: "user-2", name: "Bob", email: "bob@example.com" },
+  { userId: "user-3", name: "Charlie", email: "charlie@example.com" },
+  { userId: "user-4", name: "Diana", email: "diana@example.com" },
+  { userId: "user-5", name: "Eve", email: "eve@example.com" },
+]);
+
+// Run the stream with retry sink
+const program = Effect.gen(function* () {
+  const result = yield* userStream.pipe(Stream.run(createRetrySink(defaultRetryConfig)));
+  console.log(`\nProcessing complete.`);
+});
+
+Effect.runPromise(program);
+```
+
+This pattern:
+
+1. **Attempts operation** up to max retries
+2. **Distinguishes transient vs. permanent failures**
+3. **Uses exponential backoff** to space retries
+4. **Adds jitter** to prevent thundering herd
+5. **Tracks detailed stats** for monitoring
+6. **Reports summary** of outcomes
+
+---
+
+**Explanation:**  
+Transient failures are common in distributed systems:
+
+- **Network timeouts**: Temporary connectivity issues resolve themselves
+- **Rate limiting**: Service recovers once rate limit window resets
+- **Temporary unavailability**: Services restart or scale up
+- **Circuit breaker trips**: Service recovers after backoff period
+
+Without retry logic:
+
+- Every transient failure causes data loss or stream interruption
+- Manual intervention required to restart
+- System appears less reliable than it actually is
+
+With intelligent retry logic:
+
+- Automatic recovery from transient failures
+- Exponential backoff prevents thundering herd
+- Clear visibility into which operations failed permanently
+- Data flows continuously despite temporary issues
+
+---

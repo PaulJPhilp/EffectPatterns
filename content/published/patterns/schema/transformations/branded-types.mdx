@@ -1,0 +1,234 @@
+---
+id: schema-branded-types
+title: Branded Types for Type-Safe IDs and Strings
+category: transformations
+skillLevel: intermediate
+tags:
+  - schema
+  - branded-types
+  - type-safety
+  - validation
+  - domain-types
+  - ids
+lessonOrder: 4
+---
+
+# Problem
+
+Your domain has user IDs, product IDs, email addresses. They're all strings at runtime, but they mean different things. A function accepting `string` could receive any string—wrong ID format, email instead of UUID, etc. You need compile-time type safety that prevents accidentally mixing different ID types or invalid formats. Regular types don't cut it; you need branded types that are distinct at the type level but validated at the value level.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// 1. Define branded types with validation
+const UserId = Schema.String.pipe(
+  Schema.minLength(1),
+  Schema.pattern(/^user_[a-z0-9]{12}$/),
+  Schema.brand("UserId")
+)
+
+type UserId = typeof UserId.Type
+
+const ProductId = Schema.String.pipe(
+  Schema.minLength(1),
+  Schema.pattern(/^prod_[a-z0-9]{12}$/),
+  Schema.brand("ProductId")
+)
+
+type ProductId = typeof ProductId.Type
+
+// 2. Email branded type
+const Email = Schema.String.pipe(
+  Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/),
+  Schema.brand("Email")
+)
+
+type Email = typeof Email.Type
+
+// 3. UUID branded type
+const UUID = Schema.String.pipe(
+  Schema.pattern(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  ),
+  Schema.brand("UUID")
+)
+
+type UUID = typeof UUID.Type
+
+// 4. Positive integer branded type
+const PositiveInt = Schema.Number.pipe(
+  Schema.int(),
+  Schema.greaterThan(0),
+  Schema.brand("PositiveInt")
+)
+
+type PositiveInt = typeof PositiveInt.Type
+
+// 5. Slug branded type (URL-safe string)
+const Slug = Schema.String.pipe(
+  Schema.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  Schema.maxLength(50),
+  Schema.brand("Slug")
+)
+
+type Slug = typeof Slug.Type
+
+// 6. Define domain model using branded types
+const User = Schema.Struct({
+  id: UserId,
+  email: Email,
+  name: Schema.String,
+})
+
+type User = typeof User.Type
+
+const Product = Schema.Struct({
+  id: ProductId,
+  slug: Slug,
+  sku: Schema.String.pipe(Schema.brand("SKU")),
+  price: PositiveInt,
+})
+
+type Product = typeof Product.Type
+
+// 7. Create validators
+const validateUserId = Schema.decodeUnknown(UserId)
+const validateEmail = Schema.decodeUnknown(Email)
+const validateUUID = Schema.decodeUnknown(UUID)
+const validateUser = Schema.decodeUnknown(User)
+const validateProduct = Schema.decodeUnknown(Product)
+
+// 8. Database access with branded types
+class UserRepository {
+  // Type-safe: only accepts UserId
+  async findById(id: UserId): Promise<User | null> {
+    console.log(`Fetching user with ID: ${id}`)
+    // Simulate database query
+    return {
+      id,
+      email: "alice@example.com" as Email,
+      name: "Alice",
+    }
+  }
+
+  async findByEmail(email: Email): Promise<User | null> {
+    console.log(`Fetching user with email: ${email}`)
+    return null
+  }
+
+  async create(data: { email: Email; name: string }): Promise<User> {
+    console.log(`Creating user: ${data.email}`)
+    return {
+      id: "user_abc123def456" as UserId,
+      email: data.email,
+      name: data.name,
+    }
+  }
+}
+
+// 9. Functions that enforce branded type contracts
+const sendWelcomeEmail = (email: Email): Effect.Effect<void> =>
+  Effect.sync(() => {
+    console.log(`📧 Sending welcome email to ${email}`)
+  })
+
+const logUserAccess = (userId: UserId, action: string): Effect.Effect<void> =>
+  Effect.sync(() => {
+    console.log(`🔐 User ${userId} performed action: ${action}`)
+  })
+
+// 10. Application logic
+const appLogic = Effect.gen(function* () {
+  const repo = new UserRepository()
+
+  // Parse and validate raw input
+  const userId = yield* Effect.tryPromise({
+    try: () => validateUserId("user_xyz789abc123"),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Invalid user ID: ${msg}`)
+    },
+  })
+
+  // Parse email
+  const email = yield* Effect.tryPromise({
+    try: () => validateEmail("alice@example.com"),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Invalid email: ${msg}`)
+    },
+  })
+
+  // Type-safe: email cannot be passed where userId is expected
+  yield* logUserAccess(userId, "login")
+
+  // Type-safe: userId cannot be passed where email is expected
+  yield* sendWelcomeEmail(email)
+
+  // Fetch user (only accepts valid UserId)
+  const user = yield* Effect.promise(() => repo.findById(userId))
+
+  if (user) {
+    console.log(`✅ Found user: ${user.name}`)
+  }
+
+  // Parse product data
+  const product = yield* Effect.tryPromise({
+    try: () =>
+      validateProduct({
+        id: "prod_sku789def123",
+        slug: "awesome-product",
+        sku: "SKU-12345",
+        price: 9999,
+      }),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Invalid product: ${msg}`)
+    },
+  })
+
+  console.log(`\n✅ Product loaded: ${product.id} (slug: ${product.slug})`)
+
+  return { userId, email, user, product }
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then((data) => {
+    console.log("\n✅ Application completed")
+  })
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Brand nominal typing** | Different branded strings are distinct types at compile time |
+| **Validation at boundary** | Patterns enforce format constraints (UUID, email, ID prefix) |
+| **Type safety** | Compiler prevents mixing UserId with ProductId or Email |
+| **Domain clarity** | Code documents intent: `function(userId: UserId)` is explicit |
+| **Immutable after creation** | Brand is sealed; no runtime type conversion |
+| **Composable validation** | Layer multiple constraints (pattern, minLength, maxLength) |
+| **Zero runtime overhead** | Brands are erased; only exist in TypeScript type system |
+| **Error messages** | Schema validation explains why a value failed |
+
+# When to Use
+
+- Entity IDs (User ID, Product ID, Order ID) that need distinct types
+- Email addresses that must be validated and distinct from other strings
+- UUIDs, ULIDs, or other standardized ID formats
+- Slugs or URL-safe identifiers
+- Positive/negative integers with semantic meaning
+- Financial amounts, percentages, or other bounded numbers
+- Domain-specific strings (country codes, language codes)
+- Any value that should never accidentally be mixed with similar types
+
+# Related Patterns
+
+- [Basic Schema Transformations](./basic-transforms.md)
+- [Bidirectional Transformations](./bidirectional.md)
+- [Data Normalization](./data-normalization.md)
+- [Web Standards Validation](../web-standards-validation/email.md)

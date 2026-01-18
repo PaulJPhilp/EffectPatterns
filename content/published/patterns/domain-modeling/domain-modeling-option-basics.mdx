@@ -1,0 +1,163 @@
+---
+title: Handle Missing Values with Option
+id: domain-modeling-option-basics
+skillLevel: beginner
+applicationPatternId: domain-modeling
+summary: >-
+  Use Option to explicitly model values that might not exist, avoiding
+  null/undefined bugs.
+tags:
+  - domain-modeling
+  - option
+  - null-safety
+  - getting-started
+rule:
+  description: >-
+    Use Option instead of null/undefined to make missing values explicit and
+    type-safe.
+author: PaulJPhilp
+related:
+  - domain-modeling-hello-world
+  - domain-modeling-either-basics
+lessonOrder: 2
+---
+
+## Guideline
+
+Use `Option<A>` to represent values that might be absent. This makes "might not exist" explicit in your types, forcing you to handle both cases.
+
+---
+
+## Rationale
+
+`null` and `undefined` cause bugs because:
+
+1. **Silent failures** - Accessing `.property` on null crashes at runtime
+2. **Unclear intent** - Is null "not found" or "error"?
+3. **Forgotten checks** - Easy to forget `if (x !== null)`
+
+Option fixes this by making absence explicit and type-checked.
+
+---
+
+## Good Example
+
+```typescript
+import { Option, Effect } from "effect"
+
+// ============================================
+// 1. Creating Options
+// ============================================
+
+// Some - a value is present
+const hasValue = Option.some(42)
+
+// None - no value
+const noValue = Option.none<number>()
+
+// From nullable - null/undefined becomes None
+const fromNull = Option.fromNullable(null)        // None
+const fromValue = Option.fromNullable("hello")    // Some("hello")
+
+// ============================================
+// 2. Checking and extracting values
+// ============================================
+
+const maybeUser = Option.some({ name: "Alice", age: 30 })
+
+// Check if value exists
+if (Option.isSome(maybeUser)) {
+  console.log(`User: ${maybeUser.value.name}`)
+}
+
+// Get with default
+const name = Option.getOrElse(
+  Option.map(maybeUser, u => u.name),
+  () => "Anonymous"
+)
+
+// ============================================
+// 3. Transforming Options
+// ============================================
+
+const maybeNumber = Option.some(5)
+
+// Map - transform the value if present
+const doubled = Option.map(maybeNumber, n => n * 2)  // Some(10)
+
+// FlatMap - chain operations that return Option
+const safeDivide = (a: number, b: number): Option.Option<number> =>
+  b === 0 ? Option.none() : Option.some(a / b)
+
+const result = Option.flatMap(maybeNumber, n => safeDivide(10, n))  // Some(2)
+
+// ============================================
+// 4. Domain modeling example
+// ============================================
+
+interface User {
+  readonly id: string
+  readonly name: string
+  readonly email: Option.Option<string>  // Email is optional
+  readonly phone: Option.Option<string>  // Phone is optional
+}
+
+const createUser = (name: string): User => ({
+  id: crypto.randomUUID(),
+  name,
+  email: Option.none(),
+  phone: Option.none(),
+})
+
+const addEmail = (user: User, email: string): User => ({
+  ...user,
+  email: Option.some(email),
+})
+
+const getContactInfo = (user: User): string => {
+  const email = Option.getOrElse(user.email, () => "no email")
+  const phone = Option.getOrElse(user.phone, () => "no phone")
+  return `${user.name}: ${email}, ${phone}`
+}
+
+// ============================================
+// 5. Use in Effects
+// ============================================
+
+const findUser = (id: string): Effect.Effect<Option.Option<User>> =>
+  Effect.succeed(
+    id === "123"
+      ? Option.some({ id, name: "Alice", email: Option.none(), phone: Option.none() })
+      : Option.none()
+  )
+
+const program = Effect.gen(function* () {
+  const maybeUser = yield* findUser("123")
+
+  if (Option.isSome(maybeUser)) {
+    yield* Effect.log(`Found: ${maybeUser.value.name}`)
+  } else {
+    yield* Effect.log("User not found")
+  }
+})
+
+Effect.runPromise(program)
+```
+
+## Option vs null
+
+| null/undefined | Option |
+|----------------|--------|
+| `null` | `Option.none()` |
+| `value` | `Option.some(value)` |
+| `x !== null` | `Option.isSome(x)` |
+| `x ?? default` | `Option.getOrElse(x, () => default)` |
+| `x?.property` | `Option.map(x, v => v.property)` |
+
+## When to Use Option
+
+- Optional fields in domain models
+- Database lookups that might return nothing
+- Configuration that has defaults
+- Any value that "might not exist"
+

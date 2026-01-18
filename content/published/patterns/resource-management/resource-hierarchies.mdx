@@ -1,0 +1,211 @@
+---
+title: Manage Hierarchical Resources
+id: resource-hierarchies
+skillLevel: advanced
+applicationPatternId: resource-management
+summary: >-
+  Manage parent-child resource relationships where children must be released
+  before parents.
+tags:
+  - resource-management
+  - hierarchy
+  - scope
+  - lifecycle
+rule:
+  description: Use nested Scopes to manage resources with parent-child dependencies.
+author: PaulJPhilp
+related:
+  - manual-scope
+  - bracket-acquire-release
+lessonOrder: 2
+---
+
+## Guideline
+
+Use nested `Scope` to manage hierarchical resources where child resources depend on their parents and must be released first.
+
+---
+
+## Rationale
+
+Resources often have dependencies:
+
+1. **Database → Connections → Transactions** - Transaction needs connection
+2. **Server → Routes → Handlers** - Handler needs server context
+3. **File → Reader → Parser** - Parser needs reader
+
+Release order matters: children before parents.
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Scope, Exit } from "effect"
+
+// ============================================
+// 1. Define hierarchical resources
+// ============================================
+
+interface Database {
+  readonly name: string
+  readonly createConnection: () => Effect.Effect<Connection, never, Scope.Scope>
+}
+
+interface Connection {
+  readonly id: string
+  readonly database: string
+  readonly beginTransaction: () => Effect.Effect<Transaction, never, Scope.Scope>
+}
+
+interface Transaction {
+  readonly id: string
+  readonly connectionId: string
+  readonly execute: (sql: string) => Effect.Effect<void>
+}
+
+// ============================================
+// 2. Create resources with proper lifecycle
+// ============================================
+
+const makeDatabase = (name: string): Effect.Effect<Database, never, Scope.Scope> =>
+  Effect.acquireRelease(
+    Effect.gen(function* () {
+      yield* Effect.log(`Opening database: ${name}`)
+      
+      const db: Database = {
+        name,
+        createConnection: () => makeConnection(name),
+      }
+      
+      return db
+    }),
+    (db) => Effect.log(`Closing database: ${db.name}`)
+  )
+
+const makeConnection = (dbName: string): Effect.Effect<Connection, never, Scope.Scope> =>
+  Effect.acquireRelease(
+    Effect.gen(function* () {
+      const id = `conn-${crypto.randomUUID().slice(0, 8)}`
+      yield* Effect.log(`  Opening connection: ${id} to ${dbName}`)
+      
+      const conn: Connection = {
+        id,
+        database: dbName,
+        beginTransaction: () => makeTransaction(id),
+      }
+      
+      return conn
+    }),
+    (conn) => Effect.log(`  Closing connection: ${conn.id}`)
+  )
+
+const makeTransaction = (connId: string): Effect.Effect<Transaction, never, Scope.Scope> =>
+  Effect.acquireRelease(
+    Effect.gen(function* () {
+      const id = `tx-${crypto.randomUUID().slice(0, 8)}`
+      yield* Effect.log(`    Beginning transaction: ${id}`)
+      
+      const tx: Transaction = {
+        id,
+        connectionId: connId,
+        execute: (sql) => Effect.log(`      [${id}] ${sql}`),
+      }
+      
+      return tx
+    }),
+    (tx) => Effect.log(`    Committing transaction: ${tx.id}`)
+  )
+
+// ============================================
+// 3. Use hierarchical resources
+// ============================================
+
+const program = Effect.scoped(
+  Effect.gen(function* () {
+    yield* Effect.log("=== Starting hierarchical resource demo ===\n")
+    
+    // Level 1: Database
+    const db = yield* makeDatabase("myapp")
+    
+    // Level 2: Connection (child of database)
+    const conn = yield* db.createConnection()
+    
+    // Level 3: Transaction (child of connection)
+    const tx = yield* conn.beginTransaction()
+    
+    // Use the transaction
+    yield* tx.execute("INSERT INTO users (name) VALUES ('Alice')")
+    yield* tx.execute("INSERT INTO users (name) VALUES ('Bob')")
+    
+    yield* Effect.log("\n=== Work complete, releasing resources ===\n")
+    
+    // Resources released in reverse order:
+    // 1. Transaction committed
+    // 2. Connection closed
+    // 3. Database closed
+  })
+)
+
+Effect.runPromise(program)
+
+// ============================================
+// 4. Multiple children at same level
+// ============================================
+
+const multipleConnections = Effect.scoped(
+  Effect.gen(function* () {
+    const db = yield* makeDatabase("myapp")
+    
+    // Create multiple connections
+    const conn1 = yield* db.createConnection()
+    const conn2 = yield* db.createConnection()
+    
+    // Each connection can have transactions
+    const tx1 = yield* conn1.beginTransaction()
+    const tx2 = yield* conn2.beginTransaction()
+    
+    // Use both transactions
+    yield* Effect.all([
+      tx1.execute("UPDATE table1 SET x = 1"),
+      tx2.execute("UPDATE table2 SET y = 2"),
+    ])
+    
+    // All released in proper order
+  })
+)
+```
+
+## Output Example
+
+```
+=== Starting hierarchical resource demo ===
+
+Opening database: myapp
+  Opening connection: conn-a1b2c3d4 to myapp
+    Beginning transaction: tx-e5f6g7h8
+      [tx-e5f6g7h8] INSERT INTO users (name) VALUES ('Alice')
+      [tx-e5f6g7h8] INSERT INTO users (name) VALUES ('Bob')
+
+=== Work complete, releasing resources ===
+
+    Committing transaction: tx-e5f6g7h8
+  Closing connection: conn-a1b2c3d4
+Closing database: myapp
+```
+
+## Hierarchy Patterns
+
+| Pattern | Example |
+|---------|---------|
+| **Linear** | DB → Connection → Transaction |
+| **Tree** | Server → [Route1, Route2] |
+| **Diamond** | Pool → [Conn1, Conn2] → SharedCache |
+
+## Best Practices
+
+1. **Use acquireRelease** - Ensures cleanup happens
+2. **Scope nesting** - Child scopes close before parent
+3. **Log lifecycle** - Debug release order issues
+4. **Handle errors** - Cleanup runs even on failure
+

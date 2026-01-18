@@ -1,0 +1,142 @@
+---
+id: schema-json-file-basic
+title: Basic JSON File Validation
+category: json-validation
+skillLevel: beginner
+tags:
+  - schema
+  - json
+  - file
+  - validation
+  - file-system
+lessonOrder: 8
+---
+
+# Problem
+
+You have a JSON file on disk and need to read it, parse it, and validate the structure against a schema. Simply reading and parsing can produce runtime errors if the file is missing, corrupted, or doesn't match the expected format. You need to handle all these cases safely and report validation errors clearly to users.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect";
+import { FileSystem } from "@effect/platform";
+import { NodeFileSystem } from "@effect/platform-node";
+
+// 1. Define schema for expected structure
+const UserProfile = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String.pipe(Schema.minLength(1)),
+  email: Schema.String.pipe(
+    Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+  ),
+  age: Schema.Number.pipe(Schema.int(), Schema.between(0, 150)),
+});
+
+type UserProfile = typeof UserProfile.Type;
+
+// 2. Read and validate a JSON file
+const validateJsonFile = (filePath: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+
+    // Read file as text
+    const content = yield* fs.readFileString(filePath).pipe(
+      Effect.mapError((error) => ({
+        _tag: "FileReadError" as const,
+        message: `Failed to read file: ${error.message}`,
+      }))
+    );
+
+    // Parse JSON
+    let jsonData: unknown;
+    try {
+      jsonData = JSON.parse(content);
+    } catch (error) {
+      return yield* Effect.fail({
+        _tag: "JsonParseError" as const,
+        message: `Invalid JSON: ${String(error)}`,
+      });
+    }
+
+    // Validate against schema
+    const profile = yield* Schema.decodeUnknown(UserProfile)(
+      jsonData
+    ).pipe(
+      Effect.mapError((error) => ({
+        _tag: "ValidationError" as const,
+        message: `Validation failed: ${error.message}`,
+      }))
+    );
+
+    return profile;
+  });
+
+// 3. Usage: Load and validate a profile
+const profilePath = "./user-profile.json";
+
+Effect.runPromise(
+  validateJsonFile(profilePath).pipe(
+    Effect.provideLayer(NodeFileSystem.layer)
+  )
+)
+  .then((profile) => {
+    console.log(`✅ Loaded profile: ${profile.name} (${profile.email})`);
+  })
+  .catch((error) => {
+    console.error(`❌ ${error._tag}: ${error.message}`);
+  });
+
+// 4. Alternative: Type-safe JSON string validation
+const parseJsonString = (jsonString: string) =>
+  Effect.gen(function* () {
+    let data: unknown;
+    try {
+      data = JSON.parse(jsonString);
+    } catch (error) {
+      return yield* Effect.fail(
+        new Error(`Invalid JSON: ${String(error)}`)
+      );
+    }
+
+    const profile = yield* Schema.decodeUnknown(UserProfile)(data);
+    return profile;
+  });
+
+// Example JSON file content:
+// {
+//   "id": "user-123",
+//   "name": "Alice Johnson",
+//   "email": "alice@example.com",
+//   "age": 28
+// }
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| `FileSystem` service | Platform-agnostic file operations bound to runtime |
+| `readFileString` | Reads entire file into memory safely |
+| `JSON.parse()` wrapped in try/catch | Captures JSON parsing errors without throwing |
+| `Schema.decodeUnknown()` | Type-safe validation returning typed result |
+| Effect error channel | No exceptions; errors flow through typed handler |
+| `provideLayer(NodeFileSystem.layer)` | Injects file system implementation at runtime |
+| Type derivation `typeof X.Type` | Full TypeScript type inference from schema |
+
+# When to Use
+
+- Loading configuration files from disk
+- Reading data files that must conform to a known structure
+- Parsing user-uploaded JSON files safely
+- Replacing unsafe `JSON.parse()` calls with validation
+- Multi-step validation: read → parse → validate
+- APIs that accept JSON and need type safety
+- Batch processing of JSON files with error reporting
+
+# Related Patterns
+
+- [Basic Form Validation](../form-validation/basic.md)
+- [Validating Config Files](./config-files.md)
+- [Schema with Default Values](./with-defaults.md)
+- [Validating Multiple Config Files](./multiple-files.md)

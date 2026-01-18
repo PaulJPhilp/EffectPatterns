@@ -1,0 +1,289 @@
+---
+id: schema-basic-unions
+title: Basic Union Types and Alternatives
+category: unions
+skillLevel: beginner
+tags:
+  - schema
+  - unions
+  - type-alternatives
+  - variants
+  - polymorphism
+lessonOrder: 12
+---
+
+# Problem
+
+Your API returns different shapes depending on context. A response could be a user profile OR an error message. A payment could succeed with a transaction ID OR fail with a reason. Without union support, you'd parse to a generic object and check fields manually. You need type-safe unions that document all possible alternatives and let the compiler enforce handling each case.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// ============================================
+// 1. Simple unions: alternatives with different types
+// ============================================
+
+// A response is either a number or a string
+const NumberOrString = Schema.Union(
+  Schema.Number,
+  Schema.String
+)
+
+type NumberOrString = typeof NumberOrString.Type
+
+// ============================================
+// 2. Union of structs: different shaped objects
+// ============================================
+
+// User can be authenticated or guest
+const AuthenticatedUser = Schema.Struct({
+  type: Schema.Literal("authenticated"),
+  id: Schema.String,
+  name: Schema.String,
+  email: Schema.String,
+})
+
+const GuestUser = Schema.Struct({
+  type: Schema.Literal("guest"),
+  sessionId: Schema.String,
+})
+
+const User = Schema.Union(AuthenticatedUser, GuestUser)
+
+type User = typeof User.Type
+
+// ============================================
+// 3. Payment result union
+// ============================================
+
+const PaymentSuccess = Schema.Struct({
+  status: Schema.Literal("success"),
+  transactionId: Schema.String,
+  amount: Schema.Number,
+  timestamp: Schema.Date,
+})
+
+const PaymentFailure = Schema.Struct({
+  status: Schema.Literal("failed"),
+  reason: Schema.String,
+  retryable: Schema.Boolean,
+})
+
+const PaymentResult = Schema.Union(PaymentSuccess, PaymentFailure)
+
+type PaymentResult = typeof PaymentResult.Type
+
+// ============================================
+// 4. API response union
+// ============================================
+
+const SuccessResponse = Schema.Struct({
+  ok: Schema.Literal(true),
+  data: Schema.Any,
+})
+
+const ErrorResponse = Schema.Struct({
+  ok: Schema.Literal(false),
+  error: Schema.String,
+  code: Schema.Number,
+})
+
+const ApiResponse = Schema.Union(SuccessResponse, ErrorResponse)
+
+type ApiResponse = typeof ApiResponse.Type
+
+// ============================================
+// 5. Pattern matching on unions
+// ============================================
+
+const describeUser = (user: User): string => {
+  // Type narrowing with if/else
+  if (user.type === "authenticated") {
+    return `Authenticated: ${user.name} (${user.email})`
+  } else {
+    return `Guest: ${user.sessionId}`
+  }
+}
+
+const describePayment = (result: PaymentResult): string => {
+  // Pattern matching approach
+  switch (result.status) {
+    case "success":
+      return `✅ Payment of $${result.amount} processed. ID: ${result.transactionId}`
+    case "failed":
+      const retry = result.retryable ? "Retryable" : "Non-retryable"
+      return `❌ Payment failed: ${result.reason} (${retry})`
+  }
+}
+
+// ============================================
+// 6. Processing unions in effects
+// ============================================
+
+const parsePaymentResult = (
+  raw: unknown
+): Effect.Effect<PaymentResult, Error> =>
+  Effect.tryPromise({
+    try: () => Schema.decodeUnknown(PaymentResult)(raw),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Invalid payment result: ${msg}`)
+    },
+  })
+
+const processPayment = (
+  result: PaymentResult
+): Effect.Effect<string, Error> =>
+  Effect.gen(function* () {
+    const description = describePayment(result)
+    console.log(description)
+
+    // Type-safe handling: compiler knows all cases covered
+    if (result.status === "success") {
+      yield* Effect.log(`Recording transaction: ${result.transactionId}`)
+      return `Recorded: ${result.transactionId}`
+    } else {
+      if (result.retryable) {
+        yield* Effect.log(`Will retry: ${result.reason}`)
+      } else {
+        yield* Effect.log(`Permanent failure: ${result.reason}`)
+      }
+      return `Failed: ${result.reason}`
+    }
+  })
+
+// ============================================
+// 7. Creating and parsing unions
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  console.log("=== Scenario 1: Parse simple union ===\n")
+
+  const value1 = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(NumberOrString)("hello"),
+    catch: (error) => new Error(String(error)),
+  })
+
+  console.log(`Parsed: ${value1} (${typeof value1})`)
+
+  console.log("\n=== Scenario 2: Parse user union ===\n")
+
+  const authenticatedData = {
+    type: "authenticated",
+    id: "user_123",
+    name: "Alice",
+    email: "alice@example.com",
+  }
+
+  const authenticated = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(User)(authenticatedData),
+    catch: (error) => new Error(String(error)),
+  })
+
+  console.log(`User: ${describeUser(authenticated)}`)
+
+  const guestData = {
+    type: "guest",
+    sessionId: "sess_abc123",
+  }
+
+  const guest = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(User)(guestData),
+    catch: (error) => new Error(String(error)),
+  })
+
+  console.log(`User: ${describeUser(guest)}`)
+
+  console.log("\n=== Scenario 3: Process payment results ===\n")
+
+  const successPayment = {
+    status: "success",
+    transactionId: "txn_12345",
+    amount: 99.99,
+    timestamp: new Date(),
+  }
+
+  const success = yield* parsePaymentResult(successPayment)
+  yield* processPayment(success)
+
+  const failedPayment = {
+    status: "failed",
+    reason: "Insufficient funds",
+    retryable: true,
+  }
+
+  const failed = yield* parsePaymentResult(failedPayment)
+  yield* processPayment(failed)
+
+  console.log("\n=== Scenario 4: API response union ===\n")
+
+  const okResponse = {
+    ok: true,
+    data: { users: ["Alice", "Bob"] },
+  }
+
+  const apiOk = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(ApiResponse)(okResponse),
+    catch: (error) => new Error(String(error)),
+  })
+
+  if (apiOk.ok) {
+    console.log(`API Success:`, apiOk.data)
+  }
+
+  const errorResponse = {
+    ok: false,
+    error: "Not found",
+    code: 404,
+  }
+
+  const apiError = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(ApiResponse)(errorResponse),
+    catch: (error) => new Error(String(error)),
+  })
+
+  if (!apiError.ok) {
+    console.log(`API Error: [${apiError.code}] ${apiError.error}`)
+  }
+
+  return { authenticated, guest, success, failed, apiOk, apiError }
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Union parsing complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Schema.Union** | Combine multiple schemas; value matches first successful schema |
+| **Type safety** | TypeScript knows all union alternatives at compile time |
+| **Pattern matching** | Handle each alternative with if/switch/pattern matching |
+| **Type narrowing** | After checking type/status, compiler knows exact shape |
+| **Validation** | Each alternative validated independently during decode |
+| **Exhaustive checks** | Compiler warns if you forget to handle an alternative |
+| **Composable** | Unions can contain other unions or complex schemas |
+| **Runtime dispatch** | Schema tries each alternative until one succeeds |
+
+# When to Use
+
+- API responses with different shapes (success vs error)
+- Payment processing with multiple outcomes
+- Authentication states (authenticated, guest, expired)
+- Event types in event sourcing (UserCreated, UserDeleted, etc.)
+- Message types in message queues
+- Polymorphic domain models
+- Configuration with multiple sources/formats
+- Result types (Ok/Err pattern)
+
+# Related Patterns
+
+- [Discriminated Unions](./discriminated-unions.md)
+- [Polymorphic APIs](./polymorphic-apis.md)
+- [Exhaustive Matching](./exhaustive-matching.md)
+- [Tagged Errors](../error-handling/tagged-errors.md)

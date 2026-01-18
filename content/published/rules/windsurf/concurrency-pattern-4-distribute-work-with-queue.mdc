@@ -1,0 +1,174 @@
+description: Use Queue to distribute work between producers and consumers with built-in backpressure, enabling flexible pipeline coordination.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Concurrency Pattern 4: Distribute Work with Queue
+**Rule:** Use Queue to distribute work between producers and consumers with built-in backpressure, enabling flexible pipeline coordination.
+
+### Example
+This example demonstrates a producer-consumer pipeline with a bounded queue for buffering work items.
+
+```typescript
+import { Effect, Queue, Fiber, Ref } from "effect";
+
+interface WorkItem {
+  readonly id: number;
+  readonly data: string;
+  readonly timestamp: number;
+}
+
+interface WorkResult {
+  readonly itemId: number;
+  readonly processed: string;
+  readonly duration: number;
+}
+
+// Producer: generates work items
+const producer = (
+  queue: Queue.Enqueue<WorkItem>,
+  count: number
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[PRODUCER] Starting, generating ${count} items`);
+
+    for (let i = 1; i <= count; i++) {
+      const item: WorkItem = {
+        id: i,
+        data: `Item ${i}`,
+        timestamp: Date.now(),
+      };
+
+      const start = Date.now();
+
+      // Enqueue - will block if queue is full (backpressure)
+      yield* Queue.offer(queue, item);
+
+      const delay = Date.now() - start;
+
+      if (delay > 0) {
+        yield* Effect.log(
+          `[PRODUCER] Item ${i} enqueued (waited ${delay}ms due to backpressure)`
+        );
+      } else {
+        yield* Effect.log(`[PRODUCER] Item ${i} enqueued`);
+      }
+
+      // Simulate work
+      yield* Effect.sleep("50 millis");
+    }
+
+    yield* Effect.log(`[PRODUCER] ✓ All items enqueued`);
+  });
+
+// Consumer: processes work items
+const consumer = (
+  queue: Queue.Dequeue<WorkItem>,
+  consumerId: number,
+  results: Ref.Ref<WorkResult[]>
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[CONSUMER ${consumerId}] Starting`);
+
+    while (true) {
+      // Dequeue - will block if queue is empty
+      const item = yield* Queue.take(queue).pipe(Effect.either);
+
+      if (item._tag === "Left") {
+        yield* Effect.log(`[CONSUMER ${consumerId}] Queue closed, stopping`);
+        return;
+      }
+
+      const workItem = item.right;
+      const startTime = Date.now();
+
+      yield* Effect.log(
+        `[CONSUMER ${consumerId}] Processing ${workItem.data}`
+      );
+
+      // Simulate processing
+      yield* Effect.sleep("150 millis");
+
+      const duration = Date.now() - startTime;
+      const result: WorkResult = {
+        itemId: workItem.id,
+        processed: `${workItem.data} [processed by consumer ${consumerId}]`,
+        duration,
+      };
+
+      yield* Ref.update(results, (rs) => [...rs, result]);
+
+      yield* Effect.log(
+        `[CONSUMER ${consumerId}] ✓ Completed ${workItem.data} in ${duration}ms`
+      );
+    }
+  });
+
+// Main: coordinate producer and consumers
+const program = Effect.gen(function* () {
+  // Create bounded queue with capacity 3
+  const queue = yield* Queue.bounded<WorkItem>(3);
+  const results = yield* Ref.make<WorkResult[]>([]);
+
+  console.log(`\n[MAIN] Starting producer-consumer pipeline with queue size 3\n`);
+
+  // Spawn producer
+  const producerFiber = yield* producer(queue, 10).pipe(Effect.fork);
+
+  // Spawn 2 consumers
+  const consumer1 = yield* consumer(queue, 1, results).pipe(Effect.fork);
+  const consumer2 = yield* consumer(queue, 2, results).pipe(Effect.fork);
+
+  // Wait for producer to finish
+  yield* Fiber.join(producerFiber);
+
+  // Give consumers time to finish
+  yield* Effect.sleep("3 seconds");
+
+  // Close queue and wait for consumers
+  yield* Queue.shutdown(queue);
+  yield* Fiber.join(consumer1);
+  yield* Fiber.join(consumer2);
+
+  // Summary
+  const allResults = yield* Ref.get(results);
+  const totalDuration = allResults.reduce((sum, r) => sum + r.duration, 0);
+
+  console.log(`\n[SUMMARY]`);
+  console.log(`  Items processed: ${allResults.length}`);
+  console.log(
+    `  Avg processing time: ${Math.round(totalDuration / allResults.length)}ms`
+  );
+});
+
+Effect.runPromise(program);
+```
+
+This pattern:
+
+1. **Creates bounded queue** with capacity (backpressure point)
+2. **Producer enqueues** items (blocks if full)
+3. **Consumers dequeue** and process (each at own pace)
+4. **Queue coordinates** flow automatically
+
+---
+
+**Explanation:**  
+Direct producer-consumer coordination creates problems:
+
+- **Blocking**: Producer waits for consumer to finish
+- **Tight coupling**: Producer depends on consumer speed
+- **Memory pressure**: Fast producer floods memory with results
+- **No backpressure**: Downstream overload propagates upstream
+
+Queue solves these:
+
+- **Asynchronous**: Producer enqueues and continues
+- **Decoupled**: Producer/consumer independent
+- **Backpressure**: Producer waits when queue full (natural flow control)
+- **Throughput**: Consumer processes at own pace
+
+Real-world example: API request handler + database writer
+- **Direct**: Handler waits for DB write (blocking, slow requests)
+- **Queue**: Handler enqueues write and returns immediately (responsive)
+
+---

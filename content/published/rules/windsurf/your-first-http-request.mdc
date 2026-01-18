@@ -1,0 +1,118 @@
+description: Use @effect/platform HttpClient for type-safe HTTP requests with automatic error handling.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Your First HTTP Request
+**Rule:** Use @effect/platform HttpClient for type-safe HTTP requests with automatic error handling.
+
+### Example
+```typescript
+import { Effect, Console } from "effect"
+import { HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { NodeHttpClient, NodeRuntime } from "@effect/platform-node"
+
+// ============================================
+// 1. Simple GET request
+// ============================================
+
+const simpleGet = Effect.gen(function* () {
+  const client = yield* HttpClient.HttpClient
+  
+  // Make a GET request
+  const response = yield* client.get("https://jsonplaceholder.typicode.com/posts/1")
+  
+  // Get response as JSON
+  const json = yield* HttpClientResponse.json(response)
+  
+  return json
+})
+
+// ============================================
+// 2. GET with typed response
+// ============================================
+
+interface Post {
+  id: number
+  title: string
+  body: string
+  userId: number
+}
+
+const getPost = (id: number) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+    const response = yield* client.get(
+      `https://jsonplaceholder.typicode.com/posts/${id}`
+    )
+    const post = yield* HttpClientResponse.json(response) as Effect.Effect<Post>
+    return post
+  })
+
+// ============================================
+// 3. POST with body
+// ============================================
+
+const createPost = (title: string, body: string) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+    
+    const request = HttpClientRequest.post(
+      "https://jsonplaceholder.typicode.com/posts"
+    ).pipe(
+      HttpClientRequest.jsonBody({ title, body, userId: 1 })
+    )
+    
+    const response = yield* client.execute(yield* request)
+    const created = yield* HttpClientResponse.json(response)
+    
+    return created
+  })
+
+// ============================================
+// 4. Handle errors
+// ============================================
+
+const safeGetPost = (id: number) =>
+  getPost(id).pipe(
+    Effect.catchAll((error) =>
+      Effect.gen(function* () {
+        yield* Console.error(`Failed to fetch post ${id}: ${error}`)
+        return { id, title: "Unavailable", body: "", userId: 0 }
+      })
+    )
+  )
+
+// ============================================
+// 5. Run the program
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Console.log("=== Simple GET ===")
+  const data = yield* simpleGet
+  yield* Console.log(JSON.stringify(data, null, 2))
+
+  yield* Console.log("\n=== Typed GET ===")
+  const post = yield* getPost(1)
+  yield* Console.log(`Post: ${post.title}`)
+
+  yield* Console.log("\n=== POST Request ===")
+  const created = yield* createPost("My New Post", "This is the body")
+  yield* Console.log(`Created: ${JSON.stringify(created)}`)
+})
+
+// Provide the HTTP client implementation
+program.pipe(
+  Effect.provide(NodeHttpClient.layer),
+  NodeRuntime.runMain
+)
+```
+
+**Explanation:**  
+Effect's HttpClient is better than `fetch`:
+
+1. **Type-safe errors** - Network failures are typed, not exceptions
+2. **Automatic JSON parsing** - No manual `.json()` calls
+3. **Composable** - Chain requests, add retries, timeouts
+4. **Testable** - Easy to mock in tests
+
+---

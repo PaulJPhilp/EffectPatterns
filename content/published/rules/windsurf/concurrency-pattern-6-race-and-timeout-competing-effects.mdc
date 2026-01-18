@@ -1,0 +1,138 @@
+description: Use race to compete effects and timeout to enforce deadlines, enabling cancellation when operations exceed time limits or complete.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Concurrency Pattern 6: Race and Timeout Competing Effects
+**Rule:** Use race to compete effects and timeout to enforce deadlines, enabling cancellation when operations exceed time limits or complete.
+
+### Example
+This example demonstrates racing competing effects and handling timeouts.
+
+```typescript
+import { Effect, Fiber } from "effect";
+
+interface DataSource {
+  readonly name: string;
+  readonly latencyMs: number;
+}
+
+// Simulate fetching from different sources
+const fetchFromSource = (source: DataSource): Effect.Effect<string> =>
+  Effect.gen(function* () {
+    yield* Effect.log(
+      `[${source.name}] Starting fetch (latency: ${source.latencyMs}ms)`
+    );
+
+    yield* Effect.sleep(`${source.latencyMs} millis`);
+
+    const result = `Data from ${source.name}`;
+
+    yield* Effect.log(`[${source.name}] ✓ Completed`);
+
+    return result;
+  });
+
+// Main: demonstrate race patterns
+const program = Effect.gen(function* () {
+  console.log(`\n[RACE] Competing effects with race and timeout\n`);
+
+  // Example 1: Simple race (fastest wins)
+  console.log(`[1] Racing 3 data sources:\n`);
+
+  const sources: DataSource[] = [
+    { name: "Primary DC", latencyMs: 200 },
+    { name: "Backup DC", latencyMs: 150 },
+    { name: "Cache", latencyMs: 50 },
+  ];
+
+  const raceResult = yield* Effect.race(
+    fetchFromSource(sources[0]),
+    Effect.race(fetchFromSource(sources[1]), fetchFromSource(sources[2]))
+  );
+
+  console.log(`\nWinner: ${raceResult}\n`);
+
+  // Example 2: Timeout - succeed within deadline
+  console.log(`[2] Timeout with fast operation:\n`);
+
+  const fastOp = fetchFromSource({ name: "Fast Op", latencyMs: 100 }).pipe(
+    Effect.timeout("500 millis")
+  );
+
+  const fastResult = yield* fastOp;
+
+  console.log(`✓ Completed within timeout: ${fastResult}\n`);
+
+  // Example 3: Timeout - exceed deadline
+  console.log(`[3] Timeout with slow operation:\n`);
+
+  const slowOp = fetchFromSource({ name: "Slow Op", latencyMs: 2000 }).pipe(
+    Effect.timeout("500 millis"),
+    Effect.either
+  );
+
+  const timeoutResult = yield* slowOp;
+
+  if (timeoutResult._tag === "Left") {
+    console.log(`✗ Operation timed out after 500ms\n`);
+  }
+
+  // Example 4: Race with timeout fallback
+  console.log(`[4] Race with fallback on timeout:\n`);
+
+  const primary = fetchFromSource({ name: "Primary", latencyMs: 300 });
+
+  const fallback = fetchFromSource({ name: "Fallback", latencyMs: 100 });
+
+  const raceWithFallback = primary.pipe(
+    Effect.timeout("150 millis"),
+    Effect.catchAll(() => {
+      yield* Effect.log(`[PRIMARY] Timed out, using fallback`);
+
+      return fallback;
+    })
+  );
+
+  const fallbackResult = yield* raceWithFallback;
+
+  console.log(`Result: ${fallbackResult}\n`);
+
+  // Example 5: Race all (collect all winners)
+  console.log(`[5] Race all - multiple sources:\n`);
+
+  const raceAllResult = yield* Effect.raceAll(
+    sources.map((s) =>
+      fetchFromSource(s).pipe(
+        Effect.map((data) => ({ source: s.name, data }))
+      )
+    )
+  );
+
+  console.log(`First to complete: ${raceAllResult.source}\n`);
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+**Explanation:**  
+Without race/timeout, competing effects create issues:
+
+- **Deadlocks**: Waiting for all to complete unnecessarily
+- **Hanging requests**: No deadline enforcement
+- **Wasted resources**: Slow operations continue indefinitely
+- **No fallback**: Can't switch to alternative on timeout
+
+Race/timeout enable:
+
+- **Fastest-wins**: Take first success
+- **Deadline enforcement**: Fail after time limit
+- **Resource cleanup**: Cancel slower operations
+- **Fallback patterns**: Alternative if primary times out
+
+Real-world example: Multi-datacenter request
+- **Without race**: Wait for slowest response
+- **With race**: Get response from fastest datacenter
+
+---

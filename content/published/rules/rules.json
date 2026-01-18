@@ -1,0 +1,13 @@
+[
+  {
+    "id": "test-1",
+    "title": "Test Rule",
+    "description": "A test rule description",
+    "skillLevel": "Beginner",
+    "useCases": [
+      "Testing"
+    ],
+    "example": "console.log('test');",
+    "content": "Full content here"
+  }
+]

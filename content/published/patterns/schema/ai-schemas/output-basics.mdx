@@ -1,0 +1,115 @@
+---
+id: schema-ai-output-basic
+title: Basic AI Output Schema
+category: ai-schemas
+skillLevel: beginner
+tags:
+  - schema
+  - ai
+  - structured-output
+  - json-schema
+  - llm
+lessonOrder: 3
+---
+
+# Problem
+
+You're using an LLM to generate structured data. Without a schema, you get unpredictable JSON—missing fields, wrong types, hallucinated keys. You need to define a schema that tells the LLM exactly what shape to produce, converts to JSON Schema for the API call, and validates the response at runtime.
+
+# Solution
+
+```typescript
+import { Schema, JSONSchema, Effect } from "effect"
+import { Anthropic } from "@anthropic-ai/sdk"
+
+// 1. Define the output shape
+const SentimentAnalysis = Schema.Struct({
+  sentiment: Schema.Literal("positive", "negative", "neutral"),
+  confidence: Schema.Number.pipe(
+    Schema.between(0, 1)
+  ),
+  keywords: Schema.Array(Schema.String),
+})
+
+// 2. Derive the TypeScript type
+type SentimentAnalysis = typeof SentimentAnalysis.Type
+
+// 3. Generate JSON Schema for the LLM
+const jsonSchema = JSONSchema.make(SentimentAnalysis)
+
+// 4. Use in your LLM call
+const analyzeSentiment = (text: string) =>
+  Effect.gen(function* () {
+    const client = new Anthropic()
+
+    const response = yield* Effect.tryPromise({
+      try: () =>
+        client.messages.create({
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 1024,
+          messages: [
+            {
+              role: "user",
+              content: `Analyze the sentiment of: "${text}"`,
+            },
+          ],
+          tools: [
+            {
+              name: "sentiment_analysis",
+              description: "Analyze sentiment of text",
+              input_schema: jsonSchema as any,
+            },
+          ],
+        }),
+      catch: (error) => new Error(`API call failed: ${error}`),
+    })
+
+    // 5. Extract and validate the response
+    const toolUse = response.content.find(
+      (block) => block.type === "tool_use"
+    ) as any
+
+    if (!toolUse) {
+      return yield* Effect.fail(
+        new Error("No tool use in response")
+      )
+    }
+
+    const parseResponse = Schema.decodeUnknown(SentimentAnalysis)
+    const result = yield* Effect.tryPromise({
+      try: () => parseResponse(toolUse.input),
+      catch: (error) => new Error(`Validation failed: ${error}`),
+    })
+
+    return result
+  })
+
+// Usage
+Effect.runPromise(analyzeSentiment("I absolutely love this product!"))
+  .then((result) => console.log(result))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| `Schema.Literal` | Constrains to exact string values—LLM can only output these values |
+| `Schema.between` | Numeric validation—confidence must be 0-1 |
+| `JSONSchema.make` | Converts Effect.Schema to JSON Schema for LLM APIs |
+| `Schema.decodeUnknown` | Validates LLM response matches schema at runtime, catching hallucinations |
+| Single source of truth | Schema defines types, JSON Schema, and validation all in one place |
+
+# When to Use
+
+- OpenAI structured outputs or tool use
+- Anthropic tool use responses
+- Vercel AI SDK `generateObject`
+- Any LLM JSON mode where you need guaranteed structure
+- When you want type-safe AI responses that match your domain
+
+# Related Patterns
+
+- [Adding Descriptions for AI Context](./with-descriptions.md)
+- [Nested Object Schemas](./nested-structures.md)
+- [Union Types for Flexible Outputs](./unions-for-ai.md)
+- [Integration with Vercel AI SDK](./vercel-ai-sdk.md)

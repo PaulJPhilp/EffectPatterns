@@ -1,0 +1,169 @@
+---
+id: schema-json-db-basic
+title: Validating JSON Database Columns
+category: json-validation
+skillLevel: beginner
+tags:
+  - schema
+  - database
+  - json
+  - validation
+  - type-safety
+lessonOrder: 33
+---
+
+# Problem
+
+Databases store JSON data in columns (MySQL JSON, PostgreSQL JSONB, SQLite JSON), but the database itself doesn't enforce schema—any JSON is valid from the database's perspective. When you retrieve JSON from a database, it's untyped and could contain incorrect fields, wrong data types, or missing required values. You need to validate the JSON immediately after retrieval to ensure data integrity and prevent runtime errors downstream in your application.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect";
+
+// 1. Define schema for database JSON column
+const UserMetadata = Schema.Struct({
+  theme: Schema.Literal("light", "dark", "auto").pipe(
+    Schema.optionalWith({ default: () => "auto" })
+  ),
+  notifications: Schema.Boolean.pipe(
+    Schema.optionalWith({ default: () => true })
+  ),
+  language: Schema.Literal("en", "es", "fr", "de").pipe(
+    Schema.optionalWith({ default: () => "en" })
+  ),
+  lastLogin: Schema.String.pipe(
+    Schema.pattern(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/)
+  ).pipe(Schema.optional),
+  preferences: Schema.Struct({
+    compactView: Schema.Boolean,
+    showGuidance: Schema.Boolean,
+  }).pipe(Schema.optional),
+});
+
+type UserMetadata = typeof UserMetadata.Type;
+
+// 2. Simulate database retrieval
+const mockDatabaseQuery = (userId: string): unknown =>
+  JSON.parse(`
+    {
+      "theme": "dark",
+      "notifications": true,
+      "language": "en",
+      "lastLogin": "2024-12-17T10:30:00Z",
+      "preferences": {
+        "compactView": true,
+        "showGuidance": false
+      }
+    }
+  `);
+
+// 3. Validate JSON from database
+const validateMetadataFromDb = (userId: string) =>
+  Effect.gen(function* () {
+    // 1. Query database (returns unknown)
+    const rawData = yield* Effect.sync(() =>
+      mockDatabaseQuery(userId)
+    );
+
+    // 2. Validate against schema
+    const metadata = yield* Schema.decodeUnknown(UserMetadata)(
+      rawData
+    ).pipe(
+      Effect.mapError((error) => ({
+        _tag: "ValidationError" as const,
+        userId,
+        message: `Invalid user metadata: ${error.message}`,
+      }))
+    );
+
+    return metadata;
+  });
+
+// 4. Usage: Fetch and validate user metadata
+Effect.runPromise(validateMetadataFromDb("user-123"))
+  .then((metadata) => {
+    console.log("✅ Metadata loaded:");
+    console.log(`  Theme: ${metadata.theme}`);
+    console.log(`  Notifications: ${metadata.notifications}`);
+    console.log(`  Language: ${metadata.language}`);
+    console.log(
+      `  Last Login: ${metadata.lastLogin ?? "never"}`
+    );
+    if (metadata.preferences) {
+      console.log(
+        `  Compact View: ${metadata.preferences.compactView}`
+      );
+    }
+  })
+  .catch((error) => {
+    console.error(`❌ ${error._tag}: ${error.message}`);
+  });
+
+// 5. Type-safe access to validated data
+const applyUserTheme = (metadata: UserMetadata): string => {
+  // These properties are guaranteed to exist with correct types
+  // No undefined checks needed
+  switch (metadata.theme) {
+    case "light":
+      return "/* light theme styles */";
+    case "dark":
+      return "/* dark theme styles */";
+    case "auto":
+      return "/* auto-detect theme */";
+  }
+};
+
+// 6. Database retrieval with multiple rows
+const validateMultipleMetadata = (userIds: string[]) =>
+  Effect.gen(function* () {
+    const results = yield* Effect.all(
+      userIds.map((userId) =>
+        validateMetadataFromDb(userId).pipe(
+          Effect.catchAll((error) =>
+            Effect.succeed({
+              userId,
+              valid: false,
+              error: error.message,
+            } as const)
+          )
+        )
+      )
+    );
+
+    const valid = results.filter((r) => "theme" in r);
+    const invalid = results.filter((r) => !("theme" in r));
+
+    return { valid, invalid };
+  });
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| Schema as contract | Define shape of JSON before retrieving from DB |
+| `Schema.decodeUnknown()` | Convert untyped database JSON to typed data |
+| Error channel | Validation failures don't throw; flow through Effect |
+| Defaults via `optionalWith` | Apply missing-field defaults at parse time |
+| Type-safe after validation | TypeScript knows validated data matches schema |
+| Immediate validation | Catch bad data at DB boundary, not downstream |
+| Composable schemas | Nested structures validated automatically |
+
+# When to Use
+
+- Retrieving JSON columns from PostgreSQL, MySQL, SQLite
+- User preferences/settings stored as JSON in database
+- Metadata columns that should follow a specific structure
+- Audit logs or event data stored as JSON
+- API responses cached in database as JSON
+- Validating data immediately after database queries
+- Preventing downstream code from dealing with bad database data
+- Type-safe database record processing
+
+# Related Patterns
+
+- [Basic JSON File Validation](../json-file-validation/basic.md)
+- [PostgreSQL JSONB Validation](./postgres-jsonb.md)
+- [Handling Schema Evolution](./schema-evolution.md)
+- [Validating Partial Documents](./partial-validation.md)

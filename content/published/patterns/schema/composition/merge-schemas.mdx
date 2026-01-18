@@ -1,0 +1,275 @@
+---
+id: schema-merge-schemas
+title: Merging Multiple Schemas into One
+category: composition
+skillLevel: intermediate
+tags:
+  - schema
+  - composition
+  - merge
+  - combination
+  - intersection
+lessonOrder: 21
+---
+
+# Problem
+
+You need to validate that incoming data satisfies multiple schemas at once. A request must be valid JSON AND match your custom business rules. A document must have base metadata AND domain-specific content. You need to combine schemas so all validation rules apply.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// ============================================
+// 1. Base schemas to merge
+// ============================================
+
+const BaseEntity = Schema.Struct({
+  id: Schema.String,
+  createdAt: Schema.Date,
+  updatedAt: Schema.Date,
+})
+
+const Auditable = Schema.Struct({
+  createdBy: Schema.String,
+  modifiedBy: Schema.String,
+  version: Schema.Number,
+})
+
+const Timestamped = Schema.Struct({
+  publishedAt: Schema.Optional(Schema.Date),
+  expiresAt: Schema.Optional(Schema.Date),
+})
+
+// ============================================
+// 2. Merge using spread syntax
+// ============================================
+
+const Article = Schema.Struct({
+  ...BaseEntity.fields,
+  ...Auditable.fields,
+  title: Schema.String,
+  content: Schema.String,
+  tags: Schema.Array(Schema.String),
+})
+
+type Article = typeof Article.Type
+
+// ============================================
+// 3. Merge with Schema.extend for complex cases
+// ============================================
+
+const AuditableEntity = Schema.extend(BaseEntity, Auditable)
+
+const Article2 = Schema.extend(
+  AuditableEntity,
+  Schema.Struct({
+    title: Schema.String,
+    content: Schema.String,
+    tags: Schema.Array(Schema.String),
+  })
+)
+
+type Article2 = typeof Article2.Type
+
+// ============================================
+// 4. Merge API contract with domain rules
+// ============================================
+
+const ApiRequest = Schema.Struct({
+  userId: Schema.String,
+  action: Schema.Enum({
+    create: "create",
+    update: "update",
+    delete: "delete",
+  }),
+  timestamp: Schema.Date,
+})
+
+const BusinessRules = Schema.Struct({
+  role: Schema.Enum({
+    admin: "admin",
+    user: "user",
+    guest: "guest",
+  }),
+  accountStatus: Schema.Enum({
+    active: "active",
+    suspended: "suspended",
+  }),
+})
+
+const FullRequest = Schema.extend(ApiRequest, BusinessRules)
+
+type FullRequest = typeof FullRequest.Type
+
+// ============================================
+// 5. Conditional merge patterns
+// ============================================
+
+const Document = Schema.Struct({
+  id: Schema.String,
+  title: Schema.String,
+  content: Schema.String,
+})
+
+const PublicDocument = Schema.extend(
+  Document,
+  Schema.Struct({
+    visibility: Schema.Literal("public"),
+    publishedAt: Schema.Date,
+    author: Schema.String,
+  })
+)
+
+const PrivateDocument = Schema.extend(
+  Document,
+  Schema.Struct({
+    visibility: Schema.Literal("private"),
+    owner: Schema.String,
+    permissions: Schema.Array(Schema.String),
+  })
+)
+
+type PublicDocument = typeof PublicDocument.Type
+type PrivateDocument = typeof PrivateDocument.Type
+
+// ============================================
+// 6. Processing merged schemas
+// ============================================
+
+const parseArticle = (raw: unknown): Effect.Effect<Article, Error> =>
+  Effect.tryPromise({
+    try: () => Schema.decodeUnknown(Article)(raw),
+    catch: (error) => new Error(String(error)),
+  })
+
+const parseFullRequest = (raw: unknown): Effect.Effect<FullRequest, Error> =>
+  Effect.tryPromise({
+    try: () => Schema.decodeUnknown(FullRequest)(raw),
+    catch: (error) => new Error(String(error)),
+  })
+
+// ============================================
+// 7. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  console.log("=== Schema Merging ===\n")
+
+  console.log("1. Article (merged schemas):\n")
+
+  const articleData = {
+    id: "art_123",
+    createdAt: new Date("2025-12-01"),
+    updatedAt: new Date("2025-12-15"),
+    createdBy: "alice",
+    modifiedBy: "bob",
+    version: 3,
+    title: "Functional Programming with Effect-TS",
+    content: "A comprehensive guide...",
+    tags: ["effect", "typescript", "functional"],
+  }
+
+  const article = yield* parseArticle(articleData)
+  console.log(`Article ID: ${article.id}`)
+  console.log(`Title: ${article.title}`)
+  console.log(`Created by: ${article.createdBy}, Modified by: ${article.modifiedBy}`)
+  console.log(`Version: ${article.version}`)
+  console.log(`Tags: ${article.tags.join(", ")}`)
+
+  console.log("\n2. Full Request (API + Business Rules):\n")
+
+  const requestData = {
+    userId: "user_456",
+    action: "create",
+    timestamp: new Date(),
+    role: "user",
+    accountStatus: "active",
+  }
+
+  const request = yield* parseFullRequest(requestData)
+  console.log(`User: ${request.userId} (${request.role})`)
+  console.log(`Action: ${request.action}`)
+  console.log(`Account: ${request.accountStatus}`)
+
+  console.log("\n3. Document Variants (conditional merge):\n")
+
+  const publicDocData = {
+    id: "doc_789",
+    title: "Public Blog Post",
+    content: "This is public...",
+    visibility: "public",
+    publishedAt: new Date("2025-12-10"),
+    author: "alice",
+  }
+
+  const publicDoc = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(PublicDocument)(publicDocData),
+    catch: (error) => new Error(String(error)),
+  })
+
+  console.log(`Public Doc: ${publicDoc.title}`)
+  console.log(`Author: ${publicDoc.author}`)
+  console.log(`Published: ${publicDoc.publishedAt.toDateString()}`)
+
+  const privateDocData = {
+    id: "doc_999",
+    title: "Private Notes",
+    content: "This is private...",
+    visibility: "private",
+    owner: "bob",
+    permissions: ["read", "write"],
+  }
+
+  const privateDoc = yield* Effect.tryPromise({
+    try: () => Schema.decodeUnknown(PrivateDocument)(privateDocData),
+    catch: (error) => new Error(String(error)),
+  })
+
+  console.log(`\nPrivate Doc: ${privateDoc.title}`)
+  console.log(`Owner: ${privateDoc.owner}`)
+  console.log(`Permissions: ${privateDoc.permissions.join(", ")}`)
+
+  console.log("\n4. Benefits of merging:\n")
+  console.log("✓ Single source of truth for each concern")
+  console.log("✓ Reusable base schemas")
+  console.log("✓ Clear separation of concerns")
+  console.log("✓ Easy to understand relationships")
+  console.log("✓ Reduced duplication")
+
+  return { article, request, publicDoc, privateDoc }
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Schema merging complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Merge/extend** | Combine multiple schemas into one |
+| **Composition** | Build complex schemas from simpler parts |
+| **Reusability** | Base schemas used in multiple merged types |
+| **Separation** | Each schema has single responsibility |
+| **Flexibility** | Merge different combinations as needed |
+| **Validation** | All merged constraints validated together |
+| **Type safety** | Merged type includes all fields |
+
+# When to Use
+
+- API requests combining metadata + payload
+- Auditable entities (base + audit fields)
+- Documents with multiple concerns (content + permissions)
+- Feature flags + configuration
+- Request validation + business rules
+- Multi-tenant data (tenant info + entity)
+
+# Related Patterns
+
+- [Extend Schemas](./extend-schemas.md)
+- [Pick/Omit](./pick-omit.md)
+- [Inheritance Patterns](./inheritance-patterns.md)

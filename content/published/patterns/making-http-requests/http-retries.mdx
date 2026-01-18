@@ -1,0 +1,221 @@
+---
+title: Retry HTTP Requests with Backoff
+id: http-retries
+skillLevel: intermediate
+applicationPatternId: making-http-requests
+summary: Implement robust retry logic for HTTP requests with exponential backoff.
+tags:
+  - http
+  - retries
+  - backoff
+  - resilience
+rule:
+  description: >-
+    Use Schedule to retry failed HTTP requests with configurable backoff
+    strategies.
+author: PaulJPhilp
+related:
+  - http-hello-world
+  - http-timeouts
+lessonOrder: 7
+---
+
+## Guideline
+
+Use Effect's `retry` with `Schedule` to automatically retry failed HTTP requests with exponential backoff and jitter.
+
+---
+
+## Rationale
+
+HTTP requests fail for transient reasons:
+
+1. **Network issues** - Temporary connectivity problems
+2. **Server overload** - 503 Service Unavailable
+3. **Rate limits** - 429 Too Many Requests
+4. **Timeouts** - Slow responses
+
+Proper retry logic handles these gracefully.
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Schedule, Duration, Data } from "effect"
+import { HttpClient, HttpClientRequest, HttpClientResponse, HttpClientError } from "@effect/platform"
+
+// ============================================
+// 1. Basic retry with exponential backoff
+// ============================================
+
+const fetchWithRetry = (url: string) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    return yield* client.get(url).pipe(
+      Effect.flatMap((response) => HttpClientResponse.json(response)),
+      Effect.retry(
+        Schedule.exponential("100 millis", 2).pipe(
+          Schedule.intersect(Schedule.recurs(5)),     // Max 5 retries
+          Schedule.jittered                            // Add randomness
+        )
+      )
+    )
+  })
+
+// ============================================
+// 2. Retry only specific status codes
+// ============================================
+
+class RetryableHttpError extends Data.TaggedError("RetryableHttpError")<{
+  readonly status: number
+  readonly message: string
+}> {}
+
+class NonRetryableHttpError extends Data.TaggedError("NonRetryableHttpError")<{
+  readonly status: number
+  readonly message: string
+}> {}
+
+const isRetryable = (status: number): boolean =>
+  status === 429 ||    // Rate limited
+  status === 503 ||    // Service unavailable
+  status === 502 ||    // Bad gateway
+  status === 504 ||    // Gateway timeout
+  status >= 500        // Server errors
+
+const fetchWithSelectiveRetry = (url: string) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    const response = yield* client.get(url).pipe(
+      Effect.flatMap((response) => {
+        if (response.status >= 400) {
+          if (isRetryable(response.status)) {
+            return Effect.fail(new RetryableHttpError({
+              status: response.status,
+              message: `HTTP ${response.status}`,
+            }))
+          }
+          return Effect.fail(new NonRetryableHttpError({
+            status: response.status,
+            message: `HTTP ${response.status}`,
+          }))
+        }
+        return Effect.succeed(response)
+      }),
+      Effect.retry({
+        schedule: Schedule.exponential("200 millis").pipe(
+          Schedule.intersect(Schedule.recurs(3))
+        ),
+        while: (error) => error._tag === "RetryableHttpError",
+      })
+    )
+
+    return yield* HttpClientResponse.json(response)
+  })
+
+// ============================================
+// 3. Retry with logging
+// ============================================
+
+const fetchWithRetryLogging = (url: string) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    return yield* client.get(url).pipe(
+      Effect.flatMap((r) => HttpClientResponse.json(r)),
+      Effect.retry(
+        Schedule.exponential("100 millis").pipe(
+          Schedule.intersect(Schedule.recurs(3)),
+          Schedule.tapOutput((_, output) =>
+            Effect.log(`Retry attempt, waiting ${Duration.toMillis(output)}ms`)
+          )
+        )
+      ),
+      Effect.tapError((error) => Effect.log(`Request failed: ${error}`))
+    )
+  })
+
+// ============================================
+// 4. Custom retry policy
+// ============================================
+
+const customRetryPolicy = Schedule.exponential("500 millis", 2).pipe(
+  Schedule.intersect(Schedule.recurs(5)),
+  Schedule.union(Schedule.spaced("30 seconds")),  // Also retry after 30s
+  Schedule.whileOutput((duration) => Duration.lessThanOrEqualTo(duration, "2 minutes")),
+  Schedule.jittered
+)
+
+// ============================================
+// 5. Retry respecting Retry-After header
+// ============================================
+
+const fetchWithRetryAfter = (url: string) =>
+  Effect.gen(function* () {
+    const client = yield* HttpClient.HttpClient
+
+    const makeRequest = client.get(url).pipe(
+      Effect.flatMap((response) => {
+        if (response.status === 429) {
+          const retryAfter = response.headers["retry-after"]
+          const delay = retryAfter ? parseInt(retryAfter, 10) * 1000 : 1000
+
+          return Effect.fail({
+            _tag: "RateLimited" as const,
+            delay,
+          })
+        }
+        return Effect.succeed(response)
+      })
+    )
+
+    return yield* makeRequest.pipe(
+      Effect.retry(
+        Schedule.recurWhile<{ _tag: "RateLimited"; delay: number }>(
+          (error) => error._tag === "RateLimited"
+        ).pipe(
+          Schedule.intersect(Schedule.recurs(3)),
+          Schedule.delayed((_, error) => Duration.millis(error.delay))
+        )
+      ),
+      Effect.flatMap((r) => HttpClientResponse.json(r))
+    )
+  })
+
+// ============================================
+// 6. Usage
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("Fetching with retry...")
+
+  const data = yield* fetchWithRetry("https://api.example.com/data").pipe(
+    Effect.catchAll((error) => {
+      return Effect.succeed({ error: "All retries exhausted" })
+    })
+  )
+
+  yield* Effect.log(`Result: ${JSON.stringify(data)}`)
+})
+```
+
+## Retry Schedules
+
+| Schedule | Behavior |
+|----------|----------|
+| `exponential("100ms")` | 100ms, 200ms, 400ms... |
+| `fibonacci("100ms")` | 100ms, 100ms, 200ms, 300ms... |
+| `spaced("1s")` | 1s, 1s, 1s... (fixed) |
+| `jittered` | Add randomness |
+
+## Best Practices
+
+1. **Don't retry 4xx** - Client errors won't fix themselves
+2. **Use jitter** - Prevent thundering herd
+3. **Set max retries** - Don't retry forever
+4. **Log retries** - Know when they happen
+5. **Respect Retry-After** - Server knows best
+

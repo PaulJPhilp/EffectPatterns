@@ -1,0 +1,147 @@
+---
+title: Your First Effect Test
+id: testing-hello-world
+skillLevel: beginner
+applicationPatternId: testing
+summary: >-
+  Write your first test for an Effect program using Vitest and Effect's testing
+  utilities.
+tags:
+  - testing
+  - vitest
+  - getting-started
+rule:
+  description: Use Effect.runPromise in tests to run and assert on Effect results.
+author: PaulJPhilp
+related:
+  - testing-with-services
+  - testing-mock-dependencies
+lessonOrder: 2
+---
+
+## Guideline
+
+Test Effect programs by running them with `Effect.runPromise` and using standard test assertions on the results.
+
+---
+
+## Rationale
+
+Testing Effect code is straightforward:
+
+1. **Effects are values** - Build them in tests like any other value
+2. **Run to get results** - Use `Effect.runPromise` to execute
+3. **Assert normally** - Standard assertions work on the results
+
+---
+
+## Good Example
+
+```typescript
+import { describe, it, expect } from "vitest"
+import { Effect } from "effect"
+
+// ============================================
+// Code to test
+// ============================================
+
+const add = (a: number, b: number): Effect.Effect<number> =>
+  Effect.succeed(a + b)
+
+const divide = (a: number, b: number): Effect.Effect<number, Error> =>
+  b === 0
+    ? Effect.fail(new Error("Cannot divide by zero"))
+    : Effect.succeed(a / b)
+
+const fetchUser = (id: string): Effect.Effect<{ id: string; name: string }> =>
+  Effect.succeed({ id, name: `User ${id}` })
+
+// ============================================
+// Tests
+// ============================================
+
+describe("Basic Effect Tests", () => {
+  it("should add two numbers", async () => {
+    const result = await Effect.runPromise(add(2, 3))
+    expect(result).toBe(5)
+  })
+
+  it("should divide numbers", async () => {
+    const result = await Effect.runPromise(divide(10, 2))
+    expect(result).toBe(5)
+  })
+
+  it("should fail on divide by zero", async () => {
+    await expect(Effect.runPromise(divide(10, 0))).rejects.toThrow(
+      "Cannot divide by zero"
+    )
+  })
+
+  it("should fetch a user", async () => {
+    const user = await Effect.runPromise(fetchUser("123"))
+    
+    expect(user).toEqual({
+      id: "123",
+      name: "User 123",
+    })
+  })
+})
+
+// ============================================
+// Testing Effect.gen programs
+// ============================================
+
+const calculateDiscount = (price: number, quantity: number) =>
+  Effect.gen(function* () {
+    if (price <= 0) {
+      return yield* Effect.fail(new Error("Invalid price"))
+    }
+    
+    const subtotal = price * quantity
+    const discount = quantity >= 10 ? 0.1 : 0
+    const total = subtotal * (1 - discount)
+    
+    return { subtotal, discount, total }
+  })
+
+describe("Effect.gen Tests", () => {
+  it("should calculate without discount", async () => {
+    const result = await Effect.runPromise(calculateDiscount(10, 5))
+    
+    expect(result.subtotal).toBe(50)
+    expect(result.discount).toBe(0)
+    expect(result.total).toBe(50)
+  })
+
+  it("should apply bulk discount", async () => {
+    const result = await Effect.runPromise(calculateDiscount(10, 10))
+    
+    expect(result.subtotal).toBe(100)
+    expect(result.discount).toBe(0.1)
+    expect(result.total).toBe(90)
+  })
+
+  it("should fail for invalid price", async () => {
+    await expect(
+      Effect.runPromise(calculateDiscount(-5, 10))
+    ).rejects.toThrow("Invalid price")
+  })
+})
+```
+
+## Testing Patterns
+
+| Scenario | Approach |
+|----------|----------|
+| Success case | `await Effect.runPromise(effect)` then assert |
+| Failure case | `expect(...).rejects.toThrow()` |
+| Multiple effects | Test each independently |
+| Effect.gen | Same as above - it's still an Effect |
+
+## Best Practices
+
+1. **One assertion per test** - Clear failure messages
+2. **Test success and failure** - Both paths matter
+3. **Descriptive names** - Explain what's being tested
+4. **Arrange-Act-Assert** - Clear test structure
+

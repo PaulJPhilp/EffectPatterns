@@ -1,0 +1,282 @@
+---
+id: schema-basic-recursive
+title: Basic Recursive Schemas with Schema.suspend
+category: recursive
+skillLevel: beginner
+tags:
+  - schema
+  - recursive
+  - self-referencing
+  - trees
+  - linked-lists
+lessonOrder: 10
+---
+
+# Problem
+
+You need to validate tree-like data: a node with children that are also nodes. Or linked lists where each item points to the next. Without recursion support, you can't express these structures—the schema would need infinite nesting. You need a way to define schemas that reference themselves, with proper base cases to prevent infinite recursion.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// ============================================
+// 1. Basic recursive structure: LinkedList
+// ============================================
+
+// Forward declare the schema (will be defined below)
+const LinkedListNode: Schema.Schema<LinkedListNode> = Schema.suspend(() =>
+  Schema.Union(
+    // Base case: End of list
+    Schema.Struct({
+      type: Schema.Literal("empty"),
+    }),
+    // Recursive case: Node with value and next
+    Schema.Struct({
+      type: Schema.Literal("node"),
+      value: Schema.Number,
+      next: LinkedListNode,
+    })
+  )
+)
+
+type LinkedListNode = {
+  type: "empty"
+} | {
+  type: "node"
+  value: number
+  next: LinkedListNode
+}
+
+// ============================================
+// 2. Tree structure
+// ============================================
+
+const TreeNode: Schema.Schema<TreeNode> = Schema.suspend(() =>
+  Schema.Struct({
+    id: Schema.String,
+    value: Schema.Number,
+    children: Schema.Array(TreeNode),
+  })
+)
+
+type TreeNode = {
+  id: string
+  value: number
+  children: TreeNode[]
+}
+
+// ============================================
+// 3. Nested menu structure
+// ============================================
+
+const MenuItem: Schema.Schema<MenuItem> = Schema.suspend(() =>
+  Schema.Struct({
+    label: Schema.String,
+    action: Schema.Optional(Schema.String),
+    submenu: Schema.Optional(Schema.Array(MenuItem)),
+  })
+)
+
+type MenuItem = {
+  label: string
+  action?: string
+  submenu?: MenuItem[]
+}
+
+// ============================================
+// 4. Parse and validate recursive structures
+// ============================================
+
+const parseLinkedList = (raw: unknown): Effect.Effect<LinkedListNode, Error> =>
+  Effect.tryPromise({
+    try: () => Schema.decodeUnknown(LinkedListNode)(raw),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Invalid linked list: ${msg}`)
+    },
+  })
+
+const parseTree = (raw: unknown): Effect.Effect<TreeNode, Error> =>
+  Effect.tryPromise({
+    try: () => Schema.decodeUnknown(TreeNode)(raw),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Invalid tree: ${msg}`)
+    },
+  })
+
+const parseMenu = (raw: unknown): Effect.Effect<MenuItem, Error> =>
+  Effect.tryPromise({
+    try: () => Schema.decodeUnknown(MenuItem)(raw),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Invalid menu: ${msg}`)
+    },
+  })
+
+// ============================================
+// 5. Utilities for recursive structures
+// ============================================
+
+const listToArray = (list: LinkedListNode): number[] => {
+  if (list.type === "empty") {
+    return []
+  }
+  return [list.value, ...listToArray(list.next)]
+}
+
+const treeDepth = (node: TreeNode): number => {
+  if (node.children.length === 0) {
+    return 1
+  }
+  return 1 + Math.max(...node.children.map(treeDepth))
+}
+
+const countNodes = (node: TreeNode): number => {
+  return 1 + node.children.reduce((sum, child) => sum + countNodes(child), 0)
+}
+
+const flattenTree = (node: TreeNode): TreeNode[] => {
+  return [node, ...node.children.flatMap(flattenTree)]
+}
+
+// ============================================
+// 6. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  console.log("=== Linked List ===\n")
+
+  // Valid linked list: 1 -> 2 -> 3 -> empty
+  const listData = {
+    type: "node",
+    value: 1,
+    next: {
+      type: "node",
+      value: 2,
+      next: {
+        type: "node",
+        value: 3,
+        next: { type: "empty" },
+      },
+    },
+  }
+
+  const list = yield* parseLinkedList(listData)
+  const array = listToArray(list)
+  console.log(`List: ${array.join(" -> ")}`)
+
+  console.log("\n=== Tree Structure ===\n")
+
+  const treeData = {
+    id: "root",
+    value: 1,
+    children: [
+      {
+        id: "child1",
+        value: 2,
+        children: [
+          {
+            id: "grandchild1",
+            value: 4,
+            children: [],
+          },
+        ],
+      },
+      {
+        id: "child2",
+        value: 3,
+        children: [
+          {
+            id: "grandchild2",
+            value: 5,
+            children: [],
+          },
+          {
+            id: "grandchild3",
+            value: 6,
+            children: [],
+          },
+        ],
+      },
+    ],
+  }
+
+  const tree = yield* parseTree(treeData)
+  console.log(`Tree structure:`)
+  console.log(`  Total nodes: ${countNodes(tree)}`)
+  console.log(`  Tree depth: ${treeDepth(tree)}`)
+  console.log(`  Flattened: ${flattenTree(tree).map((n) => n.id).join(", ")}`)
+
+  console.log("\n=== Menu ===\n")
+
+  const menuData = {
+    label: "File",
+    action: "file-menu",
+    submenu: [
+      { label: "New", action: "new-file" },
+      { label: "Open", action: "open-file" },
+      {
+        label: "Recent",
+        submenu: [
+          { label: "document1.txt", action: "open-recent-1" },
+          { label: "document2.txt", action: "open-recent-2" },
+        ],
+      },
+      { label: "Exit", action: "exit" },
+    ],
+  }
+
+  const menu = yield* parseMenu(menuData)
+  console.log(`Menu: ${menu.label}`)
+  if (menu.submenu) {
+    for (const item of menu.submenu) {
+      console.log(`  - ${item.label}${item.action ? ` (${item.action})` : ""}`)
+      if (item.submenu) {
+        for (const subitem of item.submenu) {
+          console.log(
+            `    - ${subitem.label}${subitem.action ? ` (${subitem.action})` : ""}`
+          )
+        }
+      }
+    }
+  }
+
+  return { list, tree, menu }
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Recursive parsing complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Schema.suspend** | Defers schema evaluation, enabling self-reference |
+| **Base cases** | Union includes terminal case (empty, null, leaf) |
+| **Recursive cases** | Reference back to same schema for nesting |
+| **Type safety** | TypeScript infers recursive type automatically |
+| **Lazy evaluation** | Schema computed on first use, not at definition |
+| **Composable** | Combine with other schemas (Union, Array, etc.) |
+| **Efficient** | No infinite loops; base cases terminate recursion |
+
+# When to Use
+
+- Tree data structures (file systems, DOM, AST)
+- Linked lists and recursive sequences
+- Nested menu structures
+- Organizational charts
+- Comment threads with replies
+- Nested JSON with arbitrary depth
+- Any self-referencing domain model
+
+# Related Patterns
+
+- [Tree Structures](./tree-structures.md)
+- [Nested Comments](./nested-comments.md)
+- [JSON AST](./json-ast.md)

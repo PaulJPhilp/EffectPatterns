@@ -1,0 +1,479 @@
+---
+title: 'Concurrency Pattern 5: Broadcast Events with PubSub'
+id: concurrency-pattern-pubsub-event-broadcast
+skillLevel: intermediate
+applicationPatternId: concurrency
+summary: >-
+  Use PubSub to broadcast events to multiple subscribers, enabling event-driven
+  architectures and fan-out patterns without direct coupling.
+tags:
+  - concurrency
+  - pubsub
+  - event-broadcast
+  - publish-subscribe
+  - fan-out
+  - decoupling
+rule:
+  description: >-
+    Use PubSub to broadcast events to multiple subscribers, enabling
+    event-driven architectures where publishers and subscribers are loosely
+    coupled.
+related:
+  - decouple-fibers-with-queue-pubsub
+  - concurrency-pattern-queue-work-distribution
+  - run-background-tasks-with-fork
+author: effect_website
+lessonOrder: 6
+---
+
+## Guideline
+
+When multiple fibers need to react to the same events, use `PubSub`:
+
+- **Publisher** sends events once
+- **Subscribers** each receive a copy
+- **Decoupled**: Publisher doesn't know about subscribers
+- **Fan-out**: One event → multiple independent handlers
+
+PubSub variants: `bounded` (backpressure), `unbounded`, `sliding`.
+
+---
+
+## Rationale
+
+Event distribution without PubSub creates coupling:
+
+- **Direct references**: Publisher calls subscribers directly (tight coupling)
+- **Ordering issues**: Publisher blocks on slowest subscriber
+- **Scalability**: Adding subscribers slows down publisher
+- **Testing**: Hard to mock multiple subscribers
+
+PubSub enables:
+
+- **Loose coupling**: Publishers emit, subscribers listen independently
+- **Parallel delivery**: All subscribers notified simultaneously
+- **Scalability**: Add subscribers without affecting publisher
+- **Testing**: Mock single PubSub rather than all subscribers
+
+Real-world example: System state changes
+- **Direct**: StateManager calls UserNotifier, AuditLogger, MetricsCollector (tight coupling)
+- **PubSub**: StateManager publishes `StateChanged` event; subscribers listen independently
+
+---
+
+## Good Example
+
+This example demonstrates a multi-subscriber event broadcast system with independent handlers.
+
+```typescript
+import { Effect, PubSub, Fiber, Ref } from "effect";
+
+interface StateChangeEvent {
+  readonly id: string;
+  readonly oldValue: string;
+  readonly newValue: string;
+  readonly timestamp: number;
+}
+
+interface Subscriber {
+  readonly name: string;
+  readonly events: StateChangeEvent[];
+}
+
+// Create subscribers that react to events
+const createSubscriber = (
+  name: string,
+  pubsub: PubSub.PubSub<StateChangeEvent>,
+  events: Ref.Ref<StateChangeEvent[]>
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[${name}] ✓ Subscribed`);
+
+    // Get subscriber handle
+    const subscription = yield* PubSub.subscribe(pubsub);
+
+    // Listen for events indefinitely
+    while (true) {
+      const event = yield* subscription.take();
+
+      yield* Effect.log(
+        `[${name}] Received event: ${event.oldValue} → ${event.newValue}`
+      );
+
+      // Simulate processing
+      yield* Effect.sleep("50 millis");
+
+      // Store event (example action)
+      yield* Ref.update(events, (es) => [...es, event]);
+
+      yield* Effect.log(`[${name}] ✓ Processed event`);
+    }
+  });
+
+// Publisher that broadcasts events
+const publisher = (
+  pubsub: PubSub.PubSub<StateChangeEvent>,
+  eventCount: number
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[PUBLISHER] Starting, publishing ${eventCount} events`);
+
+    for (let i = 1; i <= eventCount; i++) {
+      const event: StateChangeEvent = {
+        id: `event-${i}`,
+        oldValue: `state-${i - 1}`,
+        newValue: `state-${i}`,
+        timestamp: Date.now(),
+      };
+
+      // Publish to all subscribers
+      const size = yield* PubSub.publish(pubsub, event);
+
+      yield* Effect.log(
+        `[PUBLISHER] Published event to ${size} subscribers`
+      );
+
+      // Simulate delay between events
+      yield* Effect.sleep("200 millis");
+    }
+
+    yield* Effect.log(`[PUBLISHER] ✓ All events published`);
+  });
+
+// Main: coordinate publisher and multiple subscribers
+const program = Effect.gen(function* () {
+  // Create PubSub with bounded capacity
+  const pubsub = yield* PubSub.bounded<StateChangeEvent>(5);
+
+  // Create storage for each subscriber's events
+  const subscriber1Events = yield* Ref.make<StateChangeEvent[]>([]);
+  const subscriber2Events = yield* Ref.make<StateChangeEvent[]>([]);
+  const subscriber3Events = yield* Ref.make<StateChangeEvent[]>([]);
+
+  console.log(`\n[MAIN] Starting PubSub event broadcast system\n`);
+
+  // Subscribe 3 independent subscribers
+  const sub1Fiber = yield* createSubscriber(
+    "SUBSCRIBER-1",
+    pubsub,
+    subscriber1Events
+  ).pipe(Effect.fork);
+
+  const sub2Fiber = yield* createSubscriber(
+    "SUBSCRIBER-2",
+    pubsub,
+    subscriber2Events
+  ).pipe(Effect.fork);
+
+  const sub3Fiber = yield* createSubscriber(
+    "SUBSCRIBER-3",
+    pubsub,
+    subscriber3Events
+  ).pipe(Effect.fork);
+
+  // Wait for subscriptions to establish
+  yield* Effect.sleep("100 millis");
+
+  // Start publisher
+  const publisherFiber = yield* publisher(pubsub, 5).pipe(Effect.fork);
+
+  // Wait for publisher to finish
+  yield* Fiber.join(publisherFiber);
+
+  // Wait a bit for subscribers to process last events
+  yield* Effect.sleep("1 second");
+
+  // Shut down
+  yield* PubSub.shutdown(pubsub);
+  yield* Fiber.join(sub1Fiber).pipe(Effect.catchAll(() => Effect.void));
+  yield* Fiber.join(sub2Fiber).pipe(Effect.catchAll(() => Effect.void));
+  yield* Fiber.join(sub3Fiber).pipe(Effect.catchAll(() => Effect.void));
+
+  // Print summary
+  const events1 = yield* Ref.get(subscriber1Events);
+  const events2 = yield* Ref.get(subscriber2Events);
+  const events3 = yield* Ref.get(subscriber3Events);
+
+  console.log(`\n[SUMMARY]`);
+  console.log(`  Subscriber 1 received: ${events1.length} events`);
+  console.log(`  Subscriber 2 received: ${events2.length} events`);
+  console.log(`  Subscriber 3 received: ${events3.length} events`);
+});
+
+Effect.runPromise(program);
+```
+
+This pattern:
+
+1. **Creates PubSub** for event distribution
+2. **Multiple subscribers** listen independently
+3. **Publisher broadcasts** events to all
+4. **Each subscriber** processes at own pace
+
+---
+
+## Advanced: Typed Event Channels
+
+Route different event types through PubSub:
+
+```typescript
+interface BaseEvent {
+  readonly type: string;
+  readonly timestamp: number;
+}
+
+interface UserCreatedEvent extends BaseEvent {
+  readonly type: "UserCreated";
+  readonly userId: string;
+  readonly email: string;
+}
+
+interface UserDeletedEvent extends BaseEvent {
+  readonly type: "UserDeleted";
+  readonly userId: string;
+}
+
+type UserEvent = UserCreatedEvent | UserDeletedEvent;
+
+const createTypedSubscriber = (
+  name: string,
+  pubsub: PubSub.PubSub<UserEvent>
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const subscription = yield* PubSub.subscribe(pubsub);
+
+    while (true) {
+      const event = yield* subscription.take();
+
+      // Pattern match on event type
+      if (event.type === "UserCreated") {
+        yield* Effect.log(
+          `[${name}] New user created: ${event.email}`
+        );
+      } else if (event.type === "UserDeleted") {
+        yield* Effect.log(
+          `[${name}] User deleted: ${event.userId}`
+        );
+      }
+    }
+  });
+
+const publishUserEvent = (
+  pubsub: PubSub.PubSub<UserEvent>,
+  event: UserEvent
+) =>
+  Effect.gen(function* () {
+    const subscribers = yield* PubSub.publish(pubsub, event);
+    yield* Effect.log(`Published to ${subscribers} subscribers`);
+  });
+```
+
+---
+
+## Advanced: Filtered Subscriptions
+
+Subscribe to subset of events based on predicate:
+
+```typescript
+interface FilteredSubscription {
+  readonly name: string;
+  readonly filter: (event: StateChangeEvent) => boolean;
+}
+
+const createFilteredSubscriber = (
+  config: FilteredSubscription,
+  pubsub: PubSub.PubSub<StateChangeEvent>
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const subscription = yield* PubSub.subscribe(pubsub);
+
+    yield* Effect.log(
+      `[${config.name}] Subscribed with filter`
+    );
+
+    while (true) {
+      const event = yield* subscription.take();
+
+      // Only process if matches filter
+      if (config.filter(event)) {
+        yield* Effect.log(
+          `[${config.name}] Matched event: ${event.newValue}`
+        );
+      } else {
+        yield* Effect.log(`[${config.name}] Filtered out event`);
+      }
+    }
+  });
+
+// Example: Only listen to specific state changes
+const criticalStateSubscriber = createFilteredSubscriber(
+  {
+    name: "CRITICAL-MONITOR",
+    filter: (event) =>
+      event.newValue.includes("ERROR") ||
+      event.newValue.includes("ALERT"),
+  },
+  pubsub
+);
+```
+
+---
+
+## Advanced: Request-Reply with PubSub
+
+Implement request-response pattern on top of PubSub:
+
+```typescript
+interface Request {
+  readonly requestId: string;
+  readonly type: string;
+  readonly data: unknown;
+}
+
+interface Response {
+  readonly requestId: string;
+  readonly status: "success" | "error";
+  readonly result?: unknown;
+}
+
+const requestReplyPattern = (
+  requestPubSub: PubSub.PubSub<Request>,
+  responsePubSub: PubSub.PubSub<Response>
+) =>
+  Effect.gen(function* () {
+    // Request handler
+    const handleRequest = Effect.gen(function* () {
+      const requestSub = yield* PubSub.subscribe(requestPubSub);
+
+      while (true) {
+        const request = yield* requestSub.take();
+
+        yield* Effect.log(`[HANDLER] Processing request ${request.requestId}`);
+
+        // Simulate processing
+        yield* Effect.sleep("100 millis");
+
+        const response: Response = {
+          requestId: request.requestId,
+          status: "success",
+          result: `Processed ${request.type}`,
+        };
+
+        yield* PubSub.publish(responsePubSub, response);
+      }
+    });
+
+    // Client that sends request and listens for response
+    const sendRequest = (request: Request) =>
+      Effect.gen(function* () {
+        // Publish request
+        yield* PubSub.publish(requestPubSub, request);
+
+        // Listen for matching response
+        const responseSub = yield* PubSub.subscribe(
+          responsePubSub
+        );
+
+        const response = yield* responseSub.take().pipe(
+          Effect.repeatUntil(
+            (r) => r.requestId === request.requestId
+          )
+        );
+
+        return response;
+      });
+
+    return { handleRequest, sendRequest };
+  });
+```
+
+---
+
+## Advanced: Event Aggregation
+
+Combine events from multiple publishers:
+
+```typescript
+const eventAggregator = <T extends BaseEvent>(
+  sources: PubSub.PubSub<T>[],
+  aggregate: PubSub.PubSub<T>
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    // Subscribe to all sources
+    const subscriptions = yield* Effect.all(
+      sources.map((source) => PubSub.subscribe(source))
+    );
+
+    // Forward all events to aggregate
+    const forwarders = subscriptions.map((sub, idx) =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[AGGREGATOR] Source ${idx + 1} connected`);
+
+        while (true) {
+          const event = yield* sub.take();
+          yield* PubSub.publish(aggregate, event);
+        }
+      }).pipe(Effect.fork)
+    );
+
+    // Wait for all forwarders
+    yield* Effect.all(forwarders.map((f) => Fiber.join(f)));
+  });
+
+// Example: Aggregate events from 3 sources
+const aggregatedEventBus = Effect.gen(function* () {
+  const source1 = yield* PubSub.bounded<StateChangeEvent>(5);
+  const source2 = yield* PubSub.bounded<StateChangeEvent>(5);
+  const source3 = yield* PubSub.bounded<StateChangeEvent>(5);
+  const eventBus = yield* PubSub.bounded<StateChangeEvent>(10);
+
+  yield* eventAggregator(
+    [source1, source2, source3],
+    eventBus
+  ).pipe(Effect.fork);
+
+  return { source1, source2, source3, eventBus };
+});
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use PubSub when:**
+
+- Multiple subscribers need same event
+- Event-driven architecture
+- Loose coupling between components
+- One-to-many notifications
+- System state broadcasting
+- Event sourcing patterns
+
+⚠️ **Trade-offs:**
+
+- PubSub copies events to each subscriber
+- Subscribers can fall behind (queue buildup)
+- No acknowledgment mechanism
+- Broadcasting overhead for many subscribers
+
+---
+
+## PubSub vs Queue
+
+| Aspect | PubSub | Queue |
+| --- | --- | --- |
+| **Model** | Fan-out (1→many) | Pipeline (1→1) |
+| **Subscribers** | Multiple independent | Single consumer per item |
+| **Order** | All get same event | Items processed sequentially |
+| **Use Case** | Broadcasting | Work distribution |
+| **Coupling** | Loose | Loose |
+| **Scalability** | Grows with subscribers | Grows with items |
+
+---
+
+## See Also
+
+- [Decouple Fibers with Queue/PubSub](./decouple-fibers-with-queue-pubsub.mdx) - PubSub basics
+- [Concurrency Pattern 4: Queue Work Distribution](./concurrency-pattern-queue-work-distribution.mdx) - Work distribution
+- [Run Background Tasks with Fork](./run-background-tasks-with-fork.mdx) - Background execution
+- [Concurrency Pattern 3: Coordinate with Latch](./concurrency-pattern-coordinate-with-latch.mdx) - Multi-fiber coordination

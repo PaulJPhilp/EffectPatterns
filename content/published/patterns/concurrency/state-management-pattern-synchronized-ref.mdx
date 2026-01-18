@@ -1,0 +1,489 @@
+---
+title: 'State Management Pattern 1: Synchronized Reference with SynchronizedRef'
+id: state-management-pattern-synchronized-ref
+skillLevel: advanced
+applicationPatternId: concurrency
+summary: >-
+  Use SynchronizedRef to safely share mutable state across concurrent fibers,
+  with atomic updates and guaranteed consistency.
+tags:
+  - state-management
+  - concurrency
+  - shared-state
+  - atomic-operations
+  - thread-safety
+  - fiber-coordination
+rule:
+  description: >-
+    Use SynchronizedRef for thread-safe mutable state that must be updated
+    consistently across concurrent operations, with atomic modifications.
+related:
+  - concurrency-pattern-coordinate-with-latch
+  - concurrency-pattern-distribute-work-with-queue
+  - stream-pattern-stateful-operations
+author: effect_website
+lessonOrder: 8
+---
+
+## Guideline
+
+Synchronized references manage shared state safely:
+
+- **Atomic updates**: All-or-nothing modifications
+- **Consistent reads**: Snapshot consistency
+- **Lock-free optimism**: Try updates, retry on failure
+- **Compare-and-set**: Atomic check-and-update
+- **Transaction safety**: Multiple operations as one
+
+Pattern: `Ref.make()`, `Ref.modify()`, `Ref.set()`, `Ref.get()`
+
+---
+
+## Rationale
+
+Shared mutable state without synchronization causes problems:
+
+**Problem 1: Data races**
+- Fiber A reads counter (value: 5)
+- Fiber B reads counter (value: 5)
+- Fiber A writes counter + 1 (value: 6)
+- Fiber B writes counter + 1 (value: 6)
+- Expected: 7, Got: 6 (lost update)
+
+**Problem 2: Inconsistent snapshots**
+- Transaction reads user.balance (100)
+- User spent money elsewhere
+- Transaction reads user.balance again (90)
+- Now inconsistent within same transaction
+
+**Problem 3: Race conditions**
+- Check inventory (10 items)
+- Check passes
+- Before purchase, inventory goes to 0 (race)
+- Purchase fails, user frustrated
+
+**Problem 4: Deadlocks**
+- Fiber A locks state, tries to acquire another
+- Fiber B holds that state, tries to acquire first
+- Both stuck forever
+
+Solutions:
+
+**Atomic operations**:
+- Read and modify as single operation
+- No intermediate states visible
+- No race window
+- Guaranteed consistency
+
+**Compare-and-set**:
+- "If value is X, change to Y" (atomic)
+- Fails if another fiber changed it
+- Retry automatically
+- No locks needed
+
+**Snapshot isolation**:
+- Read complete snapshot
+- All operations see consistent view
+- Modifications build on snapshot
+- Merge changes safely
+
+---
+
+## Good Example
+
+This example demonstrates synchronized reference patterns.
+
+```typescript
+import { Effect, Ref, Fiber, Deferred } from "effect";
+
+interface Counter {
+  readonly value: number;
+  readonly updates: number;
+}
+
+interface Account {
+  readonly balance: number;
+  readonly transactions: string[];
+}
+
+const program = Effect.gen(function* () {
+  console.log(
+    `\n[SYNCHRONIZED REFERENCES] Concurrent state management\n`
+  );
+
+  // Example 1: Basic counter with atomic updates
+  console.log(`[1] Atomic counter increments:\n`);
+
+  const counter = yield* Ref.make<Counter>({
+    value: 0,
+    updates: 0,
+  });
+
+  // Simulate 5 concurrent increments
+  const incrementTasks = Array.from({ length: 5 }, (_, i) =>
+    Effect.gen(function* () {
+      for (let j = 0; j < 20; j++) {
+        yield* Ref.modify(counter, (current) => [
+          undefined,
+          {
+            value: current.value + 1,
+            updates: current.updates + 1,
+          },
+        ]);
+
+        if (j === 0 || j === 19) {
+          yield* Effect.log(
+            `[FIBER ${i}] Increment ${j === 0 ? "start" : "end"}`
+          );
+        }
+      }
+    })
+  );
+
+  // Run concurrently
+  yield* Effect.all(incrementTasks, { concurrency: "unbounded" });
+
+  const finalCounter = yield* Ref.get(counter);
+
+  yield* Effect.log(
+    `[RESULT] Counter: ${finalCounter.value} (expected 100)`
+  );
+  yield* Effect.log(
+    `[RESULT] Updates: ${finalCounter.updates} (expected 100)\n`
+  );
+
+  // Example 2: Bank account with transaction isolation
+  console.log(`[2] Account with atomic transfers:\n`);
+
+  const account = yield* Ref.make<Account>({
+    balance: 1000,
+    transactions: [],
+  });
+
+  const transfer = (amount: number, description: string) =>
+    Ref.modify(account, (current) => {
+      if (current.balance < amount) {
+        // Insufficient funds, don't modify
+        return [
+          { success: false, reason: "insufficient-funds" },
+          current, // Unchanged
+        ];
+      }
+
+      // Atomic: deduct + record transaction
+      return [
+        { success: true, reason: "transferred" },
+        {
+          balance: current.balance - amount,
+          transactions: [
+            ...current.transactions,
+            `${description}: -$${amount}`,
+          ],
+        },
+      ];
+    });
+
+  // Test transfer
+  const t1 = yield* transfer(100, "Coffee");
+
+  yield* Effect.log(`[TRANSFER 1] ${t1.success ? "✓" : "✗"} ${t1.reason}`);
+
+  const t2 = yield* transfer(2000, "Electronics");
+
+  yield* Effect.log(`[TRANSFER 2] ${t2.success ? "✓" : "✗"} ${t2.reason}`);
+
+  const t3 = yield* transfer(200, "Groceries");
+
+  yield* Effect.log(`[TRANSFER 3] ${t3.success ? "✓" : "✗"} ${t3.reason}\n`);
+
+  // Example 3: Concurrent reads don't block writes
+  console.log(`[3] Concurrent reads and writes:\n`);
+
+  const state = yield* Ref.make({ value: 0, readers: 0 });
+
+  const read = Effect.gen(function* () {
+    const snapshot = yield* Ref.get(state);
+
+    yield* Effect.log(
+      `[READ] Got value: ${snapshot.value}`
+    );
+
+    return snapshot.value;
+  });
+
+  const write = (newValue: number) =>
+    Ref.set(state, { value: newValue, readers: 0 });
+
+  // Concurrent operations
+  const mixed = Effect.all(
+    [
+      read,
+      write(10),
+      read,
+      write(20),
+      read,
+    ],
+    { concurrency: "unbounded" }
+  );
+
+  yield* mixed;
+
+  // Example 4: Compare-and-set pattern (retry on failure)
+  console.log(`\n[4] Compare-and-set (optimistic updates):\n`);
+
+  const versionedState = yield* Ref.make({ version: 0, data: "initial" });
+
+  const updateWithVersion = (newData: string) =>
+    Effect.gen(function* () {
+      let retries = 0;
+
+      while (retries < 3) {
+        const current = yield* Ref.get(versionedState);
+
+        // Try to update (check-and-set)
+        const result = yield* Ref.modify(versionedState, (s) => {
+          if (s.version === current.version) {
+            // No concurrent update, proceed
+            return [
+              { success: true },
+              {
+                version: s.version + 1,
+                data: newData,
+              },
+            ];
+          }
+
+          // Version changed, conflict
+          return [{ success: false }, s];
+        });
+
+        if (result.success) {
+          yield* Effect.log(
+            `[CAS] Updated on attempt ${retries + 1}`
+          );
+
+          return true;
+        }
+
+        retries++;
+
+        yield* Effect.log(
+          `[CAS] Conflict detected, retrying (attempt ${retries + 1})`
+        );
+      }
+
+      return false;
+    });
+
+  const casResult = yield* updateWithVersion("updated-data");
+
+  yield* Effect.log(`[CAS] Success: ${casResult}\n`);
+
+  // Example 5: State with subscriptions (notify on change)
+  console.log(`[5] State changes with notification:\n`);
+
+  interface Notification {
+    oldValue: unknown;
+    newValue: unknown;
+    timestamp: Date;
+  }
+
+  const observedState = yield* Ref.make<{ value: number; lastChange: Date }>({
+    value: 0,
+    lastChange: new Date(),
+  });
+
+  const updateAndNotify = (newValue: number) =>
+    Ref.modify(observedState, (current) => {
+      const notification: Notification = {
+        oldValue: current.value,
+        newValue,
+        timestamp: new Date(),
+      };
+
+      yield* Effect.log(
+        `[NOTIFY] ${current.value} → ${newValue} at ${notification.timestamp.toISOString()}`
+      );
+
+      return [
+        notification,
+        {
+          value: newValue,
+          lastChange: notification.timestamp,
+        },
+      ];
+    });
+
+  // Trigger changes
+  for (const val of [5, 10, 15]) {
+    yield* updateAndNotify(val);
+  }
+
+  // Example 6: Atomic batch updates
+  console.log(`\n[6] Batch atomic updates:\n`);
+
+  interface BatchState {
+    items: string[];
+    locked: boolean;
+    version: number;
+  }
+
+  const batchState = yield* Ref.make<BatchState>({
+    items: [],
+    locked: false,
+    version: 0,
+  });
+
+  const addItems = (newItems: string[]) =>
+    Ref.modify(batchState, (current) => {
+      // All items added atomically
+      return [
+        { added: newItems.length },
+        {
+          items: [...current.items, ...newItems],
+          locked: false,
+          version: current.version + 1,
+        },
+      ];
+    });
+
+  const batch1 = yield* addItems(["item1", "item2", "item3"]);
+
+  yield* Effect.log(
+    `[BATCH 1] Added ${batch1.added} items`
+  );
+
+  const batch2 = yield* addItems(["item4", "item5"]);
+
+  yield* Effect.log(
+    `[BATCH 2] Added ${batch2.added} items`
+  );
+
+  const finalBatch = yield* Ref.get(batchState);
+
+  yield* Effect.log(
+    `[RESULT] Total items: ${finalBatch.items.length}, Version: ${finalBatch.version}`
+  );
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+## Advanced: Lock-Free Queue with SynchronizedRef
+
+Build a queue without explicit locks:
+
+```typescript
+interface Queue<T> {
+  enqueue: (value: T) => Effect.Effect<void>;
+  dequeue: () => Effect.Effect<T | undefined>;
+  size: () => Effect.Effect<number>;
+}
+
+const createLockFreeQueue = <T>(): Effect.Effect<Queue<T>> =>
+  Effect.gen(function* () {
+    const state = yield* Ref.make<T[]>([]);
+
+    return {
+      enqueue: (value: T) =>
+        Ref.modify(state, (items) => [undefined, [...items, value]]),
+
+      dequeue: () =>
+        Ref.modify(state, (items) => {
+          if (items.length === 0) {
+            return [undefined, items];
+          }
+
+          const [first, ...rest] = items;
+
+          return [first, rest];
+        }),
+
+      size: () => Ref.get(state).pipe(
+        Effect.map((items) => items.length)
+      ),
+    };
+  });
+```
+
+---
+
+## Advanced: Retry on Conflict
+
+Automatic retry for failed compare-and-set:
+
+```typescript
+const updateWithRetry = <T,>(
+  ref: Ref.Ref<T>,
+  f: (current: T) => T
+): Effect.Effect<T> =>
+  Effect.gen(function* () {
+    const maxRetries = 10;
+
+    for (let i = 0; i < maxRetries; i++) {
+      const current = yield* Ref.get(ref);
+      const updated = f(current);
+
+      const result = yield* Ref.modify(ref, (s) => {
+        if (s === current) {
+          return [{ success: true }, updated];
+        }
+
+        return [{ success: false }, s];
+      });
+
+      if (result.success) {
+        return updated;
+      }
+
+      // Exponential backoff on conflict
+      yield* Effect.sleep(`${Math.pow(2, i)} millis`);
+    }
+
+    yield* Effect.fail(new Error("Update failed after retries"));
+  });
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use SynchronizedRef when:**
+- Shared state across fibers
+- Atomic operations needed
+- Consistency matters
+- High concurrency
+- No external locks available
+
+✅ **Use Ref.modify() when:**
+- Read + write must be atomic
+- Conditional updates
+- Conflict detection needed
+
+⚠️ **Trade-offs:**
+- Retry overhead on conflicts
+- Memory allocation in modify
+- Harder to reason about
+- Performance impact with high contention
+
+---
+
+## Performance Tuning
+
+| Scenario | Strategy | Benefit |
+| --- | --- | --- |
+| **Low contention** | Direct Ref | Minimal overhead |
+| **High contention** | Exponential backoff | Reduce retry storms |
+| **Batch updates** | Single modify | Atomic batch |
+| **Reader-heavy** | Get-only | No modification cost |
+
+---
+
+## See Also
+
+- [Concurrency Pattern 3: Latch Coordination](./concurrency-pattern-coordinate-with-latch.mdx) - Multi-fiber sync
+- [Concurrency Pattern 4: Queue Distribution](./concurrency-pattern-queue-work-distribution.mdx) - Work queues
+- [Stream Pattern 4: Stateful Operations](./stream-pattern-stateful-operations.mdx) - Stream state
+- [State Management Pattern 2: SubscriptionRef](./state-management-pattern-subscription-ref.mdx) - Observable state

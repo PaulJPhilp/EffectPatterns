@@ -1,0 +1,160 @@
+description: Append stream events to an event log with metadata to maintain a complete, ordered record of what happened.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Sink Pattern 2: Write Stream Events to Event Log
+**Rule:** Append stream events to an event log with metadata to maintain a complete, ordered record of what happened.
+
+### Example
+This example demonstrates an event sourcing pattern where a user account stream of events is appended to an event log with metadata.
+
+```typescript
+import { Effect, Stream, Sink, DateTime, Data } from "effect";
+
+// Event types
+type AccountEvent =
+  | AccountCreated
+  | MoneyDeposited
+  | MoneyWithdrawn
+  | AccountClosed;
+
+class AccountCreated extends Data.TaggedError("AccountCreated")<{
+  readonly accountId: string;
+  readonly owner: string;
+  readonly initialBalance: number;
+}> {}
+
+class MoneyDeposited extends Data.TaggedError("MoneyDeposited")<{
+  readonly accountId: string;
+  readonly amount: number;
+}> {}
+
+class MoneyWithdrawn extends Data.TaggedError("MoneyWithdrawn")<{
+  readonly accountId: string;
+  readonly amount: number;
+}> {}
+
+class AccountClosed extends Data.TaggedError("AccountClosed")<{
+  readonly accountId: string;
+}> {}
+
+// Event envelope with metadata
+interface StoredEvent {
+  readonly eventId: string; // Unique identifier per event
+  readonly eventType: string; // Type of event
+  readonly aggregateId: string; // What this event is about
+  readonly aggregateType: string; // What kind of thing (Account)
+  readonly data: any; // Event payload
+  readonly metadata: {
+    readonly timestamp: number;
+    readonly version: number; // Position in log
+    readonly causationId?: string; // What caused this
+  };
+}
+
+// Mock event log that appends events
+const eventLog: StoredEvent[] = [];
+let eventVersion = 0;
+
+const appendToEventLog = (
+  event: AccountEvent,
+  aggregateId: string
+): Effect.Effect<StoredEvent> =>
+  Effect.gen(function* () {
+    const now = yield* DateTime.now;
+    const storedEvent: StoredEvent = {
+      eventId: `evt-${eventVersion}-${Date.now()}`,
+      eventType: event._tag,
+      aggregateId,
+      aggregateType: "Account",
+      data: event,
+      metadata: {
+        timestamp: now.toEpochMillis(),
+        version: ++eventVersion,
+      },
+    };
+
+    // Append to log (simulated)
+    eventLog.push(storedEvent);
+    console.log(
+      `[v${storedEvent.metadata.version}] ${storedEvent.eventType}: ${aggregateId}`
+    );
+
+    return storedEvent;
+  });
+
+// Simulate a stream of events from various account operations
+const accountEvents: Stream.Stream<[string, AccountEvent]> = Stream.fromIterable([
+  [
+    "acc-1",
+    new AccountCreated({
+      accountId: "acc-1",
+      owner: "Alice",
+      initialBalance: 1000,
+    }),
+  ],
+  ["acc-1", new MoneyDeposited({ accountId: "acc-1", amount: 500 })],
+  ["acc-1", new MoneyWithdrawn({ accountId: "acc-1", amount: 200 })],
+  [
+    "acc-2",
+    new AccountCreated({
+      accountId: "acc-2",
+      owner: "Bob",
+      initialBalance: 2000,
+    }),
+  ],
+  ["acc-2", new MoneyDeposited({ accountId: "acc-2", amount: 1000 })],
+  ["acc-1", new AccountClosed({ accountId: "acc-1" })],
+]);
+
+// Sink that appends each event to the log
+const eventLogSink: Sink.Sink<number, never, [string, AccountEvent]> = Sink.fold(
+  0,
+  (count, [aggregateId, event]) =>
+    appendToEventLog(event, aggregateId).pipe(
+      Effect.map(() => count + 1)
+    ),
+  (count) => Effect.succeed(count)
+);
+
+// Run the stream and append all events
+const program = Effect.gen(function* () {
+  const totalEvents = yield* accountEvents.pipe(Stream.run(eventLogSink));
+
+  console.log(`\nTotal events appended: ${totalEvents}`);
+  console.log(`\nEvent log contents:`);
+  eventLog.forEach((event) => {
+    console.log(`  [v${event.metadata.version}] ${event.eventType}`);
+  });
+});
+
+Effect.runPromise(program);
+```
+
+This pattern:
+
+1. **Defines event types** using tagged errors (AccountCreated, MoneyDeposited, etc.)
+2. **Creates event envelopes** with metadata (timestamp, version, causation)
+3. **Streams events** from various sources
+4. **Appends to log** with proper versioning and ordering
+5. **Maintains history** for reconstruction and audit
+
+---
+
+**Explanation:**  
+Event logs are foundational to many patterns:
+
+- **Event Sourcing**: Instead of storing current state, store the sequence of events that led to it
+- **Audit Trails**: Complete, tamper-proof record of who did what and when
+- **Temporal Queries**: Reconstruct state at any point in time
+- **Consistency**: Single source of truth for what happened
+- **Replay**: Rebuild state or test changes by replaying events
+
+Unlike batch inserts which are transactional, event logs are append-only. Each event is immutable once written. This simplicity enables:
+
+- Fast appends (no updates, just sequential writes)
+- Natural ordering (events in write order)
+- Easy distribution (replicate the log)
+- Strong consistency (events are facts that don't change)
+
+---

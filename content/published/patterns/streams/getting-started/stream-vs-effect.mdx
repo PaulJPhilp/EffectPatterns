@@ -1,0 +1,130 @@
+---
+title: Stream vs Effect - When to Use Which
+id: stream-vs-effect
+skillLevel: beginner
+applicationPatternId: streams-getting-started
+summary: >-
+  Understand when to use Effect (single value) vs Stream (sequence of values)
+  for your use case.
+tags:
+  - stream
+  - effect
+  - comparison
+  - getting-started
+rule:
+  description: 'Use Effect for single values, Stream for sequences of values.'
+author: PaulJPhilp
+related:
+  - stream-hello-world
+  - stream-collect-results
+lessonOrder: 3
+---
+
+## Guideline
+
+Use `Effect` when your operation produces a single result. Use `Stream` when your operation produces multiple values over time.
+
+---
+
+## Rationale
+
+Both Effect and Stream are lazy and composable, but they serve different purposes:
+
+| Aspect | Effect | Stream |
+|--------|--------|--------|
+| **Produces** | One value | Zero or more values |
+| **Memory** | Holds one result | Processes incrementally |
+| **Use case** | API call, DB query | File lines, events, batches |
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Stream } from "effect"
+
+// ============================================
+// EFFECT: Single result operations
+// ============================================
+
+// Fetch one user - returns Effect<User>
+const fetchUser = (id: string) =>
+  Effect.tryPromise(() =>
+    fetch(`/api/users/${id}`).then((r) => r.json())
+  )
+
+// Read entire config - returns Effect<Config>
+const loadConfig = Effect.tryPromise(() =>
+  fetch("/config.json").then((r) => r.json())
+)
+
+// ============================================
+// STREAM: Multiple values operations
+// ============================================
+
+// Process file line by line - returns Stream<string>
+const fileLines = Stream.fromIterable([
+  "line 1",
+  "line 2",
+  "line 3",
+])
+
+// Generate events over time - returns Stream<Event>
+const events = Stream.make(
+  { type: "click", x: 10 },
+  { type: "click", x: 20 },
+  { type: "scroll", y: 100 },
+)
+
+// ============================================
+// CONVERTING BETWEEN THEM
+// ============================================
+
+// Effect → Stream (single value becomes 1-element stream)
+const effectToStream = Stream.fromEffect(fetchUser("123"))
+
+// Stream → Effect (collect all values into array)
+const streamToEffect = Stream.runCollect(fileLines)
+
+// Stream → Effect (process each value for side effects)
+const processAll = fileLines.pipe(
+  Stream.runForEach((line) => Effect.log(`Processing: ${line}`))
+)
+
+// ============================================
+// DECISION GUIDE
+// ============================================
+
+// Use Effect when:
+// - Fetching a single resource
+// - Computing a single result
+// - Performing one action
+
+// Use Stream when:
+// - Reading files line by line
+// - Processing paginated API results
+// - Handling real-time events
+// - Processing large datasets
+// - Building data pipelines
+```
+
+## Decision Flowchart
+
+```
+Does your operation produce multiple values?
+├── No → Use Effect
+└── Yes → Do they arrive over time or need lazy processing?
+    ├── No, all at once → Use Effect with Array
+    └── Yes → Use Stream
+```
+
+## Common Conversions
+
+| From | To | Method |
+|------|-----|--------|
+| Effect → Stream | `Stream.fromEffect(effect)` |
+| Stream → Effect | `Stream.runCollect(stream)` |
+| Stream → Effect | `Stream.runForEach(stream, fn)` |
+| Array → Stream | `Stream.fromIterable(array)` |
+| Stream → Array | `Stream.runCollect` then spread |
+

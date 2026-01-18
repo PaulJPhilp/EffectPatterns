@@ -1,0 +1,256 @@
+---
+id: schema-json-db-postgres-jsonb
+title: PostgreSQL JSONB Validation
+category: json-validation
+skillLevel: intermediate
+tags:
+  - schema
+  - database
+  - postgresql
+  - jsonb
+  - validation
+lessonOrder: 29
+---
+
+# Problem
+
+PostgreSQL JSONB columns are powerful and flexible, but that flexibility is dangerous. You can store any JSON, but your application expects specific fields with specific types. When you query JSONB columns and extract values, they're untyped and need validation. You also need to distinguish between stored data and data you're about to store—validating before INSERT/UPDATE is different from validating after SELECT. Plus, JSONB queries need to handle null and missing fields gracefully.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect";
+
+// 1. Define schema for JSONB document
+const OrderMetadata = Schema.Struct({
+  // Required fields
+  orderId: Schema.String,
+  customerId: Schema.String,
+  status: Schema.Literal(
+    "pending",
+    "processing",
+    "shipped",
+    "delivered",
+    "cancelled"
+  ),
+
+  // Optional tracking data
+  trackingNumber: Schema.String.pipe(Schema.optional),
+  estimatedDelivery: Schema.String.pipe(
+    Schema.pattern(/^\d{4}-\d{2}-\d{2}$/)
+  ).pipe(Schema.optional),
+
+  // Nested JSONB structure
+  items: Schema.Array(
+    Schema.Struct({
+      productId: Schema.String,
+      quantity: Schema.Number.pipe(
+        Schema.int(),
+        Schema.positive()
+      ),
+      price: Schema.Number.pipe(Schema.positive()),
+    })
+  ).pipe(Schema.minItems(1)),
+
+  // Metadata with defaults
+  source: Schema.Literal("web", "mobile", "api").pipe(
+    Schema.optionalWith({ default: () => "web" })
+  ),
+  notes: Schema.String.pipe(Schema.optional),
+});
+
+type OrderMetadata = typeof OrderMetadata.Type;
+
+// 2. Validate JSONB before INSERT
+const validateForInsert = (data: unknown) =>
+  Effect.gen(function* () {
+    const order = yield* Schema.decodeUnknown(OrderMetadata)(
+      data
+    ).pipe(
+      Effect.mapError((error) => ({
+        _tag: "InsertValidationError" as const,
+        message: `Order data invalid: ${error.message}`,
+      }))
+    );
+
+    // Additional business logic validation
+    if (order.items.length === 0) {
+      return yield* Effect.fail({
+        _tag: "BusinessLogicError" as const,
+        message: "Order must have at least one item",
+      });
+    }
+
+    return order;
+  });
+
+// 3. Validate JSONB after SELECT
+const validateFromPostgres = (
+  jsonbData: unknown
+) =>
+  Effect.gen(function* () {
+    const order = yield* Schema.decodeUnknown(OrderMetadata)(
+      jsonbData
+    ).pipe(
+      Effect.mapError((error) => ({
+        _tag: "SelectValidationError" as const,
+        message: `Retrieved JSONB invalid: ${error.message}`,
+      }))
+    );
+
+    return order;
+  });
+
+// 4. Handle PostgreSQL JSONB operators
+const queryOrdersByStatus = (status: string) =>
+  Effect.gen(function* () {
+    // Simulates: SELECT data FROM orders WHERE data->>'status' = ?
+    const mockDbResults: unknown[] = [
+      {
+        orderId: "ORD-001",
+        customerId: "CUST-123",
+        status: "shipped",
+        trackingNumber: "ABC123XYZ",
+        items: [
+          { productId: "PROD-1", quantity: 2, price: 29.99 },
+        ],
+        source: "web",
+      },
+      {
+        orderId: "ORD-002",
+        customerId: "CUST-456",
+        status: "shipped",
+        items: [
+          { productId: "PROD-2", quantity: 1, price: 49.99 },
+          { productId: "PROD-3", quantity: 3, price: 15.99 },
+        ],
+      },
+    ];
+
+    // Validate all results
+    const orders = yield* Effect.all(
+      mockDbResults.map((result) =>
+        validateFromPostgres(result)
+      )
+    );
+
+    return orders.filter((o) => o.status === status);
+  });
+
+// 5. Safe JSONB field extraction
+const extractOrderAmount = (
+  order: OrderMetadata
+): number => {
+  // Calculate from validated items (guaranteed to exist)
+  return order.items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+};
+
+// 6. JSONB update pattern with validation
+const updateOrderStatus = (
+  orderId: string,
+  newStatus: OrderMetadata["status"],
+  trackingNumber?: string
+) =>
+  Effect.gen(function* () {
+    // Build JSONB update payload
+    const updatePayload: unknown = {
+      orderId,
+      status: newStatus,
+      ...(trackingNumber && {
+        trackingNumber,
+      }),
+    };
+
+    // Validate before sending to DB
+    const validated = yield* Schema.decodeUnknown(
+      Schema.Struct({
+        orderId: Schema.String,
+        status: OrderMetadata.fields.status,
+        trackingNumber: Schema.String.pipe(Schema.optional),
+      })
+    )(updatePayload);
+
+    // Simulates: UPDATE orders SET data = jsonb_set(data, ...)
+    console.log(`✅ Would update order with:`, validated);
+
+    return validated;
+  });
+
+// 7. Usage
+Effect.runPromise(
+  Effect.gen(function* () {
+    console.log("📦 PostgreSQL JSONB Validation\n");
+
+    // Query by status
+    const shippedOrders = yield* queryOrdersByStatus(
+      "shipped"
+    );
+    console.log(
+      `✅ Found ${shippedOrders.length} shipped orders`
+    );
+
+    for (const order of shippedOrders) {
+      const amount = extractOrderAmount(order);
+      console.log(
+        `  Order ${order.orderId}: $${amount.toFixed(2)}`
+      );
+    }
+
+    // Update order status
+    yield* updateOrderStatus(
+      "ORD-001",
+      "delivered",
+      "ABC123XYZ-DELIVERED"
+    );
+
+    // Insert new order
+    const newOrder = yield* validateForInsert({
+      orderId: "ORD-999",
+      customerId: "CUST-789",
+      status: "pending",
+      items: [
+        { productId: "PROD-X", quantity: 1, price: 99.99 },
+      ],
+    });
+
+    console.log(`✅ New order validated: ${newOrder.orderId}`);
+  })
+)
+  .catch((error) => {
+    console.error(`❌ ${error._tag}: ${error.message}`);
+  });
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| Pre-INSERT validation | Catch bad data before it hits the database |
+| Post-SELECT validation | Ensure retrieved data hasn't corrupted |
+| JSONB operators awareness | Schema works with `->`, `->>`, `@>` queries |
+| Nested structure support | Array of items validated automatically |
+| Type-safe field access | No manual `data.items?.[0]?.price` checks |
+| Defaults for optional | Missing fields get sensible defaults |
+| Business logic validation | Schema validates format, code validates logic |
+
+# When to Use
+
+- PostgreSQL databases with JSONB columns
+- Order/invoice systems storing metadata as JSONB
+- Audit logs or event tracking in JSONB
+- Document stores on top of PostgreSQL
+- Flexible data that still needs type safety
+- Multi-tenant systems with per-tenant JSONB config
+- Before INSERT/UPDATE to prevent bad data
+- After SELECT to ensure consistency
+- JSONB query result validation
+
+# Related Patterns
+
+- [Validating JSON Database Columns](./basic.md)
+- [Handling Schema Evolution](./schema-evolution.md)
+- [Validating Partial Documents](./partial-validation.md)
+- [Basic JSON File Validation](../json-file-validation/basic.md)

@@ -1,0 +1,289 @@
+---
+title: Implement Distributed Tracing
+id: observability-distributed-tracing
+skillLevel: advanced
+applicationPatternId: observability
+summary: >-
+  Set up end-to-end distributed tracing across services with trace context
+  propagation.
+tags:
+  - observability
+  - tracing
+  - distributed-systems
+  - opentelemetry
+rule:
+  description: Propagate trace context across service boundaries to correlate requests.
+author: PaulJPhilp
+related:
+  - observability-opentelemetry
+  - observability-spans
+lessonOrder: 3
+---
+
+## Guideline
+
+Implement distributed tracing by propagating trace context through HTTP headers and using consistent span naming across services.
+
+---
+
+## Rationale
+
+Distributed tracing shows the complete request journey:
+
+1. **End-to-end visibility** - See entire request flow
+2. **Latency analysis** - Find slow services
+3. **Error correlation** - Link errors across services
+4. **Dependency mapping** - Understand service relationships
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Context, Layer } from "effect"
+import { HttpClient, HttpClientRequest, HttpServerRequest, HttpServerResponse } from "@effect/platform"
+
+// ============================================
+// 1. Define trace context
+// ============================================
+
+interface TraceContext {
+  readonly traceId: string
+  readonly spanId: string
+  readonly parentSpanId?: string
+  readonly sampled: boolean
+}
+
+class CurrentTrace extends Context.Tag("CurrentTrace")<
+  CurrentTrace,
+  TraceContext
+>() {}
+
+// W3C Trace Context header names
+const TRACEPARENT_HEADER = "traceparent"
+const TRACESTATE_HEADER = "tracestate"
+
+// ============================================
+// 2. Generate trace IDs
+// ============================================
+
+const generateTraceId = (): string =>
+  Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+
+const generateSpanId = (): string =>
+  Array.from(crypto.getRandomValues(new Uint8Array(8)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+
+// ============================================
+// 3. Parse and format trace context
+// ============================================
+
+const parseTraceparent = (header: string): TraceContext | null => {
+  // Format: 00-traceId-spanId-flags
+  const parts = header.split("-")
+  if (parts.length !== 4) return null
+
+  return {
+    traceId: parts[1],
+    spanId: generateSpanId(),  // New span for this service
+    parentSpanId: parts[2],
+    sampled: parts[3] === "01",
+  }
+}
+
+const formatTraceparent = (ctx: TraceContext): string =>
+  `00-${ctx.traceId}-${ctx.spanId}-${ctx.sampled ? "01" : "00"}`
+
+// ============================================
+// 4. Extract trace from incoming request
+// ============================================
+
+const extractTraceContext = Effect.gen(function* () {
+  const request = yield* HttpServerRequest.HttpServerRequest
+
+  const traceparent = request.headers[TRACEPARENT_HEADER]
+
+  if (traceparent) {
+    const parsed = parseTraceparent(traceparent)
+    if (parsed) {
+      yield* Effect.log("Extracted trace context").pipe(
+        Effect.annotateLogs({
+          traceId: parsed.traceId,
+          parentSpanId: parsed.parentSpanId,
+        })
+      )
+      return parsed
+    }
+  }
+
+  // No incoming trace - start a new one
+  const newTrace: TraceContext = {
+    traceId: generateTraceId(),
+    spanId: generateSpanId(),
+    sampled: Math.random() < 0.1,  // 10% sampling
+  }
+
+  yield* Effect.log("Started new trace").pipe(
+    Effect.annotateLogs({ traceId: newTrace.traceId })
+  )
+
+  return newTrace
+})
+
+// ============================================
+// 5. Propagate trace to outgoing requests
+// ============================================
+
+const makeTracedHttpClient = Effect.gen(function* () {
+  const baseClient = yield* HttpClient.HttpClient
+  const trace = yield* CurrentTrace
+
+  return {
+    get: (url: string) =>
+      Effect.gen(function* () {
+        // Create child span for outgoing request
+        const childSpan: TraceContext = {
+          traceId: trace.traceId,
+          spanId: generateSpanId(),
+          parentSpanId: trace.spanId,
+          sampled: trace.sampled,
+        }
+
+        yield* Effect.log("Making traced HTTP request").pipe(
+          Effect.annotateLogs({
+            traceId: childSpan.traceId,
+            spanId: childSpan.spanId,
+            url,
+          })
+        )
+
+        const request = HttpClientRequest.get(url).pipe(
+          HttpClientRequest.setHeader(
+            TRACEPARENT_HEADER,
+            formatTraceparent(childSpan)
+          )
+        )
+
+        return yield* baseClient.execute(request)
+      }),
+  }
+})
+
+// ============================================
+// 6. Tracing middleware for HTTP server
+// ============================================
+
+const withTracing = <A, E, R>(
+  handler: Effect.Effect<A, E, R | CurrentTrace>
+): Effect.Effect<A, E, R | HttpServerRequest.HttpServerRequest> =>
+  Effect.gen(function* () {
+    const traceContext = yield* extractTraceContext
+
+    return yield* handler.pipe(
+      Effect.provideService(CurrentTrace, traceContext),
+      Effect.withLogSpan(`request-${traceContext.spanId}`),
+      Effect.annotateLogs({
+        "trace.id": traceContext.traceId,
+        "span.id": traceContext.spanId,
+        "parent.span.id": traceContext.parentSpanId ?? "none",
+      })
+    )
+  })
+
+// ============================================
+// 7. Example: Service A calls Service B
+// ============================================
+
+// Service B handler
+const serviceBHandler = withTracing(
+  Effect.gen(function* () {
+    const trace = yield* CurrentTrace
+    yield* Effect.log("Service B processing request")
+
+    // Simulate work
+    yield* Effect.sleep("50 millis")
+
+    return HttpServerResponse.json({
+      message: "Hello from Service B",
+      traceId: trace.traceId,
+    })
+  })
+)
+
+// Service A handler (calls Service B)
+const serviceAHandler = withTracing(
+  Effect.gen(function* () {
+    const trace = yield* CurrentTrace
+    yield* Effect.log("Service A processing request")
+
+    // Call Service B with trace propagation
+    const tracedClient = yield* makeTracedHttpClient
+    const response = yield* tracedClient.get("http://service-b/api/data")
+
+    yield* Effect.log("Service A received response from B")
+
+    return HttpServerResponse.json({
+      message: "Hello from Service A",
+      traceId: trace.traceId,
+    })
+  })
+)
+
+// ============================================
+// 8. Run and observe
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("=== Distributed Tracing Demo ===")
+
+  // Simulate incoming request with trace
+  const incomingTrace: TraceContext = {
+    traceId: generateTraceId(),
+    spanId: generateSpanId(),
+    sampled: true,
+  }
+
+  yield* Effect.log("Processing traced request").pipe(
+    Effect.provideService(CurrentTrace, incomingTrace),
+    Effect.annotateLogs({
+      "trace.id": incomingTrace.traceId,
+      "span.id": incomingTrace.spanId,
+    })
+  )
+})
+
+Effect.runPromise(program)
+```
+
+## Trace Context Propagation
+
+```
+┌─────────────┐     traceparent      ┌─────────────┐
+│  Service A  │ ───────────────────► │  Service B  │
+│ span: abc   │    00-xyz-abc-01     │ span: def   │
+└─────────────┘                       └─────────────┘
+       │                                    │
+       │         traceparent               │
+       │ ◄─────────────────────────────────┘
+       │        00-xyz-def-01
+```
+
+## W3C Trace Context Format
+
+```
+traceparent: 00-{traceId}-{spanId}-{flags}
+            |    32 hex    8 hex   2 hex
+            version                 01=sampled
+```
+
+## Best Practices
+
+1. **Use W3C standard** - Interop with other systems
+2. **Sample appropriately** - 100% in dev, 1-10% in prod
+3. **Include trace in logs** - Correlate logs with traces
+4. **Propagate across all boundaries** - HTTP, queues, async
+5. **Use consistent span names** - `service.operation`
+

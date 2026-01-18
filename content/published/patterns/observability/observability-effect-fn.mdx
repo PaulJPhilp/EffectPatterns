@@ -1,0 +1,77 @@
+---
+title: Instrument and Observe Function Calls with Effect.fn
+id: observability-effect-fn
+skillLevel: intermediate
+applicationPatternId: observability
+summary: >-
+  Use Effect.fn to wrap, instrument, and observe function calls, enabling
+  composable logging, metrics, and tracing at function boundaries.
+tags:
+  - Effect.fn
+  - observability
+  - instrumentation
+  - function
+  - logging
+  - metrics
+  - tracing
+rule:
+  description: >-
+    Use Effect.fn to wrap functions with effectful instrumentation, such as
+    logging, metrics, or tracing, in a composable and type-safe way.
+related:
+  - observability-structured-logging
+  - observability-custom-metrics
+  - observability-tracing-spans
+author: PaulJPhilp
+lessonOrder: 3
+---
+
+# Instrument and Observe Function Calls with `Effect.fn`
+
+## Guideline
+
+Use `Effect.fn` to wrap and instrument function calls with effectful logic, such as logging, metrics, or tracing.  
+This enables you to observe, monitor, and debug function boundaries in a composable, type-safe way.
+
+## Rationale
+
+Instrumenting function calls is essential for observability, especially in complex or critical code paths.  
+`Effect.fn` lets you add effectful logic (logging, metrics, tracing, etc.) before, after, or around any function call, without changing the function’s core logic.
+
+## Good Example
+
+```typescript
+import { Effect } from "effect";
+
+// A simple function to instrument
+function add(a: number, b: number): number {
+  return a + b;
+}
+
+// Use Effect.fn to instrument the function with observability
+const addWithLogging = Effect.fn("add")(add).pipe(
+  Effect.withSpan("add", { attributes: { "fn.name": "add" } })
+);
+
+// Use the instrumented function in an Effect workflow
+const program = Effect.gen(function* () {
+  yield* Effect.logInfo("Calling add function");
+  const sum = yield* addWithLogging(2, 3);
+  yield* Effect.logInfo(`Sum is ${sum}`);
+  return sum;
+});
+
+// Run the program
+Effect.runPromise(program);
+```
+
+**Explanation:**
+
+- `Effect.fn("name")(fn)` wraps a function with instrumentation capabilities, enabling observability.
+- You can add tracing spans, logging, metrics, and other observability logic to function boundaries.
+- Keeps instrumentation separate from business logic and fully composable.
+- The wrapped function integrates seamlessly with Effect's observability and tracing infrastructure.
+
+## Anti-Pattern
+
+Scattering logging, metrics, or tracing logic directly inside business functions, making code harder to test, maintain, and compose.

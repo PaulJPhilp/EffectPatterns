@@ -1,0 +1,131 @@
+---
+id: schema-form-basic
+title: Basic Form Validation
+category: form-validation
+skillLevel: beginner
+tags:
+  - schema
+  - form
+  - validation
+  - user-input
+  - web-forms
+lessonOrder: 7
+---
+
+# Problem
+
+You have a form with multiple fields—name, email, age. Validation is scattered everywhere: inline JavaScript, backend checks, error messages don't match. You need a single source of truth for form validation that enforces constraints at compile-time and provides clear error messages to users.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// 1. Define form schema
+const SignUpForm = Schema.Struct({
+  username: Schema.String.pipe(
+    Schema.trimmed(),
+    Schema.minLength(3),
+    Schema.maxLength(20),
+    Schema.pattern(/^[a-zA-Z0-9_-]+$/)
+  ),
+  email: Schema.String.pipe(
+    Schema.trimmed(),
+    Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+  ),
+  age: Schema.Number.pipe(
+    Schema.int(),
+    Schema.between(13, 120)
+  ),
+  password: Schema.String.pipe(
+    Schema.minLength(8)
+  ),
+})
+
+type SignUpForm = typeof SignUpForm.Type
+
+// 2. Create validator
+const validateForm = Schema.decodeUnknown(SignUpForm)
+
+// 3. Format errors for UI
+const getErrorMessage = (error: any): string => {
+  const msg = error.message || String(error)
+
+  // Map validation error messages to user-friendly text
+  if (msg.includes("minLength")) {
+    return "Field is too short"
+  }
+  if (msg.includes("maxLength")) {
+    return "Field is too long"
+  }
+  if (msg.includes("pattern")) {
+    return "Invalid format"
+  }
+  if (msg.includes("between")) {
+    return "Value out of range"
+  }
+
+  return msg
+}
+
+// 4. Submit handler
+const submitForm = (formData: unknown) =>
+  Effect.gen(function* () {
+    const validated = yield* Effect.tryPromise({
+      try: () => validateForm(formData),
+      catch: (error) => ({
+        _tag: "ValidationError" as const,
+        message: getErrorMessage(error),
+        raw: error,
+      }),
+    })
+
+    console.log(
+      `✅ Form valid: ${validated.username} (${validated.email})`
+    )
+    return validated
+  })
+
+// Usage
+const formData = {
+  username: "alice_123",
+  email: "alice@example.com",
+  age: 25,
+  password: "securepass123",
+}
+
+Effect.runPromise(submitForm(formData))
+  .then((form) => {
+    console.log(`Welcome ${form.username}!`)
+  })
+  .catch((error) => {
+    console.error(`Form error: ${error.message}`)
+  })
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| Single schema | One definition for validation and types |
+| `Schema.trimmed()` | Automatically clean user input |
+| `Schema.minLength/maxLength` | Enforce string length constraints |
+| `Schema.pattern` | Regex validation for format |
+| `Schema.between` | Numeric range validation |
+| `Schema.decodeUnknown` | Parse form data with typed errors |
+| User-friendly messages | Map technical errors to readable text |
+
+# When to Use
+
+- Sign-up and login forms
+- User profile edit forms
+- Product creation forms
+- Any multi-field user input
+- Web forms that need validation feedback
+
+# Related Patterns
+
+- [Collecting All Validation Errors](./collect-all-errors.md)
+- [Dependent Field Validation](./dependent-fields.md)
+- [Async Validation](./async-validation.md)
+- [Web Standards Validation](../web-standards-validation/email.md)

@@ -1,0 +1,184 @@
+---
+title: Create Type-Safe Errors
+id: domain-modeling-tagged-errors
+skillLevel: beginner
+applicationPatternId: domain-modeling
+summary: >-
+  Define domain-specific errors using Data.TaggedError for type-safe error
+  handling.
+tags:
+  - domain-modeling
+  - errors
+  - tagged-errors
+  - getting-started
+rule:
+  description: >-
+    Use Data.TaggedError to create typed, distinguishable errors for your
+    domain.
+author: PaulJPhilp
+related:
+  - domain-modeling-hello-world
+  - error-handling-catch-tag
+lessonOrder: 1
+---
+
+## Guideline
+
+Create domain-specific errors using `Data.TaggedError`. Each error type gets a unique `_tag` for pattern matching.
+
+---
+
+## Rationale
+
+Plain `Error` or string messages cause problems:
+
+1. **No type safety** - Can't know what errors a function might throw
+2. **Hard to handle** - Matching on error messages is fragile
+3. **Poor documentation** - Errors aren't part of the function signature
+
+Tagged errors solve this by making errors typed and distinguishable.
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Data } from "effect"
+
+// ============================================
+// 1. Define tagged errors for your domain
+// ============================================
+
+class UserNotFoundError extends Data.TaggedError("UserNotFoundError")<{
+  readonly userId: string
+}> {}
+
+class InvalidEmailError extends Data.TaggedError("InvalidEmailError")<{
+  readonly email: string
+  readonly reason: string
+}> {}
+
+class DuplicateUserError extends Data.TaggedError("DuplicateUserError")<{
+  readonly email: string
+}> {}
+
+// ============================================
+// 2. Use in Effect functions
+// ============================================
+
+interface User {
+  id: string
+  email: string
+  name: string
+}
+
+const validateEmail = (email: string): Effect.Effect<string, InvalidEmailError> => {
+  if (!email.includes("@")) {
+    return Effect.fail(new InvalidEmailError({
+      email,
+      reason: "Missing @ symbol"
+    }))
+  }
+  return Effect.succeed(email)
+}
+
+const findUser = (id: string): Effect.Effect<User, UserNotFoundError> => {
+  // Simulate database lookup
+  if (id === "123") {
+    return Effect.succeed({ id, email: "alice@example.com", name: "Alice" })
+  }
+  return Effect.fail(new UserNotFoundError({ userId: id }))
+}
+
+const createUser = (
+  email: string,
+  name: string
+): Effect.Effect<User, InvalidEmailError | DuplicateUserError> =>
+  Effect.gen(function* () {
+    const validEmail = yield* validateEmail(email)
+
+    // Simulate duplicate check
+    if (validEmail === "taken@example.com") {
+      return yield* Effect.fail(new DuplicateUserError({ email: validEmail }))
+    }
+
+    return {
+      id: crypto.randomUUID(),
+      email: validEmail,
+      name,
+    }
+  })
+
+// ============================================
+// 3. Handle errors by tag
+// ============================================
+
+const program = createUser("alice@example.com", "Alice").pipe(
+  Effect.catchTag("InvalidEmailError", (error) =>
+    Effect.succeed({
+      id: "fallback",
+      email: "default@example.com",
+      name: `${error.email} was invalid: ${error.reason}`,
+    })
+  ),
+  Effect.catchTag("DuplicateUserError", (error) =>
+    Effect.fail(new Error(`Email ${error.email} already registered`))
+  )
+)
+
+// ============================================
+// 4. Match on all errors
+// ============================================
+
+const handleAllErrors = createUser("bad-email", "Bob").pipe(
+  Effect.catchTags({
+    InvalidEmailError: (e) => Effect.succeed(`Invalid: ${e.reason}`),
+    DuplicateUserError: (e) => Effect.succeed(`Duplicate: ${e.email}`),
+  })
+)
+
+// ============================================
+// 5. Run and see results
+// ============================================
+
+Effect.runPromise(program)
+  .then((user) => console.log("Created:", user))
+  .catch((error) => console.error("Failed:", error))
+```
+
+## Key Benefits
+
+| Feature | Benefit |
+|---------|---------|
+| **`_tag` property** | Unique identifier for pattern matching |
+| **Type-safe payload** | Each error can carry relevant data |
+| **Exhaustive handling** | Compiler warns if you miss an error type |
+| **Self-documenting** | Function signature shows possible errors |
+
+## Error Hierarchy Example
+
+```typescript
+// Domain errors
+class ValidationError extends Data.TaggedError("ValidationError")<{
+  field: string
+  message: string
+}> {}
+
+class NotFoundError extends Data.TaggedError("NotFoundError")<{
+  resource: string
+  id: string
+}> {}
+
+class UnauthorizedError extends Data.TaggedError("UnauthorizedError")<{
+  reason: string
+}> {}
+
+// Function shows exactly what can go wrong
+const updateUser = (
+  id: string,
+  data: unknown
+): Effect.Effect<User, ValidationError | NotFoundError | UnauthorizedError> => {
+  // Implementation...
+}
+```
+

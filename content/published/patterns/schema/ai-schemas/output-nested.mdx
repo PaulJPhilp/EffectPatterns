@@ -1,0 +1,181 @@
+---
+id: schema-ai-output-nested-structures
+title: Nested Object Schemas
+category: ai-schemas
+skillLevel: intermediate
+tags:
+  - schema
+  - ai
+  - nested
+  - composition
+  - structured-output
+lessonOrder: 25
+---
+
+# Problem
+
+You need to represent complex, hierarchical data from an LLM—like a document with sections, paragraphs, and metadata. Flat schemas don't capture this structure. You need to compose schemas into nested objects, validate the entire tree, and ensure deeply nested fields match your expectations.
+
+# Solution
+
+```typescript
+import { Schema, JSONSchema, Effect } from "effect"
+import { Anthropic } from "@anthropic-ai/sdk"
+
+// 1. Define nested schemas bottom-up
+const Metadata = Schema.Struct({
+  author: Schema.String.pipe(
+    Schema.description("Author name or 'Unknown'")
+  ),
+  publishDate: Schema.String.pipe(
+    Schema.description("ISO 8601 date format (YYYY-MM-DD)")
+  ),
+  tags: Schema.Array(Schema.String).pipe(
+    Schema.description("Topic tags, lowercase")
+  ),
+})
+
+const Citation = Schema.Struct({
+  title: Schema.String,
+  url: Schema.String.pipe(
+    Schema.description("Full HTTP/HTTPS URL")
+  ),
+  accessDate: Schema.String.pipe(
+    Schema.optional,
+    Schema.description("ISO 8601 date when accessed")
+  ),
+})
+
+const Section = Schema.Struct({
+  title: Schema.String,
+  content: Schema.String.pipe(
+    Schema.description("Main paragraph text, 100-300 words")
+  ),
+  citations: Schema.Array(Citation).pipe(
+    Schema.description("Sources for this section")
+  ),
+  subsections: Schema.Array(Schema.lazy(() => Section)).pipe(
+    Schema.description("Nested subsections, max depth 3")
+  ),
+})
+
+const Article = Schema.Struct({
+  headline: Schema.String.pipe(
+    Schema.description("Main title of article")
+  ),
+  summary: Schema.String.pipe(
+    Schema.maxLength(300),
+    Schema.description("Executive summary, under 300 chars")
+  ),
+  metadata: Metadata,
+  sections: Schema.Array(Section).pipe(
+    Schema.minItems(1),
+    Schema.description("At least one section required")
+  ),
+})
+
+type Article = typeof Article.Type
+
+// 2. Generate JSON Schema with nested structures
+const jsonSchema = JSONSchema.make(Article)
+
+// 3. Parse and validate deeply nested response
+const extractArticle = (text: string) =>
+  Effect.gen(function* () {
+    const client = new Anthropic()
+
+    const response = yield* Effect.tryPromise({
+      try: () =>
+        client.messages.create({
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 4096,
+          messages: [
+            {
+              role: "user",
+              content: `Extract structured article from:\n\n${text}`,
+            },
+          ],
+          tools: [
+            {
+              name: "extract_article",
+              description: "Extract article with nested sections",
+              input_schema: jsonSchema as any,
+            },
+          ],
+        }),
+      catch: (error) => new Error(`API call failed: ${error}`),
+    })
+
+    const toolUse = response.content.find(
+      (block) => block.type === "tool_use"
+    ) as any
+
+    if (!toolUse) {
+      return yield* Effect.fail(new Error("No tool use in response"))
+    }
+
+    // Validates entire nested tree at once
+    const article = yield* Effect.tryPromise({
+      try: () => Schema.decodeUnknownSync(Article)(toolUse.input),
+      catch: (error) =>
+        new Error(`Validation failed: ${error}`),
+    })
+
+    return article
+  })
+
+// 4. Traverse and process nested data
+const countWords = (article: Article): number => {
+  let total = 0
+
+  const countSection = (section: Section) => {
+    total += section.content.split(" ").length
+    section.subsections.forEach(countSection)
+  }
+
+  article.sections.forEach(countSection)
+  return total
+}
+
+// Usage
+const sampleText = `
+The Rise of Effect-TS
+Effect-TS is a powerful functional programming framework...
+Section: Core Concepts
+Effect is a data type that represents an effectful computation...
+Subsection: Error Handling
+Effects model errors as data...
+`
+
+Effect.runPromise(extractArticle(sampleText))
+  .then((article) => {
+    console.log(`Article: ${article.headline}`)
+    console.log(`Words: ${countWords(article)}`)
+    console.log(JSON.stringify(article.sections[0].subsections, null, 2))
+  })
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| Bottom-up composition | Define leaf schemas first (Metadata, Citation), then compose up |
+| `Schema.lazy()` | Allows recursive schemas for subsections at arbitrary depth |
+| Single validation | `Schema.decodeUnknownSync` validates entire tree in one call |
+| Type derivation | `type Article = typeof Article.Type` gives you full TypeScript support for nested data |
+| Structural guidance | LLM sees full JSON structure, produces properly nested responses |
+
+# When to Use
+
+- Documents with sections, subsections, hierarchies
+- API responses with nested objects and arrays
+- Multi-level categorization (products → categories → items)
+- Extracting complex structured data (research papers, documentation)
+- When you need type-safe access to deeply nested fields
+
+# Related Patterns
+
+- [Basic AI Output Schema](./basic.md)
+- [Adding Descriptions for AI Context](./with-descriptions.md)
+- [Enums and Literal Types](./enums-and-literals.md)
+- [Union Types for Flexible Outputs](./unions-for-ai.md)

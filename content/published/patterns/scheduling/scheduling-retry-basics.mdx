@@ -1,0 +1,182 @@
+---
+title: Retry Failed Operations
+id: scheduling-retry-basics
+skillLevel: beginner
+applicationPatternId: scheduling
+summary: Use Effect.retry with Schedule to automatically retry operations that fail.
+tags:
+  - scheduling
+  - retry
+  - error-handling
+  - getting-started
+rule:
+  description: Use Effect.retry with a Schedule to handle transient failures gracefully.
+author: PaulJPhilp
+related:
+  - scheduling-hello-world
+  - scheduling-exponential-backoff
+lessonOrder: 1
+---
+
+## Guideline
+
+Use `Effect.retry` to automatically retry operations that fail due to transient errors like network timeouts.
+
+---
+
+## Rationale
+
+Many failures are temporary:
+
+1. **Network issues** - Connection drops, timeouts
+2. **Rate limits** - Too many requests
+3. **Resource contention** - Database locks
+4. **Service restarts** - Brief unavailability
+
+Automatic retries handle these without manual intervention.
+
+---
+
+## Good Example
+
+```typescript
+import { Effect, Schedule, Data } from "effect"
+
+// ============================================
+// 1. Define error types
+// ============================================
+
+class NetworkError extends Data.TaggedError("NetworkError")<{
+  readonly message: string
+}> {}
+
+class RateLimitError extends Data.TaggedError("RateLimitError")<{
+  readonly retryAfter: number
+}> {}
+
+class NotFoundError extends Data.TaggedError("NotFoundError")<{
+  readonly resource: string
+}> {}
+
+// ============================================
+// 2. Simulate a flaky API call
+// ============================================
+
+let callCount = 0
+const fetchData = Effect.gen(function* () {
+  callCount++
+  yield* Effect.log(`API call attempt ${callCount}`)
+
+  // Simulate intermittent failures
+  if (callCount < 3) {
+    return yield* Effect.fail(new NetworkError({ message: "Connection timeout" }))
+  }
+
+  return { data: "Success!", attempts: callCount }
+})
+
+// ============================================
+// 3. Basic retry - fixed attempts
+// ============================================
+
+const withBasicRetry = fetchData.pipe(
+  Effect.retry(Schedule.recurs(5))  // Retry up to 5 times
+)
+
+// ============================================
+// 4. Retry with delay
+// ============================================
+
+const withDelayedRetry = fetchData.pipe(
+  Effect.retry(
+    Schedule.spaced("500 millis").pipe(
+      Schedule.intersect(Schedule.recurs(5))
+    )
+  )
+)
+
+// ============================================
+// 5. Retry only specific errors
+// ============================================
+
+const fetchWithErrors = (shouldFail: boolean) =>
+  Effect.gen(function* () {
+    if (shouldFail) {
+      // Randomly fail with different errors
+      const random = Math.random()
+      if (random < 0.5) {
+        return yield* Effect.fail(new NetworkError({ message: "Timeout" }))
+      } else if (random < 0.8) {
+        return yield* Effect.fail(new RateLimitError({ retryAfter: 1000 }))
+      } else {
+        return yield* Effect.fail(new NotFoundError({ resource: "user:123" }))
+      }
+    }
+    return "Data fetched!"
+  })
+
+// Only retry network and rate limit errors, not NotFoundError
+const retryTransientOnly = fetchWithErrors(true).pipe(
+  Effect.retry({
+    schedule: Schedule.recurs(3),
+    while: (error) =>
+      error._tag === "NetworkError" || error._tag === "RateLimitError",
+  })
+)
+
+// ============================================
+// 6. Retry with exponential backoff
+// ============================================
+
+const withExponentialBackoff = fetchData.pipe(
+  Effect.retry(
+    Schedule.exponential("100 millis", 2).pipe(  // 100ms, 200ms, 400ms...
+      Schedule.intersect(Schedule.recurs(5))      // Max 5 retries
+    )
+  )
+)
+
+// ============================================
+// 7. Run and observe
+// ============================================
+
+const program = Effect.gen(function* () {
+  yield* Effect.log("Starting retry demo...")
+  
+  // Reset counter
+  callCount = 0
+  
+  const result = yield* withBasicRetry
+  yield* Effect.log(`Final result: ${JSON.stringify(result)}`)
+})
+
+Effect.runPromise(program)
+```
+
+## Retry Strategies
+
+| Strategy | When to Use |
+|----------|-------------|
+| `Schedule.recurs(n)` | Known transient failures |
+| `Schedule.spaced(d)` | Give service time to recover |
+| `Schedule.exponential(d)` | Rate limits, backpressure |
+| `Schedule.jittered(s)` | Avoid thundering herd |
+
+## Key Options
+
+```typescript
+Effect.retry({
+  schedule: Schedule.recurs(3),      // How to schedule retries
+  while: (error) => isTransient(error), // Which errors to retry
+  until: (error) => isFatal(error),     // When to stop retrying
+})
+```
+
+## Best Practices
+
+1. **Don't retry everything** - Some errors are permanent
+2. **Add delays** - Give the system time to recover
+3. **Use backoff** - Avoid overwhelming a struggling service
+4. **Set limits** - Don't retry forever
+5. **Log attempts** - Know what's happening
+

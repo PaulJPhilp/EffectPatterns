@@ -1,0 +1,137 @@
+description: Use merge and concat combinators to combine multiple streams, enabling aggregation of data from multiple independent sources.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Stream Pattern 2: Merge and Combine Multiple Streams
+**Rule:** Use merge and concat combinators to combine multiple streams, enabling aggregation of data from multiple independent sources.
+
+### Example
+This example demonstrates merging multiple event streams into a unified stream.
+
+```typescript
+import { Stream, Effect, Chunk } from "effect";
+
+interface Event {
+  readonly source: string;
+  readonly type: string;
+  readonly data: string;
+  readonly timestamp: Date;
+}
+
+// Create independent event streams from different sources
+const createUserEventStream = (): Stream.Stream<Event> =>
+  Stream.fromIterable([
+    { source: "user-service", type: "login", data: "user-123", timestamp: new Date(Date.now() + 0) },
+    { source: "user-service", type: "logout", data: "user-123", timestamp: new Date(Date.now() + 500) },
+  ]).pipe(
+    Stream.tap(() => Effect.sleep("500 millis"))
+  );
+
+const createPaymentEventStream = (): Stream.Stream<Event> =>
+  Stream.fromIterable([
+    { source: "payment-service", type: "payment-started", data: "order-456", timestamp: new Date(Date.now() + 200) },
+    { source: "payment-service", type: "payment-completed", data: "order-456", timestamp: new Date(Date.now() + 800) },
+  ]).pipe(
+    Stream.tap(() => Effect.sleep("600 millis"))
+  );
+
+const createAuditEventStream = (): Stream.Stream<Event> =>
+  Stream.fromIterable([
+    { source: "audit-log", type: "access-granted", data: "resource-789", timestamp: new Date(Date.now() + 100) },
+    { source: "audit-log", type: "access-revoked", data: "resource-789", timestamp: new Date(Date.now() + 900) },
+  ]).pipe(
+    Stream.tap(() => Effect.sleep("800 millis"))
+  );
+
+// Merge streams (interleaved, unordered)
+const mergedEventStream = (): Stream.Stream<Event> => {
+  const userStream = createUserEventStream();
+  const paymentStream = createPaymentEventStream();
+  const auditStream = createAuditEventStream();
+
+  return Stream.merge(userStream, paymentStream, auditStream);
+};
+
+// Concat streams (sequential, ordered)
+const concatenatedEventStream = (): Stream.Stream<Event> => {
+  return createUserEventStream().pipe(
+    Stream.concat(createPaymentEventStream()),
+    Stream.concat(createAuditEventStream())
+  );
+};
+
+// Main: Compare merge vs concat
+const program = Effect.gen(function* () {
+  console.log(`\n[MERGE] Interleaved events from multiple sources:\n`);
+
+  // Collect merged stream
+  const mergedEvents = yield* mergedEventStream().pipe(
+    Stream.runCollect
+  );
+
+  Chunk.forEach(mergedEvents, (event, idx) => {
+    console.log(
+      `  ${idx + 1}. [${event.source}] ${event.type}: ${event.data}`
+    );
+  });
+
+  console.log(`\n[CONCAT] Sequential events (user → payment → audit):\n`);
+
+  // Collect concatenated stream
+  const concatEvents = yield* concatenatedEventStream().pipe(
+    Stream.runCollect
+  );
+
+  Chunk.forEach(concatEvents, (event, idx) => {
+    console.log(
+      `  ${idx + 1}. [${event.source}] ${event.type}: ${event.data}`
+    );
+  });
+});
+
+Effect.runPromise(program);
+```
+
+Output shows merge interleaving vs concat ordering:
+```
+[MERGE] Interleaved events from multiple sources:
+
+  1. [audit-log] access-granted: resource-789
+  2. [user-service] login: user-123
+  3. [payment-service] payment-started: order-456
+  4. [user-service] logout: user-123
+  5. [payment-service] payment-completed: order-456
+  6. [audit-log] access-revoked: resource-789
+
+[CONCAT] Sequential events (user → payment → audit):
+
+  1. [user-service] login: user-123
+  2. [user-service] logout: user-123
+  3. [payment-service] payment-started: order-456
+  4. [payment-service] payment-completed: order-456
+  5. [audit-log] access-granted: resource-789
+  6. [audit-log] access-revoked: resource-789
+```
+
+---
+
+**Explanation:**  
+Multi-source data processing without merge/concat creates issues:
+
+- **Complex coordination**: Manual loop over multiple sources
+- **Hard to aggregate**: Collecting from different sources is verbose
+- **Ordering confusion**: Sequential vs. parallel unclear
+- **Resource management**: Multiple independent consumers
+
+Merge/concat enable:
+
+- **Simple composition**: Combine streams naturally
+- **Semantic clarity**: Merge = parallel, concat = sequential
+- **Aggregation**: Single consumer for multiple sources
+- **Scalability**: Add sources without refactoring
+
+Real-world example: Aggregating user events
+- **Without merge**: Poll user service, poll event log, poll notifications separately
+- **With merge**: `Stream.merge(userStream, eventStream, notificationStream)`
+
+---

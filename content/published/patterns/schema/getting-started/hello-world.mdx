@@ -1,0 +1,82 @@
+---
+id: schema-hello-world
+title: Your First Schema
+category: getting-started
+skillLevel: beginner
+tags:
+  - schema
+  - getting-started
+  - basics
+  - introduction
+lessonOrder: 34
+---
+
+# Problem
+
+You have unknown data—from an API, form, or file—and need to validate it has the right shape. Without schema validation, your code assumes data is correct and crashes later with cryptic errors. You need a simple way to define what valid data looks like and check it at runtime.
+
+# Solution
+
+```typescript
+import { Schema } from "effect"
+
+// Define what a valid User looks like
+const User = Schema.Struct({
+  name: Schema.String,
+  age: Schema.Number,
+  email: Schema.String,
+})
+
+// Get the TypeScript type automatically
+type User = typeof User.Type
+
+// Decode unknown data into a typed User
+const decode = Schema.decodeUnknownSync(User)
+
+// Valid data → typed User
+const validData = {
+  name: "Alice",
+  age: 30,
+  email: "alice@example.com"
+}
+
+const user = decode(validData)
+console.log(`✅ Valid user: ${user.name}, age ${user.age}`)
+// Output: ✅ Valid user: Alice, age 30
+
+// Invalid data → throws ParseError
+try {
+  const invalidData = {
+    name: "Bob",
+    age: "not a number",  // Wrong type!
+    email: "bob@example.com"
+  }
+  decode(invalidData)
+} catch (error) {
+  console.log(`❌ Invalid: age must be a number`)
+}
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Schema.Struct** | Defines an object shape with named fields |
+| **Schema.String/Number** | Built-in schemas for primitive types |
+| **typeof User.Type** | Extracts TypeScript type from schema |
+| **decodeUnknownSync** | Validates unknown data, throws on failure |
+| **Runtime validation** | Catches invalid data before it causes bugs |
+
+# When to Use
+
+- Validating API responses before using them
+- Checking form input before processing
+- Parsing JSON files or config
+- Any time you receive data from outside your code
+
+# Related Patterns
+
+- [Decode vs Encode](./decode-encode.md)
+- [Handling Parse Errors](./handling-errors.md)
+- [Object Schemas](../objects/basic-objects.md)
+

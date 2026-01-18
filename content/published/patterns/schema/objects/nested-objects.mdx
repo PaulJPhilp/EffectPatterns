@@ -1,0 +1,190 @@
+---
+id: schema-nested-objects
+title: Nested Object Schemas
+category: objects
+skillLevel: beginner
+tags:
+  - schema
+  - nested
+  - composition
+  - complex
+lessonOrder: 25
+---
+
+# Problem
+
+Real data has nested objects: a user has an address, an order has items with products. You need to define schemas for complex structures where objects contain other objects, and validate the entire tree at once.
+
+# Solution
+
+```typescript
+import { Schema } from "effect"
+
+// ============================================
+// DEFINE COMPONENT SCHEMAS
+// ============================================
+
+const Address = Schema.Struct({
+  street: Schema.String,
+  city: Schema.String,
+  zipCode: Schema.String,
+  country: Schema.String,
+})
+
+const ContactInfo = Schema.Struct({
+  email: Schema.String,
+  phone: Schema.optional(Schema.String),
+})
+
+// ============================================
+// COMPOSE INTO NESTED STRUCTURES
+// ============================================
+
+const User = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  contact: ContactInfo,          // Nested object
+  address: Address,              // Nested object
+  billingAddress: Schema.optional(Address),  // Optional nested
+})
+
+type User = typeof User.Type
+
+// ============================================
+// DEEPLY NESTED STRUCTURES
+// ============================================
+
+const Product = Schema.Struct({
+  sku: Schema.String,
+  name: Schema.String,
+  price: Schema.Number,
+})
+
+const OrderItem = Schema.Struct({
+  product: Product,              // Nested product
+  quantity: Schema.Number,
+  subtotal: Schema.Number,
+})
+
+const Order = Schema.Struct({
+  orderId: Schema.String,
+  customer: User,                // Nested user (which has nested address!)
+  items: Schema.Array(OrderItem), // Array of nested items
+  total: Schema.Number,
+  shippingAddress: Address,      // Nested address
+})
+
+type Order = typeof Order.Type
+
+// ============================================
+// VALIDATION IN ACTION
+// ============================================
+
+const decodeUser = Schema.decodeUnknownSync(User)
+const decodeOrder = Schema.decodeUnknownSync(Order)
+
+// Valid nested user
+const user = decodeUser({
+  id: "user_123",
+  name: "Alice",
+  contact: {
+    email: "alice@example.com",
+    phone: "555-1234",
+  },
+  address: {
+    street: "123 Main St",
+    city: "Springfield",
+    zipCode: "12345",
+    country: "USA",
+  },
+})
+
+console.log(`✅ ${user.name} lives in ${user.address.city}`)
+console.log(`   Email: ${user.contact.email}`)
+
+// Valid deeply nested order
+const order = decodeOrder({
+  orderId: "order_789",
+  customer: {
+    id: "user_123",
+    name: "Alice",
+    contact: { email: "alice@example.com" },
+    address: {
+      street: "123 Main St",
+      city: "Springfield",
+      zipCode: "12345",
+      country: "USA",
+    },
+  },
+  items: [
+    {
+      product: { sku: "WIDGET-001", name: "Widget", price: 29.99 },
+      quantity: 2,
+      subtotal: 59.98,
+    },
+    {
+      product: { sku: "GADGET-002", name: "Gadget", price: 49.99 },
+      quantity: 1,
+      subtotal: 49.99,
+    },
+  ],
+  total: 109.97,
+  shippingAddress: {
+    street: "456 Oak Ave",
+    city: "Portland",
+    zipCode: "97201",
+    country: "USA",
+  },
+})
+
+console.log(`\n✅ Order ${order.orderId}`)
+console.log(`   Customer: ${order.customer.name}`)
+console.log(`   Items: ${order.items.length}`)
+order.items.forEach((item) => {
+  console.log(`   - ${item.product.name} x${item.quantity}: $${item.subtotal}`)
+})
+console.log(`   Total: $${order.total}`)
+console.log(`   Ship to: ${order.shippingAddress.city}`)
+
+// Invalid - nested validation error
+try {
+  decodeUser({
+    id: "user_456",
+    name: "Bob",
+    contact: {
+      email: 12345,  // Should be string!
+    },
+    address: {
+      street: "789 Pine St",
+      // Missing city, zipCode, country!
+    },
+  })
+} catch {
+  console.log("\n❌ Nested validation failed")
+}
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Schema composition** | Use schemas as field values |
+| **Deep validation** | All nested levels validated |
+| **Type inference** | Full nested type inferred |
+| **Reusable components** | Address used in multiple places |
+| **Error paths** | Errors identify exact nested location |
+
+# When to Use
+
+- Users with addresses, contacts
+- Orders with items and products
+- API responses with nested resources
+- Config files with nested sections
+- Any complex hierarchical data
+
+# Related Patterns
+
+- [Basic Objects](./basic-objects.md)
+- [Optional Fields](./optional-fields.md)
+- [Schema Composition](../composition/extending.md)
+

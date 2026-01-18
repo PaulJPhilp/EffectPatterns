@@ -1,0 +1,312 @@
+---
+id: schema-data-normalization
+title: Data Normalization and Canonical Forms
+category: transformations
+skillLevel: intermediate
+tags:
+  - schema
+  - normalization
+  - data-cleaning
+  - canonical-form
+  - deduplication
+  - formatting
+lessonOrder: 6
+---
+
+# Problem
+
+Raw data is messy: extra whitespace, inconsistent casing, duplicates, mixed formats. You receive product names with leading/trailing spaces, emails in different cases, phone numbers with various delimiters. Before storing or comparing, you need normalization to a canonical form. This logic scattered across the codebase leads to inconsistencies—sometimes normalized, sometimes not. You need a declarative schema that ensures every value is consistently normalized at the boundary.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// ============================================
+// 1. String normalization transformations
+// ============================================
+
+// Trim whitespace
+const Trimmed = Schema.transform(Schema.String, Schema.String, {
+  decode: (input) => input.trim(),
+  encode: (output) => output,
+})
+
+// Lowercase normalization
+const Lowercase = Schema.transform(Schema.String, Schema.String, {
+  decode: (input) => input.toLowerCase(),
+  encode: (output) => output,
+})
+
+// Uppercase normalization
+const Uppercase = Schema.transform(Schema.String, Schema.String, {
+  decode: (input) => input.toUpperCase(),
+  encode: (output) => output,
+})
+
+// Title case normalization
+const TitleCase = Schema.transform(Schema.String, Schema.String, {
+  decode: (input) =>
+    input
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" "),
+  encode: (output) => output,
+})
+
+// ============================================
+// 2. Email normalization (trim + lowercase)
+// ============================================
+
+const Email = Schema.String.pipe(
+  Schema.transform(Schema.String, Schema.String, {
+    decode: (input) => input.trim().toLowerCase(),
+    encode: (output) => output,
+  }),
+  Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/),
+  Schema.brand("Email")
+)
+
+type Email = typeof Email.Type
+
+// ============================================
+// 3. Phone number normalization (remove non-digits, format)
+// ============================================
+
+const PhoneNumber = Schema.transform(
+  Schema.String,
+  Schema.String,
+  {
+    decode: (input) => {
+      // Remove all non-digit characters
+      const digits = input.replace(/\D/g, "")
+
+      // Validate length
+      if (digits.length < 10) {
+        throw new Error("Phone number must have at least 10 digits")
+      }
+
+      // Format as (XXX) XXX-XXXX for 10 digits, or country code format
+      if (digits.length === 10) {
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+      }
+
+      // For longer numbers, keep as is
+      return digits
+    },
+    encode: (output) => output,
+  }
+)
+
+// ============================================
+// 4. URL normalization (lowercase, trailing slash)
+// ============================================
+
+const NormalizedUrl = Schema.transform(
+  Schema.String,
+  Schema.String,
+  {
+    decode: (input) => {
+      let url = input.toLowerCase()
+      // Remove trailing slash for consistency
+      if (url.endsWith("/") && url.length > 1) {
+        url = url.slice(0, -1)
+      }
+      return url
+    },
+    encode: (output) => output,
+  }
+)
+
+// ============================================
+// 5. Tag/category normalization (trim, lowercase, deduplication)
+// ============================================
+
+const Tags = Schema.transform(
+  Schema.Array(Schema.String),
+  Schema.Array(Schema.String),
+  {
+    decode: (input) => {
+      // Trim each tag, lowercase, remove duplicates
+      const normalized = Array.from(
+        new Set(
+          input
+            .map((tag) => tag.trim().toLowerCase())
+            .filter((tag) => tag.length > 0)
+        )
+      )
+      return normalized.sort() // Sort for canonical order
+    },
+    encode: (output) => output,
+  }
+)
+
+// ============================================
+// 6. Complex entity normalization
+// ============================================
+
+const Product = Schema.Struct({
+  name: TitleCase,
+  sku: Uppercase,
+  email: Email,
+  website: NormalizedUrl,
+  tags: Tags,
+})
+
+type Product = typeof Product.Type
+
+// ============================================
+// 7. Address normalization
+// ============================================
+
+const Address = Schema.Struct({
+  street: Schema.transform(Schema.String, Schema.String, {
+    decode: (input) => input.trim().toUpperCase(),
+    encode: (output) => output,
+  }),
+  city: TitleCase,
+  state: Uppercase.pipe(Schema.maxLength(2)),
+  zip: Schema.transform(Schema.String, Schema.String, {
+    decode: (input) => input.replace(/\D/g, ""), // Only digits
+    encode: (output) => output,
+  }),
+})
+
+type Address = typeof Address.Type
+
+// ============================================
+// 8. Data normalization service
+// ============================================
+
+class NormalizationService {
+  normalizeProduct = Schema.decodeUnknown(Product)
+  normalizeAddress = Schema.decodeUnknown(Address)
+
+  async normalizeEmail(email: string): Promise<Email> {
+    return Schema.decodeUnknown(Email)(email)
+  }
+
+  async normalizePhoneNumber(phone: string): Promise<string> {
+    return Schema.decodeUnknown(PhoneNumber)(phone)
+  }
+
+  async normalizeUrl(url: string): Promise<string> {
+    return Schema.decodeUnknown(NormalizedUrl)(url)
+  }
+
+  async normalizeTags(tags: string[]): Promise<string[]> {
+    return Schema.decodeUnknown(Tags)(tags)
+  }
+}
+
+// ============================================
+// 9. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  const normalizer = new NormalizationService()
+
+  // Messy product data from form/API
+  const messyProduct = {
+    name: "  awesome widget  ",
+    sku: "abc-123-xyz",
+    email: "  SALES@EXAMPLE.COM  ",
+    website: "https://example.com/products/",
+    tags: ["electronics", "GADGETS", "electronics", "  fun  "],
+  }
+
+  console.log("📥 Raw input:", messyProduct)
+
+  // Normalize product
+  const normalizedProduct = yield* Effect.tryPromise({
+    try: () => normalizer.normalizeProduct(messyProduct),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Normalization failed: ${msg}`)
+    },
+  })
+
+  console.log("\n✅ Normalized product:", normalizedProduct)
+
+  // Normalize individual fields
+  const normalizedPhone = yield* Effect.tryPromise({
+    try: () => normalizer.normalizePhoneNumber("(555) 123-4567"),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Phone normalization failed: ${msg}`)
+    },
+  })
+
+  console.log(`\n📞 Normalized phone: ${normalizedPhone}`)
+
+  // Normalize address
+  const messyAddress = {
+    street: "  123 main street  ",
+    city: "new york",
+    state: "ny",
+    zip: "10001-5432",
+  }
+
+  const normalizedAddress = yield* Effect.tryPromise({
+    try: () => normalizer.normalizeAddress(messyAddress),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Address normalization failed: ${msg}`)
+    },
+  })
+
+  console.log(`\n📍 Normalized address:`, normalizedAddress)
+
+  // Normalize tags with deduplication
+  const normalizedTags = yield* Effect.tryPromise({
+    try: () =>
+      normalizer.normalizeTags(["Tech", "  gadgets  ", "TECH", "cool"]),
+    catch: (error) => {
+      const msg = error instanceof Error ? error.message : String(error)
+      return new Error(`Tags normalization failed: ${msg}`)
+    },
+  })
+
+  console.log(`\n🏷️ Normalized tags:`, normalizedTags)
+
+  return { normalizedProduct, normalizedAddress, normalizedTags }
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ All data normalized"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Canonical forms** | Consistent normalization across all data |
+| **Trim + lowercase** | Email addresses and tags in predictable format |
+| **Deduplication** | Tags automatically deduplicated and sorted |
+| **Format consistency** | Phone numbers, URLs follow standard format |
+| **Decode transformation** | Applied at data entry, before storage/comparison |
+| **Single source of truth** | Schema defines normalization once, used everywhere |
+| **No conditional logic** | Declarative rather than imperative normalization |
+| **Composable** | Chain normalization steps (trim → lowercase → dedupe) |
+
+# When to Use
+
+- Normalizing user input before storage (emails, phone numbers)
+- Standardizing product data from multiple sources
+- Deduplicating and sorting tags or categories
+- URL normalization for canonical comparison
+- Address formatting and validation
+- Contact information standardization
+- SKU or identifier formatting
+- Data import from external sources with inconsistent formats
+
+# Related Patterns
+
+- [Basic Schema Transformations](./basic-transforms.md)
+- [Branded Types](./branded-types.md)
+- [Bidirectional Transformations](./bidirectional.md)
+- [Basic Form Validation](../form-validation/basic.md)
+- [Web Standards Validation](../web-standards-validation/email.md)

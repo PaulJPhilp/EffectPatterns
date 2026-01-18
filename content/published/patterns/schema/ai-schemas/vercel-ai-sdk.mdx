@@ -1,0 +1,227 @@
+---
+id: schema-ai-output-vercel-ai-sdk
+title: Integration with Vercel AI SDK
+category: ai-schemas
+skillLevel: advanced
+tags:
+  - schema
+  - ai
+  - vercel-ai-sdk
+  - generateobject
+  - integration
+lessonOrder: 3
+---
+
+# Problem
+
+You're using Vercel AI SDK's `generateObject` function to get structured output from LLMs. The SDK expects a specific schema format. You need to convert Effect schemas to Vercel's format, handle the response type-safely, and validate output without losing TypeScript type information across both systems.
+
+# Solution
+
+```typescript
+import { Schema, JSONSchema, Effect } from "effect"
+import { generateObject } from "ai"
+import { openai } from "@ai-sdk/openai"
+
+// 1. Define Effect schema (same as always)
+const ProductReview = Schema.Struct({
+  productId: Schema.String.pipe(
+    Schema.description("Internal product ID")
+  ),
+  rating: Schema.Number.pipe(
+    Schema.between(1, 5),
+    Schema.description("Rating: 1-5 stars")
+  ),
+  sentiment: Schema.Literal("positive", "neutral", "negative").pipe(
+    Schema.description("Overall sentiment of review")
+  ),
+  pros: Schema.Array(Schema.String).pipe(
+    Schema.minItems(1),
+    Schema.maxItems(5),
+    Schema.description("What worked well (1-5 items)")
+  ),
+  cons: Schema.Array(Schema.String).pipe(
+    Schema.minItems(0),
+    Schema.maxItems(5),
+    Schema.description("What didn't work (0-5 items)")
+  ),
+  wouldRecommend: Schema.Boolean,
+  purchaseDate: Schema.String.pipe(
+    Schema.optional,
+    Schema.description("YYYY-MM-DD format or omit if unknown")
+  ),
+})
+
+type ProductReview = typeof ProductReview.Type
+
+// 2. Convert to Vercel schema format
+const toVercelSchema = (effectSchema: Schema.Schema<any>) => {
+  const jsonSchema = JSONSchema.make(effectSchema)
+
+  // Vercel's zodToJsonSchema-compatible format
+  return {
+    type: "object",
+    properties: jsonSchema.properties,
+    required: jsonSchema.required,
+    $schema: "http://json-schema.org/draft-07/schema#",
+  }
+}
+
+// 3. Create wrapper Effect for Vercel integration
+const generateProductReview = (text: string) =>
+  Effect.gen(function* () {
+    const vercelSchema = toVercelSchema(ProductReview)
+
+    // Call Vercel's generateObject
+    const result = yield* Effect.tryPromise({
+      try: () =>
+        generateObject({
+          model: openai("gpt-4-turbo"),
+          system:
+            "Extract structured product review from customer feedback.",
+          prompt: `Review text:\n\n${text}`,
+          schema: vercelSchema as any,
+        }),
+      catch: (error) => new Error(`Vercel AI call failed: ${error}`),
+    })
+
+    // Result.object is typed as 'unknown' by Vercel
+    // Re-validate with Effect schema for type safety
+    const review = yield* Effect.tryPromise({
+      try: () =>
+        Schema.decodeUnknownSync(ProductReview)(result.object),
+      catch: (error) =>
+        new Error(`Validation failed: ${error}`),
+    })
+
+    return review
+  })
+
+// 4. Alternative: Use generateObject with Zod-to-Effect adapter
+const generateWithEffectValidation = (
+  prompt: string,
+  schema: Schema.Schema<any>
+) =>
+  Effect.gen(function* () {
+    const vercelSchema = toVercelSchema(schema)
+
+    const result = yield* Effect.tryPromise({
+      try: () =>
+        generateObject({
+          model: openai("gpt-4-turbo"),
+          prompt,
+          schema: vercelSchema as any,
+        }),
+      catch: (error) => new Error(`Vercel AI call failed: ${error}`),
+    })
+
+    // Validate with Effect schema
+    const validated = yield* Effect.tryPromise({
+      try: () => Schema.decodeUnknownSync(schema)(result.object),
+      catch: (error) =>
+        new Error(
+          `Schema validation failed: ${error}`
+        ),
+    })
+
+    return validated
+  })
+
+// 5. Batch process multiple reviews
+const batchGenerateReviews = (reviews: string[]) =>
+  Effect.gen(function* () {
+    // Process in parallel with concurrency limit
+    const results = yield* Effect.all(
+      reviews.map((text) => generateProductReview(text)),
+      { concurrency: 3 }
+    )
+
+    return results
+  })
+
+// 6. Stream handler for real-time updates
+const streamReviewAnalysis = (text: string) =>
+  Effect.gen(function* () {
+    // Vercel AI SDK streaming
+    const { partialObject } = yield* Effect.tryPromise({
+      try: () =>
+        generateObject({
+          model: openai("gpt-4-turbo"),
+          system: "Extract review. Stream partial updates.",
+          prompt: `Review:\n\n${text}`,
+          schema: toVercelSchema(ProductReview) as any,
+        }),
+      catch: (error) => new Error(`Streaming failed: ${error}`),
+    })
+
+    // partialObject is updated as stream progresses
+    return partialObject
+  })
+
+// Usage example 1: Single review
+const sampleReview =
+  "Great laptop! Fast performance and excellent screen. " +
+  "Battery life is good but gets hot under load. Would buy again."
+
+Effect.runPromise(generateProductReview(sampleReview))
+  .then((review) => {
+    console.log(`Rating: ${review.rating}/5 - ${review.sentiment}`)
+    console.log(`Recommend: ${review.wouldRecommend}`)
+    console.log(`Pros: ${review.pros.join(", ")}`)
+    console.log(`Cons: ${review.cons.join(", ")}`)
+  })
+
+// Usage example 2: Batch processing
+const reviewTexts = [
+  "Amazing product!",
+  "Terrible, broke in a week",
+  "Okay, does what it says",
+]
+
+Effect.runPromise(batchGenerateReviews(reviewTexts))
+  .then((reviews) => {
+    const avgRating =
+      reviews.reduce((sum, r) => sum + r.rating, 0) /
+      reviews.length
+    console.log(`Average rating: ${avgRating.toFixed(1)}/5`)
+  })
+
+// Usage example 3: Custom schema with generateWithEffectValidation
+const CustomSchema = Schema.Struct({
+  title: Schema.String,
+  score: Schema.Number,
+})
+
+Effect.runPromise(
+  generateWithEffectValidation(
+    "Extract title and score",
+    CustomSchema
+  )
+)
+  .then((result) => console.log(result))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| Effect → Vercel conversion | `JSONSchema.make()` produces Vercel-compatible JSON Schema |
+| Double validation | Vercel validates first, Effect re-validates for type safety |
+| Type preservation | TypeScript knows full type after both validations |
+| Batch processing | `Effect.all` with concurrency for parallel LLM calls |
+| Error handling | Unified error handling across Vercel AI and Effect |
+
+# When to Use
+
+- Using Vercel AI SDK with structured outputs
+- Need type-safe wrappers around Vercel functions
+- Batch processing multiple LLM requests
+- Combining Effect error handling with Vercel AI
+- Want single schema source for validation and SDK integration
+
+# Related Patterns
+
+- [Basic AI Output Schema](./basic.md)
+- [Adding Descriptions for AI Context](./with-descriptions.md)
+- [Nested Object Schemas](./nested-structures.md)
+- [Union Types for Flexible Outputs](./unions-for-ai.md)

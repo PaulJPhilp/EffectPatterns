@@ -1,0 +1,117 @@
+---
+id: schema-handling-errors
+title: Handling Parse Errors
+category: getting-started
+skillLevel: beginner
+tags:
+  - schema
+  - errors
+  - validation
+  - error-handling
+lessonOrder: 24
+---
+
+# Problem
+
+When validation fails, you need to know what went wrong. The default parse error is detailed but hard to read. You need to extract useful error messages for logging, displaying to users, or debugging.
+
+# Solution
+
+```typescript
+import { Schema, Effect, ParseResult } from "effect"
+
+const User = Schema.Struct({
+  name: Schema.String,
+  age: Schema.Number,
+  email: Schema.String,
+})
+
+// Three ways to handle parse errors:
+
+// 1. SYNC WITH TRY/CATCH
+const decodeSync = Schema.decodeUnknownSync(User)
+
+function parseUserSync(data: unknown) {
+  try {
+    return decodeSync(data)
+  } catch (error) {
+    if (ParseResult.isParseError(error)) {
+      console.log("Parse error:", ParseResult.TreeFormatter.formatErrorSync(error))
+    }
+    throw error
+  }
+}
+
+// 2. SYNC RETURNING EITHER (no exceptions)
+const decodeEither = Schema.decodeUnknownEither(User)
+
+function parseUserSafe(data: unknown) {
+  const result = decodeEither(data)
+  
+  if (result._tag === "Left") {
+    const message = ParseResult.TreeFormatter.formatErrorSync(result.left)
+    return { success: false, error: message }
+  }
+  
+  return { success: true, user: result.right }
+}
+
+// 3. ASYNC WITH EFFECT (recommended)
+const decodeEffect = Schema.decodeUnknown(User)
+
+const parseUserEffect = (data: unknown) =>
+  decodeEffect(data).pipe(
+    Effect.mapError((error) => ({
+      _tag: "ValidationError" as const,
+      message: ParseResult.TreeFormatter.formatErrorSync(error),
+    }))
+  )
+
+// Demo all three approaches
+console.log("=== Sync with try/catch ===")
+try {
+  parseUserSync({ name: "Alice", age: "thirty", email: "a@b.com" })
+} catch {
+  // Error already logged
+}
+
+console.log("\n=== Sync returning Either ===")
+const result = parseUserSafe({ name: 123, age: 30, email: "a@b.com" })
+if (!result.success) {
+  console.log("Validation failed:", result.error)
+}
+
+console.log("\n=== Async with Effect ===")
+Effect.runPromise(
+  parseUserEffect({ name: "Alice", age: 30 }).pipe(  // Missing email
+    Effect.match({
+      onFailure: (err) => console.log("Failed:", err.message),
+      onSuccess: (user) => console.log("Success:", user.name),
+    })
+  )
+)
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **ParseResult.isParseError** | Type guard to check if error is from Schema |
+| **TreeFormatter** | Human-readable error messages |
+| **decodeUnknownEither** | Returns Either instead of throwing |
+| **decodeUnknown** | Returns Effect for async composition |
+| **Effect.mapError** | Transform error into your error type |
+
+# When to Use
+
+- Displaying validation errors to users
+- Logging parse failures for debugging
+- Building APIs that return structured error responses
+- Composing validation with other effectful operations
+
+# Related Patterns
+
+- [Your First Schema](./hello-world.md)
+- [Custom Error Messages](../error-handling/custom-messages.md)
+- [Error Aggregation](../error-handling/error-aggregation.md)
+

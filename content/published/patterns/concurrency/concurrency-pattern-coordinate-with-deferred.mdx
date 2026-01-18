@@ -1,0 +1,387 @@
+---
+title: 'Concurrency Pattern 1: Coordinate Async Operations with Deferred'
+id: concurrency-pattern-coordinate-with-deferred
+skillLevel: intermediate
+applicationPatternId: concurrency
+summary: >-
+  Use Deferred to coordinate async operations where multiple fibers wait for a
+  single event to complete, enabling producer-consumer patterns and async
+  signaling without polling.
+tags:
+  - concurrency
+  - deferred
+  - coordination
+  - async-signaling
+  - producer-consumer
+  - synchronization
+rule:
+  description: >-
+    Use Deferred for one-time async coordination between fibers, enabling
+    multiple consumers to wait for a single producer's result.
+related:
+  - run-background-tasks-with-fork
+  - understand-fibers-as-lightweight-threads
+  - race-concurrent-effects
+author: effect_website
+lessonOrder: 2
+---
+
+## Guideline
+
+When you need multiple fibers to wait for a single async event (e.g., service initialization, data availability, external signal), use `Deferred`. A Deferred is a one-shot promise that exactly one fiber completes, and many fibers can wait for. This avoids polling and provides clean async signaling.
+
+---
+
+## Rationale
+
+Many concurrent systems need to coordinate on events:
+
+- **Service initialization**: Wait for all services to start before accepting requests
+- **Data availability**: Wait for initial data load before processing
+- **External events**: Wait for webhook, signal, or message
+- **Startup gates**: All workers wait for leader to signal start
+
+Without Deferred:
+
+- Polling wastes CPU (check repeatedly)
+- Callbacks become complex (multiple consumers)
+- No clean semantics for "wait for this one thing"
+- Error propagation unclear
+
+With Deferred:
+
+- Non-blocking wait (fiber suspends)
+- One fiber produces, many consume
+- Clear completion or failure
+- Efficient wakeup when ready
+
+---
+
+## Good Example
+
+This example demonstrates a service startup pattern where multiple workers wait for initialization to complete before starting processing.
+
+```typescript
+import { Effect, Deferred, Fiber } from "effect";
+
+interface ServiceConfig {
+  readonly name: string;
+  readonly port: number;
+}
+
+interface Service {
+  readonly name: string;
+  readonly isReady: Deferred.Deferred<void>;
+}
+
+// Simulate a service that takes time to initialize
+const createService = (config: ServiceConfig): Effect.Effect<Service> =>
+  Effect.gen(function* () {
+    const isReady = yield* Deferred.make<void>();
+
+    return { name: config.name, isReady };
+  });
+
+// Initialize the service (runs in background)
+const initializeService = (service: Service): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[${service.name}] Starting initialization...`);
+
+    // Simulate initialization work
+    yield* Effect.sleep("1 second");
+
+    yield* Effect.log(`[${service.name}] Initialization complete`);
+
+    // Signal that service is ready
+    yield* Deferred.succeed(service.isReady, undefined);
+  });
+
+// A worker that waits for service to be ready before starting
+const createWorker = (
+  id: number,
+  services: Service[]
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[Worker ${id}] Starting, waiting for services...`);
+
+    // Wait for all services to be ready
+    yield* Effect.all(
+      services.map((service) =>
+        Deferred.await(service.isReady).pipe(
+          Effect.tapError((error) =>
+            Effect.log(
+              `[Worker ${id}] Error waiting for ${service.name}: ${error}`
+            )
+          )
+        )
+      )
+    );
+
+    yield* Effect.log(`[Worker ${id}] All services ready, starting work`);
+
+    // Simulate worker processing
+    for (let i = 0; i < 3; i++) {
+      yield* Effect.sleep("500 millis");
+      yield* Effect.log(`[Worker ${id}] Processing task ${i + 1}`);
+    }
+
+    yield* Effect.log(`[Worker ${id}] Complete`);
+  });
+
+// Main program
+const program = Effect.gen(function* () {
+  // Create services
+  const apiService = yield* createService({ name: "API", port: 3000 });
+  const dbService = yield* createService({ name: "Database", port: 5432 });
+  const cacheService = yield* createService({ name: "Cache", port: 6379 });
+
+  const services = [apiService, dbService, cacheService];
+
+  // Start initializing services in background
+  const initFibers = yield* Effect.all(
+    services.map((service) => initializeService(service).pipe(Effect.fork))
+  );
+
+  // Start workers that wait for services
+  const workerFibers = yield* Effect.all(
+    [1, 2, 3].map((id) => createWorker(id, services).pipe(Effect.fork))
+  );
+
+  // Wait for all workers to complete
+  yield* Effect.all(workerFibers.map((fiber) => Fiber.join(fiber)));
+
+  // Cancel initialization fibers (they're done anyway)
+  yield* Effect.all(initFibers.map((fiber) => Fiber.interrupt(fiber)));
+
+  yield* Effect.log(`\n[MAIN] All workers completed`);
+});
+
+Effect.runPromise(program);
+```
+
+This pattern:
+
+1. **Creates Deferred instances** for each service's readiness
+2. **Starts initialization** in background fibers
+3. **Workers wait** for all services via `Deferred.await`
+4. **Service signals completion** via `Deferred.succeed`
+5. **Workers resume** when all dependencies ready
+
+---
+
+## Advanced: Deferred with Timeout and Fallback
+
+Handle cases where initialization takes too long:
+
+```typescript
+const initializeServiceWithTimeout = (
+  service: Service,
+  timeoutMs: number = 5000
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const timeoutDeferred = yield* Deferred.make<"timeout">();
+    const timeoutFiber = yield* Effect.sleep(`${timeoutMs} millis`).pipe(
+      Effect.andThen(() => Deferred.succeed(timeoutDeferred, "timeout" as const)),
+      Effect.fork
+    );
+
+    const result = yield* Effect.race(
+      initializeService(service),
+      Deferred.await(timeoutDeferred)
+    );
+
+    yield* timeoutFiber.interrupt();
+
+    if (result === "timeout") {
+      yield* Effect.fail(
+        new Error(`${service.name} initialization timed out after ${timeoutMs}ms`)
+      );
+    }
+  });
+
+// Worker with graceful degradation
+const createWorkerWithFallback = (
+  id: number,
+  services: Service[]
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const readyServices = yield* Effect.all(
+      services.map((service) =>
+        Deferred.await(service.isReady).pipe(
+          Effect.map(() => service.name),
+          Effect.catchAll(() => Effect.succeed("unavailable"))
+        )
+      )
+    );
+
+    const available = readyServices.filter((s) => s !== "unavailable");
+    yield* Effect.log(
+      `[Worker ${id}] Ready services: ${available.join(", ")}`
+    );
+
+    if (available.length === 0) {
+      yield* Effect.log(`[Worker ${id}] No services available, degrading`);
+      return;
+    }
+
+    yield* Effect.log(`[Worker ${id}] Operating with ${available.length} services`);
+  });
+```
+
+---
+
+## Advanced: Deferred with Error Propagation
+
+Handle initialization failures that all workers should know about:
+
+```typescript
+class InitializationError extends Error {
+  constructor(readonly service: string, readonly cause: unknown) {
+    super(`Failed to initialize ${service}`);
+  }
+}
+
+const initializeServiceWithErrorHandling = (
+  service: Service
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[${service.name}] Starting...`);
+
+    const result = yield* Effect.gen(function* () {
+      try {
+        // Simulate potential initialization failure (10% chance)
+        if (Math.random() < 0.1) {
+          throw new Error("Connection refused");
+        }
+
+        yield* Effect.sleep("1 second");
+        return { success: true as const };
+      } catch (error) {
+        return { success: false as const, error };
+      }
+    }).pipe(Effect.either);
+
+    if (result._tag === "Right" && result.right.success) {
+      yield* Effect.log(`[${service.name}] Ready`);
+      yield* Deferred.succeed(service.isReady, undefined);
+    } else {
+      const error = new InitializationError(
+        service.name,
+        result._tag === "Left" ? result.left : result.right.error
+      );
+
+      yield* Effect.log(
+        `[${service.name}] Failed: ${error.message}`
+      );
+
+      // Fail the deferred so all waiters know about the error
+      yield* Deferred.fail(service.isReady, error);
+    }
+  });
+
+// Worker handles initialization failures
+const createWorkerWithErrorHandling = (
+  id: number,
+  services: Service[]
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`[Worker ${id}] Waiting for services...`);
+
+    const result = yield* Effect.all(
+      services.map((service) => Deferred.await(service.isReady))
+    ).pipe(Effect.either);
+
+    if (result._tag === "Left") {
+      yield* Effect.log(`[Worker ${id}] Service initialization failed: ${result.left.message}`);
+      yield* Effect.fail(result.left);
+    }
+
+    yield* Effect.log(`[Worker ${id}] All services ready`);
+  });
+```
+
+---
+
+## Advanced: Multiple Stages with Chained Deferreds
+
+Coordinate multi-stage startup where each stage depends on the previous:
+
+```typescript
+interface StartupStage {
+  readonly name: string;
+  readonly ready: Deferred.Deferred<void>;
+}
+
+const createStagedStartup = (): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const stages: StartupStage[] = [
+      { name: "config-load", ready: yield* Deferred.make<void>() },
+      { name: "database-connect", ready: yield* Deferred.make<void>() },
+      { name: "services-start", ready: yield* Deferred.make<void>() },
+      { name: "ready-to-serve", ready: yield* Deferred.make<void>() },
+    ];
+
+    // Stage 1: Load config
+    yield* Effect.gen(function* () {
+      yield* Effect.log(`[Stage 1] Loading config...`);
+      yield* Effect.sleep("500 millis");
+      yield* Effect.log(`[Stage 1] Config loaded`);
+      yield* Deferred.succeed(stages[0].ready, undefined);
+    }).pipe(Effect.fork);
+
+    // Stage 2: Wait for config, then connect database
+    yield* Effect.gen(function* () {
+      yield* Deferred.await(stages[0].ready);
+      yield* Effect.log(`[Stage 2] Connecting to database...`);
+      yield* Effect.sleep("1 second");
+      yield* Effect.log(`[Stage 2] Database connected`);
+      yield* Deferred.succeed(stages[1].ready, undefined);
+    }).pipe(Effect.fork);
+
+    // Stage 3: Wait for database, then start services
+    yield* Effect.gen(function* () {
+      yield* Deferred.await(stages[1].ready);
+      yield* Effect.log(`[Stage 3] Starting services...`);
+      yield* Effect.sleep("500 millis");
+      yield* Effect.log(`[Stage 3] Services started`);
+      yield* Deferred.succeed(stages[2].ready, undefined);
+    }).pipe(Effect.fork);
+
+    // Stage 4: Wait for services, then ready to serve
+    yield* Effect.gen(function* () {
+      yield* Deferred.await(stages[2].ready);
+      yield* Effect.log(`[Stage 4] Ready to serve!`);
+      yield* Deferred.succeed(stages[3].ready, undefined);
+    }).pipe(Effect.fork);
+
+    // Wait for final stage
+    yield* Deferred.await(stages[3].ready);
+  });
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use Deferred when:**
+
+- Multiple fibers wait for a single async event
+- One-time initialization or startup gates
+- Producer signals completion to many consumers
+- Need efficient async signaling (no polling)
+- Coordinating service dependencies
+
+⚠️ **Trade-offs:**
+
+- One-shot only (can't reset a Deferred)
+- For repeated signals use other primitives (Queue, PubSub)
+- Error affects all waiters (careful propagation)
+
+---
+
+## See Also
+
+- [Run Background Tasks with Fork](./run-background-tasks-with-fork.mdx) - Background fiber execution
+- [Understand Fibers as Lightweight Threads](./understand-fibers-as-lightweight-threads.mdx) - Fiber concurrency
+- [Race Concurrent Effects](./race-concurrent-effects.mdx) - Racing with timeouts
+- [Decouple Fibers with Queue/PubSub](./decouple-fibers-with-queue-pubsub.mdx) - Repeated signaling

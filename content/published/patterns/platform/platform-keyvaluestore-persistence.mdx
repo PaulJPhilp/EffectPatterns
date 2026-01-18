@@ -1,0 +1,466 @@
+---
+title: 'Platform Pattern 3: Persistent Key-Value Storage'
+id: platform-keyvaluestore-persistence
+skillLevel: intermediate
+applicationPatternId: platform
+summary: >-
+  Use KeyValueStore for simple persistent key-value storage, enabling caching,
+  session management, and lightweight data persistence.
+tags:
+  - platform
+  - persistence
+  - storage
+  - keyvalue
+  - cache
+  - state-management
+rule:
+  description: >-
+    Use KeyValueStore for simple persistent storage of key-value pairs, enabling
+    lightweight caching and session management.
+related:
+  - manage-shared-state-with-ref
+  - platform-filesystem-operations
+  - add-caching-by-wrapping-a-layer
+author: effect_website
+lessonOrder: 2
+---
+
+## Guideline
+
+KeyValueStore operations:
+
+- **set**: Store key-value pair
+- **get**: Retrieve value by key
+- **remove**: Delete key
+- **has**: Check if key exists
+- **clear**: Remove all entries
+
+Pattern: `KeyValueStore.set(key, value).pipe(...)`
+
+---
+
+## Rationale
+
+Without persistent storage, transient data is lost:
+
+- **Session data**: Lost on restart
+- **Caches**: Rebuilt from scratch
+- **Configuration**: Hardcoded or file-based
+- **State**: Scattered across code
+
+KeyValueStore enables:
+
+- **Transparent persistence**: Automatic backend handling
+- **Simple API**: Key-value abstraction
+- **Pluggable backends**: Memory, filesystem, database
+- **Effect integration**: Type-safe, composable
+
+Real-world example: Caching API responses
+- **Direct**: Cache in memory Map (lost on restart)
+- **With KeyValueStore**: Persistent across restarts
+
+---
+
+## Good Example
+
+This example demonstrates storing and retrieving persistent data.
+
+```typescript
+import { KeyValueStore, Effect } from "@effect/platform";
+
+interface UserSession {
+  readonly userId: string;
+  readonly token: string;
+  readonly expiresAt: number;
+}
+
+const program = Effect.gen(function* () {
+  console.log(`\n[KEYVALUESTORE] Persistent storage example\n`);
+
+  const store = yield* KeyValueStore.KeyValueStore;
+
+  // Example 1: Store session data
+  console.log(`[1] Storing session:\n`);
+
+  const session: UserSession = {
+    userId: "user-123",
+    token: "token-abc-def",
+    expiresAt: Date.now() + 3600000, // 1 hour
+  };
+
+  yield* store.set("session:user-123", JSON.stringify(session));
+
+  yield* Effect.log(`✓ Session stored`);
+
+  // Example 2: Retrieve stored data
+  console.log(`\n[2] Retrieving session:\n`);
+
+  const stored = yield* store.get("session:user-123");
+
+  if (stored._tag === "Some") {
+    const retrievedSession = JSON.parse(stored.value) as UserSession;
+
+    console.log(`  User ID: ${retrievedSession.userId}`);
+    console.log(`  Token: ${retrievedSession.token}`);
+    console.log(
+      `  Expires: ${new Date(retrievedSession.expiresAt).toISOString()}`
+    );
+  }
+
+  // Example 3: Check if key exists
+  console.log(`\n[3] Checking keys:\n`);
+
+  const hasSession = yield* store.has("session:user-123");
+  const hasOther = yield* store.has("session:user-999");
+
+  console.log(`  Has session:user-123: ${hasSession}`);
+  console.log(`  Has session:user-999: ${hasOther}`);
+
+  // Example 4: Store multiple cache entries
+  console.log(`\n[4] Caching API responses:\n`);
+
+  const apiResponses = [
+    { endpoint: "/api/users", data: [{ id: 1, name: "Alice" }] },
+    { endpoint: "/api/posts", data: [{ id: 1, title: "First Post" }] },
+    { endpoint: "/api/comments", data: [] },
+  ];
+
+  yield* Effect.all(
+    apiResponses.map((item) =>
+      store.set(
+        `cache:${item.endpoint}`,
+        JSON.stringify(item.data)
+      )
+    )
+  );
+
+  yield* Effect.log(`✓ Cached ${apiResponses.length} endpoints`);
+
+  // Example 5: Retrieve cache with expiration
+  console.log(`\n[5] Checking cached data:\n`);
+
+  for (const item of apiResponses) {
+    const cached = yield* store.get(`cache:${item.endpoint}`);
+
+    if (cached._tag === "Some") {
+      const data = JSON.parse(cached.value);
+
+      console.log(
+        `  ${item.endpoint}: ${Array.isArray(data) ? data.length : 1} items`
+      );
+    }
+  }
+
+  // Example 6: Remove specific entry
+  console.log(`\n[6] Removing entry:\n`);
+
+  yield* store.remove("cache:/api/comments");
+
+  const removed = yield* store.has("cache:/api/comments");
+
+  console.log(`  Exists after removal: ${removed}`);
+
+  // Example 7: Iterate and count entries
+  console.log(`\n[7] Counting entries:\n`);
+
+  const allKeys = yield* store.entries.pipe(
+    Effect.map((entries) => entries.length)
+  );
+
+  console.log(`  Total entries: ${allKeys}`);
+});
+
+Effect.runPromise(program);
+```
+
+---
+
+## Advanced: Session Management
+
+Implement session store with expiration:
+
+```typescript
+interface SessionData {
+  readonly userId: string;
+  readonly expiresAt: number;
+  readonly data: Record<string, unknown>;
+}
+
+const createSessionStore = () =>
+  Effect.gen(function* () {
+    const store = yield* KeyValueStore.KeyValueStore;
+
+    const setSession = (sessionId: string, userId: string, ttlMs: number) =>
+      Effect.gen(function* () {
+        const session: SessionData = {
+          userId,
+          expiresAt: Date.now() + ttlMs,
+          data: {},
+        };
+
+        yield* store.set(`session:${sessionId}`, JSON.stringify(session));
+      });
+
+    const getSession = (sessionId: string) =>
+      Effect.gen(function* () {
+        const stored = yield* store.get(`session:${sessionId}`);
+
+        if (stored._tag === "None") {
+          return null;
+        }
+
+        const session = JSON.parse(stored.value) as SessionData;
+
+        // Check expiration
+        if (Date.now() > session.expiresAt) {
+          yield* store.remove(`session:${sessionId}`);
+          return null;
+        }
+
+        return session;
+      });
+
+    const updateSessionData = (
+      sessionId: string,
+      key: string,
+      value: unknown
+    ) =>
+      Effect.gen(function* () {
+        const session = yield* getSession(sessionId);
+
+        if (!session) {
+          yield* Effect.fail(new Error("Session expired"));
+        }
+
+        session!.data[key] = value;
+
+        yield* store.set(`session:${sessionId}`, JSON.stringify(session));
+      });
+
+    return { setSession, getSession, updateSessionData };
+  });
+```
+
+---
+
+## Advanced: Tiered Caching
+
+Memory cache with persistent fallback:
+
+```typescript
+const tieredCache = () =>
+  Effect.gen(function* () {
+    const store = yield* KeyValueStore.KeyValueStore;
+    const memoryCache = new Map<string, unknown>();
+
+    const get = (key: string) =>
+      Effect.gen(function* () {
+        // Check memory first
+        if (memoryCache.has(key)) {
+          yield* Effect.log(`[CACHE] Memory hit: ${key}`);
+          return memoryCache.get(key);
+        }
+
+        // Check persistent store
+        const persistent = yield* store.get(key);
+
+        if (persistent._tag === "Some") {
+          const value = JSON.parse(persistent.value);
+
+          // Populate memory cache
+          memoryCache.set(key, value);
+
+          yield* Effect.log(`[CACHE] Store hit: ${key}`);
+
+          return value;
+        }
+
+        yield* Effect.log(`[CACHE] Miss: ${key}`);
+
+        return null;
+      });
+
+    const set = (key: string, value: unknown) =>
+      Effect.gen(function* () {
+        // Update both caches
+        memoryCache.set(key, value);
+
+        yield* store.set(key, JSON.stringify(value));
+
+        yield* Effect.log(`[CACHE] Set: ${key}`);
+      });
+
+    const clear = () =>
+      Effect.gen(function* () {
+        memoryCache.clear();
+        yield* store.clear();
+
+        yield* Effect.log(`[CACHE] Cleared all`);
+      });
+
+    return { get, set, clear };
+  });
+```
+
+---
+
+## Advanced: Cache with Versioning
+
+Track and manage cache versions:
+
+```typescript
+interface CachedItem<T> {
+  readonly value: T;
+  readonly version: number;
+  readonly timestamp: number;
+}
+
+const versionedCache = <T,>(
+  key: string,
+  version: number
+) =>
+  Effect.gen(function* () {
+    const store = yield* KeyValueStore.KeyValueStore;
+
+    const get = () =>
+      Effect.gen(function* () {
+        const stored = yield* store.get(`${key}:v${version}`);
+
+        if (stored._tag === "None") {
+          return null;
+        }
+
+        return JSON.parse(stored.value) as CachedItem<T>;
+      });
+
+    const set = (value: T) =>
+      Effect.gen(function* () {
+        const item: CachedItem<T> = {
+          value,
+          version,
+          timestamp: Date.now(),
+        };
+
+        yield* store.set(`${key}:v${version}`, JSON.stringify(item));
+
+        // Clean up old versions
+        for (let v = 1; v < version; v++) {
+          yield* store.remove(`${key}:v${v}`);
+        }
+      });
+
+    return { get, set };
+  });
+
+// Usage: Cache with version management
+const userCache = versionedCache<{ name: string; email: string }>(
+  "user:123",
+  2
+);
+```
+
+---
+
+## Advanced: Cache Invalidation Patterns
+
+Implement cache invalidation strategies:
+
+```typescript
+const cacheWithInvalidation = () =>
+  Effect.gen(function* () {
+    const store = yield* KeyValueStore.KeyValueStore;
+
+    // Tag-based invalidation
+    const cacheWithTags = (
+      key: string,
+      value: unknown,
+      tags: string[]
+    ) =>
+      Effect.gen(function* () {
+        yield* store.set(key, JSON.stringify(value));
+
+        // Store tag mappings
+        for (const tag of tags) {
+          const tagged = yield* store.get(`tag:${tag}`);
+
+          const keys = tagged._tag === "Some" 
+            ? JSON.parse(tagged.value)
+            : [];
+
+          if (!keys.includes(key)) {
+            keys.push(key);
+          }
+
+          yield* store.set(`tag:${tag}`, JSON.stringify(keys));
+        }
+      });
+
+    const invalidateByTag = (tag: string) =>
+      Effect.gen(function* () {
+        const tagged = yield* store.get(`tag:${tag}`);
+
+        if (tagged._tag === "Some") {
+          const keys = JSON.parse(tagged.value) as string[];
+
+          yield* Effect.all(keys.map((k) => store.remove(k)));
+
+          yield* store.remove(`tag:${tag}`);
+
+          yield* Effect.log(
+            `[INVALIDATE] Removed ${keys.length} entries for tag: ${tag}`
+          );
+        }
+      });
+
+    return { cacheWithTags, invalidateByTag };
+  });
+
+// Usage: Invalidate all user caches when user updates
+const userUpdated = versionedCache<User>("user:123", 1).pipe(
+  Effect.flatMap(() =>
+    cacheWithInvalidation().pipe(
+      Effect.flatMap((cache) => cache.invalidateByTag("user-data"))
+    )
+  )
+);
+```
+
+---
+
+## When to Use This Pattern
+
+✅ **Use KeyValueStore when:**
+
+- Simple key-value persistence
+- Session/token storage
+- Caching responses
+- Configuration state
+- Temporary data storage
+- Cross-request data sharing
+
+⚠️ **Trade-offs:**
+
+- Not suitable for complex queries
+- Limited schema validation
+- Performance depends on backend
+- No transactions
+
+---
+
+## Backend Options
+
+| Backend | Persistence | Speed | Scale |
+| --- | --- | --- | --- |
+| **Memory** | No | Very fast | Small |
+| **File** | Yes | Moderate | Medium |
+| **SQLite** | Yes | Good | Medium |
+| **Redis** | Optional | Very fast | Large |
+
+---
+
+## See Also
+
+- [Manage Shared State with Ref](./manage-shared-state-with-ref.mdx) - Memory state
+- [Platform Pattern 2: FileSystem Operations](./platform-filesystem-operations.mdx) - File I/O
+- [Add Caching by Wrapping a Layer](./add-caching-by-wrapping-a-layer.mdx) - Layer caching
+- [Understand Layers for Dependency Injection](./understand-layers-for-dependency-injection.mdx) - Layer patterns

@@ -1,0 +1,348 @@
+---
+id: schema-nested-comments
+title: Nested Comments and Threaded Discussions
+category: recursive
+skillLevel: intermediate
+tags:
+  - schema
+  - recursive
+  - comments
+  - threading
+  - discussions
+  - social
+lessonOrder: 23
+---
+
+# Problem
+
+Reddit, HN, YouTube—all have nested comment threads. A comment can have replies, which have replies. Users expect arbitrary nesting depth. Without recursive schemas, you'd store flat comments and reconstruct trees manually. You need a schema that validates the entire comment thread as a typed structure.
+
+# Solution
+
+```typescript
+import { Schema, Effect } from "effect"
+
+// ============================================
+// 1. Comment schema with replies
+// ============================================
+
+type Comment = {
+  id: string
+  author: {
+    username: string
+    avatar: string
+    karma: number
+  }
+  content: string
+  createdAt: Date
+  score: number
+  edited?: Date
+  replies: Comment[]
+}
+
+const Comment: Schema.Schema<Comment> = Schema.suspend(() =>
+  Schema.Struct({
+    id: Schema.String,
+    author: Schema.Struct({
+      username: Schema.String,
+      avatar: Schema.String,
+      karma: Schema.Number,
+    }),
+    content: Schema.String,
+    createdAt: Schema.Date,
+    score: Schema.Number,
+    edited: Schema.Optional(Schema.Date),
+    replies: Schema.Array(Comment),
+  })
+)
+
+// ============================================
+// 2. Thread with comments
+// ============================================
+
+type CommentThread = {
+  postId: string
+  title: string
+  author: string
+  content: string
+  createdAt: Date
+  commentCount: number
+  topComments: Comment[]
+}
+
+const CommentThread = Schema.Struct({
+  postId: Schema.String,
+  title: Schema.String,
+  author: Schema.String,
+  content: Schema.String,
+  createdAt: Schema.Date,
+  commentCount: Schema.Number,
+  topComments: Schema.Array(Comment),
+})
+
+type CommentThread = typeof CommentThread.Type
+
+// ============================================
+// 3. Utilities for comment trees
+// ============================================
+
+const countComments = (comment: Comment): number => {
+  return 1 + comment.replies.reduce((sum, reply) => sum + countComments(reply), 0)
+}
+
+const getMaxDepth = (comment: Comment, depth: number = 0): number => {
+  if (comment.replies.length === 0) return depth
+  return Math.max(...comment.replies.map((r) => getMaxDepth(r, depth + 1)))
+}
+
+const flattenComments = (comment: Comment): Comment[] => {
+  return [comment, ...comment.replies.flatMap(flattenComments)]
+}
+
+const filterComments = (
+  comment: Comment,
+  predicate: (c: Comment) => boolean
+): Comment | null => {
+  if (!predicate(comment)) return null
+
+  const filteredReplies = comment.replies
+    .map((reply) => filterComments(reply, predicate))
+    .filter((r): r is Comment => r !== null)
+
+  return { ...comment, replies: filteredReplies }
+}
+
+const sortCommentTree = (
+  comment: Comment,
+  compareFn: (a: Comment, b: Comment) => number
+): Comment => {
+  return {
+    ...comment,
+    replies: comment.replies
+      .map((reply) => sortCommentTree(reply, compareFn))
+      .sort(compareFn),
+  }
+}
+
+// ============================================
+// 4. Rendering utilities
+// ============================================
+
+const renderCommentThread = (
+  comment: Comment,
+  depth: number = 0
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const indent = "  ".repeat(depth)
+    const score = comment.score > 0 ? `⬆ ${comment.score}` : `⬇ ${Math.abs(comment.score)}`
+
+    yield* Effect.log(`${indent}👤 ${comment.author.username} ${score}`)
+    yield* Effect.log(`${indent}   ${comment.content}`)
+
+    if (comment.edited) {
+      yield* Effect.log(`${indent}   (edited)`)
+    }
+
+    if (comment.replies.length > 0) {
+      for (const reply of comment.replies) {
+        yield* renderCommentThread(reply, depth + 1)
+      }
+    }
+  })
+
+const summarizeThread = (
+  thread: CommentThread
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    yield* Effect.log(`📝 ${thread.title}`)
+    yield* Effect.log(`By ${thread.author}`)
+    yield* Effect.log(`\n${thread.content}\n`)
+
+    let totalComments = 0
+    let maxDepth = 0
+
+    for (const topComment of thread.topComments) {
+      totalComments += countComments(topComment)
+      maxDepth = Math.max(maxDepth, getMaxDepth(topComment))
+    }
+
+    yield* Effect.log(`Comments: ${totalComments}`)
+    yield* Effect.log(`Max nesting depth: ${maxDepth}`)
+  })
+
+// ============================================
+// 5. Application logic
+// ============================================
+
+const appLogic = Effect.gen(function* () {
+  console.log("=== Comment Thread Example ===\n")
+
+  const thread: CommentThread = {
+    postId: "post_123",
+    title: "Effect-TS: The Future of Functional Programming",
+    author: "alice_dev",
+    content:
+      "I've been using Effect-TS for 6 months now and it's transformed how I write TypeScript. Here are my thoughts...",
+    createdAt: new Date("2025-12-15"),
+    commentCount: 27,
+    topComments: [
+      {
+        id: "comment_1",
+        author: {
+          username: "bob_coder",
+          avatar: "https://example.com/bob.png",
+          karma: 1250,
+        },
+        content: "Great writeup! Have you tried it with databases?",
+        createdAt: new Date("2025-12-15T10:00:00Z"),
+        score: 42,
+        replies: [
+          {
+            id: "comment_1_1",
+            author: {
+              username: "alice_dev",
+              avatar: "https://example.com/alice.png",
+              karma: 3100,
+            },
+            content:
+              "Yes! We built a data pipeline that handles 1M records. Effect made error handling trivial.",
+            createdAt: new Date("2025-12-15T11:30:00Z"),
+            score: 38,
+            edited: new Date("2025-12-15T11:45:00Z"),
+            replies: [
+              {
+                id: "comment_1_1_1",
+                author: {
+                  username: "carol_async",
+                  avatar: "https://example.com/carol.png",
+                  karma: 892,
+                },
+                content:
+                  "This is exactly what we need for our microservices!",
+                createdAt: new Date("2025-12-15T14:00:00Z"),
+                score: 12,
+                replies: [],
+              },
+            ],
+          },
+          {
+            id: "comment_1_2",
+            author: {
+              username: "david_fp",
+              avatar: "https://example.com/david.png",
+              karma: 2100,
+            },
+            content:
+              "How does it compare to Railway.js? I'm trying to decide between the two.",
+            createdAt: new Date("2025-12-15T12:00:00Z"),
+            score: 25,
+            replies: [],
+          },
+        ],
+      },
+      {
+        id: "comment_2",
+        author: {
+          username: "eve_rust",
+          avatar: "https://example.com/eve.png",
+          karma: 850,
+        },
+        content: "Interesting, but seems complex for simple projects.",
+        createdAt: new Date("2025-12-15T10:30:00Z"),
+        score: 8,
+        replies: [
+          {
+            id: "comment_2_1",
+            author: {
+              username: "alice_dev",
+              avatar: "https://example.com/alice.png",
+              karma: 3100,
+            },
+            content:
+              "True, but the complexity pays off as projects grow. Start simple and scale.",
+            createdAt: new Date("2025-12-15T11:00:00Z"),
+            score: 20,
+            replies: [],
+          },
+        ],
+      },
+    ],
+  }
+
+  // Render thread
+  yield* summarizeThread(thread)
+
+  console.log("\n--- Comments ---\n")
+
+  for (const comment of thread.topComments) {
+    yield* renderCommentThread(comment)
+    yield* Effect.log("")
+  }
+
+  // Statistics
+  console.log("=== Statistics ===\n")
+
+  let totalComments = 0
+  let maxDepth = 0
+  let totalScore = 0
+
+  for (const comment of thread.topComments) {
+    const allComments = flattenComments(comment)
+    totalComments += allComments.length
+    totalScore += allComments.reduce((sum, c) => sum + c.score, 0)
+    maxDepth = Math.max(maxDepth, getMaxDepth(comment))
+  }
+
+  console.log(`Total comments in thread: ${totalComments}`)
+  console.log(`Maximum nesting depth: ${maxDepth}`)
+  console.log(`Total upvotes: ${totalScore}`)
+
+  // Filter high-karma comments
+  console.log("\n=== High-Karma Comments (1000+) ===\n")
+
+  const allComments = thread.topComments.flatMap(flattenComments)
+  const highKarma = allComments
+    .filter((c) => c.author.karma >= 1000)
+    .sort((a, b) => b.author.karma - a.author.karma)
+
+  for (const comment of highKarma) {
+    console.log(
+      `${comment.author.username} (${comment.author.karma}): ${comment.content.substring(0, 60)}...`
+    )
+  }
+
+  return thread
+})
+
+// Run application
+Effect.runPromise(appLogic)
+  .then(() => console.log("\n✅ Comment threading complete"))
+  .catch((error) => console.error(`Error: ${error.message}`))
+```
+
+# Why This Works
+
+| Concept | Explanation |
+|---------|-------------|
+| **Recursive replies** | Each comment can have replies that are also comments |
+| **Arbitrary depth** | Schema supports threading at any depth |
+| **Validation** | All replies validated recursively |
+| **Utilities** | Standard tree algorithms apply (flatten, filter, sort) |
+| **Threading** | Natural structure mirrors how users think about discussions |
+| **Real-world fit** | Matches Reddit, HN, YouTube comment systems exactly |
+
+# When to Use
+
+- Discussion forums and comment threads
+- Social media threads
+- Customer support ticket replies
+- Collaborative documents with comments
+- Code review discussions
+- Nested Q&A systems
+- Threaded messaging
+
+# Related Patterns
+
+- [Basic Recursive](./basic-recursive.md)
+- [Tree Structures](./tree-structures.md)
+- [JSON AST](./json-ast.md)

@@ -1,0 +1,45 @@
+description: Use Either to model computations that may fail, making errors explicit and type-safe.
+globs: "**/*.ts"
+alwaysApply: true
+
+# Accumulate Multiple Errors with Either
+**Rule:** Use Either to model computations that may fail, making errors explicit and type-safe.
+
+### Example
+```typescript
+import { Either } from "effect";
+
+// Create a Right (success) or Left (failure)
+const success = Either.right(42); // Either<never, number>
+const failure = Either.left("Something went wrong"); // Either<string, never>
+
+// Pattern match on Either
+const result = success.pipe(
+  Either.match({
+    onLeft: (err) => `Error: ${err}`,
+    onRight: (value) => `Value: ${value}`,
+  })
+); // string
+
+// Combine multiple Eithers and accumulate errors
+const e1 = Either.right(1);
+const e2 = Either.left("fail1");
+const e3 = Either.left("fail2");
+
+const all = [e1, e2, e3].filter(Either.isRight).map(Either.getRight); // [1]
+const errors = [e1, e2, e3].filter(Either.isLeft).map(Either.getLeft); // ["fail1", "fail2"]
+```
+
+**Explanation:**
+
+- `Either.right(value)` represents success.
+- `Either.left(error)` represents failure.
+- Pattern matching ensures all cases are handled.
+- You can accumulate errors or results from multiple Eithers.
+
+### Anti-Pattern (Avoid)
+Throwing exceptions or using ad-hoc error codes, which are not type-safe, not composable, and make error handling less predictable.
+
+**Explanation:**  
+`Either` is a foundational data type for error handling in functional programming.  
+It allows you to accumulate errors, model domain-specific failures, and avoid exceptions and unchecked errors.
