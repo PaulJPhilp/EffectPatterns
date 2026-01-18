@@ -6,37 +6,39 @@
  * Built with @effect/cli for type-safe, composable command-line interfaces.
  */
 
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 import { Args, Command } from "@effect/cli";
 import { Effect } from "effect";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { CLI, SHELL_TYPES } from "./constants.js";
 import { Display } from "./services/display/index.js";
 
 // Import command modules - Hierarchical organization
 import {
-	patternGroup,
+	configGroup,
 	dataGroup,
 	dbGroup,
 	devGroup,
 	opsGroup,
-	configGroup,
-	pipelineGroup,
+	patternGroup,
 	rootLevelCommands,
 } from "./command-groups.js";
+import {
+	EP_ADMIN_COMMANDS,
+	generateCompletion,
+	getInstallInstructions,
+	installCompletion,
+	type Shell,
+} from "./completions.js";
 import { publishCommand } from "./publish-commands.js";
-import { EP_ADMIN_COMMANDS, generateCompletion, getInstallInstructions, installCompletion, type Shell } from "./completions.js";
 
 // --- COMPLETIONS COMMAND ---
 
-const completionsGenerateCommand = Command.make(
-	"generate",
-	{
-		shell: Args.text({ name: "shell" }).pipe(
-			Args.withDescription("Shell type (bash, zsh, or fish)")
-		),
-	}
-).pipe(
+const completionsGenerateCommand = Command.make("generate", {
+	shell: Args.text({ name: "shell" }).pipe(
+		Args.withDescription("Shell type (bash, zsh, or fish)"),
+	),
+}).pipe(
 	Command.withDescription("Generate shell completion script"),
 	Command.withHandler(({ shell }) =>
 		Effect.gen(function* () {
@@ -44,26 +46,23 @@ const completionsGenerateCommand = Command.make(
 			if (!SHELL_TYPES.includes(shellType as any)) {
 				yield* Effect.fail(
 					new Error(
-						`Invalid shell: ${shell}. Must be one of: ${SHELL_TYPES.join(", ")}`
-					)
+						`Invalid shell: ${shell}. Must be one of: ${SHELL_TYPES.join(", ")}`,
+					),
 				);
 			}
 
 			const completion = generateCompletion(shellType, EP_ADMIN_COMMANDS);
 			const display = yield* Display;
 			yield* display.showText(completion);
-		})
-	)
+		}),
+	),
 );
 
-const completionsInstallCommand = Command.make(
-	"install",
-	{
-		shell: Args.text({ name: "shell" }).pipe(
-			Args.withDescription("Shell type (bash, zsh, or fish)")
-		),
-	}
-).pipe(
+const completionsInstallCommand = Command.make("install", {
+	shell: Args.text({ name: "shell" }).pipe(
+		Args.withDescription("Shell type (bash, zsh, or fish)"),
+	),
+}).pipe(
 	Command.withDescription("Install shell completions"),
 	Command.withHandler(({ shell }) =>
 		Effect.gen(function* () {
@@ -71,8 +70,8 @@ const completionsInstallCommand = Command.make(
 			if (!SHELL_TYPES.includes(shellType as any)) {
 				yield* Effect.fail(
 					new Error(
-						`Invalid shell: ${shell}. Must be one of: ${SHELL_TYPES.join(", ")}`
-					)
+						`Invalid shell: ${shell}. Must be one of: ${SHELL_TYPES.join(", ")}`,
+					),
 				);
 			}
 
@@ -81,15 +80,18 @@ const completionsInstallCommand = Command.make(
 			const instructions = getInstallInstructions(shellType, filePath);
 			const display = yield* Display;
 			yield* display.showText(instructions);
-		})
-	)
+		}),
+	),
 );
 
 const completionsCommand = Command.make("completions").pipe(
 	Command.withDescription(
-		"Generate or install shell completions for bash, zsh, or fish"
+		"Generate or install shell completions for bash, zsh, or fish",
 	),
-	Command.withSubcommands([completionsGenerateCommand, completionsInstallCommand])
+	Command.withSubcommands([
+		completionsGenerateCommand,
+		completionsInstallCommand,
+	]),
 );
 
 // --- COMMAND COMPOSITION ---
@@ -97,32 +99,30 @@ const completionsCommand = Command.make("completions").pipe(
 // Build system group with completions command
 const systemGroup = Command.make("system").pipe(
 	Command.withDescription("System utilities"),
-	Command.withSubcommands([completionsCommand])
+	Command.withSubcommands([completionsCommand]),
 );
 
 // Hierarchical command structure (organized by domain/function)
 const adminSubcommands = [
-	publishCommand,         // Pattern publishing workflow
-	patternGroup,          // Pattern discovery and management
-	dataGroup,             // Data ingestion and quality assurance
-	dbGroup,               // Database operations and migrations
-	devGroup,              // Development tools and utilities
-	opsGroup,              // Operations and infrastructure
-	configGroup,           // Configuration, setup, and entity management
-	pipelineGroup,         // Pipeline management and monitoring
-	systemGroup,           // System utilities (completions)
-	...rootLevelCommands,  // Root-level commands (release)
+	publishCommand, // Pattern publishing workflow
+	patternGroup, // Pattern discovery and management
+	dataGroup, // Data ingestion and quality assurance
+	dbGroup, // Database operations and migrations
+	devGroup, // Development tools and utilities
+	opsGroup, // Operations and infrastructure
+	configGroup, // Configuration, setup, and entity management
+	systemGroup, // System utilities (completions)
+	...rootLevelCommands, // Root-level commands (release)
 ] as const;
 
 export const adminRootCommand = Command.make(CLI.NAME).pipe(
 	Command.withDescription(CLI.DESCRIPTION),
-	Command.withSubcommands(adminSubcommands)
+	Command.withSubcommands(adminSubcommands),
 );
 
 // --- RUNTIME SETUP ---
 
 import { ProductionLayer } from "./runtime/production.js";
-import { testExecutionCommand } from "./test-execution-command.js";
 
 // Re-export for backward compatibility
 export const runtimeLayer = ProductionLayer;
@@ -133,7 +133,7 @@ const adminCliRunner = Command.run(adminRootCommand, {
 });
 
 export const createAdminProgram = (
-	argv: ReadonlyArray<string> = process.argv
+	argv: ReadonlyArray<string> = process.argv,
 ) => adminCliRunner(argv);
 
 /**
@@ -154,7 +154,10 @@ const isDirectExecution = (() => {
 	if (executedFile === __filename) return true;
 
 	// Handle execution through wrapper script (ep-admin binary)
-	if (executedFile.endsWith("ep-admin") || executedFile.endsWith("ep-admin.js")) {
+	if (
+		executedFile.endsWith("ep-admin") ||
+		executedFile.endsWith("ep-admin.js")
+	) {
 		return true;
 	}
 
@@ -168,6 +171,10 @@ const isDirectExecution = (() => {
 
 if (isDirectExecution) {
 	const program = createAdminProgram(process.argv);
-	const provided = Effect.provide(program, ProductionLayer) as Effect.Effect<void, unknown, never>;
+	const provided = Effect.provide(program, ProductionLayer) as Effect.Effect<
+		void,
+		unknown,
+		never
+	>;
 	void Effect.runPromise(provided);
 }

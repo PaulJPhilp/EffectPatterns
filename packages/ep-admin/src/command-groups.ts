@@ -17,23 +17,22 @@
  */
 
 import { Command } from "@effect/cli";
-import { publishCommand } from "./publish-commands.js";
-import { searchCommand } from "./search-commands.js";
-import { patternNewCommand, releaseCommand } from "./release-commands.js";
-import { skillsCommand } from "./skills-commands.js";
-import { ingestCommand } from "./ingest-commands.js";
-import { discordCommand } from "./discord-commands.js";
-import { qaCommand } from "./qa-commands.js";
-import { dbCommand } from "./db-commands.js";
-import { migrateCommand } from "./migrate-commands.js";
-import { testUtilsCommand } from "./test-utils-commands.js";
 import { autofixCommand } from "./autofix-commands.js";
-import { opsCommand } from "./ops-commands.js";
-import { mcpCommand } from "./mcp-commands.js";
+import { dbCommand } from "./db-commands.js";
+import { discordCommand } from "./discord-commands.js";
+import { ingestCommand } from "./ingest-commands.js";
 import { installCommand, rulesCommand } from "./install-commands.js";
-import { utilsCommand } from "./utils-commands.js";
 import { lockCommand, unlockCommand } from "./lock-commands.js";
-import { statusCommand as pipelineStatusCommand } from "./pipeline-commands.js";
+import { mcpCommand } from "./mcp-commands.js";
+import { migrateCommand } from "./migrate-commands.js";
+import { opsCommand } from "./ops-commands.js";
+import { publishCommand } from "./publish-commands.js";
+import { qaCommand } from "./qa-commands.js";
+import { patternNewCommand, releaseCommand } from "./release-commands.js";
+import { searchCommand } from "./search-commands.js";
+import { skillsCommand } from "./skills-commands.js";
+import { testUtilsCommand } from "./test-utils-commands.js";
+import { utilsCommand } from "./utils-commands.js";
 
 /**
  * Pattern Management Group
@@ -42,11 +41,7 @@ import { statusCommand as pipelineStatusCommand } from "./pipeline-commands.js";
  */
 export const patternGroup = Command.make("pattern").pipe(
 	Command.withDescription("Pattern discovery and management"),
-	Command.withSubcommands([
-		searchCommand,
-		patternNewCommand,
-		skillsCommand,
-	])
+	Command.withSubcommands([searchCommand, patternNewCommand, skillsCommand]),
 );
 
 /**
@@ -56,11 +51,7 @@ export const patternGroup = Command.make("pattern").pipe(
  */
 export const dataGroup = Command.make("data").pipe(
 	Command.withDescription("Data ingestion and quality assurance"),
-	Command.withSubcommands([
-		ingestCommand,
-		discordCommand,
-		qaCommand,
-	])
+	Command.withSubcommands([ingestCommand, discordCommand, qaCommand]),
 );
 
 /**
@@ -70,10 +61,7 @@ export const dataGroup = Command.make("data").pipe(
  */
 export const dbGroup = Command.make("db").pipe(
 	Command.withDescription("Database operations and migrations"),
-	Command.withSubcommands([
-		dbCommand,
-		migrateCommand,
-	])
+	Command.withSubcommands([dbCommand, migrateCommand]),
 );
 
 /**
@@ -83,10 +71,7 @@ export const dbGroup = Command.make("db").pipe(
  */
 export const devGroup = Command.make("dev").pipe(
 	Command.withDescription("Development tools and utilities"),
-	Command.withSubcommands([
-		testUtilsCommand,
-		autofixCommand,
-	])
+	Command.withSubcommands([testUtilsCommand, autofixCommand]),
 );
 
 /**
@@ -96,10 +81,7 @@ export const devGroup = Command.make("dev").pipe(
  */
 export const opsGroup = Command.make("ops").pipe(
 	Command.withDescription("Operations and infrastructure"),
-	Command.withSubcommands([
-		opsCommand,
-		mcpCommand,
-	])
+	Command.withSubcommands([opsCommand, mcpCommand]),
 );
 
 /**
@@ -116,25 +98,27 @@ export const configGroup = Command.make("config").pipe(
 		// Entities management sub-group
 		Command.make("entities").pipe(
 			Command.withDescription("Manage entity lifecycle (lock/unlock)"),
-			Command.withSubcommands([
-				lockCommand,
-				unlockCommand,
-			])
+			Command.withSubcommands([lockCommand, unlockCommand]),
 		),
-	])
+	]),
 );
 
 /**
  * Pipeline Management Group
  *
  * Commands for pipeline orchestration and monitoring
+ *
+ * NOTE: Commented out due to TypeScript/WeakMap issues
+ * Pipeline functionality is available via:
+ * - `publish pipeline` for full pipeline execution
+ * - `publish` group for individual commands
  */
-export const pipelineGroup = Command.make("pipeline").pipe(
-	Command.withDescription("Pipeline orchestration and monitoring"),
-	Command.withSubcommands([
-		pipelineStatusCommand,
-	])
-);
+// export const pipelineGroup = Command.make("pipeline").pipe(
+// 	Command.withDescription("Pipeline orchestration and monitoring"),
+// 	Command.withSubcommands([
+// 		pipelineStatusCommand,
+// 	])
+// );
 
 // Note: System Utilities Group is created in index.ts with completions command
 
@@ -144,14 +128,14 @@ export const pipelineGroup = Command.make("pipeline").pipe(
  * This is the organized structure that replaces the flat command list.
  */
 export const allCommandGroups = [
-	publishCommand,    // Pattern publishing workflow
-	patternGroup,      // Pattern discovery and management
-	dataGroup,         // Data ingestion and QA
-	dbGroup,           // Database operations
-	devGroup,          // Development tools
-	opsGroup,          // Operations and infrastructure
-	configGroup,       // Configuration and setup
-	pipelineGroup,     // Pipeline management
+	publishCommand, // Pattern publishing workflow
+	patternGroup, // Pattern discovery and management
+	dataGroup, // Data ingestion and QA
+	dbGroup, // Database operations
+	devGroup, // Development tools
+	opsGroup, // Operations and infrastructure
+	configGroup, // Configuration and setup
+	// pipelineGroup removed due to TypeScript/WeakMap issues
 ] as const;
 
 /**
@@ -159,9 +143,7 @@ export const allCommandGroups = [
  *
  * - releaseCommand: High-level release management (separate from publish)
  */
-export const rootLevelCommands = [
-	releaseCommand,
-] as const;
+export const rootLevelCommands = [releaseCommand] as const;
 
 /**
  * All commands organized hierarchically
