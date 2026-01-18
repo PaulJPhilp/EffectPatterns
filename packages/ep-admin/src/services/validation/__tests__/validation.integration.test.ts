@@ -5,22 +5,21 @@
  * file validation, directory validation, range checking, and error accumulation.
  */
 
-import { FileSystem } from "@effect/platform";
-import { layer as NodeFileSystemLayer } from "@effect/platform-node/NodeFileSystem";
+import { layer as  } from "@effect/platform-node/NodeFileSystem";
 import { Effect, Layer } from "effect";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-	runValidations,
-	ValidationService,
-	type ValidationResult,
+    runValidations,
+    ValidationService
 } from "../index.js";
-import {
-	ArgumentValidationError,
-	OptionValidationError,
-} from "../../../errors.js";
+
+const TestValidationLayer = Layer.provideMerge(
+	TestValidationLayer
+	
+);
 
 describe("ValidationService - Integration", () => {
 	let tempDir: string;
@@ -47,9 +46,9 @@ describe("ValidationService - Integration", () => {
 			const result = await Effect.runPromise(
 				program.pipe(
 					Effect.provide(
-						Layer.mergeAll(
-							ValidationService.Default,
-							NodeFileSystemLayer
+						
+							TestValidationLayer
+							
 						)
 					)
 				)
@@ -71,9 +70,9 @@ describe("ValidationService - Integration", () => {
 				Effect.runPromise(
 					program.pipe(
 						Effect.provide(
-							Layer.mergeAll(
-								ValidationService.Default,
-								NodeFileSystemLayer
+							
+								TestValidationLayer
+								
 							)
 						)
 					)
@@ -91,9 +90,9 @@ describe("ValidationService - Integration", () => {
 				await Effect.runPromise(
 					program.pipe(
 						Effect.provide(
-							Layer.mergeAll(
-								ValidationService.Default,
-								NodeFileSystemLayer
+							
+								TestValidationLayer
+								
 							)
 						)
 					)
@@ -117,9 +116,9 @@ describe("ValidationService - Integration", () => {
 			const result = await Effect.runPromise(
 				program.pipe(
 					Effect.provide(
-						Layer.mergeAll(
-							ValidationService.Default,
-							NodeFileSystemLayer
+						
+							TestValidationLayer
+							
 						)
 					)
 				)
@@ -141,9 +140,9 @@ describe("ValidationService - Integration", () => {
 				Effect.runPromise(
 					program.pipe(
 						Effect.provide(
-							Layer.mergeAll(
-								ValidationService.Default,
-								NodeFileSystemLayer
+							
+								TestValidationLayer
+								
 							)
 						)
 					)
@@ -161,9 +160,9 @@ describe("ValidationService - Integration", () => {
 				await Effect.runPromise(
 					program.pipe(
 						Effect.provide(
-							Layer.mergeAll(
-								ValidationService.Default,
-								NodeFileSystemLayer
+							
+								TestValidationLayer
+								
 							)
 						)
 					)
@@ -185,7 +184,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(ValidationService.Default))
+				program.pipe(Effect.provide(TestValidationLayer))
 			);
 
 			expect(result).toBe("success");
@@ -199,7 +198,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(ValidationService.Default))
+				program.pipe(Effect.provide(TestValidationLayer))
 			);
 
 			expect(result).toBe("success");
@@ -213,7 +212,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(ValidationService.Default))
+				program.pipe(Effect.provide(TestValidationLayer))
 			);
 
 			expect(result).toBe("success");
@@ -226,7 +225,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow();
 		});
 
@@ -237,7 +236,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow();
 		});
 
@@ -249,7 +248,7 @@ describe("ValidationService - Integration", () => {
 
 			try {
 				await Effect.runPromise(
-					program.pipe(Effect.provide(ValidationService.Default))
+					program.pipe(Effect.provide(TestValidationLayer))
 				);
 				expect.fail("Should have thrown");
 			} catch (error: any) {
@@ -271,7 +270,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(ValidationService.Default))
+				program.pipe(Effect.provide(TestValidationLayer))
 			);
 
 			expect(result).toBe("success");
@@ -288,7 +287,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow();
 		});
 
@@ -305,7 +304,7 @@ describe("ValidationService - Integration", () => {
 
 			try {
 				await Effect.runPromise(
-					program.pipe(Effect.provide(ValidationService.Default))
+					program.pipe(Effect.provide(TestValidationLayer))
 				);
 				expect.fail("Should have thrown");
 			} catch (error: any) {
@@ -327,7 +326,7 @@ describe("ValidationService - Integration", () => {
 
 			try {
 				await Effect.runPromise(
-					program.pipe(Effect.provide(ValidationService.Default))
+					program.pipe(Effect.provide(TestValidationLayer))
 				);
 				expect.fail("Should have thrown");
 			} catch (error: any) {
@@ -345,7 +344,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(ValidationService.Default))
+				program.pipe(Effect.provide(TestValidationLayer))
 			);
 
 			expect(result).toBe("success");
@@ -359,7 +358,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(ValidationService.Default))
+				program.pipe(Effect.provide(TestValidationLayer))
 			);
 
 			expect(result).toBe("success");
@@ -372,7 +371,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow("is required");
 		});
 
@@ -383,7 +382,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow("is required");
 		});
 
@@ -394,7 +393,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow("is required");
 		});
 
@@ -406,7 +405,7 @@ describe("ValidationService - Integration", () => {
 
 			try {
 				await Effect.runPromise(
-					program.pipe(Effect.provide(ValidationService.Default))
+					program.pipe(Effect.provide(TestValidationLayer))
 				);
 				expect.fail("Should have thrown");
 			} catch (error: any) {
@@ -422,7 +421,7 @@ describe("ValidationService - Integration", () => {
 
 			try {
 				await Effect.runPromise(
-					program.pipe(Effect.provide(ValidationService.Default))
+					program.pipe(Effect.provide(TestValidationLayer))
 				);
 				expect.fail("Should have thrown");
 			} catch (error: any) {
@@ -440,7 +439,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(ValidationService.Default))
+				program.pipe(Effect.provide(TestValidationLayer))
 			);
 
 			expect(result).toBe("success");
@@ -454,7 +453,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(ValidationService.Default))
+				program.pipe(Effect.provide(TestValidationLayer))
 			);
 
 			expect(result).toBe("success");
@@ -467,7 +466,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow("contains null bytes");
 		});
 
@@ -478,7 +477,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow("path traversal");
 		});
 
@@ -489,7 +488,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow("cannot be empty");
 		});
 
@@ -500,7 +499,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow("cannot be empty");
 		});
 
@@ -511,7 +510,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			await expect(
-				Effect.runPromise(program.pipe(Effect.provide(ValidationService.Default)))
+				Effect.runPromise(program.pipe(Effect.provide(TestValidationLayer)))
 			).rejects.toThrow("must be an absolute path");
 		});
 
@@ -523,7 +522,7 @@ describe("ValidationService - Integration", () => {
 			});
 
 			const result = await Effect.runPromise(
-				program.pipe(Effect.provide(ValidationService.Default))
+				program.pipe(Effect.provide(TestValidationLayer))
 			);
 
 			expect(result).toBe("success");
@@ -547,9 +546,9 @@ describe("ValidationService - Integration", () => {
 			const result = await Effect.runPromise(
 				program.pipe(
 					Effect.provide(
-						Layer.mergeAll(
-							ValidationService.Default,
-							NodeFileSystemLayer
+						
+							TestValidationLayer
+							
 						)
 					)
 				)
@@ -575,9 +574,9 @@ describe("ValidationService - Integration", () => {
 			const result = await Effect.runPromise(
 				program.pipe(
 					Effect.provide(
-						Layer.mergeAll(
-							ValidationService.Default,
-							NodeFileSystemLayer
+						
+							TestValidationLayer
+							
 						)
 					)
 				)
@@ -603,9 +602,9 @@ describe("ValidationService - Integration", () => {
 			const result = await Effect.runPromise(
 				program.pipe(
 					Effect.provide(
-						Layer.mergeAll(
-							ValidationService.Default,
-							NodeFileSystemLayer
+						
+							TestValidationLayer
+							
 						)
 					)
 				)
@@ -631,9 +630,9 @@ describe("ValidationService - Integration", () => {
 			const result = await Effect.runPromise(
 				program.pipe(
 					Effect.provide(
-						Layer.mergeAll(
-							ValidationService.Default,
-							NodeFileSystemLayer
+						
+							TestValidationLayer
+							
 						)
 					)
 				)
@@ -651,9 +650,9 @@ describe("ValidationService - Integration", () => {
 			const result = await Effect.runPromise(
 				program.pipe(
 					Effect.provide(
-						Layer.mergeAll(
-							ValidationService.Default,
-							NodeFileSystemLayer
+						
+							TestValidationLayer
+							
 						)
 					)
 				)
@@ -683,9 +682,9 @@ describe("ValidationService - Integration", () => {
 			const result = await Effect.runPromise(
 				program.pipe(
 					Effect.provide(
-						Layer.mergeAll(
-							ValidationService.Default,
-							NodeFileSystemLayer
+						
+							TestValidationLayer
+							
 						)
 					)
 				)
@@ -709,9 +708,9 @@ describe("ValidationService - Integration", () => {
 			const result = await Effect.runPromise(
 				program.pipe(
 					Effect.provide(
-						Layer.mergeAll(
-							ValidationService.Default,
-							NodeFileSystemLayer
+						
+							TestValidationLayer
+							
 						)
 					)
 				)

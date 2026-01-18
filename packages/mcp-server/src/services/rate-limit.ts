@@ -12,8 +12,16 @@ import { RateLimitError } from "../errors";
 import { MCPConfigService } from "./config";
 import { MCPLoggerService } from "./logger";
 
+// Basic types for Vercel KV to avoid 'any'
+interface VercelKV {
+  get<T>(key: string): Promise<T | null>;
+  set(key: string, value: unknown, options?: { px?: number }): Promise<string | null>;
+  setex(key: string, seconds: number, value: unknown): Promise<string | null>;
+  del(key: string): Promise<number>;
+}
+
 // Safely import kv with fallback for missing environment variables
-let kv: any = null;
+let kv: VercelKV | null = null;
 try {
   // Only try to import kv if environment variables are properly configured
   const kvUrl = process.env.KV_REST_API_URL;
@@ -151,7 +159,7 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
 
         if (useKv) {
           const key = `ratelimit:${identifier}`;
-          const stored = await kv.get<RateLimitEntry>(key);
+          const stored = await kv!.get<RateLimitEntry>(key);
 
           if (!stored || now - stored.windowStart >= windowMs) {
             // Create new window
@@ -213,11 +221,11 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
               if (useKv) {
                 const key = `ratelimit:${identifier}`;
                 // Store with TTL equal to window + buffer
-                yield* Effect.promise(() =>
-                  kv.setex(
+                yield* Effect.promise(async () =>
+                  kv!.setex(
                     key,
                     Math.ceil((windowMs + 5000) / 1000),
-                    JSON.stringify(newEntry)
+                    newEntry
                   )
                 );
               } else {
@@ -278,8 +286,8 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
               const ttlSeconds = Math.ceil(
                 (entry.windowStart + windowMs - now) / 1000
               );
-              yield* Effect.promise(() =>
-                kv.setex(key, ttlSeconds, JSON.stringify(updatedEntry))
+              yield* Effect.promise(async () =>
+                kv!.setex(key, ttlSeconds, updatedEntry)
               );
             } else {
               inMemoryFallback.set(identifier, updatedEntry);
@@ -334,7 +342,7 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
           try {
             if (useKv) {
               const key = `ratelimit:${identifier}`;
-              yield* Effect.promise(() => kv.del(key));
+              yield* Effect.promise(() => kv!.del(key));
             } else {
               inMemoryFallback.delete(identifier);
             }

@@ -16,6 +16,7 @@ export class AuthenticationError extends Data.TaggedError(
   "AuthenticationError"
 )<{
   readonly message: string;
+  readonly providedKey?: string;
 }> { }
 
 /**

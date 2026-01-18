@@ -8,16 +8,16 @@
  * in the OpenTelemetry trace.
  */
 
-import { validateTierAccess } from "@/auth/tierAccess";
 import { buildSnippet, GenerateRequest } from "@effect-patterns/toolkit";
 import { Schema as S } from "@effect/schema";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
-  validateApiKey,
+    validateApiKey,
 } from "../../../src/auth/apiKey";
-import { errorHandler } from "../../../src/server/errorHandler";
+import { validateTierAccess } from "../../../src/auth/tierAccess";
 import { PatternNotFoundError } from "../../../src/errors";
+import { errorHandler } from "../../../src/server/errorHandler";
 import { PatternsService, runWithRuntime } from "../../../src/server/init";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 

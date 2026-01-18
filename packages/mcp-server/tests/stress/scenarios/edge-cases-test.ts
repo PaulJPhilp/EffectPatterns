@@ -4,15 +4,16 @@
  * Tests boundary conditions and validates correctness of error handling
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { ReviewCodeResponse } from '../../../src/tools/schemas.js';
+import { getThresholds } from '../config/thresholds';
+import { generateTypeScriptFile, PRESET_CONFIGS } from '../generators/code-generator';
+import { createMetricsCollector } from '../utils/metrics-collector';
 import {
+  getServerUrl,
   startServer,
   stopServer,
-  getServerUrl,
 } from '../utils/server-control';
-import { generateTypeScriptFile, PRESET_CONFIGS } from '../generators/code-generator';
-import { getThresholds } from '../config/thresholds';
-import { createMetricsCollector } from '../utils/metrics-collector';
 
 const thresholds = getThresholds('strict');
 const metrics = createMetricsCollector();
@@ -394,7 +395,7 @@ describe('Edge Cases Test - Correctness Validation', () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as ReviewCodeResponse;
         expect(data).toBeDefined();
         expect(Array.isArray(data.recommendations)).toBe(true);
       }
@@ -410,7 +411,7 @@ describe('Edge Cases Test - Correctness Validation', () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as ReviewCodeResponse;
         expect(Array.isArray(data.recommendations)).toBe(true);
         expect(data.recommendations.length).toBeLessThanOrEqual(3);
       }

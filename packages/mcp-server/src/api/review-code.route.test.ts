@@ -4,6 +4,23 @@ describe("POST /api/review-code", () => {
 	const API_KEY = process.env.PATTERN_API_KEY || "test-key";
 	const BASE_URL = "http://localhost:3000";
 
+	interface ReviewCodeResponse {
+		recommendations: Array<{
+			id: string;
+			severity: string;
+			message: string;
+		}>;
+		meta: {
+			totalFound: number;
+			hiddenCount?: number;
+			upgradeMessage?: string;
+		};
+		markdown: string;
+		traceId: string;
+		timestamp: string;
+		error?: string;
+	}
+
 	it("should return top 3 recommendations for code with issues", async () => {
 		const response = await fetch(`${BASE_URL}/api/review-code`, {
 			method: "POST",
@@ -23,7 +40,7 @@ const a: any = 4;
 		});
 
 		expect(response.status).toBe(200);
-		const data = await response.json();
+		const data = (await response.json()) as ReviewCodeResponse;
 
 		expect(data.recommendations).toBeDefined();
 		expect(data.recommendations.length).toBeLessThanOrEqual(3);
@@ -54,7 +71,7 @@ const e: any = 5;
 		});
 
 		expect(response.status).toBe(200);
-		const data = await response.json();
+		const data = (await response.json()) as ReviewCodeResponse;
 
 		expect(data.meta.hiddenCount).toBeGreaterThan(0);
 		expect(data.meta.upgradeMessage).toContain("Upgrade to Pro");
@@ -76,7 +93,7 @@ const e: any = 5;
 		});
 
 		expect(response.status).toBe(413);
-		const data = await response.json();
+		const data = (await response.json()) as ReviewCodeResponse;
 		expect(data.error).toContain("exceeds maximum");
 	});
 
@@ -94,7 +111,7 @@ const e: any = 5;
 		});
 
 		expect(response.status).toBe(400);
-		const data = await response.json();
+		const data = (await response.json()) as ReviewCodeResponse;
 		expect(data.error).toContain("not a TypeScript file");
 	});
 
@@ -143,7 +160,7 @@ const e: any = 5;
 		});
 
 		expect(response.status).toBe(200);
-		const data = await response.json();
+		const data = (await response.json()) as ReviewCodeResponse;
 
 		expect(data.markdown).toContain("# Code Review Results");
 		expect(data.markdown).toMatch(/🔴|🟡|🔵/);

@@ -49,10 +49,11 @@ describe("Install Service", () => {
 
     it("should have valid use case arrays", () => {
       MOCK_RULES.forEach((rule) => {
-        expect(Array.isArray(rule.useCase)).toBe(true);
-        expect(rule.useCase.length).toBeGreaterThan(0);
-        rule.useCase.forEach((useCase) => {
-          expect(typeof useCase).toBe("string");
+        const useCase = rule.useCase || [];
+        expect(Array.isArray(useCase)).toBe(true);
+        expect(useCase.length).toBeGreaterThan(0);
+        useCase.forEach((uc) => {
+          expect(typeof uc).toBe("string");
         });
       });
     });

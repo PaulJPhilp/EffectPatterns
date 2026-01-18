@@ -43,9 +43,9 @@ describe("/api/list-rules and /api/list-fixes", () => {
 				makeRequest({ "x-api-key": "secret" })
 			);
 			expect(res.status).toBe(200);
-			const body = await res.json();
+			const body = await res.json() as { rules: Array<{ id: string }>, traceId: string, timestamp: string };
 			expect(Array.isArray(body.rules)).toBe(true);
-			expect(body.rules.map((r: any) => r.id)).toContain(
+			expect(body.rules.map((r) => r.id)).toContain(
 				"async-await"
 			);
 			expect(typeof body.traceId).toBe("string");
@@ -65,9 +65,9 @@ describe("/api/list-rules and /api/list-fixes", () => {
 				makeRequest({ "x-api-key": "secret" })
 			);
 			expect(res.status).toBe(200);
-			const body = await res.json();
+			const body = await res.json() as { fixes: Array<{ id: string }>, traceId: string, timestamp: string };
 			expect(Array.isArray(body.fixes)).toBe(true);
-			expect(body.fixes.map((f: any) => f.id)).toContain(
+			expect(body.fixes.map((f) => f.id)).toContain(
 				"replace-node-fs"
 			);
 			expect(typeof body.traceId).toBe("string");
@@ -90,9 +90,9 @@ describe("/api/list-rules and /api/list-fixes", () => {
 				)
 			);
 			expect(res.status).toBe(200);
-			const body = await res.json();
+			const body = await res.json() as { rules: Array<{ id: string }> };
 			expect(Array.isArray(body.rules)).toBe(true);
-			expect(body.rules.map((r: any) => r.id)).not.toContain(
+			expect(body.rules.map((r) => r.id)).not.toContain(
 				"async-await"
 			);
 		} finally {

@@ -4,18 +4,19 @@
  * Tests resource limits and handling of large/complex files
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import {
-  startServer,
-  stopServer,
-  getServerUrl,
-} from '../utils/server-control';
-import { generateTypeScriptFile, PRESET_CONFIGS } from '../generators/code-generator';
-import {
-  generateFlawedCodeFile,
-} from '../generators/anti-pattern-generator';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { ReviewCodeResponse } from '../../../src/tools/schemas.js';
 import { getThresholds } from '../config/thresholds';
+import {
+    generateFlawedCodeFile,
+} from '../generators/anti-pattern-generator';
+import { generateTypeScriptFile, PRESET_CONFIGS } from '../generators/code-generator';
 import { createMetricsCollector } from '../utils/metrics-collector';
+import {
+    getServerUrl,
+    startServer,
+    stopServer,
+} from '../utils/server-control';
 
 const thresholds = getThresholds('strict');
 const metrics = createMetricsCollector();
@@ -53,7 +54,7 @@ describe('Volume Test - Large File Handling', () => {
       expect(totalDuration).toBeLessThan(thresholds.nearLimitFile.totalTime);
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as ReviewCodeResponse;
         expect(Array.isArray(data.recommendations)).toBe(true);
       }
 
@@ -85,7 +86,7 @@ describe('Volume Test - Large File Handling', () => {
       expect(duration).toBeLessThan(thresholds.nearLimitFile.totalTime);
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as ReviewCodeResponse;
         expect(Array.isArray(data.recommendations)).toBe(true);
         expect(data.recommendations.length).toBeLessThanOrEqual(3);
       }
@@ -147,7 +148,7 @@ describe('Volume Test - Large File Handling', () => {
       expect(duration).toBeLessThan(thresholds.maxComplexity.totalTime);
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as ReviewCodeResponse;
         // Should return top 3 even with many issues
         expect(data.recommendations.length).toBeLessThanOrEqual(3);
         expect(data.recommendations.length).toBeGreaterThan(0);
@@ -199,7 +200,7 @@ describe('Volume Test - Large File Handling', () => {
       expect([200, 401, 413]).toContain(response.status);
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as ReviewCodeResponse;
         expect(data.recommendations.length).toBeLessThanOrEqual(3);
       }
     });
@@ -398,8 +399,8 @@ describe('Volume Test - Large File Handling', () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        data.recommendations.forEach((rec: any) => {
+        const data = await response.json() as ReviewCodeResponse;
+        data.recommendations.forEach((rec) => {
           expect(['high', 'medium', 'low']).toContain(rec.severity);
           expect(rec.message).toBeDefined();
         });
@@ -417,7 +418,7 @@ describe('Volume Test - Large File Handling', () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as ReviewCodeResponse;
 
         // Check if sorted by severity
         const severityOrder = { high: 0, medium: 1, low: 2 };

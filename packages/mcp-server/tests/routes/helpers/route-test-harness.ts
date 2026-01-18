@@ -24,10 +24,8 @@ export function createMockRequest(options: {
     headers.set("content-type", "application/json");
   }
 
-  let body: BodyInit | null = null;
-  if (options.body && method !== "GET") {
-    body = JSON.stringify(options.body);
-  }
+  const body =
+    options.body && method !== "GET" ? JSON.stringify(options.body) : null;
 
   return new NextRequest(url, {
     method,

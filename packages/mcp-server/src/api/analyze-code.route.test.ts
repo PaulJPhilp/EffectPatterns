@@ -40,11 +40,11 @@ describe("/api/analyze-code", () => {
 			);
 
 			expect(res.status).toBe(200);
-			const body = await res.json();
+			const body = await res.json() as { suggestions: Array<{ id: string }> };
 
 			// patterns analysisType excludes async/errors categories but includes
 			// resources/style/DI.
-			const ids = (body.suggestions as any[]).map((s) => s.id);
+			const ids = body.suggestions.map((s) => s.id);
 			expect(ids).not.toContain("async-await");
 			expect(ids).not.toContain("try-catch-in-effect");
 			expect(ids).toContain("node-fs");

@@ -5,11 +5,11 @@
  * Handles spawning the server process, managing the connection, and cleaning up resources.
  */
 
-import { spawn, ChildProcess } from "child_process";
-import path from "path";
-import { fileURLToPath } from "url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { ChildProcess } from "child_process";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,7 +48,6 @@ export class MCPTestClient {
   private client: Client;
   private transport: StdioClientTransport;
   private serverProcess: ChildProcess;
-  private config: MCPTestClientConfig;
   private toolTimeout: number;
   private isConnected = false;
 
@@ -61,7 +60,6 @@ export class MCPTestClient {
     this.client = client;
     this.transport = transport;
     this.serverProcess = serverProcess;
-    this.config = config;
     this.toolTimeout = config.toolTimeout ?? 30000;
   }
 
@@ -126,7 +124,7 @@ export class MCPTestClient {
           arguments: args,
         },
         undefined,
-        this.toolTimeout
+        { timeout: this.toolTimeout }
       );
 
       return result as ToolResult;
@@ -176,8 +174,7 @@ export class MCPTestClient {
     try {
       // Close the transport
       if (this.transport) {
-        // @ts-expect-error Transport.close may not be typed
-        await this.transport.close?.();
+        await this.transport.close();
       }
 
       // Kill the server process

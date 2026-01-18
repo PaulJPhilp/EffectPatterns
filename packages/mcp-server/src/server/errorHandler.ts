@@ -8,25 +8,26 @@
 import { Effect } from "effect";
 import { NextResponse } from "next/server";
 import {
-  isAuthenticationError,
+    isAuthenticationError,
 } from "../auth/apiKey";
 import {
-  isTierAccessError,
+    isTierAccessError,
 } from "../auth/tierAccess";
-import type {
-  AuthorizationError,
-  PatternNotFoundError,
-  ValidationError,
-  RateLimitError,
-  RequestValidationError,
-  PatternValidationError,
-  PatternLoadError,
+import {
+    AuthorizationError,
+    PatternLoadError,
+    PatternNotFoundError,
+    PatternValidationError,
+    RateLimitError,
+    RequestValidationError,
+    ValidationError,
 } from "../errors";
+import { FileSizeError, NonTypeScriptError } from "../services/review-code";
 
 /**
  * Guard functions for each error type
  */
-function isFileSizeError(error: unknown): boolean {
+function isFileSizeError(error: unknown): error is FileSizeError {
   return (
     typeof error === "object" &&
     error !== null &&
@@ -35,7 +36,7 @@ function isFileSizeError(error: unknown): boolean {
   );
 }
 
-function isNonTypeScriptError(error: unknown): boolean {
+function isNonTypeScriptError(error: unknown): error is NonTypeScriptError {
   return (
     typeof error === "object" &&
     error !== null &&
@@ -152,10 +153,10 @@ export function errorToResponse(
   // File size errors (413 Payload Too Large)
   if (isFileSizeError(error)) {
     const response: ApiErrorResponse = {
-      error: error instanceof Error ? error.message : String(error),
+      error: error.message,
       status: "payload_too_large",
-      maxSize: (error as any).maxSize,
-      actualSize: (error as any).size,
+      maxSize: error.maxSize,
+      actualSize: error.size,
     };
     return NextResponse.json(response, {
       status: 413,
@@ -238,19 +239,29 @@ export function errorToResponse(
       status: 429,
       headers: {
         ...baseHeaders,
-        "X-RateLimit-Reset": new Date(
-          (error as any).resetTime
-        ).toISOString(),
+        "X-RateLimit-Reset": error.resetTime.toISOString(),
       },
     });
   }
 
   // Validation errors (400 Bad Request)
-  if (isValidationError(error) || isRequestValidationError(error)) {
+  if (isValidationError(error)) {
     const response: ApiErrorResponse = {
       error: error.message,
       status: "validation_failed",
-      details: (error as any).details,
+      details: { field: error.field, value: error.value },
+    };
+    return NextResponse.json(response, {
+      status: 400,
+      headers: baseHeaders,
+    });
+  }
+
+  if (isRequestValidationError(error)) {
+    const response: ApiErrorResponse = {
+      error: error.message,
+      status: "validation_failed",
+      details: { endpoint: error.endpoint, errors: error.errors },
     };
     return NextResponse.json(response, {
       status: 400,
