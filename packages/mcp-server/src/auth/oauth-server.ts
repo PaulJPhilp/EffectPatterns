@@ -159,7 +159,7 @@ export class OAuth2Server {
     /**
      * Validate client credentials
      */
-    private validateClient(clientId: string, clientSecret?: string): boolean {
+    private validateClient(clientId: string, _clientSecret?: string): boolean {
         // In production, this would validate against a database
         // For now, accept any client ID and optional secret
         return clientId.length > 0;
