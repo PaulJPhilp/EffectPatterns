@@ -13,11 +13,8 @@
         "run",
         "--cwd",
         "packages/mcp-server",
-        "mcp:debug"
-      ],
-      "env": {
-        "PATTERN_API_KEY": "ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84"
-      }
+        "mcp:production"
+      ]
     },
     "effect-docs": {
       "command": "npx",

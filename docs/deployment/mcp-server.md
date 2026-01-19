@@ -12,7 +12,7 @@ The server provides MCP tools and APIs for both remote and local usage.
 
 ## Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - Bun package manager
 - Effect Patterns repository access
 - API key for authentication
@@ -434,10 +434,12 @@ vercel --prod
 ### Contact Information
 
 - **Maintainer**: Paul Philp
-- **Repository**: https://github.com/PaulJPhilp/EffectPatterns
-- **Documentation**: https://github.com/PaulJPhilp/EffectPatterns/blob/main/README.md
+- **Repository**: <https://github.com/PaulJPhilp/EffectPatterns>
+- **Documentation**: <https://github.com/PaulJPhilp/EffectPatterns/blob/main/README.md>
 - **Support**: Create GitHub issue with detailed description
 
 ---
 
-*Last updated: January 2026*
+#### Last Updated
+
+January 2026

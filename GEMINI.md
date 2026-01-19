@@ -9,17 +9,20 @@ The Effect Patterns project supports Google Gemini for various AI-powered featur
 ### Quick Start
 
 1. **Configure API Key**
+
    ```bash
    GOOGLE_API_KEY=your_gemini_api_key_here
    ```
 
 2. **Inject Rules into GEMINI.md**
+
    ```bash
    # Add Effect patterns to this file for Gemini's context
    ./ep-admin install add --tool gemini
    ```
 
 3. **Use with CLI Commands**
+
    ```bash
    # Process patterns with Gemini
    ./ep-admin process --provider google --model gemini-2.5-flash
@@ -38,7 +41,9 @@ The Effect Patterns project supports Google Gemini for various AI-powered featur
 ## Features
 
 ### 1. Pattern Generation & Analysis
+
 Create and analyze Effect-TS patterns using Gemini's reasoning capabilities.
+
 ```bash
 # Generate a new pattern
 ./ep-admin generate --provider google --model gemini-2.5-flash
@@ -48,22 +53,29 @@ Create and analyze Effect-TS patterns using Gemini's reasoning capabilities.
 ```
 
 ### 2. AI-Powered Autofix
+
 Automatically fix TypeScript errors in patterns before publishing.
+
 ```bash
 # Call Gemini to generate fixes for prepublish errors
 ./ep-admin autofix prepublish --ai-call --provider google
 ```
 
 ### 3. Gemini Skills Generation
+
 Generate structured "Skills" that enhance Gemini's understanding of specific Effect-TS categories.
+
 ```bash
 # Generate Gemini skills for all categories
 ./ep-admin install skills --format gemini
 ```
+
 *Skills are generated in `content/published/skills/gemini/` as `skill.json` and `system-prompt.txt`.*
 
 ### 4. Rule Injection
+
 Inject curated Effect-TS rules directly into your environment or project-level `GEMINI.md`.
+
 ```bash
 ./ep-admin install add --tool gemini --skill-level beginner
 ```
@@ -71,6 +83,7 @@ Inject curated Effect-TS rules directly into your environment or project-level `
 ## Configuration
 
 Environment variables for Gemini:
+
 ```bash
 GOOGLE_API_KEY=your_api_key
 GOOGLE_MODEL=gemini-2.5-flash
