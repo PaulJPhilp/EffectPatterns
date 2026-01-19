@@ -16,6 +16,8 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import type { SearchPatternsArgs } from "./schemas/tool-schemas.js";
+import { ToolSchemas } from "./schemas/tool-schemas.js";
 
 // ============================================================================
 // Configuration
@@ -110,11 +112,10 @@ const server = new McpServer(
 server.registerTool(
   "search_patterns",
   {
-    description:
-      "Search Effect-TS patterns by query, category, difficulty level, and more. Returns matching pattern summaries with basic info.",
-    inputSchema: undefined,
-  } as any,
-  async (args: any) => {
+    description: ToolSchemas.searchPatterns.description,
+    inputSchema: ToolSchemas.searchPatterns as any,
+  },
+  async (args: SearchPatternsArgs) => {
     log("Tool called: search_patterns", args);
     try {
       const searchParams = new URLSearchParams();

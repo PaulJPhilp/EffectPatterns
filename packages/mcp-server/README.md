@@ -1,15 +1,60 @@
 # Effect Patterns MCP Server
 
-API server for the Effect Patterns Claude Code Plugin, providing pattern search, code analysis, and refactoring capabilities.
+**MCP 2.0 Compatible** - Advanced API server for the Effect Patterns Claude Code Plugin, providing pattern search, code analysis, and refactoring capabilities with modern authentication and enhanced responses.
 
-## Features
+## 🚀 MCP 2.0 Features
+
+- **OAuth 2.1 Authentication**: Secure authorization with PKCE support
+- **Streamable HTTP Transport**: Modern remote access with SSE support
+- **Structured Tool Output**: Rich markdown responses with metadata
+- **Enhanced Error Handling**: Contextual error messages with suggestions
+- **Performance Tracking**: Execution timing and performance metrics
+- **Smart Navigation**: Related tools and next steps guidance
+- **JSON Schema 2020-12**: Modern validation and type safety
+
+## 🎯 Core Capabilities
 
 - **Pattern Search**: Search Effect-TS patterns by category, skill level, and keywords
 - **Code Analysis**: TypeScript analysis with Effect-TS best practices and anti-pattern detection
 - **Pattern Generation**: Generate customized Effect-TS code from templates
 - **Consistency Analysis**: Detect code inconsistencies across multiple files
-- **Refactoring Engine**: Apply automated refactoring patterns
+- **Refactoring Engine**: Apply automated refactoring patterns with preview mode
 - **Enterprise Features**: Rate limiting, caching, metrics, tracing, and comprehensive logging
+
+## 📋 MCP Tools Available
+
+### Pattern Management
+
+- `search_patterns` - Enhanced search with metadata and navigation
+- `get_pattern` - Rich pattern documentation with usage guidance
+- `generate_pattern_code` - Complete code generation with dependencies
+
+### Code Analysis
+
+- `analyze_code` - Detailed issue reporting with severity breakdowns
+- `review_code` - AI-powered architectural analysis with priorities
+- `list_analysis_rules` - Comprehensive rule listings with categories
+- `analyze_consistency` - Cross-file analysis with pattern detection
+
+### Code Improvement
+
+- `apply_refactoring` - Preview/application with impact assessment
+
+## 🔧 Transport Options
+
+### MCP 2.0 Streamable HTTP (Recommended)
+
+- **Endpoint**: `http://localhost:3001/mcp`
+- **Authentication**: OAuth 2.1 with PKCE
+- **Features**: Remote access, SSE, structured responses
+- **Security**: Origin validation, token management
+
+### Legacy Stdio Transport
+
+- **Command**: `bun run mcp:stdio`
+- **Authentication**: API key based
+- **Features**: Local development, backward compatibility
+- **Use Case**: Development and testing
 
 ## Quick Start
 
@@ -36,19 +81,48 @@ cp .env.example .env
 # Run database migrations
 bun run migrate
 
-# Start development server
-bun run dev
+# Start MCP 2.0 Streamable HTTP server
+bun run mcp:http
+
+# Or start legacy stdio server
+bun run mcp:stdio
 ```
 
-### Environment Variables
+### MCP 2.0 Setup
+
+#### OAuth 2.1 Configuration
+
+```bash
+# Required for MCP 2.0 Streamable HTTP transport
+OAUTH_CLIENT_ID=effect-patterns-mcp
+OAUTH_CLIENT_SECRET=your-client-secret
+OAUTH_REDIRECT_URIS=http://localhost:3000/callback,https://your-app.com/callback
+OAUTH_SCOPES=mcp:access,patterns:read,analysis:run
+
+# Optional PKCE settings (defaults to secure values)
+PKCE_CODE_VERIFIER_LENGTH=128
+PKCE_CODE_CHALLENGE_METHOD=S256
+```
+
+#### Environment Variables
 
 Create a `.env` file with the following variables:
 
 ```bash
-# API Configuration
+# MCP Configuration
 PATTERN_API_KEY=your-secret-api-key
 NODE_ENV=development
-PORT=3000
+PORT=3001
+
+# MCP 2.0 Transport
+MCP_TRANSPORT=http  # or "stdio" for legacy
+MCP_PROTOCOL_VERSION=2025-11-25
+
+# OAuth 2.1 (HTTP transport only)
+OAUTH_ENABLED=true
+OAUTH_CLIENT_ID=effect-patterns-mcp
+OAUTH_CLIENT_SECRET=your-client-secret
+OAUTH_REDIRECT_URIS=http://localhost:3000/callback
 
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/effect_patterns
@@ -58,7 +132,7 @@ TRACING_ENABLED=true
 OTLP_ENDPOINT=http://localhost:4318/v1/traces
 OTLP_HEADERS=authorization=Bearer your-token
 SERVICE_NAME=effect-patterns-mcp-server
-SERVICE_VERSION=0.5.1
+SERVICE_VERSION=2.0.0
 
 # Rate Limiting
 RATE_LIMIT_ENABLED=true
@@ -73,16 +147,98 @@ CACHE_MAX_ENTRIES=1000
 # Logging
 LOGGING_ENABLED=true
 LOG_LEVEL=info
+MCP_DEBUG=false
 
 # Metrics
 METRICS_ENABLED=true
+
+# Security
+ALLOWED_ORIGINS=http://localhost:3000,https://your-app.com
+ENABLE_DNS_REBINDING_PROTECTION=true
 ```
 
-## API Reference
+## MCP 2.0 Usage
+
+### Client Configuration
+
+#### MCP 2.0 Streamable HTTP Client
+
+```typescript
+import { createMcpClient } from '@modelcontextprotocol/sdk/client/mcp.js';
+
+const client = await createMcpClient({
+  name: 'effect-patterns-client',
+  version: '1.0.0',
+}, {
+  transport: {
+    type: 'streamable-http',
+    url: 'http://localhost:3001/mcp',
+    headers: {
+      'MCP-Protocol-Version': '2025-11-25',
+      'Authorization': 'Bearer your-oauth-token'
+    }
+  }
+});
+```
+
+#### OAuth 2.1 Authentication Flow
+
+```typescript
+// 1. Initiate OAuth flow
+const authUrl = 'http://localhost:3001/auth?' + 
+  'response_type=code&' +
+  'client_id=effect-patterns-mcp&' +
+  'redirect_uri=http://localhost:3000/callback&' +
+  'code_challenge=abc123&' +
+  'code_challenge_method=S256';
+
+// 2. Exchange authorization code for access token
+const tokenResponse = await fetch('http://localhost:3001/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: authCode,
+    redirect_uri: 'http://localhost:3000/callback',
+    client_id: 'effect-patterns-mcp',
+    code_verifier: pkceVerifier
+  })
+});
+
+const { access_token } = await tokenResponse.json();
+```
+
+### Enhanced Tool Responses
+
+MCP 2.0 tools now provide structured responses with rich metadata:
+
+```typescript
+// Example: search_patterns response
+{
+  content: [
+    {
+      type: "text",
+      text: "# Pattern Search Results\n\n**Query**: service\n**Results Found**: 5\n**Execution Time**: 150ms\n\n## Search Results\n\n### 1. Service Pattern\n**Category**: service\n**Difficulty**: beginner\n\nDescription...\n\n```typescript\nexport const Service = Effect.gen(...)\n```"
+    },
+    {
+      type: "text", 
+      text: JSON.stringify({
+        query: "service",
+        resultsCount: 5,
+        executionTime: "150ms",
+        relatedTools: ["get_pattern", "list_analysis_rules"],
+        nextSteps: ["Get detailed pattern information", "Analyze your code"]
+      }, null, 2)
+    }
+  ]
+}
+```
+
+## Legacy API Reference
 
 ### Authentication
 
-All endpoints (except `/api/health`) require authentication via API key:
+Legacy endpoints (except `/api/health`) require authentication via API key:
 
 ```bash
 # Header authentication (recommended)
@@ -103,6 +259,7 @@ GET /api/health
 Returns service health status (no authentication required).
 
 **Response:**
+
 ```json
 {
   "ok": true,
@@ -121,12 +278,14 @@ GET /api/patterns?q=query&category=error-handling&difficulty=beginner&limit=10
 Search for Effect-TS patterns with optional filters.
 
 **Parameters:**
+
 - `q` (string): Search query
 - `category` (string): Pattern category (e.g., "error-handling", "concurrency")
 - `difficulty` (string): "beginner" | "intermediate" | "advanced"
 - `limit` (number): Maximum results (default: 50)
 
 **Response:**
+
 ```json
 {
   "count": 5,
@@ -153,6 +312,7 @@ GET /api/patterns/{patternId}
 Retrieve a specific pattern by ID.
 
 **Response:**
+
 ```json
 {
   "id": "retry-with-backoff",
@@ -180,11 +340,13 @@ Content-Type: application/json
 Generate customized code from a pattern template.
 
 **Parameters:**
+
 - `patternId` (string): Pattern identifier
 - `name` (string, optional): Custom function name
 - `moduleType` (string): "esm" | "cjs"
 
 **Response:**
+
 ```json
 {
   "patternId": "retry-with-backoff",
@@ -220,11 +382,13 @@ For `app/api/**/route.ts` files, `try/catch` is treated as boundary
 guidance (low severity).
 
 **Parameters:**
+
 - `source` (string): Source code to analyze
 - `filename` (string, optional): File name for context
 - `analysisType` (string): "validation" | "patterns" | "errors" | "all"
 
 **Response:**
+
 ```json
 {
   "suggestions": [
@@ -252,26 +416,30 @@ Content-Type: application/json
 }
 ```
 
-Get high-fidelity architectural recommendations for Effect codebases. 
+Get high-fidelity architectural recommendations for Effect codebases.
 Returns the top 3 highest-priority issues with actionable guidance.
 
 **Free Tier Features:**
+
 - Top 3 recommendations per request (sorted by severity, then line number)
 - Unlimited queries
 - Markdown-formatted output
 - Upgrade message when more issues are found
 
 **Validation:**
+
 - Maximum file size: 100KB
 - TypeScript files only (.ts, .tsx)
 - Returns 413 for oversized files
 - Returns 400 for non-TypeScript files
 
 **Parameters:**
+
 - `code` (string): Source code to review
 - `filePath` (string, optional): File path for context and validation
 
 **Response:**
+
 ```json
 {
   "recommendations": [
@@ -328,6 +496,7 @@ Content-Type: application/json
 Detect code inconsistencies across multiple files.
 
 **Response:**
+
 ```json
 {
   "issues": [
@@ -364,11 +533,13 @@ Content-Type: application/json
 Apply automated refactoring patterns.
 
 **Parameters:**
+
 - `refactoringId` (string): Refactoring identifier
 - `files` (array): Files to refactor
 - `preview` (boolean): Preview changes without applying
 
 **Response:**
+
 ```json
 {
   "applied": false,
@@ -393,6 +564,7 @@ GET /api/trace-wiring
 Get tracing setup examples for different languages/frameworks.
 
 **Response:**
+
 ```json
 {
   "effectNodeSdk": "import { NodeSdk } from '@effect/opentelemetry'...",
@@ -414,24 +586,43 @@ bun run test
 # Integration tests (requires running server)
 bun run test:integration
 
+# MCP 2.0 compliance tests
+bun run test:mcp2
+
 # Smoke tests against live server
-bun run smoke-test https://localhost:3000 your-api-key
+bun run smoke-test https://localhost:3001 your-api-key
 
 # Test coverage
 bun run test:coverage
+```
+
+### MCP 2.0 Development
+
+```bash
+# Start MCP 2.0 Streamable HTTP server with debug
+MCP_DEBUG=true bun run mcp:http
+
+# Start legacy stdio server
+bun run mcp:stdio
+
+# Test OAuth 2.1 flow
+bun run mcp:oauth:test
+
+# Test PKCE functionality
+bun run mcp:pkce:test
 ```
 
 ### Database Operations
 
 ```bash
 # Check database connectivity
-curl -H "x-api-key: your-key" http://localhost:3000/api/db-check
+curl -H "x-api-key: your-key" http://localhost:3001/api/db-check
 
 # Run migrations
-curl -X POST -H "x-api-key: your-key" http://localhost:3000/api/migrate
+curl -X POST -H "x-api-key: your-key" http://localhost:3001/api/migrate
 
 # Check environment configuration
-curl -H "x-api-key: your-key" http://localhost:3000/api/env-check
+curl -H "x-api-key: your-key" http://localhost:3001/api/env-check
 ```
 
 ### Monitoring
@@ -439,8 +630,9 @@ curl -H "x-api-key: your-key" http://localhost:3000/api/env-check
 #### Metrics
 
 Access Prometheus metrics:
+
 ```bash
-curl http://localhost:3000/api/metrics
+curl http://localhost:3001/api/metrics
 ```
 
 #### Tracing
@@ -450,45 +642,88 @@ View traces in your OpenTelemetry-compatible backend (Jaeger, Tempo, etc.).
 #### Health Monitoring
 
 The health endpoint provides basic service status:
+
 ```bash
-curl http://localhost:3000/api/health
+curl http://localhost:3001/api/health
+```
+
+#### MCP 2.0 Health
+
+Check MCP 2.0 specific health:
+
+```bash
+curl -H "MCP-Protocol-Version: 2025-11-25" http://localhost:3001/mcp/health
 ```
 
 ## Deployment
 
-### Vercel (Recommended)
+### MCP 2.0 Deployment
+
+#### Vercel (Recommended for MCP 2.0)
 
 1. Connect your repository to Vercel
-2. Set environment variables in Vercel dashboard
+2. Set environment variables in Vercel dashboard:
+   - `OAUTH_ENABLED=true`
+   - `OAUTH_CLIENT_ID=effect-patterns-mcp`
+   - `OAUTH_CLIENT_SECRET=your-client-secret`
+   - `ALLOWED_ORIGINS=https://your-app.com`
 3. Deploy automatically on push to main branch
 
-### Docker
+#### Docker
 
 ```bash
-# Build image
+# Build MCP 2.0 image
 docker build -t effect-patterns-mcp-server .
 
-# Run with environment variables
-docker run -p 3000:3000 \
-  -e PATTERN_API_KEY=your-key \
-  -e DATABASE_URL=your-db-url \
+# Run with MCP 2.0 environment variables
+docker run -p 3001:3001 \
+  -e OAUTH_ENABLED=true \
+  -e OAUTH_CLIENT_ID=effect-patterns-mcp \
+  -e OAUTH_CLIENT_SECRET=your-key \
+  -e ALLOWED_ORIGINS=https://your-app.com \
   effect-patterns-mcp-server
 ```
 
 ### Environment-Specific Configuration
 
 **Development:**
+
 - `NODE_ENV=development`
-- Logging set to `debug` level
+- `MCP_DEBUG=true` for verbose logging
 - Database connections use local credentials
+- OAuth endpoints allow localhost
 
 **Production:**
+
 - `NODE_ENV=production`
-- API key required
+- OAuth 2.1 required for HTTP transport
 - All security features enabled
 - Metrics and tracing enabled
+- Origin validation enforced
 
 ## Architecture
+
+### MCP 2.0 Architecture
+
+The MCP 2.0 server introduces several new architectural components:
+
+#### Transport Layer
+
+- **StreamableHTTPServerTransport**: Modern HTTP transport with SSE
+- **OAuth2Server**: OAuth 2.1 authorization server with PKCE
+- **SecurityMiddleware**: Origin validation and attack prevention
+
+#### Enhanced Response System
+
+- **StructuredOutput**: Rich markdown responses with metadata
+- **ResponseBuilder**: Fluent API for constructing responses
+- **AnnotationSystem**: Error, warning, and progress annotations
+
+#### Schema System
+
+- **JSON Schema 2020-12**: Modern validation dialect
+- **ToolSchemas**: Comprehensive type definitions
+- **TypeSafety**: Full TypeScript support throughout
 
 ### Service Layer
 
@@ -501,15 +736,18 @@ The server uses Effect-TS services for dependency injection:
 - **PatternGeneratorService**: Template-based code generation
 - **ConsistencyAnalyzerService**: Multi-file analysis
 - **RefactoringEngineService**: Automated refactoring
+- **OAuth2Service**: OAuth 2.1 authorization management
 
 ### Error Handling
 
 All errors use tagged error types for type-safe handling:
-- `AuthenticationError`: API key issues
+
+- `AuthenticationError`: API key or OAuth issues
 - `ValidationError`: Invalid request data
 - `RateLimitError`: Rate limit exceeded
 - `PatternNotFoundError`: Pattern not found
 - `ConfigurationError`: Server misconfiguration
+- `OAuthError`: OAuth 2.1 flow errors
 
 ### Performance Features
 
@@ -518,14 +756,104 @@ All errors use tagged error types for type-safe handling:
 - **Metrics**: Prometheus-compatible export
 - **Tracing**: OpenTelemetry integration
 - **Connection Pooling**: Database connection management
+- **Response Optimization**: Structured output with metadata
+
+## Migration Guide
+
+### From MCP 1.0 to MCP 2.0
+
+#### Breaking Changes
+
+- **Transport**: Stdio → Streamable HTTP (recommended)
+- **Authentication**: API Key → OAuth 2.1 with PKCE
+- **Schema**: Draft-07 → JSON Schema 2020-12
+- **Responses**: Plain text → Structured markdown + metadata
+
+#### Migration Steps
+
+1. **Update Client Configuration**
+
+   ```typescript
+   // Old (MCP 1.0)
+   const client = createStdioClient();
+   
+   // New (MCP 2.0)
+   const client = await createMcpClient({
+     name: 'effect-patterns-client',
+     version: '1.0.0',
+   }, {
+     transport: {
+       type: 'streamable-http',
+       url: 'http://localhost:3001/mcp',
+       headers: {
+         'MCP-Protocol-Version': '2025-11-25',
+         'Authorization': 'Bearer your-oauth-token'
+       }
+     }
+   });
+   ```
+
+2. **Update Authentication**
+
+   ```bash
+   # Old: API Key
+   PATTERN_API_KEY=your-key
+   
+   # New: OAuth 2.1
+   OAUTH_ENABLED=true
+   OAUTH_CLIENT_ID=effect-patterns-mcp
+   OAUTH_CLIENT_SECRET=your-client-secret
+   ```
+
+3. **Handle Enhanced Responses**
+
+   ```typescript
+   // Old: Simple text response
+   const response = await client.call('search_patterns', { q: 'service' });
+   console.log(response.content[0].text);
+   
+   // New: Structured response with metadata
+   const response = await client.call('search_patterns', { q: 'service' });
+   const markdown = response.content[0].text;
+   const metadata = JSON.parse(response.content[1].text);
+   console.log(markdown);
+   console.log('Execution time:', metadata.executionTime);
+   console.log('Related tools:', metadata.relatedTools);
+   ```
+
+#### Backward Compatibility
+
+The MCP 2.0 server maintains backward compatibility:
+
+- **Legacy Stdio Transport**: Available via `bun run mcp:stdio`
+- **API Key Authentication**: Still supported for stdio transport
+- **Simple Responses**: Clients can ignore metadata and use text content
+- **JSON Schema Compatibility**: Tool schemas remain compatible
+
+#### Recommended Migration Path
+
+1. **Phase 1**: Deploy MCP 2.0 alongside existing MCP 1.0
+2. **Phase 2**: Update clients to use OAuth 2.1 authentication
+3. **Phase 3**: Migrate to Streamable HTTP transport
+4. **Phase 4**: Adopt enhanced response features
+5. **Phase 5**: Deprecate MCP 1.0 stdio transport
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Add tests for new functionality
-4. Ensure all tests pass
+4. Ensure all tests pass including MCP 2.0 compliance
 5. Submit a pull request
+
+### MCP 2.0 Development Guidelines
+
+- Use JSON Schema 2020-12 for all tool schemas
+- Provide structured responses with metadata
+- Include execution timing in all tool responses
+- Add related tools and next steps suggestions
+- Test both HTTP and stdio transports
+- Validate OAuth 2.1 flows
 
 ## License
 
@@ -534,5 +862,27 @@ MIT License - see LICENSE file for details.
 ## Support
 
 - Create issues in the GitHub repository
-- Check the smoke test output for connectivity issues
+- Check the MCP 2.0 compliance test output for connectivity issues
 - Review logs for detailed error information
+- Consult the OAuth 2.1 documentation for authentication issues
+
+## Version History
+
+### v2.0.0 - MCP 2.0 Release
+
+- ✅ OAuth 2.1 authentication with PKCE
+- ✅ Streamable HTTP transport with SSE
+- ✅ Structured tool output and annotations
+- ✅ JSON Schema 2020-12 validation
+- ✅ Enhanced error handling and suggestions
+- ✅ Performance tracking and metadata
+- ✅ Security improvements (Origin validation, DNS rebinding protection)
+- ✅ Backward compatibility with stdio transport
+
+### v1.x.x - Legacy MCP 1.0
+
+- Stdio transport only
+- API key authentication
+- Plain text responses
+- JSON Schema draft-07
+- Basic error handling
