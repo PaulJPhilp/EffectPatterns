@@ -100,7 +100,7 @@
     "@opentelemetry/exporter-trace-otlp-proto": "^0.210.0",
     "@opentelemetry/resources": "^2.4.0",
     "@opentelemetry/sdk-metrics": "^2.4.0",
-    "@opentelemetry/sdk-node": "^0.209.0",
+    "@opentelemetry/sdk-node": "^0.210.0",
     "@opentelemetry/sdk-trace-node": "^2.4.0",
     "@opentelemetry/semantic-conventions": "^1.38.0",
     "conventional-commits-parser": "^6.2.1",
