@@ -35,7 +35,7 @@ async function callProductionApi(endpoint: string, data?: any) {
         method: data ? "POST" : "GET",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${API_KEY}`,
+            "x-api-key": API_KEY,
         },
         body: data ? JSON.stringify(data) : undefined,
     });
@@ -55,16 +55,7 @@ server.registerTool(
     {
         description:
             "Analyze TypeScript code for Effect-TS patterns and best practices",
-        inputSchema: {
-            type: "object",
-            properties: {
-                code: {
-                    type: "string",
-                    description: "TypeScript code to analyze",
-                },
-            },
-            required: ["code"],
-        } as any,
+        inputSchema: undefined as any,
     },
     async (args: any) => {
         console.error("Tool called: analyze_code", args);
@@ -92,22 +83,21 @@ server.registerTool(
     "list_patterns",
     {
         description: "List available Effect-TS patterns",
-        inputSchema: {
-            type: "object",
-            properties: {
-                category: {
-                    type: "string",
-                    description: "Filter by pattern category (optional)",
-                },
-            },
-        } as any,
+        inputSchema: undefined as any,
     },
     async (args: any) => {
         console.error("Tool called: list_patterns", args);
         try {
-            const patterns = await callProductionApi("/patterns", {
-                category: args.category,
-            });
+            const searchParams = new URLSearchParams();
+            if (args.q) searchParams.append("q", args.q);
+            if (args.category) searchParams.append("category", args.category);
+            if (args.difficulty) searchParams.append("difficulty", args.difficulty);
+            if (args.limit) searchParams.append("limit", String(args.limit));
+
+            const endpoint = searchParams.toString()
+                ? `/patterns?${searchParams}`
+                : `/patterns`;
+            const patterns = await callProductionApi(endpoint);
             return {
                 content: [
                     {
@@ -128,22 +118,14 @@ server.registerTool(
     "review_code",
     {
         description: "Get AI-powered code review for Effect-TS code",
-        inputSchema: {
-            type: "object",
-            properties: {
-                code: {
-                    type: "string",
-                    description: "TypeScript code to review",
-                },
-            },
-            required: ["code"],
-        } as any,
+        inputSchema: undefined as any,
     },
     async (args: any) => {
         console.error("Tool called: review_code", args);
         try {
             const review = await callProductionApi("/review-code", {
                 code: args.code,
+                filePath: args.filePath,
             });
             return {
                 content: [
@@ -161,11 +143,40 @@ server.registerTool(
     },
 );
 
-// Start server
+server.registerTool(
+    "get_pattern",
+    {
+        description: "Get details for a specific pattern by ID",
+        inputSchema: undefined as any,
+    },
+    async (args: any) => {
+        console.error("Tool called: get_pattern", args);
+        try {
+            const pattern = await callProductionApi(`/patterns/${args.id}`);
+            return {
+                content: [
+                    {
+                        type: "text" as const,
+                        text: JSON.stringify(pattern, null, 2),
+                    },
+                ],
+            };
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.error("Tool error: get_pattern", msg);
+            throw new Error(`get_pattern failed: ${msg}`);
+        }
+    },
+);
+
+// Start the server
 async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error("Production MCP client started");
+    console.error("[Effect Patterns MCP] Production client started successfully");
 }
 
-main().catch(console.error);
+main().catch((error) => {
+    console.error("[Effect Patterns MCP] Fatal error:", error);
+    process.exit(1);
+});
