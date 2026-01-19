@@ -1,6 +1,6 @@
 {
   "name": "@effect-patterns/mcp-server",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "type": "module",
   "packageManager": "bun@1.2.23",
   "description": "Effect Patterns MCP Server - API endpoints for Claude Code Plugin",
