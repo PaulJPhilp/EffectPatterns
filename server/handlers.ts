@@ -15,15 +15,13 @@ import {
     HTTP_STATUS_OK,
 } from "./constants.js";
 import { readAndParseRules, readRuleById } from "./database.js";
-import {
-    ApiError
-} from "./errors.js";
+import { ApiError } from "./errors.js";
 import { RuleSchema } from "./schema.js";
 import {
     createApiResponse,
     createErrorResponse,
     generateRequestId,
-} from "./utils";
+} from "./utils.js";
 
 /**
  * Health check handler

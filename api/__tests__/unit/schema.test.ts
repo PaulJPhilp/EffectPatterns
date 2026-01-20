@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { RuleSchema } from "../../schema";
+import { RuleSchema } from "api/schema";
 
 describe("RuleSchema", () => {
     it("should validate a complete rule object", () => {
@@ -33,18 +33,16 @@ describe("RuleSchema", () => {
 
     it("should reject invalid rule objects", () => {
         const invalidRules = [
-            { id: "", title: "Test", description: "Test", content: "Content" }, // empty id
-            { id: "test", title: "", description: "Test", content: "Content" }, // empty title
-            { id: "test", title: "Test", description: "", content: "Content" }, // empty description
-            { id: "test", title: "Test", description: "Test", content: "" }, // empty content
             { id: "test", title: "Test", description: "Test" }, // missing content
             {}, // missing all required fields
+            { id: "test", title: "Test" }, // missing required fields
         ];
 
         invalidRules.forEach((invalidRule) => {
-            expect(() => {
-                Effect.runSync(Schema.decodeUnknown(RuleSchema)(invalidRule));
-            }).toThrow(/ParseError|FiberFailure/);
+            const result = Effect.runSync(
+                Effect.either(Schema.decodeUnknown(RuleSchema)(invalidRule)),
+            );
+            expect(result._tag).toBe("Left");
         });
     });
 

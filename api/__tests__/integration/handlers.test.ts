@@ -8,13 +8,13 @@ import {
     ERROR_RULE_NOT_FOUND,
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
     HTTP_STATUS_NOT_FOUND,
-    HTTP_STATUS_OK
-} from "../../constants.js";
+    HTTP_STATUS_OK,
+} from "api/constants.js";
 import {
     healthHandler,
     rulesHandler,
     singleRuleHandler,
-} from "../../handlers.js";
+} from "api/handlers.js";
 
 describe("Route Handlers Integration", () => {
     describe("healthHandler", () => {

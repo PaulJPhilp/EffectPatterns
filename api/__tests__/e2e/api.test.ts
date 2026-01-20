@@ -13,13 +13,13 @@ import {
     ERROR_NOT_FOUND,
     ERROR_RULE_NOT_FOUND,
     PERFORMANCE_TIMEOUT_MS,
-} from "../../constants.js";
+} from "api/constants.js";
 import {
     ApiDocumentation,
     ApiRule,
     ErrorResponse,
     HealthCheck,
-} from "../../types.js";
+} from "api/types.js";
 
 describe("API E2E Tests", () => {
     const baseUrl = process.env.API_BASE_URL || DEFAULT_API_BASE_URL;

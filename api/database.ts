@@ -3,9 +3,9 @@
  */
 
 import { Effect } from "effect";
-import { createDatabase } from "../packages/toolkit/src/db/client.js";
-import { createEffectPatternRepository } from "../packages/toolkit/src/repositories/index.js";
 import { DatabaseError, RuleNotFoundError } from "./errors.js";
+import { createDatabase } from "packages/toolkit/src/db/client.js";
+import { createEffectPatternRepository } from "packages/toolkit/src/repositories/index.js";
 
 /**
  * Load all rules from the database

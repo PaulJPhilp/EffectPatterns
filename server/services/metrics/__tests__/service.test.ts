@@ -4,7 +4,7 @@
 
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { MetricsService } from "../service.js";
+import { MetricsService } from "server/services/metrics/service.js";
 
 describe("MetricsService", () => {
     it("should track request count", () =>

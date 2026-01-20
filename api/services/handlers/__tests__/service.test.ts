@@ -4,8 +4,8 @@
 
 import { Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
-import { DatabaseService } from "../../database/service.js";
 import { HandlersService } from "../service.js";
+import { DatabaseService } from "api/services/database/service.js";
 
 describe("HandlersService", () => {
     const testLayer = Layer.provide(

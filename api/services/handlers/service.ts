@@ -12,10 +12,10 @@ import {
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
     HTTP_STATUS_NOT_FOUND,
     HTTP_STATUS_OK,
-} from "../../constants.js";
-import { RuleSchema } from "../../schema.js";
-import { DatabaseService } from "../database/service.js";
-import { ApiResponse, HealthCheckResponse } from "./types.js";
+} from "api/constants.js";
+import { RuleSchema } from "api/schema.js";
+import { DatabaseService } from "api/services/database/service.js";
+import { ApiResponse, HealthCheckResponse } from "api/services/handlers/types.js";
 
 /**
  * Handlers service using Effect.Service pattern

@@ -4,8 +4,8 @@
 
 import { Effect, Either } from "effect";
 import { describe, expect, it } from "vitest";
-import { ERROR_RULE_NOT_FOUND } from "../../constants.js";
-import { loadRulesFromDatabase, readRuleById } from "../../database.js";
+import { ERROR_RULE_NOT_FOUND } from "api/constants.js";
+import { loadRulesFromDatabase, readRuleById } from "api/database.js";
 
 describe("Database Operations Integration", () => {
     describe("loadRulesFromDatabase", () => {

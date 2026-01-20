@@ -4,7 +4,7 @@
 
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { RateLimiterService } from "../service.js";
+import { RateLimiterService } from "server/services/rate-limiter/service.js";
 
 describe("RateLimiterService", () => {
     it("should allow requests within limit", () =>

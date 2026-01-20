@@ -20,7 +20,7 @@ import {
     ERROR_NOT_FOUND,
     HTTP_STATUS_NOT_FOUND,
     HTTP_STATUS_OK,
-    RULE_PATH_REGEX
+    RULE_PATH_REGEX,
 } from "./constants.js";
 import { healthHandler, rulesHandler, singleRuleHandler } from "./handlers.js";
 

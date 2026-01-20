@@ -6,8 +6,8 @@
  */
 
 import { Effect, Layer } from "effect";
-import { DatabaseService } from "../../services/database/service.js";
-import { HandlersService } from "../../services/handlers/service.js";
+import { DatabaseService } from "api/services/database/service.js";
+import { HandlersService } from "api/services/handlers/service.js";
 
 /**
  * Test layer for API services

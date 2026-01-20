@@ -4,7 +4,7 @@
 
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { HttpServerService } from "../service.js";
+import { HttpServerService } from "server/services/http-server/service.js";
 
 describe("HttpServerService", () => {
     it("should start and stop server", () =>

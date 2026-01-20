@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { DatabaseError, RuleNotFoundError } from "../../errors";
+import { DatabaseError, RuleNotFoundError } from "api/errors";
 
 describe("DatabaseError", () => {
     it("should create a DatabaseError with cause", () => {
