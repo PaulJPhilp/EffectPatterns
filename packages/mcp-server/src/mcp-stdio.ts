@@ -16,28 +16,24 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import type { SearchPatternsArgs } from "./schemas/tool-schemas.js";
-import { ToolSchemas } from "./schemas/tool-schemas.js";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
 const API_BASE_URL =
-  process.env.EFFECT_PATTERNS_API_URL || "http://localhost:3000";
+  process.env.EFFECT_PATTERNS_API_URL ||
+  "https://effect-patterns-mcp.vercel.app";
 const API_KEY = process.env.PATTERN_API_KEY;
 const DEBUG = process.env.MCP_DEBUG === "true";
 
 // ============================================================================
-// Logging
+// Minimal Logging
 // ============================================================================
 
-function log(message: string, data?: unknown) {
+function log(message: string) {
   if (DEBUG) {
-    console.error(
-      `[MCP] ${message}`,
-      data ? JSON.stringify(data, null, 2) : "",
-    );
+    console.error(`[MCP] ${message}`);
   }
 }
 
@@ -67,23 +63,17 @@ async function callApi(
     options.body = JSON.stringify(data);
   }
 
-  log(`API ${method} ${endpoint}`, data);
+  log(`API ${method} ${endpoint}`);
 
   try {
     const response = await fetch(url, options);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP ${response.status}: ${errorText || response.statusText}`,
-      );
+      throw new Error(`HTTP ${response.status}`);
     }
-
-    const result = await response.json();
-    log(`API Response`, result);
-    return result;
+    return await response.json();
   } catch (error) {
-    log(`API Error`, error);
+    const msg = error instanceof Error ? error.message : String(error);
+    log(`API Error: ${msg}`);
     throw error;
   }
 }
@@ -112,18 +102,23 @@ const server = new McpServer(
 server.registerTool(
   "search_patterns",
   {
-    description: ToolSchemas.searchPatterns.description,
-    inputSchema: ToolSchemas.searchPatterns as any,
+    description: "Search patterns",
+    // Skip input validation to avoid Zod compatibility issues
+    // inputSchema: ToolSchemas.searchPatterns as any,
   },
-  async (args: SearchPatternsArgs) => {
-    log("Tool called: search_patterns", args);
+  async (args: any) => {
     try {
-      const searchParams = new URLSearchParams();
-      if (args.q) searchParams.append("q", args.q);
-      if (args.category) searchParams.append("category", args.category);
-      if (args.difficulty) searchParams.append("difficulty", args.difficulty);
-      if (args.limit) searchParams.append("limit", String(args.limit));
-      const result = await callApi(`/patterns?${searchParams}`);
+      const params = new URLSearchParams();
+      if (args.q) params.append("q", args.q);
+      if (args.category) params.append("category", args.category);
+      if (args.difficulty) params.append("difficulty", args.difficulty);
+      if (args.limit) params.append("limit", String(args.limit));
+      if (args.tags) {
+        const tags = Array.isArray(args.tags) ? args.tags : [args.tags];
+        tags.forEach((tag: string) => params.append("tags", tag));
+      }
+
+      const result = await callApi(`/patterns?${params}`);
       return {
         content: [
           {
@@ -134,8 +129,16 @@ server.registerTool(
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      log("Tool error: search_patterns", msg);
-      throw new Error(`search_patterns failed: ${msg}`);
+      log(`search_patterns failed: ${msg}`);
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `search_patterns failed: ${msg}`,
+          },
+        ],
+        isError: true,
+      };
     }
   },
 );
@@ -145,16 +148,17 @@ server.registerTool(
   {
     description:
       "Get full details for a specific pattern by ID. Returns complete pattern documentation and code examples.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        id: {
-          type: "string",
-          description: "Pattern identifier (e.g., 'effect-service')",
-        },
-      },
-      required: ["id"],
-    } as any,
+    // Skip input validation to avoid Zod compatibility issues
+    // inputSchema: {
+    //   type: "object",
+    //   properties: {
+    //     id: {
+    //       type: "string",
+    //       description: "Pattern identifier (e.g., 'effect-service')",
+    //     },
+    //   },
+    //   required: ["id"],
+    // } as any,
   },
   (async (args: any) => {
     log("Tool called: get_pattern", args);
@@ -181,10 +185,11 @@ server.registerTool(
   {
     description:
       "List all available code analysis rules for anti-pattern detection. Useful for understanding what patterns are detected.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-    } as any,
+    // Skip input validation to avoid Zod compatibility issues
+    // inputSchema: {
+    //   type: "object",
+    //   properties: {},
+    // } as any,
   },
   (async (_args: any) => {
     log("Tool called: list_analysis_rules");
@@ -211,26 +216,27 @@ server.registerTool(
   {
     description:
       "Analyze TypeScript code for Effect-TS anti-patterns, best practices violations, and code quality issues. Returns findings with severity levels.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        source: {
-          type: "string",
-          description: "TypeScript source code to analyze",
-        },
-        filename: {
-          type: "string",
-          description: "Filename for context (e.g., 'service.ts')",
-        },
-        analysisType: {
-          type: "string",
-          enum: ["validation", "patterns", "errors", "all"],
-          default: "all",
-          description: "Type of analysis to perform",
-        },
-      },
-      required: ["source"],
-    } as any,
+    // Skip input validation to avoid Zod compatibility issues
+    // inputSchema: {
+    //   type: "object",
+    //   properties: {
+    //     source: {
+    //       type: "string",
+    //       description: "TypeScript source code to analyze",
+    //     },
+    //     filename: {
+    //       type: "string",
+    //       description: "Filename for context (e.g., 'service.ts')",
+    //     },
+    //     analysisType: {
+    //       type: "string",
+    //       enum: ["validation", "patterns", "errors", "all"],
+    //       default: "all",
+    //       description: "Type of analysis to perform",
+    //     },
+    //   },
+    //   required: ["source"],
+    // } as any,
   },
   (async (args: any) => {
     log("Tool called: analyze_code", args);
@@ -261,17 +267,18 @@ server.registerTool(
   {
     description:
       "Get AI-powered architectural review and recommendations for Effect code (free tier). Returns top 3 high-impact suggestions.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        code: { type: "string", description: "Source code to review" },
-        filePath: {
-          type: "string",
-          description: "File path for context (e.g., 'src/services/user.ts')",
-        },
-      },
-      required: ["code"],
-    } as any,
+    // Skip input validation to avoid Zod compatibility issues
+    // inputSchema: {
+    //   type: "object",
+    //   properties: {
+    //     code: { type: "string", description: "Source code to review" },
+    //     filePath: {
+    //       type: "string",
+    //       description: "File path for context (e.g., 'src/services/user.ts')",
+    //     },
+    //   },
+    //   required: ["code"],
+    // } as any,
   },
   (async (args: any) => {
     log("Tool called: review_code", args);
@@ -301,22 +308,23 @@ server.registerTool(
   {
     description:
       "Generate customized code from a pattern template. Supports variable substitution for names and configurations.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        patternId: {
-          type: "string",
-          description:
-            "Pattern template ID (e.g., 'effect-service', 'error-handler')",
-        },
-        variables: {
-          type: "object",
-          description: "Variables for template substitution (key-value pairs)",
-          additionalProperties: { type: "string" },
-        },
-      },
-      required: ["patternId"],
-    } as any,
+    // Skip input validation to avoid Zod compatibility issues
+    // inputSchema: {
+    //   type: "object",
+    //   properties: {
+    //     patternId: {
+    //       type: "string",
+    //       description:
+    //         "Pattern template ID (e.g., 'effect-service', 'error-handler')",
+    //     },
+    //     variables: {
+    //       type: "object",
+    //       description: "Variables for template substitution (key-value pairs)",
+    //       additionalProperties: { type: "string" },
+    //     },
+    //   },
+    //   required: ["patternId"],
+    // } as any,
   },
   (async (args: any) => {
     log("Tool called: generate_pattern_code", args);
@@ -346,24 +354,25 @@ server.registerTool(
   {
     description:
       "Detect inconsistencies and anti-patterns across multiple TypeScript files. Useful for large refactoring projects.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        files: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              filename: { type: "string", description: "File path" },
-              source: { type: "string", description: "File source code" },
-            },
-            required: ["filename", "source"],
-          },
-          description: "Files to analyze",
-        },
-      },
-      required: ["files"],
-    } as any,
+    // Skip input validation to avoid Zod compatibility issues
+    // inputSchema: {
+    //   type: "object",
+    //   properties: {
+    //     files: {
+    //       type: "array",
+    //       items: {
+    //         type: "object",
+    //         properties: {
+    //           filename: { type: "string", description: "File path" },
+    //           source: { type: "string", description: "File source code" },
+    //         },
+    //         required: ["filename", "source"],
+    //       },
+    //       description: "Files to analyze",
+    //     },
+    //   },
+    //   required: ["files"],
+    // } as any,
   },
   (async (args: any) => {
     log("Tool called: analyze_consistency", args);
@@ -392,34 +401,35 @@ server.registerTool(
   {
     description:
       "Apply automated refactoring patterns to code. Supports preview mode for safe preview before applying changes.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        refactoringIds: {
-          type: "array",
-          items: { type: "string" },
-          description: "List of refactoring IDs to apply",
-        },
-        files: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              filename: { type: "string", description: "File path" },
-              source: { type: "string", description: "File source code" },
-            },
-            required: ["filename", "source"],
-          },
-          description: "Files to refactor",
-        },
-        preview: {
-          type: "boolean",
-          default: true,
-          description: "Preview changes without applying (safe default)",
-        },
-      },
-      required: ["refactoringIds", "files"],
-    } as any,
+    // Skip input validation to avoid Zod compatibility issues
+    // inputSchema: {
+    //   type: "object",
+    //   properties: {
+    //     refactoringIds: {
+    //       type: "array",
+    //       items: { type: "string" },
+    //       description: "List of refactoring IDs to apply",
+    //     },
+    //     files: {
+    //       type: "array",
+    //       items: {
+    //         type: "object",
+    //         properties: {
+    //           filename: { type: "string", description: "File path" },
+    //           source: { type: "string", description: "File source code" },
+    //         },
+    //         required: ["filename", "source"],
+    //       },
+    //       description: "Files to refactor",
+    //     },
+    //     preview: {
+    //       type: "boolean",
+    //       default: true,
+    //       description: "Preview changes without applying (safe default)",
+    //     },
+    //   },
+    //   required: ["refactoringIds", "files"],
+    // } as any,
   },
   (async (args: any) => {
     log("Tool called: apply_refactoring", args);

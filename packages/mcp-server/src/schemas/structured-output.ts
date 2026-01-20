@@ -397,7 +397,7 @@ export class ResponseBuilder {
 
 export function createSuccessResponse(
     content: ToolContent[],
-    metadata?: Partial<ToolResponseMetadata>,
+    _metadata?: Partial<ToolResponseMetadata>,
 ): EnhancedToolResponse {
     const builder = ResponseBuilder.create();
     content.forEach((item) => builder.addContent(item));

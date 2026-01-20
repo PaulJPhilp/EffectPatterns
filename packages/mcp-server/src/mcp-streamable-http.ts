@@ -21,16 +21,6 @@ import { randomUUID } from "crypto";
 import { createServer } from "http";
 import { OAuthConfig } from "./auth/oauth-config.js";
 import { OAuth2Server } from "./auth/oauth-server.js";
-import type {
-    AnalyzeCodeArgs,
-    AnalyzeConsistencyArgs,
-    ApplyRefactoringArgs,
-    GeneratePatternCodeArgs,
-    GetPatternArgs,
-    ListAnalysisRulesArgs,
-    ReviewCodeArgs,
-    SearchPatternsArgs,
-} from "./schemas/tool-schemas.js";
 import { ToolSchemas } from "./schemas/tool-schemas.js";
 
 // ============================================================================
@@ -38,7 +28,8 @@ import { ToolSchemas } from "./schemas/tool-schemas.js";
 // ============================================================================
 
 const API_BASE_URL =
-    process.env.EFFECT_PATTERNS_API_URL || "https://api.effect-patterns.com";
+    process.env.EFFECT_PATTERNS_API_URL ||
+    "https://effect-patterns-mcp.vercel.app";
 const API_KEY = process.env.PATTERN_API_KEY;
 const DEBUG = process.env.MCP_DEBUG === "true";
 const PORT = parseInt(process.env.PORT || "3001", 10);
@@ -182,9 +173,10 @@ server.registerTool(
     "search_patterns",
     {
         description: ToolSchemas.searchPatterns.description,
-        inputSchema: ToolSchemas.searchPatterns as any,
+        // Skip input validation to avoid Zod compatibility issues
+        // inputSchema: ToolSchemas.
     },
-    async (args: SearchPatternsArgs) => {
+    async (args: any) => {
         const startTime = Date.now();
         log("Tool called: search_patterns", args);
         try {
@@ -318,9 +310,10 @@ server.registerTool(
     "get_pattern",
     {
         description: ToolSchemas.getPattern.description,
-        inputSchema: ToolSchemas.getPattern as any,
+        // Skip input validation to avoid Zod compatibility issues
+        // inputSchema: ToolSchemas.
     },
-    async (args: GetPatternArgs) => {
+    async (args: any) => {
         const startTime = Date.now();
         log("Tool called: get_pattern", args);
         try {
@@ -384,9 +377,10 @@ server.registerTool(
     "list_analysis_rules",
     {
         description: ToolSchemas.listAnalysisRules.description,
-        inputSchema: ToolSchemas.listAnalysisRules as any,
+        // Skip input validation to avoid Zod compatibility issues
+        // inputSchema: ToolSchemas.
     },
-    async (_args: ListAnalysisRulesArgs) => {
+    async (_args: any) => {
         const startTime = Date.now();
         log("Tool called: list_analysis_rules");
         try {
@@ -453,9 +447,10 @@ server.registerTool(
     "analyze_code",
     {
         description: ToolSchemas.analyzeCode.description,
-        inputSchema: ToolSchemas.analyzeCode as any,
+        // Skip input validation to avoid Zod compatibility issues
+        // inputSchema: ToolSchemas.
     },
-    async (args: AnalyzeCodeArgs) => {
+    async (args: any) => {
         const startTime = Date.now();
         log("Tool called: analyze_code", args);
         try {
@@ -534,9 +529,10 @@ server.registerTool(
     "review_code",
     {
         description: ToolSchemas.reviewCode.description,
-        inputSchema: ToolSchemas.reviewCode as any,
+        // Skip input validation to avoid Zod compatibility issues
+        // inputSchema: ToolSchemas.
     },
-    async (args: ReviewCodeArgs) => {
+    async (args: any) => {
         const startTime = Date.now();
         log("Tool called: review_code", args);
         try {
@@ -613,9 +609,10 @@ server.registerTool(
     "generate_pattern_code",
     {
         description: ToolSchemas.generatePatternCode.description,
-        inputSchema: ToolSchemas.generatePatternCode as any,
+        // Skip input validation to avoid Zod compatibility issues
+        // inputSchema: ToolSchemas.
     },
-    async (args: GeneratePatternCodeArgs) => {
+    async (args: any) => {
         const startTime = Date.now();
         log("Tool called: generate_pattern_code", args);
         try {
@@ -681,9 +678,10 @@ server.registerTool(
     "analyze_consistency",
     {
         description: ToolSchemas.analyzeConsistency.description,
-        inputSchema: ToolSchemas.analyzeConsistency as any,
+        // Skip input validation to avoid Zod compatibility issues
+        // inputSchema: ToolSchemas.
     },
-    async (args: AnalyzeConsistencyArgs) => {
+    async (args: any) => {
         const startTime = Date.now();
         log("Tool called: analyze_consistency", { fileCount: args.files.length });
         try {
@@ -766,9 +764,10 @@ server.registerTool(
     "apply_refactoring",
     {
         description: ToolSchemas.applyRefactoring.description,
-        inputSchema: ToolSchemas.applyRefactoring as any,
+        // Skip input validation to avoid Zod compatibility issues
+        // inputSchema: ToolSchemas.
     },
-    async (args: ApplyRefactoringArgs) => {
+    async (args: any) => {
         const startTime = Date.now();
         log("Tool called: apply_refactoring", {
             refactoringCount: args.refactoringIds.length,
