@@ -17,16 +17,14 @@ This is a standalone Node.js HTTP server built with Effect-TS that provides the 
 ## Quick Start
 
 ### Development
+
 ```bash
 # Run server in development mode
 bun run server:dev
-
-# Test endpoints
-curl http://localhost:3001/health
-curl http://localhost:3001/api/v1/rules
 ```
 
 ### Production
+
 ```bash
 # Build and run in production
 NODE_ENV=production bun server/index.ts
@@ -38,6 +36,7 @@ PORT=8080 NODE_ENV=production bun server/index.ts
 ## Configuration
 
 ### Environment Variables
+
 ```bash
 # Server configuration
 PORT=3001                    # Server port (default: 3001)
@@ -50,6 +49,7 @@ DATABASE_URL=postgresql://user:password@host:5432/effect_patterns
 ```
 
 ### Rate Limiting
+
 - **Window**: 15 minutes
 - **Max Requests**: 100 per IP per window
 - **Storage**: In-memory Map (use Redis in production)
@@ -57,23 +57,26 @@ DATABASE_URL=postgresql://user:password@host:5432/effect_patterns
 ## API Endpoints
 
 ### Health Check
+
 ```bash
 GET /health
 ```
 
 ### List All Rules
+
 ```bash
 GET /api/v1/rules
 ```
 
 ### Get Single Rule
+
 ```bash
 GET /api/v1/rules/{id}
 ```
 
 ## Architecture
 
-```
+```text
 HTTP Request
     ↓
 Rate Limiter (per IP)
@@ -94,12 +97,15 @@ JSON Response
 ## Services
 
 ### RateLimiter
+
 Tracks request counts per IP with sliding window expiration.
 
 ### MetricsService
+
 Collects request metrics for monitoring and observability.
 
 ### Logger
+
 Structured logging with request correlation IDs.
 
 ## Error Handling
@@ -112,11 +118,13 @@ Structured logging with request correlation IDs.
 ## Testing
 
 ### Unit Tests
+
 ```bash
 bun run test:server
 ```
 
 ### Integration Tests
+
 ```bash
 # Start server in background
 bun run server:dev &
@@ -128,6 +136,7 @@ bun run test:e2e
 ## Deployment Options
 
 ### Self-Hosted
+
 ```bash
 # Using Docker
 docker build -t effect-patterns-server .
@@ -138,7 +147,9 @@ pm2 start server/index.ts --name "effect-patterns-server"
 ```
 
 ### Cloud Platforms
+
 Deploy to any Node.js hosting platform:
+
 - AWS EC2/ECS
 - Google Cloud Run
 - Azure App Service
@@ -147,25 +158,30 @@ Deploy to any Node.js hosting platform:
 ## Monitoring
 
 ### Health Checks
+
 - `/health` endpoint for load balancers
 - Structured logs with correlation IDs
 - Request metrics and rate limiting stats
 
 ### Metrics
+
 The server exposes metrics for:
+
 - Request count by endpoint
 - Response times
 - Error rates
 - Rate limit violations
 
-## Development
+## Development Tools
 
 ### Hot Reload
+
 ```bash
 bun --watch server/index.ts
 ```
 
 ### Debug Mode
+
 ```bash
 LOG_LEVEL=debug bun run server:dev
 ```
@@ -186,7 +202,7 @@ LOG_LEVEL=debug bun run server:dev
 ## Comparison with Vercel API
 
 | Feature | Server | Vercel API |
-|---------|--------|------------|
+| --------- | -------- | ------------ |
 | Deployment | Self-hosted | Serverless |
 | Cold Start | None | Yes |
 | Cost | Fixed | Per-request |
@@ -194,12 +210,14 @@ LOG_LEVEL=debug bun run server:dev
 | Scaling | Manual | Automatic |
 
 Choose the server for:
+
 - Local development
 - Self-hosting
 - Full control over infrastructure
 - Cost predictability
 
 Choose Vercel API for:
+
 - Serverless deployment
 - Automatic scaling
 - Managed infrastructure

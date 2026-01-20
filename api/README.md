@@ -9,12 +9,15 @@ This is a Vercel serverless function that provides REST endpoints for accessing 
 ## Endpoints
 
 ### Health Check
-```
+
+```http
 GET /health
 ```
+
 Returns server status.
 
 **Response:**
+
 ```json
 {
   "status": "ok"
@@ -22,12 +25,15 @@ Returns server status.
 ```
 
 ### List All Rules
-```
+
+```http
 GET /api/v1/rules
 ```
+
 Returns all patterns that have associated rules.
 
 **Response:**
+
 ```json
 [
   {
@@ -42,12 +48,15 @@ Returns all patterns that have associated rules.
 ```
 
 ### Get Single Rule
-```
+
+```http
 GET /api/v1/rules/{id}
 ```
+
 Returns a specific pattern rule by ID (slug).
 
 **Response:**
+
 ```json
 {
   "id": "pattern-slug",
@@ -60,6 +69,7 @@ Returns a specific pattern rule by ID (slug).
 ```
 
 **Error (404):**
+
 ```json
 {
   "error": "Rule not found"
@@ -69,23 +79,27 @@ Returns a specific pattern rule by ID (slug).
 ## Development
 
 ### Local Testing
+
 ```bash
 # Run API locally
 bun run api:dev
+```
 
+```bash
 # Test endpoint
 curl http://localhost:3000/health
 curl http://localhost:3000/api/v1/rules
 ```
 
 ### Environment Variables
+
 ```env
 DATABASE_URL=postgresql://user:password@host:5432/effect_patterns
 ```
 
 ## Architecture
 
-```
+```text
 API Request
     ↓
 Effect Handler (with validation)
@@ -104,6 +118,7 @@ JSON Response
 ## Data Source
 
 All rules and patterns are stored in the PostgreSQL database:
+
 - **Table**: `effect_patterns`
 - **Fields used**:
   - `slug` - Pattern identifier
@@ -125,11 +140,13 @@ All rules and patterns are stored in the PostgreSQL database:
 Deployed to Vercel as a serverless function.
 
 **Build Command:**
+
 ```bash
 bun run toolkit:build
 ```
 
 **Deployment:**
+
 ```bash
 bun run deploy
 ```

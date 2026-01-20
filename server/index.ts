@@ -21,25 +21,46 @@ import {
   HttpServerResponse,
 } from "@effect/platform";
 import { NodeHttpServer, NodeRuntime } from "@effect/platform-node";
-import { Data, Effect, Layer, Ref, Schema } from "effect";
-import matter from "gray-matter";
+import { Effect, Layer, Schema } from "effect";
 import { createServer } from "node:http";
-import * as path from "node:path";
 import { pathToFileURL } from "node:url";
+
+// Import services from their respective modules
+import { HttpServerService } from "./services/http-server/service.js";
+import { MetricsService } from "./services/metrics/service.js";
+import { RateLimiterService } from "./services/rate-limiter/service.js";
+
+// Import modular components
+import {
+  API_HEALTH,
+  API_METRICS,
+  API_RULES_BY_ID,
+  API_RULES_LIST,
+  CACHE_CONTROL_NO_CACHE,
+  CACHE_CONTROL_PUBLIC,
+  DEFAULT_HOST,
+  DEFAULT_LOG_LEVEL,
+  DEFAULT_PORT,
+  ERROR_HEALTH_CHECK_FAILED,
+  ERROR_RATE_LIMIT_EXCEEDED,
+  HTTP_STATUS_OK,
+  HTTP_STATUS_TOO_MANY_REQUESTS,
+  SERVER_NAME,
+  SERVER_VERSION,
+} from "./constants.js";
+import { readAndParseRules, readRuleById } from "./database.js";
+import { ApiError } from "./errors.js";
+import { RuleSchema, ServerConfigSchema } from "./schema.js";
+import { ServerConfig } from "./types.js";
+import {
+  addSecurityHeaders,
+  createApiResponse,
+  createErrorResponse,
+  generateRequestId,
+} from "./utils.js";
 
 // --- CONFIGURATION ---
 
-/**
- * Server configuration schema
- */
-const ServerConfigSchema = Schema.Struct({
-  port: Schema.Number.pipe(Schema.between(0, 65535)),
-  host: Schema.String,
-  nodeEnv: Schema.Literal("development", "staging", "production"),
-  logLevel: Schema.Literal("debug", "info", "warn", "error"),
-});
-
-type ServerConfig = typeof ServerConfigSchema.Type;
 const parsePort = (value: string | undefined): number | undefined => {
   if (!value) {
     return undefined;
@@ -64,469 +85,17 @@ const resolveNodeEnv = (value: string | undefined): ServerConfig["nodeEnv"] => {
 const envPort = parsePort(process.env.PORT);
 
 const DEFAULT_CONFIG: ServerConfig = {
-  port: envPort !== undefined ? envPort : 3001,
-  host: "localhost",
+  port: envPort !== undefined ? envPort : DEFAULT_PORT,
+  host: DEFAULT_HOST,
   nodeEnv: resolveNodeEnv(process.env.NODE_ENV),
-  logLevel: (process.env.LOG_LEVEL as ServerConfig["logLevel"]) || "info",
+  logLevel:
+    (process.env.LOG_LEVEL as ServerConfig["logLevel"]) || DEFAULT_LOG_LEVEL,
 };
-
-// --- RATE LIMITING ---
-
-/**
- * Rate limit entry for tracking requests per IP
- */
-interface RateLimitEntry {
-  readonly count: number;
-  readonly resetTime: number;
-}
-
-/**
- * Rate limiter configuration
- */
-const RATE_LIMIT_CONFIG = {
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 100, // requests per window
-} as const;
-
-/**
- * Rate limiter service using Effect.Service pattern
- */
-export class RateLimiter extends Effect.Service<RateLimiter>()("RateLimiter", {
-  effect: Effect.gen(function* () {
-    // In production, this should be Redis or similar
-    const store = yield* Ref.make(new Map<string, RateLimitEntry>());
-
-    const checkRateLimit = (ip: string) =>
-      Effect.gen(function* () {
-        const currentTime = Date.now();
-        const current = yield* Ref.get(store);
-
-        const entry = current.get(ip);
-
-        if (!entry || currentTime > entry.resetTime) {
-          // First request or window expired
-          const newEntry: RateLimitEntry = {
-            count: 1,
-            resetTime: currentTime + RATE_LIMIT_CONFIG.windowMs,
-          };
-          yield* Ref.update(store, (map: Map<string, RateLimitEntry>) =>
-            new Map(map).set(ip, newEntry)
-          );
-          return {
-            allowed: true,
-            remaining: RATE_LIMIT_CONFIG.maxRequests - 1,
-          };
-        }
-
-        if (entry.count >= RATE_LIMIT_CONFIG.maxRequests) {
-          // Rate limit exceeded
-          return {
-            allowed: false,
-            remaining: 0,
-            resetTime: entry.resetTime,
-          };
-        }
-
-        // Increment counter
-        const updatedEntry: RateLimitEntry = {
-          ...entry,
-          count: entry.count + 1,
-        };
-        yield* Ref.update(store, (map: Map<string, RateLimitEntry>) =>
-          new Map(map).set(ip, updatedEntry)
-        );
-
-        return {
-          allowed: true,
-          remaining: RATE_LIMIT_CONFIG.maxRequests - updatedEntry.count,
-        };
-      });
-
-    return { checkRateLimit };
-  }),
-}) {}
-
-// --- METRICS SERVICE ---
-
-/**
- * Metrics service for tracking server statistics
- */
-export class MetricsService extends Effect.Service<MetricsService>()(
-  "MetricsService",
-  {
-    effect: Effect.gen(function* () {
-      const metrics = {
-        startTime: Date.now(),
-        requestCount: 0,
-        errorCount: 0,
-        lastHealthCheck: Date.now(),
-        rateLimitHits: 0,
-      };
-
-      const incrementRequestCount = () => {
-        metrics.requestCount++;
-      };
-
-      const incrementErrorCount = () => {
-        metrics.errorCount++;
-      };
-
-      const incrementRateLimitHits = () => {
-        metrics.rateLimitHits++;
-      };
-
-      const updateHealthCheck = () => {
-        metrics.lastHealthCheck = Date.now();
-      };
-
-      const getMetrics = () => ({
-        ...metrics,
-        uptime: Date.now() - metrics.startTime,
-        healthCheckAge: Date.now() - metrics.lastHealthCheck,
-      });
-
-      return {
-        incrementRequestCount,
-        incrementErrorCount,
-        incrementRateLimitHits,
-        updateHealthCheck,
-        getMetrics,
-      };
-    }),
-  }
-) {}
-
-// --- UTILITY FUNCTIONS ---// --- ENHANCED ERROR TYPES ---
-
-/**
- * Base API error with HTTP status mapping
- */
-export class ApiError extends Data.TaggedError("ApiError")<{
-  readonly message: string;
-  readonly statusCode: number;
-  readonly code: string;
-  readonly details?: unknown;
-}> {
-  static make(
-    message: string,
-    statusCode: number,
-    code: string,
-    details?: unknown
-  ) {
-    return new ApiError({ message, statusCode, code, details });
-  }
-
-  static badRequest(message: string, details?: unknown) {
-    return ApiError.make(message, 400, "BAD_REQUEST", details);
-  }
-
-  static notFound(message: string, details?: unknown) {
-    return ApiError.make(message, 404, "NOT_FOUND", details);
-  }
-
-  static internalServerError(message: string, details?: unknown) {
-    return ApiError.make(message, 500, "INTERNAL_SERVER_ERROR", details);
-  }
-
-  static serviceUnavailable(message: string, details?: unknown) {
-    return ApiError.make(message, 503, "SERVICE_UNAVAILABLE", details);
-  }
-}
-
-/**
- * Tagged error for server-related failures
- */
-export class ServerError extends Data.TaggedError("ServerError")<{
-  readonly message: string;
-  readonly cause?: unknown;
-}> {}
-
-/**
- * Tagged error for rule loading failures
- */
-export class RuleLoadError extends Data.TaggedError("RuleLoadError")<{
-  readonly path: string;
-  readonly cause: unknown;
-}> {}
-
-/**
- * Tagged error for rule parsing failures
- */
-export class RuleParseError extends Data.TaggedError("RuleParseError")<{
-  readonly file: string;
-  readonly cause: unknown;
-}> {}
-
-/**
- * Tagged error for directory not found
- */
-export class RulesDirectoryNotFoundError extends Data.TaggedError(
-  "RulesDirectoryNotFoundError"
-)<{
-  readonly path: string;
-}> {}
-
-/**
- * Tagged error for rule not found
- */
-export class RuleNotFoundError extends Data.TaggedError("RuleNotFoundError")<{
-  readonly id: string;
-}> {}
-
-// --- SCHEMAS ---
-
-/**
- * Schema for a Rule object with enhanced validation
- */
-const RuleSchema = Schema.Struct({
-  id: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(100)),
-  title: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(200)),
-  description: Schema.String.pipe(Schema.minLength(0), Schema.maxLength(500)),
-  skillLevel: Schema.optional(
-    Schema.Literal("beginner", "intermediate", "advanced")
-  ),
-  useCase: Schema.optional(
-    Schema.Array(Schema.String.pipe(Schema.minLength(1)))
-  ),
-  content: Schema.String.pipe(Schema.minLength(1)),
-});
-
-/**
- * Schema for API response wrapper
- */
-const ApiResponseSchema = <T>(dataSchema: Schema.Schema<any, T>) =>
-  Schema.Struct({
-    success: Schema.Boolean,
-    data: dataSchema,
-    meta: Schema.Struct({
-      timestamp: Schema.String,
-      requestId: Schema.String,
-      version: Schema.String,
-    }),
-  });
-
-/**
- * Schema for error response
- */
-const ErrorResponseSchema = Schema.Struct({
-  success: Schema.Boolean,
-  error: Schema.Struct({
-    message: Schema.String,
-    code: Schema.String,
-    details: Schema.optional(Schema.Unknown),
-  }),
-  meta: Schema.Struct({
-    timestamp: Schema.String,
-    requestId: Schema.String,
-    version: Schema.String,
-  }),
-});
-
-type Rule = typeof RuleSchema.Type;
-
-// --- UTILITY FUNCTIONS ---
-
-/**
- * Generate a unique request ID
- */
-export const generateRequestId = (): string => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-};
-
-/**
- * Create a standardized API response with security headers
- */
-export const createApiResponse = <A>(
-  data: A,
-  requestId: string,
-  version = "v1"
-) => ({
-  success: true,
-  data,
-  meta: {
-    timestamp: new Date().toISOString(),
-    requestId,
-    version,
-  },
-});
-
-/**
- * Create a standardized error response with security headers
- */
-export const createErrorResponse = (
-  error: ApiError,
-  requestId: string,
-  version = "v1"
-) => ({
-  success: false,
-  error: {
-    message: error.message,
-    code: error.code,
-    details: error.details,
-  },
-  meta: {
-    timestamp: new Date().toISOString(),
-    requestId,
-    version,
-  },
-});
-
-/**
- * Add security headers to a response
- */
-export const addSecurityHeaders = (
-  response: HttpServerResponse.HttpServerResponse
-) =>
-  response.pipe(
-    HttpServerResponse.setHeader("X-Content-Type-Options", "nosniff"),
-    HttpServerResponse.setHeader("X-Frame-Options", "DENY"),
-    HttpServerResponse.setHeader("X-XSS-Protection", "1; mode=block"),
-    HttpServerResponse.setHeader(
-      "Referrer-Policy",
-      "strict-origin-when-cross-origin"
-    ),
-    HttpServerResponse.setHeader(
-      "Permissions-Policy",
-      "geolocation=(), microphone=(), camera=()"
-    )
-  );
-
-/**
- * Extract the first # heading from markdown content as the title
- */
-export const extractTitle = (content: string): string => {
-  const lines = content.split("\n");
-  for (const line of lines) {
-    const match = line.match(/^#\s+(.+)$/);
-    if (match) {
-      return match[1].trim();
-    }
-  }
-  return "Untitled Rule";
-};
-
-/**
- * Parse a single rule file and return a rule object
- */
-export const parseRuleFile = (
-  fs: FileSystem.FileSystem,
-  filePath: string,
-  fileId: string
-) =>
-  Effect.gen(function* () {
-    // Read file content
-    const content = yield* fs
-      .readFileString(filePath)
-      .pipe(
-        Effect.catchAll((error) =>
-          Effect.fail(new RuleLoadError({ path: filePath, cause: error }))
-        )
-      );
-
-    // Parse frontmatter
-    let parsed: { data: Record<string, unknown>; content: string };
-    try {
-      parsed = matter(content);
-    } catch (error) {
-      return yield* Effect.fail(
-        new RuleParseError({ file: filePath, cause: error })
-      );
-    }
-
-    const { data, content: markdownContent } = parsed;
-
-    // Extract title from content
-    const title = extractTitle(markdownContent);
-
-    // Build rule object
-    return {
-      id: fileId,
-      title,
-      description: (data.description as string) || "",
-      skillLevel: data.skillLevel as string | undefined,
-      useCase: data.useCase
-        ? Array.isArray(data.useCase)
-          ? (data.useCase as string[])
-          : [data.useCase as string]
-        : undefined,
-      content: markdownContent,
-    };
-  });
-
-/**
- * Read and parse a single rule by ID
- */
-export const readRuleById = (id: string) =>
-  Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const rulesDir = "rules/cursor";
-    const filePath = path.join(rulesDir, `${id}.mdc`);
-
-    yield* Effect.logInfo(`Loading rule by ID: ${id}`);
-
-    // Check if file exists
-    const fileExists = yield* fs.exists(filePath);
-    if (!fileExists) {
-      return yield* Effect.fail(new RuleNotFoundError({ id }));
-    }
-
-    // Parse the rule file
-    const rule = yield* parseRuleFile(fs, filePath, id);
-
-    yield* Effect.logInfo(`Successfully loaded rule: ${id}`);
-    return rule;
-  });
-
-/**
- * Read and parse all .mdc rule files from the rules/cursor directory
- */
-export const readAndParseRules = Effect.gen(function* () {
-  const fs = yield* FileSystem.FileSystem;
-  const rulesDir = "rules/cursor";
-
-  yield* Effect.logInfo(`Loading rules from ${rulesDir}`);
-
-  // Check if directory exists
-  const dirExists = yield* fs.exists(rulesDir);
-  if (!dirExists) {
-    return yield* Effect.fail(
-      new RulesDirectoryNotFoundError({ path: rulesDir })
-    );
-  }
-
-  // Read all files in directory
-  const files = yield* fs
-    .readDirectory(rulesDir)
-    .pipe(
-      Effect.catchAll((error) =>
-        Effect.fail(new RuleLoadError({ path: rulesDir, cause: error }))
-      )
-    );
-
-  // Filter for .mdc files
-  const mdcFiles = files.filter((file) => file.endsWith(".mdc"));
-  yield* Effect.logInfo(`Found ${mdcFiles.length} rule files`);
-
-  // Parse each file
-  const rules = yield* Effect.forEach(
-    mdcFiles,
-    (file) => {
-      const filePath = path.join(rulesDir, file);
-      const fileId = path.basename(file, ".mdc");
-      return parseRuleFile(fs, filePath, fileId);
-    },
-    { concurrency: "unbounded" }
-  );
-
-  yield* Effect.logInfo(`Successfully parsed ${rules.length} rules`);
-  return rules;
-});
 
 // --- ROUTE HANDLERS ---
 
 /**
- * Health check endpoint handler
- * Returns: Comprehensive health status
+ * Enhanced health check endpoint handler
  */
 export const healthHandler = Effect.gen(function* () {
   const requestId = generateRequestId();
@@ -539,7 +108,7 @@ export const healthHandler = Effect.gen(function* () {
   yield* Effect.logInfo("Health check requested", { requestId });
 
   // Check rate limit
-  const rateLimiter = yield* RateLimiter;
+  const rateLimiter = yield* RateLimiterService;
   const clientIP = "127.0.0.1"; // In production, extract from request headers
   const rateLimitResult = yield* rateLimiter.checkRateLimit(clientIP);
 
@@ -554,10 +123,10 @@ export const healthHandler = Effect.gen(function* () {
     });
 
     const apiError = ApiError.make(
-      "Rate limit exceeded",
-      429,
+      ERROR_RATE_LIMIT_EXCEEDED,
+      HTTP_STATUS_TOO_MANY_REQUESTS,
       "RATE_LIMIT_EXCEEDED",
-      { resetTime: rateLimitResult.resetTime }
+      { resetTime: rateLimitResult.resetTime },
     );
     const response = createErrorResponse(apiError, requestId);
     const httpResponse = yield* HttpServerResponse.json(response, {
@@ -567,7 +136,7 @@ export const healthHandler = Effect.gen(function* () {
         "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
         "X-RateLimit-Reset": rateLimitResult.resetTime?.toString() || "",
         "Retry-After": Math.ceil(
-          (rateLimitResult.resetTime! - Date.now()) / 1000
+          (rateLimitResult.resetTime! - Date.now()) / 1000,
         ).toString(),
       },
     });
@@ -608,9 +177,9 @@ export const healthHandler = Effect.gen(function* () {
         services: {
           rules: rulesHealthy,
         },
-        version: "1.0.0",
+        version: SERVER_VERSION,
       };
-    })
+    }),
   );
 
   if (healthResult._tag === "Left") {
@@ -624,7 +193,7 @@ export const healthHandler = Effect.gen(function* () {
       duration: `${duration}ms`,
     });
 
-    const apiError = ApiError.internalServerError("Health check failed");
+    const apiError = ApiError.internalServerError(ERROR_HEALTH_CHECK_FAILED);
     const response = createErrorResponse(apiError, requestId);
     const httpResponse = yield* HttpServerResponse.json(response, {
       status: apiError.statusCode,
@@ -648,9 +217,9 @@ export const healthHandler = Effect.gen(function* () {
 
   const response = createApiResponse(health, requestId);
   const httpResponse = yield* HttpServerResponse.json(response, {
-    status: 200,
+    status: HTTP_STATUS_OK,
     headers: {
-      "Cache-Control": "no-cache",
+      "Cache-Control": CACHE_CONTROL_NO_CACHE,
       "X-Request-ID": requestId,
       "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
     },
@@ -661,7 +230,6 @@ export const healthHandler = Effect.gen(function* () {
 
 /**
  * Metrics endpoint handler
- * Returns: Server metrics and statistics
  */
 export const metricsHandler = Effect.gen(function* () {
   const requestId = generateRequestId();
@@ -673,7 +241,7 @@ export const metricsHandler = Effect.gen(function* () {
   const serverMetrics = metrics.getMetrics();
 
   // Get rate limiter stats
-  const rateLimiter = yield* RateLimiter;
+  const rateLimiter = yield* RateLimiterService;
   // Note: In a real implementation, you'd track rate limiter metrics
 
   const response = createApiResponse(
@@ -681,7 +249,7 @@ export const metricsHandler = Effect.gen(function* () {
       server: {
         uptime: serverMetrics.uptime,
         startTime: new Date(serverMetrics.startTime).toISOString(),
-        version: "1.0.0",
+        version: SERVER_VERSION,
         environment: DEFAULT_CONFIG.nodeEnv,
       },
       requests: {
@@ -694,13 +262,13 @@ export const metricsHandler = Effect.gen(function* () {
         healthCheckAge: serverMetrics.healthCheckAge,
       },
     },
-    requestId
+    requestId,
   );
 
   const httpResponse = yield* HttpServerResponse.json(response, {
-    status: 200,
+    status: HTTP_STATUS_OK,
     headers: {
-      "Cache-Control": "no-cache",
+      "Cache-Control": CACHE_CONTROL_NO_CACHE,
       "X-Request-ID": requestId,
       "Content-Type": "application/json",
     },
@@ -710,7 +278,7 @@ export const metricsHandler = Effect.gen(function* () {
   yield* Effect.logInfo("Metrics endpoint completed", {
     requestId,
     duration: `${duration}ms`,
-    statusCode: 200,
+    statusCode: HTTP_STATUS_OK,
   });
 
   return addSecurityHeaders(httpResponse);
@@ -718,7 +286,6 @@ export const metricsHandler = Effect.gen(function* () {
 
 /**
  * Rules endpoint handler
- * Returns: Array of rules from rules/cursor directory
  */
 export const rulesHandler = Effect.gen(function* () {
   const requestId = generateRequestId();
@@ -730,7 +297,7 @@ export const rulesHandler = Effect.gen(function* () {
   yield* Effect.logInfo("Rules endpoint requested", { requestId });
 
   // Check rate limit
-  const rateLimiter = yield* RateLimiter;
+  const rateLimiter = yield* RateLimiterService;
   const clientIP = "127.0.0.1"; // In production, extract from request headers
   const rateLimitResult = yield* rateLimiter.checkRateLimit(clientIP);
 
@@ -745,10 +312,10 @@ export const rulesHandler = Effect.gen(function* () {
     });
 
     const apiError = ApiError.make(
-      "Rate limit exceeded",
-      429,
+      ERROR_RATE_LIMIT_EXCEEDED,
+      HTTP_STATUS_TOO_MANY_REQUESTS,
       "RATE_LIMIT_EXCEEDED",
-      { resetTime: rateLimitResult.resetTime }
+      { resetTime: rateLimitResult.resetTime },
     );
     const response = createErrorResponse(apiError, requestId);
     const httpResponse = yield* HttpServerResponse.json(response, {
@@ -758,7 +325,7 @@ export const rulesHandler = Effect.gen(function* () {
         "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
         "X-RateLimit-Reset": rateLimitResult.resetTime?.toString() || "",
         "Retry-After": Math.ceil(
-          (rateLimitResult.resetTime! - Date.now()) / 1000
+          (rateLimitResult.resetTime! - Date.now()) / 1000,
         ).toString(),
       },
     });
@@ -771,10 +338,10 @@ export const rulesHandler = Effect.gen(function* () {
     Effect.gen(function* () {
       const rules = yield* readAndParseRules;
       const validated = yield* Schema.decodeUnknown(Schema.Array(RuleSchema))(
-        rules
+        rules,
       );
       return validated;
-    })
+    }),
   );
 
   // Handle success or failure
@@ -816,9 +383,9 @@ export const rulesHandler = Effect.gen(function* () {
 
   const response = createApiResponse(validated, requestId);
   const httpResponse = yield* HttpServerResponse.json(response, {
-    status: 200,
+    status: HTTP_STATUS_OK,
     headers: {
-      "Cache-Control": "public, max-age=300", // 5 minutes
+      "Cache-Control": CACHE_CONTROL_PUBLIC,
       "X-Request-ID": requestId,
       "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
     },
@@ -829,7 +396,6 @@ export const rulesHandler = Effect.gen(function* () {
 
 /**
  * Single rule endpoint handler
- * Returns: Individual rule by ID
  */
 export const singleRuleHandler = (id: string) =>
   Effect.gen(function* () {
@@ -844,7 +410,7 @@ export const singleRuleHandler = (id: string) =>
     });
 
     // Check rate limit
-    const rateLimiter = yield* RateLimiter;
+    const rateLimiter = yield* RateLimiterService;
     const clientIP = "127.0.0.1"; // In production, extract from request headers
     const rateLimitResult = yield* rateLimiter.checkRateLimit(clientIP);
 
@@ -859,10 +425,10 @@ export const singleRuleHandler = (id: string) =>
       });
 
       const apiError = ApiError.make(
-        "Rate limit exceeded",
-        429,
+        ERROR_RATE_LIMIT_EXCEEDED,
+        HTTP_STATUS_TOO_MANY_REQUESTS,
         "RATE_LIMIT_EXCEEDED",
-        { resetTime: rateLimitResult.resetTime }
+        { resetTime: rateLimitResult.resetTime },
       );
       const response = createErrorResponse(apiError, requestId);
       const httpResponse = yield* HttpServerResponse.json(response, {
@@ -872,7 +438,7 @@ export const singleRuleHandler = (id: string) =>
           "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
           "X-RateLimit-Reset": rateLimitResult.resetTime?.toString() || "",
           "Retry-After": Math.ceil(
-            (rateLimitResult.resetTime! - Date.now()) / 1000
+            (rateLimitResult.resetTime! - Date.now()) / 1000,
           ).toString(),
         },
       });
@@ -911,7 +477,7 @@ export const singleRuleHandler = (id: string) =>
         const rule = yield* readRuleById(id);
         const validated = yield* Schema.decodeUnknown(RuleSchema)(rule);
         return validated;
-      })
+      }),
     );
 
     // Handle success or failure
@@ -953,9 +519,9 @@ export const singleRuleHandler = (id: string) =>
 
     const response = createApiResponse(validated, requestId);
     const httpResponse = yield* HttpServerResponse.json(response, {
-      status: 200,
+      status: HTTP_STATUS_OK,
       headers: {
-        "Cache-Control": "public, max-age=300", // 5 minutes
+        "Cache-Control": CACHE_CONTROL_PUBLIC,
         "X-Request-ID": requestId,
         "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
       },
@@ -970,11 +536,11 @@ export const singleRuleHandler = (id: string) =>
  * HTTP Router with all application routes
  */
 const router = HttpRouter.empty.pipe(
-  HttpRouter.get("/health", healthHandler),
-  HttpRouter.get("/metrics", metricsHandler),
-  HttpRouter.get("/api/v1/rules", rulesHandler),
+  HttpRouter.get(API_HEALTH, healthHandler),
+  HttpRouter.get(API_METRICS, metricsHandler),
+  HttpRouter.get(API_RULES_LIST, rulesHandler),
   HttpRouter.get(
-    "/api/v1/rules/:id",
+    API_RULES_BY_ID,
     Effect.gen(function* () {
       const params = yield* HttpRouter.params;
       const id = params.id;
@@ -988,8 +554,8 @@ const router = HttpRouter.empty.pipe(
         });
       }
       return yield* singleRuleHandler(id);
-    })
-  )
+    }),
+  ),
 );
 
 // --- HTTP SERVER LAYER ---
@@ -1016,10 +582,10 @@ const HttpLive = HttpServer.serve(router).pipe(Layer.provide(ServerLive));
  */
 const program = Effect.gen(function* () {
   yield* Effect.logInfo(
-    `🚀 Pattern Server starting on http://${DEFAULT_CONFIG.host}:${DEFAULT_CONFIG.port}`
+    `🚀 ${SERVER_NAME} starting on http://${DEFAULT_CONFIG.host}:${DEFAULT_CONFIG.port}`,
   );
   yield* Effect.logInfo(
-    `📍 Health check: http://${DEFAULT_CONFIG.host}:${DEFAULT_CONFIG.port}/health`
+    `📍 Health check: http://${DEFAULT_CONFIG.host}:${DEFAULT_CONFIG.port}${API_HEALTH}`,
   );
   yield* Effect.logInfo(`🌍 Environment: ${DEFAULT_CONFIG.nodeEnv}`);
   yield* Effect.logInfo(`📊 Log level: ${DEFAULT_CONFIG.logLevel}`);
@@ -1029,11 +595,12 @@ const program = Effect.gen(function* () {
       yield* Layer.launch(HttpLive);
       yield* Effect.logInfo("✨ Server is ready to accept requests");
       yield* Effect.never;
-    })
+    }),
   );
 }).pipe(
-  Effect.provide(RateLimiter.Default),
-  Effect.provide(MetricsService.Default)
+  Effect.provide(RateLimiterService.Default),
+  Effect.provide(MetricsService.Default),
+  Effect.provide(HttpServerService.Default),
 );
 
 // --- RUNTIME EXECUTION ---
