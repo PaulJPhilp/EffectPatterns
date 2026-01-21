@@ -62,17 +62,27 @@ export class DeploymentClient {
       requestOptions.body = JSON.stringify(options.body);
     }
 
-    const startTime = Date.now();
+      const startTime = Date.now();
 
     try {
       const response = await fetch(url, requestOptions);
       const duration = Date.now() - startTime;
 
+      // Read body as text first to avoid "Body is unusable" error
+      const text = await response.text();
+      
       let data: T;
-      try {
-        data = (await response.json()) as T;
-      } catch {
-        data = (await response.text()) as unknown as T;
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        try {
+          data = JSON.parse(text) as T;
+        } catch {
+          // If JSON parsing fails, use text as-is
+          data = text as unknown as T;
+        }
+      } else {
+        // Non-JSON response, use text as-is
+        data = text as unknown as T;
       }
 
       const responseHeaders: Record<string, string> = {};

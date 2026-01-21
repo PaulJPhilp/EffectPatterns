@@ -16,7 +16,6 @@ import {
   findEffectPatternBySlug,
   searchEffectPatterns
 } from "@effect-patterns/toolkit";
-import { NodeContext } from "@effect/platform-node";
 import { Cause, Effect, Exit, Layer, Option } from "effect";
 import { MCPCacheService } from "../services/cache";
 import { MCPConfigService } from "../services/config";
@@ -80,13 +79,29 @@ export class PatternsService extends Effect.Service<PatternsService>()(
 ) { }
 
 /**
+ * Get NodeContext layer (lazy import to avoid issues in tests)
+ * 
+ * platform-node is an implementation detail, not a service.
+ * This function lazily imports it only when needed in production.
+ */
+function getNodeContextLayer(): Layer.Layer<never, never, never> {
+  // Lazy import to avoid module resolution issues in tests
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { NodeContext } = require("@effect/platform-node");
+  return NodeContext.layer;
+}
+
+/**
  * App Layer - Full application layer composition
  *
  * Composes: Config -> Tracing -> Database -> Patterns
  * Services are self-managed via Effect.Service pattern.
+ * 
+ * Note: NodeContext.layer is included for production (Next.js runtime).
+ * For tests, use TestAppLayer which excludes platform-node implementation.
  */
 export const AppLayer = Layer.mergeAll(
-  NodeContext.layer,
+  getNodeContextLayer(),
   MCPConfigService.Default,
   MCPLoggerService.Default,
   MCPTierService.Default,
@@ -97,6 +112,31 @@ export const AppLayer = Layer.mergeAll(
   PatternsService.Default,
   TracingLayerLive,
   // NodeSdkLayer, // Disabled - OTLP endpoint not available locally
+  AnalysisServiceLive,
+  PatternGeneratorService.Default,
+  ReviewCodeService.Default
+);
+
+/**
+ * Test App Layer - Application layer without platform-node implementation
+ *
+ * Use this in integration tests to avoid importing platform-node
+ * (which is an implementation detail, not a service).
+ * 
+ * platform-node provides NodeContext which is needed for Node.js-specific
+ * functionality in production, but not required for testing business logic.
+ */
+export const TestAppLayer = Layer.mergeAll(
+  // NodeContext.layer excluded - platform-node is implementation detail
+  MCPConfigService.Default,
+  MCPLoggerService.Default,
+  MCPTierService.Default,
+  MCPValidationService.Default,
+  MCRateLimitService.Default,
+  MCPCacheService.Default,
+  DatabaseLayer,
+  PatternsService.Default,
+  TracingLayerLive,
   AnalysisServiceLive,
   PatternGeneratorService.Default,
   ReviewCodeService.Default

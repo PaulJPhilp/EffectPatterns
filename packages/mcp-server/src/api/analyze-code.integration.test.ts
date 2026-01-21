@@ -1,7 +1,7 @@
 import { AnalysisService } from "@effect-patterns/analysis-core";
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { AppLayer } from "../server/init";
+import { TestAppLayer } from "../server/init";
 
 describe("Analyze Code Integration", () => {
   it("should analyze code using the AnalysisService via AppLayer", async () => {
@@ -16,7 +16,7 @@ describe("Analyze Code Integration", () => {
         `;
         // filename implies it's not a boundary file, so async should be flagged
         return yield* service.analyzeFile("src/foo.ts", source);
-      }).pipe(Effect.provide(AppLayer), Effect.scoped)
+      }).pipe(Effect.provide(TestAppLayer), Effect.scoped)
     );
 
     expect(result.filename).toBe("src/foo.ts");
@@ -40,7 +40,7 @@ describe("Analyze Code Integration", () => {
         const service = yield* AnalysisService;
         const source = `import fs from "node:fs";`;
         return yield* service.analyzeFile("src/fs-usage.ts", source);
-      }).pipe(Effect.provide(AppLayer), Effect.scoped)
+      }).pipe(Effect.provide(TestAppLayer), Effect.scoped)
     );
 
     const nodeFsRule = result.suggestions.find(s => s.id === "node-fs");
