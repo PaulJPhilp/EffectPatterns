@@ -37,6 +37,7 @@ export interface ToolResult {
     type: string;
     text: string;
   }>;
+  isError?: boolean;
 }
 
 /**
@@ -127,8 +128,20 @@ export class MCPTestClient {
         { timeout: this.toolTimeout }
       );
 
+      // Throw if the tool returned an error
+      if (result.isError) {
+        const errorMsg = result.content
+          .filter((c) => c.type === "text")
+          .map((c) => (c as any).text)
+          .join("\n");
+        throw new Error(`Tool execution failed: ${errorMsg || "Unknown error"}`);
+      }
+
       return result as ToolResult;
     } catch (error) {
+      if (error instanceof Error && error.message.includes("Tool execution failed")) {
+        throw error;
+      }
       throw new Error(`Tool call failed: ${toolName} - ${error}`);
     }
   }

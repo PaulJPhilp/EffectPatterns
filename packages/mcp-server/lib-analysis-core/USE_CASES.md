@@ -36,10 +36,12 @@ Effect-TS projects. It is designed to be consumed by:
 issues (findings) and summary suggestions.
 
 **Input**:
+
 - `filename`: string
 - `source`: string (file content)
 
 **Output**:
+
 - `findings[]`: Concrete violations with location, severity, fix suggestions
 - `suggestions[]`: Summary-level recommendations
 - `analyzedAt`: ISO timestamp
@@ -47,6 +49,7 @@ issues (findings) and summary suggestions.
 **API**: `AnalysisService.analyzeFile(filename, content)`
 
 **Current Rules Detected** (20 rules):
+
 | Rule ID | Description | Severity |
 |---------|-------------|----------|
 | `async-await` | Prefer Effect over async/await | high |
@@ -79,6 +82,7 @@ issues (findings) and summary suggestions.
 **Description**: Analyze a file for a specific category of issues only.
 
 **Input**:
+
 - `filename`: string
 - `source`: string
 - `analysisType`: `"validation"` | `"patterns"` | `"errors"` | `"all"`
@@ -100,6 +104,7 @@ Category filtering is a gap.
 for highlighting in editors.
 
 **Output per finding**:
+
 ```typescript
 range: {
   startLine: number;  // 1-based
@@ -121,14 +126,17 @@ range: {
 patterns across a codebase.
 
 **Input**:
+
 - `files[]`: Array of `{ filename, source }`
 
 **Output**:
+
 - `issues[]`: Cross-file consistency issues
 
 **API**: `AnalysisService.analyzeConsistency(files)`
 
 **Current Consistency Checks**:
+
 | Issue ID | Description |
 |----------|-------------|
 | `mixed-fs` | Some files use node:fs, others use @effect/platform |
@@ -171,11 +179,13 @@ or type checker integration.
 automated fix without writing files.
 
 **Input**:
+
 - `ruleId`: The violated rule
 - `filename`: string
 - `source`: string
 
 **Output**:
+
 - `changes[]`: Array of `{ filename, before, after }`
 - `applied`: boolean (always `false` - preview only)
 
@@ -190,15 +200,18 @@ automated fix without writing files.
 **Description**: Apply one or more refactorings to multiple files at once.
 
 **Input**:
+
 - `refactoringIds[]`: Fix IDs to apply
 - `files[]`: Array of `{ filename, source }`
 
 **Output**:
+
 - `changes[]`: Transformed file contents
 
 **API**: `AnalysisService.applyRefactorings(refactoringIds, files)`
 
 **Current Refactorings** (7 fixes):
+
 | Fix ID | Description |
 |--------|-------------|
 | `replace-node-fs` | Rewrite node:fs imports to @effect/platform |
@@ -244,6 +257,7 @@ suggestions or user choice mechanism.
 **Description**: Retrieve the complete list of governed rules with metadata.
 
 **Output per rule**:
+
 - `id`: RuleId
 - `title`: Human-readable name
 - `message`: Detailed explanation
@@ -263,6 +277,7 @@ suggestions or user choice mechanism.
 **Description**: Retrieve the complete list of available automated fixes.
 
 **Output per fix**:
+
 - `id`: FixId
 - `title`: Human-readable name
 - `description`: What the fix does
@@ -378,6 +393,7 @@ dependencies, unused exports, or layering violations.
 **Actor**: Developer
 
 **Description**: Trace Effect pipelines to detect:
+
 - Unreachable error handlers
 - Missing error channel types
 - Unnecessary Effect wrapping
@@ -389,6 +405,7 @@ dependencies, unused exports, or layering violations.
 **Actor**: Architect
 
 **Description**: Analyze Effect.Service definitions to:
+
 - Detect circular service dependencies
 - Validate layer composition
 - Suggest optimal layer ordering
@@ -400,6 +417,7 @@ dependencies, unused exports, or layering violations.
 **Actor**: Performance Engineer
 
 **Description**: Detect patterns that may cause performance issues:
+
 - Unbounded concurrency
 - Missing caching opportunities
 - N+1 query patterns in Effect code
@@ -411,6 +429,7 @@ dependencies, unused exports, or layering violations.
 **Actor**: Developer
 
 **Description**: Assist with migrations:
+
 - Effect 2.x to 3.x
 - Legacy patterns to modern Effect.Service
 - Batch refactoring with rollback support
@@ -460,16 +479,19 @@ dependencies, unused exports, or layering violations.
 ## Recommended Priorities
 
 ### Phase 1: High Value / Low Effort
+
 1. **UC-4.3**: Rule configuration file support
 2. **UC-1.2**: Complete category filtering
 3. **UC-4.5**: Severity overrides
 
 ### Phase 2: High Value / Medium Effort
+
 1. **UC-2.2**: Project-wide analysis with directory traversal
 2. **UC-5.4**: GitHub Action for CI integration
 3. **UC-5.5**: Report generation (JSON, Markdown, HTML)
 
 ### Phase 3: Advanced Features
+
 1. **UC-2.3**: Type-aware analysis with ts.Program
 2. **UC-5.3**: LSP server for IDE integration
 3. **UC-6.2**: Effect pipeline analysis

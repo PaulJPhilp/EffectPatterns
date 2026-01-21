@@ -3,18 +3,22 @@
 **Goal: Enable testability, dependency injection, and composition.**
 
 ## Use when
+
 - You have a shared resource (database, cache, logger, HTTP client) that multiple parts of your app need.
 - You want to mock or swap the implementation in tests.
 - You're composing a large application with multiple services.
 
 ## Avoid when
+
 - You create a global singleton `export const db = new Database()`.
 - You call the singleton at module scope (runs on import).
 - You initialize resources outside of your Effect program.
 - Tests can't inject a fake version because the real one is hardwired.
 
 ## Decision rule
+
 If a resource is shared across multiple handlers/services:
+
 - Define it as an `Effect.Service`.
 - Provide it via a `Layer` (which constructs it when needed).
 - Never export a raw singleton instance.
@@ -24,17 +28,21 @@ Singleton = "Fixed in place, can't swap."
 Layer = "Provided at runtime, testable."
 
 ## Goal
+
 Enable testability, dependency injection, and composition.
 
 ---
 
 ## Architecture impact
+
 **Domain impact**
+
 - Tests are tied to real resources (database, API).
 - Can't test in isolation or with mocks.
 - Initialization order is implicit and fragile.
 
 **Boundary/runtime impact**
+
 - Deployment is rigid: can't use different configs per environment without code changes.
 - Debugging is hard: which code is calling the singleton?
 - Concurrency: shared singleton state may have race conditions.
@@ -43,12 +51,15 @@ Enable testability, dependency injection, and composition.
 ---
 
 ## Implementation prompt
+
 "Implement the Fix Plan for this finding: Convert the singleton to an `Effect.Service` with a `Layer` provider. Update call sites to use `Effect.service(MyService)` instead of the global reference. Provide a test layer in tests."
 
 ---
 
 ## Fix Plan (Steps + Diff summary + Risks)
+
 **Steps**
+
 1. Extract the singleton into an `Effect.Service` type.
 2. Create a `Layer` that constructs the service (lazy initialization).
 3. Replace all references to the global singleton with `yield* Effect.service(MyService)`.
@@ -56,11 +67,13 @@ Enable testability, dependency injection, and composition.
 5. In tests, provide a mock layer instead.
 
 **What will change (summary)**
+
 - Resources are created on-demand when the layer is provided.
 - Each test can inject a different implementation.
 - Application bootstrap is explicit: all layers are visible at the entry point.
 
 **Risks / watch-outs**
+
 - Layer initialization is lazy: the service isn't created until first use.
 - Circular dependencies between layers: ensure layers form a DAG (no cycles).
 - Tests need to provide all layers: can be verbose if many dependencies.
@@ -68,7 +81,9 @@ Enable testability, dependency injection, and composition.
 ---
 
 ## Example
+
 **Before:**
+
 ```typescript
 // database.ts - Global singleton
 export const db = new DatabaseClient({
@@ -92,6 +107,7 @@ describe("getUserService", () => {
 ```
 
 **After:**
+
 ```typescript
 // database.ts - Service + Layer
 import { Effect, Layer } from "effect";
@@ -154,6 +170,8 @@ Effect.gen(function* () {
 ---
 
 ## Related patterns
+
 See also:
+
 - **layer-dependency-cycle** — circular dependencies between layers break initialization
 - **hidden-effect-execution** — singletons constructed at module scope have similar problems

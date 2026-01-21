@@ -13,8 +13,12 @@
         "run",
         "--cwd",
         "packages/mcp-server",
-        "mcp:production"
-      ]
+        "dist/mcp-stdio.js"
+      ],
+      "env": {
+        "PATTERN_API_KEY": "ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84",
+        "EFFECT_PATTERNS_API_URL": "https://effect-patterns-mcp.vercel.app"
+      }
     },
     "effect-docs": {
       "command": "npx",

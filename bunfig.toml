@@ -1,0 +1,5 @@
+[bundle]
+root = "."
+
+[resolve]
+alias = { api = "./api", server = "./server", packages = "./packages" }
