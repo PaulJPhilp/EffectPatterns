@@ -11,7 +11,7 @@ import { ServerMetrics } from "./types.js";
 export class MetricsService extends Effect.Service<MetricsService>()(
     "MetricsService",
     {
-        effect: Effect.gen(function* () {
+        sync: () => {
             const metrics = {
                 startTime: Date.now(),
                 requestCount: 0,
@@ -20,35 +20,29 @@ export class MetricsService extends Effect.Service<MetricsService>()(
                 rateLimitHits: 0,
             };
 
-            const incrementRequestCount = () => {
-                metrics.requestCount++;
-            };
-
-            const incrementErrorCount = () => {
-                metrics.errorCount++;
-            };
-
-            const incrementRateLimitHits = () => {
-                metrics.rateLimitHits++;
-            };
-
-            const updateHealthCheck = () => {
-                metrics.lastHealthCheck = Date.now();
-            };
-
-            const getMetrics = (): ServerMetrics => ({
-                ...metrics,
-                uptime: Date.now() - metrics.startTime,
-                healthCheckAge: Date.now() - metrics.lastHealthCheck,
-            });
-
             return {
-                incrementRequestCount,
-                incrementErrorCount,
-                incrementRateLimitHits,
-                updateHealthCheck,
-                getMetrics,
+                incrementRequestCount: () => {
+                    metrics.requestCount++;
+                },
+
+                incrementErrorCount: () => {
+                    metrics.errorCount++;
+                },
+
+                incrementRateLimitHits: () => {
+                    metrics.rateLimitHits++;
+                },
+
+                updateHealthCheck: () => {
+                    metrics.lastHealthCheck = Date.now();
+                },
+
+                getMetrics: (): ServerMetrics => ({
+                    ...metrics,
+                    uptime: Date.now() - metrics.startTime,
+                    healthCheckAge: Date.now() - metrics.lastHealthCheck,
+                }),
             };
-        }),
+        },
     },
 ) { }
