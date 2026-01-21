@@ -70,3 +70,38 @@ export const REQUEST_ID_LENGTH = 9;
 
 // Memory Thresholds
 export const MEMORY_HEALTH_THRESHOLD = 0.9; // 90% of heap used
+
+// Network Configuration
+export const MAX_PORT = 65535;
+export const MIN_PORT = 0;
+
+// Client IP (Default for local requests)
+export const DEFAULT_CLIENT_IP = "127.0.0.1";
+
+// Memory Unit Conversion
+export const BYTES_PER_MB = 1024 * 1024;
+export const BYTES_PER_KB = 1024;
+
+// Random String Generation
+export const RANDOM_STRING_RADIX = 36;
+export const RANDOM_STRING_LENGTH = 9;
+export const RANDOM_STRING_SUBSTR_START = 2;
+
+// API Response Versioning
+export const DEFAULT_API_VERSION = "v1";
+
+// Health Check Status
+export const HEALTH_STATUS_HEALTHY = "healthy";
+
+// HTTP Header Names
+export const HEADER_REQUEST_ID = "X-Request-ID";
+export const HEADER_RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
+export const HEADER_RATE_LIMIT_RESET = "X-RateLimit-Reset";
+export const HEADER_RETRY_AFTER = "Retry-After";
+
+// Error Codes
+export const ERROR_CODE_BAD_REQUEST = "BAD_REQUEST";
+export const ERROR_CODE_NOT_FOUND = "NOT_FOUND";
+export const ERROR_CODE_INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR";
+export const ERROR_CODE_SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE";
+export const ERROR_CODE_RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED";

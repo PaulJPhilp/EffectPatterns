@@ -47,6 +47,18 @@ import {
   HTTP_STATUS_TOO_MANY_REQUESTS,
   SERVER_NAME,
   SERVER_VERSION,
+  MAX_PORT,
+  MIN_PORT,
+  DEFAULT_CLIENT_IP,
+  BYTES_PER_MB,
+  BYTES_PER_KB,
+  MEMORY_HEALTH_THRESHOLD,
+  HEALTH_STATUS_HEALTHY,
+  HEADER_REQUEST_ID,
+  HEADER_RATE_LIMIT_REMAINING,
+  HEADER_RATE_LIMIT_RESET,
+  HEADER_RETRY_AFTER,
+  ERROR_CODE_RATE_LIMIT_EXCEEDED,
 } from "./constants.js";
 import { readAndParseRules, readRuleById } from "./database.js";
 import { ApiError } from "./errors.js";
@@ -69,7 +81,7 @@ const parsePort = (value: string | undefined): number | undefined => {
   if (!Number.isInteger(parsed)) {
     return undefined;
   }
-  if (parsed < 0 || parsed > 65535) {
+  if (parsed < DEFAULT_PORT || parsed > MAX_PORT) {
     return undefined;
   }
   return parsed;
@@ -109,7 +121,7 @@ export const healthHandler = Effect.gen(function* () {
 
   // Check rate limit
   const rateLimiter = yield* RateLimiterService;
-  const clientIP = "127.0.0.1"; // In production, extract from request headers
+  const clientIP = DEFAULT_CLIENT_IP; // In production, extract from request headers
   const rateLimitResult = yield* rateLimiter.checkRateLimit(clientIP);
 
   if (!rateLimitResult.allowed) {
@@ -125,17 +137,17 @@ export const healthHandler = Effect.gen(function* () {
     const apiError = ApiError.make(
       ERROR_RATE_LIMIT_EXCEEDED,
       HTTP_STATUS_TOO_MANY_REQUESTS,
-      "RATE_LIMIT_EXCEEDED",
+      ERROR_CODE_RATE_LIMIT_EXCEEDED,
       { resetTime: rateLimitResult.resetTime },
     );
     const response = createErrorResponse(apiError, requestId);
     const httpResponse = yield* HttpServerResponse.json(response, {
       status: apiError.statusCode,
       headers: {
-        "X-Request-ID": requestId,
-        "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
-        "X-RateLimit-Reset": rateLimitResult.resetTime?.toString() || "",
-        "Retry-After": Math.ceil(
+        [HEADER_REQUEST_ID]: requestId,
+        [HEADER_RATE_LIMIT_REMAINING]: rateLimitResult.remaining.toString(),
+        [HEADER_RATE_LIMIT_RESET]: rateLimitResult.resetTime?.toString() || "",
+        [HEADER_RETRY_AFTER]: Math.ceil(
           (rateLimitResult.resetTime! - Date.now()) / 1000,
         ).toString(),
       },
@@ -153,7 +165,7 @@ export const healthHandler = Effect.gen(function* () {
 
       // Check memory usage
       const memUsage = process.memoryUsage();
-      const memoryHealthy = memUsage.heapUsed < memUsage.heapTotal * 0.9;
+      const memoryHealthy = memUsage.heapUsed < memUsage.heapTotal * MEMORY_HEALTH_THRESHOLD;
 
       // Check uptime
       const uptime = process.uptime();
@@ -163,12 +175,12 @@ export const healthHandler = Effect.gen(function* () {
       const rulesHealthy = rulesCheck._tag === "Right";
 
       return {
-        status: "healthy",
+        status: HEALTH_STATUS_HEALTHY,
         timestamp: new Date().toISOString(),
         uptime: `${uptime.toFixed(2)}s`,
         memory: {
-          used: `${(memUsage.heapUsed / 1024 / 1024).toFixed(2)}MB`,
-          total: `${(memUsage.heapTotal / 1024 / 1024).toFixed(2)}MB`,
+          used: `${(memUsage.heapUsed / BYTES_PER_MB).toFixed(2)}MB`,
+          total: `${(memUsage.heapTotal / BYTES_PER_MB).toFixed(2)}MB`,
           healthy: memoryHealthy,
         },
         filesystem: {
@@ -198,8 +210,8 @@ export const healthHandler = Effect.gen(function* () {
     const httpResponse = yield* HttpServerResponse.json(response, {
       status: apiError.statusCode,
       headers: {
-        "X-Request-ID": requestId,
-        "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+        [HEADER_REQUEST_ID]: requestId,
+        [HEADER_RATE_LIMIT_REMAINING]: rateLimitResult.remaining.toString(),
       },
     });
 
@@ -220,8 +232,8 @@ export const healthHandler = Effect.gen(function* () {
     status: HTTP_STATUS_OK,
     headers: {
       "Cache-Control": CACHE_CONTROL_NO_CACHE,
-      "X-Request-ID": requestId,
-      "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+      [HEADER_REQUEST_ID]: requestId,
+      [HEADER_RATE_LIMIT_REMAINING]: rateLimitResult.remaining.toString(),
     },
   });
 
@@ -269,7 +281,7 @@ export const metricsHandler = Effect.gen(function* () {
     status: HTTP_STATUS_OK,
     headers: {
       "Cache-Control": CACHE_CONTROL_NO_CACHE,
-      "X-Request-ID": requestId,
+      [HEADER_REQUEST_ID]: requestId,
       "Content-Type": "application/json",
     },
   });
@@ -298,7 +310,7 @@ export const rulesHandler = Effect.gen(function* () {
 
   // Check rate limit
   const rateLimiter = yield* RateLimiterService;
-  const clientIP = "127.0.0.1"; // In production, extract from request headers
+  const clientIP = DEFAULT_CLIENT_IP; // In production, extract from request headers
   const rateLimitResult = yield* rateLimiter.checkRateLimit(clientIP);
 
   if (!rateLimitResult.allowed) {
@@ -321,10 +333,10 @@ export const rulesHandler = Effect.gen(function* () {
     const httpResponse = yield* HttpServerResponse.json(response, {
       status: apiError.statusCode,
       headers: {
-        "X-Request-ID": requestId,
-        "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
-        "X-RateLimit-Reset": rateLimitResult.resetTime?.toString() || "",
-        "Retry-After": Math.ceil(
+        [HEADER_REQUEST_ID]: requestId,
+        [HEADER_RATE_LIMIT_REMAINING]: rateLimitResult.remaining.toString(),
+        [HEADER_RATE_LIMIT_RESET]: rateLimitResult.resetTime?.toString() || "",
+        [HEADER_RETRY_AFTER]: Math.ceil(
           (rateLimitResult.resetTime! - Date.now()) / 1000,
         ).toString(),
       },
@@ -365,8 +377,8 @@ export const rulesHandler = Effect.gen(function* () {
     const httpResponse = yield* HttpServerResponse.json(response, {
       status: apiError.statusCode,
       headers: {
-        "X-Request-ID": requestId,
-        "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+        [HEADER_REQUEST_ID]: requestId,
+        [HEADER_RATE_LIMIT_REMAINING]: rateLimitResult.remaining.toString(),
       },
     });
 
@@ -386,8 +398,8 @@ export const rulesHandler = Effect.gen(function* () {
     status: HTTP_STATUS_OK,
     headers: {
       "Cache-Control": CACHE_CONTROL_PUBLIC,
-      "X-Request-ID": requestId,
-      "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+      [HEADER_REQUEST_ID]: requestId,
+      [HEADER_RATE_LIMIT_REMAINING]: rateLimitResult.remaining.toString(),
     },
   });
 
@@ -411,7 +423,7 @@ export const singleRuleHandler = (id: string) =>
 
     // Check rate limit
     const rateLimiter = yield* RateLimiterService;
-    const clientIP = "127.0.0.1"; // In production, extract from request headers
+    const clientIP = DEFAULT_CLIENT_IP; // In production, extract from request headers
     const rateLimitResult = yield* rateLimiter.checkRateLimit(clientIP);
 
     if (!rateLimitResult.allowed) {
@@ -434,10 +446,10 @@ export const singleRuleHandler = (id: string) =>
       const httpResponse = yield* HttpServerResponse.json(response, {
         status: apiError.statusCode,
         headers: {
-          "X-Request-ID": requestId,
-          "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
-          "X-RateLimit-Reset": rateLimitResult.resetTime?.toString() || "",
-          "Retry-After": Math.ceil(
+          [HEADER_REQUEST_ID]: requestId,
+          [HEADER_RATE_LIMIT_REMAINING]: rateLimitResult.remaining.toString(),
+          [HEADER_RATE_LIMIT_RESET]: rateLimitResult.resetTime?.toString() || "",
+          [HEADER_RETRY_AFTER]: Math.ceil(
             (rateLimitResult.resetTime! - Date.now()) / 1000,
           ).toString(),
         },
@@ -463,8 +475,8 @@ export const singleRuleHandler = (id: string) =>
       const httpResponse = yield* HttpServerResponse.json(response, {
         status: apiError.statusCode,
         headers: {
-          "X-Request-ID": requestId,
-          "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+          [HEADER_REQUEST_ID]: requestId,
+          [HEADER_RATE_LIMIT_REMAINING]: rateLimitResult.remaining.toString(),
         },
       });
 
@@ -501,8 +513,8 @@ export const singleRuleHandler = (id: string) =>
       const httpResponse = yield* HttpServerResponse.json(response, {
         status: apiError.statusCode,
         headers: {
-          "X-Request-ID": requestId,
-          "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+          [HEADER_REQUEST_ID]: requestId,
+          [HEADER_RATE_LIMIT_REMAINING]: rateLimitResult.remaining.toString(),
         },
       });
 
@@ -522,8 +534,8 @@ export const singleRuleHandler = (id: string) =>
       status: HTTP_STATUS_OK,
       headers: {
         "Cache-Control": CACHE_CONTROL_PUBLIC,
-        "X-Request-ID": requestId,
-        "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+        [HEADER_REQUEST_ID]: requestId,
+        [HEADER_RATE_LIMIT_REMAINING]: rateLimitResult.remaining.toString(),
       },
     });
 
@@ -550,7 +562,7 @@ const router = HttpRouter.empty.pipe(
         const response = createErrorResponse(apiError, requestId);
         return yield* HttpServerResponse.json(response, {
           status: apiError.statusCode,
-          headers: { "X-Request-ID": requestId },
+          headers: { [HEADER_REQUEST_ID]: requestId },
         });
       }
       return yield* singleRuleHandler(id);

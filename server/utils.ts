@@ -3,13 +3,26 @@
  */
 
 import { HttpServerResponse } from "@effect/platform";
+import {
+    SECURITY_HEADERS,
+    RANDOM_STRING_RADIX,
+    RANDOM_STRING_LENGTH,
+    RANDOM_STRING_SUBSTR_START,
+    DEFAULT_API_VERSION,
+    HEADER_REQUEST_ID,
+    HEADER_RATE_LIMIT_REMAINING,
+    HEADER_RATE_LIMIT_RESET,
+    HEADER_RETRY_AFTER,
+} from "./constants.js";
 import { ApiError } from "./errors.js";
 
 /**
  * Generate a unique request ID
  */
 export const generateRequestId = (): string => {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${Math.random()
+        .toString(RANDOM_STRING_RADIX)
+        .substr(RANDOM_STRING_SUBSTR_START, RANDOM_STRING_LENGTH)}`;
 };
 
 /**
@@ -18,7 +31,7 @@ export const generateRequestId = (): string => {
 export const createApiResponse = <A>(
     data: A,
     requestId: string,
-    version = "v1",
+    version = DEFAULT_API_VERSION,
 ) => ({
     success: true,
     data,
@@ -35,7 +48,7 @@ export const createApiResponse = <A>(
 export const createErrorResponse = (
     error: ApiError,
     requestId: string,
-    version = "v1",
+    version = DEFAULT_API_VERSION,
 ) => ({
     success: false,
     error: {
@@ -55,17 +68,10 @@ export const createErrorResponse = (
  */
 export const addSecurityHeaders = (
     response: HttpServerResponse.HttpServerResponse,
-) =>
-    response.pipe(
-        HttpServerResponse.setHeader("X-Content-Type-Options", "nosniff"),
-        HttpServerResponse.setHeader("X-Frame-Options", "DENY"),
-        HttpServerResponse.setHeader("X-XSS-Protection", "1; mode=block"),
-        HttpServerResponse.setHeader(
-            "Referrer-Policy",
-            "strict-origin-when-cross-origin",
-        ),
-        HttpServerResponse.setHeader(
-            "Permissions-Policy",
-            "geolocation=(), microphone=(), camera=()",
-        ),
-    );
+) => {
+    let result = response;
+    for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+        result = result.pipe(HttpServerResponse.setHeader(key, value));
+    }
+    return result;
+};

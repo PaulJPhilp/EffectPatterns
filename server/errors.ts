@@ -3,6 +3,16 @@
  */
 
 import { Data } from "effect";
+import {
+    HTTP_STATUS_BAD_REQUEST,
+    HTTP_STATUS_NOT_FOUND,
+    HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    HTTP_STATUS_SERVICE_UNAVAILABLE,
+    ERROR_CODE_BAD_REQUEST,
+    ERROR_CODE_NOT_FOUND,
+    ERROR_CODE_INTERNAL_SERVER_ERROR,
+    ERROR_CODE_SERVICE_UNAVAILABLE,
+} from "./constants.js";
 
 /**
  * Base API error with HTTP status mapping
@@ -23,19 +33,19 @@ export class ApiError extends Data.TaggedError("ApiError")<{
     }
 
     static badRequest(message: string, details?: unknown) {
-        return ApiError.make(message, 400, "BAD_REQUEST", details);
+        return ApiError.make(message, HTTP_STATUS_BAD_REQUEST, ERROR_CODE_BAD_REQUEST, details);
     }
 
     static notFound(message: string, details?: unknown) {
-        return ApiError.make(message, 404, "NOT_FOUND", details);
+        return ApiError.make(message, HTTP_STATUS_NOT_FOUND, ERROR_CODE_NOT_FOUND, details);
     }
 
     static internalServerError(message: string, details?: unknown) {
-        return ApiError.make(message, 500, "INTERNAL_SERVER_ERROR", details);
+        return ApiError.make(message, HTTP_STATUS_INTERNAL_SERVER_ERROR, ERROR_CODE_INTERNAL_SERVER_ERROR, details);
     }
 
     static serviceUnavailable(message: string, details?: unknown) {
-        return ApiError.make(message, 503, "SERVICE_UNAVAILABLE", details);
+        return ApiError.make(message, HTTP_STATUS_SERVICE_UNAVAILABLE, ERROR_CODE_SERVICE_UNAVAILABLE, details);
     }
 }
 

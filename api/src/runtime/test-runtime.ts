@@ -5,9 +5,9 @@
  * and Scope dependency handling.
  */
 
-import { Effect, Layer } from "effect";
 import { DatabaseService } from "api/services/database/service.js";
 import { HandlersService } from "api/services/handlers/service.js";
+import { Effect, Layer } from "effect";
 
 /**
  * Test layer for API services
