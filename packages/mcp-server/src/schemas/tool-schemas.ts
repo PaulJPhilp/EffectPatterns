@@ -52,46 +52,7 @@ export const ToolSchemas = {
     filePath: z.string().optional().describe("File path for context (e.g., 'src/services/user.ts')"),
   }).describe("Get AI-powered architectural review and recommendations for Effect code"),
 
-  // Generate Pattern Code Tool
-  generatePatternCode: z.object({
-    patternId: z.string().min(1).describe("Pattern template ID (e.g., 'effect-service', 'error-handler')"),
-    variables: z.record(z.string()).optional().describe("Variables for template substitution (key-value pairs)"),
-  }).describe("Generate customized code from a pattern template"),
-
-  // Analyze Consistency Tool
-  analyzeConsistency: z.object({
-    files: z.array(
-      z.object({
-        filename: z.string().describe("File path"),
-        source: z.string().describe("File source code"),
-      })
-    )
-    .min(1)
-    .max(50)
-    .describe("Files to analyze"),
-  }).describe("Detect inconsistencies and anti-patterns across multiple TypeScript files"),
-
-  // Apply Refactoring Tool
-  applyRefactoring: z.object({
-    refactoringIds: z
-      .array(z.string())
-      .min(1)
-      .max(10)
-      .describe("List of refactoring IDs to apply"),
-    files: z.array(
-      z.object({
-        filename: z.string().describe("File path"),
-        source: z.string().describe("File source code"),
-      })
-    )
-    .min(1)
-    .max(50)
-    .describe("Files to refactor"),
-    preview: z
-      .boolean()
-      .default(true)
-      .describe("Preview changes without applying (safe default)"),
-  }).describe("Apply automated refactoring patterns to code"),
+  // Paid-tier schemas removed from MCP tool surface (HTTP API only)
 };
 
 // Type exports for TypeScript integration
@@ -100,6 +61,3 @@ export type GetPatternArgs = z.infer<typeof ToolSchemas.getPattern>;
 export type ListAnalysisRulesArgs = z.infer<typeof ToolSchemas.listAnalysisRules>;
 export type AnalyzeCodeArgs = z.infer<typeof ToolSchemas.analyzeCode>;
 export type ReviewCodeArgs = z.infer<typeof ToolSchemas.reviewCode>;
-export type GeneratePatternCodeArgs = z.infer<typeof ToolSchemas.generatePatternCode>;
-export type AnalyzeConsistencyArgs = z.infer<typeof ToolSchemas.analyzeConsistency>;
-export type ApplyRefactoringArgs = z.infer<typeof ToolSchemas.applyRefactoring>;

@@ -76,7 +76,7 @@ cd EffectPatterns
 
 ### Configuration
 
-The plugin will connect to the MCP server at the configured endpoint. API key authentication is required for production use.
+The plugin will connect to the MCP server at the configured endpoint. API key authentication is required by the HTTP API in production; the MCP transport itself does not validate keys.
 
 ## For Contributors
 

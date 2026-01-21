@@ -19,8 +19,8 @@ const projectRoot = path.resolve(__dirname, "../../..");
  * MCP Test Client Configuration
  */
 export interface MCPTestClientConfig {
-  /** API key for the MCP server */
-  apiKey: string;
+  /** API key for the MCP server (optional - MCP is pure transport) */
+  apiKey?: string;
   /** Base URL for the API (default: http://localhost:3000) */
   apiUrl?: string;
   /** Enable debug logging */
@@ -56,7 +56,7 @@ export class MCPTestClient {
     client: Client,
     transport: StdioClientTransport,
     serverProcess: ChildProcess,
-    config: MCPTestClientConfig
+    config: MCPTestClientConfig,
   ) {
     this.client = client;
     this.transport = transport;
@@ -72,15 +72,22 @@ export class MCPTestClient {
     const distPath = path.join(projectRoot, "dist", "mcp-stdio.js");
 
     // Create stdio transport - handles spawning the process internally
+    // MCP server is pure transport - API key is optional
+    const env: Record<string, string> = {
+      ...process.env,
+      EFFECT_PATTERNS_API_URL: config.apiUrl || "http://localhost:3000",
+      MCP_DEBUG: config.debug ? "true" : "false",
+    };
+    
+    // Only set API key if provided (optional)
+    if (config.apiKey) {
+      env.PATTERN_API_KEY = config.apiKey;
+    }
+
     const transport = new StdioClientTransport({
       command: "bun",
       args: [distPath],
-      env: {
-        ...process.env,
-        PATTERN_API_KEY: config.apiKey,
-        EFFECT_PATTERNS_API_URL: config.apiUrl || "http://localhost:3000",
-        MCP_DEBUG: config.debug ? "true" : "false",
-      },
+      env,
       stderr: config.debug ? "pipe" : "ignore",
     });
 
@@ -96,12 +103,17 @@ export class MCPTestClient {
 
       // Create a dummy process reference (we'll track the transport instead)
       const dummyProcess = {
-        kill: () => {},
-        once: () => {},
+        kill: () => { },
+        once: () => { },
       } as unknown as ChildProcess;
 
       // Create and return test client instance
-      const testClient = new MCPTestClient(client, transport, dummyProcess, config);
+      const testClient = new MCPTestClient(
+        client,
+        transport,
+        dummyProcess,
+        config,
+      );
       testClient.isConnected = true;
 
       return testClient;
@@ -113,7 +125,10 @@ export class MCPTestClient {
   /**
    * Call a tool via MCP protocol
    */
-  async callTool(toolName: string, args: Record<string, unknown>): Promise<ToolResult> {
+  async callTool(
+    toolName: string,
+    args: Record<string, unknown>,
+  ): Promise<ToolResult> {
     if (!this.isConnected) {
       throw new Error("MCP client is not connected");
     }
@@ -125,21 +140,17 @@ export class MCPTestClient {
           arguments: args,
         },
         undefined,
-        { timeout: this.toolTimeout }
+        { timeout: this.toolTimeout },
       );
 
-      // Throw if the tool returned an error
-      if (result.isError) {
-        const errorMsg = result.content
-          .filter((c) => c.type === "text")
-          .map((c) => (c as any).text)
-          .join("\n");
-        throw new Error(`Tool execution failed: ${errorMsg || "Unknown error"}`);
-      }
-
+      // In the new architecture, tools return errors as values (isError flag)
+      // Return the result whether it's success or error - let tests decide
       return result as ToolResult;
     } catch (error) {
-      if (error instanceof Error && error.message.includes("Tool execution failed")) {
+      if (
+        error instanceof Error &&
+        error.message.includes("Tool execution failed")
+      ) {
         throw error;
       }
       throw new Error(`Tool call failed: ${toolName} - ${error}`);
@@ -151,18 +162,22 @@ export class MCPTestClient {
    */
   parseResult(result: ToolResult): unknown {
     if (!result.content || result.content.length === 0) {
-      throw new Error("Tool result is empty");
+      return null;
     }
 
-    const textContent = result.content.find((c) => c.type === "text");
-    if (!textContent) {
-      throw new Error("No text content in tool result");
+    const update = result.content.find((c) => c.type === "text");
+    if (!update) {
+      return null;
+    }
+
+    if (result.isError) {
+      return { error: update.text };
     }
 
     try {
-      return JSON.parse(textContent.text);
-    } catch (error) {
-      throw new Error(`Failed to parse tool result: ${error}`);
+      return JSON.parse(update.text);
+    } catch {
+      return update.text;
     }
   }
 
@@ -224,10 +239,11 @@ export class MCPTestClient {
  * Helper function to create a test client with default settings
  */
 export async function createMCPTestClient(
-  overrides?: Partial<MCPTestClientConfig>
+  overrides?: Partial<MCPTestClientConfig>,
 ): Promise<MCPTestClient> {
   const config: MCPTestClientConfig = {
-    apiKey: overrides?.apiKey || "test-api-key",
+    // API key is optional - MCP is pure transport, auth happens at HTTP API
+    apiKey: overrides?.apiKey,
     apiUrl: overrides?.apiUrl || "http://localhost:3000",
     debug: overrides?.debug ?? false,
     toolTimeout: overrides?.toolTimeout,

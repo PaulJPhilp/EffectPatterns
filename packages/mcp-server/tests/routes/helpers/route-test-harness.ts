@@ -2,6 +2,12 @@
  * Route Test Harness
  *
  * Utilities for testing Next.js API routes in isolation.
+ *
+ * Architecture Note:
+ * - HTTP API is where ALL authentication and authorization happens
+ * - MCP server is pure transport - it doesn't validate auth
+ * - Tier validation (free/paid) happens at HTTP API level
+ * - These tests verify HTTP API auth and tier enforcement
  */
 
 import { NextRequest, NextResponse } from "next/server";

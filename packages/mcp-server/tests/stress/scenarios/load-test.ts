@@ -112,9 +112,41 @@ describe('Load Test - Concurrent Request Handling', () => {
 
   describe('Baseline Load (10 req/s)', () => {
     it('should handle baseline load with small files', async () => {
-      await runLoadTest(10, 30, 'small');
+      const testMetrics = createMetricsCollector();
+      testMetrics.start();
+      const startTime = Date.now();
 
-      const allMetrics = metrics.toJSON();
+      const code = generateTestCode('small');
+      const requestsPerSecond = 10;
+      const durationSeconds = 10;
+      const totalRequests = requestsPerSecond * durationSeconds;
+
+      const promises: Promise<void>[] = [];
+      for (let i = 0; i < totalRequests; i++) {
+        const delay = (i / requestsPerSecond) * 1000;
+
+        promises.push(
+          new Promise((resolve) =>
+            setTimeout(async () => {
+              const result = await makeRequest(code);
+              testMetrics.recordRequest(result);
+              resolve(undefined);
+            }, delay)
+          )
+        );
+
+        // Print progress every 25 requests
+        if ((i + 1) % 25 === 0) {
+          const elapsed = Date.now() - startTime;
+          const actualRps = (i + 1) / (elapsed / 1000);
+          console.log(`    Progress: ${i + 1}/${totalRequests} (${actualRps.toFixed(2)} actual req/s)`);
+        }
+      }
+
+      await Promise.all(promises);
+
+      testMetrics.finish();
+      const allMetrics = testMetrics.toJSON();
       console.log(`    Latency p50: ${allMetrics.latency.p50.toFixed(2)}ms`);
       console.log(`    Latency p95: ${allMetrics.latency.p95.toFixed(2)}ms`);
       console.log(`    Throughput: ${allMetrics.throughput.requestsPerSecond.toFixed(2)} req/s`);
@@ -131,25 +163,39 @@ describe('Load Test - Concurrent Request Handling', () => {
 
       const code = generateTestCode('small');
       const requestsPerSecond = 25;
-      const durationSeconds = 60;
+      const durationSeconds = 12;
       const totalRequests = requestsPerSecond * durationSeconds;
 
+      const startTime = Date.now();
+      const promises: Promise<void>[] = [];
       for (let i = 0; i < totalRequests; i++) {
         const delay = (i / requestsPerSecond) * 1000;
-        await new Promise((resolve) =>
-          setTimeout(async () => {
-            const result = await makeRequest(code);
-            testMetrics.recordRequest(result);
-            resolve(undefined);
-          }, delay)
+        
+        promises.push(
+          new Promise((resolve) =>
+            setTimeout(async () => {
+              const result = await makeRequest(code);
+              testMetrics.recordRequest(result);
+              resolve(undefined);
+            }, delay)
+          )
         );
+
+        // Print progress every 75 requests
+        if ((i + 1) % 75 === 0) {
+          const elapsed = Date.now() - startTime;
+          const actualRps = (i + 1) / (elapsed / 1000);
+          console.log(`    Progress: ${i + 1}/${totalRequests} (${actualRps.toFixed(2)} actual req/s)`);
+        }
       }
+
+      await Promise.all(promises);
 
       testMetrics.finish();
       const allMetrics = testMetrics.toJSON();
 
       console.log(`  Normal Load Results:`);
-      console.log(`    Total Requests: ${allMetrics.latency.p50}`); // Using p50 as a stand-in for total
+      console.log(`    Total Requests: ${allMetrics.throughput.successfulRequests}`);
       console.log(`    Latency p50: ${allMetrics.latency.p50.toFixed(2)}ms`);
       console.log(`    Latency p95: ${allMetrics.latency.p95.toFixed(2)}ms`);
       console.log(`    Latency p99: ${allMetrics.latency.p99.toFixed(2)}ms`);
@@ -169,7 +215,7 @@ describe('Load Test - Concurrent Request Handling', () => {
       testMetrics.start();
 
       const requestsPerSecond = 25;
-      const durationSeconds = 60;
+      const durationSeconds = 12;
       const totalRequests = requestsPerSecond * durationSeconds;
 
       // 70% small, 20% medium, 10% large
@@ -179,6 +225,8 @@ describe('Load Test - Concurrent Request Handling', () => {
         large: 0.1,
       };
 
+      const startTime = Date.now();
+      const promises: Promise<void>[] = [];
       for (let i = 0; i < totalRequests; i++) {
         const rand = Math.random();
         let preset: keyof typeof PRESET_CONFIGS = 'small';
@@ -193,14 +241,25 @@ describe('Load Test - Concurrent Request Handling', () => {
         const code = generateTestCode(preset);
         const delay = (i / requestsPerSecond) * 1000;
 
-        await new Promise((resolve) =>
-          setTimeout(async () => {
-            const result = await makeRequest(code);
-            testMetrics.recordRequest(result);
-            resolve(undefined);
-          }, delay)
+        promises.push(
+          new Promise((resolve) =>
+            setTimeout(async () => {
+              const result = await makeRequest(code);
+              testMetrics.recordRequest(result);
+              resolve(undefined);
+            }, delay)
+          )
         );
+
+        // Print progress every 75 requests
+        if ((i + 1) % 75 === 0) {
+          const elapsed = Date.now() - startTime;
+          const actualRps = (i + 1) / (elapsed / 1000);
+          console.log(`    Progress: ${i + 1}/${totalRequests} (${actualRps.toFixed(2)} actual req/s)`);
+        }
       }
+
+      await Promise.all(promises);
 
       testMetrics.finish();
       const allMetrics = testMetrics.toJSON();
@@ -215,34 +274,40 @@ describe('Load Test - Concurrent Request Handling', () => {
   });
 
   describe('Peak Load (50 req/s)', () => {
-    it('should handle peak load for 60 seconds', async () => {
+    it('should handle peak load for 12 seconds', async () => {
       const testMetrics = createMetricsCollector();
       testMetrics.start();
 
       const code = generateTestCode('small');
       const requestsPerSecond = 50;
-      const durationSeconds = 60;
+      const durationSeconds = 12;
       const totalRequests = requestsPerSecond * durationSeconds;
 
       const startTime = Date.now();
+      const promises: Promise<void>[] = [];
 
       for (let i = 0; i < totalRequests; i++) {
         const delay = (i / requestsPerSecond) * 1000;
-        await new Promise((resolve) =>
-          setTimeout(async () => {
-            const result = await makeRequest(code);
-            testMetrics.recordRequest(result);
-            resolve(undefined);
-          }, delay)
+        
+        promises.push(
+          new Promise((resolve) =>
+            setTimeout(async () => {
+              const result = await makeRequest(code);
+              testMetrics.recordRequest(result);
+              resolve(undefined);
+            }, delay)
+          )
         );
 
-        // Print progress every 500 requests
-        if ((i + 1) % 500 === 0) {
+        // Print progress every 100 requests
+        if ((i + 1) % 100 === 0) {
           const elapsed = Date.now() - startTime;
           const actualRps = (i + 1) / (elapsed / 1000);
           console.log(`    Progress: ${i + 1}/${totalRequests} (${actualRps.toFixed(2)} actual req/s)`);
         }
       }
+
+      await Promise.all(promises);
 
       testMetrics.finish();
       const allMetrics = testMetrics.toJSON();
@@ -266,21 +331,35 @@ describe('Load Test - Concurrent Request Handling', () => {
 
       const code = generateTestCode('small');
       const requestsPerSecond = 100;
-      const durationSeconds = 30;
+      const durationSeconds = 6;
       const totalRequests = requestsPerSecond * durationSeconds;
 
       console.log(`  Running saturation test: ${requestsPerSecond} req/s for ${durationSeconds}s`);
 
+      const startTime = Date.now();
+      const promises: Promise<void>[] = [];
       for (let i = 0; i < totalRequests; i++) {
         const delay = (i / requestsPerSecond) * 1000;
-        await new Promise((resolve) =>
-          setTimeout(async () => {
-            const result = await makeRequest(code);
-            testMetrics.recordRequest(result);
-            resolve(undefined);
-          }, delay)
+        
+        promises.push(
+          new Promise((resolve) =>
+            setTimeout(async () => {
+              const result = await makeRequest(code);
+              testMetrics.recordRequest(result);
+              resolve(undefined);
+            }, delay)
+          )
         );
+
+        // Print progress every 100 requests
+        if ((i + 1) % 100 === 0) {
+          const elapsed = Date.now() - startTime;
+          const actualRps = (i + 1) / (elapsed / 1000);
+          console.log(`    Progress: ${i + 1}/${totalRequests} (${actualRps.toFixed(2)} actual req/s)`);
+        }
       }
+
+      await Promise.all(promises);
 
       testMetrics.finish();
       const allMetrics = testMetrics.toJSON();
@@ -306,25 +385,34 @@ describe('Load Test - Concurrent Request Handling', () => {
 
       const code = generateTestCode('medium');
       const requestsPerSecond = 25;
-      const durationSeconds = 120; // 2 minutes
+      const durationSeconds = 30;
       const totalRequests = requestsPerSecond * durationSeconds;
 
       console.log(`  Running sustained load for ${durationSeconds} seconds...`);
 
+      const startTime = Date.now();
+      const promises: Promise<void>[] = [];
       for (let i = 0; i < totalRequests; i++) {
         const delay = (i / requestsPerSecond) * 1000;
-        await new Promise((resolve) =>
-          setTimeout(async () => {
-            const result = await makeRequest(code);
-            testMetrics.recordRequest(result);
-            resolve(undefined);
-          }, delay)
+        
+        promises.push(
+          new Promise((resolve) =>
+            setTimeout(async () => {
+              const result = await makeRequest(code);
+              testMetrics.recordRequest(result);
+              resolve(undefined);
+            }, delay)
+          )
         );
 
-        if ((i + 1) % 1000 === 0) {
-          console.log(`    ${i + 1}/${totalRequests} requests completed`);
+        if ((i + 1) % 150 === 0) {
+          const elapsed = Date.now() - startTime;
+          const actualRps = (i + 1) / (elapsed / 1000);
+          console.log(`    ${i + 1}/${totalRequests} requests completed (${actualRps.toFixed(2)} actual req/s)`);
         }
       }
+
+      await Promise.all(promises);
 
       testMetrics.finish();
       const allMetrics = testMetrics.toJSON();

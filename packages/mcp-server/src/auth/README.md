@@ -61,7 +61,7 @@ const oauthConfig: OAuthConfig = {
 |-------|-------------|---------------|
 | `mcp:access` | Basic MCP protocol access | All MCP operations |
 | `patterns:read` | Read pattern information | `get_pattern`, `search_patterns` |
-| `patterns:write` | Modify patterns | `generate_pattern_code` |
+| `patterns:write` | Modify patterns | HTTP API only (not exposed as MCP tool) |
 | `analysis:run` | Run code analysis | `analyze_code`, `review_code` |
 
 ## Endpoints

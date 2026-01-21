@@ -3,7 +3,10 @@
  * Production MCP Client - HTTP Transport
  *
  * Connects to the production Effect Patterns MCP server via HTTP API
- * and provides MCP stdio interface for Windsurf
+ * and provides MCP stdio interface for Windsurf.
+ *
+ * This is a PURE TRANSPORT layer - all authentication and authorization
+ * happens at the HTTP API level.
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -11,9 +14,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 
 // Configuration
 const PRODUCTION_URL = "https://effect-patterns-mcp.vercel.app";
-const API_KEY =
-    process.env.PATTERN_API_KEY ||
-    "ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84";
+const API_KEY = process.env.PATTERN_API_KEY || process.env.PRODUCTION_API_KEY;
 
 // Create MCP server
 const server = new McpServer(
@@ -28,28 +29,78 @@ const server = new McpServer(
     },
 );
 
-// Helper to make HTTP requests to production API
-async function callProductionApi(endpoint: string, data?: any) {
-    const url = `${PRODUCTION_URL}/api${endpoint}`;
-    const response = await fetch(url, {
-        method: data ? "POST" : "GET",
-        headers: {
-            "Content-Type": "application/json",
-            "x-api-key": API_KEY,
-        },
-        body: data ? JSON.stringify(data) : undefined,
-    });
+/**
+ * API call result - errors as values, not exceptions.
+ */
+type ApiResult<T> =
+    | { ok: true; data: T }
+    | { ok: false; error: string; status?: number };
 
-    if (!response.ok) {
-        throw new Error(
-            `API call failed: ${response.status} ${response.statusText}`,
-        );
+/**
+ * Helper to make HTTP requests to production API.
+ * Returns Result type - no exceptions thrown.
+ */
+async function callProductionApi(endpoint: string, data?: unknown): Promise<ApiResult<unknown>> {
+    const url = `${PRODUCTION_URL}/api${endpoint}`;
+
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
+    if (API_KEY) {
+        headers["x-api-key"] = API_KEY;
     }
 
-    return response.json();
+    try {
+        const response = await fetch(url, {
+            method: data ? "POST" : "GET",
+            headers,
+            body: data ? JSON.stringify(data) : undefined,
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            return {
+                ok: false,
+                error: errorText || `HTTP ${response.status}`,
+                status: response.status,
+            };
+        }
+
+        const result = await response.json();
+        return { ok: true, data: result };
+    } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        return { ok: false, error: msg };
+    }
+}
+
+/**
+ * Tool result type
+ */
+type ToolResult = {
+    content: Array<{ type: "text"; text: string }>;
+    isError?: boolean;
+};
+
+/**
+ * Convert API result to tool result
+ */
+function toToolResult(result: ApiResult<unknown>, toolName: string): ToolResult {
+    if (result.ok) {
+        return {
+            content: [{ type: "text", text: JSON.stringify(result.data, null, 2) }],
+        };
+    }
+
+    console.error(`Tool error: ${toolName}`, result.error);
+    return {
+        content: [{ type: "text", text: result.error }],
+        isError: true,
+    };
 }
 
 // Register tools based on production API
+// Note: `as any` is required for MCP SDK compatibility - inputSchema format differs
 server.registerTool(
     "analyze_code",
     {
@@ -57,25 +108,12 @@ server.registerTool(
             "Analyze TypeScript code for Effect-TS patterns and best practices",
         inputSchema: undefined as any,
     },
-    async (args: any) => {
+    async (args: { code: string; filename?: string; analysisType?: string }): Promise<ToolResult> => {
         console.error("Tool called: analyze_code", args);
-        try {
-            const analysis = await callProductionApi("/analyze-code", {
-                code: args.code,
-            });
-            return {
-                content: [
-                    {
-                        type: "text" as const,
-                        text: JSON.stringify(analysis, null, 2),
-                    },
-                ],
-            };
-        } catch (error) {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.error("Tool error: analyze_code", msg);
-            throw new Error(`analyze_code failed: ${msg}`);
-        }
+        const result = await callProductionApi("/analyze-code", {
+            code: args.code,
+        });
+        return toToolResult(result, "analyze_code");
     },
 );
 
@@ -85,32 +123,19 @@ server.registerTool(
         description: "List available Effect-TS patterns",
         inputSchema: undefined as any,
     },
-    async (args: any) => {
+    async (args: { q?: string; category?: string; difficulty?: string; limit?: number }): Promise<ToolResult> => {
         console.error("Tool called: list_patterns", args);
-        try {
-            const searchParams = new URLSearchParams();
-            if (args.q) searchParams.append("q", args.q);
-            if (args.category) searchParams.append("category", args.category);
-            if (args.difficulty) searchParams.append("difficulty", args.difficulty);
-            if (args.limit) searchParams.append("limit", String(args.limit));
+        const searchParams = new URLSearchParams();
+        if (args.q) searchParams.append("q", args.q);
+        if (args.category) searchParams.append("category", args.category);
+        if (args.difficulty) searchParams.append("difficulty", args.difficulty);
+        if (args.limit) searchParams.append("limit", String(args.limit));
 
-            const endpoint = searchParams.toString()
-                ? `/patterns?${searchParams}`
-                : `/patterns`;
-            const patterns = await callProductionApi(endpoint);
-            return {
-                content: [
-                    {
-                        type: "text" as const,
-                        text: JSON.stringify(patterns, null, 2),
-                    },
-                ],
-            };
-        } catch (error) {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.error("Tool error: list_patterns", msg);
-            throw new Error(`list_patterns failed: ${msg}`);
-        }
+        const endpoint = searchParams.toString()
+            ? `/patterns?${searchParams}`
+            : `/patterns`;
+        const result = await callProductionApi(endpoint);
+        return toToolResult(result, "list_patterns");
     },
 );
 
@@ -120,26 +145,13 @@ server.registerTool(
         description: "Get AI-powered code review for Effect-TS code",
         inputSchema: undefined as any,
     },
-    async (args: any) => {
+    async (args: { code: string; filePath?: string }): Promise<ToolResult> => {
         console.error("Tool called: review_code", args);
-        try {
-            const review = await callProductionApi("/review-code", {
-                code: args.code,
-                filePath: args.filePath,
-            });
-            return {
-                content: [
-                    {
-                        type: "text" as const,
-                        text: JSON.stringify(review, null, 2),
-                    },
-                ],
-            };
-        } catch (error) {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.error("Tool error: review_code", msg);
-            throw new Error(`review_code failed: ${msg}`);
-        }
+        const result = await callProductionApi("/review-code", {
+            code: args.code,
+            filePath: args.filePath,
+        });
+        return toToolResult(result, "review_code");
     },
 );
 
@@ -149,28 +161,23 @@ server.registerTool(
         description: "Get details for a specific pattern by ID",
         inputSchema: undefined as any,
     },
-    async (args: any) => {
+    async (args: { id: string }): Promise<ToolResult> => {
         console.error("Tool called: get_pattern", args);
-        try {
-            const pattern = await callProductionApi(`/patterns/${args.id}`);
-            return {
-                content: [
-                    {
-                        type: "text" as const,
-                        text: JSON.stringify(pattern, null, 2),
-                    },
-                ],
-            };
-        } catch (error) {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.error("Tool error: get_pattern", msg);
-            throw new Error(`get_pattern failed: ${msg}`);
-        }
+        const result = await callProductionApi(`/patterns/${args.id}`);
+        return toToolResult(result, "get_pattern");
     },
 );
 
 // Start the server
 async function main() {
+    // Warn if no API key - auth happens at HTTP API level
+    if (!API_KEY) {
+        console.error(
+            "[Effect Patterns MCP] No API key configured. " +
+                "Requests will fail if HTTP API requires authentication."
+        );
+    }
+
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error("[Effect Patterns MCP] Production client started successfully");

@@ -38,13 +38,10 @@ describe("MCP Client Stdio Connection", () => {
     expect(tools).toContain("get_pattern");
     expect(tools).toContain("analyze_code");
     expect(tools).toContain("review_code");
-    expect(tools).toContain("generate_pattern_code");
     expect(tools).toContain("list_analysis_rules");
-    expect(tools).toContain("analyze_consistency");
-    expect(tools).toContain("apply_refactoring");
 
     // Verify expected tool count
-    expect(tools.length).toBeGreaterThanOrEqual(8);
+    expect(tools.length).toBeGreaterThanOrEqual(5);
   });
 
   it("should disconnect gracefully", async () => {
@@ -81,19 +78,27 @@ describe("MCP Client Stdio Connection", () => {
     );
   });
 
-  it("should handle missing API key gracefully", async () => {
-    // Note: This test may fail if API key is required at server startup
-    // The server should be running without API key validation for testing
-    try {
-      const testClient = await createMCPTestClient({
-        apiKey: "test-key",
-        apiUrl: "http://localhost:3000",
-      });
-      await testClient.close();
-      expect(true).toBe(true); // Test passed if connection succeeds
-    } catch (error) {
-      expect(String(error)).toMatch(/api|key|connection/i);
-    }
+  it("should start without API key (pure transport)", async () => {
+    // MCP server is pure transport - API key is optional
+    // Auth validation happens at HTTP API level, not MCP level
+    const testClient = await createMCPTestClient({
+      apiKey: undefined, // No API key - should still connect
+      apiUrl: "http://localhost:3000",
+    });
+    
+    expect(testClient.isReady()).toBe(true);
+    await testClient.close();
+  });
+
+  it("should start with API key", async () => {
+    // Should also work with API key provided
+    const testClient = await createMCPTestClient({
+      apiKey: "test-key",
+      apiUrl: "http://localhost:3000",
+    });
+    
+    expect(testClient.isReady()).toBe(true);
+    await testClient.close();
   });
 
   it("should maintain connection during multiple tool calls", async () => {

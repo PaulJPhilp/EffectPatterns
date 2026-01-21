@@ -2,6 +2,13 @@
  * Review Code Route Tests
  *
  * Tests for the /api/review-code endpoint which provides AI-powered code review.
+ *
+ * Architecture:
+ * - HTTP API handles all authentication (401 for missing/invalid API key)
+ * - HTTP API handles tier validation (402 for paid tier endpoints)
+ * - Free tier: Returns top 3 recommendations
+ * - Paid tier: Returns all recommendations
+ * - MCP server is pure transport - passes requests through
  */
 
 import { describe, it, expect } from "vitest";

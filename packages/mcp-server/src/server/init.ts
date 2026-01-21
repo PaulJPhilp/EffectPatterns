@@ -30,7 +30,7 @@ import { TracingLayerLive } from "../tracing/otlpLayer";
  * Patterns service - provides database-backed pattern access
  */
 const makePatternsService = Effect.gen(function* () {
-  console.log("[Patterns] Initializing database-backed patterns service");
+  yield* Effect.logInfo("[Patterns] Initializing database-backed patterns service");
 
   /**
    * Get all patterns

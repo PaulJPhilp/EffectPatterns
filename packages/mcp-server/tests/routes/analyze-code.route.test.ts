@@ -2,6 +2,11 @@
  * Analyze Code Route Tests
  *
  * Tests for the /api/analyze-code endpoint which analyzes TypeScript code.
+ *
+ * Architecture:
+ * - HTTP API handles all authentication (401 for missing/invalid API key)
+ * - HTTP API handles tier validation (402 for paid tier endpoints)
+ * - MCP server is pure transport - passes requests through
  */
 
 import { describe, it, expect } from "vitest";

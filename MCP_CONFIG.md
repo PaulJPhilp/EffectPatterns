@@ -116,7 +116,8 @@ The MCP server respects the following environment variables:
 ### Required
 
 - **`PATTERN_API_KEY`**: API key for accessing the patterns API
-  - Default: None (required)
+  - Optional for MCP server (pure transport)
+  - Required by the HTTP API for authenticated requests
   - Example: `export PATTERN_API_KEY=sk-...`
 
 ### Optional
@@ -132,7 +133,7 @@ The MCP server respects the following environment variables:
 
 ## Available Tools
 
-The MCP server provides 8 tools:
+The MCP server provides 5 tools (free-tier surface only). Paid features are exposed via the HTTP API, not the MCP server.
 
 ### 1. `search_patterns`
 
@@ -207,84 +208,18 @@ Get AI-powered architectural review and recommendations for Effect code.
 }
 ```
 
-### 6. `generate_pattern_code`
+### Paid Features (HTTP API Only)
 
-Generate customized code from a pattern template.
-
-**Parameters:**
-- `patternId` (string, required): Pattern template ID (e.g., "effect-service", "error-handler")
-- `variables` (object, optional): Variables for template substitution
-
-**Example:**
-```json
-{
-  "patternId": "effect-service",
-  "variables": {
-    "serviceName": "UserService",
-    "methods": "getUser,createUser"
-  }
-}
-```
-
-### 7. `analyze_consistency`
-
-Detect inconsistencies and anti-patterns across multiple TypeScript files.
-
-**Parameters:**
-- `files` (array, required): Array of files to analyze
-  - Each file has:
-    - `filename` (string): File path
-    - `source` (string): File source code
-
-**Example:**
-```json
-{
-  "files": [
-    {
-      "filename": "src/services/user.ts",
-      "source": "/* ... */"
-    },
-    {
-      "filename": "src/services/product.ts",
-      "source": "/* ... */"
-    }
-  ]
-}
-```
-
-### 8. `apply_refactoring`
-
-Apply automated refactoring patterns to code.
-
-**Parameters:**
-- `refactoringIds` (array, required): List of refactoring IDs to apply
-- `files` (array, required): Files to refactor (same format as analyze_consistency)
-- `preview` (boolean, optional): Preview changes without applying (default: true)
-
-**Example:**
-```json
-{
-  "refactoringIds": ["fix-error-handling", "simplify-pipes"],
-  "files": [
-    {
-      "filename": "src/service.ts",
-      "source": "/* ... */"
-    }
-  ],
-  "preview": true
-}
-```
+The following paid-tier features are available via the HTTP API only (not exposed as MCP tools):
+- `generate_pattern_code` → `POST /api/generate-pattern`
+- `analyze_consistency` → `POST /api/analyze-consistency`
+- `apply_refactoring` → `POST /api/apply-refactoring`
 
 ## Troubleshooting
 
-### Server fails to start with "PATTERN_API_KEY is required"
+### Server fails to start with API key errors
 
-**Solution**: Ensure the `PATTERN_API_KEY` environment variable is set:
-
-```bash
-export PATTERN_API_KEY="your-api-key-here"
-bun run mcp
-```
+The MCP server no longer validates API keys. Authentication is enforced by the HTTP API. If requests fail with 401/402 errors, verify your HTTP API key and tier configuration.
 
 ### Server crashes with "Cannot find module '@modelcontextprotocol/sdk'"
 
@@ -423,7 +358,7 @@ Analyze these Effect service files for consistency and suggest refactorings: [fi
 1. **Caching**: Pattern searches are cached server-side for 5 minutes
 2. **Limits**: The API has rate limits (default: 100 requests/minute per key)
 3. **Large Files**: For analyzing multiple files, keep total size under 10MB
-4. **Batch Operations**: Group multiple refactorings into a single `apply_refactoring` call
+4. **Batch Operations**: Group multiple refactorings into a single HTTP API `apply_refactoring` call
 
 ## Support and Debugging
 
@@ -433,6 +368,156 @@ For issues:
 2. Review logs with debug enabled: `MCP_DEBUG=true bun run mcp`
 3. Verify API connectivity: `curl -H "x-api-key: $PATTERN_API_KEY" http://localhost:3000/api/patterns?q=service`
 4. Check MCP specification: https://spec.modelcontextprotocol.io/
+
+## Testing the MCP Server
+
+The MCP server can be tested against three environments: local, staging, and production.
+
+### Testing Against Local Server
+
+Test the MCP server stdio interface against your local development server:
+
+```bash
+# Prerequisites: Start local server
+cd packages/mcp-server
+bun run dev  # In one terminal
+
+# Run local MCP tests (in another terminal)
+bun run test:mcp:local
+
+# Or use the script directly
+./scripts/test-mcp-local.sh
+```
+
+**Environment Variables:**
+- `PATTERN_API_KEY` or `LOCAL_API_KEY`: API key for local server (default: "test-api-key")
+- `EFFECT_PATTERNS_API_URL`: Local server URL (default: "http://localhost:3000")
+- `MCP_DEBUG`: Enable debug logging ("true" or "false")
+
+### Testing Against Staging
+
+Test the MCP server against the staging deployment:
+
+```bash
+# Set staging API key
+export STAGING_API_KEY="your-staging-api-key"
+
+# Run staging MCP tests
+bun run test:mcp:staging
+
+# Or use the script directly
+STAGING_API_KEY=your-key ./scripts/test-mcp-staging.sh
+```
+
+**Environment Variables:**
+- `STAGING_API_KEY`: Required. API key for staging environment
+- `MCP_DEBUG`: Optional. Enable debug logging
+
+### Testing Against Production
+
+Test the MCP server against the production deployment:
+
+```bash
+# Set production API key
+export PRODUCTION_API_KEY="your-production-api-key"
+
+# Run production MCP tests
+bun run test:mcp:production
+
+# Or use the script directly
+PRODUCTION_API_KEY=your-key ./scripts/test-mcp-production.sh
+```
+
+**Environment Variables:**
+- `PRODUCTION_API_KEY`: Required. API key for production environment
+- `MCP_DEBUG`: Optional. Enable debug logging
+
+### Testing All Environments
+
+Run tests against all three environments in sequence:
+
+```bash
+# Set API keys for staging and production
+export STAGING_API_KEY="your-staging-key"
+export PRODUCTION_API_KEY="your-production-key"
+
+# Run all tests
+bun run test:mcp:all
+
+# Or use the script directly
+STAGING_API_KEY=staging-key PRODUCTION_API_KEY=prod-key ./scripts/test-mcp-all.sh
+```
+
+**Note:** Local tests require a running local server. Staging and production tests require valid API keys.
+
+### MCP Protocol Tests
+
+The MCP protocol tests verify the stdio communication between the MCP client and server:
+
+```bash
+# Run all MCP protocol tests (requires local server)
+bun run test:mcp
+
+# Watch mode
+bun run test:mcp:watch
+
+# Run specific test file
+bunx vitest run --config vitest.mcp.config.ts tests/mcp-protocol/local.test.ts
+```
+
+### Deployment Tests
+
+Test the HTTP API endpoints directly (not via MCP stdio):
+
+```bash
+# Test staging deployment
+bun run test:deployment:staging
+
+# Test production deployment
+bun run test:deployment:production
+
+# Test both
+bun run test:deployment
+```
+
+## Environment Configuration
+
+The MCP server uses environment-specific configuration:
+
+### Local Environment
+- **API URL**: `http://localhost:3000` (or `EFFECT_PATTERNS_API_URL`)
+- **API Key**: `PATTERN_API_KEY` or `LOCAL_API_KEY` (default: "test-api-key")
+- **Use Case**: Development and local testing
+
+### Staging Environment
+- **API URL**: `https://effect-patterns-mcp-staging.vercel.app`
+- **API Key**: `STAGING_API_KEY` (required)
+- **Use Case**: Pre-production testing
+
+### Production Environment
+- **API URL**: `https://effect-patterns-mcp.vercel.app`
+- **API Key**: `PRODUCTION_API_KEY` (required)
+- **Use Case**: Production validation
+
+### Switching Environments
+
+Set the `MCP_ENV` environment variable to switch between environments:
+
+```bash
+# Use local environment
+export MCP_ENV=local
+bun run mcp
+
+# Use staging environment
+export MCP_ENV=staging
+export STAGING_API_KEY=your-key
+bun run mcp
+
+# Use production environment
+export MCP_ENV=production
+export PRODUCTION_API_KEY=your-key
+bun run mcp
+```
 
 ## Next Steps
 

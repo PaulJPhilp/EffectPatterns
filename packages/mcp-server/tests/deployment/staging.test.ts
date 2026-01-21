@@ -3,6 +3,11 @@
  *
  * Tests for the staging deployment of the Effect Patterns MCP server.
  * These tests verify functionality, performance, and reliability against staging.
+ *
+ * Architecture:
+ * - HTTP API handles all authentication and authorization
+ * - Tier validation (free/paid) happens at HTTP API level
+ * - MCP server is pure transport - passes requests through
  */
 
 import { describe, it, expect, beforeAll } from "vitest";

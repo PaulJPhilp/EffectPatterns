@@ -439,7 +439,7 @@ Git Push → GitHub Webhook → API Endpoint → Queue Job → Sync to DB
 - ✅ Return structured pattern data
 - ✅ Version-aware queries
 
-**API Surface**:
+**API Surface** (free-tier MCP tools only; paid tools are HTTP API only):
 ```typescript
 // MCP Tools
 mcp_search_patterns(query: string, filters?: PatternFilters): Pattern[]

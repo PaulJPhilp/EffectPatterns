@@ -8,14 +8,14 @@ The project includes an MCP server:
 
 1. **mcp-server** - Next.js web API server (deployed to Vercel)
 
-The server provides MCP tools and APIs for both remote and local usage.
+The server provides HTTP APIs for both remote and local usage. MCP is a pure transport layer and does not enforce authentication or tiering.
 
 ## Prerequisites
 
 - Node.js 18+
 - Bun package manager
 - Effect Patterns repository access
-- API key for authentication
+- API key for HTTP API authentication (MCP transport does not validate)
 
 ## Environment Variables
 

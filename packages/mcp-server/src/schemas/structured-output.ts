@@ -12,8 +12,8 @@
 export interface StructuredContent {
     type: "structured";
     mimeType: string;
-    data: Record<string, any>;
-    metadata?: Record<string, any>;
+    data: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface TextContent {
@@ -78,7 +78,7 @@ export interface EnhancedToolResponse {
     error?: {
         code: string;
         message: string;
-        details?: Record<string, any>;
+        details?: Record<string, unknown>;
     };
 }
 
@@ -93,8 +93,8 @@ export class ContentBuilder {
 
     static structured(
         mimeType: string,
-        data: Record<string, any>,
-        metadata?: Record<string, any>,
+        data: Record<string, unknown>,
+        metadata?: Record<string, unknown>,
     ): StructuredContent {
         return {
             type: "structured",
@@ -104,7 +104,7 @@ export class ContentBuilder {
         };
     }
 
-    static json(data: Record<string, any>, title?: string): StructuredContent {
+    static json(data: Record<string, unknown>, title?: string): StructuredContent {
         return this.structured("application/json", data, {
             title,
             timestamp: new Date().toISOString(),
@@ -167,7 +167,7 @@ export class AnnotationBuilder {
     static info(
         title: string,
         message: string,
-        details?: Record<string, any>,
+        details?: Record<string, unknown>,
     ): ToolAnnotation {
         return {
             type: "info",
@@ -182,7 +182,7 @@ export class AnnotationBuilder {
     static warning(
         title: string,
         message: string,
-        details?: Record<string, any>,
+        details?: Record<string, unknown>,
         severity: "low" | "medium" | "high" = "medium",
     ): ToolAnnotation {
         return {
@@ -198,7 +198,7 @@ export class AnnotationBuilder {
     static error(
         title: string,
         message: string,
-        details?: Record<string, any>,
+        details?: Record<string, unknown>,
         severity: "medium" | "high" | "critical" = "high",
     ): ToolAnnotation {
         return {
@@ -214,7 +214,7 @@ export class AnnotationBuilder {
     static success(
         title: string,
         message: string,
-        details?: Record<string, any>,
+        details?: Record<string, unknown>,
     ): ToolAnnotation {
         return {
             type: "success",
@@ -231,7 +231,7 @@ export class AnnotationBuilder {
         message: string,
         current: number,
         total: number,
-        details?: Record<string, any>,
+        details?: Record<string, unknown>,
     ): ToolAnnotation {
         return {
             type: "progress",
@@ -286,7 +286,7 @@ export class ResponseBuilder {
         return this.addContent(ContentBuilder.text(text));
     }
 
-    addJson(data: Record<string, any>, title?: string): ResponseBuilder {
+    addJson(data: Record<string, unknown>, title?: string): ResponseBuilder {
         return this.addContent(ContentBuilder.json(data, title));
     }
 
@@ -308,7 +308,7 @@ export class ResponseBuilder {
     addInfo(
         title: string,
         message: string,
-        details?: Record<string, any>,
+        details?: Record<string, unknown>,
     ): ResponseBuilder {
         return this.addAnnotation(AnnotationBuilder.info(title, message, details));
     }
@@ -316,7 +316,7 @@ export class ResponseBuilder {
     addWarning(
         title: string,
         message: string,
-        details?: Record<string, any>,
+        details?: Record<string, unknown>,
         severity?: "low" | "medium" | "high",
     ): ResponseBuilder {
         return this.addAnnotation(
@@ -327,7 +327,7 @@ export class ResponseBuilder {
     addError(
         title: string,
         message: string,
-        details?: Record<string, any>,
+        details?: Record<string, unknown>,
         severity?: "medium" | "high" | "critical",
     ): ResponseBuilder {
         return this.addAnnotation(
@@ -338,7 +338,7 @@ export class ResponseBuilder {
     addSuccess(
         title: string,
         message: string,
-        details?: Record<string, any>,
+        details?: Record<string, unknown>,
     ): ResponseBuilder {
         return this.addAnnotation(
             AnnotationBuilder.success(title, message, details),
@@ -380,7 +380,7 @@ export class ResponseBuilder {
     setError(
         code: string,
         message: string,
-        details?: Record<string, any>,
+        details?: Record<string, unknown>,
     ): ResponseBuilder {
         this.response.isError = true;
         this.response.error = { code, message, details };
@@ -409,7 +409,7 @@ export function createSuccessResponse(
 export function createErrorResponse(
     code: string,
     message: string,
-    details?: Record<string, any>,
+    details?: Record<string, unknown>,
 ): EnhancedToolResponse {
     return ResponseBuilder.create()
         .setError(code, message, details)
@@ -421,7 +421,7 @@ export function createProgressResponse(
     current: number,
     total: number,
     message: string,
-    details?: Record<string, any>,
+    details?: Record<string, unknown>,
 ): EnhancedToolResponse {
     return ResponseBuilder.create()
         .addAnnotation(
@@ -440,8 +440,46 @@ export function createProgressResponse(
 // Pattern-Specific Content Builders
 // ============================================================================
 
+/**
+ * Pattern data structure for content builders
+ */
+interface PatternData {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    difficulty: string;
+    tags?: readonly string[];
+    codeSnippet?: string;
+    usageNotes?: string;
+    bestPractices?: string;
+}
+
+/**
+ * Analysis issue structure
+ */
+interface AnalysisIssue {
+    title: string;
+    severity: string;
+    line: number;
+    type: string;
+    description: string;
+    suggestion: string;
+}
+
+/**
+ * Analysis results structure
+ */
+interface AnalysisData {
+    filename: string;
+    analysisType: string;
+    issues?: readonly AnalysisIssue[];
+    summary?: string;
+    recommendations?: readonly string[];
+}
+
 export class PatternContentBuilder {
-    static patternSummary(pattern: any): StructuredContent {
+    static patternSummary(pattern: PatternData): StructuredContent {
         return ContentBuilder.json(
             {
                 id: pattern.id,
@@ -458,7 +496,7 @@ export class PatternContentBuilder {
         );
     }
 
-    static patternDetails(pattern: any): StructuredContent {
+    static patternDetails(pattern: PatternData): StructuredContent {
         const markdown = `
 # ${pattern.title}
 
@@ -485,7 +523,7 @@ ${pattern.bestPractices || "Follow general Effect-TS best practices."}
     }
 
     static searchResults(
-        results: any[],
+        results: readonly PatternData[],
         query: string,
         total?: number,
     ): StructuredContent {
@@ -507,7 +545,7 @@ ${pattern.bestPractices || "Follow general Effect-TS best practices."}
         );
     }
 
-    static analysisResults(analysis: any): StructuredContent {
+    static analysisResults(analysis: AnalysisData): StructuredContent {
         const markdown = `
 # Code Analysis Results
 
@@ -521,7 +559,7 @@ ${analysis.summary || "No summary provided."}
 ## Issues
 ${analysis.issues
                 ?.map(
-                    (issue: any, index: number) => `
+                    (issue: AnalysisIssue, index: number) => `
 ### ${index + 1}. ${issue.title}
 **Severity**: ${issue.severity}  
 **Line**: ${issue.line}  

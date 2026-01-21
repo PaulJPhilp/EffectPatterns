@@ -1,12 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@effect-patterns/toolkit', '@effect-patterns/analysis-core'],
+  transpilePackages: [
+    "@effect-patterns/toolkit",
+    "@effect-patterns/analysis-core",
+  ],
   turbopack: {}, // Enable turbopack with empty config
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-    }
-    return config
+    };
+    return config;
   },
 
   /**
@@ -19,12 +22,12 @@ const nextConfig = {
       beforeFiles: [
         // Rewrite v1 API paths to current API paths (for forward compatibility)
         {
-          source: '/api/v1/:path*',
-          destination: '/api/:path*'
-        }
-      ]
-    }
-  }
-}
+          source: "/api/v1/:path*",
+          destination: "/api/:path*",
+        },
+      ],
+    };
+  },
+};
 
-export default nextConfig
+export default nextConfig;

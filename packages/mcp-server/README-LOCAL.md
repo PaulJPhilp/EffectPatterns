@@ -127,11 +127,11 @@ curl http://localhost:3000/api/patterns \
 ### Free Tier (Default)
 - **Available**: Pattern search, pattern retrieval
 - **Blocked**: Code generation, refactoring, advanced analysis
-- **MCP Tools**: `search_patterns`, `get_pattern`
+- **MCP Tools**: `search_patterns`, `get_pattern`, `list_analysis_rules`, `analyze_code`, `review_code`
 
 ### Paid Tier
 - **Available**: All features
-- **MCP Tools**: `search_patterns`, `get_pattern`, `generate_snippet`
+- **MCP Tools**: Free-tier surface only (paid tools are HTTP API only)
 
 Switch tiers by setting `TIER_MODE`:
 

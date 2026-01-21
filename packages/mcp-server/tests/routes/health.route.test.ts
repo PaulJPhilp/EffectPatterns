@@ -2,6 +2,11 @@
  * Health Route Tests
  *
  * Tests for the /api/health endpoint which is public and requires no authentication.
+ *
+ * Architecture:
+ * - HTTP API handles all authentication decisions
+ * - Health endpoint is public (no auth required)
+ * - MCP server is pure transport - passes requests through
  */
 
 import { describe, it, expect } from "vitest";

@@ -85,7 +85,14 @@ Create or update your `.claude_code_config.json`:
 
 ### Available Tools
 
-The MCP server provides the following tools:
+The MCP server exposes the free-tier tool surface only:
+- `search_patterns`
+- `get_pattern`
+- `list_analysis_rules`
+- `analyze_code`
+- `review_code`
+
+Paid-tier features are available via the HTTP API only (not exposed as MCP tools).
 
 #### 🔍 `search_patterns`
 

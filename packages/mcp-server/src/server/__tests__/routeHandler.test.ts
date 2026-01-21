@@ -3,6 +3,12 @@
  *
  * Tests for the createRouteHandler, createPublicHandler, and createSimpleHandler
  * factory functions used throughout the application.
+ *
+ * Architecture:
+ * - HTTP API is where ALL authentication and authorization happens
+ * - Route handlers enforce API key validation (401)
+ * - Route handlers enforce tier validation (402 Payment Required)
+ * - MCP server is pure transport - doesn't validate anything
  */
 
 import { describe, it, expect } from "vitest";
@@ -34,7 +40,7 @@ function mockCreateRouteHandler<T, E>(
 
   return async (request: NextRequest) => {
     try {
-      // Check auth if required
+      // Check auth if required (HTTP API validates auth)
       if (opts.requireAuth) {
         const apiKey = request.headers.get("x-api-key");
         if (!apiKey) {
@@ -44,6 +50,24 @@ function mockCreateRouteHandler<T, E>(
               status: 401,
             }),
             { status: 401, headers: { "content-type": "application/json" } }
+          );
+        }
+      }
+
+      // Check tier if required (HTTP API validates tier)
+      if (opts.requirePaidTier) {
+        // Mock tier check - in real implementation, this checks TIER_MODE
+        // For free tier, return 402 Payment Required
+        const tierMode = process.env.TIER_MODE || "free";
+        if (tierMode === "free") {
+          return new Response(
+            JSON.stringify({
+              error: "This endpoint requires a paid tier",
+              status: 402,
+              tier: "free",
+              upgradeMessage: "Upgrade to paid tier to access this feature",
+            }),
+            { status: 402, headers: { "content-type": "application/json" } }
           );
         }
       }
@@ -361,6 +385,89 @@ describe("Route Handler Factories", () => {
       const response = await handler(request);
 
       expect(response.status).toBe(401);
+    });
+
+    it("should return 402 for paid tier endpoints on free tier", async () => {
+      // Save original tier mode
+      const originalTier = process.env.TIER_MODE;
+      process.env.TIER_MODE = "free";
+
+      try {
+        const handler = mockCreateRouteHandler(
+          (request: NextRequest) => Effect.succeed({ ok: true }),
+          { requirePaidTier: true }
+        );
+
+        const request = new NextRequest("http://localhost:3000/api/test", {
+          headers: { "x-api-key": "valid-key" },
+        });
+        const response = await handler(request);
+        const data = await response.json() as Record<string, unknown>;
+
+        expect(response.status).toBe(402);
+        expect(data.tier).toBe("free");
+        expect(data.upgradeMessage).toBeDefined();
+      } finally {
+        // Restore original tier mode
+        if (originalTier) {
+          process.env.TIER_MODE = originalTier;
+        } else {
+          delete process.env.TIER_MODE;
+        }
+      }
+    });
+
+    it("should allow paid tier endpoints on paid tier", async () => {
+      // Save original tier mode
+      const originalTier = process.env.TIER_MODE;
+      process.env.TIER_MODE = "paid";
+
+      try {
+        const handler = mockCreateRouteHandler(
+          (request: NextRequest) => Effect.succeed({ ok: true }),
+          { requirePaidTier: true }
+        );
+
+        const request = new NextRequest("http://localhost:3000/api/test", {
+          headers: { "x-api-key": "valid-key" },
+        });
+        const response = await handler(request);
+
+        expect(response.status).toBe(200);
+      } finally {
+        // Restore original tier mode
+        if (originalTier) {
+          process.env.TIER_MODE = originalTier;
+        } else {
+          delete process.env.TIER_MODE;
+        }
+      }
+    });
+
+    it("should require auth before checking tier", async () => {
+      // Save original tier mode
+      const originalTier = process.env.TIER_MODE;
+      process.env.TIER_MODE = "paid";
+
+      try {
+        const handler = mockCreateRouteHandler(
+          (request: NextRequest) => Effect.succeed({ ok: true }),
+          { requirePaidTier: true }
+        );
+
+        // No API key - should fail auth before tier check
+        const request = new NextRequest("http://localhost:3000/api/test");
+        const response = await handler(request);
+
+        expect(response.status).toBe(401); // Auth fails first
+      } finally {
+        // Restore original tier mode
+        if (originalTier) {
+          process.env.TIER_MODE = originalTier;
+        } else {
+          delete process.env.TIER_MODE;
+        }
+      }
     });
 
     it("should include response data in response", async () => {

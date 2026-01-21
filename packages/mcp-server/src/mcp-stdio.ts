@@ -5,27 +5,32 @@
  * Provides Model Context Protocol (MCP) interface for the Effect Patterns API.
  * Allows Claude Code IDE and other MCP clients to access pattern tools via stdio.
  *
+ * This is a PURE TRANSPORT layer - all authentication and authorization
+ * (including tier validation) happens at the HTTP API level.
+ *
  * Usage:
- *   PATTERN_API_KEY=xxx node dist/mcp-stdio.js
+ *   node dist/mcp-stdio.js                    # Local dev (no auth)
+ *   PATTERN_API_KEY=xxx node dist/mcp-stdio.js  # With API key
  *
  * Environment Variables:
- *   - PATTERN_API_KEY: Required. API key for accessing the patterns API
- *   - EFFECT_PATTERNS_API_URL: Optional. Base URL for patterns API (default: https://api.effect-patterns.com)
+ *   - PATTERN_API_KEY: Optional. API key passed to HTTP API (auth happens there)
+ *   - EFFECT_PATTERNS_API_URL: Optional. Base URL for patterns API
  *   - MCP_DEBUG: Optional. Enable debug logging (default: false)
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerTools } from "./tools/tool-implementations.js";
+import { getActiveMCPConfig } from "./config/mcp-environments.js";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const API_BASE_URL =
-  process.env.EFFECT_PATTERNS_API_URL ||
-  "https://effect-patterns-mcp.vercel.app";
-const API_KEY = process.env.PATTERN_API_KEY;
+// Get configuration from environment (local, staging, or production)
+const config = getActiveMCPConfig();
+const API_BASE_URL = config.apiUrl;
+const API_KEY = config.apiKey;
 const DEBUG = process.env.MCP_DEBUG === "true";
 
 // ============================================================================
@@ -42,22 +47,33 @@ function log(message: string, data?: unknown) {
 // API Client
 // ============================================================================
 
+/**
+ * API call result - either success data or error information.
+ * Following Effect-style: errors as values, not exceptions.
+ */
+type ApiResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string; status?: number };
+
 async function callApi(
   endpoint: string,
   method: "GET" | "POST" = "GET",
   data?: unknown,
-) {
-  if (!API_KEY) {
-    throw new Error("PATTERN_API_KEY environment variable is required");
+): Promise<ApiResult<unknown>> {
+  const url = `${API_BASE_URL}/api${endpoint}`;
+
+  // Build headers - only add API key if provided
+  // Auth validation happens at HTTP API level
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (API_KEY) {
+    headers["x-api-key"] = API_KEY;
   }
 
-  const url = `${API_BASE_URL}/api${endpoint}`;
   const options: RequestInit = {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY,
-    },
+    headers,
   };
 
   if (data && method === "POST") {
@@ -68,14 +84,25 @@ async function callApi(
 
   try {
     const response = await fetch(url, options);
+
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      // Return error as value, not exception
+      const errorBody = await response.text();
+      log(`API Error: HTTP ${response.status}`);
+      return {
+        ok: false,
+        error: errorBody || `HTTP ${response.status}`,
+        status: response.status,
+      };
     }
-    return await response.json();
+
+    const result = await response.json();
+    return { ok: true, data: result };
   } catch (error) {
+    // Network or parsing errors
     const msg = error instanceof Error ? error.message : String(error);
     log(`API Error: ${msg}`);
-    throw error;
+    return { ok: false, error: msg };
   }
 }
 
@@ -107,15 +134,18 @@ registerTools(server, callApi, log);
 // ============================================================================
 
 async function main() {
-  // Validate environment
+  // Warn if no API key - auth happens at HTTP API level
   if (!API_KEY) {
-    console.error("Error: PATTERN_API_KEY environment variable is required");
-    console.error("Usage: PATTERN_API_KEY=xxx npm run mcp");
-    process.exit(1);
+    console.error(
+      "[Effect Patterns MCP] No API key configured. " +
+        "Requests will fail if HTTP API requires authentication."
+    );
   }
 
   log("Starting MCP server", {
+    environment: config.name,
     apiUrl: API_BASE_URL,
+    hasApiKey: !!API_KEY,
     debug: DEBUG,
   });
 

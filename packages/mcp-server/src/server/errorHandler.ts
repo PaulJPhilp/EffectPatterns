@@ -25,101 +25,16 @@ import {
 import { FileSizeError, NonTypeScriptError } from "../services/review-code";
 
 /**
- * Guard functions for each error type
+ * Helper to check if error has a _tag property
  */
-function isFileSizeError(error: unknown): error is FileSizeError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "FileSizeError"
-  );
-}
-
-function isNonTypeScriptError(error: unknown): error is NonTypeScriptError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "NonTypeScriptError"
-  );
-}
-
-function isAuthorizationError(
-  error: unknown
-): error is AuthorizationError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "AuthorizationError"
-  );
-}
-
-function isPatternNotFoundError(
-  error: unknown
-): error is PatternNotFoundError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "PatternNotFoundError"
-  );
-}
-
-function isValidationError(
-  error: unknown
-): error is ValidationError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "ValidationError"
-  );
-}
-
-function isRequestValidationError(
-  error: unknown
-): error is RequestValidationError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "RequestValidationError"
-  );
-}
-
-function isRateLimitError(
-  error: unknown
-): error is RateLimitError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "RateLimitError"
-  );
-}
-
-function isPatternValidationError(
-  error: unknown
-): error is PatternValidationError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "PatternValidationError"
-  );
-}
-
-function isPatternLoadError(
-  error: unknown
-): error is PatternLoadError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "_tag" in error &&
-    error._tag === "PatternLoadError"
-  );
+function hasTag(error: unknown): error is { _tag: string } {
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+  
+  // Type-safe check for _tag property
+  const errorObj = error as Record<string, unknown>;
+  return "_tag" in errorObj && typeof errorObj._tag === "string";
 }
 
 /**
@@ -140,6 +55,7 @@ interface ApiErrorResponse {
  * Convert errors to HTTP responses
  *
  * Handles all typed error cases and returns appropriate status codes and messages.
+ * Uses tag-based dispatch for type-safe error handling.
  */
 export function errorToResponse(
   error: unknown,
@@ -150,33 +66,127 @@ export function errorToResponse(
     baseHeaders["x-trace-id"] = traceId;
   }
 
-  // File size errors (413 Payload Too Large)
-  if (isFileSizeError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "payload_too_large",
-      maxSize: error.maxSize,
-      actualSize: error.size,
-    };
-    return NextResponse.json(response, {
-      status: 413,
-      headers: baseHeaders,
-    });
+  // Handle tagged errors by tag
+  if (hasTag(error)) {
+    switch (error._tag) {
+      case "FileSizeError": {
+        const e = error as FileSizeError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "payload_too_large",
+          maxSize: e.maxSize,
+          actualSize: e.size,
+        };
+        return NextResponse.json(response, {
+          status: 413,
+          headers: baseHeaders,
+        });
+      }
+
+      case "NonTypeScriptError": {
+        const e = error as NonTypeScriptError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "non_typescript_file",
+        };
+        return NextResponse.json(response, {
+          status: 400,
+          headers: baseHeaders,
+        });
+      }
+
+      case "AuthorizationError": {
+        const e = error as AuthorizationError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "forbidden",
+        };
+        return NextResponse.json(response, {
+          status: 403,
+          headers: baseHeaders,
+        });
+      }
+
+      case "PatternNotFoundError": {
+        const e = error as PatternNotFoundError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "not_found",
+        };
+        return NextResponse.json(response, {
+          status: 404,
+          headers: baseHeaders,
+        });
+      }
+
+      case "RateLimitError": {
+        const e = error as RateLimitError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "rate_limit_exceeded",
+        };
+        return NextResponse.json(response, {
+          status: 429,
+          headers: {
+            ...baseHeaders,
+            "X-RateLimit-Reset": e.resetTime.toISOString(),
+          },
+        });
+      }
+
+      case "ValidationError": {
+        const e = error as ValidationError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "validation_failed",
+          details: { field: e.field, value: e.value },
+        };
+        return NextResponse.json(response, {
+          status: 400,
+          headers: baseHeaders,
+        });
+      }
+
+      case "RequestValidationError": {
+        const e = error as RequestValidationError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "validation_failed",
+          details: { endpoint: e.endpoint, errors: e.errors },
+        };
+        return NextResponse.json(response, {
+          status: 400,
+          headers: baseHeaders,
+        });
+      }
+
+      case "PatternValidationError": {
+        const e = error as PatternValidationError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "pattern_validation_failed",
+        };
+        return NextResponse.json(response, {
+          status: 400,
+          headers: baseHeaders,
+        });
+      }
+
+      case "PatternLoadError": {
+        const e = error as PatternLoadError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "pattern_load_error",
+        };
+        return NextResponse.json(response, {
+          status: 500,
+          headers: baseHeaders,
+        });
+      }
+    }
   }
 
-  // Non-TypeScript file errors (400 Bad Request)
-  if (isNonTypeScriptError(error)) {
-    const response: ApiErrorResponse = {
-      error: error instanceof Error ? error.message : String(error),
-      status: "non_typescript_file",
-    };
-    return NextResponse.json(response, {
-      status: 400,
-      headers: baseHeaders,
-    });
-  }
-
-  // Authentication errors (401)
+  // Check for authentication errors (uses custom type guard from auth module)
   if (isAuthenticationError(error)) {
     const response: ApiErrorResponse = {
       error: error.message,
@@ -188,19 +198,7 @@ export function errorToResponse(
     });
   }
 
-  // Authorization errors (403)
-  if (isAuthorizationError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "forbidden",
-    };
-    return NextResponse.json(response, {
-      status: 403,
-      headers: baseHeaders,
-    });
-  }
-
-  // Tier access errors (402 Payment Required)
+  // Check for tier access errors (uses custom type guard from auth module)
   if (isTierAccessError(error)) {
     const response: ApiErrorResponse = {
       error: error.message,
@@ -214,82 +212,6 @@ export function errorToResponse(
         ...baseHeaders,
         "X-Tier-Error": "feature-gated",
       },
-    });
-  }
-
-  // Pattern not found (404)
-  if (isPatternNotFoundError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "not_found",
-    };
-    return NextResponse.json(response, {
-      status: 404,
-      headers: baseHeaders,
-    });
-  }
-
-  // Rate limit errors (429 Too Many Requests)
-  if (isRateLimitError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "rate_limit_exceeded",
-    };
-    return NextResponse.json(response, {
-      status: 429,
-      headers: {
-        ...baseHeaders,
-        "X-RateLimit-Reset": error.resetTime.toISOString(),
-      },
-    });
-  }
-
-  // Validation errors (400 Bad Request)
-  if (isValidationError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "validation_failed",
-      details: { field: error.field, value: error.value },
-    };
-    return NextResponse.json(response, {
-      status: 400,
-      headers: baseHeaders,
-    });
-  }
-
-  if (isRequestValidationError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "validation_failed",
-      details: { endpoint: error.endpoint, errors: error.errors },
-    };
-    return NextResponse.json(response, {
-      status: 400,
-      headers: baseHeaders,
-    });
-  }
-
-  // Pattern validation errors (400 Bad Request)
-  if (isPatternValidationError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "pattern_validation_failed",
-    };
-    return NextResponse.json(response, {
-      status: 400,
-      headers: baseHeaders,
-    });
-  }
-
-  // Pattern load errors (500 Internal Server Error)
-  if (isPatternLoadError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "pattern_load_error",
-    };
-    return NextResponse.json(response, {
-      status: 500,
-      headers: baseHeaders,
     });
   }
 

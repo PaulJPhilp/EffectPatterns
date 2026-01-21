@@ -11,7 +11,7 @@
  */
 
 import * as api from "@opentelemetry/api";
-import { Context, Effect, Layer } from "effect";
+import { Effect } from "effect";
 
 /**
  * Tracing configuration from environment variables
@@ -22,20 +22,6 @@ export interface TracingConfig {
   readonly serviceName: string;
   readonly serviceVersion: string;
 }
-
-/**
- * Tracing service for accessing trace context
- *
- * Note: With @effect/opentelemetry, spans are created automatically
- * via Effect.fn. This service provides utilities for accessing trace
- * context in handlers when needed.
- */
-export class TracingService extends Context.Tag("TracingService")<
-  TracingService,
-  {
-    readonly getTraceId: () => string | undefined;
-  }
->() {}
 
 /**
  * Parse OTLP headers from environment variable
@@ -93,17 +79,11 @@ const getTraceId = (): string | undefined => {
 };
 
 /**
- * Create the tracing service implementation
- */
-const makeTracingService = Effect.succeed({
-  getTraceId,
-});
-
-/**
- * Tracing Layer - Effect-based OpenTelemetry integration
+ * Tracing service for accessing trace context
  *
- * Provides automatic span creation via Effect.fn throughout the application
- * using NodeSdk from @effect/opentelemetry.
+ * Note: With @effect/opentelemetry, spans are created automatically
+ * via Effect.fn. This service provides utilities for accessing trace
+ * context in handlers when needed.
  *
  * Usage:
  * ```
@@ -115,20 +95,22 @@ const makeTracingService = Effect.succeed({
  * })
  * ```
  */
-export const TracingLayer = Layer.scoped(
-  TracingService,
-  Effect.gen(function* () {
-    const config = yield* loadTracingConfig;
+export class TracingService extends Effect.Service<TracingService>()(
+  "TracingService",
+  {
+    effect: Effect.gen(function* () {
+      const config = yield* loadTracingConfig;
 
-    console.log(
-      `[Tracing] OTLP initialized: ${config.serviceName} -> ${config.otlpEndpoint}`
-    );
+      yield* Effect.logInfo(
+        `[Tracing] OTLP initialized: ${config.serviceName} -> ${config.otlpEndpoint}`
+      );
 
-    // The NodeSdk will be provided by the application runtime
-    // This service just provides access to trace context via getTraceId
-    return yield* makeTracingService;
-  })
-);
+      return {
+        getTraceId: (): string | undefined => getTraceId(),
+      };
+    }),
+  }
+) {}
 
 /**
  * Live Tracing Layer - Ready to use in production
@@ -136,4 +118,4 @@ export const TracingLayer = Layer.scoped(
  * This layer automatically initializes OpenTelemetry with NodeSdk,
  * enabling automatic span creation via Effect.fn throughout the application.
  */
-export const TracingLayerLive = TracingLayer;
+export const TracingLayerLive = TracingService.Default;

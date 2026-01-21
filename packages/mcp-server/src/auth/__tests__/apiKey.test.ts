@@ -3,6 +3,11 @@
  *
  * Tests for API key validation from headers and query parameters.
  *
+ * Architecture:
+ * - HTTP API is where ALL authentication happens
+ * - MCP server is pure transport - doesn't validate auth
+ * - These tests verify HTTP API authentication logic
+ *
  * NOTE: These tests verify the authentication logic works correctly.
  * Full integration tests with Effect service composition are in the route tests.
  */

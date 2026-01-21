@@ -16,10 +16,9 @@
 
 - **Pattern Search**: Search Effect-TS patterns by category, skill level, and keywords
 - **Code Analysis**: TypeScript analysis with Effect-TS best practices and anti-pattern detection
-- **Pattern Generation**: Generate customized Effect-TS code from templates
-- **Consistency Analysis**: Detect code inconsistencies across multiple files
-- **Refactoring Engine**: Apply automated refactoring patterns with preview mode
 - **Enterprise Features**: Rate limiting, caching, metrics, tracing, and comprehensive logging
+
+Paid-tier features (code generation, consistency analysis, refactoring) are available via the HTTP API only.
 
 ## 📋 MCP Tools Available
 
@@ -27,18 +26,14 @@
 
 - `search_patterns` - Enhanced search with metadata and navigation
 - `get_pattern` - Rich pattern documentation with usage guidance
-- `generate_pattern_code` - Complete code generation with dependencies
 
 ### Code Analysis
 
 - `analyze_code` - Detailed issue reporting with severity breakdowns
 - `review_code` - AI-powered architectural analysis with priorities
 - `list_analysis_rules` - Comprehensive rule listings with categories
-- `analyze_consistency` - Cross-file analysis with pattern detection
 
-### Code Improvement
-
-- `apply_refactoring` - Preview/application with impact assessment
+Paid-tier tools are exposed via the HTTP API only (not MCP).
 
 ## 🔧 Transport Options
 
@@ -52,7 +47,7 @@
 ### Legacy Stdio Transport
 
 - **Command**: `bun run mcp:stdio`
-- **Authentication**: API key based
+- **Authentication**: Optional (auth enforced at HTTP API)
 - **Features**: Local development, backward compatibility
 - **Use Case**: Development and testing
 

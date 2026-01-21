@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "effect-patterns-local": {
+      "command": "bun",
+      "args": [
+        "run",
+        "--cwd",
+        "packages/mcp-server",
+        "dist/mcp-stdio.js"
+      ],
+      "env": {
+        "PATTERN_API_KEY": "test-api-key",
+        "EFFECT_PATTERNS_API_URL": "http://localhost:3000",
+        "MCP_ENV": "local"
+      },
+      "disabled": false
+    }
+  }
+}

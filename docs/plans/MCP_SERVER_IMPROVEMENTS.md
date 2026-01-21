@@ -61,7 +61,7 @@ The MCP server currently provides:
      };
    }
 
-   interface ApplyRefactoringTool {
+   interface ApplyRefactoringTool { // HTTP API only (not exposed as MCP tool)
      name: "apply_refactoring";
      input: {
        filePath: string;
@@ -159,7 +159,7 @@ The MCP server currently provides:
    ];
    ```
 
-3. **Implement MCP Tool**
+3. **Implement MCP Tool** (free-tier)
    ```typescript
    // Add to MCP server tools
    server.tool(
@@ -180,7 +180,7 @@ The MCP server currently provides:
 ### Deliverables:
 - [ ] CodeAnalyzer service
 - [ ] Pattern detection rules
-- [ ] `analyze_code` MCP tool
+- [ ] `analyze_code` MCP tool (free-tier)
 - [ ] Unit tests for analyzer
 
 ---
@@ -291,7 +291,7 @@ The MCP server currently provides:
    );
    ```
 
-3. **Implement MCP Tool**
+3. **Implement HTTP API Endpoint** (paid feature; not exposed as MCP tool)
    ```typescript
    server.tool(
      "generate_pattern",
@@ -311,7 +311,7 @@ The MCP server currently provides:
 ### Deliverables:
 - [ ] Pattern library with 10+ patterns
 - [ ] PatternGenerator service
-- [ ] `generate_pattern` MCP tool
+- [ ] `generate_pattern` HTTP API endpoint (not MCP)
 - [ ] Pattern documentation
 
 ---
@@ -407,7 +407,7 @@ The MCP server currently provides:
    };
    ```
 
-3. **Implement MCP Tool**
+3. **Implement HTTP API Endpoint** (paid feature; not exposed as MCP tool)
    ```typescript
    server.tool(
      "apply_refactoring",
@@ -432,7 +432,7 @@ The MCP server currently provides:
 ### Deliverables:
 - [ ] RefactoringEngine service
 - [ ] 5+ refactoring transformations
-- [ ] `apply_refactoring` MCP tool
+- [ ] `apply_refactoring` HTTP API endpoint (not MCP)
 - [ ] Preview functionality
 - [ ] Rollback capability
 
@@ -520,7 +520,7 @@ The MCP server currently provides:
    ];
    ```
 
-3. **Implement MCP Tool**
+3. **Implement HTTP API Endpoint** (paid feature; not exposed as MCP tool)
    ```typescript
    server.tool(
      "analyze_consistency",
@@ -540,7 +540,7 @@ The MCP server currently provides:
 ### Deliverables:
 - [ ] ConsistencyAnalyzer service
 - [ ] Consistency rules
-- [ ] `analyze_consistency` MCP tool
+- [ ] `analyze_consistency` HTTP API endpoint (not MCP)
 - [ ] Project-wide recommendations
 
 ---
@@ -558,7 +558,8 @@ The MCP server currently provides:
    - Test refactoring transformations
 
 2. **Integration Tests**
-   - Test MCP tool endpoints
+   - Test free-tier MCP tool endpoints
+   - Test paid HTTP API endpoints
    - Test end-to-end workflows
    - Test with real codebase
 

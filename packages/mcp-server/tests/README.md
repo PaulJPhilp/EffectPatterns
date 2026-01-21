@@ -65,53 +65,39 @@ bun run test:mcp:watch
 - Graceful disconnection and reconnection
 - Error handling when disconnected
 
-#### MCP Tools (50+ tests)
+#### MCP Tools (Free-tier surface)
 
-1. **search_patterns** (13 tests)
+The MCP server exposes the free-tier tools only. Paid features are HTTP API only.
+
+1. **search_patterns**
    - Basic pattern search with query
    - Category and difficulty filters
    - Limit parameter validation
    - Empty queries and special characters
    - Consistency across calls
 
-2. **get_pattern** (12 tests)
+2. **get_pattern**
    - Pattern retrieval by ID
    - Non-existent pattern handling
    - Pattern metadata in responses
    - Case sensitivity
 
-3. **analyze_code** (16 tests)
+3. **analyze_code**
    - Code analysis for anti-patterns
    - Different analysis types (validation, patterns, errors, all)
    - Syntax error handling
    - Large code samples
    - Non-TypeScript code
 
-4. **review_code** (16 tests)
+4. **review_code**
    - AI-powered code review
    - Free tier limitation (top 3 issues)
    - Effect-TS pattern detection
    - Severity level indicators
 
-5. **generate_pattern_code** (14 tests)
-   - Code generation from templates
-   - Variable substitution
-   - Default values and partial variables
-   - Pattern availability
-
-6. **list_analysis_rules** (10 tests)
+5. **list_analysis_rules**
    - Rule discovery
    - Consistency verification
-
-7. **analyze_consistency** (14 tests)
-   - Multi-file pattern analysis
-   - Inconsistency detection
-   - Large projects
-
-8. **apply_refactoring** (15 tests)
-   - Preview mode testing
-   - Multiple refactorings
-   - File preservation
 
 #### Error Handling (15 tests)
 - `error-handling.test.ts`
@@ -599,16 +585,18 @@ describe("New Route", () => {
 });
 ```
 
-### Testing a New MCP Tool
+### Testing a New MCP Tool (Free-tier surface only)
 
-1. Create tool test file in `tests/mcp-protocol/tools/`
+1. Create tool test file in `tests/mcp-protocol/`
 2. Use MCPTestClient to invoke tool
 3. Write tests covering:
    - Successful operation
    - Parameter validation
-   - Error handling
+   - Error handling (errors returned as values with `isError`)
    - Response structure
    - Edge cases
+
+Paid features should be tested at the HTTP API level, not as MCP tools.
 
 ```typescript
 it("should validate parameters", async () => {

@@ -1,5 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ToolSchemas } from "../schemas/tool-schemas.js";
+import {
+  ToolSchemas,
+  type SearchPatternsArgs,
+  type GetPatternArgs,
+  type AnalyzeCodeArgs,
+  type ReviewCodeArgs,
+} from "../schemas/tool-schemas.js";
 
 /**
  * Result of a tool execution.
@@ -13,18 +19,44 @@ export type CallToolResult = {
 };
 
 /**
+ * API call result - errors as values, not exceptions.
+ */
+export type ApiResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string; status?: number };
+
+/**
  * Function type for calling the internal API.
+ * Returns Result type - no exceptions thrown.
  */
 export type CallApiFn = (
   endpoint: string,
   method?: "GET" | "POST",
   data?: unknown
-) => Promise<any>;
+) => Promise<ApiResult<unknown>>;
 
 /**
  * Function type for logging.
  */
 export type LogFn = (message: string, data?: unknown) => void;
+
+/**
+ * Helper to convert API result to tool result.
+ */
+function toToolResult(result: ApiResult<unknown>, toolName: string, log: LogFn): CallToolResult {
+  if (result.ok) {
+    return {
+      content: [{ type: "text", text: JSON.stringify(result.data) }],
+    };
+  }
+
+  // Return error as content with isError flag
+  log(`Tool error: ${toolName}`, result.error);
+  return {
+    content: [{ type: "text", text: result.error }],
+    isError: true,
+  };
+}
 
 /**
  * Registers all Effect Patterns tools with the MCP server.
@@ -36,224 +68,83 @@ export function registerTools(
   log: LogFn
 ): void {
   // Search Patterns Tool
+  // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
   server.tool(
     "search_patterns",
     "Search Effect-TS patterns by query, category, difficulty level, and more",
     ToolSchemas.searchPatterns.shape as any,
-    async (args: any): Promise<CallToolResult> => {
+    async (args: SearchPatternsArgs): Promise<CallToolResult> => {
       log("Tool called: search_patterns", args);
-      try {
-        const searchParams = new URLSearchParams();
-        if (args.q) searchParams.append("q", args.q);
-        if (args.category) searchParams.append("category", args.category);
-        if (args.difficulty) searchParams.append("difficulty", args.difficulty);
-        if (args.limit) searchParams.append("limit", String(args.limit));
+      const searchParams = new URLSearchParams();
+      if (args.q) searchParams.append("q", args.q);
+      if (args.category) searchParams.append("category", args.category);
+      if (args.difficulty) searchParams.append("difficulty", args.difficulty);
+      if (args.limit) searchParams.append("limit", String(args.limit));
 
-        const result = await callApi(`/patterns?${searchParams}`);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log("Tool error: search_patterns", msg);
-        throw new Error(msg);
-      }
+      const result = await callApi(`/patterns?${searchParams}`);
+      return toToolResult(result, "search_patterns", log);
     }
   );
 
   // Get Pattern Tool
+  // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
   server.tool(
     "get_pattern",
     "Get full details for a specific pattern by ID",
     ToolSchemas.getPattern.shape as any,
-    async (args: any): Promise<CallToolResult> => {
+    async (args: GetPatternArgs): Promise<CallToolResult> => {
       log("Tool called: get_pattern", args);
-      try {
-        const result = await callApi(`/patterns/${encodeURIComponent(args.id)}`);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log("Tool error: get_pattern", msg);
-        throw new Error(msg);
-      }
+      const result = await callApi(`/patterns/${encodeURIComponent(args.id)}`);
+      return toToolResult(result, "get_pattern", log);
     }
   );
 
   // List Analysis Rules Tool
+  // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
   server.tool(
     "list_analysis_rules",
     "List all available code analysis rules for anti-pattern detection",
     ToolSchemas.listAnalysisRules.shape as any,
-    async (args: any): Promise<CallToolResult> => {
+    async (_args: Record<string, never>): Promise<CallToolResult> => {
       log("Tool called: list_analysis_rules", args);
-      try {
-        const result = await callApi("/list-rules", "POST", {});
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log("Tool error: list_analysis_rules", msg);
-        throw new Error(msg);
-      }
+      const result = await callApi("/list-rules", "POST", {});
+      return toToolResult(result, "list_analysis_rules", log);
     }
   );
 
   // Analyze Code Tool
+  // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
   server.tool(
     "analyze_code",
     "Analyze TypeScript code for Effect-TS anti-patterns and best practices violations",
     ToolSchemas.analyzeCode.shape as any,
-    async (args: any): Promise<CallToolResult> => {
+    async (args: AnalyzeCodeArgs): Promise<CallToolResult> => {
       log("Tool called: analyze_code", args);
-      try {
-        const result = await callApi("/analyze-code", "POST", {
-          source: args.source,
-          filename: args.filename,
-          analysisType: args.analysisType || "all",
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log("Tool error: analyze_code", msg);
-        throw new Error(msg);
-      }
+      const result = await callApi("/analyze-code", "POST", {
+        source: args.source,
+        filename: args.filename,
+        analysisType: args.analysisType || "all",
+      });
+      return toToolResult(result, "analyze_code", log);
     }
   );
 
   // Review Code Tool
+  // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
   server.tool(
     "review_code",
     "Get AI-powered architectural review and recommendations for Effect code",
     ToolSchemas.reviewCode.shape as any,
-    async (args: any): Promise<CallToolResult> => {
+    async (args: ReviewCodeArgs): Promise<CallToolResult> => {
       log("Tool called: review_code", args);
-      try {
-        const result = await callApi("/review-code", "POST", {
-          code: args.code,
-          filePath: args.filePath,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log("Tool error: review_code", msg);
-        throw new Error(msg);
-      }
+      const result = await callApi("/review-code", "POST", {
+        code: args.code,
+        filePath: args.filePath,
+      });
+      return toToolResult(result, "review_code", log);
     }
   );
 
-  // Generate Pattern Code Tool
-  server.tool(
-    "generate_pattern_code",
-    "Generate customized code from a pattern template",
-    ToolSchemas.generatePatternCode.shape as any,
-    async (args: any): Promise<CallToolResult> => {
-      log("Tool called: generate_pattern_code", args);
-      try {
-        const result = await callApi("/generate-pattern", "POST", {
-          patternId: args.patternId,
-          variables: args.variables || {},
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log("Tool error: generate_pattern_code", msg);
-        throw new Error(msg);
-      }
-    }
-  );
-
-  // Analyze Consistency Tool
-  server.tool(
-    "analyze_consistency",
-    "Detect inconsistencies and anti-patterns across multiple TypeScript files",
-    ToolSchemas.analyzeConsistency.shape as any,
-    async (args: any): Promise<CallToolResult> => {
-      log("Tool called: analyze_consistency", args);
-      try {
-        const result = await callApi("/analyze-consistency", "POST", {
-          files: args.files,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log("Tool error: analyze_consistency", msg);
-        throw new Error(msg);
-      }
-    }
-  );
-
-  // Apply Refactoring Tool
-  server.tool(
-    "apply_refactoring",
-    "Apply automated refactoring patterns to code",
-    ToolSchemas.applyRefactoring.shape as any,
-    async (args: any): Promise<CallToolResult> => {
-      log("Tool called: apply_refactoring", args);
-      try {
-        const result = await callApi("/apply-refactoring", "POST", {
-          refactoringIds: args.refactoringIds,
-          files: args.files,
-          preview: args.preview !== false,
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log("Tool error: apply_refactoring", msg);
-        throw new Error(msg);
-      }
-    }
-  );
+  // NOTE: Paid-tier MCP tools are intentionally not exposed.
+  // Paid features are available via HTTP API only.
 }

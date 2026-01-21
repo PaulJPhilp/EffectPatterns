@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "effect-patterns-production": {
+      "command": "bun",
+      "args": [
+        "run",
+        "--cwd",
+        "packages/mcp-server",
+        "dist/mcp-stdio.js"
+      ],
+      "env": {
+        "PATTERN_API_KEY": "${PRODUCTION_API_KEY}",
+        "EFFECT_PATTERNS_API_URL": "https://effect-patterns-mcp.vercel.app",
+        "MCP_ENV": "production"
+      },
+      "disabled": false
+    }
+  }
+}

@@ -60,7 +60,7 @@ The MCP server also provides:
 - `get_pattern` - Get full pattern details
 - `analyze_code` - Deeper analysis (all findings)
 - `list_analysis_rules` - See all detection rules
-- `generate_pattern_code` - Generate code from templates
+- Paid features (code generation, consistency analysis, refactoring) are available via the HTTP API only (not exposed as MCP tools)
 
 ### Configuration
 

@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "effect-patterns-staging": {
+      "command": "bun",
+      "args": [
+        "run",
+        "--cwd",
+        "packages/mcp-server",
+        "dist/mcp-stdio.js"
+      ],
+      "env": {
+        "PATTERN_API_KEY": "${STAGING_API_KEY}",
+        "EFFECT_PATTERNS_API_URL": "https://effect-patterns-mcp-staging.vercel.app",
+        "MCP_ENV": "staging"
+      },
+      "disabled": false
+    }
+  }
+}

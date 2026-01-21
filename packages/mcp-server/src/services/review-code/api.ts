@@ -1,0 +1,239 @@
+import { AnalysisService } from "@effect-patterns/analysis-core";
+import { Effect } from "effect";
+import type {
+	Finding,
+	FixDefinition,
+	RuleDefinition,
+} from "../../tools/schemas";
+import { ConfidenceCalculatorService } from "../confidence-calculator";
+import { FixPlanGeneratorService } from "../fix-plan-generator";
+import { GuidanceLoaderService } from "../guidance-loader";
+import { SnippetExtractorService } from "../snippet-extractor";
+import { FileSizeError, NonTypeScriptError } from "./errors";
+import {
+	countByConfidence,
+	countBySeverity,
+	generateEnhancedMarkdown,
+	MAX_FREE_TIER_RECOMMENDATIONS,
+	sortFindings as sortFindingsHelper,
+	validateFileSize,
+	validateTypeScript,
+} from "./helpers";
+import type {
+	CodeRecommendation,
+	CodeSnippet,
+	ConfidenceScore,
+	EnhancedCodeRecommendation,
+	FixPlan,
+	MachineSummary,
+	ReviewCodeMeta,
+	ReviewCodeResult,
+} from "./types";
+
+/**
+ * Build enhanced recommendation from finding
+ */
+function buildEnhancedRecommendation(
+	finding: Finding,
+	rule: RuleDefinition,
+	confidenceScore: ConfidenceScore,
+	evidence: CodeSnippet,
+	fixPlan: FixPlan,
+	guidanceKey: string | undefined,
+	guidance: string | undefined,
+): EnhancedCodeRecommendation {
+	return {
+		severity: finding.severity,
+		title: finding.title,
+		line: finding.range.startLine,
+		message: finding.message,
+		ruleId: finding.ruleId,
+		category: rule.category,
+		confidence: confidenceScore,
+		evidence,
+		fixPlan,
+		guidanceKey,
+		guidance,
+	};
+}
+
+/**
+ * ReviewCodeService - Free Tier Code Review
+ *
+ * Provides limited, high-fidelity architectural recommendations for Effect
+ * codebases. Acts as the "Hook" for the Free Tier by demonstrating the
+ * value of the Analysis Core while driving users toward Pro Tier features.
+ */
+export class ReviewCodeService extends Effect.Service<ReviewCodeService>()(
+	"ReviewCodeService",
+	{
+		effect: Effect.gen(function* () {
+			const analysis = yield* AnalysisService;
+			const confidenceCalculator = yield* ConfidenceCalculatorService;
+			const fixPlanGenerator = yield* FixPlanGeneratorService;
+			const snippetExtractor = yield* SnippetExtractorService;
+			const guidanceLoader = yield* GuidanceLoaderService;
+
+			return {
+				/**
+				 * Review code and return top 3 recommendations with enhanced details
+				 */
+				reviewCode: (
+					code: string,
+					filePath?: string,
+				): Effect.Effect<
+					ReviewCodeResult,
+					FileSizeError | NonTypeScriptError | Error
+				> =>
+					Effect.gen(function* () {
+						yield* validateFileSize(code);
+						yield* validateTypeScript(filePath);
+
+						const filename = filePath ?? "unknown.ts";
+						const result = yield* analysis.analyzeFile(filename, code, {
+							analysisType: "all",
+						});
+
+						const sortedFindings = sortFindingsHelper(
+							result.findings.map(
+								(f): EnhancedCodeRecommendation => ({
+									severity: f.severity,
+									title: f.title,
+									line: f.range.startLine,
+									message: f.message,
+									ruleId: f.ruleId,
+									category: "validation",
+									confidence: { level: "medium", score: 0.5, factors: [] },
+									evidence: {
+										beforeContext: [],
+										targetLines: [],
+										afterContext: [],
+										startLine: f.range.startLine,
+										endLine: f.range.endLine,
+									},
+									fixPlan: { steps: [], changes: [], risks: [] },
+								}),
+							),
+						);
+
+						const totalFound = sortedFindings.length;
+						const hiddenCount = Math.max(
+							0,
+							totalFound - MAX_FREE_TIER_RECOMMENDATIONS,
+						);
+
+						// Prepare rules and fixes for enhancement (placeholder - normally from registry)
+						// In a full implementation, these would come from RuleRegistryService
+						const rulesMap = new Map<string, RuleDefinition>();
+						const allFixes: FixDefinition[] = [];
+
+						// For now, we'll create a minimal rule definition for each finding
+						// In production, these would come from RuleRegistryService
+						result.findings.forEach((finding) => {
+							if (!rulesMap.has(finding.ruleId)) {
+								rulesMap.set(finding.ruleId, {
+									id: finding.ruleId,
+									title: finding.title,
+									message: finding.message,
+									severity: finding.severity,
+									category: "validation", // Default category
+									fixIds: [],
+								});
+							}
+						});
+
+						// Build enhanced recommendations for all findings
+						const allEnhancedFindings: EnhancedCodeRecommendation[] = [];
+						for (const finding of result.findings) {
+							const rule = rulesMap.get(finding.ruleId)!;
+							const confidenceScore = yield* confidenceCalculator.calculate(
+								finding,
+								code,
+								rule,
+							);
+							const fixPlan = yield* fixPlanGenerator.generate(
+								finding,
+								rule,
+								allFixes,
+							);
+							const evidence = yield* snippetExtractor.extract(finding, code);
+							const guidanceKey = yield* guidanceLoader.getGuidanceKey(
+								finding.ruleId,
+							);
+							const guidance = guidanceKey
+								? yield* guidanceLoader.loadGuidance(finding.ruleId)
+								: undefined;
+							const enhanced = buildEnhancedRecommendation(
+								finding,
+								rule,
+								confidenceScore,
+								evidence,
+								fixPlan,
+								guidanceKey,
+								guidance,
+							);
+							allEnhancedFindings.push(enhanced);
+						}
+
+						// Take top 3 for free tier
+						const topEnhancedFindings = allEnhancedFindings.slice(
+							0,
+							MAX_FREE_TIER_RECOMMENDATIONS,
+						);
+
+						// Build machine summary
+						const summary: MachineSummary = {
+							findingsByLevel: countBySeverity(allEnhancedFindings),
+							topIssueRuleIds: allEnhancedFindings
+								.slice(0, 5)
+								.map((f) => f.ruleId),
+							confidenceDistribution: countByConfidence(allEnhancedFindings),
+						};
+
+						// Build backward-compatible recommendations
+						const recommendations = topEnhancedFindings.map(
+							(f): CodeRecommendation => ({
+								severity: f.severity,
+								title: f.title,
+								line: f.line,
+								message: f.message,
+							}),
+						);
+
+						const upgradeMessage =
+							hiddenCount > 0
+								? `${hiddenCount} more architectural issue${hiddenCount === 1 ? "" : "s"} found. Upgrade to Pro to see all issues and auto-fix them.`
+								: undefined;
+
+						const meta: ReviewCodeMeta = {
+							totalFound,
+							hiddenCount,
+							upgradeMessage,
+						};
+
+						// Generate enhanced markdown
+						const markdown = generateEnhancedMarkdown(
+							topEnhancedFindings,
+							summary,
+							meta,
+						);
+
+						return {
+							recommendations,
+							enhancedRecommendations: topEnhancedFindings,
+							summary,
+							meta,
+							markdown,
+						};
+					}),
+			};
+		}),
+		dependencies: [
+			AnalysisService.Default,
+			ConfidenceCalculatorService.Default,
+			FixPlanGeneratorService.Default,
+			SnippetExtractorService.Default,
+			GuidanceLoaderService.Default,
+		],
+	},
+) { }

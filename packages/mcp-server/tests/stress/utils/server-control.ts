@@ -23,6 +23,10 @@ const DEFAULT_CONFIG: ServerConfig = {
 let serverProcess: ChildProcess | null = null;
 let serverConfig: ServerConfig = DEFAULT_CONFIG;
 
+// Shared server state for reusing instances across test suites
+let sharedServerStarted = false;
+let sharedServerRefCount = 0;
+
 /**
  * Start the test server
  */
@@ -212,4 +216,48 @@ export function getServerUrl(endpoint: string = ''): string {
  */
 export function isServerRunning(): boolean {
   return serverProcess !== null && !serverProcess.killed;
+}
+
+/**
+ * Start a shared server instance (reused across test suites)
+ * This avoids port conflicts and speeds up test execution
+ */
+export async function startSharedServer(config: Partial<ServerConfig> = {}): Promise<void> {
+  sharedServerRefCount++;
+  
+  if (sharedServerStarted && isServerRunning()) {
+    console.log(`[Shared Server] Reusing existing instance (ref count: ${sharedServerRefCount})`);
+    return;
+  }
+  
+  console.log(`[Shared Server] Starting new instance (ref count: ${sharedServerRefCount})`);
+  sharedServerStarted = true;
+  return startServer(config);
+}
+
+/**
+ * Stop the shared server instance (with reference counting)
+ * Only stops when all references are released
+ */
+export async function stopSharedServer(): Promise<void> {
+  sharedServerRefCount--;
+  
+  if (sharedServerRefCount <= 0) {
+    console.log('[Shared Server] All references released, stopping server');
+    sharedServerRefCount = 0;
+    sharedServerStarted = false;
+    return stopServer();
+  }
+  
+  console.log(`[Shared Server] Reference released (remaining: ${sharedServerRefCount})`);
+}
+
+/**
+ * Reset shared server state (for cleanup between test runs)
+ */
+export async function resetSharedServer(): Promise<void> {
+  console.log('[Shared Server] Resetting state');
+  sharedServerRefCount = 0;
+  sharedServerStarted = false;
+  return stopServer();
 }
