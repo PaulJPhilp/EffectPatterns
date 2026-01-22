@@ -51,3 +51,6 @@ content/backups/
 content/published/skills/claude/
 content/published/skills/gemini/
 content/published/skills/openai/
+
+# IDE local config with secrets
+.cursor/mcp.json
