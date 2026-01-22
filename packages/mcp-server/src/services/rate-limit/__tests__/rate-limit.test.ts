@@ -126,4 +126,114 @@ describe("MCRateLimitService", () => {
 		expect(result.resetTime).toBeDefined();
 		expect(result.windowMs).toBe(60000);
 	});
+
+	it("should allow all requests when rate limiting is disabled", async () => {
+		// Temporarily disable rate limiting
+		const originalEnabled = process.env.RATE_LIMIT_ENABLED;
+		process.env.RATE_LIMIT_ENABLED = "false";
+
+		try {
+			const result = await Effect.runPromise(
+				Effect.gen(function* () {
+					const rl = yield* MCRateLimitService;
+					
+					// Make many requests - all should be allowed
+					for (let i = 0; i < 10; i++) {
+						yield* rl.checkRateLimit("ip:disabled");
+					}
+					
+					const status = yield* rl.getRateLimitStatus("ip:disabled");
+					return status;
+				}).pipe(Effect.provide(TestLayer))
+			);
+
+			expect(result.allowed).toBe(true);
+			expect(result.remaining).toBe(2); // Should return the configured limit
+		} finally {
+			process.env.RATE_LIMIT_ENABLED = originalEnabled;
+		}
+	});
+
+	it("should handle window reset correctly", async () => {
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const rl = yield* MCRateLimitService;
+				
+				// Use up the limit
+				yield* rl.checkRateLimit("ip:window");
+				yield* rl.checkRateLimit("ip:window");
+				
+				// Reset the window
+				yield* rl.resetRateLimit("ip:window");
+				
+				// Should be able to make requests again
+				const status = yield* rl.checkRateLimit("ip:window");
+				return status;
+			}).pipe(Effect.provide(TestLayer))
+		);
+
+		expect(result.allowed).toBe(true);
+		expect(result.remaining).toBe(1); // One request used after reset
+	});
+
+	it("should handle status query for expired window", async () => {
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const rl = yield* MCRateLimitService;
+				
+				// Use up the limit
+				yield* rl.checkRateLimit("ip:expired");
+				yield* rl.checkRateLimit("ip:expired");
+				
+				// Get status - should show limit exceeded
+				const statusBefore = yield* rl.getRateLimitStatus("ip:expired");
+				
+				// Reset to simulate window expiration
+				yield* rl.resetRateLimit("ip:expired");
+				
+				// Status after reset should show full limit available
+				const statusAfter = yield* rl.getRateLimitStatus("ip:expired");
+				
+				return { statusBefore, statusAfter };
+			}).pipe(Effect.provide(TestLayer))
+		);
+
+		expect(result.statusBefore.remaining).toBe(0);
+		expect(result.statusAfter.remaining).toBe(2);
+	});
+
+	it("should handle getRateLimitStatus for new identifier", async () => {
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const rl = yield* MCRateLimitService;
+				
+				// Query status for identifier that hasn't made requests
+				const status = yield* rl.getRateLimitStatus("ip:new");
+				
+				return status;
+			}).pipe(Effect.provide(TestLayer))
+		);
+
+		expect(result.allowed).toBe(true);
+		expect(result.remaining).toBe(2);
+		expect(result.limit).toBe(2);
+	});
+
+	it("should expose configuration access methods", async () => {
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const rl = yield* MCRateLimitService;
+				
+				const enabled = yield* rl.isEnabled();
+				const requests = yield* rl.getRequests();
+				const windowMs = yield* rl.getWindowMs();
+				
+				return { enabled, requests, windowMs };
+			}).pipe(Effect.provide(TestLayer))
+		);
+
+		expect(result.enabled).toBe(true);
+		expect(result.requests).toBe(2);
+		expect(result.windowMs).toBe(60000);
+	});
 });

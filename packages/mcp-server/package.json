@@ -50,7 +50,8 @@
     "cleanup:next": "bash scripts/cleanup-next.sh",
     "cleanup:all": "bun run cleanup:next && rm -rf node_modules .next dist && bun install",
     "typecheck": "tsc --noEmit",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:narration-leakage": "bash scripts/check-narration-leakage.sh"
   },
   "dependencies": {
     "@effect-patterns/analysis-core": "file:./lib-analysis-core",

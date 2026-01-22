@@ -20,6 +20,15 @@ import { describe, it, expect, beforeAll, afterEach } from "vitest";
 import { MCPTestClient, createMCPTestClient } from "./helpers/mcp-test-client";
 import { getMCPEnvironmentConfig } from "../../src/config/mcp-environments";
 
+function extractContentText(
+  content: Array<{ type: string; text?: string }> | { type: string; text?: string }
+): string {
+  if (Array.isArray(content)) {
+    return content.map((block) => block.text || "").join("\n");
+  }
+  return content.text || "";
+}
+
 describe("Local MCP Server", () => {
   let client: MCPTestClient;
   const config = getMCPEnvironmentConfig("local");
@@ -82,6 +91,27 @@ describe("Local MCP Server", () => {
 
       expect(result.content).toBeDefined();
       expect(result.content.length).toBeGreaterThan(0);
+    });
+
+    it("should render clean markdown without tool chatter", async () => {
+      if (!isLocalAvailable) return;
+      const result = await client.callTool("search_patterns", {
+        q: "concurrency",
+        format: "markdown",
+        limitCards: 1,
+      });
+
+      expect(result.content).toBeDefined();
+      const text = extractContentText(result.content);
+      const disallowed = [
+        /\[.*tools called.*\]/i,
+        /Tool called:/i,
+        /Checking the MCP server tools directory/i,
+      ];
+
+      for (const pattern of disallowed) {
+        expect(text).not.toMatch(pattern);
+      }
     });
 
     it("should filter by category", async () => {

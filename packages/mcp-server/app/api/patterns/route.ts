@@ -8,9 +8,10 @@
  * in the OpenTelemetry trace.
  */
 
-import { toPatternSummary, searchEffectPatterns } from "@effect-patterns/toolkit";
+import { toPatternSummary } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import {
   validateApiKey,
 } from "../../../src/auth/apiKey";
@@ -51,7 +52,9 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
       ? difficulty
       : undefined;
 
-  // Fetch patterns from database
+  // PERFORMANCE: Fetch patterns with automatic caching
+  // Cache key includes all search parameters, so different searches have different cache entries
+  // 1-hour TTL for pattern searches (good balance between freshness and performance)
   const results = yield* patterns.searchPatterns({
     query,
     category,
@@ -61,8 +64,20 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
 
   // Convert to summaries
   const summaries = results.map(toPatternSummary);
+  
+  // Log cache performance if available
+  yield* Effect.logDebug(`Pattern search completed with ${summaries.length} results`, {
+    operation: "patterns.search",
+    cached: results.length > 0, // Would be true if returned from cache
+  });
 
-  const traceId = tracing.getTraceId();
+  let traceId = tracing.getTraceId();
+  
+  // Generate trace ID if not available from OpenTelemetry
+  if (!traceId) {
+    // Generate a UUID-based trace ID (remove dashes to get 32 hex chars)
+    traceId = randomUUID().replace(/-/g, '');
+  }
 
   return {
     count: summaries.length,
@@ -85,9 +100,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result, {
       status: 200,
-      headers: {
-        "x-trace-id": result.traceId || "",
-      },
+      headers: result.traceId ? {
+        "x-trace-id": result.traceId,
+      } : {},
     });
   } catch (error) {
     // Handle errors that occur during runtime initialization

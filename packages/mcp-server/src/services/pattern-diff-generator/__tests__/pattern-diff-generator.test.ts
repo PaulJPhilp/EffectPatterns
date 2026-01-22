@@ -60,8 +60,8 @@ describe("Pattern Diff Generator", () => {
     it("should include before and after sections", () => {
       const diff = generateMigrationDiff("effect-fail-tagged-error");
       const texts = diff.map((b) => b.text).join("\n");
-      expect(texts).toContain("Before (v3 style)");
-      expect(texts).toContain("After (v4 style)");
+      expect(texts).toContain("[🔴 v3 Pattern] Before");
+      expect(texts).toContain("[✅ v4 Pattern] After");
     });
 
     it("should include explanation", () => {

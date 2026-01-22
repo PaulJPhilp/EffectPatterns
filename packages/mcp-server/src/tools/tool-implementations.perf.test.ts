@@ -4,17 +4,16 @@
  * Tests cover:
  * 1. Rendering determinism (same input -> same output)
  * 2. Output schema validation
- * 3. Narration/agent leakage prevention
- * 4. Cache behavior (TTL, max size)
+ * 3. Cache behavior (TTL, max size)
+ *
+ * Note: Tool narration leakage is prevented at the source by the primary
+ * guarantee: all debug logs use console.error() (stderr), never stdout.
+ * This is enforced via:
+ * - ESLint no-console rule (allow console.error only)
+ * - CI gate: fail if console.log/console.info appear in src/
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
-import {
-  containsForbiddenNarration,
-  stripForbiddenNarration,
-  validateCleanContent,
-  resetNarrationFilterMetrics,
-} from "./narration-filter.js";
+import { describe, it, expect } from "vitest";
 
 // ============================================================================
 // Test Fixtures
@@ -41,92 +40,6 @@ const MOCK_SEARCH_RESULT = {
   count: 2,
   patterns: [MOCK_PATTERN, { ...MOCK_PATTERN, id: "test-pattern-2" }],
 };
-
-// ============================================================================
-// Narration Filter Tests
-// ============================================================================
-
-describe("Narration Filter", () => {
-  beforeEach(() => {
-    resetNarrationFilterMetrics();
-  });
-
-  describe("containsForbiddenNarration", () => {
-    it("should detect '[N tools called]' pattern", () => {
-      expect(containsForbiddenNarration("Result: [1 tool called]")).toBe(true);
-      expect(containsForbiddenNarration("Result: [2 tools called]")).toBe(true);
-    });
-
-    it("should detect 'Tool called:' pattern", () => {
-      expect(containsForbiddenNarration("Tool called: search_patterns")).toBe(true);
-      expect(containsForbiddenNarration("tool called: get_pattern")).toBe(true);
-    });
-
-    it("should detect 'Searching' pattern", () => {
-      expect(containsForbiddenNarration("Searching patterns for query")).toBe(true);
-    });
-
-    it("should detect 'API error/call' pattern", () => {
-      expect(containsForbiddenNarration("API error: timeout")).toBe(true);
-      expect(containsForbiddenNarration("API call: /patterns")).toBe(true);
-    });
-
-    it("should detect 'Cache hit/miss' pattern", () => {
-      expect(containsForbiddenNarration("Cache hit for key")).toBe(true);
-      expect(containsForbiddenNarration("Cache miss, fetching")).toBe(true);
-    });
-
-    it("should be case-insensitive", () => {
-      expect(containsForbiddenNarration("TOOL CALLED: search")).toBe(true);
-      expect(containsForbiddenNarration("Tool Called: search")).toBe(true);
-    });
-
-    it("should allow clean content", () => {
-      expect(containsForbiddenNarration("# Search Results\nFound 5 patterns.")).toBe(false);
-      expect(containsForbiddenNarration("This is a valid pattern description.")).toBe(false);
-    });
-  });
-
-  describe("stripForbiddenNarration", () => {
-    it("should remove 'Tool called:' prefix", () => {
-      const input = "Tool called: search_patterns\nResult: ...";
-      const output = stripForbiddenNarration(input);
-      expect(output).not.toContain("Tool called:");
-    });
-
-    it("should remove '[N tools called]' pattern", () => {
-      const input = "Operation complete [2 tools called]";
-      const output = stripForbiddenNarration(input);
-      expect(output).not.toContain("[2 tools called]");
-    });
-
-    it("should handle multiple violations", () => {
-      const input =
-        "Tool called: search_patterns\nSearching patterns\nFound 5 patterns [1 tool called]";
-      const output = stripForbiddenNarration(input);
-      expect(containsForbiddenNarration(output)).toBe(false);
-    });
-
-    it("should preserve legitimate content", () => {
-      const input = "# Search Results\nFound 5 patterns.";
-      const output = stripForbiddenNarration(input);
-      expect(output).toBe("# Search Results\nFound 5 patterns.");
-    });
-  });
-
-  describe("validateCleanContent", () => {
-    it("should return null for clean content", () => {
-      const error = validateCleanContent("# Valid Content\nSome description");
-      expect(error).toBeNull();
-    });
-
-    it("should return error message for dirty content", () => {
-      const error = validateCleanContent("Tool called: search_patterns\nResult");
-      expect(error).not.toBeNull();
-      expect(error).toMatch(/forbidden narration/i);
-    });
-  });
-});
 
 // ============================================================================
 // Rendering Determinism Tests
@@ -298,22 +211,26 @@ describe("Cache Behavior", () => {
 // ============================================================================
 
 describe("Tool Output Validation (Integration)", () => {
-  it("should not leak narration in search results", () => {
-    // Simulate rendered output
+  it("should not leak internal tool noise in search results", () => {
+    // Verify that rendered output is clean (does not contain debug narration).
+    // This is prevented at the source: all debug logs use console.error() (stderr).
     const output = "# Search Results\nFound 5 patterns.\n| Pattern | ... |";
     
-    const hasNarration = containsForbiddenNarration(output);
-    expect(hasNarration).toBe(false);
+    // Output should not contain narration patterns
+    expect(output).not.toMatch(/Tool called:/i);
+    expect(output).not.toMatch(/\[\d+\s+tools?\s+called\]/i);
+    expect(output).not.toMatch(/Cache (hit|miss)/i);
   });
 
-  it("should not leak narration in pattern details", () => {
+  it("should not leak internal tool noise in pattern details", () => {
     const output = "# Test Pattern\n**Description:** A test pattern";
     
-    const hasNarration = containsForbiddenNarration(output);
-    expect(hasNarration).toBe(false);
+    expect(output).not.toMatch(/Tool called:/i);
+    expect(output).not.toMatch(/API (error|call)/i);
+    expect(output).not.toMatch(/Searching patterns/i);
   });
 
-  it("should validate complete tool result", () => {
+  it("should have clean tool result blocks", () => {
     const toolResult = {
       content: [
         {
@@ -323,10 +240,10 @@ describe("Tool Output Validation (Integration)", () => {
       ],
     };
 
-    // Check all content blocks are clean
+    // Check all content blocks are clean (no debug narration)
     for (const block of toolResult.content) {
-      const error = validateCleanContent(block.text);
-      expect(error).toBeNull();
+      expect(block.text).not.toMatch(/Tool called:/i);
+      expect(block.text).not.toMatch(/\[1\s+tools?\s+called\]/i);
     }
   });
 });

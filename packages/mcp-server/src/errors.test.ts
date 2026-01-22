@@ -15,6 +15,11 @@ import {
 	TimeoutError,
 	TracingError,
 	ValidationError,
+	createAuthenticationError,
+	createPatternNotFoundError,
+	createPatternLoadError,
+	createRequestValidationError,
+	createConfigurationError,
 } from "./errors";
 
 describe("Error Types", () => {
@@ -246,6 +251,60 @@ describe("Error Types", () => {
 			expect(error.key).toBe("DATABASE_URL");
 			expect(error.expected).toBe("postgresql://...");
 			expect(error.received).toBe("invalid-url");
+		});
+	});
+
+	describe("Error Factory Functions", () => {
+		describe("createAuthenticationError", () => {
+			it("should create AuthenticationError with message", () => {
+				const error = createAuthenticationError("Invalid API key");
+				expect(error._tag).toBe("AuthenticationError");
+				expect(error.message).toBe("Invalid API key");
+			});
+		});
+
+		describe("createPatternNotFoundError", () => {
+			it("should create PatternNotFoundError with patternId", () => {
+				const error = createPatternNotFoundError("non-existent-pattern");
+				expect(error._tag).toBe("PatternNotFoundError");
+				expect(error.patternId).toBe("non-existent-pattern");
+			});
+		});
+
+		describe("createPatternLoadError", () => {
+			it("should create PatternLoadError with filePath and cause", () => {
+				const cause = new Error("File not found");
+				const error = createPatternLoadError("/path/to/pattern.json", cause);
+				expect(error._tag).toBe("PatternLoadError");
+				expect(error.filePath).toBe("/path/to/pattern.json");
+				expect(error.cause).toBe(cause);
+			});
+		});
+
+		describe("createRequestValidationError", () => {
+			it("should create RequestValidationError with endpoint and errors", () => {
+				const errors = [
+					{ field: "query", message: "Missing required parameter", actual: undefined }
+				];
+				const error = createRequestValidationError("/api/patterns", errors);
+				expect(error._tag).toBe("RequestValidationError");
+				expect(error.endpoint).toBe("/api/patterns");
+				expect(error.errors).toEqual(errors);
+			});
+		});
+
+		describe("createConfigurationError", () => {
+			it("should create ConfigurationError with key, expected, and received", () => {
+				const error = createConfigurationError(
+					"DATABASE_URL",
+					"postgresql://...",
+					"invalid-url"
+				);
+				expect(error._tag).toBe("ConfigurationError");
+				expect(error.key).toBe("DATABASE_URL");
+				expect(error.expected).toBe("postgresql://...");
+				expect(error.received).toBe("invalid-url");
+			});
 		});
 	});
 });

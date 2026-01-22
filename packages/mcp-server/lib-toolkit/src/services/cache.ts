@@ -91,7 +91,15 @@ export class CacheService extends Effect.Service<CacheService>()(
         if (cleanupInterval) return;
 
         cleanupInterval = setInterval(() => {
-          Effect.runSync(cleanupExpired);
+          // Run cleanup synchronously (it's a pure function now)
+          try {
+            cleanupExpired();
+          } catch (error) {
+            // Silently handle errors in background cleanup
+            if (isLoggingEnabled) {
+              console.error("[Cache] Cleanup error:", error);
+            }
+          }
         }, cleanupIntervalMs);
 
         if (isLoggingEnabled) {
@@ -121,8 +129,10 @@ export class CacheService extends Effect.Service<CacheService>()(
 
       /**
        * Remove expired entries
+       * Note: This is a pure function that doesn't require any Effect services
+       * to avoid type issues when running in setInterval callback
        */
-      const cleanupExpired = Effect.gen(function* () {
+      const cleanupExpired = (): number => {
         const now = Date.now();
         const expiredKeys: string[] = [];
 
@@ -134,17 +144,13 @@ export class CacheService extends Effect.Service<CacheService>()(
 
         expiredKeys.forEach((key) => cache.delete(key));
 
+        // Log if enabled (using console for background cleanup to avoid service requirements)
         if (expiredKeys.length > 0 && isLoggingEnabled) {
-          yield* logger
-            .withOperation("cache")
-            .debug("Cleaned up expired entries", {
-              expiredCount: expiredKeys.length,
-              remainingCount: cache.size,
-            });
+          console.debug(`[Cache] Cleaned up ${expiredKeys.length} expired entries, ${cache.size} remaining`);
         }
 
         return expiredKeys.length;
-      });
+      };
 
       /**
        * Get cache entry (internal)

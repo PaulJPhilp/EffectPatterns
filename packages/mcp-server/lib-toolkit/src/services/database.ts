@@ -62,7 +62,27 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
         url: databaseUrl.replace(/:[^:@]+@/, ":****@"), // Hide password
       })
 
-      const connection = createDatabase(databaseUrl)
+      // PERFORMANCE: Use larger pool size for server deployments (default 1 for CLI)
+      // Server needs concurrent connections for multiple requests
+      const poolSize = process.env.DATABASE_POOL_SIZE ? parseInt(process.env.DATABASE_POOL_SIZE, 10) : 20
+      const warmupConnections = process.env.DATABASE_WARMUP_CONNECTIONS ? parseInt(process.env.DATABASE_WARMUP_CONNECTIONS, 10) : 5
+
+      const connection = createDatabase(databaseUrl, {
+        poolSize,
+        warmupConnections,
+      })
+
+      // PERFORMANCE: Warm up connection pool at startup
+      // Pre-establish N connections to reduce first-request latency
+      yield* logger.info("Warming up database connection pool", {
+        poolSize,
+        warmupConnections,
+      })
+
+      yield* Effect.tryPromise({
+        try: () => connection.warmupPool?.(warmupConnections) ?? Promise.resolve(),
+        catch: (error) => new Error(`Database pool warmup failed: ${String(error)}`),
+      }).pipe(Effect.ignore) // Continue even if warmup fails
 
       yield* Effect.addFinalizer(() =>
         Effect.gen(function* () {

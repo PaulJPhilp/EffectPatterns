@@ -26,14 +26,19 @@ export class ConfidenceCalculatorService extends Effect.Service<
 	effect: Effect.gen(function* () {
 		/**
 		 * Calculate confidence score for a finding
+		 * 
+		 * Performance optimization: Pass an optional pre-parsed sourceFile to avoid
+		 * re-parsing the same source code multiple times per request.
 		 */
 		const calculate = (
 			finding: Finding,
 			sourceCode: string,
-			rule: RuleDefinition
+			rule: RuleDefinition,
+			sourceFile?: ts.SourceFile
 		): Effect.Effect<ConfidenceScore, Error> =>
 			Effect.gen(function* () {
-				const sourceFile = ts.createSourceFile(
+				// Reuse provided sourceFile to avoid expensive re-parsing
+				const sf = sourceFile || ts.createSourceFile(
 					"temp.ts",
 					sourceCode,
 					ts.ScriptTarget.Latest,
@@ -46,7 +51,7 @@ export class ConfidenceCalculatorService extends Effect.Service<
 
 				// Factor 1: Complexity penalty (nesting level reduces confidence)
 				const { penalty: complexityPenalty, nestingLevel } =
-					calculateComplexityPenalty(finding, sourceFile, config);
+					calculateComplexityPenalty(finding, sf, config);
 				baseScore -= complexityPenalty;
 				if (complexityPenalty > 0) {
 					factors.push(`Nested context (${nestingLevel} level penalty)`);

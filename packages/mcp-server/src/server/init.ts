@@ -31,24 +31,43 @@ import { TracingLayerLive } from "../tracing/otlpLayer";
  */
 const makePatternsService = Effect.gen(function* () {
   yield* Effect.logInfo("[Patterns] Initializing database-backed patterns service");
+  
+  // PERFORMANCE: Import cache service for query result caching
+  const cache = yield* MCPCacheService;
 
   /**
    * Get all patterns
+   * 
+   * PERFORMANCE: Cached with 1-hour TTL (popular query)
    */
   const getAllPatterns = () =>
-    searchEffectPatterns({});
+    cache.getOrSet(
+      "patterns:all", // Cache key
+      () => searchEffectPatterns({}),
+      3600000 // 1 hour TTL in milliseconds
+    );
 
   /**
    * Get pattern by ID/slug
+   * 
+   * PERFORMANCE: Cached with 24-hour TTL (stable data)
    */
   const getPatternById = (id: string) =>
-    Effect.gen(function* () {
-      const pattern = yield* findEffectPatternBySlug(id);
-      return pattern ?? undefined;
-    });
+    cache.getOrSet(
+      `patterns:by-id:${id}`, // Unique cache key per pattern
+      () =>
+        Effect.gen(function* () {
+          const pattern = yield* findEffectPatternBySlug(id);
+          return pattern ?? undefined;
+        }),
+      86400000 // 24 hours TTL in milliseconds
+    );
 
   /**
    * Search patterns
+   * 
+   * PERFORMANCE: Cached with 1-hour TTL
+   * Cache key includes all search parameters to differentiate searches
    */
   const searchPatterns = (params: {
     query?: string;
@@ -56,12 +75,17 @@ const makePatternsService = Effect.gen(function* () {
     skillLevel?: "beginner" | "intermediate" | "advanced";
     limit?: number;
   }) =>
-    searchEffectPatterns({
-      query: params.query,
-      category: params.category,
-      skillLevel: params.skillLevel,
-      limit: params.limit,
-    });
+    cache.getOrSet(
+      `patterns:search:${JSON.stringify(params)}`, // Cache key includes all params
+      () =>
+        searchEffectPatterns({
+          query: params.query,
+          category: params.category,
+          skillLevel: params.skillLevel,
+          limit: params.limit,
+        }),
+      3600000 // 1 hour TTL in milliseconds
+    );
 
   return {
     getAllPatterns,
@@ -74,7 +98,7 @@ export class PatternsService extends Effect.Service<PatternsService>()(
   "PatternsService",
   {
     scoped: makePatternsService,
-    dependencies: [DatabaseLayer],
+    dependencies: [DatabaseLayer, MCPCacheService.Default],
   }
 ) { }
 

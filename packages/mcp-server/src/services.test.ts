@@ -118,10 +118,10 @@ describe("MCP Server Services", () => {
       const result = await Effect.runPromise(
         Effect.gen(function* () {
           const config = yield* MCPConfigService;
-          const apiKey = yield* config.getApiKey();
-          const port = yield* config.getPort();
-          const cacheEnabled = yield* config.isCacheEnabled();
-          const rateLimitRequests = yield* config.getRateLimitRequests();
+          const apiKey = config.apiKey;
+          const port = config.port;
+          const cacheEnabled = config.cacheEnabled;
+          const rateLimitRequests = config.rateLimitRequests;
 
           return { apiKey, port, cacheEnabled, rateLimitRequests };
         }).pipe(Effect.provide(MCPConfigServiceLive))
@@ -137,7 +137,7 @@ describe("MCP Server Services", () => {
       const result = await Effect.runPromise(
         Effect.gen(function* () {
           const config = yield* MCPConfigService;
-          const configData = yield* config.getConfig();
+          const configData = config.config;
 
           return configData;
         }).pipe(Effect.provide(MCPConfigServiceLive))
@@ -729,7 +729,7 @@ describe("MCP Server Services", () => {
           const config = yield* MCPConfigService;
 
           const enabled = yield* cache.isEnabled();
-          const configEnabled = yield* config.isCacheEnabled();
+          const configEnabled = config.cacheEnabled;
 
           expect(enabled).toBe(configEnabled);
 
@@ -1076,7 +1076,7 @@ describe("MCP Server Services", () => {
           const cache = yield* MCPCacheService;
 
           // Test basic functionality across services
-          const port = yield* config.getPort();
+          const port = config.port;
           yield* logger
             .withOperation("integration.test")
             .info("Services composed successfully");

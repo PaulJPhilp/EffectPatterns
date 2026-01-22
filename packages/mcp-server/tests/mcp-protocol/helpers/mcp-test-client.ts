@@ -78,10 +78,14 @@ export class MCPTestClient {
       EFFECT_PATTERNS_API_URL: config.apiUrl || "http://localhost:3000",
       MCP_DEBUG: config.debug ? "true" : "false",
     };
-    
-    // Only set API key if provided (optional)
+
+    // Ensure deterministic API key behavior for local MCP tests.
     if (config.apiKey) {
       env.PATTERN_API_KEY = config.apiKey;
+      env.LOCAL_API_KEY = config.apiKey;
+    } else {
+      delete env.PATTERN_API_KEY;
+      delete env.LOCAL_API_KEY;
     }
 
     const transport = new StdioClientTransport({

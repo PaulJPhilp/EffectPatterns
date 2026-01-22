@@ -153,38 +153,55 @@ export class ReviewCodeService extends Effect.Service<ReviewCodeService>()(
 							}
 						});
 
-						// Build enhanced recommendations for all findings
-						const allEnhancedFindings: EnhancedCodeRecommendation[] = [];
-						for (const finding of result.findings) {
-							const rule = rulesMap.get(finding.ruleId)!;
-							const confidenceScore = yield* confidenceCalculator.calculate(
-								finding,
-								code,
-								rule,
-							);
-							const fixPlan = yield* fixPlanGenerator.generate(
-								finding,
-								rule,
-								allFixes,
-							);
-							const evidence = yield* snippetExtractor.extract(finding, code);
-							const guidanceKey = yield* guidanceLoader.getGuidanceKey(
-								finding.ruleId,
-							);
-							const guidance = guidanceKey
-								? yield* guidanceLoader.loadGuidance(finding.ruleId)
-								: undefined;
-							const enhanced = buildEnhancedRecommendation(
-								finding,
-								rule,
-								confidenceScore,
-								evidence,
-								fixPlan,
-								guidanceKey,
-								guidance,
-							);
-							allEnhancedFindings.push(enhanced);
-						}
+						// PERFORMANCE: Build enhanced recommendations in parallel
+						// Use Effect.forEach with concurrency limit to parallelize per-finding operations
+						// while avoiding resource exhaustion from unlimited parallelism
+						const allEnhancedFindings = yield* Effect.forEach(
+							result.findings,
+							(finding) =>
+								Effect.gen(function* () {
+									const rule = rulesMap.get(finding.ruleId)!;
+
+									// PERFORMANCE: Parallelize independent operations using Effect.all()
+									// These operations have no dependencies on each other
+									const [confidenceScore, fixPlan, evidence, guidanceKey] = yield* Effect.all([
+										confidenceCalculator.calculate(
+											finding,
+											code,
+											rule,
+											result.sourceFile, // PERFORMANCE: Pre-parsed SourceFile (Fix #1)
+										),
+										fixPlanGenerator.generate(
+											finding,
+											rule,
+											allFixes,
+										),
+										snippetExtractor.extract(finding, code),
+										guidanceLoader.getGuidanceKey(
+											finding.ruleId,
+										),
+									]);
+
+									// Load guidance only if key exists
+									const guidance = guidanceKey
+										? yield* guidanceLoader.loadGuidance(finding.ruleId)
+										: undefined;
+
+									// Build recommendation from all collected data
+									const enhanced = buildEnhancedRecommendation(
+										finding,
+										rule,
+										confidenceScore,
+										evidence,
+										fixPlan,
+										guidanceKey,
+										guidance,
+									);
+
+									return enhanced;
+								}),
+							{ concurrency: 5 }, // PERFORMANCE: Limit to 5 concurrent operations to avoid resource exhaustion
+						);
 
 						// Take top 3 for free tier
 						const topEnhancedFindings = allEnhancedFindings.slice(

@@ -25,7 +25,7 @@ export function getMCPEnvironmentConfig(
       return {
         name: "local",
         apiUrl: process.env.EFFECT_PATTERNS_API_URL || "http://localhost:3000",
-        apiKey: process.env.PATTERN_API_KEY || process.env.LOCAL_API_KEY,
+        apiKey: process.env.LOCAL_API_KEY || process.env.PATTERN_API_KEY,
         description: "Local development server",
       };
 

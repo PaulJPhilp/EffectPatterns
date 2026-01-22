@@ -56,6 +56,7 @@ export interface AnalyzeCodeInput {
 export interface AnalyzeCodeOutput {
 	readonly suggestions: readonly CodeSuggestion[];
 	readonly findings: readonly CodeFinding[];
+	readonly sourceFile?: ts.SourceFile; // Optional: for reuse in downstream services
 }
 
 // --- Analysis Logic ---
@@ -1922,8 +1923,8 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 						} satisfies CodeSuggestion;
 					});
 
-					return { suggestions, findings: ctx.findings };
-				});
+					return { suggestions, findings: ctx.findings, sourceFile };
+					});
 
 			return { analyze };
 		}),

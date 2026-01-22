@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { MCPLoggerService } from "../index";
 import { Effect, Layer } from "effect";
 import { MCPConfigService } from "../../config";
+import { logDebug, logInfo, logWarn, logError, createLogEntry } from "../helpers";
 
 const TestLayer = Layer.provideMerge(
 	MCPLoggerService.Default,
@@ -127,7 +128,7 @@ describe("MCPLoggerService", () => {
 				const logger = yield* MCPLoggerService;
 				const config = yield* MCPConfigService;
 
-				const enabled = yield* config.isLoggingEnabled();
+				const enabled = config.loggingEnabled;
 				expect(typeof enabled).toBe("boolean");
 
 				return true;
@@ -253,5 +254,107 @@ describe("MCPLoggerService", () => {
 
 		expect(typeof result.level).toBe("string");
 		expect(typeof result.enabled).toBe("boolean");
+	});
+});
+
+describe("Logger Helpers", () => {
+	describe("createLogEntry", () => {
+		it("should create log entry with Error object", () => {
+			const error = new Error("Test error");
+			const entry = createLogEntry("error", "Test message", "test.operation", { key: "value" }, error);
+			
+			expect(entry.message).toBe("Test message");
+			expect(entry.level).toBe("error");
+			expect(entry.operation).toBe("test.operation");
+			expect(entry.data).toEqual({ key: "value" });
+			expect(entry.error).toBeDefined();
+			expect(entry.error?.name).toBe("Error");
+			expect(entry.error?.message).toBe("Test error");
+		});
+
+		it("should create log entry with unknown error", () => {
+			const error = "String error";
+			const entry = createLogEntry("error", "Test message", undefined, undefined, error);
+			
+			expect(entry.error).toBeDefined();
+			expect(entry.error?.name).toBe("UnknownError");
+			expect(entry.error?.message).toBe("String error");
+		});
+
+		it("should create log entry without error", () => {
+			const entry = createLogEntry("info", "Test message", undefined, { key: "value" });
+			
+			expect(entry.message).toBe("Test message");
+			expect(entry.level).toBe("info");
+			expect(entry.data).toEqual({ key: "value" });
+			expect(entry.error).toBeUndefined();
+		});
+	});
+
+	describe("Legacy logging functions", () => {
+		beforeEach(() => {
+			vi.clearAllMocks();
+			vi.spyOn(console, "log").mockImplementation(() => {});
+			vi.spyOn(console, "warn").mockImplementation(() => {});
+			vi.spyOn(console, "error").mockImplementation(() => {});
+		});
+
+		it("logDebug should log debug message", () => {
+			logDebug("Debug message", { key: "value" });
+			expect(console.log).toHaveBeenCalled();
+			const call = vi.mocked(console.log).mock.calls[0][0];
+			const parsed = JSON.parse(call);
+			expect(parsed.level).toBe("debug");
+			expect(parsed.message).toBe("Debug message");
+			expect(parsed.data).toEqual({ key: "value" });
+		});
+
+		it("logInfo should log info message", () => {
+			logInfo("Info message", { key: "value" });
+			expect(console.log).toHaveBeenCalled();
+			const call = vi.mocked(console.log).mock.calls[vi.mocked(console.log).mock.calls.length - 1][0];
+			const parsed = JSON.parse(call);
+			expect(parsed.level).toBe("info");
+			expect(parsed.message).toBe("Info message");
+		});
+
+		it("logWarn should log warning message", () => {
+			logWarn("Warning message", { key: "value" });
+			expect(console.warn).toHaveBeenCalled();
+			const call = vi.mocked(console.warn).mock.calls[0][0];
+			const parsed = JSON.parse(call);
+			expect(parsed.level).toBe("warn");
+			expect(parsed.message).toBe("Warning message");
+		});
+
+		it("logError should log error message with Error object", () => {
+			const error = new Error("Test error");
+			logError("Error message", error, { key: "value" });
+			expect(console.error).toHaveBeenCalled();
+			const call = vi.mocked(console.error).mock.calls[0][0];
+			const parsed = JSON.parse(call);
+			expect(parsed.level).toBe("error");
+			expect(parsed.message).toBe("Error message");
+			expect(parsed.error.name).toBe("Error");
+			expect(parsed.error.message).toBe("Test error");
+		});
+
+		it("logError should log error message with unknown error", () => {
+			logError("Error message", "String error", { key: "value" });
+			expect(console.error).toHaveBeenCalled();
+			const call = vi.mocked(console.error).mock.calls[0][0];
+			const parsed = JSON.parse(call);
+			expect(parsed.error.name).toBe("UnknownError");
+			expect(parsed.error.message).toBe("String error");
+		});
+
+		it("logError should log error message without error", () => {
+			logError("Error message", undefined, { key: "value" });
+			expect(console.error).toHaveBeenCalled();
+			const call = vi.mocked(console.error).mock.calls[0][0];
+			const parsed = JSON.parse(call);
+			expect(parsed.level).toBe("error");
+			expect(parsed.error).toBeUndefined();
+		});
 	});
 });

@@ -59,20 +59,59 @@ export const GUIDANCE_MAP: GuidanceMapping = {
 };
 
 /**
- * Load guidance markdown content from disk
+ * In-memory cache for guidance content.
+ * Loaded once at startup to eliminate synchronous I/O during requests.
+ * 
+ * PERFORMANCE: This cache is populated at service initialization time,
+ * not lazily at request time. This eliminates blocking readFileSync() calls
+ * from the hot path (per-finding guidance loading).
+ */
+let guidanceCache: Map<string, string> | null = null;
+
+/**
+ * Initialize the guidance content cache from disk.
+ * Called once at service startup to preload all guidance files.
+ * 
+ * PERFORMANCE: This is a synchronous operation at startup, not in request hot path.
+ */
+export function initializeGuidanceCache(): void {
+	if (guidanceCache !== null) {
+		// Already initialized
+		return;
+	}
+
+	guidanceCache = new Map<string, string>();
+
+	// Load all guidance files from disk at startup
+	for (const [, guidanceKey] of Object.entries(GUIDANCE_MAP)) {
+		try {
+			const guidancePath = join(
+				__dirname,
+				"guidance",
+				`${guidanceKey}.md`
+			);
+			const content = readFileSync(guidancePath, "utf-8");
+			guidanceCache.set(guidanceKey, content);
+		} catch {
+			// Silently skip missing files - guidance is optional
+			// (not all rules have guidance documentation)
+		}
+	}
+}
+
+/**
+ * Load guidance markdown content from in-memory cache.
+ * 
+ * PERFORMANCE: This is a fast O(1) Map lookup, not synchronous I/O.
+ * The cache is populated at startup via initializeGuidanceCache().
  */
 export function loadGuidanceContent(guidanceKey: string): string | undefined {
-	try {
-		const guidancePath = join(
-			__dirname,
-			"guidance",
-			`${guidanceKey}.md`
-		);
-		return readFileSync(guidancePath, "utf-8");
-	} catch {
-		// Silently return undefined if file doesn't exist
-		return undefined;
+	// Ensure cache is initialized (defensive; normally done at startup)
+	if (guidanceCache === null) {
+		initializeGuidanceCache();
 	}
+
+	return guidanceCache!.get(guidanceKey);
 }
 
 /**

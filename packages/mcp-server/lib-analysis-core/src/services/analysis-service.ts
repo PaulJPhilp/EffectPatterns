@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import ts from "typescript";
 import type { FixId, RuleId } from "../tools/ids";
 import type { AnalysisConfig } from "../config/types";
 import type {
@@ -22,6 +23,7 @@ export interface AnalysisReport {
 	readonly suggestions: readonly CodeSuggestion[];
 	readonly findings: readonly CodeFinding[];
 	readonly analyzedAt: string;
+	readonly sourceFile?: ts.SourceFile; // Optional: for reuse in downstream services (e.g., ConfidenceCalculator)
 }
 
 /**
@@ -141,6 +143,7 @@ export class AnalysisService extends Effect.Service<AnalysisService>()(
 						suggestions: result.suggestions,
 						findings: result.findings,
 						analyzedAt: new Date().toISOString(),
+						sourceFile: result.sourceFile,
 					};
 				});
 

@@ -45,8 +45,8 @@ export const validateApiKey = (
     const apiKey = config.apiKey;
     const nodeEnv = config.nodeEnv;
 
-    // In development mode, skip API key validation entirely for local development
-    // This makes local testing easier without requiring API key setup
+    // In development mode, allow open access ONLY if no API key is configured
+    // If an API key is configured, require proper authentication even in dev mode
     if (nodeEnv === "development") {
       if (!apiKey || apiKey.trim() === "") {
         // No API key configured - allow all requests in dev mode
@@ -56,14 +56,15 @@ export const validateApiKey = (
         return;
       }
       
-      // API key is configured in dev mode - validate if provided, but allow requests without key
+      // API key is configured in dev mode - require authentication
       const providedKey = extractApiKey(request);
       if (!providedKey) {
-        // No key provided in request - allow in dev mode
-        console.warn(
-          "[Auth] No API key provided in request - allowing in development mode"
+        // No key provided in request - require authentication
+        return yield* Effect.fail(
+          new AuthenticationError({
+            message: "Missing API key"
+          })
         );
-        return;
       }
       
       // Key provided - validate it matches configured key

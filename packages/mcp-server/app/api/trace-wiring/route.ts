@@ -7,6 +7,7 @@
 
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import {
   validateApiKey,
 } from "../../../src/auth/apiKey";
@@ -112,7 +113,13 @@ const handleTraceWiring = Effect.fn("trace-wiring")(function* (
     endpoint: "trace-wiring",
   });
 
-  const traceId = tracing.getTraceId();
+  let traceId = tracing.getTraceId();
+  
+  // Generate trace ID if not available from OpenTelemetry
+  if (!traceId) {
+    // Generate a UUID-based trace ID (remove dashes to get 32 hex chars)
+    traceId = randomUUID().replace(/-/g, '');
+  }
 
   return {
     effectNodeSdk: EFFECT_NODE_SDK_EXAMPLE,
@@ -136,8 +143,8 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json(result, {
     status: 200,
-    headers: {
-      "x-trace-id": result.traceId || "",
-    },
+    headers: result.traceId ? {
+      "x-trace-id": result.traceId,
+    } : {},
   });
 }

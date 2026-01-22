@@ -26,6 +26,24 @@ export const ToolSchemas = {
       .max(100)
       .optional()
       .describe("Maximum number of results to return"),
+    format: z
+      .enum(["json", "markdown", "both"])
+      .default("both")
+      .optional()
+      .describe("Output format (default: 'both')"),
+    limitCards: z
+      .number()
+      .int()
+      .min(1)
+      .max(10)
+      .default(3)
+      .optional()
+      .describe("Maximum number of cards to render in markdown (default: 3)"),
+    includeProvenancePanel: z
+      .boolean()
+      .default(false)
+      .optional()
+      .describe("Include provenance information panel (default: false)"),
   }).describe("Search Effect-TS patterns by query, category, difficulty level, and more"),
 
   // Get Pattern Tool
