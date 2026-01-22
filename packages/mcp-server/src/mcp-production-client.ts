@@ -11,10 +11,29 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { Agent as HttpsAgent } from "https";
 
 // Configuration
 const PRODUCTION_URL = "https://effect-patterns-mcp.vercel.app";
 const API_KEY = process.env.PATTERN_API_KEY || process.env.PRODUCTION_API_KEY;
+const REQUEST_TIMEOUT_MS = 30000;
+
+// HTTP Connection Pooling (production API is always HTTPS)
+const httpsAgent = new HttpsAgent({
+  keepAlive: true,
+  keepAliveMsecs: 30000,
+  maxSockets: 50,
+  maxFreeSockets: 10,
+  timeout: REQUEST_TIMEOUT_MS,
+});
+
+/**
+ * In-flight request deduping
+ */
+const inFlightRequests = new Map<
+  string,
+  Promise<ApiResult<unknown>>
+>();
 
 // Create MCP server
 const server = new McpServer(
@@ -39,9 +58,18 @@ type ApiResult<T> =
 /**
  * Helper to make HTTP requests to production API.
  * Returns Result type - no exceptions thrown.
+ * Features: connection pooling, keep-alive, timeout, deduping
  */
 async function callProductionApi(endpoint: string, data?: unknown): Promise<ApiResult<unknown>> {
     const url = `${PRODUCTION_URL}/api${endpoint}`;
+    const requestKey = `${data ? "POST" : "GET"}:${endpoint}:${data ? JSON.stringify(data) : ""}`;
+
+    // Check for in-flight request (dedupe)
+    const inFlight = inFlightRequests.get(requestKey);
+    if (inFlight) {
+        console.error(`[MCP] Dedupe hit: ${requestKey}`);
+        return inFlight;
+    }
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -50,28 +78,56 @@ async function callProductionApi(endpoint: string, data?: unknown): Promise<ApiR
         headers["x-api-key"] = API_KEY;
     }
 
-    try {
-        const response = await fetch(url, {
-            method: data ? "POST" : "GET",
-            headers,
-            body: data ? JSON.stringify(data) : undefined,
-        });
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+        controller.abort();
+    }, REQUEST_TIMEOUT_MS);
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            return {
-                ok: false,
-                error: errorText || `HTTP ${response.status}`,
-                status: response.status,
-            };
+    const requestPromise = (async (): Promise<ApiResult<unknown>> => {
+        try {
+            const response = await fetch(url, {
+                method: data ? "POST" : "GET",
+                headers,
+                body: data ? JSON.stringify(data) : undefined,
+                signal: controller.signal,
+                // @ts-expect-error - Node.js fetch supports agent option
+                agent: httpsAgent,
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                return {
+                    ok: false,
+                    error: errorText || `HTTP ${response.status}`,
+                    status: response.status,
+                };
+            }
+
+            const result = await response.json();
+            return { ok: true, data: result };
+        } catch (error) {
+            clearTimeout(timeoutId);
+            
+            if (error instanceof Error && error.name === "AbortError") {
+                return { ok: false, error: `Request timeout after ${REQUEST_TIMEOUT_MS}ms` };
+            }
+
+            const msg = error instanceof Error ? error.message : String(error);
+            return { ok: false, error: msg };
+        } finally {
+            inFlightRequests.delete(requestKey);
         }
+    })();
 
-        const result = await response.json();
-        return { ok: true, data: result };
-    } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        return { ok: false, error: msg };
+    // Store in-flight request (GET only to avoid side-effects)
+    if (!data) {
+        inFlightRequests.set(requestKey, requestPromise);
     }
+
+    return requestPromise;
 }
 
 /**
@@ -81,6 +137,34 @@ type ToolResult = {
     content: Array<{ type: "text"; text: string }>;
     isError?: boolean;
 };
+
+/**
+ * Simple in-memory cache for production client
+ */
+class SimpleCache {
+  private cache = new Map<string, { value: any; expiresAt: number }>();
+  private readonly maxEntries = 1000;
+
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.value as T;
+  }
+
+  set<T>(key: string, value: T, ttlMs: number = 5 * 60 * 1000): void {
+    if (this.cache.size >= this.maxEntries) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) this.cache.delete(firstKey);
+    }
+    this.cache.set(key, { value, expiresAt: Date.now() + ttlMs });
+  }
+}
+
+const productionCache = new SimpleCache();
 
 /**
  * Convert API result to tool result

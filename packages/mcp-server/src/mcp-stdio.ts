@@ -20,6 +20,8 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { Agent } from "http";
+import { Agent as HttpsAgent } from "https";
 import { registerTools } from "./tools/tool-implementations.js";
 import { getActiveMCPConfig } from "./config/mcp-environments.js";
 
@@ -32,6 +34,53 @@ const config = getActiveMCPConfig();
 const API_BASE_URL = config.apiUrl;
 const API_KEY = config.apiKey;
 const DEBUG = process.env.MCP_DEBUG === "true";
+const REQUEST_TIMEOUT_MS = 30000; // 30 seconds timeout
+
+// ============================================================================
+// HTTP Connection Pooling
+// ============================================================================
+
+// Global agents with connection reuse and keep-alive
+const httpAgent = new Agent({
+  keepAlive: true,
+  keepAliveMsecs: 30000,
+  maxSockets: 50,
+  maxFreeSockets: 10,
+  timeout: REQUEST_TIMEOUT_MS,
+});
+
+const httpsAgent = new HttpsAgent({
+  keepAlive: true,
+  keepAliveMsecs: 30000,
+  maxSockets: 50,
+  maxFreeSockets: 10,
+  timeout: REQUEST_TIMEOUT_MS,
+});
+
+/**
+ * In-flight request deduping
+ * Key: request signature (endpoint + method + data hash)
+ * Value: Promise that resolves to ApiResult
+ */
+const inFlightRequests = new Map<
+  string,
+  Promise<ApiResult<unknown>>
+>();
+
+// Telemetry counters
+let dedupeHits = 0;
+let dedupeMisses = 0;
+
+function getRequestKey(
+  endpoint: string,
+  method: "GET" | "POST",
+  data?: unknown
+): string {
+  // For GET requests, include query params in key
+  // For POST requests, include data hash (simplified: JSON stringify)
+  const dataStr = data ? JSON.stringify(data) : "";
+  return `${method}:${endpoint}:${dataStr}`;
+}
 
 // ============================================================================
 // Minimal Logging
@@ -61,6 +110,17 @@ async function callApi(
   data?: unknown,
 ): Promise<ApiResult<unknown>> {
   const url = `${API_BASE_URL}/api${endpoint}`;
+  const requestKey = getRequestKey(endpoint, method, data);
+
+  // Check for in-flight request (dedupe)
+  const inFlight = inFlightRequests.get(requestKey);
+  if (inFlight) {
+    dedupeHits++;
+    log(`API Dedupe Hit: ${requestKey}`);
+    return inFlight;
+  }
+
+  dedupeMisses++;
 
   // Build headers - only add API key if provided
   // Auth validation happens at HTTP API level
@@ -71,9 +131,22 @@ async function callApi(
     headers["x-api-key"] = API_KEY;
   }
 
+  // Create AbortController for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
+
+  // Select agent based on protocol
+  const isHttps = url.startsWith("https");
+  const agentOption = isHttps ? httpsAgent : httpAgent;
+
   const options: RequestInit = {
     method,
     headers,
+    signal: controller.signal,
+    // @ts-expect-error - Node.js fetch supports agent option
+    agent: agentOption,
   };
 
   if (data && method === "POST") {
@@ -82,29 +155,106 @@ async function callApi(
 
   log(`API ${method} ${endpoint}`);
 
-  try {
-    const response = await fetch(url, options);
+  // Create promise for this request
+  const requestPromise = (async (): Promise<ApiResult<unknown>> => {
+    try {
+      const response = await fetch(url, options);
+      clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      // Return error as value, not exception
-      const errorBody = await response.text();
-      log(`API Error: HTTP ${response.status}`);
-      return {
-        ok: false,
-        error: errorBody || `HTTP ${response.status}`,
-        status: response.status,
-      };
+      if (!response.ok) {
+        // Return error as value, not exception
+        const errorBody = await response.text();
+        log(`API Error: HTTP ${response.status}`);
+        return {
+          ok: false,
+          error: errorBody || `HTTP ${response.status}`,
+          status: response.status,
+        };
+      }
+
+      const result = await response.json();
+      return { ok: true, data: result };
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      // Check if it was a timeout
+      if (error instanceof Error && error.name === "AbortError") {
+        const msg = `Request timeout after ${REQUEST_TIMEOUT_MS}ms: ${method} ${endpoint}`;
+        log(`API Error: ${msg}`);
+        return { ok: false, error: msg };
+      }
+
+      // Network or parsing errors
+      const msg = error instanceof Error ? error.message : String(error);
+      log(`API Error: ${msg}`);
+      return { ok: false, error: msg };
+    } finally {
+      // Clean up in-flight request
+      inFlightRequests.delete(requestKey);
+    }
+  })();
+
+  // Store in-flight request (only for GET requests to avoid side-effects)
+  if (method === "GET") {
+    inFlightRequests.set(requestKey, requestPromise);
+  }
+
+  return requestPromise;
+}
+
+// ============================================================================
+// Simple In-Memory Cache for Tool Results
+// ============================================================================
+
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+}
+
+class SimpleCache {
+  private cache = new Map<string, CacheEntry<unknown>>();
+  private readonly maxEntries = 1000;
+
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
     }
 
-    const result = await response.json();
-    return { ok: true, data: result };
-  } catch (error) {
-    // Network or parsing errors
-    const msg = error instanceof Error ? error.message : String(error);
-    log(`API Error: ${msg}`);
-    return { ok: false, error: msg };
+    return entry.value as T;
+  }
+
+  set<T>(key: string, value: T, ttlMs: number = 5 * 60 * 1000): void {
+    // Evict oldest entry if cache is full (simple FIFO)
+    if (this.cache.size >= this.maxEntries) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) {
+        this.cache.delete(firstKey);
+      }
+    }
+
+    this.cache.set(key, {
+      value,
+      expiresAt: Date.now() + ttlMs,
+    });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  getStats() {
+    return {
+      size: this.cache.size,
+      maxEntries: this.maxEntries,
+    };
   }
 }
+
+const toolCache = new SimpleCache();
 
 // ============================================================================
 // MCP Server Setup
@@ -126,8 +276,11 @@ const server = new McpServer(
 // Tool Handlers
 // ============================================================================
 
-// Register all tools using the shared implementation
-registerTools(server, callApi, log);
+// Register all tools using the shared implementation with cache support
+registerTools(server, callApi, log, {
+  get: (key: string) => toolCache.get(key),
+  set: (key: string, value: any, ttl: number) => toolCache.set(key, value, ttl),
+});
 
 // ============================================================================
 // Server Startup
