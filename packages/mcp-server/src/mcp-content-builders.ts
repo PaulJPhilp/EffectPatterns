@@ -792,6 +792,134 @@ function buildScanFirstPatternContent(pattern: PatternData): TextContent[] {
   return content;
 }
 
+/**
+ * Build an index table for search results
+ *
+ * Optimized: Pre-allocates buffer for string building (avoids quadratic concat)
+ */
+interface SearchResultsPayload {
+  readonly count: number;
+  readonly patterns: readonly PatternData[];
+}
+
+function buildIndexTable(patterns: readonly PatternData[]): string {
+  if (patterns.length === 0) return "No patterns found.";
+
+  // Pre-allocate buffer and use single join pass (O(N) instead of O(N²))
+  const rows: string[] = [];
+  rows.push("| Pattern | Category | Difficulty | Tags |");
+  rows.push("| :--- | :--- | :--- | :--- |");
+
+  for (const p of patterns) {
+    const tags = p.tags ? p.tags.join(", ") : "";
+    rows.push(
+      `| **${p.title}** (\`${p.id}\`) | ${p.category} | ${p.difficulty} | ${tags} |`
+    );
+  }
+
+  return rows.join("\n");
+}
+
+/**
+ * Build search results content with index table and top N cards
+ *
+ * Performance Optimizations:
+ * - Index table rendered once (not per pattern)
+ * - Card rendering limited to N=3 by default (configurable)
+ * - Lazy pagination: full results available via index, top cards highlighted
+ */
+function buildSearchResultsContent(
+  results: SearchResultsPayload,
+  options: {
+    limitCards?: number;
+    includeProvenancePanel?: boolean;
+    query?: string;
+  } = {}
+): TextContent[] {
+  const content: TextContent[] = [];
+  // Default to 3 cards; max 10 to prevent runaway rendering
+  const limitCards = Math.min(options.limitCards ?? 3, 10);
+  const normalizePriority = (blocks: TextContent[]): TextContent[] =>
+    blocks.map((block) => {
+      if (!block.annotations) return block;
+      return {
+        ...block,
+        annotations: {
+          ...block.annotations,
+          priority: 1,
+        },
+      };
+    });
+
+  // 1. Summary Header
+  const queryInfo = options.query ? ` for "${options.query}"` : "";
+  const moreCount = Math.max(0, results.patterns.length - limitCards);
+  const moreNote =
+    moreCount > 0
+      ? ` (showing top ${limitCards} of ${results.count}; see index for all)`
+      : "";
+  
+  content.push(
+    createTextBlock(
+      `# Search Results${queryInfo}\nFound **${results.count}** patterns${moreNote}.`,
+      {
+        priority: 1,
+        audience: ["user"],
+      }
+    )
+  );
+
+  // 2. Index Table (always render full index for discovery)
+  content.push(
+    createTextBlock(`## Index\n\n${buildIndexTable(results.patterns)}`, {
+      priority: 1,
+      audience: ["user"],
+    })
+  );
+
+  // 3. Top N Cards (lazy rendering - only render up to limitCards)
+  if (results.patterns.length > 0 && limitCards > 0) {
+    const displayCount = Math.min(results.patterns.length, limitCards);
+    content.push(
+      createTextBlock(`## Top ${displayCount} Patterns`, {
+        priority: 2,
+        audience: ["user"],
+      })
+    );
+
+    for (let i = 0; i < displayCount; i++) {
+      const pattern = results.patterns[i];
+      // Use buildScanFirstPatternContent for each card
+      const cardContent = buildScanFirstPatternContent(pattern);
+      content.push(...normalizePriority(cardContent));
+    }
+  }
+
+  // 4. Provenance Panel (if requested)
+  if (options.includeProvenancePanel) {
+    const provenance = {
+      source: "Effect Patterns API",
+      timestamp: new Date().toISOString(),
+      version: "pps-v2",
+      buildSha: "local-dev",
+      query: options.query,
+      resultCount: results.count,
+    };
+
+    content.push(
+      createTextBlock(
+        `---\n<details>\n<summary>Provenance</summary>\n\n\`\`\`json\n${JSON.stringify(provenance, null, 2)}\n\`\`\`\n</details>`,
+        {
+          priority: 1,
+          audience: ["user"],
+        }
+      )
+    );
+  }
+
+  return normalizePriority(content);
+}
+
 export {
   createTextBlock,
   createCodeBlock,
@@ -803,6 +931,7 @@ export {
   createSeverityBlock,
   createFindingsSummary,
   buildScanFirstPatternContent,
+  buildSearchResultsContent,
   extractTLDRPoints,
   createTOC,
   type MCPAnnotations,
