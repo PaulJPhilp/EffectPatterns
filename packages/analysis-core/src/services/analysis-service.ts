@@ -136,10 +136,15 @@ export class AnalysisService extends Effect.Service<AnalysisService>()(
 						config: options?.config,
 					});
 
+					const severityOrder: Record<string, number> = { high: 3, medium: 2, low: 1 };
+					const sortedFindings = [...result.findings].sort((a, b) =>
+						(severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0)
+					);
+
 					return {
 						filename,
 						suggestions: result.suggestions,
-						findings: result.findings,
+						findings: sortedFindings,
 						analyzedAt: new Date().toISOString(),
 					};
 				});
