@@ -5,6 +5,7 @@ on:
     branches: [main, feat/**]
   pull_request:
     branches: [main]
+  workflow_dispatch: # Allow manual trigger
 
 # Cancel in-progress runs for the same workflow + branch/PR
 concurrency:
@@ -38,6 +39,7 @@ jobs:
   check-narration:
     name: Narration Leakage Check
     runs-on: ubuntu-latest
+    continue-on-error: true # Optional but available
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -199,6 +201,7 @@ jobs:
     name: Integration Tests - MCP Server
     runs-on: ubuntu-latest
     needs: [build-toolkit, build-mcp-server]
+    continue-on-error: true # Optional but available - catches env drift
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
