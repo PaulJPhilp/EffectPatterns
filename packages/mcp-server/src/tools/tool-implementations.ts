@@ -11,6 +11,7 @@ import {
   createTextBlock,
   createCodeBlock,
   buildPatternContent,
+  buildScanFirstPatternContent,
 } from "../mcp-content-builders.js";
 import {
   generateMigrationDiff,
@@ -122,97 +123,19 @@ export function registerTools(
         };
       }
 
-      // For regular patterns, build rich content with description + code examples
+      // For regular patterns, build scan-first content optimized for quick scanning
       if (result.ok && result.data) {
         const pattern = result.data as any;
-        const richContent: (TextContent | { type: "text"; text: string })[] = [];
-
-        // Title
-        richContent.push(
-          createTextBlock(`# ${pattern.title}`, {
-            priority: 1,
-            audience: ["user"],
-          })
-        );
-
-        // Category and difficulty badges
-        richContent.push(
-          createTextBlock(
-            `**Category:** ${pattern.category} | **Difficulty:** ${pattern.difficulty}`,
-            {
-              priority: 2,
-              audience: ["user"],
-            }
-          )
-        );
-
-        // Description (TextContent block)
-        richContent.push(
-          createTextBlock(pattern.description, {
-            priority: 2,
-            audience: ["user"],
-          })
-        );
-
-        // Code examples (CodeContent blocks)
-        if (pattern.examples && pattern.examples.length > 0) {
-          richContent.push(
-            createTextBlock("## Examples", {
-              priority: 2,
-              audience: ["user"],
-            })
-          );
-
-          for (let i = 0; i < pattern.examples.length; i++) {
-            const example = pattern.examples[i];
-            richContent.push(
-              createCodeBlock(
-                example.code,
-                example.language || "typescript",
-                example.description
-                  ? `**Example ${i + 1}:** ${example.description}`
-                  : undefined,
-                {
-                  priority: 2,
-                  audience: ["user"],
-                }
-              )
-            );
-          }
-        }
-
-        // Use cases
-        if (pattern.useCases && pattern.useCases.length > 0) {
-          const useCasesText = `## Use Cases\n\n${pattern.useCases.map((uc: string) => `- ${uc}`).join("\n")}`;
-          richContent.push(
-            createTextBlock(useCasesText, {
-              priority: 3,
-              audience: ["user"],
-            })
-          );
-        }
-
-        // Tags
-        if (pattern.tags && pattern.tags.length > 0) {
-          const tagsText = `**Tags:** ${pattern.tags.join(", ")}`;
-          richContent.push(
-            createTextBlock(tagsText, {
-              priority: 4,
-              audience: ["user"],
-            })
-          );
-        }
-
-        // Related patterns
-        if (pattern.relatedPatterns && pattern.relatedPatterns.length > 0) {
-          const relatedText = `## Related Patterns\n\n${pattern.relatedPatterns.map((rp: string) => `- ${rp}`).join("\n")}`;
-          richContent.push(
-            createTextBlock(relatedText, {
-              priority: 4,
-              audience: ["user"],
-            })
-          );
-        }
+        const richContent = buildScanFirstPatternContent({
+          title: pattern.title,
+          category: pattern.category,
+          difficulty: pattern.difficulty,
+          description: pattern.description,
+          examples: pattern.examples,
+          useCases: pattern.useCases,
+          tags: pattern.tags,
+          relatedPatterns: pattern.relatedPatterns,
+        });
 
         return {
           content: richContent,

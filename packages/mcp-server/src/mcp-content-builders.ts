@@ -471,6 +471,327 @@ function createFindingsSummary(
   return blocks;
 }
 
+/**
+ * Extract 3-5 key points for TL;DR section
+ *
+ * Prioritizes useCases, then extracts from description if needed
+ */
+function extractTLDRPoints(
+  description: string,
+  useCases?: readonly string[]
+): readonly string[] {
+  // If useCases exist, use first 3-5 as TL;DR points
+  if (useCases && useCases.length > 0) {
+    return useCases.slice(0, 5);
+  }
+
+  // Otherwise, try to extract key points from description
+  // Look for bullet points or numbered lists
+  const bulletMatch = description.match(/^[-•*]\s+(.+)$/gm);
+  if (bulletMatch && bulletMatch.length > 0) {
+    return bulletMatch.slice(0, 5).map((m) => m.replace(/^[-•*]\s+/, "").trim());
+  }
+
+  // Look for numbered lists
+  const numberedMatch = description.match(/^\d+\.\s+(.+)$/gm);
+  if (numberedMatch && numberedMatch.length > 0) {
+    return numberedMatch.slice(0, 5).map((m) => m.replace(/^\d+\.\s+/, "").trim());
+  }
+
+  // Fall back to splitting description into sentences
+  // Take first 3-5 sentences that are substantial
+  const sentences = description
+    .split(/[.!?]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 20)
+    .slice(0, 5);
+
+  return sentences.length > 0 ? sentences : [description.substring(0, 200)];
+}
+
+/**
+ * Create table of contents with jump links
+ *
+ * Generates anchor links for all available sections
+ */
+function createTOC(hasExamples: boolean, hasUseCases: boolean, hasRelated: boolean): string {
+  const links: string[] = [];
+
+  // Always include these sections
+  links.push("[What is this?](#what-is-this)");
+
+  if (hasUseCases) {
+    links.push("[What should I do?](#what-should-i-do)");
+  }
+
+  if (hasExamples) {
+    links.push("[Show me the APIs](#show-me-the-apis)");
+  }
+
+  if (hasRelated) {
+    links.push("[Related Patterns](#related-patterns)");
+  }
+
+  return `**Jump to:** ${links.join(" · ")}`;
+}
+
+/**
+ * Pattern data structure for scan-first content building
+ */
+interface PatternData {
+  readonly title: string;
+  readonly category: string;
+  readonly difficulty: string;
+  readonly description: string;
+  readonly examples?: readonly Array<{
+    readonly code: string;
+    readonly language?: string;
+    readonly description?: string;
+  }>;
+  readonly useCases?: readonly string[];
+  readonly tags?: readonly string[];
+  readonly relatedPatterns?: readonly string[];
+}
+
+/**
+ * Extract API names from tags or code examples
+ */
+function extractAPINames(pattern: PatternData): readonly string[] {
+  const apiNames: string[] = [];
+
+  // Extract from tags (e.g., "Effect.all", "Effect.forEach")
+  if (pattern.tags) {
+    for (const tag of pattern.tags) {
+      if (tag.includes("Effect.") || tag.includes("Layer.") || tag.includes("Stream.")) {
+        apiNames.push(tag);
+      }
+    }
+  }
+
+  // Extract from code examples if not found in tags
+  if (apiNames.length === 0 && pattern.examples) {
+    for (const example of pattern.examples) {
+      const matches = example.code.match(/\b(Effect|Layer|Stream|Schedule|Metric|Ref|Queue|PubSub)\.\w+/g);
+      if (matches) {
+        apiNames.push(...matches);
+      }
+    }
+  }
+
+  // Remove duplicates and return
+  return Array.from(new Set(apiNames)).slice(0, 5);
+}
+
+/**
+ * Extract "Use when" from useCases or description
+ */
+function extractUseWhen(pattern: PatternData): string {
+  if (pattern.useCases && pattern.useCases.length > 0) {
+    return pattern.useCases[0];
+  }
+
+  // Extract first sentence from description
+  const firstSentence = pattern.description.split(/[.!?]+/)[0].trim();
+  return firstSentence.length > 0 ? firstSentence : pattern.description.substring(0, 100);
+}
+
+/**
+ * Extract "Avoid when" from tags or infer from context
+ */
+function extractAvoidWhen(pattern: PatternData): string | undefined {
+  // Look for "avoid" or "not" in useCases
+  if (pattern.useCases) {
+    const avoidCase = pattern.useCases.find(
+      (uc) => uc.toLowerCase().includes("avoid") || uc.toLowerCase().includes("not")
+    );
+    if (avoidCase) {
+      return avoidCase;
+    }
+  }
+
+  // Look for "avoid" in description
+  const avoidMatch = pattern.description.match(/avoid[^.!?]*[.!?]/i);
+  if (avoidMatch) {
+    return avoidMatch[0].trim();
+  }
+
+  return undefined;
+}
+
+/**
+ * Truncate code example to max lines
+ */
+function truncateCodeExample(code: string, maxLines: number = 20): string {
+  const lines = code.split("\n");
+  if (lines.length <= maxLines) {
+    return code;
+  }
+
+  return lines.slice(0, maxLines).join("\n") + "\n// ...";
+}
+
+/**
+ * Extract notes from remaining useCases or description
+ */
+function extractNotes(pattern: PatternData): readonly string[] {
+  const notes: string[] = [];
+
+  // Use remaining useCases (skip first one used for "Use when")
+  if (pattern.useCases && pattern.useCases.length > 1) {
+    notes.push(...pattern.useCases.slice(1, 3));
+  }
+
+  // If not enough notes, extract from description
+  if (notes.length < 2) {
+    const sentences = pattern.description
+      .split(/[.!?]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 20 && s.length < 150)
+      .slice(2, 4); // Skip first 2 sentences (used for summary)
+    notes.push(...sentences);
+  }
+
+  return notes.slice(0, 2);
+}
+
+/**
+ * Build pattern card content optimized for quick comparison
+ *
+ * Card structure:
+ * - Name (pattern title)
+ * - Use when (1 line)
+ * - Avoid when (1 line, optional)
+ * - API (chips: Effect.all, Effect.forEach)
+ * - Minimal example (10–20 lines max)
+ * - Notes (1–2 bullets)
+ */
+function buildScanFirstPatternContent(pattern: PatternData): TextContent[] {
+  const content: TextContent[] = [];
+
+  // Card Header: Name with category/difficulty badges
+  content.push(
+    createTextBlock(`# ${pattern.title}`, {
+      priority: 1,
+      audience: ["user"],
+    })
+  );
+
+  content.push(
+    createTextBlock(
+      `**Category:** ${pattern.category} | **Difficulty:** ${pattern.difficulty}`,
+      {
+        priority: 1,
+        audience: ["user"],
+      }
+    )
+  );
+
+  // Use when (1 line)
+  const useWhen = extractUseWhen(pattern);
+  content.push(
+    createTextBlock(`**Use when:** ${useWhen}`, {
+      priority: 1,
+      audience: ["user"],
+    })
+  );
+
+  // Avoid when (1 line, optional)
+  const avoidWhen = extractAvoidWhen(pattern);
+  if (avoidWhen) {
+    content.push(
+      createTextBlock(`**Avoid when:** ${avoidWhen}`, {
+        priority: 1,
+        audience: ["user"],
+      })
+    );
+  }
+
+  // API chips
+  const apiNames = extractAPINames(pattern);
+  if (apiNames.length > 0) {
+    const apiChips = apiNames.map((api) => `\`${api}\``).join(" ");
+    content.push(
+      createTextBlock(`**API:** ${apiChips}`, {
+        priority: 1,
+        audience: ["user"],
+      })
+    );
+  }
+
+  // Default vs Recommended (infer from tags or pattern context)
+  const isRecommended = pattern.tags?.some((tag) =>
+    tag.toLowerCase().includes("recommended") || tag.toLowerCase().includes("preferred")
+  );
+  const isDefault = pattern.tags?.some((tag) => tag.toLowerCase().includes("default"));
+  
+  if (isRecommended || isDefault) {
+    const defaultVsRecommended = isRecommended
+      ? "**Recommended** (preferred approach)"
+      : isDefault
+        ? "**Default** (standard approach)"
+        : undefined;
+    
+    if (defaultVsRecommended) {
+      content.push(
+        createTextBlock(defaultVsRecommended, {
+          priority: 1,
+          audience: ["user"],
+        })
+      );
+    }
+  }
+
+  // Minimal example (10–20 lines max)
+  if (pattern.examples && pattern.examples.length > 0) {
+    const firstExample = pattern.examples[0];
+    const truncatedCode = truncateCodeExample(firstExample.code, 20);
+
+    content.push(
+      createTextBlock("**Example:**", {
+        priority: 1,
+        audience: ["user"],
+      })
+    );
+
+    content.push(
+      createCodeBlock(
+        truncatedCode,
+        firstExample.language || "typescript",
+        undefined,
+        {
+          priority: 1,
+          audience: ["user"],
+        }
+      )
+    );
+  }
+
+  // Notes (1–2 bullets)
+  const notes = extractNotes(pattern);
+  if (notes.length > 0) {
+    const notesText = notes.map((note) => `- ${note}`).join("\n");
+    content.push(
+      createTextBlock(`**Notes:**\n\n${notesText}`, {
+        priority: 2,
+        audience: ["user"],
+      })
+    );
+  }
+
+  // Related Patterns (if available)
+  if (pattern.relatedPatterns && pattern.relatedPatterns.length > 0) {
+    const relatedText = `**Related:** ${pattern.relatedPatterns.slice(0, 3).join(", ")}`;
+    content.push(
+      createTextBlock(relatedText, {
+        priority: 3,
+        audience: ["user"],
+      })
+    );
+  }
+
+  return content;
+}
+
 export {
   createTextBlock,
   createCodeBlock,
@@ -481,6 +802,9 @@ export {
   buildViolationContent,
   createSeverityBlock,
   createFindingsSummary,
+  buildScanFirstPatternContent,
+  extractTLDRPoints,
+  createTOC,
   type MCPAnnotations,
   type TextContent,
 };
