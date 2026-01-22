@@ -15,7 +15,7 @@ import type { TextContent } from "@modelcontextprotocol/sdk/shared/messages.js";
 import {
   MARKER_PATTERN_CARD_V1,
   MARKER_PATTERN_INDEX_V1,
-} from "./constants/markers.js";
+} from "@/constants/markers.js";
 
 /**
  * MCP 2.0 Annotation structure

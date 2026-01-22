@@ -22,7 +22,7 @@ import { getMCPEnvironmentConfig } from "../../src/config/mcp-environments";
 import {
   MARKER_PATTERN_CARD_V1,
   MARKER_PATTERN_INDEX_V1,
-} from "../../src/constants/markers";
+} from "@/constants/markers";
 
 function extractContentText(
   content: Array<{ type: string; text?: string }> | { type: string; text?: string }
