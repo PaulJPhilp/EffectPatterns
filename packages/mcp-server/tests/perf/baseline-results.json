@@ -1,0 +1,51 @@
+{
+  "timestamp": "2025-01-22T20:00:00Z",
+  "environment": "localhost",
+  "node_version": "v24.3.0",
+  "platform": "darwin arm64",
+  "memory_gb": 16.0,
+  "tests": {
+    "search_patterns": {
+      "iterations": 100,
+      "min_ms": 0.0,
+      "mean_ms": 0.02,
+      "p50_ms": 0.0,
+      "p95_ms": 0.03,
+      "p99_ms": 0.64,
+      "max_ms": 0.64,
+      "notes": "Pure rendering benchmark (no HTTP). Real latency dominated by API call ~150-200ms"
+    },
+    "get_pattern": {
+      "iterations": 100,
+      "min_ms": 0.0,
+      "mean_ms": 0.0,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.0,
+      "max_ms": 0.0,
+      "notes": "Pure rendering benchmark (no HTTP). Real latency dominated by API call ~80-150ms"
+    },
+    "markdown_rendering": {
+      "iterations": 100,
+      "min_ms": 0.0,
+      "mean_ms": 0.01,
+      "p50_ms": 0.0,
+      "p95_ms": 0.01,
+      "p99_ms": 0.24,
+      "max_ms": 0.24,
+      "notes": "Pure rendering cost for variable result sizes (1-3 patterns)"
+    }
+  },
+  "estimated_e2e_latency": {
+    "search_patterns_p95_ms": 250,
+    "get_pattern_p95_ms": 150,
+    "notes": "Estimates include ~150-200ms HTTP API latency (not cached, no keep-alive)"
+  },
+  "identified_bottlenecks": [
+    "No HTTP connection reuse (each request creates new connection)",
+    "No in-flight deduping for concurrent identical requests",
+    "No pattern result caching (MCPCacheService exists but unused)",
+    "Full markdown rendering for every search (even if cached)",
+    "No lazy pagination of results"
+  ]
+}
