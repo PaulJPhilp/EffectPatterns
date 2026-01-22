@@ -19,6 +19,10 @@
 import { describe, it, expect, beforeAll, afterEach } from "vitest";
 import { MCPTestClient, createMCPTestClient } from "./helpers/mcp-test-client";
 import { getMCPEnvironmentConfig } from "../../src/config/mcp-environments";
+import {
+  MARKER_PATTERN_CARD_V1,
+  MARKER_PATTERN_INDEX_V1,
+} from "../../src/constants/markers";
 
 function extractContentText(
   content: Array<{ type: string; text?: string }> | { type: string; text?: string }
@@ -129,11 +133,11 @@ describe("Local MCP Server", () => {
       }
       
       // Positive assertion: Check for contractual structural markers (stable IDs and markers)
-      expect(searchText).toContain("<!-- kind:pattern-index:v1 -->"); // Index contract marker
-      expect(searchText).toContain("<!-- kind:pattern-card:v1 -->"); // Card contract marker
+      expect(searchText).toContain(MARKER_PATTERN_INDEX_V1); // Index contract marker
+      expect(searchText).toContain(MARKER_PATTERN_CARD_V1); // Card contract marker
       
       // Ensure cards are rendered (K=1 requested in args)
-      const cardMatches = searchText.match(/<!-- kind:pattern-card:v1 -->/g);
+      const cardMatches = searchText.match(new RegExp(MARKER_PATTERN_CARD_V1, "g"));
       expect(cardMatches?.length).toBe(1);
 
       // Test 2: Get pattern
@@ -144,9 +148,9 @@ describe("Local MCP Server", () => {
       
       // Structural markers for single pattern card
       expect(getText).toMatch(/^# /m); // Markdown H1 title
-      expect(getText).toContain("<!-- kind:pattern-card:v1 -->"); // Contract marker
+      expect(getText).toContain(MARKER_PATTERN_CARD_V1); // Contract marker
       
-      const getCardMatches = getText.match(/<!-- kind:pattern-card:v1 -->/g);
+      const getCardMatches = getText.match(new RegExp(MARKER_PATTERN_CARD_V1, "g"));
       expect(getCardMatches?.length).toBe(1);
 
       expect(getText).toContain("**API:**");

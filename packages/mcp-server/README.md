@@ -900,6 +900,17 @@ The server implements a hierarchical logging system to ensure production safety 
 
 **Note:** All logs are strictly routed to `stderr` to prevent interference with the MCP protocol on `stdout`.
 
+## Presentation Contract
+
+The server output embeds stable, hidden contract markers to facilitate automated testing and client integration without relying on brittle markdown styling.
+
+- **`<!-- kind:pattern-index:v1 -->`**: Indicates the presence of the search results index table.
+- **`<!-- kind:pattern-card:v1 -->`**: Indicates the start of a pattern detail card.
+
+These markers are guaranteed to be present in the raw tool output content, enabling robust regression testing of the presentation layer.
+
+**Versioning Rule:** If marker semantics change, the version suffix (e.g., `v1`) must be incremented, and backward compatibility should be maintained where feasible.
+
 ## CI/CD Requirements
 
 Integration tests (`test:integration`) require specific environment variables in your CI/CD pipeline:

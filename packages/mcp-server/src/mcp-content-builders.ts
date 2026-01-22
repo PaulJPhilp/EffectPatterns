@@ -12,6 +12,10 @@
  */
 
 import type { TextContent } from "@modelcontextprotocol/sdk/shared/messages.js";
+import {
+  MARKER_PATTERN_CARD_V1,
+  MARKER_PATTERN_INDEX_V1,
+} from "./constants/markers.js";
 
 /**
  * MCP 2.0 Annotation structure
@@ -678,7 +682,7 @@ function buildScanFirstPatternContent(pattern: PatternData): TextContent[] {
 
   // Hidden presentation marker for contract testing
   content.push(
-    createTextBlock("<!-- kind:pattern-card:v1 -->", {
+    createTextBlock(MARKER_PATTERN_CARD_V1, {
       priority: 1,
       audience: ["user"],
     })
@@ -815,7 +819,7 @@ function buildIndexTable(patterns: readonly PatternData[]): string {
 
   // Pre-allocate buffer and use single join pass (O(N) instead of O(N²))
   const rows: string[] = [];
-  rows.push("<!-- kind:pattern-index:v1 -->"); // Hidden marker for contract testing
+  rows.push(MARKER_PATTERN_INDEX_V1); // Hidden marker for contract testing
   rows.push("| Pattern | Category | Difficulty | Tags |");
   rows.push("| :--- | :--- | :--- | :--- |");
 
