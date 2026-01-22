@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { TextContent } from "@modelcontextprotocol/sdk/shared/messages.js";
 import {
   ToolSchemas,
   type SearchPatternsArgs,
@@ -6,15 +7,21 @@ import {
   type AnalyzeCodeArgs,
   type ReviewCodeArgs,
 } from "../schemas/tool-schemas.js";
+import {
+  createTextBlock,
+  createCodeBlock,
+  buildPatternContent,
+} from "../mcp-content-builders.js";
+import {
+  generateMigrationDiff,
+  isMigrationPattern,
+} from "../services/pattern-diff-generator/api.js";
 
 /**
- * Result of a tool execution.
+ * Result of a tool execution - supports MCP 2.0 rich content arrays
  */
 export type CallToolResult = {
-  content: Array<{
-    type: "text";
-    text: string;
-  }>;
+  content: (TextContent | { type: "text"; text: string })[];
   isError?: boolean;
 };
 
@@ -41,10 +48,21 @@ export type CallApiFn = (
 export type LogFn = (message: string, data?: unknown) => void;
 
 /**
- * Helper to convert API result to tool result.
+ * Helper to convert API result to tool result - supports both plain text and rich content.
  */
-function toToolResult(result: ApiResult<unknown>, toolName: string, log: LogFn): CallToolResult {
+function toToolResult(
+  result: ApiResult<unknown>,
+  toolName: string,
+  log: LogFn,
+  richContent?: (TextContent | { type: "text"; text: string })[]
+): CallToolResult {
   if (result.ok) {
+    // If rich content provided, use it; otherwise fall back to JSON
+    if (richContent && richContent.length > 0) {
+      return {
+        content: richContent,
+      };
+    }
     return {
       content: [{ type: "text", text: JSON.stringify(result.data) }],
     };
@@ -86,7 +104,7 @@ export function registerTools(
     }
   );
 
-  // Get Pattern Tool
+  // Get Pattern Tool - Returns rich content with description and code examples
   // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
   server.tool(
     "get_pattern",
@@ -95,6 +113,113 @@ export function registerTools(
     async (args: GetPatternArgs): Promise<CallToolResult> => {
       log("Tool called: get_pattern", args);
       const result = await callApi(`/patterns/${encodeURIComponent(args.id)}`);
+
+      // Check if this is a migration pattern and return annotated diff
+      if (result.ok && isMigrationPattern(args.id)) {
+        const diffContent = generateMigrationDiff(args.id);
+        return {
+          content: diffContent,
+        };
+      }
+
+      // For regular patterns, build rich content with description + code examples
+      if (result.ok && result.data) {
+        const pattern = result.data as any;
+        const richContent: (TextContent | { type: "text"; text: string })[] = [];
+
+        // Title
+        richContent.push(
+          createTextBlock(`# ${pattern.title}`, {
+            priority: 1,
+            audience: ["user"],
+          })
+        );
+
+        // Category and difficulty badges
+        richContent.push(
+          createTextBlock(
+            `**Category:** ${pattern.category} | **Difficulty:** ${pattern.difficulty}`,
+            {
+              priority: 2,
+              audience: ["user"],
+            }
+          )
+        );
+
+        // Description (TextContent block)
+        richContent.push(
+          createTextBlock(pattern.description, {
+            priority: 2,
+            audience: ["user"],
+          })
+        );
+
+        // Code examples (CodeContent blocks)
+        if (pattern.examples && pattern.examples.length > 0) {
+          richContent.push(
+            createTextBlock("## Examples", {
+              priority: 2,
+              audience: ["user"],
+            })
+          );
+
+          for (let i = 0; i < pattern.examples.length; i++) {
+            const example = pattern.examples[i];
+            richContent.push(
+              createCodeBlock(
+                example.code,
+                example.language || "typescript",
+                example.description
+                  ? `**Example ${i + 1}:** ${example.description}`
+                  : undefined,
+                {
+                  priority: 2,
+                  audience: ["user"],
+                }
+              )
+            );
+          }
+        }
+
+        // Use cases
+        if (pattern.useCases && pattern.useCases.length > 0) {
+          const useCasesText = `## Use Cases\n\n${pattern.useCases.map((uc: string) => `- ${uc}`).join("\n")}`;
+          richContent.push(
+            createTextBlock(useCasesText, {
+              priority: 3,
+              audience: ["user"],
+            })
+          );
+        }
+
+        // Tags
+        if (pattern.tags && pattern.tags.length > 0) {
+          const tagsText = `**Tags:** ${pattern.tags.join(", ")}`;
+          richContent.push(
+            createTextBlock(tagsText, {
+              priority: 4,
+              audience: ["user"],
+            })
+          );
+        }
+
+        // Related patterns
+        if (pattern.relatedPatterns && pattern.relatedPatterns.length > 0) {
+          const relatedText = `## Related Patterns\n\n${pattern.relatedPatterns.map((rp: string) => `- ${rp}`).join("\n")}`;
+          richContent.push(
+            createTextBlock(relatedText, {
+              priority: 4,
+              audience: ["user"],
+            })
+          );
+        }
+
+        return {
+          content: richContent,
+        };
+      }
+
+      // Fall back to JSON response if not a pattern or error
       return toToolResult(result, "get_pattern", log);
     }
   );
