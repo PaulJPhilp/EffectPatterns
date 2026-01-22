@@ -386,4 +386,203 @@ describe("Review Code Route (/api/review-code)", () => {
       expect((recommendations[0].suggestion as string).length).toBeGreaterThan(0);
     }
   });
+
+  describe("Code source constraints", () => {
+    it("should require code parameter (cannot use filePath alone)", async () => {
+      const request = new NextRequest("http://localhost:3000/api/review-code", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": "test-api-key",
+        },
+        body: JSON.stringify({
+          filePath: "src/test.ts",
+          // code is missing
+        }),
+      });
+
+      const response = await reviewCodeHandler(request);
+
+      expect(response.status).toBe(400);
+      const data = await response.json() as Record<string, unknown>;
+      expect(data.error).toContain("code parameter is required");
+    });
+
+    it("should accept code without filePath", async () => {
+      const request = new NextRequest("http://localhost:3000/api/review-code", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": "test-api-key",
+        },
+        body: JSON.stringify({
+          code: "const x: number = 42;",
+          // filePath is optional
+        }),
+      });
+
+      const response = await reviewCodeHandler(request);
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as Record<string, unknown>;
+      expect(data).toHaveProperty("recommendations");
+    });
+
+    it("should use provided code, not read from filePath", async () => {
+      // This test verifies that the code parameter is used,
+      // not the filePath (which might point to a different file or not exist)
+      const providedCode = "const x: any = 42;"; // Code with issue
+      const nonExistentPath = "/tmp/non-existent-file.ts"; // Path that doesn't exist
+
+      const request = new NextRequest("http://localhost:3000/api/review-code", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": "test-api-key",
+        },
+        body: JSON.stringify({
+          code: providedCode,
+          filePath: nonExistentPath,
+        }),
+      });
+
+      const response = await reviewCodeHandler(request);
+
+      // Should succeed because we use provided code, not filePath
+      expect(response.status).toBe(200);
+      const data = await response.json() as Record<string, unknown>;
+      expect(data).toHaveProperty("recommendations");
+      // Should analyze the provided code (which has ": any")
+      const recommendations = data.recommendations as Array<Record<string, unknown>>;
+      // If the code has issues, we should get recommendations
+      expect(Array.isArray(recommendations)).toBe(true);
+    });
+  });
+
+  describe("Diagnostic-only response", () => {
+    it("should return only diagnostic information, no corrected code", async () => {
+      const request = new NextRequest("http://localhost:3000/api/review-code", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": "test-api-key",
+        },
+        body: JSON.stringify({
+          code: "const x: any = 1;",
+        }),
+      });
+
+      const response = await reviewCodeHandler(request);
+      const data = await response.json() as Record<string, unknown>;
+
+      // Verify response structure contains only diagnostics
+      expect(data).toHaveProperty("recommendations");
+      expect(data).toHaveProperty("totalFindings");
+      expect(data).toHaveProperty("tier");
+
+      // Verify NO corrected code fields
+      expect(data).not.toHaveProperty("correctedCode");
+      expect(data).not.toHaveProperty("after");
+      expect(data).not.toHaveProperty("fixed");
+      expect(data).not.toHaveProperty("patched");
+
+      // Verify recommendations contain diagnostics only
+      const recommendations = data.recommendations as Array<Record<string, unknown>>;
+      if (recommendations.length > 0) {
+        const rec = recommendations[0];
+        expect(rec).toHaveProperty("severity");
+        expect(rec).toHaveProperty("message");
+        expect(rec).toHaveProperty("suggestion");
+        // Should NOT have corrected code
+        expect(rec).not.toHaveProperty("correctedCode");
+        expect(rec).not.toHaveProperty("after");
+        expect(rec).not.toHaveProperty("fixedCode");
+      }
+    });
+
+    it("should return recommendations with suggestions, not corrected code", async () => {
+      const request = new NextRequest("http://localhost:3000/api/review-code", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": "test-api-key",
+        },
+        body: JSON.stringify({
+          code: "const x: any = 1;",
+        }),
+      });
+
+      const response = await reviewCodeHandler(request);
+      const data = await response.json() as Record<string, unknown>;
+
+      const recommendations = data.recommendations as Array<Record<string, unknown>>;
+      if (recommendations.length > 0) {
+        const rec = recommendations[0];
+
+        // Should have diagnostic information
+        expect(rec).toHaveProperty("message");
+        expect(rec).toHaveProperty("suggestion");
+        expect(rec).toHaveProperty("impact");
+
+        // Suggestions should be descriptive, not full corrected code
+        const suggestion = rec.suggestion as string;
+        expect(typeof suggestion).toBe("string");
+        expect(suggestion.length).toBeGreaterThan(0);
+        // Should be a suggestion/guidance, not a full code replacement
+        expect(suggestion.length).toBeLessThan(500); // Reasonable length for suggestion
+
+        // Should NOT contain full corrected code blocks
+        expect(suggestion).not.toMatch(/^```/); // Not a code block
+        expect(suggestion).not.toMatch(/const x: [^=]+ = 1;/); // Not the corrected line
+      }
+    });
+
+    it("should not include corrected code in response structure", async () => {
+      const request = new NextRequest("http://localhost:3000/api/review-code", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": "test-api-key",
+        },
+        body: JSON.stringify({
+          code: "const x: any = {}; try { } catch (e) { }",
+        }),
+      });
+
+      const response = await reviewCodeHandler(request);
+      const data = await response.json() as Record<string, unknown>;
+
+      // Get all keys in the response
+      const responseKeys = Object.keys(data);
+
+      // Verify no corrected code related keys exist
+      const forbiddenKeys = [
+        "correctedCode",
+        "after",
+        "fixed",
+        "patched",
+        "corrected",
+        "fixedCode",
+        "patchedCode",
+        "afterCode",
+      ];
+
+      forbiddenKeys.forEach((key) => {
+        expect(responseKeys).not.toContain(key);
+      });
+
+      // Verify only diagnostic keys exist
+      const allowedKeys = [
+        "recommendations",
+        "totalFindings",
+        "filePath",
+        "tier",
+        "moreAvailable",
+        "traceId",
+      ];
+
+      // Response should contain diagnostic keys
+      expect(responseKeys.some((key) => allowedKeys.includes(key))).toBe(true);
+    });
+  });
 });

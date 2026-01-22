@@ -19,16 +19,24 @@ export const MyService = Effect.gen(function* () {
 });
 ```
 
-#### 2. Reference a File
+#### 2. Reference an Open Editor File
 ```
 Review this file for architectural issues: src/services/user.ts
 ```
+*(Note: The code must be from an open editor file. Files are not read from disk.)*
+
+**Important**: The tool only accepts code that is:
+- Cut and pasted into the prompt, OR
+- Provided from an open editor file
+
+Files are **NOT** read from disk. Only diagnostic information is returned (no corrected code).
 
 The tool will:
 - Analyze the code for Effect-TS anti-patterns
 - Return top 3 high-impact recommendations (free tier)
 - Show severity levels: 🔴 high, 🟡 medium, 🔵 low
-- Provide detailed explanations for each finding
+- Provide detailed diagnostic information (findings, recommendations, fix plans)
+- **NOT** return corrected code - only diagnostics
 
 ### Example Prompts
 
@@ -48,10 +56,12 @@ The code review tool checks for:
 
 ### Free Tier Limits
 
+- **Code source**: Code must be cut and pasted or from open editor (files not read from disk)
 - Max 100KB per file
 - Top 3 recommendations shown (sorted by severity)
 - `.ts` and `.tsx` files only
 - Results include upgrade messaging if more issues detected
+- **Response type**: Only diagnostic information (no corrected code)
 
 ### More Tools Available
 

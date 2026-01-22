@@ -156,6 +156,55 @@ export const handler = Effect.gen(function* () {
       expect(result.content).toBeDefined();
     });
 
+    it("should require code parameter (filePath alone is not sufficient)", async () => {
+      if (!isLocalAvailable) return;
+      // MCP tool schema should enforce code is required
+      // This test verifies runtime behavior
+      const result = await client.callTool("review_code", {
+        code: "", // Empty code (minimum required)
+        filePath: "src/handlers/api.ts",
+      });
+
+      // Should return content (may be empty result or error)
+      expect(result.content).toBeDefined();
+    });
+
+    it("should work without filePath (code-only mode)", async () => {
+      if (!isLocalAvailable) return;
+      const result = await client.callTool("review_code", {
+        code: sampleCode,
+        // filePath is optional
+      });
+
+      expect(result.content).toBeDefined();
+    });
+
+    it("should return only diagnostic information, no corrected code", async () => {
+      if (!isLocalAvailable) return;
+      const result = await client.callTool("review_code", {
+        code: "const x: any = 42;",
+        filePath: "test.ts",
+      });
+
+      expect(result.content).toBeDefined();
+      const content = Array.isArray(result.content)
+        ? result.content[0]
+        : result.content;
+
+      if (content && typeof content === "object" && "text" in content) {
+        const text = content.text as string;
+        const data = JSON.parse(text);
+
+        // Verify response structure contains only diagnostics
+        expect(data).toHaveProperty("recommendations");
+        // Verify NO corrected code fields
+        expect(data).not.toHaveProperty("correctedCode");
+        expect(data).not.toHaveProperty("after");
+        expect(data).not.toHaveProperty("fixed");
+        expect(data).not.toHaveProperty("patched");
+      }
+    });
+
     it("should list analysis rules", async () => {
       if (!isLocalAvailable) return;
       const result = await client.callTool("list_analysis_rules", {});

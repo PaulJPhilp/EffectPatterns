@@ -77,6 +77,17 @@ export class ReviewCodeService extends Effect.Service<ReviewCodeService>()(
 			return {
 				/**
 				 * Review code and return top 3 recommendations with enhanced details
+				 * 
+				 * IMPORTANT: This service only accepts code that is:
+				 * 1. Cut and pasted into the prompt (code parameter)
+				 * 2. Provided from an open editor file (code parameter with optional filePath for context)
+				 * 
+				 * Files are NOT read from disk. The filePath parameter is only used for:
+				 * - TypeScript file extension validation
+				 * - Context/metadata in analysis results
+				 * 
+				 * Only diagnostic information is returned (findings, recommendations, fix plans).
+				 * No corrected code is included in the response.
 				 */
 				reviewCode: (
 					code: string,

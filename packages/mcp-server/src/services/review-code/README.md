@@ -6,13 +6,19 @@ Free tier code review with architectural recommendations.
 
 The `ReviewCodeService` provides high-fidelity architectural recommendations for Effect codebases with confidence scoring, fix plans, and guidance. Limited to top 3 findings in Free tier.
 
+**Important**: This service only accepts code that is:
+1. Cut and pasted into the prompt (code parameter)
+2. Provided from an open editor file (code parameter with optional filePath for context)
+
+Files are **NOT** read from disk. The `filePath` parameter is only used for TypeScript file extension validation and context/metadata. Only diagnostic information is returned (no corrected code).
+
 ## API
 
 ### Methods
 
 #### `reviewCode(code: string, filePath?: string): Effect<ReviewCodeResult, FileSizeError | NonTypeScriptError | Error>`
 
-Analyze TypeScript code and return review recommendations.
+Analyze TypeScript code and return diagnostic recommendations. Code must be provided directly - files are not read from disk.
 
 ```typescript
 const result = yield* reviewer.reviewCode(
@@ -28,10 +34,12 @@ console.log(result.markdown);
 
 ## Constraints
 
+- **Code source**: Code must be cut and pasted or provided from open editor. Files are NOT read from disk.
 - **File size**: Max 100KB (100,000 bytes)
-- **File type**: Must be .ts or .tsx
+- **File type**: Must be .ts or .tsx (if filePath provided)
 - **Free tier limit**: Top 3 recommendations (by severity)
 - **Code limit**: Entire finding base is analyzed
+- **Response type**: Only diagnostic information returned (findings, recommendations, fix plans). No corrected code is included.
 
 ## Response Structure
 

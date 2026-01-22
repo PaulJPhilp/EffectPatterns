@@ -256,9 +256,13 @@ export function registerTools(
 
   // Review Code Tool
   // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
+  // This tool only accepts code that is:
+  // 1. Cut and pasted into the prompt (code parameter)
+  // 2. Provided from an open editor file (code parameter with optional filePath for context)
+  // Files are NOT read from disk. Only diagnostic information is returned (no corrected code).
   server.tool(
     "review_code",
-    "Get AI-powered architectural review and recommendations for Effect code",
+    "Get AI-powered architectural review and diagnostic recommendations for Effect code. Only accepts code that is cut and pasted into the prompt or provided from an open editor file. Returns diagnostic information only (no corrected code).",
     ToolSchemas.reviewCode.shape as any,
     async (args: ReviewCodeArgs): Promise<CallToolResult> => {
       log("Tool called: review_code", args);

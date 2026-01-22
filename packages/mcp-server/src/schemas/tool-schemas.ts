@@ -48,9 +48,9 @@ export const ToolSchemas = {
 
   // Review Code Tool
   reviewCode: z.object({
-    code: z.string().min(1).describe("Source code to review"),
-    filePath: z.string().optional().describe("File path for context (e.g., 'src/services/user.ts')"),
-  }).describe("Get AI-powered architectural review and recommendations for Effect code"),
+    code: z.string().min(1).describe("Source code to review (must be cut and pasted from prompt or provided from open editor)"),
+    filePath: z.string().optional().describe("File path for context only (e.g., 'src/services/user.ts'). Code must be provided via 'code' parameter - files are not read from disk."),
+  }).describe("Get AI-powered architectural review and diagnostic recommendations for Effect code. Only accepts code that is cut and pasted into the prompt or provided from an open editor file. Returns diagnostic information only (no corrected code)."),
 
   // Paid-tier schemas removed from MCP tool surface (HTTP API only)
 };

@@ -142,11 +142,13 @@ server.registerTool(
 server.registerTool(
     "review_code",
     {
-        description: "Get AI-powered code review for Effect-TS code",
+        description: "Get AI-powered architectural review and diagnostic recommendations for Effect code. Only accepts code that is cut and pasted into the prompt or provided from an open editor file. Returns diagnostic information only (no corrected code).",
         inputSchema: undefined as any,
     },
     async (args: { code: string; filePath?: string }): Promise<ToolResult> => {
         console.error("Tool called: review_code", args);
+        // Note: This tool only accepts code that is cut and pasted or from open editor.
+        // Files are NOT read from disk. Only diagnostics are returned.
         const result = await callProductionApi("/review-code", {
             code: args.code,
             filePath: args.filePath,
