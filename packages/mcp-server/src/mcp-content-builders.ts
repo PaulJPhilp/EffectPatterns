@@ -247,6 +247,7 @@ function buildPatternContent(
  * Build a violation annotation block with severity levels
  *
  * Useful for code review and analysis tools.
+ * Uses standardized Markdown with severity indicators for scannability.
  */
 function buildViolationContent(
   ruleName: string,
@@ -257,26 +258,42 @@ function buildViolationContent(
 ): TextContent[] {
   const content: TextContent[] = [];
 
+  // Parse severity for better blockquote formatting
+  const severityLabel = severity.includes("high")
+    ? "[🔴 HIGH SEVERITY]"
+    : severity.includes("medium")
+      ? "[🟡 ADVISORY]"
+      : "[🔵 INFO]";
+
+  // Header with severity for quick scanning
   content.push(
-    createTextBlock(`${severity} **${ruleName}**`, {
+    createTextBlock(`## ${severityLabel} ${ruleName}`, {
       priority: 1,
       audience: ["user"],
     })
   );
 
+  // Blockquoted message for visual separation
   content.push(
-    createTextBlock(message, {
-      priority: 2,
+    createTextBlock(`> **Issue:** ${message}`, {
+      priority: 1,
       audience: ["user"],
     })
   );
 
   if (example) {
     content.push(
+      createTextBlock("### Problematic Pattern", {
+        priority: 2,
+        audience: ["user"],
+      })
+    );
+
+    content.push(
       createCodeBlock(
         example,
         "typescript",
-        "**Example of violation:**",
+        undefined,
         {
           priority: 2,
           audience: ["user"],
@@ -285,14 +302,173 @@ function buildViolationContent(
     );
   }
 
+  // Remediation with clear header
   content.push(
-    createTextBlock(`**Remediation:**\n\n${remediation}`, {
+    createTextBlock("### How to Fix", {
+      priority: 3,
+      audience: ["user"],
+    })
+  );
+
+  content.push(
+    createTextBlock(`> ${remediation}`, {
       priority: 3,
       audience: ["user"],
     })
   );
 
   return content;
+}
+
+/**
+ * Create a scannable severity block with standardized Markdown formatting
+ *
+ * @param severity Severity level: "high" | "medium" | "low"
+ * @param title Brief title of the finding
+ * @param description Detailed description
+ * @param relatedCode Optional code snippet showing the issue
+ */
+function createSeverityBlock(
+  severity: "high" | "medium" | "low",
+  title: string,
+  description: string,
+  relatedCode?: string
+): TextContent[] {
+  const blocks: TextContent[] = [];
+
+  const severityLabel =
+    severity === "high"
+      ? "[🔴 HIGH SEVERITY]"
+      : severity === "medium"
+        ? "[🟡 ADVISORY]"
+        : "[🔵 INFO]";
+
+  const severityPriority =
+    severity === "high" ? 1 : severity === "medium" ? 2 : 3;
+
+  // Header with severity for quick scanning
+  blocks.push(
+    createTextBlock(`### ${severityLabel} ${title}`, {
+      priority: severityPriority,
+      audience: ["user"],
+    })
+  );
+
+  // Blockquoted description for visual hierarchy
+  blocks.push(
+    createTextBlock(`> ${description}`, {
+      priority: severityPriority + 1,
+      audience: ["user"],
+    })
+  );
+
+  // Optional code block
+  if (relatedCode) {
+    blocks.push(
+      createCodeBlock(
+        relatedCode,
+        "typescript",
+        "**Example:**",
+        {
+          priority: severityPriority + 1,
+          audience: ["user"],
+        }
+      )
+    );
+  }
+
+  return blocks;
+}
+
+/**
+ * Create a findings summary with grouped severity levels
+ *
+ * Formats findings in scannable sections ordered by severity
+ */
+function createFindingsSummary(
+  findings: Array<{
+    severity: "high" | "medium" | "low";
+    title: string;
+    description: string;
+    code?: string;
+  }>
+): TextContent[] {
+  const blocks: TextContent[] = [];
+
+  // Group by severity
+  const highSeverity = findings.filter((f) => f.severity === "high");
+  const mediumSeverity = findings.filter((f) => f.severity === "medium");
+  const lowSeverity = findings.filter((f) => f.severity === "low");
+
+  // Summary header
+  blocks.push(
+    createTextBlock(
+      `## Findings Summary (${findings.length} total)`,
+      {
+        priority: 1,
+        audience: ["user"],
+      }
+    )
+  );
+
+  // High severity section
+  if (highSeverity.length > 0) {
+    blocks.push(
+      createTextBlock(`### 🔴 High Severity (${highSeverity.length})`, {
+        priority: 1,
+        audience: ["user"],
+      })
+    );
+
+    for (const finding of highSeverity) {
+      blocks.push(...createSeverityBlock(
+        "high",
+        finding.title,
+        finding.description,
+        finding.code
+      ));
+    }
+  }
+
+  // Medium severity section
+  if (mediumSeverity.length > 0) {
+    blocks.push(
+      createTextBlock(`### 🟡 Advisory (${mediumSeverity.length})`, {
+        priority: 2,
+        audience: ["user"],
+      })
+    );
+
+    for (const finding of mediumSeverity) {
+      blocks.push(...createSeverityBlock(
+        "medium",
+        finding.title,
+        finding.description,
+        finding.code
+      ));
+    }
+  }
+
+  // Low severity section
+  if (lowSeverity.length > 0) {
+    blocks.push(
+      createTextBlock(`### 🔵 Info (${lowSeverity.length})`, {
+        priority: 3,
+        audience: ["user"],
+      })
+    );
+
+    for (const finding of lowSeverity) {
+      blocks.push(...createSeverityBlock(
+        "low",
+        finding.title,
+        finding.description,
+        finding.code
+      ));
+    }
+  }
+
+  return blocks;
 }
 
 export {
@@ -303,6 +479,8 @@ export {
   createPatternAnnotation,
   buildPatternContent,
   buildViolationContent,
+  createSeverityBlock,
+  createFindingsSummary,
   type MCPAnnotations,
   type TextContent,
 };

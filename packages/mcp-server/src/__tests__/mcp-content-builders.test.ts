@@ -12,6 +12,8 @@ import {
   createAntiPatternAnnotation,
   buildPatternContent,
   buildViolationContent,
+  createSeverityBlock,
+  createFindingsSummary,
 } from "../mcp-content-builders.js";
 
 describe("MCP Content Builders", () => {
@@ -212,6 +214,213 @@ describe("MCP Content Builders", () => {
         "Remediation"
       );
       expect(content.length).toBeGreaterThan(0);
+    });
+
+    it("should include severity label in header", () => {
+      const content = buildViolationContent(
+        "Test",
+        "🔴 high",
+        "Message",
+        "Fix"
+      );
+      const texts = content.map((b) => b.text).join("\n");
+      expect(texts).toContain("[🔴 HIGH SEVERITY]");
+    });
+
+    it("should include advisory label for medium severity", () => {
+      const content = buildViolationContent(
+        "Test",
+        "🟡 medium",
+        "Message",
+        "Fix"
+      );
+      const texts = content.map((b) => b.text).join("\n");
+      expect(texts).toContain("[🟡 ADVISORY]");
+    });
+
+    it("should include info label for low severity", () => {
+      const content = buildViolationContent(
+        "Test",
+        "🔵 low",
+        "Message",
+        "Fix"
+      );
+      const texts = content.map((b) => b.text).join("\n");
+      expect(texts).toContain("[🔵 INFO]");
+    });
+
+    it("should use blockquotes for emphasis", () => {
+      const content = buildViolationContent(
+        "Test",
+        "🔴 high",
+        "Message",
+        "Fix"
+      );
+      const texts = content.map((b) => b.text).join("\n");
+      expect(texts).toContain("> ");
+    });
+  });
+
+  describe("createSeverityBlock", () => {
+    it("should create high severity block", () => {
+      const blocks = createSeverityBlock(
+        "high",
+        "Critical Issue",
+        "This is critical"
+      );
+      expect(blocks.length).toBeGreaterThan(0);
+      const texts = blocks.map((b) => b.text).join("\n");
+      expect(texts).toContain("[🔴 HIGH SEVERITY]");
+      expect(texts).toContain("Critical Issue");
+    });
+
+    it("should create medium severity block", () => {
+      const blocks = createSeverityBlock(
+        "medium",
+        "Advisory",
+        "This is advisory"
+      );
+      const texts = blocks.map((b) => b.text).join("\n");
+      expect(texts).toContain("[🟡 ADVISORY]");
+    });
+
+    it("should create low severity block", () => {
+      const blocks = createSeverityBlock(
+        "low",
+        "Info",
+        "This is info"
+      );
+      const texts = blocks.map((b) => b.text).join("\n");
+      expect(texts).toContain("[🔵 INFO]");
+    });
+
+    it("should include code block when provided", () => {
+      const blocks = createSeverityBlock(
+        "high",
+        "Issue",
+        "Description",
+        "const x = 1"
+      );
+      const texts = blocks.map((b) => b.text).join("\n");
+      expect(texts).toContain("```typescript");
+      expect(texts).toContain("const x = 1");
+    });
+
+    it("should prioritize high severity blocks", () => {
+      const blocks = createSeverityBlock(
+        "high",
+        "Issue",
+        "Description"
+      );
+      expect(blocks[0].annotations?.priority).toBe(1);
+    });
+
+    it("should prioritize medium severity blocks", () => {
+      const blocks = createSeverityBlock(
+        "medium",
+        "Issue",
+        "Description"
+      );
+      expect(blocks[0].annotations?.priority).toBe(2);
+    });
+
+    it("should prioritize low severity blocks", () => {
+      const blocks = createSeverityBlock(
+        "low",
+        "Issue",
+        "Description"
+      );
+      expect(blocks[0].annotations?.priority).toBe(3);
+    });
+  });
+
+  describe("createFindingsSummary", () => {
+    it("should group findings by severity", () => {
+      const findings = [
+        {
+          severity: "high" as const,
+          title: "High Issue",
+          description: "High severity",
+        },
+        {
+          severity: "medium" as const,
+          title: "Medium Issue",
+          description: "Medium severity",
+        },
+        {
+          severity: "low" as const,
+          title: "Low Issue",
+          description: "Low severity",
+        },
+      ];
+
+      const blocks = createFindingsSummary(findings);
+      const texts = blocks.map((b) => b.text).join("\n");
+
+      expect(texts).toContain("🔴 High Severity");
+      expect(texts).toContain("🟡 Advisory");
+      expect(texts).toContain("🔵 Info");
+    });
+
+    it("should include finding count in summary", () => {
+      const findings = [
+        { severity: "high" as const, title: "Issue", description: "Desc" },
+      ];
+
+      const blocks = createFindingsSummary(findings);
+      const texts = blocks.map((b) => b.text).join("\n");
+
+      expect(texts).toContain("Findings Summary (1 total)");
+    });
+
+    it("should show correct count per severity", () => {
+      const findings = [
+        { severity: "high" as const, title: "Issue 1", description: "Desc" },
+        { severity: "high" as const, title: "Issue 2", description: "Desc" },
+        { severity: "medium" as const, title: "Issue 3", description: "Desc" },
+      ];
+
+      const blocks = createFindingsSummary(findings);
+      const texts = blocks.map((b) => b.text).join("\n");
+
+      expect(texts).toContain("High Severity (2)");
+      expect(texts).toContain("Advisory (1)");
+    });
+
+    it("should handle empty findings lists", () => {
+      const blocks = createFindingsSummary([]);
+      expect(blocks.length).toBeGreaterThan(0);
+      const texts = blocks.map((b) => b.text).join("\n");
+      expect(texts).toContain("Findings Summary (0 total)");
+    });
+
+    it("should skip sections with no findings", () => {
+      const findings = [
+        { severity: "high" as const, title: "Issue", description: "Desc" },
+      ];
+
+      const blocks = createFindingsSummary(findings);
+      const texts = blocks.map((b) => b.text).join("\n");
+
+      expect(texts).toContain("High Severity (1)");
+      expect(texts).not.toContain("Advisory");
+      expect(texts).not.toContain("Info");
+    });
+
+    it("should include code examples when provided", () => {
+      const findings = [
+        {
+          severity: "high" as const,
+          title: "Issue",
+          description: "Desc",
+          code: "const x = 1",
+        },
+      ];
+
+      const blocks = createFindingsSummary(findings);
+      const texts = blocks.map((b) => b.text).join("\n");
+
+      expect(texts).toContain("const x = 1");
     });
   });
 });

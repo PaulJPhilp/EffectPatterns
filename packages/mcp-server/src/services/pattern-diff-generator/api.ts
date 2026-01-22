@@ -366,7 +366,7 @@ const migrationExamples: Record<string, MigrationExample> = {
  * Generate migration diff content for a pattern
  *
  * @param patternId The migration pattern ID
- * @returns TextContent array suitable for MCP tool responses
+ * @returns TextContent array suitable for MCP tool responses with improved scannability
  */
 function generateMigrationDiff(patternId: string): TextContent[] {
   const example = migrationExamples[patternId];
@@ -386,20 +386,29 @@ function generateMigrationDiff(patternId: string): TextContent[] {
     },
   });
 
-  // Explanation
+  // Explanation with blockquote for emphasis
   content.push({
     type: "text",
-    text: example.explanation,
+    text: `> ${example.explanation}`,
+    annotations: {
+      priority: 1,
+      audience: ["user"],
+    },
+  });
+
+  // Before section with severity indicator
+  content.push({
+    type: "text",
+    text: "## [🔴 v3 Pattern] Before",
     annotations: {
       priority: 2,
       audience: ["user"],
     },
   });
 
-  // Before section
   content.push({
     type: "text",
-    text: "## Before (v3 style)",
+    text: "> This pattern has known issues in v4. Pay attention to the highlighted lines below.",
     annotations: {
       priority: 2,
       audience: ["user"],
@@ -416,12 +425,22 @@ function generateMigrationDiff(patternId: string): TextContent[] {
     },
   });
 
-  // Anti-pattern annotations
-  for (const block of example.beforeV3) {
-    if (block.isAntiPattern && block.annotation) {
+  // Anti-pattern annotations with severity signaling
+  const antiPatterns = example.beforeV3.filter((b) => b.isAntiPattern && b.annotation);
+  if (antiPatterns.length > 0) {
+    content.push({
+      type: "text",
+      text: "### Issues to Address",
+      annotations: {
+        priority: 1,
+        audience: ["user"],
+      },
+    });
+
+    for (const block of antiPatterns) {
       content.push({
         type: "text",
-        text: `**Line ${block.line}:** ⚠️ ${block.annotation}`,
+        text: `> **Line ${block.line}:** ⚠️ ${block.annotation}`,
         annotations: {
           priority: 1,
           audience: ["user"],
@@ -430,12 +449,21 @@ function generateMigrationDiff(patternId: string): TextContent[] {
     }
   }
 
-  // After section
+  // After section with improvement indicator
   content.push({
     type: "text",
-    text: "## After (v4 style)",
+    text: "## [✅ v4 Pattern] After",
     annotations: {
-      priority: 3,
+      priority: 2,
+      audience: ["user"],
+    },
+  });
+
+  content.push({
+    type: "text",
+    text: "> This is the recommended approach for v4. The highlighted improvements are marked below.",
+    annotations: {
+      priority: 2,
       audience: ["user"],
     },
   });
@@ -450,12 +478,22 @@ function generateMigrationDiff(patternId: string): TextContent[] {
     },
   });
 
-  // Improvement annotations
-  for (const block of example.afterV4) {
-    if (!block.isAntiPattern && block.annotation) {
+  // Improvement annotations with visual markers
+  const improvements = example.afterV4.filter((b) => !b.isAntiPattern && b.annotation);
+  if (improvements.length > 0) {
+    content.push({
+      type: "text",
+      text: "### Key Improvements",
+      annotations: {
+        priority: 2,
+        audience: ["user"],
+      },
+    });
+
+    for (const block of improvements) {
       content.push({
         type: "text",
-        text: `**Line ${block.line}:** ✅ ${block.annotation}`,
+        text: `> **Line ${block.line}:** ✅ ${block.annotation}`,
         annotations: {
           priority: 2,
           audience: ["user"],
