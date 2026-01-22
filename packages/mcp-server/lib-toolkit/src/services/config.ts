@@ -158,7 +158,3 @@ function validateConfig(
   });
 }
 
-/**
- * Default configuration layer
- */
-export const ToolkitConfigLive = ToolkitConfig.Default;

@@ -349,14 +349,14 @@ LOG_LEVEL=info
 
 ### Vercel Configuration
 
+The MCP server is deployed as a Next.js application. Configuration is in `vercel.json`:
+
 ```json
 {
-  "functions": {
-    "api/server.ts": {
-      "maxDuration": 10,
-      "memory": 512
-    }
-  },
+  "framework": "nextjs",
+  "buildCommand": "bun run --filter @effect-patterns/mcp-server build",
+  "outputDirectory": "packages/mcp-server/.next"
+}
   "env": {
     "DATABASE_URL": "@database_url"
   }

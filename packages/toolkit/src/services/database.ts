@@ -23,8 +23,8 @@ import type {
 } from "../db/schema/index.js"
 import type { JobWithPatterns } from "../repositories/index.js"
 import type { Pattern } from "../schemas/pattern.js"
-import { ToolkitLogger, ToolkitLoggerLive } from "./logger.js"
-import { ToolkitConfigLive } from "./config.js"
+import { ToolkitLogger } from "./logger.js"
+import { ToolkitConfig } from "./config.js"
 
 /**
  * Convert database EffectPattern to legacy Pattern format
@@ -79,7 +79,7 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
         close: connection.close,
       }
     }),
-    dependencies: [ToolkitLoggerLive],
+    dependencies: [ToolkitLogger],
   }
 ) {}
 
@@ -87,8 +87,8 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
  * Database layer with all services
  */
 export const DatabaseServiceLive = DatabaseService.Default.pipe(
-  Layer.provide(ToolkitLoggerLive),
-  Layer.provide(ToolkitConfigLive)
+  Layer.provide(ToolkitLogger.Default),
+  Layer.provide(ToolkitConfig.Default)
 )
 
 /**

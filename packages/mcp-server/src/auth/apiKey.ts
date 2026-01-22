@@ -41,17 +41,45 @@ export const validateApiKey = (
 ): Effect.Effect<void, AuthenticationError, MCPConfigService> =>
   Effect.gen(function* () {
     const config = yield* MCPConfigService;
-    const apiKey = yield* config.getApiKey();
-    const nodeEnv = yield* config.getNodeEnv();
+    // Access properties directly (they're plain values, not Effect-returning methods)
+    const apiKey = config.apiKey;
+    const nodeEnv = config.nodeEnv;
 
-    // If no API key is configured, skip validation (dev mode)
-    if (!apiKey || apiKey.trim() === "") {
-      if (nodeEnv === "development") {
+    // In development mode, skip API key validation entirely for local development
+    // This makes local testing easier without requiring API key setup
+    if (nodeEnv === "development") {
+      if (!apiKey || apiKey.trim() === "") {
+        // No API key configured - allow all requests in dev mode
         console.warn(
-          "[Auth] No PATTERN_API_KEY configured - running in open mode"
+          "[Auth] No PATTERN_API_KEY configured - running in open mode (development)"
         );
         return;
       }
+      
+      // API key is configured in dev mode - validate if provided, but allow requests without key
+      const providedKey = extractApiKey(request);
+      if (!providedKey) {
+        // No key provided in request - allow in dev mode
+        console.warn(
+          "[Auth] No API key provided in request - allowing in development mode"
+        );
+        return;
+      }
+      
+      // Key provided - validate it matches configured key
+      if (providedKey !== apiKey) {
+        return yield* Effect.fail(
+          new AuthenticationError({
+            message: "Invalid API key"
+          })
+        );
+      }
+      // Valid key provided
+      return;
+    }
+
+    // Production mode: require API key
+    if (!apiKey || apiKey.trim() === "") {
       return yield* Effect.fail(
         new AuthenticationError({ message: "API key not configured on server" })
       );

@@ -125,7 +125,7 @@ const serverLayer = HttpServer.serve(app);
    ```
 2. Run server in dev mode:
    ```bash
-   bun run server:dev
+   bun run mcp:dev
    ```
 3. Run tests:
    ```bash

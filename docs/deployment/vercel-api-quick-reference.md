@@ -108,8 +108,10 @@ LOG_LEVEL=info
 
 ## Related Files
 
-- `api/server.ts` - Main serverless function
-- `api/handlers.ts` - Route handlers
-- `api/database.ts` - Database operations
-- `api/schema.ts` - Validation schemas
+The API is implemented in the MCP server package:
+
+- `packages/mcp-server/app/api/` - Next.js API routes
+- `packages/mcp-server/src/api/` - Route handlers and business logic
+- `packages/mcp-server/src/services/` - Service implementations
+- `packages/toolkit/src/repositories/` - Database operations
 - `api/constants.ts` - API constants

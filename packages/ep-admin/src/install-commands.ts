@@ -89,10 +89,10 @@ const fetchRulesFromAPI = (serverUrl: string) =>
 						yield* Console.error(
 							`The Pattern Server at ${serverUrl} is not running.\n`
 						);
-						yield* Console.error(colorize("How to fix:\n", "BRIGHT"));
-						yield* Console.error("  1. Start the Pattern Server:");
-						yield* Console.error(colorize("     bun run server:dev\n", "CYAN"));
-						yield* Console.error("  2. Verify the server is running:");
+					yield* Console.error(colorize("How to fix:\n", "BRIGHT"));
+					yield* Console.error("  1. Start the Pattern Server:");
+					yield* Console.error(colorize("     bun run mcp:dev\n", "CYAN"));
+					yield* Console.error("  2. Verify the server is running:");
 						yield* Console.error(
 							colorize(`     curl ${serverUrl}/health\n`, "CYAN")
 						);
@@ -184,7 +184,7 @@ export const installAddCommand = Command.make("add", {
 		),
 		serverUrl: Options.text("server-url").pipe(
 			Options.withDescription("Pattern Server URL"),
-			Options.withDefault("http://localhost:3001")
+			Options.withDefault("http://localhost:3000")
 		),
 		skillLevel: Options.text("skill-level").pipe(
 			Options.withDescription(

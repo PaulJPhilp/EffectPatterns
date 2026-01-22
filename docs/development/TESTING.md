@@ -90,7 +90,7 @@ Many tests require the Pattern Server to be running. The tests automatically sta
 
 ```bash
 # In a separate terminal
-bun run server:dev
+bun run mcp:dev
 ```
 
 ### Clean State
@@ -378,10 +378,10 @@ If tests are failing due to server issues:
 
 ```bash
 # Check if server is running
-curl http://localhost:3001/health
+curl http://localhost:3000/api/health
 
 # Start server manually
-bun run server:dev
+bun run mcp:dev
 ```
 
 ## Continuous Integration
@@ -455,7 +455,7 @@ bun run test:cli
 **Solution**:
 
 ```bash
-lsof -ti:3001 | xargs kill -9
+lsof -ti:3000 | xargs kill -9
 ```
 
 ### File Permission Errors

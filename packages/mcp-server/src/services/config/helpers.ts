@@ -63,105 +63,106 @@ export function parseOtlpHeaders(
 export function validateConfig(
   config: MCPConfig,
 ): Effect.Effect<void, ConfigurationError> {
-  return Effect.gen(function* () {
-    // API Key validation
-    if (!config.apiKey && config.nodeEnv === "production") {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "apiKey",
-          expected: "non-empty string in production",
-          received: config.apiKey,
-        }),
-      );
-    }
+  // API Key validation
+  if (!config.apiKey && config.nodeEnv === "production") {
+    return Effect.fail(
+      new ConfigurationError({
+        key: "apiKey",
+        expected: "non-empty string in production",
+        received: config.apiKey,
+      }),
+    );
+  }
 
-    // Port validation
-    if (config.port < 1 || config.port > 65535) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "port",
-          expected: "number between 1-65535",
-          received: config.port,
-        }),
-      );
-    }
+  // Port validation
+  if (config.port < 1 || config.port > 65535) {
+    return Effect.fail(
+      new ConfigurationError({
+        key: "port",
+        expected: "number between 1-65535",
+        received: config.port,
+      }),
+    );
+  }
 
-    // Timeout validations
-    if (config.requestTimeoutMs < 1000) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "requestTimeoutMs",
-          expected: "at least 1000ms",
-          received: config.requestTimeoutMs,
-        }),
-      );
-    }
+  // Timeout validations
+  if (config.requestTimeoutMs < 1000) {
+    return Effect.fail(
+      new ConfigurationError({
+        key: "requestTimeoutMs",
+        expected: "at least 1000ms",
+        received: config.requestTimeoutMs,
+      }),
+    );
+  }
 
-    if (config.patternsLoadTimeoutMs < 1000) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "patternsLoadTimeoutMs",
-          expected: "at least 1000ms",
-          received: config.patternsLoadTimeoutMs,
-        }),
-      );
-    }
+  if (config.patternsLoadTimeoutMs < 1000) {
+    return Effect.fail(
+      new ConfigurationError({
+        key: "patternsLoadTimeoutMs",
+        expected: "at least 1000ms",
+        received: config.patternsLoadTimeoutMs,
+      }),
+    );
+  }
 
-    // Rate limit validations
-    if (config.rateLimitRequests < 1) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "rateLimitRequests",
-          expected: "at least 1",
-          received: config.rateLimitRequests,
-        }),
-      );
-    }
+  // Rate limit validations
+  if (config.rateLimitRequests < 1) {
+    return Effect.fail(
+      new ConfigurationError({
+        key: "rateLimitRequests",
+        expected: "at least 1",
+        received: config.rateLimitRequests,
+      }),
+    );
+  }
 
-    if (config.rateLimitWindowMs < 1000) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "rateLimitWindowMs",
-          expected: "at least 1000ms",
-          received: config.rateLimitWindowMs,
-        }),
-      );
-    }
+  if (config.rateLimitWindowMs < 1000) {
+    return Effect.fail(
+      new ConfigurationError({
+        key: "rateLimitWindowMs",
+        expected: "at least 1000ms",
+        received: config.rateLimitWindowMs,
+      }),
+    );
+  }
 
-    // Cache validations
-    if (config.cacheMaxEntries < 1) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "cacheMaxEntries",
-          expected: "at least 1",
-          received: config.cacheMaxEntries,
-        }),
-      );
-    }
+  // Cache validations
+  if (config.cacheMaxEntries < 1) {
+    return Effect.fail(
+      new ConfigurationError({
+        key: "cacheMaxEntries",
+        expected: "at least 1",
+        received: config.cacheMaxEntries,
+      }),
+    );
+  }
 
-    // Log level validation
-    const validLogLevels = ["debug", "info", "warn", "error"];
-    if (!validLogLevels.includes(config.logLevel)) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "logLevel",
-          expected: `one of: ${validLogLevels.join(", ")}`,
-          received: config.logLevel,
-        }),
-      );
-    }
+  // Log level validation
+  const validLogLevels = ["debug", "info", "warn", "error"];
+  if (!validLogLevels.includes(config.logLevel)) {
+    return Effect.fail(
+      new ConfigurationError({
+        key: "logLevel",
+        expected: `one of: ${validLogLevels.join(", ")}`,
+        received: config.logLevel,
+      }),
+    );
+  }
 
-    // Tracing sampling rate validation
-    if (config.tracingSamplingRate < 0 || config.tracingSamplingRate > 1) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "tracingSamplingRate",
-          expected: "number between 0.0 and 1.0",
-          received: config.tracingSamplingRate,
-        }),
-      );
-    }
-  });
+  // Tracing sampling rate validation
+  if (config.tracingSamplingRate < 0 || config.tracingSamplingRate > 1) {
+    return Effect.fail(
+      new ConfigurationError({
+        key: "tracingSamplingRate",
+        expected: "number between 0.0 and 1.0",
+        received: config.tracingSamplingRate,
+      }),
+    );
+  }
+
+  // All validations passed
+  return Effect.succeed(void 0);
 }
 
 /**
@@ -245,7 +246,7 @@ export function loadConfig(): Effect.Effect<MCPConfig, ConfigurationError> {
 
     // Validate configuration
     yield* validateConfig(config);
-
+    
     return config;
   });
 }

@@ -277,7 +277,7 @@ bun test
 
 # Specific suite
 bun run test:cli
-bun run test:server
+bun run mcp:test
 bun run test:integration
 
 # With coverage

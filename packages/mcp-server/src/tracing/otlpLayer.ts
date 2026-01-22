@@ -48,20 +48,22 @@ function parseOtlpHeaders(headersString: string): Record<string, string> {
 /**
  * Load tracing configuration from environment
  */
-const loadTracingConfig = Effect.sync((): TracingConfig => {
-  const otlpEndpoint =
-    process.env.OTLP_ENDPOINT || "http://localhost:4318/v1/traces";
-  const otlpHeadersRaw = process.env.OTLP_HEADERS || "";
-  const serviceName = process.env.SERVICE_NAME || "effect-patterns-mcp-server";
-  const serviceVersion = process.env.SERVICE_VERSION || "0.5.0";
+function loadTracingConfig(): Effect.Effect<TracingConfig> {
+  return Effect.sync((): TracingConfig => {
+    const otlpEndpoint =
+      process.env.OTLP_ENDPOINT || "http://localhost:4318/v1/traces";
+    const otlpHeadersRaw = process.env.OTLP_HEADERS || "";
+    const serviceName = process.env.SERVICE_NAME || "effect-patterns-mcp-server";
+    const serviceVersion = process.env.SERVICE_VERSION || "0.5.0";
 
-  return {
-    otlpEndpoint,
-    otlpHeaders: parseOtlpHeaders(otlpHeadersRaw),
-    serviceName,
-    serviceVersion,
-  };
-});
+    return {
+      otlpEndpoint,
+      otlpHeaders: parseOtlpHeaders(otlpHeadersRaw),
+      serviceName,
+      serviceVersion,
+    };
+  });
+}
 
 /**
  * Get current trace ID from OpenTelemetry context
@@ -99,7 +101,7 @@ export class TracingService extends Effect.Service<TracingService>()(
   "TracingService",
   {
     effect: Effect.gen(function* () {
-      const config = yield* loadTracingConfig;
+      const config = yield* loadTracingConfig();
 
       yield* Effect.logInfo(
         `[Tracing] OTLP initialized: ${config.serviceName} -> ${config.otlpEndpoint}`

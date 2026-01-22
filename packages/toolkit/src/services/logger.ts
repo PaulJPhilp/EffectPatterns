@@ -114,10 +114,6 @@ export class ToolkitLogger extends Effect.Service<ToolkitLogger>()(
         withDuration,
       };
     }),
+    dependencies: [ToolkitConfig],
   }
 ) {}
-
-/**
- * Default logging layer
- */
-export const ToolkitLoggerLive = ToolkitLogger.Default;

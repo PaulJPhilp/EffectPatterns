@@ -8,7 +8,7 @@
  * in the OpenTelemetry trace.
  */
 
-import { toPatternSummary } from "@effect-patterns/toolkit";
+import { toPatternSummary, searchEffectPatterns } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
@@ -24,7 +24,7 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
 ) {
   const tracing = yield* TracingService;
   const patterns = yield* PatternsService;
-
+  
   // Validate API key
   yield* validateApiKey(request);
 
@@ -72,20 +72,26 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
 });
 
 export async function GET(request: NextRequest) {
-  const result = await runWithRuntime(
-    handleSearchPatterns(request).pipe(
-      Effect.catchAll((error) => errorHandler(error))
-    )
-  );
+  try {
+    const result = await runWithRuntime(
+      handleSearchPatterns(request).pipe(
+        Effect.catchAll((error) => errorHandler(error))
+      )
+    );
 
-  if (result instanceof Response) {
-    return result;
+    if (result instanceof Response) {
+      return result;
+    }
+
+    return NextResponse.json(result, {
+      status: 200,
+      headers: {
+        "x-trace-id": result.traceId || "",
+      },
+    });
+  } catch (error) {
+    // Handle errors that occur during runtime initialization
+    const errorResponse = await runWithRuntime(errorHandler(error));
+    return errorResponse;
   }
-
-  return NextResponse.json(result, {
-    status: 200,
-    headers: {
-      "x-trace-id": result.traceId || "",
-    },
-  });
 }

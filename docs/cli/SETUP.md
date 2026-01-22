@@ -129,10 +129,10 @@ Before installing rules, you need to start the Pattern Server:
 
 ```bash
 # In a separate terminal
-bun run server:dev
+bun run mcp:dev
 ```
 
-The server runs on `http://localhost:3001` by default.
+The server runs on `http://localhost:3000` by default.
 
 If you need to use a different port:
 
@@ -286,7 +286,7 @@ demonstrating memory-efficient data processing.
 **Solution**: Start the server in a separate terminal:
 
 ```bash
-bun run server:dev
+bun run mcp:dev
 ```
 
 ### Validation Failures

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "effect-patterns": {
+      "command": "/Users/paul/Projects/Public/Effect-Patterns/packages/mcp-server/start-mcp.sh",
+      "env": {
+        "EFFECT_PATTERNS_API_URL": "http://localhost:3000",
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}
