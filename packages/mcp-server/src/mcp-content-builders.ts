@@ -676,6 +676,14 @@ function buildScanFirstPatternContent(pattern: PatternData): TextContent[] {
     })
   );
 
+  // Hidden presentation marker for contract testing
+  content.push(
+    createTextBlock("<!-- kind:pattern-card:v1 -->", {
+      priority: 1,
+      audience: ["user"],
+    })
+  );
+
   content.push(
     createTextBlock(
       `**Category:** ${pattern.category} | **Difficulty:** ${pattern.difficulty}`,
@@ -807,6 +815,7 @@ function buildIndexTable(patterns: readonly PatternData[]): string {
 
   // Pre-allocate buffer and use single join pass (O(N) instead of O(N²))
   const rows: string[] = [];
+  rows.push("<!-- kind:pattern-index:v1 -->"); // Hidden marker for contract testing
   rows.push("| Pattern | Category | Difficulty | Tags |");
   rows.push("| :--- | :--- | :--- | :--- |");
 

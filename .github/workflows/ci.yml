@@ -35,6 +35,23 @@ jobs:
         run: bun run lint
         continue-on-error: true
 
+  check-narration:
+    name: Narration Leakage Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Run Narration Guardrail
+        run: |
+          cd packages/mcp-server
+          bash scripts/check-narration-leakage.sh
+
   typecheck:
     name: TypeScript Type Check
     runs-on: ubuntu-latest
@@ -219,6 +236,12 @@ jobs:
           PATTERN_API_KEY: test-api-key-for-ci
           TEST_BASE_URL: http://localhost:3000
 
+      - name: Run MCP protocol tests
+        run: bun --filter @effect-patterns/mcp-server run test:mcp:local
+        env:
+          PATTERN_API_KEY: test-api-key-for-ci
+          MCP_ENV: local
+
       - name: Stop server
         if: always()
         run: |
@@ -250,6 +273,7 @@ jobs:
     needs:
       [
         lint,
+        check-narration,
         typecheck,
         test-toolkit,
         build-toolkit,

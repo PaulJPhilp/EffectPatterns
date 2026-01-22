@@ -881,3 +881,30 @@ MIT License - see LICENSE file for details.
 - Plain text responses
 - JSON Schema draft-07
 - Basic error handling
+
+## Logging & Debugging
+
+The server implements a hierarchical logging system to ensure production safety and protocol integrity.
+
+### Log Levels
+
+- `debug`: Detailed implementation tracing
+- `info`: Standard operational events (default)
+- `warn`: Recoverable issues
+- `error`: Fatal or critical failures
+
+### Configuration
+
+- `LOG_LEVEL`: Set the minimum log level (default: `info`)
+- `MCP_DEBUG`: Set to `true` to force `debug` level regardless of `LOG_LEVEL`
+
+**Note:** All logs are strictly routed to `stderr` to prevent interference with the MCP protocol on `stdout`.
+
+## CI/CD Requirements
+
+Integration tests (`test:integration`) require specific environment variables in your CI/CD pipeline:
+
+- `PATTERN_API_KEY`: Required for all integration tests.
+- `CI`: Set to `true` to enable strict assertions.
+
+Integration tests will fail fast if these variables are missing in a CI environment.

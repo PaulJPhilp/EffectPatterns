@@ -52,42 +52,69 @@ export const createLogEntry = (
 };
 
 /**
+ * Log levels and their priorities
+ */
+const LOG_LEVELS: Record<string, number> = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+};
+
+/**
+ * Get current log level priority
+ */
+function getLogLevelPriority(): number {
+  const defaultLevel = process.env.NODE_ENV === "production" ? "warn" : "info";
+  const level = process.env.LOG_LEVEL || defaultLevel;
+  // MCP_DEBUG=true forces debug level
+  if (process.env.MCP_DEBUG === "true") return LOG_LEVELS.debug;
+  return LOG_LEVELS[level.toLowerCase()] ?? LOG_LEVELS[defaultLevel];
+}
+
+/**
  * Legacy logging functions (for backward compatibility)
  */
 export function logDebug(
   message: string,
   data?: Record<string, unknown>
 ): void {
-  console.log(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      level: "debug",
-      message,
-      data,
-    })
-  );
+  if (getLogLevelPriority() <= LOG_LEVELS.debug) {
+    console.error(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: "debug",
+        message,
+        data,
+      })
+    );
+  }
 }
 
 export function logInfo(message: string, data?: Record<string, unknown>): void {
-  console.log(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      level: "info",
-      message,
-      data,
-    })
-  );
+  if (getLogLevelPriority() <= LOG_LEVELS.info) {
+    console.error(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: "info",
+        message,
+        data,
+      })
+    );
+  }
 }
 
 export function logWarn(message: string, data?: Record<string, unknown>): void {
-  console.warn(
-    JSON.stringify({
-      timestamp: new Date().toISOString(),
-      level: "warn",
-      message,
-      data,
-    })
-  );
+  if (getLogLevelPriority() <= LOG_LEVELS.warn) {
+    console.warn(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: "warn",
+        message,
+        data,
+      })
+    );
+  }
 }
 
 export function logError(
@@ -95,27 +122,29 @@ export function logError(
   error?: unknown,
   data?: Record<string, unknown>
 ): void {
-  const logEntry: any = {
-    timestamp: new Date().toISOString(),
-    level: "error",
-    message,
-    data,
-  };
+  if (getLogLevelPriority() <= LOG_LEVELS.error) {
+    const logEntry: any = {
+      timestamp: new Date().toISOString(),
+      level: "error",
+      message,
+      data,
+    };
 
-  if (error) {
-    if (error instanceof Error) {
-      logEntry.error = {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      };
-    } else {
-      logEntry.error = {
-        name: "UnknownError",
-        message: String(error),
-      };
+    if (error) {
+      if (error instanceof Error) {
+        logEntry.error = {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        };
+      } else {
+        logEntry.error = {
+          name: "UnknownError",
+          message: String(error),
+        };
+      }
     }
-  }
 
-  console.error(JSON.stringify(logEntry));
+    console.error(JSON.stringify(logEntry));
+  }
 }

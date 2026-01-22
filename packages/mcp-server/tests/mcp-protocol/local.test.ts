@@ -35,6 +35,15 @@ describe("Local MCP Server", () => {
   let isLocalAvailable = false;
 
   beforeAll(async () => {
+    // Strict CI Check: Fail immediately if required secrets are missing
+    if (process.env.CI === "true" && !config.apiKey) {
+      throw new Error(
+        "FATAL: PATTERN_API_KEY is missing in CI environment. " +
+        "This key is required for MCP protocol integration tests. " +
+        "Ensure the secret is correctly passed to the GitHub Action job."
+      );
+    }
+
     // Verify local server is running
     try {
       const healthCheck = await fetch(`${config.apiUrl}/api/health`);
@@ -95,22 +104,65 @@ describe("Local MCP Server", () => {
 
     it("should render clean markdown without tool chatter", async () => {
       if (!isLocalAvailable) return;
-      const result = await client.callTool("search_patterns", {
+      
+      // Test 1: Search patterns
+      const searchResult = await client.callTool("search_patterns", {
         q: "concurrency",
         format: "markdown",
         limitCards: 1,
       });
 
-      expect(result.content).toBeDefined();
-      const text = extractContentText(result.content);
+      expect(searchResult.content).toBeDefined();
+      const searchText = extractContentText(searchResult.content);
+
+      // Check for auth error
+      if (searchText.includes('"error":') && searchText.includes("authentication_required")) {
+        if (process.env.CI === "true") {
+           throw new Error(
+             "FATAL: Authentication failed in CI environment. " +
+             "PATTERN_API_KEY must be set in CI secrets for 'test:mcp:local' to run. " +
+             "Check .github/workflows/ci.yml and ensure the secret is passed to the job."
+           );
+        }
+        console.warn("Skipping 'clean markdown' assertion due to missing API key");
+        return;
+      }
+      
+      // Positive assertion: Check for contractual structural markers (stable IDs and markers)
+      expect(searchText).toContain("<!-- kind:pattern-index:v1 -->"); // Index contract marker
+      expect(searchText).toContain("<!-- kind:pattern-card:v1 -->"); // Card contract marker
+      
+      // Ensure cards are rendered (K=1 requested in args)
+      const cardMatches = searchText.match(/<!-- kind:pattern-card:v1 -->/g);
+      expect(cardMatches?.length).toBe(1);
+
+      // Test 2: Get pattern
+      const getResult = await client.callTool("get_pattern", {
+        id: "effect-service"
+      });
+      const getText = extractContentText(getResult.content);
+      
+      // Structural markers for single pattern card
+      expect(getText).toMatch(/^# /m); // Markdown H1 title
+      expect(getText).toContain("<!-- kind:pattern-card:v1 -->"); // Contract marker
+      
+      const getCardMatches = getText.match(/<!-- kind:pattern-card:v1 -->/g);
+      expect(getCardMatches?.length).toBe(1);
+
+      expect(getText).toContain("**API:**");
+
       const disallowed = [
         /\[.*tools called.*\]/i,
         /Tool called:/i,
         /Checking the MCP server tools directory/i,
       ];
+      
+      // legitimate content that uses the word "search" shouldn't trigger false positives
+      expect(searchText.toLowerCase()).toContain("search"); 
 
       for (const pattern of disallowed) {
-        expect(text).not.toMatch(pattern);
+        expect(searchText).not.toMatch(pattern);
+        expect(getText).not.toMatch(pattern);
       }
     });
 
@@ -224,6 +276,19 @@ export const handler = Effect.gen(function* () {
       if (content && typeof content === "object" && "text" in content) {
         const text = content.text as string;
         const data = JSON.parse(text);
+
+        // Check for auth error which causes test flakiness
+        if (data.error === "Invalid API key" || data.error === "Missing API key") {
+          if (process.env.CI === "true") {
+             throw new Error(
+               "FATAL: Authentication failed in CI environment. " +
+               "PATTERN_API_KEY must be set in CI secrets for 'test:mcp:local' to run. " +
+               "Check .github/workflows/ci.yml and ensure the secret is passed to the job."
+             );
+          }
+          console.warn("Skipping test assertion due to missing API key");
+          return;
+        }
 
         // Verify response structure contains only diagnostics
         expect(data).toHaveProperty("recommendations");
