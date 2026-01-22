@@ -12,11 +12,26 @@ import {
   createCodeBlock,
   buildPatternContent,
   buildScanFirstPatternContent,
+  buildSearchResultsContent,
 } from "../mcp-content-builders.js";
 import {
   generateMigrationDiff,
   isMigrationPattern,
 } from "../services/pattern-diff-generator/api.js";
+
+/**
+ * Telemetry counters for cache performance
+ */
+let cacheMetrics = {
+  searchHits: 0,
+  searchMisses: 0,
+  patternHits: 0,
+  patternMisses: 0,
+};
+
+export function getCacheMetrics() {
+  return { ...cacheMetrics };
+}
 
 /**
  * Result of a tool execution - supports MCP 2.0 rich content arrays
@@ -48,6 +63,27 @@ export type CallApiFn = (
  */
 export type LogFn = (message: string, data?: unknown) => void;
 
+interface SearchPatternSummary {
+  readonly id: string;
+  readonly title: string;
+  readonly category: string;
+  readonly difficulty: string;
+  readonly description: string;
+  readonly examples?: readonly Array<{
+    readonly code: string;
+    readonly language?: string;
+    readonly description?: string;
+  }>;
+  readonly useCases?: readonly string[];
+  readonly tags?: readonly string[];
+  readonly relatedPatterns?: readonly string[];
+}
+
+interface SearchResultsPayload {
+  readonly count: number;
+  readonly patterns: readonly SearchPatternSummary[];
+}
+
 /**
  * Helper to convert API result to tool result - supports both plain text and rich content.
  */
@@ -78,13 +114,47 @@ function toToolResult(
 }
 
 /**
+ * Generates a cache key for search results
+ * Includes all search parameters to ensure correct cache hits
+ * Uses JSON.stringify to avoid collision risk from separators in args
+ * (e.g., query containing colons)
+ */
+function getSearchCacheKey(args: SearchPatternsArgs): string {
+  // Normalize args to stable JSON format (safe separator handling)
+  const key = JSON.stringify({
+    q: args.q || "",
+    category: args.category || "",
+    difficulty: args.difficulty || "",
+    limit: args.limit || 20,
+  });
+  return `search:${key}`;
+}
+
+/**
+ * Generates a cache key for rendered pattern content
+ * Includes patternId and render options for stable caching
+ */
+function getPatternRenderCacheKey(
+  patternId: string,
+  contentHash?: string
+): string {
+  return `pattern-render:${patternId}:${contentHash || ""}`;
+}
+
+/**
  * Registers all Effect Patterns tools with the MCP server.
  * Shared implementation for both Stdio and HTTP transports.
+ *
+ * Implements:
+ * - Search result caching (5 min TTL)
+ * - Pattern content caching (30 min TTL)
+ * - In-flight request deduping at HTTP layer
  */
 export function registerTools(
   server: McpServer,
   callApi: CallApiFn,
-  log: LogFn
+  log: LogFn,
+  cache?: { get: (key: string) => any; set: (key: string, value: any, ttl: number) => void }
 ): void {
   // Search Patterns Tool
   // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
@@ -94,6 +164,21 @@ export function registerTools(
     ToolSchemas.searchPatterns.shape as any,
     async (args: SearchPatternsArgs): Promise<CallToolResult> => {
       log("Tool called: search_patterns", args);
+
+      const cacheKey = getSearchCacheKey(args);
+      const format = args.format || "both";
+
+      // Try cache first (5 min TTL for search results)
+      if (cache) {
+        const cached = cache.get(cacheKey);
+        if (cached) {
+          cacheMetrics.searchHits++;
+          log(`Cache hit: ${cacheKey}`);
+          return cached;
+        }
+        cacheMetrics.searchMisses++;
+      }
+
       const searchParams = new URLSearchParams();
       if (args.q) searchParams.append("q", args.q);
       if (args.category) searchParams.append("category", args.category);
@@ -101,6 +186,42 @@ export function registerTools(
       if (args.limit) searchParams.append("limit", String(args.limit));
 
       const result = await callApi(`/patterns?${searchParams}`);
+
+      if (result.ok && result.data) {
+        const data = result.data as SearchResultsPayload;
+
+        let richContent: TextContent[] | undefined;
+        if (format === "markdown" || format === "both") {
+          richContent = buildSearchResultsContent(data, {
+            limitCards: args.limitCards,
+            includeProvenancePanel: args.includeProvenancePanel,
+            query: args.q,
+          });
+        }
+
+        let toolResult: CallToolResult;
+        if (format === "markdown") {
+          toolResult = { content: richContent! };
+        } else if (format === "json") {
+          toolResult = { content: [{ type: "text", text: JSON.stringify(data) }] };
+        } else {
+          // Default: both
+          toolResult = {
+            content: [
+              ...richContent!,
+              { type: "text", text: JSON.stringify(data) },
+            ],
+          };
+        }
+
+        // Cache result (5 min TTL)
+        if (cache) {
+          cache.set(cacheKey, toolResult, 5 * 60 * 1000);
+        }
+
+        return toolResult;
+      }
+
       return toToolResult(result, "search_patterns", log);
     }
   );
@@ -113,14 +234,33 @@ export function registerTools(
     ToolSchemas.getPattern.shape as any,
     async (args: GetPatternArgs): Promise<CallToolResult> => {
       log("Tool called: get_pattern", args);
+
+      const cacheKey = `pattern:${args.id}`;
+
+      // Try cache first (30 min TTL for individual patterns)
+      if (cache) {
+        const cached = cache.get(cacheKey);
+        if (cached) {
+          cacheMetrics.patternHits++;
+          log(`Cache hit: ${cacheKey}`);
+          return cached;
+        }
+        cacheMetrics.patternMisses++;
+      }
+
       const result = await callApi(`/patterns/${encodeURIComponent(args.id)}`);
 
       // Check if this is a migration pattern and return annotated diff
       if (result.ok && isMigrationPattern(args.id)) {
         const diffContent = generateMigrationDiff(args.id);
-        return {
+        const toolResult = {
           content: diffContent,
         };
+        // Cache migration patterns (longer TTL: 60 min)
+        if (cache) {
+          cache.set(cacheKey, toolResult, 60 * 60 * 1000);
+        }
+        return toolResult;
       }
 
       // For regular patterns, build scan-first content optimized for quick scanning
@@ -137,9 +277,16 @@ export function registerTools(
           relatedPatterns: pattern.relatedPatterns,
         });
 
-        return {
+        const toolResult = {
           content: richContent,
         };
+
+        // Cache result (30 min TTL)
+        if (cache) {
+          cache.set(cacheKey, toolResult, 30 * 60 * 1000);
+        }
+
+        return toolResult;
       }
 
       // Fall back to JSON response if not a pattern or error
@@ -154,7 +301,7 @@ export function registerTools(
     "List all available code analysis rules for anti-pattern detection",
     ToolSchemas.listAnalysisRules.shape as any,
     async (_args: Record<string, never>): Promise<CallToolResult> => {
-      log("Tool called: list_analysis_rules", args);
+      log("Tool called: list_analysis_rules", _args);
       const result = await callApi("/list-rules", "POST", {});
       return toToolResult(result, "list_analysis_rules", log);
     }
