@@ -7,18 +7,27 @@ import { spawn } from "node:child_process";
 import { ExecutionError } from "./errors.js";
 import type { ExecutionOptions } from "./types.js";
 
-// Import TUI spinner if available
-let spinnerEffectTUI: any = null;
-let InkService: any = null;
-
-try {
-	// eslint-disable-next-line @typescript-eslint/no-require-imports
-	const tuiModule = require("effect-cli-tui");
-	spinnerEffectTUI = tuiModule.spinnerEffect;
-	InkService = tuiModule.InkService;
-} catch {
-	// TUI not available, will use console fallback
+/**
+ * TUI module interface for dynamic loading
+ */
+interface TUIModule {
+	spinnerEffect?: (message: string) => Effect.Effect<void>;
+	InkService?: unknown;
 }
+
+// Import TUI spinner if available
+let spinnerEffectTUI: TUIModule["spinnerEffect"] | null = null;
+let InkService: TUIModule["InkService"] | null = null;
+
+Effect.sync(() => {
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
+	const tuiModule = require("effect-cli-tui") as TUIModule;
+	spinnerEffectTUI = tuiModule.spinnerEffect ?? null;
+	InkService = tuiModule.InkService ?? null;
+}).pipe(
+	Effect.catchAll(() => Effect.void)
+);
+// Note: Not awaited since this is module-level initialization for optional feature
 
 /**
  * Convert child process spawn to Effect

@@ -13,6 +13,36 @@ import type { PanelOptions, TableOptions } from "./types.js";
 import { TUILoader } from "./tui-loader.js";
 
 /**
+ * Helper to call TUI method if available, otherwise use fallback
+ */
+const withTUIFallback = (
+	tuiMethod: string,
+	tuiArgs: unknown[],
+	fallback: Effect.Effect<void, unknown>
+): ((tui: unknown) => Effect.Effect<void, unknown>) => {
+	return (tui: unknown) =>
+		Effect.gen(function* () {
+			const tuiObj = tui as Record<string, unknown>;
+			const service = tuiObj.DisplayService as unknown;
+			const method = tuiObj[tuiMethod] as unknown;
+
+			if (service && typeof method === "function") {
+				const maybeDisplay = yield* Effect.serviceOption(
+					service as any
+				);
+				if (Opt.isSome(maybeDisplay)) {
+					yield* (method as (...args: unknown[]) => Effect.Effect<void, unknown>)(
+						...tuiArgs
+					);
+					return;
+				}
+			}
+
+			yield* fallback;
+		});
+};
+
+/**
  * Display service using Effect.Service pattern
  */
 export class Display extends Effect.Service<Display>()("Display", {
@@ -25,77 +55,33 @@ export class Display extends Effect.Service<Display>()("Display", {
 		const showSuccess: DisplayService["showSuccess"] = (message: string) =>
 			Effect.gen(function* () {
 				const tui = yield* tuiLoader.load();
-
-				if (tui?.DisplayService && tui?.displaySuccess) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displaySuccess(message);
-						return;
-					}
-				}
-
-				// Fallback to console with color support
 				const icon = colorizeWithConfig("✓", "GREEN", loggerConfig);
-				yield* Console.log(`${icon} ${message}`);
+				const fallback = Console.log(`${icon} ${message}`);
+				yield* (tui ? withTUIFallback("displaySuccess", [message], fallback)(tui) : fallback);
 			}) as Effect.Effect<void, unknown>;
 
 		const showError: DisplayService["showError"] = (message: string) =>
 			Effect.gen(function* () {
 				const tui = yield* tuiLoader.load();
-
-				if (tui?.DisplayService && tui?.displayError) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayError(message);
-						return;
-					}
-				}
-
-				// Fallback to console with color support
 				const icon = colorizeWithConfig("✖", "RED", loggerConfig);
-				yield* Console.error(`${icon} ${message}`);
+				const fallback = Console.error(`${icon} ${message}`);
+				yield* (tui ? withTUIFallback("displayError", [message], fallback)(tui) : fallback);
 			}) as Effect.Effect<void, unknown>;
 
 		const showInfo: DisplayService["showInfo"] = (message: string) =>
 			Effect.gen(function* () {
 				const tui = yield* tuiLoader.load();
-
-				if (tui?.DisplayService && tui?.displayInfo) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayInfo(message);
-						return;
-					}
-				}
-
-				// Fallback to console with color support
 				const icon = colorizeWithConfig("ℹ", "BLUE", loggerConfig);
-				yield* Console.log(`${icon} ${message}`);
+				const fallback = Console.log(`${icon} ${message}`);
+				yield* (tui ? withTUIFallback("displayInfo", [message], fallback)(tui) : fallback);
 			}) as Effect.Effect<void, unknown>;
 
 		const showWarning: DisplayService["showWarning"] = (message: string) =>
 			Effect.gen(function* () {
 				const tui = yield* tuiLoader.load();
-
-				if (tui?.DisplayService && tui?.displayWarning) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayWarning(message);
-						return;
-					}
-				}
-
-				// Fallback to console with color support
 				const icon = colorizeWithConfig("⚠", "YELLOW", loggerConfig);
-				yield* Console.log(`${icon} ${message}`);
+				const fallback = Console.log(`${icon} ${message}`);
+				yield* (tui ? withTUIFallback("displayWarning", [message], fallback)(tui) : fallback);
 			}) as Effect.Effect<void, unknown>;
 
 		const showPanel: DisplayService["showPanel"] = (
@@ -105,26 +91,21 @@ export class Display extends Effect.Service<Display>()("Display", {
 		) =>
 			Effect.gen(function* () {
 				const tui = yield* tuiLoader.load();
-
-				if (tui?.DisplayService && tui?.displayPanel) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayPanel(content, title, {
-							type: options?.type || "info",
-						});
-						return;
-					}
-				}
-
-				// Fallback to console
 				const border = "─".repeat(60);
-				yield* Console.log(`\n${border}`);
-				yield* Console.log(title);
-				yield* Console.log(border);
-				yield* Console.log(content);
-				yield* Console.log(`${border}\n`);
+				const fallback = Effect.gen(function* () {
+					yield* Console.log(`\n${border}`);
+					yield* Console.log(title);
+					yield* Console.log(border);
+					yield* Console.log(content);
+					yield* Console.log(`${border}\n`);
+				});
+				yield* (tui
+					? withTUIFallback(
+							"displayPanel",
+							[content, title, { type: options?.type || "info" }],
+							fallback
+					  )(tui)
+					: fallback);
 			}) as Effect.Effect<void, unknown>;
 
 		const showTable: DisplayService["showTable"] = <
@@ -135,47 +116,28 @@ export class Display extends Effect.Service<Display>()("Display", {
 		) =>
 			Effect.gen(function* () {
 				const tui = yield* tuiLoader.load();
-
-				if (tui?.DisplayService && tui?.displayTable) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayTable(data, {
-							columns: options.columns.map((col: any) => ({
-								key: String(col.key),
-								header: col.header,
-								width: col.width,
-								align: col.align,
-								formatter: col.formatter,
-							})),
-							bordered: options.bordered,
-							head: options.head,
-						});
-						return;
-					}
-				}
-
-				// Fallback to console
-				console.table(data);
+				const fallback = Effect.sync(() => console.table(data));
+				const tableData = {
+					columns: options.columns.map((col) => ({
+						key: String(col.key),
+						header: col.header,
+						width: col.width,
+						align: col.align,
+						formatter: col.formatter,
+					})),
+					bordered: options.bordered,
+					head: options.head,
+				};
+				yield* (tui
+					? withTUIFallback("displayTable", [data, tableData], fallback)(tui)
+					: fallback);
 			}) as Effect.Effect<void, unknown>;
 
 		const showHighlight: DisplayService["showHighlight"] = (message: string) =>
 			Effect.gen(function* () {
 				const tui = yield* tuiLoader.load();
-
-				if (tui?.DisplayService && tui?.displayHighlight) {
-					const maybeDisplay = yield* Effect.serviceOption(
-						tui.DisplayService
-					);
-					if (Opt.isSome(maybeDisplay)) {
-						yield* tui.displayHighlight(message);
-						return;
-					}
-				}
-
-				// Fallback to console
-				yield* Console.log(`\n📌 ${message}\n`);
+				const fallback = Console.log(`\n📌 ${message}\n`);
+				yield* (tui ? withTUIFallback("displayHighlight", [message], fallback)(tui) : fallback);
 			}) as Effect.Effect<void, unknown>;
 
 		const showSeparator: DisplayService["showSeparator"] = () =>

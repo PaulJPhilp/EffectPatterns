@@ -94,7 +94,7 @@ const BaseLayer = Layer.mergeAll(
   NodeFileSystem.layer,
   LoggerLive(globalConfig),
   LiveTUILoader,
-  (StateStore as any).Default as Layer.Layer<StateStore>
+  StateStore.Default
 );
 
 const ServiceLayer = Layer.mergeAll(

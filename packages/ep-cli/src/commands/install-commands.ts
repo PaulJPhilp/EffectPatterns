@@ -109,23 +109,21 @@ export const installRemoveCommand = Command.make("remove", {
         return;
       }
 
-      let toRemoveIds: string[] = [];
-
-      if (Option.isSome(args.ruleId)) {
-        toRemoveIds = [args.ruleId.value];
-      } else {
-        // Interactive removal
-        const choices = current.map(r => ({
-          title: `${r.title} (${r.tool})`,
-          value: r.id,
-          description: r.description
-        }));
-
-        toRemoveIds = yield* Prompt.multiSelect({
-          message: "Select rules to remove:",
-          choices
-        });
-      }
+      const toRemoveIds = yield* Option.match(args.ruleId, {
+        onNone: () =>
+          Effect.gen(function* () {
+            const choices = current.map(r => ({
+              title: `${r.title} (${r.tool})`,
+              value: r.id,
+              description: r.description
+            }));
+            return yield* Prompt.multiSelect({
+              message: "Select rules to remove:",
+              choices
+            });
+          }),
+        onSome: (ruleId) => Effect.succeed([ruleId]),
+      });
 
       if (toRemoveIds.length === 0) return;
 
@@ -173,6 +171,38 @@ export const installDiffCommand = Command.make("diff", {
 );
 
 /**
+ * Display installed rules or message if none exist
+ */
+const displayInstalledRules = (
+  loadInstalledRules: () => Effect.Effect<InstalledRule[], unknown>
+): Effect.Effect<void, unknown> =>
+  Effect.gen(function* () {
+    const rules = yield* loadInstalledRules();
+    if (rules.length === 0) {
+      yield* Console.log("No rules installed.");
+      return;
+    }
+    yield* Console.log(colorize("\n📦 Installed Rules\n", "bright"));
+    console.table(rules.map(r => ({
+      ID: r.id,
+      Title: r.title,
+      Tool: r.tool,
+      Installed: r.installedAt
+    })));
+  });
+
+/**
+ * Display supported AI tools
+ */
+const displaySupportedTools = (): Effect.Effect<void, unknown> =>
+  Effect.gen(function* () {
+    yield* Console.log(colorize("\n📋 Supported AI Tools\n", "bright"));
+    yield* Console.log("  • cursor");
+    yield* Console.log("  • agents");
+    yield* Console.log("  • vscode");
+  });
+
+/**
  * install:list - List supported tools or installed rules
  */
 export const installListCommand = Command.make("list", {
@@ -189,23 +219,9 @@ export const installListCommand = Command.make("list", {
       const { loadInstalledRules } = yield* Install;
       
       if (options.installed) {
-        const rules = yield* loadInstalledRules();
-        if (rules.length === 0) {
-          yield* Console.log("No rules installed.");
-          return;
-        }
-        yield* Console.log(colorize("\n📦 Installed Rules\n", "bright"));
-        console.table(rules.map(r => ({
-          ID: r.id,
-          Title: r.title,
-          Tool: r.tool,
-          Installed: r.installedAt
-        })));
+        yield* displayInstalledRules(loadInstalledRules);
       } else {
-        yield* Console.log(colorize("\n📋 Supported AI Tools\n", "bright"));
-        yield* Console.log("  • cursor");
-        yield* Console.log("  • agents");
-        yield* Console.log("  • vscode");
+        yield* displaySupportedTools();
       }
     })
   )

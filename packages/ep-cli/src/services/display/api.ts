@@ -24,7 +24,7 @@ export interface DisplayService {
 	readonly showTable: <T extends Record<string, unknown>>(
 		data: T[],
 		options: TableOptions<T>
-	) => Effect.Effect<void, unknown, any>;
+	) => Effect.Effect<void, unknown>;
 	readonly showHighlight: (message: string) => Effect.Effect<void, unknown>;
 	readonly showSeparator: () => Effect.Effect<void, unknown>;
 }
