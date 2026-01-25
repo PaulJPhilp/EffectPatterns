@@ -80,14 +80,14 @@ export const parseGitStatus = (output: string) => {
  * Check if directory is a git repository
  */
 export const isGitRepository = (path: string): Effect.Effect<boolean> =>
-	Effect.sync(() => {
-		try {
-			execSync("git rev-parse --git-dir", { cwd: path, stdio: "ignore" });
-			return true;
-		} catch {
-			return false;
-		}
-	});
+        Effect.sync(() => {
+                try {
+                        execSync("git rev-parse --git-dir", { cwd: path, stdio: "ignore" });
+                        return true;
+                } catch {
+                        return false;
+                }
+        });
 
 /**
  * Get git repository root directory
@@ -164,18 +164,26 @@ export const getRecommendedBump = (
 /**
  * Parse commits and categorize them
  */
+interface ParsedCommit {
+	type?: string;
+	subject?: string;
+	header?: string;
+	notes?: Array<{ title: string }>;
+}
+
 export const categorizeCommits = async (commits: string[]) => {
-	let parseCommit: (message: string) => any;
+	let parseCommit: (message: string) => ParsedCommit;
 
 	try {
 		const module = await import("conventional-commits-parser");
-		const maybeDefault = (module as any).default;
-
+		
 		// Type guard for commit parser function
-		const isCommitParser = (fn: unknown): fn is (message: string) => any => {
+		const isCommitParser = (fn: unknown): fn is (message: string) => ParsedCommit => {
 			return typeof fn === "function";
 		};
 
+		const maybeDefault = (module as unknown as { default: unknown }).default;
+		
 		if (isCommitParser(maybeDefault)) {
 			parseCommit = maybeDefault;
 		} else if (isCommitParser(module)) {
@@ -186,7 +194,7 @@ export const categorizeCommits = async (commits: string[]) => {
 			);
 		}
 	} catch {
-		parseCommit = (message: string) => {
+		parseCommit = (message: string): ParsedCommit => {
 			const header = message.split("\n")[0] ?? message;
 			const match = header.match(
 				/^(?<type>\w+)(?:\([^)]*\))?(?<breaking>!)?:\s*(?<subject>.+)$/
@@ -214,7 +222,7 @@ export const categorizeCommits = async (commits: string[]) => {
 	for (const commitMsg of commits) {
 		const parsed = parseCommit(commitMsg);
 
-		if (parsed.notes?.some((note: any) => note.title === "BREAKING CHANGE")) {
+		if (parsed.notes?.some((note) => note.title === "BREAKING CHANGE")) {
 			categories.breaking.push(parsed.header || commitMsg);
 		} else if (parsed.type === "feat") {
 			categories.features.push(parsed.subject || commitMsg);

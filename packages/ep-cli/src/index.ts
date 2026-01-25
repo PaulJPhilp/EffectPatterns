@@ -10,7 +10,10 @@ import { StateStore } from "@effect-patterns/pipeline-state";
 import { Command } from "@effect/cli";
 import { FetchHttpClient } from "@effect/platform";
 import { Effect, Layer } from "effect";
+import { EnvService } from "effect-env";
 
+import { validateEnvironment } from "./config/validate-env.js";
+import { envLayer } from "./config/env.js";
 import { CLI } from "./constants.js";
 
 // Commands
@@ -32,7 +35,7 @@ import { Logger, LoggerLive, parseLogLevel } from "./services/logger/index.js";
 import { Skills } from "./services/skills/index.js";
 
 /**
- * Resolve logger configuration from environment variables.
+ * Resolve logger configuration from environment variables (synchronous version).
  *
  * Logger configuration is resolved from the following sources (in priority order):
  * 1. LOG_LEVEL environment variable (e.g., LOG_LEVEL=debug)
@@ -90,6 +93,7 @@ export const rootCommand = Command.make("ep").pipe(
  * Core runtime layer (Standard CLI)
  */
 const BaseLayer = Layer.mergeAll(
+  envLayer,  // Environment configuration (must be first)
   FetchHttpClient.layer,
   NodeFileSystem.layer,
   LoggerLive(globalConfig),
@@ -132,7 +136,13 @@ export const createProgram = (argv: ReadonlyArray<string> = process.argv) =>
   cliRunner(argv);
 
 // Run the program
-const program = createProgram(process.argv);
+const program = Effect.gen(function* () {
+  // Validate environment first
+  yield* validateEnvironment;
+  // Then run the CLI
+  yield* createProgram(process.argv);
+});
+
 const provided = program.pipe(
   Effect.provide(runtimeLayer),
   Effect.catchAllCause((cause) =>

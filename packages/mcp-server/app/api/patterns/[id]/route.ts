@@ -34,8 +34,13 @@ const handleGetPattern = Effect.fn("get-pattern")(function* (
     patternId,
   });
 
-  // Fetch pattern
-  const result = yield* patternsService.getPatternById(patternId);
+  // Fetch pattern - handle errors gracefully
+  const result = yield* patternsService.getPatternById(patternId).pipe(
+    Effect.catchAll(() => {
+      // If pattern lookup fails, return undefined (will be converted to 404 below)
+      return Effect.succeed(undefined);
+    })
+  );
 
   if (!result) {
     return yield* Effect.fail(new PatternNotFoundError({ patternId }));
@@ -55,21 +60,27 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const result = await runWithRuntime(
-    handleGetPattern(request, id).pipe(
-      Effect.catchAll((error) => errorHandler(error))
-    )
-  );
+  try {
+    const { id } = await params;
+    const result = await runWithRuntime(
+      handleGetPattern(request, id).pipe(
+        Effect.catchAll((error) => errorHandler(error))
+      )
+    );
 
-  if (result instanceof Response) {
-    return result;
+    if (result instanceof Response) {
+      return result;
+    }
+
+    return NextResponse.json(result, {
+      status: 200,
+      headers: {
+        "x-trace-id": result.traceId || "",
+      },
+    });
+  } catch (error) {
+    // Handle any unhandled errors (defects, etc.)
+    const errorResponse = await runWithRuntime(errorHandler(error));
+    return errorResponse;
   }
-
-  return NextResponse.json(result, {
-    status: 200,
-    headers: {
-      "x-trace-id": result.traceId || "",
-    },
-  });
 }

@@ -37,7 +37,6 @@ async function testWithAgent() {
       {
         // @ts-expect-error - Node.js agent option, Bun supports it
         agent,
-        timeout: 10000,
       }
     );
     const t1 = performance.now() - start1;
@@ -50,7 +49,6 @@ async function testWithAgent() {
       {
         // @ts-expect-error
         agent,
-        timeout: 10000,
       }
     );
     const t2 = performance.now() - start2;
@@ -89,10 +87,7 @@ async function testWithoutAgent() {
     // First request (no agent)
     const start1 = performance.now();
     const r1 = await fetch(
-      "https://effect-patterns-mcp.vercel.app/api/health",
-      {
-        timeout: 10000,
-      }
+      "https://effect-patterns-mcp.vercel.app/api/health"
     );
     const t1 = performance.now() - start1;
     console.log(`First request:  ${t1.toFixed(2)}ms (status: ${r1.status})`);
@@ -100,10 +95,7 @@ async function testWithoutAgent() {
     // Second request (no agent, new connection)
     const start2 = performance.now();
     const r2 = await fetch(
-      "https://effect-patterns-mcp.vercel.app/api/health",
-      {
-        timeout: 10000,
-      }
+      "https://effect-patterns-mcp.vercel.app/api/health"
     );
     const t2 = performance.now() - start2;
     console.log(`Second request: ${t2.toFixed(2)}ms (status: ${r2.status})`);
@@ -150,7 +142,7 @@ async function main() {
     console.log("   → Assume agents work, but verify under load");
   }
 
-  if (withoutAgent && withAgent && withAgent !== false) {
+  if (withoutAgent && withAgent === true) {
     const improvement = (
       ((withoutAgent - (withoutAgent * 0.5)) / withoutAgent) *
       100

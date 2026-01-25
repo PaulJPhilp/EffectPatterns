@@ -247,15 +247,15 @@ export async function searchPatternsDb(
     const repo = createEffectPatternRepository(db)
     const dbPatterns = await repo.search(params)
 
-    return dbPatterns.map((p) => ({
+    return dbPatterns.map((p): Pattern => ({
       id: p.slug,
       title: p.title,
       description: p.summary,
       category: (p.category as Pattern["category"]) || "error-handling",
       difficulty: (p.skillLevel as Pattern["difficulty"]) || "intermediate",
-      tags: (p.tags as string[]) || [],
-      examples: (p.examples as Pattern["examples"]) || [],
-      useCases: (p.useCases as string[]) || [],
+      tags: Array.isArray(p.tags) ? p.tags : [],
+      examples: Array.isArray(p.examples) ? p.examples : [],
+      useCases: Array.isArray(p.useCases) ? p.useCases : [],
       relatedPatterns: undefined,
       effectVersion: undefined,
       createdAt: p.createdAt?.toISOString(),
@@ -293,18 +293,18 @@ export async function getPatternByIdDb(
       description: p.summary,
       category: (p.category as Pattern["category"]) || "error-handling",
       difficulty: (p.skillLevel as Pattern["difficulty"]) || "intermediate",
-      tags: (p.tags as string[]) || [],
-      examples: (p.examples as Pattern["examples"]) || [],
-      useCases: (p.useCases as string[]) || [],
+      tags: Array.isArray(p.tags) ? p.tags : [],
+      examples: Array.isArray(p.examples) ? p.examples : [],
+      useCases: Array.isArray(p.useCases) ? p.useCases : [],
       relatedPatterns: undefined,
       effectVersion: undefined,
       createdAt: p.createdAt?.toISOString(),
       updatedAt: p.updatedAt?.toISOString(),
-    }
-  } finally {
+    } as Pattern
+    } finally {
     await close()
-  }
-}
+    }
+    }
 
 /**
  * Count patterns by skill level from database

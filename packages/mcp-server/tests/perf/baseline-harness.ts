@@ -75,7 +75,7 @@ const MOCK_PATTERNS = [
 
 interface SearchResultsPayload {
   readonly count: number;
-  readonly patterns: readonly typeof MOCK_PATTERNS;
+  readonly patterns: typeof MOCK_PATTERNS;
 }
 
 // ============================================================================
@@ -104,7 +104,7 @@ function createCodeBlock(
   return { type: "text", text: fullText };
 }
 
-function buildIndexTable(patterns: readonly typeof MOCK_PATTERNS): string {
+function buildIndexTable(patterns: typeof MOCK_PATTERNS): string {
   if (patterns.length === 0) return "No patterns found.";
 
   const header =
@@ -122,7 +122,7 @@ function buildSearchResultsContent(
   options: { limitCards?: number; query?: string } = {}
 ): TextContent[] {
   const content: TextContent[] = [];
-  const limitCards = options.limitCards ?? 3;
+  const limitCards = options.limitCards ?? 10;
 
   // Summary header
   const queryInfo = options.query ? ` for "${options.query}"` : "";
@@ -227,8 +227,8 @@ async function runSearchPatternsTest(iterations: number = 100): Promise<LatencyS
       patterns: MOCK_PATTERNS,
     };
 
-    // Render results
-    const content = buildSearchResultsContent(results, {
+    // Render results (measure performance, result not used)
+    buildSearchResultsContent(results, {
       limitCards: 3,
       query,
     });
@@ -254,8 +254,6 @@ async function runGetPatternTest(iterations: number = 100): Promise<LatencyStats
   const latencies: number[] = [];
 
   for (let i = 0; i < iterations; i++) {
-    const patternId =
-      MOCK_PATTERNS[i % MOCK_PATTERNS.length].id;
     const startMem = process.memoryUsage().heapUsed / 1024 / 1024;
 
     const start = performance.now();

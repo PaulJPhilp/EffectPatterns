@@ -2,7 +2,8 @@
  * Unit tests for global CLI options
  */
 
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
+import { EnvService } from "effect-env";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
     configureLoggerFromOptions,
@@ -251,7 +252,7 @@ describe("Global CLI Options", () => {
                     // Config should now be debug + verbose
                     const updatedConfig = yield* logger.getConfig();
                     return updatedConfig;
-                }).pipe(Effect.provide(testLayer))
+                }).pipe(Effect.provide(testLayer), Effect.provideService(EnvService, EnvService.of({ get: () => Effect.succeed(undefined) })))
             );
 
             expect(result.logLevel).toBe("debug");
@@ -266,7 +267,7 @@ describe("Global CLI Options", () => {
                     yield* configureLoggerFromOptions({ quiet: true });
                     const logger = yield* Logger;
                     return yield* logger.getConfig();
-                }).pipe(Effect.provide(testLayer))
+                }).pipe(Effect.provide(testLayer), Effect.provideService(EnvService, EnvService.of({ get: () => Effect.succeed(undefined) })))
             );
 
             expect(result.logLevel).toBe("error");
@@ -280,7 +281,7 @@ describe("Global CLI Options", () => {
                     yield* configureLoggerFromOptions({ json: true });
                     const logger = yield* Logger;
                     return yield* logger.getConfig();
-                }).pipe(Effect.provide(testLayer))
+                }).pipe(Effect.provide(testLayer), Effect.provideService(EnvService, EnvService.of({ get: () => Effect.succeed(undefined) })))
             );
 
             expect(result.outputFormat).toBe("json");
@@ -295,7 +296,7 @@ describe("Global CLI Options", () => {
                     yield* configureLoggerFromOptions({ noColor: true });
                     const logger = yield* Logger;
                     return yield* logger.getConfig();
-                }).pipe(Effect.provide(testLayer))
+                }).pipe(Effect.provide(testLayer), Effect.provideService(EnvService, EnvService.of({ get: () => Effect.succeed(undefined) })))
             );
 
             expect(result.useColors).toBe(false);

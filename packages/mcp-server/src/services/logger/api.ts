@@ -34,6 +34,8 @@ export class MCPLoggerService extends Effect.Service<MCPLoggerService>()(
 
       /**
        * Write log entry to console
+       * CRITICAL: Always use console.error for MCP stdio protocol compliance.
+       * stdout must be reserved for protocol/tool results only.
        */
       const writeLog = (entry: LogEntry): Effect.Effect<void> => {
         if (!shouldLog(entry.level)) {
@@ -41,8 +43,8 @@ export class MCPLoggerService extends Effect.Service<MCPLoggerService>()(
         }
 
         const formatted = formatLogEntry(entry);
-        const output = entry.level === "error" ? console.error : console.log;
-        return Effect.sync(() => output(formatted));
+        // Always use console.error - stdout is reserved for MCP protocol
+        return Effect.sync(() => console.error(formatted));
       };
 
       /**

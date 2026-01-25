@@ -27,10 +27,11 @@ A Model Context Protocol (MCP) server that provides Effect-TS patterns, code ana
      "args": ["run", "mcp:production"],
      "cwd": "/path/to/your/project",
      "env": {
-       "PATTERN_API_KEY": "ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84"
+       "PATTERN_API_KEY": "${PRODUCTION_API_KEY}"
      }
    }
    ```
+   Set `PRODUCTION_API_KEY` in your environment or secrets before use.
 
 3. **Alternative: Local Development**
 
@@ -59,6 +60,7 @@ A Model Context Protocol (MCP) server that provides Effect-TS patterns, code ana
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PATTERN_API_KEY` | Authentication key | Required |
+| `PRODUCTION_API_KEY` | Production API key (for `mcp:production`) | Use `PATTERN_API_KEY` if unset |
 | `DATABASE_URL` | PostgreSQL connection | Auto-configured |
 | `TIER_MODE` | Service tier (`free`/`paid`) | `free` |
 | `NODE_ENV` | Environment mode | `development` |
@@ -74,12 +76,13 @@ Create or update your `.claude_code_config.json`:
       "command": "bun",
       "args": ["run", "mcp:production"],
       "env": {
-        "PATTERN_API_KEY": "ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84"
+        "PATTERN_API_KEY": "${PRODUCTION_API_KEY}"
       }
     }
   }
 }
 ```
+Set `PRODUCTION_API_KEY` via your environment or secrets.
 
 ## 🎯 Usage
 
@@ -283,8 +286,8 @@ MCP: Suggests beginner patterns:
 
 The MCP server uses API key authentication:
 
-- **Production Key**: `ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84`
-- **Development Key**: `dev-key` (local only)
+- **Production**: Set `PRODUCTION_API_KEY` or `PATTERN_API_KEY` in your environment. Never commit keys.
+- **Development**: `dev-key` (local only, used when no key is set)
 
 Include the key in your MCP server configuration or request headers.
 

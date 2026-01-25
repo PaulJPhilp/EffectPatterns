@@ -58,17 +58,16 @@ export function printLintResults(results: LintResult[]): number {
 			console.log(`\n${colorize(result.file, "bright")}`);
 
 			for (const issue of result.issues) {
-				if (issue.severity === "error") {
-					console.log(
-						colorize(
-							`  ${issue.line}:${issue.column} - ${issue.rule}: ` +
-							`${issue.message}`,
-							"red"
-						)
-					);
-					if (issue.suggestion) {
-						console.log(colorize(`    → ${issue.suggestion}`, "dim"));
-					}
+				if (issue.severity !== "error") continue;
+				console.log(
+					colorize(
+						`  ${issue.line}:${issue.column} - ${issue.rule}: ` +
+						`${issue.message}`,
+						"red"
+					)
+				);
+				if (issue.suggestion) {
+					console.log(colorize(`    → ${issue.suggestion}`, "dim"));
 				}
 			}
 		}
@@ -86,17 +85,16 @@ export function printLintResults(results: LintResult[]): number {
 			console.log(`\n${colorize(result.file, "bright")}`);
 
 			for (const issue of result.issues) {
-				if (issue.severity === "warning") {
-					console.log(
-						colorize(
-							`  ${issue.line}:${issue.column} - ${issue.rule}: ` +
-							`${issue.message}`,
-							"yellow"
-						)
-					);
-					if (issue.suggestion) {
-						console.log(colorize(`    → ${issue.suggestion}`, "dim"));
-					}
+				if (issue.severity !== "warning") continue;
+				console.log(
+					colorize(
+						`  ${issue.line}:${issue.column} - ${issue.rule}: ` +
+						`${issue.message}`,
+						"yellow"
+					)
+				);
+				if (issue.suggestion) {
+					console.log(colorize(`    → ${issue.suggestion}`, "dim"));
 				}
 			}
 		}

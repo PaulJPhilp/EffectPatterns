@@ -382,35 +382,33 @@ export class MCPValidationService extends Effect.Service<MCPValidationService>()
         input: unknown,
         context: string = "unknown"
       ): Effect.Effect<A, ValidationError> => {
-        return Effect.gen(function* () {
-          const startTime = Date.now();
-
-          const result = yield* Schema.decodeUnknown(schema)(input).pipe(
-            Effect.mapError((parseError) => {
-              return new ValidationError({
-                field: context,
-                message: `Schema validation failed: ${parseError.message}`,
-                value: input,
-              });
-            })
-          );
-
-          yield* logger
-            .withOperation("validation.schema")
-            .debug(`Schema validation successful for ${context}`, {
-              duration: Date.now() - startTime,
+        const decodeEffect = Schema.decodeUnknown(schema)(input);
+        return decodeEffect.pipe(
+          Effect.mapError((parseError) => {
+            return new ValidationError({
+              field: context,
+              message: `Schema validation failed: ${parseError.message}`,
+              value: input,
             });
-
-          return result;
-        }).pipe(
+          }),
+          Effect.tap(() =>
+            Effect.gen(function* () {
+              const startTime = Date.now();
+              yield* logger
+                .withOperation("validation.schema")
+                .debug(`Schema validation successful for ${context}`, {
+                  duration: Date.now() - startTime,
+                });
+            })
+          ),
           Effect.tapError((error) =>
             logger
               .withOperation("validation.schema")
               .error(`Schema validation failed for ${context}`, error, {
-                duration: Date.now() - Date.now(),
+                duration: 0,
               })
           )
-        );
+        ) as Effect.Effect<A, ValidationError>;
       };
 
       /**

@@ -12,6 +12,7 @@
 import { Command, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
 import { Effect } from "effect";
+import { EnvService } from "effect-env";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
 
@@ -80,9 +81,10 @@ export const discordTestCommand = Command.make("test", {
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
             yield* Display.showInfo("Discord Connection Test");
-
+    
             // Check for Discord token
-            const token = process.env.DISCORD_TOKEN;
+            const env = yield* EnvService.Default;
+            const token = yield* env.get("DISCORD_TOKEN");
             if (token) {
                 yield* Display.showSuccess("Discord token found in environment");
             } else {
@@ -91,7 +93,7 @@ export const discordTestCommand = Command.make("test", {
                     "Set DISCORD_TOKEN environment variable to enable Discord integration"
                 );
             }
-
+    
             yield* Display.showSuccess("Discord test completed!");
         })
     )

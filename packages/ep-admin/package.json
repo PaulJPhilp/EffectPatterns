@@ -13,6 +13,7 @@
     "dotenv": "^17.2.3",
     "effect": "^3.19.14",
     "effect-cli-tui": "^2.2.0",
+    "effect-env": "^0.4.1",
     "glob": "^11.1.0",
     "js-yaml": "^4.1.1",
     "liquidjs": "^10.24.0",

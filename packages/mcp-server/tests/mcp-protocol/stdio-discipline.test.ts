@@ -88,6 +88,13 @@ describe("MCP Stdio Output Discipline", () => {
       /Server started/,
       /Starting MCP server/,
       /console\.log/,
+      // Build/summary patterns that should never appear on stdout
+      /Implementation Complete/i,
+      /Commit:/i,
+      /Branch:/i,
+      /^# MCP 2\.0/i,  // Markdown headings
+      /MCP 2\.0 Rich Content Implementation/i,
+      /Summary/i,  // Generic summary blocks
     ]
 
     for (const pattern of forbiddenPatterns) {

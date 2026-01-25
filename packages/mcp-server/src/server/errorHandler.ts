@@ -110,7 +110,7 @@ export function errorToResponse(
       case "PatternNotFoundError": {
         const e = error as PatternNotFoundError;
         const response: ApiErrorResponse = {
-          error: e.message,
+          error: `Pattern '${e.patternId}' not found`,
           status: "not_found",
         };
         return NextResponse.json(response, {

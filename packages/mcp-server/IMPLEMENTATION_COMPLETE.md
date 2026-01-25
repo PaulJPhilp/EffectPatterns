@@ -254,7 +254,7 @@ console.log({
 
 4. **Rendering** (`src/mcp-content-builders.ts:804-821`)
    - String building: pre-allocated array + single join
-   - Card limit: min(N, 10) with "showing top 3 of 100" note
+   - Card limit: min(N, 10) with "Detailed documentation for the top results follows" note
    - Index table: always full (for discovery)
 
 5. **Narration Filter** (`src/tools/narration-filter.ts`)

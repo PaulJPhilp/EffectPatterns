@@ -106,54 +106,39 @@ function validateConfig(
   config: ToolkitConfigType
 ): Effect.Effect<void, ConfigurationError> {
   return Effect.gen(function* () {
-    if (config.maxSearchResults <= 0) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "maxSearchResults",
-          expected: "positive number",
-          received: config.maxSearchResults,
-        })
-      );
-    }
+    const validations = [
+      {
+        key: "maxSearchResults" as const,
+        value: config.maxSearchResults,
+      },
+      {
+        key: "searchTimeoutMs" as const,
+        value: config.searchTimeoutMs,
+      },
+      {
+        key: "loadTimeoutMs" as const,
+        value: config.loadTimeoutMs,
+      },
+      {
+        key: "cacheTtlMs" as const,
+        value: config.cacheTtlMs,
+      },
+      {
+        key: "maxCacheSize" as const,
+        value: config.maxCacheSize,
+      },
+    ];
 
-    if (config.searchTimeoutMs <= 0) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "searchTimeoutMs",
-          expected: "positive number",
-          received: config.searchTimeoutMs,
-        })
-      );
-    }
-
-    if (config.loadTimeoutMs <= 0) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "loadTimeoutMs",
-          expected: "positive number",
-          received: config.loadTimeoutMs,
-        })
-      );
-    }
-
-    if (config.cacheTtlMs <= 0) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "cacheTtlMs",
-          expected: "positive number",
-          received: config.cacheTtlMs,
-        })
-      );
-    }
-
-    if (config.maxCacheSize <= 0) {
-      yield* Effect.fail(
-        new ConfigurationError({
-          key: "maxCacheSize",
-          expected: "positive number",
-          received: config.maxCacheSize,
-        })
-      );
+    for (const { key, value } of validations) {
+      if (value <= 0) {
+        yield* Effect.fail(
+          new ConfigurationError({
+            key,
+            expected: "positive number",
+            received: value,
+          })
+        );
+      }
     }
   });
 }

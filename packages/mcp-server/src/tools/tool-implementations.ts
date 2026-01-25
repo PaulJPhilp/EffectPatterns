@@ -1,37 +1,37 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
-  MARKER_PATTERN_CARD_V1,
-  MARKER_PATTERN_INDEX_V1,
+    MARKER_PATTERN_CARD_V1,
+    MARKER_PATTERN_INDEX_V1,
 } from "@/constants/markers.js";
 import {
-  buildScanFirstPatternContent,
-  buildSearchResultsContent,
+    buildScanFirstPatternContent,
+    buildSearchResultsContent,
 } from "@/mcp-content-builders.js";
 import type {
-  Elicitation,
-  PatternDetailsOutput,
-  SearchResultsOutput,
-  ToolError,
+    Elicitation,
+    PatternDetailsOutput,
+    SearchResultsOutput,
+    ToolError,
 } from "@/schemas/output-schemas.js";
 import type { TextContent } from "@/schemas/structured-output.js";
 import {
-  ToolSchemas,
-  type AnalyzeCodeArgs,
-  type GetPatternArgs,
-  type ReviewCodeArgs,
-  type SearchPatternsArgs,
+    ToolSchemas,
+    type AnalyzeCodeArgs,
+    type GetPatternArgs,
+    type ReviewCodeArgs,
+    type SearchPatternsArgs,
 } from "@/schemas/tool-schemas.js";
 import {
-  generateMigrationDiff,
-  isMigrationPattern,
+    generateMigrationDiff,
+    isMigrationPattern,
 } from "@/services/pattern-diff-generator/api.js";
 import {
-  elicitPatternId,
-  elicitSearchFilters,
-  elicitSearchQuery,
-  isSearchQueryValid,
-  isSearchTooBroad,
+    elicitPatternId,
+    elicitSearchFilters,
+    elicitSearchQuery,
+    isSearchQueryValid,
+    isSearchTooBroad,
 } from "@/tools/elicitation-helpers.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 /**
  * Telemetry counters for cache performance
@@ -1101,14 +1101,14 @@ export function registerTools(
         const useWhen =
           pattern.useCases && pattern.useCases.length > 0
             ? pattern.useCases[0]
-            : pattern.description.split(/[.!?]+/)[0].trim();
+            : pattern.description?.split(/[.!?]+/)[0]?.trim() ?? "";
 
         const avoidWhen =
           pattern.useCases?.find(
             (uc: string) =>
               uc.toLowerCase().includes("avoid") ||
               uc.toLowerCase().includes("not"),
-          ) || pattern.description.match(/avoid[^.!?]*[.!?]/i)?.[0]?.trim();
+          ) || pattern.description?.match(/avoid[^.!?]*[.!?]/i)?.[0]?.trim();
 
         // Build sections
         const sections: PatternDetailsOutput["sections"] = [];

@@ -4,20 +4,20 @@
  * Tests for rich content block generation and annotation utilities.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  createTextBlock,
-  createCodeBlock,
-  createAnnotatedDiff,
-  createAntiPatternAnnotation,
-  buildPatternContent,
-  buildViolationContent,
-  createSeverityBlock,
-  createFindingsSummary,
-  extractTLDRPoints,
-  createTOC,
-  buildScanFirstPatternContent,
-  buildSearchResultsContent,
+    buildPatternContent,
+    buildScanFirstPatternContent,
+    buildSearchResultsContent,
+    buildViolationContent,
+    createAnnotatedDiff,
+    createAntiPatternAnnotation,
+    createCodeBlock,
+    createFindingsSummary,
+    createSeverityBlock,
+    createTextBlock,
+    createTOC,
+    extractTLDRPoints,
 } from "../mcp-content-builders.js";
 
 describe("MCP Content Builders", () => {
@@ -505,11 +505,10 @@ describe("MCP Content Builders", () => {
         relatedPatterns: ["pattern-1"],
       };
 
-      const content = buildScanFirstPatternContent(pattern);
-      expect(content.length).toBeGreaterThan(0);
-      const texts = content.map((b) => b.text).join("\n");
-      expect(texts).toContain("Test Pattern");
-      expect(texts).toContain("const x = 1");
+      const block = buildScanFirstPatternContent(pattern);
+      expect(block.type).toBe("text");
+      expect(block.text).toContain("Test Pattern");
+      expect(block.text).toContain("const x = 1");
     });
 
     it("should work with minimal pattern data", () => {
@@ -521,8 +520,8 @@ describe("MCP Content Builders", () => {
         description: "Desc",
       };
 
-      const content = buildScanFirstPatternContent(pattern);
-      expect(content.length).toBeGreaterThan(0);
+      const block = buildScanFirstPatternContent(pattern);
+      expect(block.type).toBe("text");
     });
   });
 
@@ -564,7 +563,7 @@ describe("MCP Content Builders", () => {
       const content = buildSearchResultsContent(results, { query: "query" });
       expect(content.length).toBeGreaterThan(0);
       const texts = content.map((b) => b.text).join("\n");
-      expect(texts).toContain("No patterns found");
+      expect(texts).toContain("NO PATTERNS FOUND IN DATABASE");
     });
   });
 });

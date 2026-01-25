@@ -5,26 +5,26 @@
  * dependency injection and error handling.
  */
 
-import { Effect, Layer, Config } from "effect"
+import { Config, Effect, Layer } from "effect"
 import { createDatabase, getDatabaseUrl } from "../db/client.js"
-import {
-  createApplicationPatternRepository,
-  createEffectPatternRepository,
-  createJobRepository,
-  type ApplicationPatternRepository,
-  type EffectPatternRepository,
-  type JobRepository,
-  type SearchPatternsParams,
-} from "../repositories/index.js"
 import type {
-  ApplicationPattern,
-  EffectPattern as DbEffectPattern,
-  Job,
+    ApplicationPattern,
+    EffectPattern as DbEffectPattern,
+    Job,
 } from "../db/schema/index.js"
 import type { JobWithPatterns } from "../repositories/index.js"
+import {
+    createApplicationPatternRepository,
+    createEffectPatternRepository,
+    createJobRepository,
+    type ApplicationPatternRepository,
+    type EffectPatternRepository,
+    type JobRepository,
+    type SearchPatternsParams,
+} from "../repositories/index.js"
 import type { Pattern } from "../schemas/pattern.js"
-import { ToolkitLogger } from "./logger.js"
 import { ToolkitConfig } from "./config.js"
+import { ToolkitLogger } from "./logger.js"
 
 /**
  * Convert database EffectPattern to legacy Pattern format
@@ -79,7 +79,7 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
         close: connection.close,
       }
     }),
-    dependencies: [ToolkitLogger],
+    dependencies: [ToolkitLogger.Default],
   }
 ) {}
 
@@ -101,7 +101,7 @@ export class ApplicationPatternRepositoryService extends Effect.Service<Applicat
       const dbService = yield* DatabaseService
       return createApplicationPatternRepository(dbService.db)
     }),
-    dependencies: [DatabaseServiceLive],
+    dependencies: [DatabaseService.Default],
   }
 ) {}
 
@@ -115,7 +115,7 @@ export class EffectPatternRepositoryService extends Effect.Service<EffectPattern
       const dbService = yield* DatabaseService
       return createEffectPatternRepository(dbService.db)
     }),
-    dependencies: [DatabaseServiceLive],
+    dependencies: [DatabaseService.Default],
   }
 ) {}
 
@@ -129,7 +129,7 @@ export class JobRepositoryService extends Effect.Service<JobRepositoryService>()
       const dbService = yield* DatabaseService
       return createJobRepository(dbService.db)
     }),
-    dependencies: [DatabaseServiceLive],
+    dependencies: [DatabaseService.Default],
   }
 ) {}
 

@@ -809,7 +809,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 			"and causes unpredictable behavior.",
 		severity: "high",
 		category: "style",
-		fixIds: ["convert-default-to-named-exports"],
+		fixIds: [], // No automated fix - requires manual resolution of duplicate IDs
 	},
 	{
 		id: "unreachable-rule-declaration",

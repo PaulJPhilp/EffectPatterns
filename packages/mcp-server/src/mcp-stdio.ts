@@ -6,7 +6,7 @@
  * Allows Claude Code IDE and other MCP clients to access pattern tools via stdio.
  *
  * This is a PURE TRANSPORT layer - all authentication and authorization
- * (including tier validation) happens at the HTTP API level.
+ * happens at the HTTP API level.
  *
  * Usage:
  *   node dist/mcp-stdio.js                    # Local dev (no auth)
@@ -22,8 +22,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Agent } from "http";
 import { Agent as HttpsAgent } from "https";
-import { registerTools } from "./tools/tool-implementations.js";
-import { getActiveMCPConfig } from "./config/mcp-environments.js";
+import { getActiveMCPConfig } from "@/config/mcp-environments.js";
+import { registerTools } from "@/tools/tool-implementations.js";
 
 // ============================================================================
 // Configuration
@@ -34,7 +34,16 @@ const config = getActiveMCPConfig();
 const API_BASE_URL = config.apiUrl;
 const API_KEY = config.apiKey;
 const DEBUG = process.env.MCP_DEBUG === "true";
-const REQUEST_TIMEOUT_MS = 30000; // 30 seconds timeout
+const REQUEST_TIMEOUT_MS = 10000; // 10 seconds timeout
+
+// Extract API host for diagnostics (safe, no secrets)
+let API_HOST = "<invalid>";
+try {
+  const apiUrl = new URL(API_BASE_URL);
+  API_HOST = apiUrl.host;
+} catch {
+  // URL parsing failed, keep "<invalid>"
+}
 
 // ============================================================================
 // HTTP Connection Pooling
@@ -62,10 +71,7 @@ const httpsAgent = new HttpsAgent({
  * Key: request signature (endpoint + method + data hash)
  * Value: Promise that resolves to ApiResult
  */
-const inFlightRequests = new Map<
-  string,
-  Promise<ApiResult<unknown>>
->();
+const inFlightRequests = new Map<string, Promise<ApiResult<unknown>>>();
 
 // Telemetry counters
 let dedupeHits = 0;
@@ -74,7 +80,7 @@ let dedupeMisses = 0;
 function getRequestKey(
   endpoint: string,
   method: "GET" | "POST",
-  data?: unknown
+  data?: unknown,
 ): string {
   // For GET requests, include query params in key
   // For POST requests, include data hash (simplified: JSON stringify)
@@ -83,12 +89,15 @@ function getRequestKey(
 }
 
 // ============================================================================
-// Minimal Logging
+// Minimal Logging (stderr only - stdout is reserved for protocol)
 // ============================================================================
 
 function log(message: string, data?: unknown) {
   if (DEBUG) {
-    console.error(`[MCP] ${message}`, data ? JSON.stringify(data, null, 2) : "");
+    console.error(
+      `[MCP] ${message}`,
+      data ? JSON.stringify(data, null, 2) : "",
+    );
   }
 }
 
@@ -99,10 +108,25 @@ function log(message: string, data?: unknown) {
 /**
  * API call result - either success data or error information.
  * Following Effect-style: errors as values, not exceptions.
+ *
+ * Details object captures diagnostic info for network errors.
  */
 type ApiResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: string; status?: number };
+  | {
+      ok: false;
+      error: string;
+      status?: number;
+      details?: {
+        errorName?: string;
+        errorType?: string;
+        errorMessage?: string;
+        cause?: string;
+        retryable?: boolean;
+        apiHost?: string;
+        hasApiKey?: boolean;
+      };
+    };
 
 async function callApi(
   endpoint: string,
@@ -177,17 +201,85 @@ async function callApi(
     } catch (error) {
       clearTimeout(timeoutId);
 
-      // Check if it was a timeout
-      if (error instanceof Error && error.name === "AbortError") {
-        const msg = `Request timeout after ${REQUEST_TIMEOUT_MS}ms: ${method} ${endpoint}`;
+      // Capture detailed error information
+      const errorName = error instanceof Error ? error.name : "Unknown";
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const cause =
+        error instanceof Error &&
+        "cause" in error &&
+        error.cause instanceof Error
+          ? error.cause.message
+          : undefined;
+
+      // Check if it was a timeout (AbortError)
+      if (errorName === "AbortError") {
+        const msg = `Request timeout after ${REQUEST_TIMEOUT_MS}ms`;
         log(`API Error: ${msg}`);
-        return { ok: false, error: msg };
+        return {
+          ok: false,
+          error: msg,
+          details: {
+            errorName: "AbortError",
+            errorType: "timeout",
+            errorMessage: msg,
+            retryable: true,
+            apiHost: API_HOST,
+            hasApiKey: !!API_KEY,
+          },
+        };
       }
 
-      // Network or parsing errors
-      const msg = error instanceof Error ? error.message : String(error);
-      log(`API Error: ${msg}`);
-      return { ok: false, error: msg };
+      // Classify error type and retryability
+      let errorType = "network";
+      let retryable = true;
+
+      if (errorName === "TypeError" && errorMessage.includes("fetch")) {
+        errorType = "fetch_error";
+        retryable = true;
+      } else if (cause?.includes("ECONNREFUSED")) {
+        errorType = "connection_refused";
+        retryable = true;
+      } else if (cause?.includes("ENOTFOUND")) {
+        errorType = "dns_error";
+        retryable = true;
+      } else if (cause?.includes("ETIMEDOUT") || cause?.includes("timeout")) {
+        errorType = "timeout";
+        retryable = true;
+      } else if (cause?.includes("ECONNRESET")) {
+        errorType = "connection_reset";
+        retryable = true;
+      } else if (
+        cause?.includes("CERT") ||
+        cause?.includes("SSL") ||
+        cause?.includes("TLS")
+      ) {
+        errorType = "tls_error";
+        retryable = false; // TLS errors are not retryable
+      }
+
+      const msg = errorMessage;
+      log(`API Error: ${errorName}: ${msg}`, {
+        cause,
+        errorType,
+        retryable,
+        apiHost: API_HOST,
+        hasApiKey: !!API_KEY,
+      });
+
+      return {
+        ok: false,
+        error: msg,
+        details: {
+          errorName,
+          errorType,
+          errorMessage: msg,
+          cause,
+          retryable,
+          apiHost: API_HOST,
+          hasApiKey: !!API_KEY,
+        },
+      };
     } finally {
       // Clean up in-flight request
       inFlightRequests.delete(requestKey);
@@ -287,11 +379,19 @@ registerTools(server, callApi, log, {
 // ============================================================================
 
 async function main() {
+  // ============================================================================
+  // DIAGNOSTIC LOG (always to stderr, no secrets)
+  // This is the critical startup diagnostic line for debugging env issues.
+  // ============================================================================
+  console.error(
+    `[DIAGNOSTIC] API_HOST=${API_HOST} HAS_API_KEY=${!!API_KEY}`,
+  );
+
   // Warn if no API key - auth happens at HTTP API level
   if (!API_KEY) {
     console.error(
       "[Effect Patterns MCP] No API key configured. " +
-        "Requests will fail if HTTP API requires authentication."
+        "Requests will fail if HTTP API requires authentication.",
     );
   }
 
@@ -306,12 +406,44 @@ async function main() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
     log("MCP server connected via stdio");
-    console.error("[Effect Patterns MCP] Server started successfully");
+    console.error(
+      `[MCP-DEBUG-SIGNAL-99] Server started. Path: ${process.cwd()}`,
+    );
   } catch (error) {
     console.error("[Effect Patterns MCP] Failed to start:", error);
     process.exit(1);
   }
 }
+
+// ============================================================================
+// Fatal Error Handlers (stderr only - stdout is reserved for protocol)
+// ============================================================================
+
+process.on("uncaughtException", (error) => {
+  console.error("[Effect Patterns MCP] FATAL: Uncaught exception:", error);
+  console.error("[Effect Patterns MCP] Stack:", error.stack);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[Effect Patterns MCP] FATAL: Unhandled rejection:", reason);
+  console.error("[Effect Patterns MCP] Promise:", promise);
+  if (reason instanceof Error) {
+    console.error("[Effect Patterns MCP] Stack:", reason.stack);
+  }
+  process.exit(1);
+});
+
+process.on("SIGPIPE", () => {
+  console.error(
+    "[Effect Patterns MCP] FATAL: SIGPIPE - stdin/stdout pipe broken",
+  );
+  process.exit(1);
+});
+
+process.on("exit", (code) => {
+  console.error(`[Effect Patterns MCP] Process exiting with code: ${code}`);
+});
 
 // Handle signals gracefully
 process.on("SIGINT", () => {
@@ -326,5 +458,8 @@ process.on("SIGTERM", () => {
 
 main().catch((error) => {
   console.error("[Effect Patterns MCP] Fatal error:", error);
+  if (error instanceof Error) {
+    console.error("[Effect Patterns MCP] Stack:", error.stack);
+  }
   process.exit(1);
 });

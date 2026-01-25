@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { MCPLoggerService } from "../index";
 import { Effect, Layer } from "effect";
 import { MCPConfigService } from "../../config";
@@ -292,69 +292,112 @@ describe("Logger Helpers", () => {
 	});
 
 	describe("Legacy logging functions", () => {
-		beforeEach(() => {
-			vi.clearAllMocks();
-			vi.spyOn(console, "log").mockImplementation(() => {});
-			vi.spyOn(console, "warn").mockImplementation(() => {});
-			vi.spyOn(console, "error").mockImplementation(() => {});
-		});
+		// Capture console output without mocks
+		function captureConsoleOutput(
+			method: "log" | "warn" | "error"
+		): { output: string[]; restore: () => void } {
+			const output: string[] = [];
+			const original = console[method];
+			
+			console[method] = ((...args: unknown[]) => {
+				output.push(args.map(String).join(" "));
+			}) as typeof console[method];
+			
+			return {
+				output,
+				restore: () => {
+					console[method] = original;
+				},
+			};
+		}
 
 		it("logDebug should log debug message", () => {
-			logDebug("Debug message", { key: "value" });
-			expect(console.log).toHaveBeenCalled();
-			const call = vi.mocked(console.log).mock.calls[0][0];
-			const parsed = JSON.parse(call);
-			expect(parsed.level).toBe("debug");
-			expect(parsed.message).toBe("Debug message");
-			expect(parsed.data).toEqual({ key: "value" });
+			const { output, restore } = captureConsoleOutput("error");
+			const originalDebug = process.env.MCP_DEBUG;
+			try {
+				process.env.MCP_DEBUG = "true";
+				logDebug("Debug message", { key: "value" });
+				expect(output.length).toBeGreaterThan(0);
+				const parsed = JSON.parse(output[0]!);
+				expect(parsed.level).toBe("debug");
+				expect(parsed.message).toBe("Debug message");
+				expect(parsed.data).toEqual({ key: "value" });
+			} finally {
+				restore();
+				if (originalDebug === undefined) {
+					delete process.env.MCP_DEBUG;
+				} else {
+					process.env.MCP_DEBUG = originalDebug;
+				}
+			}
 		});
 
 		it("logInfo should log info message", () => {
-			logInfo("Info message", { key: "value" });
-			expect(console.log).toHaveBeenCalled();
-			const call = vi.mocked(console.log).mock.calls[vi.mocked(console.log).mock.calls.length - 1][0];
-			const parsed = JSON.parse(call);
-			expect(parsed.level).toBe("info");
-			expect(parsed.message).toBe("Info message");
+			const { output, restore } = captureConsoleOutput("error");
+			try {
+				logInfo("Info message", { key: "value" });
+				expect(output.length).toBeGreaterThan(0);
+				const parsed = JSON.parse(output[output.length - 1]!);
+				expect(parsed.level).toBe("info");
+				expect(parsed.message).toBe("Info message");
+			} finally {
+				restore();
+			}
 		});
 
 		it("logWarn should log warning message", () => {
-			logWarn("Warning message", { key: "value" });
-			expect(console.warn).toHaveBeenCalled();
-			const call = vi.mocked(console.warn).mock.calls[0][0];
-			const parsed = JSON.parse(call);
-			expect(parsed.level).toBe("warn");
-			expect(parsed.message).toBe("Warning message");
+			const { output, restore } = captureConsoleOutput("warn");
+			try {
+				logWarn("Warning message", { key: "value" });
+				expect(output.length).toBeGreaterThan(0);
+				const parsed = JSON.parse(output[0]!);
+				expect(parsed.level).toBe("warn");
+				expect(parsed.message).toBe("Warning message");
+			} finally {
+				restore();
+			}
 		});
 
 		it("logError should log error message with Error object", () => {
-			const error = new Error("Test error");
-			logError("Error message", error, { key: "value" });
-			expect(console.error).toHaveBeenCalled();
-			const call = vi.mocked(console.error).mock.calls[0][0];
-			const parsed = JSON.parse(call);
-			expect(parsed.level).toBe("error");
-			expect(parsed.message).toBe("Error message");
-			expect(parsed.error.name).toBe("Error");
-			expect(parsed.error.message).toBe("Test error");
+			const { output, restore } = captureConsoleOutput("error");
+			try {
+				const error = new Error("Test error");
+				logError("Error message", error, { key: "value" });
+				expect(output.length).toBeGreaterThan(0);
+				const parsed = JSON.parse(output[0]!);
+				expect(parsed.level).toBe("error");
+				expect(parsed.message).toBe("Error message");
+				expect(parsed.error.name).toBe("Error");
+				expect(parsed.error.message).toBe("Test error");
+			} finally {
+				restore();
+			}
 		});
 
 		it("logError should log error message with unknown error", () => {
-			logError("Error message", "String error", { key: "value" });
-			expect(console.error).toHaveBeenCalled();
-			const call = vi.mocked(console.error).mock.calls[0][0];
-			const parsed = JSON.parse(call);
-			expect(parsed.error.name).toBe("UnknownError");
-			expect(parsed.error.message).toBe("String error");
+			const { output, restore } = captureConsoleOutput("error");
+			try {
+				logError("Error message", "String error", { key: "value" });
+				expect(output.length).toBeGreaterThan(0);
+				const parsed = JSON.parse(output[0]!);
+				expect(parsed.error.name).toBe("UnknownError");
+				expect(parsed.error.message).toBe("String error");
+			} finally {
+				restore();
+			}
 		});
 
 		it("logError should log error message without error", () => {
-			logError("Error message", undefined, { key: "value" });
-			expect(console.error).toHaveBeenCalled();
-			const call = vi.mocked(console.error).mock.calls[0][0];
-			const parsed = JSON.parse(call);
-			expect(parsed.level).toBe("error");
-			expect(parsed.error).toBeUndefined();
+			const { output, restore } = captureConsoleOutput("error");
+			try {
+				logError("Error message", undefined, { key: "value" });
+				expect(output.length).toBeGreaterThan(0);
+				const parsed = JSON.parse(output[0]!);
+				expect(parsed.level).toBe("error");
+				expect(parsed.error).toBeUndefined();
+			} finally {
+				restore();
+			}
 		});
 	});
 });

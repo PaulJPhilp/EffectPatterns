@@ -47,10 +47,17 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
     moduleType: generateRequest.moduleType,
   });
 
-  // Get the pattern
-  const pattern = yield* patternsService.getPatternById(
+  // Get the pattern - handle both undefined result and errors
+  const patternResult = yield* patternsService.getPatternById(
     generateRequest.patternId
+  ).pipe(
+    Effect.catchAll(() => {
+      // If pattern lookup fails (DB error, etc), return PatternNotFoundError
+      return Effect.succeed(undefined);
+    })
   );
+  
+  const pattern = patternResult;
 
   if (!pattern) {
     return yield* Effect.fail(
@@ -60,13 +67,22 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
     );
   }
 
-  // Generate snippet
-  const snippet = buildSnippet({
-    pattern,
-    customName: generateRequest.name,
-    customInput: generateRequest.input,
-    moduleType: generateRequest.moduleType,
-    effectVersion: generateRequest.effectVersion,
+  // Generate snippet - wrap in try/catch to handle any buildSnippet errors
+  const snippet = yield* Effect.try({
+    try: () => buildSnippet({
+      pattern,
+      customName: generateRequest.name,
+      customInput: generateRequest.input,
+      moduleType: generateRequest.moduleType,
+      effectVersion: generateRequest.effectVersion,
+    }),
+    catch: () => {
+      // If buildSnippet fails, it's likely because pattern structure is invalid
+      // Return PatternNotFoundError to be consistent
+      return new PatternNotFoundError({
+        patternId: generateRequest.patternId,
+      });
+    },
   });
 
   const traceId = tracing.getTraceId();

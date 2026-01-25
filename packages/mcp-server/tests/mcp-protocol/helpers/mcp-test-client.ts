@@ -36,7 +36,9 @@ export interface ToolResult {
   content: Array<{
     type: string;
     text: string;
+    mimeType?: string;
   }>;
+  structuredContent?: unknown;
   isError?: boolean;
 }
 
@@ -105,17 +107,11 @@ export class MCPTestClient {
       // Connect client to transport
       await client.connect(transport);
 
-      // Create a dummy process reference (we'll track the transport instead)
-      const dummyProcess = {
-        kill: () => { },
-        once: () => { },
-      } as unknown as ChildProcess;
-
       // Create and return test client instance
       const testClient = new MCPTestClient(
         client,
         transport,
-        dummyProcess,
+        null as any, // We'll rely on transport.close() instead of explicit process kill
         config,
       );
       testClient.isConnected = true;
@@ -209,22 +205,26 @@ export class MCPTestClient {
         await this.transport.close();
       }
 
-      // Kill the server process
-      if (this.serverProcess) {
-        this.serverProcess.kill("SIGTERM");
+      // Kill the server process if we have one
+      if (this.serverProcess && typeof this.serverProcess.kill === 'function') {
+        try {
+          this.serverProcess.kill("SIGTERM");
 
-        // Wait for process to exit
-        await new Promise<void>((resolve) => {
-          const timeout = setTimeout(() => {
-            this.serverProcess.kill("SIGKILL");
-            resolve();
-          }, 5000);
+          // Wait for process to exit
+          await new Promise<void>((resolve) => {
+            const timeout = setTimeout(() => {
+              this.serverProcess.kill("SIGKILL");
+              resolve();
+            }, 5000);
 
-          this.serverProcess.once("exit", () => {
-            clearTimeout(timeout);
-            resolve();
+            this.serverProcess.once("exit", () => {
+              clearTimeout(timeout);
+              resolve();
+            });
           });
-        });
+        } catch (e) {
+          // Process might already be dead
+        }
       }
     } catch (error) {
       console.error("[MCP Client] Error during cleanup:", error);

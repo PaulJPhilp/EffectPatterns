@@ -82,18 +82,19 @@ export class ValidationService extends Effect.Service<ValidationService>()(
               return Array.isArray(path) ? path.map(String) : [String(path)];
             }
             // For other issue types, try to extract path if available
-            const fallbackPath = (issue as any).path;
-            return fallbackPath ? (Array.isArray(fallbackPath) ? fallbackPath : [fallbackPath]) : [];
+            const issueWithPath = issue as { path?: unknown };
+            const fallbackPath = issueWithPath.path;
+            if (fallbackPath === undefined || fallbackPath === null) {
+                return [];
+            }
+            return Array.isArray(fallbackPath) ? fallbackPath.map(String) : [String(fallbackPath)];
           };
 
           // Extract actual value from the error issue
           const extractActual = (issue: ParseResult.ParseIssue): unknown => {
             // Different issue types may store the actual value differently
-            if (issue._tag === "Pointer") {
-              return (issue as any).actual;
-            }
-            // Try to get actual from other issue types
-            return (issue as any).actual;
+            const issueWithActual = issue as { actual?: unknown };
+            return issueWithActual.actual;
           };
 
           return {
@@ -147,18 +148,14 @@ export class ValidationService extends Effect.Service<ValidationService>()(
 
           // Apply timeout to validation
           const result = yield* validationEffect.pipe(
-            Effect.timeout(validationTimeoutMs),
-            Effect.catchTag("TimeoutException", () =>
-              Effect.fail(
-                new ValidationServiceError({
-                  operation: "validate",
-                  schema: schemaName,
-                  cause: new Error(
-                    `Validation timeout after ${validationTimeoutMs}ms`
-                  ),
-                })
-              )
-            ),
+            Effect.timeoutFail({
+              duration: validationTimeoutMs,
+              onTimeout: () => new ValidationServiceError({
+                operation: "validate",
+                schema: schemaName,
+                cause: new Error(`Validation timeout after ${validationTimeoutMs}ms`),
+              })
+            }),
             Effect.catchAll((error) =>
               Effect.fail(
                 new ValidationServiceError({

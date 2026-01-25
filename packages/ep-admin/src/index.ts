@@ -10,6 +10,7 @@ import { Args, Command } from "@effect/cli";
 import { Effect } from "effect";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { validateEnvironment } from "./config/validate-env.js";
 import { CLI, SHELL_TYPES } from "./constants.js";
 import { Display } from "./services/display/index.js";
 
@@ -43,7 +44,7 @@ const completionsGenerateCommand = Command.make("generate", {
 	Command.withHandler(({ shell }) =>
 		Effect.gen(function* () {
 			const shellType = shell.toLowerCase() as Shell;
-			if (!SHELL_TYPES.includes(shellType as any)) {
+			if (!SHELL_TYPES.includes(shellType as Shell)) {
 				yield* Effect.fail(
 					new Error(
 						`Invalid shell: ${shell}. Must be one of: ${SHELL_TYPES.join(", ")}`,
@@ -67,7 +68,7 @@ const completionsInstallCommand = Command.make("install", {
 	Command.withHandler(({ shell }) =>
 		Effect.gen(function* () {
 			const shellType = shell.toLowerCase() as Shell;
-			if (!SHELL_TYPES.includes(shellType as any)) {
+			if (!SHELL_TYPES.includes(shellType as Shell)) {
 				yield* Effect.fail(
 					new Error(
 						`Invalid shell: ${shell}. Must be one of: ${SHELL_TYPES.join(", ")}`,
@@ -170,7 +171,12 @@ const isDirectExecution = (() => {
 })();
 
 if (isDirectExecution) {
-	const program = createAdminProgram(process.argv);
+	const program = Effect.gen(function* () {
+		// Validate environment first
+		yield* validateEnvironment;
+		// Then run the CLI
+		yield* createAdminProgram(process.argv);
+	});
 	const provided = Effect.provide(program, ProductionLayer) as Effect.Effect<
 		void,
 		unknown,

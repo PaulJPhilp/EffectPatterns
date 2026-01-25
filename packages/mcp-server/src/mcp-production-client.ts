@@ -53,7 +53,14 @@ const server = new McpServer(
  */
 type ApiResult<T> =
     | { ok: true; data: T }
-    | { ok: false; error: string; status?: number };
+    | { ok: false; error: string; status?: number; details?: {
+        errorName?: string;
+        errorType?: string;
+        cause?: string;
+        retryable?: boolean;
+        apiHost?: string;
+        hasApiKey?: boolean;
+    } };
 
 /**
  * Helper to make HTTP requests to production API.
@@ -112,11 +119,63 @@ async function callProductionApi(endpoint: string, data?: unknown): Promise<ApiR
             clearTimeout(timeoutId);
             
             if (error instanceof Error && error.name === "AbortError") {
-                return { ok: false, error: `Request timeout after ${REQUEST_TIMEOUT_MS}ms` };
+                return { 
+                    ok: false, 
+                    error: `Request timeout after ${REQUEST_TIMEOUT_MS}ms`,
+                    details: {
+                        errorName: "AbortError",
+                        errorType: "timeout",
+                        retryable: true,
+                    }
+                };
             }
 
-            const msg = error instanceof Error ? error.message : String(error);
-            return { ok: false, error: msg };
+            // Capture detailed error information
+            const errorName = error instanceof Error ? error.name : "Unknown";
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const cause = error instanceof Error && "cause" in error && error.cause instanceof Error
+                ? error.cause.message
+                : undefined;
+            
+            // Extract API host from URL (safe, no secrets)
+            let apiHost: string | undefined;
+            try {
+                const apiUrl = new URL(PRODUCTION_URL);
+                apiHost = apiUrl.host;
+            } catch {
+                // Invalid URL, skip host extraction
+            }
+            
+            // Classify error type and retryability
+            let errorType = "network";
+            let retryable = true;
+            
+            if (errorName === "TypeError" && errorMessage.includes("fetch")) {
+                errorType = "fetch_error";
+                retryable = true;
+            } else if (cause?.includes("ECONNREFUSED") || cause?.includes("ENOTFOUND")) {
+                errorType = "connection_refused";
+                retryable = true;
+            } else if (cause?.includes("ETIMEDOUT") || cause?.includes("timeout")) {
+                errorType = "timeout";
+                retryable = true;
+            } else if (cause?.includes("ECONNRESET")) {
+                errorType = "connection_reset";
+                retryable = true;
+            }
+
+            return { 
+                ok: false, 
+                error: errorMessage,
+                details: {
+                    errorName,
+                    errorType,
+                    cause,
+                    retryable,
+                    apiHost,
+                    hasApiKey: !!API_KEY,
+                }
+            };
         } finally {
             inFlightRequests.delete(requestKey);
         }
@@ -137,34 +196,6 @@ type ToolResult = {
     content: Array<{ type: "text"; text: string }>;
     isError?: boolean;
 };
-
-/**
- * Simple in-memory cache for production client
- */
-class SimpleCache {
-  private cache = new Map<string, { value: any; expiresAt: number }>();
-  private readonly maxEntries = 1000;
-
-  get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-    if (Date.now() > entry.expiresAt) {
-      this.cache.delete(key);
-      return null;
-    }
-    return entry.value as T;
-  }
-
-  set<T>(key: string, value: T, ttlMs: number = 5 * 60 * 1000): void {
-    if (this.cache.size >= this.maxEntries) {
-      const firstKey = this.cache.keys().next().value;
-      if (firstKey) this.cache.delete(firstKey);
-    }
-    this.cache.set(key, { value, expiresAt: Date.now() + ttlMs });
-  }
-}
-
-const productionCache = new SimpleCache();
 
 /**
  * Convert API result to tool result
@@ -256,6 +287,19 @@ server.registerTool(
 
 // Start the server
 async function main() {
+    // One-time startup diagnostic log (always to stderr, no secrets)
+    try {
+        const apiUrl = new URL(PRODUCTION_URL);
+        console.error(
+            `[Effect Patterns MCP] API_HOST=${apiUrl.host} HAS_API_KEY=${!!API_KEY}`
+        );
+    } catch {
+        // Fallback if URL parsing fails
+        console.error(
+            `[Effect Patterns MCP] API_HOST=<invalid> HAS_API_KEY=${!!API_KEY}`
+        );
+    }
+
     // Warn if no API key - auth happens at HTTP API level
     if (!API_KEY) {
         console.error(

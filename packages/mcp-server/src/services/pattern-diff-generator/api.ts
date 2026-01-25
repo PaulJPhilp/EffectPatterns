@@ -5,8 +5,7 @@
  * highlighting why specific lines are anti-patterns or improvements.
  */
 
-import type { TextContent } from "@modelcontextprotocol/sdk/shared/messages.js";
-import { buildViolationContent } from "./mcp-content-builders.js";
+import type { TextContent } from "../../schemas/structured-output.js";
 
 interface DiffBlock {
   readonly line: number;

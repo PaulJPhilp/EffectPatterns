@@ -171,15 +171,13 @@ export class PatternSearch extends Effect.Service<PatternSearch>()(
 
           // Apply timeout
           const result = yield* searchEffect.pipe(
-            Effect.timeout(searchTimeoutMs),
-            Effect.catchTag("TimeoutException", () =>
-              Effect.fail(
-                new SearchError({
-                  query,
-                  cause: new Error(`Search timeout after ${searchTimeoutMs}ms`),
-                })
-              )
-            )
+            Effect.timeoutFail({
+              duration: searchTimeoutMs,
+              onTimeout: () => new SearchError({
+                query,
+                cause: new Error(`Search timeout after ${searchTimeoutMs}ms`),
+              })
+            })
           );
 
           if (isLoggingEnabled) {

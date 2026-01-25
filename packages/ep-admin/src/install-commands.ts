@@ -246,8 +246,8 @@ export const installAddCommand = Command.make("add", {
 
 				let rules = allRules;
 
-				if (Option.isSome(skillLevelFilter as any)) {
-					const level = (skillLevelFilter as any).value;
+				if (Option.isSome(skillLevelFilter)) {
+					const level = skillLevelFilter.value;
 					rules = rules.filter(
 						(rule) => rule.skillLevel?.toLowerCase() === level.toLowerCase()
 					);
@@ -260,8 +260,8 @@ export const installAddCommand = Command.make("add", {
 					);
 				}
 
-				if (Option.isSome(useCaseFilter as any)) {
-					const useCase = (useCaseFilter as any).value;
+				if (Option.isSome(useCaseFilter)) {
+					const useCase = useCaseFilter.value;
 					rules = rules.filter((rule) =>
 						rule.useCase?.some(
 							(uc) => uc.toLowerCase() === useCase.toLowerCase()

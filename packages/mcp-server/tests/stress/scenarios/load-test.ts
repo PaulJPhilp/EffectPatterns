@@ -68,48 +68,6 @@ describe('Load Test - Concurrent Request Handling', () => {
     }
   }
 
-  /**
-   * Helper to run concurrent load test
-   */
-  async function runLoadTest(
-    requestsPerSecond: number,
-    durationSeconds: number,
-    filePreset: keyof typeof PRESET_CONFIGS = 'small'
-  ): Promise<void> {
-    const code = generateTestCode(filePreset);
-    const totalRequests = requestsPerSecond * durationSeconds;
-    const requests: Promise<any>[] = [];
-
-    console.log(`  Running: ${requestsPerSecond} req/s for ${durationSeconds}s (${totalRequests} total requests)`);
-
-    for (let i = 0; i < totalRequests; i++) {
-      // Spread requests evenly over time
-      const delay = (i / requestsPerSecond) * 1000;
-
-      const requestPromise = new Promise<void>((resolve) => {
-        setTimeout(async () => {
-          const result = await makeRequest(code);
-          metrics.recordRequest(result);
-          resolve();
-        }, delay);
-      });
-
-      // Wrap promise to return itself so we can remove it from the list
-      // We cast to any because we're returning the promise itself
-      const wrappedPromise: Promise<any> = requestPromise.then(() => wrappedPromise);
-
-      requests.push(wrappedPromise);
-
-      // Keep max 50 concurrent requests
-      if (requests.length >= 50) {
-        const completed = await Promise.race(requests);
-        requests.splice(requests.indexOf(completed), 1);
-      }
-    }
-
-    await Promise.all(requests);
-  }
-
   describe('Baseline Load (10 req/s)', () => {
     it('should handle baseline load with small files', async () => {
       const testMetrics = createMetricsCollector();

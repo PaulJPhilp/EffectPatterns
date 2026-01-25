@@ -21,3 +21,7 @@ if (!process.env.KV_REST_API_TOKEN) {
 if (!process.env.TIER_MODE) {
 	process.env.TIER_MODE = "free";
 }
+
+if (!process.env.PATTERN_API_KEY) {
+	process.env.PATTERN_API_KEY = "test-key";
+}

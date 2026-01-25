@@ -14,10 +14,10 @@
 import { FileSystem as EffectFileSystem } from "@effect/platform";
 import { Effect } from "effect";
 import {
-	ArgumentValidationError,
-	FileNotFoundError,
-	FileOperationError,
-	OptionValidationError,
+    ArgumentValidationError,
+    FileNotFoundError,
+    FileOperationError,
+    OptionValidationError,
 } from "../../errors.js";
 
 /**
@@ -187,15 +187,21 @@ export const createValidationService = (): Effect.Effect<ValidationService, neve
 			isOption = false
 		): Effect.Effect<void, ArgumentValidationError | OptionValidationError> => {
 			if (!allowedValues.includes(value)) {
-				const ErrorClass = isOption ? OptionValidationError : ArgumentValidationError;
-				return Effect.fail(
-					new ErrorClass({
-						[isOption ? "option" : "argument"]: argName,
+				if (isOption) {
+					return Effect.fail(new OptionValidationError({
+						option: argName,
 						message: `not a valid choice`,
 						value,
 						expected: `one of: ${allowedValues.join(", ")}`,
-					} as any)
-				);
+					}));
+				} else {
+					return Effect.fail(new ArgumentValidationError({
+						argument: argName,
+						message: `not a valid choice`,
+						value,
+						expected: `one of: ${allowedValues.join(", ")}`,
+					}));
+				}
 			}
 			return Effect.void;
 		};
@@ -206,14 +212,19 @@ export const createValidationService = (): Effect.Effect<ValidationService, neve
 			isOption = false
 		): Effect.Effect<void, ArgumentValidationError | OptionValidationError> => {
 			if (value === undefined || value === null || value === "") {
-				const ErrorClass = isOption ? OptionValidationError : ArgumentValidationError;
-				return Effect.fail(
-					new ErrorClass({
-						[isOption ? "option" : "argument"]: fieldName,
+				if (isOption) {
+					return Effect.fail(new OptionValidationError({
+						option: fieldName,
 						message: `is required`,
 						expected: `a non-empty value`,
-					} as any)
-				);
+					}));
+				} else {
+					return Effect.fail(new ArgumentValidationError({
+						argument: fieldName,
+						message: `is required`,
+						expected: `a non-empty value`,
+					}));
+				}
 			}
 			return Effect.void;
 		};
@@ -298,10 +309,10 @@ export const ValidationService = Effect.Service<ValidationService>()(
  * Helper to run all validations and collect errors
  */
 export const runValidations = (
-	validations: readonly Effect.Effect<void, any, any>[]
+	validations: readonly Effect.Effect<void, ArgumentValidationError | OptionValidationError | FileNotFoundError | FileOperationError, EffectFileSystem.FileSystem>[]
 ): Effect.Effect<ValidationResult, never, EffectFileSystem.FileSystem> =>
 	Effect.gen(function* () {
-		const errors: Array<any> = [];
+		const errors: Array<ArgumentValidationError | OptionValidationError | FileNotFoundError | FileOperationError> = [];
 
 		for (const validation of validations) {
 			yield* validation.pipe(
