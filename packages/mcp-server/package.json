@@ -57,7 +57,7 @@
   "dependencies": {
     "@effect-patterns/analysis-core": "file:./lib-analysis-core",
     "@effect-patterns/toolkit": "file:./lib-toolkit",
-    "@effect/opentelemetry": "^0.60.0",
+    "@effect/opentelemetry": "^0.61.0",
     "@effect/platform": "^0.94.1",
     "@effect/platform-node": "^0.104.0",
     "@effect/schema": "^0.75.5",
