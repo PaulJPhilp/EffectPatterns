@@ -505,7 +505,11 @@ describe("MCP Content Builders", () => {
         relatedPatterns: ["pattern-1"],
       };
 
-      const block = buildScanFirstPatternContent(pattern);
+      const block = buildScanFirstPatternContent(pattern, {
+        includeExample: true,
+        includeNotes: true,
+        includeRelated: true,
+      });
       expect(block.type).toBe("text");
       expect(block.text).toContain("Test Pattern");
       expect(block.text).toContain("const x = 1");

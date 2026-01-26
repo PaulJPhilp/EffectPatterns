@@ -94,7 +94,7 @@ export class MCPTestClient {
       command: "bun",
       args: [distPath],
       env,
-      stderr: config.debug ? "pipe" : "ignore",
+      stderr: config.debug ? "inherit" : "ignore",
     });
 
     // Create MCP client

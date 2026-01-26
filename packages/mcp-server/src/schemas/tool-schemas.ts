@@ -44,6 +44,10 @@ export const ToolSchemas = {
       .default(false)
       .optional()
       .describe("Include provenance information panel (default: false)"),
+    includeStructuredPatterns: z
+      .boolean()
+      .optional()
+      .describe("Include full patterns array in structuredContent (default: false for markdown-only)"),
   }).describe("Search Effect-TS patterns by query, category, difficulty level, and more"),
 
   // Get Pattern Tool
@@ -54,6 +58,10 @@ export const ToolSchemas = {
       .default("markdown")
       .optional()
       .describe("Output format (default: 'markdown')"),
+    includeStructuredDetails: z
+      .boolean()
+      .optional()
+      .describe("Include full structuredContent details (default: false for markdown-only)"),
   }).describe("Get full details for a specific pattern by ID"),
 
   // List Analysis Rules Tool

@@ -5,6 +5,7 @@ These anti-patterns indicate missing or weak domain models in Effect-TS codebase
 ## Overview
 
 Domain modeling anti-patterns are **design smells**, not syntax errors. Most are AST-detectable via heuristics and are best used in **read-only review**. These rules help users:
+
 - Reduce hidden complexity
 - Make illegal states unrepresentable
 - Let Effect's types do real work
@@ -19,7 +20,7 @@ Domain modeling anti-patterns are **design smells**, not syntax errors. Most are
 **Category**: validation  
 **Fix ID**: `introduce-branded-types`
 
-### The Problem
+### Problem: Primitive Types Lose Meaning
 
 ```typescript
 // ❌ Bad - Primitives lose meaning
@@ -27,11 +28,12 @@ function transfer(amount: number, accountId: string)
 ```
 
 **Why this is bad:**
+
 - Loses meaning and constraints
 - Easy to mix up parameters
 - No place to enforce invariants
 
-### Better Approach
+### Better Approach: Branded Types with Meaning
 
 ```typescript
 // ✅ Good - Branded types with meaning
@@ -64,7 +66,7 @@ const makeAmount = (value: number): Effect.Effect<Amount, ValidationError> =>
 **Category**: style  
 **Fix ID**: `replace-boolean-with-tagged-union`
 
-### The Problem
+### Problem: Boolean Flags Hide Branches
 
 ```typescript
 // ❌ Bad - Boolean flags hide branches
@@ -72,11 +74,12 @@ function process(user: User, isAdmin: boolean)
 ```
 
 **Why this is bad:**
+
 - Hidden branches
 - Poor readability
 - Hard to extend safely
 
-### Better Approach
+### Better Approach: Explicit Modes with Tagged Unions
 
 ```typescript
 // ✅ Good - Explicit modes with tagged unions
@@ -113,7 +116,7 @@ Match.type<UserRole>().pipe(
 **Category**: validation  
 **Fix ID**: `replace-magic-strings-with-union`
 
-### The Problem
+### Problem: Magic Strings Lack Type Safety
 
 ```typescript
 // ❌ Bad - Magic strings, no exhaustiveness
@@ -121,11 +124,12 @@ if (status === "approved") { ... }
 ```
 
 **Why this is bad:**
+
 - No exhaustiveness checking
 - Easy to drift during refactors
 - Usually wants a union or enum
 
-### Better Approach
+### Better Approach: Literal Union or Tagged Enum
 
 ```typescript
 // ✅ Good - Literal union or tagged enum
@@ -161,7 +165,7 @@ const handleStatus = (status: OrderStatus) =>
 **Category**: validation  
 **Fix ID**: `model-explicit-state-machine`
 
-### The Problem
+### Problem: Impossible States Allowed
 
 ```typescript
 // ❌ Bad - Allows impossible states
@@ -169,11 +173,12 @@ if (order.cancelled && !order.shipped) { ... }
 ```
 
 **Why this is bad:**
+
 - Impossible states allowed
 - Complex conditional logic
 - No compiler assistance
 
-### Better Approach
+### Better Approach: Explicit State Machine
 
 ```typescript
 // ✅ Good - Explicit state machine
@@ -215,7 +220,7 @@ const submitOrder = (state: OrderState.Draft): Effect.Effect<
 **Category**: style  
 **Fix ID**: `extract-domain-predicates`
 
-### The Problem
+### Problem: Business Rules Hidden in Conditionals
 
 ```typescript
 // ❌ Bad - Business rules hidden in conditionals
@@ -223,11 +228,12 @@ if (x > 100 && y < 10 && mode !== "test") { ... }
 ```
 
 **Why this is bad:**
+
 - Business rules are hidden
 - Hard to test or reuse
 - Encourages copy-paste logic
 
-### Better Approach
+### Better Approach: Named Domain Predicates
 
 ```typescript
 // ✅ Good - Named domain predicates
@@ -265,7 +271,7 @@ if (isEligibleForDiscount(total, tier, mode)) {
 **Category**: errors  
 **Fix ID**: `use-domain-specific-errors`
 
-### The Problem
+### Problem: Domain Meaning Implicit
 
 ```typescript
 // ❌ Bad - Domain meaning implicit
@@ -273,11 +279,12 @@ Effect.fail("not allowed")
 ```
 
 **Why this is bad:**
+
 - Domain meaning is implicit
 - No structured recovery
 - Difficult to observe or migrate
 
-### Better Approach
+### Better Approach: Domain-Specific Error Types
 
 ```typescript
 // ✅ Good - Domain-specific error types
@@ -322,7 +329,7 @@ const transfer = (
 **Category**: validation  
 **Fix ID**: `structure-config-schema`
 
-### The Problem
+### Problem: Configuration Structure Unclear
 
 ```typescript
 // ❌ Bad - Unclear structure
@@ -330,11 +337,12 @@ function createThing(opts: any)
 ```
 
 **Why this is bad:**
+
 - Unclear required vs optional fields
 - Silent misconfiguration
 - Hard to validate
 
-### Better Approach
+### Better Approach: Structured Schema with Validation
 
 ```typescript
 // ✅ Good - Structured schema with validation
@@ -370,7 +378,7 @@ const createDatabase = (
 **Category**: validation  
 **Fix ID**: `introduce-branded-ids`
 
-### The Problem
+### Problem: IDs Are Interchangeable
 
 ```typescript
 // ❌ Bad - IDs are interchangeable
@@ -378,10 +386,11 @@ type UserId = string
 ```
 
 **Why this is bad:**
+
 - IDs are interchangeable by accident
 - No place to attach semantics
 
-### Better Approach
+### Better Approach: Branded IDs with Constructors
 
 ```typescript
 // ✅ Good - Branded IDs with constructors
@@ -420,7 +429,7 @@ function getOrder(userId: UserId, orderId: OrderId) // Type-safe!
 **Category**: validation  
 **Fix ID**: `use-duration-abstraction`
 
-### The Problem
+### Problem: Time Units Ambiguous
 
 ```typescript
 // ❌ Bad - Units unclear
@@ -428,11 +437,12 @@ expiresAt: number
 ```
 
 **Why this is bad:**
+
 - Units unclear (ms? seconds?)
 - Arithmetic errors
 - Time logic becomes brittle
 
-### Better Approach
+### Better Approach: Duration Abstraction
 
 ```typescript
 // ✅ Good - Duration abstraction
@@ -472,16 +482,17 @@ const extendSession = (session: Session): Session => ({
 **Category**: style  
 **Fix ID**: `encode-domain-in-types`
 
-### The Problem
+### Problem: Domain Meaning Encoded Implicitly
 
 Meaning encoded implicitly by where code lives rather than by types.
 
 **Why this is bad:**
+
 - Hard to refactor
 - New contributors miss rules
 - Tooling can't help you
 
-### Better Approach
+### Better Approach: Domain Meaning Encoded in Types
 
 ```typescript
 // ❌ Bad - Meaning from file location

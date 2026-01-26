@@ -17,8 +17,7 @@
  */
 
 import {
-  MARKER_PATTERN_CARD_V1,
-  MARKER_PATTERN_INDEX_V1,
+    MARKER_PATTERN_INDEX_V1
 } from "@/constants/markers.js";
 import type { TextContent } from "@/schemas/structured-output.js";
 
@@ -36,19 +35,19 @@ interface MCPAnnotations {
  * Truncate text at word boundary to avoid mid-sentence cuts
  */
 function truncateAtWordBoundary(text: string, maxLength: number): string {
-  if (text.length <= maxLength) {
-    return text;
+  if (!text || text.length <= maxLength) {
+    return text || "";
   }
-  
+
   // Find last space before maxLength
   const truncated = text.substring(0, maxLength);
   const lastSpace = truncated.lastIndexOf(" ");
-  
+
   // If we found a space reasonably close to maxLength, use it
   if (lastSpace > maxLength * 0.8) {
     return text.substring(0, lastSpace) + "...";
   }
-  
+
   // Otherwise, just truncate and add ellipsis
   return truncated + "...";
 }
@@ -58,12 +57,17 @@ function truncateAtWordBoundary(text: string, maxLength: number): string {
  */
 function createTextBlock(
   text: string,
-  annotations?: MCPAnnotations
+  annotations?: MCPAnnotations,
 ): TextContent {
+  const normalizedAnnotations =
+    annotations && typeof annotations.priority === "number" && annotations.priority > 1
+      ? { ...annotations, priority: 1 }
+      : annotations;
+
   return {
     type: "text",
     text,
-    ...(annotations && { annotations }),
+    ...(normalizedAnnotations && { annotations: normalizedAnnotations }),
   };
 }
 
@@ -79,7 +83,7 @@ function createCodeBlock(
   code: string,
   language: string = "typescript",
   description?: string,
-  annotations?: MCPAnnotations
+  annotations?: MCPAnnotations,
 ): TextContent {
   const codeBlock = `\`\`\`${language}\n${code}\n\`\`\``;
   const fullText = description ? `${description}\n\n${codeBlock}` : codeBlock;
@@ -99,7 +103,7 @@ function createAnnotatedDiff(
   before: string,
   after: string,
   annotations?: MCPAnnotations,
-  explanation?: string
+  explanation?: string,
 ): TextContent[] {
   const diffContent: TextContent[] = [];
 
@@ -109,55 +113,39 @@ function createAnnotatedDiff(
       createTextBlock(`${explanation}\n`, {
         priority: 1,
         audience: ["user"],
-      })
+      }),
     );
   }
 
   // Create "Before" section
   diffContent.push(
-    createTextBlock(
-      "\n\n**Before (v3 style)**\n\n",
-      {
-        priority: explanation ? 2 : 1,
-        audience: ["user"],
-      }
-    )
+    createTextBlock("\n\n**Before (v3 style)**\n\n", {
+      priority: explanation ? 2 : 1,
+      audience: ["user"],
+    }),
   );
 
   diffContent.push(
-    createCodeBlock(
-      before,
-      "typescript",
-      undefined,
-      {
-        priority: explanation ? 2 : 1,
-        audience: ["user"],
-      }
-    )
+    createCodeBlock(before, "typescript", undefined, {
+      priority: explanation ? 2 : 1,
+      audience: ["user"],
+    }),
   );
 
   // Create "After" section
   diffContent.push(
-    createTextBlock(
-      "\n\n**After (v4 style)**\n\n",
-      {
-        priority: explanation ? 3 : 2,
-        audience: ["user"],
-      }
-    )
+    createTextBlock("\n\n**After (v4 style)**\n\n", {
+      priority: explanation ? 3 : 2,
+      audience: ["user"],
+    }),
   );
 
   diffContent.push(
-    createCodeBlock(
-      after,
-      "typescript",
-      undefined,
-      {
-        priority: explanation ? 3 : 2,
-        audience: ["user"],
-        ...annotations,
-      }
-    )
+    createCodeBlock(after, "typescript", undefined, {
+      priority: explanation ? 3 : 2,
+      audience: ["user"],
+      ...annotations,
+    }),
   );
 
   return diffContent;
@@ -173,7 +161,7 @@ function createAnnotatedDiff(
 function createAntiPatternAnnotation(
   severity: "high" | "medium" | "low",
   _message: string,
-  _line?: number
+  _line?: number,
 ): MCPAnnotations {
   const severityPriority = {
     high: 1,
@@ -198,7 +186,7 @@ function createAntiPatternAnnotation(
 function createPatternAnnotation(
   _pattern: string,
   _explanation: string,
-  isAntiPattern: boolean = true
+  isAntiPattern: boolean = true,
 ): MCPAnnotations {
   return {
     priority: isAntiPattern ? 1 : 2,
@@ -216,7 +204,7 @@ function buildPatternContent(
   description: string,
   codeExample: string,
   useCases?: readonly string[],
-  relatedPatterns?: readonly string[]
+  relatedPatterns?: readonly string[],
 ): TextContent[] {
   const content: TextContent[] = [];
 
@@ -225,7 +213,7 @@ function buildPatternContent(
     createTextBlock(`\n\n# ${title}\n\n`, {
       priority: 1,
       audience: ["user"],
-    })
+    }),
   );
 
   // Description
@@ -233,41 +221,40 @@ function buildPatternContent(
     createTextBlock(`${description}\n\n`, {
       priority: 2,
       audience: ["user"],
-    })
+    }),
   );
 
   // Code example
   content.push(
-    createCodeBlock(
-      codeExample,
-      "typescript",
-      "**Example:**",
-      {
-        priority: 2,
-        audience: ["user"],
-      }
-    )
+    createCodeBlock(codeExample, "typescript", "**Example:**", {
+      priority: 2,
+      audience: ["user"],
+    }),
   );
 
   // Use cases
-  if (useCases && useCases.length > 0) {
+  if (useCases && Array.isArray(useCases) && useCases.length > 0) {
     const useCasesText = `\n\n**Use Cases:**\n\n${useCases.map((uc) => `- ${uc}`).join("\n")}\n`;
     content.push(
       createTextBlock(useCasesText, {
-        priority: 3,
+        priority: 2,
         audience: ["user"],
-      })
+      }),
     );
   }
 
   // Related patterns
-  if (relatedPatterns && relatedPatterns.length > 0) {
+  if (
+    relatedPatterns &&
+    Array.isArray(relatedPatterns) &&
+    relatedPatterns.length > 0
+  ) {
     const relatedText = `\n\n**Related Patterns:**\n\n${relatedPatterns.map((rp) => `- ${rp}`).join("\n")}\n`;
     content.push(
       createTextBlock(relatedText, {
-        priority: 4,
+        priority: 3,
         audience: ["user"],
-      })
+      }),
     );
   }
 
@@ -285,7 +272,7 @@ function buildViolationContent(
   severity: "🔴 high" | "🟡 medium" | "🔵 low",
   message: string,
   remediation: string,
-  example?: string
+  example?: string,
 ): TextContent[] {
   const content: TextContent[] = [];
 
@@ -301,7 +288,7 @@ function buildViolationContent(
     createTextBlock(`\n\n## ${severityLabel} ${ruleName}\n\n`, {
       priority: 1,
       audience: ["user"],
-    })
+    }),
   );
 
   // Blockquoted message for visual separation
@@ -309,7 +296,7 @@ function buildViolationContent(
     createTextBlock(`> **Issue:** ${message}\n\n`, {
       priority: 1,
       audience: ["user"],
-    })
+    }),
   );
 
   if (example) {
@@ -317,19 +304,14 @@ function buildViolationContent(
       createTextBlock("\n\n### Problematic Pattern\n\n", {
         priority: 2,
         audience: ["user"],
-      })
+      }),
     );
 
     content.push(
-      createCodeBlock(
-        example,
-        "typescript",
-        undefined,
-        {
-          priority: 2,
-          audience: ["user"],
-        }
-      )
+      createCodeBlock(example, "typescript", undefined, {
+        priority: 2,
+        audience: ["user"],
+      }),
     );
   }
 
@@ -338,14 +320,14 @@ function buildViolationContent(
     createTextBlock("\n\n### How to Fix\n\n", {
       priority: 3,
       audience: ["user"],
-    })
+    }),
   );
 
   content.push(
     createTextBlock(`> ${remediation}\n\n`, {
       priority: 3,
       audience: ["user"],
-    })
+    }),
   );
 
   return content;
@@ -363,7 +345,7 @@ function createSeverityBlock(
   severity: "high" | "medium" | "low",
   title: string,
   description: string,
-  relatedCode?: string
+  relatedCode?: string,
 ): TextContent[] {
   const blocks: TextContent[] = [];
 
@@ -382,7 +364,7 @@ function createSeverityBlock(
     createTextBlock(`\n\n### ${severityLabel} ${title}\n\n`, {
       priority: severityPriority,
       audience: ["user"],
-    })
+    }),
   );
 
   // Blockquoted description for visual hierarchy
@@ -390,21 +372,16 @@ function createSeverityBlock(
     createTextBlock(`> ${description}\n\n`, {
       priority: severityPriority + 1,
       audience: ["user"],
-    })
+    }),
   );
 
   // Optional code block
   if (relatedCode) {
     blocks.push(
-      createCodeBlock(
-        relatedCode,
-        "typescript",
-        "**Example:**",
-        {
-          priority: severityPriority + 1,
-          audience: ["user"],
-        }
-      )
+      createCodeBlock(relatedCode, "typescript", "**Example:**", {
+        priority: severityPriority + 1,
+        audience: ["user"],
+      }),
     );
   }
 
@@ -422,7 +399,7 @@ function createFindingsSummary(
     title: string;
     description: string;
     code?: string;
-  }>
+  }>,
 ): TextContent[] {
   const blocks: TextContent[] = [];
 
@@ -433,13 +410,10 @@ function createFindingsSummary(
 
   // Summary header
   blocks.push(
-    createTextBlock(
-      `\n\n## Findings Summary (${findings.length} total)\n\n`,
-      {
-        priority: 1,
-        audience: ["user"],
-      }
-    )
+    createTextBlock(`\n\n## Findings Summary (${findings.length} total)\n\n`, {
+      priority: 1,
+      audience: ["user"],
+    }),
   );
 
   // High severity section
@@ -448,54 +422,85 @@ function createFindingsSummary(
       createTextBlock(`\n\n### 🔴 High Severity (${highSeverity.length})\n\n`, {
         priority: 1,
         audience: ["user"],
-      })
+      }),
     );
 
     for (const finding of highSeverity) {
-      blocks.push(...createSeverityBlock(
-        "high",
-        finding.title,
-        finding.description,
-        finding.code
-      ));
+      blocks.push(
+        ...createSeverityBlock(
+          "high",
+          finding.title,
+          finding.description,
+          finding.code,
+        ),
+      );
+    }
+  }
+
+  // High severity section
+  if (highSeverity && Array.isArray(highSeverity) && highSeverity.length > 0) {
+    blocks.push(
+      createTextBlock(`\n\n### 🔴 High Severity (${highSeverity.length})\n\n`, {
+        priority: 1,
+        audience: ["user"],
+      }),
+    );
+
+    for (const finding of highSeverity) {
+      blocks.push(
+        ...createSeverityBlock(
+          "high",
+          finding.title,
+          finding.description,
+          finding.code,
+        ),
+      );
     }
   }
 
   // Medium severity section
-  if (mediumSeverity.length > 0) {
+  if (
+    mediumSeverity &&
+    Array.isArray(mediumSeverity) &&
+    mediumSeverity.length > 0
+  ) {
     blocks.push(
       createTextBlock(`\n\n### 🟡 Advisory (${mediumSeverity.length})\n\n`, {
         priority: 2,
         audience: ["user"],
-      })
+      }),
     );
 
     for (const finding of mediumSeverity) {
-      blocks.push(...createSeverityBlock(
-        "medium",
-        finding.title,
-        finding.description,
-        finding.code
-      ));
+      blocks.push(
+        ...createSeverityBlock(
+          "medium",
+          finding.title,
+          finding.description,
+          finding.code,
+        ),
+      );
     }
   }
 
   // Low severity section
-  if (lowSeverity.length > 0) {
+  if (lowSeverity && Array.isArray(lowSeverity) && lowSeverity.length > 0) {
     blocks.push(
       createTextBlock(`\n\n### 🔵 Info (${lowSeverity.length})\n\n`, {
         priority: 3,
         audience: ["user"],
-      })
+      }),
     );
 
     for (const finding of lowSeverity) {
-      blocks.push(...createSeverityBlock(
-        "low",
-        finding.title,
-        finding.description,
-        finding.code
-      ));
+      blocks.push(
+        ...createSeverityBlock(
+          "low",
+          finding.title,
+          finding.description,
+          finding.code,
+        ),
+      );
     }
   }
 
@@ -509,34 +514,46 @@ function createFindingsSummary(
  */
 function extractTLDRPoints(
   description: string,
-  useCases?: readonly string[]
+  useCases?: readonly string[],
 ): readonly string[] {
   // If useCases exist, use first 3-5 as TL;DR points
-  if (useCases && useCases.length > 0) {
+  if (useCases && Array.isArray(useCases) && useCases.length > 0) {
     return useCases.slice(0, 5);
   }
 
   // Otherwise, try to extract key points from description
   // Look for bullet points or numbered lists
   const bulletMatch = description?.match(/^[-•*]\s+(.+)$/gm);
-  if (bulletMatch && bulletMatch.length > 0) {
-    return bulletMatch.slice(0, 5).map((m) => m.replace(/^[-•*]\s+/, "").trim());
+  if (bulletMatch && Array.isArray(bulletMatch) && bulletMatch.length > 0) {
+    return bulletMatch
+      .slice(0, 5)
+      .map((m) => m.replace(/^[-•*]\s+/, "").trim());
   }
 
   // Look for numbered lists
   const numberedMatch = description?.match(/^\d+\.\s+(.+)$/gm);
-  if (numberedMatch && numberedMatch.length > 0) {
-    return numberedMatch.slice(0, 5).map((m) => m.replace(/^\d+\.\s+/, "").trim());
+  if (
+    numberedMatch &&
+    Array.isArray(numberedMatch) &&
+    numberedMatch.length > 0
+  ) {
+    return numberedMatch
+      .slice(0, 5)
+      .map((m) => m.replace(/^\d+\.\s+/, "").trim());
   }
 
   // Fall back to splitting description into sentences
   // Take first 3-5 sentences that are substantial
-  const sentences = description?.split(/[.!?]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 20)
-    .slice(0, 5) ?? [];
+  const sentences =
+    description
+      ?.split(/[.!?]+/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 20)
+      .slice(0, 5) ?? [];
 
-  return sentences.length > 0 ? sentences : [truncateAtWordBoundary(description || "", 200)];
+  return sentences.length > 0
+    ? sentences
+    : [truncateAtWordBoundary(description || "", 200)];
 }
 
 /**
@@ -544,7 +561,11 @@ function extractTLDRPoints(
  *
  * Generates anchor links for all available sections
  */
-function createTOC(hasExamples: boolean, hasUseCases: boolean, hasRelated: boolean): string {
+function createTOC(
+  hasExamples: boolean,
+  hasUseCases: boolean,
+  hasRelated: boolean,
+): string {
   const links: string[] = [];
 
   // Always include these sections
@@ -592,20 +613,32 @@ function extractAPINames(pattern: PatternData): readonly string[] {
   if (!pattern) return apiNames;
 
   // Extract from tags (e.g., "Effect.all", "Effect.forEach")
-  if (pattern.tags) {
+  if (pattern.tags && Array.isArray(pattern.tags)) {
     for (const tag of pattern.tags) {
-      if (tag.includes("Effect.") || tag.includes("Layer.") || tag.includes("Stream.")) {
+      if (
+        tag.includes("Effect.") ||
+        tag.includes("Layer.") ||
+        tag.includes("Stream.")
+      ) {
         apiNames.push(tag);
       }
     }
   }
 
   // Extract from code examples if not found in tags
-  if (apiNames.length === 0 && pattern.examples) {
+  if (
+    apiNames.length === 0 &&
+    pattern.examples &&
+    Array.isArray(pattern.examples)
+  ) {
     for (const example of pattern.examples) {
-      const matches = example.code?.match(/\b(Effect|Layer|Stream|Schedule|Metric|Ref|Queue|PubSub)\.\w+/g);
-      if (matches) {
-        apiNames.push(...matches);
+      if (example && example.code) {
+        const matches = example.code.match(
+          /\b(Effect|Layer|Stream|Schedule|Metric|Ref|Queue|PubSub)\.\w+/g,
+        );
+        if (matches) {
+          apiNames.push(...matches);
+        }
       }
     }
   }
@@ -619,13 +652,22 @@ function extractAPINames(pattern: PatternData): readonly string[] {
  */
 function extractUseWhen(pattern: PatternData): string {
   if (!pattern) return "";
-  if (pattern.useCases && pattern.useCases.length > 0) {
+  if (
+    pattern.useCases &&
+    Array.isArray(pattern.useCases) &&
+    pattern.useCases.length > 0
+  ) {
     return pattern.useCases[0];
   }
 
   // Extract first sentence from description
-  const firstSentence = pattern.description?.split(/[.!?]+/)[0]?.trim() ?? "";
-  return firstSentence.length > 0 ? firstSentence : truncateAtWordBoundary(pattern.description || "", 100);
+  if (pattern.description) {
+    const firstSentence = pattern.description.split(/[.!?]+/)[0]?.trim() ?? "";
+    return firstSentence.length > 0
+      ? firstSentence
+      : truncateAtWordBoundary(pattern.description, 100);
+  }
+  return "";
 }
 
 /**
@@ -634,19 +676,23 @@ function extractUseWhen(pattern: PatternData): string {
 function extractAvoidWhen(pattern: PatternData): string | undefined {
   if (!pattern) return undefined;
   // Look for "avoid" or "not" in useCases
-  if (pattern.useCases) {
-    const avoidCase = pattern.useCases.find(
-      (uc) => uc.toLowerCase().includes("avoid") || uc.toLowerCase().includes("not")
-    );
-    if (avoidCase) {
-      return avoidCase;
+  if (pattern.useCases && Array.isArray(pattern.useCases)) {
+    for (const useCase of pattern.useCases) {
+      if (
+        useCase.toLowerCase().includes("avoid") ||
+        useCase.toLowerCase().includes("not")
+      ) {
+        return useCase;
+      }
     }
   }
 
-  // Look for "avoid" in description
-  const avoidMatch = pattern.description?.match(/avoid[^.!?]*[.!?]/i);
-  if (avoidMatch) {
-    return avoidMatch[0].trim();
+  // Look for "avoid" patterns in description
+  if (pattern.description) {
+    const avoidMatch = pattern.description.match(/avoid[^.!?]*[.!?]/i);
+    if (avoidMatch) {
+      return avoidMatch[0].trim();
+    }
   }
 
   return undefined;
@@ -672,18 +718,24 @@ function extractNotes(pattern: PatternData): readonly string[] {
   if (!pattern) return notes;
 
   // Use remaining useCases (skip first one used for "Use when")
-  if (pattern.useCases && pattern.useCases.length > 1) {
+  if (
+    pattern.useCases &&
+    Array.isArray(pattern.useCases) &&
+    pattern.useCases.length > 1
+  ) {
     notes.push(...pattern.useCases.slice(1, 3));
   }
 
   // If not enough notes, extract from description
   if (notes.length < 2 && pattern.description) {
     const sentences = pattern.description
-      ?.split(/[.!?]+/)
+      .split(/[.!?]+/)
       .map((s) => s.trim())
       .filter((s) => s.length > 20 && s.length < 150)
       .slice(2, 4); // Skip first 2 sentences (used for summary)
-    notes.push(...sentences);
+    if (sentences && sentences.length > 0) {
+      notes.push(...sentences);
+    }
   }
 
   return notes.slice(0, 2);
@@ -706,100 +758,111 @@ function extractNotes(pattern: PatternData): readonly string[] {
  * RETURNS: Single TextContent block containing the entire card.
  * This ensures each card is treated as a distinct UI component.
  */
-function buildScanFirstPatternContent(pattern: PatternData): TextContent {
+type ScanFirstOptions = {
+  descriptionMaxChars?: number;
+  includeExample?: boolean;
+  includeNotes?: boolean;
+  includeRelated?: boolean;
+  exampleMaxLines?: number;
+  includeApi?: boolean;
+  includeUseWhen?: boolean;
+};
+
+function buildScanFirstPatternContent(
+  pattern: PatternData,
+  options: ScanFirstOptions = {},
+): TextContent {
+  const {
+    descriptionMaxChars = 160,
+    includeExample = false,
+    includeNotes = false,
+    includeRelated = false,
+    exampleMaxLines = 12,
+    includeApi = true,
+    includeUseWhen = true,
+  } = options;
   // Build card content as a single string to ensure it's treated as ONE UI block
   const parts: string[] = [];
 
   // Visual "UI Signature" - Official border to prevent model overwrite
   // This makes it visually obvious if the model is "summarizing" (no borders) or "rendering" (borders present)
-  parts.push(`\n\n╔═══════════════════════════════════════════════════════════════╗\n`);
-  parts.push(`║                    OFFICIAL EFFECT PATTERN                      ║\n`);
-  parts.push(`╚═══════════════════════════════════════════════════════════════╝\n\n`);
+  parts.push(
+    `\n\n╔═══════════════════════════════════════════════════════════════╗\n`,
+  );
+  parts.push(
+    `║                    OFFICIAL EFFECT PATTERN                      ║\n`,
+  );
+  parts.push(
+    `╚═══════════════════════════════════════════════════════════════╝\n\n`,
+  );
 
-  // Card Header: Name with proper spacing
-  parts.push(`# ${pattern.title}\n\n`);
-
-  // Hidden presentation marker - strictly separated from header by \n\n
-  // This ensures Cursor identifies it as a distinct UI marker
-  parts.push(`${MARKER_PATTERN_CARD_V1}\n\n`);
-
-  // Category/difficulty badges
-  parts.push(`**Category:** ${pattern.category} | **Difficulty:** ${pattern.difficulty}\n`);
-
-  // Full Description (up to 1000 chars, word-boundary truncated)
-  // This ensures the card is "rich" and complete, preventing follow-up calls
+  // Description
   if (pattern.description) {
-    const fullDescription = truncateAtWordBoundary(pattern.description, 1000);
-    parts.push(`\n**Description:**\n\n${fullDescription}\n`);
+    const fullDescription = truncateAtWordBoundary(
+      pattern.description,
+      descriptionMaxChars,
+    );
+    parts.push(`**Description:**\n\n${fullDescription}\n`);
   }
 
-  // Use when (1 line)
-  const useWhen = extractUseWhen(pattern);
-  parts.push(`\n**Use when:** ${useWhen}\n`);
-
-  // Avoid when (1 line, optional)
-  const avoidWhen = extractAvoidWhen(pattern);
-  if (avoidWhen) {
-    parts.push(`\n**Avoid when:** ${avoidWhen}\n`);
+  // Use when
+  if (includeUseWhen) {
+    const useWhen = extractUseWhen(pattern);
+    parts.push(`**Use when:** ${useWhen}\n`);
   }
 
   // API chips
-  const apiNames = extractAPINames(pattern);
-  if (apiNames.length > 0) {
-    const apiChips = apiNames.map((api) => `\`${api}\``).join(" ");
-    parts.push(`\n**API:** ${apiChips}\n`);
-  }
-
-  // Default vs Recommended (infer from tags or pattern context)
-  const isRecommended = pattern.tags?.some((tag) =>
-    tag.toLowerCase().includes("recommended") || tag.toLowerCase().includes("preferred")
-  );
-  const isDefault = pattern.tags?.some((tag) => tag.toLowerCase().includes("default"));
-  
-  if (isRecommended || isDefault) {
-    const defaultVsRecommended = isRecommended
-      ? "**Recommended** (preferred approach)"
-      : isDefault
-        ? "**Default** (standard approach)"
-        : undefined;
-    
-    if (defaultVsRecommended) {
-      parts.push(`\n${defaultVsRecommended}\n`);
+  if (includeApi) {
+    const apiNames = extractAPINames(pattern);
+    if (apiNames.length > 0) {
+      const apiChips = apiNames
+        .slice(0, 4)
+        .map((api) => `\`${api}\``)
+        .join(" ");
+      parts.push(`**API:** ${apiChips}\n`);
     }
   }
 
-  // Minimal example (10–20 lines max) - REQUIRED for rich cards
-  // This ensures agents don't need follow-up calls to get code examples
-  if (pattern.examples && pattern.examples.length > 0) {
+  // Example
+  if (
+    includeExample &&
+    pattern.examples &&
+    Array.isArray(pattern.examples) &&
+    pattern.examples.length > 0
+  ) {
     const firstExample = pattern.examples[0];
-    const truncatedCode = truncateCodeExample(firstExample.code, 20);
-    const language = firstExample.language || "typescript";
-    parts.push(`\n**Example:**\n\n\`\`\`${language}\n${truncatedCode}\n\`\`\`\n`);
-  } else {
-    // Fallback: Provide link to full pattern if no example available
-    parts.push(`\n**Example:** [View Full Pattern Details](#pattern-${pattern.id})\n`);
+    if (firstExample && typeof firstExample === "object" && firstExample.code) {
+      const truncatedCode = truncateCodeExample(
+        firstExample.code,
+        exampleMaxLines,
+      );
+      const language = firstExample.language || "typescript";
+      parts.push(
+        `**Example:**\n\n\`\`\`${language}\n${truncatedCode}\n\`\`\`\n`,
+      );
+    }
   }
 
-  // Notes (1–2 bullets)
-  const notes = extractNotes(pattern);
-  if (notes.length > 0) {
-    const notesText = notes.map((note) => `- ${note}`).join("\n");
-    parts.push(`\n**Notes:**\n\n${notesText}\n`);
+  // Notes
+  if (includeNotes) {
+    const notes = extractNotes(pattern);
+    if (notes.length > 0) {
+      const notesText = notes.map((note) => `- ${note}`).join("\n");
+      parts.push(`**Notes:**\n\n${notesText}\n`);
+    }
   }
 
-  // Related Patterns (if available)
-  if (pattern.relatedPatterns && pattern.relatedPatterns.length > 0) {
+  // Related patterns
+  if (
+    includeRelated &&
+    pattern.relatedPatterns &&
+    Array.isArray(pattern.relatedPatterns) &&
+    pattern.relatedPatterns.length > 0
+  ) {
     const relatedText = `**Related:** ${pattern.relatedPatterns.slice(0, 3).join(", ")}`;
     parts.push(`\n${relatedText}\n`);
   }
 
-  // Close visual border
-  parts.push(`\n╔═══════════════════════════════════════════════════════════════╗\n`);
-  parts.push(`║              END OF OFFICIAL EFFECT PATTERN                    ║\n`);
-  parts.push(`╚═══════════════════════════════════════════════════════════════╝\n`);
-
-  // Return as SINGLE TextContent block with strong annotations
-  // This signals to the model: "This is a final UI component; do not modify"
   return createTextBlock(parts.join(""), {
     priority: 1,
     audience: ["user"],
@@ -823,11 +886,11 @@ function buildIndexTable(patterns: readonly PatternData[]): string {
 
   // Pre-allocate buffer and use single join pass (O(N) instead of O(N²))
   const rows: string[] = [];
-  
+
   // Hidden marker - strictly separated from content by \n\n
   // This ensures Cursor identifies it as a distinct UI marker
   rows.push(`\n\n${MARKER_PATTERN_INDEX_V1}\n\n`);
-  
+
   // Table header
   rows.push("| Pattern | Category | Difficulty | Tags |");
   rows.push("| :--- | :--- | :--- | :--- |");
@@ -835,7 +898,7 @@ function buildIndexTable(patterns: readonly PatternData[]): string {
   for (const p of patterns) {
     const tags = p.tags ? p.tags.join(", ") : "";
     rows.push(
-      `| **${p.title}** (\`${p.id}\`) | ${p.category} | ${p.difficulty} | ${tags} |`
+      `| **${p.title}** (\`${p.id}\`) | ${p.category} | ${p.difficulty} | ${tags} |`,
     );
   }
 
@@ -860,106 +923,84 @@ function buildSearchResultsContent(
   options: {
     limitCards?: number;
     includeProvenancePanel?: boolean;
+    includeIndexTable?: boolean;
     query?: string;
-  } = {}
+  } = {},
 ): TextContent[] {
   const content: TextContent[] = [];
-  // Default to 10 cards; max 10 to prevent runaway rendering
-  const limitCards = Math.min(options.limitCards ?? 10, 10);
-  const normalizePriority = (blocks: TextContent[]): TextContent[] =>
-    blocks.map((block) => {
-      if (!block.annotations) return block;
-      return {
-        ...block,
-        annotations: {
-          ...block.annotations,
-          priority: 1,
-        },
-      };
-    });
+  const limitCards = Math.min(options.limitCards ?? 3, 10);
+  const includeIndexTable = options.includeIndexTable ?? false;
 
-  // 1. Summary Header with proper spacing
+  // Simple header
   const queryInfo = options.query ? ` for "${options.query}"` : "";
-  
   content.push(
     createTextBlock(
-      `## [LIVE-BUILD-v1] OFFICIAL EFFECT PATTERN SEARCH${queryInfo}\n\nFound **${results.count}** matching patterns. Detailed documentation for the top results follows. Use pattern IDs from the Index with 'get_pattern' for additional deep-dives.\n`,
+      `## Effect Pattern Search${queryInfo}\nFound **${results.count}** patterns.\n\n`,
       {
         priority: 1,
         audience: ["user"],
-      }
-    )
+      },
+    ),
   );
 
-  // 2. Index Table with proper header spacing
-  content.push(
-    createTextBlock(`\n\n## Index\n\n${buildIndexTable(results.patterns)}\n`, {
-      priority: 1,
-      audience: ["user"],
-    })
-  );
+  // Simple index table (optional)
+  if (includeIndexTable) {
+    content.push(
+      createTextBlock(
+        `\n## Pattern Index\n\n${buildIndexTable(results.patterns)}\n`,
+        {
+          priority: 1,
+          audience: ["user"],
+        },
+      ),
+    );
+  }
 
-  // 3. Top N Cards - Each card is a SINGLE distinct block
-  // This multi-block partitioning prevents model overwrite
+  // Top patterns (simplified)
   if (results.patterns.length > 0 && limitCards > 0) {
     const displayCount = Math.min(results.patterns.length, limitCards);
-    
-    // Section header as separate block
+
     content.push(
-      createTextBlock(`\n\n## Top ${displayCount} Patterns\n`, {
+      createTextBlock(`\n## Top ${displayCount} Patterns\n`, {
         priority: 2,
         audience: ["user"],
-      })
+      }),
     );
 
-    // Each card is ONE block - prevents model from merging/summarizing
     for (let i = 0; i < displayCount; i++) {
       const pattern = results.patterns[i];
-      // Each card is returned as a SINGLE TextContent block
       const cardBlock = buildScanFirstPatternContent(pattern);
       content.push(cardBlock);
-      
-      // Separator as distinct block (not after the last card)
+
+      // Simple separator
       if (i < displayCount - 1) {
         content.push(
           createTextBlock("\n\n---\n\n", {
             priority: 1,
             audience: ["user"],
-          })
+          }),
         );
       }
     }
   }
 
-  // 4. Provenance Panel (if requested)
-  if (options.includeProvenancePanel) {
-    const provenance = {
-      source: "Effect Patterns API",
-      timestamp: new Date().toISOString(),
-      version: "pps-v2",
-      buildSha: "local-dev",
-      query: options.query,
-      resultCount: results.count,
-    };
-
-    content.push(
-      createTextBlock(
-        `\n\n---\n\n<details>\n<summary>Provenance</summary>\n\n\`\`\`json\n${JSON.stringify(provenance, null, 2)}\n\`\`\`\n</details>\n`,
-        {
-          priority: 1,
-          audience: ["user"],
-        }
-      )
-    );
-  }
-
-  return normalizePriority(content);
+  return content;
 }
 
 export {
-  buildPatternContent, buildScanFirstPatternContent,
-  buildSearchResultsContent, buildViolationContent, createAnnotatedDiff,
-  createAntiPatternAnnotation, createCodeBlock, createFindingsSummary, createPatternAnnotation, createSeverityBlock, createTextBlock, createTOC, extractTLDRPoints, type MCPAnnotations,
-  type TextContent
+    buildPatternContent,
+    buildScanFirstPatternContent,
+    buildSearchResultsContent,
+    buildViolationContent,
+    createAnnotatedDiff,
+    createAntiPatternAnnotation,
+    createCodeBlock,
+    createFindingsSummary,
+    createPatternAnnotation,
+    createSeverityBlock,
+    createTOC,
+    createTextBlock,
+    extractTLDRPoints,
+    type MCPAnnotations,
+    type TextContent
 };
-

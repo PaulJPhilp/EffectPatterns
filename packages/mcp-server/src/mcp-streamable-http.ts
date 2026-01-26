@@ -22,6 +22,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "crypto";
+import { Agent } from "http";
+import { Agent as HttpsAgent } from "https";
 import { createServer } from "http";
 import { OAuthConfig } from "./auth/oauth-config.js";
 import { OAuth2Server } from "./auth/oauth-server.js";
@@ -37,6 +39,11 @@ const API_BASE_URL =
 const API_KEY = process.env.PATTERN_API_KEY;
 const DEBUG = process.env.MCP_DEBUG === "true";
 const PORT = parseInt(process.env.PORT || "3001", 10);
+const SSE_DROP_AFTER_MS = parseInt(
+    process.env.MCP_SSE_DROP_AFTER_MS || "0",
+    10,
+);
+const REQUEST_TIMEOUT_MS = 10000; // 10 seconds timeout
 
 // OAuth 2.1 Configuration
 const oauthConfig: OAuthConfig = {
@@ -72,6 +79,117 @@ function log(message: string, data?: unknown) {
             data ? JSON.stringify(data, null, 2) : "",
         );
     }
+}
+
+// ============================================================================
+// In-Memory Event Store (resumable sessions)
+// ============================================================================
+
+type StoredEvent = {
+    eventId: string;
+    streamId: string;
+    message: unknown;
+};
+
+class InMemoryEventStore {
+    private events: StoredEvent[] = [];
+    private counter = 0;
+
+    async storeEvent(streamId: string, message: unknown): Promise<string> {
+        const eventId = String(++this.counter);
+        this.events.push({ eventId, streamId, message });
+        log("Event stored", { streamId, eventId });
+        return eventId;
+    }
+
+    async getStreamIdForEventId(eventId: string): Promise<string | undefined> {
+        const found = this.events.find((e) => e.eventId === eventId);
+        return found?.streamId;
+    }
+
+    async replayEventsAfter(
+        lastEventId: string,
+        { send }: { send: (eventId: string, message: unknown) => Promise<void> },
+    ): Promise<string> {
+        log("Replay requested", { lastEventId });
+        const startIndex = this.events.findIndex((e) => e.eventId === lastEventId);
+        if (startIndex === -1) {
+            throw new Error("Unknown eventId");
+        }
+        const streamId = this.events[startIndex]?.streamId;
+        for (const event of this.events.slice(startIndex + 1)) {
+            if (event.streamId === streamId) {
+                await send(event.eventId, event.message);
+            }
+        }
+        log("Replay completed", { streamId });
+        return streamId!;
+    }
+}
+
+// ============================================================================
+// HTTP Connection Pooling
+// ============================================================================
+
+// Global agents with connection reuse and keep-alive
+const httpAgent = new Agent({
+    keepAlive: true,
+    keepAliveMsecs: 30000,
+    maxSockets: 50,
+    maxFreeSockets: 10,
+    timeout: REQUEST_TIMEOUT_MS,
+});
+
+const httpsAgent = new HttpsAgent({
+    keepAlive: true,
+    keepAliveMsecs: 30000,
+    maxSockets: 50,
+    maxFreeSockets: 10,
+    timeout: REQUEST_TIMEOUT_MS,
+});
+
+/**
+ * In-flight request deduping
+ * Key: request signature (endpoint + method + data hash)
+ * Value: Promise that resolves to ApiResult
+ */
+const inFlightRequests = new Map<string, Promise<ApiResult<unknown>>>();
+const patternsCache = new Map<
+    string,
+    { expiresAt: number; value: ApiResult<unknown> }
+>();
+const PATTERNS_SEARCH_CACHE_TTL_MS = 5_000;
+const PATTERNS_DETAIL_CACHE_TTL_MS = 2_000;
+
+function getRequestKey(
+    endpoint: string,
+    method: "GET" | "POST",
+    data?: unknown,
+): string {
+    const dataStr = data ? JSON.stringify(data) : "";
+    return `${method}:${endpoint}:${dataStr}`;
+}
+
+// ============================================================================
+// Handshake Metrics (debug only)
+// ============================================================================
+
+const handshakeCounters = {
+    mcp: 0,
+    auth: 0,
+    token: 0,
+    api: 0,
+};
+
+function logHandshakeCounts(reason: string) {
+    if (!DEBUG) return;
+    log("Handshake counts", {
+        reason,
+        mcp: handshakeCounters.mcp,
+        auth: handshakeCounters.auth,
+        token: handshakeCounters.token,
+        api: handshakeCounters.api,
+    });
 }
 
 // ============================================================================
@@ -120,6 +238,25 @@ async function callApi(
     data?: unknown,
 ): Promise<ApiResult<unknown>> {
     const url = `${API_BASE_URL}/api${endpoint}`;
+    const requestKey = getRequestKey(endpoint, method, data);
+    const isPatternsGet =
+        method === "GET" && endpoint.startsWith("/patterns");
+    const isPatternDetail = isPatternsGet && endpoint.startsWith("/patterns/");
+
+    if (isPatternsGet) {
+        const cached = patternsCache.get(requestKey);
+        if (cached && cached.expiresAt > Date.now()) {
+            return cached.value;
+        }
+        patternsCache.delete(requestKey);
+    }
+
+    // Check for in-flight request (dedupe)
+    const inFlight = inFlightRequests.get(requestKey);
+    if (inFlight) {
+        log(`API Dedupe Hit: ${requestKey}`);
+        return inFlight;
+    }
 
     // Build headers - only add API key if provided
     // Auth validation happens at HTTP API level
@@ -131,9 +268,22 @@ async function callApi(
         headers["x-api-key"] = API_KEY;
     }
 
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+        controller.abort();
+    }, REQUEST_TIMEOUT_MS);
+
+    // Select agent based on protocol
+    const isHttps = url.startsWith("https");
+    const agentOption = isHttps ? httpsAgent : httpAgent;
+
     const options: RequestInit = {
         method,
         headers,
+        signal: controller.signal,
+        // @ts-expect-error - Node.js fetch supports agent option
+        agent: agentOption,
     };
 
     if (data && method === "POST") {
@@ -142,27 +292,53 @@ async function callApi(
 
     log(`API ${method} ${endpoint}`, data);
 
-    try {
-        const response = await fetch(url, options);
+    const requestPromise = (async (): Promise<ApiResult<unknown>> => {
+        try {
+            const response = await fetch(url, options);
+            clearTimeout(timeoutId);
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            log(`API Error: HTTP ${response.status}`);
-            return {
-                ok: false,
-                error: errorText || `HTTP ${response.status}`,
-                status: response.status,
-            };
+            if (!response.ok) {
+                const errorText = await response.text();
+                log(`API Error: HTTP ${response.status}`);
+                return {
+                    ok: false,
+                    error: errorText || `HTTP ${response.status}`,
+                    status: response.status,
+                };
+            }
+
+            const result = await response.json();
+            log(`API Response`, result);
+            const apiResult: ApiResult<unknown> = { ok: true, data: result };
+            if (isPatternsGet) {
+                const ttl = isPatternDetail
+                    ? PATTERNS_DETAIL_CACHE_TTL_MS
+                    : PATTERNS_SEARCH_CACHE_TTL_MS;
+                patternsCache.set(requestKey, {
+                    expiresAt: Date.now() + ttl,
+                    value: apiResult,
+                });
+            }
+            return apiResult;
+        } catch (error) {
+            clearTimeout(timeoutId);
+            const msg = error instanceof Error ? error.message : String(error);
+            log(`API Error`, msg);
+            return { ok: false, error: msg };
+        } finally {
+            inFlightRequests.delete(requestKey);
         }
+    })();
 
-        const result = await response.json();
-        log(`API Response`, result);
-        return { ok: true, data: result };
-    } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        log(`API Error`, msg);
-        return { ok: false, error: msg };
+    // Store in-flight request (GET only to avoid side-effects)
+    if (method === "GET") {
+        inFlightRequests.set(requestKey, requestPromise);
     }
+
+    handshakeCounters.api++;
+    logHandshakeCounts("api");
+
+    return requestPromise;
 }
 
 // ============================================================================
@@ -187,7 +363,45 @@ const server = new McpServer(
 // Tool Registrations (using same pattern as stdio version)
 // ============================================================================
 
-registerTools(server, callApi, log);
+class SimpleCache {
+    private cache = new Map<string, { value: any; expiresAt: number }>();
+    private maxEntries: number;
+
+    constructor(maxEntries = 500) {
+        this.maxEntries = maxEntries;
+    }
+
+    get(key: string) {
+        const entry = this.cache.get(key);
+        if (!entry) return null;
+
+        if (Date.now() > entry.expiresAt) {
+            this.cache.delete(key);
+            return null;
+        }
+
+        return entry.value;
+    }
+
+    set(key: string, value: any, ttlMs: number) {
+        if (this.cache.size >= this.maxEntries) {
+            const firstKey = this.cache.keys().next().value;
+            if (firstKey) this.cache.delete(firstKey);
+        }
+
+        this.cache.set(key, {
+            value,
+            expiresAt: Date.now() + ttlMs,
+        });
+    }
+}
+
+const toolCache = new SimpleCache();
+
+registerTools(server, callApi, log, {
+    get: (key: string) => toolCache.get(key),
+    set: (key: string, value: any, ttl: number) => toolCache.set(key, value, ttl),
+});
 
 // Server Startup
 // ============================================================================
@@ -217,6 +431,7 @@ async function main() {
         const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(), // Enable stateful mode
             enableJsonResponse: false, // Use SSE streaming for better MCP 2.0 support
+            eventStore: new InMemoryEventStore(), // Enable resumption within this process
             onsessioninitialized: (sessionId) => {
                 log("Session initialized", { sessionId });
             },
@@ -242,21 +457,41 @@ async function main() {
 
             // OAuth endpoints
             if (url.startsWith("/auth")) {
+                handshakeCounters.auth++;
+                logHandshakeCounts("auth");
                 await oauthServer.handleAuthorizationRequest(req, res);
                 return;
             }
 
             if (url.startsWith("/token")) {
+                handshakeCounters.token++;
+                logHandshakeCounts("token");
                 await oauthServer.handleTokenRequest(req, res);
                 return;
             }
 
             // MCP endpoint with OAuth protection
             if (url === "/mcp" && (req.method === "POST" || req.method === "GET")) {
-                // Validate OAuth token
-                const session = await oauthServer.validateBearerToken(req);
-                if (!session) {
-                    log("Unauthorized MCP request - missing or invalid token");
+                handshakeCounters.mcp++;
+                logHandshakeCounts("mcp");
+                // Prefer API key auth for best DX; fallback to OAuth token
+                const apiKeyHeader = req.headers["x-api-key"];
+                const apiKeyFromHeader =
+                    typeof apiKeyHeader === "string"
+                        ? apiKeyHeader
+                        : Array.isArray(apiKeyHeader)
+                        ? apiKeyHeader[0]
+                        : undefined;
+                const requestUrl = new URL(req.url || "/mcp", `http://${req.headers.host}`);
+                const apiKeyFromQuery =
+                    requestUrl.searchParams.get("key") ||
+                    requestUrl.searchParams.get("api_key") ||
+                    undefined;
+                const apiKey = apiKeyFromHeader || apiKeyFromQuery;
+
+                const session = apiKey ? null : await oauthServer.validateBearerToken(req);
+                if (!apiKey && !session) {
+                    log("Unauthorized MCP request - missing API key or OAuth token");
                     res.writeHead(401, {
                         "Content-Type": "application/json",
                         "WWW-Authenticate":
@@ -267,7 +502,7 @@ async function main() {
                             jsonrpc: "2.0",
                             error: {
                                 code: -32001,
-                                message: "Unauthorized - valid OAuth token required",
+                                message: "Unauthorized - valid API key or OAuth token required",
                             },
                         }),
                     );
@@ -279,7 +514,7 @@ async function main() {
                 if (!validateOrigin(origin)) {
                     log("Invalid origin rejected", {
                         origin,
-                        sessionId: session.clientId,
+                        sessionId: session?.clientId,
                     });
                     res.writeHead(403, { "Content-Type": "application/json" });
                     res.end(
@@ -296,10 +531,27 @@ async function main() {
 
                 // Add MCP protocol version and OAuth info to headers
                 res.setHeader("MCP-Protocol-Version", "2025-11-25");
-                res.setHeader("X-OAuth-Client-ID", session.clientId);
-                res.setHeader("X-OAuth-Scopes", session.scopes.join(" "));
+                if (session) {
+                    res.setHeader("X-OAuth-Client-ID", session.clientId);
+                    res.setHeader("X-OAuth-Scopes", session.scopes.join(" "));
+                }
 
                 try {
+                    if (req.method === "GET") {
+                        const lastEventId =
+                            req.headers["last-event-id"] ||
+                            req.headers["Last-Event-ID"];
+                        log("SSE reconnect header", { lastEventId });
+                    }
+                    if (SSE_DROP_AFTER_MS > 0 && req.method === "GET") {
+                        // Close SSE connection to force client reconnect (replay test).
+                        setTimeout(() => {
+                            if (!res.writableEnded) {
+                                res.end();
+                            }
+                        }, SSE_DROP_AFTER_MS);
+                    }
+
                     // Parse body for POST requests
                     let parsedBody;
                     if (req.method === "POST") {
@@ -314,7 +566,10 @@ async function main() {
                     // Handle the MCP request
                     await transport.handleRequest(req, res, parsedBody);
                 } catch (error) {
-                    log("Request handling error", { error, sessionId: session.clientId });
+                    log("Request handling error", {
+                        error,
+                        sessionId: session?.clientId,
+                    });
                     if (!res.headersSent) {
                         res.writeHead(500, { "Content-Type": "application/json" });
                         res.end(

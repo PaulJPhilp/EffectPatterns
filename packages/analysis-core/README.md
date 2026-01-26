@@ -1,46 +1,61 @@
 # @effect-patterns/analysis-core
 
-Transport-agnostic code analysis "brain" for the Effect Patterns project.
+> Transport-agnostic code analysis brain for Effect-TS patterns
 
-This package contains the core analysis logic (rules, detection, and
-refactor/fix generation) as Effect services. It is designed to be invoked by:
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-blue.svg)](https://www.typescriptlang.org/)
+[![Effect](https://img.shields.io/badge/Effect-3.19+-purple.svg)](https://effect.website/)
+
+A pure Effect library providing transport-agnostic code analysis services for Effect-TS patterns. Built with modern Effect.Service patterns for type-safe dependency injection and composability.
+
+This package contains the core analysis logic (rules, detection, and refactor/fix generation) as Effect services. It is designed to be invoked by:
 
 - The MCP server (HTTP / Vercel)
 - A local CLI harness (bulk analysis)
 - An autonomous coding agent
 
-## Goals
-
-- Keep analysis logic independent of any transport (HTTP/MCP/CLI)
-- Centralize governed architectural rules for Effect-TS projects
-- Provide structured analysis output (findings + suggestions)
-- Provide automated fix generation (AST-based refactorings)
-- Eliminate false positives through TypeScript AST analysis
-
-## Current Status
+## Features
 
 - **20 governed rules** implemented with precise AST-based detection
 - **7 automated refactorings** implemented as TypeScript AST transforms
 - **Cross-file consistency analysis** for pattern violations
-- **Comprehensive test suite** with 85%+ line coverage
-- **Zero false positives** through AST analysis (vs. previous regex-based approach)
+- **Transport-agnostic design** - pure Effect services
+- **Zero false positives** through TypeScript AST analysis
+- **Effect.Service pattern** for modern dependency injection
+- **Type-safe interfaces** with comprehensive error handling
 
-## Public API
+## Installation
 
-All public exports are re-exported from `src/index.ts`.
+```bash
+# npm
+npm install @effect-patterns/analysis-core effect typescript
 
-### Services
+# bun
+bun add @effect-patterns/analysis-core effect typescript
 
-- `AnalysisService` - Main analysis orchestration service
-- `CodeAnalyzerService` - Single-file analysis with AST traversal
-- `RuleRegistryService` - Rule definitions and metadata
-- `RefactoringEngineService` - AST-based code transformation
-- `ConsistencyAnalyzerService` - Cross-file pattern consistency
+# pnpm
+pnpm add @effect-patterns/analysis-core effect typescript
+```
 
-### IDs
+## Quick Start
 
-- `RuleId` / `RuleIdValues`
-- `FixId` / `FixIdValues`
+```typescript
+import { Effect } from "effect";
+import { AnalysisService } from "@effect-patterns/analysis-core";
+
+const program = Effect.gen(function* () {
+  const analysis = yield* AnalysisService;
+  return yield* analysis.analyzeFile("foo.ts", "export const x = async () => 1");
+});
+
+Effect.runPromise(program.pipe(Effect.provide(AnalysisService.Default)));
+```
+
+**Output includes:**
+
+- `findings[]` - Rule violations with precise line/column ranges
+- `suggestions[]` - High-level recommendations  
+- `analyzedAt` - ISO timestamp
 
 ## Governed Rules and Fixes
 
@@ -52,7 +67,7 @@ This package intentionally separates:
 ### Current Rules (20)
 
 | Rule ID | Description | Severity | Category |
-|---------|-------------|----------|----------|
+|---------|-------------|----------|----------| |
 | `async-await` | Prefer Effect over async/await | high | async |
 | `node-fs` | Prefer @effect/platform FileSystem | medium | resources |
 | `try-catch-in-effect` | Prefer Effect.try over try/catch | high | errors |
@@ -61,7 +76,7 @@ This package intentionally separates:
 | `throw-in-effect-code` | Don't throw inside Effect code | high | errors |
 | `any-type` | Avoid `any` type | high | style |
 | `effect-map-fn-reference` | Wrap Effect.map callbacks | low | dependency-injection |
-| `yield-star-non-effect` | yield* on non-Effect value | medium | async |
+| `yield-star-non-effect` | `yield*` on `non-Effect` value | medium | async |
 | `context-tag-anti-pattern` | Use Effect.Service not Context.Tag | high | dependency-injection |
 | `promise-all-in-effect` | Use Effect.all not Promise.all | high | async |
 | `mutable-ref-in-effect` | Avoid mutable refs in Effect | medium | style |
@@ -77,7 +92,7 @@ This package intentionally separates:
 ### Current Fixes (7)
 
 | Fix ID | Description | Applies To |
-|--------|-------------|------------|
+|--------|-------------|------------| |
 | `replace-node-fs` | Rewrite node:fs imports to @effect/platform | `node-fs` |
 | `add-filter-or-fail-validator` | Add Effect.filterOrFail validation | `missing-validation` |
 | `wrap-effect-map-callback` | Wrap Effect.map(fn) to Effect.map(x => fn(x)) | `effect-map-fn-reference` |
@@ -86,33 +101,54 @@ This package intentionally separates:
 | `replace-console-log` | Convert console.log to Effect.log | `console-log-in-effect` |
 | `add-schema-decode` | Add TODO comment for Schema.decodeUnknown | `schema-decode-unknown` |
 
-## Usage
+## API Reference
 
-### Analyze a file (in-memory)
+### Services
 
-```ts
-import { Effect } from "effect";
+The package provides five main services using the Effect.Service pattern:
+
+#### `AnalysisService`
+
+Main orchestration service that composes all other analysis services.
+
+#### `CodeAnalyzerService`
+
+Single-file analysis with TypeScript AST traversal.
+
+#### `RuleRegistryService`
+
+Rule definitions, metadata, and rule-to-fix mappings.
+
+#### `RefactoringEngineService`
+
+AST-based code transformation and fix generation.
+
+#### `ConsistencyAnalyzerService`
+
+Cross-file pattern consistency analysis.
+
+### Core Methods
+
+#### `analyzeFile(filename, source)`
+
+Analyze a single TypeScript file for pattern violations.
+
+```typescript
 import { AnalysisService } from "@effect-patterns/analysis-core";
 
 const program = Effect.gen(function* () {
   const analysis = yield* AnalysisService;
   return yield* analysis.analyzeFile("foo.ts", "export const x = async () => 1");
 });
-
-await Effect.runPromise(program.pipe(Effect.provide(AnalysisService.Default)));
 ```
 
-**Output includes:**
-- `findings[]` - Rule violations with precise line/column ranges
-- `suggestions[]` - High-level recommendations  
-- `analyzedAt` - ISO timestamp
+**Returns**: `Effect<AnalysisReport, AnalysisError>`
 
-### Analyze multiple files for consistency
+#### `analyzeConsistency(files)`
 
-```ts
-import { Effect } from "effect";
-import { AnalysisService } from "@effect-patterns/analysis-core";
+Analyze multiple files for cross-file pattern consistency.
 
+```typescript
 const files = [
   { filename: "a.ts", source: 'import { readFile } from "node:fs";' },
   { filename: "b.ts", source: 'import { FileSystem } from "@effect/platform";' }
@@ -122,75 +158,184 @@ const program = Effect.gen(function* () {
   const analysis = yield* AnalysisService;
   return yield* analysis.analyzeConsistency(files);
 });
-
-await Effect.runPromise(program.pipe(Effect.provide(AnalysisService.Default)));
 ```
 
-### List governed rules and fixes
+**Returns**: `Effect<ConsistencyReport, AnalysisError>`
 
-```ts
+#### `listRules()`
+
+Get all available analysis rules.
+
+```typescript
+const rules = yield* analysis.listRules();
+```
+
+**Returns**: `Effect<Rule[], never>`
+
+#### `listFixes()`
+
+Get all available automated fixes.
+
+```typescript
+const fixes = yield* analysis.listFixes();
+```
+
+**Returns**: `Effect<Fix[], never>`
+
+#### `applyRefactorings(fixIds, files)`
+
+Apply automated refactorings to files (preview-only).
+
+```typescript
+const result = yield* analysis.applyRefactorings(
+  ["replace-node-fs"],
+  [{ filename: "a.ts", source: 'import { readFile } from "node:fs";' }]
+);
+```
+
+**Returns**: `Effect<RefactoringResult, RefactoringError>`
+
+#### `generateFix(input)`
+
+Generate a fix preview for a specific rule violation.
+
+```typescript
+const result = yield* analysis.generateFix({
+  ruleId: "node-fs",
+  filename: "a.ts", 
+  source: 'import { readFile } from "node:fs";'
+});
+```
+
+**Returns**: `Effect<GenerateFixOutput, RefactoringError>`
+
+## Usage Examples
+
+### Basic File Analysis
+
+```typescript
 import { Effect } from "effect";
 import { AnalysisService } from "@effect-patterns/analysis-core";
 
-const program = Effect.gen(function* () {
+const analyzeFile = (filename: string, source: string) =>
+  Effect.gen(function* () {
+    const analysis = yield* AnalysisService;
+    const report = yield* analysis.analyzeFile(filename, source);
+    
+    console.log(`Found ${report.findings.length} issues in ${filename}`);
+    for (const finding of report.findings) {
+      console.log(`- ${finding.ruleId}: ${finding.message} at line ${finding.position.line}`);
+    }
+    
+    return report;
+  });
+
+// Run the analysis
+Effect.runPromise(
+  analyzeFile("example.ts", "export const x = async () => 1").pipe(
+    Effect.provide(AnalysisService.Default)
+  )
+);
+```
+
+### Multi-File Consistency Analysis
+
+```typescript
+import { Effect } from "effect";
+import { AnalysisService } from "@effect-patterns/analysis-core";
+
+const files = [
+  { filename: "a.ts", source: 'import { readFile } from "node:fs";' },
+  { filename: "b.ts", source: 'import { FileSystem } from "@effect/platform";' }
+];
+
+const checkConsistency = Effect.gen(function* () {
   const analysis = yield* AnalysisService;
-  const rules = yield* analysis.listRules();
-  const fixes = yield* analysis.listFixes();
-  return { rules, fixes };
+  const report = yield* analysis.analyzeConsistency(files);
+  
+  console.log(`Consistency analysis completed:`);
+  console.log(`- ${report.inconsistencies.length} inconsistencies found`);
+  console.log(`- ${report.suggestions.length} suggestions generated`);
+  
+  return report;
 });
 
-await Effect.runPromise(program.pipe(Effect.provide(AnalysisService.Default)));
+Effect.runPromise(
+  checkConsistency.pipe(Effect.provide(AnalysisService.Default))
+);
 ```
 
-### Generate refactoring changes
+### Automated Refactoring
 
-```ts
+```typescript
 import { Effect } from "effect";
 import { AnalysisService } from "@effect-patterns/analysis-core";
 
-const program = Effect.gen(function* () {
+const applyFixes = Effect.gen(function* () {
   const analysis = yield* AnalysisService;
+  
+  // Apply node:fs to @effect/platform refactoring
   const result = yield* analysis.applyRefactorings(
     ["replace-node-fs"],
-    [{ filename: "a.ts", source: 'import { readFile } from "node:fs";' }]
+    [{ 
+      filename: "filesystem.ts", 
+      source: 'import { readFile } from "node:fs";\nconst content = readFile("file.txt");' 
+    }]
   );
+  
+  console.log(`Refactoring preview:`);
+  for (const change of result.changes) {
+    console.log(`File: ${change.filename}`);
+    console.log(`Before: ${change.before}`);
+    console.log(`After: ${change.after}`);
+  }
+  
   return result;
 });
 
-await Effect.runPromise(program.pipe(Effect.provide(AnalysisService.Default)));
+Effect.runPromise(
+  applyFixes.pipe(Effect.provide(AnalysisService.Default))
+);
 ```
 
-**Key points:**
-- Refactorings are applied as TypeScript AST transforms
-- Returns in-memory diffs (preview-only, no file writing)
-- Multiple refactorings can be applied in a single operation
-- Each change includes `before` and `after` content for comparison
+### Rule and Fix Discovery
 
-### Generate fix preview for specific violation
-
-```ts
+```typescript
 import { Effect } from "effect";
-import { AnalysisService } from "@effect-patterns/analysis-core";
+import { AnalysisService, RuleIdValues, FixIdValues } from "@effect-patterns/analysis-core";
 
-const program = Effect.gen(function* () {
+const exploreRules = Effect.gen(function* () {
   const analysis = yield* AnalysisService;
-  return yield* analysis.generateFix({
-    ruleId: "node-fs",
-    filename: "a.ts", 
-    source: 'import { readFile } from "node:fs";'
-  });
+  
+  // Get all available rules
+  const rules = yield* analysis.listRules();
+  console.log(`Available rules (${rules.length}):`);
+  for (const rule of rules) {
+    console.log(`- ${rule.id}: ${rule.title} (${rule.severity})`);
+  }
+  
+  // Get all available fixes
+  const fixes = yield* analysis.listFixes();
+  console.log(`\nAvailable fixes (${fixes.length}):`);
+  for (const fix of fixes) {
+    console.log(`- ${fix.id}: ${fix.title}`);
+  }
+  
+  return { rules, fixes };
 });
 
-await Effect.runPromise(program.pipe(Effect.provide(AnalysisService.Default)));
+Effect.runPromise(
+  exploreRules.pipe(Effect.provide(AnalysisService.Default))
+);
 ```
 
 ## Architecture
 
 ### Service Composition
 
-All services are `Effect.Service` instances with automatic layer composition:
+All services use the modern Effect.Service pattern with automatic dependency injection:
 
-```ts
+```typescript
 // Main orchestration service - composes all others
 AnalysisService.Default
 
@@ -214,28 +359,44 @@ This package uses TypeScript's Compiler API for precise code analysis:
 
 The core analysis logic is completely independent of transport:
 
-```ts
+```typescript
 // Can be used from MCP server, CLI, or agents
 const analysis = yield* AnalysisService;
 const result = yield* analysis.analyzeFile(filename, content);
 ```
 
 Transport-specific concerns (HTTP, file I/O, MCP protocol) are handled by:
+
 - `packages/mcp-server` - HTTP/Vercel integration
 - CLI harness (future) - Command-line interface  
 - Autonomous agents (future) - Direct service usage
 
+### Type Safety
+
+The package provides comprehensive TypeScript types:
+
+```typescript
+import {
+  type AnalysisReport,
+  type CodeFinding,
+  type CodeSuggestion,
+  type RuleId,
+  type FixId,
+  RuleIdValues,
+  FixIdValues,
+} from "@effect-patterns/analysis-core";
+```
+
 ## Testing
 
-This package has a comprehensive test suite under `src/__tests__/` with 85%+ line coverage.
-
-### Run tests
-
-```sh
-# Unit tests
+```bash
+# Run tests
 bun test packages/analysis-core/
 
-# With coverage
+# Watch mode
+bun test --watch packages/analysis-core/
+
+# Coverage
 bun test --coverage packages/analysis-core/
 
 # Coverage with threshold (80% minimum)
@@ -250,9 +411,37 @@ bun test --coverage --coverage.threshold=80 packages/analysis-core/
 - **Refactoring tests** - Each of the 7 fixes has transformation tests
 - **AST tests** - Safe traversal and transformation utilities
 
+### Testing with Services
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { Effect } from "effect";
+import { AnalysisService } from "@effect-patterns/analysis-core";
+
+describe("AnalysisService", () => {
+  it("should analyze async/await patterns", async () => {
+    const result = await Effect.runPromise(
+      Effect.gen(function* () {
+        const analysis = yield* AnalysisService;
+        return yield* analysis.analyzeFile(
+          "test.ts",
+          "export const x = async () => 1"
+        );
+      }).pipe(
+        Effect.provide(AnalysisService.Default)
+      )
+    );
+    
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0].ruleId).toBe("async-await");
+  });
+});
+```
+
 ### Integration Testing
 
 The `packages/mcp-server` package contains integration tests that verify the full stack:
+
 - MCP server → analysis-core → analysis results
 - Real-world code scenarios
 - Cross-file consistency checking
@@ -272,19 +461,27 @@ The `packages/mcp-server` package contains integration tests that verify the ful
 2. Update rule-to-fix mappings in `src/services/rule-registry/`
 3. Add transformation tests with before/after examples
 
+## Dependencies
+
+- **effect**: Core Effect library
+- **typescript**: TypeScript Compiler API for AST analysis
+
 ## Roadmap
 
 ### Phase 1: Core Enhancements
+
 - [ ] Rule configuration files (enable/disable per project)
 - [ ] Category filtering for analysis types
 - [ ] Severity overrides per project
 
 ### Phase 2: Integration & Tooling  
+
 - [ ] Project-wide analysis with directory traversal
 - [ ] GitHub Action for CI/CD integration
 - [ ] Report generation (JSON, Markdown, HTML)
 
 ### Phase 3: Advanced Features
+
 - [ ] Type-aware analysis with TypeScript Program
 - [ ] LSP server for IDE integration
 - [ ] Effect pipeline analysis
@@ -296,6 +493,10 @@ The `packages/mcp-server` package contains integration tests that verify the ful
 - **`@effect/platform`** - Platform services used in refactoring targets
 - **`effect`** - Core Effect-TS framework
 
+## License
+
+MIT © Effect Patterns Team
+
 ---
 
-*Last updated: January 2026*
+**Part of the [Effect Patterns Hub](https://github.com/PaulJPhilp/Effect-Patterns)**

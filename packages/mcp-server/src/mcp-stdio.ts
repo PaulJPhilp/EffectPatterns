@@ -72,10 +72,32 @@ const httpsAgent = new HttpsAgent({
  * Value: Promise that resolves to ApiResult
  */
 const inFlightRequests = new Map<string, Promise<ApiResult<unknown>>>();
+const patternsCache = new Map<
+  string,
+  { expiresAt: number; value: ApiResult<unknown> }
+>();
+const PATTERNS_SEARCH_CACHE_TTL_MS = 5_000;
+const PATTERNS_DETAIL_CACHE_TTL_MS = 2_000;
 
 // Telemetry counters
 let dedupeHits = 0;
 let dedupeMisses = 0;
+
+// ============================================================================
+// Handshake Metrics (debug only)
+// ============================================================================
+
+const handshakeCounters = {
+  api: 0,
+};
+
+function logHandshakeCounts(reason: string) {
+  if (!DEBUG) return;
+  log("Handshake counts", {
+    reason,
+    api: handshakeCounters.api,
+  });
+}
 
 function getRequestKey(
   endpoint: string,
@@ -135,6 +157,17 @@ async function callApi(
 ): Promise<ApiResult<unknown>> {
   const url = `${API_BASE_URL}/api${endpoint}`;
   const requestKey = getRequestKey(endpoint, method, data);
+  const isPatternsGet =
+    method === "GET" && endpoint.startsWith("/patterns");
+  const isPatternDetail = isPatternsGet && endpoint.startsWith("/patterns/");
+
+  if (isPatternsGet) {
+    const cached = patternsCache.get(requestKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
+    patternsCache.delete(requestKey);
+  }
 
   // Check for in-flight request (dedupe)
   const inFlight = inFlightRequests.get(requestKey);
@@ -197,7 +230,17 @@ async function callApi(
       }
 
       const result = await response.json();
-      return { ok: true, data: result };
+      const apiResult: ApiResult<unknown> = { ok: true, data: result };
+      if (isPatternsGet) {
+        const ttl = isPatternDetail
+          ? PATTERNS_DETAIL_CACHE_TTL_MS
+          : PATTERNS_SEARCH_CACHE_TTL_MS;
+        patternsCache.set(requestKey, {
+          expiresAt: Date.now() + ttl,
+          value: apiResult,
+        });
+      }
+      return apiResult;
     } catch (error) {
       clearTimeout(timeoutId);
 
@@ -290,6 +333,9 @@ async function callApi(
   if (method === "GET") {
     inFlightRequests.set(requestKey, requestPromise);
   }
+
+  handshakeCounters.api++;
+  logHandshakeCounts("api");
 
   return requestPromise;
 }

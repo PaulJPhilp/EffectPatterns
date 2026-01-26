@@ -456,7 +456,11 @@ function getSearchCacheKey(args: SearchPatternsArgs): string {
     q: args.q || "",
     category: args.category || "",
     difficulty: args.difficulty || "",
-    limit: args.limit || 20,
+    limit: args.limit ?? 3,
+    format: args.format || "markdown",
+    limitCards: args.limitCards || 10,
+    includeProvenancePanel: args.includeProvenancePanel || false,
+    includeStructuredPatterns: args.includeStructuredPatterns ?? null,
   });
   return `search:${key}`;
 }
@@ -492,6 +496,9 @@ export function registerTools(
       try {
         // Default format is "markdown" (no JSON block)
         const format = args.format || "markdown";
+        const includeStructuredPatterns =
+          args.includeStructuredPatterns ?? format !== "markdown";
+        const effectiveLimit = args.limit ?? 3;
 
         // Elicitation: Check for missing/too-short query
         if (!isSearchQueryValid(args.q)) {
@@ -523,59 +530,6 @@ export function registerTools(
         const cacheKey = getSearchCacheKey(args);
         const isDebug = process.env.MCP_DEBUG === "true";
 
-        // DIAGNOSTIC (MCP_DEBUG only): Check total patterns in DB before search.
-        // Avoids extra /patterns call on every request when debug is off.
-        if (isDebug) {
-          const allPatternsResult = await callApi("/patterns");
-          const allPatterns = allPatternsResult.ok && allPatternsResult.data
-            ? (allPatternsResult.data as SearchResultsPayload).patterns
-            : [];
-          const patternCount = allPatterns.length;
-          log(`[DIAGNOSTIC] Total patterns in Database: ${patternCount}`);
-          if (patternCount === 0) {
-            const errorMessage =
-              "CRITICAL DATA ERROR: Database contains 0 patterns. Please verify database seeding.";
-            log(`[DIAGNOSTIC] ${errorMessage}`);
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: `**Error:** ${errorMessage}`,
-                  mimeType: "text/markdown" as const,
-                },
-              ],
-              structuredContent: {
-                kind: "toolError:v1",
-                code: "SERVER_ERROR",
-                message: errorMessage,
-                retryable: false,
-              },
-              isError: true,
-            };
-          }
-          if (patternCount < 10) {
-            const errorMessage =
-              "CRITICAL DATA ERROR: Database contains fewer than 10 patterns. Please verify database seeding.";
-            log(`[DIAGNOSTIC] ${errorMessage}`);
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: `**Error:** ${errorMessage}`,
-                  mimeType: "text/markdown" as const,
-                },
-              ],
-              structuredContent: {
-                kind: "toolError:v1",
-                code: "SERVER_ERROR",
-                message: errorMessage,
-                retryable: false,
-              },
-              isError: true,
-            };
-          }
-        }
-
         // Try cache first (5 min TTL for search results)
         if (cache) {
           const cached = cache.get(cacheKey);
@@ -594,7 +548,7 @@ export function registerTools(
         if (args.q) searchParams.append("q", args.q);
         if (args.category) searchParams.append("category", args.category);
         if (args.difficulty) searchParams.append("difficulty", args.difficulty);
-        if (args.limit) searchParams.append("limit", String(args.limit));
+        if (effectiveLimit) searchParams.append("limit", String(effectiveLimit));
 
         const result = await callApi(`/patterns?${searchParams}`);
 
@@ -709,7 +663,8 @@ export function registerTools(
           }
 
           // Build structured output
-          const limitCards = args.limitCards || 10;
+          const defaultLimitCards = data.count <= 3 ? 2 : 3;
+          const limitCards = args.limitCards || defaultLimitCards;
           const renderedCards = Math.min(data.patterns.length, limitCards);
 
           // Count contract markers in markdown content
@@ -720,6 +675,7 @@ export function registerTools(
             const builtContent = buildSearchResultsContent(data, {
               limitCards: args.limitCards,
               includeProvenancePanel: args.includeProvenancePanel,
+              includeIndexTable: false,
               query: args.q,
             });
             richContent.push(...builtContent);
@@ -762,7 +718,7 @@ export function registerTools(
               | "beginner"
               | "intermediate"
               | "advanced";
-          if (args.limit !== undefined) query.limit = args.limit;
+          if (effectiveLimit !== undefined) query.limit = effectiveLimit;
           query.format = format; // Echo resolved format
 
           // Cards are rendered for the first K patterns in index order (deterministic)
@@ -806,21 +762,23 @@ export function registerTools(
             kind: "patternSearchResults:v1",
             query,
             metadata,
-            patterns: data.patterns.map((p) => {
-              // Build pattern summary (card view) - omit optional fields if empty
-              const pattern: SearchResultsOutput["patterns"][number] = {
-                id: p.id,
-                title: p.title,
-                category: p.category,
-                difficulty: p.difficulty as
-                  | "beginner"
-                  | "intermediate"
-                  | "advanced",
-                description: truncateAtWordBoundary(p.description, 200),
-              };
-              if (p.tags && p.tags.length > 0) pattern.tags = [...p.tags];
-              return pattern;
-            }),
+            patterns: includeStructuredPatterns
+              ? data.patterns.map((p) => {
+                  // Build pattern summary (card view) - omit optional fields if empty
+                  const pattern: SearchResultsOutput["patterns"][number] = {
+                    id: p.id,
+                    title: p.title,
+                    category: p.category,
+                    difficulty: p.difficulty as
+                      | "beginner"
+                      | "intermediate"
+                      | "advanced",
+                    description: truncateAtWordBoundary(p.description, 200),
+                  };
+                  if (p.tags && p.tags.length > 0) pattern.tags = [...p.tags];
+                  return pattern;
+                })
+              : [],
             provenance: args.includeProvenancePanel
               ? {
                   source: "Effect Patterns API",
@@ -829,6 +787,15 @@ export function registerTools(
                 }
               : undefined,
           };
+          
+          if (process.env.MCP_DEBUG === "true") {
+            const structuredSize = JSON.stringify(structuredContent).length;
+            log("[DIAGNOSTIC] structuredContent size (chars)", {
+              structuredSize,
+              includeStructuredPatterns,
+              format,
+            });
+          }
 
           // Build content with MIME types
           // Each block is a distinct UI component - do not merge or summarize
@@ -952,6 +919,8 @@ export function registerTools(
       log("Tool called: get_pattern", args);
 
       const format = args.format || "markdown";
+      const includeStructuredDetails =
+        args.includeStructuredDetails ?? format !== "markdown";
 
       // Elicitation: Check for missing/invalid pattern ID
       if (!args.id || args.id.trim().length === 0) {
@@ -977,7 +946,7 @@ export function registerTools(
          };
       }
 
-      const cacheKey = `pattern:${args.id}`;
+      const cacheKey = `pattern:${args.id}:format=${format}:details=${includeStructuredDetails}`;
 
       // Try cache first (30 min TTL for individual patterns)
       if (cache) {
@@ -1085,41 +1054,57 @@ export function registerTools(
       if (result.ok && result.data) {
         const pattern = result.data as any;
         // buildScanFirstPatternContent now returns a SINGLE TextContent block
-        const cardBlock = buildScanFirstPatternContent({
-          id: pattern.id || args.id,
-          title: pattern.title,
-          category: pattern.category,
-          difficulty: pattern.difficulty,
-          description: pattern.description,
-          examples: pattern.examples,
-          useCases: pattern.useCases,
-          tags: pattern.tags,
-          relatedPatterns: pattern.relatedPatterns,
-        });
+        const cardBlock = buildScanFirstPatternContent(
+          {
+            id: pattern.id || args.id,
+            title: pattern.title,
+            category: pattern.category,
+            difficulty: pattern.difficulty,
+            description: pattern.description,
+            examples: pattern.examples,
+            useCases: pattern.useCases,
+            tags: pattern.tags,
+            relatedPatterns: pattern.relatedPatterns,
+          },
+          {
+            descriptionMaxChars: includeStructuredDetails ? 500 : 160,
+            includeExample: includeStructuredDetails,
+            includeNotes: includeStructuredDetails,
+            includeRelated: includeStructuredDetails,
+            includeUseWhen: includeStructuredDetails,
+            exampleMaxLines: includeStructuredDetails ? 20 : 12,
+          },
+        );
 
-        // Extract use guidance
-        const useWhen =
-          pattern.useCases && pattern.useCases.length > 0
+        const wantsDetailedStructured =
+          includeStructuredDetails && (format === "json" || format === "both");
+
+        // Extract use guidance only when detailed structured output is needed
+        const useWhen = wantsDetailedStructured
+          ? pattern.useCases && pattern.useCases.length > 0
             ? pattern.useCases[0]
-            : pattern.description?.split(/[.!?]+/)[0]?.trim() ?? "";
+            : pattern.description?.split(/[.!?]+/)[0]?.trim() ?? ""
+          : undefined;
 
-        const avoidWhen =
-          pattern.useCases?.find(
-            (uc: string) =>
-              uc.toLowerCase().includes("avoid") ||
-              uc.toLowerCase().includes("not"),
-          ) || pattern.description?.match(/avoid[^.!?]*[.!?]/i)?.[0]?.trim();
+        const avoidWhen = wantsDetailedStructured
+          ? pattern.useCases?.find(
+              (uc: string) =>
+                uc.toLowerCase().includes("avoid") ||
+                uc.toLowerCase().includes("not"),
+            ) || pattern.description?.match(/avoid[^.!?]*[.!?]/i)?.[0]?.trim()
+          : undefined;
 
-        // Build sections
-        const sections: PatternDetailsOutput["sections"] = [];
-        if (pattern.description) {
+        // Build sections only when detailed structured output is needed
+        const sections: PatternDetailsOutput["sections"] | undefined =
+          wantsDetailedStructured ? [] : undefined;
+        if (wantsDetailedStructured && pattern.description) {
           sections.push({
             title: "Description",
             content: pattern.description,
             type: "description",
           });
         }
-        if (pattern.examples && pattern.examples.length > 0) {
+        if (wantsDetailedStructured && pattern.examples && pattern.examples.length > 0) {
           for (const example of pattern.examples) {
             sections.push({
               title: example.description || "Example",
@@ -1128,7 +1113,7 @@ export function registerTools(
             });
           }
         }
-        if (pattern.useCases && pattern.useCases.length > 0) {
+        if (wantsDetailedStructured && pattern.useCases && pattern.useCases.length > 0) {
           for (const useCase of pattern.useCases) {
             sections.push({
               title: "Use Case",
@@ -1137,7 +1122,11 @@ export function registerTools(
             });
           }
         }
-        if (pattern.relatedPatterns && pattern.relatedPatterns.length > 0) {
+        if (
+          wantsDetailedStructured &&
+          pattern.relatedPatterns &&
+          pattern.relatedPatterns.length > 0
+        ) {
           sections.push({
             title: "Related Patterns",
             content: pattern.relatedPatterns.join(", "),
@@ -1156,6 +1145,10 @@ export function registerTools(
           ) || []
         ).length;
 
+        const descriptionText = includeStructuredDetails
+          ? pattern.description
+          : truncateAtWordBoundary(pattern.description, 400);
+
         const structuredContent: PatternDetailsOutput = {
           kind: "patternDetails:v1",
           id: pattern.id || args.id,
@@ -1166,30 +1159,45 @@ export function registerTools(
             | "intermediate"
             | "advanced",
           summary: truncateAtWordBoundary(pattern.description, 200),
-          description: pattern.description,
-          tags: pattern.tags,
-          useGuidance: {
-            useWhen,
-            avoidWhen,
-          },
-          sections,
-          examples: pattern.examples?.map((ex: any) => ({
-            code: ex.code,
-            language: ex.language || "typescript",
-            description: ex.description,
-          })),
-          provenance: {
-            source: "Effect Patterns API",
-            timestamp: new Date().toISOString(),
-            version: "pps-v2",
-            marker: cardMarkerCount > 0 ? "v1" : undefined,
-          },
+          description: descriptionText,
+          tags: includeStructuredDetails ? pattern.tags : undefined,
+          useGuidance: wantsDetailedStructured
+            ? {
+                useWhen,
+                avoidWhen,
+              }
+            : undefined,
+          sections: wantsDetailedStructured ? sections : undefined,
+          examples: wantsDetailedStructured
+            ? pattern.examples?.map((ex: any) => ({
+                code: ex.code,
+                language: ex.language || "typescript",
+                description: ex.description,
+              }))
+            : undefined,
+          provenance: wantsDetailedStructured
+            ? {
+                source: "Effect Patterns API",
+                timestamp: new Date().toISOString(),
+                version: "pps-v2",
+                marker: cardMarkerCount > 0 ? "v1" : undefined,
+              }
+            : undefined,
         };
 
         // Ensure structuredContent is JSON-serializable
         const serializableStructuredContent = JSON.parse(
           JSON.stringify(structuredContent),
         );
+
+        if (process.env.MCP_DEBUG === "true") {
+          const structuredSize = JSON.stringify(serializableStructuredContent).length;
+          log("[DIAGNOSTIC] structuredContent size (chars)", {
+            structuredSize,
+            includeStructuredDetails,
+            format,
+          });
+        }
 
         // Build content respecting format gating
         // Card is a SINGLE block to prevent model overwrite

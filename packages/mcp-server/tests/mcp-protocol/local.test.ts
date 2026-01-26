@@ -142,7 +142,7 @@ describe("Local MCP Server", () => {
 
       // Test 2: Get pattern
       const getResult = await client.callTool("get_pattern", {
-        id: "pattern-a"
+        id: "transform-effect-values",
       });
       const getText = extractContentText(getResult.content);
       
@@ -195,7 +195,7 @@ describe("Local MCP Server", () => {
     it("should get pattern by ID", async () => {
       if (!isLocalAvailable) return;
       const result = await client.callTool("get_pattern", {
-        id: "pattern-a",
+        id: "transform-effect-values",
       });
 
       expect(result.content).toBeDefined();
