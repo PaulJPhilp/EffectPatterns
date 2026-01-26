@@ -222,6 +222,7 @@ export class PatternSearch extends Effect.Service<PatternSearch>()(
        */
       const toPatternSummary = (pattern: Pattern): PatternSummary => ({
         id: pattern.id,
+        slug: pattern.slug,
         title: pattern.title,
         description: pattern.description,
         category: pattern.category,
@@ -383,6 +384,7 @@ export function getPatternById(
 export function toPatternSummary(pattern: Pattern): PatternSummary {
   return {
     id: pattern.id,
+    slug: pattern.slug,
     title: pattern.title,
     description: pattern.description,
     category: pattern.category,

@@ -17,7 +17,7 @@
  */
 
 import {
-    MARKER_PATTERN_INDEX_V1
+  MARKER_PATTERN_INDEX_V1
 } from "@/constants/markers.js";
 import type { TextContent } from "@/schemas/structured-output.js";
 
@@ -60,9 +60,7 @@ function createTextBlock(
   annotations?: MCPAnnotations,
 ): TextContent {
   const normalizedAnnotations =
-    annotations && typeof annotations.priority === "number" && annotations.priority > 1
-      ? { ...annotations, priority: 1 }
-      : annotations;
+    annotations;
 
   return {
     type: "text",
@@ -766,6 +764,7 @@ type ScanFirstOptions = {
   exampleMaxLines?: number;
   includeApi?: boolean;
   includeUseWhen?: boolean;
+  includeAvoidWhen?: boolean;
 };
 
 function buildScanFirstPatternContent(
@@ -780,6 +779,7 @@ function buildScanFirstPatternContent(
     exampleMaxLines = 12,
     includeApi = true,
     includeUseWhen = true,
+    includeAvoidWhen = true,
   } = options;
   // Build card content as a single string to ensure it's treated as ONE UI block
   const parts: string[] = [];
@@ -796,6 +796,9 @@ function buildScanFirstPatternContent(
     `╚═══════════════════════════════════════════════════════════════╝\n\n`,
   );
 
+  // Title
+  parts.push(`**${pattern.title}**\n\n`);
+
   // Description
   if (pattern.description) {
     const fullDescription = truncateAtWordBoundary(
@@ -809,6 +812,14 @@ function buildScanFirstPatternContent(
   if (includeUseWhen) {
     const useWhen = extractUseWhen(pattern);
     parts.push(`**Use when:** ${useWhen}\n`);
+  }
+
+  // Avoid when
+  if (includeAvoidWhen) {
+    const avoidWhen = extractAvoidWhen(pattern);
+    if (avoidWhen) {
+      parts.push(`**Avoid when:** ${avoidWhen}\n`);
+    }
   }
 
   // API chips
@@ -944,7 +955,7 @@ function buildSearchResultsContent(
   );
 
   // Simple index table (optional)
-  if (includeIndexTable) {
+  if (includeIndexTable || results.count === 0) {
     content.push(
       createTextBlock(
         `\n## Pattern Index\n\n${buildIndexTable(results.patterns)}\n`,
@@ -988,19 +999,17 @@ function buildSearchResultsContent(
 }
 
 export {
-    buildPatternContent,
-    buildScanFirstPatternContent,
-    buildSearchResultsContent,
-    buildViolationContent,
-    createAnnotatedDiff,
-    createAntiPatternAnnotation,
-    createCodeBlock,
-    createFindingsSummary,
-    createPatternAnnotation,
-    createSeverityBlock,
-    createTOC,
-    createTextBlock,
-    extractTLDRPoints,
-    type MCPAnnotations,
-    type TextContent
+  buildPatternContent,
+  buildScanFirstPatternContent,
+  buildSearchResultsContent,
+  buildViolationContent,
+  createAnnotatedDiff,
+  createAntiPatternAnnotation,
+  createCodeBlock,
+  createFindingsSummary,
+  createPatternAnnotation,
+  createSeverityBlock, createTextBlock, createTOC, extractTLDRPoints,
+  type MCPAnnotations,
+  type TextContent
 };
+

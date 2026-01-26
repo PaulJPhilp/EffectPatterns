@@ -1,35 +1,35 @@
 import {
-    MARKER_PATTERN_CARD_V1,
-    MARKER_PATTERN_INDEX_V1,
+  MARKER_PATTERN_CARD_V1,
+  MARKER_PATTERN_INDEX_V1,
 } from "@/constants/markers.js";
 import {
-    buildScanFirstPatternContent,
-    buildSearchResultsContent,
+  buildScanFirstPatternContent,
+  buildSearchResultsContent,
 } from "@/mcp-content-builders.js";
 import type {
-    Elicitation,
-    PatternDetailsOutput,
-    SearchResultsOutput,
-    ToolError,
+  Elicitation,
+  PatternDetailsOutput,
+  SearchResultsOutput,
+  ToolError,
 } from "@/schemas/output-schemas.js";
 import type { TextContent } from "@/schemas/structured-output.js";
 import {
-    ToolSchemas,
-    type AnalyzeCodeArgs,
-    type GetPatternArgs,
-    type ReviewCodeArgs,
-    type SearchPatternsArgs,
+  ToolSchemas,
+  type AnalyzeCodeArgs,
+  type GetPatternArgs,
+  type ReviewCodeArgs,
+  type SearchPatternsArgs,
 } from "@/schemas/tool-schemas.js";
 import {
-    generateMigrationDiff,
-    isMigrationPattern,
+  generateMigrationDiff,
+  isMigrationPattern,
 } from "@/services/pattern-diff-generator/api.js";
 import {
-    elicitPatternId,
-    elicitSearchFilters,
-    elicitSearchQuery,
-    isSearchQueryValid,
-    isSearchTooBroad,
+  elicitPatternId,
+  elicitSearchFilters,
+  elicitSearchQuery,
+  isSearchQueryValid,
+  isSearchTooBroad,
 } from "@/tools/elicitation-helpers.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
@@ -1097,14 +1097,14 @@ export function registerTools(
         // Build sections only when detailed structured output is needed
         const sections: PatternDetailsOutput["sections"] | undefined =
           wantsDetailedStructured ? [] : undefined;
-        if (wantsDetailedStructured && pattern.description) {
+        if (sections && pattern.description) {
           sections.push({
             title: "Description",
             content: pattern.description,
             type: "description",
           });
         }
-        if (wantsDetailedStructured && pattern.examples && pattern.examples.length > 0) {
+        if (sections && pattern.examples && pattern.examples.length > 0) {
           for (const example of pattern.examples) {
             sections.push({
               title: example.description || "Example",
@@ -1113,7 +1113,7 @@ export function registerTools(
             });
           }
         }
-        if (wantsDetailedStructured && pattern.useCases && pattern.useCases.length > 0) {
+        if (sections && pattern.useCases && pattern.useCases.length > 0) {
           for (const useCase of pattern.useCases) {
             sections.push({
               title: "Use Case",
@@ -1123,7 +1123,7 @@ export function registerTools(
           }
         }
         if (
-          wantsDetailedStructured &&
+          sections &&
           pattern.relatedPatterns &&
           pattern.relatedPatterns.length > 0
         ) {
