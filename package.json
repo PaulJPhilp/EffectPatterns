@@ -121,7 +121,7 @@
     "@ai-sdk/openai": "^2.0.89",
     "@biomejs/biome": "^2.3.11",
     "@effect/language-service": "^0.69.2",
-    "@effect/opentelemetry": "^0.60.0",
+    "@effect/opentelemetry": "^0.61.0",
     "@effect/schema": "^0.75.5",
     "@modelcontextprotocol/sdk": "^1.25.3",
     "@opentelemetry/sdk-trace-base": "^2.5.0",
