@@ -32,14 +32,14 @@
     "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "@effect/platform": "0.94.1",
-    "@effect/platform-node": "0.104.0",
+    "@effect/platform": "0.94.2",
+    "@effect/platform-node": "0.104.1",
     "@effect/schema": "^0.75.5",
     "effect": "^3.19.14"
   },
   "peerDependencies": {
-    "@effect/platform": "0.94.1",
-    "@effect/platform-node": "0.104.0",
+    "@effect/platform": "0.94.2",
+    "@effect/platform-node": "0.104.1",
     "@effect/schema": "^0.75.5",
     "effect": "^3.19.14"
   },

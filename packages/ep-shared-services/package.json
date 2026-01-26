@@ -47,8 +47,8 @@
   "license": "MIT",
   "dependencies": {
     "effect": "^3.19.14",
-    "@effect/platform": "0.94.1",
-    "@effect/platform-node": "0.104.0"
+    "@effect/platform": "0.94.2",
+    "@effect/platform-node": "0.104.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.13",
