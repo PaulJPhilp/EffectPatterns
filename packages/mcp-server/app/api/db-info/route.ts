@@ -29,7 +29,10 @@ function sanitizeDatabaseUrl(url: string) {
 const handleDbInfo = Effect.fn("db-info")(function* (request: NextRequest) {
   yield* validateAdminKey(request);
 
-  const dbUrl = process.env.DATABASE_URL;
+  const rawDatabaseUrl = process.env.DATABASE_URL;
+  const overrideUrl = process.env.DATABASE_URL_OVERRIDE;
+  const dbUrl = overrideUrl || rawDatabaseUrl;
+
   if (!dbUrl) {
     return yield* Effect.fail(
       new Error("DATABASE_URL not configured on server")
@@ -47,7 +50,11 @@ const handleDbInfo = Effect.fn("db-info")(function* (request: NextRequest) {
 
   return {
     success: true,
-    database: sanitizeDatabaseUrl(dbUrl),
+    database: {
+      effective: sanitizeDatabaseUrl(dbUrl),
+      raw: rawDatabaseUrl ? sanitizeDatabaseUrl(rawDatabaseUrl) : undefined,
+      override: overrideUrl ? sanitizeDatabaseUrl(overrideUrl) : undefined,
+    },
     testResult: result,
   };
 });
