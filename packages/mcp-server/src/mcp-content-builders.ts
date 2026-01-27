@@ -290,15 +290,15 @@ function buildFullPatternCard(params: {
   const sections: string[] = [];
 
   sections.push(`## ${title}`);
-  sections.push(`**Summary:** ${summary}`);
-  sections.push(`**Use when:** ${useWhen}`);
+  sections.push(`**🧭 Summary:** ${summary}`);
+  sections.push(`**✅ Use when:** ${useWhen}`);
 
   if (apiNames.length > 0) {
     const apiChips = apiNames.map((api) => `\`${api}\``).join(" ");
-    sections.push(`**API:** ${apiChips}`);
+    sections.push(`**🧩 API:** ${apiChips}`);
   }
 
-  sections.push(`**Example:**\n\n\`\`\`${exampleLanguage || "typescript"}\n${exampleCode}\n\`\`\``);
+  sections.push(`**💡 Example:**\n\n\`\`\`${exampleLanguage || "typescript"}\n${exampleCode}\n\`\`\``);
 
   const body = sections.join("\n\n");
   return [
