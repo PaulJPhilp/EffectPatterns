@@ -26,13 +26,12 @@ const handleDbSearchCheck = Effect.fn("db-search-check")(function* (
 
   const result = yield* Effect.gen(function* () {
     const { db, close } = createDatabase(dbUrl);
-    try {
-      const repo = createEffectPatternRepository(db);
-      const rows = await repo.search({ limit: 1 });
-      return { ok: true, rows };
-    } catch (error: any) {
-      return {
-        ok: false,
+    const repo = createEffectPatternRepository(db);
+
+    const rowsResult = yield* Effect.tryPromise({
+      try: () => repo.search({ limit: 1 }),
+      catch: (error: any) => ({
+        ok: false as const,
         error: {
           message: error?.message,
           code: error?.code,
@@ -45,10 +44,16 @@ const handleDbSearchCheck = Effect.fn("db-search-check")(function* (
           where: error?.where,
           cause: error?.cause?.message ?? error?.cause,
         },
-      };
-    } finally {
-      await close();
+      }),
+    });
+
+    yield* Effect.promise(() => close());
+
+    if (Array.isArray(rowsResult)) {
+      return { ok: true as const, rows: rowsResult };
     }
+
+    return rowsResult;
   });
 
   return {
