@@ -111,16 +111,16 @@ export const ingestProcessOneCommand = Command.make("process-one", {
             const config = getIngestConfig();
             const result = yield* processPattern(positional.patternFile, config);
 
-            if (result.success) {
-                yield* Display.showSuccess(
-                    `Pattern ${positional.patternFile} processed! ID: ${result.id}`
-                );
-            } else {
+            if (!result.success) {
                 yield* Display.showError(
                     `Failed to process ${positional.patternFile}: ${result.error}`
                 );
                 return yield* Effect.fail(new Error(result.error));
             }
+
+            yield* Display.showSuccess(
+                `Pattern ${positional.patternFile} processed! ID: ${result.id}`
+            );
         })
     )
 );
@@ -204,14 +204,14 @@ export const ingestTestCommand = Command.make("test", {
                 `Tested ${tested.length} patterns: ${passed} passed, ${failed} failed`
             );
 
-            if (failed > 0) {
+            if (failed === 0) {
+                yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_TESTS_PASSED);
+            } else {
                 for (const r of tested.filter((r) => r.valid && !r.testPassed)) {
                     yield* Display.showError(`  - ${r.pattern.id}: test failed`);
                 }
                 return yield* Effect.fail(new Error("Some tests failed"));
             }
-
-            yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_TESTS_PASSED);
         })
     )
 );

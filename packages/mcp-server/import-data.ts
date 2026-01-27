@@ -7,6 +7,10 @@ import { createDatabase } from "@effect-patterns/toolkit";
 import { sql } from "drizzle-orm";
 import { readFileSync } from "node:fs";
 
+function toJsonb(value: unknown, fallback: unknown) {
+    return JSON.stringify(value ?? fallback);
+}
+
 async function importData() {
     const dbUrl = process.env.DATABASE_URL;
     if (!dbUrl) {
@@ -36,13 +40,14 @@ async function importData() {
                 `Importing ${exportData.application_patterns.length} application patterns...`,
             );
             for (const pattern of exportData.application_patterns) {
+                const subPatternsJson = toJsonb(pattern.sub_patterns, []);
                 await db.execute(sql`
           INSERT INTO application_patterns (
             id, slug, name, description, learning_order, effect_module,
             sub_patterns, validated, validated_at, created_at, updated_at
           ) VALUES (
             ${pattern.id}, ${pattern.slug}, ${pattern.name}, ${pattern.description},
-            ${pattern.learning_order}, ${pattern.effect_module}, ${pattern.sub_patterns},
+            ${pattern.learning_order}, ${pattern.effect_module}, ${subPatternsJson}::jsonb,
             ${pattern.validated}, ${pattern.validated_at}, ${pattern.created_at}, ${pattern.updated_at}
           )
         `);
@@ -55,6 +60,10 @@ async function importData() {
                 `Importing ${exportData.effect_patterns.length} effect patterns...`,
             );
             for (const pattern of exportData.effect_patterns) {
+                const tagsJson = toJsonb(pattern.tags, []);
+                const examplesJson = toJsonb(pattern.examples, []);
+                const useCasesJson = toJsonb(pattern.use_cases, []);
+                const ruleJson = pattern.rule ? JSON.stringify(pattern.rule) : null;
                 await db.execute(sql`
           INSERT INTO effect_patterns (
             id, slug, title, summary, skill_level, category, difficulty,
@@ -63,7 +72,7 @@ async function importData() {
           ) VALUES (
             ${pattern.id}, ${pattern.slug}, ${pattern.title}, ${pattern.summary},
             ${pattern.skill_level}, ${pattern.category}, ${pattern.difficulty},
-            ${pattern.tags}, ${pattern.examples}, ${pattern.use_cases}, ${pattern.rule},
+            ${tagsJson}::jsonb, ${examplesJson}::jsonb, ${useCasesJson}::jsonb, ${ruleJson}::jsonb,
             ${pattern.content}, ${pattern.author}, ${pattern.lesson_order},
             ${pattern.application_pattern_id}, ${pattern.validated}, ${pattern.validated_at},
             ${pattern.created_at}, ${pattern.updated_at}

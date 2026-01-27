@@ -11,6 +11,7 @@ Successfully added **10 Error Modeling Anti-Patterns** to the Effect Patterns co
 **File**: `src/tools/ids.ts`
 
 **Added to RuleIdValues (10 new rule IDs):**
+
 - `error-as-public-type` - Using Error as public error type
 - `mixed-error-shapes` - Mixing multiple error shapes in one Effect
 - `convert-errors-to-strings-early` - Converting errors to strings early
@@ -23,6 +24,7 @@ Successfully added **10 Error Modeling Anti-Patterns** to the Effect Patterns co
 - `logging-instead-of-modeling-errors` - Logging errors instead of modeling them
 
 **Added to FixIdValues (10 new fix IDs):**
+
 - `replace-error-with-tagged-type` - Replace Error with tagged error type
 - `normalize-error-shapes` - Normalize mixed error shapes
 - `preserve-error-structure` - Preserve error structure instead of converting to string
@@ -45,6 +47,7 @@ Added 10 comprehensive fix definitions with clear titles and descriptions for ea
 **File**: `src/services/rule-registry.ts`
 
 Added 10 detailed rule definitions with:
+
 - Clear titles and comprehensive messages
 - Appropriate severity levels (3 High, 7 Medium)
 - Categorized as "errors"
@@ -53,11 +56,13 @@ Added 10 detailed rule definitions with:
 ## Severity Distribution
 
 ### High Severity (3 rules)
+
 1. **`mixed-error-shapes`** - Forces defensive programming, unreliable pattern matching
 2. **`catch-and-rethrow-generic`** - Loses original failure information, hides root causes
 3. **`exceptions-for-domain-errors`** - Bypasses typed error channel, breaks observability
 
 ### Medium Severity (7 rules)
+
 1. **`error-as-public-type`** - Loses domain meaning, weakens observability
 2. **`convert-errors-to-strings-early`** - Destroys structure, loses causal context
 3. **`catching-errors-too-early`** - Prevents higher-level recovery strategies
@@ -95,6 +100,7 @@ These anti-patterns address:
 ### Detection Strategy
 
 **AST Patterns:**
+
 - Type annotations with `Effect<*, Error>` or `Effect<*, unknown>`
 - Union types with primitives in error channel
 - `Effect.fail(*.message)` or string concatenation
@@ -103,6 +109,7 @@ These anti-patterns address:
 - `tapError` without corresponding error modeling
 
 **Context Detection:**
+
 - Boundary file identification (routes, CLI, main)
 - Effect.gen context tracking
 - Error handling combinator detection
@@ -224,11 +231,13 @@ These rules strengthen:
 ## Documentation
 
 Created comprehensive documentation:
+
 - `ERROR_MODELING_ANTI_PATTERNS.md` - Full guide with examples, rationale, and better patterns
 
 ## Integration Status
 
 ✅ **Fully Integrated**:
+
 - Type definitions updated (10 rule IDs + 10 fix IDs)
 - Fix definitions added with clear descriptions
 - Rule definitions with comprehensive messages
@@ -239,6 +248,7 @@ Created comprehensive documentation:
 ## Impact Summary
 
 **Total Anti-Patterns**: Now **38** (28 previous + 10 error modeling)
+
 - 17 original anti-patterns
 - 10 Top 10 correctness anti-patterns
 - 1 design smell detector (large switch)
@@ -247,6 +257,7 @@ Created comprehensive documentation:
 **Total Fix Definitions**: Now **30** (20 previous + 10 error modeling)
 
 **Severity Distribution**:
+
 - High: 15 rules (12 previous + 3 error modeling)
 - Medium: 21 rules (14 previous + 7 error modeling)
 - Low: 2 rules

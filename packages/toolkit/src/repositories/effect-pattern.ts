@@ -64,6 +64,14 @@ export interface SearchPatternsParams {
 }
 
 /**
+ * Normalize separators (hyphens, underscores) to spaces for fuzzy matching
+ * This allows "error handling" to match "error-handling" and "error_handling"
+ */
+function normalizeForSearch(text: string): string {
+  return text.replace(/[-_]+/g, " ").toLowerCase().trim()
+}
+
+/**
  * Create effect pattern repository functions
  */
 export function createEffectPatternRepository(db: Database) {
@@ -107,30 +115,44 @@ export function createEffectPatternRepository(db: Database) {
 
     /**
      * Search patterns with filters
+     * 
+     * SIMPLIFIED SEARCH: Simple ILIKE '%keyword%' across title and tags.
      */
     async search(params: SearchPatternsParams): Promise<EffectPattern[]> {
       const conditions = []
 
-      // Text search across title, summary, and tags
+      // Keyword-aware search across title, summary, and tags (AND across keywords)
       if (params.query) {
-        const searchTerm = `%${params.query}%`
-        // For JSONB tags column, we need to cast to text and use sql template
-        // Drizzle's ilike doesn't work directly with JSONB, so we use sql with direct interpolation
-        // Drizzle automatically parameterizes values interpolated into sql templates
-        // Using PostgreSQL's ::text cast syntax which is more idiomatic
-        const tagsCondition = sql`${effectPatterns.tags}::text ILIKE ${searchTerm}`
-        conditions.push(
-          or(
-            ilike(effectPatterns.title, searchTerm),
-            ilike(effectPatterns.summary, searchTerm),
-            tagsCondition
+        const keywords = params.query
+          .toLowerCase()
+          .split(/\W+/)
+          .filter((keyword) => keyword.length > 2)
+
+        for (const keyword of keywords) {
+          const searchTerm = `%${keyword}%`
+          conditions.push(
+            or(
+              ilike(effectPatterns.title, searchTerm),
+              ilike(effectPatterns.summary, searchTerm),
+              sql`${effectPatterns.tags}::text ILIKE ${searchTerm}`
+            )
           )
-        )
+        }
       }
 
-      // Category filter
+      // Category filter (case-insensitive, with normalization)
+      // Matches both original category value and normalized version
       if (params.category) {
-        conditions.push(ilike(effectPatterns.category, params.category))
+        const normalizedCategory = normalizeForSearch(params.category)
+        const originalCategory = params.category.toLowerCase().trim()
+        const categorySearchTermNormalized = `%${normalizedCategory}%`
+        const categorySearchTermOriginal = `%${originalCategory}%`
+        conditions.push(
+          or(
+            ilike(effectPatterns.category, categorySearchTermOriginal),
+            sql`REPLACE(REPLACE(LOWER(${effectPatterns.category}), '-', ' '), '_', ' ') ILIKE ${categorySearchTermNormalized}`
+          )
+        )
       }
 
       // Skill level filter

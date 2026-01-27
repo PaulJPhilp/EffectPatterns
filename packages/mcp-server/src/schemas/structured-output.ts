@@ -19,6 +19,12 @@ export interface StructuredContent {
 export interface TextContent {
     type: "text";
     text: string;
+    annotations?: {
+        readonly priority?: number;
+        readonly audience?: ("user" | "assistant")[];
+        readonly lastModified?: string;
+        readonly [key: string]: unknown;
+    };
 }
 
 export interface ImageContent {

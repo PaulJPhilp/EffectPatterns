@@ -46,24 +46,10 @@ export const validateAdminKey = (
 ): Effect.Effect<void, AuthorizationError, MCPConfigService> =>
   Effect.gen(function* () {
     const config = yield* MCPConfigService;
-    const nodeEnv = yield* config.getNodeEnv();
+    const nodeEnv = config.nodeEnv;
 
-    // Get admin key from config
-    const adminKey = yield* Effect.tryPromise(
-      () =>
-        new Promise<string | undefined>((resolve) => {
-          resolve(process.env.ADMIN_API_KEY);
-        })
-    ).pipe(
-      Effect.catchAll(() =>
-        Effect.fail(
-          new AuthorizationError({
-            message: "Failed to retrieve admin credentials",
-            requiredRole: "admin",
-          })
-        )
-      )
-    );
+    // Get admin key from environment (not in config service)
+    const adminKey = yield* Effect.sync(() => process.env.ADMIN_API_KEY);
 
     // If no admin key is configured
     if (!adminKey || adminKey.trim() === "") {

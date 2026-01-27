@@ -6,6 +6,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { MCPTestClient, createMCPTestClient } from "./helpers/mcp-test-client";
+import { ToolErrorSchema, ToolStructuredContentSchema } from "../../src/schemas/output-schemas";
+import { parseStructuredContent } from "./helpers/parse-structured-content";
 
 describe("MCP Error Handling", () => {
   let client: MCPTestClient;
@@ -231,5 +233,199 @@ describe("MCP Error Handling", () => {
     if (result1.isError && result2.isError) {
       expect(result1.content[0].type).toBe(result2.content[0].type);
     }
+  });
+
+  describe("Format-gated error responses", () => {
+    /**
+     * Helper to find JSON blocks that validate as toolError:v1
+     * Returns the parsed error object if found, null otherwise
+     */
+    function findErrorJsonBlock(result: any): any | null {
+      if (!result.content || result.content.length === 0) return null;
+      
+      for (const block of [...result.content].reverse()) {
+        if (block?.type !== "text" || typeof block.text !== "string") continue;
+        try {
+          const parsed = JSON.parse(block.text);
+          const validation = ToolErrorSchema.safeParse(parsed);
+          if (validation.success) return validation.data;
+        } catch {
+          // Not valid JSON, continue searching
+        }
+      }
+      return null;
+    }
+
+    /**
+     * Helper to check if result contains any parsable JSON blocks (not just errors)
+     */
+    function hasAnyJsonBlock(result: any): boolean {
+      if (!result.content || result.content.length === 0) return false;
+      
+      for (const block of result.content) {
+        if (block?.type !== "text" || typeof block.text !== "string") continue;
+        try {
+          JSON.parse(block.text);
+          return true; // Found any valid JSON
+        } catch {
+          // Not JSON
+        }
+      }
+      return false;
+    }
+
+    it("search_patterns - format='markdown' should NOT include JSON error block", async () => {
+      // Test: In markdown mode, errors should NOT include JSON blocks
+      // Note: This test verifies the contract even if no error occurs
+      const result = await client.callTool("search_patterns", {
+        q: "test",
+        format: "markdown",
+      });
+
+      // Contract: format="markdown" should NOT have parsable toolError:v1 JSON block
+      const errorJson = findErrorJsonBlock(result);
+      expect(errorJson).toBeNull(); // No error JSON block in markdown mode
+      
+      // Should have content (either success or error message)
+      expect(result.content.length).toBeGreaterThan(0);
+    });
+
+    it("search_patterns - format='json' should include JSON block (error or success)", async () => {
+      // Test: In json mode, should have JSON block (either error or success)
+      const result = await client.callTool("search_patterns", {
+        q: "test",
+        format: "json",
+      });
+
+      // Contract: format="json" should have JSON block
+      expect(hasAnyJsonBlock(result)).toBe(true);
+      
+      // Parse structured content (should always succeed in json mode)
+      const parsed = parseStructuredContent(result);
+      expect(parsed.success).toBe(true);
+      
+      if (parsed.success && parsed.data && typeof parsed.data === "object") {
+        const data = parsed.data as Record<string, unknown>;
+        // If it's an error, validate the error structure
+        if (data.kind === "toolError:v1") {
+          const validation = ToolErrorSchema.safeParse(data);
+          expect(validation.success).toBe(true);
+          if (validation.success) {
+            expect(validation.data.code).toBeDefined();
+            expect(validation.data.message).toBeDefined();
+          }
+        }
+      }
+    });
+
+    it("search_patterns - format='both' should include both message and JSON block (JSON last)", async () => {
+      // Test: In both mode, should have markdown + JSON, with JSON last
+      const result = await client.callTool("search_patterns", {
+        q: "test",
+        format: "both",
+      });
+
+      expect(result.content.length).toBeGreaterThanOrEqual(2); // At least markdown + JSON
+      
+      // Last block should be JSON (error or success)
+      const lastBlock = result.content[result.content.length - 1];
+      expect(lastBlock.type).toBe("text");
+      
+      try {
+        const parsed = JSON.parse(lastBlock.text || "");
+        // Should validate against ToolStructuredContentSchema
+        const validation = ToolStructuredContentSchema.safeParse(parsed);
+        expect(validation.success).toBe(true);
+        
+        if (validation.success) {
+          // If it's an error, verify structure
+          if (parsed.kind === "toolError:v1") {
+            expect(parsed.code).toBeDefined();
+            expect(parsed.message).toBeDefined();
+          }
+        }
+      } catch (e) {
+        throw new Error(`Last block in format='both' should be valid JSON (error or success): ${e}`);
+      }
+    });
+
+    it("get_pattern - format='markdown' should NOT include JSON error block", async () => {
+      // Test: In markdown mode, errors should NOT include JSON blocks
+      const result = await client.callTool("get_pattern", {
+        id: "non-existent-pattern-xyz-12345",
+        format: "markdown",
+      });
+
+      // Contract: format="markdown" should NOT have parsable toolError:v1 JSON block
+      const errorJson = findErrorJsonBlock(result);
+      expect(errorJson).toBeNull(); // No error JSON block in markdown mode
+      
+      // Should have content (either elicitation or error message)
+      expect(result.content.length).toBeGreaterThan(0);
+    });
+
+    it("get_pattern - format='json' should include JSON block (error, elicitation, or success)", async () => {
+      // Test: In json mode, should have JSON block
+      // Note: get_pattern with non-existent ID returns elicitation, not error
+      const result = await client.callTool("get_pattern", {
+        id: "non-existent-pattern-xyz-12345",
+        format: "json",
+      });
+
+      // Contract: format="json" should have JSON block
+      expect(hasAnyJsonBlock(result)).toBe(true);
+      
+      // Parse and validate
+      const parsed = parseStructuredContent(result);
+      expect(parsed.success).toBe(true);
+      
+      if (parsed.success && parsed.data && typeof parsed.data === "object") {
+        const data = parsed.data as Record<string, unknown>;
+        // Should be either elicitation (needsInput:v1) or error (toolError:v1) or success
+        expect(["needsInput:v1", "toolError:v1", "patternDetails:v1"]).toContain(data.kind);
+        
+        // If it's an error, validate structure
+        if (data.kind === "toolError:v1") {
+          const validation = ToolErrorSchema.safeParse(data);
+          expect(validation.success).toBe(true);
+        }
+      }
+    });
+
+    it("get_pattern - format='both' should include both message and JSON block (JSON last)", async () => {
+      // Test: In both mode, should have markdown + JSON, with JSON last
+      // Note: get_pattern with non-existent ID returns elicitation, not error
+      const result = await client.callTool("get_pattern", {
+        id: "non-existent-pattern-xyz-12345",
+        format: "both",
+      });
+
+      // Should have at least one content block (may be elicitation with just markdown in some cases)
+      expect(result.content.length).toBeGreaterThanOrEqual(1);
+      
+      // If format="both", should have JSON block (last block)
+      const lastBlock = result.content[result.content.length - 1];
+      expect(lastBlock.type).toBe("text");
+      
+      try {
+        const parsed = JSON.parse(lastBlock.text || "");
+        // Should validate against ToolStructuredContentSchema
+        const validation = ToolStructuredContentSchema.safeParse(parsed);
+        expect(validation.success).toBe(true);
+        
+        if (validation.success) {
+          // Should be elicitation, error, or success
+          expect(["needsInput:v1", "toolError:v1", "patternDetails:v1"]).toContain(parsed.kind);
+          
+          // If it's an error, verify structure
+          if (parsed.kind === "toolError:v1") {
+            expect(parsed.code).toBeDefined();
+            expect(parsed.message).toBeDefined();
+          }
+        }
+      } catch (e) {
+        throw new Error(`Last block in format='both' should be valid JSON: ${e}`);
+      }
+    });
   });
 });

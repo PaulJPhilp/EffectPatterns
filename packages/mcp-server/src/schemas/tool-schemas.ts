@@ -10,7 +10,7 @@ import { z } from "zod";
 export const ToolSchemas = {
   // Search Patterns Tool
   searchPatterns: z.object({
-    q: z.string().min(1).optional().describe("Search query string"),
+    q: z.string().optional().describe("Search query string. Empty string will trigger elicitation."),
     category: z
       .enum(["validation", "service", "error-handling", "composition", "concurrency", "streams", "resource", "scheduling"])
       .optional()
@@ -28,27 +28,40 @@ export const ToolSchemas = {
       .describe("Maximum number of results to return"),
     format: z
       .enum(["json", "markdown", "both"])
-      .default("both")
+      .default("markdown")
       .optional()
-      .describe("Output format (default: 'both')"),
+      .describe("Output format (default: 'markdown')"),
     limitCards: z
       .number()
       .int()
       .min(1)
       .max(10)
-      .default(3)
+      .default(10)
       .optional()
-      .describe("Maximum number of cards to render in markdown (default: 3)"),
+      .describe("Maximum number of cards to render in markdown (default: 10)"),
     includeProvenancePanel: z
       .boolean()
       .default(false)
       .optional()
       .describe("Include provenance information panel (default: false)"),
+    includeStructuredPatterns: z
+      .boolean()
+      .optional()
+      .describe("Include full patterns array in structuredContent (default: false for markdown-only)"),
   }).describe("Search Effect-TS patterns by query, category, difficulty level, and more"),
 
   // Get Pattern Tool
   getPattern: z.object({
-    id: z.string().min(1).describe("Pattern identifier (e.g., 'effect-service')"),
+    id: z.string().describe("Pattern identifier (e.g., 'effect-service'). Empty string will trigger elicitation."),
+    format: z
+      .enum(["json", "markdown", "both"])
+      .default("markdown")
+      .optional()
+      .describe("Output format (default: 'markdown')"),
+    includeStructuredDetails: z
+      .boolean()
+      .optional()
+      .describe("Include full structuredContent details (default: false for markdown-only)"),
   }).describe("Get full details for a specific pattern by ID"),
 
   // List Analysis Rules Tool

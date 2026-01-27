@@ -57,6 +57,26 @@ if grep -rn "process\.stdout\.write(" "$TARGET_DIR" --include="*.ts" --exclude-d
   VIOLATIONS=$((VIOLATIONS + 1))
 fi
 
+# Check for patterns that indicate summary/documentation printing
+# These should never appear in runtime code that executes during server startup
+SUMMARY_PATTERNS=(
+  "Implementation Complete"
+  "Commit:"
+  "Branch:"
+  "# MCP 2.0"
+  "MCP 2.0 Rich Content Implementation"
+)
+
+for pattern in "${SUMMARY_PATTERNS[@]}"; do
+  # Escape special regex characters
+  escaped_pattern=$(printf '%s\n' "$pattern" | sed 's/[[\.*^$()+?{|]/\\&/g')
+  if grep -rn "$escaped_pattern" "$TARGET_DIR" --include="*.ts" --exclude-dir=node_modules 2>/dev/null | grep -v "\.test\.ts" | grep -v "README.md" | grep -v "\.mdx\?" | grep -v "//.*$escaped_pattern"; then
+    echo -e "${YELLOW}⚠ WARNING: Pattern '$pattern' found in source code.${NC}"
+    echo -e "${YELLOW}   Ensure this is not printed to stdout during server startup.${NC}"
+    # Don't fail, but warn - might be in comments or string literals
+  fi
+done
+
 echo ""
 
 if [ $VIOLATIONS -eq 0 ]; then

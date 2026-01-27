@@ -20,6 +20,11 @@ import type {
 
 /**
  * Skills service interface
+ *
+ * Note: These properties are defined without resource dependencies because
+ * they are accessed through the Skills service context tag, which handles
+ * the resource requirements. When used directly, callers should use the
+ * standalone functions below which explicitly declare Skills as a dependency.
  */
 export interface SkillsService {
 	readonly listAll: Effect.Effect<

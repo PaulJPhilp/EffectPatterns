@@ -114,6 +114,6 @@ export class ToolkitLogger extends Effect.Service<ToolkitLogger>()(
         withDuration,
       };
     }),
-    dependencies: [ToolkitConfig],
+    dependencies: [ToolkitConfig.Default],
   }
 ) {}

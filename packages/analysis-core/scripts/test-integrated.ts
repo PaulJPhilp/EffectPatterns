@@ -13,39 +13,39 @@ import { existsSync } from "fs";
 const testCategories = {
 	registry: {
 		description: "Rule Registry Integrity Tests",
-		path: "packages/analysis-core/src/__tests__/registry/",
+		path: "src/__tests__/registry/",
 	},
 	categories: {
 		description: "Category Coverage Tests",
-		path: "packages/analysis-core/src/__tests__/categories/",
+		path: "src/__tests__/categories/",
 	},
 	severity: {
 		description: "Severity Distribution Tests",
-		path: "packages/analysis-core/src/__tests__/severity/",
+		path: "src/__tests__/severity/",
 	},
 	integration: {
 		description: "Analysis Engine Integration Tests",
-		path: "packages/analysis-core/src/__tests__/integration/",
+		path: "src/__tests__/integration/",
 	},
 	mcp: {
 		description: "MCP Output Contract Tests",
-		path: "packages/analysis-core/src/__tests__/mcp/",
+		path: "src/__tests__/mcp/",
 	},
 	"fix-mapping": {
 		description: "Fix Mapping Tests",
-		path: "packages/analysis-core/src/__tests__/fix-mapping/",
+		path: "src/__tests__/fix-mapping/",
 	},
 	regression: {
 		description: "Regression/Snapshot Tests",
-		path: "packages/analysis-core/src/__tests__/regression/",
+		path: "src/__tests__/regression/",
 	},
 	performance: {
 		description: "Performance Smoke Tests",
-		path: "packages/analysis-core/src/__tests__/performance/",
+		path: "src/__tests__/performance/",
 	},
 	rules: {
 		description: "Rule-Level Unit Tests",
-		path: "packages/analysis-core/src/__tests__/rules/",
+		path: "src/__tests__/rules/",
 	},
 };
 
@@ -69,7 +69,7 @@ function showUsage() {
 
 function runTests(category: string, options: { coverage?: boolean; watch?: boolean; verbose?: boolean }) {
 	const testPath = category === "all"
-		? "packages/analysis-core/src/__tests__/"
+		? "src/__tests__/"
 		: testCategories[category]?.path;
 
 	if (!testPath) {

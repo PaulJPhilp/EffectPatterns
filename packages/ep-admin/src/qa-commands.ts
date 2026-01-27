@@ -9,12 +9,12 @@
  * - test-enhanced: Run enhanced QA tests
  * - fix-permissions: Fix file permissions
  * - test-single: Test a single pattern
- *
- * NOTE: Commands now use native Effect services instead of script execution.
  */
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 import {
     CONTENT_DIRS,
     MESSAGES,
@@ -28,13 +28,14 @@ import {
     type QAConfig,
 } from "./services/qa/index.js";
 
+const execAsync = promisify(exec);
 const PROJECT_ROOT = process.cwd();
 
 // --- DEFAULT CONFIG ---
 
 const getQAConfig = (useNew = false): QAConfig => {
     const qaDir = useNew
-        ? `${PROJECT_ROOT}/content/new/qa`
+        ? `${PROJECT_ROOT}/content/new/qa` 
         : `${PROJECT_ROOT}/content/qa`;
 
     return {
@@ -327,13 +328,20 @@ export const qaTestSingleCommand = Command.make("test-single", {
             yield* configureLoggerFromOptions(options);
             yield* Display.showInfo(`Testing pattern: ${positional.patternFile}...`);
 
-            // Note: Single pattern testing would require pattern-specific QA
-            // For now, show info about the pattern
-            yield* Display.showInfo(
-                `Pattern ${positional.patternFile} - use 'qa status' for full results`
-            );
+            // Check if file exists (using Bun/Node fs via tryPromise for speed in stub)
+            const command = `bun test ${positional.patternFile}`;
+            yield* Display.showInfo(`Running: ${command}`);
 
-            yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERN_TEST_PASSED);
+            yield* Effect.tryPromise(() => execAsync(command)).pipe(
+                Effect.tap(() => Display.showSuccess(MESSAGES.SUCCESS.PATTERN_TEST_PASSED)),
+                Effect.catchAll((error) => 
+                     Effect.gen(function*() {
+                         yield* Display.showError(`Test failed for ${positional.patternFile}`);
+                         // @ts-ignore
+                         yield* Display.showError(error.stdout || String(error));
+                     })
+                )
+            );
         })
     )
 );
@@ -354,14 +362,12 @@ export const qaFixPermissionsCommand = Command.make("fix-permissions", {
             yield* configureLoggerFromOptions(options);
             yield* Display.showInfo("Fixing file permissions...");
 
-            // Note: Permission fixing would require shell commands
-            // This is typically handled at the OS level
-            yield* Display.showInfo(
-                "Permission fixes are typically done via shell commands. " +
-                "Run 'chmod -R 755 content/' if needed."
+            const command = "chmod -R 755 content/";
+            
+            yield* Effect.tryPromise(() => execAsync(command)).pipe(
+                Effect.tap(() => Display.showSuccess(MESSAGES.SUCCESS.PERMISSIONS_FIXED)),
+                Effect.catchAll((error) => Display.showError(`Failed to fix permissions: ${String(error)}`))
             );
-
-            yield* Display.showSuccess(MESSAGES.SUCCESS.PERMISSIONS_FIXED);
         })
     )
 );

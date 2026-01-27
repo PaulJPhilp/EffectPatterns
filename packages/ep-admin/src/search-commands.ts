@@ -44,8 +44,18 @@ export const searchCommand = Command.make("search", {
 						const errorMessage =
 							error instanceof Error ? error.message : String(error);
 
-						const postgresError =
-							error && typeof error === "object" ? (error as any) : null;
+						interface PostgresError {
+							code?: string;
+							message?: string;
+							detail?: string;
+							hint?: string;
+						}
+
+						const postgresError: PostgresError | null = (
+							error && typeof error === "object" 
+								? error as PostgresError
+								: null
+						);
 						const pgCode = postgresError?.code;
 						const pgMessage = postgresError?.message;
 						const pgDetail = postgresError?.detail;

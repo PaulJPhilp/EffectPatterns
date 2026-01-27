@@ -54,25 +54,25 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 	{
 		id: "replace-node-fs",
 		title: "Replace node:fs with @effect/platform",
-		description: "Rewrites node:fs imports to @effect/platform.",
+		description: "Replaces node:fs imports with @effect/platform services.",
 	},
 	{
 		id: "add-filter-or-fail-validator",
 		title: "Add Effect.filterOrFail validator",
-		description: "Adds a simple input validation helper.",
+		description: "Adds a simple input validation helper to the effect pipeline.",
 	},
 	{
 		id: "wrap-effect-map-callback",
 		title: "Wrap Effect.map callback",
 		description:
-			"Rewrites Effect.map(myFn) to Effect.map((x) => myFn(x)) " +
+			"Wraps Effect.map(myFn) in an explicit callback (x) => myFn(x) " +
 			"for clarity and consistency.",
 	},
 	{
 		id: "replace-context-tag",
 		title: "Replace Context.Tag with Effect.Service",
 		description:
-			"Converts Context.Tag/Context.GenericTag to the modern " +
+			"Converts Context.Tag and Context.GenericTag to the modern " +
 			"Effect.Service pattern.",
 	},
 	{
@@ -80,13 +80,13 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		title: "Replace Promise.all with Effect.all",
 		description:
 			"Converts Promise.all([...]) to Effect.all([...]) for proper " +
-			"Effect composition.",
+			"Effect composition and interruption.",
 	},
 	{
 		id: "replace-console-log",
 		title: "Replace console.log with Effect logging",
 		description:
-			"Converts console.log/warn/error to Effect.log/logWarning/logError.",
+			"Converts console.log, warn, and error calls to Effect.log, logWarning, and logError.",
 	},
 	{
 		id: "add-schema-decode",
@@ -99,7 +99,7 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		id: "add-concurrency-limit",
 		title: "Add concurrency limit to Effect.all",
 		description:
-			"Adds concurrency limit to Effect.all calls to prevent unbounded parallelism.",
+			"Adds a concurrency limit to Effect.all calls to prevent unbounded parallelism.",
 	},
 	{
 		id: "add-fiber-supervision",
@@ -115,13 +115,13 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 	},
 	{
 		id: "use-acquire-release",
-		title: "Use acquireRelease instead of manual resource management",
+		title: "Use acquireRelease for resource management",
 		description:
-			"Converts manual try/finally resource cleanup to Effect.acquireRelease pattern.",
+			"Converts manual try/finally resource cleanup to the Effect.acquireRelease pattern.",
 	},
 	{
 		id: "fix-scope-leak",
-		title: "Fix resource scope leakage",
+		title: "Scope resources to effect lifetime",
 		description:
 			"Ensures resources are properly scoped to the effect lifetime to prevent leaks.",
 	},
@@ -129,89 +129,89 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		id: "replace-platform-imports",
 		title: "Replace platform imports with portable alternatives",
 		description:
-			"Replaces node:fs, node:process imports with portable Effect services.",
+			"Replaces node:fs and node:process imports with portable Effect services.",
 	},
 	{
 		id: "add-effect-logging",
 		title: "Add Effect logging infrastructure",
 		description:
-			"Replaces console logging with Effect.log/logWarning/logError for structured logging.",
+			"Adds Effect.log, logWarning, and logError in place of console logging for structured logs.",
 	},
 	{
 		id: "replace-any-with-types",
 		title: "Replace any with proper types",
 		description:
-			"Adds proper type annotations and replaces any with specific types.",
+			"Adds proper type annotations and replaces any with specific domain types.",
 	},
 	{
 		id: "remove-non-null-assertions",
 		title: "Remove non-null assertions (!)",
 		description:
-			"Replaces non-null assertions with proper type guards or optional chaining.",
+			"Removes non-null assertions and replaces them with proper type guards or optional chaining.",
 	},
 	{
 		id: "convert-default-to-named-exports",
 		title: "Convert default exports to named exports",
 		description:
-			"Converts default exports to named exports for consistent import style.",
+			"Converts default exports to named exports for consistent import style across the project.",
 	},
 	{
 		id: "replace-yield-with-yield-star",
 		title: "Replace yield with yield* in Effect.gen",
 		description:
-			"Converts yield effect to yield* effect for proper Effect execution.",
+			"Converts yield effect statements to yield* effect for proper Effect execution.",
 	},
 	{
 		id: "replace-throw-with-effect-fail",
 		title: "Replace throw with Effect.fail",
 		description:
-			"Converts throw statements inside Effect logic to Effect.fail calls.",
+			"Converts throw statements inside Effect logic to Effect.fail calls with tagged errors.",
 	},
 	{
 		id: "replace-async-callbacks-with-effect",
-		title: "Replace async callbacks with Effect-returning functions",
+		title: "Replace async callbacks with Effect functions",
 		description:
 			"Converts async callbacks in Effect combinators to Effect-returning functions.",
 	},
 	{
 		id: "remove-or-die-outside-boundaries",
-		title: "Remove orDie/orDieWith outside boundaries",
+		title: "Remove orDie usage from non-boundary code",
 		description:
-			"Removes orDie/orDieWith usage from non-boundary code.",
+			"Removes orDie and orDieWith usage from code that is not at an application boundary.",
 	},
 	{
 		id: "add-logging-to-catchall",
 		title: "Add logging to catchAll error handling",
 		description:
-			"Adds proper logging or telemetry to catchAll blocks that swallow errors.",
+			"Adds proper logging or telemetry to catchAll blocks that would otherwise swallow errors.",
 	},
 	{
 		id: "replace-effect-ignore",
-		title: "Replace Effect.ignore with explicit error handling",
+		title: "Replace Effect.ignore with explicit handling",
 		description:
-			"Replaces Effect.ignore with explicit error handling or logging.",
+			"Replaces Effect.ignore with explicit error handling, logging, or fallback logic.",
 	},
 	{
 		id: "replace-try-catch-with-effect-try",
-		title: "Replace try/catch with Effect.try/Effect.tryPromise",
+		title: "Replace try/catch with Effect.try patterns",
 		description:
-			"Converts try/catch blocks inside Effect logic to Effect.try patterns.",
+			"Converts try/catch blocks inside Effect logic to Effect.try or Effect.tryPromise.",
 	},
 	{
 		id: "replace-promise-apis-with-effect",
 		title: "Replace Promise APIs with Effect equivalents",
 		description:
-			"Converts Promise.all, .then, .catch to Effect.all, Effect.map, Effect.catchAll.",
+			"Converts Promise.all, .then, and .catch to Effect.all, Effect.map, and Effect.catchAll.",
 	},
 	{
 		id: "replace-generic-error-with-tagged",
 		title: "Replace generic Error with tagged error types",
 		description:
-			"Converts Effect<*, Error> to Effect<*, TaggedError> for better error semantics.",
+			"Converts Effect<A, Error> to Effect<A, TaggedError> for better error semantics.",
 	},
 	{
 		id: "refactor-switch-to-tagged-union",
-		title: "Refactor switch statement to tagged union",
+		title: "Convert switch statement to tagged union",
 		description:
 			"Converts large switch statements to tagged unions with pattern matching or handler maps.",
 	},
@@ -219,91 +219,91 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		id: "replace-error-with-tagged-type",
 		title: "Replace Error with tagged error type",
 		description:
-			"Converts generic Error type to domain-specific tagged error unions.",
+			"Converts generic Error types to domain-specific tagged error unions.",
 	},
 	{
 		id: "normalize-error-shapes",
 		title: "Normalize mixed error shapes",
 		description:
-			"Converts mixed error types (Error | string | number) to a single tagged error model.",
+			"Converts mixed error types (Error | string | number) to a single normalized tagged error model.",
 	},
 	{
 		id: "preserve-error-structure",
-		title: "Preserve error structure instead of converting to string",
+		title: "Preserve error structure",
 		description:
-			"Maintains error data structure instead of converting to string early.",
+			"Preserves the error data structure instead of converting to a string early in the pipeline.",
 	},
 	{
 		id: "wrap-error-with-context",
 		title: "Wrap error with context",
 		description:
-			"Wraps caught errors with additional context while preserving the original error.",
+			"Wraps caught errors with additional context while preserving the original error cause.",
 	},
 	{
 		id: "propagate-errors-upward",
-		title: "Propagate errors upward",
+		title: "Move error propagation upward to boundaries",
 		description:
-			"Removes premature error catching to allow errors to flow to appropriate boundaries.",
+			"Removes premature error catching to allow errors to propagate to appropriate boundaries.",
 	},
 	{
 		id: "model-expected-states-as-data",
 		title: "Model expected states as data",
 		description:
-			"Converts expected domain states from error channel to data using Option/Either.",
+			"Converts expected domain states from the error channel to data using Option or Either.",
 	},
 	{
 		id: "use-effect-fail-for-domain-errors",
 		title: "Use Effect.fail for domain errors",
 		description:
-			"Converts throw statements for domain errors to Effect.fail calls.",
+			"Converts throw statements for domain errors to explicit Effect.fail calls.",
 	},
 	{
 		id: "add-error-payload-fields",
 		title: "Add error payload fields",
 		description:
-			"Adds context fields (ids, causes, timestamps) to error tag definitions.",
+			"Adds context fields like ids, causes, and timestamps to tagged error definitions.",
 	},
 	{
 		id: "narrow-unknown-error-type",
-		title: "Narrow unknown error type",
+		title: "Handle unknown error type",
 		description:
-			"Replaces unknown error channel with specific error types.",
+			"Replaces the unknown error channel with specific, narrowed error types.",
 	},
 	{
 		id: "structure-error-propagation",
 		title: "Structure error propagation",
 		description:
-			"Adds structured error modeling alongside logging for better observability.",
+			"Structures error modeling alongside logging for better observability and recovery.",
 	},
 	{
 		id: "introduce-branded-types",
 		title: "Introduce branded types for domain concepts",
 		description:
-			"Converts primitive types to branded types with domain meaning and constraints.",
+			"Converts primitive types to branded types with explicit domain meaning and constraints.",
 	},
 	{
 		id: "replace-boolean-with-tagged-union",
 		title: "Replace boolean flags with tagged unions",
 		description:
-			"Converts boolean flags to explicit tagged unions for better type safety.",
+			"Converts boolean flags to explicit tagged unions for better type safety and readability.",
 	},
 	{
 		id: "replace-magic-strings-with-union",
 		title: "Replace magic strings with literal unions",
 		description:
-			"Converts magic string literals to typed literal unions defined in one place.",
+			"Converts magic string literals to typed literal unions defined in a central location.",
 	},
 	{
 		id: "model-explicit-state-machine",
 		title: "Model explicit state machine",
 		description:
-			"Converts implicit state logic to explicit tagged state machine.",
+			"Converts implicit state logic to an explicit tagged state machine model.",
 	},
 	{
 		id: "extract-domain-predicates",
 		title: "Extract domain predicates",
 		description:
-			"Extracts domain logic from conditionals into named domain functions.",
+			"Extracts domain logic from conditionals into named domain predicate functions.",
 	},
 	{
 		id: "use-domain-specific-errors",
@@ -315,31 +315,31 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		id: "structure-config-schema",
 		title: "Structure config schema",
 		description:
-			"Converts overloaded config objects to structured schemas with validation.",
+			"Structures overloaded config objects into schemas with validation and clear types.",
 	},
 	{
 		id: "introduce-branded-ids",
 		title: "Introduce branded IDs",
 		description:
-			"Converts raw string IDs to branded types with constructor functions.",
+			"Converts raw string IDs to branded types with dedicated constructor functions.",
 	},
 	{
 		id: "use-duration-abstraction",
 		title: "Use Duration abstraction",
 		description:
-			"Converts number/Date time values to Duration or explicit time abstractions.",
+			"Converts number and Date time values to the Effect Duration abstraction.",
 	},
 	{
 		id: "encode-domain-in-types",
-		title: "Encode domain meaning in types",
+		title: "Structure domain meaning in types",
 		description:
-			"Makes domain meaning explicit in types rather than relying on file structure.",
+			"Ensures domain meaning is encoded explicitly in types rather than relying on file structure.",
 	},
 	{
 		id: "add-concurrency-limit-to-effect-all",
 		title: "Add concurrency limit to Effect.all",
 		description:
-			"Adds concurrency limit to Effect.all or replaces with Effect.forEach.",
+			"Adds a concurrency limit to Effect.all or replaces it with Effect.forEach.",
 	},
 	{
 		id: "add-fiber-supervision-or-join",
@@ -351,31 +351,31 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		id: "replace-loop-fork-with-foreach",
 		title: "Replace loop fork with Effect.forEach",
 		description:
-			"Replaces manual fork loops with Effect.forEach with concurrency control.",
+			"Replaces manual fork loops with Effect.forEach using concurrency control.",
 	},
 	{
 		id: "handle-race-interruption",
 		title: "Handle race interruption semantics",
 		description:
-			"Adds proper handling for loser fibers in Effect.race scenarios.",
+			"Handles loser fibers in Effect.race scenarios to ensure proper resource cleanup.",
 	},
 	{
 		id: "offload-blocking-work",
 		title: "Offload blocking work",
 		description:
-			"Wraps blocking operations in Effect.blocking or moves to separate thread pool.",
+			"Wraps blocking operations in Effect.blocking or offloads them to a separate thread pool.",
 	},
 	{
 		id: "replace-promise-all-with-effect-all",
 		title: "Replace Promise.all with Effect.all",
 		description:
-			"Converts Promise.all to Effect.all for proper interruption and supervision.",
+			"Converts Promise.all to Effect.all for proper interruption and supervision support.",
 	},
 	{
 		id: "observe-fiber-results",
-		title: "Observe fiber results",
+		title: "Provide observed fiber results",
 		description:
-			"Adds fiber.join or fiber.await to observe forked fiber results.",
+			"Adds fiber.join or fiber.await to ensure forked fiber results are observed.",
 	},
 	{
 		id: "add-retry-coordination",
@@ -393,7 +393,7 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		id: "ensure-cancellation-awareness",
 		title: "Ensure cancellation awareness",
 		description:
-			"Makes inner effects properly handle interruption signals from timeouts.",
+			"Ensures inner effects properly handle interruption signals from timeouts.",
 	},
 	{
 		id: "wrap-with-acquire-release",
@@ -405,37 +405,37 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		id: "return-scoped-effect",
 		title: "Return scoped effect",
 		description:
-			"Returns an effect that manages the resource instead of the resource itself.",
+			"Returns an effect that manages the resource instead of returning the resource itself.",
 	},
 	{
 		id: "bind-scope-to-lifetime",
 		title: "Bind scope to lifetime",
 		description:
-			"Ties scope creation to effect lifetime for automatic cleanup.",
+			"Binds scope creation to the effect lifetime for automatic cleanup.",
 	},
 	{
 		id: "move-resource-to-app-layer",
 		title: "Move resource to app layer",
 		description:
-			"Moves long-lived resources from request scope to application layer.",
+			"Moves long-lived resources from request scope to the application layer.",
 	},
 	{
 		id: "convert-singleton-to-layer",
 		title: "Convert singleton to layer",
 		description:
-			"Converts global singleton to Effect layer for testability and lifecycle management.",
+			"Converts global singletons to Effect layers for better lifecycle management.",
 	},
 	{
 		id: "remove-manual-close",
 		title: "Remove manual close",
 		description:
-			"Removes explicit close calls in favor of acquireRelease cleanup.",
+			"Removes explicit close calls in favor of automatic acquireRelease cleanup.",
 	},
 	{
 		id: "scope-resources-before-run",
 		title: "Scope resources before run",
 		description:
-			"Ensures all resources are properly scoped before running effects.",
+			"Ensures all resources are properly scoped before running effects to prevent leaks.",
 	},
 	{
 		id: "flatten-resource-acquisition",
@@ -453,7 +453,7 @@ const Fixes: ReadonlyArray<FixDefinition> = [
 		id: "add-layer-provision",
 		title: "Add layer provision",
 		description:
-			"Adds missing layer provision to satisfy effect requirements.",
+			"Adds missing layer provision to ensure effect requirements are satisfied.",
 	},
 ];
 
@@ -461,8 +461,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "non-typescript",
 		title: "Non-TypeScript input",
-		message:
-			"This analyzer is tuned for TypeScript/TSX. Results may be limited.",
+		message: "This analyzer is tuned for TypeScript/TSX. Results may be limited.",
 		severity: "low",
 		category: "style",
 		fixIds: [],
@@ -470,41 +469,37 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "async-await",
 		title: "Prefer Effect over async/await",
-		message:
-			"Use Effect.tryPromise/Effect.promise (or Effect.gen) for async " +
+		message: "Use Effect.tryPromise/Effect.promise (or Effect.gen) for async " +
 			"operations so errors are tracked in the typed channel and effects " +
 			"compose correctly.",
 		severity: "high",
 		category: "async",
-		fixIds: [],
+		fixIds: ["replace-promise-apis-with-effect"],
 	},
 	{
 		id: "throw-in-effect-code",
 		title: "Don't throw inside Effect code",
-		message:
-			"Throwing bypasses Effect's typed error channel. Prefer returning a " +
+		message: "Throwing bypasses Effect's typed error channel. Prefer returning a " +
 			"typed error via Effect.fail (or Effect.die only for unrecoverable " +
 			"bugs).",
 		severity: "high",
 		category: "errors",
-		fixIds: [],
+		fixIds: ["replace-throw-with-effect-fail"],
 	},
 	{
 		id: "try-catch-in-effect",
 		title: "Prefer Effect.try/tryPromise over try/catch",
-		message:
-			"try/catch inside Effect logic often bypasses the typed error " +
+		message: "try/catch inside Effect logic often bypasses the typed error " +
 			"channel. Prefer Effect.try/Effect.tryPromise and handle errors " +
 			"via Effect.catchAll/Effect.match.",
 		severity: "high",
 		category: "errors",
-		fixIds: [],
+		fixIds: ["replace-try-catch-with-effect-try"],
 	},
 	{
 		id: "try-catch-boundary-ok",
 		title: "try/catch is OK at HTTP boundaries",
-		message:
-			"try/catch in route handlers is reasonable. Consider mapping " +
+		message: "try/catch in route handlers is reasonable. Consider mapping " +
 			"tagged errors to HTTP responses consistently via a shared helper.",
 		severity: "low",
 		category: "errors",
@@ -513,19 +508,17 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "catch-log-and-swallow",
 		title: "Don't log and swallow errors",
-		message:
-			"This catch block logs and then continues, which can hide failures. " +
+		message: "This catch block logs and then continues, which can hide failures. " +
 			"Prefer returning a typed error via Effect.fail, or return " +
 			"Option/Either explicitly if absence is expected.",
 		severity: "high",
 		category: "errors",
-		fixIds: [],
+		fixIds: ["add-logging-to-catchall"],
 	},
 	{
 		id: "node-fs",
 		title: "Prefer @effect/platform FileSystem",
-		message:
-			"Replace Node.js fs usage with @effect/platform FileSystem service " +
+		message: "Replace Node.js fs usage with @effect/platform FileSystem service " +
 			"for better testability and Effect integration.",
 		severity: "medium",
 		category: "resources",
@@ -534,8 +527,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "missing-validation",
 		title: "Add input validation",
-		message:
-			"Consider validating user-controlled inputs using Effect.filterOrFail " +
+		message: "Consider validating user-controlled inputs using Effect.filterOrFail " +
 			"(or Schema.decodeUnknown) at the boundary.",
 		severity: "high",
 		category: "validation",
@@ -544,8 +536,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "effect-map-fn-reference",
 		title: "Avoid passing function references to Effect.map",
-		message:
-			"Prefer an explicit callback: Effect.map((x) => myFn(x)). This improves " +
+		message: "Prefer an explicit callback: Effect.map((x) => myFn(x)). This improves " +
 			"readability and makes parameter usage clear.",
 		severity: "low",
 		category: "style",
@@ -554,18 +545,16 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "any-type",
 		title: "Avoid any",
-		message:
-			"Replace `any` with specific types and/or @effect/schema schemas to " +
+		message: "Replace `any` with specific types and/or @effect/schema schemas to " +
 			"improve safety and inference.",
 		severity: "high",
 		category: "style",
-		fixIds: [],
+		fixIds: ["replace-any-with-types"],
 	},
 	{
 		id: "yield-star-non-effect",
 		title: "yield* used on non-Effect value",
-		message:
-			"Some platform services (e.g. Path.dirname) are pure functions. " +
+		message: "Some platform services (e.g. Path.dirname) are pure functions. " +
 			"Avoid `yield*` when the method returns a plain value.",
 		severity: "medium",
 		category: "style",
@@ -574,8 +563,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "context-tag-anti-pattern",
 		title: "Use Effect.Service instead of Context.Tag",
-		message:
-			"Context.Tag and Context.GenericTag are deprecated patterns. " +
+		message: "Context.Tag and Context.GenericTag are deprecated patterns. " +
 			"Use Effect.Service for service definitions to get automatic " +
 			"layer creation and better type inference.",
 		severity: "high",
@@ -585,8 +573,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "promise-all-in-effect",
 		title: "Use Effect.all instead of Promise.all",
-		message:
-			"Promise.all bypasses Effect's error channel and concurrency " +
+		message: "Promise.all bypasses Effect's error channel and concurrency " +
 			"controls. Use Effect.all with { concurrency: 'unbounded' } " +
 			"for parallel execution within Effect.",
 		severity: "high",
@@ -596,19 +583,17 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "mutable-ref-in-effect",
 		title: "Avoid mutable refs in Effect code",
-		message:
-			"Mutable variables (let) inside Effect.gen can cause subtle bugs. " +
+		message: "Mutable variables (let) inside Effect.gen can cause subtle bugs. " +
 			"Use Effect.Ref for managed mutable state or restructure to use " +
 			"immutable patterns.",
 		severity: "medium",
 		category: "style",
-		fixIds: [],
+		fixIds: ["use-ref-for-shared-state"],
 	},
 	{
 		id: "console-log-in-effect",
 		title: "Use Effect logging instead of console",
-		message:
-			"console.log/warn/error bypass Effect's logging infrastructure. " +
+		message: "console.log/warn/error bypass Effect's logging infrastructure. " +
 			"Use Effect.log, Effect.logWarning, or Effect.logError for " +
 			"structured, composable logging.",
 		severity: "medium",
@@ -618,30 +603,27 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "effect-runSync-unsafe",
 		title: "Avoid Effect.runSync in production code",
-		message:
-			"Effect.runSync throws on async operations and bypasses proper " +
+		message: "Effect.runSync throws on async operations and bypasses proper " +
 			"resource management. Use Effect.runPromise or provide effects " +
 			"to a managed runtime instead.",
 		severity: "high",
 		category: "async",
-		fixIds: [],
+		fixIds: ["scope-resources-before-run"],
 	},
 	{
 		id: "missing-error-channel",
 		title: "Effect may fail but error type is never",
-		message:
-			"This Effect can fail at runtime but declares never as its error " +
+		message: "This Effect can fail at runtime but declares never as its error " +
 			"type. Add proper error handling with Effect.catchAll or declare " +
 			"the error type explicitly.",
 		severity: "high",
 		category: "errors",
-		fixIds: [],
+		fixIds: ["add-error-payload-fields"],
 	},
 	{
 		id: "layer-provide-anti-pattern",
 		title: "Provide layers at composition root",
-		message:
-			"Calling Layer.provide inside service implementations couples " +
+		message: "Calling Layer.provide inside service implementations couples " +
 			"services tightly. Provide layers at the application composition " +
 			"root for better testability.",
 		severity: "medium",
@@ -651,8 +633,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "effect-gen-no-yield",
 		title: "Effect.gen without yield* is wasteful",
-		message:
-			"Effect.gen(function* () { return value }) can be simplified to " +
+		message: "Effect.gen(function* () { return value }) can be simplified to " +
 			"Effect.succeed(value). Use Effect.gen only when you need to " +
 			"yield* other effects.",
 		severity: "low",
@@ -662,8 +643,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "schema-decode-unknown",
 		title: "Use Schema.decodeUnknown for external data",
-		message:
-			"Parsing external data (JSON.parse, request.json()) without " +
+		message: "Parsing external data (JSON.parse, request.json()) without " +
 			"validation is unsafe. Use Schema.decodeUnknown to validate " +
 			"and type external inputs.",
 		severity: "high",
@@ -674,61 +654,55 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "effect-run-promise-boundary",
 		title: "Effect.runPromise/Effect.runSync used outside boundary",
-		message:
-			"Effect.runPromise and Effect.runSync should only be used at application " +
+		message: "Effect.runPromise and Effect.runSync should only be used at application " +
 			"boundaries (main, CLI, route handlers). In library code, prefer " +
 			"composing effects and returning them to the caller.",
 		severity: "high",
 		category: "async",
-		fixIds: [],
+		fixIds: ["scope-resources-before-run"],
 	},
 	{
 		id: "throw-in-effect-pipeline",
 		title: "Throw statement inside Effect pipeline",
-		message:
-			"Using 'throw new Error()' inside Effect.map/flatMap/gen callbacks bypasses " +
+		message: "Using 'throw new Error()' inside Effect.map/flatMap/gen callbacks bypasses " +
 			"Effect's typed error channel. Use Effect.fail or Effect.die instead.",
 		severity: "high",
 		category: "errors",
-		fixIds: [],
+		fixIds: ["replace-throw-with-effect-fail"],
 	},
 	{
 		id: "swallow-failures-without-logging",
 		title: "Effect failures swallowed without logging or typed fallback",
-		message:
-			"catchAll(() => Effect.succeed(...)) without logging or returning a typed " +
+		message: "catchAll(() => Effect.succeed(...)) without logging or returning a typed " +
 			"fallback result can hide failures. Either log the error or return " +
 			"Option/Either to explicitly handle absence.",
 		severity: "high",
 		category: "errors",
-		fixIds: [],
+		fixIds: ["add-logging-to-catchall"],
 	},
 	{
 		id: "generic-error-type",
 		title: "Effect<*, Error> used instead of tagged errors",
-		message:
-			"Using generic Error in the error channel loses type information. " +
+		message: "Using generic Error in the error channel loses type information. " +
 			"Prefer Data.TaggedError or specific error types for better error handling.",
 		severity: "medium",
 		category: "errors",
-		fixIds: [],
+		fixIds: ["replace-generic-error-with-tagged"],
 	},
 	{
 		id: "incorrect-promise-bridge",
 		title: "Effect.promise/Effect.tryPromise used incorrectly",
-		message:
-			"Promise bridge usage may lose interruption/timeout semantics. " +
+		message: "Promise bridge usage may lose interruption/timeout semantics. " +
 			"Ensure proper cancellation handling or use Effect.suspend for lazy evaluation.",
 		severity: "medium",
 		category: "async",
-		fixIds: [],
+		fixIds: ["replace-promise-apis-with-effect"],
 	},
 	// Concurrency & fiber hygiene
 	{
 		id: "fire-and-forget-fork",
 		title: "Fiber fork without supervision or await strategy",
-		message:
-			"Fire-and-forget Effect.fork without Fiber.join, Fiber.interrupt, or proper " +
+		message: "Fire-and-forget Effect.fork without Fiber.join, Fiber.interrupt, or proper " +
 			"supervision can cause resource leaks and unhandled failures.",
 		severity: "high",
 		category: "concurrency",
@@ -737,8 +711,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "unbounded-parallelism",
 		title: "Effect.all without concurrency limit",
-		message:
-			"Effect.all with large arrays without concurrency limits can cause resource " +
+		message: "Effect.all with large arrays without concurrency limits can cause resource " +
 			"exhaustion. Add { concurrency: n } or use Effect.forEachWithConcurrency.",
 		severity: "medium",
 		category: "concurrency",
@@ -747,8 +720,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "blocking-calls-in-effect",
 		title: "Blocking synchronous calls inside Effect",
-		message:
-			"Synchronous filesystem/crypto/zlib work inside Effect blocks the event loop. " +
+		message: "Synchronous filesystem/crypto/zlib work inside Effect blocks the event loop. " +
 			"Use Effect.offload to move blocking operations to a separate thread pool.",
 		severity: "medium",
 		category: "concurrency",
@@ -758,8 +730,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "manual-resource-lifecycle",
 		title: "Manual resource lifecycle instead of acquireRelease",
-		message:
-			"Manual try/finally resource cleanup in Effect context is error-prone. " +
+		message: "Manual try/finally resource cleanup in Effect context is error-prone. " +
 			"Use Effect.acquireRelease for automatic resource management.",
 		severity: "high",
 		category: "resources",
@@ -768,8 +739,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "leaking-scopes",
 		title: "Resource scope leakage",
-		message:
-			"Creating Scope/resources without tying them to effect lifetime can cause " +
+		message: "Creating Scope/resources without tying them to effect lifetime can cause " +
 			"resource leaks. Use Effect.scoped or proper scope management.",
 		severity: "medium",
 		category: "resources",
@@ -779,8 +749,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "node-platform-in-shared-code",
 		title: "Node.js platform imports in shared code",
-		message:
-			"node:fs, node:process usage should be limited to Node boundary packages. " +
+		message: "node:fs, node:process usage should be limited to Node boundary packages. " +
 			"Use @effect/platform services for portable code.",
 		severity: "high",
 		category: "platform",
@@ -789,8 +758,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "console-log-in-effect-flow",
 		title: "Console logging in Effect flows",
-		message:
-			"console.log inside Effect bypasses structured logging. " +
+		message: "console.log inside Effect bypasses structured logging. " +
 			"Use Effect.log/logWarning/logError for composable logging.",
 		severity: "medium",
 		category: "style",
@@ -800,8 +768,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "any-type-usage",
 		title: "any type usage without narrowing",
-		message:
-			"Using any bypasses TypeScript's type checking. " +
+		message: "Using any bypasses TypeScript's type checking. " +
 			"Replace with specific types or Schema validation.",
 		severity: "high",
 		category: "types",
@@ -810,8 +777,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "unknown-without-narrowing",
 		title: "unknown type without type guard narrowing",
-		message:
-			"unknown without type guards provides no safety. " +
+		message: "unknown without type guards provides no safety. " +
 			"Add type guards or Schema.decodeUnknown for validation.",
 		severity: "medium",
 		category: "types",
@@ -820,8 +786,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "non-null-assertions",
 		title: "Non-null assertions (!) used",
-		message:
-			"Non-null assertions can cause runtime errors. " +
+		message: "Non-null assertions can cause runtime errors. " +
 			"Use optional chaining or proper type guards instead.",
 		severity: "medium",
 		category: "types",
@@ -829,9 +794,8 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	},
 	{
 		id: "default-exports-in-core",
-		title: "Default exports in core packages",
-		message:
-			"Default exports in library packages create inconsistent import styles. " +
+		title: "Default exports in library packages create inconsistent import styles",
+		message: "Default exports in library packages create inconsistent import styles. " +
 			"Use named exports for better tree-shaking and consistency.",
 		severity: "low",
 		category: "style",
@@ -841,18 +805,16 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "duplicate-pattern-ids",
 		title: "Duplicate pattern IDs detected",
-		message:
-			"Multiple patterns with the same ID found. This breaks agent lookup " +
+		message: "Multiple patterns with the same ID found. This breaks agent lookup " +
 			"and causes unpredictable behavior.",
 		severity: "high",
 		category: "style",
-		fixIds: [],
+		fixIds: [], // No automated fix - requires manual resolution of duplicate IDs
 	},
 	{
 		id: "unreachable-rule-declaration",
 		title: "Rule declared but not registered",
-		message:
-			"Rule is exported but not included in the rule registry. " +
+		message: "Rule is exported but not included in the rule registry. " +
 			"Add to Rules array to make it available for analysis.",
 		severity: "medium",
 		category: "style",
@@ -861,8 +823,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "missing-rule-documentation",
 		title: "Rule registered but missing documentation",
-		message:
-			"Rule exists in registry but lacks proper documentation. " +
+		message: "Rule exists in registry but lacks proper documentation. " +
 			"Add description, examples, and fix information.",
 		severity: "low",
 		category: "style",
@@ -872,19 +833,17 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "run-effect-outside-boundary",
 		title: "Running Effects Outside Boundaries",
-		message:
-			"Using Effect.runPromise, runSync, runFork inside library or business logic. " +
+		message: "Using Effect.runPromise, runSync, runFork inside library or business logic. " +
 			"Breaks composability, makes testing difficult, and bypasses dependency injection. " +
 			"Only use at CLI entrypoints, HTTP route handlers, main() functions, or scripts.",
 		severity: "high",
 		category: "async",
-		fixIds: [],
+		fixIds: ["scope-resources-before-run"],
 	},
 	{
 		id: "yield-instead-of-yield-star",
 		title: "Using yield Instead of yield* in Effect.gen",
-		message:
-			"Using 'yield effect' instead of 'yield* effect' in Effect.gen. " +
+		message: "Using 'yield effect' instead of 'yield* effect' in Effect.gen. " +
 			"'yield' returns the Effect value instead of executing it, leading to silent bugs. " +
 			"This is one of the most common real-world Effect bugs.",
 		severity: "high",
@@ -894,8 +853,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "throw-inside-effect-logic",
 		title: "Throwing Inside Effect Logic",
-		message:
-			"Using 'throw' inside Effect.gen or callbacks to map/flatMap/tap. " +
+		message: "Using 'throw' inside Effect.gen or callbacks to map/flatMap/tap. " +
 			"Bypasses the typed error channel and turns expected failures into defects. " +
 			"Return Effect.fail(...) with tagged error types instead.",
 		severity: "high",
@@ -905,8 +863,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "async-callbacks-in-effect-combinators",
 		title: "Async Callbacks Passed to Effect Combinators",
-		message:
-			"Using async callbacks in Effect.map, flatMap, tap etc. " +
+		message: "Using async callbacks in Effect.map, flatMap, tap etc. " +
 			"Returns Promise instead of Effect, resulting in Effect<Promise<A>>. " +
 			"Escapes Effect's interruption and error model. Use Effect-returning callbacks.",
 		severity: "high",
@@ -916,8 +873,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "or-die-outside-boundaries",
 		title: "Using orDie/orDieWith Outside Boundaries",
-		message:
-			"Using orDie/orDieWith outside application boundaries. " +
+		message: "Using orDie/orDieWith outside application boundaries. " +
 			"Converts recoverable errors into defects, makes failures invisible to callers, " +
 			"and breaks retry and fallback logic. Only use at application boundaries.",
 		severity: "high",
@@ -927,8 +883,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "swallowing-errors-in-catchall",
 		title: "Swallowing Errors in catchAll",
-		message:
-			"Using Effect.catchAll(() => Effect.succeed(...)) without logging or documentation. " +
+		message: "Using Effect.catchAll(() => Effect.succeed(...)) without logging or documentation. " +
 			"Errors disappear silently, leading to corrupt state and making debugging impossible. " +
 			"Add explicit logging/telemetry or clearly document the intent.",
 		severity: "high",
@@ -938,8 +893,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "effect-ignore-on-failable-effects",
 		title: "Using Effect.ignore on Failable Effects",
-		message:
-			"Using Effect.ignore on effects that can fail. " +
+		message: "Using Effect.ignore on effects that can fail. " +
 			"Silently discards failures and often hides bugs during refactors. " +
 			"Use explicit error handling or logging instead.",
 		severity: "medium",
@@ -949,8 +903,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "try-catch-inside-effect-logic",
 		title: "Using try/catch Inside Effect Logic",
-		message:
-			"Using try/catch inside Effect callbacks or generators. " +
+		message: "Using try/catch inside Effect callbacks or generators. " +
 			"Duplicates Effect's error model, encourages imperative escape hatches, " +
 			"and leads to inconsistent failure handling. Use Effect.try/Effect.tryPromise instead.",
 		severity: "medium",
@@ -960,8 +913,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "promise-apis-inside-effect-logic",
 		title: "Promise APIs Used Inside Effect Logic",
-		message:
-			"Using Promise.all, .then, .catch, .finally inside Effect callbacks. " +
+		message: "Using Promise.all, .then, .catch, .finally inside Effect callbacks. " +
 			"Bypasses interruption semantics, loses structured error handling, " +
 			"and is harder to test and observe. Use Effect.all, Effect.map, Effect.catchAll instead.",
 		severity: "medium",
@@ -971,8 +923,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "public-apis-returning-generic-error",
 		title: "Public APIs Returning Effect<*, Error>",
-		message:
-			"Public APIs returning Effect<*, Error> instead of tagged error types. " +
+		message: "Public APIs returning Effect<*, Error> instead of tagged error types. " +
 			"Generic Error carries no semantic meaning, makes migrations harder, " +
 			"and weakens observability. Use tagged/domain-specific error types.",
 		severity: "medium",
@@ -983,8 +934,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "large-switch-statement",
 		title: "Large Switch Statement",
-		message:
-			"Large switch statements (≥5 cases) often indicate missing domain modeling or ad-hoc error routing. " +
+		message: "Large switch statements (≥5 cases) often indicate missing domain modeling or ad-hoc error routing. " +
 			"In Effect code, this usually means: (1) hidden domain logic instead of modeled data, " +
 			"(2) ad-hoc error routing instead of typed error handling, or (3) control flow doing work the type system should do. " +
 			"Consider tagged unions with pattern matching, Effect combinators (catchTag, handler maps), or explicit domain modeling. " +
@@ -997,8 +947,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "error-as-public-type",
 		title: "Using Error as Public Error Type",
-		message:
-			"Using generic Error as the public error type in Effect<Success, Error>. " +
+		message: "Using generic Error as the public error type in Effect<Success, Error>. " +
 			"Loses domain meaning, makes retries and recovery vague, breaks error-specific handling, and weakens observability. " +
 			"Use tagged error unions or domain-specific error types instead.",
 		severity: "medium",
@@ -1008,8 +957,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "mixed-error-shapes",
 		title: "Mixing Multiple Error Shapes in One Effect",
-		message:
-			"Using mixed error types like Effect<Success, Error | string | number>. " +
+		message: "Using mixed error types like Effect<Success, Error | string | number>. " +
 			"Forces defensive programming everywhere, indicates missing normalization boundary, and makes pattern matching unreliable. " +
 			"Normalize errors at boundaries and convert to a single tagged error model.",
 		severity: "high",
@@ -1019,8 +967,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "convert-errors-to-strings-early",
 		title: "Converting Errors to Strings Early",
-		message:
-			"Using Effect.fail(error.message) or converting errors to strings early. " +
+		message: "Using Effect.fail(error.message) or converting errors to strings early. " +
 			"Destroys structure, loses causal context, and makes tracing and metrics useless. " +
 			"Preserve error data and attach human-readable messages later (UI/logging).",
 		severity: "medium",
@@ -1030,8 +977,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "catch-and-rethrow-generic",
 		title: "Catch-and-Rethrow with Generic Errors",
-		message:
-			"Using Effect.catchAll(() => Effect.fail(new Error('failed'))) pattern. " +
+		message: "Using Effect.catchAll(() => Effect.fail(new Error('failed'))) pattern. " +
 			"Loses original failure information, hides root causes, and breaks retries based on error type. " +
 			"Wrap errors with context while preserving the original error as a cause.",
 		severity: "high",
@@ -1041,8 +987,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "catching-errors-too-early",
 		title: "Catching Errors Too Early",
-		message:
-			"Catching errors deep inside business logic instead of letting them propagate. " +
+		message: "Catching errors deep inside business logic instead of letting them propagate. " +
 			"Prevents higher-level recovery strategies, forces decisions at the wrong layer, and reduces composability. " +
 			"Let errors flow upward and handle them at meaningful boundaries.",
 		severity: "medium",
@@ -1052,8 +997,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "expected-states-as-errors",
 		title: "Treating Expected Domain States as Errors",
-		message:
-			"Using Effect.fail('NotFound') or similar for expected domain states. " +
+		message: "Using Effect.fail('NotFound') or similar for expected domain states. " +
 			"Overloads the error channel, makes control flow unclear, and encourages excessive catchAll. " +
 			"Model expected states as data using Option, Either, or tagged results.",
 		severity: "medium",
@@ -1063,8 +1007,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "exceptions-for-domain-errors",
 		title: "Using Exceptions for Domain Errors",
-		message:
-			"Using throw new DomainError(...) inside Effect logic. " +
+		message: "Using throw new DomainError(...) inside Effect logic. " +
 			"Bypasses typed error channel, breaks observability, and escapes supervision. " +
 			"Use Effect.fail(DomainError) to keep all failures in the error channel.",
 		severity: "high",
@@ -1074,8 +1017,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "error-tags-without-payloads",
 		title: "Error Tags Without Payloads",
-		message:
-			"Defining error types with only _tag field like { _tag: 'MyError' }. " +
+		message: "Defining error types with only _tag field like { _tag: 'MyError' }. " +
 			"No context, no metadata, hard to debug in production. " +
 			"Include relevant fields (ids, causes, timestamps) for better observability.",
 		severity: "medium",
@@ -1085,8 +1027,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "overusing-unknown-error-channel",
 		title: "Overusing unknown as Error Channel",
-		message:
-			"Using Effect<Success, unknown> as error channel type. " +
+		message: "Using Effect<Success, unknown> as error channel type. " +
 			"Forces downstream type assertions, indicates missing modeling, and makes safe recovery difficult. " +
 			"Narrow error types as early as possible.",
 		severity: "medium",
@@ -1096,8 +1037,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "logging-instead-of-modeling-errors",
 		title: "Logging Errors Instead of Modeling Them",
-		message:
-			"Using Effect.tapError(e => Effect.log(e)) without structured error propagation. " +
+		message: "Using Effect.tapError(e => Effect.log(e)) without structured error propagation. " +
 			"Logging is not handling - errors still need meaning and shape. Logs disappear; types don't. " +
 			"Log AND model - keep errors structured and observable.",
 		severity: "medium",
@@ -1108,8 +1048,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "primitives-for-domain-concepts",
 		title: "Using Primitives for Domain Concepts",
-		message:
-			"Using primitive types (number, string) for domain concepts like function transfer(amount: number, accountId: string). " +
+		message: "Using primitive types (number, string) for domain concepts like function transfer(amount: number, accountId: string). " +
 			"Loses meaning and constraints, easy to mix up parameters, no place to enforce invariants. " +
 			"Use branded types, small domain wrappers, or schemas for validation.",
 		severity: "medium",
@@ -1119,8 +1058,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "boolean-flags-controlling-behavior",
 		title: "Boolean Flags Controlling Behavior",
-		message:
-			"Using boolean flags to control behavior like function process(user: User, isAdmin: boolean). " +
+		message: "Using boolean flags to control behavior like function process(user: User, isAdmin: boolean). " +
 			"Creates hidden branches, poor readability, and hard to extend safely. " +
 			"Use tagged unions or explicit modes/roles instead.",
 		severity: "medium",
@@ -1130,8 +1068,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "magic-string-domains",
 		title: "Magic String Domains",
-		message:
-			"Using magic string literals for domain states like if (status === 'approved'). " +
+		message: "Using magic string literals for domain states like if (status === 'approved'). " +
 			"No exhaustiveness checking, easy to drift during refactors, usually wants a union or enum. " +
 			"Use tagged unions or literal unions defined in one place.",
 		severity: "medium",
@@ -1141,8 +1078,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "objects-as-implicit-state-machines",
 		title: "Objects Used as Implicit State Machines",
-		message:
-			"Using object properties as implicit state like if (order.cancelled && !order.shipped). " +
+		message: "Using object properties as implicit state like if (order.cancelled && !order.shipped). " +
 			"Allows impossible states, creates complex conditional logic, no compiler assistance. " +
 			"Use explicit state models with tagged state transitions.",
 		severity: "medium",
@@ -1152,8 +1088,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "domain-logic-in-conditionals",
 		title: "Domain Logic Embedded in Conditionals",
-		message:
-			"Embedding business rules in conditionals like if (x > 100 && y < 10 && mode !== 'test'). " +
+		message: "Embedding business rules in conditionals like if (x > 100 && y < 10 && mode !== 'test'). " +
 			"Business rules are hidden, hard to test or reuse, encourages copy-paste logic. " +
 			"Extract into named domain functions or explicit rules/predicates.",
 		severity: "medium",
@@ -1163,8 +1098,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "adhoc-error-semantics-in-domain",
 		title: "Ad-Hoc Error Semantics in Domain Code",
-		message:
-			"Using ad-hoc error strings in domain code like Effect.fail('not allowed'). " +
+		message: "Using ad-hoc error strings in domain code like Effect.fail('not allowed'). " +
 			"Domain meaning is implicit, no structured recovery, difficult to observe or migrate. " +
 			"Use domain-specific error types with tagged errors and payloads.",
 		severity: "high",
@@ -1174,8 +1108,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "overloaded-config-objects",
 		title: "Overloaded Config or Options Objects",
-		message:
-			"Using overloaded config objects like function createThing(opts: any). " +
+		message: "Using overloaded config objects like function createThing(opts: any). " +
 			"Unclear required vs optional fields, silent misconfiguration, hard to validate. " +
 			"Use structured config schemas with separate types for variants.",
 		severity: "medium",
@@ -1185,8 +1118,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "domain-ids-as-raw-strings",
 		title: "Domain Identifiers as Raw Strings Everywhere",
-		message:
-			"Using raw strings for domain IDs like type UserId = string across modules. " +
+		message: "Using raw strings for domain IDs like type UserId = string across modules. " +
 			"IDs are interchangeable by accident, no place to attach semantics. " +
 			"Use branded IDs with constructor functions.",
 		severity: "medium",
@@ -1196,8 +1128,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "time-as-number-or-date",
 		title: "Time as number or Date in Domain Logic",
-		message:
-			"Using number or Date for time in domain logic like expiresAt: number. " +
+		message: "Using number or Date for time in domain logic like expiresAt: number. " +
 			"Units unclear (ms? seconds?), arithmetic errors, time logic becomes brittle. " +
 			"Use Duration or explicit time abstractions.",
 		severity: "medium",
@@ -1207,8 +1138,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "domain-meaning-from-file-structure",
 		title: "Domain Meaning Inferred from File Structure",
-		message:
-			"Encoding domain meaning implicitly by file location rather than types. " +
+		message: "Encoding domain meaning implicitly by file location rather than types. " +
 			"Hard to refactor, new contributors miss rules, tooling can't help. " +
 			"Use explicit domain types and names that encode intent.",
 		severity: "medium",
@@ -1219,8 +1149,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "unbounded-parallelism-effect-all",
 		title: "Unbounded Parallelism",
-		message:
-			"Using Effect.all(items.map(doWork)) without concurrency limits. " +
+		message: "Using Effect.all(items.map(doWork)) without concurrency limits. " +
 			"Can overwhelm services, no backpressure, memory spikes. " +
 			"Use Effect.forEach(items, { concurrency: N }) or Effect.all with concurrency option.",
 		severity: "high",
@@ -1230,8 +1159,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "fire-and-forget-forks",
 		title: "Fire-and-Forget Forks",
-		message:
-			"Using Effect.fork(effect) without join, supervision, or lifetime control. " +
+		message: "Using Effect.fork(effect) without join, supervision, or lifetime control. " +
 			"Leaks fibers, loses errors, hard to reason about shutdown. " +
 			"Add fiber.join, fiber.await, or proper supervision.",
 		severity: "high",
@@ -1241,8 +1169,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "forking-inside-loops",
 		title: "Forking Inside Loops",
-		message:
-			"Using Effect.fork inside for/while loops. " +
+		message: "Using Effect.fork inside for/while loops. " +
 			"Explosive concurrency, almost always accidental. " +
 			"Replace with Effect.forEach with concurrency control.",
 		severity: "high",
@@ -1252,8 +1179,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "racing-without-handling-losers",
 		title: "Racing Effects Without Handling Losers",
-		message:
-			"Using Effect.race(a, b) without understanding interruption semantics. " +
+		message: "Using Effect.race(a, b) without understanding interruption semantics. " +
 			"Loser fibers may hold resources, side effects may still run. " +
 			"Ensure proper cleanup and understand interruption behavior.",
 		severity: "high",
@@ -1263,8 +1189,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "blocking-calls-in-effect-logic",
 		title: "Blocking Calls Inside Effect Logic",
-		message:
-			"Using synchronous blocking operations (filesystem, crypto, compression, CPU-heavy work) inside Effect. " +
+		message: "Using synchronous blocking operations (filesystem, crypto, compression, CPU-heavy work) inside Effect. " +
 			"Blocks the fiber pool, starves unrelated work. " +
 			"Use Effect.blocking or offload to separate thread pool.",
 		severity: "high",
@@ -1274,8 +1199,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "promise-concurrency-in-effect",
 		title: "Using Promise Concurrency Instead of Effect",
-		message:
-			"Using Promise.all(...) inside Effect logic. " +
+		message: "Using Promise.all(...) inside Effect logic. " +
 			"No interruption, no supervision, no structured error handling. " +
 			"Replace with Effect.all for proper concurrency control.",
 		severity: "medium",
@@ -1285,8 +1209,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "ignoring-fiber-failures",
 		title: "Ignoring Fiber Failures",
-		message:
-			"Forked fiber fails but result is never observed. " +
+		message: "Forked fiber fails but result is never observed. " +
 			"Silent data loss, debugging nightmare. " +
 			"Add fiber.join or fiber.await to observe results.",
 		severity: "medium",
@@ -1296,8 +1219,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "retrying-concurrently-without-limits",
 		title: "Retrying Concurrently Without Limits",
-		message:
-			"Retrying parallel effects without coordination. " +
+		message: "Retrying parallel effects without coordination. " +
 			"Retry storms, thundering herd problems. " +
 			"Add retry coordination mechanisms or exponential backoff.",
 		severity: "high",
@@ -1307,8 +1229,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "shared-mutable-state-across-fibers",
 		title: "Shared Mutable State Across Fibers",
-		message:
-			"Using mutable objects captured by multiple fibers. " +
+		message: "Using mutable objects captured by multiple fibers. " +
 			"Race conditions, non-deterministic bugs. " +
 			"Use Effect.Ref for safe concurrent state management.",
 		severity: "high",
@@ -1318,8 +1239,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "timeouts-without-cancellation-awareness",
 		title: "Timeouts Without Cancellation Awareness",
-		message:
-			"Applying timeouts but inner effects ignore interruption. " +
+		message: "Applying timeouts but inner effects ignore interruption. " +
 			"Work continues after timeout, resources leak. " +
 			"Ensure inner effects properly handle interruption signals.",
 		severity: "medium",
@@ -1330,8 +1250,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "resources-without-acquire-release",
 		title: "Resources Created Without acquireRelease",
-		message:
-			"Manual open/close logic inside Effect without using Effect.acquireRelease. " +
+		message: "Manual open/close logic inside Effect without using Effect.acquireRelease. " +
 			"Cleanup not guaranteed, easy to miss failure paths. " +
 			"Use Effect.acquireRelease to ensure cleanup happens even on errors.",
 		severity: "high",
@@ -1341,8 +1260,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "returning-resources-instead-of-effects",
 		title: "Returning Resources Instead of Effects",
-		message:
-			"Using Effect.succeed(resource) to return a resource directly. " +
+		message: "Using Effect.succeed(resource) to return a resource directly. " +
 			"Lifetime escapes scope, callers can misuse resource. " +
 			"Return an effect that manages the resource lifetime instead.",
 		severity: "high",
@@ -1352,8 +1270,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "creating-scopes-without-binding",
 		title: "Creating Scopes Without Binding Them",
-		message:
-			"Creating a Scope but not tying it to the effect lifetime. " +
+		message: "Creating a Scope but not tying it to the effect lifetime. " +
 			"Cleanup never runs, leaks are invisible. " +
 			"Bind scopes to effect lifetime using Effect.scoped.",
 		severity: "high",
@@ -1363,8 +1280,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "long-lived-resources-in-short-scopes",
 		title: "Long-Lived Resources in Short-Lived Scopes",
-		message:
-			"Database clients, HTTP pools inside request scopes. " +
+		message: "Database clients, HTTP pools inside request scopes. " +
 			"Reconnection storms, performance degradation. " +
 			"Move long-lived resources to application layer.",
 		severity: "high",
@@ -1374,8 +1290,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "global-singletons-instead-of-layers",
 		title: "Using Global Singletons Instead of Layers",
-		message:
-			"Using const client = new Client() instead of Effect layers. " +
+		message: "Using const client = new Client() instead of Effect layers. " +
 			"Hard to test, hard to swap implementations, hidden lifecycle. " +
 			"Convert to Effect layer for proper lifecycle management.",
 		severity: "medium",
@@ -1385,8 +1300,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "closing-resources-manually",
 		title: "Closing Resources Manually",
-		message:
-			"Calling .close() explicitly inside Effect logic. " +
+		message: "Calling .close() explicitly inside Effect logic. " +
 			"Double-close bugs, missed paths. " +
 			"Use acquireRelease for automatic cleanup.",
 		severity: "medium",
@@ -1396,8 +1310,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "effect-run-with-open-resources",
 		title: "Effect.run* While Resources Are Open",
-		message:
-			"Running effects before all resources are scoped. " +
+		message: "Running effects before all resources are scoped. " +
 			"Cleanup skipped, shutdown hangs. " +
 			"Ensure all resources are properly scoped before running effects.",
 		severity: "high",
@@ -1407,8 +1320,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "nested-resource-acquisition",
 		title: "Nested Resource Acquisition",
-		message:
-			"Deeply nested acquireRelease blocks. " +
+		message: "Deeply nested acquireRelease blocks. " +
 			"Hard to reason about lifetime, indicates missing composition. " +
 			"Flatten into composable resource layers.",
 		severity: "medium",
@@ -1418,8 +1330,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "using-scope-global-for-convenience",
 		title: "Using Scope.global for Convenience",
-		message:
-			"Using Scope.global to avoid explicit scope management. " +
+		message: "Using Scope.global to avoid explicit scope management. " +
 			"Hides ownership, makes cleanup implicit. " +
 			"Use explicit scope management for clear resource ownership.",
 		severity: "medium",
@@ -1429,8 +1340,7 @@ const Rules: ReadonlyArray<RuleDefinition> = [
 	{
 		id: "forgetting-to-provide-layers",
 		title: "Forgetting to Provide Required Layers",
-		message:
-			"Effect expects a resource but relies on ambient context. " +
+		message: "Effect expects a resource but relies on ambient context. " +
 			"Runtime failures, environment confusion. " +
 			"Explicitly provide all required layers.",
 		severity: "medium",

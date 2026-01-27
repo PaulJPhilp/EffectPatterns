@@ -122,15 +122,22 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				const tui = yield* tuiService.load();
 
 				if (tui?.displayTable) {
+					type DisplayTableColumn = {
+						readonly key: string;
+						readonly header: string;
+						readonly width?: number;
+						readonly align?: "left" | "center" | "right";
+					};
+					const displayColumns: DisplayTableColumn[] = options.columns.map((col) => ({
+						key: String(col.key),
+						header: col.header,
+						width: col.width,
+						align: col.align,
+					}));
 					yield* Effect.promise(async () => tui.displayTable(data, {
-						columns: options.columns.map((col: any) => ({
-							key: String(col.key),
-							header: col.header,
-							width: col.width,
-							align: col.align,
-						})),
+						columns: displayColumns,
 						bordered: options.bordered,
-					} as any));
+					}));
 					return;
 				}
 

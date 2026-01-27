@@ -49,11 +49,11 @@ export const InstallLive = Layer.effect(
         if (!exists) return [];
 
         const content = yield* fs.readFileString(INSTALLED_STATE_FILE);
-        try {
-          return JSON.parse(content) as InstalledRule[];
-        } catch (e) {
-          return yield* Effect.fail(new Error(`Failed to parse ${INSTALLED_STATE_FILE}: ${e}`));
-        }
+        const rules = yield* Effect.try({
+          try: () => JSON.parse(content) as InstalledRule[],
+          catch: (e) => new Error(`Failed to parse ${INSTALLED_STATE_FILE}: ${e}`),
+        });
+        return rules;
       });
 
     const saveInstalledRules = (rules: InstalledRule[]) =>

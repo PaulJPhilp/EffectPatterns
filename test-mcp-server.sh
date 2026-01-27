@@ -4,7 +4,7 @@
 
 set -e
 
-API_KEY="${PATTERN_API_KEY:-ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84}"
+API_KEY="${PATTERN_API_KEY:-dev-key}"
 MCP_SERVER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/packages/mcp-server" && pwd)"
 
 echo "🧪 Testing Effect Patterns MCP Server..."

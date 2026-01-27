@@ -5,10 +5,10 @@
  */
 
 import {
-	createApplicationPatternRepository,
-	createDatabase,
-	createEffectPatternRepository,
-	createJobRepository,
+    createApplicationPatternRepository,
+    createDatabase,
+    createEffectPatternRepository,
+    createJobRepository,
 } from "@effect-patterns/toolkit";
 import { Args, Command, Options } from "@effect/cli";
 import { Effect } from "effect";
@@ -23,11 +23,23 @@ interface EntityResult {
 	slug: string;
 }
 
+interface EntityRecord {
+	id: string;
+	slug: string;
+}
+
+interface Repository {
+	findBySlug(slug: string): Promise<EntityRecord | null>;
+	findById(id: string): Promise<EntityRecord | null>;
+	lock(id: string): Promise<any>;
+	unlock(id: string): Promise<any>;
+}
+
 /**
  * Find an entity by slug or ID
  */
 const findEntity = (
-	repo: any,
+	repo: Repository,
 	identifier: string,
 	entityType: string
 ): Effect.Effect<EntityResult, Error> =>
@@ -55,20 +67,20 @@ const findEntity = (
 					new Error(`${entityType} "${identifier}" not found (tried as slug and ID)`)
 				);
 			}
-			return { id: (byId as any).id, slug: (byId as any).slug };
+			return { id: byId.id, slug: byId.slug };
 		}
-		return { id: (existing as any).id, slug: (existing as any).slug };
+		return { id: existing.id, slug: existing.slug };
 	});
 
 /**
  * Perform lock/unlock operation on an entity
  */
 const performEntityOperation = (
-	repo: any,
+	repo: Repository,
 	entityId: string,
 	action: "lock" | "unlock",
 	entityType: string
-): Effect.Effect<any, Error> =>
+): Effect.Effect<void, Error> =>
 	Effect.tryPromise({
 		try: () => (action === "lock" ? repo.lock(entityId) : repo.unlock(entityId)),
 		catch: (error) =>
@@ -80,7 +92,7 @@ const performEntityOperation = (
 /**
  * Get repository for entity type
  */
-const getRepository = (db: any, entityType: string) => {
+const getRepository = (db: any, entityType: string): Repository | null => {
 	switch (entityType) {
 		case "pattern":
 		case "effect-pattern":
@@ -143,22 +155,11 @@ export const handleEntityOperation = (
 		const entityName = getEntityDisplayName(entityType, entity.slug);
 
 		// Perform the operation
-		const result = yield* performEntityOperation(repo, entity.id, action, entityType);
-
-		if (!result) {
-			yield* Display.showError(`Failed to ${action} ${entityName}`);
-			return;
-		}
+		yield* performEntityOperation(repo, entity.id, action, entityType);
 
 		// Show success
 		const actionText = action === "lock" ? "locked (validated)" : "unlocked";
 		yield* Display.showSuccess(`${entityName} has been ${actionText}`);
-		yield* Display.showText(`  • Validated: ${result.validated ? "Yes" : "No"}`);
-		if (action === "lock" && result.validatedAt) {
-			yield* Display.showText(
-				`  • Validated at: ${result.validatedAt.toISOString()}`
-			);
-		}
 	}).pipe(
 		Effect.catchAll((error) =>
 			Effect.gen(function* () {

@@ -22,23 +22,21 @@ export const searchCommand = Command.make("search", {
   Command.withHandler(({ args }) =>
     Effect.gen(function* () {
       const { db } = createDatabase();
-      try {
-        const repo = createEffectPatternRepository(db);
-        const results = yield* Effect.tryPromise({
-          try: () => repo.search({ query: args.query, limit: 10 }),
-          catch: (e) => new Error(`Search failed: ${e}`),
-        });
+      yield* Effect.addFinalizer(() => closeDatabaseSafely(db).pipe(Effect.ignoreLogged));
 
-        if (results.length === 0) {
-          yield* Display.showError(`No patterns found for "${args.query}"`);
-        } else {
-          yield* Console.log(`\nFound ${results.length} pattern(s):\n`);
-          for (const p of results) {
-            yield* Console.log(`  • ${p.title} (${p.slug})`);
-          }
+      const repo = createEffectPatternRepository(db);
+      const results = yield* Effect.tryPromise({
+        try: () => repo.search({ query: args.query, limit: 10 }),
+        catch: (e) => new Error(`Search failed: ${e}`),
+      });
+
+      if (results.length === 0) {
+        yield* Display.showError(`No patterns found for "${args.query}"`);
+      } else {
+        yield* Console.log(`\nFound ${results.length} pattern(s):\n`);
+        for (const p of results) {
+          yield* Console.log(`  • ${p.title} (${p.slug})`);
         }
-      } finally {
-        yield* closeDatabaseSafely(db);
       }
     })
   )
@@ -65,19 +63,17 @@ export const listCommand = Command.make("list", {
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
       const { db } = createDatabase();
-      try {
-        const repo = createEffectPatternRepository(db);
-        const results = yield* Effect.tryPromise({
-          try: () => repo.search({}),
-          catch: (e) => new Error(`List failed: ${e}`),
-        });
+      yield* Effect.addFinalizer(() => closeDatabaseSafely(db).pipe(Effect.ignoreLogged));
 
-        yield* Console.log(`\nTotal Patterns: ${results.length}\n`);
-        for (const p of results) {
-          yield* Console.log(`  • ${p.title} (${p.slug})`);
-        }
-      } finally {
-        yield* closeDatabaseSafely(db);
+      const repo = createEffectPatternRepository(db);
+      const results = yield* Effect.tryPromise({
+        try: () => repo.search({}),
+        catch: (e) => new Error(`List failed: ${e}`),
+      });
+
+      yield* Console.log(`\nTotal Patterns: ${results.length}\n`);
+      for (const p of results) {
+        yield* Console.log(`  • ${p.title} (${p.slug})`);
       }
     })
   )
@@ -93,22 +89,20 @@ export const showCommand = Command.make("show", {
   Command.withHandler(({ args }) =>
     Effect.gen(function* () {
       const { db } = createDatabase();
-      try {
-        const repo = createEffectPatternRepository(db);
-        const p = yield* Effect.tryPromise({
-          try: () => repo.findBySlug(args.patternId),
-          catch: (e) => new Error(`Show failed: ${e}`),
-        });
+      yield* Effect.addFinalizer(() => closeDatabaseSafely(db).pipe(Effect.ignoreLogged));
 
-        if (!p) {
-          yield* Display.showError(`Pattern "${args.patternId}" not found`);
-          return;
-        }
+      const repo = createEffectPatternRepository(db);
+      const p = yield* Effect.tryPromise({
+        try: () => repo.findBySlug(args.patternId),
+        catch: (e) => new Error(`Show failed: ${e}`),
+      });
 
-        yield* Display.showPanel(p.summary, p.title);
-      } finally {
-        yield* closeDatabaseSafely(db);
+      if (!p) {
+        yield* Display.showError(`Pattern "${args.patternId}" not found`);
+        return;
       }
+
+      yield* Display.showPanel(p.summary, p.title);
     })
   )
 );

@@ -285,29 +285,31 @@ export function checkErrorModel(
 		const line = lines[i];
 
 		if (
-			(line.includes("Effect<") && line.includes(", Error,")) ||
-			(line.includes("Effect.fail") && line.includes("new Error("))
+			!((line.includes("Effect<") && line.includes(", Error,")) ||
+			(line.includes("Effect.fail") && line.includes("new Error(")))
 		) {
-			if (
-				line.trim().startsWith("//") ||
-				lines[i - 1]?.includes("Anti-Pattern") ||
-				lines[i - 1]?.includes("Bad:")
-			) {
-				continue;
-			}
-
-			issues.push({
-				rule: "effect-error-model",
-				severity: "info",
-				message:
-					"Consider using typed errors (Data.TaggedError) instead of " +
-					"generic Error",
-				line: i + 1,
-				column: line.indexOf("Error") + 1,
-				suggestion:
-					"Define: class MyError extends Data.TaggedError('MyError')<{...}>",
-			});
+			continue;
 		}
+
+		if (
+			line.trim().startsWith("//") ||
+			lines[i - 1]?.includes("Anti-Pattern") ||
+			lines[i - 1]?.includes("Bad:")
+		) {
+			continue;
+		}
+
+		issues.push({
+			rule: "effect-error-model",
+			severity: "info",
+			message:
+				"Consider using typed errors (Data.TaggedError) instead of " +
+				"generic Error",
+			line: i + 1,
+			column: line.indexOf("Error") + 1,
+			suggestion:
+				"Define: class MyError extends Data.TaggedError('MyError')<{...}>",
+		});
 	}
 
 	return issues;

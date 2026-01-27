@@ -342,11 +342,11 @@ export class MCPCacheService extends Effect.Service<MCPCacheService>()(
       /**
        * Get or set pattern (common use case)
        */
-      const getOrSet = <T, E>(
+      const getOrSet = <T, E, R>(
         key: string,
-        fetcher: () => Effect.Effect<T, E>,
+        fetcher: () => Effect.Effect<T, E, R>,
         ttl?: number
-      ): Effect.Effect<T, E> => {
+      ): Effect.Effect<T, E, R> => {
         return Effect.gen(function* () {
           const result = yield* get<T>(key);
 

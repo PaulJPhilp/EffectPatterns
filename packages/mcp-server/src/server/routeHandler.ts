@@ -45,7 +45,7 @@ export interface RouteHandlerOptions {
 /**
  * Response with metadata
  */
-export interface RoutResponse<T> {
+export interface RouteResponse<T> {
   data: T;
   traceId?: string;
   timestamp?: string;

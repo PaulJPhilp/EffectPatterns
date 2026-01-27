@@ -13,7 +13,7 @@
     "mcp:http": "bun build --target=node --outdir=dist src/mcp-streamable-http.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-dev-key} bun dist/mcp-streamable-http.js",
     "mcp:http:debug": "bun build --target=node --outdir=dist src/mcp-streamable-http.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-dev-key} MCP_DEBUG=true bun dist/mcp-streamable-http.js",
     "mcp:oauth:test": "bun -e 'import { generatePKCE } from \"./src/auth/pkce.js\"; console.log(\"🔐 PKCE Test:\", generatePKCE());'",
-    "mcp:production": "bun build --target=node --outdir=dist src/mcp-production-client.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84} bun dist/mcp-production-client.js",
+    "mcp:production": "bun build --target=node --outdir=dist src/mcp-production-client.ts && bun dist/mcp-production-client.js",
     "mcp:build": "bun build --target=node --outdir=dist src/mcp-stdio.ts",
     "test": "bunx vitest run",
     "test:unit": "bunx vitest run",

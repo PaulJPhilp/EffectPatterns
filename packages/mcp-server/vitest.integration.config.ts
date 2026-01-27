@@ -1,6 +1,9 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  resolve: {
+    extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs"],
+  },
   test: {
     globals: true,
     environment: "node",
@@ -12,9 +15,5 @@ export default defineConfig({
     ],
     testTimeout: 30_000,
     hookTimeout: 30_000,
-    // Resolve .ts and .js files
-    resolve: {
-      extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs"],
-    },
   },
 });

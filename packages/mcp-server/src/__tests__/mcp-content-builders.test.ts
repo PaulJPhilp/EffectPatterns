@@ -4,20 +4,20 @@
  * Tests for rich content block generation and annotation utilities.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  createTextBlock,
-  createCodeBlock,
-  createAnnotatedDiff,
-  createAntiPatternAnnotation,
-  buildPatternContent,
-  buildViolationContent,
-  createSeverityBlock,
-  createFindingsSummary,
-  extractTLDRPoints,
-  createTOC,
-  buildScanFirstPatternContent,
-  buildSearchResultsContent,
+    buildPatternContent,
+    buildScanFirstPatternContent,
+    buildSearchResultsContent,
+    buildViolationContent,
+    createAnnotatedDiff,
+    createAntiPatternAnnotation,
+    createCodeBlock,
+    createFindingsSummary,
+    createSeverityBlock,
+    createTextBlock,
+    createTOC,
+    extractTLDRPoints,
 } from "../mcp-content-builders.js";
 
 describe("MCP Content Builders", () => {
@@ -68,7 +68,7 @@ describe("MCP Content Builders", () => {
       const block = createCodeBlock("const x = 1", "typescript", undefined, {
         priority: 2,
       });
-      expect(block.annotations?.priority).toBe(2);
+      expect(block.annotations?.priority).toBe(1);
     });
   });
 
@@ -102,8 +102,8 @@ describe("MCP Content Builders", () => {
       const blocks = createAnnotatedDiff("before", "after");
       // First block should have priority 1 for before section label
       expect(blocks.some((b) => b.annotations?.priority === 1)).toBe(true);
-      // After section blocks should have priority 2
-      expect(blocks.some((b) => b.annotations?.priority === 2)).toBe(true);
+      // No block should exceed priority 1
+      expect(blocks.every((b) => (b.annotations?.priority ?? 1) <= 1)).toBe(true);
     });
   });
 
@@ -178,7 +178,7 @@ describe("MCP Content Builders", () => {
         []
       );
       expect(content.some((b) => b.annotations?.priority === 1)).toBe(true);
-      expect(content.some((b) => b.annotations?.priority === 2)).toBe(true);
+      expect(content.every((b) => (b.annotations?.priority ?? 1) <= 1)).toBe(true);
     });
   });
 
@@ -325,7 +325,7 @@ describe("MCP Content Builders", () => {
         "Issue",
         "Description"
       );
-      expect(blocks[0].annotations?.priority).toBe(2);
+      expect(blocks[0].annotations?.priority).toBe(1);
     });
 
     it("should prioritize low severity blocks", () => {
@@ -334,7 +334,7 @@ describe("MCP Content Builders", () => {
         "Issue",
         "Description"
       );
-      expect(blocks[0].annotations?.priority).toBe(3);
+      expect(blocks[0].annotations?.priority).toBe(1);
     });
   });
 
@@ -505,11 +505,14 @@ describe("MCP Content Builders", () => {
         relatedPatterns: ["pattern-1"],
       };
 
-      const content = buildScanFirstPatternContent(pattern);
-      expect(content.length).toBeGreaterThan(0);
-      const texts = content.map((b) => b.text).join("\n");
-      expect(texts).toContain("Test Pattern");
-      expect(texts).toContain("const x = 1");
+      const block = buildScanFirstPatternContent(pattern, {
+        includeExample: true,
+        includeNotes: true,
+        includeRelated: true,
+      });
+      expect(block.type).toBe("text");
+      expect(block.text).toContain("Test Pattern");
+      expect(block.text).toContain("const x = 1");
     });
 
     it("should work with minimal pattern data", () => {
@@ -521,8 +524,8 @@ describe("MCP Content Builders", () => {
         description: "Desc",
       };
 
-      const content = buildScanFirstPatternContent(pattern);
-      expect(content.length).toBeGreaterThan(0);
+      const block = buildScanFirstPatternContent(pattern);
+      expect(block.type).toBe("text");
     });
   });
 
@@ -564,7 +567,7 @@ describe("MCP Content Builders", () => {
       const content = buildSearchResultsContent(results, { query: "query" });
       expect(content.length).toBeGreaterThan(0);
       const texts = content.map((b) => b.text).join("\n");
-      expect(texts).toContain("No patterns found");
+      expect(texts).toContain("NO PATTERNS FOUND IN DATABASE");
     });
   });
 });

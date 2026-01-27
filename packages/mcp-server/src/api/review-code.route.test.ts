@@ -164,6 +164,6 @@ const e: any = 5;
 
 		expect(data.markdown).toContain("# Code Review Results");
 		expect(data.markdown).toMatch(/🔴|🟡|🔵/);
-		expect(data.markdown).toContain("**Line");
+		expect(data.markdown).toContain("_Lines");
 	});
 });

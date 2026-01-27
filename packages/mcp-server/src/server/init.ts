@@ -57,7 +57,12 @@ const makePatternsService = Effect.gen(function* () {
       `patterns:by-id:${id}`, // Unique cache key per pattern
       () =>
         Effect.gen(function* () {
-          const pattern = yield* findEffectPatternBySlug(id);
+          const pattern = yield* findEffectPatternBySlug(id).pipe(
+            Effect.catchAll(() => {
+              // If database lookup fails, return null (pattern not found)
+              return Effect.succeed(null);
+            })
+          );
           return pattern ?? undefined;
         }),
       86400000 // 24 hours TTL in milliseconds

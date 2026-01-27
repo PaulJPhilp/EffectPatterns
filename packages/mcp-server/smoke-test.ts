@@ -11,7 +11,13 @@
  */
 
 const BASE_URL = process.argv[2] || "http://localhost:3000";
-const API_KEY = process.argv[3] || "test-api-key";
+// For local dev, use empty string if no key provided (server allows open access in dev mode)
+// For remote, require explicit API key
+const API_KEY = process.argv[3] !== undefined 
+  ? process.argv[3] 
+  : BASE_URL.includes("localhost") || BASE_URL.includes("127.0.0.1")
+    ? "" // Empty string for local dev (no auth required)
+    : "test-api-key"; // Default for remote servers
 
 // Remove trailing slash
 const baseUrl = BASE_URL.replace(/\/$/, "");
@@ -35,6 +41,15 @@ function printHeader(text: string) {
   console.log(`\n${colors.blue}${"=".repeat(50)}${colors.reset}`);
   console.log(`${colors.blue}${text}${colors.reset}`);
   console.log(`${colors.blue}${"=".repeat(50)}${colors.reset}\n`);
+}
+
+// Helper to create headers with optional API key
+function createHeaders(additionalHeaders: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = { ...additionalHeaders };
+  if (API_KEY) {
+    headers["x-api-key"] = API_KEY;
+  }
+  return headers;
 }
 
 function printTest(text: string) {
@@ -105,7 +120,10 @@ function assertNotNull<T>(
 async function runSmokeTests() {
   printHeader("Effect Patterns MCP Server - Smoke Tests");
   printInfo(`Base URL: ${baseUrl}`);
-  printInfo(`API Key: ${API_KEY.substring(0, 10)}...`);
+  printInfo(`API Key: ${API_KEY ? `${API_KEY.substring(0, 10)}...` : "(none - open access mode)"}`);
+  
+  // Check if server allows open access (dev mode)
+  const isOpenMode = API_KEY === "";
 
   // Test 1: Health Check (No Auth)
   await runTest("Health check endpoint (no auth required)", async () => {
@@ -127,27 +145,33 @@ async function runSmokeTests() {
     assert(traceId.length > 0, "Trace ID should not be empty");
   });
 
-  // Test 3: Patterns Requires Auth
-  await runTest("Patterns endpoint requires authentication", async () => {
-    const response = await fetch(`${baseUrl}/api/patterns`);
-    assertEquals(response.status, 401);
-  });
-
-  // Test 4: Patterns Rejects Invalid Key
-  await runTest("Patterns endpoint rejects invalid API key", async () => {
-    const response = await fetch(`${baseUrl}/api/patterns`, {
-      headers: { "x-api-key": "invalid-key" },
+  // Test 3: Patterns Requires Auth (skip in open mode)
+  if (!isOpenMode) {
+    await runTest("Patterns endpoint requires authentication", async () => {
+      const response = await fetch(`${baseUrl}/api/patterns`);
+      assertEquals(response.status, 401);
     });
-    assertEquals(response.status, 401);
-  });
 
-  // Test 5: Patterns with Valid Key (Header)
-  await runTest(
-    "Patterns endpoint accepts valid API key (header)",
-    async () => {
+    // Test 4: Patterns Rejects Invalid Key
+    await runTest("Patterns endpoint rejects invalid API key", async () => {
       const response = await fetch(`${baseUrl}/api/patterns`, {
-        headers: { "x-api-key": API_KEY },
+        headers: { "x-api-key": "invalid-key" },
       });
+      assertEquals(response.status, 401);
+    });
+  }
+
+  // Test 5: Patterns with Valid Key (Header) or Open Access
+  await runTest(
+    isOpenMode 
+      ? "Patterns endpoint allows open access (dev mode)"
+      : "Patterns endpoint accepts valid API key (header)",
+    async () => {
+      const headers: Record<string, string> = {};
+      if (!isOpenMode) {
+        headers["x-api-key"] = API_KEY;
+      }
+      const response = await fetch(`${baseUrl}/api/patterns`, { headers });
       assertEquals(response.status, 200);
 
       const data: any = await response.json();
@@ -159,10 +183,17 @@ async function runSmokeTests() {
     }
   );
 
-  // Test 6: Patterns with Valid Key (Query)
-  await runTest("Patterns endpoint accepts valid API key (query)", async () => {
-    const response = await fetch(`${baseUrl}/api/patterns?key=${API_KEY}`);
-    assertEquals(response.status, 200);
+  // Test 6: Patterns with Valid Key (Query) or Open Access
+  await runTest(
+    isOpenMode 
+      ? "Patterns endpoint allows open access via query (dev mode)"
+      : "Patterns endpoint accepts valid API key (query)",
+    async () => {
+      const url = isOpenMode 
+        ? `${baseUrl}/api/patterns`
+        : `${baseUrl}/api/patterns?key=${API_KEY}`;
+      const response = await fetch(url);
+      assertEquals(response.status, 200);
 
     const data: any = await response.json();
     assertNotNull(data.patterns);
@@ -172,7 +203,7 @@ async function runSmokeTests() {
   // Test 7: Patterns Search Query
   await runTest("Patterns endpoint supports search query", async () => {
     const response = await fetch(`${baseUrl}/api/patterns?q=retry`, {
-      headers: { "x-api-key": API_KEY },
+      headers: createHeaders(),
     });
     assertEquals(response.status, 200);
 
@@ -185,7 +216,7 @@ async function runSmokeTests() {
     const response = await fetch(
       `${baseUrl}/api/patterns?category=error-handling`,
       {
-        headers: { "x-api-key": API_KEY },
+        headers: createHeaders(),
       }
     );
     assertEquals(response.status, 200);
@@ -208,7 +239,7 @@ async function runSmokeTests() {
   // Test 9: Patterns Limit
   await runTest("Patterns endpoint respects limit parameter", async () => {
     const response = await fetch(`${baseUrl}/api/patterns?limit=1`, {
-      headers: { "x-api-key": API_KEY },
+      headers: createHeaders(),
     });
     assertEquals(response.status, 200);
 
@@ -216,18 +247,20 @@ async function runSmokeTests() {
     assert(data.patterns.length <= 1, "Should return at most 1 pattern");
   });
 
-  // Test 10: Get Pattern by ID Requires Auth
-  await runTest("Get pattern by ID requires authentication", async () => {
-    const response = await fetch(`${baseUrl}/api/patterns/retry-with-backoff`);
-    assertEquals(response.status, 401);
-  });
+  // Test 10: Get Pattern by ID Requires Auth (skip in open mode)
+  if (!isOpenMode) {
+    await runTest("Get pattern by ID requires authentication", async () => {
+      const response = await fetch(`${baseUrl}/api/patterns/retry-with-backoff`);
+      assertEquals(response.status, 401);
+    });
+  }
 
   // Test 11: Get Non-existent Pattern
   await runTest("Get non-existent pattern returns 404", async () => {
     const response = await fetch(
       `${baseUrl}/api/patterns/nonexistent-pattern-id`,
       {
-        headers: { "x-api-key": API_KEY },
+        headers: createHeaders(),
       }
     );
     assertEquals(response.status, 404);
@@ -236,24 +269,23 @@ async function runSmokeTests() {
     assertNotNull(data.error);
   });
 
-  // Test 12: Generate Requires Auth
-  await runTest("Generate endpoint requires authentication", async () => {
-    const response = await fetch(`${baseUrl}/api/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ patternId: "retry-with-backoff" }),
+  // Test 12: Generate Requires Auth (skip in open mode)
+  if (!isOpenMode) {
+    await runTest("Generate endpoint requires authentication", async () => {
+      const response = await fetch(`${baseUrl}/api/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patternId: "retry-with-backoff" }),
+      });
+      assertEquals(response.status, 401);
     });
-    assertEquals(response.status, 401);
-  });
+  }
 
   // Test 13: Generate Snippet
   await runTest("Generate snippet from pattern", async () => {
     const response = await fetch(`${baseUrl}/api/generate`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ patternId: "retry-with-backoff" }),
     });
 
@@ -275,10 +307,7 @@ async function runSmokeTests() {
   await runTest("Generate snippet with custom name", async () => {
     const response = await fetch(`${baseUrl}/api/generate`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         patternId: "retry-with-backoff",
         name: "myRetry",
@@ -297,10 +326,7 @@ async function runSmokeTests() {
   await runTest("Generate snippet with CJS module type", async () => {
     const response = await fetch(`${baseUrl}/api/generate`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         patternId: "retry-with-backoff",
         moduleType: "cjs",
@@ -319,10 +345,7 @@ async function runSmokeTests() {
   await runTest("Generate endpoint validates request body", async () => {
     const response = await fetch(`${baseUrl}/api/generate`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ name: "test" }), // Missing patternId
     });
     assertEquals(response.status, 400);
@@ -331,16 +354,18 @@ async function runSmokeTests() {
     assertNotNull(data.error);
   });
 
-  // Test 17: Trace Wiring Requires Auth
-  await runTest("Trace wiring endpoint requires authentication", async () => {
-    const response = await fetch(`${baseUrl}/api/trace-wiring`);
-    assertEquals(response.status, 401);
-  });
+  // Test 17: Trace Wiring Requires Auth (skip in open mode)
+  if (!isOpenMode) {
+    await runTest("Trace wiring endpoint requires authentication", async () => {
+      const response = await fetch(`${baseUrl}/api/trace-wiring`);
+      assertEquals(response.status, 401);
+    });
+  }
 
   // Test 18: Trace Wiring Returns Examples
   await runTest("Trace wiring endpoint returns examples", async () => {
     const response = await fetch(`${baseUrl}/api/trace-wiring`, {
-      headers: { "x-api-key": API_KEY },
+      headers: createHeaders(),
     });
     assertEquals(response.status, 200);
 
@@ -355,7 +380,7 @@ async function runSmokeTests() {
   // Test 19: Trace Wiring Contains Effect Example
   await runTest("Trace wiring includes Effect.js example", async () => {
     const response = await fetch(`${baseUrl}/api/trace-wiring`, {
-      headers: { "x-api-key": API_KEY },
+      headers: createHeaders(),
     });
     const data: any = await response.json();
     assertContains(data.effectNodeSdk, "Effect");
@@ -366,7 +391,7 @@ async function runSmokeTests() {
   await runTest("Response time check (< 3 seconds)", async () => {
     const startTime = Date.now();
     await fetch(`${baseUrl}/api/patterns`, {
-      headers: { "x-api-key": API_KEY },
+      headers: createHeaders(),
     });
     const endTime = Date.now();
     const responseTime = (endTime - startTime) / 1000;
@@ -381,7 +406,7 @@ async function runSmokeTests() {
   // Test 21: Trace ID Consistency
   await runTest("Trace ID in body matches header", async () => {
     const response = await fetch(`${baseUrl}/api/patterns`, {
-      headers: { "x-api-key": API_KEY },
+      headers: createHeaders(),
     });
     const data: any = await response.json();
     const headerTraceId = response.headers.get("x-trace-id");
@@ -393,24 +418,23 @@ async function runSmokeTests() {
     );
   });
 
-  // Test 22: Analyze Code Requires Auth
-  await runTest("Analyze code endpoint requires authentication", async () => {
-    const response = await fetch(`${baseUrl}/api/analyze-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source: "const x = 1;" }),
+  // Test 22: Analyze Code Requires Auth (skip in open mode)
+  if (!isOpenMode) {
+    await runTest("Analyze code endpoint requires authentication", async () => {
+      const response = await fetch(`${baseUrl}/api/analyze-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "const x = 1;" }),
+      });
+      assertEquals(response.status, 401);
     });
-    assertEquals(response.status, 401);
-  });
+  }
 
   // Test 23: Analyze Code
   await runTest("Analyze code endpoint analyzes TypeScript", async () => {
     const response = await fetch(`${baseUrl}/api/analyze-code`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         source: 'import { readFile } from "node:fs/promises"; const x = 1;',
         filename: "example.ts",
@@ -426,27 +450,26 @@ async function runSmokeTests() {
     assertNotNull(data.timestamp, "timestamp should not be null");
   });
 
-  // Test 24: Generate Pattern Requires Auth
-  await runTest("Generate pattern endpoint requires authentication", async () => {
-    const response = await fetch(`${baseUrl}/api/generate-pattern`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        patternId: "validation-filter-or-fail",
-        variables: { Name: "FilePath", paramName: "path", paramType: "string", shortName: "p", condition: "p.length > 0", errorMessage: "Path cannot be empty" },
-      }),
+  // Test 24: Generate Pattern Requires Auth (skip in open mode)
+  if (!isOpenMode) {
+    await runTest("Generate pattern endpoint requires authentication", async () => {
+      const response = await fetch(`${baseUrl}/api/generate-pattern`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patternId: "validation-filter-or-fail",
+          variables: { Name: "FilePath", paramName: "path", paramType: "string", shortName: "p", condition: "p.length > 0", errorMessage: "Path cannot be empty" },
+        }),
+      });
+      assertEquals(response.status, 401);
     });
-    assertEquals(response.status, 401);
-  });
+  }
 
   // Test 25: Generate Pattern
   await runTest("Generate pattern endpoint generates code", async () => {
     const response = await fetch(`${baseUrl}/api/generate-pattern`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         patternId: "validation-filter-or-fail",
         variables: { Name: "FilePath", paramName: "path", paramType: "string", shortName: "p", condition: "p.length > 0", errorMessage: "Path cannot be empty" },
@@ -465,26 +488,25 @@ async function runSmokeTests() {
     assertNotNull(data.timestamp, "timestamp should not be null");
   });
 
-  // Test 26: Analyze Consistency Requires Auth
-  await runTest("Analyze consistency endpoint requires authentication", async () => {
-    const response = await fetch(`${baseUrl}/api/analyze-consistency`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        files: [{ filename: "a.ts", source: "const x = 1;" }],
-      }),
+  // Test 26: Analyze Consistency Requires Auth (skip in open mode)
+  if (!isOpenMode) {
+    await runTest("Analyze consistency endpoint requires authentication", async () => {
+      const response = await fetch(`${baseUrl}/api/analyze-consistency`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          files: [{ filename: "a.ts", source: "const x = 1;" }],
+        }),
+      });
+      assertEquals(response.status, 401);
     });
-    assertEquals(response.status, 401);
-  });
+  }
 
   // Test 27: Analyze Consistency
   await runTest("Analyze consistency endpoint detects issues", async () => {
     const response = await fetch(`${baseUrl}/api/analyze-consistency`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         files: [
           { filename: "a.ts", source: 'import { readFile } from "node:fs/promises";' },
@@ -501,27 +523,26 @@ async function runSmokeTests() {
     assertNotNull(data.timestamp, "timestamp should not be null");
   });
 
-  // Test 28: Apply Refactoring Requires Auth
-  await runTest("Apply refactoring endpoint requires authentication", async () => {
-    const response = await fetch(`${baseUrl}/api/apply-refactoring`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        refactoringId: "replace-node-fs",
-        files: [{ filename: "a.ts", source: 'import { readFile } from "node:fs/promises";' }],
-      }),
+  // Test 28: Apply Refactoring Requires Auth (skip in open mode)
+  if (!isOpenMode) {
+    await runTest("Apply refactoring endpoint requires authentication", async () => {
+      const response = await fetch(`${baseUrl}/api/apply-refactoring`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          refactoringId: "replace-node-fs",
+          files: [{ filename: "a.ts", source: 'import { readFile } from "node:fs/promises";' }],
+        }),
+      });
+      assertEquals(response.status, 401);
     });
-    assertEquals(response.status, 401);
-  });
+  }
 
   // Test 29: Apply Refactoring (Preview)
   await runTest("Apply refactoring endpoint returns preview (preview-only)", async () => {
     const response = await fetch(`${baseUrl}/api/apply-refactoring`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         refactoringId: "replace-node-fs",
         files: [{ filename: "a.ts", source: 'import { readFile } from "node:fs/promises";' }],
@@ -544,27 +565,26 @@ async function runSmokeTests() {
     assertNotNull(data.timestamp, "timestamp should not be null");
   });
 
-  // Test 30: Review Code Requires Auth
-  await runTest("Review code endpoint requires authentication", async () => {
-    const response = await fetch(`${baseUrl}/api/review-code`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: "const x: any = 1;",
-        filePath: "test.ts",
-      }),
+  // Test 30: Review Code Requires Auth (skip in open mode)
+  if (!isOpenMode) {
+    await runTest("Review code endpoint requires authentication", async () => {
+      const response = await fetch(`${baseUrl}/api/review-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: "const x: any = 1;",
+          filePath: "test.ts",
+        }),
+      });
+      assertEquals(response.status, 401);
     });
-    assertEquals(response.status, 401);
-  });
+  }
 
   // Test 31: Review Code Returns Top 3 Recommendations
   await runTest("Review code returns top 3 recommendations with Markdown", async () => {
     const response = await fetch(`${baseUrl}/api/review-code`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         code: "const a: any = 1;\nconst b: any = 2;\nconst c: any = 3;\nconst d: any = 4;",
         filePath: "test.ts",
@@ -601,10 +621,7 @@ async function runSmokeTests() {
     const largeCode = "x".repeat(101 * 1024);
     const response = await fetch(`${baseUrl}/api/review-code`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         code: largeCode,
         filePath: "test.ts",
@@ -617,10 +634,7 @@ async function runSmokeTests() {
   await runTest("Review code rejects non-TypeScript files", async () => {
     const response = await fetch(`${baseUrl}/api/review-code`, {
       method: "POST",
-      headers: {
-        "x-api-key": API_KEY,
-        "Content-Type": "application/json",
-      },
+      headers: createHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         code: "const x = 1;",
         filePath: "test.js",

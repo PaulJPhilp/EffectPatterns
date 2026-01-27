@@ -71,11 +71,11 @@ export function loadGuidanceContent(guidanceKey) {
 
 ### Fix #1: Share TypeScript SourceFile
 **Files Modified:**
-1. `lib-analysis-core/src/services/code-analyzer.ts`
+1. `packages/analysis-core/src/services/code-analyzer.ts`
    - Added `sourceFile?: ts.SourceFile` to `AnalyzeCodeOutput`
    - Return the parsed SourceFile
 
-2. `lib-analysis-core/src/services/analysis-service.ts`
+2. `packages/analysis-core/src/services/analysis-service.ts`
    - Added `sourceFile?: ts.SourceFile` to `AnalysisReport`
    - Propagate through to result
 

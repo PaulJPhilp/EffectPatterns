@@ -1,0 +1,16 @@
+[
+  {
+    "id": "pattern-a",
+    "title": "Pattern A",
+    "skillLevel": "beginner",
+    "summary": "First pattern",
+    "tags": []
+  },
+  {
+    "id": "pattern-b",
+    "title": "Pattern B",
+    "skillLevel": "intermediate",
+    "summary": "Second pattern",
+    "tags": []
+  }
+]

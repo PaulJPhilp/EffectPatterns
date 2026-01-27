@@ -100,8 +100,8 @@ export function buildSnippet(params: BuildSnippetParams): string {
   // Use first example if available
   const example = pattern.examples?.[0];
 
-  if (!example) {
-    // Generate a minimal placeholder if no example exists
+  if (!example || !example.code) {
+    // Generate a minimal placeholder if no example exists or example has no code
     const header = [
       `// ${pattern.title}`,
       effectVersion ? `// Effect version: ${effectVersion}` : "",
@@ -135,6 +135,7 @@ export function buildSnippet(params: BuildSnippetParams): string {
     .join("\n");
 
   // Process the example code (sanitize but preserve structure)
+  // example.code is guaranteed to exist here due to check above
   const processedCode = example.code
     .split("\n")
     .map((line) => {

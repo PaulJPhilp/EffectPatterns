@@ -21,45 +21,64 @@ export const getRecommendedBump = (
   });
 
 /**
- * Parse commits and categorize them
+ * Commit parser output structure
  */
-export const categorizeCommits = async (commits: string[]) => {
-  // Handle both ESM and CommonJS exports; fall back to a simple parser
-  let parseCommit: (message: string) => any;
+interface ParsedCommit {
+  type?: string;
+  subject?: string;
+  header?: string;
+  notes?: Array<{ title: string }>;
+}
+
+/**
+ * Basic fallback commit parser
+ */
+const createFallbackParser = (): ((message: string) => ParsedCommit) => {
+  return (message: string) => {
+    const header = message.split("\n")[0] ?? message;
+    const match = header.match(
+      /^(?<type>\w+)(?:\([^)]*\))?(?<breaking>!)?:\s*(?<subject>.+)$/
+    );
+
+    const type = match?.groups?.type;
+    const subject = match?.groups?.subject ?? header;
+    const notes = match?.groups?.breaking
+      ? [{ title: "BREAKING CHANGE" }]
+      : [];
+
+    return { type, subject, header, notes };
+  };
+};
+
+/**
+ * Load commit parser, falling back to basic parser if unavailable
+ */
+const loadCommitParser = async (): Promise<(message: string) => ParsedCommit> => {
+  const isCommitParser = (fn: unknown): fn is (message: string) => ParsedCommit => {
+    return typeof fn === "function";
+  };
 
   try {
     const module = await import("conventional-commits-parser");
-    const maybeDefault = (module as any).default;
-
-    // Type guard for commit parser function
-    const isCommitParser = (fn: unknown): fn is (message: string) => any => {
-      return typeof fn === "function";
-    };
+    const maybeDefault = (module as { default?: unknown }).default;
 
     if (isCommitParser(maybeDefault)) {
-      parseCommit = maybeDefault;
-    } else if (isCommitParser(module)) {
-      parseCommit = module;
-    } else {
-      throw new Error("No callable export found in conventional-commits-parser");
+      return maybeDefault;
     }
+    if (isCommitParser(module as unknown)) {
+      return module as unknown as (message: string) => ParsedCommit;
+    }
+    throw new Error("No callable export found in conventional-commits-parser");
   } catch {
-    // Basic fallback parser
-    parseCommit = (message: string) => {
-      const header = message.split("\n")[0] ?? message;
-      const match = header.match(
-        /^(?<type>\w+)(?:\([^)]*\))?(?<breaking>!)?:\s*(?<subject>.+)$/
-      );
-
-      const type = match?.groups?.type;
-      const subject = match?.groups?.subject ?? header;
-      const notes = match?.groups?.breaking
-        ? [{ title: "BREAKING CHANGE" }]
-        : [];
-
-      return { type, subject, header, notes };
-    };
+    return createFallbackParser();
   }
+};
+
+/**
+ * Parse commits and categorize them
+ */
+export const categorizeCommits = async (commits: string[]) => {
+  const parseCommit = await loadCommitParser();
 
   const categories = {
     breaking: [] as string[],
@@ -73,7 +92,7 @@ export const categorizeCommits = async (commits: string[]) => {
   for (const commitMsg of commits) {
     const parsed = parseCommit(commitMsg);
 
-    if (parsed.notes?.some((note: any) => note.title === "BREAKING CHANGE")) {
+    if (parsed.notes?.some((note) => note.title === "BREAKING CHANGE")) {
       categories.breaking.push(parsed.header || commitMsg);
     } else if (parsed.type === "feat") {
       categories.features.push(parsed.subject || commitMsg);
@@ -82,7 +101,7 @@ export const categorizeCommits = async (commits: string[]) => {
     } else if (parsed.type === "docs") {
       categories.docs.push(parsed.subject || commitMsg);
     } else if (
-      ["chore", "build", "ci"].includes(parsed.type)
+      ["chore", "build", "ci"].includes(parsed.type ?? "")
     ) {
       categories.chore.push(parsed.subject || commitMsg);
     } else {

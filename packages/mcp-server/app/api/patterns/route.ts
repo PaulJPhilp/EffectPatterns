@@ -8,16 +8,34 @@
  * in the OpenTelemetry trace.
  */
 
-import { toPatternSummary } from "@effect-patterns/toolkit";
+import { type Pattern } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import {
   validateApiKey,
 } from "../../../src/auth/apiKey";
-import { errorHandler } from "../../../src/server/errorHandler";
+import { errorHandler, errorToResponse } from "../../../src/server/errorHandler";
 import { PatternsService, runWithRuntime } from "../../../src/server/init";
 import { TracingService } from "../../../src/tracing/otlpLayer";
+
+/**
+ * Convert Pattern to Rich Summary (includes examples and useCases for rich cards)
+ * This ensures search results include code examples so agents don't need follow-up calls
+ */
+function toRichPatternSummary(pattern: Pattern) {
+  return {
+    id: pattern.id,
+    title: pattern.title,
+    description: pattern.description,
+    category: pattern.category,
+    difficulty: pattern.difficulty,
+    tags: pattern.tags,
+    examples: pattern.examples,
+    useCases: pattern.useCases,
+    relatedPatterns: pattern.relatedPatterns,
+  };
+}
 
 // Handler implementation with automatic span creation via Effect.fn
 const handleSearchPatterns = Effect.fn("search-patterns")(function* (
@@ -62,8 +80,9 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
     limit,
   });
 
-  // Convert to summaries
-  const summaries = results.map(toPatternSummary);
+  // Convert to rich summaries (includes examples and useCases for rich cards)
+  // This ensures the "Top 3" cards are complete and don't require follow-up calls
+  const summaries = results.map(toRichPatternSummary);
   
   // Log cache performance if available
   yield* Effect.logDebug(`Pattern search completed with ${summaries.length} results`, {
@@ -105,8 +124,9 @@ export async function GET(request: NextRequest) {
       } : {},
     });
   } catch (error) {
-    // Handle errors that occur during runtime initialization
-    const errorResponse = await runWithRuntime(errorHandler(error));
-    return errorResponse;
+    // Runtime init or unexpected failure: avoid runWithRuntime (may fail again).
+    // Use errorToResponse directly; no Effect runtime required.
+    const traceId = randomUUID().replace(/-/g, "");
+    return errorToResponse(error, traceId);
   }
 }

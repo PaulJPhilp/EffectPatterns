@@ -8,7 +8,8 @@ export const calculateMemoryUsage = (cache: Map<string, CacheEntry<unknown>>): n
   for (const [key, entry] of cache.entries()) {
     // Rough estimation: key length + value size + metadata
     totalSize += key.length * 2; // UTF-16 characters
-    totalSize += JSON.stringify(entry.value).length * 2;
+    const valueStr = entry.value !== undefined ? JSON.stringify(entry.value) : "";
+    totalSize += valueStr.length * 2;
     totalSize += 100; // Metadata overhead
   }
   return totalSize;

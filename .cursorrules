@@ -1,0 +1,25 @@
+# Cursor Rules
+
+## HARD CONSTRAINT: Pattern Tool Usage
+
+**CRITICAL RULE**: If the user mentions "patterns", asks "how to" in Effect, or requests Effect-TS guidance, you are **FORBIDDEN** from using filesystem tools to find patterns.
+
+### FORBIDDEN Tools for Pattern Queries:
+- ❌ `grep` - Never search pattern files
+- ❌ `read_file` - Never read pattern files directly
+- ❌ `codebase_search` - Never search codebase for patterns
+- ❌ `glob_file_search` - Never search for pattern files
+- ❌ `list_dir` on pattern directories - Never browse pattern directories
+
+### REQUIRED Tool for Pattern Queries:
+- ✅ `mcp_Effect-Patterns-effect-patterns_search_patterns` - **MUST** use this tool
+- ✅ Display results verbatim - **DO NOT** summarize or rewrite
+
+### Why This Rule Exists:
+- The `search_patterns` tool provides production-tested code and rich-UI blocks
+- Manual file searching misses critical context, examples, and structured guidance
+- Pattern files contain implementation details that should not be exposed directly
+- The MCP tool ensures consistent, authoritative pattern presentation
+
+### Violation Consequences:
+Manual summarization of pattern files is a **violation of project safety standards**. Always use the authorized MCP tool.

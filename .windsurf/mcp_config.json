@@ -10,14 +10,15 @@
     "effect-patterns": {
       "command": "bun",
       "args": [
-        "run",
         "--cwd",
         "packages/mcp-server",
         "dist/mcp-stdio.js"
       ],
+      "disabled": false,
       "env": {
-        "PATTERN_API_KEY": "ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84",
-        "EFFECT_PATTERNS_API_URL": "https://effect-patterns-mcp.vercel.app"
+        "EFFECT_PATTERNS_API_URL": "http://localhost:3000",
+        "MCP_ENV": "local",
+        "MCP_DEBUG": "false"
       }
     },
     "effect-docs": {

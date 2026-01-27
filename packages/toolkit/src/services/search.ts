@@ -171,15 +171,13 @@ export class PatternSearch extends Effect.Service<PatternSearch>()(
 
           // Apply timeout
           const result = yield* searchEffect.pipe(
-            Effect.timeout(searchTimeoutMs),
-            Effect.catchTag("TimeoutException", () =>
-              Effect.fail(
-                new SearchError({
-                  query,
-                  cause: new Error(`Search timeout after ${searchTimeoutMs}ms`),
-                })
-              )
-            )
+            Effect.timeoutFail({
+              duration: searchTimeoutMs,
+              onTimeout: () => new SearchError({
+                query,
+                cause: new Error(`Search timeout after ${searchTimeoutMs}ms`),
+              })
+            })
           );
 
           if (isLoggingEnabled) {
@@ -224,6 +222,7 @@ export class PatternSearch extends Effect.Service<PatternSearch>()(
        */
       const toPatternSummary = (pattern: Pattern): PatternSummary => ({
         id: pattern.id,
+        slug: pattern.slug,
         title: pattern.title,
         description: pattern.description,
         category: pattern.category,
@@ -385,6 +384,7 @@ export function getPatternById(
 export function toPatternSummary(pattern: Pattern): PatternSummary {
   return {
     id: pattern.id,
+    slug: pattern.slug,
     title: pattern.title,
     description: pattern.description,
     category: pattern.category,

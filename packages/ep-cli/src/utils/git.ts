@@ -21,17 +21,16 @@ export const execGitCommand = (
  * Get the latest git tag
  */
 export const getLatestTag = (): Effect.Effect<string, Error> =>
-  Effect.try({
-    try: () => {
-      try {
-        return execSync("git describe --tags --abbrev=0", { encoding: "utf-8" }).trim();
-      } catch {
-        // Fallback if no tags exist
-        return "v0.0.0";
-      }
-    },
-    catch: (error) => new Error(`Failed to get latest tag: ${error}`),
-  });
+  Effect.sync(() => {
+    try {
+      return execSync("git describe --tags --abbrev=0", { encoding: "utf-8" }).trim();
+    } catch {
+      // Fallback if no tags exist
+      return "v0.0.0";
+    }
+  }).pipe(
+    Effect.mapError((error) => new Error(`Failed to get latest tag: ${error}`))
+  );
 
 /**
  * Get all commits since the last tag with full bodies

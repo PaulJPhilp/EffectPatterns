@@ -1,6 +1,14 @@
-# Effect Patterns MCP Server
+# @effect-patterns/mcp-server
 
-**MCP 2.0 Compatible** - Advanced API server for the Effect Patterns Claude Code Plugin, providing pattern search, code analysis, and refactoring capabilities with modern authentication and enhanced responses.
+> MCP 2.0 Compatible server for Effect Patterns with advanced code analysis and pattern management
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)
+[![Effect](https://img.shields.io/badge/Effect-3.19+-purple.svg)](https://effect.website/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.0+-black.svg)](https://nextjs.org/)
+[![MCP](https://img.shields.io/badge/MCP-2.0-green.svg)](https://modelcontextprotocol.io)
+
+A comprehensive MCP 2.0 server and HTTP API for the Effect Patterns ecosystem, providing pattern search, code analysis, refactoring capabilities, and modern authentication with enterprise-grade features.
 
 ## 🚀 MCP 2.0 Features
 
@@ -16,9 +24,12 @@
 
 - **Pattern Search**: Search Effect-TS patterns by category, skill level, and keywords
 - **Code Analysis**: TypeScript analysis with Effect-TS best practices and anti-pattern detection
+- **Automated Refactoring**: AST-based code transformations with preview
+- **Consistency Analysis**: Cross-file pattern consistency checking
 - **Enterprise Features**: Rate limiting, caching, metrics, tracing, and comprehensive logging
 
-Paid-tier features (code generation, consistency analysis, refactoring) are available via the HTTP API only.
+**Free Tier Features**: Pattern search, basic code analysis, and MCP tools
+**Paid Tier Features**: Advanced code generation, consistency analysis, and automated refactoring (HTTP API only)
 
 ## 📋 MCP Tools Available
 
@@ -33,7 +44,11 @@ Paid-tier features (code generation, consistency analysis, refactoring) are avai
 - `review_code` - AI-powered architectural analysis with priorities
 - `list_analysis_rules` - Comprehensive rule listings with categories
 
-Paid-tier tools are exposed via the HTTP API only (not MCP).
+### Advanced Features (HTTP API)
+
+- `analyze_consistency` - Cross-file pattern consistency analysis
+- `apply_refactoring` - Automated AST-based refactoring with preview
+- `generate_pattern` - Template-based code generation
 
 ## 🔧 Transport Options
 
@@ -51,20 +66,12 @@ Paid-tier tools are exposed via the HTTP API only (not MCP).
 - **Features**: Local development, backward compatibility
 - **Use Case**: Development and testing
 
-## Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- Bun (recommended) or npm
-- PostgreSQL database (for pattern storage)
-
-### Installation
+## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/effect-patterns.git
-cd effect-patterns/packages/mcp-server
+git clone https://github.com/PaulJPhilp/Effect-Patterns.git
+cd Effect-Patterns/packages/mcp-server
 
 # Install dependencies
 bun install
@@ -83,9 +90,16 @@ bun run mcp:http
 bun run mcp:stdio
 ```
 
-### MCP 2.0 Setup
+## Prerequisites
 
-#### OAuth 2.1 Configuration
+- **Node.js 18+** - Required for Next.js and modern JavaScript features
+- **Bun 1.2+** - Recommended package manager and runtime
+- **PostgreSQL 14+** - For pattern storage and analytics
+- **OpenTelemetry Collector** (optional) - For distributed tracing
+
+## MCP 2.0 Setup
+
+### OAuth 2.1 Configuration
 
 ```bash
 # Required for MCP 2.0 Streamable HTTP transport
@@ -99,7 +113,7 @@ PKCE_CODE_VERIFIER_LENGTH=128
 PKCE_CODE_CHALLENGE_METHOD=S256
 ```
 
-#### Environment Variables
+### Environment Variables
 
 Create a `.env` file with the following variables:
 
@@ -229,7 +243,7 @@ MCP 2.0 tools now provide structured responses with rich metadata:
 }
 ```
 
-## Legacy API Reference
+## HTTP API Reference
 
 ### Authentication
 
@@ -468,7 +482,7 @@ Returns the top 3 highest-priority issues with actionable guidance.
 }
 ```
 
-#### Analyze Consistency
+#### Analyze Consistency (Pro Tier)
 
 ```http
 POST /api/analyze-consistency
@@ -507,7 +521,7 @@ Detect code inconsistencies across multiple files.
 }
 ```
 
-#### Apply Refactoring
+#### Apply Refactoring (Pro Tier)
 
 ```http
 POST /api/apply-refactoring
@@ -698,6 +712,154 @@ docker run -p 3001:3001 \
 
 ## Architecture
 
+```mermaid
+graph TB
+    %% Clients
+    Client[Claude Code Client] -->|MCP 2.0 Protocol| HTTP[HTTP Transport]
+    Client -->|Legacy MCP| Stdio[Stdio Transport]
+    
+    %% Transport Layer
+    HTTP --> Auth[OAuth 2.1 Server]
+    HTTP --> Security[Security Middleware]
+    Stdio --> Auth
+    
+    %% API Layer
+    Auth --> Router[Next.js API Routes]
+    Security --> Router
+    Router --> MCPTools[MCP Tool Handlers]
+    Router --> REST[REST API Endpoints]
+    
+    %% Service Layer
+    MCPTools --> Services[Effect-TS Services]
+    REST --> Services
+    
+    %% Core Services
+    Services --> Config[ConfigService]
+    Services --> Patterns[PatternsService]
+    Services --> Analyzer[CodeAnalyzerService]
+    Services --> Refactor[RefactoringEngineService]
+    Services --> Consistency[ConsistencyAnalyzerService]
+    Services --> Tracing[TracingService]
+    Services --> OAuth[OAuth2Service]
+    
+    %% Data Layer
+    Patterns --> DB[(PostgreSQL)]
+    Config --> Cache[(Redis Cache)]
+    
+    %% External Services
+    Tracing --> OTLP[OpenTelemetry Collector]
+    Analyzer --> AnalysisCore[@effect-patterns/analysis-core]
+    Patterns --> Toolkit[@effect-patterns/toolkit]
+    
+    %% Monitoring
+    Router --> Metrics[Prometheus Metrics]
+    Services --> Logging[Structured Logging]
+    
+    %% Response Flow
+    MCPTools --> Response[Structured Output Builder]
+    Response --> Client
+    
+    %% Styling
+    classDef client fill:#e1f5fe
+    classDef transport fill:#f3e5f5
+    classDef api fill:#e8f5e8
+    classDef service fill:#fff3e0
+    classDef data fill:#fce4ec
+    classDef external fill:#f1f8e9
+    classDef monitoring fill:#e0f2f1
+    
+    class Client client
+    class HTTP,Stdio transport
+    class Router,MCPTools,REST api
+    class Config,Patterns,Analyzer,Refactor,Consistency,Tracing,OAuth service
+    class DB,Cache data
+    class OTLP,AnalysisCore,Toolkit external
+    class Metrics,Logging monitoring
+```
+
+### Dataflow Diagram
+
+```mermaid
+---
+config:
+  theme: default
+---
+sequenceDiagram
+    box User
+      participant Client as Claude Code Client
+    end
+    box Authentication
+      participant Auth as OAuth 2.1 Server
+    end
+    box Backend Gateway
+      participant API as Next.js API Routes
+      participant MCP as MCP Tool Handlers
+    end
+    box Service Layer & Data
+      participant Services as Effect-TS Services
+      participant DB as PostgreSQL
+      participant Cache as Redis Cache
+      participant Analysis as analysis-core
+      participant Response as Response Builder
+    end
+    %% MCP 2.0 Authentication Flow
+    Client->>Auth: Initiate OAuth Flow
+    Auth->>Client: Authorization Code
+    Client->>Auth: Exchange Code for Token
+    Auth->>Client: Access Token
+    %% Pattern Search Flow
+    Client->>API: POST /mcp (search_patterns)
+    Note over API: Bearer Token Auth
+    API->>MCP: search_patterns tool call
+    MCP->>Services: PatternsService.search()
+    Services->>Cache: Check cache first
+    alt Cache Hit
+        Cache->>Services: Return cached patterns
+    else Cache Miss
+        Services->>DB: Query patterns table
+        DB->>Services: Pattern results
+        Services->>Cache: Store in cache
+    end
+    Services->>MCP: Pattern results
+    MCP->>Response: Build structured output
+    Response->>API: Markdown + metadata
+    API->>Client: MCP response
+    %% Code Analysis Flow
+    Client->>API: POST /mcp (analyze_code)
+    API->>MCP: analyze_code tool call
+    MCP->>Services: CodeAnalyzerService.analyze()
+    Services->>Analysis: AST analysis request
+    Analysis->>Services: Issues + suggestions
+    Services->>MCP: Analysis results
+    MCP->>Response: Build rich response
+    Response->>API: Formatted findings
+    API->>Client: Analysis report
+    %% Code Review Flow (Pro Tier)
+    Client->>API: POST /api/review-code
+    Note over API: API Key Auth
+    API->>Services: ReviewCodeService.review()
+    Services->>Analysis: Architectural analysis
+    Analysis->>Services: Priority recommendations
+    Services->>DB: Store review metrics
+    Services->>API: Top 3 issues + upgrade prompt
+    API->>Client: Review results
+    %% Refactoring Flow (Pro Tier)
+    Client->>API: POST /api/apply-refactoring
+    API->>Services: RefactoringEngineService.apply()
+    Services->>Analysis: AST transformation
+    Analysis->>Services: Preview changes
+    Services->>API: Before/after diff
+    API->>Client: Refactoring preview
+    %% Error Handling Flow
+    API->>Services: Service call fails
+    Services->>API: Tagged error type
+    API->>Response: Error annotation
+    Response->>Client: Structured error + suggestions
+    %% Monitoring Flow
+    API->>Services: Log request start
+    Services->>API: Log request completion
+    API->>Client: Include traceId in response
+
 ### MCP 2.0 Architecture
 
 The MCP 2.0 server introduces several new architectural components:
@@ -788,7 +950,7 @@ All errors use tagged error types for type-safe handling:
    });
    ```
 
-2. **Update Authentication**
+1. **Update Authentication**
 
    ```bash
    # Old: API Key
@@ -800,7 +962,7 @@ All errors use tagged error types for type-safe handling:
    OAUTH_CLIENT_SECRET=your-client-secret
    ```
 
-3. **Handle Enhanced Responses**
+2. **Handle Enhanced Responses**
 
    ```typescript
    // Old: Simple text response
@@ -852,7 +1014,31 @@ The MCP 2.0 server maintains backward compatibility:
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License
+
+Copyright (c) 2023 Effect Patterns Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+**Part of the [Effect Patterns Hub](https://github.com/PaulJPhilp/Effect-Patterns)**
 
 ## Support
 

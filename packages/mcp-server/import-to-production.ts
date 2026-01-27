@@ -51,12 +51,13 @@ async function importToProduction() {
         const importResult = await importResponse.json();
         console.log(`✅ ${importResult.message}`);
 
-        // Verify import
+        // Verify import (requires PRODUCTION_API_KEY or PATTERN_API_KEY)
+        const apiKey = process.env.PRODUCTION_API_KEY || process.env.PATTERN_API_KEY;
+        if (!apiKey) {
+            throw new Error("PRODUCTION_API_KEY or PATTERN_API_KEY required for verification");
+        }
         const verifyResponse = await fetch(`${PROD_URL}/api/patterns?limit=5`, {
-            headers: {
-                "x-api-key":
-                    "ce9a3a239f8c028cbf543aa1b77637b8a98ade05814770e4950ff2bb32e9ee84",
-            },
+            headers: { "x-api-key": apiKey },
         });
 
         if (verifyResponse.ok) {

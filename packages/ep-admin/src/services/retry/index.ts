@@ -56,25 +56,27 @@ const isRetryableError = (error: unknown): boolean => {
 	if (
 		error &&
 		typeof error === "object" &&
-		"status" in error &&
-		typeof (error as any).status === "number"
+		"status" in error
 	) {
-		const status = (error as any).status;
-		// Retry on server errors (5xx)
-		if (status >= 500 && status < 600) {
-			return true;
-		}
-		// Retry on rate limiting
-		if (status === 429) {
-			return true;
-		}
-		// Retry on timeouts
-		if (status === 408) {
-			return true;
-		}
-		// Don't retry on client errors (4xx) except those above
-		if (status >= 400 && status < 500) {
-			return false;
+		const statusValue = (error as { status: unknown }).status;
+		if (typeof statusValue === "number") {
+			const status = statusValue;
+			// Retry on server errors (5xx)
+			if (status >= 500 && status < 600) {
+				return true;
+			}
+			// Retry on rate limiting
+			if (status === 429) {
+				return true;
+			}
+			// Retry on timeouts
+			if (status === 408) {
+				return true;
+			}
+			// Don't retry on client errors (4xx) except those above
+			if (status >= 400 && status < 500) {
+				return false;
+			}
 		}
 	}
 

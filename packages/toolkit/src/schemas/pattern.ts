@@ -20,7 +20,7 @@ export const PatternCategory = S.Literal(
   "caching",
   "observability",
   "scheduling",
-  "resource-management"
+  "resource-management",
 );
 
 export type PatternCategory = S.Schema.Type<typeof PatternCategory>;
@@ -31,7 +31,7 @@ export type PatternCategory = S.Schema.Type<typeof PatternCategory>;
 export const DifficultyLevel = S.Literal(
   "beginner",
   "intermediate",
-  "advanced"
+  "advanced",
 );
 
 export type DifficultyLevel = S.Schema.Type<typeof DifficultyLevel>;
@@ -52,6 +52,7 @@ export type CodeExample = S.Schema.Type<typeof CodeExample>;
  */
 export const Pattern = S.Struct({
   id: S.String,
+  slug: S.String,
   title: S.String,
   description: S.String,
   category: PatternCategory,
@@ -72,6 +73,7 @@ export type Pattern = S.Schema.Type<typeof Pattern>;
  */
 export const PatternSummary = S.Struct({
   id: S.String,
+  slug: S.String,
   title: S.String,
   description: S.String,
   category: PatternCategory,

@@ -6,6 +6,7 @@
  */
 
 import { Options } from "@effect/cli";
+import { EnvService } from "effect-env";
 import { OUTPUT_FORMATS, type OutputFormat } from "./constants.js";
 import { LOG_LEVEL_VALUES, type LogLevel } from "./services/logger/index.js";
 
@@ -170,16 +171,19 @@ export const resolveOutputFormat = (options: Partial<GlobalOptions>): OutputForm
 };
 
 /**
- * Check if colors should be used based on options and environment
+ * Check if colors should be used based on options and environment (synchronous version)
+ * 
+ * For use in Layer and sync contexts only.
+ * For Effect contexts, use shouldUseColorsEffect.
  */
-export const shouldUseColors = (options: Partial<GlobalOptions>): boolean => {
+const shouldUseColorSync = (options: Partial<GlobalOptions>): boolean => {
     // Explicit --no-color flag
     if (options.noColor) return false;
 
     // JSON output should not have colors
     if (options.json) return false;
 
-    // Check common CI environment variables
+    // Check common environment variables synchronously
     if (process.env.NO_COLOR) return false;
     if (process.env.CI) return false;
     if (process.env.TERM === "dumb") return false;
@@ -189,6 +193,44 @@ export const shouldUseColors = (options: Partial<GlobalOptions>): boolean => {
 
     return true;
 };
+
+/**
+ * Check if colors should be used based on options and environment (Effect version)
+ * 
+ * Checks environment variables through EnvService for type safety.
+ * For sync contexts, use shouldUseColorSync.
+ */
+export const shouldUseColorsEffect = (options: Partial<GlobalOptions>): Effect.Effect<boolean, any, any> =>
+    Effect.gen(function* () {
+        // Explicit --no-color flag
+        if (options.noColor) return false;
+
+        // JSON output should not have colors
+        if (options.json) return false;
+
+        // Check common CI environment variables via EnvService
+        const env = yield* EnvService.Default;
+        const noColor = yield* env.get("NO_COLOR");
+        if (noColor) return false;
+        
+        const ci = yield* env.get("CI");
+        if (ci) return false;
+        
+        const term = yield* env.get("TERM");
+        if (term === "dumb") return false;
+
+        // Check if stdout is a TTY
+        if (!process.stdout.isTTY) return false;
+
+        return true;
+    });
+
+/**
+ * Check if colors should be used based on options and environment (backwards compatible)
+ * 
+ * Use shouldUseColorSync for sync contexts or shouldUseColorsEffect for Effect contexts.
+ */
+export const shouldUseColors = shouldUseColorSync;
 
 // =============================================================================
 // Logger Configuration from Options
@@ -217,16 +259,17 @@ export const configureLoggerFromOptions = (
 ): Effect.Effect<void, never, Logger> =>
     Effect.gen(function* () {
         const logger = yield* Logger;
+        const useColors = yield* shouldUseColorsEffect(options) as any;
 
         const config: Partial<LoggerConfig> = {
             logLevel: resolveLogLevel(options),
             outputFormat: resolveOutputFormat(options),
-            useColors: shouldUseColors(options),
+            useColors,
             verbose: options.verbose ?? false,
         };
 
         yield* logger.updateConfig(config);
-    });
+    }) as any;
 
 /**
  * Create a LoggerConfig from global options (synchronous, for Layer creation)
@@ -236,6 +279,6 @@ export const loggerConfigFromOptions = (
 ): LoggerConfig => ({
     logLevel: resolveLogLevel(options),
     outputFormat: resolveOutputFormat(options),
-    useColors: shouldUseColors(options),
+    useColors: shouldUseColorSync(options),
     verbose: options.verbose ?? false,
 });
