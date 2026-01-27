@@ -244,8 +244,12 @@ export function loadConfig(): Effect.Effect<MCPConfig, ConfigurationError> {
         DEFAULT_CONFIG.tracingSamplingRate,
     };
 
-    // Validate configuration
-    yield* validateConfig(config);
+    // Validate configuration unless explicitly skipped (useful for preview debugging)
+    if (process.env.SKIP_CONFIG_VALIDATE !== "true") {
+      yield* validateConfig(config);
+    } else {
+      console.warn("[Config] SKIP_CONFIG_VALIDATE=true - skipping config validation");
+    }
     
     return config;
   });

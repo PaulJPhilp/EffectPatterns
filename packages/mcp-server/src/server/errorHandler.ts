@@ -21,6 +21,7 @@ import {
     RateLimitError,
     RequestValidationError,
     ValidationError,
+    ConfigurationError,
 } from "../errors";
 import { FileSizeError, NonTypeScriptError } from "../services/review-code";
 
@@ -168,6 +169,19 @@ export function errorToResponse(
         };
         return NextResponse.json(response, {
           status: 400,
+          headers: baseHeaders,
+        });
+      }
+
+      case "ConfigurationError": {
+        const e = error as ConfigurationError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "configuration_error",
+          details: { key: e.key, expected: e.expected, received: e.received },
+        };
+        return NextResponse.json(response, {
+          status: 500,
           headers: baseHeaders,
         });
       }
