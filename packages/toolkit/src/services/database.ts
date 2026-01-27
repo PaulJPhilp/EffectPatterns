@@ -56,7 +56,7 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
   {
     effect: Effect.gen(function* () {
       const logger = yield* ToolkitLogger;
-      const databaseUrl = yield* Config.string("DATABASE_URL").pipe(
+      const databaseUrl = yield* Config.string("DATABASE_URL_OVERRIDE").pipe(
         Config.withDefault(getDatabaseUrl()),
       );
 

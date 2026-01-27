@@ -63,6 +63,7 @@ export function createDatabase(url?: string): DatabaseConnection {
  */
 export function getDatabaseUrl(): string {
   return (
+    process.env.DATABASE_URL_OVERRIDE ??
     process.env.DATABASE_URL ??
     "postgresql://postgres:postgres@localhost:5432/effect_patterns"
   )
