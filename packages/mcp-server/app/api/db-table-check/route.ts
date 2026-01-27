@@ -27,7 +27,17 @@ const handleDbTableCheck = Effect.fn("db-table-check")(function* (
   const result = yield* Effect.gen(function* () {
     const { db, close } = createDatabase(dbUrl);
     const count = yield* Effect.tryPromise(async () => {
-      return await db.execute(sql`SELECT COUNT(*)::int as count FROM effect_patterns`);
+      return await db.execute(
+        sql`SELECT COUNT(*)::int as count FROM effect_patterns`
+      );
+    });
+    const columns = yield* Effect.tryPromise(async () => {
+      return await db.execute(sql`
+        SELECT column_name, data_type
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'effect_patterns'
+        ORDER BY ordinal_position
+      `);
     });
     yield* Effect.promise(() => close());
     return count;
@@ -35,7 +45,7 @@ const handleDbTableCheck = Effect.fn("db-table-check")(function* (
 
   return {
     success: true,
-    result,
+    result: { count, columns },
   };
 });
 
