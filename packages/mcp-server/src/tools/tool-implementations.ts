@@ -3,6 +3,8 @@ import {
   MARKER_PATTERN_INDEX_V1,
 } from "@/constants/markers.js";
 import {
+  buildFullPatternCard,
+  buildPatternContent,
   buildScanFirstPatternContent,
   buildSearchResultsContent,
 } from "@/mcp-content-builders.js";
@@ -32,6 +34,10 @@ import {
   isSearchTooBroad,
 } from "@/tools/elicitation-helpers.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import matter from "gray-matter";
+import { globSync } from "glob";
+import path from "node:path";
+import { readFileSync } from "node:fs";
 
 /**
  * Telemetry counters for cache performance
@@ -52,6 +58,80 @@ export function getCacheMetrics() {
  */
 function generateRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+function normalizeAnnotations(
+  annotations: TextContent["annotations"] | undefined,
+): TextContent["annotations"] | undefined {
+  if (!annotations) return undefined;
+  if (typeof annotations.priority !== "number") return annotations;
+  return {
+    ...annotations,
+    priority: Math.min(annotations.priority, 1),
+  };
+}
+
+function normalizeContentBlocks(
+  content: CallToolResult["content"],
+): CallToolResult["content"] {
+  return content
+    .filter((block) => typeof (block as any).text === "string")
+    .map((block) => ({
+      ...block,
+      text: String((block as any).text),
+    }));
+}
+
+function extractFirstCodeFence(body: string): { code: string; language?: string } | null {
+  const fence = /```(\\w+)?\\n([\\s\\S]*?)\\n```/m.exec(body);
+  if (!fence) return null;
+  return { language: fence[1], code: fence[2].trim() };
+}
+
+function extractSection(body: string, heading: string): string | null {
+  const pattern = new RegExp(`^##\\s+${heading}\\s*$`, "m");
+  const match = pattern.exec(body);
+  if (!match) return null;
+  const start = match.index + match[0].length;
+  const rest = body.slice(start);
+  const next = rest.search(/^##\\s+/m);
+  return (next === -1 ? rest : rest.slice(0, next)).trim();
+}
+
+function extractFirstParagraph(text: string | null): string | null {
+  if (!text) return null;
+  const cleaned = text.replace(/```[\\s\\S]*?```/g, "").trim();
+  const para = cleaned.split(/\\n\\n+/)[0]?.trim();
+  return para || null;
+}
+
+function findMdxPathBySlug(id: string): string | null {
+  const root = path.resolve(process.cwd(), "../../content/published/patterns");
+  const matches = globSync(`${root}/**/${id}.mdx`);
+  return matches[0] || null;
+}
+
+function extractMdxFields(id: string): {
+  summary?: string;
+  guideline?: string;
+  rationale?: string;
+  example?: { code: string; language?: string };
+} {
+  const filePath = findMdxPathBySlug(id);
+  if (!filePath) return {};
+  const raw = readFileSync(filePath, "utf8");
+  const { data, content } = matter(raw);
+  const summary = typeof data.summary === "string" ? data.summary : undefined;
+  const guideline = extractFirstParagraph(extractSection(content, "Guideline"));
+  const rationale = extractFirstParagraph(extractSection(content, "Rationale"));
+  const goodExampleSection = extractSection(content, "Good Example") || extractSection(content, "Example");
+  const example = extractFirstCodeFence(goodExampleSection || content) || undefined;
+  return { summary, guideline, rationale, example };
+}
+
+function extractApiNames(text: string): string[] {
+  const matches = text.match(/\\b(Effect|Layer|Stream|Schedule|Metric|Ref|Queue|PubSub)\\.\\w+/g);
+  return matches ? Array.from(new Set(matches)).slice(0, 6) : [];
 }
 
 /**
@@ -129,6 +209,77 @@ interface SearchPatternSummary {
 interface SearchResultsPayload {
   readonly count: number;
   readonly patterns: readonly SearchPatternSummary[];
+}
+
+async function buildFullSearchContent(
+  data: SearchResultsPayload,
+  args: SearchPatternsArgs,
+  callApi: CallApiFn,
+  renderedCards: number,
+): Promise<TextContent[]> {
+  const content: TextContent[] = [];
+  const queryInfo = args.q ? ` for "${args.q}"` : "";
+
+  content.push({
+    type: "text",
+    text: `## Effect Pattern Search${queryInfo}\nFound **${data.count}** patterns.\n\n`,
+    annotations: { priority: 1, audience: ["user"] },
+  });
+
+  if (data.patterns.length === 0 || renderedCards === 0) {
+    return content;
+  }
+
+  for (let i = 0; i < renderedCards; i++) {
+    const summary = data.patterns[i];
+    const detailResult = await callApi(
+      `/patterns/${encodeURIComponent(summary.id)}`,
+    );
+
+    if (detailResult.ok && detailResult.data) {
+      const detailEnvelope = detailResult.data as any;
+      const detail = detailEnvelope.pattern ?? detailEnvelope;
+      const summaryText =
+        detail.summary || detail.description || summary.description;
+      const rationaleText =
+        detail.description || summary.description;
+      const useWhenText =
+        detail.useCases && detail.useCases.length > 0
+          ? detail.useCases[0]
+          : summaryText;
+      const example = detail.examples && detail.examples.length > 0 ? detail.examples[0] : undefined;
+      const exampleCode = example?.code || "// No example available for this pattern.";
+      const apiNames = extractApiNames(exampleCode);
+
+      const fullCard = buildFullPatternCard({
+        title: detail.title || summary.title,
+        summary: summaryText,
+        rationale: rationaleText,
+        useWhen: useWhenText,
+        apiNames,
+        exampleCode,
+        exampleLanguage: example?.language || "typescript",
+      });
+      content.push(...fullCard);
+    } else {
+      const fallback = buildPatternContent(
+        summary.title,
+        summary.description,
+        "// No example available for this pattern.",
+      );
+      content.push(...fallback);
+    }
+
+    if (i < renderedCards - 1) {
+      content.push({
+        type: "text",
+        text: "\n\n---\n\n",
+        annotations: { priority: 1, audience: ["user"] },
+      });
+    }
+  }
+
+  return content;
 }
 
 /**
@@ -460,7 +611,7 @@ function getSearchCacheKey(args: SearchPatternsArgs): string {
     format: args.format || "markdown",
     limitCards: args.limitCards || 10,
     includeProvenancePanel: args.includeProvenancePanel || false,
-    includeStructuredPatterns: args.includeStructuredPatterns ?? null,
+    includeStructuredPatterns: args.includeStructuredPatterns ?? false,
   });
   return `search:${key}`;
 }
@@ -663,21 +814,23 @@ export function registerTools(
           }
 
           // Build structured output
-          const defaultLimitCards = data.count <= 3 ? 2 : 3;
+          const defaultLimitCards = data.count <= 3 ? 3 : 3;
           const limitCards = args.limitCards || defaultLimitCards;
           const renderedCards = Math.min(data.patterns.length, limitCards);
+          const renderedCardsForMetadata =
+            format === "markdown" || format === "both" ? renderedCards : 0;
 
           // Count contract markers in markdown content
           let markdownText = "";
           const richContent: TextContent[] = [];
 
           if (format === "markdown" || format === "both") {
-            const builtContent = buildSearchResultsContent(data, {
-              limitCards: args.limitCards,
-              includeProvenancePanel: args.includeProvenancePanel,
-              includeIndexTable: false,
-              query: args.q,
-            });
+            const builtContent = await buildFullSearchContent(
+              data,
+              args,
+              callApi,
+              renderedCards,
+            );
             richContent.push(...builtContent);
             markdownText = builtContent.map((block) => block.text).join("\n");
           }
@@ -722,9 +875,10 @@ export function registerTools(
           query.format = format; // Echo resolved format
 
           // Cards are rendered for the first K patterns in index order (deterministic)
-          const renderedCardIds = data.patterns
-            .slice(0, renderedCards)
-            .map((p) => p.id);
+          const renderedCardIds =
+            format === "markdown" || format === "both"
+              ? data.patterns.slice(0, renderedCards).map((p) => p.id)
+              : [];
 
           // Validate contract marker counts match rendered content
           // Policy: Dev=warn, CI/tests=fail (via test assertions), Prod=warn only
@@ -749,7 +903,7 @@ export function registerTools(
             totalCount: data.count,
             categories: categoryCounts,
             difficulties: difficultyCounts,
-            renderedCards,
+            renderedCards: renderedCardsForMetadata,
             renderedCardIds,
             contractMarkers: {
               index: indexMarkerCount,
@@ -809,7 +963,7 @@ export function registerTools(
                 ...block,
                 mimeType: "text/markdown" as const,
                 // Ensure annotations are present to signal "final UI component"
-                annotations: block.annotations || {
+                annotations: normalizeAnnotations(block.annotations) || {
                   priority: 1,
                   audience: ["user"],
                 },
@@ -866,9 +1020,12 @@ export function registerTools(
             return errorContent;
           }
 
+          const includeStructuredContent =
+            includeStructuredPatterns || format === "json" || format === "both";
+
           const toolResult: CallToolResult = {
             content,
-            structuredContent: jsonContent,
+            ...(includeStructuredContent && { structuredContent: jsonContent }),
             isError: false, // Explicitly set to false for successful searches
           };
 
@@ -920,7 +1077,7 @@ export function registerTools(
 
       const format = args.format || "markdown";
       const includeStructuredDetails =
-        args.includeStructuredDetails ?? format !== "markdown";
+        args.includeStructuredDetails ?? true;
 
       // Elicitation: Check for missing/invalid pattern ID
       if (!args.id || args.id.trim().length === 0) {
@@ -941,12 +1098,12 @@ export function registerTools(
          }
          
          return {
-           content,
+           content: normalizeContentBlocks(content),
            structuredContent: elicitation.structuredContent,
          };
       }
 
-      const cacheKey = `pattern:${args.id}:format=${format}:details=${includeStructuredDetails}`;
+      const cacheKey = `pattern:v3:${args.id}:format=${format}:details=${includeStructuredDetails}`;
 
       // Try cache first (30 min TTL for individual patterns)
       if (cache) {
@@ -954,7 +1111,10 @@ export function registerTools(
         if (cached) {
           cacheMetrics.patternHits++;
           log(`Cache hit: ${cacheKey}`);
-          return cached;
+          return {
+            ...cached,
+            content: normalizeContentBlocks(cached.content || []),
+          };
         }
         cacheMetrics.patternMisses++;
       }
@@ -994,7 +1154,7 @@ export function registerTools(
          }
          
          return {
-           content,
+           content: normalizeContentBlocks(content),
            structuredContent: elicitation.structuredContent,
          };
       }
@@ -1040,7 +1200,7 @@ export function registerTools(
         }
 
         const toolResult: CallToolResult = {
-          content,
+          content: normalizeContentBlocks(content),
           structuredContent: jsonContent,
         };
         // Cache migration patterns (longer TTL: 60 min)
@@ -1052,29 +1212,28 @@ export function registerTools(
 
       // For regular patterns, build scan-first content optimized for quick scanning
       if (result.ok && result.data) {
-        const pattern = result.data as any;
+        const patternEnvelope = result.data as any;
+        const pattern = patternEnvelope.pattern ?? patternEnvelope;
         // buildScanFirstPatternContent now returns a SINGLE TextContent block
-        const cardBlock = buildScanFirstPatternContent(
-          {
-            id: pattern.id || args.id,
-            title: pattern.title,
-            category: pattern.category,
-            difficulty: pattern.difficulty,
-            description: pattern.description,
-            examples: pattern.examples,
-            useCases: pattern.useCases,
-            tags: pattern.tags,
-            relatedPatterns: pattern.relatedPatterns,
-          },
-          {
-            descriptionMaxChars: includeStructuredDetails ? 500 : 160,
-            includeExample: includeStructuredDetails,
-            includeNotes: includeStructuredDetails,
-            includeRelated: includeStructuredDetails,
-            includeUseWhen: includeStructuredDetails,
-            exampleMaxLines: includeStructuredDetails ? 20 : 12,
-          },
-        );
+        const summaryText = pattern.summary || pattern.description;
+        const rationaleText = pattern.description;
+        const useWhenText =
+          pattern.useCases && pattern.useCases.length > 0
+            ? pattern.useCases[0]
+            : summaryText;
+        const example = pattern.examples && pattern.examples.length > 0 ? pattern.examples[0] : undefined;
+        const exampleCode = example?.code || "// No example available for this pattern.";
+        const apiNames = extractApiNames(exampleCode);
+
+        const cardBlock = buildFullPatternCard({
+          title: pattern.title,
+          summary: summaryText,
+          rationale: rationaleText,
+          useWhen: useWhenText,
+          apiNames,
+          exampleCode,
+          exampleLanguage: example?.language || "typescript",
+        });
 
         const wantsDetailedStructured =
           includeStructuredDetails && (format === "json" || format === "both");
@@ -1135,7 +1294,7 @@ export function registerTools(
         }
 
         // Count markers in content (now a single block)
-        const markdownText = cardBlock.text;
+        const markdownText = cardBlock.map((b) => b.text).join("\n");
         const cardMarkerCount = (
           markdownText.match(
             new RegExp(
@@ -1204,15 +1363,16 @@ export function registerTools(
         const content: CallToolResult["content"] = [];
 
         if (format === "markdown" || format === "both") {
-          content.push({
-            ...cardBlock,
-            mimeType: "text/markdown" as const,
-            // Ensure annotations signal "final UI component"
-            annotations: cardBlock.annotations || {
-              priority: 1,
-              audience: ["user"],
-            },
-          });
+          content.push(
+            ...cardBlock.map((block) => ({
+              ...block,
+              mimeType: "text/markdown" as const,
+              annotations: block.annotations || {
+                priority: 1,
+                audience: ["user"],
+              },
+            })),
+          );
         }
 
         if (format === "json" || format === "both") {
@@ -1224,8 +1384,10 @@ export function registerTools(
         }
 
         const toolResult: CallToolResult = {
-          content,
-          structuredContent: serializableStructuredContent,
+          content: normalizeContentBlocks(content),
+          ...(format === "markdown"
+            ? {}
+            : { structuredContent: serializableStructuredContent }),
         };
 
         // Cache result (30 min TTL)

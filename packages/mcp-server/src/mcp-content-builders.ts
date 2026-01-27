@@ -59,8 +59,14 @@ function createTextBlock(
   text: string,
   annotations?: MCPAnnotations,
 ): TextContent {
-  const normalizedAnnotations =
-    annotations;
+  const normalizedAnnotations = annotations
+    ? {
+        ...annotations,
+        ...(typeof annotations.priority === "number" && {
+          priority: Math.min(annotations.priority, 1),
+        }),
+      }
+    : undefined;
 
   return {
     type: "text",
@@ -257,6 +263,50 @@ function buildPatternContent(
   }
 
   return content;
+}
+
+/**
+ * Build a full pattern card with consistent sections.
+ */
+function buildFullPatternCard(params: {
+  title: string;
+  summary: string;
+  rationale: string;
+  useWhen: string;
+  apiNames: readonly string[];
+  exampleCode: string;
+  exampleLanguage?: string;
+}): TextContent[] {
+  const {
+    title,
+    summary,
+    rationale,
+    useWhen,
+    apiNames,
+    exampleCode,
+    exampleLanguage,
+  } = params;
+
+  const sections: string[] = [];
+
+  sections.push(`## ${title}`);
+  sections.push(`**Summary:** ${summary}`);
+  sections.push(`**Use when:** ${useWhen}`);
+
+  if (apiNames.length > 0) {
+    const apiChips = apiNames.map((api) => `\`${api}\``).join(" ");
+    sections.push(`**API:** ${apiChips}`);
+  }
+
+  sections.push(`**Example:**\n\n\`\`\`${exampleLanguage || "typescript"}\n${exampleCode}\n\`\`\``);
+
+  const body = sections.join("\n\n");
+  return [
+    createTextBlock(`\n\n${body}\n\n`, {
+      priority: 1,
+      audience: ["user"],
+    }),
+  ];
 }
 
 /**
@@ -1000,6 +1050,7 @@ function buildSearchResultsContent(
 
 export {
   buildPatternContent,
+  buildFullPatternCard,
   buildScanFirstPatternContent,
   buildSearchResultsContent,
   buildViolationContent,
@@ -1012,4 +1063,3 @@ export {
   type MCPAnnotations,
   type TextContent
 };
-
