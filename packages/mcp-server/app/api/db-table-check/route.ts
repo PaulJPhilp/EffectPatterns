@@ -40,12 +40,12 @@ const handleDbTableCheck = Effect.fn("db-table-check")(function* (
       `);
     });
     yield* Effect.promise(() => close());
-    return count;
+    return { count, columns };
   });
 
   return {
     success: true,
-    result: { count, columns },
+    result,
   };
 });
 
