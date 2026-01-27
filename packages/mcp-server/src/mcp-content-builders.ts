@@ -280,7 +280,6 @@ function buildFullPatternCard(params: {
   const {
     title,
     summary,
-    rationale,
     useWhen,
     apiNames,
     exampleCode,

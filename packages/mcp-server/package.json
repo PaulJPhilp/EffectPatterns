@@ -55,8 +55,8 @@
     "preflight": "bun run mcp:build && bun run check:narration-leakage && bun run test:mcp:local"
   },
   "dependencies": {
-    "@effect-patterns/analysis-core": "file:./lib-analysis-core",
-    "@effect-patterns/toolkit": "file:./lib-toolkit",
+    "@effect-patterns/analysis-core": "workspace:*",
+    "@effect-patterns/toolkit": "workspace:*",
     "@effect/opentelemetry": "^0.61.0",
     "@effect/platform": "^0.94.1",
     "@effect/platform-node": "^0.104.0",

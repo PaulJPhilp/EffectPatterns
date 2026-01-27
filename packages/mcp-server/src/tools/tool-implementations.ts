@@ -5,8 +5,6 @@ import {
 import {
   buildFullPatternCard,
   buildPatternContent,
-  buildScanFirstPatternContent,
-  buildSearchResultsContent,
 } from "@/mcp-content-builders.js";
 import type {
   Elicitation,
@@ -34,10 +32,6 @@ import {
   isSearchTooBroad,
 } from "@/tools/elicitation-helpers.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import matter from "gray-matter";
-import { globSync } from "glob";
-import path from "node:path";
-import { readFileSync } from "node:fs";
 
 /**
  * Telemetry counters for cache performance
@@ -80,53 +74,6 @@ function normalizeContentBlocks(
       ...block,
       text: String((block as any).text),
     }));
-}
-
-function extractFirstCodeFence(body: string): { code: string; language?: string } | null {
-  const fence = /```(\\w+)?\\n([\\s\\S]*?)\\n```/m.exec(body);
-  if (!fence) return null;
-  return { language: fence[1], code: fence[2].trim() };
-}
-
-function extractSection(body: string, heading: string): string | null {
-  const pattern = new RegExp(`^##\\s+${heading}\\s*$`, "m");
-  const match = pattern.exec(body);
-  if (!match) return null;
-  const start = match.index + match[0].length;
-  const rest = body.slice(start);
-  const next = rest.search(/^##\\s+/m);
-  return (next === -1 ? rest : rest.slice(0, next)).trim();
-}
-
-function extractFirstParagraph(text: string | null): string | null {
-  if (!text) return null;
-  const cleaned = text.replace(/```[\\s\\S]*?```/g, "").trim();
-  const para = cleaned.split(/\\n\\n+/)[0]?.trim();
-  return para || null;
-}
-
-function findMdxPathBySlug(id: string): string | null {
-  const root = path.resolve(process.cwd(), "../../content/published/patterns");
-  const matches = globSync(`${root}/**/${id}.mdx`);
-  return matches[0] || null;
-}
-
-function extractMdxFields(id: string): {
-  summary?: string;
-  guideline?: string;
-  rationale?: string;
-  example?: { code: string; language?: string };
-} {
-  const filePath = findMdxPathBySlug(id);
-  if (!filePath) return {};
-  const raw = readFileSync(filePath, "utf8");
-  const { data, content } = matter(raw);
-  const summary = typeof data.summary === "string" ? data.summary : undefined;
-  const guideline = extractFirstParagraph(extractSection(content, "Guideline"));
-  const rationale = extractFirstParagraph(extractSection(content, "Rationale"));
-  const goodExampleSection = extractSection(content, "Good Example") || extractSection(content, "Example");
-  const example = extractFirstCodeFence(goodExampleSection || content) || undefined;
-  return { summary, guideline, rationale, example };
 }
 
 function extractApiNames(text: string): string[] {
