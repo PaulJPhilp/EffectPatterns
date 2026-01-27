@@ -5,7 +5,7 @@
  */
 
 import { createDatabase } from "@effect-patterns/toolkit";
-import { createEffectPatternRepository } from "@effect-patterns/toolkit/repositories";
+import { createEffectPatternRepository } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import { validateAdminKey } from "../../../src/auth/adminAuth";
