@@ -37,6 +37,7 @@ export function createDatabase(url?: string): DatabaseConnection {
     max: 1, // Single connection for CLI usage
     idle_timeout: 20, // Close idle connections after 20 seconds
     connect_timeout: 10, // Connection timeout in seconds
+    prepare: false, // Required for Neon pooler / PgBouncer compatibility
     onnotice: () => {
       // Suppress notices in CLI
     },
