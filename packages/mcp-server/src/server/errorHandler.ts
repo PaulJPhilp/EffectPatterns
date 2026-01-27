@@ -255,10 +255,22 @@ export function errorToResponse(
       });
     }
 
-    // Default to 500 for unhandled errors
+    // Default to 500 for unhandled errors (include structured details when available)
+    const err = error as any;
     const response: ApiErrorResponse = {
       error: error.message,
       status: "internal_server_error",
+      details: {
+        code: err?.code,
+        detail: err?.detail,
+        hint: err?.hint,
+        constraint: err?.constraint,
+        table: err?.table ?? err?.table_name,
+        column: err?.column ?? err?.column_name,
+        schema: err?.schema ?? err?.schema_name,
+        where: err?.where,
+        cause: err?.cause?.message ?? err?.cause,
+      },
     };
     return NextResponse.json(response, {
       status: 500,
