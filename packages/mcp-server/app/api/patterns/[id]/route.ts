@@ -8,6 +8,7 @@
  * in the OpenTelemetry trace.
  */
 
+import { getPatternByIdDb } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
@@ -15,7 +16,7 @@ import {
 } from "../../../../src/auth/apiKey";
 import { PatternNotFoundError } from "../../../../src/errors";
 import { errorHandler } from "../../../../src/server/errorHandler";
-import { PatternsService, runWithRuntime } from "../../../../src/server/init";
+import { runWithRuntime } from "../../../../src/server/init";
 import { TracingService } from "../../../../src/tracing/otlpLayer";
 
 // Handler implementation with automatic span creation via Effect.fn
@@ -24,7 +25,6 @@ const handleGetPattern = Effect.fn("get-pattern")(function* (
   patternId: string
 ) {
   const tracing = yield* TracingService;
-  const patternsService = yield* PatternsService;
 
   // Validate API key
   yield* validateApiKey(request);
@@ -35,12 +35,11 @@ const handleGetPattern = Effect.fn("get-pattern")(function* (
   });
 
   // Fetch pattern - handle errors gracefully
-  const result = yield* patternsService.getPatternById(patternId).pipe(
-    Effect.catchAll(() => {
-      // If pattern lookup fails, return undefined (will be converted to 404 below)
-      return Effect.succeed(undefined);
-    })
-  );
+  const dbUrl = process.env.DATABASE_URL_OVERRIDE || process.env.DATABASE_URL;
+  const result = yield* Effect.tryPromise({
+    try: () => getPatternByIdDb(patternId, dbUrl),
+    catch: () => undefined,
+  });
 
   if (!result) {
     return yield* Effect.fail(new PatternNotFoundError({ patternId }));

@@ -8,7 +8,7 @@
  * in the OpenTelemetry trace.
  */
 
-import { type Pattern } from "@effect-patterns/toolkit";
+import { searchPatternsDb, type Pattern } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
@@ -16,7 +16,7 @@ import {
   validateApiKey,
 } from "../../../src/auth/apiKey";
 import { errorHandler, errorToResponse } from "../../../src/server/errorHandler";
-import { PatternsService, runWithRuntime } from "../../../src/server/init";
+import { runWithRuntime } from "../../../src/server/init";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
 /**
@@ -42,7 +42,6 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
   request: NextRequest
 ) {
   const tracing = yield* TracingService;
-  const patterns = yield* PatternsService;
   
   // Validate API key
   yield* validateApiKey(request);
@@ -73,11 +72,19 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
   // PERFORMANCE: Fetch patterns with automatic caching
   // Cache key includes all search parameters, so different searches have different cache entries
   // 1-hour TTL for pattern searches (good balance between freshness and performance)
-  const results = yield* patterns.searchPatterns({
-    query,
-    category,
-    skillLevel,
-    limit,
+  const dbUrl = process.env.DATABASE_URL_OVERRIDE || process.env.DATABASE_URL;
+  const results = yield* Effect.tryPromise({
+    try: () =>
+      searchPatternsDb(
+        {
+          query,
+          category,
+          skillLevel,
+          limit,
+        },
+        dbUrl
+      ),
+    catch: (error) => new Error(`Failed to search patterns: ${String(error)}`),
   });
 
   // Convert to rich summaries (includes examples and useCases for rich cards)
