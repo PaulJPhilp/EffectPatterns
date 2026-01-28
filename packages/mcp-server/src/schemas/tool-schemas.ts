@@ -83,6 +83,15 @@ export const ToolSchemas = {
     filePath: z.string().optional().describe("File path for context only (e.g., 'src/services/user.ts'). Code must be provided via 'code' parameter - files are not read from disk."),
   }).describe("Get AI-powered architectural review and diagnostic recommendations for Effect code. Only accepts code that is cut and pasted into the prompt or provided from an open editor file. Returns diagnostic information only (no corrected code)."),
 
+  // Debug MCP Config Tool
+  getMcpConfig: z.object({
+    format: z
+      .enum(["json", "markdown", "both"])
+      .default("markdown")
+      .optional()
+      .describe("Output format (default: 'markdown')"),
+  }).describe("Get MCP server config (base URL, env, and api-key presence) for debugging"),
+
   // Paid-tier schemas removed from MCP tool surface (HTTP API only)
 };
 
@@ -92,3 +101,4 @@ export type GetPatternArgs = z.infer<typeof ToolSchemas.getPattern>;
 export type ListAnalysisRulesArgs = z.infer<typeof ToolSchemas.listAnalysisRules>;
 export type AnalyzeCodeArgs = z.infer<typeof ToolSchemas.analyzeCode>;
 export type ReviewCodeArgs = z.infer<typeof ToolSchemas.reviewCode>;
+export type GetMcpConfigArgs = z.infer<typeof ToolSchemas.getMcpConfig>;

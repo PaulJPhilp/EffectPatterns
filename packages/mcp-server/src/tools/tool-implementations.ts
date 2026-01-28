@@ -17,6 +17,7 @@ import {
   ToolSchemas,
   type AnalyzeCodeArgs,
   type GetPatternArgs,
+  type GetMcpConfigArgs,
   type ReviewCodeArgs,
   type SearchPatternsArgs,
 } from "@/schemas/tool-schemas.js";
@@ -1010,6 +1011,53 @@ export function registerTools(
         }
         throw error; // Re-throw to let MCP SDK handle it
       }
+    },
+  );
+
+  // MCP Config Tool (debug)
+  server.tool(
+    "get_mcp_config",
+    "Get MCP server config (base URL, env, api-key presence) for debugging",
+    ToolSchemas.getMcpConfig.shape as any,
+    async (args: GetMcpConfigArgs): Promise<CallToolResult> => {
+      const format = args.format || "markdown";
+      const payload = {
+        baseUrl: process.env.EFFECT_PATTERNS_API_URL || "",
+        mcpEnv: process.env.MCP_ENV || "",
+        debug: process.env.MCP_DEBUG || "",
+        hasApiKey: !!(process.env.PATTERN_API_KEY && process.env.PATTERN_API_KEY.trim()),
+      };
+
+      const content: CallToolResult["content"] = [];
+
+      if (format === "markdown" || format === "both") {
+        content.push({
+          type: "text",
+          text: [
+            "## MCP Config",
+            "",
+            `- baseUrl: ${payload.baseUrl || "(empty)"}`,
+            `- mcpEnv: ${payload.mcpEnv || "(empty)"}`,
+            `- debug: ${payload.debug || "(empty)"}`,
+            `- hasApiKey: ${payload.hasApiKey}`,
+            "",
+          ].join("\n"),
+          mimeType: "text/markdown",
+        });
+      }
+
+      if (format === "json" || format === "both") {
+        content.push({
+          type: "text",
+          text: JSON.stringify(payload, null, 2),
+          mimeType: "application/json",
+        });
+      }
+
+      return {
+        content: normalizeContentBlocks(content),
+        structuredContent: payload,
+      };
     },
   );
 
