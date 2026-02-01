@@ -116,7 +116,7 @@
     "ora": "^9.1.0",
     "postgres": "^3.4.8",
     "semver": "^7.7.3",
-    "vercel": "^50.5.0",
+    "vercel": "^50.7.1",
     "yaml": "^2.8.2"
   },
   "devDependencies": {

@@ -33,15 +33,43 @@ export function createDatabase(url?: string): DatabaseConnection {
     process.env.DATABASE_URL ??
     "postgresql://postgres:postgres@localhost:5432/effect_patterns"
 
-  const client = postgres(databaseUrl, {
-    max: 1, // Single connection for CLI usage
-    idle_timeout: 20, // Close idle connections after 20 seconds
-    connect_timeout: 10, // Connection timeout in seconds
+  // Detect environment to configure connection pooling appropriately
+  const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+  const isCLI = process.argv[1]?.includes('cli') ||
+    process.argv[1]?.includes('load-patterns') ||
+    process.argv[1]?.includes('migrate') ||
+    Boolean(process.env.CLI_MODE)
+
+  // Configure pool based on environment
+  let poolConfig: any = {
     prepare: false, // Required for Neon pooler / PgBouncer compatibility
     onnotice: () => {
       // Suppress notices in CLI
     },
-  })
+  }
+
+  if (isCLI) {
+    // CLI usage: single connection
+    poolConfig.max = 1
+    poolConfig.idle_timeout = 20
+    poolConfig.connect_timeout = 10
+  } else if (isServerless) {
+    // Serverless (Vercel): moderate pool for concurrent requests, aggressive idle timeout
+    poolConfig.max = 10
+    poolConfig.idle_timeout = 10
+    poolConfig.connect_timeout = 10
+    poolConfig.max_lifetime = 300 // 5 minutes - prevent stale connections
+    poolConfig.transform = {
+      undefined: null, // Normalize undefined values
+    }
+  } else {
+    // Server environment: larger pool for sustained load
+    poolConfig.max = 20
+    poolConfig.idle_timeout = 20
+    poolConfig.connect_timeout = 10
+  }
+
+  const client = postgres(databaseUrl, poolConfig)
 
   const db = drizzle(client, { schema })
 

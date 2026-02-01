@@ -45,6 +45,8 @@
     "test:routes": "bunx vitest run --config vitest.routes.config.ts",
     "test:routes:watch": "bunx vitest --config vitest.routes.config.ts",
     "test:routes:coverage": "bunx vitest run --config vitest.routes.config.ts --coverage",
+    "test:workflows": "bunx vitest run --config vitest.workflows.config.ts",
+    "test:workflows:watch": "bunx vitest --config vitest.workflows.config.ts",
     "test:full": "bun run test && bun run test:auth && bun run test:routes",
     "test:ci": "bun run test && bun run test:auth && bun run test:routes && bun run test:stress:edge",
     "cleanup:next": "bash scripts/cleanup-next.sh",

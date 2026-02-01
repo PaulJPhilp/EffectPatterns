@@ -7,16 +7,12 @@
 import { createDatabase } from "@effect-patterns/toolkit";
 import { sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { type NextRequest, NextResponse } from "next/server";
-import { validateAdminKey } from "../../../src/auth/adminAuth";
-import { runWithRuntime } from "../../../src/server/init";
-import { errorHandler } from "../../../src/server/errorHandler";
+import { type NextRequest } from "next/server";
+import { createRouteHandler } from "../../../src/server/routeHandler";
 
 const handleDbTableCheck = Effect.fn("db-table-check")(function* (
   request: NextRequest
 ) {
-  yield* validateAdminKey(request);
-
   const dbUrl = process.env.DATABASE_URL_OVERRIDE || process.env.DATABASE_URL;
   if (!dbUrl) {
     return yield* Effect.fail(
@@ -49,16 +45,7 @@ const handleDbTableCheck = Effect.fn("db-table-check")(function* (
   };
 });
 
-export async function GET(request: NextRequest) {
-  const result = await runWithRuntime(
-    handleDbTableCheck(request).pipe(
-      Effect.catchAll((error) => errorHandler(error))
-    )
-  );
-
-  if (result instanceof Response) {
-    return result;
-  }
-
-  return NextResponse.json(result, { status: 200 });
-}
+export const GET = createRouteHandler(handleDbTableCheck, {
+  requireAuth: false,
+  requireAdmin: true,
+});

@@ -16,8 +16,8 @@
       ],
       "disabled": false,
       "env": {
-        "EFFECT_PATTERNS_API_URL": "http://localhost:3000",
-        "MCP_ENV": "local",
+        "EFFECT_PATTERNS_API_URL": "https://effect-patterns-7wk2w32jl-buddybuilder.vercel.app",
+        "MCP_ENV": "staging",
         "MCP_DEBUG": "false"
       }
     },
