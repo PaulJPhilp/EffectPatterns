@@ -29,6 +29,7 @@ export type CodeExample = S.Schema.Type<typeof CodeExample>;
  */
 export declare const Pattern: S.Struct<{
     id: typeof S.String;
+    slug: typeof S.String;
     title: typeof S.String;
     description: typeof S.String;
     category: S.Literal<["error-handling", "concurrency", "data-transformation", "testing", "services", "streams", "caching", "observability", "scheduling", "resource-management"]>;
@@ -51,6 +52,7 @@ export type Pattern = S.Schema.Type<typeof Pattern>;
  */
 export declare const PatternSummary: S.Struct<{
     id: typeof S.String;
+    slug: typeof S.String;
     title: typeof S.String;
     description: typeof S.String;
     category: S.Literal<["error-handling", "concurrency", "data-transformation", "testing", "services", "streams", "caching", "observability", "scheduling", "resource-management"]>;
@@ -65,6 +67,7 @@ export declare const PatternsIndex: S.Struct<{
     version: S.optional<typeof S.String>;
     patterns: S.Array$<S.Struct<{
         id: typeof S.String;
+        slug: typeof S.String;
         title: typeof S.String;
         description: typeof S.String;
         category: S.Literal<["error-handling", "concurrency", "data-transformation", "testing", "services", "streams", "caching", "observability", "scheduling", "resource-management"]>;

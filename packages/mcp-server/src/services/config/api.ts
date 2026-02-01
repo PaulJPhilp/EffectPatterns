@@ -55,6 +55,10 @@ export class MCPConfigService extends Effect.Service<MCPConfigService>()(
         serviceName: config.serviceName,
         serviceVersion: config.serviceVersion,
         tracingSamplingRate: config.tracingSamplingRate,
+
+        // Circuit Breaker
+        circuitBreakerDb: config.circuitBreakerDb,
+        circuitBreakerKv: config.circuitBreakerKv,
       };
     }),
   }

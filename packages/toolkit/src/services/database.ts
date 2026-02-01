@@ -220,7 +220,9 @@ export const findAllApplicationPatterns = (): Effect.Effect<
       try: () => repo.findAll(),
       catch: (error) =>
         new Error(`Failed to load application patterns: ${String(error)}`),
-    });
+    }).pipe(
+      Effect.timeout(15000) // 15 second timeout for batch operations
+    );
   });
 
 /**
@@ -239,7 +241,9 @@ export const findApplicationPatternBySlug = (
       try: () => repo.findBySlug(slug),
       catch: (error) =>
         new Error(`Failed to find application pattern: ${String(error)}`),
-    });
+    }).pipe(
+      Effect.timeout(10000) // 10 second timeout for single pattern lookups
+    );
   });
 
 /**
@@ -254,7 +258,9 @@ export const searchEffectPatterns = (
       try: () => repo.search(params),
       catch: (error) =>
         new Error(`Failed to search patterns: ${String(error)}`),
-    });
+    }).pipe(
+      Effect.timeout(15000) // 15 second timeout for search operations
+    );
     return dbPatterns.map(dbPatternToLegacy);
   });
 
@@ -269,7 +275,9 @@ export const findEffectPatternBySlug = (
     const dbPattern = yield* Effect.tryPromise({
       try: () => repo.findBySlug(slug),
       catch: (error) => new Error(`Failed to find pattern: ${String(error)}`),
-    });
+    }).pipe(
+      Effect.timeout(10000) // 10 second timeout for single pattern lookups
+    );
     return dbPattern ? dbPatternToLegacy(dbPattern) : null;
   });
 
