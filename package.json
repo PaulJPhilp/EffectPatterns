@@ -147,7 +147,7 @@
     "tsx": "^4.21.0",
     "turbo": "^2.7.6",
     "typescript": "5.9.3",
-    "ultracite": "7.0.12",
+    "ultracite": "7.1.3",
     "vitest": "^4.0.18"
   },
   "keywords": [
