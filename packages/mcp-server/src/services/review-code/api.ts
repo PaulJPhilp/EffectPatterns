@@ -230,7 +230,7 @@ export class ReviewCodeService extends Effect.Service<ReviewCodeService>()(
 
 						const upgradeMessage =
 							hiddenCount > 0
-								? `${hiddenCount} more architectural issue${hiddenCount === 1 ? "" : "s"} found. Upgrade to Pro to see all issues and auto-fix them.`
+								? `${hiddenCount} more architectural issue${hiddenCount === 1 ? "" : "s"} found. Use the HTTP API or CLI to see all issues and auto-fix them.`
 								: undefined;
 
 						const meta: ReviewCodeMeta = {

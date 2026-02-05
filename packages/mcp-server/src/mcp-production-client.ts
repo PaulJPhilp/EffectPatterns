@@ -214,32 +214,20 @@ function toToolResult(result: ApiResult<unknown>, toolName: string): ToolResult 
     };
 }
 
-// Register tools based on production API
+// Register tools based on production API (FREE TIER ONLY)
 // Note: `as any` is required for MCP SDK compatibility - inputSchema format differs
-server.registerTool(
-    "analyze_code",
-    {
-        description:
-            "Analyze TypeScript code for Effect-TS patterns and best practices",
-        inputSchema: undefined as any,
-    },
-    async (args: { code: string; filename?: string; analysisType?: string }): Promise<ToolResult> => {
-        console.error("Tool called: analyze_code", args);
-        const result = await callProductionApi("/analyze-code", {
-            code: args.code,
-        });
-        return toToolResult(result, "analyze_code");
-    },
-);
+//
+// Paid tools (analyze_code, review_code, apply_refactoring, analyze_consistency,
+// generate_pattern) are available via HTTP API / paid CLI only.
 
 server.registerTool(
-    "list_patterns",
+    "search_patterns",
     {
-        description: "List available Effect-TS patterns",
+        description: "Search Effect-TS patterns by query, category, and difficulty",
         inputSchema: undefined as any,
     },
     async (args: { q?: string; category?: string; difficulty?: string; limit?: number }): Promise<ToolResult> => {
-        console.error("Tool called: list_patterns", args);
+        console.error("Tool called: search_patterns", args);
         const searchParams = new URLSearchParams();
         if (args.q) searchParams.append("q", args.q);
         if (args.category) searchParams.append("category", args.category);
@@ -250,25 +238,7 @@ server.registerTool(
             ? `/patterns?${searchParams}`
             : `/patterns`;
         const result = await callProductionApi(endpoint);
-        return toToolResult(result, "list_patterns");
-    },
-);
-
-server.registerTool(
-    "review_code",
-    {
-        description: "Get AI-powered architectural review and diagnostic recommendations for Effect code. Only accepts code that is cut and pasted into the prompt or provided from an open editor file. Returns diagnostic information only (no corrected code).",
-        inputSchema: undefined as any,
-    },
-    async (args: { code: string; filePath?: string }): Promise<ToolResult> => {
-        console.error("Tool called: review_code", args);
-        // Note: This tool only accepts code that is cut and pasted or from open editor.
-        // Files are NOT read from disk. Only diagnostics are returned.
-        const result = await callProductionApi("/review-code", {
-            code: args.code,
-            filePath: args.filePath,
-        });
-        return toToolResult(result, "review_code");
+        return toToolResult(result, "search_patterns");
     },
 );
 
@@ -282,6 +252,19 @@ server.registerTool(
         console.error("Tool called: get_pattern", args);
         const result = await callProductionApi(`/patterns/${args.id}`);
         return toToolResult(result, "get_pattern");
+    },
+);
+
+server.registerTool(
+    "list_analysis_rules",
+    {
+        description: "List all available code analysis rules for anti-pattern detection (read-only catalog)",
+        inputSchema: undefined as any,
+    },
+    async (_args: Record<string, never>): Promise<ToolResult> => {
+        console.error("Tool called: list_analysis_rules");
+        const result = await callProductionApi("/list-rules");
+        return toToolResult(result, "list_analysis_rules");
     },
 );
 

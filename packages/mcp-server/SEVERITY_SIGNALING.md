@@ -313,6 +313,4 @@ Potential additions:
 
 ## References
 
-- [MCP 2.0 Specification](https://modelcontextprotocol.io/docs/spec/2.0/protocol)
-- [Markdown Guide](https://www.markdownguide.org)
-- [Semantic HTML](https://developer.mozilla.org/en-US/docs/Glossary/Semantics)
+- MCP 2.0 specification, Markdown, and semantic HTML: see official documentation

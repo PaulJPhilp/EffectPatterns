@@ -117,7 +117,7 @@ function mapErrorToResponse(error: unknown): Response {
       status: 402,
       endpoint: error.endpoint,
       currentTier: error.currentTier,
-      upgradeMessage: "Upgrade to paid tier to access this feature",
+      upgradeMessage: "This capability is not available via MCP. Use the HTTP API or CLI.",
     };
   } else if (error instanceof Error) {
     status = 500;

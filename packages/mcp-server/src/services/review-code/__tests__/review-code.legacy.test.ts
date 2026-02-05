@@ -71,7 +71,7 @@ const e: any = 5;
 			expect(result.recommendations).toHaveLength(3);
 			expect(result.meta.totalFound).toBeGreaterThan(3);
 			expect(result.meta.hiddenCount).toBeGreaterThan(0);
-			expect(result.meta.upgradeMessage).toContain("Upgrade to Pro");
+			expect(result.meta.upgradeMessage).toContain("Use the HTTP API or CLI");
 			expect(result.markdown).toContain("💡");
 		});
 

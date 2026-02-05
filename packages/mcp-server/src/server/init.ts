@@ -9,20 +9,22 @@
  */
 
 // biome-ignore assist/source/organizeImports: <>
-import { CircuitBreakerService } from "../services/circuit-breaker";
-import { ReviewCodeService } from "../services/review-code";
 import { AnalysisServiceLive } from "@effect-patterns/analysis-core";
 import {
-  DatabaseLayer,
-  findEffectPatternBySlug,
-  searchEffectPatterns
+    DatabaseLayer,
+    findEffectPatternBySlug,
+    searchEffectPatterns,
+    ToolkitConfig,
+    ToolkitLogger
 } from "@effect-patterns/toolkit";
 import { Cause, Effect, Exit, Layer, Option } from "effect";
 import { MCPCacheService } from "../services/cache";
+import { CircuitBreakerService } from "../services/circuit-breaker";
 import { MCPConfigService } from "../services/config";
 import { MCPLoggerService } from "../services/logger";
 import { PatternGeneratorService } from "../services/pattern-generator";
 import { MCRateLimitService } from "../services/rate-limit";
+import { ReviewCodeService } from "../services/review-code";
 import { MCPTierService } from "../services/tier";
 import { MCPValidationService } from "../services/validation";
 import { TracingLayerLive } from "../tracing/otlpLayer";
@@ -157,12 +159,12 @@ export const AppLayer = Layer.mergeAll(
   MCRateLimitService.Default,
   MCPCacheService.Default,
   DatabaseLayer,
-  PatternsService.Default,
   TracingLayerLive,
-  // NodeSdkLayer, // Disabled - OTLP endpoint not available locally
   AnalysisServiceLive,
   PatternGeneratorService.Default,
-  ReviewCodeService.Default
+  ReviewCodeService.Default,
+  ToolkitConfig.Default,
+  ToolkitLogger.Default
 );
 
 /**
@@ -188,7 +190,9 @@ export const TestAppLayer = Layer.mergeAll(
   TracingLayerLive,
   AnalysisServiceLive,
   PatternGeneratorService.Default,
-  ReviewCodeService.Default
+  ReviewCodeService.Default,
+  ToolkitConfig.Default,
+  ToolkitLogger.Default
 );
 
 /**

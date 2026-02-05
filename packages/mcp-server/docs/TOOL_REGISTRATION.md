@@ -64,9 +64,11 @@ When the MCP SDK adds support for `outputSchema`:
 ### Input Schemas (`src/schemas/tool-schemas.ts`)
 - `ToolSchemas.searchPatterns` - Input schema for `search_patterns`
 - `ToolSchemas.getPattern` - Input schema for `get_pattern`
-- `ToolSchemas.analyzeCode` - Input schema for `analyze_code`
-- `ToolSchemas.reviewCode` - Input schema for `review_code`
 - `ToolSchemas.listAnalysisRules` - Input schema for `list_analysis_rules`
+- `ToolSchemas.getMcpConfig` - Input schema for `get_mcp_config` (registered only when `MCP_DEBUG=true` or `MCP_ENV=local`)
+
+> **Note**: `analyzeCode` and `reviewCode` schemas were removed from the MCP tool surface.
+> **Note**: `get_mcp_config` is a debug/local-only tool; it is not registered in production or staging.
 
 ### Output Schemas (`src/schemas/output-schemas.ts`)
 - `SearchResultsOutputSchema` - Output schema for `search_patterns`
@@ -141,7 +143,5 @@ The `structuredContent` field is a custom extension to tool results. We've verif
 
 ## References
 
-- MCP SDK Documentation: https://modelcontextprotocol.io
-- Zod Documentation: https://zod.dev
 - Implementation: `src/tools/tool-implementations.ts`
 - Schemas: `src/schemas/`
