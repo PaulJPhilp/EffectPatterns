@@ -7,10 +7,8 @@
 import { createDatabase } from "@effect-patterns/toolkit";
 import { sql } from "drizzle-orm";
 import { Effect } from "effect";
-import { type NextRequest, NextResponse } from "next/server";
-import { validateAdminKey } from "../../../src/auth/adminAuth";
-import { runWithRuntime } from "../../../src/server/init";
-import { errorHandler } from "../../../src/server/errorHandler";
+import { type NextRequest } from "next/server";
+import { createRouteHandler } from "../../../src/server/routeHandler";
 
 function sanitizeDatabaseUrl(url: string) {
   try {
@@ -27,8 +25,6 @@ function sanitizeDatabaseUrl(url: string) {
 }
 
 const handleDbInfo = Effect.fn("db-info")(function* (request: NextRequest) {
-  yield* validateAdminKey(request);
-
   const rawDatabaseUrl = process.env.DATABASE_URL;
   const overrideUrl = process.env.DATABASE_URL_OVERRIDE;
   const dbUrl = overrideUrl || rawDatabaseUrl;
@@ -59,14 +55,7 @@ const handleDbInfo = Effect.fn("db-info")(function* (request: NextRequest) {
   };
 });
 
-export async function GET(request: NextRequest) {
-  const result = await runWithRuntime(
-    handleDbInfo(request).pipe(Effect.catchAll((error) => errorHandler(error)))
-  );
-
-  if (result instanceof Response) {
-    return result;
-  }
-
-  return NextResponse.json(result, { status: 200 });
-}
+export const GET = createRouteHandler(handleDbInfo, {
+  requireAuth: false,
+  requireAdmin: true,
+});

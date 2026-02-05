@@ -55,7 +55,7 @@ export class MCPTierService extends Effect.Service<MCPTierService>()(
 				getUpgradeMessage: () =>
 					Effect.succeed(
 						tierMode === "free"
-							? "This feature is available in the Paid Tier. Upgrade to unlock code generation, refactoring, and advanced analysis features."
+							? "This capability is not available via MCP. Use the HTTP API or CLI."
 							: "All features are available in your Paid Tier."
 					),
 

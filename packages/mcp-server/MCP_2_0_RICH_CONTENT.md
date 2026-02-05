@@ -404,4 +404,4 @@ No changes to deployment configuration. The implementation is backward-compatibl
 For more details, see:
 - `MCP_2_0_IMPROVEMENTS.ts` - Detailed technical documentation
 - Test files for usage examples
-- MCP specification: https://modelcontextprotocol.io
+- MCP specification: see official MCP protocol documentation

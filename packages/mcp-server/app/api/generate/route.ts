@@ -11,28 +11,16 @@
 import { buildSnippet, GenerateRequest } from "@effect-patterns/toolkit";
 import { Schema as S } from "@effect/schema";
 import { Effect } from "effect";
-import { type NextRequest, NextResponse } from "next/server";
-import {
-    validateApiKey,
-} from "../../../src/auth/apiKey";
-import { validateTierAccess } from "../../../src/auth/tierAccess";
+import { type NextRequest } from "next/server";
 import { PatternNotFoundError } from "../../../src/errors";
-import { errorHandler } from "../../../src/server/errorHandler";
-import { PatternsService, runWithRuntime } from "../../../src/server/init";
-import { TracingService } from "../../../src/tracing/otlpLayer";
+import { PatternsService } from "../../../src/server/init";
+import { createRouteHandler } from "../../../src/server/routeHandler";
 
 // Handler implementation with automatic span creation via Effect.fn
 const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
   request: NextRequest
 ) {
-  const tracing = yield* TracingService;
   const patternsService = yield* PatternsService;
-
-  // Validate API key
-  yield* validateApiKey(request);
-
-  // Validate tier access
-  yield* validateTierAccess(request);
 
   // Parse and validate request body
   const body = yield* Effect.tryPromise({
@@ -56,7 +44,7 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
       return Effect.succeed(undefined);
     })
   );
-  
+
   const pattern = patternResult;
 
   if (!pattern) {
@@ -85,32 +73,14 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
     },
   });
 
-  const traceId = tracing.getTraceId();
-
   return {
     patternId: pattern.id,
     title: pattern.title,
     snippet,
-    traceId,
-    timestamp: new Date().toISOString(),
   };
 });
 
-export async function POST(request: NextRequest) {
-  const result = await runWithRuntime(
-    handleGenerateSnippet(request).pipe(
-      Effect.catchAll((error) => errorHandler(error))
-    )
-  );
-
-  if (result instanceof Response) {
-    return result;
-  }
-
-  return NextResponse.json(result, {
-    status: 200,
-    headers: {
-      "x-trace-id": result.traceId || "",
-    },
-  });
-}
+export const POST = createRouteHandler(handleGenerateSnippet, {
+  requireAuth: true,
+  requirePaidTier: true,
+});

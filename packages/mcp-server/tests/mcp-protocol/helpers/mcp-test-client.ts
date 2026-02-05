@@ -23,8 +23,10 @@ export interface MCPTestClientConfig {
   apiKey?: string;
   /** Base URL for the API (default: http://localhost:3000) */
   apiUrl?: string;
-  /** Enable debug logging */
+  /** Enable debug logging (sets MCP_DEBUG=true when true) */
   debug?: boolean;
+  /** MCP_ENV value for the server process (e.g. "production" to hide get_mcp_config) */
+  mcpEnv?: string;
   /** Timeout for tool calls in milliseconds (default: 30000) */
   toolTimeout?: number;
 }
@@ -50,14 +52,14 @@ export interface ToolResult {
 export class MCPTestClient {
   private client: Client;
   private transport: StdioClientTransport;
-  private serverProcess: ChildProcess;
+  private serverProcess: ChildProcess | null;
   private toolTimeout: number;
   private isConnected = false;
 
   private constructor(
     client: Client,
     transport: StdioClientTransport,
-    serverProcess: ChildProcess,
+    serverProcess: ChildProcess | null,
     config: MCPTestClientConfig,
   ) {
     this.client = client;
@@ -75,11 +77,28 @@ export class MCPTestClient {
 
     // Create stdio transport - handles spawning the process internally
     // MCP server is pure transport - API key is optional
+    // When mcpEnv is set, use a minimal env so we don't inherit MCP_ENV=local / MCP_DEBUG=true
+    // from the test runner, ensuring the child sees exactly the env we intend (e.g. production).
+    const inheritFromProcess =
+      config.mcpEnv === undefined
+        ? { ...process.env }
+        : {
+            PATH: process.env.PATH,
+            HOME: process.env.HOME,
+            USER: process.env.USER,
+            LOGNAME: process.env.LOGNAME,
+            SHELL: process.env.SHELL,
+            TERM: process.env.TERM,
+          };
+
     const env: Record<string, string> = {
-      ...process.env,
+      ...inheritFromProcess,
       EFFECT_PATTERNS_API_URL: config.apiUrl || "http://localhost:3000",
       MCP_DEBUG: config.debug ? "true" : "false",
     };
+    if (config.mcpEnv !== undefined) {
+      env.MCP_ENV = config.mcpEnv;
+    }
 
     // Ensure deterministic API key behavior for local MCP tests.
     if (config.apiKey) {
@@ -90,10 +109,16 @@ export class MCPTestClient {
       delete env.LOCAL_API_KEY;
     }
 
+    // Spawn env must be Record<string, string>; strip undefined so child gets only set vars
+    const spawnEnv: Record<string, string> = {};
+    for (const [k, v] of Object.entries(env)) {
+      if (typeof v === "string") spawnEnv[k] = v;
+    }
+
     const transport = new StdioClientTransport({
       command: "bun",
       args: [distPath],
-      env,
+      env: spawnEnv,
       stderr: config.debug ? "inherit" : "ignore",
     });
 
@@ -111,7 +136,7 @@ export class MCPTestClient {
       const testClient = new MCPTestClient(
         client,
         transport,
-        null as any, // We'll rely on transport.close() instead of explicit process kill
+        null, // We rely on transport.close() for cleanup instead of explicit process kill
         config,
       );
       testClient.isConnected = true;
@@ -206,18 +231,19 @@ export class MCPTestClient {
       }
 
       // Kill the server process if we have one
-      if (this.serverProcess && typeof this.serverProcess.kill === 'function') {
+      const proc = this.serverProcess;
+      if (proc && typeof proc.kill === "function") {
         try {
-          this.serverProcess.kill("SIGTERM");
+          proc.kill("SIGTERM");
 
           // Wait for process to exit
           await new Promise<void>((resolve) => {
             const timeout = setTimeout(() => {
-              this.serverProcess.kill("SIGKILL");
+              proc.kill("SIGKILL");
               resolve();
             }, 5000);
 
-            this.serverProcess.once("exit", () => {
+            proc.once("exit", () => {
               clearTimeout(timeout);
               resolve();
             });
@@ -250,6 +276,7 @@ export async function createMCPTestClient(
     apiKey: overrides?.apiKey,
     apiUrl: overrides?.apiUrl || "http://localhost:3000",
     debug: overrides?.debug ?? false,
+    mcpEnv: overrides?.mcpEnv,
     toolTimeout: overrides?.toolTimeout,
   };
 

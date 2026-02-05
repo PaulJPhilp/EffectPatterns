@@ -22,6 +22,7 @@ import {
     RequestValidationError,
     ValidationError,
     ConfigurationError,
+    CircuitBreakerOpenError,
 } from "../errors";
 import { FileSizeError, NonTypeScriptError } from "../services/review-code";
 
@@ -195,6 +196,25 @@ export function errorToResponse(
         return NextResponse.json(response, {
           status: 500,
           headers: baseHeaders,
+        });
+      }
+
+      case "CircuitBreakerOpenError": {
+        const e = error as CircuitBreakerOpenError;
+        const response: ApiErrorResponse = {
+          error: e.message,
+          status: "service_unavailable",
+          details: {
+            circuit: e.circuitName,
+            openedAt: e.openedAt.toISOString(),
+          },
+        };
+        return NextResponse.json(response, {
+          status: 503,
+          headers: {
+            ...baseHeaders,
+            "Retry-After": "60",
+          },
         });
       }
     }

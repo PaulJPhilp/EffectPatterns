@@ -428,10 +428,8 @@ MIT License - see [LICENSE](../LICENSE) file for details.
 
 ## 🔗 Related Resources
 
-- **Effect-TS Documentation**: <https://effect.website>
-- **Effect Patterns Repository**: <https://github.com/effect-ts/effect-patterns>
-- **Claude Code**: <https://docs.anthropic.com/claude/docs/claude-code>
-- **MCP Protocol**: <https://modelcontextprotocol.io>
+- Project docs: this README, [README-END-USER.md](./README-END-USER.md), [MCP_CONFIG.md](../../MCP_CONFIG.md)
+- Effect-TS and MCP protocol: see official documentation
 
 ## 📞 Support
 

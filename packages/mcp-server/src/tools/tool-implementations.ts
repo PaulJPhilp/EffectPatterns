@@ -1,86 +1,54 @@
+import { isMcpDebugOrLocal } from "@/config/mcp-environments.js";
 import {
-  MARKER_PATTERN_CARD_V1,
-  MARKER_PATTERN_INDEX_V1,
+    MARKER_PATTERN_CARD_V1,
+    MARKER_PATTERN_INDEX_V1,
 } from "@/constants/markers.js";
 import {
-  buildFullPatternCard,
-  buildPatternContent,
+    buildFullPatternCard,
+    buildPatternContent,
 } from "@/mcp-content-builders.js";
 import type {
-  Elicitation,
-  PatternDetailsOutput,
-  SearchResultsOutput,
-  ToolError,
+    Elicitation,
+    PatternDetailsOutput,
+    SearchResultsOutput,
+    ToolError,
 } from "@/schemas/output-schemas.js";
 import type { TextContent } from "@/schemas/structured-output.js";
 import {
-  ToolSchemas,
-  type AnalyzeCodeArgs,
-  type GetPatternArgs,
-  type GetMcpConfigArgs,
-  type ReviewCodeArgs,
-  type SearchPatternsArgs,
+    ToolSchemas,
+    type GetMcpConfigArgs,
+    type GetPatternArgs,
+    type SearchPatternsArgs,
 } from "@/schemas/tool-schemas.js";
 import {
-  generateMigrationDiff,
-  isMigrationPattern,
+    generateMigrationDiff,
+    isMigrationPattern,
 } from "@/services/pattern-diff-generator/api.js";
 import {
-  elicitPatternId,
-  elicitSearchFilters,
-  elicitSearchQuery,
-  isSearchQueryValid,
-  isSearchTooBroad,
+    generatePatternCacheKey,
+    generateSearchCacheKey,
+} from "@/tools/cache-keys.js";
+import {
+    elicitPatternId,
+    elicitSearchFilters,
+    elicitSearchQuery,
+    isSearchQueryValid,
+    isSearchTooBroad,
 } from "@/tools/elicitation-helpers.js";
+import {
+    extractApiNames,
+    generateRequestId,
+    normalizeAnnotations,
+    normalizeContentBlocks,
+    recordPatternHit,
+    recordPatternMiss,
+    recordSearchHit,
+    recordSearchMiss,
+    truncateAtWordBoundary,
+} from "@/tools/tool-shared.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-/**
- * Telemetry counters for cache performance
- */
-let cacheMetrics = {
-  searchHits: 0,
-  searchMisses: 0,
-  patternHits: 0,
-  patternMisses: 0,
-};
-
-export function getCacheMetrics() {
-  return { ...cacheMetrics };
-}
-
-/**
- * Generate a unique request ID for tracking tool handler execution
- */
-function generateRequestId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
-function normalizeAnnotations(
-  annotations: TextContent["annotations"] | undefined,
-): TextContent["annotations"] | undefined {
-  if (!annotations) return undefined;
-  if (typeof annotations.priority !== "number") return annotations;
-  return {
-    ...annotations,
-    priority: Math.min(annotations.priority, 1),
-  };
-}
-
-function normalizeContentBlocks(
-  content: CallToolResult["content"],
-): CallToolResult["content"] {
-  return content
-    .filter((block) => typeof (block as any).text === "string")
-    .map((block) => ({
-      ...block,
-      text: String((block as any).text),
-    }));
-}
-
-function extractApiNames(text: string): string[] {
-  const matches = text.match(/\\b(Effect|Layer|Stream|Schedule|Metric|Ref|Queue|PubSub)\\.\\w+/g);
-  return matches ? Array.from(new Set(matches)).slice(0, 6) : [];
-}
+// All shared utilities are now imported from tool-shared.ts for better code organization
 
 /**
  * Result of a tool execution - supports MCP 2.0 rich content arrays
@@ -230,26 +198,6 @@ async function buildFullSearchContent(
   return content;
 }
 
-/**
- * Truncate text at word boundary to avoid mid-sentence cuts
- */
-function truncateAtWordBoundary(text: string, maxLength: number): string {
-  if (text.length <= maxLength) {
-    return text;
-  }
-  
-  // Find last space before maxLength
-  const truncated = text.substring(0, maxLength);
-  const lastSpace = truncated.lastIndexOf(" ");
-  
-  // If we found a space reasonably close to maxLength, use it
-  if (lastSpace > maxLength * 0.8) {
-    return text.substring(0, lastSpace) + "...";
-  }
-  
-  // Otherwise, just truncate and add ellipsis
-  return truncated + "...";
-}
 
 /**
  * Helper to convert API result to tool result - supports both plain text and rich content.
@@ -543,26 +491,8 @@ async function buildZeroResultsResponse(
   };
 }
 
-/**
- * Generates a cache key for search results
- * Includes all search parameters to ensure correct cache hits
- * Uses JSON.stringify to avoid collision risk from separators in args
- * (e.g., query containing colons)
- */
-function getSearchCacheKey(args: SearchPatternsArgs): string {
-  // Normalize args to stable JSON format (safe separator handling)
-  const key = JSON.stringify({
-    q: args.q || "",
-    category: args.category || "",
-    difficulty: args.difficulty || "",
-    limit: args.limit ?? 3,
-    format: args.format || "markdown",
-    limitCards: args.limitCards || 10,
-    includeProvenancePanel: args.includeProvenancePanel || false,
-    includeStructuredPatterns: args.includeStructuredPatterns ?? false,
-  });
-  return `search:${key}`;
-}
+// Use centralized cache key generator for consistency across transports
+// This ensures identical searches with different arg orders produce same key
 
 /**
  * Registers all Effect Patterns tools with the MCP server.
@@ -626,21 +556,21 @@ export function registerTools(
           };
         }
 
-        const cacheKey = getSearchCacheKey(args);
+        const cacheKey = generateSearchCacheKey(args);
         const isDebug = process.env.MCP_DEBUG === "true";
 
         // Try cache first (5 min TTL for search results)
         if (cache) {
           const cached = cache.get(cacheKey);
           if (cached) {
-            cacheMetrics.searchHits++;
+            recordSearchHit();
             log(`Cache hit: ${cacheKey}`);
             log(
               `[${requestId}] Tool handler COMPLETED: search_patterns (cached)`,
             );
             return cached;
           }
-          cacheMetrics.searchMisses++;
+          recordSearchMiss();
         }
 
         const searchParams = new URLSearchParams();
@@ -1014,52 +944,54 @@ export function registerTools(
     },
   );
 
-  // MCP Config Tool (debug)
-  server.tool(
-    "get_mcp_config",
-    "Get MCP server config (base URL, env, api-key presence) for debugging",
-    ToolSchemas.getMcpConfig.shape as any,
-    async (args: GetMcpConfigArgs): Promise<CallToolResult> => {
-      const format = args.format || "markdown";
-      const payload = {
-        baseUrl: process.env.EFFECT_PATTERNS_API_URL || "",
-        mcpEnv: process.env.MCP_ENV || "",
-        debug: process.env.MCP_DEBUG || "",
-        hasApiKey: !!(process.env.PATTERN_API_KEY && process.env.PATTERN_API_KEY.trim()),
-      };
+  // MCP Config Tool (debug/local only — not part of default production/staging surface)
+  if (isMcpDebugOrLocal()) {
+    server.tool(
+      "get_mcp_config",
+      "Get MCP server config (base URL, env, api-key presence) for debugging. Only available when MCP_DEBUG=true or MCP_ENV=local.",
+      ToolSchemas.getMcpConfig.shape as any,
+      async (args: GetMcpConfigArgs): Promise<CallToolResult> => {
+        const format = args.format || "markdown";
+        const payload = {
+          baseUrl: process.env.EFFECT_PATTERNS_API_URL || "",
+          mcpEnv: process.env.MCP_ENV || "",
+          debug: process.env.MCP_DEBUG || "",
+          hasApiKey: !!(process.env.PATTERN_API_KEY && process.env.PATTERN_API_KEY.trim()),
+        };
 
-      const content: CallToolResult["content"] = [];
+        const content: CallToolResult["content"] = [];
 
-      if (format === "markdown" || format === "both") {
-        content.push({
-          type: "text",
-          text: [
-            "## MCP Config",
-            "",
-            `- baseUrl: ${payload.baseUrl || "(empty)"}`,
-            `- mcpEnv: ${payload.mcpEnv || "(empty)"}`,
-            `- debug: ${payload.debug || "(empty)"}`,
-            `- hasApiKey: ${payload.hasApiKey}`,
-            "",
-          ].join("\n"),
-          mimeType: "text/markdown",
-        });
-      }
+        if (format === "markdown" || format === "both") {
+          content.push({
+            type: "text",
+            text: [
+              "## MCP Config",
+              "",
+              `- baseUrl: ${payload.baseUrl || "(empty)"}`,
+              `- mcpEnv: ${payload.mcpEnv || "(empty)"}`,
+              `- debug: ${payload.debug || "(empty)"}`,
+              `- hasApiKey: ${payload.hasApiKey}`,
+              "",
+            ].join("\n"),
+            mimeType: "text/markdown",
+          });
+        }
 
-      if (format === "json" || format === "both") {
-        content.push({
-          type: "text",
-          text: JSON.stringify(payload, null, 2),
-          mimeType: "application/json",
-        });
-      }
+        if (format === "json" || format === "both") {
+          content.push({
+            type: "text",
+            text: JSON.stringify(payload, null, 2),
+            mimeType: "application/json",
+          });
+        }
 
-      return {
-        content: normalizeContentBlocks(content),
-        structuredContent: payload,
-      };
-    },
-  );
+        return {
+          content: normalizeContentBlocks(content),
+          structuredContent: payload,
+        };
+      },
+    );
+  }
 
   // Get Pattern Tool - Returns rich content with description and code examples
   // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
@@ -1098,20 +1030,22 @@ export function registerTools(
          };
       }
 
-      const cacheKey = `pattern:v3:${args.id}:format=${format}:details=${includeStructuredDetails}`;
+      // Use centralized cache key generator with format and details params
+      const baseCacheKey = generatePatternCacheKey(args.id);
+      const cacheKey = `${baseCacheKey}:format=${format}:details=${includeStructuredDetails}`;
 
       // Try cache first (30 min TTL for individual patterns)
       if (cache) {
         const cached = cache.get(cacheKey);
         if (cached) {
-          cacheMetrics.patternHits++;
+          recordPatternHit();
           log(`Cache hit: ${cacheKey}`);
           return {
             ...cached,
             content: normalizeContentBlocks(cached.content || []),
           };
         }
-        cacheMetrics.patternMisses++;
+        recordPatternMiss();
       }
 
       const result = await callApi(`/patterns/${encodeURIComponent(args.id)}`);
@@ -1398,7 +1332,8 @@ export function registerTools(
     },
   );
 
-  // List Analysis Rules Tool
+  // List Analysis Rules Tool (READ-ONLY CATALOG)
+  // Returns rule metadata only - no code scanning. Free tier.
   // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
   server.tool(
     "list_analysis_rules",
@@ -1411,40 +1346,14 @@ export function registerTools(
     },
   );
 
-  // Analyze Code Tool
-  // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
-  server.tool(
-    "analyze_code",
-    "Analyze TypeScript code for Effect-TS anti-patterns and best practices violations",
-    ToolSchemas.analyzeCode.shape as any,
-    async (args: AnalyzeCodeArgs): Promise<CallToolResult> => {
-      log("Tool called: analyze_code", args);
-      const result = await callApi("/analyze-code", "POST", {
-        source: args.source,
-        filename: args.filename,
-        analysisType: args.analysisType || "all",
-      });
-      return toToolResult(result, "analyze_code", log);
-    },
-  );
-
-  // Review Code Tool
-  // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
-  // This tool only accepts code that is:
-  // 1. Cut and pasted into the prompt (code parameter)
-  // 2. Provided from an open editor file (code parameter with optional filePath for context)
-  // Files are NOT read from disk. Only diagnostic information is returned (no corrected code).
-  server.tool(
-    "review_code",
-    "Get AI-powered architectural review and diagnostic recommendations for Effect code. Only accepts code that is cut and pasted into the prompt or provided from an open editor file. Returns diagnostic information only (no corrected code).",
-    ToolSchemas.reviewCode.shape as any,
-    async (args: ReviewCodeArgs): Promise<CallToolResult> => {
-      log("Tool called: review_code", args);
-      const result = await callApi("/review-code", "POST", {
-        code: args.code,
-        filePath: args.filePath,
-      });
-      return toToolResult(result, "review_code", log);
-    },
-  );
+  // ============================================================================
+  // PAID TOOLS REMOVED FROM MCP (available via HTTP API / paid CLI only):
+  // - analyze_code   → POST /api/analyze-code
+  // - review_code    → POST /api/review-code
+  // - apply_refactoring → POST /api/apply-refactoring
+  // - analyze_consistency → POST /api/analyze-consistency
+  // - generate_pattern → POST /api/generate-pattern
+  //
+  // Use the HTTP API or paid CLI for these capabilities.
+  // ============================================================================
 }

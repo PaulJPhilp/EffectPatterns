@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { Effect } from 'effect';
 import { createDatabase } from '../packages/toolkit/src/db/client.js';
 import { effectPatterns } from '../packages/toolkit/src/db/schema/index.js';
+import { randomUUID } from 'node:crypto';
 
 interface PatternData {
   id: string;
@@ -54,12 +55,16 @@ const loadPatternsProgram = Effect.gen(function* () {
   // Create database connection
   const { db, close } = createDatabase();
 
-  // Clear existing patterns (optional - comment out if you want to keep existing)
-  console.log('\n🗑️  Clearing existing patterns...');
-  yield* Effect.tryPromise({
-    try: () => db.delete(effectPatterns),
-    catch: (error) => new Error(`Failed to clear patterns: ${error}`),
-  });
+  if (!process.env.SKIP_DELETE) {
+    // Clear existing patterns (optional - comment out if you want to keep existing)
+    console.log('\n🗑️  Clearing existing patterns...');
+    yield* Effect.tryPromise({
+      try: () => db.delete(effectPatterns),
+      catch: (error) => new Error(`Failed to clear patterns: ${error}`),
+    });
+  } else {
+    console.log('\n↩️  Skipping delete (SKIP_DELETE=1)');
+  }
 
   // Insert patterns
   console.log('\n📝 Inserting patterns...');
@@ -71,9 +76,12 @@ const loadPatternsProgram = Effect.gen(function* () {
           ? 'advanced'
           : 'intermediate';
 
+    const id = randomUUID();
+
     yield* Effect.tryPromise({
       try: () =>
         db.insert(effectPatterns).values({
+          id,
           slug: pattern.id,
           title: pattern.title,
           summary: pattern.description,
@@ -92,8 +100,22 @@ const loadPatternsProgram = Effect.gen(function* () {
           validated: true,
           validatedAt: new Date(),
         }),
-      catch: (error) =>
-        new Error(`Failed to insert pattern ${pattern.id}: ${error}`),
+      catch: (error) => {
+        const err = error as any;
+        console.error("Insert error details:", {
+          message: err?.message,
+          code: err?.code,
+          detail: err?.detail,
+          hint: err?.hint,
+          constraint: err?.constraint,
+          table: err?.table,
+          column: err?.column,
+          dataType: err?.dataType,
+          where: err?.where,
+          cause: err?.cause,
+        });
+        return new Error(`Failed to insert pattern ${pattern.id}: ${error}`);
+      },
     });
 
     console.log(`  ✓ Loaded: ${pattern.title}`);

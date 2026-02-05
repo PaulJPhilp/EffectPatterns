@@ -7,16 +7,12 @@
 import { createDatabase } from "@effect-patterns/toolkit";
 import { createEffectPatternRepository } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
-import { type NextRequest, NextResponse } from "next/server";
-import { validateAdminKey } from "../../../src/auth/adminAuth";
-import { runWithRuntime } from "../../../src/server/init";
-import { errorHandler } from "../../../src/server/errorHandler";
+import { type NextRequest } from "next/server";
+import { createRouteHandler } from "../../../src/server/routeHandler";
 
 const handleDbSearchCheck = Effect.fn("db-search-check")(function* (
   request: NextRequest
 ) {
-  yield* validateAdminKey(request);
-
   const dbUrl = process.env.DATABASE_URL_OVERRIDE || process.env.DATABASE_URL;
   if (!dbUrl) {
     return yield* Effect.fail(
@@ -62,16 +58,7 @@ const handleDbSearchCheck = Effect.fn("db-search-check")(function* (
   };
 });
 
-export async function GET(request: NextRequest) {
-  const result = await runWithRuntime(
-    handleDbSearchCheck(request).pipe(
-      Effect.catchAll((error) => errorHandler(error))
-    )
-  );
-
-  if (result instanceof Response) {
-    return result;
-  }
-
-  return NextResponse.json(result, { status: 200 });
-}
+export const GET = createRouteHandler(handleDbSearchCheck, {
+  requireAuth: false,
+  requireAdmin: true,
+});

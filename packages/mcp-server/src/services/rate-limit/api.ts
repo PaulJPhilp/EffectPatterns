@@ -1,6 +1,7 @@
 import { Effect, Ref, Schedule, Duration, Fiber } from "effect";
 import { MCPConfigService } from "../config";
 import { MCPLoggerService } from "../logger";
+import { CircuitBreakerService } from "../circuit-breaker";
 import { RateLimitError } from "./errors";
 import { getKvClient } from "./helpers";
 import { RateLimitEntry, RateLimitResult } from "./types";
@@ -11,10 +12,11 @@ import { RateLimitEntry, RateLimitResult } from "./types";
 export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
   "MCRateLimitService",
   {
-    dependencies: [MCPConfigService.Default, MCPLoggerService.Default],
+    dependencies: [MCPConfigService.Default, MCPLoggerService.Default, CircuitBreakerService.Default],
     scoped: Effect.gen(function* () {
       const config = yield* MCPConfigService;
       const logger = yield* MCPLoggerService;
+      const circuitBreaker = yield* CircuitBreakerService;
 
       // Rate limiting configuration (direct property access)
       const enabled = config.rateLimitEnabled;
@@ -95,9 +97,15 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
 
           if (useKv) {
             const key = `ratelimit:${identifier}`;
-            const stored = yield* Effect.tryPromise(() => 
+            const kvGet = Effect.tryPromise(() =>
               kv!.get<RateLimitEntry>(key)
-            ).pipe(Effect.orElseSucceed(() => null));
+            );
+            const stored = yield* circuitBreaker
+              .execute("kv-rate-limit-get", kvGet, config.circuitBreakerKv)
+              .pipe(
+                Effect.orElseSucceed(() => null),
+                Effect.catchTag("CircuitBreakerOpenError", () => Effect.succeed(null))
+              );
 
             if (!stored || now - stored.windowStart >= windowMs) {
               // Create new window
@@ -157,13 +165,19 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
             if (useKv) {
               const key = `ratelimit:${identifier}`;
               // Store with TTL equal to window + buffer
-              yield* Effect.tryPromise(() =>
+              const kvSetex = Effect.tryPromise(() =>
                 kv!.setex(
                   key,
                   Math.ceil((windowMs + 5000) / 1000),
                   newEntry
                 )
-              ).pipe(Effect.orElseSucceed(() => undefined));
+              );
+              yield* circuitBreaker
+                .execute("kv-rate-limit-set", kvSetex, config.circuitBreakerKv)
+                .pipe(
+                  Effect.orElseSucceed(() => undefined),
+                  Effect.catchTag("CircuitBreakerOpenError", () => Effect.succeed(undefined))
+                );
             } else {
               yield* Ref.update(inMemoryFallbackRef, (fallback) => {
                 const newFallback = new Map(fallback);
@@ -226,9 +240,15 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
             const ttlSeconds = Math.ceil(
               (entry.windowStart + windowMs - now) / 1000
             );
-            yield* Effect.tryPromise(() =>
+            const kvSetex = Effect.tryPromise(() =>
               kv!.setex(key, ttlSeconds, updatedEntry)
-            ).pipe(Effect.orElseSucceed(() => undefined));
+            );
+            yield* circuitBreaker
+              .execute("kv-rate-limit-set", kvSetex, config.circuitBreakerKv)
+              .pipe(
+                Effect.orElseSucceed(() => undefined),
+                Effect.catchTag("CircuitBreakerOpenError", () => Effect.succeed(undefined))
+              );
           } else {
             yield* Ref.update(inMemoryFallbackRef, (fallback) => {
               const newFallback = new Map(fallback);
@@ -267,9 +287,13 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
 
           if (useKv) {
             const key = `ratelimit:${identifier}`;
-            yield* Effect.tryPromise(() => kv!.del(key)).pipe(
-              Effect.orElseSucceed(() => undefined)
-            );
+            const kvDel = Effect.tryPromise(() => kv!.del(key));
+            yield* circuitBreaker
+              .execute("kv-rate-limit-del", kvDel, config.circuitBreakerKv)
+              .pipe(
+                Effect.orElseSucceed(() => undefined),
+                Effect.catchTag("CircuitBreakerOpenError", () => Effect.succeed(undefined))
+              );
           } else {
             yield* Ref.update(inMemoryFallbackRef, (fallback) => {
               const newFallback = new Map(fallback);

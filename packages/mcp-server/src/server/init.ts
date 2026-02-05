@@ -9,19 +9,22 @@
  */
 
 // biome-ignore assist/source/organizeImports: <>
-import { ReviewCodeService } from "../services/review-code";
 import { AnalysisServiceLive } from "@effect-patterns/analysis-core";
 import {
-  DatabaseLayer,
-  findEffectPatternBySlug,
-  searchEffectPatterns
+    DatabaseLayer,
+    findEffectPatternBySlug,
+    searchEffectPatterns,
+    ToolkitConfig,
+    ToolkitLogger
 } from "@effect-patterns/toolkit";
 import { Cause, Effect, Exit, Layer, Option } from "effect";
 import { MCPCacheService } from "../services/cache";
+import { CircuitBreakerService } from "../services/circuit-breaker";
 import { MCPConfigService } from "../services/config";
 import { MCPLoggerService } from "../services/logger";
 import { PatternGeneratorService } from "../services/pattern-generator";
 import { MCRateLimitService } from "../services/rate-limit";
+import { ReviewCodeService } from "../services/review-code";
 import { MCPTierService } from "../services/tier";
 import { MCPValidationService } from "../services/validation";
 import { TracingLayerLive } from "../tracing/otlpLayer";
@@ -31,35 +34,47 @@ import { TracingLayerLive } from "../tracing/otlpLayer";
  */
 const makePatternsService = Effect.gen(function* () {
   yield* Effect.logInfo("[Patterns] Initializing database-backed patterns service");
-  
+
   // PERFORMANCE: Import cache service for query result caching
   const cache = yield* MCPCacheService;
+  const circuitBreaker = yield* CircuitBreakerService;
+  const config = yield* MCPConfigService;
 
   /**
    * Get all patterns
-   * 
+   *
    * PERFORMANCE: Cached with 1-hour TTL (popular query)
+   * RESILIENCE: Protected by circuit breaker against database failures
    */
   const getAllPatterns = () =>
     cache.getOrSet(
       "patterns:all", // Cache key
-      () => searchEffectPatterns({}),
+      () => circuitBreaker.execute(
+        "database-get-all-patterns",
+        searchEffectPatterns({}),
+        config.circuitBreakerDb
+      ),
       3600000 // 1 hour TTL in milliseconds
     );
 
   /**
    * Get pattern by ID/slug
-   * 
+   *
    * PERFORMANCE: Cached with 24-hour TTL (stable data)
+   * RESILIENCE: Protected by circuit breaker against database failures
    */
   const getPatternById = (id: string) =>
     cache.getOrSet(
       `patterns:by-id:${id}`, // Unique cache key per pattern
       () =>
         Effect.gen(function* () {
-          const pattern = yield* findEffectPatternBySlug(id).pipe(
+          const pattern = yield* circuitBreaker.execute(
+            "database-get-pattern-by-id",
+            findEffectPatternBySlug(id),
+            config.circuitBreakerDb
+          ).pipe(
             Effect.catchAll(() => {
-              // If database lookup fails, return null (pattern not found)
+              // If circuit is open or database lookup fails, return null (pattern not found)
               return Effect.succeed(null);
             })
           );
@@ -70,9 +85,10 @@ const makePatternsService = Effect.gen(function* () {
 
   /**
    * Search patterns
-   * 
+   *
    * PERFORMANCE: Cached with 1-hour TTL
    * Cache key includes all search parameters to differentiate searches
+   * RESILIENCE: Protected by circuit breaker against database failures
    */
   const searchPatterns = (params: {
     query?: string;
@@ -83,12 +99,16 @@ const makePatternsService = Effect.gen(function* () {
     cache.getOrSet(
       `patterns:search:${JSON.stringify(params)}`, // Cache key includes all params
       () =>
-        searchEffectPatterns({
-          query: params.query,
-          category: params.category,
-          skillLevel: params.skillLevel,
-          limit: params.limit,
-        }),
+        circuitBreaker.execute(
+          "database-search-patterns",
+          searchEffectPatterns({
+            query: params.query,
+            category: params.category,
+            skillLevel: params.skillLevel,
+            limit: params.limit,
+          }),
+          config.circuitBreakerDb
+        ),
       3600000 // 1 hour TTL in milliseconds
     );
 
@@ -103,7 +123,7 @@ export class PatternsService extends Effect.Service<PatternsService>()(
   "PatternsService",
   {
     scoped: makePatternsService,
-    dependencies: [DatabaseLayer, MCPCacheService.Default],
+    dependencies: [DatabaseLayer, MCPCacheService.Default, CircuitBreakerService.Default, MCPConfigService.Default],
   }
 ) { }
 
@@ -133,17 +153,18 @@ export const AppLayer = Layer.mergeAll(
   getNodeContextLayer(),
   MCPConfigService.Default,
   MCPLoggerService.Default,
+  CircuitBreakerService.Default,
   MCPTierService.Default,
   MCPValidationService.Default,
   MCRateLimitService.Default,
   MCPCacheService.Default,
   DatabaseLayer,
-  PatternsService.Default,
   TracingLayerLive,
-  // NodeSdkLayer, // Disabled - OTLP endpoint not available locally
   AnalysisServiceLive,
   PatternGeneratorService.Default,
-  ReviewCodeService.Default
+  ReviewCodeService.Default,
+  ToolkitConfig.Default,
+  ToolkitLogger.Default
 );
 
 /**
@@ -159,6 +180,7 @@ export const TestAppLayer = Layer.mergeAll(
   // NodeContext.layer excluded - platform-node is implementation detail
   MCPConfigService.Default,
   MCPLoggerService.Default,
+  CircuitBreakerService.Default,
   MCPTierService.Default,
   MCPValidationService.Default,
   MCRateLimitService.Default,
@@ -168,7 +190,9 @@ export const TestAppLayer = Layer.mergeAll(
   TracingLayerLive,
   AnalysisServiceLive,
   PatternGeneratorService.Default,
-  ReviewCodeService.Default
+  ReviewCodeService.Default,
+  ToolkitConfig.Default,
+  ToolkitLogger.Default
 );
 
 /**

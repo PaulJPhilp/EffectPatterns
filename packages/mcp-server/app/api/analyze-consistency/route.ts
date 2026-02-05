@@ -1,52 +1,27 @@
 import { AnalysisService } from "@effect-patterns/analysis-core";
 import { Effect, Schema as S } from "effect";
-import { type NextRequest, NextResponse } from "next/server";
-import {
-	validateApiKey,
-} from "../../../src/auth/apiKey";
-import { errorHandler } from "../../../src/server/errorHandler";
-import { runWithRuntime } from "../../../src/server/init";
+import { type NextRequest } from "next/server";
 import {
 	AnalyzeConsistencyRequest,
 	AnalyzeConsistencyResponse,
 } from "../../../src/tools/schemas";
-import { TracingService } from "../../../src/tracing/otlpLayer";
+import { createRouteHandler } from "../../../src/server/routeHandler";
 
 const handleAnalyzeConsistency = Effect.fn("analyze-consistency")(function* (
 	request: NextRequest
 ) {
-	const tracing = yield* TracingService;
 	const analysis = yield* AnalysisService;
-
-	yield* validateApiKey(request);
 
 	const body = yield* Effect.tryPromise(() => request.json());
 	const decoded = yield* S.decode(AnalyzeConsistencyRequest)(body as any);
 
 	const issues = yield* analysis.analyzeConsistency(decoded.files);
 
-	const traceId = tracing.getTraceId() ?? "";
-
 	return {
 		issues,
-		traceId,
-		timestamp: new Date().toISOString(),
 	} satisfies typeof AnalyzeConsistencyResponse.Type;
 });
 
-export async function POST(request: NextRequest) {
-	const result = await runWithRuntime(
-		handleAnalyzeConsistency(request).pipe(
-			Effect.catchAll((error) => errorHandler(error))
-		)
-	);
-
-	if (result instanceof Response) {
-		return result;
-	}
-
-	return NextResponse.json(result, {
-		status: 200,
-		headers: { "x-trace-id": result.traceId || "" },
-	});
-}
+export const POST = createRouteHandler(handleAnalyzeConsistency, {
+	requireAuth: true,
+});

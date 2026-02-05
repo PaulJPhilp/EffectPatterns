@@ -4,10 +4,7 @@ This guide helps you set up and run the Effect Patterns MCP server locally for d
 
 ## Prerequisites
 
-1. **Node.js/Bun**: Install Bun for package management
-   ```bash
-   curl -fsSL https://bun.sh/install | bash
-   ```
+1. **Node.js/Bun**: Install Bun (see bun.sh or your package manager).
 
 2. **PostgreSQL**: Set up a local PostgreSQL instance
    ```bash

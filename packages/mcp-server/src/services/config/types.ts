@@ -43,4 +43,18 @@ export interface MCPConfig {
   readonly serviceName: string;
   readonly serviceVersion: string;
   readonly tracingSamplingRate: number; // 0.0 to 1.0, default 0.1 (10%)
+
+  // Circuit Breaker
+  readonly circuitBreakerDb: {
+    readonly failureThreshold: number;
+    readonly successThreshold: number;
+    readonly timeout: number;
+    readonly halfOpenMaxCalls: number;
+  };
+  readonly circuitBreakerKv: {
+    readonly failureThreshold: number;
+    readonly successThreshold: number;
+    readonly timeout: number;
+    readonly halfOpenMaxCalls: number;
+  };
 }

@@ -31,6 +31,18 @@ export const DEFAULT_CONFIG: Omit<MCPConfig, "apiKey" | "nodeEnv"> = {
   serviceName: "effect-patterns-mcp-server",
   serviceVersion: "1.1.0", // Updated version
   tracingSamplingRate: 0.05, // Reduced to 5% for production efficiency
+  circuitBreakerDb: {
+    failureThreshold: 5,
+    successThreshold: 2,
+    timeout: 60000, // 1 minute
+    halfOpenMaxCalls: 3,
+  },
+  circuitBreakerKv: {
+    failureThreshold: 3,
+    successThreshold: 2,
+    timeout: 30000, // 30 seconds
+    halfOpenMaxCalls: 2,
+  },
 };
 
 /**
@@ -242,6 +254,20 @@ export function loadConfig(): Effect.Effect<MCPConfig, ConfigurationError> {
       tracingSamplingRate:
         parseFloat(process.env.TRACING_SAMPLING_RATE || "") ||
         DEFAULT_CONFIG.tracingSamplingRate,
+
+      // Circuit Breaker
+      circuitBreakerDb: {
+        failureThreshold: Number(process.env.CB_DB_FAILURE_THRESHOLD ?? DEFAULT_CONFIG.circuitBreakerDb.failureThreshold),
+        successThreshold: Number(process.env.CB_DB_SUCCESS_THRESHOLD ?? DEFAULT_CONFIG.circuitBreakerDb.successThreshold),
+        timeout: Number(process.env.CB_DB_TIMEOUT ?? DEFAULT_CONFIG.circuitBreakerDb.timeout),
+        halfOpenMaxCalls: Number(process.env.CB_DB_HALF_OPEN_MAX ?? DEFAULT_CONFIG.circuitBreakerDb.halfOpenMaxCalls),
+      },
+      circuitBreakerKv: {
+        failureThreshold: Number(process.env.CB_KV_FAILURE_THRESHOLD ?? DEFAULT_CONFIG.circuitBreakerKv.failureThreshold),
+        successThreshold: Number(process.env.CB_KV_SUCCESS_THRESHOLD ?? DEFAULT_CONFIG.circuitBreakerKv.successThreshold),
+        timeout: Number(process.env.CB_KV_TIMEOUT ?? DEFAULT_CONFIG.circuitBreakerKv.timeout),
+        halfOpenMaxCalls: Number(process.env.CB_KV_HALF_OPEN_MAX ?? DEFAULT_CONFIG.circuitBreakerKv.halfOpenMaxCalls),
+      },
     };
 
     // Validate configuration unless explicitly skipped (useful for preview debugging)

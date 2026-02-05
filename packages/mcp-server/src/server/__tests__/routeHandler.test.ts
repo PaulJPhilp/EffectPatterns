@@ -11,9 +11,9 @@
  * - MCP server is pure transport - doesn't validate anything
  */
 
-import { describe, it, expect } from "vitest";
 import { Effect } from "effect";
 import { NextRequest } from "next/server";
+import { describe, expect, it } from "vitest";
 
 /**
  * Mock handler factory utilities
@@ -23,7 +23,7 @@ import { NextRequest } from "next/server";
  * Mock createRouteHandler
  */
 function mockCreateRouteHandler<T, E>(
-  handler: (request: NextRequest) => Effect.Effect<T, E, any>,
+  _handler: (_request: NextRequest) => Effect.Effect<T, E, any>,
   options: {
     requireAuth?: boolean;
     requirePaidTier?: boolean;
@@ -38,11 +38,11 @@ function mockCreateRouteHandler<T, E>(
     includeTraceId: options.includeTraceId !== false,
   };
 
-  return async (request: NextRequest) => {
+  return async (_request: NextRequest) => {
     try {
       // Check auth if required (HTTP API validates auth)
       if (opts.requireAuth) {
-        const apiKey = request.headers.get("x-api-key");
+        const apiKey = _request.headers.get("x-api-key");
         if (!apiKey) {
           return new Response(
             JSON.stringify({
@@ -65,7 +65,7 @@ function mockCreateRouteHandler<T, E>(
               error: "This endpoint requires a paid tier",
               status: 402,
               tier: "free",
-              upgradeMessage: "Upgrade to paid tier to access this feature",
+              upgradeMessage: "This capability is not available via MCP. Use the HTTP API or CLI.",
             }),
             { status: 402, headers: { "content-type": "application/json" } }
           );
@@ -105,9 +105,9 @@ function mockCreateRouteHandler<T, E>(
  * Mock createPublicHandler
  */
 function mockCreatePublicHandler<T, E>(
-  handler: (request: NextRequest) => Effect.Effect<T, E, any>
+  _handler: () => Effect.Effect<T, E, any>
 ) {
-  return async (request: NextRequest) => {
+  return async (_request: NextRequest) => {
     try {
       const data = { result: "success" };
 
@@ -136,7 +136,7 @@ function mockCreatePublicHandler<T, E>(
 describe("Route Handler Factories", () => {
   describe("createRouteHandler", () => {
     it("should require authentication by default", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = (_request: NextRequest) => Effect.succeed({ ok: true });
       const handler = mockCreateRouteHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/test");
@@ -146,7 +146,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should accept valid API key", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = (_request: NextRequest) => Effect.succeed({ ok: true });
       const handler = mockCreateRouteHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/test", {
@@ -159,7 +159,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should wrap response with data property", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = (_request: NextRequest) => Effect.succeed({ ok: true });
       const handler = mockCreateRouteHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/test", {
@@ -173,7 +173,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should include timestamp in response", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = (_request: NextRequest) => Effect.succeed({ ok: true });
       const handler = mockCreateRouteHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/test", {
@@ -187,7 +187,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should include trace ID by default", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = (_request: NextRequest) => Effect.succeed({ ok: true });
       const handler = mockCreateRouteHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/test", {
@@ -201,7 +201,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should not include trace ID when disabled", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = (_request: NextRequest) => Effect.succeed({ ok: true });
       const handler = mockCreateRouteHandler(mockHandler, {
         includeTraceId: false,
       });
@@ -217,7 +217,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should allow unauthenticated access when disabled", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = (_request: NextRequest) => Effect.succeed({ ok: true });
       const handler = mockCreateRouteHandler(mockHandler, {
         requireAuth: false,
       });
@@ -229,7 +229,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should return 200 for successful handler", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = (_request: NextRequest) => Effect.succeed({ ok: true });
       const handler = mockCreateRouteHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/test", {
@@ -242,7 +242,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should return JSON response", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = (_request: NextRequest) => Effect.succeed({ ok: true });
       const handler = mockCreateRouteHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/test", {
@@ -257,7 +257,7 @@ describe("Route Handler Factories", () => {
 
   describe("createPublicHandler", () => {
     it("should not require authentication", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = () => Effect.succeed({ ok: true });
       const handler = mockCreatePublicHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/public");
@@ -267,7 +267,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should include trace ID", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = () => Effect.succeed({ ok: true });
       const handler = mockCreatePublicHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/public");
@@ -278,7 +278,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should wrap response with data property", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = () => Effect.succeed({ ok: true });
       const handler = mockCreatePublicHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/public");
@@ -289,7 +289,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should include timestamp", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = () => Effect.succeed({ ok: true });
       const handler = mockCreatePublicHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/public");
@@ -300,7 +300,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should return successful response", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = () => Effect.succeed({ ok: true });
       const handler = mockCreatePublicHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/public");
@@ -310,7 +310,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should return JSON response", async () => {
-      const mockHandler = (request: NextRequest) => Effect.succeed({ ok: true });
+      const mockHandler = () => Effect.succeed({ ok: true });
       const handler = mockCreatePublicHandler(mockHandler);
 
       const request = new NextRequest("http://localhost:3000/api/public");
@@ -323,10 +323,10 @@ describe("Route Handler Factories", () => {
   describe("Handler Composition", () => {
     it("should support multiple handlers in sequence", async () => {
       const handler1 = mockCreateRouteHandler(
-        (request: NextRequest) => Effect.succeed({ step: 1 })
+        (_request: NextRequest) => Effect.succeed({ step: 1 })
       );
       const handler2 = mockCreatePublicHandler(
-        (request: NextRequest) => Effect.succeed({ step: 2 })
+        () => Effect.succeed({ step: 2 })
       );
 
       const request1 = new NextRequest("http://localhost:3000/api/test1", {
@@ -343,7 +343,7 @@ describe("Route Handler Factories", () => {
 
     it("should preserve response structure across handlers", async () => {
       const handler = mockCreateRouteHandler(
-        (request: NextRequest) => Effect.succeed({ custom: "data" })
+        (_request: NextRequest) => Effect.succeed({ custom: "data" })
       );
 
       const request = new NextRequest("http://localhost:3000/api/test", {
@@ -361,7 +361,7 @@ describe("Route Handler Factories", () => {
 
   describe("Error Handling", () => {
     it("should handle successful requests", async () => {
-      const mockHandler = (request: NextRequest) =>
+      const mockHandler = (_request: NextRequest) =>
         Effect.succeed({ ok: true });
       const handler = mockCreateRouteHandler(mockHandler);
 
@@ -378,7 +378,7 @@ describe("Route Handler Factories", () => {
 
     it("should return 401 for authentication errors", async () => {
       const handler = mockCreateRouteHandler(
-        (request: NextRequest) => Effect.succeed({ ok: true })
+        (_request: NextRequest) => Effect.succeed({ ok: true })
       );
 
       const request = new NextRequest("http://localhost:3000/api/test");
@@ -394,7 +394,7 @@ describe("Route Handler Factories", () => {
 
       try {
         const handler = mockCreateRouteHandler(
-          (request: NextRequest) => Effect.succeed({ ok: true }),
+          (_request: NextRequest) => Effect.succeed({ ok: true }),
           { requirePaidTier: true }
         );
 
@@ -424,7 +424,7 @@ describe("Route Handler Factories", () => {
 
       try {
         const handler = mockCreateRouteHandler(
-          (request: NextRequest) => Effect.succeed({ ok: true }),
+          (_request: NextRequest) => Effect.succeed({ ok: true }),
           { requirePaidTier: true }
         );
 
@@ -451,7 +451,7 @@ describe("Route Handler Factories", () => {
 
       try {
         const handler = mockCreateRouteHandler(
-          (request: NextRequest) => Effect.succeed({ ok: true }),
+          (_request: NextRequest) => Effect.succeed({ ok: true }),
           { requirePaidTier: true }
         );
 
@@ -471,7 +471,7 @@ describe("Route Handler Factories", () => {
     });
 
     it("should include response data in response", async () => {
-      const mockHandler = (request: NextRequest) =>
+      const mockHandler = (_request: NextRequest) =>
         Effect.succeed({ result: "success" });
       const handler = mockCreateRouteHandler(mockHandler);
 
@@ -489,10 +489,10 @@ describe("Route Handler Factories", () => {
   describe("Response Format", () => {
     it("should use consistent response format", async () => {
       const handler1 = mockCreateRouteHandler(
-        (request: NextRequest) => Effect.succeed({ a: 1 })
+        (_request: NextRequest) => Effect.succeed({ b: 2 })
       );
       const handler2 = mockCreateRouteHandler(
-        (request: NextRequest) => Effect.succeed({ b: 2 })
+        (_request: NextRequest) => Effect.succeed({ b: 2 })
       );
 
       const request1 = new NextRequest("http://localhost:3000/api/test1", {
@@ -516,10 +516,10 @@ describe("Route Handler Factories", () => {
 
     it("should include correct status codes for different scenarios", async () => {
       const successHandler = mockCreateRouteHandler(
-        (request: NextRequest) => Effect.succeed({ ok: true })
+        (_request: NextRequest) => Effect.succeed({ ok: true })
       );
       const authHandler = mockCreateRouteHandler(
-        (request: NextRequest) => Effect.succeed({ ok: true })
+        (_request: NextRequest) => Effect.succeed({ ok: true })
       );
 
       const request1 = new NextRequest("http://localhost:3000/api/test", {

@@ -182,3 +182,14 @@ export function createConfigurationError(
 ): ConfigurationError {
   return new ConfigurationError({ key, expected, received });
 }
+
+/**
+ * Circuit breaker errors
+ */
+export class CircuitBreakerOpenError extends Data.TaggedError(
+  "CircuitBreakerOpenError"
+)<{
+  readonly circuitName: string;
+  readonly openedAt: Date;
+  readonly message: string;
+}> { }
