@@ -18,17 +18,17 @@ The Effect Patterns project supports Google Gemini for various AI-powered featur
 
    ```bash
    # Add Effect patterns to this file for Gemini's context
-   ./ep-admin install add --tool gemini
+   ./ep-admin config install add --tool gemini
    ```
 
 3. **Use with CLI Commands**
 
    ```bash
-   # Process patterns with Gemini
-   ./ep-admin process --provider google --model gemini-2.5-flash
+   # Ingest raw patterns
+   ./ep-admin data ingest process
    
-   # Generate patterns with Gemini
-   ./ep-admin generate --provider google
+   # Run AI-powered autofix for TypeScript errors
+   ./ep-admin dev autofix prepublish --ai-call --provider google
    ```
 
 ## Supported Models
@@ -45,20 +45,20 @@ The Effect Patterns project supports Google Gemini for various AI-powered featur
 Create and analyze Effect-TS patterns using Gemini's reasoning capabilities.
 
 ```bash
-# Generate a new pattern
-./ep-admin generate --provider google --model gemini-2.5-flash
+# Generate documentation from published patterns
+./ep-admin publish generate
 
-# Process and analyze content
-./ep-admin process --provider google
+# Search for patterns
+./ep-admin pattern search "Error management"
 ```
 
 ### 2. AI-Powered Autofix
 
-Automatically fix TypeScript errors in patterns before publishing.
+Automatically fix TypeScript errors in patterns before publishing using Gemini 2.5 Flash.
 
 ```bash
 # Call Gemini to generate fixes for prepublish errors
-./ep-admin autofix prepublish --ai-call --provider google
+./ep-admin dev autofix prepublish --ai-call --provider google --model gemini-2.5-flash
 ```
 
 ### 3. Gemini Skills Generation
@@ -67,7 +67,7 @@ Generate structured "Skills" that enhance Gemini's understanding of specific Eff
 
 ```bash
 # Generate Gemini skills for all categories
-./ep-admin install skills --format gemini
+./ep-admin config install skills --format gemini
 ```
 
 *Skills are generated in `content/published/skills/gemini/` as `skill.json` and `system-prompt.txt`.*
@@ -77,33 +77,35 @@ Generate structured "Skills" that enhance Gemini's understanding of specific Eff
 Inject curated Effect-TS rules directly into your environment or project-level `GEMINI.md`.
 
 ```bash
-./ep-admin install add --tool gemini --skill-level beginner
+# Inject beginner level rules
+./ep-admin config install add --tool gemini --skill-level beginner
 ```
 
 ## Configuration
 
-Environment variables for Gemini:
+Environment variables for Gemini (set in `.env`):
 
 ```bash
 GOOGLE_API_KEY=your_api_key
-GOOGLE_MODEL=gemini-2.5-flash
-GOOGLE_REGION=us-central1
 ```
+
+*Note: Model selection is handled via CLI flags or defaults to `gemini-2.5-flash`.*
 
 ## CLI Reference
 
 | Command | Description |
 |---------|-------------|
-| `./ep-admin install add --tool gemini` | Inject patterns into GEMINI.md |
-| `./ep-admin install skills --format gemini` | Generate Gemini-compatible skills |
-| `./ep-admin autofix prepublish --ai-call` | Fix errors using Gemini |
-| `./ep-admin generate --provider google` | Generate new patterns |
-| `./ep-admin qa process --ai-provider google` | Run QA suite with Gemini |
+| `./ep-admin config install add --tool gemini` | Inject patterns into GEMINI.md |
+| `./ep-admin config install skills --format gemini` | Generate Gemini-compatible skills |
+| `./ep-admin dev autofix prepublish --ai-call` | Fix errors using Gemini |
+| `./ep-admin publish generate` | Generate documentation from patterns |
+| `./ep-admin data qa process` | Run QA suite for patterns |
+| `./ep-admin data ingest pipeline` | Run full ingest pipeline |
 
 ## Best Practices
 
 1. **Use Gemini 2.5 Flash**: It provides the best performance/cost ratio for agentic workflows in 2026.
-2. **Inject Rules**: Always run `./ep-admin install add --tool gemini` in your project to give Gemini the latest context.
+2. **Inject Rules**: Always run `./ep-admin config install add --tool gemini` in your project to give Gemini the latest context.
 3. **Review AI Fixes**: When using `autofix`, always review the generated changes before committing.
 4. **Skills for Context**: Use the generated `system-prompt.txt` from skills to prime Gemini for specific tasks (e.g., error management).
 
@@ -111,7 +113,7 @@ GOOGLE_REGION=us-central1
 
 1. **API Key Issues**: Verify your `GOOGLE_API_KEY` in your `.env` or environment.
 2. **Model Availability**: If `gemini-2.5-flash` is unavailable, fall back to `gemini-2.0-flash`.
-3. **Rate Limiting**: Free tier is limited to 60 RPM. Use `./ep-admin`'s built-in batching where available.
+3. **Rate Limiting**: Free tier is limited to 60 RPM. Use the CLI's built-in batching where available.
 
 ---
 
