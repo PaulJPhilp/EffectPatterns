@@ -8,13 +8,13 @@ The test suite is organized into 5 categories:
 
 | Category | Tests | Location | Purpose |
 |----------|-------|----------|---------|
-| **Unit Tests** | 137+ | `src/**/*.test.ts` | Core services and utilities |
-| **MCP Protocol** | 50+ | `tests/mcp-protocol/` | MCP stdio communication |
-| **Deployment** | 50+ | `tests/deployment/` | Staging & production environments |
-| **Authentication** | 13+ | `src/auth/__tests__/` | API key validation |
-| **Routes** | 80+ | `tests/routes/` + `src/server/__tests__/` | API routes & handlers |
-| **Stress Tests** | 48+ | `tests/stress/` | Performance & load testing |
-| **TOTAL** | **378+** | | Complete coverage |
+| **Unit Tests** | 485 | `src/**/*.test.ts` | Core services and utilities |
+| **MCP Protocol** | 181 | `tests/mcp-protocol/` | MCP stdio communication |
+| **Deployment** | 65 | `tests/deployment/` | Staging & production environments |
+| **Authentication** | 13 | `src/auth/__tests__/` | API key validation |
+| **Routes** | 116 | `tests/routes/` + `src/server/__tests__/` | API routes & handlers |
+| **Stress Tests** | 10 | `tests/stress/` | Performance & load testing |
+| **TOTAL** | **870** | | Complete coverage |
 
 ---
 
@@ -99,12 +99,14 @@ The MCP server exposes the free-tier tools only. Paid features are HTTP API only
    - Rule discovery
    - Consistency verification
 
-#### Error Handling (15 tests)
+#### Error Handling (23 tests)
 - `error-handling.test.ts`
-- Invalid tools and parameters
+- Invalid tools, parameters, and types
 - Size limits and timeouts
 - Recovery after errors
-- Security validation
+- Security validation and information leakage prevention
+- Format-gated error responses (markdown vs JSON)
+- Malformed input and connection loss handling
 
 ---
 
@@ -243,14 +245,17 @@ bun run test:routes:coverage
 
 **What it tests:**
 
-#### Health Route (10 tests)
+#### Health Route (13 tests)
 - `tests/routes/health.route.test.ts`
 - 200 status response
 - JSON format
 - Service metadata
 - No authentication required
-- Fast response time
+- Fast response time (< 50ms)
+- UUID trace ID format and headers
 - Multiple concurrent requests
+- Consistent response structure
+- All required fields validation
 
 #### Patterns Search Route (13 tests)
 - `tests/routes/patterns.route.test.ts`
@@ -322,7 +327,7 @@ Test performance under various conditions:
 bun run test:stress:all
 
 # Run specific stress test suites
-bun run test:stress:edge      # Edge cases (2.9s)
+bun run test:stress:edge      # Edge cases (2.9s) - 19 tests
 bun run test:stress:volume    # Large files (3.4s)
 bun run test:stress:load      # Concurrent requests (~300s)
 bun run test:stress:spike     # Traffic bursts (~380s)
@@ -353,10 +358,10 @@ bun run test:ci
 ```
 
 **test:full** includes:
-- ✅ Unit tests (137+)
-- ✅ MCP protocol tests (50+)
-- ✅ Authentication tests (13+)
-- ✅ Route tests (80+)
+- ✅ Unit tests (485)
+- ✅ MCP protocol tests (181)
+- ✅ Authentication tests (13)
+- ✅ Route tests (116)
 
 **test:ci** additionally includes:
 - ✅ Stress tests (edge cases only)
@@ -538,13 +543,13 @@ export PATTERN_API_KEY="test-api-key"
 
 | Category | Target | Status |
 |----------|--------|--------|
-| Unit Tests | 137+ | ✅ Existing |
-| MCP Protocol | 50+ | ✅ New |
-| Deployment | 50+ | ✅ New |
-| Authentication | 13+ | ✅ New |
-| Routes & Handlers | 80+ | ✅ New |
-| Stress Tests | 48+ | ✅ Existing |
-| **TOTAL** | **378+** | ✅ Complete |
+| Unit Tests | 485 | ✅ Existing |
+| MCP Protocol | 181 | ✅ New |
+| Deployment | 65 | ✅ New |
+| Authentication | 13 | ✅ New |
+| Routes & Handlers | 116 | ✅ New |
+| Stress Tests | 10 | ✅ Existing |
+| **TOTAL** | **870** | ✅ Complete |
 
 ### By Response Time
 
@@ -708,7 +713,4 @@ When adding new features:
 
 ## Resources
 
-- [Effect-TS Documentation](https://effect.website)
-- [MCP SDK Documentation](https://modelcontextprotocol.io)
-- [Vitest Documentation](https://vitest.dev)
-- [Next.js Testing](https://nextjs.org/docs/testing)
+- Project docs: `../../docs/`, `../README.md`, and `MCP_CONFIG.md` for API and MCP setup.
