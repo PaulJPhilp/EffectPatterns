@@ -474,7 +474,7 @@ Returns the top 3 highest-priority issues with actionable guidance.
   "meta": {
     "totalFound": 12,
     "hiddenCount": 9,
-    "upgradeMessage": "9 more architectural issues found. Upgrade to Pro to see all issues and auto-fix them."
+    "upgradeMessage": "9 more architectural issues found. Use the HTTP API or CLI to see all issues and auto-fix them."
   },
   "markdown": "# Code Review Results\n\nFound 12 issues...",
   "traceId": "trace-123",
@@ -588,22 +588,48 @@ Get tracing setup examples for different languages/frameworks.
 
 ### Running Tests
 
+Complete testing guide: **[TESTING_GUIDE.md](./TESTING_GUIDE.md)**
+
+This guide includes:
+- Step-by-step instructions for all 7 test types
+- Environment setup for each test type
+- Troubleshooting for common issues
+- CI/CD integration examples
+- Performance optimization tips
+
+Environment variables reference: **[ENV_VARS.md](./ENV_VARS.md)**
+
+Quick test commands:
+
 ```bash
-# Unit tests
+# Unit tests (10-15s)
 bun run test
 
-# Integration tests (requires running server)
+# Routes and handlers (45-60s)
+bun run test:routes
+
+# MCP protocol (30-40s)
+bun run test:mcp
+
+# Integration tests (20-30s, requires server startup)
 bun run test:integration
 
-# MCP 2.0 compliance tests
-bun run test:mcp2
+# Deployment tests (90-120s, requires API key)
+export STAGING_API_KEY="your-key"
+bun run test:deployment:staging
 
-# Smoke tests against live server
-bun run smoke-test https://localhost:3001 your-api-key
+# All critical tests
+bun run test:full
 
 # Test coverage
 bun run test:coverage
+
+# Stress tests
+bun run test:stress:all
 ```
+
+For detailed instructions on each test type, environment setup, and troubleshooting, see [TESTING_GUIDE.md](./TESTING_GUIDE.md).
+For complete environment variable reference, see [ENV_VARS.md](./ENV_VARS.md).
 
 ### MCP 2.0 Development
 
@@ -841,7 +867,7 @@ sequenceDiagram
     Services->>Analysis: Architectural analysis
     Analysis->>Services: Priority recommendations
     Services->>DB: Store review metrics
-    Services->>API: Top 3 issues + upgrade prompt
+    Services->>API: Top 3 issues + capability message
     API->>Client: Review results
     %% Refactoring Flow (Pro Tier)
     Client->>API: POST /api/apply-refactoring
