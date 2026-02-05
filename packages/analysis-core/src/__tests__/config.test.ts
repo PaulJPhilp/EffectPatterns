@@ -10,6 +10,7 @@ const mockRules: RuleDefinition[] = [
 		title: "Async/Await Usage",
 		message: "Use Effect instead of async/await",
 		severity: "medium",
+		defaultLevel: "warn",
 		category: "async",
 		fixIds: [],
 	},
@@ -18,6 +19,7 @@ const mockRules: RuleDefinition[] = [
 		title: "Node.js File System",
 		message: "Use @effect/platform FileSystem instead",
 		severity: "high",
+		defaultLevel: "error",
 		category: "resources",
 		fixIds: [],
 	},
@@ -74,7 +76,7 @@ describe("Config Module", () => {
 	describe("service", () => {
 		it("resolves default config when no config provided", () => {
 			const resolved = resolveConfig(mockRules);
-			expect(resolved.rules["async-await"].enabled).toBe(true);
+			expect(resolved.rules["async-await"].level).toBe("warn");
 			expect(resolved.rules["async-await"].severity).toBe("medium");
 		});
 
@@ -82,14 +84,14 @@ describe("Config Module", () => {
 			const resolved = resolveConfig(mockRules, {
 				rules: { "async-await": "off" },
 			});
-			expect(resolved.rules["async-await"].enabled).toBe(false);
+			expect(resolved.rules["async-await"].level).toBe("off");
 		});
 
 		it("resolves rule with 'warn' level", () => {
 			const resolved = resolveConfig(mockRules, {
 				rules: { "async-await": "warn" },
 			});
-			expect(resolved.rules["async-await"].enabled).toBe(true);
+			expect(resolved.rules["async-await"].level).toBe("warn");
 			expect(resolved.rules["async-await"].severity).toBe("medium");
 		});
 
@@ -97,15 +99,15 @@ describe("Config Module", () => {
 			const resolved = resolveConfig(mockRules, {
 				rules: { "async-await": "error" },
 			});
-			expect(resolved.rules["async-await"].enabled).toBe(true);
-			expect(resolved.rules["async-await"].severity).toBe("high");
+			expect(resolved.rules["async-await"].level).toBe("error");
+			expect(resolved.rules["async-await"].severity).toBe("medium");
 		});
 
 		it("resolves rule with overrides", () => {
 			const resolved = resolveConfig(mockRules, {
 				rules: { "async-await": ["error", { severity: "low" }] },
 			});
-			expect(resolved.rules["async-await"].enabled).toBe(true);
+			expect(resolved.rules["async-await"].level).toBe("error");
 			expect(resolved.rules["async-await"].severity).toBe("low");
 		});
 

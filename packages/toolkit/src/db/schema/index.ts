@@ -9,20 +9,20 @@
  * - PatternRelation: Related patterns linking
  */
 
-import {
-  pgTable,
-  uuid,
-  varchar,
-  text,
-  integer,
-  timestamp,
-  boolean,
-  jsonb,
-  primaryKey,
-  index,
-  uniqueIndex,
-} from "drizzle-orm/pg-core"
 import { relations } from "drizzle-orm"
+import {
+    boolean,
+    index,
+    integer,
+    jsonb,
+    pgTable,
+    primaryKey,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar,
+} from "drizzle-orm/pg-core"
 
 /**
  * Skill level enum values
@@ -118,6 +118,7 @@ export const effectPatterns = pgTable(
     index("effect_patterns_category_idx").on(table.category),
     index("effect_patterns_application_pattern_idx").on(table.applicationPatternId),
     index("effect_patterns_validated_idx").on(table.validated),
+    index("effect_patterns_tags_idx").using("gin", table.tags), // Optimize tag search
   ]
 )
 

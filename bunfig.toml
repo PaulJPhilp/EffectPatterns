@@ -3,3 +3,6 @@ root = "."
 
 [resolve]
 alias = { api = "./api", server = "./server", packages = "./packages" }
+
+[test]
+preload = ["./packages/mcp-server/src/test/setup-env.ts"]

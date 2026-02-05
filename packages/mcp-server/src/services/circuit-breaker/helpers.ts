@@ -4,13 +4,19 @@
  * Pure state transition logic for circuit breaker state machine
  */
 
-import { CircuitState, CircuitStatus } from "./types";
+import { CircuitState } from "./types";
 
 /**
  * Check if circuit should transition from CLOSED to OPEN
  */
 export function shouldOpenCircuit(state: CircuitState, threshold: number): boolean {
-  return state.status === "CLOSED" && state.failureCount >= threshold;
+  if (state.status === "CLOSED") {
+    return state.failureCount >= threshold;
+  }
+  if (state.status === "HALF_OPEN") {
+    return state.failureCount > 0;
+  }
+  return false;
 }
 
 /**

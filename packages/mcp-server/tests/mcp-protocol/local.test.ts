@@ -82,15 +82,51 @@ describe("Local MCP Server", () => {
       expect(client.isReady()).toBe(true);
     });
 
-    it("should list all available tools", async () => {
+    const PRODUCTION_TOOLS = ["get_pattern", "list_analysis_rules", "search_patterns"] as const;
+
+    it("should expose exactly 3 tools when MCP_DEBUG=false and MCP_ENV=production", async () => {
+      if (!isLocalAvailable) return;
+      const productionClient = await createMCPTestClient({
+        apiKey: config.apiKey,
+        apiUrl: config.apiUrl,
+        debug: false,
+        mcpEnv: "production",
+      });
+
+      const tools = await productionClient.listTools();
+
+      expect(tools).toHaveLength(3);
+      expect([...tools].sort()).toEqual([...PRODUCTION_TOOLS].sort());
+      expect(tools).not.toContain("get_mcp_config");
+      await productionClient.close();
+    });
+
+    it("should list only the allowed MCP tool set", async () => {
       if (!isLocalAvailable) return;
       const tools = await client.listTools();
 
-      expect(tools).toContain("search_patterns");
-      expect(tools).toContain("get_pattern");
-      expect(tools).toContain("analyze_code");
-      expect(tools).toContain("review_code");
-      expect(tools).toContain("list_analysis_rules");
+      const allowed = ["search_patterns", "get_pattern", "list_analysis_rules"];
+      const forbidden = [
+        "analyze_code",
+        "review_code",
+        "apply_refactoring",
+        "analyze_consistency",
+        "generate_pattern",
+      ];
+
+      for (const name of allowed) {
+        expect(tools).toContain(name);
+      }
+      for (const name of forbidden) {
+        expect(tools).not.toContain(name);
+      }
+
+      const allowedOptional = new Set([...allowed, "get_mcp_config"]);
+      for (const name of tools) {
+        expect(allowedOptional.has(name)).toBe(true);
+      }
+      expect(tools.length).toBeGreaterThanOrEqual(3);
+      expect(tools.length).toBeLessThanOrEqual(4);
     });
   });
 
@@ -106,7 +142,7 @@ describe("Local MCP Server", () => {
       expect(result.content.length).toBeGreaterThan(0);
     });
 
-    it.skip("should render clean markdown without tool chatter", async () => {
+    it("should render clean markdown without tool chatter", async () => {
       if (!isLocalAvailable) return;
       
       // Test 1: Search patterns
@@ -212,98 +248,7 @@ describe("Local MCP Server", () => {
     });
   });
 
-  describe("Code Analysis", () => {
-    const sampleCode = `
-import { Effect } from "effect";
-
-export const handler = Effect.gen(function* () {
-  const result = yield* Effect.succeed(42);
-  return result;
-});
-    `.trim();
-
-    it("should analyze code successfully", async () => {
-      if (!isLocalAvailable) return;
-      const result = await client.callTool("analyze_code", {
-        source: sampleCode,
-        filename: "handler.ts",
-      });
-
-      expect(result.content).toBeDefined();
-    });
-
-    it("should review code successfully", async () => {
-      if (!isLocalAvailable) return;
-      const result = await client.callTool("review_code", {
-        code: sampleCode,
-        filePath: "src/handlers/api.ts",
-      });
-
-      expect(result.content).toBeDefined();
-    });
-
-    it("should require code parameter (filePath alone is not sufficient)", async () => {
-      if (!isLocalAvailable) return;
-      // MCP tool schema should enforce code is required
-      // This test verifies runtime behavior
-      const result = await client.callTool("review_code", {
-        code: "", // Empty code (minimum required)
-        filePath: "src/handlers/api.ts",
-      });
-
-      // Should return content (may be empty result or error)
-      expect(result.content).toBeDefined();
-    });
-
-    it("should work without filePath (code-only mode)", async () => {
-      if (!isLocalAvailable) return;
-      const result = await client.callTool("review_code", {
-        code: sampleCode,
-        // filePath is optional
-      });
-
-      expect(result.content).toBeDefined();
-    });
-
-    it("should return only diagnostic information, no corrected code", async () => {
-      if (!isLocalAvailable) return;
-      const result = await client.callTool("review_code", {
-        code: "const x: any = 42;",
-        filePath: "test.ts",
-      });
-
-      expect(result.content).toBeDefined();
-      const content = Array.isArray(result.content)
-        ? result.content[0]
-        : result.content;
-
-      if (content && typeof content === "object" && "text" in content) {
-        const text = content.text as string;
-        const data = JSON.parse(text);
-
-        // Check for auth error which causes test flakiness
-        if (data.error === "Invalid API key" || data.error === "Missing API key") {
-          if (process.env.CI === "true") {
-             throw new Error(
-               "FATAL: Authentication failed in CI environment. " +
-               "PATTERN_API_KEY must be set in CI secrets for 'test:mcp:local' to run. " +
-               "Check .github/workflows/ci.yml and ensure the secret is passed to the job."
-             );
-          }
-          console.warn("Skipping test assertion due to missing API key");
-          return;
-        }
-
-        // Verify response structure contains only diagnostics
-        expect(data).toHaveProperty("recommendations");
-        // Verify NO corrected code fields
-        expect(data).not.toHaveProperty("correctedCode");
-        expect(data).not.toHaveProperty("after");
-        expect(data).not.toHaveProperty("fixed");
-        expect(data).not.toHaveProperty("patched");
-      }
-    });
-
+  describe("Rule Catalog (Read-Only)", () => {
     it("should list analysis rules", async () => {
       if (!isLocalAvailable) return;
       const result = await client.callTool("list_analysis_rules", {});

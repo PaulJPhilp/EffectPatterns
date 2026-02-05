@@ -5,22 +5,22 @@
  * when services are degraded.
  */
 
-import { Effect, Ref, Fiber } from "effect";
+import { Effect, Fiber, Ref } from "effect";
+import { CircuitBreakerOpenError } from "../../errors";
 import { MCPConfigService } from "../config";
 import { MCPLoggerService } from "../logger";
-import { CircuitBreakerOpenError } from "../../errors";
-import { CircuitBreakerOptions, CircuitState, CircuitStats } from "./types";
 import {
-  createInitialState,
-  recordFailure,
-  recordSuccess,
-  shouldCloseCircuit,
-  shouldOpenCircuit,
-  shouldTransitionToHalfOpen,
-  transitionToClosed,
-  transitionToHalfOpen,
-  transitionToOpen,
+    createInitialState,
+    recordFailure,
+    recordSuccess,
+    shouldCloseCircuit,
+    shouldOpenCircuit,
+    shouldTransitionToHalfOpen,
+    transitionToClosed,
+    transitionToHalfOpen,
+    transitionToOpen,
 } from "./helpers";
+import { CircuitBreakerOptions, CircuitState, CircuitStats } from "./types";
 
 /**
  * Default circuit breaker options
@@ -43,7 +43,7 @@ export class CircuitBreakerService extends Effect.Service<CircuitBreakerService>
   {
     dependencies: [MCPConfigService.Default, MCPLoggerService.Default],
     scoped: Effect.gen(function* () {
-      const config = yield* MCPConfigService;
+      yield* MCPConfigService;
       const logger = yield* MCPLoggerService;
 
       // State management for each named circuit
@@ -58,11 +58,11 @@ export class CircuitBreakerService extends Effect.Service<CircuitBreakerService>
       /**
        * Execute an effect with circuit breaker protection
        */
-      const execute = <A, E>(
+      const execute = <A, E, R>(
         name: string,
-        effect: Effect.Effect<A, E>,
+        effect: Effect.Effect<A, E, R>,
         options?: CircuitBreakerOptions
-      ): Effect.Effect<A, E | CircuitBreakerOpenError> =>
+      ): Effect.Effect<A, E | CircuitBreakerOpenError, R> =>
         Effect.gen(function* () {
           const opts = options ?? DEFAULT_OPTIONS;
 
@@ -109,7 +109,7 @@ export class CircuitBreakerService extends Effect.Service<CircuitBreakerService>
 
           // Execute the effect with error handling
           const result = yield* effect.pipe(
-            Effect.tapError((error) =>
+            Effect.tapError((_error) =>
               Effect.gen(function* () {
                 // Record failure
                 let updatedState = recordFailure(state);

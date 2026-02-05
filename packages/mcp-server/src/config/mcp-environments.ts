@@ -51,6 +51,14 @@ export function getMCPEnvironmentConfig(
 }
 
 /**
+ * True when the debug-only MCP tool (get_mcp_config) should be registered.
+ * Used to gate get_mcp_config so it does not appear in production/staging by default.
+ */
+export function isMcpDebugOrLocal(): boolean {
+  return process.env.MCP_DEBUG === "true" || process.env.MCP_ENV === "local";
+}
+
+/**
  * Get active environment from environment variable
  */
 export function getActiveMCPEnvironment(): "local" | "staging" | "production" {

@@ -99,8 +99,8 @@ describe("MCPTierService", () => {
 				}).pipe(Effect.provide(MCPTierService.Default))
 			);
 
-			expect(result).toContain("Paid Tier");
-			expect(result).toContain("Upgrade");
+			expect(result).toContain("capability is not available via MCP");
+			expect(result).toContain("Use the HTTP API or CLI");
 		});
 
 		it("should return correct feature categories", async () => {

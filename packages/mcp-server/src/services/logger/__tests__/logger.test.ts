@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { MCPLoggerService } from "../index";
 import { Effect, Layer } from "effect";
+import { describe, expect, it } from "vitest";
 import { MCPConfigService } from "../../config";
-import { logDebug, logInfo, logWarn, logError, createLogEntry } from "../helpers";
+import { createLogEntry, logDebug, logError, logInfo, logWarn } from "../helpers";
+import { MCPLoggerService } from "../index";
 
 const TestLayer = Layer.provideMerge(
 	MCPLoggerService.Default,
@@ -125,7 +125,7 @@ describe("MCPLoggerService", () => {
 	it("should respect logging configuration", async () => {
 		const result = await Effect.runPromise(
 			Effect.gen(function* () {
-				const logger = yield* MCPLoggerService;
+				yield* MCPLoggerService;
 				const config = yield* MCPConfigService;
 
 				const enabled = config.loggingEnabled;
@@ -301,7 +301,7 @@ describe("Logger Helpers", () => {
 			
 			console[method] = ((...args: unknown[]) => {
 				output.push(args.map(String).join(" "));
-			}) as typeof console[method];
+			}) as any;
 			
 			return {
 				output,

@@ -1,15 +1,13 @@
 import { AnalysisService } from "@effect-patterns/analysis-core";
 import { Effect, Schema as S } from "effect";
 import { type NextRequest } from "next/server";
+import { createSimpleHandler } from "../../../src/server/routeHandler";
 import {
-	AnalyzeCodeRequest,
-	AnalyzeCodeResponse,
+    AnalyzeCodeRequest,
+    AnalyzeCodeResponse,
 } from "../../../src/tools/schemas";
-import { createRouteHandler } from "../../../src/server/routeHandler";
 
-const handleAnalyzeCode = Effect.fn("analyze-code")(function* (
-	request: NextRequest
-) {
+const handleAnalyzeCode = (request: NextRequest) => Effect.gen(function* () {
 	const analysis = yield* AnalysisService;
 
 	const body = yield* Effect.tryPromise(() => request.json());
@@ -28,9 +26,10 @@ const handleAnalyzeCode = Effect.fn("analyze-code")(function* (
 		suggestions: result.suggestions,
 		findings: result.findings,
 		timestamp: result.analyzedAt,
+		traceId: "",
 	} satisfies typeof AnalyzeCodeResponse.Type;
 });
 
-export const POST = createRouteHandler(handleAnalyzeCode, {
+export const POST = createSimpleHandler(handleAnalyzeCode, {
 	requireAuth: true,
 });

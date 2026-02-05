@@ -10,9 +10,7 @@ import { Effect } from "effect";
 import { type NextRequest } from "next/server";
 import { createRouteHandler } from "../../../src/server/routeHandler";
 
-const handleDbTableCheck = Effect.fn("db-table-check")(function* (
-  request: NextRequest
-) {
+const handleDbTableCheck = (_request: NextRequest) => Effect.gen(function* () {
   const dbUrl = process.env.DATABASE_URL_OVERRIDE || process.env.DATABASE_URL;
   if (!dbUrl) {
     return yield* Effect.fail(

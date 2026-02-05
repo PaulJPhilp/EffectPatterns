@@ -10,16 +10,16 @@
  * - MCP server is pure transport - passes requests through
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
-import {
-  getDeploymentConfig,
-  endpoints,
-  sla,
-  testData,
-} from "./helpers/environment-config";
+import { beforeAll, describe, expect, it } from "vitest";
 import { createDeploymentClient, DeploymentClient } from "./helpers/deployment-client";
+import {
+    endpoints,
+    getDeploymentConfig,
+    sla,
+    testData,
+} from "./helpers/environment-config";
 
-describe("Staging Environment", () => {
+describe.skipIf(!process.env.STAGING_API_KEY)("Staging Environment", () => {
   let client: DeploymentClient;
   const config = getDeploymentConfig("staging");
 

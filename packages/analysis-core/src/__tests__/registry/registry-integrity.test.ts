@@ -29,6 +29,9 @@ describe("Rule Registry Integrity Tests", () => {
 			expect(rule.severity).toBeDefined();
 			expect(["low", "medium", "high"]).toContain(rule.severity);
 
+			expect(rule.defaultLevel).toBeDefined();
+			expect(["off", "warn", "error"]).toContain(rule.defaultLevel);
+
 			expect(rule.category).toBeDefined();
 			expect([
 				"async",
@@ -114,6 +117,9 @@ describe("Rule Registry Integrity Tests", () => {
 			expect(fix.description).toBeDefined();
 			expect(fix.description).toBeTruthy();
 			expect(typeof fix.description).toBe("string");
+
+			expect(["safe", "review", "risky"]).toContain(fix.safety);
+			expect(["codemod", "assisted", "manual"]).toContain(fix.kind);
 		}
 	});
 

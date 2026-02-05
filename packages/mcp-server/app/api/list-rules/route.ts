@@ -1,12 +1,10 @@
 import { AnalysisService } from "@effect-patterns/analysis-core";
 import { Effect, Schema as S } from "effect";
 import { type NextRequest } from "next/server";
-import { ListRulesRequest } from "../../../src/tools/schemas";
 import { createRouteHandler } from "../../../src/server/routeHandler";
+import { ListRulesRequest } from "../../../src/tools/schemas";
 
-const handleListRules = Effect.fn("list-rules")(function* (
-	request: NextRequest
-) {
+const handleListRules = (request: NextRequest) => Effect.gen(function* () {
 	const analysis = yield* AnalysisService;
 
 	const body = yield* Effect.tryPromise(() => request.json()).pipe(

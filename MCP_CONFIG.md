@@ -8,10 +8,9 @@ The Effect Patterns MCP Server provides access to 700+ Effect-TS patterns throug
 
 - Search Effect-TS patterns by query, category, and difficulty level
 - Retrieve detailed pattern documentation and code examples
-- Analyze TypeScript code for anti-patterns and best practices violations
-- Get AI-powered architectural reviews and recommendations
-- Generate customized code from pattern templates
-- Apply automated refactoring patterns
+- Browse the analysis rule catalog (read-only metadata)
+
+Paid features (code analysis, code review, refactoring, consistency analysis) are available via the HTTP API and paid CLI only — not exposed as MCP tools.
 
 ## Quick Start (Local Development)
 
@@ -133,7 +132,7 @@ The MCP server respects the following environment variables:
 
 ## Available Tools
 
-The MCP server provides 5 tools (free-tier surface only). Paid features are exposed via the HTTP API, not the MCP server.
+The MCP server provides 3 tools (free-tier surface only). Paid features are exposed via the HTTP API, not the MCP server.
 
 ### 1. `search_patterns`
 
@@ -170,47 +169,15 @@ Retrieve full details for a specific pattern by ID.
 
 ### 3. `list_analysis_rules`
 
-List all available code analysis rules for anti-pattern detection.
+List all analysis rule metadata (IDs, titles, severity, categories). Read-only catalog — does not scan or analyze user code.
 
 **Parameters:** None
-
-### 4. `analyze_code`
-
-Analyze TypeScript code for Effect-TS anti-patterns and best practices violations.
-
-**Parameters:**
-- `source` (string, required): TypeScript source code to analyze
-- `filename` (string, optional): Filename for context (e.g., "service.ts")
-- `analysisType` (string, optional): Analysis type (validation, patterns, errors, all; default: "all")
-
-**Example:**
-```json
-{
-  "source": "const x = Effect.try(() => { /* ... */ })",
-  "filename": "service.ts",
-  "analysisType": "all"
-}
-```
-
-### 5. `review_code`
-
-Get AI-powered architectural review and recommendations for Effect code.
-
-**Parameters:**
-- `code` (string, required): Source code to review
-- `filePath` (string, optional): File path for context (e.g., "src/services/user.ts")
-
-**Example:**
-```json
-{
-  "code": "export const MyService = Effect.gen(function* () { /* ... */ })",
-  "filePath": "src/services/user.ts"
-}
-```
 
 ### Paid Features (HTTP API Only)
 
 The following paid-tier features are available via the HTTP API only (not exposed as MCP tools):
+- `analyze_code` → `POST /api/analyze-code`
+- `review_code` → `POST /api/review-code`
 - `generate_pattern_code` → `POST /api/generate-pattern`
 - `analyze_consistency` → `POST /api/analyze-consistency`
 - `apply_refactoring` → `POST /api/apply-refactoring`
@@ -322,28 +289,16 @@ Search for patterns about error handling with difficulty level intermediate
 
 Claude will automatically use the `search_patterns` tool and show results.
 
-### Code Analysis in Context
+### Code Analysis (Paid — HTTP API Only)
 
-When analyzing code, Claude can use `analyze_code`:
+Code analysis, review, pattern generation, and refactoring are available via the HTTP API and paid CLI, not via MCP tools:
 
-```
-Analyze this code for Effect-TS anti-patterns: [code snippet]
-```
-
-### Pattern Generation
-
-Generate code from patterns:
-
-```
-Generate a UserService using the effect-service pattern with these methods: getUser, createUser, updateUser
-```
-
-### Refactoring Projects
-
-Analyze and refactor entire project sections:
-
-```
-Analyze these Effect service files for consistency and suggest refactorings: [files]
+```bash
+# Example: analyze code via HTTP API
+curl -X POST -H "x-api-key: $PATTERN_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"source": "...", "analysisType": "all"}' \
+  https://effect-patterns-mcp.vercel.app/api/analyze-code
 ```
 
 ## Security Considerations
@@ -357,7 +312,7 @@ Analyze these Effect service files for consistency and suggest refactorings: [fi
 
 1. **Caching**: Pattern searches are cached server-side for 5 minutes
 2. **Limits**: The API has rate limits (default: 100 requests/minute per key)
-3. **Large Files**: For analyzing multiple files, keep total size under 10MB
+3. **Large Files**: For analyzing multiple files via HTTP API, keep total size under 10MB
 4. **Batch Operations**: Group multiple refactorings into a single HTTP API `apply_refactoring` call
 
 ## Support and Debugging

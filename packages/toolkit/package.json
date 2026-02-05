@@ -13,6 +13,14 @@
     "./splitSections": {
       "types": "./dist/splitSections.d.ts",
       "default": "./dist/splitSections.js"
+    },
+    "./services/config": {
+      "types": "./dist/services/config.d.ts",
+      "default": "./dist/services/config.js"
+    },
+    "./services/logger": {
+      "types": "./dist/services/logger.d.ts",
+      "default": "./dist/services/logger.js"
     }
   },
   "files": [

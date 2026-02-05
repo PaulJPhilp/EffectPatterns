@@ -2,34 +2,26 @@ import { Effect } from "effect";
 import type { RuleDefinition, RuleSeverity } from "../services/rule-registry";
 import type { RuleId } from "../tools/ids";
 import type {
-	AnalysisConfig,
-	ResolvedConfig,
-	ResolvedRuleConfig,
-	RuleConfig,
-	RuleLevel,
+    AnalysisConfig,
+    ResolvedConfig,
+    ResolvedRuleConfig,
+    RuleConfig,
 } from "./types";
-
-const levelToEnabled = (level: RuleLevel): boolean => level !== "off";
-
-const defaultSeverityForLevel = (level: Exclude<RuleLevel, "off">): RuleSeverity =>
-	level === "error" ? "high" : "medium";
+import { isLevelEnabled } from "./types";
 
 const resolveRule = (rule: RuleDefinition, cfg?: RuleConfig): ResolvedRuleConfig => {
 	if (cfg === undefined) {
-		return { enabled: true, severity: rule.severity };
+		return { level: rule.defaultLevel, severity: rule.severity };
 	}
 
 	if (typeof cfg === "string") {
-		if (cfg === "off") {
-			return { enabled: false, severity: rule.severity };
-		}
-		return { enabled: true, severity: defaultSeverityForLevel(cfg) };
+		return { level: cfg, severity: rule.severity };
 	}
 
 	const [level, overrides] = cfg;
 	return {
-		enabled: levelToEnabled(level),
-		severity: overrides.severity ?? defaultSeverityForLevel(level),
+		level,
+		severity: overrides.severity ?? rule.severity,
 		options: overrides.options,
 	};
 };
@@ -56,7 +48,7 @@ export const applyConfigToRules = (
 ): readonly RuleDefinition[] => {
 	const resolved = resolveConfig(rules, config);
 	return rules
-		.filter((r) => resolved.rules[r.id].enabled)
+		.filter((r) => isLevelEnabled(resolved.rules[r.id].level))
 		.map((r) => ({
 			...r,
 			severity: resolved.rules[r.id].severity,
@@ -69,7 +61,8 @@ export const isRuleEnabled = (
 	config?: AnalysisConfig
 ): boolean => {
 	const resolved = resolveConfig(rules, config);
-	return resolved.rules[ruleId]?.enabled ?? true;
+	const level = resolved.rules[ruleId]?.level;
+	return level !== undefined ? isLevelEnabled(level) : true;
 };
 
 export const resolveRuleSeverity = (

@@ -1,14 +1,20 @@
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
+import type { AnalysisConfig } from "../../config/types";
 import type { RuleDefinition } from "../../services/rule-registry";
 import { RuleRegistryService } from "../../services/rule-registry";
+
+/** Config that enables rules with defaultLevel "off" so listRules returns the full set (90). */
+const fullRulesetConfig: AnalysisConfig = {
+	rules: { "non-typescript": "warn", "try-catch-boundary-ok": "warn" },
+};
 
 describe("Severity Distribution Tests", () => {
 	it("high severity rules are within reasonable bounds", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -22,7 +28,7 @@ describe("Severity Distribution Tests", () => {
 	it("no style rules are marked as high severity", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -35,7 +41,7 @@ describe("Severity Distribution Tests", () => {
 	it("resources category has at least 1 high severity rule", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -48,7 +54,7 @@ describe("Severity Distribution Tests", () => {
 	it("concurrency category has at least 5 high severity rules", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -61,7 +67,7 @@ describe("Severity Distribution Tests", () => {
 	it("errors category has appropriate high severity distribution", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -79,7 +85,7 @@ describe("Severity Distribution Tests", () => {
 	it("async category has at least 3 high severity rules", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -92,7 +98,7 @@ describe("Severity Distribution Tests", () => {
 	it("validation category has at least 2 high severity rules", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -105,7 +111,7 @@ describe("Severity Distribution Tests", () => {
 	it("platform category has at least 1 high severity rule", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -118,7 +124,7 @@ describe("Severity Distribution Tests", () => {
 	it("types category has at least 1 high severity rule", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -131,7 +137,7 @@ describe("Severity Distribution Tests", () => {
 	it("medium severity rules are well-distributed", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -145,7 +151,7 @@ describe("Severity Distribution Tests", () => {
 	it("low severity rules are limited but present", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
@@ -159,7 +165,7 @@ describe("Severity Distribution Tests", () => {
 	it("specific rules have expected severities", async () => {
 		const rules = await Effect.runPromise(Effect.gen(function* () {
 			const registry = yield* RuleRegistryService;
-			return yield* registry.listRules();
+			return yield* registry.listRules(fullRulesetConfig);
 		}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 

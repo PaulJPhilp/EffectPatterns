@@ -1,10 +1,37 @@
-/**
- * Database Service Tests
- */
-
 import { Effect } from "effect";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { runFullTestSuite, runQuickTest, verifySchema } from "../service.js";
+
+// Mock @effect-patterns/toolkit to avoid real DB calls
+vi.mock("@effect-patterns/toolkit", () => ({
+	createDatabase: vi.fn().mockReturnValue({
+		db: {
+			execute: vi.fn().mockImplementation((query: string) => {
+				if (query.includes("SELECT 1")) {
+					return Promise.resolve([{ test: 1 }]);
+				}
+				if (query.includes("EXISTS")) {
+					return Promise.resolve([{ exists: true }]);
+				}
+				return Promise.resolve([]);
+			}),
+		},
+		close: vi.fn().mockResolvedValue(undefined),
+	}),
+	createApplicationPatternRepository: vi.fn().mockReturnValue({
+		findAll: vi.fn().mockResolvedValue([]),
+		findBySlug: vi.fn().mockResolvedValue({ slug: "test" }),
+	}),
+	createEffectPatternRepository: vi.fn().mockReturnValue({
+		findAll: vi.fn().mockResolvedValue([]),
+		search: vi.fn().mockResolvedValue([]),
+		countBySkillLevel: vi.fn().mockResolvedValue({ beginner: 0, intermediate: 0, advanced: 0 }),
+		findBySlug: vi.fn().mockResolvedValue({ slug: "test" }),
+	}),
+	createJobRepository: vi.fn().mockReturnValue({
+		findAll: vi.fn().mockResolvedValue([]),
+	}),
+}));
 
 describe("Database Service", () => {
 	it("should run quick test", async () => {

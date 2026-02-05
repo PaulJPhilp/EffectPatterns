@@ -1,11 +1,9 @@
 import { AnalysisService } from "@effect-patterns/analysis-core";
 import { Effect } from "effect";
 import { type NextRequest } from "next/server";
-import { createRouteHandler } from "../../../src/server/routeHandler";
+import { createSimpleHandler } from "../../../src/server/routeHandler";
 
-const handleListFixes = Effect.fn("list-fixes")(function* (
-	request: NextRequest
-) {
+const handleListFixes = (_request: NextRequest) => Effect.gen(function* () {
 	const analysis = yield* AnalysisService;
 
 	const fixes = yield* analysis.listFixes();
@@ -15,6 +13,6 @@ const handleListFixes = Effect.fn("list-fixes")(function* (
 	};
 });
 
-export const POST = createRouteHandler(handleListFixes, {
+export const POST = createSimpleHandler(handleListFixes, {
 	requireAuth: true,
 });

@@ -49,6 +49,7 @@ describe("CodeAnalyzerService", () => {
 					source,
 					filename: "app/api/health/route.ts",
 					analysisType: "all",
+					config: { rules: { "try-catch-boundary-ok": "warn" } },
 				});
 			}).pipe(Effect.provide(CodeAnalyzerService.Default))
 		);

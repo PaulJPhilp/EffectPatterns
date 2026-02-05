@@ -2,15 +2,13 @@ import { AnalysisService } from "@effect-patterns/analysis-core";
 import { FileSystem } from "@effect/platform";
 import { Effect, Schema as S } from "effect";
 import { type NextRequest } from "next/server";
-import {
-	ApplyRefactoringRequest,
-	ApplyRefactoringResponse,
-} from "../../../src/tools/schemas";
 import { createRouteHandler } from "../../../src/server/routeHandler";
+import {
+    ApplyRefactoringRequest,
+    ApplyRefactoringResponse,
+} from "../../../src/tools/schemas";
 
-const handleApplyRefactoring = Effect.fn("apply-refactoring")(function* (
-	request: NextRequest
-) {
+const handleApplyRefactoring = (request: NextRequest) => Effect.gen(function* () {
 	const analysis = yield* AnalysisService;
 	const fs = yield* FileSystem.FileSystem;
 
@@ -34,6 +32,8 @@ const handleApplyRefactoring = Effect.fn("apply-refactoring")(function* (
 		return {
 			applied: false,
 			changes,
+			traceId: "",
+			timestamp: new Date().toISOString(),
 		} satisfies typeof ApplyRefactoringResponse.Type;
 	}
 
@@ -55,6 +55,8 @@ const handleApplyRefactoring = Effect.fn("apply-refactoring")(function* (
 	return {
 		applied: true,
 		changes,
+		traceId: "",
+		timestamp: new Date().toISOString(),
 	} satisfies typeof ApplyRefactoringResponse.Type;
 });
 

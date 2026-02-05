@@ -1,10 +1,23 @@
 import { Effect } from "effect";
 import ts from "typescript";
-import type { AnalysisConfig } from "../config/types";
+import type { AnalysisConfig, RuleLevel } from "../config/types";
 import { ASTUtils } from "../tools/ast-utils";
 import type { FixId, RuleId } from "../tools/ids";
-import type { RuleDefinition } from "./rule-registry";
+import type { FixDefinition, FixSafety, FixKind, RuleDefinition } from "./rule-registry";
 import { RuleRegistryService } from "./rule-registry";
+
+/** Re-export for consumers (fix safety is intrinsic to the fix). */
+export type { FixSafety, FixKind };
+
+/**
+ * Denormalized fix info on a finding for edit tools. Source of truth is FixDefinition in the registry.
+ */
+export interface ApplicableFix {
+	readonly id: FixId;
+	readonly title: string;
+	readonly safety: FixSafety;
+	readonly kind: FixKind;
+}
 
 /**
  * A summary-level suggestion derived from governed rules.
@@ -28,6 +41,7 @@ export interface SourceRange {
 
 /**
  * A concrete rule violation or guidance item detected in a source file.
+ * level: resolved enforcement (for CI/PR: fail if level === "error"); severity: impact (for UI/sorting).
  */
 export interface CodeFinding {
 	readonly id: string;
@@ -35,9 +49,14 @@ export interface CodeFinding {
 	readonly title: string;
 	readonly message: string;
 	readonly severity: "low" | "medium" | "high";
+	/** Resolved enforcement level so PR/CI can fail on error-level findings. */
+	readonly level: RuleLevel;
 	readonly filename?: string;
 	readonly range: SourceRange;
+	/** Backward compat: just IDs. */
 	readonly refactoringIds: readonly FixId[];
+	/** Denormalized fix info for edit tools (safe/review/risky, codemod/assisted/manual). */
+	readonly applicableFixes: readonly ApplicableFix[];
 }
 
 /**
@@ -59,6 +78,13 @@ export interface AnalyzeCodeOutput {
 	readonly sourceFile?: ts.SourceFile;
 }
 
+/**
+ * Exit code for CLI/CI: 0 if no error-level findings, 1 if any. Use exit 2 for internal failures.
+ */
+export function exitCodeFromFindings(findings: readonly CodeFinding[]): 0 | 1 {
+	return findings.some((f) => f.level === "error") ? 1 : 0;
+}
+
 // --- Analysis Logic ---
 
 interface AnalysisContext {
@@ -67,6 +93,9 @@ interface AnalysisContext {
 	readonly source: string;
 	readonly findings: CodeFinding[];
 	readonly suggestions: Set<RuleId>;
+	readonly resolvedLevelByRuleId: Partial<Record<RuleId, RuleLevel>>;
+	/** Fix definitions by id for denormalizing applicableFixes on findings. */
+	readonly fixById: Map<FixId, FixDefinition>;
 }
 
 const createFinding = (
@@ -80,6 +109,11 @@ const createFinding = (
 
 	const start = ctx.sourceFile.getLineAndCharacterOfPosition(node.getStart());
 	const end = ctx.sourceFile.getLineAndCharacterOfPosition(node.getEnd());
+	const level = ctx.resolvedLevelByRuleId[ruleId] ?? "warn";
+	const applicableFixes: ApplicableFix[] = rule.fixIds
+		.map((fid) => ctx.fixById.get(fid))
+		.filter((f): f is FixDefinition => f != null)
+		.map((f) => ({ id: f.id, title: f.title, safety: f.safety, kind: f.kind }));
 
 	const finding: CodeFinding = {
 		id: `${ruleId}:${ctx.filename}:${start.line + 1}:${start.character + 1}`,
@@ -87,6 +121,7 @@ const createFinding = (
 		title: rule.title,
 		message: rule.message,
 		severity: rule.severity,
+		level,
 		filename: ctx.filename,
 		range: {
 			startLine: start.line + 1,
@@ -95,6 +130,7 @@ const createFinding = (
 			endCol: end.character + 1,
 		},
 		refactoringIds: rule.fixIds,
+		applicableFixes,
 	};
 
 	ctx.findings.push(finding);
@@ -1867,9 +1903,20 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 				input: AnalyzeCodeInput
 			): Effect.Effect<AnalyzeCodeOutput, never> =>
 				Effect.gen(function* () {
-					const rulesList = yield* registry.listRules(input.config);
+					const [rulesList, resolvedConfig, fixesList] = yield* Effect.all([
+						registry.listRules(input.config),
+						registry.getResolvedConfig(input.config),
+						registry.listFixes(),
+					]);
 					const ruleById: Map<RuleId, RuleDefinition> = new Map(
 						rulesList.map((r) => [r.id, r] as const)
+					);
+					const resolvedLevelByRuleId: Partial<Record<RuleId, RuleLevel>> =
+						Object.fromEntries(
+							Object.entries(resolvedConfig.rules).map(([id, c]) => [id, c.level])
+						) as Partial<Record<RuleId, RuleLevel>>;
+					const fixById = new Map(
+						fixesList.map((f) => [f.id, f] as const)
 					);
 
 					const filename = input.filename ?? "anonymous.ts";
@@ -1884,6 +1931,8 @@ export class CodeAnalyzerService extends Effect.Service<CodeAnalyzerService>()(
 						source: input.source,
 						findings: [],
 						suggestions: new Set(),
+						resolvedLevelByRuleId,
+						fixById,
 					};
 
 					const allowedCategories = categoriesForAnalysisType(

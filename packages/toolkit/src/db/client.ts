@@ -48,6 +48,9 @@ export function createDatabase(url?: string): DatabaseConnection {
     },
   }
 
+  const poolMax = process.env.DB_POOL_MAX ? parseInt(process.env.DB_POOL_MAX, 10) : undefined
+  const poolIdle = process.env.DB_POOL_IDLE_TIMEOUT ? parseInt(process.env.DB_POOL_IDLE_TIMEOUT, 10) : undefined
+
   if (isCLI) {
     // CLI usage: single connection
     poolConfig.max = 1
@@ -55,8 +58,8 @@ export function createDatabase(url?: string): DatabaseConnection {
     poolConfig.connect_timeout = 10
   } else if (isServerless) {
     // Serverless (Vercel): moderate pool for concurrent requests, aggressive idle timeout
-    poolConfig.max = 10
-    poolConfig.idle_timeout = 10
+    poolConfig.max = poolMax ?? 10
+    poolConfig.idle_timeout = poolIdle ?? 10
     poolConfig.connect_timeout = 10
     poolConfig.max_lifetime = 300 // 5 minutes - prevent stale connections
     poolConfig.transform = {
@@ -64,8 +67,8 @@ export function createDatabase(url?: string): DatabaseConnection {
     }
   } else {
     // Server environment: larger pool for sustained load
-    poolConfig.max = 20
-    poolConfig.idle_timeout = 20
+    poolConfig.max = poolMax ?? 20
+    poolConfig.idle_timeout = poolIdle ?? 20
     poolConfig.connect_timeout = 10
   }
 

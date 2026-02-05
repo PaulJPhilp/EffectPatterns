@@ -4,15 +4,12 @@
  * Runs the same repository search used by /api/patterns and returns errors.
  */
 
-import { createDatabase } from "@effect-patterns/toolkit";
-import { createEffectPatternRepository } from "@effect-patterns/toolkit";
+import { createDatabase, createEffectPatternRepository } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest } from "next/server";
 import { createRouteHandler } from "../../../src/server/routeHandler";
 
-const handleDbSearchCheck = Effect.fn("db-search-check")(function* (
-  request: NextRequest
-) {
+const handleDbSearchCheck = (_request: NextRequest) => Effect.gen(function* () {
   const dbUrl = process.env.DATABASE_URL_OVERRIDE || process.env.DATABASE_URL;
   if (!dbUrl) {
     return yield* Effect.fail(

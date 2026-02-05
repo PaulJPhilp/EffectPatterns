@@ -36,7 +36,15 @@ describe("MCP Output Contract", () => {
 			expect(typeof finding.title).toBe("string");
 			expect(typeof finding.message).toBe("string");
 			expect(["low", "medium", "high"]).toContain(finding.severity);
+			expect(["off", "warn", "error"]).toContain(finding.level);
 			expect(Array.isArray(finding.refactoringIds)).toBe(true);
+			expect(Array.isArray(finding.applicableFixes)).toBe(true);
+			for (const fix of finding.applicableFixes) {
+				expect(typeof fix.id).toBe("string");
+				expect(typeof fix.title).toBe("string");
+				expect(["safe", "review", "risky"]).toContain(fix.safety);
+				expect(["codemod", "assisted", "manual"]).toContain(fix.kind);
+			}
 		}
 	});
 });

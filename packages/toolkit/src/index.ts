@@ -10,9 +10,9 @@
 // ============================================
 
 export {
-  getPatternFromDatabase,
-  loadPatternsFromDatabase,
-  searchPatternsFromDatabase,
+    getPatternFromDatabase,
+    loadPatternsFromDatabase,
+    searchPatternsFromDatabase
 } from "./io.js";
 
 // ============================================
@@ -20,16 +20,16 @@ export {
 // ============================================
 
 export {
-  countPatternsBySkillLevelDb,
-  getPatternById,
-  getPatternByIdDb,
-  // In-memory search (legacy)
-  searchPatterns,
-  // Database search
-  searchPatternsDb,
-  toPatternSummary,
-  type DatabaseSearchParams,
-  type SearchPatternsParams,
+    countPatternsBySkillLevelDb,
+    getPatternById,
+    getPatternByIdDb,
+    // In-memory search (legacy)
+    searchPatterns,
+    // Database search
+    searchPatternsDb,
+    toPatternSummary,
+    type DatabaseSearchParams,
+    type SearchPatternsParams
 } from "./search.js";
 
 // ============================================
@@ -37,10 +37,10 @@ export {
 // ============================================
 
 export {
-  buildSnippet,
-  generateUsageExample,
-  sanitizeInput,
-  type BuildSnippetParams,
+    buildSnippet,
+    generateUsageExample,
+    sanitizeInput,
+    type BuildSnippetParams
 } from "./template.js";
 
 // ============================================
@@ -48,22 +48,22 @@ export {
 // ============================================
 
 export {
-  CodeExample,
-  DifficultyLevel,
-  Pattern,
-  PatternCategory,
-  PatternSummary,
-  PatternsIndex,
-  type CodeExample as CodeExampleType,
-  type DifficultyLevel as DifficultyLevelType,
-  type PatternCategory as PatternCategoryType,
-  type PatternSummary as PatternSummaryType,
-  type Pattern as PatternType,
+    CodeExample,
+    DifficultyLevel,
+    Pattern,
+    PatternCategory,
+    PatternSummary,
+    PatternsIndex,
+    type CodeExample as CodeExampleType,
+    type DifficultyLevel as DifficultyLevelType,
+    type PatternCategory as PatternCategoryType,
+    type PatternSummary as PatternSummaryType,
+    type Pattern as PatternType
 } from "./schemas/pattern.js";
 
 export {
-  GenerateRequest,
-  type GenerateRequest as GenerateRequestType,
+    GenerateRequest,
+    type GenerateRequest as GenerateRequestType
 } from "./schemas/generate.js";
 
 // ============================================
@@ -71,31 +71,31 @@ export {
 // ============================================
 
 export {
-  createDatabase,
-  getDatabaseUrl,
-  type Database,
-  type DatabaseConnection,
+    createDatabase,
+    getDatabaseUrl,
+    type Database,
+    type DatabaseConnection
 } from "./db/client.js";
 
 export {
-  // Schema types
-  applicationPatterns,
-  effectPatterns,
-  jobStatuses,
-  jobs,
-  patternJobs,
-  patternRelations,
-  skillLevels,
-  type ApplicationPattern as DbApplicationPattern,
-  type CodeExample as DbCodeExample,
-  type EffectPattern as DbEffectPattern,
-  type Job as DbJob,
-  type JobStatus,
-  type NewApplicationPattern,
-  type NewEffectPattern,
-  type NewJob,
-  type PatternRule,
-  type SkillLevel,
+    // Schema types
+    applicationPatterns,
+    effectPatterns,
+    jobStatuses,
+    jobs,
+    patternJobs,
+    patternRelations,
+    skillLevels,
+    type ApplicationPattern as DbApplicationPattern,
+    type CodeExample as DbCodeExample,
+    type EffectPattern as DbEffectPattern,
+    type Job as DbJob,
+    type JobStatus,
+    type NewApplicationPattern,
+    type NewEffectPattern,
+    type NewJob,
+    type PatternRule,
+    type SkillLevel
 } from "./db/schema/index.js";
 
 // ============================================
@@ -103,23 +103,23 @@ export {
 // ============================================
 
 export {
-  ApplicationPatternLockedError,
-  ApplicationPatternNotFoundError,
-  ApplicationPatternRepositoryError,
-  EffectPatternLockedError,
-  EffectPatternNotFoundError,
-  EffectPatternRepositoryError,
-  JobLockedError,
-  JobNotFoundError,
-  JobRepositoryError,
-  createApplicationPatternRepository,
-  createEffectPatternRepository,
-  createJobRepository,
-  type ApplicationPatternRepository,
-  type EffectPatternRepository,
-  type JobRepository,
-  type JobWithPatterns,
-  type SearchPatternsParams as RepositorySearchParams,
+    ApplicationPatternLockedError,
+    ApplicationPatternNotFoundError,
+    ApplicationPatternRepositoryError,
+    EffectPatternLockedError,
+    EffectPatternNotFoundError,
+    EffectPatternRepositoryError,
+    JobLockedError,
+    JobNotFoundError,
+    JobRepositoryError,
+    createApplicationPatternRepository,
+    createEffectPatternRepository,
+    createJobRepository,
+    type ApplicationPatternRepository,
+    type EffectPatternRepository,
+    type JobRepository,
+    type JobWithPatterns,
+    type SearchPatternsParams as RepositorySearchParams
 } from "./repositories/index.js";
 
 // ============================================
@@ -127,23 +127,23 @@ export {
 // ============================================
 
 export {
-  ApplicationPatternRepositoryLive,
-  ApplicationPatternRepositoryService,
-  DatabaseLayer,
-  DatabaseService,
-  DatabaseServiceLive,
-  EffectPatternRepositoryLive,
-  EffectPatternRepositoryService,
-  JobRepositoryLive,
-  JobRepositoryService,
-  findAllApplicationPatterns,
-  findApplicationPatternBySlug,
-  findEffectPatternBySlug,
-  findJobsByApplicationPattern,
-  findPatternsByApplicationPattern,
-  getCoverageStats,
-  getJobWithPatterns,
-  searchEffectPatterns,
+    ApplicationPatternRepositoryLive,
+    ApplicationPatternRepositoryService,
+    DatabaseLayer,
+    DatabaseService,
+    DatabaseServiceLive,
+    EffectPatternRepositoryLive,
+    EffectPatternRepositoryService,
+    JobRepositoryLive,
+    JobRepositoryService,
+    findAllApplicationPatterns,
+    findApplicationPatternBySlug,
+    findEffectPatternBySlug,
+    findJobsByApplicationPattern,
+    findPatternsByApplicationPattern,
+    getCoverageStats,
+    getJobWithPatterns,
+    searchEffectPatterns
 } from "./services/database.js";
 
 // ============================================
@@ -157,12 +157,24 @@ export { splitSections } from "./splitSections.js";
 // ============================================
 
 export {
-  CacheError,
-  ConfigurationError,
-  PatternLoadError,
-  PatternNotFoundError,
-  PatternValidationError,
-  SearchError,
-  ServiceUnavailableError,
-  TemplateError,
+    ToolkitConfig,
+    type ToolkitConfigType
+} from "./services/config.js";
+
+export {
+    LogLevel as ToolkitLogLevel,
+    ToolkitLogger,
+    type LogEntry as ToolkitLogEntry
+} from "./services/logger.js";
+
+export {
+    CacheError,
+    ConfigurationError,
+    PatternLoadError,
+    PatternNotFoundError,
+    PatternValidationError,
+    SearchError,
+    ServiceUnavailableError,
+    TemplateError
 } from "./errors.js";
+

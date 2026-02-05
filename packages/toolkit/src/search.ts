@@ -7,10 +7,10 @@
  * Supports both in-memory search (legacy) and database-backed search.
  */
 
-import type { Pattern, PatternSummary } from "./schemas/pattern.js"
 import { createDatabase } from "./db/client.js"
-import { createEffectPatternRepository } from "./repositories/index.js"
 import type { SkillLevel } from "./db/schema/index.js"
+import { createEffectPatternRepository } from "./repositories/index.js"
+import type { Pattern, PatternSummary } from "./schemas/pattern.js"
 
 // ============================================
 // In-Memory Search (Legacy)
@@ -77,7 +77,7 @@ function fuzzyScore(query: string, target: string): number {
 /**
  * Calculate relevance score for a pattern against a search query
  *
- * Checks all fields (title, description, tags, category) and returns the
+ *            yield* Metric.update(ToolkitMetrics.cacheOps.pipe(Metric.tagged("operation", "get"), Metric.tagged("result", "hit")), 1);
  * highest weighted score. This ensures that even if a query doesn't match
  * the title, it can still find highly relevant results from tags or category.
  *
@@ -202,6 +202,7 @@ export function getPatternById(
 export function toPatternSummary(pattern: Pattern): PatternSummary {
   return {
     id: pattern.id,
+    slug: pattern.id,
     title: pattern.title,
     description: pattern.description,
     category: pattern.category,
@@ -249,13 +250,14 @@ export async function searchPatternsDb(
 
     return dbPatterns.map((p): Pattern => ({
       id: p.slug,
+      slug: p.slug,
       title: p.title,
       description: p.summary,
       category: (p.category as Pattern["category"]) || "error-handling",
       difficulty: (p.skillLevel as Pattern["difficulty"]) || "intermediate",
-      tags: Array.isArray(p.tags) ? p.tags : [],
-      examples: Array.isArray(p.examples) ? p.examples : [],
-      useCases: Array.isArray(p.useCases) ? p.useCases : [],
+      tags: Array.isArray(p.tags) ? (p.tags as string[]) : [],
+      examples: Array.isArray(p.examples) ? (p.examples as Pattern["examples"]) : [],
+      useCases: Array.isArray(p.useCases) ? (p.useCases as string[]) : [],
       relatedPatterns: undefined,
       effectVersion: undefined,
       createdAt: p.createdAt?.toISOString(),
@@ -289,13 +291,14 @@ export async function getPatternByIdDb(
 
     return {
       id: p.slug,
+      slug: p.slug,
       title: p.title,
       description: p.summary,
       category: (p.category as Pattern["category"]) || "error-handling",
       difficulty: (p.skillLevel as Pattern["difficulty"]) || "intermediate",
-      tags: Array.isArray(p.tags) ? p.tags : [],
-      examples: Array.isArray(p.examples) ? p.examples : [],
-      useCases: Array.isArray(p.useCases) ? p.useCases : [],
+      tags: Array.isArray(p.tags) ? (p.tags as string[]) : [],
+      examples: Array.isArray(p.examples) ? (p.examples as Pattern["examples"]) : [],
+      useCases: Array.isArray(p.useCases) ? (p.useCases as string[]) : [],
       relatedPatterns: undefined,
       effectVersion: undefined,
       createdAt: p.createdAt?.toISOString(),

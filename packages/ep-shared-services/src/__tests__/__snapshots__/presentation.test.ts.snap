@@ -104,3 +104,108 @@ exports[`snapshot stability > renderIndexMarkdown produces stable output for rep
 
 ### Click a pattern name above to see full details."
 `;
+
+exports[`snapshot stability renderCardMarkdown produces stable output for representative card 1`] = `
+"## Process a Collection in Parallel with Effect.forEach
+**intermediate** | concurrency | concurrency, parallel, performance
+Use Effect.forEach with concurrency option.
+### When to Use / Avoid
+**Use when:**
+- Processing large collections (100+) with bounded concurrency
+- Preventing resource exhaustion
+**Avoid when:**
+- Small arrays (<10 items) where overhead exceeds benefit
+- When you need results in strict order
+### Default Behavior
+If you omit \`concurrency\` option, runs all items sequentially
+*Rationale:* Without explicit concurrency, you sacrifice parallelism benefits
+*Risk Level:* high
+### Recommended
+**1.** Use \`{ concurrency: N }\` where N = 2-4x CPU cores
+When: I/O-bound work, Network requests
+Tradeoffs: Higher N = more memory
+### Minimal Example
+\`\`\`typescript
+const result = yield* Effect.forEach(items, fn, { concurrency: 5 });
+\`\`\`
+Processes 5 items concurrently.
+### Advanced Example
+\`\`\`typescript
+const result = yield* Effect.forEach(items, fn, { concurrency: 'inherit' });
+\`\`\`
+Uses parent concurrency setting.
+### Common Gotchas
+- Using Effect.all on large arrays instead of forEach
+- Forgetting to handle per-item errors
+### Related Patterns
+- [Run All Effects](../run-effects-in-parallel-with-all.md)"
+`;
+
+exports[`snapshot stability renderCardMarkdown with provenance produces stable output 1`] = `
+"## Process a Collection in Parallel with Effect.forEach
+**intermediate** | concurrency | concurrency, parallel, performance
+Use Effect.forEach with concurrency option.
+### When to Use / Avoid
+**Use when:**
+- Processing large collections (100+) with bounded concurrency
+- Preventing resource exhaustion
+**Avoid when:**
+- Small arrays (<10 items) where overhead exceeds benefit
+- When you need results in strict order
+### Default Behavior
+If you omit \`concurrency\` option, runs all items sequentially
+*Rationale:* Without explicit concurrency, you sacrifice parallelism benefits
+*Risk Level:* high
+### Recommended
+**1.** Use \`{ concurrency: N }\` where N = 2-4x CPU cores
+When: I/O-bound work, Network requests
+Tradeoffs: Higher N = more memory
+### Minimal Example
+\`\`\`typescript
+const result = yield* Effect.forEach(items, fn, { concurrency: 5 });
+\`\`\`
+Processes 5 items concurrently.
+### Advanced Example
+\`\`\`typescript
+const result = yield* Effect.forEach(items, fn, { concurrency: 'inherit' });
+\`\`\`
+Uses parent concurrency setting.
+### Common Gotchas
+- Using Effect.all on large arrays instead of forEach
+- Forgetting to handle per-item errors
+### Related Patterns
+- [Run All Effects](../run-effects-in-parallel-with-all.md)
+---
+<details>
+<summary>📋 Trace / Provenance</summary>
+- **Pattern ID**: \`test-pattern\`
+- **File**: \`content/patterns/test-pattern.mdx\`
+- **Commit**: \`abc123def456\`
+- **Server**: https://effect-patterns-mcp.vercel.app
+- **Retrieved**: 2024-01-22T05:06:40.000Z
+- **Indexed**: 2024-01-22T05:06:41.000Z
+- **Content Hash**: \`sha256:a1b2c3d4e...\`
+- **Effect Version**: 3.19.14
+</details>"
+`;
+
+exports[`snapshot stability renderIndexMarkdown produces stable output for representative index 1`] = `
+"## Pattern Reference (2 patterns)
+
+**Categories:** concurrency: 2
+
+**Difficulty:** Beginner: 0 | Intermediate: 1 | Advanced: 1
+
+---
+
+### Patterns
+
+| Pattern | Category | Difficulty | Key Guidance |
+|---------|----------|------------|--------------|
+| **Pattern A** | concurrency | intermediate | **Risk:** high |
+| **Pattern B** | concurrency | advanced | **Risk:** high |
+
+---
+
+### Click a pattern name above to see full details."
+`;

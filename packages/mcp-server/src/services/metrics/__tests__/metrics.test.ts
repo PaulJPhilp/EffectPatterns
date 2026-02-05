@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { MCPMetricsService } from "../index";
 import { Effect, Layer } from "effect";
+import { describe, expect, it } from "vitest";
 import { MCPConfigService } from "../../config";
 import { MCPLoggerService } from "../../logger";
+import { MCPMetricsService } from "../index";
 
 const TestLayer = Layer.provideMerge(
 	MCPMetricsService.Default,

@@ -4,12 +4,17 @@
  * Comprehensive test suite for circuit breaker pattern implementation
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
 import { Effect } from "effect";
-import { CircuitBreakerService, CircuitBreakerOpenError } from "../index.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { TestAppLayer } from "../../../server/init.js";
+import { CircuitBreakerService } from "../index.js";
 
 describe("CircuitBreakerService", () => {
+  beforeEach(() => {
+    // Set TIER_MODE environment variable required by MCPTierService
+    process.env.TIER_MODE = "free";
+  });
+
   /**
    * Test: Circuit starts in CLOSED state
    */
@@ -22,7 +27,7 @@ describe("CircuitBreakerService", () => {
       expect(state.successCount).toBe(0);
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -50,7 +55,7 @@ describe("CircuitBreakerService", () => {
       expect(state.failureCount).toBe(0);
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -82,7 +87,7 @@ describe("CircuitBreakerService", () => {
       expect(state.lastFailureTime).toBeTruthy();
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -110,7 +115,7 @@ describe("CircuitBreakerService", () => {
       expect(state.openedAt).toBeTruthy();
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -151,7 +156,7 @@ describe("CircuitBreakerService", () => {
       expect(error).toBe("test");
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -191,7 +196,7 @@ describe("CircuitBreakerService", () => {
       expect(state.status).toBe("HALF_OPEN");
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -243,7 +248,7 @@ describe("CircuitBreakerService", () => {
       expect(state.successCount).toBe(0);
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -293,7 +298,7 @@ describe("CircuitBreakerService", () => {
       expect(state.status).toBe("OPEN");
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -328,7 +333,7 @@ describe("CircuitBreakerService", () => {
       expect(state.successCount).toBe(0);
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -365,7 +370,7 @@ describe("CircuitBreakerService", () => {
       expect(state2.status).toBe("CLOSED");
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -404,7 +409,7 @@ describe("CircuitBreakerService", () => {
       expect(circuit2Stats?.failures).toBe(1);
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 
   /**
@@ -420,7 +425,7 @@ describe("CircuitBreakerService", () => {
         yield* cb
           .execute("test", failingOp, {
             failureThreshold: 5,
-            successThreshold: 2,
+            successThreshold: 5,
             timeout: 100,
             halfOpenMaxCalls: 2,
           })
@@ -434,7 +439,7 @@ describe("CircuitBreakerService", () => {
       yield* cb
         .execute("test", Effect.succeed("ok"), {
           failureThreshold: 5,
-          successThreshold: 2,
+          successThreshold: 5,
           timeout: 100,
           halfOpenMaxCalls: 2,
         })
@@ -444,7 +449,7 @@ describe("CircuitBreakerService", () => {
       yield* cb
         .execute("test", Effect.succeed("ok"), {
           failureThreshold: 5,
-          successThreshold: 2,
+          successThreshold: 5,
           timeout: 100,
           halfOpenMaxCalls: 2,
         })
@@ -454,7 +459,7 @@ describe("CircuitBreakerService", () => {
       const error = yield* cb
         .execute("test", Effect.succeed("ok"), {
           failureThreshold: 5,
-          successThreshold: 2,
+          successThreshold: 5,
           timeout: 100,
           halfOpenMaxCalls: 2,
         })
@@ -468,6 +473,6 @@ describe("CircuitBreakerService", () => {
       expect(error).toBe("rejected");
     });
 
-    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer)));
+    await Effect.runPromise(program.pipe(Effect.provide(TestAppLayer), Effect.scoped));
   });
 });

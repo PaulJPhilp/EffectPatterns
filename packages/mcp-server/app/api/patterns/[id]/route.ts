@@ -12,7 +12,7 @@ import { getPatternByIdDb } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
-  validateApiKey,
+    validateApiKey,
 } from "../../../../src/auth/apiKey";
 import { PatternNotFoundError } from "../../../../src/errors";
 import { errorHandler } from "../../../../src/server/errorHandler";
@@ -20,10 +20,7 @@ import { runWithRuntime } from "../../../../src/server/init";
 import { TracingService } from "../../../../src/tracing/otlpLayer";
 
 // Handler implementation with automatic span creation via Effect.fn
-const handleGetPattern = Effect.fn("get-pattern")(function* (
-  request: NextRequest,
-  patternId: string
-) {
+const handleGetPattern = (request: NextRequest, patternId: string) => Effect.gen(function* () {
   const tracing = yield* TracingService;
 
   // Validate API key

@@ -5,13 +5,9 @@
  * a single union schema, preventing drift as new response types are added.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  ToolStructuredContentSchema,
-  SearchResultsOutputSchema,
-  PatternDetailsOutputSchema,
-  ElicitationSchema,
-  ToolErrorSchema,
+    ToolStructuredContentSchema,
 } from "../../schemas/output-schemas.js";
 
 describe("ToolStructuredContentSchema (Discriminated Union)", () => {

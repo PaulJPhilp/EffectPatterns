@@ -6,13 +6,13 @@
 
 import { createDatabase } from "./db/client.js";
 import type {
-  EffectPattern as DbEffectPattern,
-  SkillLevel,
+    EffectPattern as DbEffectPattern,
+    SkillLevel,
 } from "./db/schema/index.js";
 import { createEffectPatternRepository } from "./repositories/index.js";
 import {
-  type Pattern,
-  type PatternsIndex as PatternsIndexData,
+    type Pattern,
+    type PatternsIndex as PatternsIndexData,
 } from "./schemas/pattern.js";
 
 /**
@@ -21,6 +21,7 @@ import {
 function dbPatternToLegacy(dbPattern: DbEffectPattern): Pattern {
   return {
     id: dbPattern.slug,
+    slug: dbPattern.slug,
     title: dbPattern.title,
     description: dbPattern.summary,
     category: (dbPattern.category as Pattern["category"]) || "error-handling",

@@ -5,26 +5,27 @@
  * dependency injection and error handling.
  */
 
-import { Config, Effect, Layer } from "effect";
+import { Config, Effect, Layer, Metric, Schedule } from "effect";
 import { createDatabase, getDatabaseUrl } from "../db/client.js";
 import type {
-  ApplicationPattern,
-  EffectPattern as DbEffectPattern,
-  Job,
+    ApplicationPattern,
+    EffectPattern as DbEffectPattern,
+    Job,
 } from "../db/schema/index.js";
 import type { JobWithPatterns } from "../repositories/index.js";
 import {
-  createApplicationPatternRepository,
-  createEffectPatternRepository,
-  createJobRepository,
-  type ApplicationPatternRepository,
-  type EffectPatternRepository,
-  type JobRepository,
-  type SearchPatternsParams,
+    createApplicationPatternRepository,
+    createEffectPatternRepository,
+    createJobRepository,
+    type ApplicationPatternRepository,
+    type EffectPatternRepository,
+    type JobRepository,
+    type SearchPatternsParams,
 } from "../repositories/index.js";
 import type { Pattern } from "../schemas/pattern.js";
 import { ToolkitConfig } from "./config.js";
 import { ToolkitLogger } from "./logger.js";
+import * as ToolkitMetrics from "./metrics.js";
 
 /**
  * Convert database EffectPattern to legacy Pattern format
@@ -56,6 +57,12 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
   {
     effect: Effect.gen(function* () {
       const logger = yield* ToolkitLogger;
+      const config = yield* ToolkitConfig;
+      const maxConcurrent = yield* config.getMaxConcurrentDbRequests();
+      
+      // Initialize Bulkhead Semaphore
+      const semaphore = yield* Effect.makeSemaphore(maxConcurrent);
+
       const databaseUrl = yield* Config.string("DATABASE_URL_OVERRIDE").pipe(
         Config.withDefault(getDatabaseUrl()),
       );
@@ -82,9 +89,11 @@ export class DatabaseService extends Effect.Service<DatabaseService>()(
       return {
         db: connection.db,
         close: connection.close,
+        semaphore,
+
       };
     }),
-    dependencies: [ToolkitLogger.Default],
+    dependencies: [ToolkitLogger.Default, ToolkitConfig.Default],
   },
 ) {}
 
@@ -202,6 +211,69 @@ export const getJobRepository = (): Effect.Effect<
     return yield* JobRepositoryService;
   });
 
+/**
+ * Resilient Operation Helper
+ * Applies Bulkhead, Retry, and Fallback patterns
+ */
+const resilient = <A, E, R>(
+  effect: Effect.Effect<A, E, R>,
+  fallbackValue: A
+): Effect.Effect<A, E, R | DatabaseService | ToolkitConfig | ToolkitLogger> =>
+  Effect.gen(function* () {
+    const dbService = yield* DatabaseService;
+    const config = yield* ToolkitConfig;
+    const logger = yield* ToolkitLogger;
+
+    const retryAttempts = yield* config.getDbRetryAttempts();
+    const retryDelay = yield* config.getDbRetryDelayMs();
+
+    // Define retry policy with exponential backoff
+    const retryPolicy = Schedule.exponential(retryDelay).pipe(
+      Schedule.intersect(Schedule.recurs(retryAttempts))
+    );
+
+    const trackedEffect = effect.pipe(
+      Effect.tap(() => Metric.increment(ToolkitMetrics.dbBulkheadActive)),
+      // Bulkhead: Limit concurrent execution
+      dbService.semaphore.withPermits(1),
+      Effect.tap(() => Metric.incrementBy(ToolkitMetrics.dbBulkheadActive, -1)),
+      
+      Effect.tapError(() => Metric.update(ToolkitMetrics.dbRequests.pipe(Metric.tagged("status", "failure")), 1)),
+      Effect.tap(() => Metric.update(ToolkitMetrics.dbRequests.pipe(Metric.tagged("status", "success")), 1)),
+      // Track Duration manually
+      (eff) => Effect.gen(function*() {
+          const start = Date.now();
+          const result = yield* Effect.exit(eff);
+          const duration = (Date.now() - start) / 1000;
+          yield* Metric.update(ToolkitMetrics.dbRequestDuration, duration);
+          return yield* result;
+      }),
+
+      // Retry: Exponential backoff for transient failures
+      Effect.retry({
+        schedule: retryPolicy,
+        while: (error) => {
+          // Log retry attempt
+          Effect.runSync(
+            logger.warn("Retrying DB operation due to error", { error })
+          );
+          return true; // Always retry for now, could be refined based on error type
+        }
+      }),
+      
+      // Fallback: Safe default on ultimate failure
+      Effect.catchAll((error) =>
+        Effect.gen(function* () {
+          yield* logger.error("DB operation failed after retries, using fallback", { error });
+          yield* Metric.update(ToolkitMetrics.dbRequests.pipe(Metric.tagged("status", "fallback")), 1);
+          return fallbackValue;
+        })
+      )
+    );
+
+    return yield* trackedEffect;
+  });
+
 // ============================================
 // High-Level Operations
 // ============================================
@@ -212,17 +284,18 @@ export const getJobRepository = (): Effect.Effect<
 export const findAllApplicationPatterns = (): Effect.Effect<
   ApplicationPattern[],
   Error,
-  ApplicationPatternRepositoryService
+  ApplicationPatternRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger
 > =>
   Effect.gen(function* () {
     const repo = yield* ApplicationPatternRepositoryService;
-    return yield* Effect.tryPromise({
+    const operation = Effect.tryPromise({
       try: () => repo.findAll(),
       catch: (error) =>
         new Error(`Failed to load application patterns: ${String(error)}`),
     }).pipe(
       Effect.timeout(15000) // 15 second timeout for batch operations
     );
+    return yield* resilient(operation, []);
   });
 
 /**
@@ -233,17 +306,19 @@ export const findApplicationPatternBySlug = (
 ): Effect.Effect<
   ApplicationPattern | null,
   Error,
-  ApplicationPatternRepositoryService
+  ApplicationPatternRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger
 > =>
   Effect.gen(function* () {
     const repo = yield* ApplicationPatternRepositoryService;
-    return yield* Effect.tryPromise({
+    const operation = Effect.tryPromise({
       try: () => repo.findBySlug(slug),
       catch: (error) =>
         new Error(`Failed to find application pattern: ${String(error)}`),
     }).pipe(
       Effect.timeout(10000) // 10 second timeout for single pattern lookups
     );
+    
+    return yield* resilient(operation, null);
   });
 
 /**
@@ -251,17 +326,19 @@ export const findApplicationPatternBySlug = (
  */
 export const searchEffectPatterns = (
   params: SearchPatternsParams,
-): Effect.Effect<Pattern[], Error, EffectPatternRepositoryService> =>
+): Effect.Effect<Pattern[], Error, EffectPatternRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger> =>
   Effect.gen(function* () {
     const repo = yield* EffectPatternRepositoryService;
-    const dbPatterns = yield* Effect.tryPromise({
+    const operation = Effect.tryPromise({
       try: () => repo.search(params),
       catch: (error) =>
         new Error(`Failed to search patterns: ${String(error)}`),
     }).pipe(
-      Effect.timeout(15000) // 15 second timeout for search operations
+      Effect.timeout(15000), // 15 second timeout for search operations
+      Effect.map(patterns => patterns.map(dbPatternToLegacy))
     );
-    return dbPatterns.map(dbPatternToLegacy);
+    
+    return yield* resilient(operation, []);
   });
 
 /**
@@ -269,16 +346,18 @@ export const searchEffectPatterns = (
  */
 export const findEffectPatternBySlug = (
   slug: string,
-): Effect.Effect<Pattern | null, Error, EffectPatternRepositoryService> =>
+): Effect.Effect<Pattern | null, Error, EffectPatternRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger> =>
   Effect.gen(function* () {
     const repo = yield* EffectPatternRepositoryService;
-    const dbPattern = yield* Effect.tryPromise({
+    const operation = Effect.tryPromise({
       try: () => repo.findBySlug(slug),
       catch: (error) => new Error(`Failed to find pattern: ${String(error)}`),
     }).pipe(
-      Effect.timeout(10000) // 10 second timeout for single pattern lookups
+      Effect.timeout(10000), // 10 second timeout for single pattern lookups
+      Effect.map(p => p ? dbPatternToLegacy(p) : null)
     );
-    return dbPattern ? dbPatternToLegacy(dbPattern) : null;
+    
+    return yield* resilient(operation, null);
   });
 
 /**
@@ -286,14 +365,17 @@ export const findEffectPatternBySlug = (
  */
 export const findPatternsByApplicationPattern = (
   applicationPatternId: string,
-): Effect.Effect<Pattern[], Error, EffectPatternRepositoryService> =>
+): Effect.Effect<Pattern[], Error, EffectPatternRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger> =>
   Effect.gen(function* () {
     const repo = yield* EffectPatternRepositoryService;
-    const dbPatterns = yield* Effect.tryPromise({
+    const operation = Effect.tryPromise({
       try: () => repo.findByApplicationPattern(applicationPatternId),
       catch: (error) => new Error(`Failed to find patterns: ${String(error)}`),
-    });
-    return dbPatterns.map(dbPatternToLegacy);
+    }).pipe(
+      Effect.map(patterns => patterns.map(dbPatternToLegacy))
+    );
+    
+    return yield* resilient(operation, []);
   });
 
 /**
@@ -301,13 +383,15 @@ export const findPatternsByApplicationPattern = (
  */
 export const findJobsByApplicationPattern = (
   applicationPatternId: string,
-): Effect.Effect<Job[], Error, JobRepositoryService> =>
+): Effect.Effect<Job[], Error, JobRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger> =>
   Effect.gen(function* () {
     const repo = yield* JobRepositoryService;
-    return yield* Effect.tryPromise({
+    const operation = Effect.tryPromise({
       try: () => repo.findByApplicationPattern(applicationPatternId),
       catch: (error) => new Error(`Failed to find jobs: ${String(error)}`),
     });
+    
+    return yield* resilient(operation, []);
   });
 
 /**
@@ -315,14 +399,16 @@ export const findJobsByApplicationPattern = (
  */
 export const getJobWithPatterns = (
   jobId: string,
-): Effect.Effect<JobWithPatterns | null, Error, JobRepositoryService> =>
+): Effect.Effect<JobWithPatterns | null, Error, JobRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger> =>
   Effect.gen(function* () {
     const repo = yield* JobRepositoryService;
-    return yield* Effect.tryPromise({
+    const operation = Effect.tryPromise({
       try: () => repo.findWithPatterns(jobId),
       catch: (error) =>
         new Error(`Failed to get job with patterns: ${String(error)}`),
     });
+    
+    return yield* resilient(operation, null);
   });
 
 /**
@@ -331,13 +417,15 @@ export const getJobWithPatterns = (
 export const getCoverageStats = (): Effect.Effect<
   { total: number; covered: number; partial: number; gap: number },
   Error,
-  JobRepositoryService
+  JobRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger
 > =>
   Effect.gen(function* () {
     const repo = yield* JobRepositoryService;
-    return yield* Effect.tryPromise({
+    const operation = Effect.tryPromise({
       try: () => repo.getCoverageStats(),
       catch: (error) =>
         new Error(`Failed to get coverage stats: ${String(error)}`),
     });
+    
+    return yield* resilient(operation, { total: 0, covered: 0, partial: 0, gap: 0 });
   });

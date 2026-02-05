@@ -1,24 +1,22 @@
 import { Effect, Schema as S } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import {
-	isAuthenticationError,
-	validateApiKey,
+    isAuthenticationError,
+    validateApiKey,
 } from "../../../src/auth/apiKey";
 import {
-	validateTierAccess,
-	isTierAccessError
+    isTierAccessError,
+    validateTierAccess
 } from "../../../src/auth/tierAccess";
 import { runWithRuntime } from "../../../src/server/init";
 import { PatternGeneratorService } from "../../../src/services/pattern-generator";
 import {
-	GeneratePatternRequest,
-	GeneratePatternResponse,
+    GeneratePatternRequest,
+    GeneratePatternResponse,
 } from "../../../src/tools/schemas";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
-const handleGeneratePattern = Effect.fn("generate-pattern")(function* (
-	request: NextRequest
-) {
+const handleGeneratePattern = (request: NextRequest) => Effect.gen(function* () {
 	const tracing = yield* TracingService;
 	const generator = yield* PatternGeneratorService;
 

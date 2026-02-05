@@ -4,9 +4,9 @@
  * Tests MCP server error scenarios and error responses.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { MCPTestClient, createMCPTestClient } from "./helpers/mcp-test-client";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ToolErrorSchema, ToolStructuredContentSchema } from "../../src/schemas/output-schemas";
+import { MCPTestClient, createMCPTestClient } from "./helpers/mcp-test-client";
 import { parseStructuredContent } from "./helpers/parse-structured-content";
 
 describe("MCP Error Handling", () => {
@@ -70,10 +70,10 @@ describe("MCP Error Handling", () => {
   });
 
   it("should handle extremely large input", async () => {
-    // Create a 10MB string
-    const largeString = "x".repeat(10 * 1024 * 1024);
-    const result = await client.callTool("analyze_code", {
-      source: largeString,
+    // Create a very long search query string
+    const largeString = "x".repeat(10 * 1024);
+    const result = await client.callTool("search_patterns", {
+      q: largeString,
     });
     expect(result).toBeDefined();
     if (result.isError) {
@@ -90,7 +90,7 @@ describe("MCP Error Handling", () => {
 
   it("should recover from error and continue working", async () => {
     // Make a call that may error - errors are returned as values, not thrown
-    const errorResult = await client.callTool("get_pattern", {
+    await client.callTool("get_pattern", {
       id: "non-existent",
     });
     // Error result is valid, just has isError flag

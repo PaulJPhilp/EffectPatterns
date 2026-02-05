@@ -7,7 +7,7 @@
  * - Connection cleanup
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { MCPTestClient, createMCPTestClient } from "./helpers/mcp-test-client";
 
 describe("MCP Client Stdio Connection", () => {
@@ -28,20 +28,50 @@ describe("MCP Client Stdio Connection", () => {
     expect(client.isReady()).toBe(true);
   });
 
-  it("should list all available tools", async () => {
+  const PRODUCTION_TOOLS = ["get_pattern", "list_analysis_rules", "search_patterns"] as const;
+
+  it("should expose exactly 3 tools in default/production env (no get_mcp_config)", async () => {
+    client = await createMCPTestClient({
+      apiKey: "test-api-key",
+      apiUrl: "http://localhost:3000",
+      debug: false,
+      mcpEnv: "production",
+    });
+
+    const tools = await client.listTools();
+
+    expect(tools).toHaveLength(3);
+    expect([...tools].sort()).toEqual([...PRODUCTION_TOOLS].sort());
+    expect(tools).not.toContain("get_mcp_config");
+  });
+
+  it("should list only the allowed MCP tool set", async () => {
     client = await createMCPTestClient();
 
     const tools = await client.listTools();
 
-    // Verify all expected tools are present
-    expect(tools).toContain("search_patterns");
-    expect(tools).toContain("get_pattern");
-    expect(tools).toContain("analyze_code");
-    expect(tools).toContain("review_code");
-    expect(tools).toContain("list_analysis_rules");
+    const allowed = ["search_patterns", "get_pattern", "list_analysis_rules"];
+    const forbidden = [
+      "analyze_code",
+      "review_code",
+      "apply_refactoring",
+      "analyze_consistency",
+      "generate_pattern",
+    ];
 
-    // Verify expected tool count
-    expect(tools.length).toBeGreaterThanOrEqual(5);
+    for (const name of allowed) {
+      expect(tools).toContain(name);
+    }
+    for (const name of forbidden) {
+      expect(tools).not.toContain(name);
+    }
+
+    const allowedOptional = new Set([...allowed, "get_mcp_config"]);
+    for (const name of tools) {
+      expect(allowedOptional.has(name)).toBe(true);
+    }
+    expect(tools.length).toBeGreaterThanOrEqual(3);
+    expect(tools.length).toBeLessThanOrEqual(4);
   });
 
   it("should disconnect gracefully", async () => {

@@ -1,123 +1,135 @@
 /**
- * Health Route Tests
+ * Health Route Tests - REAL ROUTE TESTING (ZERO MOCKS)
  *
- * Tests for the /api/health endpoint which is public and requires no authentication.
+ * Tests the ACTUAL route handler from app/api/health/route.ts
+ * No mocks. No test doubles. Real implementation.
  *
  * Architecture:
- * - HTTP API handles all authentication decisions
- * - Health endpoint is public (no auth required)
- * - MCP server is pure transport - passes requests through
+ * - GET /api/health - Public health check endpoint
+ * - No authentication required
+ * - No external dependencies
+ * - Returns service status with version and trace ID
  */
 
-import { describe, it, expect } from "vitest";
-import { NextRequest } from "next/server";
+import { GET as healthGET } from "../../app/api/health/route";
+import { describe, expect, it } from "vitest";
 
-/**
- * Mock health route handler
- */
-async function healthHandler(request: NextRequest) {
-  return new Response(
-    JSON.stringify({
-      ok: true,
-      service: "effect-patterns-mcp-server",
-      timestamp: new Date().toISOString(),
-    }),
-    {
-      status: 200,
-      headers: { "content-type": "application/json" },
-    }
-  );
-}
-
-describe("Health Route (/api/health)", () => {
+describe("Health Route (/api/health) - REAL ROUTE", () => {
   it("should return 200 status code", async () => {
-    const request = new NextRequest("http://localhost:3000/api/health");
-    const response = await healthHandler(request);
-
+    const response = await healthGET();
     expect(response.status).toBe(200);
   });
 
   it("should return JSON response", async () => {
-    const request = new NextRequest("http://localhost:3000/api/health");
-    const response = await healthHandler(request);
-
+    const response = await healthGET();
     expect(response.headers.get("content-type")).toContain("application/json");
   });
 
-  it("should return ok status", async () => {
-    const request = new NextRequest("http://localhost:3000/api/health");
-    const response = await healthHandler(request);
-
+  it("should return ok: true status", async () => {
+    const response = await healthGET();
     const data = await response.json() as Record<string, unknown>;
     expect(data.ok).toBe(true);
   });
 
   it("should return service name", async () => {
-    const request = new NextRequest("http://localhost:3000/api/health");
-    const response = await healthHandler(request);
-
+    const response = await healthGET();
     const data = await response.json() as Record<string, unknown>;
     expect(data.service).toMatch(/effect-patterns/i);
   });
 
-  it("should return timestamp", async () => {
-    const request = new NextRequest("http://localhost:3000/api/health");
-    const response = await healthHandler(request);
+  it("should return version field", async () => {
+    const response = await healthGET();
+    const data = await response.json() as Record<string, unknown>;
+    expect(data.version).toBeDefined();
+    expect(typeof data.version).toBe("string");
+    expect(data.version).toMatch(/^\d+\.\d+\.\d+/); // Semantic version
+  });
 
+  it("should return ISO timestamp", async () => {
+    const response = await healthGET();
     const data = await response.json() as Record<string, unknown>;
     expect(typeof data.timestamp).toBe("string");
-    expect(() => new Date(data.timestamp as string)).not.toThrow();
+    const timestamp = data.timestamp as string;
+    // Verify it's a valid ISO date string
+    const date = new Date(timestamp);
+    expect(date.getTime()).toBeGreaterThan(0);
+    expect(timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it("should include UUID trace ID in response body", async () => {
+    const response = await healthGET();
+    const data = await response.json() as Record<string, unknown>;
+    expect(data.traceId).toBeDefined();
+    expect(typeof data.traceId).toBe("string");
+    // UUID format check: 8-4-4-4-12 hex digits with dashes
+    expect(data.traceId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  });
+
+  it("should include trace ID in x-trace-id response header", async () => {
+    const response = await healthGET();
+    const traceIdHeader = response.headers.get("x-trace-id");
+    expect(traceIdHeader).toBeDefined();
+    expect(typeof traceIdHeader).toBe("string");
+    // UUID format
+    expect(traceIdHeader).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   });
 
   it("should not require authentication", async () => {
-    const request = new NextRequest("http://localhost:3000/api/health");
-    const response = await healthHandler(request);
-
+    const response = await healthGET();
     expect(response.status).toBe(200);
+    const data = await response.json() as Record<string, unknown>;
+    expect(data.error).toBeUndefined();
   });
 
-  it("should handle GET request", async () => {
-    const request = new NextRequest("http://localhost:3000/api/health", {
-      method: "GET",
-    });
-    const response = await healthHandler(request);
+  it("should handle multiple concurrent requests", async () => {
+    const responses = await Promise.all([
+      healthGET(),
+      healthGET(),
+      healthGET(),
+    ]);
 
-    expect(response.status).toBe(200);
-  });
-
-  it("should handle multiple requests", async () => {
-    const requests = Array(3)
-      .fill(null)
-      .map(
-        () => new NextRequest("http://localhost:3000/api/health")
-      );
-
-    for (const request of requests) {
-      const response = await healthHandler(request);
+    for (const response of responses) {
       expect(response.status).toBe(200);
+      const data = await response.json() as Record<string, unknown>;
+      expect(data.ok).toBe(true);
+      expect(data.service).toBeDefined();
     }
   });
 
-  it("should return consistent response structure", async () => {
-    const request1 = new NextRequest("http://localhost:3000/api/health");
-    const response1 = await healthHandler(request1);
+  it("should return consistent response structure across multiple calls", async () => {
+    const response1 = await healthGET();
     const data1 = await response1.json() as Record<string, unknown>;
 
-    const request2 = new NextRequest("http://localhost:3000/api/health");
-    const response2 = await healthHandler(request2);
+    const response2 = await healthGET();
     const data2 = await response2.json() as Record<string, unknown>;
 
+    // All calls should return same structure
     expect(typeof data1.ok).toBe(typeof data2.ok);
     expect(typeof data1.service).toBe(typeof data2.service);
+    expect(typeof data1.version).toBe(typeof data2.version);
+    expect(typeof data1.traceId).toBe(typeof data2.traceId);
+    expect(typeof data1.timestamp).toBe(typeof data2.timestamp);
+
+    // But trace IDs should be different (different UUIDs)
+    expect(data1.traceId).not.toBe(data2.traceId);
   });
 
-  it("should be fast", async () => {
-    const request = new NextRequest("http://localhost:3000/api/health");
+  it("should respond fast (< 50ms)", async () => {
+    const start = performance.now();
+    await healthGET();
+    const duration = performance.now() - start;
 
-    const start = Date.now();
-    await healthHandler(request);
-    const duration = Date.now() - start;
+    expect(duration).toBeLessThan(50);
+  });
 
-    expect(duration).toBeLessThan(100); // Should be < 100ms
+  it("should contain all required fields in response", async () => {
+    const response = await healthGET();
+    const data = await response.json() as Record<string, unknown>;
+
+    const requiredFields = ["ok", "service", "version", "timestamp", "traceId"];
+    for (const field of requiredFields) {
+      expect(data).toHaveProperty(field);
+      expect(data[field]).toBeDefined();
+    }
   });
 });

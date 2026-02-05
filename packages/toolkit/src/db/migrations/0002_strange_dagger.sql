@@ -1,0 +1,1 @@
+CREATE INDEX "effect_patterns_tags_idx" ON "effect_patterns" USING gin ("tags");

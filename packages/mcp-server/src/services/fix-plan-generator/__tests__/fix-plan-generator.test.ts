@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
-import { FixPlanGeneratorService } from "../api";
 import { Effect, Layer } from "effect";
-import type { Finding, RuleDefinition, FixDefinition } from "../../../tools/schemas";
+import { describe, expect, it } from "vitest";
+import type { Finding, FixDefinition, RuleDefinition } from "../../../tools/schemas";
 import { MCPConfigService } from "../../config";
 import { MCPLoggerService } from "../../logger";
-import { generateSteps, generateChanges, generateRisks } from "../helpers";
+import { FixPlanGeneratorService } from "../api";
+import { generateChanges, generateRisks, generateSteps } from "../helpers";
 
 const TestLayer = Layer.provideMerge(
 	FixPlanGeneratorService.Default,
@@ -22,23 +22,24 @@ describe("FixPlanGeneratorService", () => {
 
 		const finding: Finding = {
 			id: "test-1",
+			title: "Avoid generic error",
 			range: {
 				startLine: 1,
+				startCol: 0,
 				endLine: 1,
-				startChar: 0,
-				endChar: 10,
+				endCol: 10,
 			},
 			message: "Generic error found",
-			ruleId: "errors/avoid-generic-error",
+			ruleId: "async-await",
 			severity: "high",
+			refactoringIds: [],
 		};
 
 		const rule: RuleDefinition = {
-			id: "errors/avoid-generic-error",
+			id: "async-await",
 			title: "Avoid generic error",
-			category: "errors",
+			category: "async",
 			message: "Use domain-specific error types",
-			enabled: true,
 			severity: "high",
 			fixIds: [],
 		};
@@ -64,22 +65,23 @@ describe("FixPlanGeneratorService", () => {
 		const input = {
 			finding: {
 				id: "test-2",
+				title: "Missing validation",
 				range: {
 					startLine: 5,
+					startCol: 0,
 					endLine: 5,
-					startChar: 0,
-					endChar: 20,
+					endCol: 20,
 				},
 				message: "Validation issue",
-				ruleId: "validation/missing-schema",
+				ruleId: "missing-validation" as const,
 				severity: "medium" as const,
+				refactoringIds: [],
 			},
 			rule: {
-				id: "validation/missing-schema",
+				id: "missing-validation" as const,
 				title: "Missing schema",
 				category: "validation" as const,
 				message: "Add validation schema",
-				enabled: true,
 				severity: "medium" as const,
 				fixIds: [],
 			},
@@ -103,23 +105,24 @@ describe("FixPlanGeneratorService", () => {
 
 				const finding: Finding = {
 					id: "test-4",
+					title: "Naming convention",
 					range: {
 						startLine: 10,
+						startCol: 0,
 						endLine: 10,
-						startChar: 0,
-						endChar: 5,
+						endCol: 5,
 					},
 					message: "Style issue found",
-					ruleId: "style/naming",
+					ruleId: "any-type",
 					severity: "low",
+					refactoringIds: [],
 				};
 
 				const rule: RuleDefinition = {
-					id: "style/naming",
+					id: "any-type",
 					title: "Naming convention",
 					category: "style",
 					message: "Use camelCase for variable names",
-					enabled: true,
 					severity: "low",
 					fixIds: [],
 				};
@@ -140,23 +143,24 @@ describe("FixPlanGeneratorService", () => {
 
 				const finding: Finding = {
 					id: "test-5",
+					title: "Performance optimization",
 					range: {
 						startLine: 15,
+						startCol: 0,
 						endLine: 15,
-						startChar: 0,
-						endChar: 10,
+						endCol: 10,
 					},
 					message: "Breaking change warning",
-					ruleId: "performance/optimization",
+					ruleId: "async-await",
 					severity: "medium",
+					refactoringIds: [],
 				};
 
 				const rule: RuleDefinition = {
-					id: "performance/optimization",
+					id: "async-await",
 					title: "Performance optimization",
-					category: "performance",
+					category: "async",
 					message: "Consider performance implications",
-					enabled: true,
 					severity: "medium",
 					fixIds: [],
 				};
@@ -177,18 +181,19 @@ describe("FixPlanGeneratorService", () => {
 
 				const finding: Finding = {
 					id: "test-async",
-					range: { startLine: 1, endLine: 1, startChar: 0, endChar: 10 },
+					title: "Async/await found",
+					range: { startLine: 1, startCol: 0, endLine: 1, endCol: 10 },
 					message: "Async/await found",
-					ruleId: "async/avoid-async-await",
+					ruleId: "async-await",
 					severity: "medium",
+					refactoringIds: [],
 				};
 
 				const rule: RuleDefinition = {
-					id: "async/avoid-async-await",
+					id: "async-await",
 					title: "Avoid async/await",
 					category: "async",
 					message: "Use Effect composition",
-					enabled: true,
 					severity: "medium",
 					fixIds: [],
 				};
@@ -208,18 +213,19 @@ describe("FixPlanGeneratorService", () => {
 
 				const finding: Finding = {
 					id: "test-di",
-					range: { startLine: 1, endLine: 1, startChar: 0, endChar: 10 },
+					title: "Context.Tag found",
+					range: { startLine: 1, startCol: 0, endLine: 1, endCol: 10 },
 					message: "Context.Tag found",
-					ruleId: "dependency-injection/use-service",
+					ruleId: "context-tag-anti-pattern",
 					severity: "medium",
+					refactoringIds: [],
 				};
 
 				const rule: RuleDefinition = {
-					id: "dependency-injection/use-service",
+					id: "context-tag-anti-pattern",
 					title: "Use Effect.Service",
 					category: "dependency-injection",
 					message: "Migrate to Effect.Service",
-					enabled: true,
 					severity: "medium",
 					fixIds: [],
 				};
@@ -239,18 +245,19 @@ describe("FixPlanGeneratorService", () => {
 
 				const finding: Finding = {
 					id: "test-resources",
-					range: { startLine: 1, endLine: 1, startChar: 0, endChar: 10 },
+					title: "Resource leak found",
+					range: { startLine: 1, startCol: 0, endLine: 1, endCol: 10 },
 					message: "Resource leak found",
-					ruleId: "resources/use-acquire-release",
+					ruleId: "node-fs",
 					severity: "high",
+					refactoringIds: [],
 				};
 
 				const rule: RuleDefinition = {
-					id: "resources/use-acquire-release",
+					id: "node-fs",
 					title: "Use acquireRelease",
 					category: "resources",
 					message: "Use Effect.acquireRelease",
-					enabled: true,
 					severity: "high",
 					fixIds: [],
 				};
@@ -266,18 +273,19 @@ describe("FixPlanGeneratorService", () => {
 	it("should generate steps for errors category with generic rule", () => {
 		const finding: Finding = {
 			id: "test",
-			range: { startLine: 1, endLine: 1, startChar: 0, endChar: 10 },
+			title: "Generic error",
+			range: { startLine: 1, startCol: 0, endLine: 1, endCol: 10 },
 			message: "Generic error",
-			ruleId: "errors/generic-error",
+			ruleId: "generic-throw" as any,
 			severity: "high",
+			refactoringIds: [],
 		};
 
 		const rule: RuleDefinition = {
-			id: "errors/generic-error",
+			id: "generic-throw" as any,
 			title: "Generic error",
 			category: "errors",
 			message: "Use TaggedError",
-			enabled: true,
 			severity: "high",
 			fixIds: [],
 		};
@@ -291,19 +299,20 @@ describe("FixPlanGeneratorService", () => {
 	it("should generate changes for multi-line findings", () => {
 		const finding: Finding = {
 			id: "test",
-			range: { startLine: 1, endLine: 5, startChar: 0, endChar: 10 },
+			title: "Multi-line issue",
+			range: { startLine: 1, startCol: 0, endLine: 5, endCol: 10 },
 			message: "Multi-line issue",
-			ruleId: "test/rule",
+			ruleId: "async-await",
 			severity: "medium",
+			refactoringIds: [],
 		};
 
 		const rule: RuleDefinition = {
-			id: "test/rule",
+			id: "style-issue" as any,
 			title: "Test rule",
-			category: "other",
+			category: "other" as any,
 			message: "Test message",
-			enabled: true,
-			severity: "medium",
+			severity: "medium" as const,
 			fixIds: [],
 		};
 
@@ -314,11 +323,10 @@ describe("FixPlanGeneratorService", () => {
 
 	it("should generate risks for resources category", () => {
 		const rule: RuleDefinition = {
-			id: "resources/test",
+			id: "node-fs",
 			title: "Resource rule",
 			category: "resources",
 			message: "Test",
-			enabled: true,
 			severity: "high",
 			fixIds: [],
 		};
@@ -331,28 +339,28 @@ describe("FixPlanGeneratorService", () => {
 	it("should generate steps with fixes when available", () => {
 		const finding: Finding = {
 			id: "test",
-			range: { startLine: 1, endLine: 1, startChar: 0, endChar: 10 },
+			title: "Error",
+			range: { startLine: 1, startCol: 0, endLine: 1, endCol: 10 },
 			message: "Error",
-			ruleId: "errors/non-generic",
+			ruleId: "async-await",
 			severity: "high",
+			refactoringIds: [],
 		};
 
 		const rule: RuleDefinition = {
-			id: "errors/non-generic-error",
+			id: "async-await",
 			title: "Non-generic error",
-			category: "errors",
+			category: "async",
 			message: "Fix error",
-			enabled: true,
 			severity: "high",
 			fixIds: [],
 		};
 
 		const fixes: FixDefinition[] = [
 			{
-				id: "fix-1",
+				id: "replace-node-fs",
 				title: "Fix 1",
 				description: "Description 1",
-				category: "errors",
 			},
 		];
 

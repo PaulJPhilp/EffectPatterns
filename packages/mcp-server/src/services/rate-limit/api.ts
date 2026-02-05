@@ -1,7 +1,7 @@
-import { Effect, Ref, Schedule, Duration, Fiber } from "effect";
+import { Duration, Effect, Fiber, Ref, Schedule } from "effect";
+import { CircuitBreakerService } from "../circuit-breaker";
 import { MCPConfigService } from "../config";
 import { MCPLoggerService } from "../logger";
-import { CircuitBreakerService } from "../circuit-breaker";
 import { RateLimitError } from "./errors";
 import { getKvClient } from "./helpers";
 import { RateLimitEntry, RateLimitResult } from "./types";
@@ -103,8 +103,7 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
             const stored = yield* circuitBreaker
               .execute("kv-rate-limit-get", kvGet, config.circuitBreakerKv)
               .pipe(
-                Effect.orElseSucceed(() => null),
-                Effect.catchTag("CircuitBreakerOpenError", () => Effect.succeed(null))
+                Effect.orElseSucceed(() => null)
               );
 
             if (!stored || now - stored.windowStart >= windowMs) {
@@ -175,8 +174,7 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
               yield* circuitBreaker
                 .execute("kv-rate-limit-set", kvSetex, config.circuitBreakerKv)
                 .pipe(
-                  Effect.orElseSucceed(() => undefined),
-                  Effect.catchTag("CircuitBreakerOpenError", () => Effect.succeed(undefined))
+                  Effect.orElseSucceed(() => undefined)
                 );
             } else {
               yield* Ref.update(inMemoryFallbackRef, (fallback) => {
@@ -246,8 +244,7 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
             yield* circuitBreaker
               .execute("kv-rate-limit-set", kvSetex, config.circuitBreakerKv)
               .pipe(
-                Effect.orElseSucceed(() => undefined),
-                Effect.catchTag("CircuitBreakerOpenError", () => Effect.succeed(undefined))
+                Effect.orElseSucceed(() => undefined)
               );
           } else {
             yield* Ref.update(inMemoryFallbackRef, (fallback) => {
@@ -291,8 +288,7 @@ export class MCRateLimitService extends Effect.Service<MCRateLimitService>()(
             yield* circuitBreaker
               .execute("kv-rate-limit-del", kvDel, config.circuitBreakerKv)
               .pipe(
-                Effect.orElseSucceed(() => undefined),
-                Effect.catchTag("CircuitBreakerOpenError", () => Effect.succeed(undefined))
+                Effect.orElseSucceed(() => undefined)
               );
           } else {
             yield* Ref.update(inMemoryFallbackRef, (fallback) => {

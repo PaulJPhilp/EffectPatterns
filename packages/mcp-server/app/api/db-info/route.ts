@@ -24,7 +24,7 @@ function sanitizeDatabaseUrl(url: string) {
   }
 }
 
-const handleDbInfo = Effect.fn("db-info")(function* (request: NextRequest) {
+const handleDbInfo = (_request: NextRequest) => Effect.gen(function* () {
   const rawDatabaseUrl = process.env.DATABASE_URL;
   const overrideUrl = process.env.DATABASE_URL_OVERRIDE;
   const dbUrl = overrideUrl || rawDatabaseUrl;

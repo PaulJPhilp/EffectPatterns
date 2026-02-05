@@ -5,9 +5,10 @@
  * Supports both in-memory and configurable storage backends.
  */
 
-import { Data, Effect } from "effect";
+import { Data, Effect, Layer, Metric } from "effect";
 import { ToolkitConfig } from "./config.js";
 import { ToolkitLogger } from "./logger.js";
+import * as ToolkitMetrics from "./metrics.js";
 
 /**
  * Cache entry with metadata
@@ -26,20 +27,164 @@ export interface CacheEntry<T = unknown> {
 }
 
 /**
+ * Cache Store Interface
+ * Abstract backend for caching
+ */
+export interface CacheStore {
+  get<T>(key: string): Effect.Effect<CacheEntry<T> | undefined>;
+  set<T>(key: string, entry: CacheEntry<T>): Effect.Effect<void>;
+  delete(key: string): Effect.Effect<boolean>;
+  clear(): Effect.Effect<void>;
+  keys(): Effect.Effect<string[]>;
+  size(): Effect.Effect<number>;
+  cleanup(now: number): Effect.Effect<number>;
+}
+
+/**
+ * In-Memory Cache Store Implementation
+ */
+export class MemoryStore implements CacheStore {
+  private cache = new Map<string, CacheEntry>();
+  
+  constructor(private maxEntries: number) {}
+
+  get<T>(key: string): Effect.Effect<CacheEntry<T> | undefined> {
+    return Effect.sync(() => this.cache.get(key) as CacheEntry<T> | undefined);
+  }
+
+  set<T>(key: string, entry: CacheEntry<T>): Effect.Effect<void> {
+    return Effect.sync(() => {
+      // Enforce max entries via LRU if we are at capacity and inserting new key
+      if (this.cache.size >= this.maxEntries && !this.cache.has(key)) {
+        let oldestKey: string | undefined;
+        let oldestTime = Infinity;
+
+        for (const [k, e] of this.cache.entries()) {
+          if (e.lastAccessedAt < oldestTime) {
+            oldestTime = e.lastAccessedAt;
+            oldestKey = k;
+          }
+        }
+
+        if (oldestKey) {
+          this.cache.delete(oldestKey);
+        }
+      }
+      this.cache.set(key, entry);
+    });
+  }
+
+  delete(key: string): Effect.Effect<boolean> {
+    return Effect.sync(() => this.cache.delete(key));
+  }
+
+  clear(): Effect.Effect<void> {
+    return Effect.sync(() => this.cache.clear());
+  }
+
+  keys(): Effect.Effect<string[]> {
+    return Effect.sync(() => Array.from(this.cache.keys()));
+  }
+
+  size(): Effect.Effect<number> {
+    return Effect.sync(() => this.cache.size);
+  }
+
+  cleanup(now: number): Effect.Effect<number> {
+    return Effect.sync(() => {
+      let expiredCount = 0;
+      for (const [key, entry] of this.cache.entries()) {
+        if (entry.expiresAt <= now) {
+          this.cache.delete(key);
+          expiredCount++;
+        }
+      }
+      return expiredCount;
+    });
+  }
+}
+
+/**
+ * Multi-Tier Cache Store (L1 + L2)
+ */
+export class MultiTierStore implements CacheStore {
+  constructor(
+    private l1: CacheStore,
+    private l2: CacheStore
+  ) {}
+
+  get<T>(key: string): Effect.Effect<CacheEntry<T> | undefined> {
+    const self = this;
+    return Effect.gen(function* () {
+      // Try L1
+      const l1Entry = yield* self.l1.get<T>(key);
+      if (l1Entry) return l1Entry;
+
+      // Try L2
+      const l2Entry = yield* self.l2.get<T>(key);
+      if (l2Entry) {
+        // Populate L1 on cache miss
+        yield* self.l1.set(key, l2Entry);
+        return l2Entry;
+      }
+
+      return undefined;
+    });
+  }
+
+  set<T>(key: string, entry: CacheEntry<T>): Effect.Effect<void> {
+    const self = this;
+    return Effect.gen(function* () {
+      yield* self.l1.set(key, entry);
+      yield* self.l2.set(key, entry);
+    });
+  }
+
+  delete(key: string): Effect.Effect<boolean> {
+    const self = this;
+    return Effect.gen(function* () {
+      const l1Existed = yield* self.l1.delete(key);
+      const l2Existed = yield* self.l2.delete(key);
+      return l1Existed || l2Existed;
+    });
+  }
+
+  clear(): Effect.Effect<void> {
+    const self = this;
+    return Effect.gen(function* () {
+      yield* self.l1.clear();
+      yield* self.l2.clear();
+    });
+  }
+
+  keys(): Effect.Effect<string[]> {
+    // Only returning L1 keys for simplicity in this implementation
+    return this.l1.keys();
+  }
+
+  size(): Effect.Effect<number> {
+    return this.l1.size();
+  }
+
+  cleanup(now: number): Effect.Effect<number> {
+    const self = this;
+    return Effect.gen(function* () {
+      const l1Count = yield* self.l1.cleanup(now);
+      const l2Count = yield* self.l2.cleanup(now);
+      return l1Count + l2Count;
+    });
+  }
+}
+
+/**
  * Cache statistics
  */
 export interface CacheStats {
-  /** Total number of entries */
   totalEntries: number;
-  /** Number of entries that have expired */
   expiredEntries: number;
-  /** Total cache hits */
   hits: number;
-  /** Total cache misses */
   misses: number;
-  /** Hit rate percentage */
   hitRate: number;
-  /** Memory usage in bytes (approximate) */
   memoryUsage: number;
 }
 
@@ -71,125 +216,57 @@ export class CacheService extends Effect.Service<CacheService>()(
       // Configuration
       const defaultTtlMs = yield* config.getCacheTtlMs();
       const maxEntries = yield* config.getMaxCacheSize();
-      const cleanupIntervalMs = 60000; // 1 minute cleanup interval
+      const redisUrl = yield* config.getRedisUrl();
+      const cleanupIntervalMs = 60000;
       const isLoggingEnabled = yield* config.isLoggingEnabled();
 
-      // In-memory storage
-      const cache = new Map<string, CacheEntry>();
+      // Initialize Stores
+      const memoryStore = new MemoryStore(maxEntries);
+      let store: CacheStore = memoryStore;
+
+      // TODO: Initialize Redis Store if redisUrl is present and wrap in MultiTierStore
+      if (redisUrl) {
+         yield* logger.info("Redis L2 Cache configuration detected (Not implemented yet, using MemoryStore)", { redisUrl });
+         // const redisStore = new RedisStore(redisUrl);
+         // store = new MultiTierStore(memoryStore, redisStore);
+      }
 
       // Statistics
       let totalHits = 0;
       let totalMisses = 0;
-
-      // Cleanup interval reference
       let cleanupInterval: NodeJS.Timeout | null = null;
 
-      /**
-       * Start background cleanup process
-       */
       const startCleanup = Effect.gen(function* () {
         if (cleanupInterval) return;
-
         cleanupInterval = setInterval(() => {
           Effect.runSync(cleanupExpired);
         }, cleanupIntervalMs);
 
         if (isLoggingEnabled) {
-          yield* logger
-            .withOperation("cache")
-            .debug("Started cache cleanup interval", {
-              intervalMs: cleanupIntervalMs,
-            });
+          yield* logger.withOperation("cache").debug("Started cache cleanup interval", { intervalMs: cleanupIntervalMs });
         }
       });
 
-      /**
-       * Stop background cleanup process
-       */
       const stopCleanup = Effect.gen(function* () {
         if (cleanupInterval) {
           clearInterval(cleanupInterval);
           cleanupInterval = null;
-
           if (isLoggingEnabled) {
-            yield* logger
-              .withOperation("cache")
-              .debug("Stopped cache cleanup interval");
+            yield* logger.withOperation("cache").debug("Stopped cache cleanup interval");
           }
         }
       });
 
-      /**
-       * Remove expired entries
-       */
       const cleanupExpired = Effect.gen(function* () {
         const now = Date.now();
-        const expiredKeys: string[] = [];
-
-        for (const [key, entry] of cache.entries()) {
-          if (entry.expiresAt <= now) {
-            expiredKeys.push(key);
-          }
+        const expiredCount = yield* store.cleanup(now);
+        
+        if (expiredCount > 0 && isLoggingEnabled) {
+          const remaining = yield* store.size();
+          yield* logger.withOperation("cache").debug("Cleaned up expired entries", { expiredCount, remainingCount: remaining });
         }
-
-        expiredKeys.forEach((key) => cache.delete(key));
-
-        if (expiredKeys.length > 0 && isLoggingEnabled) {
-          yield* logger
-            .withOperation("cache")
-            .debug("Cleaned up expired entries", {
-              expiredCount: expiredKeys.length,
-              remainingCount: cache.size,
-            });
-        }
-
-        return expiredKeys.length;
+        return expiredCount;
       });
-
-      /**
-       * Get cache entry (internal)
-       */
-      const getEntry = (key: string): CacheEntry | undefined => {
-        const entry = cache.get(key);
-        if (!entry) return undefined;
-
-        // Check if expired
-        if (entry.expiresAt <= Date.now()) {
-          cache.delete(key);
-          return undefined;
-        }
-
-        // Update access statistics
-        entry.accessCount++;
-        entry.lastAccessedAt = Date.now();
-
-        return entry;
-      };
-
-      /**
-       * Set cache entry (internal)
-       */
-      const setEntry = (key: string, entry: CacheEntry): void => {
-        // Enforce max entries limit (simple LRU eviction)
-        if (cache.size >= maxEntries && !cache.has(key)) {
-          // Find least recently used entry
-          let oldestKey: string | undefined;
-          let oldestTime = Date.now();
-
-          for (const [k, e] of cache.entries()) {
-            if (e.lastAccessedAt < oldestTime) {
-              oldestTime = e.lastAccessedAt;
-              oldestKey = k;
-            }
-          }
-
-          if (oldestKey) {
-            cache.delete(oldestKey);
-          }
-        }
-
-        cache.set(key, entry);
-      };
 
       /**
        * Get value from cache
@@ -197,210 +274,144 @@ export class CacheService extends Effect.Service<CacheService>()(
       const get = <T>(key: string) =>
         Effect.gen(function* () {
           const operationLogger = logger.withOperation("cache.get");
-
           try {
-            const entry = getEntry(key);
+            const entry = yield* store.get<T>(key);
 
             if (!entry) {
               totalMisses++;
-              if (isLoggingEnabled) {
-                yield* operationLogger.debug("Cache miss", { key });
-              }
+              yield* Metric.update(ToolkitMetrics.cacheOps.pipe(Metric.tagged("operation", "get"), Metric.tagged("result", "miss")), 1);
+              if (isLoggingEnabled) yield* operationLogger.debug("Cache miss", { key });
               yield* Effect.fail(new CacheKeyNotFoundError({ key }));
+              return undefined as unknown as T; // Unreachable due to fail
             }
 
+            if (entry.expiresAt <= Date.now()) {
+                yield* store.delete(key);
+                totalMisses++; // Count expired as miss
+                yield* Metric.update(ToolkitMetrics.cacheOps.pipe(Metric.tagged("operation", "get"), Metric.tagged("result", "miss_expired")), 1);
+                yield* Effect.fail(new CacheKeyNotFoundError({ key }));
+                return undefined as unknown as T;
+            }
+
+            // Update stats (simulated, ideally would write back access time to store async)
             totalHits++;
-            if (isLoggingEnabled && entry) {
-              yield* operationLogger.debug("Cache hit", {
-                key,
-                accessCount: entry.accessCount,
-                age: Date.now() - entry.createdAt,
-              });
+            entry.lastAccessedAt = Date.now();
+            entry.accessCount++;
+
+            yield* Metric.update(ToolkitMetrics.cacheOps.pipe(Metric.tagged("operation", "get"), Metric.tagged("result", "hit")), 1);
+
+            if (isLoggingEnabled) {
+              yield* operationLogger.debug("Cache hit", { key, accessCount: entry.accessCount });
             }
 
-            return (entry as CacheEntry).value as T;
+            return entry.value;
           } catch (error) {
-            yield* operationLogger.error("Cache get operation failed", {
-              key,
-              error,
-            });
-            yield* Effect.fail(
-              new CacheError({
-                operation: "get",
-                key,
-                cause: error,
-              })
-            );
+             // If error is ours rethrow, otherwise wrap
+             if (error instanceof CacheKeyNotFoundError) return yield* Effect.fail(error);
+
+             yield* operationLogger.error("Cache get operation failed", { key, error });
+             return yield* Effect.fail(new CacheError({ operation: "get", key, cause: error }));
           }
         });
 
       /**
-       * Set value in cache with optional TTL
+       * Set value in cache
        */
       const set = <T>(key: string, value: T, ttlMs?: number) =>
         Effect.gen(function* () {
-          const operationLogger = logger.withOperation("cache.set");
+            const operationLogger = logger.withOperation("cache.set");
+            try {
+                const now = Date.now();
+                const effectiveTtl = ttlMs ?? defaultTtlMs;
+                const entry: CacheEntry<T> = {
+                    value,
+                    createdAt: now,
+                    expiresAt: now + effectiveTtl,
+                    accessCount: 0,
+                    lastAccessedAt: now
+                };
+                
+                yield* store.set(key, entry);
+                
+                yield* Metric.update(ToolkitMetrics.cacheOps.pipe(Metric.tagged("operation", "set"), Metric.tagged("result", "success")), 1);
+                yield* Metric.set(ToolkitMetrics.cacheSize, yield* store.size());
 
-          try {
-            const now = Date.now();
-            const effectiveTtl = ttlMs ?? defaultTtlMs;
 
-            const entry: CacheEntry<T> = {
-              value,
-              createdAt: now,
-              expiresAt: now + effectiveTtl,
-              accessCount: 0,
-              lastAccessedAt: now,
-            };
 
-            setEntry(key, entry);
-
-            if (isLoggingEnabled) {
-              yield* operationLogger.debug("Cache set", {
-                key,
-                ttlMs: effectiveTtl,
-                totalEntries: cache.size,
-              });
+                if (isLoggingEnabled) {
+                    const size = yield* store.size();
+                    yield* operationLogger.debug("Cache set", { key, ttlMs: effectiveTtl, totalEntries: size });
+                }
+            } catch (error) {
+                yield* operationLogger.error("Cache set operation failed", { key, error });
+                yield* Effect.fail(new CacheError({ operation: "set", key, cause: error }));
             }
-          } catch (error) {
-            yield* operationLogger.error("Cache set operation failed", {
-              key,
-              error,
-            });
-            yield* Effect.fail(
-              new CacheError({
-                operation: "set",
-                key,
-                cause: error,
-              })
-            );
-          }
         });
 
-      /**
-       * Delete value from cache
-       */
-      const delete_ = (key: string) =>
-        Effect.gen(function* () {
-          const operationLogger = logger.withOperation("cache.delete");
-
-          try {
-            const existed = cache.delete(key);
-
-            if (isLoggingEnabled) {
-              yield* operationLogger.debug("Cache delete", { key, existed });
+      const delete_ = (key: string) => 
+        Effect.gen(function*() {
+            try {
+                return yield* store.delete(key);
+            } catch (error) {
+                 yield* Effect.fail(new CacheError({ operation: "delete", key, cause: error }));
             }
-
-            return existed;
-          } catch (error) {
-            yield* operationLogger.error("Cache delete operation failed", {
-              key,
-              error,
-            });
-            yield* Effect.fail(
-              new CacheError({
-                operation: "delete",
-                key,
-                cause: error,
-              })
-            );
-          }
         });
 
-      /**
-       * Check if key exists in cache
-       */
       const has = (key: string) =>
-        Effect.gen(function* () {
-          try {
-            const entry = getEntry(key);
-            return entry !== undefined;
-          } catch (error) {
-            yield* Effect.fail(
-              new CacheError({
-                operation: "has",
-                key,
-                cause: error,
-              })
-            );
+         Effect.gen(function*() {
+             const entry = yield* store.get(key);
+             return entry !== undefined;
+         }).pipe(
+             Effect.catchAll(() => Effect.succeed(false))
+         );
+
+      const clear = Effect.gen(function*() {
+          yield* store.clear();
+      });
+
+      const getStats = Effect.gen(function*() {
+          const totalEntries = yield* store.size();
+          // Simplified implementation for stats
+          const hitRate = (totalHits + totalMisses) > 0 ? (totalHits / (totalHits + totalMisses)) * 100 : 0;
+          
+          return {
+              totalEntries,
+              expiredEntries: 0, // Not tracking historically
+              hits: totalHits,
+              misses: totalMisses,
+              hitRate,
+              memoryUsage: 0 // Not calculating for now impact
+          } satisfies CacheStats;
+      });
+
+      const keys = store.keys();
+
+      // Advanced: Invalidation by Pattern
+      const invalidateByPattern = (pattern: RegExp | string) => Effect.gen(function*() {
+          const allKeys = yield* store.keys();
+          const regex = typeof pattern === 'string' ? new RegExp(pattern.replace('*', '.*')) : pattern;
+          
+          let count = 0;
+          for (const key of allKeys) {
+              if (regex.test(key)) {
+                  yield* store.delete(key);
+                  count++;
+              }
           }
-        });
-
-      /**
-       * Clear all cache entries
-       */
-      const clear = Effect.gen(function* () {
-        const operationLogger = logger.withOperation("cache.clear");
-
-        try {
-          const clearedCount = cache.size;
-          cache.clear();
-
+          yield* Metric.update(ToolkitMetrics.cacheInvalidations.pipe(Metric.tagged("type", "pattern")), count);
           if (isLoggingEnabled) {
-            yield* operationLogger.debug("Cache cleared", { clearedCount });
+             yield* logger.withOperation("cache.invalidate").debug("Invalidated keys by pattern", { pattern: String(pattern), count });
           }
-
-          return clearedCount;
-        } catch (error) {
-          yield* operationLogger.error("Cache clear operation failed", {
-            error,
-          });
-          yield* Effect.fail(
-            new CacheError({
-              operation: "clear",
-              cause: error,
-            })
-          );
-        }
+          return count;
       });
 
-      /**
-       * Get cache statistics
-       */
-      const getStats = Effect.gen(function* () {
-        const now = Date.now();
-        let expiredCount = 0;
-        let totalMemoryUsage = 0;
-
-        for (const entry of cache.values()) {
-          if (entry.expiresAt <= now) {
-            expiredCount++;
-          }
-          // Rough memory estimation
-          totalMemoryUsage += JSON.stringify(entry.value).length * 2; // UTF-16
-        }
-
-        const totalRequests = totalHits + totalMisses;
-        const hitRate =
-          totalRequests > 0 ? (totalHits / totalRequests) * 100 : 0;
-
-        return {
-          totalEntries: cache.size,
-          expiredEntries: expiredCount,
-          hits: totalHits,
-          misses: totalMisses,
-          hitRate,
-          memoryUsage: totalMemoryUsage,
-        } satisfies CacheStats;
+      // Advanced: Cache Warming
+      const warm = <A, E, R>(key: string, loader: Effect.Effect<A, E, R>, ttlMs?: number) => Effect.gen(function*() {
+          const value = yield* loader;
+          yield* set(key, value, ttlMs);
+          return value;
       });
 
-      /**
-       * Get all cache keys
-       */
-      const keys = Effect.gen(function* () {
-        try {
-          return Array.from(cache.keys());
-        } catch (error) {
-          yield* Effect.fail(
-            new CacheError({
-              operation: "keys",
-              cause: error,
-            })
-          );
-        }
-      });
-
-      // Start cleanup on service initialization
       yield* startCleanup;
 
       return {
@@ -411,56 +422,34 @@ export class CacheService extends Effect.Service<CacheService>()(
         clear,
         getStats,
         keys,
-        cleanupExpired,
-        startCleanup,
-        stopCleanup,
+        invalidateByPattern,
+        warm,
+        cleanupExpired
       };
     }),
+    dependencies: [ToolkitLogger.Default, ToolkitConfig.Default],
   }
 ) {}
 
-/**
- * Default cache service layer
- */
-export const CacheServiceLive = CacheService.Default;
+export const CacheServiceLive = CacheService.Default.pipe(
+    Layer.provide(ToolkitLogger.Default),
+    Layer.provide(ToolkitConfig.Default)
+);
 
-/**
- * Legacy compatibility functions
- * These will be deprecated in favor of the service-based approach
- */
+// Compatibility Layer
 const legacyCache = new Map<string, { value: unknown; expiresAt: number }>();
-
 export function getCacheEntry<T>(key: string): T | undefined {
   const entry = legacyCache.get(key);
   if (!entry) return undefined;
-
   if (entry.expiresAt <= Date.now()) {
     legacyCache.delete(key);
     return undefined;
   }
-
   return entry.value as T;
 }
-
-export function setCacheEntry<T>(
-  key: string,
-  value: T,
-  ttlMs: number = 300000
-): void {
-  legacyCache.set(key, {
-    value,
-    expiresAt: Date.now() + ttlMs,
-  });
+export function setCacheEntry<T>(key: string, value: T, ttlMs: number = 300000): void {
+  legacyCache.set(key, { value, expiresAt: Date.now() + ttlMs });
 }
-
-export function deleteCacheEntry(key: string): boolean {
-  return legacyCache.delete(key);
-}
-
-export function clearCache(): void {
-  legacyCache.clear();
-}
-
-export function getCacheStats(): { size: number } {
-  return { size: legacyCache.size };
-}
+export function deleteCacheEntry(key: string): boolean { return legacyCache.delete(key); }
+export function clearCache(): void { legacyCache.clear(); }
+export function getCacheStats(): { size: number } { return { size: legacyCache.size }; }

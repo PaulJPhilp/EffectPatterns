@@ -27,7 +27,7 @@ export interface ToolkitConfigType {
   /** Maximum cache size in entries */
   readonly maxCacheSize: number;
 
-  /** Enable caching feature */
+  /* Enable caching feature */
   readonly enableCache: boolean;
 
   /** Enable detailed logging */
@@ -35,6 +35,18 @@ export interface ToolkitConfigType {
 
   /** Enable metrics collection */
   readonly enableMetrics: boolean;
+
+  /** Maximum concurrent database requests (Bulkhead) */
+  readonly maxConcurrentDbRequests: number;
+
+  /** Number of retry attempts for DB operations */
+  readonly dbRetryAttempts: number;
+
+  /** Base delay for DB retries in milliseconds */
+  readonly dbRetryDelayMs: number;
+
+  /** Redis URL for L2 Caching (optional) */
+  readonly redisUrl?: string;
 }
 
 /**
@@ -49,6 +61,9 @@ export const DEFAULT_TOOLKIT_CONFIG: ToolkitConfigType = {
   enableCache: true,
   enableLogging: false,
   enableMetrics: false,
+  maxConcurrentDbRequests: 10,
+  dbRetryAttempts: 3,
+  dbRetryDelayMs: 100,
 };
 
 /**
@@ -78,6 +93,16 @@ export class ToolkitConfig extends Effect.Service<ToolkitConfig>()(
         enableCache: process.env.TOOLKIT_ENABLE_CACHE !== "false", // Default true
         enableLogging: process.env.TOOLKIT_ENABLE_LOGGING === "true", // Default false
         enableMetrics: process.env.TOOLKIT_ENABLE_METRICS === "true", // Default false
+        maxConcurrentDbRequests:
+          parseInt(process.env.TOOLKIT_MAX_CONCURRENT_DB_REQUESTS || "") ||
+          DEFAULT_TOOLKIT_CONFIG.maxConcurrentDbRequests,
+        dbRetryAttempts:
+          parseInt(process.env.TOOLKIT_DB_RETRY_ATTEMPTS || "") ||
+          DEFAULT_TOOLKIT_CONFIG.dbRetryAttempts,
+        dbRetryDelayMs:
+          parseInt(process.env.TOOLKIT_DB_RETRY_DELAY_MS || "") ||
+          DEFAULT_TOOLKIT_CONFIG.dbRetryDelayMs,
+        redisUrl: process.env.TOOLKIT_REDIS_URL,
       };
 
       // Validate configuration
@@ -94,6 +119,11 @@ export class ToolkitConfig extends Effect.Service<ToolkitConfig>()(
         isCacheEnabled: () => Effect.succeed(config.enableCache),
         isLoggingEnabled: () => Effect.succeed(config.enableLogging),
         isMetricsEnabled: () => Effect.succeed(config.enableMetrics),
+        getMaxConcurrentDbRequests: () =>
+          Effect.succeed(config.maxConcurrentDbRequests),
+        getDbRetryAttempts: () => Effect.succeed(config.dbRetryAttempts),
+        getDbRetryDelayMs: () => Effect.succeed(config.dbRetryDelayMs),
+        getRedisUrl: () => Effect.succeed(config.redisUrl),
       };
     }),
   }
@@ -126,6 +156,18 @@ function validateConfig(
       {
         key: "maxCacheSize" as const,
         value: config.maxCacheSize,
+      },
+      {
+        key: "maxConcurrentDbRequests" as const,
+        value: config.maxConcurrentDbRequests,
+      },
+      {
+        key: "dbRetryAttempts" as const,
+        value: config.dbRetryAttempts,
+      },
+      {
+        key: "dbRetryDelayMs" as const,
+        value: config.dbRetryDelayMs,
       },
     ];
 

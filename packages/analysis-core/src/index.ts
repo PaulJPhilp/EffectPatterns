@@ -12,6 +12,7 @@ export * from "./config";
 export * from "./services/analysis-service";
 export * from "./services/code-analyzer";
 export * from "./services/consistency-analyzer";
+export * from "./services/fix-utils";
 export * from "./services/refactoring-engine";
 export * from "./services/rule-registry";
 

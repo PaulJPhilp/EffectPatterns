@@ -15,6 +15,13 @@
       "when": 1766256489464,
       "tag": "0001_faulty_kitty_pryde",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769980437440,
+      "tag": "0002_strange_dagger",
+      "breakpoints": true
     }
   ]
 }

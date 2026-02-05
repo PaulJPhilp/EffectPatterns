@@ -22,9 +22,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "crypto";
-import { Agent } from "http";
+import { Agent, createServer } from "http";
 import { Agent as HttpsAgent } from "https";
-import { createServer } from "http";
 import { OAuthConfig } from "./auth/oauth-config.js";
 import { OAuth2Server } from "./auth/oauth-server.js";
 import { registerTools } from "./tools/tool-implementations.js";
@@ -149,15 +148,83 @@ const httpsAgent = new HttpsAgent({
 });
 
 /**
- * In-flight request deduping
- * Key: request signature (endpoint + method + data hash)
- * Value: Promise that resolves to ApiResult
+ * Bounded cache with LRU eviction to prevent memory leaks
+ * Maintains both time-based expiration and size-based eviction
  */
-const inFlightRequests = new Map<string, Promise<ApiResult<unknown>>>();
-const patternsCache = new Map<
+class BoundedCache<T> {
+  private cache = new Map<string, { expiresAt: number; value: T; accessTime: number }>();
+  private readonly maxEntries: number;
+
+  constructor(maxEntries: number) {
+    this.maxEntries = maxEntries;
+  }
+
+  get(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    // Check expiration
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    // Update access time for LRU tracking
+    entry.accessTime = Date.now();
+    return entry.value;
+  }
+
+  set(key: string, value: T, ttlMs: number): void {
+    // Evict oldest entry if cache is full (LRU)
+    if (this.cache.size >= this.maxEntries && !this.cache.has(key)) {
+      let oldestKey = "";
+      let oldestAccessTime = Infinity;
+
+      for (const [k, v] of this.cache) {
+        if (v.accessTime < oldestAccessTime) {
+          oldestAccessTime = v.accessTime;
+          oldestKey = k;
+        }
+      }
+
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+      }
+    }
+
+    this.cache.set(key, {
+      value,
+      expiresAt: Date.now() + ttlMs,
+      accessTime: Date.now(),
+    });
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  getStats() {
+    return {
+      size: this.cache.size,
+      maxEntries: this.maxEntries,
+    };
+  }
+}
+
+/**
+ * In-flight request deduping with time-based expiration
+ * Key: request signature (endpoint + method + data hash)
+ * Value: { promise, createdAt } to prevent stale dedup sharing
+ *
+ * CRITICAL: Promises older than DEDUP_TIMEOUT_MS are not shared to prevent
+ * error cascade when one request fails and others share its error result.
+ */
+const DEDUP_TIMEOUT_MS = 500; // Dedupe window (don't share promises older than this)
+const inFlightRequests = new Map<
     string,
-    { expiresAt: number; value: ApiResult<unknown> }
+    { promise: Promise<ApiResult<unknown>>; createdAt: number }
 >();
+const patternsCache = new BoundedCache<ApiResult<unknown>>(100); // Max 100 pattern cache entries
 const PATTERNS_SEARCH_CACHE_TTL_MS = 5_000;
 const PATTERNS_DETAIL_CACHE_TTL_MS = 2_000;
 
@@ -227,10 +294,28 @@ function validateOrigin(origin: string | undefined): boolean {
 /**
  * API call result - either success data or error information.
  * Following Effect-style: errors as values, not exceptions.
+ *
+ * Error details object provides diagnostic information for network errors:
+ * - errorName: Error constructor name (e.g., "AbortError", "TypeError")
+ * - errorType: Classified error type (timeout, connection_refused, dns_error, etc.)
+ * - errorMessage: Human-readable error message
+ * - cause: Underlying error cause (e.g., "ECONNREFUSED")
+ * - retryable: Whether the request can be safely retried
  */
 type ApiResult<T> =
     | { ok: true; data: T }
-    | { ok: false; error: string; status?: number };
+    | {
+        ok: false;
+        error: string;
+        status?: number;
+        details?: {
+            errorName?: string;
+            errorType?: string;
+            errorMessage?: string;
+            cause?: string;
+            retryable?: boolean;
+        };
+    };
 
 async function callApi(
     endpoint: string,
@@ -245,17 +330,23 @@ async function callApi(
 
     if (isPatternsGet) {
         const cached = patternsCache.get(requestKey);
-        if (cached && cached.expiresAt > Date.now()) {
-            return cached.value;
+        if (cached) {
+            log(`Cache hit (patterns): ${requestKey}`);
+            return cached;
         }
-        patternsCache.delete(requestKey);
     }
 
-    // Check for in-flight request (dedupe)
+    // Check for in-flight request (dedupe) - CRITICAL: only share if within time window
     const inFlight = inFlightRequests.get(requestKey);
-    if (inFlight) {
-        log(`API Dedupe Hit: ${requestKey}`);
-        return inFlight;
+    const now = Date.now();
+
+    if (inFlight && (now - inFlight.createdAt) < DEDUP_TIMEOUT_MS) {
+        log(`API Dedupe Hit: ${requestKey} (age: ${now - inFlight.createdAt}ms)`);
+        return inFlight.promise;
+    } else if (inFlight) {
+        // Dedup timeout expired - clean up stale entry
+        log(`Dedup timeout expired (age: ${now - inFlight.createdAt}ms), removing stale entry`);
+        inFlightRequests.delete(requestKey);
     }
 
     // Build headers - only add API key if provided
@@ -282,7 +373,9 @@ async function callApi(
         method,
         headers,
         signal: controller.signal,
-        // @ts-expect-error - Node.js fetch supports agent option
+        // @ts-expect-error - Node.js fetch (undici) supports agent option for connection pooling.
+        // This is a non-standard extension specific to Node.js runtime (not Web API compliant).
+        // Used for HTTP/HTTPS connection reuse with keep-alive and socket limits.
         agent: agentOption,
     };
 
@@ -307,32 +400,122 @@ async function callApi(
                 };
             }
 
-            const result = await response.json();
+            const result = await response.json() as any;
             log(`API Response`, result);
-            const apiResult: ApiResult<unknown> = { ok: true, data: result };
+            const apiResult: ApiResult<unknown> = {
+                ok: true,
+                data: (result && typeof result === "object" && result.data !== undefined) ? result.data : result
+            };
             if (isPatternsGet) {
                 const ttl = isPatternDetail
                     ? PATTERNS_DETAIL_CACHE_TTL_MS
                     : PATTERNS_SEARCH_CACHE_TTL_MS;
-                patternsCache.set(requestKey, {
-                    expiresAt: Date.now() + ttl,
-                    value: apiResult,
-                });
+                patternsCache.set(requestKey, apiResult, ttl);
             }
             return apiResult;
         } catch (error) {
             clearTimeout(timeoutId);
-            const msg = error instanceof Error ? error.message : String(error);
-            log(`API Error`, msg);
-            return { ok: false, error: msg };
+
+            // Capture detailed error information
+            const errorName = error instanceof Error ? error.name : "Unknown";
+            const errorMessage =
+                error instanceof Error ? error.message : String(error);
+            const cause =
+                error instanceof Error &&
+                "cause" in error &&
+                error.cause instanceof Error
+                    ? error.cause.message
+                    : undefined;
+
+            // Check if it was a timeout (AbortError)
+            if (errorName === "AbortError") {
+                const msg = `Request timeout after ${REQUEST_TIMEOUT_MS}ms`;
+                log(`API Error: ${msg}`);
+                return {
+                    ok: false,
+                    error: msg,
+                    status: 408, // HTTP Request Timeout
+                };
+            }
+
+            // Classify error type and retryability (same as stdio for parity)
+            let errorType = "network";
+            let retryable = true;
+
+            if (errorName === "TypeError" && errorMessage.includes("fetch")) {
+                errorType = "fetch_error";
+                retryable = true;
+            } else if (cause?.includes("ECONNREFUSED")) {
+                errorType = "connection_refused";
+                retryable = true;
+            } else if (cause?.includes("ENOTFOUND")) {
+                errorType = "dns_error";
+                retryable = true;
+            } else if (cause?.includes("ETIMEDOUT") || cause?.includes("timeout")) {
+                errorType = "timeout";
+                retryable = true;
+            } else if (cause?.includes("ECONNRESET")) {
+                errorType = "connection_reset";
+                retryable = true;
+            } else if (
+                cause?.includes("CERT") ||
+                cause?.includes("SSL") ||
+                cause?.includes("TLS")
+            ) {
+                errorType = "tls_error";
+                retryable = false; // TLS errors are not retryable
+            }
+
+            const msg = errorMessage;
+            log(`API Error: ${errorName}: ${msg}`, {
+                cause,
+                errorType,
+                retryable,
+            });
+
+            return {
+                ok: false,
+                error: msg,
+                details: {
+                    errorName,
+                    errorType,
+                    errorMessage: msg,
+                    cause,
+                    retryable,
+                },
+            };
         } finally {
             inFlightRequests.delete(requestKey);
         }
     })();
 
-    // Store in-flight request (GET only to avoid side-effects)
+    // Store in-flight request (only for GET requests to avoid side-effects)
+    // Include createdAt timestamp to prevent sharing promises across timeout window
     if (method === "GET") {
-        inFlightRequests.set(requestKey, requestPromise);
+        // Enforce max in-flight requests to prevent memory leak
+        if (inFlightRequests.size >= 500) {
+            // Remove oldest in-flight request
+            const oldestKey = inFlightRequests.keys().next().value;
+            if (oldestKey) {
+                log(`In-flight limit reached (500), removing oldest: ${oldestKey}`);
+                inFlightRequests.delete(oldestKey);
+            }
+        }
+
+        inFlightRequests.set(requestKey, {
+            promise: requestPromise,
+            createdAt: Date.now(),
+        });
+
+        // Clean up expired in-flight requests periodically (every 100 requests)
+        if (inFlightRequests.size % 100 === 0) {
+            const now = Date.now();
+            for (const [key, value] of inFlightRequests) {
+                if (now - value.createdAt > DEDUP_TIMEOUT_MS * 10) {
+                    inFlightRequests.delete(key);
+                }
+            }
+        }
     }
 
     handshakeCounters.api++;
@@ -588,7 +771,10 @@ async function main() {
 
             // OAuth discovery endpoint
             if (url === "/.well-known/oauth-authorization-server") {
-                res.writeHead(200, { "Content-Type": "application/json" });
+                res.writeHead(200, {
+                    "Content-Type": "application/json",
+                    "Cache-Control": "public, max-age=3600", // Cache for 1 hour
+                });
                 res.end(
                     JSON.stringify({
                         issuer: `http://localhost:${PORT}`,
@@ -607,7 +793,10 @@ async function main() {
 
             // Server info endpoint
             if (url === "/info") {
-                res.writeHead(200, { "Content-Type": "application/json" });
+                res.writeHead(200, {
+                    "Content-Type": "application/json",
+                    "Cache-Control": "public, max-age=3600", // Cache for 1 hour
+                });
                 res.end(
                     JSON.stringify({
                         name: "Effect Patterns MCP Server",

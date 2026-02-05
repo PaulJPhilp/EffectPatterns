@@ -8,18 +8,18 @@ import { Schema as S } from "@effect/schema";
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 import {
-  GenerateRequest,
-  GenerateResponse,
-  ModuleType,
-  SearchPatternsRequest,
+    GenerateRequest,
+    GenerateResponse,
+    ModuleType,
+    SearchPatternsRequest,
 } from "../src/schemas/generate.js";
 import {
-  CodeExample,
-  DifficultyLevel,
-  Pattern,
-  PatternCategory,
-  PatternSummary,
-  PatternsIndex,
+    CodeExample,
+    DifficultyLevel,
+    Pattern,
+    PatternCategory,
+    PatternSummary,
+    PatternsIndex,
 } from "../src/schemas/pattern.js";
 
 describe("Pattern schemas", () => {
@@ -119,6 +119,7 @@ describe("Pattern schemas", () => {
   describe("Pattern", () => {
     const validPattern = {
       id: "test-pattern",
+      slug: "test-pattern",
       title: "Test Pattern",
       description: "A test pattern",
       category: "error-handling" as const,
@@ -227,6 +228,7 @@ describe("Pattern schemas", () => {
   describe("PatternSummary", () => {
     const validSummary = {
       id: "test",
+      slug: "test",
       title: "Test",
       description: "Test description",
       category: "error-handling" as const,
@@ -270,6 +272,7 @@ describe("Pattern schemas", () => {
       patterns: [
         {
           id: "test",
+          slug: "test",
           title: "Test",
           description: "Test",
           category: "error-handling" as const,
@@ -521,6 +524,7 @@ describe("Schema edge cases", () => {
   it("should handle null values appropriately", async () => {
     const withNull = {
       id: "test",
+      slug: "test",
       title: "Test",
       description: "Test",
       category: "error-handling" as const,
@@ -540,6 +544,7 @@ describe("Schema edge cases", () => {
   it("should handle extra fields gracefully", async () => {
     const withExtra = {
       id: "test",
+      slug: "test",
       title: "Test",
       description: "Test",
       category: "error-handling" as const,

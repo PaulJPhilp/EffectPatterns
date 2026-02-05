@@ -13,6 +13,7 @@ describe("CodeAnalyzerService - branch coverage", () => {
 					source,
 					filename: "README.md",
 					analysisType: "all",
+					config: { rules: { "non-typescript": "warn" } },
 				});
 			}).pipe(Effect.provide(CodeAnalyzerService.Default))
 		);
@@ -41,6 +42,7 @@ describe("CodeAnalyzerService - branch coverage", () => {
 					source,
 					filename: "app/api/foo/route.ts",
 					analysisType: "all",
+					config: { rules: { "try-catch-boundary-ok": "warn" } },
 				});
 			}).pipe(Effect.provide(CodeAnalyzerService.Default))
 		);

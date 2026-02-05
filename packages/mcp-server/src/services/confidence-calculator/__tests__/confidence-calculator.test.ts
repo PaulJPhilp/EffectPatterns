@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { ConfidenceCalculatorService } from "../api";
 import { Effect, Layer } from "effect";
+import { describe, expect, it } from "vitest";
 import type { Finding, RuleDefinition } from "../../../tools/schemas";
 import { MCPConfigService } from "../../config";
 import { MCPLoggerService } from "../../logger";
+import { ConfidenceCalculatorService } from "../api";
 
 const TestLayer = Layer.provideMerge(
 	ConfidenceCalculatorService.Default,
@@ -21,24 +21,26 @@ describe("ConfidenceCalculatorService", () => {
 		
 		const finding: Finding = {
 			id: "test-1",
+			title: "Test finding",
 			range: {
 				startLine: 5,
+				startCol: 10,
 				endLine: 5,
-				startChar: 10,
-				endChar: 20,
+				endCol: 20,
 			},
 			message: "Test finding",
-			ruleId: "test-rule",
-			severity: "error",
+			ruleId: "async-await",
+			severity: "high",
+			refactoringIds: [],
 		};
 
 		const rule: RuleDefinition = {
-			id: "test-rule",
-			name: "Test Rule",
-			category: "errors",
+			id: "async-await",
+			title: "Test Rule",
+			category: "async",
 			message: "Test error pattern",
-			enabled: true,
-			severity: "error",
+			severity: "high",
+			fixIds: [],
 		};
 
 		const sourceCode = `
@@ -70,24 +72,26 @@ function test() {
 		const input = {
 			finding: {
 				id: "test-2",
+				title: "Test",
 				range: {
 					startLine: 1,
+					startCol: 0,
 					endLine: 1,
-					startChar: 0,
-					endChar: 10,
+					endCol: 10,
 				},
 				message: "Test",
-				ruleId: "test",
-				severity: "warning" as const,
+				ruleId: "async-await" as const,
+				severity: "medium" as const,
+				refactoringIds: [],
 			},
 			sourceCode: "const x = 1;",
 			rule: {
-				id: "test",
-				name: "Test",
-				category: "style",
+				id: "async-await" as const,
+				title: "Test",
+				category: "async" as const,
 				message: "Test rule",
-				enabled: true,
-				severity: "warning" as const,
+				severity: "medium" as const,
+				fixIds: [],
 			},
 		};
 

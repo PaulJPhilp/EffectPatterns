@@ -5,11 +5,11 @@
  * Returns example code for integrating trace IDs across platforms
  */
 
+import { randomUUID } from "crypto";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
-import { randomUUID } from "crypto";
 import {
-  validateApiKey,
+    validateApiKey,
 } from "../../../src/auth/apiKey";
 import { errorHandler } from "../../../src/server/errorHandler";
 import { runWithRuntime } from "../../../src/server/init";
@@ -100,9 +100,7 @@ Trace Wiring Best Practices:
 `.trim();
 
 // Handler implementation with automatic span creation via Effect.fn
-const handleTraceWiring = Effect.fn("trace-wiring")(function* (
-  request: NextRequest
-) {
+const handleTraceWiring = (request: NextRequest) => Effect.gen(function* () {
   const tracing = yield* TracingService;
 
   // Validate API key

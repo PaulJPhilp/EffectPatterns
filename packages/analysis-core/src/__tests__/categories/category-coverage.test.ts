@@ -2,7 +2,11 @@ import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 
 import type { RuleCategory, RuleDefinition } from "../../services/rule-registry";
-import { RuleRegistryService } from "../../services/rule-registry";
+import {
+	allRulesCount,
+	recommendedRulesetCount,
+	RuleRegistryService,
+} from "../../services/rule-registry";
 
 describe("Category Coverage Tests", () => {
 	it("concurrency category contains exactly 13 rules", async () => {
@@ -142,7 +146,7 @@ describe("Category Coverage Tests", () => {
 		}
 	});
 
-	it("total rule count equals expected 90", async () => {
+	it("recommended ruleset (no config) returns recommendedRulesetCount", async () => {
 		const rules = await Effect.runPromise(
 			Effect.gen(function* () {
 				const registry = yield* RuleRegistryService;
@@ -150,7 +154,11 @@ describe("Category Coverage Tests", () => {
 			}).pipe(Effect.provide(RuleRegistryService.Default))
 		);
 
-		expect(rules.length).toBe(90);
+		expect(rules.length).toBe(recommendedRulesetCount);
+	});
+
+	it("full ruleset size equals allRulesCount", () => {
+		expect(allRulesCount).toBe(90);
 	});
 
 	it("all expected categories are present", async () => {

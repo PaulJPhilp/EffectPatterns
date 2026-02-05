@@ -72,7 +72,7 @@ describe("MCPConfigService", () => {
 		const either = await Effect.runPromise(
 			Effect.gen(function* () {
 				const config = yield* MCPConfigService;
-				return yield* config.getLogLevel();
+				return config.logLevel;
 			}).pipe(Effect.provide(MCPConfigService.Default), Effect.either)
 		);
 
@@ -95,7 +95,7 @@ describe("MCPConfigService", () => {
 		const either = await Effect.runPromise(
 			Effect.gen(function* () {
 				const config = yield* MCPConfigService;
-				return yield* config.getRequestTimeoutMs();
+				return config.requestTimeoutMs;
 			}).pipe(Effect.provide(MCPConfigService.Default), Effect.either)
 		);
 

@@ -6,8 +6,8 @@
  *
  * Supports both in-memory search (legacy) and database-backed search.
  */
-import type { Pattern, PatternSummary } from "./schemas/pattern.js";
 import type { SkillLevel } from "./db/schema/index.js";
+import type { Pattern, PatternSummary } from "./schemas/pattern.js";
 /**
  * Parameters for searching patterns
  */

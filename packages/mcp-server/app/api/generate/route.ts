@@ -14,12 +14,10 @@ import { Effect } from "effect";
 import { type NextRequest } from "next/server";
 import { PatternNotFoundError } from "../../../src/errors";
 import { PatternsService } from "../../../src/server/init";
-import { createRouteHandler } from "../../../src/server/routeHandler";
+import { createSimpleHandler } from "../../../src/server/routeHandler";
 
-// Handler implementation with automatic span creation via Effect.fn
-const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
-  request: NextRequest
-) {
+// Handler implementation
+const handleGenerateSnippet = (request: NextRequest) => Effect.gen(function* () {
   const patternsService = yield* PatternsService;
 
   // Parse and validate request body
@@ -80,7 +78,7 @@ const handleGenerateSnippet = Effect.fn("generate-snippet")(function* (
   };
 });
 
-export const POST = createRouteHandler(handleGenerateSnippet, {
+export const POST = createSimpleHandler(handleGenerateSnippet, {
   requireAuth: true,
   requirePaidTier: true,
 });
