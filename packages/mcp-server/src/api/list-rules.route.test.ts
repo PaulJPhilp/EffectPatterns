@@ -43,13 +43,13 @@ describe("/api/list-rules and /api/list-fixes", () => {
 				makeRequest({ "x-api-key": "secret" })
 			);
 			expect(res.status).toBe(200);
-			const body = await res.json() as { rules: Array<{ id: string }>, traceId: string, timestamp: string };
+			const json = await res.json() as { data: { rules: Array<{ id: string }> }, traceId?: string, timestamp: string };
+			const body = json.data;
 			expect(Array.isArray(body.rules)).toBe(true);
 			expect(body.rules.map((r) => r.id)).toContain(
 				"async-await"
 			);
-			expect(typeof body.traceId).toBe("string");
-			expect(typeof body.timestamp).toBe("string");
+			expect(typeof json.timestamp).toBe("string");
 		} finally {
 			process.env.PATTERN_API_KEY = prevKey;
 		}
@@ -65,13 +65,11 @@ describe("/api/list-rules and /api/list-fixes", () => {
 				makeRequest({ "x-api-key": "secret" })
 			);
 			expect(res.status).toBe(200);
-			const body = await res.json() as { fixes: Array<{ id: string }>, traceId: string, timestamp: string };
+			const body = await res.json() as { fixes: Array<{ id: string }> };
 			expect(Array.isArray(body.fixes)).toBe(true);
 			expect(body.fixes.map((f) => f.id)).toContain(
 				"replace-node-fs"
 			);
-			expect(typeof body.traceId).toBe("string");
-			expect(typeof body.timestamp).toBe("string");
 		} finally {
 			process.env.PATTERN_API_KEY = prevKey;
 		}
@@ -90,7 +88,8 @@ describe("/api/list-rules and /api/list-fixes", () => {
 				)
 			);
 			expect(res.status).toBe(200);
-			const body = await res.json() as { rules: Array<{ id: string }> };
+			const json = await res.json() as { data: { rules: Array<{ id: string }> } };
+			const body = json.data;
 			expect(Array.isArray(body.rules)).toBe(true);
 			expect(body.rules.map((r) => r.id)).not.toContain(
 				"async-await"

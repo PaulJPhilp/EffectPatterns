@@ -56,15 +56,14 @@ const a: any = 4;
 		);
 
 		expect(response.status).toBe(200);
-		const json = (await response.json()) as { data: ReviewCodeResponse, traceId?: string, timestamp: string };
-		const data = json.data;
+		const data = (await response.json()) as ReviewCodeResponse & { timestamp?: string };
 
 		expect(data.recommendations).toBeDefined();
 		expect(data.recommendations.length).toBeLessThanOrEqual(3);
 		expect(data.meta).toBeDefined();
 		expect(data.meta.totalFound).toBeGreaterThanOrEqual(3);
 		expect(data.markdown).toContain("# Code Review Results");
-		expect(json.timestamp).toBeDefined();
+		expect(data.timestamp).toBeDefined();
 	});
 
 	it("should include upgrade message when more than 3 issues found", async () => {
@@ -85,8 +84,7 @@ const e: any = 5;
 		);
 
 		expect(response.status).toBe(200);
-		const json = (await response.json()) as { data: ReviewCodeResponse };
-		const data = json.data;
+		const data = (await response.json()) as ReviewCodeResponse;
 
 		expect(data.meta.hiddenCount).toBeGreaterThan(0);
 		expect(data.meta.upgradeMessage).toContain("Use the HTTP API or CLI");
@@ -166,8 +164,7 @@ const e: any = 5;
 		);
 
 		expect(response.status).toBe(200);
-		const json = (await response.json()) as { data: ReviewCodeResponse };
-		const data = json.data;
+		const data = (await response.json()) as ReviewCodeResponse;
 
 		expect(data.markdown).toContain("# Code Review Results");
 		expect(data.markdown).toMatch(/🔴|🟡|🔵/);
