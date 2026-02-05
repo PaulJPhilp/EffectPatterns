@@ -5,7 +5,7 @@
  * Returns 402 Payment Required for features not available in current tier.
  */
 
-import { Effect } from "effect";
+import { Cause, Effect, Option } from "effect";
 import type { NextRequest } from "next/server";
 import { TierAccessError } from "../errors";
 import { MCPTierService } from "../services/tier";
@@ -60,6 +60,22 @@ export const validateTierAccess = (
 export function isTierAccessError(
 	error: unknown
 ): error is TierAccessError {
+	// Handle Effect FiberFailure wrapping
+	if (error && typeof error === "object" && "cause" in error) {
+		const cause = (error as any).cause;
+		// Check if cause has the error directly
+		if (cause && typeof cause === "object" && "_tag" in cause && cause._tag === "TierAccessError") {
+			return true;
+		}
+		// Check nested cause structure
+		if (cause && typeof cause === "object" && "error" in cause) {
+			const innerError = cause.error;
+			if (innerError && typeof innerError === "object" && "_tag" in innerError && innerError._tag === "TierAccessError") {
+				return true;
+			}
+		}
+	}
+	
 	return (
 		typeof error === "object" &&
 		error !== null &&
@@ -77,40 +93,44 @@ export function withTierValidation<T extends any[]>(
 	handler: (request: NextRequest, ...args: T) => Promise<Response>
 ) {
 	return async (request: NextRequest, ...args: T): Promise<Response> => {
-		try {
-			// First validate tier access
-			await Effect.runPromise(
-				validateTierAccess(request).pipe(
-					Effect.provide(MCPTierService.Default)
-				)
-			);
+		// Use runPromiseExit to get better error handling
+		const exit = await Effect.runPromiseExit(
+			validateTierAccess(request).pipe(
+				Effect.provide(MCPTierService.Default)
+			)
+		);
 
-			// If tier validation passes, call the original handler
-			return await handler(request, ...args);
-		} catch (error) {
-			if (isTierAccessError(error)) {
-				// Return 402 Payment Required with upgrade message
-				return new Response(
-					JSON.stringify({
-						error: error.message,
-						tier: error.tierMode,
-						upgradeMessage: error.upgradeMessage,
-						availableFeatures: error.endpoint.includes("/api/patterns")
-							? ["Pattern Search", "Pattern Retrieval", "Read-Only Analysis"]
-							: [],
-					}),
-					{
-						status: 402,
-						headers: {
-							"Content-Type": "application/json",
-							"X-Tier-Error": "feature-gated",
-						},
-					}
-				);
+		if (exit._tag === "Failure") {
+			// Extract error from Cause
+			const failureOption = Cause.failureOption(exit.cause);
+			if (failureOption._tag === "Some") {
+				const error = failureOption.value;
+				if (isTierAccessError(error)) {
+					// Return 402 Payment Required with upgrade message
+					return new Response(
+						JSON.stringify({
+							error: error.message,
+							tier: error.tierMode,
+							upgradeMessage: error.upgradeMessage,
+							availableFeatures: error.endpoint.includes("/api/patterns")
+								? ["Pattern Search", "Pattern Retrieval", "Read-Only Analysis"]
+								: [],
+						}),
+						{
+							status: 402,
+							headers: {
+								"Content-Type": "application/json",
+								"X-Tier-Error": "feature-gated",
+							},
+						}
+					);
+				}
 			}
-
 			// Re-throw other errors
-			throw error;
+			throw Cause.squash(exit.cause);
 		}
+
+		// If tier validation passes, call the original handler
+		return await handler(request, ...args);
 	};
 }
