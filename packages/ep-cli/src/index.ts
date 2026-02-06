@@ -6,14 +6,10 @@
  * A unified project management CLI for EffectPatterns.
  */
 
-import { StateStore } from "@effect-patterns/pipeline-state";
 import { Command } from "@effect/cli";
-import { FetchHttpClient } from "@effect/platform";
 import { Effect, Layer } from "effect";
-import { EnvService } from "effect-env";
 
 import { validateEnvironment } from "./config/validate-env.js";
-import { envLayer } from "./config/env.js";
 import { CLI } from "./constants.js";
 
 // Commands
@@ -93,12 +89,9 @@ export const rootCommand = Command.make("ep").pipe(
  * Core runtime layer (Standard CLI)
  */
 const BaseLayer = Layer.mergeAll(
-  envLayer,  // Environment configuration (must be first)
-  FetchHttpClient.layer,
   NodeFileSystem.layer,
   LoggerLive(globalConfig),
-  LiveTUILoader,
-  StateStore.Default
+  LiveTUILoader
 );
 
 const ServiceLayer = Layer.mergeAll(
@@ -145,7 +138,7 @@ const program = Effect.gen(function* () {
 
 const provided = program.pipe(
   Effect.provide(runtimeLayer),
-  Effect.catchAllCause((cause) =>
+  Effect.tapErrorCause((cause) =>
     Effect.gen(function* () {
       const logger = yield* Logger;
       yield* logger.error("Fatal Error", { cause });
@@ -153,4 +146,6 @@ const provided = program.pipe(
   )
 );
 
-void Effect.runPromise(provided as Effect.Effect<void, never, never>);
+void Effect.runPromise(provided as Effect.Effect<void, unknown, never>).catch(() => {
+  process.exitCode = 1;
+});

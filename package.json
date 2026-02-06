@@ -158,9 +158,6 @@
   ],
   "author": "Paul",
   "license": "MIT",
-  "overrides": {
-    "@effect/rpc": "^0.66.0"
-  },
   "resolutions": {
     "@effect/platform": "^0.94.1",
     "@effect/platform-node": "^0.104.0",

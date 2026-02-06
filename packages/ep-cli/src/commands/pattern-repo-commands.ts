@@ -2,7 +2,6 @@
  * Pattern Repository Commands
  */
 
-import { createDatabase, createEffectPatternRepository } from "@effect-patterns/toolkit";
 import { Args, Command, Options } from "@effect/cli";
 import { Console, Effect } from "effect";
 import { Display } from "../services/display/index.js";
@@ -21,6 +20,9 @@ export const searchCommand = Command.make("search", {
   Command.withDescription("Search patterns by keyword"),
   Command.withHandler(({ args }) =>
     Effect.gen(function* () {
+      const { createDatabase, createEffectPatternRepository } = yield* Effect.tryPromise(
+        () => import("@effect-patterns/toolkit")
+      );
       const { db } = createDatabase();
       yield* Effect.addFinalizer(() => closeDatabaseSafely(db).pipe(Effect.ignoreLogged));
 
@@ -62,6 +64,9 @@ export const listCommand = Command.make("list", {
   Command.withDescription("List all patterns with optional filters"),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
+      const { createDatabase, createEffectPatternRepository } = yield* Effect.tryPromise(
+        () => import("@effect-patterns/toolkit")
+      );
       const { db } = createDatabase();
       yield* Effect.addFinalizer(() => closeDatabaseSafely(db).pipe(Effect.ignoreLogged));
 
@@ -88,6 +93,9 @@ export const showCommand = Command.make("show", {
   Command.withDescription("Show detailed pattern information"),
   Command.withHandler(({ args }) =>
     Effect.gen(function* () {
+      const { createDatabase, createEffectPatternRepository } = yield* Effect.tryPromise(
+        () => import("@effect-patterns/toolkit")
+      );
       const { db } = createDatabase();
       yield* Effect.addFinalizer(() => closeDatabaseSafely(db).pipe(Effect.ignoreLogged));
 

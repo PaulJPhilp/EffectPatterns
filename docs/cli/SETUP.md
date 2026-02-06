@@ -78,13 +78,7 @@ The Effect Patterns Hub can inject coding rules directly into your AI developmen
 | Cursor IDE   | `ep install add --tool cursor`   | `.cursor/rules.md`   |
 | AGENTS.md    | `ep install add --tool agents`   | `AGENTS.md`          |
 | Windsurf IDE | `ep install add --tool windsurf` | `.windsurf/rules.md` |
-| Gemini AI    | `ep install add --tool gemini`   | `GEMINI.md`          |
-| Claude AI    | `ep install add --tool claude`   | `CLAUDE.md`          |
 | VS Code      | `ep install add --tool vscode`   | `.vscode/rules.md`   |
-| Kilo IDE     | `ep install add --tool kilo`     | `.kilo/rules.md`     |
-| Kira IDE     | `ep install add --tool kira`     | `.kira/rules.md`     |
-| Trae IDE     | `ep install add --tool trae`     | `.trae/rules.md`     |
-| Goose AI     | `ep install add --tool goose`    | `.goosehints`        |
 
 ### Installation Examples
 
@@ -99,7 +93,7 @@ ep install add --tool cursor --skill-level beginner
 ep install add --tool agents --use-case error-management
 
 # Combine filters: beginner error-management rules
-ep install add --tool goose --skill-level beginner --use-case error-management
+ep install add --tool windsurf --skill-level beginner --use-case error-management
 ```
 
 ### Filtering Options
@@ -123,22 +117,13 @@ You can filter which rules to install using:
 
 Run `ep install list` to see all available tools.
 
-### Prerequisites for Rules Installation
+### Rules Source
 
-Before installing rules, you need to start the Pattern Server:
+`ep install add` reads local published rule files from this repository:
 
-```bash
-# In a separate terminal
-bun run mcp:dev
-```
-
-The server runs on `http://localhost:3000` by default.
-
-If you need to use a different port:
-
-```bash
-ep install add --tool cursor --server-url http://localhost:PORT
-```
+- `content/published/rules/cursor/*.mdc`
+- `content/published/rules/windsurf/*.mdc`
+- `vscode` uses the `cursor` rules corpus
 
 ## Creating New Patterns
 
@@ -279,14 +264,15 @@ demonstrating memory-efficient data processing.
 
 **Solution**: Run `bun link` in the project directory
 
-### Pattern Server Not Running
+### Rules Source Not Found
 
-**Error**: "Cannot connect to Pattern Server"
+**Error**: install command fails while reading published rules
 
-**Solution**: Start the server in a separate terminal:
+**Solution**:
 
 ```bash
-bun run mcp:dev
+ls content/published/rules/cursor/*.mdc
+ls content/published/rules/windsurf/*.mdc
 ```
 
 ### Validation Failures
@@ -336,14 +322,6 @@ chmod +x scripts/ep.ts
 ```
 
 ## Configuration
-
-### Custom Server URL
-
-If the Pattern Server runs on a different port:
-
-```bash
-ep install add --tool cursor --server-url http://localhost:3002
-```
 
 ### Verbose Output
 

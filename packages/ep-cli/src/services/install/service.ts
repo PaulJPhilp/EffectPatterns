@@ -4,37 +4,13 @@
 
 import { FileSystem } from "@effect/platform";
 import { Context, Effect, Layer } from "effect";
+import { readFile } from "node:fs/promises";
+import { glob } from "glob";
+import path from "node:path";
+import { PATHS } from "../../constants.js";
 import { InstalledRule, InstallService, Rule } from "./api.js";
 
 const INSTALLED_STATE_FILE = ".ep-installed.json";
-
-// Mock Rules for initial implementation - will be replaced by actual registry/API
-export const MOCK_RULES: Rule[] = [
-  {
-    id: "error-management",
-    title: "Error Recovery Pattern",
-    description: "Best practices for handling errors in Effect",
-    skillLevel: "beginner",
-    useCase: ["error-management"],
-    content: "Content v1.0",
-  },
-  {
-    id: "concurrency",
-    title: "Concurrency Control",
-    description: "Managing concurrent tasks safely",
-    skillLevel: "intermediate",
-    useCase: ["concurrency"],
-    content: "Content v1.0",
-  },
-  {
-    id: "resource-management",
-    title: "Resource Management",
-    description: "Safe acquisition and release of resources",
-    skillLevel: "advanced",
-    useCase: ["resource-management"],
-    content: "Content v1.0",
-  },
-];
 
 export const Install = Context.GenericTag<InstallService>("@services/Install");
 
@@ -42,6 +18,112 @@ export const InstallLive = Layer.effect(
   Install,
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
+    const projectRoot = PATHS.PROJECT_ROOT;
+    type SkillLevel = "beginner" | "intermediate" | "advanced";
+
+    const normalizeKey = (value: string): string =>
+      value
+        .toLowerCase()
+        .replace(/[`"'’]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+
+    const extractSectionTitles = (markdown: string): string[] => {
+      const matches = markdown.match(/^##\s+(.+)$/gm) ?? [];
+      return matches.map((line) => line.replace(/^##\s+/, "").trim());
+    };
+
+    const buildMetadataIndexes = async (): Promise<{
+      byTitleSkill: Map<string, SkillLevel>;
+      byTitleUseCases: Map<string, Set<string>>;
+    }> => {
+      const byTitleSkill = new Map<string, SkillLevel>();
+      const byTitleUseCases = new Map<string, Set<string>>();
+
+      const skillFiles: Array<{ file: string; level: SkillLevel }> = [
+        { file: path.join(projectRoot, "content/published/rules/beginner.md"), level: "beginner" },
+        { file: path.join(projectRoot, "content/published/rules/intermediate.md"), level: "intermediate" },
+        { file: path.join(projectRoot, "content/published/rules/advanced.md"), level: "advanced" },
+      ];
+
+      for (const { file, level } of skillFiles) {
+        const content = await readFile(file, "utf8");
+        for (const title of extractSectionTitles(content)) {
+          byTitleSkill.set(normalizeKey(title), level);
+        }
+      }
+
+      const useCaseFiles = await glob(path.join(projectRoot, "content/published/rules/by-use-case/*.md"));
+      for (const file of useCaseFiles) {
+        const slug = path.basename(file, ".md");
+        const content = await readFile(file, "utf8");
+        for (const title of extractSectionTitles(content)) {
+          const key = normalizeKey(title);
+          const set = byTitleUseCases.get(key) ?? new Set<string>();
+          set.add(slug);
+          byTitleUseCases.set(key, set);
+        }
+      }
+
+      return { byTitleSkill, byTitleUseCases };
+    };
+
+    let metadataCache:
+      | {
+          byTitleSkill: Map<string, SkillLevel>;
+          byTitleUseCases: Map<string, Set<string>>;
+        }
+      | undefined;
+
+    const getMetadata = async () => {
+      if (!metadataCache) {
+        metadataCache = await buildMetadataIndexes();
+      }
+      return metadataCache;
+    };
+
+    const sourceDirForTool = (tool?: string): string => {
+      const normalized = (tool ?? "cursor").toLowerCase();
+      const map: Record<string, string> = {
+        agents: "cursor",
+        cursor: "cursor",
+        windsurf: "windsurf",
+        vscode: "cursor",
+      };
+      return path.join(projectRoot, "content/published/rules", map[normalized] ?? "cursor");
+    };
+
+    const readRules = (tool?: string): Effect.Effect<Rule[], Error> =>
+      Effect.tryPromise({
+        try: async () => {
+          const dir = sourceDirForTool(tool);
+          const files = await glob(path.join(dir, "*.mdc"));
+          const metadata = await getMetadata();
+
+          const rules: Rule[] = [];
+          for (const filePath of files) {
+            const content = await readFile(filePath, "utf8");
+            const id = path.basename(filePath, ".mdc");
+            const titleMatch = content.match(/^#\s+(.+)$/m);
+            const descriptionMatch = content.match(/^description:\s*(.+)$/m);
+
+            const title = titleMatch?.[1]?.trim() ?? id;
+            const titleKey = normalizeKey(title);
+            rules.push({
+              id,
+              title,
+              description: descriptionMatch?.[1]?.trim() ?? "Effect pattern rule",
+              skillLevel: metadata.byTitleSkill.get(titleKey),
+              useCase: Array.from(metadata.byTitleUseCases.get(titleKey) ?? []),
+              content,
+            });
+          }
+
+          // stable ordering for deterministic installs
+          return rules.sort((a, b) => a.id.localeCompare(b.id));
+        },
+        catch: (error) => new Error(`Failed to load published rules: ${error}`),
+      });
 
     const loadInstalledRules = () =>
       Effect.gen(function* () {
@@ -63,9 +145,10 @@ export const InstallLive = Layer.effect(
       query?: string;
       skillLevel?: string;
       useCase?: string;
+      tool?: string;
     }) =>
-      Effect.sync(() => {
-        let rules = MOCK_RULES;
+      Effect.gen(function* () {
+        let rules = yield* readRules(options.tool);
         if (options.query) {
           const q = options.query.toLowerCase();
           rules = rules.filter(
@@ -85,7 +168,8 @@ export const InstallLive = Layer.effect(
 
     const fetchRule = (id: string) =>
       Effect.gen(function* () {
-        const rule = MOCK_RULES.find((r) => r.id === id);
+        const rules = yield* readRules("cursor");
+        const rule = rules.find((r) => r.id === id);
         if (!rule) {
           return yield* Effect.fail(new Error(`Rule with id ${id} not found`));
         }

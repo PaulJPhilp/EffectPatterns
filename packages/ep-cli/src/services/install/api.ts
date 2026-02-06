@@ -42,6 +42,7 @@ export interface InstallService {
     query?: string;
     skillLevel?: string;
     useCase?: string;
+    tool?: string;
   }) => Effect.Effect<Rule[], Error>;
   readonly fetchRule: (id: string) => Effect.Effect<Rule, Error>;
 }

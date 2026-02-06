@@ -155,12 +155,14 @@ Subcommands:
 - `install list`
   - List supported tools and the file paths that will be written.
 
-- `install add --tool <text> [--server-url <text>] [--skill-level <text>]
-  [--use-case <text>]`
-  - Fetch rules from the pattern server and inject them into the target tool.
+- `install add --tool <text> [--skill-level <text>] [--use-case <text>]`
+  - Install rules from local published content into the target tool file.
 
-- `install skills [--category <text>] [--format <text>]`
-  - Generate skills (Claude, Gemini, OpenAI) from published patterns.
+- `install remove [<rule-id>]`
+  - Currently disabled.
+
+- `install diff <rule-id>`
+  - Currently disabled.
 
 Examples:
 
@@ -176,9 +178,6 @@ bun run ep install add --tool cursor --skill-level beginner
 
 # Install only error-management rules
 bun run ep install add --tool cursor --use-case error-management
-
-# Override server URL
-bun run ep install add --tool cursor --server-url http://localhost:3000
 ```
 
 ---
