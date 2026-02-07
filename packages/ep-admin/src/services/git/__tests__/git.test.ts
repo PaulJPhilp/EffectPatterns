@@ -50,9 +50,14 @@ const DisplayTest = Display.Default.pipe(
 	Layer.provide(Logger.Default)
 );
 
+const ExecutionTest = Execution.Default.pipe(
+	Layer.provide(MockTUIService),
+	Layer.provide(Logger.Default)
+);
+
 const TestLayer = Layer.mergeAll(
 	Git.Default,
-	Execution.Default,
+	ExecutionTest,
 	Logger.Default,
 	DisplayTest
 );

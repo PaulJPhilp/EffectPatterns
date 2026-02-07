@@ -8,6 +8,26 @@ import { Logger } from "../../logger/index.js";
 import { TUIService } from "../../tui/service.js";
 import { Execution } from "../service.js";
 
+const MockTUIService = Layer.succeed(
+	TUIService,
+	TUIService.of({
+		load: () => Effect.succeed(null),
+		isAvailable: () => Effect.succeed(false),
+		clearCache: () => Effect.void,
+	})
+);
+
+const ExecutionTest = Execution.Default.pipe(
+	Layer.provide(MockTUIService),
+	Layer.provide(Logger.Default)
+);
+
+const TestLayer = Layer.mergeAll(
+	ExecutionTest,
+	Logger.Default,
+	MockTUIService
+);
+
 describe("Execution Service", () => {
 	describe("Service Methods", () => {
 		it("should provide all execution methods", () =>
@@ -19,13 +39,7 @@ describe("Execution Service", () => {
 				expect(execution.executeScriptStream).toBeDefined();
 				expect(execution.withSpinner).toBeDefined();
 			}).pipe(
-				Effect.provide(
-					Layer.mergeAll(
-						Execution.Default,
-						Logger.Default,
-						TUIService.Default
-					)
-				),
+				Effect.provide(TestLayer),
 				Effect.runPromise
 			));
 	});
@@ -40,13 +54,7 @@ describe("Execution Service", () => {
 				);
 				expect(result).toBe("test result");
 			}).pipe(
-				Effect.provide(
-					Layer.mergeAll(
-						Execution.Default,
-						Logger.Default,
-						TUIService.Default
-					)
-				),
+				Effect.provide(TestLayer),
 				Effect.runPromise
 			));
 
@@ -61,15 +69,7 @@ describe("Execution Service", () => {
 
 			await expect(
 				Effect.runPromise(
-					program.pipe(
-						Effect.provide(
-							Layer.mergeAll(
-								Execution.Default,
-								Logger.Default,
-								TUIService.Default
-							)
-						)
-					)
+					program.pipe(Effect.provide(TestLayer))
 				)
 			).rejects.toThrow("Task failed");
 		});

@@ -126,9 +126,9 @@ export function generateCategorySkill(
   category: string,
   patterns: PatternContent[]
 ): string {
-  // Sort by skill level
+  // Sort by skill level (non-mutating)
   const levels = { beginner: 0, intermediate: 1, advanced: 2 };
-  const sorted = patterns.sort(
+  const sorted = [...patterns].sort(
     (a, b) => levels[a.skillLevel] - levels[b.skillLevel]
   );
 
@@ -290,9 +290,9 @@ export function generateGeminiSkill(
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
-  // Sort by skill level
+  // Sort by skill level (non-mutating)
   const levels = { beginner: 0, intermediate: 1, advanced: 2 };
-  const sorted = patterns.sort(
+  const sorted = [...patterns].sort(
     (a, b) => levels[a.skillLevel] - levels[b.skillLevel]
   );
 

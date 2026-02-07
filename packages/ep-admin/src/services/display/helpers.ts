@@ -3,18 +3,9 @@
  */
 
 import { Effect } from "effect";
-import { colors } from "../../utils.js";
+import { ANSI_COLORS } from "../../constants.js";
 import type { LoggerConfig } from "../logger/index.js";
 import { Logger } from "../logger/index.js";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TUIModule = any;
-
-// TUI module state - loaded lazily on first use
-// TUI module state - loaded lazily on first use
-// Stores: null (not attempted), false (attempted but failed), or the module
-// let tuiModuleCache: TUIModule | false | null = null;
-
 
 /**
  * Get logger config from Logger service
@@ -31,9 +22,9 @@ export const getLoggerConfig = (): Effect.Effect<LoggerConfig, never, Logger> =>
  */
 export const colorizeWithConfig = (
 	text: string,
-	color: keyof typeof colors,
+	color: keyof typeof ANSI_COLORS,
 	config: LoggerConfig
 ): string => {
 	if (!config.useColors) return text;
-	return `${colors[color]}${text}${colors.RESET}`;
+	return `${ANSI_COLORS[color]}${text}${ANSI_COLORS.RESET}`;
 };

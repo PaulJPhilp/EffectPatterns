@@ -5,9 +5,11 @@
 import { Command, Prompt } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
 import { Console, Effect } from "effect";
+import path from "node:path";
+import { PROJECT_ROOT } from "../constants.js";
 import { execGitCommand } from "../utils/git.js";
 import { analyzeRelease } from "../utils/release.js";
-import { colorize } from "../utils/string.js";
+import { colorize } from "../utils.js";
 
 /**
  * release:preview - Preview the next release
@@ -20,7 +22,7 @@ export const releasePreviewCommand = Command.make("preview").pipe(
       const analysis = yield* analyzeRelease();
 
       if (!analysis.hasChanges) {
-        yield* Console.log(colorize("\n⚠️  No commits found since last release\n", "yellow"));
+        yield* Console.log(colorize("\n⚠️  No commits found since last release\n", "YELLOW"));
         return;
       }
 
@@ -57,19 +59,20 @@ export const releaseCreateCommand = Command.make("create").pipe(
       const fs = yield* FileSystem.FileSystem;
       
       // Update package.json
-      const pkg = JSON.parse(yield* fs.readFileString("package.json"));
+      const pkgPath = path.join(PROJECT_ROOT, "package.json");
+      const pkg = JSON.parse(yield* fs.readFileString(pkgPath));
       pkg.version = analysis.nextVersion;
-      yield* fs.writeFileString("package.json", JSON.stringify(pkg, null, 2) + "\n");
+      yield* fs.writeFileString(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
 
       // Update CHANGELOG.md (simplified)
-      yield* fs.writeFileString("CHANGELOG.md", analysis.changelog);
+      yield* fs.writeFileString(path.join(PROJECT_ROOT, "CHANGELOG.md"), analysis.changelog);
 
       yield* execGitCommand("add", ["package.json", "CHANGELOG.md"]);
       yield* execGitCommand("commit", ["-m", `chore(release): v${analysis.nextVersion}`]);
       yield* execGitCommand("tag", [`v${analysis.nextVersion}`]);
       yield* execGitCommand("push", ["--follow-tags"]);
 
-      yield* Console.log(colorize(`\n✨ Release v${analysis.nextVersion} completed!`, "green"));
+      yield* Console.log(colorize(`\n✨ Release v${analysis.nextVersion} completed!`, "GREEN"));
     })
   )
 );

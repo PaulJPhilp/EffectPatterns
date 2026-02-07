@@ -3,19 +3,19 @@
  */
 
 export interface LintIssue {
-  file: string;
-  line: number;
-  column: number;
-  rule: string;
-  severity: "error" | "warning" | "info" | "off";
-  message: string;
-  suggestion?: string;
+  readonly file: string;
+  readonly line: number;
+  readonly column: number;
+  readonly rule: string;
+  readonly severity: "error" | "warning" | "info" | "off";
+  readonly message: string;
+  readonly suggestion?: string;
 }
 
 export interface LintResult {
-  file: string;
-  issues: LintIssue[];
-  errors: number;
-  warnings: number;
-  info: number;
+  readonly file: string;
+  readonly issues: LintIssue[];
+  readonly errors: number;
+  readonly warnings: number;
+  readonly info: number;
 }

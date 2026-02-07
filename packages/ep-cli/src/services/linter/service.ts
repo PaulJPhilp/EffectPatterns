@@ -20,7 +20,7 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
       const lines = content.split("\n");
       const fileName = path.basename(filePath);
 
-      lines.forEach((line, index) => {
+      for (const [index, line] of lines.entries()) {
         if (line.includes("Effect.catchAll") && line.toLowerCase().includes("log")) {
           issues.push({
             file: fileName,
@@ -32,7 +32,7 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
             suggestion: "Use Effect.tapError(...) instead of Effect.catchAll if you're not recovering from the error.",
           });
         }
-      });
+      }
       return issues;
     };
 
@@ -41,7 +41,7 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
       const lines = content.split("\n");
       const fileName = path.basename(filePath);
 
-      lines.forEach((line, index) => {
+      for (const [index, line] of lines.entries()) {
         if (line.includes("Effect.all(") && !line.includes("concurrency:")) {
           issues.push({
             file: fileName,
@@ -53,7 +53,7 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
             suggestion: 'Add { concurrency: "unbounded" } or a specific number as the second argument.',
           });
         }
-      });
+      }
       return issues;
     };
 
@@ -69,8 +69,8 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
         { old: "Effect.matchTag", new: "Effect.catchTags" },
       ];
 
-      lines.forEach((line, index) => {
-        DEPRECATED.forEach((api) => {
+      for (const [index, line] of lines.entries()) {
+        for (const api of DEPRECATED) {
           if (line.includes(api.old)) {
             issues.push({
               file: fileName,
@@ -82,8 +82,8 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
               suggestion: `Use ${api.new} instead.`,
             });
           }
-        });
-      });
+        }
+      }
       return issues;
     };
 
@@ -148,13 +148,13 @@ export class Linter extends Effect.Service<Linter>()("Linter", {
 
           if (result.issues.length > 0) {
             yield* logger.info(colorize(`\n${result.file}:`, "BRIGHT"));
-            
+
             for (const issue of result.issues) {
               const location = colorize(`${issue.line}:${issue.column}`, "DIM");
               const severityColor = issue.severity === "error" ? "RED" : issue.severity === "warning" ? "YELLOW" : "BLUE";
               const severity = colorize(issue.severity.toUpperCase(), severityColor);
               const rule = colorize(issue.rule, "DIM");
-              
+
               yield* logger.info(`  ${location}  ${severity}  ${issue.message}  ${rule}`);
               if (issue.suggestion) {
                 yield* logger.info(colorize(`    Suggestion: ${issue.suggestion}`, "GREEN"));

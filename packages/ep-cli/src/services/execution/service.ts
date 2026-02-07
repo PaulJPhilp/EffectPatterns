@@ -33,10 +33,11 @@ export class Execution extends Effect.Service<Execution>()("Execution", {
 
 				// Try to use TUI spinner if available
 				if (tui?.InkService && tui?.spinnerEffect) {
-					const maybeInk = yield* Effect.serviceOption(tui.InkService);
+					// biome-ignore lint/suspicious/noExplicitAny: Dynamic TUI module service tag is untyped
+					const maybeInk = yield* Effect.serviceOption(tui.InkService as any);
 					if (Opt.isSome(maybeInk) && !options?.verbose) {
 						// Use TUI spinner
-						yield* (tui.spinnerEffect(taskName, task, {
+						yield* ((tui.spinnerEffect as Function)(taskName, task, {
 							type: "dots",
 							color: "cyan",
 						}) as Effect.Effect<void, ExecutionError>);

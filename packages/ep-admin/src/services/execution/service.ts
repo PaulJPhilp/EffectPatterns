@@ -4,9 +4,10 @@
 
 import { Console, Effect, Option as Opt } from "effect";
 import { spawn } from "node:child_process";
+import { TUIService } from "../tui/service.js";
 import type { ExecutionService } from "./api.js";
 import { ExecutionError, ScriptExecutionError } from "./errors.js";
-import { getTUISpinner, spawnEffect, withSpinner } from "./helpers.js";
+import { spawnEffect, withSpinner } from "./helpers.js";
 import type { ExecutionOptions } from "./types.js";
 
 /**
@@ -15,6 +16,8 @@ import type { ExecutionOptions } from "./types.js";
 export class Execution extends Effect.Service<Execution>()("Execution", {
 	accessors: true,
 	effect: Effect.gen(function* () {
+		const tuiService = yield* TUIService;
+
 		const executeScriptWithTUI: ExecutionService["executeScriptWithTUI"] = (
 			scriptPath: string,
 			taskName: string,
@@ -22,19 +25,18 @@ export class Execution extends Effect.Service<Execution>()("Execution", {
 		) =>
 			Effect.gen(function* () {
 				const task = spawnEffect(scriptPath, options);
-				const { spinnerEffectTUI, InkService } = getTUISpinner();
 
 				// Try to use TUI spinner if available
-				if (InkService && spinnerEffectTUI) {
-					const maybeInk = yield* Effect.serviceOption(InkService as any);
+				// biome-ignore lint/suspicious/noExplicitAny: Dynamic TUI module shape varies at runtime
+				const tui = yield* tuiService.load().pipe(Effect.catchAll(() => Effect.succeed(null))) as Effect.Effect<Record<string, any> | null>;
+				if (tui?.InkService && tui?.spinnerEffect) {
+					const maybeInk = yield* Effect.serviceOption(tui.InkService);
 					if (Opt.isSome(maybeInk) && !options?.verbose) {
 						// Use TUI spinner
-						yield* Effect.promise(() =>
-							(spinnerEffectTUI as any)(taskName, task, {
-								type: "dots",
-								color: "cyan",
-							})
-						);
+						yield* (tui.spinnerEffect(taskName, task, {
+							type: "dots",
+							color: "cyan",
+						}) as Effect.Effect<void, ExecutionError>);
 						return;
 					}
 				}

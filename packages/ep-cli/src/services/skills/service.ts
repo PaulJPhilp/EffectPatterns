@@ -5,6 +5,7 @@
 import { FileSystem } from "@effect/platform";
 import { Effect } from "effect";
 import * as path from "node:path";
+import { PATHS } from "../../constants.js";
 import type { SkillsService } from "./api.js";
 import {
     SkillNotFoundError,
@@ -26,10 +27,7 @@ export class Skills extends Effect.Service<Skills>()("Skills", {
 
 		const getSkillsDirectory = Effect.gen(function* () {
 			const cwd = yield* Effect.sync(() => process.cwd());
-			return path.join(
-				cwd,
-				".claude-plugin/plugins/effect-patterns/skills"
-			);
+			return path.join(cwd, PATHS.SKILLS_DIR);
 		});
 
 		const listAllSkills = Effect.gen(function* () {

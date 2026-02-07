@@ -5,9 +5,6 @@ import { Effect } from "effect";
 export { Execution, ExecutionError, ScriptExecutionError } from "@effect-patterns/ep-shared-services/execution";
 export type { ExecutionOptions, ExecutionService } from "@effect-patterns/ep-shared-services/execution";
 
-// Export ep-cli specific TUI adapter
-export { EpCliExecutionTUIAdapter } from "./tui-adapter.js";
-
 // Convenience functions (mirrors current API for easier migration)
 export const executeScriptWithTUI = Execution.executeScriptWithTUI;
 export const executeScriptCapture = Execution.executeScriptCapture;

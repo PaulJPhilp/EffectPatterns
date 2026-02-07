@@ -21,6 +21,7 @@ import { Execution } from "../services/execution/index.js";
 import { EnhancedFileSystem } from "../services/filesystem/index.js";
 import { Logger } from "../services/logger/index.js";
 import { McpService } from "../services/mcp/service.js";
+import { TUIService } from "../services/tui/service.js";
 import { ValidationService } from "../services/validation/index.js";
 
 /**
@@ -45,7 +46,8 @@ export const ProductionLayer = Layer.mergeAll(
         NodeFileSystemLayer,
         Logger.Default,
         Layer.provide(Display.Default, Logger.Default),
-        Layer.provide(Execution.Default, Logger.Default),
+        TUIService.Default,
+        Layer.provide(Execution.Default, Layer.mergeAll(Logger.Default, TUIService.Default)),
         Layer.provide(EnhancedFileSystem.Default, NodeFileSystemLayer),
         Layer.provide(ValidationService.Default, NodeFileSystemLayer),
         McpLayer,

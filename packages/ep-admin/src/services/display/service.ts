@@ -153,7 +153,9 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 
 				yield* Console.log(headers);
 				yield* Console.log("─".repeat(headers.length));
-				rows.forEach((row) => Console.log(row));
+				for (const row of rows) {
+					yield* Console.log(row);
+				}
 			}).pipe(
 				Effect.mapError((error) => DisplayError.make(`Failed to show table`, error))
 			) as Effect.Effect<void, DisplayServiceError>;

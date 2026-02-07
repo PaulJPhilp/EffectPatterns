@@ -3,5 +3,4 @@
  */
 
 export * from "./api.js";
-export * from "./service.js";
-
+export { Install } from "./service.js";

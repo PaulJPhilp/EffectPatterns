@@ -7,6 +7,7 @@ import { Effect } from "effect";
 import { glob } from "glob";
 import path from "node:path";
 import { PROJECT_ROOT } from "../constants.js";
+import { LintFailedError } from "../errors.js";
 import { Display } from "../services/display/index.js";
 import { Execution } from "../services/execution/index.js";
 import { Linter } from "../services/linter/index.js";
@@ -37,10 +38,22 @@ export const lintCommand = Command.make("lint", {
       }
 
       const results = yield* linter.lintFiles(files);
+
+      if (options.fix) {
+        for (const result of results) {
+          const fixableIssues = result.issues.filter((i) => i.severity !== "off");
+          if (fixableIssues.length > 0) {
+            const filePath = path.join(PROJECT_ROOT, "content/new/src", result.file);
+            yield* linter.applyFixes(filePath, fixableIssues);
+          }
+        }
+        yield* Display.showInfo("Applied auto-fixes where possible.");
+      }
+
       const exitCode = yield* linter.printResults(results);
 
       if (exitCode !== 0) {
-        return yield* Effect.fail(new Error("Linting failed with errors"));
+        return yield* Effect.fail(new LintFailedError({ message: "Linting failed with errors" }));
       }
 
       yield* Display.showSuccess("Linting completed successfully!");

@@ -3,20 +3,22 @@
  */
 
 import { FileSystem } from "@effect/platform";
-import { Context, Effect, Layer } from "effect";
+import { Effect, Schema } from "effect";
 import { readFile } from "node:fs/promises";
 import { glob } from "glob";
 import path from "node:path";
 import { PATHS } from "../../constants.js";
-import { InstalledRule, InstallService, Rule } from "./api.js";
+import type { InstalledRule, InstallService, Rule } from "./api.js";
+import { InstalledRuleSchema } from "./api.js";
 
 const INSTALLED_STATE_FILE = ".ep-installed.json";
 
-export const Install = Context.GenericTag<InstallService>("@services/Install");
-
-export const InstallLive = Layer.effect(
-  Install,
-  Effect.gen(function* () {
+/**
+ * Install service using Effect.Service pattern
+ */
+export class Install extends Effect.Service<Install>()("Install", {
+  accessors: true,
+  effect: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const projectRoot = PATHS.PROJECT_ROOT;
     type SkillLevel = "beginner" | "intermediate" | "advanced";
@@ -24,7 +26,7 @@ export const InstallLive = Layer.effect(
     const normalizeKey = (value: string): string =>
       value
         .toLowerCase()
-        .replace(/[`"'’]/g, "")
+        .replace(/[`"'']/g, "")
         .replace(/[^a-z0-9]+/g, " ")
         .trim();
 
@@ -125,17 +127,22 @@ export const InstallLive = Layer.effect(
         catch: (error) => new Error(`Failed to load published rules: ${error}`),
       });
 
+    const InstalledRulesArraySchema = Schema.Array(InstalledRuleSchema);
+
     const loadInstalledRules = () =>
       Effect.gen(function* () {
         const exists = yield* fs.exists(INSTALLED_STATE_FILE);
         if (!exists) return [];
 
         const content = yield* fs.readFileString(INSTALLED_STATE_FILE);
-        const rules = yield* Effect.try({
-          try: () => JSON.parse(content) as InstalledRule[],
+        const parsed = yield* Effect.try({
+          try: () => JSON.parse(content) as unknown,
           catch: (e) => new Error(`Failed to parse ${INSTALLED_STATE_FILE}: ${e}`),
         });
-        return rules;
+        const rules = yield* Schema.decodeUnknown(InstalledRulesArraySchema)(parsed).pipe(
+          Effect.mapError((e) => new Error(`Invalid ${INSTALLED_STATE_FILE} schema: ${e}`)),
+        );
+        return rules as InstalledRule[];
       });
 
     const saveInstalledRules = (rules: InstalledRule[]) =>
@@ -181,6 +188,6 @@ export const InstallLive = Layer.effect(
       saveInstalledRules,
       searchRules,
       fetchRule,
-    };
-  })
-);
+    } as InstallService;
+  }),
+}) {}

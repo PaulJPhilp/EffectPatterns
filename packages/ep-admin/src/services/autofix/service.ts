@@ -44,9 +44,10 @@ const callGemini = (
         }
 
         const json = yield* response.json;
-        // @ts-ignore
-        const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-        return text as string | undefined;
+        const candidates = (json as Record<string, unknown>).candidates as Array<Record<string, unknown>> | undefined;
+        const content = candidates?.[0]?.content as Record<string, unknown> | undefined;
+        const parts = content?.parts as Array<Record<string, unknown>> | undefined;
+        return parts?.[0]?.text as string | undefined;
     });
 
 export const DefaultAutofixService = Layer.effect(
@@ -83,20 +84,20 @@ export const DefaultAutofixService = Layer.effect(
 
                     // Handle report structure (adapt as needed)
                     // Assumes prepublish-check output format
-                    // @ts-ignore
-                    const diagnostics = report.diagnostics || [];
+                    const diagnostics = ((report as Record<string, unknown>).diagnostics ?? []) as Array<Record<string, unknown>>;
                     if (diagnostics.length === 0) {
                         yield* display.showInfo("No errors found in report.");
                         return;
                     }
 
                     // Group by file
-                    const filesMap = new Map<string, any[]>();
+                    const filesMap = new Map<string, Array<Record<string, unknown>>>();
                     for (const d of diagnostics) {
                         if (!d.file) continue;
-                        const existing = filesMap.get(d.file) || [];
+                        const filePath = String(d.file);
+                        const existing = filesMap.get(filePath) || [];
                         existing.push(d);
-                        filesMap.set(d.file, existing);
+                        filesMap.set(filePath, existing);
                     }
 
                     let processed = 0;

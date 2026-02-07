@@ -3,9 +3,8 @@
  */
 import { Context, Effect, Layer } from "effect";
 
-// Define the shape of the TUI module
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type TUIModule = any;
+// biome-ignore lint/suspicious/noExplicitAny: Dynamic TUI module shape is unknown at compile time
+export type TUIModule = Record<string, unknown>;
 
 export class TUILoader extends Context.Tag("TUILoader")<
 	TUILoader,

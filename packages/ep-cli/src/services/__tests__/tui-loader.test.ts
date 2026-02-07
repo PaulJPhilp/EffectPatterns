@@ -21,8 +21,8 @@ describe("TUILoader", () => {
     }).pipe(Effect.provide(LiveTUILoader));
 
     const result = await Effect.runPromise(program);
-    expect(result).toBeDefined();
-    expect(result.displaySuccess).toBeDefined();
+    expect(result).not.toBeNull();
+    expect(result!.displaySuccess).toBeDefined();
   });
 
   it("should return the cached module on subsequent calls", async () => {

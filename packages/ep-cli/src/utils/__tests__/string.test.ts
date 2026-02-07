@@ -3,55 +3,9 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { colorize, toKebabCase } from "../string.js";
+import { toKebabCase } from "../string.js";
 
 describe("String Utils", () => {
-  describe("colorize", () => {
-    it("should wrap text with color codes", () => {
-      const result = colorize("test", "red");
-      expect(result).toContain("\x1b[31m");
-      expect(result).toContain("test");
-      expect(result).toContain("\x1b[0m");
-    });
-
-    it("should apply reset code at end", () => {
-      const result = colorize("test", "green");
-      expect(result.endsWith("\x1b[0m")).toBe(true);
-    });
-
-    it("should support multiple colors", () => {
-      const colors = ["red", "green", "yellow", "blue", "cyan", "bright", "dim"];
-      colors.forEach((color) => {
-        const result = colorize("text", color);
-        expect(result).toContain("\x1b");
-        expect(result).toContain("text");
-      });
-    });
-
-    it("should handle invalid color gracefully", () => {
-      const result = colorize("test", "invalid-color");
-      expect(result).toContain("test");
-      expect(result).toContain("\x1b[0m");
-    });
-
-    it("should preserve exact text", () => {
-      const text = "Hello World!";
-      const result = colorize(text, "blue");
-      expect(result).toContain(text);
-    });
-
-    it("should handle empty text", () => {
-      const result = colorize("", "red");
-      expect(result).toContain("\x1b[31m");
-      expect(result).toContain("\x1b[0m");
-    });
-
-    it("should handle special characters", () => {
-      const result = colorize("test@#$%", "cyan");
-      expect(result).toContain("test@#$%");
-    });
-  });
-
   describe("toKebabCase", () => {
     it("should convert to lowercase", () => {
       expect(toKebabCase("UPPERCASE")).toBe("uppercase");

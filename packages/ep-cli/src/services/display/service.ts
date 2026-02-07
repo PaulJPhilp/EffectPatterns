@@ -27,9 +27,8 @@ const withTUIFallback = (
 			const method = tuiObj[tuiMethod] as unknown;
 
 			if (service && typeof method === "function") {
-				const maybeDisplay = yield* Effect.serviceOption(
-					service as any
-				);
+				// biome-ignore lint/suspicious/noExplicitAny: Dynamic TUI module service tag is untyped
+			const maybeDisplay = yield* Effect.serviceOption(service as any);
 				if (Opt.isSome(maybeDisplay)) {
 					yield* (method as (...args: unknown[]) => Effect.Effect<void, unknown>)(
 						...tuiArgs

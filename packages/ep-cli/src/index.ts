@@ -9,7 +9,6 @@
 import { Command } from "@effect/cli";
 import { Effect, Layer } from "effect";
 
-import { validateEnvironment } from "./config/validate-env.js";
 import { CLI } from "./constants.js";
 
 // Commands
@@ -25,7 +24,7 @@ import { NodeFileSystem } from "@effect/platform-node";
 import { Display } from "./services/display/index.js";
 import { LiveTUILoader, TUILoader } from "./services/display/tui-loader.js";
 import { Execution } from "./services/execution/index.js";
-import { InstallLive } from "./services/install/index.js";
+import { Install } from "./services/install/index.js";
 import { Linter } from "./services/linter/index.js";
 import { Logger, LoggerLive, parseLogLevel } from "./services/logger/index.js";
 import { Skills } from "./services/skills/index.js";
@@ -98,7 +97,7 @@ const ServiceLayer = Layer.mergeAll(
   Linter.Default,
   Skills.Default,
   Display.Default,
-  InstallLive,
+  Install.Default,
   Layer.provide(Execution.Default, Logger.Default)
 ).pipe(
   Layer.provide(BaseLayer)
@@ -114,7 +113,7 @@ export const runtimeLayerWithTUI = Effect.gen(function* () {
   const tui = yield* tuiLoader.load();
 
   if (tui?.runtimeLayer) {
-    return runtimeLayer.pipe(Layer.provide(tui.runtimeLayer));
+    return runtimeLayer.pipe(Layer.provide(tui.runtimeLayer as Layer.Layer<never>));
   }
 
   return runtimeLayer;
@@ -130,9 +129,6 @@ export const createProgram = (argv: ReadonlyArray<string> = process.argv) =>
 
 // Run the program
 const program = Effect.gen(function* () {
-  // Validate environment first
-  yield* validateEnvironment;
-  // Then run the CLI
   yield* createProgram(process.argv);
 });
 

@@ -6,7 +6,7 @@ import { Effect, Layer } from "effect";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { colorizeWithConfig, getLoggerConfig } from "../helpers.js";
 import { Logger, LoggerDefault } from "../../logger/index.js";
-import { colors } from "../../../utils.js";
+import { ANSI_COLORS } from "../../../constants.js";
 
 describe("Display Helpers", () => {
 	describe("colorizeWithConfig", () => {
@@ -19,8 +19,8 @@ describe("Display Helpers", () => {
 			};
 
 			const result = colorizeWithConfig("text", "GREEN", config);
-			expect(result).toContain(colors.GREEN);
-			expect(result).toContain(colors.RESET);
+			expect(result).toContain(ANSI_COLORS.GREEN);
+			expect(result).toContain(ANSI_COLORS.RESET);
 		});
 
 		it("should not apply color when colors disabled", () => {
@@ -33,7 +33,7 @@ describe("Display Helpers", () => {
 
 			const result = colorizeWithConfig("text", "GREEN", config);
 			expect(result).toBe("text");
-			expect(result).not.toContain(colors.GREEN);
+			expect(result).not.toContain(ANSI_COLORS.GREEN);
 		});
 
 		it("should handle different color keys", () => {
@@ -48,9 +48,9 @@ describe("Display Helpers", () => {
 			const blueResult = colorizeWithConfig("text", "BLUE", config);
 			const yellowResult = colorizeWithConfig("text", "YELLOW", config);
 
-			expect(redResult).toContain(colors.RED);
-			expect(blueResult).toContain(colors.BLUE);
-			expect(yellowResult).toContain(colors.YELLOW);
+			expect(redResult).toContain(ANSI_COLORS.RED);
+			expect(blueResult).toContain(ANSI_COLORS.BLUE);
+			expect(yellowResult).toContain(ANSI_COLORS.YELLOW);
 		});
 	});
 

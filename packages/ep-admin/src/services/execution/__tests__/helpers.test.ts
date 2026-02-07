@@ -4,7 +4,7 @@
 
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { getTUISpinner, withSpinner } from "../helpers.js";
+import { withSpinner } from "../helpers.js";
 
 describe("Execution Helpers", () => {
 	describe("withSpinner", () => {
@@ -25,11 +25,4 @@ describe("Execution Helpers", () => {
 		});
 	});
 
-	describe("getTUISpinner", () => {
-		it("should return TUI spinner info", () => {
-			const result = getTUISpinner();
-			expect(result).toHaveProperty("spinnerEffectTUI");
-			expect(result).toHaveProperty("InkService");
-		});
-	});
 });

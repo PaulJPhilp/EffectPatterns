@@ -8,7 +8,8 @@ import { Console, Effect, Option } from "effect";
 import path from "node:path";
 import { Display } from "../services/display/index.js";
 import { Install, InstalledRule } from "../services/install/index.js";
-import { colorize } from "../utils/string.js";
+import { colorize } from "../utils.js";
+import { DisabledFeatureError, UnsupportedToolError } from "../errors.js";
 
 /**
  * install:add - Add rules to AI tool configuration
@@ -53,10 +54,13 @@ export const installAddCommand = Command.make("add", {
         yield* Display.showError(
           `Tool '${options.tool}' is not supported by local file injection yet. Supported: ${Object.keys(installTargetByTool).join(", ")}`
         );
-        return yield* Effect.fail(new Error(`Unsupported tool: ${options.tool}`));
+        return yield* Effect.fail(new UnsupportedToolError({
+          tool: options.tool,
+          supported: Object.keys(installTargetByTool),
+        }));
       }
 
-      yield* Console.log(colorize("\nInstalling rules for " + options.tool + "...\n", "cyan"));
+      yield* Console.log(colorize("\nInstalling rules for " + options.tool + "...\n", "CYAN"));
 
       let rulesToInstall = yield* searchRules({
         tool: options.tool,
@@ -159,7 +163,10 @@ export const installRemoveCommand = Command.make("remove", {
       yield* Display.showInfo(
         "Re-enable 'install remove' after server-backed injection and uninstall support is implemented."
       );
-      return yield* Effect.fail(new Error("install remove is disabled"));
+      return yield* Effect.fail(new DisabledFeatureError({
+        feature: "install remove",
+        reason: "Tool-file injection is not implemented yet",
+      }));
     })
   )
 );
@@ -181,7 +188,10 @@ export const installDiffCommand = Command.make("diff", {
       yield* Display.showInfo(
         "Re-enable 'install diff' after server-backed source of truth and file-level diffing are implemented."
       );
-      return yield* Effect.fail(new Error("install diff is disabled"));
+      return yield* Effect.fail(new DisabledFeatureError({
+        feature: "install diff",
+        reason: "Server-backed source of truth and file-level diffing are not implemented yet",
+      }));
     })
   )
 );
@@ -198,7 +208,7 @@ const displayInstalledRules = (
       yield* Console.log("No rules installed.");
       return;
     }
-    yield* Console.log(colorize("\n📦 Installed Rules\n", "bright"));
+    yield* Console.log(colorize("\n📦 Installed Rules\n", "BRIGHT"));
     console.table(rules.map(r => ({
       ID: r.id,
       Title: r.title,
@@ -212,7 +222,7 @@ const displayInstalledRules = (
  */
 const displaySupportedTools = (): Effect.Effect<void, unknown> =>
   Effect.gen(function* () {
-    yield* Console.log(colorize("\n📋 Supported AI Tools\n", "bright"));
+    yield* Console.log(colorize("\n📋 Supported AI Tools\n", "BRIGHT"));
     yield* Console.log("  • agents");
     yield* Console.log("  • cursor");
     yield* Console.log("  • vscode");

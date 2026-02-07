@@ -5,12 +5,12 @@
 import { NodeFileSystem } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
 import { describe, expect, it } from "vitest";
-import { Install, InstallLive } from "../service.js";
+import { Install } from "../service.js";
 
 const runInstall = <A>(effect: Effect.Effect<A, unknown, any>) =>
   Effect.runPromise(
     effect.pipe(
-      Effect.provide(Layer.provide(InstallLive, NodeFileSystem.layer))
+      Effect.provide(Layer.provide(Install.Default, NodeFileSystem.layer))
     ) as Effect.Effect<
       A,
       unknown,

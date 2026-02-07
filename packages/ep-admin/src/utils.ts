@@ -4,7 +4,7 @@
 
 import { readFileSync } from "node:fs";
 import * as path from "node:path";
-import { ANSI_COLORS, LOG_LEVEL_COLORS, PATHS } from "./constants.js";
+import { ANSI_COLORS, PATHS } from "./constants.js";
 
 /**
  * Get project root by looking for package.json with "effect-patterns-hub"
@@ -27,20 +27,9 @@ export const getProjectRoot = (): string => {
 };
 
 /**
- * ANSI color codes
- * @deprecated Use ANSI_COLORS from constants.ts instead
- */
-export const colors = ANSI_COLORS;
-
-/**
- * Colors for different log levels
- * @deprecated Use LOG_LEVEL_COLORS from constants.ts instead
- */
-export const levelColors = LOG_LEVEL_COLORS;
-
-/**
  * Colorize text with ANSI codes
  */
 export function colorize(text: string, color: keyof typeof ANSI_COLORS): string {
+	if (process.env.NO_COLOR) return text;
 	return `${ANSI_COLORS[color]}${text}${ANSI_COLORS.RESET}`;
 }

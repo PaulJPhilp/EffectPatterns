@@ -3,7 +3,7 @@
  */
 
 import { Console, Effect } from "effect";
-import { colors, levelColors } from "../../utils.js";
+import { ANSI_COLORS, LOG_LEVEL_COLORS } from "../../constants.js";
 import type { LogLevel, LoggerConfig } from "./types.js";
 
 /**
@@ -41,15 +41,15 @@ export const formatMessage = (
 
 	// Text format
 	const icon = ICONS[level] ?? "";
-	const color = config.useColors ? (levelColors[level] ?? "") : "";
-	const reset = config.useColors ? colors.RESET : "";
+	const color = config.useColors ? (LOG_LEVEL_COLORS[level] ?? "") : "";
+	const reset = config.useColors ? ANSI_COLORS.RESET : "";
 
 	let output = `${color}${icon}${reset} ${message}`;
 
 	if (data !== undefined && config.verbose) {
 		const dataStr =
 			typeof data === "string" ? data : JSON.stringify(data, null, 2);
-		output += `\n${colors.DIM}${dataStr}${reset}`;
+		output += `\n${ANSI_COLORS.DIM}${dataStr}${reset}`;
 	}
 
 	return output;
