@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
+        const body = await request.json() as Record<string, unknown>;
         const { patterns } = body;
 
         if (!Array.isArray(patterns)) {

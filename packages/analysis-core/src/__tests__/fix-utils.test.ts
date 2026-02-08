@@ -13,14 +13,14 @@ const safeFix: ApplicableFix = {
 	kind: "codemod",
 };
 const reviewFix: ApplicableFix = {
-	id: "add-scope",
-	title: "Add scope",
+	id: "wrap-with-acquire-release",
+	title: "Wrap with acquire-release",
 	safety: "review",
 	kind: "assisted",
 };
 const riskyFix: ApplicableFix = {
-	id: "split-layer",
-	title: "Split layer",
+	id: "move-resource-to-app-layer",
+	title: "Move resource to app layer",
 	safety: "risky",
 	kind: "manual",
 };

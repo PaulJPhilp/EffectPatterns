@@ -11,6 +11,8 @@ import {
   jobs,
   patternJobs,
   patternRelations,
+  skillPatterns,
+  skills,
 } from "../db/schema/index.js"
 import type { Database } from "../db/client.js"
 
@@ -36,6 +38,8 @@ export function createTestDatabase(url?: string) {
  * Clean all tables in the database
  */
 export async function cleanDatabase(db: Database): Promise<void> {
+  await db.delete(skillPatterns)
+  await db.delete(skills)
   await db.delete(patternRelations)
   await db.delete(patternJobs)
   await db.delete(effectPatterns)

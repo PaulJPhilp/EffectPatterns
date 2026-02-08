@@ -10,7 +10,7 @@
 import { execSync } from "child_process";
 import { existsSync } from "fs";
 
-const testCategories = {
+const testCategories: Record<string, { description: string; path: string }> = {
 	registry: {
 		description: "Rule Registry Integrity Tests",
 		path: "src/__tests__/registry/",

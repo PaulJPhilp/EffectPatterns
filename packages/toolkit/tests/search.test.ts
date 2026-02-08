@@ -15,6 +15,7 @@ import {
 // Test fixtures
 const createMockPattern = (overrides: Partial<Pattern> = {}): Pattern => ({
   id: "test-pattern",
+  slug: "test-pattern",
   title: "Test Pattern",
   description: "A test pattern for unit testing",
   category: "error-handling",

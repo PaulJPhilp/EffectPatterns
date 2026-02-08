@@ -10,16 +10,15 @@
  * Run this script to detect schema drift issues early.
  */
 
-
 // biome-ignore assist/source/organizeImports: <>
-import  { Console, Effect } from "effect";
-import { createDatabase } from "../packages/toolkit/src/db/client.js";
+import { Console, Effect } from 'effect';
+import { createDatabase } from '../packages/toolkit/src/db/client.js';
 import {
   effectPatterns,
   type EffectPattern as DbEffectPattern,
-} from "../packages/toolkit/src/db/schema/index.js";
-import { Pattern } from "../packages/toolkit/src/schemas/pattern.js";
-import { dbPatternToLegacy } from "../packages/toolkit/src/services/database.js";
+} from '../packages/toolkit/src/db/schema/index.js';
+import { Pattern } from '../packages/toolkit/src/schemas/pattern.js';
+import { dbPatternToLegacy } from '../packages/toolkit/src/services/database.js';
 
 // ============================================================================
 // Schema Validation Types
@@ -29,7 +28,7 @@ interface SchemaValidationError {
   field: string;
   expectedType: string;
   actualType: string;
-  severity: "error" | "warning";
+  severity: 'error' | 'warning';
   message: string;
 }
 
@@ -46,7 +45,7 @@ interface ValidationResult {
 const getDatabaseSchema = Effect.gen(function* () {
   const connection = createDatabase(
     process.env.DATABASE_URL ||
-      "postgresql://postgres:postgres@localhost:5432/effect_patterns",
+      'postgresql://postgres:postgres@localhost:5432/effect_patterns',
   );
 
   // Get sample pattern from database
@@ -56,12 +55,12 @@ const getDatabaseSchema = Effect.gen(function* () {
   });
 
   if (samplePatterns.length === 0) {
-    yield* Console.error("❌ No patterns found in database to validate schema");
+    yield* Console.error('❌ No patterns found in database to validate schema');
     return null;
   }
 
   const sample = samplePatterns[0];
-  yield* Console.log("📋 Database sample pattern fields:");
+  yield* Console.log('📋 Database sample pattern fields:');
 
   // Log all database fields with their types
   const dbFields = Object.entries(sample).map(([key, value]) => ({
@@ -72,7 +71,7 @@ const getDatabaseSchema = Effect.gen(function* () {
   }));
 
   for (const { field, type, nullable } of dbFields) {
-    yield* Console.log(`  - ${field}: ${type}${nullable ? " (nullable)" : ""}`);
+    yield* Console.log(`  - ${field}: ${type}${nullable ? ' (nullable)' : ''}`);
   }
 
   return sample;
@@ -83,7 +82,7 @@ const getDatabaseSchema = Effect.gen(function* () {
 // ============================================================================
 
 const validateDomainSchema = Effect.gen(function* () {
-  yield* Console.log("🔍 Validating domain schema...");
+  yield* Console.log('🔍 Validating domain schema...');
 
   // Get expected fields from Effect Schema
   const expectedFields = Object.keys(Pattern.fields);
@@ -106,7 +105,7 @@ const validateLegacyMapping = (
   expectedFields: string[],
 ) =>
   Effect.gen(function* () {
-    yield* Console.log("🔄 Validating legacy mapping function...");
+    yield* Console.log('🔄 Validating legacy mapping function...');
 
     const mappedPattern = dbPatternToLegacy(dbSample);
     const mappedFields = Object.keys(mappedPattern);
@@ -126,9 +125,9 @@ const validateLegacyMapping = (
       if (!(expectedField in mappedPattern)) {
         errors.push({
           field: expectedField,
-          expectedType: "string",
-          actualType: "missing",
-          severity: "error",
+          expectedType: 'string',
+          actualType: 'missing',
+          severity: 'error',
           message: `Required field '${expectedField}' missing from legacy mapping`,
         });
       }
@@ -139,10 +138,10 @@ const validateLegacyMapping = (
       if (!expectedFields.includes(mappedField)) {
         warnings.push({
           field: mappedField,
-          expectedType: "undefined",
+          expectedType: 'undefined',
           actualType:
             typeof mappedPattern[mappedField as keyof typeof mappedPattern],
-          severity: "warning",
+          severity: 'warning',
           message: `Extra field '${mappedField}' in legacy mapping`,
         });
       }
@@ -151,20 +150,20 @@ const validateLegacyMapping = (
     // Validate specific field mappings
     if (mappedPattern.id !== dbSample.slug) {
       errors.push({
-        field: "id",
+        field: 'id',
         expectedType: dbSample.slug,
         actualType: mappedPattern.id,
-        severity: "error",
+        severity: 'error',
         message: `Field 'id' should map from db.slug, but got mismatch`,
       });
     }
 
     if (mappedPattern.slug !== dbSample.slug) {
       errors.push({
-        field: "slug",
+        field: 'slug',
         expectedType: dbSample.slug,
         actualType: mappedPattern.slug,
-        severity: "error",
+        severity: 'error',
         message: `Field 'slug' should map from db.slug, but got mismatch`,
       });
     }
@@ -177,8 +176,8 @@ const validateLegacyMapping = (
 // ============================================================================
 
 const validateSchema = Effect.gen(function* () {
-  yield* Console.log("🚀 Starting schema validation...");
-  yield* Console.log("=".repeat(50));
+  yield* Console.log('🚀 Starting schema validation...');
+  yield* Console.log('='.repeat(50));
 
   // Step 1: Get database schema
   const dbSample = yield* getDatabaseSchema;
@@ -187,11 +186,11 @@ const validateSchema = Effect.gen(function* () {
       isValid: false,
       errors: [
         {
-          field: "database",
-          expectedType: "data",
-          actualType: "empty",
-          severity: "error",
-          message: "No data in database",
+          field: 'database',
+          expectedType: 'data',
+          actualType: 'empty',
+          severity: 'error',
+          message: 'No data in database',
         },
       ],
       warnings: [],
@@ -207,8 +206,8 @@ const validateSchema = Effect.gen(function* () {
     expectedFields,
   );
 
-  yield* Console.log("=".repeat(50));
-  yield* Console.log("📊 VALIDATION RESULTS:");
+  yield* Console.log('='.repeat(50));
+  yield* Console.log('📊 VALIDATION RESULTS:');
 
   if (errors.length > 0) {
     yield* Console.error(`❌ ${errors.length} ERRORS FOUND:`);
@@ -225,7 +224,7 @@ const validateSchema = Effect.gen(function* () {
   }
 
   if (errors.length === 0 && warnings.length === 0) {
-    yield* Console.log("✅ Schema validation PASSED! All schemas are in sync.");
+    yield* Console.log('✅ Schema validation PASSED! All schemas are in sync.');
   }
 
   return {
@@ -240,20 +239,20 @@ const validateSchema = Effect.gen(function* () {
 // ============================================================================
 
 const checkSchemaFrozen = Effect.gen(function* () {
-  yield* Console.log("🧊 Checking schema freeze status...");
+  yield* Console.log('🧊 Checking schema freeze status...');
 
   // In a real implementation, this would check against a stored schema hash
   // For now, we'll just validate the current schema is consistent
   const result = yield* validateSchema;
 
   if (result.isValid) {
-    yield* Console.log("✅ Schema is consistent and ready to freeze");
-    yield* Console.log("💡 To freeze this schema:");
-    yield* Console.log("   1. Commit these schema changes");
-    yield* Console.log("   2. Generate schema hash: bun run schema:hash");
-    yield* Console.log("   3. Store hash in .schema-hash file");
+    yield* Console.log('✅ Schema is consistent and ready to freeze');
+    yield* Console.log('💡 To freeze this schema:');
+    yield* Console.log('   1. Commit these schema changes');
+    yield* Console.log('   2. Generate schema hash: bun run schema:hash');
+    yield* Console.log('   3. Store hash in .schema-hash file');
   } else {
-    yield* Console.error("❌ Schema has issues - fix before freezing");
+    yield* Console.error('❌ Schema has issues - fix before freezing');
   }
 
   return result;
@@ -264,11 +263,11 @@ const checkSchemaFrozen = Effect.gen(function* () {
 // ============================================================================
 
 const main = Effect.gen(function* () {
-  const command = process.argv[2] || "validate";
+  const command = process.argv[2] || 'validate';
 
-  if (command === "validate") {
+  if (command === 'validate') {
     yield* validateSchema;
-  } else if (command === "freeze") {
+  } else if (command === 'freeze') {
     yield* checkSchemaFrozen;
   } else {
     yield* Console.error("Unknown command. Use: 'validate' or 'freeze'");
@@ -283,7 +282,7 @@ const main = Effect.gen(function* () {
 main.pipe(
   Effect.catchAll((error) =>
     Effect.gen(function* () {
-      yield* Console.error("❌ Schema validation failed:");
+      yield* Console.error('❌ Schema validation failed:');
       yield* Console.error(String(error));
       process.exit(1);
     }),

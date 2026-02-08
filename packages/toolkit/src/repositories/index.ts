@@ -32,3 +32,13 @@ export {
   type JobRepository,
   type JobWithPatterns,
 } from "./job.js"
+
+// Skill Repository
+export {
+  createSkillRepository,
+  SkillNotFoundError,
+  SkillRepositoryError,
+  SkillLockedError,
+  type SkillRepository,
+  type SearchSkillsParams,
+} from "./skill.js"

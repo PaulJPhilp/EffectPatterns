@@ -5,7 +5,7 @@
  * Returns 402 Payment Required for features not available in current tier.
  */
 
-import { Cause, Effect, Option } from "effect";
+import { Cause, Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { TierAccessError } from "../errors";
 import { MCPTierService } from "../services/tier";

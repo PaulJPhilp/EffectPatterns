@@ -14,7 +14,7 @@ import { isMcpDebugOrLocal } from "../../config/mcp-environments";
  */
 function createMockCallApi(returns: any) {
 	return async () => ({
-		ok: true,
+		ok: true as const,
 		data: returns,
 	});
 }
@@ -152,7 +152,7 @@ describe("Tool Implementations", () => {
 			});
 
 			const errorCallApi = async () => ({
-				ok: false,
+				ok: false as const,
 				error: "API error",
 				status: 500,
 			});

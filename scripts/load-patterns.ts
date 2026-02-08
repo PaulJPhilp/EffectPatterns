@@ -6,12 +6,12 @@
  * Usage: bun run scripts/load-patterns.ts
  */
 
+import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Effect } from 'effect';
 import { createDatabase } from '../packages/toolkit/src/db/client.js';
 import { effectPatterns } from '../packages/toolkit/src/db/schema/index.js';
-import { randomUUID } from 'node:crypto';
 
 interface PatternData {
   id: string;
@@ -102,7 +102,7 @@ const loadPatternsProgram = Effect.gen(function* () {
         }),
       catch: (error) => {
         const err = error as any;
-        console.error("Insert error details:", {
+        console.error('Insert error details:', {
           message: err?.message,
           code: err?.code,
           detail: err?.detail,

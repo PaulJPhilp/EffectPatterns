@@ -91,11 +91,13 @@ export class MCPTestClient {
             TERM: process.env.TERM,
           };
 
-    const env: Record<string, string> = {
-      ...inheritFromProcess,
-      EFFECT_PATTERNS_API_URL: config.apiUrl || "http://localhost:3000",
-      MCP_DEBUG: config.debug ? "true" : "false",
-    };
+    const env: Record<string, string> = Object.fromEntries(
+      Object.entries({
+        ...inheritFromProcess,
+        EFFECT_PATTERNS_API_URL: config.apiUrl || "http://localhost:3000",
+        MCP_DEBUG: config.debug ? "true" : "false",
+      }).filter((entry): entry is [string, string] => entry[1] !== undefined)
+    );
     if (config.mcpEnv !== undefined) {
       env.MCP_ENV = config.mcpEnv;
     }

@@ -11,7 +11,6 @@
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
-import { EnvService } from "effect-env";
 import {
     MESSAGES,
 } from "./constants.js";
@@ -55,13 +54,9 @@ export const opsHealthCheckCommand = Command.make("health-check", {
 
             // Check API keys
             yield* Display.showInfo("\n3. API Keys:");
-            const env = yield* EnvService.Default;
-            const openaiKey = yield* env.get("OPENAI_API_KEY");
-            const anthropicKey = yield* env.get("ANTHROPIC_API_KEY");
-            const googleKey = yield* env.get("GOOGLE_API_KEY");
-            const hasOpenAI = openaiKey !== undefined;
-            const hasAnthropic = anthropicKey !== undefined;
-            const hasGoogle = googleKey !== undefined;
+            const hasOpenAI = !!process.env.OPENAI_API_KEY;
+            const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
+            const hasGoogle = !!process.env.GOOGLE_API_KEY;
             yield* Display.showInfo(`   OpenAI: ${hasOpenAI ? "✓" : "✗"}`);
             yield* Display.showInfo(`   Anthropic: ${hasAnthropic ? "✓" : "✗"}`);
             yield* Display.showInfo(`   Google: ${hasGoogle ? "✓" : "✗"}`);

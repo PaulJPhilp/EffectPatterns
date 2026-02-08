@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { Effect } from 'effect';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { Effect } from 'effect';
 
 /**
  * Extract all patterns from README.md and create a comprehensive patterns JSON file
@@ -77,7 +77,7 @@ const extractPatternsProgram = Effect.gen(function* () {
         // Parse pattern row
         const columns = rowLine
           .split('|')
-          .map((col, colIndex) => col.trim())
+          .map((col, _colIndex) => col.trim())
           .filter((col) => col);
         if (columns.length >= 3) {
           const patternCol = columns[0];

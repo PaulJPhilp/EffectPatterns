@@ -177,7 +177,7 @@ describe("Tier Access", () => {
 
 			const response = await wrappedHandler(request);
 			expect(response.status).toBe(200);
-			const data = await response.json();
+			const data = await response.json() as Record<string, unknown>;
 			expect(data.success).toBe(true);
 		});
 
@@ -195,7 +195,7 @@ describe("Tier Access", () => {
 			expect(response.status).toBe(402);
 			expect(response.headers.get("X-Tier-Error")).toBe("feature-gated");
 
-			const data = await response.json();
+			const data = await response.json() as Record<string, unknown>;
 			expect(data.error).toBeDefined();
 			expect(data.tier).toBe("free");
 			expect(data.upgradeMessage).toBeDefined();
@@ -225,8 +225,8 @@ describe("Tier Access", () => {
 
 			const response = await wrappedHandler(request);
 			expect(response.status).toBe(402);
-			
-			const data = await response.json();
+
+			const data = await response.json() as Record<string, unknown>;
 			expect(data.error).toContain("/api/generate");
 			expect(data.tier).toBe("free");
 			expect(data.upgradeMessage).toBeDefined();

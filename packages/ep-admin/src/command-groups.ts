@@ -18,7 +18,14 @@
 
 import { Command } from "@effect/cli";
 import { autofixCommand } from "./autofix-commands.js";
-import { dbCommand } from "./db-commands.js";
+import {
+	dbMigrateRemoteCommand,
+	dbMockCommand,
+	dbStatusCommand,
+	dbTestCommand,
+	dbTestQuickCommand,
+	dbVerifyMigrationCommand,
+} from "./db-commands.js";
 import { discordCommand } from "./discord-commands.js";
 import { ingestCommand } from "./ingest-commands.js";
 import { installCommand, rulesCommand } from "./install-commands.js";
@@ -30,6 +37,7 @@ import { publishCommand } from "./publish-commands.js";
 import { qaCommand } from "./qa-commands.js";
 import { patternNewCommand, releaseCommand } from "./release-commands.js";
 import { searchCommand } from "./search-commands.js";
+import { showCommand } from "./show-commands.js";
 import { skillsCommand } from "./skills-commands.js";
 import { testUtilsCommand } from "./test-utils-commands.js";
 import { utilsCommand } from "./utils-commands.js";
@@ -61,7 +69,16 @@ export const dataGroup = Command.make("data").pipe(
  */
 export const dbGroup = Command.make("db").pipe(
 	Command.withDescription("Database operations and migrations"),
-	Command.withSubcommands([dbCommand, migrateCommand]),
+	Command.withSubcommands([
+		showCommand,
+		dbTestCommand,
+		dbTestQuickCommand,
+		dbVerifyMigrationCommand,
+		dbMockCommand,
+		dbStatusCommand,
+		dbMigrateRemoteCommand,
+		migrateCommand,
+	]),
 );
 
 /**

@@ -8,10 +8,11 @@ import {
 	createApplicationPatternRepository,
 	createDatabase,
 	createEffectPatternRepository,
+	type SkillLevel,
 } from "@effect-patterns/toolkit";
 import { Command, Options } from "@effect/cli";
-import { FileSystem, HttpClient } from "@effect/platform";
-import { Console, Effect, Option, Schema } from "effect";
+import { FileSystem } from "@effect/platform";
+import { Console, Effect, Option } from "effect";
 import * as path from "node:path";
 import { Display } from "./services/display/index.js";
 import {
@@ -30,89 +31,16 @@ import { colorize, getProjectRoot } from "./utils.js";
 const PROJECT_ROOT = getProjectRoot();
 
 /**
- * Schema for a Rule object from the API
+ * Rule type for pattern installation
  */
-const RuleSchema = Schema.Struct({
-	id: Schema.String,
-	title: Schema.String,
-	description: Schema.String,
-	skillLevel: Schema.optional(Schema.String),
-	useCase: Schema.optional(Schema.Array(Schema.String)),
-	content: Schema.String,
-});
-
-type Rule = typeof RuleSchema.Type;
-
-/**
- * Check if Pattern Server is reachable
- */
-const checkServerHealth = (serverUrl: string) =>
-	Effect.tryPromise({
-		try: async () => {
-			try {
-				const controller = new AbortController();
-				const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-				const response = await fetch(`${serverUrl}/health`, {
-					signal: controller.signal,
-				});
-
-				clearTimeout(timeoutId);
-				return response.ok;
-			} catch {
-				return false;
-			}
-		},
-		catch: () => false,
-	});
-
-/**
- * Fetch rules from the Pattern Server API
- */
-const fetchRulesFromAPI = (serverUrl: string) =>
-	Effect.gen(function* () {
-		const client = (yield* HttpClient.HttpClient).pipe(
-			HttpClient.filterStatusOk
-		);
-
-		const response = yield* client.get(`${serverUrl}/api/v1/rules`).pipe(
-			Effect.flatMap((response) => response.json),
-			Effect.flatMap(Schema.decodeUnknown(Schema.Array(RuleSchema))),
-			Effect.catchAll((error) =>
-				Effect.gen(function* () {
-					const isServerUp = yield* checkServerHealth(serverUrl);
-
-					if (!isServerUp) {
-						yield* Console.error(
-							colorize("\n❌ Cannot connect to Pattern Server\n", "RED")
-						);
-						yield* Console.error(
-							`The Pattern Server at ${serverUrl} is not running.\n`
-						);
-					yield* Console.error(colorize("How to fix:\n", "BRIGHT"));
-					yield* Console.error("  1. Start the Pattern Server:");
-					yield* Console.error(colorize("     bun run mcp:dev\n", "CYAN"));
-					yield* Console.error("  2. Verify the server is running:");
-						yield* Console.error(
-							colorize(`     curl ${serverUrl}/health\n`, "CYAN")
-						);
-
-						return yield* Effect.fail(
-							new Error("Pattern Server not reachable")
-						);
-					}
-
-					yield* Console.error(
-						colorize("\n❌ Failed to fetch rules\n", "RED")
-					);
-					yield* Console.error(`Error: ${error}\n`);
-					return yield* Effect.fail(new Error("Failed to fetch rules"));
-				})
-			)
-		);
-
-		return response;
-	});
+interface Rule {
+	readonly id: string;
+	readonly title: string;
+	readonly description: string;
+	readonly skillLevel?: string;
+	readonly useCase?: readonly string[];
+	readonly content: string;
+}
 
 /**
  * Format a single rule
@@ -182,10 +110,6 @@ export const installAddCommand = Command.make("add", {
 				"The AI tool to add rules for (cursor, agents, etc.)"
 			)
 		),
-		serverUrl: Options.text("server-url").pipe(
-			Options.withDescription("Pattern Server URL"),
-			Options.withDefault("http://localhost:3000")
-		),
 		skillLevel: Options.text("skill-level").pipe(
 			Options.withDescription(
 				"Filter by skill level (beginner, intermediate, advanced)"
@@ -202,128 +126,168 @@ export const installAddCommand = Command.make("add", {
 	args: {},
 }).pipe(
 	Command.withDescription(
-		"Fetch rules from Pattern Server and inject them into AI tool " +
-		"configuration."
+		"Fetch rules from database and inject them into AI tool configuration."
 	),
 	Command.withHandler(
 		({ options }) =>
-			Effect.gen(function* () {
-				const tool = options.tool;
-				const serverUrl = options.serverUrl;
-				const skillLevelFilter = options.skillLevel;
-				const useCaseFilter = options.useCase;
+			Effect.scoped(
+				Effect.gen(function* () {
+					const tool = options.tool;
+					const skillLevelFilter = options.skillLevel;
+					const useCaseFilter = options.useCase;
 
-				const supportedTools = [
-					"cursor",
-					"agents",
-					"windsurf",
-					"gemini",
-					"claude",
-					"vscode",
-					"kilo",
-					"kira",
-					"trae",
-					"goose",
-				];
+					const supportedTools = [
+						"cursor",
+						"agents",
+						"windsurf",
+						"gemini",
+						"claude",
+						"vscode",
+						"kilo",
+						"kira",
+						"trae",
+						"goose",
+					];
 
-				if (!supportedTools.includes(tool)) {
-					yield* Console.error(
-						colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, "RED")
-					);
-					yield* Console.error(
-						colorize("Currently supported tools:\n", "BRIGHT")
-					);
-					for (const t of supportedTools) {
-						yield* Console.error(`  • ${t}`);
+					if (!supportedTools.includes(tool)) {
+						yield* Console.error(
+							colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, "RED")
+						);
+						yield* Console.error(
+							colorize("Currently supported tools:\n", "BRIGHT")
+						);
+						for (const t of supportedTools) {
+							yield* Console.error(`  • ${t}`);
+						}
+						return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
 					}
-					return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
-				}
 
-				const allRules = yield* fetchRulesFromAPI(serverUrl);
-				yield* Console.log(
-					`✓ Fetched ${allRules.length} rules from Pattern Server`
-				);
-
-				let rules = allRules;
-
-				if (Option.isSome(skillLevelFilter)) {
-					const level = skillLevelFilter.value;
-					rules = rules.filter(
-						(rule) => rule.skillLevel?.toLowerCase() === level.toLowerCase()
+					const conn = yield* Effect.try({
+						try: () => createDatabase(),
+						catch: (error) =>
+							new Error(
+								`Failed to create database connection: ${error instanceof Error ? error.message : String(error)}`
+							),
+					});
+					yield* Effect.addFinalizer(() =>
+						Effect.promise(() => conn.close())
 					);
+
+					const repo = createEffectPatternRepository(conn.db);
+					const searchParams: {
+						query?: string;
+						skillLevel?: SkillLevel;
+						limit?: number;
+					} = { limit: 1000 };
+
+					if (Option.isSome(skillLevelFilter)) {
+						searchParams.skillLevel =
+							skillLevelFilter.value.toLowerCase() as SkillLevel;
+					}
+
+					const dbPatterns = yield* Effect.tryPromise({
+						try: () => repo.search(searchParams),
+						catch: (error) =>
+							new Error(
+								`Failed to query patterns: ${error instanceof Error ? error.message : String(error)}`
+							),
+					});
+
+					const allRules: Rule[] = dbPatterns.map((p) => ({
+						id: p.slug,
+						title: p.title,
+						description: p.summary,
+						skillLevel: p.skillLevel ?? undefined,
+						useCase: p.useCases ?? undefined,
+						content: p.content ?? p.summary,
+					}));
+
 					yield* Console.log(
-						colorize(
-							`📊 Filtered to ${rules.length} rules with skill level: ` +
-							`${level}\n`,
-							"CYAN"
+						`✓ Loaded ${allRules.length} rules from database`
+					);
+
+					let rules = allRules;
+
+					if (Option.isSome(skillLevelFilter)) {
+						const level = skillLevelFilter.value;
+						yield* Console.log(
+							colorize(
+								`📊 Filtered to ${rules.length} rules with skill level: ` +
+								`${level}\n`,
+								"CYAN"
+							)
+						);
+					}
+
+					if (Option.isSome(useCaseFilter)) {
+						const useCase = useCaseFilter.value;
+						rules = rules.filter((rule) =>
+							rule.useCase?.some(
+								(uc) => uc.toLowerCase() === useCase.toLowerCase()
+							)
+						);
+						yield* Console.log(
+							colorize(
+								`📊 Filtered to ${rules.length} rules with use case: ` +
+								`${useCase}\n`,
+								"CYAN"
+							)
+						);
+					}
+
+					if (rules.length === 0) {
+						yield* Console.log(
+							colorize("⚠️  No rules match the specified filters\n", "YELLOW")
+						);
+						return;
+					}
+
+					const toolFileMap: Record<string, string> = {
+						agents: "AGENTS.md",
+						windsurf: ".windsurf/rules.md",
+						gemini: "GEMINI.md",
+						claude: "CLAUDE.md",
+						vscode: ".vscode/rules.md",
+						kilo: ".kilo/rules.md",
+						kira: ".kira/rules.md",
+						trae: ".trae/rules.md",
+						goose: ".goosehints",
+						cursor: ".cursor/rules.md",
+					};
+
+					const targetFile = toolFileMap[tool] || ".cursor/rules.md";
+
+					yield* Console.log(
+						colorize(`📝 Injecting rules into ${targetFile}...\n`, "CYAN")
+					);
+
+					const count = yield* injectRulesIntoFile(targetFile, rules).pipe(
+						Effect.catchAll((error) =>
+							Effect.gen(function* () {
+								yield* Console.log(
+									colorize("❌ Failed to inject rules\n", "RED")
+								);
+								yield* Console.log(`Error: ${error}\n`);
+								return yield* Effect.fail(
+									new Error("Failed to inject rules")
+								);
+							})
 						)
 					);
-				}
 
-				if (Option.isSome(useCaseFilter)) {
-					const useCase = useCaseFilter.value;
-					rules = rules.filter((rule) =>
-						rule.useCase?.some(
-							(uc) => uc.toLowerCase() === useCase.toLowerCase()
-						)
-					);
-					yield* Console.log(
-						colorize(
-							`📊 Filtered to ${rules.length} rules with use case: ` +
-							`${useCase}\n`,
-							"CYAN"
-						)
-					);
-				}
-
-				if (rules.length === 0) {
-					yield* Console.log(
-						colorize("⚠️  No rules match the specified filters\n", "YELLOW")
-					);
-					return;
-				}
-
-				const toolFileMap: Record<string, string> = {
-					agents: "AGENTS.md",
-					windsurf: ".windsurf/rules.md",
-					gemini: "GEMINI.md",
-					claude: "CLAUDE.md",
-					vscode: ".vscode/rules.md",
-					kilo: ".kilo/rules.md",
-					kira: ".kira/rules.md",
-					trae: ".trae/rules.md",
-					goose: ".goosehints",
-					cursor: ".cursor/rules.md",
-				};
-
-				const targetFile = toolFileMap[tool] || ".cursor/rules.md";
-
-				yield* Console.log(
-					colorize(`📝 Injecting rules into ${targetFile}...\n`, "CYAN")
-				);
-
-				const count = yield* injectRulesIntoFile(targetFile, rules).pipe(
-					Effect.catchAll((error) =>
-						Effect.gen(function* () {
-							yield* Console.log(colorize("❌ Failed to inject rules\n", "RED"));
-							yield* Console.log(`Error: ${error}\n`);
-							return yield* Effect.fail(new Error("Failed to inject rules"));
-						})
-					)
-				);
-
-				yield* Display.showPanel(
-					`Successfully added ${count} rules to ${targetFile}
+					yield* Display.showPanel(
+						`Successfully added ${count} rules to ${targetFile}
 
 Tool: ${tool}
 File: ${targetFile}
 Rules Added: ${count}
 
 Your AI tool configuration has been updated with Effect patterns!`,
-					"Installation Complete",
-					{ type: "success" }
-				);
-			}) as any
+						"Installation Complete",
+						{ type: "success" }
+					);
+				})
+			) as any
 	)
 );
 
@@ -400,7 +364,8 @@ export const installSkillsCommand = Command.make("skills", {
 		"Generate Skills (Claude, Gemini, OpenAI) from published Effect patterns"
 	),
 	Command.withHandler(({ options }) => {
-		return Effect.gen(function* () {
+		return Effect.scoped(
+			Effect.gen(function* () {
 			const formatOption: string = options.format;
 			const validOptions = ["claude", "gemini", "openai", "both"];
 
@@ -450,9 +415,10 @@ export const installSkillsCommand = Command.make("skills", {
 				colorize("\n🎓 Generating Skills from Effect Patterns\n", "BRIGHT")
 			);
 
-			const db = createDatabase().db;
-			const apRepo = createApplicationPatternRepository(db);
-			const epRepo = createEffectPatternRepository(db);
+			const conn = createDatabase();
+			yield* Effect.addFinalizer(() => Effect.promise(() => conn.close()));
+			const apRepo = createApplicationPatternRepository(conn.db);
+			const epRepo = createEffectPatternRepository(conn.db);
 
 			yield* Console.log(
 				colorize("📖 Loading patterns from database...", "CYAN")
@@ -715,7 +681,7 @@ export const installSkillsCommand = Command.make("skills", {
 				"✨ Skills Generation Complete!",
 				{ type: "success" }
 			);
-		}) as any;
+		})) as any;
 	})
 );
 

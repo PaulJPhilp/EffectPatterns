@@ -11,6 +11,9 @@ import { validateAdminKey, isAuthorizationError } from "../adminAuth";
 import { AuthorizationError } from "../../errors";
 import { MCPConfigService } from "../../services/config";
 
+// Mutable env for test setup/teardown
+const env = process.env as Record<string, string | undefined>;
+
 /**
  * Create a mock NextRequest for testing
  */
@@ -34,7 +37,7 @@ describe("Admin Authentication", () => {
 
 	beforeAll(() => {
 		process.env.ADMIN_API_KEY = "admin-secret-key";
-		process.env.NODE_ENV = "production";
+		env.NODE_ENV = "production";
 		// Ensure config service can load
 		if (!process.env.PATTERN_API_KEY) {
 			process.env.PATTERN_API_KEY = "test-key";
@@ -45,12 +48,12 @@ describe("Admin Authentication", () => {
 		if (prevAdminKey !== undefined) {
 			process.env.ADMIN_API_KEY = prevAdminKey;
 		} else {
-			delete process.env.ADMIN_API_KEY;
+			delete env.ADMIN_API_KEY;
 		}
 		if (prevNodeEnv !== undefined) {
-			process.env.NODE_ENV = prevNodeEnv;
+			env.NODE_ENV = prevNodeEnv;
 		} else {
-			delete process.env.NODE_ENV;
+			delete env.NODE_ENV;
 		}
 	});
 
@@ -146,7 +149,7 @@ describe("Admin Authentication", () => {
 		});
 
 		it("should allow requests when no admin key configured in dev mode", async () => {
-			process.env.NODE_ENV = "development";
+			env.NODE_ENV = "development";
 			process.env.ADMIN_API_KEY = "";
 
 			const request = createMockRequest({});
@@ -160,12 +163,12 @@ describe("Admin Authentication", () => {
 			expect(result).toBeUndefined();
 
 			// Restore
-			process.env.NODE_ENV = "production";
+			env.NODE_ENV = "production";
 			process.env.ADMIN_API_KEY = "admin-secret-key";
 		});
 
 		it("should reject requests when admin key not configured in production", async () => {
-			process.env.NODE_ENV = "production";
+			env.NODE_ENV = "production";
 			process.env.ADMIN_API_KEY = "";
 
 			const request = createMockRequest({

@@ -111,10 +111,10 @@ async function main() {
   const transport = new StreamableHTTPClientTransport(new URL(SERVER_URL), {
     authProvider,
     reconnectionOptions: {
-      maxAttempts: 1,
-      baseDelayMs: 100,
-      maxDelayMs: 200,
-      jitterFactor: 0,
+      maxReconnectionDelay: 200,
+      initialReconnectionDelay: 100,
+      reconnectionDelayGrowFactor: 1,
+      maxRetries: 1,
     },
   });
 

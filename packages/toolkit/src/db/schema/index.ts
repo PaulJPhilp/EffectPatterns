@@ -7,6 +7,8 @@
  * - Job: Jobs-to-be-Done entries
  * - PatternJob: Many-to-many relationship between patterns and jobs
  * - PatternRelation: Related patterns linking
+ * - Skill: Agent Skills (SKILL.md) generated from patterns
+ * - SkillPattern: Many-to-many relationship between skills and patterns
  */
 
 import { relations } from "drizzle-orm"
@@ -197,6 +199,62 @@ export const patternRelations = pgTable(
   ]
 )
 
+/**
+ * Skills table
+ *
+ * Agent Skills (SKILL.md format) generated from patterns.
+ * Each skill packages a set of patterns into a deployable agent capability.
+ */
+export const skills = pgTable(
+  "skills",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    slug: varchar("slug", { length: 255 }).notNull().unique(),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description").notNull(),
+    category: varchar("category", { length: 100 }),
+    content: text("content"),
+    version: integer("version").notNull().default(1),
+    patternCount: integer("pattern_count").notNull().default(0),
+    applicationPatternId: uuid("application_pattern_id").references(
+      () => applicationPatterns.id,
+      { onDelete: "set null" }
+    ),
+    validated: boolean("validated").default(false).notNull(),
+    validatedAt: timestamp("validated_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("skills_slug_idx").on(table.slug),
+    index("skills_category_idx").on(table.category),
+    index("skills_application_pattern_idx").on(table.applicationPatternId),
+    index("skills_validated_idx").on(table.validated),
+  ]
+)
+
+/**
+ * Skill-Pattern join table
+ *
+ * Many-to-many relationship: Skills are composed of multiple patterns.
+ */
+export const skillPatterns = pgTable(
+  "skill_patterns",
+  {
+    skillId: uuid("skill_id")
+      .notNull()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    patternId: uuid("pattern_id")
+      .notNull()
+      .references(() => effectPatterns.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.skillId, table.patternId] }),
+    index("skill_patterns_skill_idx").on(table.skillId),
+    index("skill_patterns_pattern_idx").on(table.patternId),
+  ]
+)
+
 // ============================================
 // Drizzle Relations
 // ============================================
@@ -207,6 +265,7 @@ export const patternRelations = pgTable(
 export const applicationPatternRelations = relations(applicationPatterns, ({ many }) => ({
   effectPatterns: many(effectPatterns),
   jobs: many(jobs),
+  skills: many(skills),
 }))
 
 /**
@@ -218,6 +277,7 @@ export const effectPatternRelations = relations(effectPatterns, ({ one, many }) 
     references: [applicationPatterns.id],
   }),
   patternJobs: many(patternJobs),
+  skillPatterns: many(skillPatterns),
   relatedFrom: many(patternRelations, { relationName: "relatedFrom" }),
   relatedTo: many(patternRelations, { relationName: "relatedTo" }),
 }))
@@ -263,6 +323,31 @@ export const patternRelationRelations = relations(patternRelations, ({ one }) =>
   }),
 }))
 
+/**
+ * Skill relations
+ */
+export const skillRelations = relations(skills, ({ one, many }) => ({
+  applicationPattern: one(applicationPatterns, {
+    fields: [skills.applicationPatternId],
+    references: [applicationPatterns.id],
+  }),
+  skillPatterns: many(skillPatterns),
+}))
+
+/**
+ * SkillPattern relations
+ */
+export const skillPatternRelations = relations(skillPatterns, ({ one }) => ({
+  skill: one(skills, {
+    fields: [skillPatterns.skillId],
+    references: [skills.id],
+  }),
+  pattern: one(effectPatterns, {
+    fields: [skillPatterns.patternId],
+    references: [effectPatterns.id],
+  }),
+}))
+
 // ============================================
 // Type Exports
 // ============================================
@@ -281,4 +366,10 @@ export type NewPatternJob = typeof patternJobs.$inferInsert
 
 export type PatternRelation = typeof patternRelations.$inferSelect
 export type NewPatternRelation = typeof patternRelations.$inferInsert
+
+export type Skill = typeof skills.$inferSelect
+export type NewSkill = typeof skills.$inferInsert
+
+export type SkillPattern = typeof skillPatterns.$inferSelect
+export type NewSkillPattern = typeof skillPatterns.$inferInsert
 

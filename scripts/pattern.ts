@@ -2,11 +2,11 @@
 
 const id = process.argv[2];
 if (!id) {
-  console.error("Usage: bun ./scripts/pattern.ts <pattern-id>");
+  console.error('Usage: bun ./scripts/pattern.ts <pattern-id>');
   process.exit(1);
 }
 
-const baseUrl = process.env.EFFECT_PATTERNS_API_URL || "http://localhost:3000";
+const baseUrl = process.env.EFFECT_PATTERNS_API_URL || 'http://localhost:3000';
 const url = `${baseUrl}/api/patterns/${encodeURIComponent(id)}`;
 
 try {
@@ -20,6 +20,6 @@ try {
   const json = await res.json();
   console.log(JSON.stringify(json, null, 2));
 } catch (err) {
-  console.error("Request error:", err);
+  console.error('Request error:', err);
   process.exit(1);
 }

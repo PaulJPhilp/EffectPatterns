@@ -87,7 +87,13 @@ export class OAuth2Client {
             throw new Error(`Token exchange failed: ${error}`);
         }
 
-        const tokenData = await response.json();
+        const tokenData = await response.json() as {
+            access_token: string;
+            token_type: string;
+            expires_in: number;
+            refresh_token?: string;
+            scope: string;
+        };
 
         // Clear PKCE verifier
         sessionStorage.removeItem("oauth_pkce_verifier");
@@ -123,7 +129,13 @@ export class OAuth2Client {
             throw new Error(`Token refresh failed: ${error}`);
         }
 
-        return response.json();
+        return response.json() as Promise<{
+            access_token: string;
+            token_type: string;
+            expires_in: number;
+            refresh_token?: string;
+            scope: string;
+        }>;
     }
 
     /**

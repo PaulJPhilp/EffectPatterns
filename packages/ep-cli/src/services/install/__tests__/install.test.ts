@@ -1,5 +1,7 @@
 /**
- * Install Service Tests (real published rules)
+ * Install Service Tests (DB-backed patterns)
+ *
+ * Requires DATABASE_URL to be set — skipped otherwise.
  */
 
 import { NodeFileSystem } from "@effect/platform-node";
@@ -18,38 +20,27 @@ const runInstall = <A>(effect: Effect.Effect<A, unknown, any>) =>
     >
   );
 
-describe("Install Service", () => {
-  it("loads published cursor rules", async () => {
+describe.skipIf(!process.env.DATABASE_URL)("Install Service", () => {
+  it("loads patterns from database", async () => {
     const rules = await runInstall(
       Effect.gen(function* () {
         const install = yield* Install;
-        return yield* install.searchRules({ tool: "cursor" });
+        return yield* install.searchRules({});
       })
     );
 
-    expect(rules.length).toBeGreaterThan(200);
+    expect(rules.length).toBeGreaterThan(100);
     expect(rules[0]).toHaveProperty("id");
     expect(rules[0]).toHaveProperty("title");
     expect(rules[0]).toHaveProperty("description");
     expect(rules[0]).toHaveProperty("content");
   });
 
-  it("loads published windsurf rules", async () => {
-    const rules = await runInstall(
-      Effect.gen(function* () {
-        const install = yield* Install;
-        return yield* install.searchRules({ tool: "windsurf" });
-      })
-    );
-
-    expect(rules.length).toBeGreaterThan(200);
-  });
-
   it("filters rules by query", async () => {
     const rules = await runInstall(
       Effect.gen(function* () {
         const install = yield* Install;
-        return yield* install.searchRules({ tool: "cursor", query: "retry" });
+        return yield* install.searchRules({ query: "retry" });
       })
     );
 
@@ -63,7 +54,21 @@ describe("Install Service", () => {
     ).toBe(true);
   });
 
-  it("finds a rule by id", async () => {
+  it("filters rules by skill level", async () => {
+    const rules = await runInstall(
+      Effect.gen(function* () {
+        const install = yield* Install;
+        return yield* install.searchRules({ skillLevel: "beginner" });
+      })
+    );
+
+    expect(rules.length).toBeGreaterThan(0);
+    for (const r of rules) {
+      expect(r.skillLevel).toBe("beginner");
+    }
+  });
+
+  it("finds a rule by id (slug)", async () => {
     const rule = await runInstall(
       Effect.gen(function* () {
         const install = yield* Install;

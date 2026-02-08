@@ -22,80 +22,90 @@ export const searchCommand = Command.make("search", {
 	.pipe(Command.withDescription("Search patterns by keyword"))
 	.pipe(
 		Command.withHandler(({ args }) =>
-			Effect.gen(function* () {
-				yield* Console.log(
-					`\n🔍 Searching for patterns matching "${args.query}"...\n`
-				);
-
-				const db = yield* Effect.try({
-					try: () => createDatabase(),
-					catch: (error) =>
-						new Error(`Failed to create database connection: ${error instanceof Error ? error.message : String(error)}`),
-				});
-
-				const repo = createEffectPatternRepository(db.db);
-				const dbPatterns = yield* Effect.tryPromise({
-					try: () =>
-						repo.search({
-							query: args.query,
-							limit: 10,
-						}),
-					catch: (error) => {
-						const errorMessage =
-							error instanceof Error ? error.message : String(error);
-
-						interface PostgresError {
-							code?: string;
-							message?: string;
-							detail?: string;
-							hint?: string;
-						}
-
-						const postgresError: PostgresError | null = (
-							error && typeof error === "object" 
-								? error as PostgresError
-								: null
-						);
-						const pgCode = postgresError?.code;
-						const pgMessage = postgresError?.message;
-						const pgDetail = postgresError?.detail;
-						const pgHint = postgresError?.hint;
-
-						let details = "";
-						if (pgCode) {
-							details += `\nPostgreSQL Error Code: ${pgCode}`;
-						}
-						if (pgMessage && pgMessage !== errorMessage) {
-							details += `\nPostgreSQL Message: ${pgMessage}`;
-						}
-						if (pgDetail) {
-							details += `\nDetail: ${pgDetail}`;
-						}
-						if (pgHint) {
-							details += `\nHint: ${pgHint}`;
-						}
-						if (!details && error instanceof Error && "cause" in error) {
-							details = `\nCause: ${String(error.cause)}`;
-						}
-
-						return new Error(
-							`Failed to search patterns: ${errorMessage}${details}`
-						);
-					},
-				});
-
-				if (dbPatterns.length === 0) {
+			Effect.scoped(
+				Effect.gen(function* () {
 					yield* Console.log(
-						`❌ No patterns found matching "${args.query}"\n`
+						`\n🔍 Searching for patterns matching "${args.query}"...\n`
 					);
-				} else {
-					yield* Console.log(`✓ Found ${dbPatterns.length} pattern(s):\n`);
-					for (const pattern of dbPatterns) {
-						yield* Console.log(`  • ${pattern.title} (${pattern.slug})`);
+
+					const db = yield* Effect.try({
+						try: () => createDatabase(),
+						catch: (error) =>
+							new Error(
+								`Failed to create database connection: ${error instanceof Error ? error.message : String(error)}`
+							),
+					});
+					yield* Effect.addFinalizer(() =>
+						Effect.promise(() => db.close())
+					);
+
+					const repo = createEffectPatternRepository(db.db);
+					const dbPatterns = yield* Effect.tryPromise({
+						try: () =>
+							repo.search({
+								query: args.query,
+								limit: 10,
+							}),
+						catch: (error) => {
+							const errorMessage =
+								error instanceof Error ? error.message : String(error);
+
+							interface PostgresError {
+								code?: string;
+								message?: string;
+								detail?: string;
+								hint?: string;
+							}
+
+							const postgresError: PostgresError | null =
+								error && typeof error === "object"
+									? (error as PostgresError)
+									: null;
+							const pgCode = postgresError?.code;
+							const pgMessage = postgresError?.message;
+							const pgDetail = postgresError?.detail;
+							const pgHint = postgresError?.hint;
+
+							let details = "";
+							if (pgCode) {
+								details += `\nPostgreSQL Error Code: ${pgCode}`;
+							}
+							if (pgMessage && pgMessage !== errorMessage) {
+								details += `\nPostgreSQL Message: ${pgMessage}`;
+							}
+							if (pgDetail) {
+								details += `\nDetail: ${pgDetail}`;
+							}
+							if (pgHint) {
+								details += `\nHint: ${pgHint}`;
+							}
+							if (!details && error instanceof Error && "cause" in error) {
+								details = `\nCause: ${String(error.cause)}`;
+							}
+
+							return new Error(
+								`Failed to search patterns: ${errorMessage}${details}`
+							);
+						},
+					});
+
+					if (dbPatterns.length === 0) {
+						yield* Console.log(
+							`❌ No patterns found matching "${args.query}"\n`
+						);
+					} else {
+						yield* Console.log(
+							`✓ Found ${dbPatterns.length} pattern(s):\n`
+						);
+						for (const pattern of dbPatterns) {
+							yield* Console.log(
+								`  • ${pattern.title} (${pattern.slug})`
+							);
+						}
+						yield* Console.log("");
 					}
-					yield* Console.log("");
-				}
-			}).pipe(
+				})
+			).pipe(
 				Effect.catchAll((error) =>
 					Effect.gen(function* () {
 						yield* Display.showError(
@@ -103,7 +113,7 @@ export const searchCommand = Command.make("search", {
 						);
 						yield* Console.log(
 							"\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL " +
-							"is set correctly.\n"
+								"is set correctly.\n"
 						);
 						return Effect.fail(error);
 					})

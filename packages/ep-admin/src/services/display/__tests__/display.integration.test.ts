@@ -191,10 +191,10 @@ describe("Display Service - Integration", () => {
 		});
 
 		it("should support table display structure", () => {
-			interface Row {
+			type Row = {
 				name: string;
 				status: string;
-			}
+			};
 
 			const data: Row[] = [
 				{ name: "Item 1", status: "Active" },
@@ -217,9 +217,9 @@ describe("Display Service - Integration", () => {
 		});
 
 		it("should support empty table", () => {
-			interface Row {
+			type Row = {
 				name: string;
-			}
+			};
 
 			const data: Row[] = [];
 
@@ -235,12 +235,12 @@ describe("Display Service - Integration", () => {
 		});
 
 		it("should support table with multiple columns", () => {
-			interface Row {
+			type Row = {
 				id: string;
 				name: string;
 				status: string;
 				value: number;
-			}
+			};
 
 			const data: Row[] = [
 				{ id: "1", name: "Test", status: "Active", value: 100 },
@@ -417,9 +417,9 @@ describe("Display Service - Integration", () => {
 
 	describe("Table Edge Cases", () => {
 		it("should handle table with no columns", () => {
-			interface Row {
+			type Row = {
 				field: string;
-			}
+			};
 
 			const data: Row[] = [];
 
@@ -433,10 +433,10 @@ describe("Display Service - Integration", () => {
 		});
 
 		it("should handle table with missing data fields", () => {
-			interface Row {
+			type Row = {
 				id: string;
 				name?: string;
-			}
+			};
 
 			const data: Row[] = [{ id: "1" }, { id: "2", name: "Test" }];
 
@@ -455,11 +455,11 @@ describe("Display Service - Integration", () => {
 		});
 
 		it("should handle table with numeric and string data", () => {
-			interface Row {
+			type Row = {
 				id: number;
 				name: string;
 				value: number;
-			}
+			};
 
 			const data: Row[] = [
 				{ id: 1, name: "Test", value: 100 },

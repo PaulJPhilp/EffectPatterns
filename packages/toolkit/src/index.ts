@@ -86,6 +86,8 @@ export {
     patternJobs,
     patternRelations,
     skillLevels,
+    skillPatterns,
+    skills,
     type ApplicationPattern as DbApplicationPattern,
     type CodeExample as DbCodeExample,
     type EffectPattern as DbEffectPattern,
@@ -94,8 +96,12 @@ export {
     type NewApplicationPattern,
     type NewEffectPattern,
     type NewJob,
+    type NewSkill,
+    type NewSkillPattern,
     type PatternRule,
-    type SkillLevel
+    type Skill as DbSkill,
+    type SkillLevel,
+    type SkillPattern,
 } from "./db/schema/index.js";
 
 // ============================================
@@ -112,14 +118,20 @@ export {
     JobLockedError,
     JobNotFoundError,
     JobRepositoryError,
+    SkillLockedError,
+    SkillNotFoundError,
+    SkillRepositoryError,
     createApplicationPatternRepository,
     createEffectPatternRepository,
     createJobRepository,
+    createSkillRepository,
     type ApplicationPatternRepository,
     type EffectPatternRepository,
     type JobRepository,
     type JobWithPatterns,
-    type SearchPatternsParams as RepositorySearchParams
+    type SearchPatternsParams as RepositorySearchParams,
+    type SearchSkillsParams,
+    type SkillRepository,
 } from "./repositories/index.js";
 
 // ============================================

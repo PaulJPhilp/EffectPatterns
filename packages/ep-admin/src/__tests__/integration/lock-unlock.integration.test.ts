@@ -12,9 +12,12 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { Display } from "../../services/display/index.js";
 import { handleEntityOperation } from "../../lock-commands.js";
+import { Logger } from "../../services/logger/index.js";
+
+const testDisplayLayer = Layer.provide(Display.Default, Logger.Default);
 
 /**
  * Get test database URL from environment
@@ -56,7 +59,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 
 				// Should complete without error
 				try {
-					await Effect.runPromise(program);
+					await Effect.runPromise(Effect.provide(program, testDisplayLayer));
 				} catch {
 					// Database might not have test data, but test should structure properly
 				}
@@ -75,7 +78,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 				const program = handleEntityOperation(args, options, "lock");
 
 				try {
-					await Effect.runPromise(program);
+					await Effect.runPromise(Effect.provide(program, testDisplayLayer));
 				} catch {
 					// Expected - entity not found
 				}
@@ -93,7 +96,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 				const program = handleEntityOperation(args, options, "lock");
 
 				try {
-					await Effect.runPromise(program);
+					await Effect.runPromise(Effect.provide(program, testDisplayLayer));
 				} catch {
 					// Expected - invalid type
 				}
@@ -130,7 +133,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 
 				// Should complete without error
 				try {
-					await Effect.runPromise(program);
+					await Effect.runPromise(Effect.provide(program, testDisplayLayer));
 				} catch {
 					// Database might not have test data
 				}
@@ -145,7 +148,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 				const program = handleEntityOperation(args, options, "unlock");
 
 				try {
-					await Effect.runPromise(program);
+					await Effect.runPromise(Effect.provide(program, testDisplayLayer));
 				} catch {
 					// Expected
 				}
@@ -228,7 +231,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 
 				// Should handle errors without crashing
 				try {
-					await Effect.runPromise(program);
+					await Effect.runPromise(Effect.provide(program, testDisplayLayer));
 				} catch (error) {
 					// Expected - either DB error or entity not found
 					expect(error).toBeDefined();
@@ -291,7 +294,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 				const program = handleEntityOperation(args, options, "lock");
 
 				try {
-					await Effect.runPromise(program);
+					await Effect.runPromise(Effect.provide(program, testDisplayLayer));
 				} catch {
 					// Expected
 				}
@@ -309,7 +312,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 				const program = handleEntityOperation(args, options, "unlock");
 
 				try {
-					await Effect.runPromise(program);
+					await Effect.runPromise(Effect.provide(program, testDisplayLayer));
 				} catch {
 					// Expected
 				}

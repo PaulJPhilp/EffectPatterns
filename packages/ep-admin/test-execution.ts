@@ -27,5 +27,5 @@ const testProgram = Effect.gen(function* () {
 
 // Run the test
 Effect.runPromise(
-	Effect.provide(testProgram, ProductionLayer)
+	Effect.provide(testProgram, ProductionLayer) as Effect.Effect<void>
 ).catch(console.error);

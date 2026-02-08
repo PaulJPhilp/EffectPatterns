@@ -6,7 +6,6 @@
  */
 
 import { Options } from "@effect/cli";
-import { EnvService } from "effect-env";
 import { OUTPUT_FORMATS, type OutputFormat } from "./constants.js";
 import { LOG_LEVEL_VALUES, type LogLevel } from "./services/logger/index.js";
 
@@ -195,40 +194,7 @@ const shouldUseColorSync = (options: Partial<GlobalOptions>): boolean => {
 };
 
 /**
- * Check if colors should be used based on options and environment (Effect version)
- * 
- * Checks environment variables through EnvService for type safety.
- * For sync contexts, use shouldUseColorSync.
- */
-export const shouldUseColorsEffect = (options: Partial<GlobalOptions>): Effect.Effect<boolean, any, any> =>
-    Effect.gen(function* () {
-        // Explicit --no-color flag
-        if (options.noColor) return false;
-
-        // JSON output should not have colors
-        if (options.json) return false;
-
-        // Check common CI environment variables via EnvService
-        const env = yield* EnvService.Default;
-        const noColor = yield* env.get("NO_COLOR");
-        if (noColor) return false;
-        
-        const ci = yield* env.get("CI");
-        if (ci) return false;
-        
-        const term = yield* env.get("TERM");
-        if (term === "dumb") return false;
-
-        // Check if stdout is a TTY
-        if (!process.stdout.isTTY) return false;
-
-        return true;
-    });
-
-/**
- * Check if colors should be used based on options and environment (backwards compatible)
- * 
- * Use shouldUseColorSync for sync contexts or shouldUseColorsEffect for Effect contexts.
+ * Check if colors should be used based on options and environment
  */
 export const shouldUseColors = shouldUseColorSync;
 
@@ -259,17 +225,16 @@ export const configureLoggerFromOptions = (
 ): Effect.Effect<void, never, Logger> =>
     Effect.gen(function* () {
         const logger = yield* Logger;
-        const useColors = yield* shouldUseColorsEffect(options) as any;
 
         const config: Partial<LoggerConfig> = {
             logLevel: resolveLogLevel(options),
             outputFormat: resolveOutputFormat(options),
-            useColors,
+            useColors: shouldUseColorSync(options),
             verbose: options.verbose ?? false,
         };
 
         yield* logger.updateConfig(config);
-    }) as any;
+    });
 
 /**
  * Create a LoggerConfig from global options (synchronous, for Layer creation)

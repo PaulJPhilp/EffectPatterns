@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     const { circuitName } = body;
 
     if (!circuitName || typeof circuitName !== "string") {

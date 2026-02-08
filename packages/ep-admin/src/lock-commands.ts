@@ -133,34 +133,41 @@ export const handleEntityOperation = (
 	options: { type: string },
 	action: "lock" | "unlock"
 ) =>
-	Effect.gen(function* () {
-		const db = yield* Effect.try({
-			try: () => createDatabase(),
-			catch: (error) => new Error(`Failed to create database connection: ${error instanceof Error ? error.message : String(error)}`)
-		});
+	Effect.scoped(
+		Effect.gen(function* () {
+			const db = yield* Effect.try({
+				try: () => createDatabase(),
+				catch: (error) =>
+					new Error(
+						`Failed to create database connection: ${error instanceof Error ? error.message : String(error)}`
+					),
+			});
+			yield* Effect.addFinalizer(() => Effect.promise(() => db.close()));
 
-		const entityType = options.type.toLowerCase();
-		const repo = getRepository(db.db, entityType);
+			const entityType = options.type.toLowerCase();
+			const repo = getRepository(db.db, entityType);
 
-		if (!repo) {
-			yield* Display.showError(
-				`Invalid entity type: ${options.type}. Must be one of: ` +
-				`pattern, application-pattern, job`
-			);
-			return;
-		}
+			if (!repo) {
+				yield* Display.showError(
+					`Invalid entity type: ${options.type}. Must be one of: ` +
+						`pattern, application-pattern, job`
+				);
+				return;
+			}
 
-		// Find the entity
-		const entity = yield* findEntity(repo, args.identifier, entityType);
-		const entityName = getEntityDisplayName(entityType, entity.slug);
+			// Find the entity
+			const entity = yield* findEntity(repo, args.identifier, entityType);
+			const entityName = getEntityDisplayName(entityType, entity.slug);
 
-		// Perform the operation
-		yield* performEntityOperation(repo, entity.id, action, entityType);
+			// Perform the operation
+			yield* performEntityOperation(repo, entity.id, action, entityType);
 
-		// Show success
-		const actionText = action === "lock" ? "locked (validated)" : "unlocked";
-		yield* Display.showSuccess(`${entityName} has been ${actionText}`);
-	}).pipe(
+			// Show success
+			const actionText =
+				action === "lock" ? "locked (validated)" : "unlocked";
+			yield* Display.showSuccess(`${entityName} has been ${actionText}`);
+		})
+	).pipe(
 		Effect.catchAll((error) =>
 			Effect.gen(function* () {
 				yield* Display.showError(
@@ -168,7 +175,7 @@ export const handleEntityOperation = (
 				);
 				yield* Display.showText(
 					"\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL " +
-					"is set correctly.\n"
+						"is set correctly.\n"
 				);
 				return Effect.fail(error);
 			})

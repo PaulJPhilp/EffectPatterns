@@ -48,7 +48,7 @@ async function importToProduction() {
             );
         }
 
-        const importResult = await importResponse.json();
+        const importResult = await importResponse.json() as Record<string, unknown>;
         console.log(`✅ ${importResult.message}`);
 
         // Verify import (requires PRODUCTION_API_KEY or PATTERN_API_KEY)
@@ -61,7 +61,7 @@ async function importToProduction() {
         });
 
         if (verifyResponse.ok) {
-            const data = await verifyResponse.json();
+            const data = await verifyResponse.json() as Record<string, unknown>;
             console.log(
                 `✅ Verification: Found ${data.count} patterns in production database`,
             );
