@@ -89,6 +89,7 @@ export const TASK_NAMES = {
 	ROTATING_API_KEY: "Rotating API key",
 	UPGRADING_BASELINE: "Upgrading test baseline",
 	GENERATING_SKILLS: "Generating skills",
+	GENERATING_SKILLS_FROM_DB: "Generating skills from database",
 	RUNNING_SKILL_GENERATOR: "Running skill generator",
 	GENERATING_README_SKILLS: "Generating README",
 } as const;
@@ -142,6 +143,7 @@ export const MESSAGES = {
 		API_KEY_ROTATED: "API key rotated successfully!",
 		BASELINE_UPGRADED: "Test baseline upgraded!",
 		SKILLS_GENERATED: "Skills generated successfully!",
+		SKILLS_GENERATED_FROM_DB: "DB-native skill generation completed!",
 		SKILL_GENERATION_COMPLETED: "Skill generation completed!",
 		README_GENERATED: "README generated!",
 	},
