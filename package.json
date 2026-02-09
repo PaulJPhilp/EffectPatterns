@@ -88,8 +88,8 @@
     "test:supermemory": "bun run ep:admin test-utils supermemory"
   },
   "dependencies": {
-    "@effect/cli": "0.73.1",
-    "@effect/platform": "0.94.2",
+    "@effect/cli": "0.73.2",
+    "@effect/platform": "0.94.4",
     "@effect/platform-node": "0.104.1",
     "@effect/rpc": "^0.73.0",
     "@opentelemetry/api": "^1.9.0",
