@@ -23,13 +23,17 @@ export {
     countPatternsBySkillLevelDb,
     getPatternById,
     getPatternByIdDb,
+    getSkillBySlugDb,
     // In-memory search (legacy)
     searchPatterns,
     // Database search
     searchPatternsDb,
+    searchSkillsDb,
     toPatternSummary,
     type DatabaseSearchParams,
-    type SearchPatternsParams
+    type SearchPatternsParams,
+    type SkillSearchParams,
+    type SkillSummary
 } from "./search.js";
 
 // ============================================

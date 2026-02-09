@@ -47,6 +47,12 @@ export class PatternNotFoundError extends Data.TaggedError(
   readonly patternId: string;
 }> { }
 
+export class SkillNotFoundError extends Data.TaggedError(
+  "SkillNotFoundError"
+)<{
+  readonly slug: string;
+}> { }
+
 export class PatternLoadError extends Data.TaggedError("PatternLoadError")<{
   readonly filePath: string;
   readonly cause: unknown;

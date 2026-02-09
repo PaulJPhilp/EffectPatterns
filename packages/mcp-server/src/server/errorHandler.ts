@@ -20,6 +20,7 @@ import {
     PatternValidationError,
     RateLimitError,
     RequestValidationError,
+    SkillNotFoundError,
     ValidationError,
     ConfigurationError,
     CircuitBreakerOpenError,
@@ -113,6 +114,18 @@ export function errorToResponse(
         const e = error as PatternNotFoundError;
         const response: ApiErrorResponse = {
           error: `Pattern '${e.patternId}' not found`,
+          status: "not_found",
+        };
+        return NextResponse.json(response, {
+          status: 404,
+          headers: baseHeaders,
+        });
+      }
+
+      case "SkillNotFoundError": {
+        const e = error as SkillNotFoundError;
+        const response: ApiErrorResponse = {
+          error: `Skill '${e.slug}' not found`,
           status: "not_found",
         };
         return NextResponse.json(response, {

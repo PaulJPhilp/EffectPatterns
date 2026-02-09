@@ -92,4 +92,45 @@ export declare function getPatternByIdDb(id: string, databaseUrl?: string): Prom
  * @returns Promise resolving to counts by skill level
  */
 export declare function countPatternsBySkillLevelDb(databaseUrl?: string): Promise<Record<SkillLevel, number>>;
+/**
+ * Summary shape returned by skill search functions
+ */
+export interface SkillSummary {
+    readonly slug: string;
+    readonly name: string;
+    readonly description: string;
+    readonly category: string;
+    readonly patternCount: number;
+    readonly version: number;
+    readonly content?: string;
+}
+/**
+ * Parameters for skill database search
+ */
+export interface SkillSearchParams {
+    /** Search query (optional) */
+    readonly query?: string;
+    /** Filter by category (optional) */
+    readonly category?: string;
+    /** Maximum number of results */
+    readonly limit?: number;
+    /** Offset for pagination */
+    readonly offset?: number;
+}
+/**
+ * Search skills using database
+ *
+ * @param params - Search parameters
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to matched skill summaries (without content)
+ */
+export declare function searchSkillsDb(params: SkillSearchParams, databaseUrl?: string): Promise<SkillSummary[]>;
+/**
+ * Get a skill by slug from database (includes full content)
+ *
+ * @param slug - Skill slug
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to the skill or null
+ */
+export declare function getSkillBySlugDb(slug: string, databaseUrl?: string): Promise<SkillSummary | null>;
 //# sourceMappingURL=search.d.ts.map

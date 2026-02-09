@@ -76,6 +76,34 @@ export const ToolSchemas = {
       .describe("Output format (default: 'markdown')"),
   }).describe("Get MCP server config (base URL, env, and api-key presence) for debugging"),
 
+  // List Skills Tool
+  listSkills: z.object({
+    q: z.string().optional().describe("Search query"),
+    category: z.string().optional().describe("Filter by category"),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .optional()
+      .describe("Maximum number of results to return"),
+    format: z
+      .enum(["json", "markdown", "both"])
+      .default("markdown")
+      .optional()
+      .describe("Output format (default: 'markdown')"),
+  }).describe("Search Effect-TS skills by query and category"),
+
+  // Get Skill Tool
+  getSkill: z.object({
+    slug: z.string().describe("Skill slug identifier"),
+    format: z
+      .enum(["json", "markdown", "both"])
+      .default("markdown")
+      .optional()
+      .describe("Output format (default: 'markdown')"),
+  }).describe("Get full details for a specific skill by slug"),
+
   // ============================================================================
   // PAID-TIER SCHEMAS (HTTP API only, not exposed as MCP tools):
   // - analyzeCode    → POST /api/analyze-code
@@ -91,3 +119,5 @@ export type SearchPatternsArgs = z.infer<typeof ToolSchemas.searchPatterns>;
 export type GetPatternArgs = z.infer<typeof ToolSchemas.getPattern>;
 export type ListAnalysisRulesArgs = z.infer<typeof ToolSchemas.listAnalysisRules>;
 export type GetMcpConfigArgs = z.infer<typeof ToolSchemas.getMcpConfig>;
+export type ListSkillsArgs = z.infer<typeof ToolSchemas.listSkills>;
+export type GetSkillArgs = z.infer<typeof ToolSchemas.getSkill>;

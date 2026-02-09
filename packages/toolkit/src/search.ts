@@ -9,7 +9,7 @@
 
 import { createDatabase } from "./db/client.js"
 import type { SkillLevel } from "./db/schema/index.js"
-import { createEffectPatternRepository } from "./repositories/index.js"
+import { createEffectPatternRepository, createSkillRepository } from "./repositories/index.js"
 import type { Pattern, PatternSummary } from "./schemas/pattern.js"
 
 // ============================================
@@ -323,6 +323,102 @@ export async function countPatternsBySkillLevelDb(
   try {
     const repo = createEffectPatternRepository(db)
     return repo.countBySkillLevel()
+  } finally {
+    await close()
+  }
+}
+
+// ============================================
+// Skill Search (Database-Backed)
+// ============================================
+
+/**
+ * Summary shape returned by skill search functions
+ */
+export interface SkillSummary {
+  readonly slug: string
+  readonly name: string
+  readonly description: string
+  readonly category: string
+  readonly patternCount: number
+  readonly version: number
+  readonly content?: string
+}
+
+/**
+ * Parameters for skill database search
+ */
+export interface SkillSearchParams {
+  /** Search query (optional) */
+  readonly query?: string
+  /** Filter by category (optional) */
+  readonly category?: string
+  /** Maximum number of results */
+  readonly limit?: number
+  /** Offset for pagination */
+  readonly offset?: number
+}
+
+/**
+ * Search skills using database
+ *
+ * @param params - Search parameters
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to matched skill summaries (without content)
+ */
+export async function searchSkillsDb(
+  params: SkillSearchParams,
+  databaseUrl?: string
+): Promise<SkillSummary[]> {
+  const { db, close } = createDatabase(databaseUrl)
+
+  try {
+    const repo = createSkillRepository(db)
+    const skills = await repo.search(params)
+
+    return skills.map((s): SkillSummary => ({
+      slug: s.slug,
+      name: s.name,
+      description: s.description,
+      category: s.category || "",
+      patternCount: s.patternCount,
+      version: s.version,
+    }))
+  } finally {
+    await close()
+  }
+}
+
+/**
+ * Get a skill by slug from database (includes full content)
+ *
+ * @param slug - Skill slug
+ * @param databaseUrl - Optional database URL
+ * @returns Promise resolving to the skill or null
+ */
+export async function getSkillBySlugDb(
+  slug: string,
+  databaseUrl?: string
+): Promise<SkillSummary | null> {
+  const { db, close } = createDatabase(databaseUrl)
+
+  try {
+    const repo = createSkillRepository(db)
+    const s = await repo.findBySlug(slug)
+
+    if (!s) {
+      return null
+    }
+
+    return {
+      slug: s.slug,
+      name: s.name,
+      description: s.description,
+      category: s.category || "",
+      patternCount: s.patternCount,
+      version: s.version,
+      content: s.content || undefined,
+    }
   } finally {
     await close()
   }

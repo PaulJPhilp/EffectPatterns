@@ -5,7 +5,7 @@
  * search, validate, and generate code from the Effect Patterns Hub
  */
 export { getPatternFromDatabase, loadPatternsFromDatabase, searchPatternsFromDatabase } from "./io.js";
-export { countPatternsBySkillLevelDb, getPatternById, getPatternByIdDb, searchPatterns, searchPatternsDb, toPatternSummary, type DatabaseSearchParams, type SearchPatternsParams } from "./search.js";
+export { countPatternsBySkillLevelDb, getPatternById, getPatternByIdDb, getSkillBySlugDb, searchPatterns, searchPatternsDb, searchSkillsDb, toPatternSummary, type DatabaseSearchParams, type SearchPatternsParams, type SkillSearchParams, type SkillSummary } from "./search.js";
 export { buildSnippet, generateUsageExample, sanitizeInput, type BuildSnippetParams } from "./template.js";
 export { CodeExample, DifficultyLevel, Pattern, PatternCategory, PatternSummary, PatternsIndex, type CodeExample as CodeExampleType, type DifficultyLevel as DifficultyLevelType, type PatternCategory as PatternCategoryType, type PatternSummary as PatternSummaryType, type Pattern as PatternType } from "./schemas/pattern.js";
 export { GenerateRequest, type GenerateRequest as GenerateRequestType } from "./schemas/generate.js";
