@@ -24,6 +24,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { randomUUID } from "crypto";
 import { Agent, createServer } from "http";
 import { Agent as HttpsAgent } from "https";
+import { validateTransportApiKey } from "./auth/mcpTransportAuth.js";
 import { OAuthConfig } from "./auth/oauth-config.js";
 import { OAuth2Server } from "./auth/oauth-server.js";
 import { registerTools } from "./tools/tool-implementations.js";
@@ -38,6 +39,23 @@ const API_BASE_URL =
 const API_KEY = process.env.PATTERN_API_KEY;
 const DEBUG = process.env.MCP_DEBUG === "true";
 const PORT = parseInt(process.env.PORT || "3001", 10);
+const OAUTH_CLIENT_ID =
+    process.env.MCP_OAUTH_CLIENT_ID?.trim() || "effect-patterns-mcp";
+const OAUTH_CLIENT_SECRET = process.env.MCP_OAUTH_CLIENT_SECRET?.trim();
+const OAUTH_TOKEN_AUTH_METHOD = (() => {
+    const raw = process.env.MCP_OAUTH_TOKEN_AUTH_METHOD?.trim();
+    if (!raw) return "none" as const;
+    if (
+        raw === "none" ||
+        raw === "client_secret_basic" ||
+        raw === "client_secret_post"
+    ) {
+        return raw;
+    }
+    throw new Error(
+        `Invalid MCP_OAUTH_TOKEN_AUTH_METHOD: ${raw}. Expected one of: none, client_secret_basic, client_secret_post`,
+    );
+})();
 const SSE_DROP_AFTER_MS = parseInt(
     process.env.MCP_SSE_DROP_AFTER_MS || "0",
     10,
@@ -48,7 +66,8 @@ const REQUEST_TIMEOUT_MS = 10000; // 10 seconds timeout
 const oauthConfig: OAuthConfig = {
     authorizationEndpoint: `http://localhost:${PORT}/auth`,
     tokenEndpoint: `http://localhost:${PORT}/token`,
-    clientId: "effect-patterns-mcp",
+    clientId: OAUTH_CLIENT_ID,
+    clientSecret: OAUTH_CLIENT_SECRET,
     redirectUris: [
         "http://localhost:3000/callback",
         "http://localhost:3001/callback",
@@ -62,7 +81,7 @@ const oauthConfig: OAuthConfig = {
         "analysis:run",
     ],
     requirePKCE: true, // OAuth 2.1 requirement
-    tokenEndpointAuthMethod: "client_secret_basic",
+    tokenEndpointAuthMethod: OAUTH_TOKEN_AUTH_METHOD,
     accessTokenLifetime: 3600, // 1 hour
     refreshTokenLifetime: 86400, // 24 hours
 };
@@ -672,8 +691,32 @@ async function main() {
                     undefined;
                 const apiKey = apiKeyFromHeader || apiKeyFromQuery;
 
-                const session = apiKey ? null : await oauthServer.validateBearerToken(req);
-                if (!apiKey && !session) {
+                const apiKeyAuth = validateTransportApiKey(apiKey, API_KEY);
+                if (!apiKeyAuth.ok) {
+                    log("Unauthorized MCP request - invalid API key", {
+                        reason: apiKeyAuth.error,
+                    });
+                    res.writeHead(401, {
+                        "Content-Type": "application/json",
+                        "WWW-Authenticate":
+                            'Bearer realm="MCP Server", error="invalid_token"',
+                    });
+                    res.end(
+                        JSON.stringify({
+                            jsonrpc: "2.0",
+                            error: {
+                                code: -32001,
+                                message: apiKeyAuth.error,
+                            },
+                        }),
+                    );
+                    return;
+                }
+
+                const session = apiKeyAuth.authenticatedByApiKey
+                    ? null
+                    : await oauthServer.validateBearerToken(req);
+                if (!apiKeyAuth.authenticatedByApiKey && !session) {
                     log("Unauthorized MCP request - missing API key or OAuth token");
                     res.writeHead(401, {
                         "Content-Type": "application/json",
@@ -783,7 +826,9 @@ async function main() {
                         response_types_supported: ["code"],
                         grant_types_supported: ["authorization_code", "refresh_token"],
                         scopes_supported: oauthConfig.supportedScopes,
-                        token_endpoint_auth_methods_supported: ["client_secret_basic"],
+                        token_endpoint_auth_methods_supported: [
+                            oauthConfig.tokenEndpointAuthMethod,
+                        ],
                         code_challenge_methods_supported: ["S256"],
                         require_pkce: oauthConfig.requirePKCE,
                     }),

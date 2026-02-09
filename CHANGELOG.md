@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+### 🔒 Security
+- **MCP Streamable Auth**: Enforced strict API key validation in streamable transport (presence-only bypass removed) with constant-time comparison.
+- **OAuth/PKCE Hardening**: Fixed PKCE verification flow and required verifier validation for OAuth code exchange.
+- **OAuth Client Auth**: Enforced configured `client_id`/`client_secret` validation for token exchange and aligned discovery metadata with supported token auth mode.
+
+### 🛡️ Admin Protection
+- **DB Mutation Routes**: Locked down destructive migration/reset/import endpoints behind admin authentication.
+
+### ✅ Release Readiness
+- **Regression Coverage**: Added auth and admin-route regression tests for transport auth, PKCE/client auth, and DB mutation authorization.
+- **EP CLI Publishability**: Enabled npm release path by removing package `private` flag from `@effect-patterns/ep-cli`.
+
 ## [0.10.0-patterns] - 2026-01-12
 
 ### 🚀 Features

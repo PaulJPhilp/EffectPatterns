@@ -5,7 +5,7 @@
  * with PKCE support, token management, and security best practices.
  */
 
-import { randomBytes } from "crypto";
+import { randomBytes, timingSafeEqual } from "crypto";
 import { IncomingMessage, ServerResponse } from "http";
 import { URL } from "url";
 import {
@@ -27,7 +27,7 @@ export class OAuth2Server {
             clientId: string;
             redirectUri: string;
             scopes: string[];
-            codeVerifier?: string;
+            codeChallenge?: string;
             expiresAt: number;
             userId?: string;
         }
@@ -72,7 +72,7 @@ export class OAuth2Server {
                 scopes: params.scope
                     ? params.scope.split(" ")
                     : this.config.defaultScopes,
-                codeVerifier: params.codeChallenge ? undefined : params.codeChallenge, // Store PKCE verifier if provided
+                codeChallenge: params.codeChallenge,
                 expiresAt,
             });
 
@@ -106,7 +106,12 @@ export class OAuth2Server {
     ): Promise<void> {
         try {
             const body = await this.parseRequestBody(req);
-            const params = this.parseTokenParams(body);
+            const clientAuth = this.parseClientAuthentication(req, body);
+            const params = this.parseTokenParams({
+                ...body,
+                client_id: clientAuth.clientId ?? body.client_id,
+                client_secret: clientAuth.clientSecret ?? body.client_secret,
+            });
 
             // Validate grant type and request
             let tokenResponse: TokenResponse;
@@ -159,10 +164,24 @@ export class OAuth2Server {
     /**
      * Validate client credentials
      */
-    private validateClient(clientId: string, _clientSecret?: string): boolean {
-        // In production, this would validate against a database
-        // For now, accept any client ID and optional secret
-        return clientId.length > 0;
+    private validateClient(clientId?: string, clientSecret?: string): boolean {
+        if (!clientId || clientId !== this.config.clientId) {
+            return false;
+        }
+
+        switch (this.config.tokenEndpointAuthMethod) {
+            case "none":
+                return true;
+            case "client_secret_basic":
+            case "client_secret_post": {
+                if (!this.config.clientSecret || !clientSecret) {
+                    return false;
+                }
+                return this.constantTimeEquals(clientSecret, this.config.clientSecret);
+            }
+            default:
+                return false;
+        }
     }
 
     /**
@@ -224,6 +243,16 @@ export class OAuth2Server {
             };
         }
 
+        if (params.clientId !== this.config.clientId) {
+            return {
+                valid: false,
+                error: {
+                    error: "invalid_client",
+                    errorDescription: "Unknown client_id",
+                },
+            };
+        }
+
         if (!params.redirectUri) {
             return {
                 valid: false,
@@ -271,8 +300,16 @@ export class OAuth2Server {
             throw new Error("invalid_request");
         }
 
+        if (!this.validateClient(params.clientId, params.clientSecret)) {
+            throw new Error("invalid_client");
+        }
+
         const authCode = this.authorizationCodes.get(params.code);
         if (!authCode || authCode.expiresAt < Date.now()) {
+            throw new Error("invalid_grant");
+        }
+
+        if (params.clientId !== authCode.clientId) {
             throw new Error("invalid_grant");
         }
 
@@ -281,9 +318,16 @@ export class OAuth2Server {
             throw new Error("invalid_grant");
         }
 
-        // Validate PKCE if present
-        if (authCode.codeVerifier && params.codeVerifier) {
-            if (!verifyPKCE(authCode.codeVerifier, params.codeVerifier)) {
+        // Validate PKCE (required for OAuth 2.1 public clients)
+        if (this.config.requirePKCE) {
+            if (!authCode.codeChallenge || !params.codeVerifier) {
+                throw new Error("invalid_grant");
+            }
+            if (!verifyPKCE(authCode.codeChallenge, params.codeVerifier)) {
+                throw new Error("invalid_grant");
+            }
+        } else if (authCode.codeChallenge && params.codeVerifier) {
+            if (!verifyPKCE(authCode.codeChallenge, params.codeVerifier)) {
                 throw new Error("invalid_grant");
             }
         }
@@ -325,12 +369,20 @@ export class OAuth2Server {
             throw new Error("invalid_request");
         }
 
+        if (!this.validateClient(params.clientId, params.clientSecret)) {
+            throw new Error("invalid_client");
+        }
+
         // Find session by refresh token
         const session = Array.from(this.sessions.values()).find(
             (s) => s.refreshToken === params.refreshToken,
         );
 
         if (!session) {
+            throw new Error("invalid_grant");
+        }
+
+        if (params.clientId !== session.clientId) {
             throw new Error("invalid_grant");
         }
 
@@ -358,7 +410,11 @@ export class OAuth2Server {
     private async handleClientCredentialsGrant(
         params: TokenRequest,
     ): Promise<TokenResponse> {
-        if (!this.validateClient(params.clientId!, params.clientSecret)) {
+        if (this.config.tokenEndpointAuthMethod === "none") {
+            throw new Error("unauthorized_client");
+        }
+
+        if (!this.validateClient(params.clientId, params.clientSecret)) {
             throw new Error("invalid_client");
         }
 
@@ -407,19 +463,101 @@ export class OAuth2Server {
     /**
      * Parse request body
      */
-    private async parseRequestBody(req: IncomingMessage): Promise<any> {
+    private async parseRequestBody(req: IncomingMessage): Promise<Record<string, string>> {
         return new Promise((resolve, reject) => {
             let body = "";
             req.on("data", (chunk) => (body += chunk));
             req.on("end", () => {
                 try {
-                    resolve(JSON.parse(body));
+                    const contentTypeHeader = req.headers["content-type"];
+                    const contentType = Array.isArray(contentTypeHeader)
+                        ? contentTypeHeader[0] || ""
+                        : contentTypeHeader || "";
+                    const trimmedBody = body.trim();
+
+                    if (!trimmedBody) {
+                        resolve({});
+                        return;
+                    }
+
+                    if (contentType.includes("application/x-www-form-urlencoded")) {
+                        resolve(this.parseFormBody(trimmedBody));
+                        return;
+                    }
+
+                    if (contentType.includes("application/json")) {
+                        resolve(JSON.parse(trimmedBody) as Record<string, string>);
+                        return;
+                    }
+
+                    // Fallback for clients that omit content-type
+                    try {
+                        resolve(JSON.parse(trimmedBody) as Record<string, string>);
+                    } catch {
+                        resolve(this.parseFormBody(trimmedBody));
+                    }
                 } catch (error) {
                     reject(error);
                 }
             });
             req.on("error", reject);
         });
+    }
+
+    private parseFormBody(body: string): Record<string, string> {
+        const params = new URLSearchParams(body);
+        const parsed: Record<string, string> = {};
+
+        for (const [key, value] of params.entries()) {
+            parsed[key] = value;
+        }
+
+        return parsed;
+    }
+
+    private parseClientAuthentication(
+        req: IncomingMessage,
+        body: Record<string, string>,
+    ): { clientId?: string; clientSecret?: string } {
+        const authHeader = req.headers.authorization;
+
+        if (authHeader && authHeader.startsWith("Basic ")) {
+            const encoded = authHeader.substring(6).trim();
+            const decoded = Buffer.from(encoded, "base64").toString("utf8");
+            const separatorIndex = decoded.indexOf(":");
+
+            if (separatorIndex <= 0) {
+                throw new Error("invalid_client");
+            }
+
+            const clientId = decoded.slice(0, separatorIndex);
+            const clientSecret = decoded.slice(separatorIndex + 1);
+
+            if (
+                (body.client_id && body.client_id !== clientId) ||
+                (body.client_secret && body.client_secret !== clientSecret)
+            ) {
+                throw new Error("invalid_client");
+            }
+
+            return { clientId, clientSecret };
+        }
+
+        return {
+            clientId: body.client_id,
+            clientSecret: body.client_secret,
+        };
+    }
+
+    private constantTimeEquals(a: string, b: string): boolean {
+        const aBuffer = Buffer.from(a);
+        const bBuffer = Buffer.from(b);
+
+        if (aBuffer.length !== bBuffer.length) {
+            return false;
+        }
+
+        return timingSafeEqual(aBuffer, bBuffer);
     }
 
     /**

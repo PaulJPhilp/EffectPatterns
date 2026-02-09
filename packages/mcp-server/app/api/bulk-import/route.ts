@@ -4,42 +4,43 @@
 
 import { createDatabase } from "@effect-patterns/toolkit";
 import { sql } from "drizzle-orm";
-import { NextResponse } from "next/server";
+import { Effect } from "effect";
+import { type NextRequest } from "next/server";
+import { ValidationError } from "../../../src/errors";
+import { createSimpleHandler } from "../../../src/server/routeHandler";
 
-export async function POST(request: Request) {
+const handleBulkImport = (request: NextRequest) => Effect.gen(function* () {
+  const body = (yield* Effect.tryPromise({
+    try: () => request.json(),
+    catch: () =>
+      new ValidationError({
+        field: "body",
+        message: "Invalid JSON request body",
+      }),
+  })) as Record<string, unknown>;
+  const { patterns } = body;
+
+  if (!Array.isArray(patterns)) {
+    return yield* Effect.fail(
+      new ValidationError({
+        field: "patterns",
+        message: "patterns must be an array",
+        value: patterns,
+      })
+    );
+  }
+
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    return yield* Effect.fail(new Error("DATABASE_URL not set"));
+  }
+
+  const imported = yield* Effect.tryPromise(async () => {
+    const { db, close } = createDatabase(dbUrl);
     try {
-        const body = await request.json() as Record<string, unknown>;
-        const { patterns } = body;
-
-        if (!Array.isArray(patterns)) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "patterns must be an array",
-                },
-                { status: 400 },
-            );
-        }
-
-        const dbUrl = process.env.DATABASE_URL;
-        if (!dbUrl) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: "DATABASE_URL not set",
-                },
-                { status: 500 },
-            );
-        }
-
-        const { db, close } = createDatabase(dbUrl);
-
-        try {
-            console.log(`Importing ${patterns.length} patterns...`);
-
-            let imported = 0;
-            for (const pattern of patterns) {
-                await db.execute(sql`
+      let importedCount = 0;
+      for (const pattern of patterns as Array<Record<string, unknown>>) {
+        await db.execute(sql`
           INSERT INTO effect_patterns (
             id, slug, title, summary, skill_level, category, difficulty,
             tags, examples, use_cases, rule, content, author, lesson_order,
@@ -57,28 +58,22 @@ export async function POST(request: Request) {
           )
           ON CONFLICT (id) DO NOTHING
         `);
-                imported++;
-            }
-
-            console.log(`✅ Successfully imported ${imported} patterns`);
-
-            return NextResponse.json({
-                success: true,
-                message: `Imported ${imported} patterns`,
-                imported,
-            });
-        } finally {
-            await close();
-        }
-    } catch (error) {
-        console.error("Import error:", error);
-        return NextResponse.json(
-            {
-                success: false,
-                error: "Import failed",
-                details: error instanceof Error ? error.message : String(error),
-            },
-            { status: 500 },
-        );
+        importedCount++;
+      }
+      return importedCount;
+    } finally {
+      await close();
     }
-}
+  });
+
+  return {
+    success: true,
+    message: `Imported ${imported} patterns`,
+    imported,
+  };
+});
+
+export const POST = createSimpleHandler(handleBulkImport, {
+  requireAuth: false,
+  requireAdmin: true,
+});
