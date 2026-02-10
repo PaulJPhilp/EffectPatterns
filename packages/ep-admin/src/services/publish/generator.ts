@@ -1,43 +1,69 @@
 /**
  * README Generator Service
  *
- * Generates README.md from database patterns:
- * - Loads application patterns and effect patterns from PostgreSQL
- * - Groups patterns by application pattern
- * - Generates table of contents
- * - Creates formatted markdown sections
+ * Generates README.md from published pattern files on disk:
+ * - Scans content/published/patterns/ for .mdx files
+ * - Parses frontmatter for pattern metadata
+ * - Groups patterns by application pattern (directory)
+ * - Generates table of contents and formatted markdown sections
  */
 
-import { createApplicationPatternRepository, createDatabase, createEffectPatternRepository } from "@effect-patterns/toolkit";
 import { FileSystem } from "@effect/platform";
 import { Effect } from "effect";
+import * as nodeFs from "node:fs";
+import * as path from "node:path";
 
 // --- TYPES ---
 
 export interface PatternInfo {
-	slug: string;
-	title: string;
-	skillLevel: string;
-	summary: string;
-	lessonOrder?: number | null;
-	applicationPatternId: string | null;
+	readonly slug: string;
+	readonly title: string;
+	readonly skillLevel: string;
+	readonly summary: string;
+	readonly lessonOrder: number | null;
+	readonly applicationPatternId: string | null;
+}
+
+export interface ApplicationPatternInfo {
+	readonly slug: string;
+	readonly name: string;
+	readonly description: string;
+	readonly learningOrder: number;
 }
 
 export interface GeneratorConfig {
 	readmePath: string;
 }
 
+// --- APPLICATION PATTERN DEFINITIONS ---
+
+/**
+ * Application pattern metadata keyed by slug.
+ * Learning order determines the section ordering in the README.
+ */
+const APPLICATION_PATTERNS: readonly ApplicationPatternInfo[] = [
+	{ slug: "getting-started", name: "Getting Started", description: "Foundational patterns for your first steps with Effect-TS.", learningOrder: 1 },
+	{ slug: "core-concepts", name: "Core Concepts", description: "Essential building blocks for understanding and using Effect.", learningOrder: 2 },
+	{ slug: "error-management", name: "Error Management", description: "Patterns for type-safe, composable error handling.", learningOrder: 3 },
+	{ slug: "resource-management", name: "Resource Management", description: "Safe acquisition, use, and release of resources.", learningOrder: 4 },
+	{ slug: "concurrency", name: "Concurrency", description: "Patterns for parallel and concurrent execution.", learningOrder: 5 },
+	{ slug: "streams", name: "Streams", description: "Processing sequences of values over time.", learningOrder: 6 },
+	{ slug: "scheduling", name: "Scheduling", description: "Patterns for retries, repetition, and time-based execution.", learningOrder: 7 },
+	{ slug: "domain-modeling", name: "Domain Modeling", description: "Building robust domain models with Effect and Schema.", learningOrder: 8 },
+	{ slug: "schema", name: "Schema", description: "Validation, parsing, and transformation with @effect/schema.", learningOrder: 9 },
+	{ slug: "platform", name: "Platform", description: "Cross-platform utilities from @effect/platform.", learningOrder: 10 },
+	{ slug: "building-apis", name: "Building APIs", description: "Patterns for building robust API services.", learningOrder: 11 },
+	{ slug: "making-http-requests", name: "Making HTTP Requests", description: "HTTP client patterns with @effect/platform.", learningOrder: 12 },
+	{ slug: "building-data-pipelines", name: "Building Data Pipelines", description: "Patterns for data ingestion, transformation, and processing.", learningOrder: 13 },
+	{ slug: "testing", name: "Testing", description: "Patterns for testing Effect-based applications.", learningOrder: 14 },
+	{ slug: "observability", name: "Observability", description: "Logging, metrics, and tracing patterns.", learningOrder: 15 },
+	{ slug: "tooling-and-debugging", name: "Tooling & Debugging", description: "Developer tools and debugging techniques for Effect.", learningOrder: 16 },
+];
+
 // --- HELPERS ---
 
 function getSkillLevel(skillLevel: string): string {
 	return skillLevel.toLowerCase();
-}
-
-function generatePatternLink(
-	slug: string,
-	_applicationPatternSlug: string | null,
-): string {
-	return `#${slug}`;
 }
 
 function getSkillEmoji(skillLevel: string): string {
@@ -50,6 +76,119 @@ function getSkillEmoji(skillLevel: string): string {
 	return emojiMap[level] || "⚪️";
 }
 
+/**
+ * Parse YAML frontmatter from an .mdx file.
+ * Returns key-value pairs from the --- delimited header.
+ */
+function parseFrontmatter(content: string): Record<string, string> {
+	const match = content.match(/^---\n([\s\S]*?)\n---/);
+	if (!match) return {};
+	const frontmatter: Record<string, string> = {};
+	let currentKey = "";
+	let currentValue = "";
+	for (const line of match[1].split("\n")) {
+		// Multi-line value continuation (indented or >- continuation)
+		if (currentKey && (line.startsWith("  ") || line.startsWith("\t")) && !line.match(/^\s+- /)) {
+			currentValue += ` ${line.trim()}`;
+			frontmatter[currentKey] = currentValue.trim();
+			continue;
+		}
+		const kvMatch = line.match(/^(\w[\w-]*):\s*(.*)$/);
+		if (kvMatch) {
+			currentKey = kvMatch[1];
+			// Handle >- multiline indicator, then strip surrounding quotes
+			currentValue = kvMatch[2].replace(/^>-?\s*$/, "").trim();
+			currentValue = currentValue.replace(/^(['"])(.*)\1$/, "$2");
+			if (currentValue) {
+				frontmatter[currentKey] = currentValue;
+			}
+		}
+	}
+	return frontmatter;
+}
+
+/**
+ * Recursively find all .mdx files under a directory.
+ */
+function findMdxFiles(dir: string): string[] {
+	const results: string[] = [];
+	const entries = nodeFs.readdirSync(dir, { withFileTypes: true });
+	for (const entry of entries) {
+		const fullPath = path.join(dir, entry.name);
+		if (entry.isDirectory()) {
+			results.push(...findMdxFiles(fullPath));
+		} else if (entry.name.endsWith(".mdx")) {
+			results.push(fullPath);
+		}
+	}
+	return results;
+}
+
+/**
+ * Scan the patterns directory and build PatternInfo[] from .mdx frontmatter.
+ * Recursively scans subdirectories (e.g. schema/getting-started/*.mdx).
+ * When the frontmatter applicationPatternId doesn't match a known application
+ * pattern, falls back to the top-level directory name.
+ */
+function loadPatternsFromDisk(patternsDir: string): PatternInfo[] {
+	const knownAPs = new Set(APPLICATION_PATTERNS.map((ap) => ap.slug));
+	const patterns: PatternInfo[] = [];
+	const allFiles = findMdxFiles(patternsDir);
+	for (const filePath of allFiles) {
+		const relativeToPatternsDir = path.relative(patternsDir, filePath);
+		const topLevelCategory = relativeToPatternsDir.split(path.sep)[0];
+		const content = nodeFs.readFileSync(filePath, "utf-8");
+		const fm = parseFrontmatter(content);
+		const slug = fm.id || path.basename(filePath, ".mdx");
+		const fmApId = fm.applicationPatternId;
+		// Use frontmatter value if it matches a known AP, otherwise use directory
+		const applicationPatternId = fmApId && knownAPs.has(fmApId)
+			? fmApId
+			: topLevelCategory;
+		patterns.push({
+			slug,
+			title: fm.title || slug,
+			skillLevel: fm.skillLevel || "intermediate",
+			summary: fm.summary || "",
+			lessonOrder: fm.lessonOrder ? Number.parseInt(fm.lessonOrder, 10) : null,
+			applicationPatternId,
+		});
+	}
+	return patterns;
+}
+
+/**
+ * Build a map from pattern slug to its relative file path.
+ * Recursively scans subdirectories.
+ * Maps both the filename-based slug and the frontmatter id (if different).
+ */
+function buildSlugToPathMap(patternsDir: string, repoRoot: string): Map<string, string> {
+	const slugToPath = new Map<string, string>();
+	const allFiles = findMdxFiles(patternsDir);
+	for (const filePath of allFiles) {
+		const relativePath = `./${path.relative(repoRoot, filePath)}`;
+		const fileSlug = path.basename(filePath, ".mdx");
+		slugToPath.set(fileSlug, relativePath);
+		// Also map the frontmatter id if it differs from the filename
+		const content = nodeFs.readFileSync(filePath, "utf-8");
+		const idMatch = content.match(/^id:\s*(.+)$/m);
+		if (idMatch) {
+			const fmId = idMatch[1].trim();
+			if (fmId !== fileSlug) {
+				slugToPath.set(fmId, relativePath);
+			}
+		}
+	}
+	return slugToPath;
+}
+
+function generatePatternLink(
+	slug: string,
+	slugToPath: Map<string, string>,
+): string {
+	return slugToPath.get(slug) ?? `#${slug}`;
+}
+
 // --- README GENERATION ---
 
 export const generateReadme = (
@@ -58,111 +197,86 @@ export const generateReadme = (
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 
-		// Connect to database
-		const { db, close } = createDatabase();
-		const apRepo = createApplicationPatternRepository(db);
-		const epRepo = createEffectPatternRepository(db);
+		const repoRoot = path.resolve(config.readmePath, "..");
+		const patternsDir = path.join(repoRoot, "content", "published", "patterns");
 
-		try {
-			// Load Application Patterns from database
-			const applicationPatterns = yield* Effect.promise(() =>
-				apRepo.findAll(),
-			);
-			const sortedAPs = applicationPatterns.sort(
-				(a, b) => a.learningOrder - b.learningOrder,
-			);
+		// Load all pattern data from disk
+		const allPatterns = loadPatternsFromDisk(patternsDir);
+		const slugToPath = buildSlugToPathMap(patternsDir, repoRoot);
 
-			// Load all Effect Patterns from database
-			const allDbPatterns = yield* Effect.promise(() => epRepo.findAll());
-
-			// Create a map of application pattern IDs to slugs
-			const apIdToSlug = new Map(
-				applicationPatterns.map((ap) => [ap.id, ap.slug]),
-			);
-
-			// Convert database patterns to PatternInfo
-			const allPatterns: PatternInfo[] = allDbPatterns.map((dbPattern) => ({
-				slug: dbPattern.slug,
-				title: dbPattern.title,
-				skillLevel: dbPattern.skillLevel,
-				summary: dbPattern.summary,
-				lessonOrder: dbPattern.lessonOrder,
-				applicationPatternId: dbPattern.applicationPatternId || null,
-			}));
-
-			// Group patterns by Application Pattern slug
-			const patternsByAP = new Map<string, PatternInfo[]>();
-
-			for (const pattern of allPatterns) {
-				const apSlug = pattern.applicationPatternId
-					? apIdToSlug.get(pattern.applicationPatternId) || null
-					: null;
-
-				if (!apSlug) continue;
-
-				if (!patternsByAP.has(apSlug)) {
-					patternsByAP.set(apSlug, []);
-				}
-				patternsByAP.get(apSlug)?.push(pattern);
+		// Group patterns by application pattern slug
+		const patternsByAP = new Map<string, PatternInfo[]>();
+		for (const pattern of allPatterns) {
+			const apSlug = pattern.applicationPatternId;
+			if (!apSlug) continue;
+			if (!patternsByAP.has(apSlug)) {
+				patternsByAP.set(apSlug, []);
 			}
+			patternsByAP.get(apSlug)?.push(pattern);
+		}
 
-			// Generate README content
-			const sections: string[] = [];
-			const toc: string[] = [];
+		// Sort application patterns by learning order
+		const sortedAPs = [...APPLICATION_PATTERNS].sort(
+			(a, b) => a.learningOrder - b.learningOrder,
+		);
 
-			// Build TOC
-			toc.push("### Effect Patterns\n");
+		// Generate README content
+		const sections: string[] = [];
+		const toc: string[] = [];
 
-			for (const ap of sortedAPs) {
-				const patterns = patternsByAP.get(ap.slug);
-				if (!patterns || patterns.length === 0) continue;
+		// Build TOC
+		toc.push("### Effect Patterns\n");
 
-				const anchor = ap.slug.toLowerCase().replace(/\s+/g, "-");
-				toc.push(`- [${ap.name}](#${anchor})`);
-			}
+		for (const ap of sortedAPs) {
+			const patterns = patternsByAP.get(ap.slug);
+			if (!patterns || patterns.length === 0) continue;
 
-			toc.push("\n");
+			const anchor = ap.slug.toLowerCase().replace(/\s+/g, "-");
+			toc.push(`- [${ap.name}](#${anchor})`);
+		}
 
-			// Generate sections for each Application Pattern
-			for (const ap of sortedAPs) {
-				const patterns = patternsByAP.get(ap.slug);
-				if (!patterns || patterns.length === 0) continue;
+		toc.push("\n");
 
-				sections.push(`## ${ap.name}\n`);
-				sections.push(`${ap.description}\n\n`);
+		// Generate sections for each Application Pattern
+		for (const ap of sortedAPs) {
+			const patterns = patternsByAP.get(ap.slug);
+			if (!patterns || patterns.length === 0) continue;
 
-				// Sort patterns by skill level and lesson order
-				const sortedPatterns = patterns.sort((a, b) => {
-					const levels = { beginner: 0, intermediate: 1, advanced: 2 };
-					const levelDiff =
-						levels[getSkillLevel(a.skillLevel) as keyof typeof levels] -
-						levels[getSkillLevel(b.skillLevel) as keyof typeof levels];
-					if (levelDiff !== 0) return levelDiff;
-					const orderA = a.lessonOrder ?? 999;
-					const orderB = b.lessonOrder ?? 999;
-					return orderA - orderB;
-				});
+			sections.push(`## ${ap.name}\n`);
+			sections.push(`${ap.description}\n\n`);
 
-				// Render patterns table
+			// Sort patterns by skill level and lesson order
+			const sortedPatterns = [...patterns].sort((a, b) => {
+				const levels = { beginner: 0, intermediate: 1, advanced: 2 };
+				const levelDiff =
+					levels[getSkillLevel(a.skillLevel) as keyof typeof levels] -
+					levels[getSkillLevel(b.skillLevel) as keyof typeof levels];
+				if (levelDiff !== 0) return levelDiff;
+				const orderA = a.lessonOrder ?? 999;
+				const orderB = b.lessonOrder ?? 999;
+				return orderA - orderB;
+			});
+
+			// Render patterns table
+			sections.push(
+				"| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n",
+			);
+
+			for (const pattern of sortedPatterns) {
+				const skillLevel = getSkillLevel(pattern.skillLevel);
+				const skillEmoji = getSkillEmoji(pattern.skillLevel);
+				const link = generatePatternLink(pattern.slug, slugToPath);
+
 				sections.push(
-					"| Pattern | Skill Level | Summary |\n| :--- | :--- | :--- |\n",
+					`| [${pattern.title}](${link}) | ${skillEmoji} **${skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)}** | ${pattern.summary || ""} |\n`,
 				);
-
-				for (const pattern of sortedPatterns) {
-					const skillLevel = getSkillLevel(pattern.skillLevel);
-					const skillEmoji = getSkillEmoji(pattern.skillLevel);
-					const link = generatePatternLink(pattern.slug, ap.slug);
-
-					sections.push(
-						`| [${pattern.title}](${link}) | ${skillEmoji} **${skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)}** | ${pattern.summary || ""} |\n`,
-					);
-				}
-
-				sections.push("\n");
 			}
 
-			// Generate full README
-			const readme = `<!--
+			sections.push("\n");
+		}
+
+		// Generate full README
+		const readme = `<!--
   ⚠️ AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
 
   This file is automatically generated by the publishing pipeline.
@@ -195,19 +309,8 @@ ${toc.join("\n")}
 
 ${sections.join("")}`;
 
-			// Write README
-			yield* fs.writeFileString(config.readmePath, readme);
-
-			// Close database connection
-			yield* Effect.promise(() => close());
-
-			return;
-		} catch (error) {
-			yield* Effect.promise(() => close());
-			return yield* Effect.fail(
-				new Error(`Failed to generate README: ${error}`),
-			);
-		}
+		// Write README
+		yield* fs.writeFileString(config.readmePath, readme);
 	});
 
 export const generateReadmeWithStats = (
@@ -218,28 +321,17 @@ export const generateReadmeWithStats = (
 	FileSystem.FileSystem
 > =>
 	Effect.gen(function* () {
-		const { db, close } = createDatabase();
-		const apRepo = createApplicationPatternRepository(db);
-		const epRepo = createEffectPatternRepository(db);
+		const repoRoot = path.resolve(config.readmePath, "..");
+		const patternsDir = path.join(repoRoot, "content", "published", "patterns");
+		const allPatterns = loadPatternsFromDisk(patternsDir);
 
-		try {
-			const applicationPatterns = yield* Effect.promise(() =>
-				apRepo.findAll(),
-			);
-			const effectPatterns = yield* Effect.promise(() => epRepo.findAll());
+		// Count unique application patterns
+		const apSlugs = new Set(allPatterns.map((p) => p.applicationPatternId).filter(Boolean));
 
-			yield* generateReadme(config);
+		yield* generateReadme(config);
 
-			yield* Effect.promise(() => close());
-
-			return {
-				applicationPatterns: applicationPatterns.length,
-				effectPatterns: effectPatterns.length,
-			};
-		} catch (error) {
-			yield* Effect.promise(() => close());
-			return yield* Effect.fail(
-				new Error(`Failed to generate README with stats: ${error}`),
-			);
-		}
+		return {
+			applicationPatterns: apSlugs.size,
+			effectPatterns: allPatterns.length,
+		};
 	});
