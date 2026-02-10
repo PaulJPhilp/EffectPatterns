@@ -1,6 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [0.12.0] - 2026-02-10
+
+### 🚀 First npm Publish
+- **npm Packages**: Prepared all four public packages for first npm publish
+  - `@effect-patterns/toolkit` 0.4.0
+  - `@effect-patterns/ep-cli` 0.3.0
+  - `@effect-patterns/ep-shared-services` 1.0.1
+  - `@effect-patterns/pipeline-state` 1.1.1
+- **MCP Server**: `@effect-patterns/mcp-server` 0.7.7 patch release
+
+### 📦 New Content
+- **5 New Patterns**: core-concepts-chunk-vs-array, error-management-extract-cause, observability-compose-metrics, resource-management-guarantee-cleanup, resource-management-runtime-vs-provide
 
 ### 🔒 Security
 - **MCP Streamable Auth**: Enforced strict API key validation in streamable transport (presence-only bypass removed) with constant-time comparison.
@@ -13,6 +24,12 @@
 ### ✅ Release Readiness
 - **Regression Coverage**: Added auth and admin-route regression tests for transport auth, PKCE/client auth, and DB mutation authorization.
 - **EP CLI Publishability**: Enabled npm release path by removing package `private` flag from `@effect-patterns/ep-cli`.
+
+### 🔧 Fixes
+- **CI Workflow**: Fixed stale `services/mcp-server` path → `packages/mcp-server` in CI build step
+- **Package Metadata**: Added repository, bugs, homepage, engines, publishConfig to all packages
+- **Toolkit**: Excluded test artifacts from npm package via `!dist/__tests__`
+- **Pipeline State**: Updated `@effect/schema` dependency from 0.68 → 0.75
 
 ## [0.10.0-patterns] - 2026-01-12
 

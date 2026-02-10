@@ -5,6 +5,19 @@ All notable changes to `@effect-patterns/toolkit` will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-10
+
+### Changed
+- **First npm publish** preparation with updated package metadata
+- Excluded test artifacts (`dist/__tests__`) from published package
+- Added LICENSE file to package
+
+### Dependencies
+- effect ^3.19.14
+- @effect/schema ^0.75.5
+- @effect/platform 0.94.4
+- @effect/platform-node 0.104.1
+
 ## [0.2.0] - 2025-01-15
 
 ### Changed

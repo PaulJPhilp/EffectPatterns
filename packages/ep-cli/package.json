@@ -1,6 +1,6 @@
 {
   "name": "@effect-patterns/ep-cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "End-user CLI for Effect Patterns Hub",
   "private": false,
   "type": "module",
@@ -38,5 +38,33 @@
   "devDependencies": {
     "tsx": "^4.21.0",
     "typescript": "5.9.3"
-  }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PaulJPhilp/Effect-Patterns.git",
+    "directory": "packages/ep-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/PaulJPhilp/Effect-Patterns/issues"
+  },
+  "homepage": "https://github.com/PaulJPhilp/Effect-Patterns#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "effect",
+    "effect-ts",
+    "cli",
+    "patterns",
+    "code-generation",
+    "typescript"
+  ]
 }

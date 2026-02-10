@@ -108,7 +108,7 @@
     },
     "packages/ep-cli": {
       "name": "@effect-patterns/ep-cli",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "bin": {
         "ep": "./dist/index.js",
       },
@@ -139,7 +139,7 @@
     },
     "packages/ep-shared-services": {
       "name": "@effect-patterns/ep-shared-services",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@effect/platform": "0.94.4",
         "@effect/platform-node": "0.104.1",
@@ -157,7 +157,7 @@
     },
     "packages/mcp-server": {
       "name": "@effect-patterns/mcp-server",
-      "version": "0.7.6",
+      "version": "0.7.7",
       "dependencies": {
         "@effect-patterns/analysis-core": "workspace:*",
         "@effect-patterns/toolkit": "workspace:*",
@@ -199,23 +199,23 @@
     },
     "packages/pipeline-state": {
       "name": "@effect-patterns/pipeline-state",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "dependencies": {
         "@effect/platform": "0.94.4",
         "effect": "^3.19.14",
       },
       "devDependencies": {
-        "@effect/schema": "^0.68.27",
+        "@effect/schema": "^0.75.5",
         "typescript": "^5.9.3",
         "vitest": "^4.0.17",
       },
       "peerDependencies": {
-        "@effect/schema": "^0.68.0",
+        "@effect/schema": "^0.75.0",
       },
     },
     "packages/toolkit": {
       "name": "@effect-patterns/toolkit",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "dependencies": {
         "@effect/platform": "0.94.4",
         "@effect/platform-node": "0.104.1",
@@ -2737,8 +2737,6 @@
     "@effect-patterns/mcp-server/@opentelemetry/exporter-trace-otlp-http": ["@opentelemetry/exporter-trace-otlp-http@0.211.0", "", { "dependencies": { "@opentelemetry/core": "2.5.0", "@opentelemetry/otlp-exporter-base": "0.211.0", "@opentelemetry/otlp-transformer": "0.211.0", "@opentelemetry/resources": "2.5.0", "@opentelemetry/sdk-trace-base": "2.5.0" }, "peerDependencies": { "@opentelemetry/api": "^1.3.0" } }, "sha512-F1Rv3JeMkgS//xdVjbQMrI3+26e5SXC7vXA6trx8SWEA0OUhw4JHB+qeHtH0fJn46eFItrYbL5m8j4qi9Sfaxw=="],
 
     "@effect-patterns/mcp-server/@types/node": ["@types/node@25.2.1", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-CPrnr8voK8vC6eEtyRzvMpgp3VyVRhgclonE7qYi6P9sXwYb59ucfrnmFBTaP0yUi8Gk4yZg/LlTJULGxvTNsg=="],
-
-    "@effect-patterns/pipeline-state/@effect/schema": ["@effect/schema@0.68.27", "", { "dependencies": { "fast-check": "^3.20.0" }, "peerDependencies": { "effect": "^3.5.7" } }, "sha512-/rmIb+4QaQTecdTfeYSZtNikIV+BeIbYDl/hpgBTaS96en7pKNW5hcygFQhdocjKguIL7Y/be+oUrVafWV60ew=="],
 
     "@effect-patterns/toolkit/@types/node": ["@types/node@25.2.1", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-CPrnr8voK8vC6eEtyRzvMpgp3VyVRhgclonE7qYi6P9sXwYb59ucfrnmFBTaP0yUi8Gk4yZg/LlTJULGxvTNsg=="],
 

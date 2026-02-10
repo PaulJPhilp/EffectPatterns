@@ -1,6 +1,6 @@
 {
   "name": "@effect-patterns/ep-shared-services",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared services for Effect Patterns CLI tools",
   "type": "module",
   "main": "dist/index.js",
@@ -45,6 +45,18 @@
   ],
   "author": "Effect Patterns",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PaulJPhilp/Effect-Patterns.git",
+    "directory": "packages/ep-shared-services"
+  },
+  "bugs": {
+    "url": "https://github.com/PaulJPhilp/Effect-Patterns/issues"
+  },
+  "homepage": "https://github.com/PaulJPhilp/Effect-Patterns#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "effect": "^3.19.14",
     "@effect/platform": "0.94.4",

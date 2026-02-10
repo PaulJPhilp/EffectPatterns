@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@effect-patterns/pipeline-state",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "State machine for managing pattern publishing pipeline workflow",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,8 +12,22 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PaulJPhilp/Effect-Patterns.git",
+    "directory": "packages/pipeline-state"
+  },
+  "bugs": {
+    "url": "https://github.com/PaulJPhilp/Effect-Patterns/issues"
+  },
+  "homepage": "https://github.com/PaulJPhilp/Effect-Patterns#readme",
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "test": "vitest run",
@@ -35,11 +49,11 @@
     "effect": "^3.19.14"
   },
   "devDependencies": {
-    "@effect/schema": "^0.68.27",
+    "@effect/schema": "^0.75.5",
     "typescript": "^5.9.3",
     "vitest": "^4.0.17"
   },
   "peerDependencies": {
-    "@effect/schema": "^0.68.0"
+    "@effect/schema": "^0.75.0"
   }
 }

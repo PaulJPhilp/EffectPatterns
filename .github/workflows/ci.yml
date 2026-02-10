@@ -186,7 +186,7 @@ jobs:
           path: packages/toolkit/dist/
 
       - name: Build MCP server
-        run: cd services/mcp-server && bun run build
+        run: cd packages/mcp-server && bun run build
         env:
           SKIP_ENV_VALIDATION: true
 
@@ -194,7 +194,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: mcp-server-dist
-          path: services/mcp-server/.next/
+          path: packages/mcp-server/.next/
           retention-days: 7
 
   test-integration:

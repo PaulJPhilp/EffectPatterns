@@ -21,7 +21,7 @@ export const PATHS = {
 
 export const CLI = {
   NAME: "ep",
-  VERSION: "0.2.0",
+  VERSION: "0.3.0",
   DESCRIPTION: "A CLI for Effect Patterns Hub",
   RUNNER_NAME: "EffectPatterns CLI",
 } as const;
