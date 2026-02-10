@@ -1,0 +1,59 @@
+---
+title: Extract Failures and Defects from a Cause
+id: error-management-extract-cause
+skillLevel: intermediate
+applicationPatternId: error-management
+summary: >-
+  Use Cause.failures and Cause.defects to inspect a Cause and handle expected
+  failures differently from unexpected defects.
+tags:
+  - error management
+  - cause
+  - defects
+  - failures
+rule:
+  description: Inspect Cause to separate expected failures from defects.
+related:
+  - handle-unexpected-errors-with-cause
+  - pattern-catchtag
+author: effect_website
+lessonOrder: 4
+---
+
+# Extract Failures and Defects from a Cause
+
+## Guideline
+
+When you catch with `Effect.catchAllCause`, use `Cause.failures(cause)` to get expected typed errors and `Cause.defects(cause)` to get unexpected defects. Handle them differently: recover or retry failures; log and escalate defects.
+
+## Rationale
+
+Failures are part of your domain model (e.g., `UserNotFound`, `ValidationError`). Defects are bugs or unhandled exceptions. Extracting them lets you log defects for debugging while treating failures as recoverable business logic.
+
+## Good Example
+
+```typescript
+import { Effect, Cause } from "effect"
+
+const program = Effect.die("unexpected bug").pipe(
+  Effect.catchAllCause((cause) =>
+    Effect.gen(function* () {
+      const defects = Cause.defects(cause)
+      const failures = Cause.failures(cause)
+      yield* Effect.sync(() => {
+        console.log("Defects:", defects)
+        console.log("Failures:", failures)
+      })
+      return "recovered"
+    })
+  )
+)
+
+Effect.runPromise(program)
+```
+
+**Explanation:** `Cause.defects` and `Cause.failures` extract the underlying values. Use them to decide: log defects, recover from failures, or return a fallback.
+
+## Anti-Pattern
+
+Treating all errors the same, or using `Effect.catchAll` (without Cause) and losing the ability to distinguish failures from defects.

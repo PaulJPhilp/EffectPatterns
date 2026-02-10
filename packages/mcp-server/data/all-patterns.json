@@ -2808,6 +2808,85 @@
       "examples": [],
       "useCases": [],
       "effectVersion": "3.x"
+    },
+    {
+      "id": "resource-management-guarantee-cleanup",
+      "title": "Guarantee Cleanup Even on Failure",
+      "description": "Effect.acquireRelease and Effect.scoped ensure that release logic runs even when the use phase fails or is interrupted.",
+      "category": "resource management",
+      "difficulty": "beginner",
+      "tags": [
+        "resource management",
+        "cleanup",
+        "acquireRelease",
+        "finalizer"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "core-concepts-chunk-vs-array",
+      "title": "When to Use Chunk vs Array",
+      "description": "Choose Chunk for Effect pipelines, Stream results, and immutable collection operations; use Array when interfacing with existing APIs.",
+      "category": "core concepts",
+      "difficulty": "beginner",
+      "tags": [
+        "chunk",
+        "collections",
+        "core concepts"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "observability-compose-metrics",
+      "title": "Compose Metrics into Effect Pipelines",
+      "description": "Add Metric.increment, Metric.trackDuration, and other metrics to your Effect pipelines without changing core logic.",
+      "category": "observability",
+      "difficulty": "intermediate",
+      "tags": [
+        "observability",
+        "metrics",
+        "counter",
+        "timer"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "error-management-extract-cause",
+      "title": "Extract Failures and Defects from a Cause",
+      "description": "Use Cause.failures and Cause.defects to inspect a Cause and handle expected failures differently from unexpected defects.",
+      "category": "error management",
+      "difficulty": "intermediate",
+      "tags": [
+        "error management",
+        "cause",
+        "defects",
+        "failures"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
+    },
+    {
+      "id": "resource-management-runtime-vs-provide",
+      "title": "Choose Between ManagedRuntime and Effect.provide",
+      "description": "Use ManagedRuntime when running many effects with the same layers (servers, workers); use Effect.provide for one-off scripts.",
+      "category": "resource management",
+      "difficulty": "intermediate",
+      "tags": [
+        "resource management",
+        "runtime",
+        "provide",
+        "dependency injection"
+      ],
+      "examples": [],
+      "useCases": [],
+      "effectVersion": "3.x"
     }
   ],
   "lastUpdated": "2026-01-12T19:09:03.867Z"

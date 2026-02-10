@@ -1,0 +1,53 @@
+---
+title: When to Use Chunk vs Array
+id: core-concepts-chunk-vs-array
+skillLevel: beginner
+applicationPatternId: core-concepts
+summary: >-
+  Choose Chunk for Effect pipelines, Stream results, and immutable collection
+  operations; use Array when interfacing with existing APIs.
+tags:
+  - chunk
+  - collections
+  - core concepts
+  - data
+rule:
+  description: Use Chunk in Effect/Stream pipelines; use Array for external APIs.
+related:
+  - use-chunk-for-high-performance-collections
+  - process-streaming-data-with-stream
+author: effect_website
+lessonOrder: 21
+---
+
+# When to Use Chunk vs Array
+
+## Guideline
+
+Use `Chunk` when working inside Effect pipelines, processing Stream results, or performing many immutable operations. Use `Array` when you need to interface with existing libraries or return data to non-Effect callers.
+
+## Rationale
+
+`Chunk` is Effect's preferred immutable collection. It integrates with `Stream.runCollect`, offers efficient append/prepend, and is designed for Effect's data processing workflows. Arrays are ubiquitous in JavaScript but mutable and less efficient for repeated immutable operations.
+
+## Good Example
+
+```typescript
+import { Effect, Chunk, Stream } from "effect"
+
+const program = Stream.fromIterable([1, 2, 3, 4, 5]).pipe(
+  Stream.map((n) => n * 2),
+  Stream.runCollect
+)
+
+Effect.runPromise(program).then((chunk) => {
+  const doubled = Chunk.map(chunk, (n) => n + 1)
+  return Chunk.toArray(doubled)
+})
+```
+
+**Explanation:** `Stream.runCollect` returns a `Chunk`. Use `Chunk.map` in the pipeline. Convert to `Array` only when passing to external code.
+
+## Anti-Pattern
+
+Eagerly converting Chunk to Array at every step, or using Array in hot Effect/Stream pipelines where Chunk would be more efficient.

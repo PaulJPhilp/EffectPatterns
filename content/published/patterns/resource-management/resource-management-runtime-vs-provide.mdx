@@ -1,0 +1,63 @@
+---
+title: Choose Between ManagedRuntime and Effect.provide
+id: resource-management-runtime-vs-provide
+skillLevel: intermediate
+applicationPatternId: resource-management
+summary: >-
+  Use ManagedRuntime when running many effects with the same layers (servers,
+  workers); use Effect.provide for one-off scripts.
+tags:
+  - resource management
+  - runtime
+  - provide
+  - dependency injection
+rule:
+  description: Runtime for many runs; Effect.provide for one-off.
+related:
+  - create-managed-runtime-for-scoped-resources
+  - understand-layers-for-dependency-injection
+author: effect_website
+lessonOrder: 5
+---
+
+# Choose Between ManagedRuntime and Effect.provide
+
+## Guideline
+
+Use `ManagedRuntime.make(layer)` when you run many effects with the same dependencies—HTTP servers, long-running workers, REPLs. Use `Effect.provide(program, layer)` for one-off scripts or when each program has different needs.
+
+## Rationale
+
+A runtime bakes your layers into a reusable execution environment. You call `runtime.runPromise(effect)` without passing layers each time. For one-off scripts, providing at the edge is simpler. For servers that handle many requests with the same DB, logger, and config, a runtime avoids repeating `Effect.provide` on every handler.
+
+## Good Example
+
+```typescript
+import { Effect, Layer, ManagedRuntime } from "effect"
+
+class Db extends Effect.Service<Db>()("Db", {
+  sync: () => ({ query: () => Effect.succeed("data") }),
+}) {}
+
+// One-off: provide at the edge
+const oneOff = Effect.gen(function* () {
+  const db = yield* Db
+  return yield* db.query()
+})
+Effect.runPromise(Effect.provide(oneOff, Db.Default))
+
+// Many runs: create runtime once
+const runtime = ManagedRuntime.make(Db.Default)
+const effect = Effect.gen(function* () {
+  const db = yield* Db
+  return yield* db.query()
+})
+runtime.runPromise(effect).then(console.log)
+runtime.dispose()
+```
+
+**Explanation:** One-off scripts use `Effect.provide` at the call site. Long-running apps create a runtime and reuse it; call `dispose()` when shutting down.
+
+## Anti-Pattern
+
+Creating a new runtime for every request, or using `Effect.provide` in a hot loop instead of building a runtime once.

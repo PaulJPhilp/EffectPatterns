@@ -1,0 +1,59 @@
+---
+title: Compose Metrics into Effect Pipelines
+id: observability-compose-metrics
+skillLevel: intermediate
+applicationPatternId: observability
+summary: >-
+  Add Metric.increment, Metric.trackDuration, and other metrics to your Effect
+  pipelines without changing core logic.
+tags:
+  - observability
+  - metrics
+  - counter
+  - timer
+  - pipeline
+rule:
+  description: Add metrics at the edges of pipelines; keep business logic clean.
+related:
+  - add-custom-metrics
+  - trace-operations-with-spans
+author: effect_website
+lessonOrder: 2
+---
+
+# Compose Metrics into Effect Pipelines
+
+## Guideline
+
+Metrics compose with Effect. Use `Metric.increment`, `Metric.trackDuration`, and `Effect.tap` to add observability to your pipelines without altering the core success value or control flow. Observability stays at the edges.
+
+## Rationale
+
+By composing metrics into pipelines, you avoid scattering mutable counters or manual timing logic throughout your codebase. Effect's declarative style lets you wrap operations with `Metric.trackDuration(timer)` or add `Effect.tap(() => Metric.increment(counter))` without changing what the pipeline returns.
+
+## Good Example
+
+```typescript
+import { Effect, Metric } from "effect"
+
+const successCounter = Metric.counter("operations_success_total")
+const stepTimer = Metric.timer("step_duration")
+
+const fetchUser = Effect.succeed({ id: 1, name: "Alice" }).pipe(
+  Effect.delay("20 millis"),
+  Metric.trackDuration(stepTimer)
+)
+
+const program = fetchUser.pipe(
+  Effect.tap(() => Metric.increment(successCounter)),
+  Effect.tap((user) => Effect.sync(() => console.log(user)))
+)
+
+Effect.runPromise(program)
+```
+
+**Explanation:** Metrics wrap and tap the pipeline. The success value flows through unchanged; counters and timers record observability data.
+
+## Anti-Pattern
+
+Mixing business logic with metric recording (e.g., mutating counters inside the main Effect), or not using `Effect.tap` to keep metrics side-effect-only.

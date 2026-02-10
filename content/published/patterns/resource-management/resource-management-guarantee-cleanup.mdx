@@ -1,0 +1,55 @@
+---
+title: Guarantee Cleanup Even on Failure
+id: resource-management-guarantee-cleanup
+skillLevel: beginner
+applicationPatternId: resource-management
+summary: >-
+  Effect.acquireRelease and Effect.scoped ensure that release logic runs even
+  when the use phase fails or is interrupted.
+tags:
+  - resource management
+  - cleanup
+  - acquireRelease
+  - finalizer
+  - scope
+rule:
+  description: Release logic always runs, even on failure or interruption.
+related:
+  - safely-bracket-resource-usage
+  - manual-scope-management
+author: effect_website
+lessonOrder: 4
+---
+
+# Guarantee Cleanup Even on Failure
+
+## Guideline
+
+One of the key guarantees of `Effect.acquireRelease` and `Effect.scoped` is that the release effect runs regardless of whether the use phase succeeds, fails, or is interrupted. You never leave resources leaking.
+
+## Rationale
+
+In traditional try/finally, if an exception occurs during cleanup or if the process is interrupted, the finally block might not run. Effect's bracket pattern ensures release is always invoked, even when the main logic fails or when a fiber is interrupted. This prevents resource leaks in production.
+
+## Good Example
+
+```typescript
+import { Effect } from "effect"
+
+const acquire = Effect.sync(() => ({ id: 1 }))
+const release = () => Effect.log("Released!")
+
+const program = Effect.acquireRelease(acquire, release).pipe(
+  Effect.flatMap(() => Effect.fail("oops")),
+  Effect.scoped
+)
+
+Effect.runPromise(program).catch(() => {})
+// Logs: Released!
+```
+
+**Explanation:** Even though the use phase fails with `Effect.fail("oops")`, the release runs first. The error propagates after cleanup completes.
+
+## Anti-Pattern
+
+Assuming cleanup will run only on success, or manually tracking resources and forgetting to close them on error paths.
