@@ -1,7 +1,7 @@
 /**
  * API Key Authentication Middleware
  *
- * Validates PATTERN_API_KEY from x-api-key header or ?key query param.
+ * Validates PATTERN_API_KEY from x-api-key header.
  * Returns 401 Unauthorized for invalid/missing keys.
  */
 
@@ -9,23 +9,16 @@ import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { AuthenticationError } from "../errors";
 import { MCPConfigService } from "../services/config";
+import { constantTimeEquals } from "./secureCompare";
 
 /**
  * Extract API key from request
  *
- * Checks:
- * 1. x-api-key header
- * 2. ?key query parameter
+ * Checks `x-api-key` header only.
  */
 function extractApiKey(request: NextRequest): string | null {
-  // Check header first
   const headerKey = request.headers.get("x-api-key");
   if (headerKey) return headerKey;
-
-  // Check query parameter
-  const { searchParams } = new URL(request.url);
-  const queryKey = searchParams.get("key");
-  if (queryKey) return queryKey;
 
   return null;
 }
@@ -71,7 +64,7 @@ export const validateApiKey = (
       }
       
       // Key provided - validate it matches configured key
-      if (providedKey !== apiKey) {
+      if (!constantTimeEquals(providedKey, apiKey)) {
         return yield* Effect.fail(
           new AuthenticationError({
             message: "Invalid API key"
@@ -96,7 +89,7 @@ export const validateApiKey = (
     }
 
     // Validate key
-    if (providedKey !== apiKey) {
+    if (!constantTimeEquals(providedKey, apiKey)) {
       return yield* Effect.fail(
         new AuthenticationError({
           message: "Invalid API key"

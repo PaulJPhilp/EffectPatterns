@@ -15,6 +15,7 @@
  * Environment Variables:
  *   - PATTERN_API_KEY: Optional. API key passed to HTTP API (auth happens there)
  *   - EFFECT_PATTERNS_API_URL: Optional. Base URL for patterns API
+ *   - MCP_SERVER_PUBLIC_URL: Optional. Public base URL used in OAuth metadata/discovery
  *   - MCP_DEBUG: Optional. Enable debug logging (default: false)
  *   - PORT: Optional. Port for the HTTP server (default: 3001)
  */
@@ -39,6 +40,9 @@ const API_BASE_URL =
 const API_KEY = process.env.PATTERN_API_KEY;
 const DEBUG = process.env.MCP_DEBUG === "true";
 const PORT = parseInt(process.env.PORT || "3001", 10);
+const SERVER_BASE_URL = (
+    process.env.MCP_SERVER_PUBLIC_URL?.trim() || `http://localhost:${PORT}`
+).replace(/\/+$/, "");
 const OAUTH_CLIENT_ID =
     process.env.MCP_OAUTH_CLIENT_ID?.trim() || "effect-patterns-mcp";
 const OAUTH_CLIENT_SECRET = process.env.MCP_OAUTH_CLIENT_SECRET?.trim();
@@ -64,8 +68,8 @@ const REQUEST_TIMEOUT_MS = 10000; // 10 seconds timeout
 
 // OAuth 2.1 Configuration
 const oauthConfig: OAuthConfig = {
-    authorizationEndpoint: `http://localhost:${PORT}/auth`,
-    tokenEndpoint: `http://localhost:${PORT}/token`,
+    authorizationEndpoint: `${SERVER_BASE_URL}/auth`,
+    tokenEndpoint: `${SERVER_BASE_URL}/token`,
     clientId: OAUTH_CLIENT_ID,
     clientSecret: OAUTH_CLIENT_SECRET,
     redirectUris: [
@@ -655,7 +659,11 @@ async function main() {
             });
 
             // Route handling
-            const url = req.url || "/";
+            const requestUrl = new URL(
+                req.url || "/",
+                `http://${req.headers.host || "localhost"}`,
+            );
+            const url = requestUrl.pathname;
 
             // OAuth endpoints
             if (url.startsWith("/auth")) {
@@ -678,18 +686,12 @@ async function main() {
                 logHandshakeCounts("mcp");
                 // Prefer API key auth for best DX; fallback to OAuth token
                 const apiKeyHeader = req.headers["x-api-key"];
-                const apiKeyFromHeader =
+                const apiKey =
                     typeof apiKeyHeader === "string"
                         ? apiKeyHeader
                         : Array.isArray(apiKeyHeader)
                         ? apiKeyHeader[0]
                         : undefined;
-                const requestUrl = new URL(req.url || "/mcp", `http://${req.headers.host}`);
-                const apiKeyFromQuery =
-                    requestUrl.searchParams.get("key") ||
-                    requestUrl.searchParams.get("api_key") ||
-                    undefined;
-                const apiKey = apiKeyFromHeader || apiKeyFromQuery;
 
                 const apiKeyAuth = validateTransportApiKey(apiKey, API_KEY);
                 if (!apiKeyAuth.ok) {
@@ -820,7 +822,7 @@ async function main() {
                 });
                 res.end(
                     JSON.stringify({
-                        issuer: `http://localhost:${PORT}`,
+                        issuer: SERVER_BASE_URL,
                         authorization_endpoint: oauthConfig.authorizationEndpoint,
                         token_endpoint: oauthConfig.tokenEndpoint,
                         response_types_supported: ["code"],
@@ -857,8 +859,8 @@ async function main() {
                         endpoints: {
                             authorization: oauthConfig.authorizationEndpoint,
                             token: oauthConfig.tokenEndpoint,
-                            mcp: `http://localhost:${PORT}/mcp`,
-                            discovery: `http://localhost:${PORT}/.well-known/oauth-authorization-server`,
+                            mcp: `${SERVER_BASE_URL}/mcp`,
+                            discovery: `${SERVER_BASE_URL}/.well-known/oauth-authorization-server`,
                         },
                     }),
                 );
@@ -886,7 +888,7 @@ async function main() {
         httpServer.listen(PORT, () => {
             log("MCP 2.0 Streamable HTTP server started with OAuth 2.1", {
                 port: PORT,
-                endpoint: `http://localhost:${PORT}/mcp`,
+                endpoint: `${SERVER_BASE_URL}/mcp`,
                 protocolVersion: "2025-11-25",
                 oauthEnabled: true,
                 authorizationEndpoint: oauthConfig.authorizationEndpoint,
@@ -896,16 +898,16 @@ async function main() {
                 `[Effect Patterns MCP] HTTP server started on port ${PORT}`,
             );
             console.error(
-                `[Effect Patterns MCP] MCP endpoint: http://localhost:${PORT}/mcp`,
+                `[Effect Patterns MCP] MCP endpoint: ${SERVER_BASE_URL}/mcp`,
             );
             console.error(
-                `[Effect Patterns MCP] OAuth authorization: http://localhost:${PORT}/auth`,
+                `[Effect Patterns MCP] OAuth authorization: ${SERVER_BASE_URL}/auth`,
             );
             console.error(
-                `[Effect Patterns MCP] OAuth token: http://localhost:${PORT}/token`,
+                `[Effect Patterns MCP] OAuth token: ${SERVER_BASE_URL}/token`,
             );
             console.error(
-                `[Effect Patterns MCP] Server info: http://localhost:${PORT}/info`,
+                `[Effect Patterns MCP] Server info: ${SERVER_BASE_URL}/info`,
             );
         });
     } catch (error) {

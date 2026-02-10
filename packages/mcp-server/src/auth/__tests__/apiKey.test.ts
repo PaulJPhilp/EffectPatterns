@@ -1,7 +1,7 @@
 /**
  * API Key Authentication Tests
  *
- * Tests for API key validation from headers and query parameters.
+ * Tests for API key validation from headers.
  *
  * Architecture:
  * - HTTP API is where ALL authentication happens
@@ -61,16 +61,6 @@ function validateApiKeySimple(
     };
   }
 
-  // Check query parameter
-  const { searchParams } = new URL(request.url);
-  const queryKey = searchParams.get("key");
-  if (queryKey) {
-    return {
-      valid: queryKey === configuredApiKey,
-      error: queryKey !== configuredApiKey ? "Invalid API key" : undefined,
-    };
-  }
-
   return {
     valid: false,
     error: "Missing API key",
@@ -90,7 +80,7 @@ describe("validateApiKey Logic", () => {
     expect(result.error).toBeUndefined();
   });
 
-  it("should pass with valid API key in query parameter", () => {
+  it("should reject query parameter API key", () => {
     const testApiKey = "test-api-key-query";
     const request = createMockRequest({
       url: `http://localhost:3000/api/test?key=${testApiKey}`,
@@ -98,7 +88,8 @@ describe("validateApiKey Logic", () => {
 
     const result = validateApiKeySimple(request, testApiKey);
 
-    expect(result.valid).toBe(true);
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Missing API key");
   });
 
   it("should fail with missing API key", () => {
@@ -121,7 +112,7 @@ describe("validateApiKey Logic", () => {
     expect(result.error).toBe("Invalid API key");
   });
 
-  it("should prefer header over query parameter", () => {
+  it("should use header key and ignore query parameter", () => {
     const testApiKey = "header-key";
     const request = createMockRequest({
       headers: { "x-api-key": testApiKey },
@@ -200,7 +191,7 @@ describe("validateApiKey Logic", () => {
     expect(result.valid).toBe(false);
   });
 
-  it("should decode URL-encoded query parameters", () => {
+  it("should not accept URL-encoded query API key", () => {
     const testApiKey = "test key with spaces";
     const encodedKey = encodeURIComponent(testApiKey);
     const request = createMockRequest({
@@ -209,6 +200,7 @@ describe("validateApiKey Logic", () => {
 
     const result = validateApiKeySimple(request, testApiKey);
 
-    expect(result.valid).toBe(true);
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Missing API key");
   });
 });

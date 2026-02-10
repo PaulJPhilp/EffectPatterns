@@ -11,6 +11,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { randomUUID } from "crypto";
 import { Effect } from "effect";
+import { constantTimeEquals } from "../../../../src/auth/secureCompare";
 import { CircuitBreakerService } from "../../../../src/services/circuit-breaker";
 import { runWithRuntime } from "../../../../src/server/init";
 
@@ -28,7 +29,11 @@ function verifyAdminAccess(request: NextRequest): boolean {
     return false;
   }
 
-  return adminKey === expectedKey;
+  if (!adminKey) {
+    return false;
+  }
+
+  return constantTimeEquals(adminKey, expectedKey);
 }
 
 /**

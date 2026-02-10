@@ -1,20 +1,9 @@
-import { timingSafeEqual } from "crypto";
+import { constantTimeEquals } from "./secureCompare.js";
 
 export type ApiKeyAuthResult =
   | { readonly ok: true; readonly authenticatedByApiKey: true }
   | { readonly ok: true; readonly authenticatedByApiKey: false }
   | { readonly ok: false; readonly error: string };
-
-function constantTimeEquals(a: string, b: string): boolean {
-  const aBuffer = Buffer.from(a);
-  const bBuffer = Buffer.from(b);
-
-  if (aBuffer.length !== bBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(aBuffer, bBuffer);
-}
 
 /**
  * Validate optional API key used by MCP streamable transport.

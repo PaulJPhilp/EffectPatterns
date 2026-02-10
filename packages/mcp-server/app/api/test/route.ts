@@ -1,63 +1,62 @@
 /**
- * Simple test endpoint to verify database connection
+ * Admin-only database connectivity check.
  */
 
-import { createDatabase, effectPatterns } from "@effect-patterns/toolkit"
-import { Effect } from "effect"
-import { NextResponse } from "next/server"
+import { createDatabase, effectPatterns } from "@effect-patterns/toolkit";
+import { Effect } from "effect";
+import { type NextRequest, NextResponse } from "next/server";
+import { validateAdminKey } from "../../../src/auth/adminAuth";
+import { errorHandler } from "../../../src/server/errorHandler";
+import { runWithRuntime } from "../../../src/server/init";
 
-export async function GET() {
-	try {
-		const dbUrl = process.env.DATABASE_URL
-		if (!dbUrl) {
-			return NextResponse.json({
-				success: false,
-				error: "DATABASE_URL not set",
-				envKeys: Object.keys(process.env).filter(k => k.includes("DATABASE") || k.includes("POSTGRES"))
-			}, { status: 500 })
-		}
+const handleDatabaseTest = (request: NextRequest) =>
+  Effect.gen(function* () {
+    yield* validateAdminKey(request);
 
-		const result = await Effect.runPromise(
-			Effect.gen(function* () {
-				const { db, close } = createDatabase(dbUrl)
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
+      return yield* Effect.fail(new Error("DATABASE_URL not set"));
+    }
 
-				const patterns = yield* Effect.tryPromise(async () => {
-					return await db.select({
-						id: effectPatterns.id,
-						title: effectPatterns.title,
-						skillLevel: effectPatterns.skillLevel,
-						category: effectPatterns.category
-					}).from(effectPatterns).limit(5)
-				})
+    const { db, close } = createDatabase(dbUrl);
+    const rows = yield* Effect.tryPromise({
+      try: () =>
+        db
+          .select({
+            id: effectPatterns.id,
+            title: effectPatterns.title,
+            skillLevel: effectPatterns.skillLevel,
+            category: effectPatterns.category,
+          })
+          .from(effectPatterns)
+          .limit(5),
+      catch: (error) => new Error(`Database connection failed: ${String(error)}`),
+    }).pipe(
+      Effect.ensuring(
+        Effect.tryPromise({
+          try: () => close(),
+          catch: (error) => new Error(`Failed to close database connection: ${String(error)}`),
+        }).pipe(Effect.ignore),
+      ),
+    );
 
-				yield* Effect.promise(() => close())
-				return patterns
-			})
-		)
+    return {
+      success: true,
+      count: rows.length,
+      patterns: rows,
+    };
+  });
 
-		return NextResponse.json({
-			success: true,
-			count: result.length,
-			patterns: result.map((p: any) => ({
-				id: p.id,
-				title: p.title,
-				skillLevel: p.skillLevel,
-				category: p.category
-			}))
-		})
-	} catch (error) {
-		console.error("Database test error:", error)
-		const errorMessage = error instanceof Error ? error.message : String(error)
-		const errorStack = error instanceof Error ? error.stack : undefined
-		return NextResponse.json(
-			{
-				success: false,
-				error: "Database connection failed",
-				details: errorMessage,
-				stack: errorStack?.split('\n').slice(0, 5)
-			},
-			{ status: 500 }
-		)
-	}
+export async function GET(request: NextRequest) {
+  const result = await runWithRuntime(
+    handleDatabaseTest(request).pipe(
+      Effect.catchAll((error) => errorHandler(error)),
+    ),
+  );
+
+  if (result instanceof Response) {
+    return result;
+  }
+
+  return NextResponse.json(result, { status: 200 });
 }
-

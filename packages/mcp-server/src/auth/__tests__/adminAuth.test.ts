@@ -72,9 +72,30 @@ describe("Admin Authentication", () => {
 			expect(result).toBeUndefined(); // Success
 		});
 
-		it("should allow valid admin key from query parameter", async () => {
-			const request = createMockRequest({
-				url: "http://localhost:3000/api/test?admin-key=admin-secret-key",
+			it("should reject admin key passed via query parameter", async () => {
+				const request = createMockRequest({
+					url: "http://localhost:3000/api/test?admin-key=admin-secret-key",
+				});
+
+				const result = await Effect.runPromise(
+					validateAdminKey(request).pipe(
+						Effect.provide(MCPConfigService.Default),
+						Effect.either
+					)
+				);
+
+				expect(result._tag).toBe("Left");
+				if (result._tag === "Left") {
+					const errorObj = result.left as any;
+					expect(errorObj._tag).toBe("AuthorizationError");
+					expect(errorObj.message).toContain("required");
+				}
+			});
+
+			it("should use header key and ignore query parameter", async () => {
+				const request = createMockRequest({
+					headers: { "x-admin-key": "admin-secret-key" },
+					url: "http://localhost:3000/api/test?admin-key=wrong-key",
 			});
 
 			const result = await Effect.runPromise(
@@ -83,23 +104,8 @@ describe("Admin Authentication", () => {
 				)
 			);
 
-			expect(result).toBeUndefined();
-		});
-
-		it("should prefer header over query parameter", async () => {
-			const request = createMockRequest({
-				headers: { "x-admin-key": "admin-secret-key" },
-				url: "http://localhost:3000/api/test?admin-key=wrong-key",
+				expect(result).toBeUndefined();
 			});
-
-			const result = await Effect.runPromise(
-				validateAdminKey(request).pipe(
-					Effect.provide(MCPConfigService.Default)
-				)
-			);
-
-			expect(result).toBeUndefined(); // Header takes precedence
-		});
 
 		it("should reject missing admin key in production", async () => {
 			const request = createMockRequest({});

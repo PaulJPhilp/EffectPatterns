@@ -11,23 +11,16 @@ import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { AuthorizationError } from "../errors";
 import { MCPConfigService } from "../services/config";
+import { constantTimeEquals } from "./secureCompare";
 
 /**
  * Extract admin API key from request
  *
- * Checks:
- * 1. x-admin-key header
- * 2. ?admin-key query parameter (less preferred, less secure)
+ * Checks `x-admin-key` header only.
  */
 function extractAdminKey(request: NextRequest): string | null {
-  // Check header first (more secure)
   const headerKey = request.headers.get("x-admin-key");
   if (headerKey) return headerKey;
-
-  // Check query parameter (less secure, but supported)
-  const { searchParams } = new URL(request.url);
-  const queryKey = searchParams.get("admin-key");
-  if (queryKey) return queryKey;
 
   return null;
 }
@@ -80,7 +73,7 @@ export const validateAdminKey = (
     }
 
     // Validate key (never include provided key in error for security)
-    if (providedKey !== adminKey) {
+    if (!constantTimeEquals(providedKey, adminKey)) {
       return yield* Effect.fail(
         new AuthorizationError({
           message: "Invalid admin credentials",
