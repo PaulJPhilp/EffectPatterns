@@ -25,6 +25,9 @@
 - **Regression Coverage**: Added auth and admin-route regression tests for transport auth, PKCE/client auth, and DB mutation authorization.
 - **EP CLI Publishability**: Enabled npm release path by removing package `private` flag from `@effect-patterns/ep-cli`.
 
+### 🛠️ Improvements
+- **Generator**: Rewrote README generator to read patterns from disk (.mdx files) instead of querying PostgreSQL, fixing README links to use file paths
+
 ### 🔧 Fixes
 - **CI Workflow**: Fixed stale `services/mcp-server` path → `packages/mcp-server` in CI build step
 - **Package Metadata**: Added repository, bugs, homepage, engines, publishConfig to all packages
