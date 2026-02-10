@@ -216,25 +216,37 @@ bun run typecheck
 // Custom rules you might want
 
 // ❌ Bad: Using Promise where Effect should be used
-const fetchData = async () => { }  // Warn in Effect codebase
+{
+  const fetchData = async () => { }  // Warn in Effect codebase
+}
 
 // ✅ Good: Using Effect
-const fetchData = Effect.gen(function* () { })
+{
+  const fetchData = Effect.gen(function* () { })
+}
 
 // ❌ Bad: Throwing errors
-const validate = (x: unknown) => {
-  if (!x) throw new Error("Invalid")  // Error
+{
+  const validate = (x: unknown) => {
+    if (!x) throw new Error("Invalid")  // Error
+  }
 }
 
 // ✅ Good: Returning Effect with error
-const validate = (x: unknown) =>
-  x ? Effect.succeed(x) : Effect.fail(new ValidationError())
+{
+  const validate = (x: unknown) =>
+    x ? Effect.succeed(x) : Effect.fail(new ValidationError())
+}
 
 // ❌ Bad: Using null/undefined directly
-const maybeValue: string | null = null  // Warn
+{
+  const maybeValue: string | null = null  // Warn
+}
 
 // ✅ Good: Using Option
-const maybeValue: Option.Option<string> = Option.none()
+{
+  const maybeValue: Option.Option<string> = Option.none()
+}
 ```
 
 ## Biome vs ESLint

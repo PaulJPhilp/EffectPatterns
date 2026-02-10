@@ -168,13 +168,15 @@ const callLLMStreaming = (
   Effect.gen(function* () {
     const client = new Anthropic()
 
-    const stream = await client.messages.stream({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 2048,
-      messages: [
-        { role: "user", content: prompt },
-      ],
-    })
+    const stream = yield* Effect.tryPromise(() =>
+      client.messages.stream({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 2048,
+        messages: [
+          { role: "user", content: prompt },
+        ],
+      })
+    )
 
     // Convert to async iterable of text chunks
     const textStream = async function* () {

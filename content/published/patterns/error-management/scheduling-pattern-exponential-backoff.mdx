@@ -114,7 +114,7 @@ const exponentialBackoffWithJitter = (config: BackoffConfig) => {
     const withJitter = exponential * (0.5 + Math.random() * 0.5); // ±50% jitter
     const capped = Math.min(withJitter, config.maxDelayMs);
 
-    yield* Effect.log(
+    console.log(
       `[BACKOFF] Attempt ${attempt + 1}: ${Math.round(capped)}ms delay`
     );
 

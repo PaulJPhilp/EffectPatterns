@@ -1,7 +1,4 @@
 ---
-lessonOrder: 1
----
-1---
 title: Fork Background Work
 id: concurrency-fork-basics
 skillLevel: beginner
@@ -143,19 +140,21 @@ Effect.runPromise(fanOut)
 ## Common Patterns
 
 ```typescript
-// Fire and forget (logging, analytics)
-yield* Effect.forkDaemon(sendAnalytics(event))
+Effect.gen(function* () {
+  // Fire and forget (logging, analytics)
+  yield* Effect.forkDaemon(sendAnalytics(event))
 
-// Background with timeout
-const fiber = yield* Effect.fork(longRunningTask)
-yield* Effect.sleep("5 seconds")
-yield* Fiber.interrupt(fiber) // Cancel if still running
+  // Background with timeout
+  const fiber = yield* Effect.fork(longRunningTask)
+  yield* Effect.sleep("5 seconds")
+  yield* Fiber.interrupt(fiber) // Cancel if still running
 
-// Parallel fan-out/fan-in
-const fibers = yield* Effect.forEach(items, (item) =>
-  Effect.fork(processItem(item))
-)
-const results = yield* Fiber.joinAll(fibers)
+  // Parallel fan-out/fan-in
+  const fibers = yield* Effect.forEach(items, (item) =>
+    Effect.fork(processItem(item))
+  )
+  const results = yield* Fiber.joinAll(fibers)
+})
 ```
 
 ## Best Practices

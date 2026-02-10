@@ -278,10 +278,8 @@ const program = Effect.gen(function* () {
 
       yield* Effect.log(`[SCOPE] Using resource in scope ${id}`);
 
-      yield* Effect.sync(() => {
-        // Cleanup happens here when scope exits
-        yield* Effect.log(`[SCOPE] Exit scope ${id}`);
-      }).pipe(
+      // Cleanup is guaranteed via ensuring
+      yield* Effect.unit.pipe(
         Effect.ensuring(
           Effect.log(`[SCOPE] Cleanup guaranteed for scope ${id}`)
         )
@@ -292,9 +290,9 @@ const program = Effect.gen(function* () {
 
   // Nested scopes
   const result = yield* withScoped(() =>
-    Effect.succeed({
-      level: 1,
-      data: yield* withScoped(() => Effect.succeed("inner data")),
+    Effect.gen(function* () {
+      const innerData = yield* withScoped(() => Effect.succeed("inner data"));
+      return { level: 1, data: innerData };
     })
   ).pipe(
     Effect.catchAll(() => Effect.succeed({ level: 0, data: null }))

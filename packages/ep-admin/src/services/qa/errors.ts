@@ -73,3 +73,23 @@ export class PatternNotFoundError extends Data.TaggedError(
 	readonly patternId: string;
 	readonly patternsDir: string;
 }> { }
+
+/**
+ * QA validation error (frontmatter/structure issues)
+ */
+export class QAValidationError extends Data.TaggedError(
+	"QAValidationError"
+)<{
+	readonly filePath: string;
+	readonly cause: string;
+}> { }
+
+/**
+ * TypeScript type-check error
+ */
+export class TypeCheckError extends Data.TaggedError(
+	"TypeCheckError"
+)<{
+	readonly filePath: string;
+	readonly cause: string;
+}> { }

@@ -294,24 +294,27 @@ const program = Effect.gen(function* () {
   });
 
   const updateAndNotify = (newValue: number) =>
-    Ref.modify(observedState, (current) => {
-      const notification: Notification = {
-        oldValue: current.value,
-        newValue,
-        timestamp: new Date(),
-      };
+    Effect.gen(function* () {
+      const notification = yield* Ref.modify(observedState, (current) => {
+        const n: Notification = {
+          oldValue: current.value,
+          newValue,
+          timestamp: new Date(),
+        };
+        return [
+          n,
+          {
+            value: newValue,
+            lastChange: n.timestamp,
+          },
+        ];
+      });
 
       yield* Effect.log(
-        `[NOTIFY] ${current.value} → ${newValue} at ${notification.timestamp.toISOString()}`
+        `[NOTIFY] ${notification.oldValue} → ${newValue} at ${notification.timestamp.toISOString()}`
       );
 
-      return [
-        notification,
-        {
-          value: newValue,
-          lastChange: notification.timestamp,
-        },
-      ];
+      return notification;
     });
 
   // Trigger changes

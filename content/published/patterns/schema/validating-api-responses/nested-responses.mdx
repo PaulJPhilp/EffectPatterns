@@ -105,19 +105,20 @@ const fetchUserPartial = (id: number) =>
     // Then validate nested profile
     const profile = yield* Effect.orElse(
       parseProfile(response.profile),
-      () => {
-        yield* Effect.log("Profile validation failed, using default")
-        return Effect.succeed({
-          bio: undefined,
-          address: {
-            street: "Unknown",
-            city: "Unknown",
-            zipCode: "Unknown",
-            coordinates: { latitude: 0, longitude: 0 },
-          },
-          tags: [],
-        } as Profile)
-      }
+      () =>
+        Effect.gen(function* () {
+          yield* Effect.log("Profile validation failed, using default")
+          return {
+            bio: undefined,
+            address: {
+              street: "Unknown",
+              city: "Unknown",
+              zipCode: "Unknown",
+              coordinates: { latitude: 0, longitude: 0 },
+            },
+            tags: [],
+          } as Profile
+        })
     )
 
     return { ...userFields, profile }
@@ -161,7 +162,7 @@ const main = Effect.gen(function* () {
   yield* Effect.log(`Total pages: ${Math.ceil(pagination.total / pagination.perPage)}`)
 })
 
-await Effect.runPromise(main)
+Effect.runPromise(main)
 ```
 
 # Why This Works

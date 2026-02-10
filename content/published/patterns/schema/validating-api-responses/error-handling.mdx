@@ -43,10 +43,11 @@ const fetchUserWithDefault = (id: number, defaultUser: User) =>
 
     return yield* Effect.orElse(
       parseUser(response),
-      () => {
-        yield* Effect.log(`Failed to parse user ${id}, using default`)
-        return Effect.succeed(defaultUser)
-      }
+      () =>
+        Effect.gen(function* () {
+          yield* Effect.log(`Failed to parse user ${id}, using default`)
+          return defaultUser
+        })
     )
   })
 
@@ -57,12 +58,15 @@ const fetchUserWithLogging = (id: number) =>
       fetch(`https://api.example.com/users/${id}`).then((r) => r.json())
     )
 
-    return yield* Effect.catchTag("ParseError", (error) => {
-      yield* Effect.log(`Validation failed: ${error.message}`)
-      yield* Effect.log(`Full details: ${JSON.stringify(error.issue)}`)
-      return Effect.fail(error)
-    })
-      .pipe(parseUser(response))
+    return yield* parseUser(response).pipe(
+      Effect.catchTag("ParseError", (error) =>
+        Effect.gen(function* () {
+          yield* Effect.log(`Validation failed: ${error.message}`)
+          yield* Effect.log(`Full details: ${JSON.stringify(error.issue)}`)
+          return yield* Effect.fail(error)
+        })
+      )
+    )
   })
 
 // Strategy 3: Try multiple decoders (union handling)
@@ -125,7 +129,7 @@ const main = Effect.gen(function* () {
   yield* Effect.log(`Final user: ${user.name}`)
 })
 
-await Effect.runPromise(main)
+Effect.runPromise(main)
 ```
 
 # Why This Works

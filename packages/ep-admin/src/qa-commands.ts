@@ -25,6 +25,7 @@ import {
     generateQAReport,
     getQAStatus,
     repairAllFailed,
+    validateAllPublishedPatterns,
     type QAConfig,
 } from "./services/qa/index.js";
 
@@ -35,7 +36,7 @@ const PROJECT_ROOT = process.cwd();
 
 const getQAConfig = (useNew = false): QAConfig => {
     const qaDir = useNew
-        ? `${PROJECT_ROOT}/content/new/qa` 
+        ? `${PROJECT_ROOT}/content/new/qa`
         : `${PROJECT_ROOT}/content/qa`;
 
     return {
@@ -43,10 +44,68 @@ const getQAConfig = (useNew = false): QAConfig => {
         resultsDir: `${qaDir}/results`,
         backupsDir: `${qaDir}/backups`,
         repairsDir: `${qaDir}/repairs`,
-        patternsDir: `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`,
+        patternsDir: useNew
+            ? `${PROJECT_ROOT}/${CONTENT_DIRS.NEW_PROCESSED}`
+            : `${PROJECT_ROOT}/${CONTENT_DIRS.PUBLISHED}/patterns`,
+        publishedPatternsDir: `${PROJECT_ROOT}/${CONTENT_DIRS.PUBLISHED}/patterns`,
         reportFile: `${qaDir}/qa-report.json`,
     };
 };
+
+/**
+ * qa:validate - Validate all published patterns
+ */
+export const qaValidateCommand = Command.make("validate", {
+    options: {
+        ...globalOptions,
+        concurrency: Options.integer("concurrency").pipe(
+            Options.withDescription("Number of patterns to validate concurrently"),
+            Options.withDefault(10)
+        ),
+    },
+}).pipe(
+    Command.withDescription(
+        "Validate all published patterns: frontmatter, structure, TypeScript type-checks"
+    ),
+    Command.withHandler(({ options }) =>
+        Effect.gen(function* () {
+            yield* configureLoggerFromOptions(options);
+            yield* Display.showInfo("Validating published patterns...");
+
+            const config = getQAConfig(false);
+            const results = yield* validateAllPublishedPatterns(config, options.concurrency);
+
+            const passed = results.filter((r) => r.passed).length;
+            const failed = results.filter((r) => !r.passed).length;
+            const totalWarnings = results.reduce(
+                (sum, r) => sum + (r.warnings?.length ?? 0), 0
+            );
+            const totalErrors = results.reduce(
+                (sum, r) => sum + (r.errors?.length ?? 0), 0
+            );
+
+            yield* Display.showInfo(`\nValidation Results`);
+            yield* Display.showInfo(`${"-".repeat(40)}`);
+            yield* Display.showInfo(`Total: ${results.length}`);
+            yield* Display.showInfo(`Passed: ${passed}`);
+            yield* Display.showInfo(`Failed: ${failed}`);
+            yield* Display.showInfo(`Errors: ${totalErrors}`);
+            yield* Display.showInfo(`Warnings: ${totalWarnings}`);
+
+            if (failed > 0) {
+                yield* Display.showInfo("\nFailed patterns:");
+                for (const result of results.filter((r) => !r.passed)) {
+                    yield* Display.showError(
+                        `  ${result.patternId}: ${(result.errors ?? []).join("; ")}`
+                    );
+                }
+            }
+
+            yield* Display.showInfo(`\nResults written to: ${config.resultsDir}`);
+            yield* Display.showSuccess("Validation complete!");
+        })
+    )
+);
 
 /**
  * qa:process - Run full QA pipeline
@@ -74,20 +133,37 @@ export const qaProcessCommand = Command.make("process", {
 
             const config = getQAConfig(options.new);
 
-            // Get status first
+            // Step 1: Validate published patterns (generates -qa.json files)
+            if (!options.new) {
+                yield* Display.showInfo("Step 1: Validating published patterns...");
+                const validationResults = yield* validateAllPublishedPatterns(config);
+                const passed = validationResults.filter((r) => r.passed).length;
+                const failed = validationResults.filter((r) => !r.passed).length;
+                yield* Display.showInfo(
+                    `Validated ${validationResults.length} patterns: ${passed} passed, ${failed} failed`
+                );
+            }
+
+            // Step 2: Get status (reads -qa.json files)
+            yield* Display.showInfo(
+                options.new ? "Step 1: Checking QA status..." : "Step 2: Checking QA status..."
+            );
             const status = yield* getQAStatus(config);
             yield* Display.showInfo(
                 `Found ${status.total} patterns: ` +
                 `${status.passed} passed, ${status.failed} failed`
             );
 
-            // Generate report
+            // Step 3: Generate report
+            yield* Display.showInfo(
+                options.new ? "Step 2: Generating report..." : "Step 3: Generating report..."
+            );
             const report = yield* generateQAReport(config);
             yield* Display.showInfo(
                 `Report generated: ${report.summary.passRate.toFixed(1)}% pass rate`
             );
 
-            // Optionally fix issues
+            // Step 4: Optionally fix issues
             if (options.fix && status.failed > 0) {
                 yield* Display.showInfo("Attempting to repair failed patterns...");
                 const repairSummary = yield* repairAllFailed(config, false);
@@ -378,6 +454,7 @@ export const qaFixPermissionsCommand = Command.make("fix-permissions", {
 export const qaCommand = Command.make("qa").pipe(
     Command.withDescription("Quality assurance operations for patterns"),
     Command.withSubcommands([
+        qaValidateCommand,
         qaProcessCommand,
         qaStatusCommand,
         qaReportCommand,

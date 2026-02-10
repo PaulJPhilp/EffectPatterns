@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.12.1] - 2026-02-10
+
+### 🔧 QA Pipeline
+- **QA Validator**: New `validator.ts` module validates frontmatter, structure, and TypeScript code blocks for all published `.mdx` patterns
+- **`qa validate` command**: New subcommand runs validation with configurable concurrency and writes per-pattern `-qa.json` result files
+- **`qa process` updated**: Now runs validation as Step 1 before status/report/repair
+
+### 🐛 Content Fixes
+- **15 pattern files fixed**: Corrected TypeScript code blocks across concurrency, schema, error-management, streams, scheduling, and tooling patterns
+  - Fixed broken frontmatter in `concurrency-fork-basics`
+  - Changed pseudocode blocks from `typescript` to `text` fencing where appropriate
+  - Wrapped `yield*` calls in proper `Effect.gen` generators inside `catchAll`, `catchTag`, `orElse` callbacks
+  - Scoped duplicate declarations in linting/type-error example blocks
+  - Fixed `await` outside async and `yield*` outside generator contexts
+
+### 📦 Dependencies
+- **`@effect-patterns/ep-admin`** 0.2.1: Added `gray-matter` for frontmatter parsing
+- **`@effect-patterns/toolkit`** 0.4.1: Added `releaseVersion` column to `effectPatterns` schema
+
+### 🛠️ Improvements
+- **`QAConfig` type**: Added `publishedPatternsDir` field, made all properties `readonly`
+- **Tagged errors**: Added `QAValidationError` and `TypeCheckError` to QA error types
+- **Pattern sync script**: New `scripts/sync-patterns-from-mdx.ts` utility
+
 ## [0.12.0] - 2026-02-10
 
 ### 🚀 First npm Publish

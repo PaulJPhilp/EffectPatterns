@@ -142,11 +142,12 @@ const program = Effect.gen(function* () {
 
   const raceWithFallback = primary.pipe(
     Effect.timeout("150 millis"),
-    Effect.catchAll(() => {
-      yield* Effect.log(`[PRIMARY] Timed out, using fallback`);
-
-      return fallback;
-    })
+    Effect.catchAll(() =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[PRIMARY] Timed out, using fallback`);
+        return yield* fallback;
+      })
+    )
   );
 
   const fallbackResult = yield* raceWithFallback;

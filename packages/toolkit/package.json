@@ -1,6 +1,6 @@
 {
   "name": "@effect-patterns/toolkit",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "description": "Type-safe Effect library for working with Effect-TS patterns - search, validate, and generate code from the Effect Patterns Hub",
   "main": "./dist/index.js",

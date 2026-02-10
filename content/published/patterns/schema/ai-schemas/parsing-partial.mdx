@@ -125,7 +125,7 @@ const parseStreamed = (json: string) =>
 
 // 5. Handle streaming data
 const handleStream = (chunks: AsyncIterable<string>) =>
-  Effect.gen(function* () {
+  Effect.tryPromise(async () => {
     let accumulated = ""
     const results: StreamedAnalysis[] = []
 
@@ -133,22 +133,15 @@ const handleStream = (chunks: AsyncIterable<string>) =>
       accumulated += chunk
 
       // Try parse on each chunk
-      const attempt = yield* parseStreamed(
-        accumulated
-      ).pipe(
-        Effect.catchTag(
-          "ValidationError",
-          () => Effect.none() // Not complete yet
-        ),
-        Effect.catchTag(
-          "ParseError",
-          () => Effect.none() // Still incomplete
+      const attempt = await Effect.runPromise(
+        parseStreamed(accumulated).pipe(
+          Effect.option
         )
       )
 
       if (Option.isSome(attempt)) {
         console.log(
-          "✅ Got complete analysis at",
+          "Got complete analysis at",
           accumulated.length,
           "bytes"
         )
@@ -159,23 +152,16 @@ const handleStream = (chunks: AsyncIterable<string>) =>
 
     // Handle final partial data if streaming ended
     if (accumulated.length > 0) {
-      const final = yield* parseStreamed(
-        accumulated
-      ).pipe(
-        Effect.catchTag(
-          "ValidationError",
-          (e) => {
-            console.warn(
-              "Final chunk incomplete but keeping:",
-              e.message
-            )
-            return Effect.succeed({
+      const final = await Effect.runPromise(
+        parseStreamed(accumulated).pipe(
+          Effect.orElse(() =>
+            Effect.succeed({
               title: "Incomplete",
               sections: undefined,
               conclusion: undefined,
               isComplete: false,
             } as StreamedAnalysis)
-          }
+          )
         )
       )
 

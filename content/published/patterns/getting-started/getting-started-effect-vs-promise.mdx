@@ -94,13 +94,13 @@ const fetchUser = (id: string): Effect.Effect<User, FetchError | ParseError> =>
 ## Key Insight
 
 With Promises:
-```typescript
+```text
 // You have to read the implementation to know what might fail
 async function doSomething(): Promise<Result> { ... }
 ```
 
 With Effect:
-```typescript
+```text
 // The type tells you everything
 function doSomething(): Effect<Result, NetworkError | ParseError, Database> { ... }
 //                               ^success  ^errors                   ^dependencies

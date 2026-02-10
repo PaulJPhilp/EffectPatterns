@@ -96,6 +96,7 @@
         "effect-cli-tui": "^2.2.0",
         "effect-env": "^0.4.1",
         "glob": "^13.0.1",
+        "gray-matter": "^4.0.3",
         "js-yaml": "^4.1.1",
         "liquidjs": "^10.24.0",
         "ora": "^9.0.0",

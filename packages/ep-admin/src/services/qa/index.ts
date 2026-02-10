@@ -16,7 +16,7 @@ export type { QAService } from "./api.js";
 
 // Errors
 export {
-	BackupCreationError, PatternNotFoundError, PatternRepairError, QAConfigurationError, QAFileParseError, QAReportGenerationError, QAResultsLoadError
+	BackupCreationError, PatternNotFoundError, PatternRepairError, QAConfigurationError, QAFileParseError, QAReportGenerationError, QAResultsLoadError, QAValidationError, TypeCheckError
 } from "./errors.js";
 
 // Service
@@ -30,4 +30,9 @@ export {
 	QA_FILE_SUFFIX, calculatePassRate, categorizeError, countFailuresByCategory, createPatternBackup, extractFailedPatternIds, filterFailedPatterns, generateRecommendations, groupBySkillLevel,
 	groupByTags, loadQAResults, patternExists
 } from "./helpers.js";
+
+// Validator
+export {
+	validateAllPublishedPatterns, validatePublishedPattern
+} from "./validator.js";
 

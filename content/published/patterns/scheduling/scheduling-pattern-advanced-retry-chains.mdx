@@ -300,10 +300,12 @@ const program = Effect.gen(function* () {
 
   const fallbackChain = callEndpoint("primary", true).pipe(
     Effect.orElse(() => callEndpoint("secondary", false)),
-    Effect.orElse(() => {
-      yield* Effect.log(`[FALLBACK] Using cached data`);
-      return Effect.succeed(endpoints.cache);
-    })
+    Effect.orElse(() =>
+      Effect.gen(function* () {
+        yield* Effect.log(`[FALLBACK] Using cached data`);
+        return endpoints.cache;
+      })
+    )
   );
 
   const result = yield* fallbackChain;
@@ -470,10 +472,12 @@ const createHealthAwareRetry = (config: {
       return healthy;
     }).pipe(
       Effect.timeout(Duration.millis(config.healthCheckTimeoutMs)),
-      Effect.catchAll(() => {
-        yield* Effect.log("[HEALTH] Check timed out, assuming unhealthy");
-        return Effect.succeed(false);
-      })
+      Effect.catchAll(() =>
+        Effect.gen(function* () {
+          yield* Effect.log("[HEALTH] Check timed out, assuming unhealthy");
+          return false;
+        })
+      )
     );
 
     return performHealthCheck;

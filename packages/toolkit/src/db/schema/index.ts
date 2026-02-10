@@ -105,6 +105,7 @@ export const effectPatterns = pgTable(
     content: text("content"),
     author: varchar("author", { length: 255 }),
     lessonOrder: integer("lesson_order"),
+    releaseVersion: varchar("release_version", { length: 20 }),
     applicationPatternId: uuid("application_pattern_id").references(
       () => applicationPatterns.id,
       { onDelete: "set null" }

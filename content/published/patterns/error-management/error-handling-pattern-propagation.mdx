@@ -245,19 +245,21 @@ const program = Effect.gen(function* () {
 
     for (let i = 1; i <= 3; i++) {
       const result = yield* networkCall.pipe(
-        Effect.catchTag("NetworkError", (error) => {
-          lastError = error;
+        Effect.catchTag("NetworkError", (error) =>
+          Effect.gen(function* () {
+            lastError = error;
 
-          yield* Effect.log(
-            `[RETRY] Attempt ${i} failed: ${error.statusCode}`
-          );
+            yield* Effect.log(
+              `[RETRY] Attempt ${i} failed: ${error.statusCode}`
+            );
 
-          if (i < 3) {
-            yield* Effect.log(`[RETRY] Waiting before retry...`);
-          }
+            if (i < 3) {
+              yield* Effect.log(`[RETRY] Waiting before retry...`);
+            }
 
-          return Effect.fail(error);
-        })
+            return yield* Effect.fail(error);
+          })
+        )
       ).pipe(
         Effect.tap(() => Effect.log(`[SUCCESS] Connected on attempt ${i}`))
       ).pipe(

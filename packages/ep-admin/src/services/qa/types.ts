@@ -3,12 +3,13 @@
  */
 
 export interface QAConfig {
-	qaDir: string;
-	resultsDir: string;
-	backupsDir: string;
-	repairsDir: string;
-	patternsDir: string;
-	reportFile: string;
+	readonly qaDir: string;
+	readonly resultsDir: string;
+	readonly backupsDir: string;
+	readonly repairsDir: string;
+	readonly patternsDir: string;
+	readonly publishedPatternsDir: string;
+	readonly reportFile: string;
 }
 
 export interface QAResult {
