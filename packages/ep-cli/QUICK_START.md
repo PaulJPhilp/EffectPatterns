@@ -102,7 +102,7 @@ DEBUG=1 VERBOSE=1 ep install @effect-patterns/toolkit
 
 ## See Also
 
-- **Full Documentation**: `EFFECT_ENV_IMPLEMENTATION_STATUS.md`
+- **Full Documentation**: `README.md`
 - **Config**: `src/config/env.ts`
 - **Test Helper**: `src/runtime/test.ts`
 

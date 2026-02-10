@@ -93,7 +93,6 @@ const hasOpenAI = yield* env.get("OPENAI_API_KEY") !== undefined;
 - **Full Guide**: `docs/ENVIRONMENT_CONFIGURATION.md`
 - **Implementation**: `src/config/env.ts`
 - **Examples**: `src/config/__tests__/env.test.ts`
-- **Status**: `EFFECT_ENV_IMPLEMENTATION_STATUS.md`
 
 ## Key Points
 
@@ -130,6 +129,4 @@ Make sure you're using `Effect.provide(program, testEnv)`
 
 ## See Full Implementation
 
-- `IMPLEMENTATION_COMPLETE.md` - What was done
-- `EFFECT_ENV_IMPLEMENTATION_STATUS.md` - Detailed status
 - `docs/ENVIRONMENT_CONFIGURATION.md` - Complete guide
