@@ -23,26 +23,27 @@ import { Schema, Effect } from "effect"
 
 // 1. Define environment schema
 const EnvironmentSchema = Schema.Struct({
-  DATABASE_URL: Schema.String.pipe(
-    Schema.description("PostgreSQL connection string")
-  ),
-  API_KEY: Schema.String.pipe(
-    Schema.minLength(32),
-    Schema.description("API authentication key (min 32 chars)")
-  ),
-  PORT: Schema.pipe(
-    Schema.String,
-    Schema.parseNumber(),
-    Schema.int(),
-    Schema.between(1024, 65535),
-    Schema.description("Server port (1024-65535)")
-  ),
-  LOG_LEVEL: Schema.Literal("debug", "info", "warn", "error").pipe(
-    Schema.description("Logging level")
-  ),
-  NODE_ENV: Schema.Literal("development", "staging", "production").pipe(
-    Schema.description("Deployment environment")
-  ),
+	DATABASE_URL: Schema.String.pipe(
+		Schema.annotations({ description: 'PostgreSQL connection string' }),
+	),
+	API_KEY: Schema.String.pipe(
+		Schema.minLength(32),
+		Schema.annotations({
+			description: 'API authentication key (min 32 chars)',
+		}),
+	),
+	PORT: Schema.String.pipe(
+		Schema.parseNumber,
+		Schema.int(),
+		Schema.between(1024, 65535),
+		Schema.annotations({ description: 'Server port (1024-65535)' }),
+	),
+	LOG_LEVEL: Schema.Literal('debug', 'info', 'warn', 'error').pipe(
+		Schema.annotations({ description: 'Logging level' }),
+	),
+	NODE_ENV: Schema.Literal('development', 'staging', 'production').pipe(
+		Schema.annotations({ description: 'Deployment environment' }),
+	),
 })
 
 type Environment = typeof EnvironmentSchema.Type
@@ -51,56 +52,52 @@ type Environment = typeof EnvironmentSchema.Type
 const validateEnv = Schema.decodeUnknown(EnvironmentSchema)
 
 // 3. Load and validate environment
-const loadEnvironment = (): Effect.Effect<Environment, Error> =>
-  Effect.gen(function* () {
-    const envVars = process.env
+const loadEnvironment = Effect.fn(function* () {
+	const validated = yield* validateEnv(process.env)
 
-    const validated = yield* Effect.tryPromise({
-      try: () => validateEnv(envVars),
-      catch: (error) => {
-        const errorMsg =
-          error instanceof Error ? error.message : String(error)
-        return new Error(`Environment validation failed: ${errorMsg}`)
-      },
-    })
-
-    console.log(`✅ Environment loaded: NODE_ENV=${validated.NODE_ENV}`)
-    return validated
-  })
+	console.log(`✅ Environment loaded: NODE_ENV=${validated.NODE_ENV}`)
+	return validated
+})
 
 // 4. Create service to provide environment
-class EnvironmentService {
-  constructor(readonly env: Environment) {}
-
-  isDev = () => this.env.NODE_ENV === "development"
-  isProd = () => this.env.NODE_ENV === "production"
-  isStaging = () => this.env.NODE_ENV === "staging"
+export class EnvironmentService extends Context.Tag('@app/EnvironmentService')<
+	EnvironmentService,
+	Environment & {
+		isDev: () => boolean
+		isStaging: () => boolean
+		isProd: () => boolean
+	}
+>() {
+	static layer = Layer.effect(
+		this,
+		Effect.gen(function* () {
+			const env = yield* loadEnvironment()
+			return {
+				...env,
+				isDev: () => env.NODE_ENV === 'development',
+				isStaging: () => env.NODE_ENV === 'staging',
+				isProd: () => env.NODE_ENV === 'production',
+			}
+		}),
+	)
 }
 
-// 5. Provide environment as a service
-const EnvironmentServiceLive = Effect.gen(function* () {
-  const env = yield* loadEnvironment()
-  return new EnvironmentService(env)
-}).pipe(Effect.layer)
-
 // Usage
-const appLogic = Effect.gen(function* () {
-  const envService = yield* Effect.service(EnvironmentService)
+const program = Effect.gen(function* () {
+	const envService = yield* EnvironmentService
 
-  console.log(`Database: ${envService.env.DATABASE_URL}`)
-  console.log(`Port: ${envService.env.PORT}`)
-  console.log(`Log level: ${envService.env.LOG_LEVEL}`)
-  console.log(`Is production: ${envService.isProd()}`)
+	console.log(`Database: ${envService.DATABASE_URL}`)
+	console.log(`Port: ${envService.PORT}`)
+	console.log(`Log level: ${envService.LOG_LEVEL}`)
+	console.log(`Is production: ${envService.isProd()}`)
 
-  return envService.env.PORT
+	return envService.PORT
 })
 
 // Run with environment layer
-Effect.runPromise(
-  appLogic.pipe(Effect.provide(EnvironmentServiceLive))
-)
-  .then((port) => console.log(`Server starting on port ${port}`))
-  .catch((error) => console.error(`Failed to start: ${error.message}`))
+Effect.runPromise(program.pipe(Effect.provide(EnvironmentService.layer)))
+	.then((port) => console.log(`Server starting on port ${port}`))
+	.catch((error) => console.error(`Failed to start: ${error.message}`))
 ```
 
 # Why This Works
