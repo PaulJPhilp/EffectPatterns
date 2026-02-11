@@ -11,7 +11,7 @@
 
 export const CLI = {
 	NAME: "ep-admin",
-	VERSION: "0.2.1",
+	VERSION: "0.2.2",
 	DESCRIPTION: "Administrative CLI for Effect Patterns maintainers",
 	RUNNER_NAME: "EffectPatterns Admin CLI",
 } as const;

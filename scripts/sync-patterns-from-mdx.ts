@@ -5,6 +5,8 @@
  *
  * - Inserts patterns that exist on disk but not in the DB
  * - Updates patterns that already exist in the DB
+ * - Links each pattern to its application_pattern via top-level category
+ * - Populates pattern_relations from frontmatter `related:` fields (second pass)
  *
  * Usage: bun run scripts/sync-patterns-from-mdx.ts [--release <version>]
  *
@@ -19,7 +21,11 @@ import { readFileSync } from "node:fs";
 import { Effect } from "effect";
 import { eq } from "drizzle-orm";
 import { createDatabase } from "../packages/toolkit/src/db/client.js";
-import { effectPatterns } from "../packages/toolkit/src/db/schema/index.js";
+import {
+  applicationPatterns,
+  effectPatterns,
+  patternRelations,
+} from "../packages/toolkit/src/db/schema/index.js";
 
 const ROOT = path.resolve(import.meta.dir, "..");
 const CONTENT_DIR = path.join(ROOT, "content/published/patterns");
@@ -82,6 +88,17 @@ function extractSummary(content: string): string {
   return firstParagraph.replace(/[#*`\[\]]/g, "").trim().slice(0, 500) || "No summary available";
 }
 
+/**
+ * Extract the top-level category from a file path relative to CONTENT_DIR.
+ *
+ * E.g. for "schema/primitives/date-validation.mdx" → "schema"
+ *      for "core-concepts/data-ref.mdx" → "core-concepts"
+ */
+function extractTopLevelCategory(file: string): string {
+  const relativePath = path.relative(CONTENT_DIR, file);
+  return relativePath.split(path.sep)[0];
+}
+
 const program = Effect.gen(function* () {
   const files = globSync(`${CONTENT_DIR}/**/*.mdx`);
   console.log(`Found ${files.length} .mdx files on disk`);
@@ -92,9 +109,32 @@ const program = Effect.gen(function* () {
 
   const { db, close } = createDatabase();
 
+  // --- Build application_pattern slug → id map ---
+  const appPatternRows = yield* Effect.tryPromise({
+    try: () =>
+      db
+        .select({ id: applicationPatterns.id, slug: applicationPatterns.slug })
+        .from(applicationPatterns),
+    catch: (error) => new Error(`Failed to load application_patterns: ${error}`),
+  });
+
+  const appPatternMap = new Map<string, string>();
+  for (const row of appPatternRows) {
+    appPatternMap.set(row.slug, row.id);
+  }
+  console.log(`Loaded ${appPatternMap.size} application patterns for linking`);
+  if (appPatternMap.size === 0) {
+    console.warn("⚠ No application_patterns found — run seed-application-patterns.ts first");
+  }
+
+  // --- First pass: sync patterns ---
   let inserted = 0;
   let updated = 0;
   let errors = 0;
+  let linkedCount = 0;
+
+  // Collect related: frontmatter for second pass
+  const relatedMap = new Map<string, string[]>();
 
   for (const file of files) {
     const raw = readFileSync(file, "utf8");
@@ -107,7 +147,8 @@ const program = Effect.gen(function* () {
 
     const title = frontmatter.title || slug;
     const skillLevel = frontmatter.skillLevel || "intermediate";
-    const category = frontmatter.category || frontmatter.applicationPatternId || path.basename(path.dirname(file));
+    const topLevelCategory = extractTopLevelCategory(file);
+    const category = topLevelCategory;
     const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [];
     const summary = frontmatter.summary || extractSummary(content);
     const difficulty = frontmatter.difficulty || skillLevel;
@@ -115,6 +156,15 @@ const program = Effect.gen(function* () {
     const lessonOrder = typeof frontmatter.lessonOrder === "number" ? frontmatter.lessonOrder : null;
     const rule = frontmatter.rule || null;
     const examples = extractExamples(content);
+
+    // Resolve application_pattern_id
+    const applicationPatternId = appPatternMap.get(topLevelCategory) || null;
+    if (applicationPatternId) linkedCount++;
+
+    // Collect related slugs for second pass
+    if (Array.isArray(frontmatter.related) && frontmatter.related.length > 0) {
+      relatedMap.set(slug, frontmatter.related);
+    }
 
     try {
       // Check if pattern exists
@@ -146,6 +196,7 @@ const program = Effect.gen(function* () {
                 author,
                 lessonOrder,
                 rule,
+                applicationPatternId,
                 validated: true,
                 validatedAt: new Date(),
                 updatedAt: new Date(),
@@ -171,6 +222,7 @@ const program = Effect.gen(function* () {
               author,
               lessonOrder,
               rule,
+              applicationPatternId,
               releaseVersion,
               validated: true,
               validatedAt: new Date(),
@@ -186,7 +238,63 @@ const program = Effect.gen(function* () {
     }
   }
 
-  // Verify
+  // --- Second pass: populate pattern_relations ---
+  console.log(`\nPopulating pattern_relations from ${relatedMap.size} patterns with related: field...`);
+
+  // Build slug → id map for all effect_patterns
+  const allPatternRows = yield* Effect.tryPromise({
+    try: () =>
+      db
+        .select({ id: effectPatterns.id, slug: effectPatterns.slug })
+        .from(effectPatterns),
+    catch: (error) => new Error(`Failed to load effect_patterns for relations: ${error}`),
+  });
+
+  const patternIdMap = new Map<string, string>();
+  for (const row of allPatternRows) {
+    patternIdMap.set(row.slug, row.id);
+  }
+
+  let relationsInserted = 0;
+  let relationsSkipped = 0;
+
+  for (const [slug, relatedSlugs] of relatedMap) {
+    const patternId = patternIdMap.get(slug);
+    if (!patternId) continue;
+
+    // Delete existing relations for this pattern
+    yield* Effect.tryPromise({
+      try: () =>
+        db
+          .delete(patternRelations)
+          .where(eq(patternRelations.patternId, patternId)),
+      catch: (error) => new Error(`Failed to delete relations for ${slug}: ${error}`),
+    });
+
+    for (const relatedSlug of relatedSlugs) {
+      const relatedPatternId = patternIdMap.get(relatedSlug);
+      if (!relatedPatternId) {
+        relationsSkipped++;
+        continue;
+      }
+
+      // Skip self-references
+      if (patternId === relatedPatternId) continue;
+
+      yield* Effect.tryPromise({
+        try: () =>
+          db.insert(patternRelations).values({
+            patternId,
+            relatedPatternId,
+          }).onConflictDoNothing(),
+        catch: (error) => new Error(`Failed to insert relation ${slug} → ${relatedSlug}: ${error}`),
+      });
+
+      relationsInserted++;
+    }
+  }
+
+  // --- Verify ---
   const count = yield* Effect.tryPromise({
     try: () =>
       db
@@ -196,11 +304,23 @@ const program = Effect.gen(function* () {
     catch: (error) => new Error(`Failed to count patterns: ${error}`),
   });
 
+  const relCount = yield* Effect.tryPromise({
+    try: () =>
+      db
+        .select()
+        .from(patternRelations)
+        .then((result) => result.length),
+    catch: (error) => new Error(`Failed to count relations: ${error}`),
+  });
+
   console.log(`\n✅ Sync complete!`);
   console.log(`   Inserted: ${inserted}`);
   console.log(`   Updated:  ${updated}`);
   console.log(`   Errors:   ${errors}`);
-  console.log(`   Total in DB: ${count}`);
+  console.log(`   Linked to application_pattern: ${linkedCount}`);
+  console.log(`   Total patterns in DB: ${count}`);
+  console.log(`   Relations inserted: ${relationsInserted} (skipped ${relationsSkipped} unresolved slugs)`);
+  console.log(`   Total relations in DB: ${relCount}`);
 
   yield* Effect.promise(() => close());
 });

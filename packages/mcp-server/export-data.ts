@@ -28,14 +28,6 @@ async function exportData() {
         );
         console.log(`Found ${effectPatterns.length} effect patterns`);
 
-        // Export jobs
-        const jobs = await db.execute(sql`SELECT * FROM jobs ORDER BY created_at`);
-        console.log(`Found ${jobs.length} jobs`);
-
-        // Export pattern_jobs
-        const patternJobs = await db.execute(sql`SELECT * FROM pattern_jobs`);
-        console.log(`Found ${patternJobs.length} pattern-job relationships`);
-
         // Export pattern_relations
         const patternRelations = await db.execute(
             sql`SELECT * FROM pattern_relations`,
@@ -46,8 +38,6 @@ async function exportData() {
         const exportData = {
             application_patterns: appPatterns,
             effect_patterns: effectPatterns,
-            jobs: jobs,
-            pattern_jobs: patternJobs,
             pattern_relations: patternRelations,
             exported_at: new Date().toISOString(),
         };

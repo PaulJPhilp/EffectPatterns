@@ -8,7 +8,6 @@ import {
     createApplicationPatternRepository,
     createDatabase,
     createEffectPatternRepository,
-    createJobRepository,
 } from "@effect-patterns/toolkit";
 import { Args, Command, Options } from "@effect/cli";
 import { Effect } from "effect";
@@ -100,8 +99,6 @@ const getRepository = (db: any, entityType: string): Repository | null => {
 		case "application-pattern":
 		case "ap":
 			return createApplicationPatternRepository(db);
-		case "job":
-			return createJobRepository(db);
 		default:
 			return null;
 	}
@@ -118,8 +115,6 @@ const getEntityDisplayName = (entityType: string, slug: string): string => {
 		case "application-pattern":
 		case "ap":
 			return `Application pattern "${slug}"`;
-		case "job":
-			return `Job "${slug}"`;
 		default:
 			return `Entity "${slug}"`;
 	}
@@ -150,7 +145,7 @@ export const handleEntityOperation = (
 			if (!repo) {
 				yield* Display.showError(
 					`Invalid entity type: ${options.type}. Must be one of: ` +
-						`pattern, application-pattern, job`
+						`pattern, application-pattern`
 				);
 				return;
 			}

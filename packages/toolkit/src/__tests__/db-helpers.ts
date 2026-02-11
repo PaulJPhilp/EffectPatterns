@@ -8,8 +8,6 @@ import { createDatabase } from "../db/client.js"
 import {
   applicationPatterns,
   effectPatterns,
-  jobs,
-  patternJobs,
   patternRelations,
   skillPatterns,
   skills,
@@ -41,9 +39,7 @@ export async function cleanDatabase(db: Database): Promise<void> {
   await db.delete(skillPatterns)
   await db.delete(skills)
   await db.delete(patternRelations)
-  await db.delete(patternJobs)
   await db.delete(effectPatterns)
-  await db.delete(jobs)
   await db.delete(applicationPatterns)
 }
 
@@ -53,7 +49,6 @@ export async function cleanDatabase(db: Database): Promise<void> {
 export async function seedTestData(db: Database): Promise<{
   applicationPatternId: string
   patternId: string
-  jobId: string
 }> {
   // Create test application pattern
   const [ap] = await db
@@ -81,28 +76,9 @@ export async function seedTestData(db: Database): Promise<{
     })
     .returning()
 
-  // Create test job
-  const [job] = await db
-    .insert(jobs)
-    .values({
-      slug: "test-job-run-parallel",
-      description: "Run effects in parallel",
-      category: "getting-started",
-      status: "covered",
-      applicationPatternId: ap.id,
-    })
-    .returning()
-
-  // Link pattern to job
-  await db.insert(patternJobs).values({
-    patternId: ep.id,
-    jobId: job.id,
-  })
-
   return {
     applicationPatternId: ap.id,
     patternId: ep.id,
-    jobId: job.id,
   }
 }
 
@@ -115,7 +91,6 @@ export async function setupTestDatabase(url?: string): Promise<{
   ids: {
     applicationPatternId: string
     patternId: string
-    jobId: string
   }
 }> {
   const connection = createTestDatabase(url)

@@ -8,7 +8,6 @@ import {
 	createApplicationPatternRepository,
 	createDatabase,
 	createEffectPatternRepository,
-	createJobRepository,
 } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 
@@ -39,8 +38,6 @@ const isExistsQueryResult = (rows: unknown[]): rows is ExistsQueryResult[] => {
 export const REQUIRED_TABLES = [
 	"application_patterns",
 	"effect_patterns",
-	"jobs",
-	"pattern_jobs",
 	"pattern_relations",
 ] as const;
 
@@ -96,18 +93,15 @@ export const getDatabaseStats = (db: Database) =>
 		try: async () => {
 			const apRepo = createApplicationPatternRepository(db);
 			const epRepo = createEffectPatternRepository(db);
-			const jobRepo = createJobRepository(db);
 
-			const [apCount, epCount, jobCount] = await Promise.all([
+			const [apCount, epCount] = await Promise.all([
 				apRepo.findAll(),
 				epRepo.findAll(),
-				jobRepo.findAll(),
 			]);
 
 			return {
 				applicationPatterns: apCount.length,
 				effectPatterns: epCount.length,
-				jobs: jobCount.length,
 				tables: REQUIRED_TABLES,
 			};
 		},

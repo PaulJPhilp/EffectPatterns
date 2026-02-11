@@ -4,8 +4,6 @@
  * PostgreSQL schema for Effect Patterns Hub data model:
  * - ApplicationPattern: High-level pattern categories
  * - EffectPattern: Concrete code examples
- * - Job: Jobs-to-be-Done entries
- * - PatternJob: Many-to-many relationship between patterns and jobs
  * - PatternRelation: Related patterns linking
  * - Skill: Agent Skills (SKILL.md) generated from patterns
  * - SkillPattern: Many-to-many relationship between skills and patterns
@@ -31,12 +29,6 @@ import {
  */
 export const skillLevels = ["beginner", "intermediate", "advanced"] as const
 export type SkillLevel = (typeof skillLevels)[number]
-
-/**
- * Job status enum values
- */
-export const jobStatuses = ["covered", "partial", "gap"] as const
-export type JobStatus = (typeof jobStatuses)[number]
 
 /**
  * Application Patterns table
@@ -122,59 +114,6 @@ export const effectPatterns = pgTable(
     index("effect_patterns_application_pattern_idx").on(table.applicationPatternId),
     index("effect_patterns_validated_idx").on(table.validated),
     index("effect_patterns_tags_idx").using("gin", table.tags), // Optimize tag search
-  ]
-)
-
-/**
- * Jobs table
- *
- * Represents a specific developer need or task within
- * an Application Pattern domain.
- */
-export const jobs = pgTable(
-  "jobs",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    slug: varchar("slug", { length: 255 }).notNull().unique(),
-    description: text("description").notNull(),
-    category: varchar("category", { length: 100 }),
-    status: varchar("status", { length: 50 }).notNull().$type<JobStatus>(),
-    applicationPatternId: uuid("application_pattern_id").references(
-      () => applicationPatterns.id,
-      { onDelete: "cascade" }
-    ),
-    validated: boolean("validated").default(false).notNull(),
-    validatedAt: timestamp("validated_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  },
-  (table) => [
-    uniqueIndex("jobs_slug_idx").on(table.slug),
-    index("jobs_status_idx").on(table.status),
-    index("jobs_application_pattern_idx").on(table.applicationPatternId),
-    index("jobs_validated_idx").on(table.validated),
-  ]
-)
-
-/**
- * Pattern-Job join table
- *
- * Many-to-many relationship: Jobs can be fulfilled by multiple patterns.
- */
-export const patternJobs = pgTable(
-  "pattern_jobs",
-  {
-    patternId: uuid("pattern_id")
-      .notNull()
-      .references(() => effectPatterns.id, { onDelete: "cascade" }),
-    jobId: uuid("job_id")
-      .notNull()
-      .references(() => jobs.id, { onDelete: "cascade" }),
-  },
-  (table) => [
-    primaryKey({ columns: [table.patternId, table.jobId] }),
-    index("pattern_jobs_pattern_idx").on(table.patternId),
-    index("pattern_jobs_job_idx").on(table.jobId),
   ]
 )
 
@@ -265,7 +204,6 @@ export const skillPatterns = pgTable(
  */
 export const applicationPatternRelations = relations(applicationPatterns, ({ many }) => ({
   effectPatterns: many(effectPatterns),
-  jobs: many(jobs),
   skills: many(skills),
 }))
 
@@ -277,35 +215,9 @@ export const effectPatternRelations = relations(effectPatterns, ({ one, many }) 
     fields: [effectPatterns.applicationPatternId],
     references: [applicationPatterns.id],
   }),
-  patternJobs: many(patternJobs),
   skillPatterns: many(skillPatterns),
   relatedFrom: many(patternRelations, { relationName: "relatedFrom" }),
   relatedTo: many(patternRelations, { relationName: "relatedTo" }),
-}))
-
-/**
- * Job relations
- */
-export const jobRelations = relations(jobs, ({ one, many }) => ({
-  applicationPattern: one(applicationPatterns, {
-    fields: [jobs.applicationPatternId],
-    references: [applicationPatterns.id],
-  }),
-  patternJobs: many(patternJobs),
-}))
-
-/**
- * PatternJob relations
- */
-export const patternJobRelations = relations(patternJobs, ({ one }) => ({
-  pattern: one(effectPatterns, {
-    fields: [patternJobs.patternId],
-    references: [effectPatterns.id],
-  }),
-  job: one(jobs, {
-    fields: [patternJobs.jobId],
-    references: [jobs.id],
-  }),
 }))
 
 /**
@@ -358,12 +270,6 @@ export type NewApplicationPattern = typeof applicationPatterns.$inferInsert
 
 export type EffectPattern = typeof effectPatterns.$inferSelect
 export type NewEffectPattern = typeof effectPatterns.$inferInsert
-
-export type Job = typeof jobs.$inferSelect
-export type NewJob = typeof jobs.$inferInsert
-
-export type PatternJob = typeof patternJobs.$inferSelect
-export type NewPatternJob = typeof patternJobs.$inferInsert
 
 export type PatternRelation = typeof patternRelations.$inferSelect
 export type NewPatternRelation = typeof patternRelations.$inferInsert

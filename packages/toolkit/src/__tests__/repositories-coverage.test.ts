@@ -11,11 +11,6 @@ import {
 	EffectPatternRepositoryError,
 } from "../repositories/effect-pattern.js";
 
-import {
-	JobNotFoundError,
-	JobRepositoryError,
-} from "../repositories/job.js";
-
 describe("Repository Error Classes - Effect Pattern", () => {
 	describe("EffectPatternNotFoundError", () => {
 		it("should create error with identifier", () => {
@@ -54,35 +49,6 @@ describe("Repository Error Classes - Effect Pattern", () => {
 			expect(error._tag).toBe("EffectPatternLockedError");
 			expect(error.message).toContain("locked-effect-pattern");
 			expect(error.message).toContain("locked");
-		});
-	});
-});
-
-describe("Repository Error Classes - Job", () => {
-	describe("JobNotFoundError", () => {
-		it("should create error with identifier", () => {
-			const error = new JobNotFoundError("job-123");
-
-			expect(error).toBeInstanceOf(Error);
-			expect(error).toBeInstanceOf(JobNotFoundError);
-			expect(error.identifier).toBe("job-123");
-			expect(error._tag).toBe("JobNotFoundError");
-			expect(error.message).toContain("job-123");
-		});
-	});
-
-	describe("JobRepositoryError", () => {
-		it("should create error with operation and cause", () => {
-			const cause = new Error("Connection timeout");
-			const error = new JobRepositoryError("update", cause);
-
-			expect(error).toBeInstanceOf(Error);
-			expect(error).toBeInstanceOf(JobRepositoryError);
-			expect(error.operation).toBe("update");
-			expect(error.cause).toBe(cause);
-			expect(error._tag).toBe("JobRepositoryError");
-			expect(error.message).toContain("update");
-			expect(error.message).toContain("Connection timeout");
 		});
 	});
 });
@@ -135,56 +101,6 @@ describe("Repository Logic Tests", () => {
 
 			invalidEffectPatterns.forEach(pattern => {
 				const errors = validateEffectPattern(pattern);
-				expect(errors.length).toBeGreaterThan(0);
-			});
-		});
-	});
-
-	describe("Job Logic", () => {
-		it("should validate job data", () => {
-			const validJob = {
-				id: "job-123",
-				slug: "validate-user-input",
-				description: "Validate user input safely",
-				status: "covered",
-				category: "validation"
-			};
-
-			const invalidJobs = [
-				{ id: "" }, // empty id
-				{ slug: "Invalid Slug With Spaces" }, // invalid slug
-				{ status: "completed" }, // invalid status
-				{ description: "" } // empty description
-			];
-
-			// Validation logic
-			const validateJob = (job: any) => {
-				const errors = [];
-
-				if (!job.id || typeof job.id !== "string") {
-					errors.push("Invalid id");
-				}
-
-				if (!job.slug || !/^[a-z0-9-]+$/.test(job.slug)) {
-					errors.push("Invalid slug");
-				}
-
-				const validStatuses = ["covered", "partial", "gap"];
-				if (job.status && !validStatuses.includes(job.status)) {
-					errors.push("Invalid status");
-				}
-
-				if (job.description !== undefined && typeof job.description !== "string") {
-					errors.push("Description must be string");
-				}
-
-				return errors;
-			};
-
-			expect(validateJob(validJob)).toEqual([]);
-
-			invalidJobs.forEach(job => {
-				const errors = validateJob(job);
 				expect(errors.length).toBeGreaterThan(0);
 			});
 		});

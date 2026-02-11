@@ -56,7 +56,7 @@ Effect Patterns Hub
 
 **Database** (`packages/toolkit/src/db/`)
 - PostgreSQL with Drizzle ORM
-- Tables: `effect_patterns`, `application_patterns`, `pattern_jobs`, `pattern_relations`
+- Tables: `effect_patterns`, `application_patterns`, `pattern_relations`, `skills`, `skill_patterns`
 - Connection pooling with serverless-aware configuration (Vercel KV fallback)
 
 **MCP Protocol** (`packages/mcp-server/src/mcp-stdio.ts`)
@@ -354,12 +354,14 @@ const patterns = await db
 - `learningOrder`, `effectModule`, `subPatterns` (JSONB)
 - Indexed on: slug, learning_order
 
-**`pattern_jobs`** - Pattern → Jobs mapping
-- Links patterns to "jobs-to-be-done" functional outcomes
-- Supports coverage tracking: covered, partial, gap
-
 **`pattern_relations`** - Related patterns
-- Establishes connections between related patterns
+- Self-referential many-to-many linking related patterns
+
+**`skills`** - Agent skills generated from patterns
+- One per application pattern category, contains SKILL.md content
+
+**`skill_patterns`** - Skill → Pattern join table
+- Many-to-many linking skills to their constituent patterns
 
 ### Skill Levels
 - `🟢 Beginner` - Fundamentals, first patterns

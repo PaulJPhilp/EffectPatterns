@@ -29,8 +29,6 @@ async function importData() {
         // Clear existing data
         console.log("Clearing existing data...");
         await db.execute(sql`DELETE FROM pattern_relations`);
-        await db.execute(sql`DELETE FROM pattern_jobs`);
-        await db.execute(sql`DELETE FROM jobs`);
         await db.execute(sql`DELETE FROM effect_patterns`);
         await db.execute(sql`DELETE FROM application_patterns`);
 
@@ -77,36 +75,6 @@ async function importData() {
             ${pattern.application_pattern_id}, ${pattern.validated}, ${pattern.validated_at},
             ${pattern.created_at}, ${pattern.updated_at}
           )
-        `);
-            }
-        }
-
-        // Import jobs
-        if (exportData.jobs.length > 0) {
-            console.log(`Importing ${exportData.jobs.length} jobs...`);
-            for (const job of exportData.jobs) {
-                await db.execute(sql`
-          INSERT INTO jobs (
-            id, slug, description, category, status, application_pattern_id,
-            validated, validated_at, created_at, updated_at
-          ) VALUES (
-            ${job.id}, ${job.slug}, ${job.description}, ${job.category},
-            ${job.status}, ${job.application_pattern_id}, ${job.validated},
-            ${job.validated_at}, ${job.created_at}, ${job.updated_at}
-          )
-        `);
-            }
-        }
-
-        // Import pattern_jobs
-        if (exportData.pattern_jobs.length > 0) {
-            console.log(
-                `Importing ${exportData.pattern_jobs.length} pattern-job relationships...`,
-            );
-            for (const relation of exportData.pattern_jobs) {
-                await db.execute(sql`
-          INSERT INTO pattern_jobs (pattern_id, job_id)
-          VALUES (${relation.pattern_id}, ${relation.job_id})
         `);
             }
         }

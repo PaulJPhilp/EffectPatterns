@@ -10,16 +10,12 @@ import { createDatabase, getDatabaseUrl } from "../db/client.js";
 import type {
     ApplicationPattern,
     EffectPattern as DbEffectPattern,
-    Job,
 } from "../db/schema/index.js";
-import type { JobWithPatterns } from "../repositories/index.js";
 import {
     createApplicationPatternRepository,
     createEffectPatternRepository,
-    createJobRepository,
     type ApplicationPatternRepository,
     type EffectPatternRepository,
-    type JobRepository,
     type SearchPatternsParams,
 } from "../repositories/index.js";
 import type { Pattern } from "../schemas/pattern.js";
@@ -133,20 +129,6 @@ export class EffectPatternRepositoryService extends Effect.Service<EffectPattern
   },
 ) {}
 
-/**
- * Job Repository Service
- */
-export class JobRepositoryService extends Effect.Service<JobRepositoryService>()(
-  "JobRepositoryService",
-  {
-    effect: Effect.gen(function* () {
-      const dbService = yield* DatabaseService;
-      return createJobRepository(dbService.db);
-    }),
-    dependencies: [DatabaseService.Default],
-  },
-) {}
-
 export const ApplicationPatternRepositoryLive =
   ApplicationPatternRepositoryService.Default.pipe(
     Layer.provide(DatabaseServiceLive),
@@ -157,10 +139,6 @@ export const EffectPatternRepositoryLive =
     Layer.provide(DatabaseServiceLive),
   );
 
-export const JobRepositoryLive = JobRepositoryService.Default.pipe(
-  Layer.provide(DatabaseServiceLive),
-);
-
 /**
  * Complete database layer with all repositories
  */
@@ -168,7 +146,6 @@ export const DatabaseLayer = Layer.mergeAll(
   DatabaseServiceLive,
   ApplicationPatternRepositoryLive,
   EffectPatternRepositoryLive,
-  JobRepositoryLive,
 );
 
 // ============================================
@@ -197,18 +174,6 @@ export const getEffectPatternRepository = (): Effect.Effect<
 > =>
   Effect.gen(function* () {
     return yield* EffectPatternRepositoryService;
-  });
-
-/**
- * Get job repository
- */
-export const getJobRepository = (): Effect.Effect<
-  JobRepository,
-  never,
-  JobRepositoryService
-> =>
-  Effect.gen(function* () {
-    return yield* JobRepositoryService;
   });
 
 /**
@@ -378,54 +343,3 @@ export const findPatternsByApplicationPattern = (
     return yield* resilient(operation, []);
   });
 
-/**
- * Find jobs by application pattern
- */
-export const findJobsByApplicationPattern = (
-  applicationPatternId: string,
-): Effect.Effect<Job[], Error, JobRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger> =>
-  Effect.gen(function* () {
-    const repo = yield* JobRepositoryService;
-    const operation = Effect.tryPromise({
-      try: () => repo.findByApplicationPattern(applicationPatternId),
-      catch: (error) => new Error(`Failed to find jobs: ${String(error)}`),
-    });
-    
-    return yield* resilient(operation, []);
-  });
-
-/**
- * Get job with patterns
- */
-export const getJobWithPatterns = (
-  jobId: string,
-): Effect.Effect<JobWithPatterns | null, Error, JobRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger> =>
-  Effect.gen(function* () {
-    const repo = yield* JobRepositoryService;
-    const operation = Effect.tryPromise({
-      try: () => repo.findWithPatterns(jobId),
-      catch: (error) =>
-        new Error(`Failed to get job with patterns: ${String(error)}`),
-    });
-    
-    return yield* resilient(operation, null);
-  });
-
-/**
- * Get coverage statistics
- */
-export const getCoverageStats = (): Effect.Effect<
-  { total: number; covered: number; partial: number; gap: number },
-  Error,
-  JobRepositoryService | DatabaseService | ToolkitConfig | ToolkitLogger
-> =>
-  Effect.gen(function* () {
-    const repo = yield* JobRepositoryService;
-    const operation = Effect.tryPromise({
-      try: () => repo.getCoverageStats(),
-      catch: (error) =>
-        new Error(`Failed to get coverage stats: ${String(error)}`),
-    });
-    
-    return yield* resilient(operation, { total: 0, covered: 0, partial: 0, gap: 0 });
-  });

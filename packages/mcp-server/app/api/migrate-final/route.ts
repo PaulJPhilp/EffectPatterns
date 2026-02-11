@@ -19,8 +19,6 @@ const handleMigrateFinal = (_request: NextRequest) => Effect.gen(function* () {
 		try {
 			// Drop existing tables
 			await db.execute(sql`DROP TABLE IF EXISTS pattern_relations CASCADE`)
-			await db.execute(sql`DROP TABLE IF EXISTS pattern_jobs CASCADE`)
-			await db.execute(sql`DROP TABLE IF EXISTS jobs CASCADE`)
 			await db.execute(sql`DROP TABLE IF EXISTS effect_patterns CASCADE`)
 			await db.execute(sql`DROP TABLE IF EXISTS application_patterns CASCADE`)
 

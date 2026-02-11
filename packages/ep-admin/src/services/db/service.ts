@@ -11,7 +11,6 @@ import {
 	createApplicationPatternRepository,
 	createDatabase,
 	createEffectPatternRepository,
-	createJobRepository,
 } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import type {
@@ -48,8 +47,6 @@ const isTestQueryResult = (rows: unknown[]): rows is TestQueryResult[] => {
 const REQUIRED_TABLES = [
 	"application_patterns",
 	"effect_patterns",
-	"jobs",
-	"pattern_jobs",
 	"pattern_relations",
 ];
 
@@ -76,8 +73,7 @@ export const runQuickTest = (): Effect.Effect<DBQuickTestResult, Error> =>
 				stats: {
 					applicationPatterns: 0,
 					effectPatterns: 0,
-					jobs: 0,
-					tables: [],
+						tables: [],
 				},
 				searchWorks: false,
 				repositoriesWork: false,
@@ -112,7 +108,6 @@ export const runQuickTest = (): Effect.Effect<DBQuickTestResult, Error> =>
 		// Get stats
 		const apRepo = createApplicationPatternRepository(db);
 		const epRepo = createEffectPatternRepository(db);
-		const jobRepo = createJobRepository(db);
 
 		const stats = yield* Effect.all([
 			Effect.tryPromise({
@@ -123,15 +118,10 @@ export const runQuickTest = (): Effect.Effect<DBQuickTestResult, Error> =>
 				try: () => epRepo.findAll(),
 				catch: () => [],
 			}),
-			Effect.tryPromise({
-				try: () => jobRepo.findAll(),
-				catch: () => [],
-			}),
 		]).pipe(
-			Effect.map(([aps, eps, jobs]) => ({
+			Effect.map(([aps, eps]) => ({
 				applicationPatterns: aps.length,
 				effectPatterns: eps.length,
-				jobs: jobs.length,
 				tables: REQUIRED_TABLES,
 			}))
 		);
@@ -263,16 +253,7 @@ export const runFullTestSuite = (): Effect.Effect<DBTestSummary, Error> =>
 				}
 			});
 
-			// Test 6: Jobs Repository
-			yield* runTest("Jobs Repository", async () => {
-				const repo = createJobRepository(db);
-				const all = await repo.findAll();
-				if (!Array.isArray(all)) {
-					throw new Error("findAll should return an array");
-				}
-			});
-
-			// Test 7: Count by Skill Level
+			// Test 6: Count by Skill Level
 			yield* runTest("Count Patterns by Skill Level", async () => {
 				const repo = createEffectPatternRepository(db);
 				const counts = await repo.countBySkillLevel();

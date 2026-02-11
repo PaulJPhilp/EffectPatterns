@@ -6,12 +6,9 @@ import { describe, expect, it } from "vitest";
 import {
 	applicationPatterns,
 	effectPatterns,
-	jobs,
-	jobStatuses,
 	skillLevels,
 	type ApplicationPattern,
 	type EffectPattern,
-	type Job
 } from "../db/schema/index.js";
 
 describe("Database Schema", () => {
@@ -24,13 +21,6 @@ describe("Database Schema", () => {
 			expect(skillLevels).toHaveLength(3);
 		});
 
-		it("should have valid job statuses", () => {
-			expect(jobStatuses).toEqual(["covered", "partial", "gap"]);
-			expect(jobStatuses).toContain("covered");
-			expect(jobStatuses).toContain("partial");
-			expect(jobStatuses).toContain("gap");
-			expect(jobStatuses).toHaveLength(3);
-		});
 	});
 
 	describe("Table Definitions", () => {
@@ -44,10 +34,6 @@ describe("Database Schema", () => {
 			expect(typeof effectPatterns).toBe("object");
 		});
 
-		it("should export jobs table", () => {
-			expect(jobs).toBeDefined();
-			expect(typeof jobs).toBe("object");
-		});
 	});
 
 	describe("Type Safety", () => {
@@ -96,23 +82,6 @@ describe("Database Schema", () => {
 			expect(pattern.updatedAt).toBeInstanceOf(Date);
 		});
 
-		it("should have correct Job type structure", () => {
-			const job: Partial<Job> = {
-				id: "test-id",
-				slug: "test-job",
-				description: "Test description",
-				status: "covered",
-				createdAt: new Date(),
-				updatedAt: new Date()
-			};
-
-			expect(job.id).toBe("test-id");
-			expect(job.slug).toBe("test-job");
-			expect(job.description).toBe("Test description");
-			expect(job.status).toBe("covered");
-			expect(job.createdAt).toBeInstanceOf(Date);
-			expect(job.updatedAt).toBeInstanceOf(Date);
-		});
 	});
 
 	describe("Validation Logic", () => {
@@ -122,14 +91,6 @@ describe("Database Schema", () => {
 
 			expect(skillLevels.includes(validSkillLevel as any)).toBe(true);
 			expect(skillLevels.includes(invalidSkillLevel as any)).toBe(false);
-		});
-
-		it("should validate job status values", () => {
-			const validStatus = "covered";
-			const invalidStatus = "complete";
-
-			expect(jobStatuses.includes(validStatus as any)).toBe(true);
-			expect(jobStatuses.includes(invalidStatus as any)).toBe(false);
 		});
 
 		it("should validate slug format", () => {

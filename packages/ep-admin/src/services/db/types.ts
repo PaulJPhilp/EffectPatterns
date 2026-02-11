@@ -20,7 +20,6 @@ export interface DBTestSummary {
 export interface DBStats {
 	applicationPatterns: number;
 	effectPatterns: number;
-	jobs: number;
 	tables: string[];
 }
 

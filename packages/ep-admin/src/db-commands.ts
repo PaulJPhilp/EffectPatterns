@@ -133,7 +133,6 @@ export const dbTestQuickCommand = Command.make("test-quick", {
             yield* Display.showInfo("\n3. Checking data...");
             yield* Display.showInfo(`   Application Patterns: ${result.stats.applicationPatterns}`);
             yield* Display.showInfo(`   Effect Patterns: ${result.stats.effectPatterns}`);
-            yield* Display.showInfo(`   Jobs: ${result.stats.jobs}`);
 
             if (result.stats.applicationPatterns === 0 && result.stats.effectPatterns === 0) {
                 yield* Display.showInfo("\n   No data found. Run: bun run db:migrate");

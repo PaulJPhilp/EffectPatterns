@@ -17,12 +17,10 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest"
 import {
   createApplicationPatternRepository,
   createEffectPatternRepository,
-  createJobRepository,
 } from "../repositories/index.js"
 import type {
   NewApplicationPattern,
   NewEffectPattern,
-  NewJob,
 } from "../db/schema/index.js"
 import {
   setupTestDatabase,
@@ -231,94 +229,6 @@ describe("Repository Integration Tests", () => {
       expect(counts.beginner).toBe(2)
       expect(counts.advanced).toBe(1)
       expect(counts.intermediate).toBe(0)
-    })
-  })
-
-  describe("Jobs Repository", () => {
-    it("should create and retrieve a job", async () => {
-      if (!db) return
-
-      const apRepo = createApplicationPatternRepository(db)
-      const jobRepo = createJobRepository(db)
-
-      const ap = await apRepo.create({
-        slug: "job-test-ap",
-        name: "Job Test",
-        description: "For job testing",
-        learningOrder: 1,
-      })
-
-      const testJob: NewJob = {
-        slug: "test-job-run-parallel",
-        description: "Run effects in parallel",
-        category: "getting-started",
-        status: "covered",
-        applicationPatternId: ap.id,
-      }
-
-      const inserted = await jobRepo.create(testJob)
-      expect(inserted.slug).toBe("test-job-run-parallel")
-      expect(inserted.status).toBe("covered")
-      expect(inserted.applicationPatternId).toBe(ap.id)
-    })
-
-    it("should link patterns to jobs", async () => {
-      if (!db) return
-
-      const epRepo = createEffectPatternRepository(db)
-      const jobRepo = createJobRepository(db)
-
-      // Create pattern
-      const pattern = await epRepo.create({
-        slug: "fulfilling-pattern",
-        title: "Fulfilling Pattern",
-        summary: "Fulfills a job",
-        skillLevel: "beginner",
-      })
-
-      // Create job
-      const job = await jobRepo.create({
-        slug: "fulfilled-job",
-        description: "A job to be fulfilled",
-        status: "covered",
-      })
-
-      // Link them
-      await jobRepo.linkPattern(job.id, pattern.id)
-
-      // Query the job with patterns
-      const jobWithPatterns = await jobRepo.findWithPatterns(job.id)
-      expect(jobWithPatterns).toBeDefined()
-      expect(jobWithPatterns?.patterns).toHaveLength(1)
-      expect(jobWithPatterns?.patterns[0].slug).toBe("fulfilling-pattern")
-    })
-
-    it("should get coverage stats", async () => {
-      if (!db) return
-
-      const jobRepo = createJobRepository(db)
-
-      await jobRepo.create({
-        slug: "covered-job",
-        description: "Covered job",
-        status: "covered",
-      })
-      await jobRepo.create({
-        slug: "gap-job",
-        description: "Gap job",
-        status: "gap",
-      })
-      await jobRepo.create({
-        slug: "partial-job",
-        description: "Partial job",
-        status: "partial",
-      })
-
-      const stats = await jobRepo.getCoverageStats()
-      expect(stats.total).toBe(3)
-      expect(stats.covered).toBe(1)
-      expect(stats.gap).toBe(1)
-      expect(stats.partial).toBe(1)
     })
   })
 

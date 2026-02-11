@@ -1,6 +1,6 @@
 {
   "name": "@effect-patterns/ep-admin",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "dependencies": {
     "@effect-patterns/ep-shared-services": "workspace:*",
     "@effect-patterns/pipeline-state": "workspace:*",

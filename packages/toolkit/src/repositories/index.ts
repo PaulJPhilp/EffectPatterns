@@ -23,16 +23,6 @@ export {
   type SearchPatternsParams,
 } from "./effect-pattern.js"
 
-// Job Repository
-export {
-  createJobRepository,
-  JobNotFoundError,
-  JobRepositoryError,
-  JobLockedError,
-  type JobRepository,
-  type JobWithPatterns,
-} from "./job.js"
-
 // Skill Repository
 export {
   createSkillRepository,

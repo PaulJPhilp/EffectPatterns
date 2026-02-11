@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.12.2] - 2026-02-11
+
+### 🗄️ Database Population
+- **All 5 tables populated**: `effect_patterns` (309), `application_patterns` (16), `pattern_relations` (455), `skills` (16), `skill_patterns` (309)
+- **Fixed category extraction**: Sync script now uses top-level directory (16 categories) instead of subcategory dirs (was 38)
+- **Linked application patterns**: All 309 `effect_patterns` now have `application_pattern_id` set
+- **Populated pattern relations**: 455 relations from MDX `related:` frontmatter fields
+- **Generated skills**: 16 skills (one per category) with `skill_patterns` join records
+
+### 🧹 Removed Jobs Tables
+- **Dropped `jobs` and `pattern_jobs`**: Removed unused Jobs-to-be-Done tables from schema, codebase, and database
+- **Migration 0004**: `0004_next_ikaris.sql` drops both tables
+- **Cleaned all references**: Removed job repository, service layer, CLI commands, tests, import/export, and migration routes
+
+### 📝 Content & Documentation
+- **77 schema patterns**: Added missing `rule:` frontmatter via `scripts/add-missing-rules.ts`
+- **DATABASE_ARCHITECTURE.md**: New comprehensive database reference (5 tables, row counts, FK summary, writers, known issues)
+- **CLAUDE.md**: Updated database tables list to reflect current schema
+- **README.md**: Regenerated from patterns
+
+### 🛠️ New Scripts
+- **`scripts/seed-application-patterns.ts`**: Seeds 16 application pattern categories via UPSERT
+- **`scripts/add-missing-rules.ts`**: Adds `rule:` frontmatter to schema patterns missing it
+- **`scripts/sync-patterns-from-mdx.ts`**: Enhanced with `application_pattern_id` linking and `pattern_relations` population
+
+### 📦 Package Versions
+- `effect-patterns-hub` 0.12.2
+- `@effect-patterns/toolkit` 0.4.2
+- `@effect-patterns/ep-admin` 0.2.2
+
 ## [0.12.1] - 2026-02-10
 
 ### 🔧 QA Pipeline
