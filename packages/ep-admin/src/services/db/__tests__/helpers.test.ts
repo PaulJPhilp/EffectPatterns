@@ -20,8 +20,6 @@ describe("Database Service Helpers", () => {
 			expect(REQUIRED_TABLES).toEqual([
 				"application_patterns",
 				"effect_patterns",
-				"jobs",
-				"pattern_jobs",
 				"pattern_relations",
 			]);
 		});

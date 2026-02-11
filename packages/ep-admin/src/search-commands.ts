@@ -3,8 +3,8 @@
  */
 
 import {
-	createDatabase,
-	createEffectPatternRepository,
+	EffectPatternRepositoryLive,
+	EffectPatternRepositoryService,
 } from "@effect-patterns/toolkit";
 import { Args, Command } from "@effect/cli";
 import { Console, Effect } from "effect";
@@ -28,18 +28,7 @@ export const searchCommand = Command.make("search", {
 						`\n🔍 Searching for patterns matching "${args.query}"...\n`
 					);
 
-					const db = yield* Effect.try({
-						try: () => createDatabase(),
-						catch: (error) =>
-							new Error(
-								`Failed to create database connection: ${error instanceof Error ? error.message : String(error)}`
-							),
-					});
-					yield* Effect.addFinalizer(() =>
-						Effect.promise(() => db.close())
-					);
-
-					const repo = createEffectPatternRepository(db.db);
+					const repo = yield* EffectPatternRepositoryService;
 					const dbPatterns = yield* Effect.tryPromise({
 						try: () =>
 							repo.search({
@@ -106,6 +95,7 @@ export const searchCommand = Command.make("search", {
 					}
 				})
 			).pipe(
+				Effect.provide(EffectPatternRepositoryLive),
 				Effect.catchAll((error) =>
 					Effect.gen(function* () {
 						yield* Display.showError(

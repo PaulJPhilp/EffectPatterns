@@ -8,153 +8,120 @@
  */
 
 import {
-  createDatabase,
-  createApplicationPatternRepository,
-  createEffectPatternRepository,
-  createSkillRepository,
+  ApplicationPatternRepositoryService,
+  DatabaseLayer,
+  EffectPatternRepositoryService,
+  SkillRepositoryService,
 } from "@effect-patterns/toolkit";
-import { Args, Command, Options } from "@effect/cli";
+import { Command } from "@effect/cli";
 import { Console, Effect } from "effect";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
 
 // ============================================
-// Helpers
-// ============================================
-
-const withDatabase = <A>(
-  fn: (repos: {
-    appPatternRepo: ReturnType<typeof createApplicationPatternRepository>;
-    patternRepo: ReturnType<typeof createEffectPatternRepository>;
-    skillRepo: ReturnType<typeof createSkillRepository>;
-  }) => Effect.Effect<A, Error, never>
-) =>
-  Effect.scoped(
-    Effect.gen(function* () {
-      const db = yield* Effect.try({
-        try: () => createDatabase(),
-        catch: (error) =>
-          new Error(
-            `Failed to connect to database: ${error instanceof Error ? error.message : String(error)}`
-          ),
-      });
-      yield* Effect.addFinalizer(() => Effect.promise(() => db.close()));
-
-      const appPatternRepo = createApplicationPatternRepository(db.db);
-      const patternRepo = createEffectPatternRepository(db.db);
-      const skillRepo = createSkillRepository(db.db);
-
-      return yield* fn({ appPatternRepo, patternRepo, skillRepo });
-    })
-  );
-
-// ============================================
 // Display helpers
 // ============================================
 
-const showPatterns = (
-  patternRepo: ReturnType<typeof createEffectPatternRepository>
-) =>
-  Effect.gen(function* () {
-    const patterns = yield* Effect.tryPromise({
-      try: () => patternRepo.findAll(),
-      catch: (error) => new Error(`Failed to query patterns: ${error}`),
-    });
+const showPatterns = Effect.gen(function* () {
+  const patternRepo = yield* EffectPatternRepositoryService;
 
-    const counts = yield* Effect.tryPromise({
-      try: () => patternRepo.countBySkillLevel(),
-      catch: (error) => new Error(`Failed to count patterns: ${error}`),
-    });
-
-    yield* Console.log(`\n  Effect Patterns: ${patterns.length}`);
-    yield* Console.log(
-      `    Beginner: ${counts.beginner}  Intermediate: ${counts.intermediate}  Advanced: ${counts.advanced}`
-    );
-
-    // Group by category
-    const categories = new Map<string, number>();
-    for (const p of patterns) {
-      const cat = p.category ?? "(none)";
-      categories.set(cat, (categories.get(cat) ?? 0) + 1);
-    }
-
-    if (categories.size > 0) {
-      const sorted = [...categories.entries()].sort((a, b) => b[1] - a[1]);
-      yield* Console.log(`    Categories: ${sorted.length}`);
-      for (const [cat, count] of sorted) {
-        yield* Console.log(`      ${cat}: ${count}`);
-      }
-    }
-
-    return patterns.length;
+  const patterns = yield* Effect.tryPromise({
+    try: () => patternRepo.findAll(),
+    catch: (error) => new Error(`Failed to query patterns: ${error}`),
   });
 
-const showSkills = (
-  skillRepo: ReturnType<typeof createSkillRepository>
-) =>
-  Effect.gen(function* () {
-    const skills = yield* Effect.tryPromise({
-      try: () => skillRepo.findAll(),
-      catch: (error) => new Error(`Failed to query skills: ${error}`),
-    });
+  const counts = yield* Effect.tryPromise({
+    try: () => patternRepo.countBySkillLevel(),
+    catch: (error) => new Error(`Failed to count patterns: ${error}`),
+  });
 
-    yield* Console.log(`\n  Skills: ${skills.length}`);
+  yield* Console.log(`\n  Effect Patterns: ${patterns.length}`);
+  yield* Console.log(
+    `    Beginner: ${counts.beginner}  Intermediate: ${counts.intermediate}  Advanced: ${counts.advanced}`
+  );
 
-    if (skills.length === 0) {
-      yield* Console.log(`    (none — run scripts/load-skills.ts to populate)`);
-      return 0;
-    }
+  // Group by category
+  const categories = new Map<string, number>();
+  for (const p of patterns) {
+    const cat = p.category ?? "(none)";
+    categories.set(cat, (categories.get(cat) ?? 0) + 1);
+  }
 
-    // Stats
-    const validated = skills.filter((s) => s.validated).length;
-    const totalPatterns = skills.reduce((sum, s) => sum + s.patternCount, 0);
-    const versions = skills.map((s) => s.version);
-    const maxVersion = Math.max(...versions);
-
-    yield* Console.log(`    Validated: ${validated}/${skills.length}`);
-    yield* Console.log(`    Total pattern links: ${totalPatterns}`);
-    if (maxVersion > 1) {
-      yield* Console.log(`    Max version: ${maxVersion}`);
-    }
-
-    // Group by category
-    const categories = new Map<string, number>();
-    for (const s of skills) {
-      const cat = s.category ?? "(none)";
-      categories.set(cat, (categories.get(cat) ?? 0) + 1);
-    }
-
+  if (categories.size > 0) {
     const sorted = [...categories.entries()].sort((a, b) => b[1] - a[1]);
     yield* Console.log(`    Categories: ${sorted.length}`);
     for (const [cat, count] of sorted) {
       yield* Console.log(`      ${cat}: ${count}`);
     }
+  }
 
-    return skills.length;
+  return patterns.length;
+});
+
+const showSkills = Effect.gen(function* () {
+  const skillRepo = yield* SkillRepositoryService;
+
+  const skills = yield* Effect.tryPromise({
+    try: () => skillRepo.findAll(),
+    catch: (error) => new Error(`Failed to query skills: ${error}`),
   });
 
-const showApplicationPatterns = (
-  appPatternRepo: ReturnType<typeof createApplicationPatternRepository>
-) =>
-  Effect.gen(function* () {
-    const appPatterns = yield* Effect.tryPromise({
-      try: () => appPatternRepo.findAll(),
-      catch: (error) => new Error(`Failed to query application patterns: ${error}`),
-    });
+  yield* Console.log(`\n  Skills: ${skills.length}`);
 
-    yield* Console.log(`\n  Application Patterns: ${appPatterns.length}`);
+  if (skills.length === 0) {
+    yield* Console.log(`    (none — run scripts/load-skills.ts to populate)`);
+    return 0;
+  }
 
-    if (appPatterns.length > 0) {
-      for (const ap of appPatterns) {
-        const validated = ap.validated ? " [validated]" : "";
-        yield* Console.log(
-          `    ${ap.learningOrder}. ${ap.name} (${ap.slug})${validated}`
-        );
-      }
+  // Stats
+  const validated = skills.filter((s) => s.validated).length;
+  const totalPatterns = skills.reduce((sum, s) => sum + s.patternCount, 0);
+  const versions = skills.map((s) => s.version);
+  const maxVersion = Math.max(...versions);
+
+  yield* Console.log(`    Validated: ${validated}/${skills.length}`);
+  yield* Console.log(`    Total pattern links: ${totalPatterns}`);
+  if (maxVersion > 1) {
+    yield* Console.log(`    Max version: ${maxVersion}`);
+  }
+
+  // Group by category
+  const categories = new Map<string, number>();
+  for (const s of skills) {
+    const cat = s.category ?? "(none)";
+    categories.set(cat, (categories.get(cat) ?? 0) + 1);
+  }
+
+  const sorted = [...categories.entries()].sort((a, b) => b[1] - a[1]);
+  yield* Console.log(`    Categories: ${sorted.length}`);
+  for (const [cat, count] of sorted) {
+    yield* Console.log(`      ${cat}: ${count}`);
+  }
+
+  return skills.length;
+});
+
+const showApplicationPatterns = Effect.gen(function* () {
+  const appPatternRepo = yield* ApplicationPatternRepositoryService;
+
+  const appPatterns = yield* Effect.tryPromise({
+    try: () => appPatternRepo.findAll(),
+    catch: (error) => new Error(`Failed to query application patterns: ${error}`),
+  });
+
+  yield* Console.log(`\n  Application Patterns: ${appPatterns.length}`);
+
+  if (appPatterns.length > 0) {
+    for (const ap of appPatterns) {
+      const validated = ap.validated ? " [validated]" : "";
+      yield* Console.log(
+        `    ${ap.learningOrder}. ${ap.name} (${ap.slug})${validated}`
+      );
     }
+  }
 
-    return appPatterns.length;
-  });
+  return appPatterns.length;
+});
 
 // ============================================
 // Commands
@@ -175,9 +142,8 @@ const showPatternsCommand = Command.make("patterns", {
         yield* configureLoggerFromOptions(options);
         yield* Display.showInfo("Querying database for patterns...");
 
-        yield* withDatabase(({ patternRepo }) =>
-          showPatterns(patternRepo)
-        ).pipe(
+        yield* Effect.scoped(showPatterns).pipe(
+          Effect.provide(DatabaseLayer),
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               yield* Display.showError(
@@ -205,9 +171,8 @@ const showSkillsCommand = Command.make("skills", {
         yield* configureLoggerFromOptions(options);
         yield* Display.showInfo("Querying database for skills...");
 
-        yield* withDatabase(({ skillRepo }) =>
-          showSkills(skillRepo)
-        ).pipe(
+        yield* Effect.scoped(showSkills).pipe(
+          Effect.provide(DatabaseLayer),
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               yield* Display.showError(
@@ -235,17 +200,18 @@ const showAllCommand = Command.make("all", {
         yield* configureLoggerFromOptions(options);
         yield* Display.showInfo("Querying database...");
 
-        yield* withDatabase(({ appPatternRepo, patternRepo, skillRepo }) =>
+        yield* Effect.scoped(
           Effect.gen(function* () {
-            const appCount = yield* showApplicationPatterns(appPatternRepo);
-            const patternCount = yield* showPatterns(patternRepo);
-            const skillCount = yield* showSkills(skillRepo);
+            const appCount = yield* showApplicationPatterns;
+            const patternCount = yield* showPatterns;
+            const skillCount = yield* showSkills;
 
             yield* Console.log(
               `\n  Total: ${appCount} application patterns, ${patternCount} effect patterns, ${skillCount} skills`
             );
           })
         ).pipe(
+          Effect.provide(DatabaseLayer),
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               yield* Display.showError(

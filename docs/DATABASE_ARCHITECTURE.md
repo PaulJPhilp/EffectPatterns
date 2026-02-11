@@ -298,14 +298,21 @@ These files enumerate columns explicitly in raw SQL INSERT statements. They don'
 
 ## Current State
 
-As of v0.12.1 (2026-02-11):
+As of v0.12.3 (2026-02-11):
 
 | Table | Row count | Notes |
 |---|---|---|
-| `effect_patterns` | 309 | All linked to `application_patterns`, all have `rule` |
+| `effect_patterns` | 304 | All linked to `application_patterns`, all have `rule` and `summary` |
 | `application_patterns` | 16 | 16 top-level categories |
-| `pattern_relations` | 455 | Populated from MDX `related:` frontmatter |
+| `pattern_relations` | 445 | Populated from MDX `related:` frontmatter |
 | `skills` | 16 | One per application pattern category |
 | `skill_patterns` | 309 | All patterns assigned to a skill |
 
 All 5 tables are actively populated. The `jobs` and `pattern_jobs` tables were removed in migration 0004.
+
+### v0.12.3 changes
+
+- Deleted 5 duplicate patterns (`data-chunk`, `data-duration`, `observability-custom-metrics`, `observability-tracing-spans`, `leverage-structured-logging`) — row count dropped from 309 to 304
+- All 77 schema patterns now have `summary` populated from frontmatter (previously extracted from body at sync time)
+- 4 core-concepts patterns renamed to disambiguate duplicate titles
+- `pattern_relations` rebuilt with updated `related:` slugs (445 rows, down from 455 due to removed patterns)

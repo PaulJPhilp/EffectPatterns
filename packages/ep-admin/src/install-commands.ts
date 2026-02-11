@@ -1,13 +1,14 @@
 /**
  * Install and rules commands for AI tool integration
- * 
+ *
  * Commands for installing Effect patterns into AI tools and generating skills
  */
 
 import {
-	createApplicationPatternRepository,
-	createDatabase,
-	createEffectPatternRepository,
+	ApplicationPatternRepositoryService,
+	DatabaseLayer,
+	EffectPatternRepositoryLive,
+	EffectPatternRepositoryService,
 	type SkillLevel,
 } from "@effect-patterns/toolkit";
 import { Command, Options } from "@effect/cli";
@@ -162,18 +163,7 @@ export const installAddCommand = Command.make("add", {
 						return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
 					}
 
-					const conn = yield* Effect.try({
-						try: () => createDatabase(),
-						catch: (error) =>
-							new Error(
-								`Failed to create database connection: ${error instanceof Error ? error.message : String(error)}`
-							),
-					});
-					yield* Effect.addFinalizer(() =>
-						Effect.promise(() => conn.close())
-					);
-
-					const repo = createEffectPatternRepository(conn.db);
+					const repo = yield* EffectPatternRepositoryService;
 					const searchParams: {
 						query?: string;
 						skillLevel?: SkillLevel;
@@ -287,6 +277,8 @@ Your AI tool configuration has been updated with Effect patterns!`,
 						{ type: "success" }
 					);
 				})
+			).pipe(
+				Effect.provide(EffectPatternRepositoryLive),
 			) as any
 	)
 );
@@ -415,10 +407,8 @@ export const installSkillsCommand = Command.make("skills", {
 				colorize("\n🎓 Generating Skills from Effect Patterns\n", "BRIGHT")
 			);
 
-			const conn = createDatabase();
-			yield* Effect.addFinalizer(() => Effect.promise(() => conn.close()));
-			const apRepo = createApplicationPatternRepository(conn.db);
-			const epRepo = createEffectPatternRepository(conn.db);
+			const epRepo = yield* EffectPatternRepositoryService;
+			const apRepo = yield* ApplicationPatternRepositoryService;
 
 			yield* Console.log(
 				colorize("📖 Loading patterns from database...", "CYAN")
@@ -681,7 +671,9 @@ export const installSkillsCommand = Command.make("skills", {
 				"✨ Skills Generation Complete!",
 				{ type: "success" }
 			);
-		})) as any;
+		})).pipe(
+			Effect.provide(DatabaseLayer),
+		) as any;
 	})
 );
 

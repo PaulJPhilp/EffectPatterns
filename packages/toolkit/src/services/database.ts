@@ -14,6 +14,7 @@ import type {
 import {
     createApplicationPatternRepository,
     createEffectPatternRepository,
+    createSkillRepository,
     type ApplicationPatternRepository,
     type EffectPatternRepository,
     type SearchPatternsParams,
@@ -129,6 +130,20 @@ export class EffectPatternRepositoryService extends Effect.Service<EffectPattern
   },
 ) {}
 
+/**
+ * Skill Repository Service
+ */
+export class SkillRepositoryService extends Effect.Service<SkillRepositoryService>()(
+  "SkillRepositoryService",
+  {
+    effect: Effect.gen(function* () {
+      const dbService = yield* DatabaseService;
+      return createSkillRepository(dbService.db);
+    }),
+    dependencies: [DatabaseService.Default],
+  },
+) {}
+
 export const ApplicationPatternRepositoryLive =
   ApplicationPatternRepositoryService.Default.pipe(
     Layer.provide(DatabaseServiceLive),
@@ -139,6 +154,11 @@ export const EffectPatternRepositoryLive =
     Layer.provide(DatabaseServiceLive),
   );
 
+export const SkillRepositoryLive =
+  SkillRepositoryService.Default.pipe(
+    Layer.provide(DatabaseServiceLive),
+  );
+
 /**
  * Complete database layer with all repositories
  */
@@ -146,6 +166,7 @@ export const DatabaseLayer = Layer.mergeAll(
   DatabaseServiceLive,
   ApplicationPatternRepositoryLive,
   EffectPatternRepositoryLive,
+  SkillRepositoryLive,
 );
 
 // ============================================

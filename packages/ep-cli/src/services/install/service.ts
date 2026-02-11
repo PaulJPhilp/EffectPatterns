@@ -6,8 +6,8 @@
  */
 
 import { FileSystem } from "@effect/platform";
+import { EffectPatternRepositoryService } from "@effect-patterns/toolkit";
 import { Effect, Schema } from "effect";
-import { closeDatabaseSafely } from "../../utils/database.js";
 import type { InstalledRule, InstallService, Rule } from "./api.js";
 import { InstalledRuleSchema } from "./api.js";
 
@@ -39,6 +39,7 @@ export class Install extends Effect.Service<Install>()("Install", {
   accessors: true,
   effect: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
+    const repo = yield* EffectPatternRepositoryService;
 
     const InstalledRulesArraySchema = Schema.Array(InstalledRuleSchema);
 
@@ -66,56 +67,38 @@ export class Install extends Effect.Service<Install>()("Install", {
       skillLevel?: string;
       useCase?: string;
     }) =>
-      Effect.scoped(
-        Effect.gen(function* () {
-          const { createDatabase, createEffectPatternRepository } = yield* Effect.tryPromise(
-            () => import("@effect-patterns/toolkit")
-          );
-          const { db } = createDatabase();
-          yield* Effect.addFinalizer(() => closeDatabaseSafely(db).pipe(Effect.ignoreLogged));
+      Effect.gen(function* () {
+        const results = yield* Effect.tryPromise({
+          try: () =>
+            repo.search({
+              query: options.query,
+              skillLevel: options.skillLevel as "beginner" | "intermediate" | "advanced" | undefined,
+            }),
+          catch: (e) => new Error(`Failed to search patterns: ${e}`),
+        });
 
-          const repo = createEffectPatternRepository(db);
-          const results = yield* Effect.tryPromise({
-            try: () =>
-              repo.search({
-                query: options.query,
-                skillLevel: options.skillLevel as "beginner" | "intermediate" | "advanced" | undefined,
-              }),
-            catch: (e) => new Error(`Failed to search patterns: ${e}`),
-          });
+        let rules = results.map(dbPatternToRule);
 
-          let rules = results.map(dbPatternToRule);
+        if (options.useCase) {
+          rules = rules.filter((r) => r.useCase?.includes(options.useCase!));
+        }
 
-          if (options.useCase) {
-            rules = rules.filter((r) => r.useCase?.includes(options.useCase!));
-          }
-
-          return rules;
-        })
-      );
+        return rules;
+      });
 
     const fetchRule = (id: string) =>
-      Effect.scoped(
-        Effect.gen(function* () {
-          const { createDatabase, createEffectPatternRepository } = yield* Effect.tryPromise(
-            () => import("@effect-patterns/toolkit")
-          );
-          const { db } = createDatabase();
-          yield* Effect.addFinalizer(() => closeDatabaseSafely(db).pipe(Effect.ignoreLogged));
+      Effect.gen(function* () {
+        const pattern = yield* Effect.tryPromise({
+          try: () => repo.findBySlug(id),
+          catch: (e) => new Error(`Failed to fetch pattern: ${e}`),
+        });
 
-          const repo = createEffectPatternRepository(db);
-          const pattern = yield* Effect.tryPromise({
-            try: () => repo.findBySlug(id),
-            catch: (e) => new Error(`Failed to fetch pattern: ${e}`),
-          });
+        if (!pattern) {
+          return yield* Effect.fail(new Error(`Rule with id ${id} not found`));
+        }
 
-          if (!pattern) {
-            return yield* Effect.fail(new Error(`Rule with id ${id} not found`));
-          }
-
-          return dbPatternToRule(pattern);
-        })
-      );
+        return dbPatternToRule(pattern);
+      });
 
     return {
       loadInstalledRules,
@@ -124,4 +107,5 @@ export class Install extends Effect.Service<Install>()("Install", {
       fetchRule,
     } as InstallService;
   }),
+  dependencies: [EffectPatternRepositoryService.Default],
 }) {}

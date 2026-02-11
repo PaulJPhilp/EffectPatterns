@@ -138,6 +138,8 @@ export {
     DatabaseServiceLive,
     EffectPatternRepositoryLive,
     EffectPatternRepositoryService,
+    SkillRepositoryLive,
+    SkillRepositoryService,
     findAllApplicationPatterns,
     findApplicationPatternBySlug,
     findEffectPatternBySlug,

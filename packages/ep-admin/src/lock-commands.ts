@@ -5,9 +5,9 @@
  */
 
 import {
-    createApplicationPatternRepository,
-    createDatabase,
-    createEffectPatternRepository,
+    ApplicationPatternRepositoryService,
+    DatabaseLayer,
+    EffectPatternRepositoryService,
 } from "@effect-patterns/toolkit";
 import { Args, Command, Options } from "@effect/cli";
 import { Effect } from "effect";
@@ -89,16 +89,20 @@ const performEntityOperation = (
 	});
 
 /**
- * Get repository for entity type
+ * Get repository for entity type from pre-constructed services
  */
-const getRepository = (db: any, entityType: string): Repository | null => {
+const getRepository = (
+	epRepo: Repository,
+	apRepo: Repository,
+	entityType: string
+): Repository | null => {
 	switch (entityType) {
 		case "pattern":
 		case "effect-pattern":
-			return createEffectPatternRepository(db);
+			return epRepo;
 		case "application-pattern":
 		case "ap":
-			return createApplicationPatternRepository(db);
+			return apRepo;
 		default:
 			return null;
 	}
@@ -130,17 +134,11 @@ export const handleEntityOperation = (
 ) =>
 	Effect.scoped(
 		Effect.gen(function* () {
-			const db = yield* Effect.try({
-				try: () => createDatabase(),
-				catch: (error) =>
-					new Error(
-						`Failed to create database connection: ${error instanceof Error ? error.message : String(error)}`
-					),
-			});
-			yield* Effect.addFinalizer(() => Effect.promise(() => db.close()));
+			const epRepo = yield* EffectPatternRepositoryService;
+			const apRepo = yield* ApplicationPatternRepositoryService;
 
 			const entityType = options.type.toLowerCase();
-			const repo = getRepository(db.db, entityType);
+			const repo = getRepository(epRepo, apRepo, entityType);
 
 			if (!repo) {
 				yield* Display.showError(
@@ -163,6 +161,7 @@ export const handleEntityOperation = (
 			yield* Display.showSuccess(`${entityName} has been ${actionText}`);
 		})
 	).pipe(
+		Effect.provide(DatabaseLayer),
 		Effect.catchAll((error) =>
 			Effect.gen(function* () {
 				yield* Display.showError(
