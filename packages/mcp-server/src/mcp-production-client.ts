@@ -17,6 +17,7 @@ import { Agent as HttpsAgent } from "https";
 const PRODUCTION_URL = "https://effect-patterns-mcp.vercel.app";
 const API_KEY = process.env.PATTERN_API_KEY || process.env.PRODUCTION_API_KEY;
 const REQUEST_TIMEOUT_MS = 30000;
+const MCP_SERVER_VERSION = "2.0.0";
 
 // HTTP Connection Pooling (production API is always HTTPS)
 const httpsAgent = new HttpsAgent({
@@ -39,7 +40,7 @@ const inFlightRequests = new Map<
 const server = new McpServer(
     {
         name: "effect-patterns-production",
-        version: "1.0.0",
+        version: MCP_SERVER_VERSION,
     },
     {
         capabilities: {

@@ -27,7 +27,8 @@ import type {
 import type { SearchPatternsArgs } from "@/schemas/tool-schemas.js";
 
 /**
- * Build rich search content by fetching individual pattern details.
+ * Build rich search content from search summaries.
+ * Falls back to per-pattern detail fetch only when required card fields are missing.
  * Returns an array of TextContent blocks for markdown rendering.
  */
 export async function buildFullSearchContent(
@@ -49,44 +50,66 @@ export async function buildFullSearchContent(
     return content;
   }
 
+  const canRenderFromSummary = (summary: SearchResultsPayload["patterns"][number]) =>
+    Boolean(summary.examples && summary.examples.length > 0 && summary.examples[0]?.code);
+
+  const buildCardFromSummary = (
+    summary: SearchResultsPayload["patterns"][number],
+  ): TextContent[] => {
+    const summaryText = summary.description || "No summary available.";
+    const useWhenText =
+      summary.useCases && summary.useCases.length > 0
+        ? summary.useCases[0]
+        : summaryText;
+    const example = summary.examples && summary.examples.length > 0 ? summary.examples[0] : undefined;
+    const exampleCode = example?.code || "// No example available for this pattern.";
+    const apiNames = extractApiNames(exampleCode);
+
+    return buildFullPatternCard({
+      title: summary.title,
+      summary: summaryText,
+      rationale: summaryText,
+      useWhen: useWhenText,
+      apiNames,
+      exampleCode,
+      exampleLanguage: example?.language || "typescript",
+    });
+  };
+
   for (let i = 0; i < renderedCards; i++) {
-    const summary = data.patterns[i];
-    const detailResult = await callApi(
-      `/patterns/${encodeURIComponent(summary.id)}`,
-    );
-
-    if (detailResult.ok && detailResult.data) {
-      const detailEnvelope = detailResult.data as any;
-      const detail = detailEnvelope.pattern ?? detailEnvelope;
-      const summaryText =
-        detail.summary || detail.description || summary.description;
-      const rationaleText =
-        detail.description || summary.description;
-      const useWhenText =
-        detail.useCases && detail.useCases.length > 0
-          ? detail.useCases[0]
-          : summaryText;
-      const example = detail.examples && detail.examples.length > 0 ? detail.examples[0] : undefined;
-      const exampleCode = example?.code || "// No example available for this pattern.";
-      const apiNames = extractApiNames(exampleCode);
-
-      const fullCard = buildFullPatternCard({
-        title: detail.title || summary.title,
-        summary: summaryText,
-        rationale: rationaleText,
-        useWhen: useWhenText,
-        apiNames,
-        exampleCode,
-        exampleLanguage: example?.language || "typescript",
-      });
-      content.push(...fullCard);
+    const summary = data.patterns[i]!;
+    if (canRenderFromSummary(summary)) {
+      content.push(...buildCardFromSummary(summary));
     } else {
-      const fallback = buildPatternContent(
-        summary.title,
-        summary.description,
-        "// No example available for this pattern.",
+      const detailResult = await callApi(
+        `/patterns/${encodeURIComponent(summary.id)}`,
       );
-      content.push(...fallback);
+
+      if (detailResult.ok && detailResult.data) {
+        const detailEnvelope = detailResult.data as any;
+        const detail = detailEnvelope.pattern ?? detailEnvelope;
+        const mergedSummary = {
+          ...summary,
+          title: detail.title || summary.title,
+          description: detail.summary || detail.description || summary.description,
+          useCases:
+            detail.useCases && detail.useCases.length > 0
+              ? detail.useCases
+              : summary.useCases,
+          examples:
+            detail.examples && detail.examples.length > 0
+              ? detail.examples
+              : summary.examples,
+        };
+        content.push(...buildCardFromSummary(mergedSummary));
+      } else {
+        const fallback = buildPatternContent(
+          summary.title,
+          summary.description,
+          "// No example available for this pattern.",
+        );
+        content.push(...fallback);
+      }
     }
 
     if (i < renderedCards - 1) {

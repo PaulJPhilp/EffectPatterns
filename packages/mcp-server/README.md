@@ -272,7 +272,7 @@ Returns service health status (no authentication required).
 ```json
 {
   "ok": true,
-  "version": "0.5.1",
+  "version": "0.7.7",
   "service": "effect-patterns-mcp-server",
   "timestamp": "2024-01-13T12:00:00.000Z"
 }

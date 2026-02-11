@@ -495,6 +495,7 @@ class SimpleCache {
 }
 
 const toolCache = new SimpleCache();
+const MCP_SERVER_VERSION = "2.0.0";
 
 // ============================================================================
 // MCP Server Setup
@@ -503,7 +504,7 @@ const toolCache = new SimpleCache();
 const server = new McpServer(
   {
     name: "effect-patterns",
-    version: "1.0.0",
+    version: MCP_SERVER_VERSION,
   },
   {
     capabilities: {

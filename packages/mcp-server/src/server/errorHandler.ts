@@ -54,6 +54,14 @@ interface ApiErrorResponse {
   details?: Record<string, unknown>;
 }
 
+function isDebugErrorMode(): boolean {
+  return process.env.MCP_DEBUG === "true";
+}
+
+function internalErrorMessage(error: string): string {
+  return isDebugErrorMode() ? error : "Internal server error";
+}
+
 /**
  * Convert errors to HTTP responses
  *
@@ -190,9 +198,11 @@ export function errorToResponse(
       case "ConfigurationError": {
         const e = error as ConfigurationError;
         const response: ApiErrorResponse = {
-          error: e.message,
+          error: internalErrorMessage(e.message),
           status: "configuration_error",
-          details: { key: e.key, expected: e.expected, received: e.received },
+          details: isDebugErrorMode()
+            ? { key: e.key, expected: e.expected, received: e.received }
+            : undefined,
         };
         return NextResponse.json(response, {
           status: 500,
@@ -203,7 +213,7 @@ export function errorToResponse(
       case "PatternLoadError": {
         const e = error as PatternLoadError;
         const response: ApiErrorResponse = {
-          error: e.message,
+          error: internalErrorMessage(e.message),
           status: "pattern_load_error",
         };
         return NextResponse.json(response, {
@@ -291,19 +301,21 @@ export function errorToResponse(
     // Default to 500 for unhandled errors (include structured details when available)
     const err = error as any;
     const response: ApiErrorResponse = {
-      error: error.message,
+      error: internalErrorMessage(error.message),
       status: "internal_server_error",
-      details: {
-        code: err?.code,
-        detail: err?.detail,
-        hint: err?.hint,
-        constraint: err?.constraint,
-        table: err?.table ?? err?.table_name,
-        column: err?.column ?? err?.column_name,
-        schema: err?.schema ?? err?.schema_name,
-        where: err?.where,
-        cause: err?.cause?.message ?? err?.cause,
-      },
+      details: isDebugErrorMode()
+        ? {
+            code: err?.code,
+            detail: err?.detail,
+            hint: err?.hint,
+            constraint: err?.constraint,
+            table: err?.table ?? err?.table_name,
+            column: err?.column ?? err?.column_name,
+            schema: err?.schema ?? err?.schema_name,
+            where: err?.where,
+            cause: err?.cause?.message ?? err?.cause,
+          }
+        : undefined,
     };
     return NextResponse.json(response, {
       status: 500,
@@ -313,7 +325,7 @@ export function errorToResponse(
 
   // Unknown error type
   const response: ApiErrorResponse = {
-    error: String(error),
+    error: internalErrorMessage(String(error)),
     status: "unknown_error",
   };
   return NextResponse.json(response, {
