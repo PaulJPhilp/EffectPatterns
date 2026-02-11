@@ -35,6 +35,18 @@ export type {
 import type { CallApiFn, CallToolResult, LogFn, ToolContext } from "@/tools/tool-types.js";
 
 /**
+ * Official MCP tool surface contract for production/staging.
+ * Debug/local may add `get_mcp_config`.
+ */
+export const OFFICIAL_MCP_TOOL_NAMES = [
+  "search_patterns",
+  "get_pattern",
+  "list_analysis_rules",
+  "list_skills",
+  "get_skill",
+] as const;
+
+/**
  * Registers all Effect Patterns tools with the MCP server.
  * Shared implementation for both Stdio and HTTP transports.
  *
