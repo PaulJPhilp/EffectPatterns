@@ -23,7 +23,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "crypto";
-import { Agent, createServer } from "http";
+import { Agent, createServer, IncomingMessage } from "http";
 import { Agent as HttpsAgent } from "https";
 import { validateTransportApiKey } from "./auth/mcpTransportAuth.js";
 import { OAuthConfig } from "./auth/oauth-config.js";
@@ -365,6 +365,209 @@ function validateOrigin(origin: string | undefined): boolean {
     }
 
     return allowedOrigins.includes(origin);
+}
+
+type McpRequestBodyErrorCode =
+    | "payload_too_large"
+    | "malformed_json"
+    | "request_timeout"
+    | "request_aborted"
+    | "request_stream_error";
+
+class McpRequestBodyError extends Error {
+    constructor(
+        readonly code: McpRequestBodyErrorCode,
+        message: string,
+        readonly cause?: unknown,
+    ) {
+        super(message);
+        this.name = "McpRequestBodyError";
+    }
+}
+
+function mapMcpRequestBodyError(error: McpRequestBodyError): {
+    status: number;
+    jsonRpcCode: number;
+    message: string;
+} {
+    switch (error.code) {
+        case "payload_too_large":
+            return {
+                status: 413,
+                jsonRpcCode: -32013,
+                message: `Request body too large. Maximum allowed size is ${MCP_POST_BODY_MAX_BYTES} bytes.`,
+            };
+        case "malformed_json":
+            return {
+                status: 400,
+                jsonRpcCode: -32700,
+                message: "Malformed JSON payload.",
+            };
+        case "request_timeout":
+            return {
+                status: 408,
+                jsonRpcCode: -32008,
+                message: `Request body parse timeout after ${MCP_POST_BODY_TIMEOUT_MS}ms.`,
+            };
+        case "request_aborted":
+            return {
+                status: 400,
+                jsonRpcCode: -32600,
+                message: "Request body was aborted by client.",
+            };
+        case "request_stream_error":
+            return {
+                status: 400,
+                jsonRpcCode: -32600,
+                message: "Unable to read request body.",
+            };
+    }
+}
+
+function getDeclaredContentLength(req: IncomingMessage): number | null {
+    const header = req.headers["content-length"];
+    const rawValue =
+        typeof header === "string"
+            ? header
+            : Array.isArray(header)
+              ? header[0]
+              : undefined;
+
+    if (!rawValue) {
+        return null;
+    }
+
+    const parsed = Number.parseInt(rawValue, 10);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        return null;
+    }
+
+    return parsed;
+}
+
+async function parseMcpPostBody(req: IncomingMessage): Promise<unknown | undefined> {
+    const declaredContentLength = getDeclaredContentLength(req);
+    if (
+        declaredContentLength !== null &&
+        declaredContentLength > MCP_POST_BODY_MAX_BYTES
+    ) {
+        throw new McpRequestBodyError(
+            "payload_too_large",
+            "Declared content-length exceeds request body size limit.",
+        );
+    }
+
+    return await new Promise((resolve, reject) => {
+        const chunks: Buffer[] = [];
+        let totalBytes = 0;
+        let settled = false;
+
+        const cleanup = () => {
+            clearTimeout(timeoutId);
+            req.off("data", onData);
+            req.off("end", onEnd);
+            req.off("error", onError);
+            req.off("aborted", onAborted);
+        };
+
+        const settle = (fn: () => void) => {
+            if (settled) {
+                return;
+            }
+            settled = true;
+            cleanup();
+            fn();
+        };
+
+        const timeoutId = setTimeout(() => {
+            req.resume();
+            settle(() =>
+                reject(
+                    new McpRequestBodyError(
+                        "request_timeout",
+                        "Request body parsing exceeded timeout limit.",
+                    ),
+                ),
+            );
+        }, MCP_POST_BODY_TIMEOUT_MS);
+
+        const onAborted = () => {
+            req.resume();
+            settle(() =>
+                reject(
+                    new McpRequestBodyError(
+                        "request_aborted",
+                        "Request body was aborted before completion.",
+                    ),
+                ),
+            );
+        };
+
+        const onError = (error: unknown) => {
+            req.resume();
+            settle(() =>
+                reject(
+                    new McpRequestBodyError(
+                        "request_stream_error",
+                        "Request stream emitted an error.",
+                        error,
+                    ),
+                ),
+            );
+        };
+
+        const onData = (chunk: Buffer | string) => {
+            const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+            totalBytes += buffer.length;
+
+            if (totalBytes > MCP_POST_BODY_MAX_BYTES) {
+                req.resume();
+                settle(() =>
+                    reject(
+                        new McpRequestBodyError(
+                            "payload_too_large",
+                            "Request body exceeded request body size limit.",
+                        ),
+                    ),
+                );
+                return;
+            }
+
+            chunks.push(buffer);
+        };
+
+        const onEnd = () => {
+            settle(() => {
+                if (totalBytes === 0) {
+                    resolve(undefined);
+                    return;
+                }
+
+                const rawBody = Buffer.concat(chunks, totalBytes).toString("utf8");
+                if (rawBody.trim().length === 0) {
+                    resolve(undefined);
+                    return;
+                }
+
+                try {
+                    resolve(JSON.parse(rawBody));
+                } catch (error) {
+                    reject(
+                        new McpRequestBodyError(
+                            "malformed_json",
+                            "Request body is not valid JSON.",
+                            error,
+                        ),
+                    );
+                }
+            });
+        };
+
+        req.on("data", onData);
+        req.on("end", onEnd);
+        req.on("error", onError);
+        req.on("aborted", onAborted);
+    });
 }
 
 // ============================================================================
@@ -847,12 +1050,32 @@ async function main() {
                     // Parse body for POST requests
                     let parsedBody;
                     if (req.method === "POST") {
-                        const chunks: any[] = [];
-                        for await (const chunk of req) {
-                            chunks.push(chunk);
+                        try {
+                            parsedBody = await parseMcpPostBody(req);
+                        } catch (error) {
+                            if (error instanceof McpRequestBodyError) {
+                                const mappedError = mapMcpRequestBodyError(error);
+                                log("Invalid MCP POST body", {
+                                    code: error.code,
+                                    status: mappedError.status,
+                                    message: error.message,
+                                });
+                                res.writeHead(mappedError.status, {
+                                    "Content-Type": "application/json",
+                                });
+                                res.end(
+                                    JSON.stringify({
+                                        jsonrpc: "2.0",
+                                        error: {
+                                            code: mappedError.jsonRpcCode,
+                                            message: mappedError.message,
+                                        },
+                                    }),
+                                );
+                                return;
+                            }
+                            throw error;
                         }
-                        const body = Buffer.concat(chunks).toString();
-                        parsedBody = body ? JSON.parse(body) : undefined;
                     }
 
                     // Handle the MCP request
