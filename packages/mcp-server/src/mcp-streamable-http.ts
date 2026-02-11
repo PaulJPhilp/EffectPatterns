@@ -30,6 +30,20 @@ import { OAuthConfig } from "./auth/oauth-config.js";
 import { OAuth2Server } from "./auth/oauth-server.js";
 import { registerTools } from "./tools/tool-implementations.js";
 
+function getPositiveIntEnv(name: string, fallback: number): number {
+    const raw = process.env[name];
+    if (!raw) {
+        return fallback;
+    }
+
+    const parsed = parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        return fallback;
+    }
+
+    return parsed;
+}
+
 // ============================================================================
 // Configuration
 // ============================================================================
@@ -65,6 +79,23 @@ const SSE_DROP_AFTER_MS = parseInt(
     10,
 );
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds timeout
+const OAUTH_MAX_SESSIONS = getPositiveIntEnv("MCP_OAUTH_MAX_SESSIONS", 5000);
+const OAUTH_MAX_AUTH_CODES = getPositiveIntEnv(
+    "MCP_OAUTH_MAX_AUTH_CODES",
+    5000,
+);
+const OAUTH_CLEANUP_INTERVAL_MS = getPositiveIntEnv(
+    "MCP_OAUTH_CLEANUP_INTERVAL_MS",
+    60_000,
+);
+const EVENT_STORE_MAX_EVENTS = getPositiveIntEnv(
+    "MCP_EVENT_STORE_MAX_EVENTS",
+    2000,
+);
+const EVENT_STORE_TTL_MS = getPositiveIntEnv(
+    "MCP_EVENT_STORE_TTL_MS",
+    15 * 60 * 1000,
+);
 
 // OAuth 2.1 Configuration
 const oauthConfig: OAuthConfig = {
@@ -111,20 +142,45 @@ type StoredEvent = {
     eventId: string;
     streamId: string;
     message: unknown;
+    createdAt: number;
 };
 
 class InMemoryEventStore {
     private events: StoredEvent[] = [];
     private counter = 0;
 
+    constructor(
+        private readonly maxEvents: number,
+        private readonly eventTtlMs: number,
+    ) {}
+
+    private cleanupExpiredEvents(now: number): void {
+        const cutoff = now - this.eventTtlMs;
+        while (this.events.length > 0 && this.events[0]!.createdAt < cutoff) {
+            this.events.shift();
+        }
+    }
+
+    private enforceSizeLimit(): void {
+        if (this.events.length <= this.maxEvents) {
+            return;
+        }
+        const overflow = this.events.length - this.maxEvents;
+        this.events.splice(0, overflow);
+    }
+
     async storeEvent(streamId: string, message: unknown): Promise<string> {
+        const now = Date.now();
+        this.cleanupExpiredEvents(now);
         const eventId = String(++this.counter);
-        this.events.push({ eventId, streamId, message });
+        this.events.push({ eventId, streamId, message, createdAt: now });
+        this.enforceSizeLimit();
         log("Event stored", { streamId, eventId });
         return eventId;
     }
 
     async getStreamIdForEventId(eventId: string): Promise<string | undefined> {
+        this.cleanupExpiredEvents(Date.now());
         const found = this.events.find((e) => e.eventId === eventId);
         return found?.streamId;
     }
@@ -134,6 +190,7 @@ class InMemoryEventStore {
         { send }: { send: (eventId: string, message: unknown) => Promise<void> },
     ): Promise<string> {
         log("Replay requested", { lastEventId });
+        this.cleanupExpiredEvents(Date.now());
         const startIndex = this.events.findIndex((e) => e.eventId === lastEventId);
         if (startIndex === -1) {
             throw new Error("Unknown eventId");
@@ -631,13 +688,20 @@ async function main() {
 
     try {
         // Initialize OAuth 2.1 server
-        const oauthServer = new OAuth2Server(oauthConfig);
+        const oauthServer = new OAuth2Server(oauthConfig, {
+            maxSessions: OAUTH_MAX_SESSIONS,
+            maxAuthorizationCodes: OAUTH_MAX_AUTH_CODES,
+            cleanupIntervalMs: OAUTH_CLEANUP_INTERVAL_MS,
+        });
 
         // Create Streamable HTTP transport with session management
         const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(), // Enable stateful mode
             enableJsonResponse: false, // Use SSE streaming for better MCP 2.0 support
-            eventStore: new InMemoryEventStore(), // Enable resumption within this process
+            eventStore: new InMemoryEventStore(
+                EVENT_STORE_MAX_EVENTS,
+                EVENT_STORE_TTL_MS,
+            ), // Enable bounded resumption within this process
             onsessioninitialized: (sessionId) => {
                 log("Session initialized", { sessionId });
             },

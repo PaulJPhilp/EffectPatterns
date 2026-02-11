@@ -18,23 +18,47 @@ import {
 } from "./oauth-config.js";
 import { verifyPKCE } from "./pkce.js";
 
+type AuthorizationCodeRecord = {
+    clientId: string;
+    redirectUri: string;
+    scopes: string[];
+    codeChallenge?: string;
+    issuedAt: number;
+    expiresAt: number;
+    userId?: string;
+};
+
+type OAuth2ServerOptions = {
+    now?: () => number;
+    maxSessions?: number;
+    maxAuthorizationCodes?: number;
+    cleanupIntervalMs?: number;
+};
+
 export class OAuth2Server {
     private config: OAuthConfig;
+    private readonly now: () => number;
+    private readonly maxSessions: number;
+    private readonly maxAuthorizationCodes: number;
     private sessions = new Map<string, AuthenticatedSession>();
-    private authorizationCodes = new Map<
-        string,
-        {
-            clientId: string;
-            redirectUri: string;
-            scopes: string[];
-            codeChallenge?: string;
-            expiresAt: number;
-            userId?: string;
-        }
-    >();
+    private authorizationCodes = new Map<string, AuthorizationCodeRecord>();
 
-    constructor(config: OAuthConfig) {
+    constructor(config: OAuthConfig, options: OAuth2ServerOptions = {}) {
         this.config = config;
+        this.now = options.now ?? Date.now;
+        this.maxSessions = Math.max(1, options.maxSessions ?? 5000);
+        this.maxAuthorizationCodes = Math.max(1, options.maxAuthorizationCodes ?? 5000);
+        const cleanupIntervalMs = Math.max(1000, options.cleanupIntervalMs ?? 60_000);
+
+        this.cleanupExpiredState();
+        const cleanupTimer = setInterval(() => {
+            try {
+                this.cleanupExpiredState();
+            } catch (error) {
+                console.error("OAuth cleanup failed:", error);
+            }
+        }, cleanupIntervalMs);
+        cleanupTimer.unref?.();
     }
 
     /**
@@ -46,6 +70,7 @@ export class OAuth2Server {
         res: ServerResponse,
     ): Promise<void> {
         try {
+            this.cleanupExpiredState();
             const url = new URL(req.url!, `http://${req.headers.host}`);
             const params = this.parseAuthParams(url.searchParams);
 
@@ -63,7 +88,8 @@ export class OAuth2Server {
 
             // Generate authorization code
             const code = this.generateAuthorizationCode();
-            const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+            const issuedAt = this.now();
+            const expiresAt = issuedAt + 10 * 60 * 1000; // 10 minutes
 
             // Store authorization code
             this.authorizationCodes.set(code, {
@@ -73,8 +99,10 @@ export class OAuth2Server {
                     ? params.scope.split(" ")
                     : this.config.defaultScopes,
                 codeChallenge: params.codeChallenge,
+                issuedAt,
                 expiresAt,
             });
+            this.enforceAuthorizationCodeLimit();
 
             // Redirect back to client with authorization code
             const redirectUrl = new URL(params.redirectUri);
@@ -105,6 +133,7 @@ export class OAuth2Server {
         res: ServerResponse,
     ): Promise<void> {
         try {
+            this.cleanupExpiredState();
             const body = await this.parseRequestBody(req);
             const clientAuth = this.parseClientAuthentication(req, body);
             const params = this.parseTokenParams({
@@ -153,8 +182,20 @@ export class OAuth2Server {
 
         const token = authHeader.substring(7);
         const session = this.sessions.get(token);
+        const now = this.now();
 
-        if (!session || session.expiresAt < Date.now()) {
+        if (!session) {
+            return null;
+        }
+
+        // Defensive cleanup for stale aliases from old token rotation behavior.
+        if (session.accessToken !== token) {
+            this.sessions.delete(token);
+            return null;
+        }
+
+        if (session.expiresAt < now || this.isRefreshTokenExpired(session, now)) {
+            this.sessions.delete(token);
             return null;
         }
 
@@ -296,6 +337,7 @@ export class OAuth2Server {
     private async handleAuthorizationCodeGrant(
         params: TokenRequest,
     ): Promise<TokenResponse> {
+        this.cleanupExpiredState();
         if (!params.code) {
             throw new Error("invalid_request");
         }
@@ -304,8 +346,9 @@ export class OAuth2Server {
             throw new Error("invalid_client");
         }
 
+        const now = this.now();
         const authCode = this.authorizationCodes.get(params.code);
-        if (!authCode || authCode.expiresAt < Date.now()) {
+        if (!authCode || authCode.expiresAt < now) {
             throw new Error("invalid_grant");
         }
 
@@ -335,17 +378,21 @@ export class OAuth2Server {
         // Generate tokens
         const accessToken = this.generateAccessToken();
         const refreshToken = this.generateRefreshToken();
-        const expiresAt = Date.now() + this.config.accessTokenLifetime * 1000;
+        const expiresAt = now + this.config.accessTokenLifetime * 1000;
+        const refreshTokenExpiresAt = this.getRefreshTokenExpiresAt(now);
 
         // Store session
         const session: AuthenticatedSession = {
             clientId: authCode.clientId,
             scopes: authCode.scopes,
+            issuedAt: now,
             expiresAt,
+            refreshTokenExpiresAt,
             accessToken,
             refreshToken,
         };
         this.sessions.set(accessToken, session);
+        this.enforceSessionLimit();
 
         // Clean up authorization code
         this.authorizationCodes.delete(params.code);
@@ -365,6 +412,7 @@ export class OAuth2Server {
     private async handleRefreshTokenGrant(
         params: TokenRequest,
     ): Promise<TokenResponse> {
+        this.cleanupExpiredState();
         if (!params.refreshToken) {
             throw new Error("invalid_request");
         }
@@ -373,27 +421,49 @@ export class OAuth2Server {
             throw new Error("invalid_client");
         }
 
-        // Find session by refresh token
-        const session = Array.from(this.sessions.values()).find(
-            (s) => s.refreshToken === params.refreshToken,
+        const now = this.now();
+
+        // Find sessions by refresh token
+        const matches = Array.from(this.sessions.entries()).filter(
+            ([, session]) => session.refreshToken === params.refreshToken,
         );
-
-        if (!session) {
+        if (matches.length === 0) {
             throw new Error("invalid_grant");
         }
 
-        if (params.clientId !== session.clientId) {
+        const clientMatches = matches.filter(
+            ([, session]) => session.clientId === params.clientId,
+        );
+        if (clientMatches.length === 0) {
             throw new Error("invalid_grant");
         }
+
+        const activeMatches = clientMatches.filter(
+            ([, session]) => !this.isRefreshTokenExpired(session, now),
+        );
+        if (activeMatches.length === 0) {
+            this.revokeSessionsByRefreshToken(params.refreshToken);
+            throw new Error("invalid_grant");
+        }
+
+        const [previousAccessToken, session] = activeMatches.reduce((latest, current) =>
+            current[1].issuedAt > latest[1].issuedAt ? current : latest,
+        );
 
         // Generate new access token
         const accessToken = this.generateAccessToken();
-        const expiresAt = Date.now() + this.config.accessTokenLifetime * 1000;
+        const expiresAt = now + this.config.accessTokenLifetime * 1000;
 
-        // Update session
+        // Rotate access token and invalidate old access token aliases.
+        this.revokeSessionsByRefreshToken(params.refreshToken);
         session.accessToken = accessToken;
         session.expiresAt = expiresAt;
+        session.issuedAt = now;
+        if (previousAccessToken !== accessToken) {
+            this.sessions.delete(previousAccessToken);
+        }
         this.sessions.set(accessToken, session);
+        this.enforceSessionLimit();
 
         return {
             accessToken,
@@ -410,6 +480,7 @@ export class OAuth2Server {
     private async handleClientCredentialsGrant(
         params: TokenRequest,
     ): Promise<TokenResponse> {
+        this.cleanupExpiredState();
         if (this.config.tokenEndpointAuthMethod === "none") {
             throw new Error("unauthorized_client");
         }
@@ -419,17 +490,20 @@ export class OAuth2Server {
         }
 
         const accessToken = this.generateAccessToken();
-        const expiresAt = Date.now() + this.config.accessTokenLifetime * 1000;
+        const now = this.now();
+        const expiresAt = now + this.config.accessTokenLifetime * 1000;
 
         const session: AuthenticatedSession = {
             clientId: params.clientId!,
             scopes: params.scope
                 ? params.scope.split(" ")
                 : this.config.defaultScopes,
+            issuedAt: now,
             expiresAt,
             accessToken,
         };
         this.sessions.set(accessToken, session);
+        this.enforceSessionLimit();
 
         return {
             accessToken,
@@ -458,6 +532,97 @@ export class OAuth2Server {
      */
     private generateRefreshToken(): string {
         return randomBytes(32).toString("hex");
+    }
+
+    private getRefreshTokenExpiresAt(now: number): number | undefined {
+        if (
+            this.config.refreshTokenLifetime === undefined ||
+            this.config.refreshTokenLifetime <= 0
+        ) {
+            return undefined;
+        }
+        return now + this.config.refreshTokenLifetime * 1000;
+    }
+
+    private isRefreshTokenExpired(
+        session: AuthenticatedSession,
+        now: number,
+    ): boolean {
+        if (!session.refreshToken || session.refreshTokenExpiresAt === undefined) {
+            return false;
+        }
+        return session.refreshTokenExpiresAt < now;
+    }
+
+    private revokeSessionsByRefreshToken(refreshToken: string): void {
+        for (const [accessToken, session] of this.sessions.entries()) {
+            if (session.refreshToken === refreshToken) {
+                this.sessions.delete(accessToken);
+            }
+        }
+    }
+
+    private enforceSessionLimit(): void {
+        while (this.sessions.size > this.maxSessions) {
+            let oldestToken: string | undefined;
+            let oldestIssuedAt = Number.POSITIVE_INFINITY;
+
+            for (const [token, session] of this.sessions.entries()) {
+                if (session.issuedAt < oldestIssuedAt) {
+                    oldestIssuedAt = session.issuedAt;
+                    oldestToken = token;
+                }
+            }
+
+            if (oldestToken) {
+                this.sessions.delete(oldestToken);
+            } else {
+                break;
+            }
+        }
+    }
+
+    private enforceAuthorizationCodeLimit(): void {
+        while (this.authorizationCodes.size > this.maxAuthorizationCodes) {
+            let oldestCode: string | undefined;
+            let oldestIssuedAt = Number.POSITIVE_INFINITY;
+
+            for (const [code, authCode] of this.authorizationCodes.entries()) {
+                if (authCode.issuedAt < oldestIssuedAt) {
+                    oldestIssuedAt = authCode.issuedAt;
+                    oldestCode = code;
+                }
+            }
+
+            if (oldestCode) {
+                this.authorizationCodes.delete(oldestCode);
+            } else {
+                break;
+            }
+        }
+    }
+
+    private cleanupExpiredState(): void {
+        const now = this.now();
+
+        for (const [code, authCode] of this.authorizationCodes.entries()) {
+            if (authCode.expiresAt < now) {
+                this.authorizationCodes.delete(code);
+            }
+        }
+
+        for (const [token, session] of this.sessions.entries()) {
+            const expiredAccessToken = session.expiresAt < now;
+            const staleAlias = session.accessToken !== token;
+            const expiredRefreshToken = this.isRefreshTokenExpired(session, now);
+
+            if (expiredAccessToken || staleAlias || expiredRefreshToken) {
+                this.sessions.delete(token);
+            }
+        }
+
+        this.enforceAuthorizationCodeLimit();
+        this.enforceSessionLimit();
     }
 
     /**
