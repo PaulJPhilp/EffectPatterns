@@ -11,7 +11,7 @@
     "conventional-commits-parser": "^6.2.1",
     "conventional-recommended-bump": "^11.2.0",
     "dotenv": "^17.2.3",
-    "effect": "^3.19.14",
+    "effect": "^3.19.16",
     "effect-cli-tui": "^2.2.0",
     "effect-env": "^0.4.1",
     "glob": "^13.0.1",
