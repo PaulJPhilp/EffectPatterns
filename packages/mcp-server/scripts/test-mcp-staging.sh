@@ -52,6 +52,8 @@ export EFFECT_PATTERNS_API_URL="${STAGING_URL}"
 echo -e "${BLUE}Running MCP protocol tests against staging server...${NC}\n"
 
 # Run MCP tests with staging config
-bunx vitest run --config vitest.mcp.config.ts tests/mcp-protocol/client-stdio.test.ts tests/mcp-protocol/tools.test.ts
+bunx vitest run --config vitest.mcp.config.ts \
+    tests/mcp-protocol/client-stdio.test.ts \
+    tests/mcp-protocol/structured-output.test.ts
 
 echo -e "\n${GREEN}✓ Staging MCP tests completed${NC}"
