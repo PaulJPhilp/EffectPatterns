@@ -17,23 +17,13 @@
   },
   "dependencies": {
     "@effect-patterns/ep-shared-services": "workspace:*",
-    "@effect-patterns/pipeline-state": "workspace:*",
     "@effect-patterns/toolkit": "workspace:*",
-    "@effect/cli": "^0.73.0",
-    "@effect/platform": "^0.94.1",
-    "@effect/platform-node": "^0.104.0",
-    "conventional-commits-parser": "^6.2.1",
-    "conventional-recommended-bump": "^11.2.0",
-    "dotenv": "^17.2.3",
-    "effect": "^3.19.14",
+    "@effect/cli": "0.73.2",
+    "@effect/platform": "0.94.4",
+    "@effect/platform-node": "0.104.1",
+    "effect": "^3.19.16",
     "effect-cli-tui": "^2.2.0",
-    "effect-env": "^0.4.1",
-    "glob": "^13.0.1",
-    "js-yaml": "^4.1.1",
-    "liquidjs": "^10.24.0",
-    "ora": "^9.0.0",
-    "semver": "^7.7.3",
-    "yaml": "^2.8.2"
+    "effect-env": "^0.4.1"
   },
   "devDependencies": {
     "tsx": "^4.21.0",
@@ -57,7 +47,7 @@
   },
   "homepage": "https://github.com/PaulJPhilp/Effect-Patterns#readme",
   "engines": {
-    "node": ">=18.0.0"
+    "bun": ">=1.0.0"
   },
   "keywords": [
     "effect",

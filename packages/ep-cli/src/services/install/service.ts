@@ -1,35 +1,34 @@
 /**
  * Install Service Implementation
  *
- * Reads patterns from the Effect Patterns Database (PostgreSQL)
- * via the toolkit repository, then maps them to local Rule objects.
+ * Reads patterns from the Effect Patterns HTTP API and maps them
+ * to local Rule objects.
  */
 
 import { FileSystem } from "@effect/platform";
-import { EffectPatternRepositoryService } from "@effect-patterns/toolkit";
 import { Effect, Schema } from "effect";
+import { PatternApi } from "../pattern-api/index.js";
 import type { InstalledRule, InstallService, Rule } from "./api.js";
 import { InstalledRuleSchema } from "./api.js";
 
 const INSTALLED_STATE_FILE = ".ep-installed.json";
 
 /**
- * Map a DB EffectPattern row to a local Rule.
+ * Map an API pattern record to a local Rule.
  */
-const dbPatternToRule = (p: {
-  readonly slug: string;
+const apiPatternToRule = (p: {
+  readonly id: string;
   readonly title: string;
-  readonly summary: string;
-  readonly skillLevel: string;
-  readonly useCases: string[] | null;
-  readonly content: string | null;
+  readonly description: string;
+  readonly difficulty: string;
+  readonly useCases?: readonly string[];
 }): Rule => ({
-  id: p.slug,
+  id: p.id,
   title: p.title,
-  description: p.summary,
-  skillLevel: p.skillLevel,
-  useCase: p.useCases ?? [],
-  content: p.content ?? p.summary,
+  description: p.description,
+  skillLevel: p.difficulty,
+  useCase: p.useCases ? [...p.useCases] : [],
+  content: p.description,
 });
 
 /**
@@ -39,7 +38,7 @@ export class Install extends Effect.Service<Install>()("Install", {
   accessors: true,
   effect: Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const repo = yield* EffectPatternRepositoryService;
+    const patternApi = yield* PatternApi;
 
     const InstalledRulesArraySchema = Schema.Array(InstalledRuleSchema);
 
@@ -68,16 +67,12 @@ export class Install extends Effect.Service<Install>()("Install", {
       useCase?: string;
     }) =>
       Effect.gen(function* () {
-        const results = yield* Effect.tryPromise({
-          try: () =>
-            repo.search({
-              query: options.query,
-              skillLevel: options.skillLevel as "beginner" | "intermediate" | "advanced" | undefined,
-            }),
-          catch: (e) => new Error(`Failed to search patterns: ${e}`),
+        const results = yield* patternApi.search({
+          query: options.query,
+          difficulty: options.skillLevel,
         });
 
-        let rules = results.map(dbPatternToRule);
+        let rules = results.map(apiPatternToRule);
 
         if (options.useCase) {
           rules = rules.filter((r) => r.useCase?.includes(options.useCase!));
@@ -88,16 +83,13 @@ export class Install extends Effect.Service<Install>()("Install", {
 
     const fetchRule = (id: string) =>
       Effect.gen(function* () {
-        const pattern = yield* Effect.tryPromise({
-          try: () => repo.findBySlug(id),
-          catch: (e) => new Error(`Failed to fetch pattern: ${e}`),
-        });
+        const pattern = yield* patternApi.getById(id);
 
         if (!pattern) {
           return yield* Effect.fail(new Error(`Rule with id ${id} not found`));
         }
 
-        return dbPatternToRule(pattern);
+        return apiPatternToRule(pattern);
       });
 
     return {
@@ -107,5 +99,4 @@ export class Install extends Effect.Service<Install>()("Install", {
       fetchRule,
     } as InstallService;
   }),
-  dependencies: [EffectPatternRepositoryService.Default],
 }) {}

@@ -1,82 +1,164 @@
-/**
- * Install Service Tests (DB-backed patterns)
- *
- * Requires DATABASE_URL to be set — skipped otherwise.
- */
-
 import { NodeFileSystem } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
-import { describe, expect, it } from "vitest";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { PatternApiService } from "../../pattern-api/api.js";
+import { PatternApi } from "../../pattern-api/index.js";
+import type { InstalledRule } from "../api.js";
 import { Install } from "../service.js";
 
-const runInstall = <A>(effect: Effect.Effect<A, unknown, any>) =>
+const runInstall = <A>(
+  effect: Effect.Effect<A, unknown, Install>,
+  patternApiService: PatternApiService
+) =>
   Effect.runPromise(
     effect.pipe(
-      Effect.provide(Layer.provide(Install.Default, NodeFileSystem.layer))
-    ) as Effect.Effect<
-      A,
-      unknown,
-      never
-    >
+      Effect.provide(Install.Default),
+      Effect.provide(NodeFileSystem.layer),
+      Effect.provide(Layer.succeed(PatternApi, patternApiService as any))
+    )
   );
 
-describe.skipIf(!process.env.DATABASE_URL)("Install Service", () => {
-  it("loads patterns from database", async () => {
-    const rules = await runInstall(
-      Effect.gen(function* () {
-        const install = yield* Install;
-        return yield* install.searchRules({});
-      })
-    );
+describe("Install Service", () => {
+  const originalCwd = process.cwd();
+  let tmpDir = "";
 
-    expect(rules.length).toBeGreaterThan(100);
-    expect(rules[0]).toHaveProperty("id");
-    expect(rules[0]).toHaveProperty("title");
-    expect(rules[0]).toHaveProperty("description");
-    expect(rules[0]).toHaveProperty("content");
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "ep-cli-install-"));
+    process.chdir(tmpDir);
   });
 
-  it("filters rules by query", async () => {
-    const rules = await runInstall(
-      Effect.gen(function* () {
-        const install = yield* Install;
-        return yield* install.searchRules({ query: "retry" });
-      })
+  afterEach(async () => {
+    process.chdir(originalCwd);
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("searchRules maps API patterns to rules and filters by use case", async () => {
+    const searchMock = vi.fn(() =>
+      Effect.succeed([
+        {
+          id: "retry-failed-operations",
+          title: "Retry failed operations",
+          description: "Retry transient failures.",
+          category: "error-handling",
+          difficulty: "beginner",
+          tags: ["retry"],
+          useCases: ["resilience"],
+        },
+        {
+          id: "layer-caching",
+          title: "Layer caching",
+          description: "Cache at layer boundary.",
+          category: "concurrency",
+          difficulty: "advanced",
+          tags: ["cache"],
+          useCases: ["performance"],
+        },
+      ])
     );
 
-    expect(rules.length).toBeGreaterThan(0);
-    expect(
-      rules.some(
-        (r) =>
-          r.title.toLowerCase().includes("retry") ||
-          r.description.toLowerCase().includes("retry")
+    const getByIdMock = vi.fn(() => Effect.succeed(null));
+
+    const rules = await runInstall(
+      Install.searchRules({ skillLevel: "beginner", useCase: "resilience" }),
+      {
+        search: searchMock,
+        getById: getByIdMock,
+      }
+    );
+
+    expect(searchMock).toHaveBeenCalledWith({
+      query: undefined,
+      difficulty: "beginner",
+    });
+    expect(rules).toEqual([
+      {
+        id: "retry-failed-operations",
+        title: "Retry failed operations",
+        description: "Retry transient failures.",
+        skillLevel: "beginner",
+        useCase: ["resilience"],
+        content: "Retry transient failures.",
+      },
+    ]);
+  });
+
+  it("fetchRule returns mapped rule and fails when missing", async () => {
+    const getByIdMock = vi
+      .fn()
+      .mockReturnValueOnce(
+        Effect.succeed({
+          id: "retry-failed-operations",
+          title: "Retry failed operations",
+          description: "Retry transient failures.",
+          category: "error-handling",
+          difficulty: "intermediate",
+          tags: ["retry"],
+          useCases: ["resilience"],
+        })
       )
-    ).toBe(true);
-  });
+      .mockReturnValueOnce(Effect.succeed(null));
 
-  it("filters rules by skill level", async () => {
-    const rules = await runInstall(
-      Effect.gen(function* () {
-        const install = yield* Install;
-        return yield* install.searchRules({ skillLevel: "beginner" });
-      })
-    );
+    const searchMock = vi.fn(() => Effect.succeed([]));
 
-    expect(rules.length).toBeGreaterThan(0);
-    for (const r of rules) {
-      expect(r.skillLevel).toBe("beginner");
-    }
-  });
-
-  it("finds a rule by id (slug)", async () => {
     const rule = await runInstall(
-      Effect.gen(function* () {
-        const install = yield* Install;
-        return yield* install.fetchRule("retry-failed-operations");
-      })
+      Install.fetchRule("retry-failed-operations"),
+      {
+        search: searchMock,
+        getById: getByIdMock,
+      }
     );
 
     expect(rule.id).toBe("retry-failed-operations");
-    expect(rule.content.length).toBeGreaterThan(0);
+    expect(rule.skillLevel).toBe("intermediate");
+
+    await expect(
+      runInstall(
+        Install.fetchRule("missing-rule"),
+        {
+          search: searchMock,
+          getById: getByIdMock,
+        }
+      )
+    ).rejects.toThrow("Rule with id missing-rule not found");
+  });
+
+  it("saves and loads installed rules from local state file", async () => {
+    const searchMock = vi.fn(() => Effect.succeed([]));
+    const getByIdMock = vi.fn(() => Effect.succeed(null));
+
+    const installedRules: InstalledRule[] = [
+      {
+        id: "retry-failed-operations",
+        title: "Retry failed operations",
+        description: "Retry transient failures.",
+        skillLevel: "beginner",
+        useCase: ["resilience"],
+        content: "Retry transient failures.",
+        installedAt: "2026-02-11T00:00:00.000Z",
+        tool: "cursor",
+        version: "1.0.0",
+      },
+    ];
+
+    await runInstall(
+      Install.saveInstalledRules(installedRules),
+      {
+        search: searchMock,
+        getById: getByIdMock,
+      }
+    );
+
+    const loaded = await runInstall(
+      Install.loadInstalledRules(),
+      {
+        search: searchMock,
+        getById: getByIdMock,
+      }
+    );
+
+    expect(loaded).toEqual(installedRules);
   });
 });
