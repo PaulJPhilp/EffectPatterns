@@ -38,7 +38,7 @@ bun run test:coverage
 **What it tests:**
 - Service configuration and validation
 - Rate limiting logic
-- Tier access control
+- Authorization behavior
 - Pattern generation and code analysis
 - Review service functionality
 
@@ -65,9 +65,9 @@ bun run test:mcp:watch
 - Graceful disconnection and reconnection
 - Error handling when disconnected
 
-#### MCP Tools (Free-tier surface)
+#### MCP Tools
 
-The MCP server exposes the free-tier tools only. Paid features are HTTP API only.
+The MCP server exposes the MCP tool surface only. Extended features are HTTP API only.
 
 1. **search_patterns**
    - Basic pattern search with query
@@ -91,7 +91,7 @@ The MCP server exposes the free-tier tools only. Paid features are HTTP API only
 
 4. **review_code**
    - AI-powered code review
-   - Free tier limitation (top 3 issues)
+   - Top-3 response limit
    - Effect-TS pattern detection
    - Severity level indicators
 
@@ -283,7 +283,7 @@ bun run test:routes:coverage
 - `tests/routes/review-code.route.test.ts`
 - Authentication requirement
 - Code parameter validation
-- Free tier limitation (top 3 issues)
+- Top-3 response limit
 - Severity level indicators
 - File path context
 - Size limit (100KB)
@@ -590,7 +590,7 @@ describe("New Route", () => {
 });
 ```
 
-### Testing a New MCP Tool (Free-tier surface only)
+### Testing a New MCP Tool
 
 1. Create tool test file in `tests/mcp-protocol/`
 2. Use MCPTestClient to invoke tool
@@ -601,7 +601,7 @@ describe("New Route", () => {
    - Response structure
    - Edge cases
 
-Paid features should be tested at the HTTP API level, not as MCP tools.
+HTTP API-only features should be tested at the HTTP API level, not as MCP tools.
 
 ```typescript
 it("should validate parameters", async () => {
@@ -688,7 +688,7 @@ Test:ci:         ~5 minutes
 
 ## Future Enhancements
 
-- [ ] Route handler factory tests for tier validation
+- [ ] Route handler factory tests for authorization behavior
 - [ ] Admin authentication tests
 - [ ] Integration test for complete workflows
 - [ ] Performance profiling tests

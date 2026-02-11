@@ -18,7 +18,6 @@ export class MCPConfigService extends Effect.Service<MCPConfigService>()(
         apiKey: config.apiKey,
         nodeEnv: config.nodeEnv,
         port: config.port,
-        tierMode: config.tierMode,
 
         // Pattern Configuration
         patternsPath: config.patternsPath,

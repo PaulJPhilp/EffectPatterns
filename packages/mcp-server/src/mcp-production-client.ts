@@ -214,11 +214,10 @@ function toToolResult(result: ApiResult<unknown>, toolName: string): ToolResult 
     };
 }
 
-// Register tools based on production API (FREE TIER ONLY)
+// Register tools based on the production MCP tool surface
 // Note: `as any` is required for MCP SDK compatibility - inputSchema format differs
 //
-// Paid tools (analyze_code, review_code, apply_refactoring, analyze_consistency,
-// generate_pattern) are available via HTTP API / paid CLI only.
+// Additional analysis/generation endpoints remain HTTP API/CLI only.
 
 server.registerTool(
     "search_patterns",

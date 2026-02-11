@@ -5,7 +5,7 @@
  * These tests verify that the MCP server correctly communicates with the local API.
  *
  * Architecture: MCP server is a pure transport layer - all authentication
- * and authorization (including tier validation) happens at the HTTP API level.
+ * and authorization happens at the HTTP API level.
  *
  * Prerequisites:
  * - Local API server running on http://localhost:3000
@@ -82,9 +82,15 @@ describe("Local MCP Server", () => {
       expect(client.isReady()).toBe(true);
     });
 
-    const PRODUCTION_TOOLS = ["get_pattern", "list_analysis_rules", "search_patterns"] as const;
+    const PRODUCTION_TOOLS = [
+      "get_pattern",
+      "get_skill",
+      "list_analysis_rules",
+      "list_skills",
+      "search_patterns",
+    ] as const;
 
-    it("should expose exactly 3 tools when MCP_DEBUG=false and MCP_ENV=production", async () => {
+    it("should expose exactly 5 tools when MCP_DEBUG=false and MCP_ENV=production", async () => {
       if (!isLocalAvailable) return;
       const productionClient = await createMCPTestClient({
         apiKey: config.apiKey,
@@ -95,7 +101,7 @@ describe("Local MCP Server", () => {
 
       const tools = await productionClient.listTools();
 
-      expect(tools).toHaveLength(3);
+      expect(tools).toHaveLength(5);
       expect([...tools].sort()).toEqual([...PRODUCTION_TOOLS].sort());
       expect(tools).not.toContain("get_mcp_config");
       await productionClient.close();
@@ -105,7 +111,13 @@ describe("Local MCP Server", () => {
       if (!isLocalAvailable) return;
       const tools = await client.listTools();
 
-      const allowed = ["search_patterns", "get_pattern", "list_analysis_rules"];
+      const allowed = [
+        "search_patterns",
+        "get_pattern",
+        "list_analysis_rules",
+        "list_skills",
+        "get_skill",
+      ];
       const forbidden = [
         "analyze_code",
         "review_code",
@@ -125,8 +137,8 @@ describe("Local MCP Server", () => {
       for (const name of tools) {
         expect(allowedOptional.has(name)).toBe(true);
       }
-      expect(tools.length).toBeGreaterThanOrEqual(3);
-      expect(tools.length).toBeLessThanOrEqual(4);
+      expect(tools.length).toBeGreaterThanOrEqual(5);
+      expect(tools.length).toBeLessThanOrEqual(6);
     });
   });
 

@@ -127,9 +127,9 @@ Never commit API keys; use environment variables or your IDE's secret storage.
 
 ---
 
-## MCP Tools (Free Tier)
+## MCP Tools
 
-The MCP server exposes **exactly three tools** in production and staging. No other tools (including code analysis or review) are available via MCP.
+The MCP server exposes **exactly five tools** in production and staging. No other tools (including code analysis or review) are available via MCP.
 
 ### 1. `search_patterns`
 
@@ -177,29 +177,52 @@ No parameters.
 - "List all analysis rules."
 - "What rules does the analyzer use?"
 
+---
+
+### 4. `list_skills`
+
+Search Effect-TS skills by query and optional category.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `q` | string | No | Search query string. |
+| `category` | string | No | Skill category filter. |
+| `limit` | number | No | Maximum results (1–100). |
+| `format` | string | No | `markdown`, `json`, or `both`. |
+
+### 5. `get_skill`
+
+Get full details for one skill by slug.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `slug` | string | Yes | Skill slug identifier. |
+
 **Debug / local only:** The tool `get_mcp_config` is not part of the default production/staging surface; it only appears when `MCP_DEBUG=true` or `MCP_ENV=local`.
 
 ---
 
 ## HTTP API
 
-When you use the **hosted** server, the MCP server forwards tool calls to the HTTP API for patterns and rules only. You can also call the API directly (e.g. from scripts or CI) with the same API key. **MCP tools do not call paid endpoints** — analysis, review, refactoring, and generation are available only when using the HTTP API or paid CLI directly.
+When you use the **hosted** server, the MCP server forwards tool calls to the HTTP API for patterns and rules only. You can also call the API directly (e.g. from scripts or CI) with the same API key. **MCP tools do not call analysis/refactoring/generation endpoints** — those are available only when using the HTTP API or CLI directly.
 
 - **Auth:** `x-api-key: <PATTERN_API_KEY>` on requests (or query param in some setups).
 - **Base URLs:** Production: `https://effect-patterns-mcp.vercel.app`; Staging: `https://effect-patterns-mcp-staging.vercel.app`.
 
 ### Endpoints (summary)
 
-**Free (used by MCP tools):**
+**Used by MCP tools:**
 
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/api/health` | Health check (no auth). |
 | GET | `/api/patterns` | Search patterns (query params: `q`, `category`, `difficulty`, `limit`). |
 | GET | `/api/patterns/[id]` | Get pattern by ID. |
+| GET | `/api/skills` | List/search skills (`q`, `category`, `limit`). |
+| GET | `/api/skills/[slug]` | Get skill by slug. |
 | POST | `/api/list-rules` | List rules metadata (read-only catalog). |
 
-**Paid (HTTP API / CLI only — not exposed via MCP):**
+**HTTP API / CLI only (not exposed via MCP):**
 
 | Method | Path | Purpose |
 |--------|------|---------|
@@ -215,10 +238,10 @@ Full request/response shapes: see [MCP Server API Reference](../../docs/mcp-serv
 
 ---
 
-## Service Tiers
+## Capability Boundaries
 
-- **MCP (free):** Patterns and rule catalog only — `search_patterns`, `get_pattern`, `list_analysis_rules`. Rate limits apply (e.g. 100 requests per 15 minutes per key). MCP cannot call paid endpoints.
-- **Paid (HTTP API / CLI only):** Code analysis, code review, consistency analysis, apply refactoring, generate pattern code, and higher limits. Use the HTTP API or paid CLI; these capabilities are not available via MCP.
+- **MCP surface:** Patterns and rule catalog only — `search_patterns`, `get_pattern`, `list_analysis_rules`. Rate limits apply (e.g. 100 requests per 15 minutes per key). MCP does not call analysis/refactoring/generation endpoints.
+- **HTTP API / CLI surface:** Code analysis, code review, consistency analysis, apply refactoring, and generate pattern code.
 
 ---
 
@@ -245,7 +268,7 @@ Full request/response shapes: see [MCP Server API Reference](../../docs/mcp-serv
 
 - **Backend not running:** If using local API, ensure `bun run dev` is running in `packages/mcp-server` and the API is at `http://localhost:3000`.
 - **Wrong URL:** If using hosted, set `EFFECT_PATTERNS_API_URL` to `https://effect-patterns-mcp.vercel.app` (or staging).
-- **Auth:** 401/402 usually mean invalid or missing API key. Check the key and that it's passed to the process that runs the MCP server.
+- **Auth:** 401/403 usually mean invalid or missing API key. Check the key and that it's passed to the process that runs the MCP server.
 
 ### Debugging
 

@@ -339,5 +339,5 @@ export function countExpectedFindings(patterns: AntiPatternConfig[]): number {
     };
     total += pattern.count * (findingsPerInstance[pattern.type] || 1);
   }
-  return Math.min(total, 3); // Free tier returns top 3
+  return Math.min(total, 3); // Endpoint returns the top 3 findings
 }

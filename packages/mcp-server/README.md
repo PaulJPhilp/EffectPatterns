@@ -28,8 +28,8 @@ A comprehensive MCP 2.0 server and HTTP API for the Effect Patterns ecosystem, p
 - **Consistency Analysis**: Cross-file pattern consistency checking
 - **Enterprise Features**: Rate limiting, caching, metrics, tracing, and comprehensive logging
 
-**Free Tier Features**: Pattern search, basic code analysis, and MCP tools
-**Paid Tier Features**: Advanced code generation, consistency analysis, and automated refactoring (HTTP API only)
+**MCP Tool Surface**: Pattern search and rule catalog
+**HTTP API / CLI Surface**: Code analysis, generation, consistency analysis, and automated refactoring
 
 ## 📋 MCP Tools Available
 
@@ -413,7 +413,7 @@ guidance (low severity).
 }
 ```
 
-#### Review Code (Free Tier)
+#### Review Code
 
 ```http
 POST /api/review-code
@@ -428,7 +428,7 @@ Content-Type: application/json
 Get high-fidelity architectural recommendations for Effect codebases.
 Returns the top 3 highest-priority issues with actionable guidance.
 
-**Free Tier Features:**
+**Response Characteristics:**
 
 - Top 3 recommendations per request (sorted by severity, then line number)
 - Unlimited queries
@@ -482,7 +482,7 @@ Returns the top 3 highest-priority issues with actionable guidance.
 }
 ```
 
-#### Analyze Consistency (Pro Tier)
+#### Analyze Consistency
 
 ```http
 POST /api/analyze-consistency
@@ -521,7 +521,7 @@ Detect code inconsistencies across multiple files.
 }
 ```
 
-#### Apply Refactoring (Pro Tier)
+#### Apply Refactoring
 
 ```http
 POST /api/apply-refactoring
@@ -860,7 +860,7 @@ sequenceDiagram
     MCP->>Response: Build rich response
     Response->>API: Formatted findings
     API->>Client: Analysis report
-    %% Code Review Flow (Pro Tier)
+    %% Code Review Flow
     Client->>API: POST /api/review-code
     Note over API: API Key Auth
     API->>Services: ReviewCodeService.review()
@@ -869,7 +869,7 @@ sequenceDiagram
     Services->>DB: Store review metrics
     Services->>API: Top 3 issues + capability message
     API->>Client: Review results
-    %% Refactoring Flow (Pro Tier)
+    %% Refactoring Flow
     Client->>API: POST /api/apply-refactoring
     API->>Services: RefactoringEngineService.apply()
     Services->>Analysis: AST transformation

@@ -8,7 +8,6 @@ import { MCPConfig } from "./types";
  */
 export const DEFAULT_CONFIG: Omit<MCPConfig, "apiKey" | "nodeEnv"> = {
   port: 3000,
-  tierMode: "free",
   patternsPath: path.join(process.cwd(), "data", "patterns.json"),
   patternsCacheTtlMs: 600000, // 10 minutes (increased for 31 patterns)
   patternsLoadTimeoutMs: 15000, // 15 seconds (increased for larger pattern set)
@@ -190,9 +189,6 @@ export function loadConfig(): Effect.Effect<MCPConfig, ConfigurationError> {
         (process.env.NODE_ENV as MCPConfig["nodeEnv"]) ||
         "development",
       port: parseInt(process.env.PORT || "") || DEFAULT_CONFIG.port,
-      tierMode:
-        (process.env.TIER_MODE as MCPConfig["tierMode"]) ||
-        DEFAULT_CONFIG.tierMode,
 
       // Pattern Configuration
       patternsPath: process.env.PATTERNS_PATH || DEFAULT_CONFIG.patternsPath,

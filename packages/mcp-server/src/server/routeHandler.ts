@@ -9,7 +9,6 @@ import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { validateApiKey } from "../auth/apiKey";
-import { validateTierAccess } from "../auth/tierAccess";
 import { validateAdminKey } from "../auth/adminAuth";
 import { errorHandler } from "./errorHandler";
 import { runWithRuntime } from "./init";
@@ -23,12 +22,6 @@ export interface RouteHandlerOptions {
    * Whether to require API key authentication (default: true)
    */
   requireAuth?: boolean;
-
-  /**
-   * Whether to check tier access (default: false)
-   * Set to true for paid-tier features
-   */
-  requirePaidTier?: boolean;
 
   /**
    * Whether to require admin authentication (default: false)
@@ -65,7 +58,7 @@ export interface RouteResponse<T> {
  *
  * export const GET = createRouteHandler(handleSearch, {
  *   requireAuth: true,
- *   requirePaidTier: false
+ *   requireAdmin: false
  * });
  * ```
  */
@@ -75,7 +68,6 @@ export function createRouteHandler<T, E>(
 ) {
   const {
     requireAuth = true,
-    requirePaidTier = false,
     requireAdmin = false,
     includeTraceId = true,
   } = options;
@@ -88,11 +80,6 @@ export function createRouteHandler<T, E>(
         yield* validateAdminKey(request);
       } else if (requireAuth) {
         yield* validateApiKey(request);
-      }
-
-      // Tier access layer
-      if (requirePaidTier && !requireAdmin) {
-        yield* validateTierAccess(request);
       }
 
       // Execute handler
@@ -194,7 +181,6 @@ export function createSimpleHandler<T, E>(
 ) {
   const {
     requireAuth = true,
-    requirePaidTier = false,
     requireAdmin = false,
   } = options;
 
@@ -205,11 +191,6 @@ export function createSimpleHandler<T, E>(
         yield* validateAdminKey(request);
       } else if (requireAuth) {
         yield* validateApiKey(request);
-      }
-
-      // Tier access layer
-      if (requirePaidTier && !requireAdmin) {
-        yield* validateTierAccess(request);
       }
 
       // Execute handler
