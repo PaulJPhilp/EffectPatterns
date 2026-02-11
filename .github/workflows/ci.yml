@@ -239,8 +239,8 @@ jobs:
           PATTERN_API_KEY: test-api-key-for-ci
           TEST_BASE_URL: http://localhost:3000
 
-      - name: Run MCP protocol tests
-        run: bun --filter @effect-patterns/mcp-server run test:mcp:local
+      - name: Run MCP protocol tests (tool surface + structured output)
+        run: bun --filter @effect-patterns/mcp-server run test:mcp:ci
         env:
           PATTERN_API_KEY: test-api-key-for-ci
           MCP_ENV: local

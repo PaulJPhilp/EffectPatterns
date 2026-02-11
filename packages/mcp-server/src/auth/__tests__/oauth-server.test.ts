@@ -162,3 +162,96 @@ describe("OAuth2Server client auth enforcement", () => {
     expect(validation.error?.error).toBe("invalid_client");
   });
 });
+
+describe("OAuth2Server token lifecycle hardening", () => {
+  it("invalidates old access token after refresh rotation", async () => {
+    const server = new OAuth2Server(publicClientConfig) as any;
+    const pkce = generatePKCE();
+
+    server.authorizationCodes.set("rotation-code", {
+      clientId: "test-client",
+      redirectUri: "http://localhost:3000/callback",
+      scopes: ["mcp:access"],
+      codeChallenge: pkce.codeChallenge,
+      issuedAt: Date.now(),
+      expiresAt: Date.now() + 60_000,
+    });
+
+    const initial = await server.handleAuthorizationCodeGrant({
+      grantType: "authorization_code",
+      clientId: "test-client",
+      code: "rotation-code",
+      redirectUri: "http://localhost:3000/callback",
+      codeVerifier: pkce.codeVerifier,
+    });
+
+    const oldTokenReq = {
+      headers: {
+        authorization: `Bearer ${initial.accessToken}`,
+      },
+    };
+    const oldTokenBeforeRefresh = await server.validateBearerToken(oldTokenReq);
+    expect(oldTokenBeforeRefresh).not.toBeNull();
+
+    const rotated = await server.handleRefreshTokenGrant({
+      grantType: "refresh_token",
+      clientId: "test-client",
+      refreshToken: initial.refreshToken,
+    });
+
+    expect(rotated.accessToken).not.toBe(initial.accessToken);
+
+    const oldTokenAfterRefresh = await server.validateBearerToken(oldTokenReq);
+    expect(oldTokenAfterRefresh).toBeNull();
+
+    const newTokenReq = {
+      headers: {
+        authorization: `Bearer ${rotated.accessToken}`,
+      },
+    };
+    const newTokenSession = await server.validateBearerToken(newTokenReq);
+    expect(newTokenSession).not.toBeNull();
+  });
+
+  it("rejects refresh token exchange after refresh token expiry", async () => {
+    let now = Date.now();
+    const shortRefreshConfig: OAuthConfig = {
+      ...publicClientConfig,
+      refreshTokenLifetime: 1,
+    };
+    const server = new OAuth2Server(shortRefreshConfig, {
+      now: () => now,
+      cleanupIntervalMs: 3600_000,
+    }) as any;
+    const pkce = generatePKCE();
+
+    server.authorizationCodes.set("expiry-code", {
+      clientId: "test-client",
+      redirectUri: "http://localhost:3000/callback",
+      scopes: ["mcp:access"],
+      codeChallenge: pkce.codeChallenge,
+      issuedAt: now,
+      expiresAt: now + 60_000,
+    });
+
+    const issued = await server.handleAuthorizationCodeGrant({
+      grantType: "authorization_code",
+      clientId: "test-client",
+      code: "expiry-code",
+      redirectUri: "http://localhost:3000/callback",
+      codeVerifier: pkce.codeVerifier,
+    });
+
+    now += 1_100;
+
+    await expect(
+      server.handleRefreshTokenGrant({
+        grantType: "refresh_token",
+        clientId: "test-client",
+        refreshToken: issued.refreshToken,
+      }),
+    ).rejects.toThrow("invalid_grant");
+
+    expect(server.sessions.size).toBe(0);
+  });
+});

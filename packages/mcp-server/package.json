@@ -34,7 +34,8 @@
     "test:stress:all": "bun run test:stress",
     "test:mcp": "bunx vitest run --config vitest.mcp.config.ts",
     "test:mcp:watch": "bunx vitest --config vitest.mcp.config.ts",
-    "test:mcp:local": "MCP_ENV=local bunx vitest run --config vitest.mcp.config.ts tests/mcp-protocol/local.test.ts tests/mcp-protocol/stdio-discipline.test.ts",
+    "test:mcp:local": "MCP_ENV=local bunx vitest run --config vitest.mcp.config.ts tests/mcp-protocol/local.test.ts tests/mcp-protocol/structured-output.test.ts tests/mcp-protocol/stdio-discipline.test.ts",
+    "test:mcp:ci": "MCP_ENV=local bunx vitest run --config vitest.mcp.config.ts tests/mcp-protocol/local.test.ts tests/mcp-protocol/structured-output.test.ts tests/mcp-protocol/stdio-discipline.test.ts",
     "test:mcp:staging": "bash scripts/test-mcp-staging.sh",
     "test:mcp:production": "bash scripts/test-mcp-production.sh",
     "test:mcp:all": "bash scripts/test-mcp-all.sh",
@@ -54,7 +55,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "check:narration-leakage": "bash scripts/check-narration-leakage.sh",
-    "preflight": "bun run mcp:build && bun run check:narration-leakage && bun run test:mcp:local"
+    "preflight": "bun run mcp:build && bun run check:narration-leakage && bun run test:mcp:ci"
   },
   "dependencies": {
     "@effect-patterns/analysis-core": "workspace:*",

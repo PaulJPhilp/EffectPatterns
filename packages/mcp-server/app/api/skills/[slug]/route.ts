@@ -8,11 +8,12 @@
 import { getSkillBySlugDb } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import {
     validateApiKey,
 } from "../../../../src/auth/apiKey";
 import { SkillNotFoundError } from "../../../../src/errors";
-import { errorHandler } from "../../../../src/server/errorHandler";
+import { errorHandler, errorToResponse } from "../../../../src/server/errorHandler";
 import { runWithRuntime } from "../../../../src/server/init";
 import { TracingService } from "../../../../src/tracing/otlpLayer";
 
@@ -66,7 +67,9 @@ export async function GET(
       },
     });
   } catch (error) {
-    const errorResponse = await runWithRuntime(errorHandler(error));
-    return errorResponse;
+    // Runtime init or unexpected failure: avoid runWithRuntime (may fail again).
+    // Use errorToResponse directly; no Effect runtime required.
+    const traceId = randomUUID().replace(/-/g, "");
+    return errorToResponse(error, traceId);
   }
 }
