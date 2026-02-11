@@ -236,8 +236,8 @@ All pattern metadata is stored in PostgreSQL using Drizzle ORM:
 
 - **Application Patterns**: `application_patterns` table
 - **Effect Patterns**: `effect_patterns` table
-- **Jobs**: `jobs` table
-- **Relationships**: `pattern_jobs` and `pattern_relations` tables
+- **Skills**: `skills` table
+- **Relationships**: `pattern_relations`, `skill_patterns` tables
 
 The database is the **primary source of truth** for all pattern metadata, relationships, and search functionality.
 
@@ -311,25 +311,12 @@ interface EffectPattern {
 }
 ```
 
-### Jobs Table
-
-```typescript
-interface Job {
-  id: string              // UUID primary key
-  slug: string           // Unique identifier
-  description: string
-  category?: string
-  status: "covered" | "partial" | "gap"
-  applicationPatternId?: string // FK to application_patterns
-  createdAt: Date
-  updatedAt: Date
-}
-```
-
 ### Relationship Tables
 
-- **pattern_jobs**: Many-to-many relationship between patterns and jobs
 - **pattern_relations**: Self-referential many-to-many for related patterns
+- **skill_patterns**: Many-to-many relationship between skills and patterns
+
+See [DATABASE_ARCHITECTURE.md](../DATABASE_ARCHITECTURE.md) for complete column definitions, indexes, and production infrastructure details.
 
 ## Accessing Data
 
@@ -373,7 +360,7 @@ const result = await program.pipe(
 
 The project migrated from file-based storage to PostgreSQL in December 2024. The migration:
 
-1. **Preserves all data** - All patterns, jobs, and application patterns are migrated
+1. **Preserves all data** - All patterns and application patterns are migrated
 2. **Maintains compatibility** - Legacy file-based functions still work but are deprecated
 3. **Enables new features** - Full-text search, complex queries, relationships
 
@@ -398,10 +385,10 @@ See [MIGRATION_TESTING.md](./MIGRATION_TESTING.md) for detailed migration guide.
 ## Future Considerations
 
 1. ✅ **Database Storage** - Migrated to PostgreSQL (December 2024)
-2. ✅ **Structured Jobs** - Jobs now stored in database
+2. ✅ **Structured Jobs** - Jobs removed (migration 0004); coverage tracked via application patterns
 3. ✅ **API** - MCP server uses database for pattern access
-4. **Validation** - Add Effect.Schema validation for database inserts
-5. **Coverage Reports** - Auto-calculate job coverage from database queries
+4. ✅ **Skills** - Agent skills generated from patterns and stored in database
+5. **Validation** - Add Effect.Schema validation for database inserts
 6. **Learning Paths** - Define ordered sequences through Application Patterns
 7. **Full-text Search** - Enhance search with PostgreSQL full-text search capabilities
 8. **Caching Layer** - Add Redis caching for frequently accessed patterns

@@ -24,6 +24,58 @@ application_patterns  (categories)
 
 ---
 
+## Production Infrastructure
+
+### Provider
+
+- **Provider**: Vercel Postgres (powered by Neon)
+- **Region**: iad1 (Washington, D.C., USA - East)
+- **Connection pooling**: Neon pooler (PgBouncer-compatible)
+- **SSL**: Required for all connections
+
+### Environment variables
+
+Vercel automatically provisions these. Only `DATABASE_URL` is used by the application code.
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Pooled connection URL (used by app) |
+| `DATABASE_URL_OVERRIDE` | Takes precedence over `DATABASE_URL` if set |
+| `DATABASE_URL_UNPOOLED` | Direct connection (for migrations and Drizzle Studio) |
+
+The toolkit client resolves the URL in this order: `DATABASE_URL_OVERRIDE` > `DATABASE_URL` > `postgresql://postgres:postgres@localhost:5432/effect_patterns`.
+
+### Deployment
+
+The MCP server is deployed on Vercel. Database schema changes follow this workflow:
+
+```bash
+# 1. Edit schema in packages/toolkit/src/db/schema/index.ts
+# 2. Generate migration
+bun run db:generate
+# 3. Review migration in packages/toolkit/src/db/migrations/
+# 4. Push to production
+bun run db:push
+# 5. Verify
+bun run ep:admin db test-quick
+```
+
+### Backup and recovery
+
+- Neon provides automatic daily backups with point-in-time recovery (7-day retention)
+- Manual backup: `pg_dump $DATABASE_URL > backup.sql`
+- Manual restore: `psql $DATABASE_URL < backup.sql`
+
+### Health checks
+
+```bash
+bun run ep:admin db test-quick   # Connectivity + table checks + search
+bun run ep:admin db test         # Full test suite including transactions
+bun run ep:admin db verify-migration  # Schema verification
+```
+
+---
+
 ## Connection
 
 ```
@@ -34,11 +86,13 @@ Override:       DATABASE_URL_OVERRIDE takes precedence over DATABASE_URL
 
 ### Pool configuration
 
-| Environment | `max` | `idle_timeout` | `connect_timeout` | `prepare` |
-|---|---|---|---|---|
-| CLI | 1 | 20s | 10s | false |
-| Serverless (Vercel) | 10 | 10s | 10s | false |
-| Server | 20 | 20s | 10s | false |
+The client in `packages/toolkit/src/db/client.ts` auto-detects the environment and configures pooling accordingly.
+
+| Environment | Detection | `max` | `idle_timeout` | `connect_timeout` | `max_lifetime` | `prepare` |
+|---|---|---|---|---|---|---|
+| CLI | `process.argv` contains `cli`/`load-patterns`/`migrate`, or `CLI_MODE` env | 1 | 20s | 10s | — | false |
+| Serverless (Vercel) | `VERCEL` or `AWS_LAMBDA_FUNCTION_NAME` env | 10 | 10s | 10s | 300s | false |
+| Server | Fallback | 20 | 20s | 10s | — | false |
 
 `prepare: false` is required for Neon pooler / PgBouncer compatibility.
 
