@@ -46,7 +46,7 @@
   "license": "MIT",
   "dependencies": {
     "@effect/platform": "0.94.4",
-    "effect": "^3.19.14"
+    "effect": "^3.19.16"
   },
   "devDependencies": {
     "@effect/schema": "^0.75.5",
@@ -54,6 +54,6 @@
     "vitest": "^4.0.17"
   },
   "peerDependencies": {
-    "@effect/schema": "^0.75.0"
+    "@effect/schema": "^0.75.5"
   }
 }

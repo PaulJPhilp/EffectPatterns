@@ -96,6 +96,14 @@ const EVENT_STORE_TTL_MS = getPositiveIntEnv(
     "MCP_EVENT_STORE_TTL_MS",
     15 * 60 * 1000,
 );
+const MCP_POST_BODY_MAX_BYTES = getPositiveIntEnv(
+    "MCP_POST_BODY_MAX_BYTES",
+    1_048_576, // 1 MB
+);
+const MCP_POST_BODY_TIMEOUT_MS = getPositiveIntEnv(
+    "MCP_POST_BODY_TIMEOUT_MS",
+    10_000, // 10 seconds
+);
 
 // OAuth 2.1 Configuration
 const oauthConfig: OAuthConfig = {
