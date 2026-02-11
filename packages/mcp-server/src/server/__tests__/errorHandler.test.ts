@@ -5,7 +5,6 @@
  *
  * Architecture:
  * - HTTP API error handler maps Effect errors to HTTP responses
- * - TierAccessError maps to 402 Payment Required
  * - MCP server is pure transport - doesn't handle errors, just passes through
  */
 
@@ -67,19 +66,6 @@ class FileSizeError extends Error {
   }
 }
 
-class TierAccessError extends Error {
-  readonly _tag = "TierAccessError";
-  readonly endpoint: string;
-  readonly currentTier: string;
-
-  constructor(message: string, endpoint: string, currentTier: string) {
-    super(message);
-    this.name = "TierAccessError";
-    this.endpoint = endpoint;
-    this.currentTier = currentTier;
-  }
-}
-
 /**
  * Mock error handler
  */
@@ -109,15 +95,6 @@ function mapErrorToResponse(error: unknown): Response {
       status: 413,
       maxSize: error.maxSize,
       actualSize: error.actualSize,
-    };
-  } else if (error instanceof TierAccessError) {
-    status = 402;
-    body = {
-      error: error.message,
-      status: 402,
-      endpoint: error.endpoint,
-      currentTier: error.currentTier,
-      upgradeMessage: "This capability is not available via MCP. Use the HTTP API or CLI.",
     };
   } else if (error instanceof Error) {
     status = 500;
@@ -174,17 +151,6 @@ describe("Error Handler", () => {
       const response = mapErrorToResponse(error);
 
       expect(response.status).toBe(413);
-    });
-
-    it("should map TierAccessError to 402", () => {
-      const error = new TierAccessError(
-        "This endpoint requires a paid tier",
-        "/api/generate",
-        "free"
-      );
-      const response = mapErrorToResponse(error);
-
-      expect(response.status).toBe(402);
     });
 
     it("should map unknown Error to 500", () => {
@@ -337,35 +303,6 @@ describe("Error Handler", () => {
       });
     });
 
-    describe("Tier Access Errors", () => {
-      it("should handle paid tier endpoint on free tier", async () => {
-        const error = new TierAccessError(
-          "This endpoint requires a paid tier",
-          "/api/generate",
-          "free"
-        );
-        const response = mapErrorToResponse(error);
-
-        expect(response.status).toBe(402);
-        const data = await response.json() as Record<string, unknown>;
-        expect(data.endpoint).toBe("/api/generate");
-        expect(data.currentTier).toBe("free");
-        expect(data.upgradeMessage).toBeDefined();
-      });
-
-      it("should include tier information in response", async () => {
-        const error = new TierAccessError(
-          "Upgrade required",
-          "/api/apply-refactoring",
-          "free"
-        );
-        const response = mapErrorToResponse(error);
-
-        const data = await response.json() as Record<string, unknown>;
-        expect(data.status).toBe(402);
-        expect(data.currentTier).toBe("free");
-      });
-    });
   });
 
   describe("Error Consistency", () => {

@@ -1,7 +1,7 @@
 import type { RuleId } from "../../tools/schemas";
 
 /**
- * Code recommendation for Free Tier output
+ * Code recommendation for review output
  */
 export interface CodeRecommendation {
 	readonly severity: "high" | "medium" | "low";

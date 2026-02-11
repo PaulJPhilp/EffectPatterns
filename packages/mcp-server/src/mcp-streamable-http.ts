@@ -6,7 +6,7 @@
  * Supports the new Streamable HTTP transport for remote connections.
  *
  * This is a PURE TRANSPORT layer - all authentication and authorization
- * (including tier validation) happens at the HTTP API level.
+ * happens at the HTTP API level.
  *
  * Usage:
  *   node dist/mcp-streamable-http.js                    # Local dev (no auth)

@@ -14,7 +14,7 @@ import {
 	countByConfidence,
 	countBySeverity,
 	generateEnhancedMarkdown,
-	MAX_FREE_TIER_RECOMMENDATIONS,
+	MAX_RECOMMENDATIONS,
 	sortFindings as sortFindingsHelper,
 	validateFileSize,
 	validateTypeScript,
@@ -58,11 +58,9 @@ function buildEnhancedRecommendation(
 }
 
 /**
- * ReviewCodeService - Free Tier Code Review
+ * ReviewCodeService
  *
- * Provides limited, high-fidelity architectural recommendations for Effect
- * codebases. Acts as the "Hook" for the Free Tier by demonstrating the
- * value of the Analysis Core while driving users toward Pro Tier features.
+ * Provides high-fidelity architectural recommendations for Effect codebases.
  */
 export class ReviewCodeService extends Effect.Service<ReviewCodeService>()(
 	"ReviewCodeService",
@@ -130,7 +128,7 @@ export class ReviewCodeService extends Effect.Service<ReviewCodeService>()(
 						const totalFound = sortedFindings.length;
 						const hiddenCount = Math.max(
 							0,
-							totalFound - MAX_FREE_TIER_RECOMMENDATIONS,
+							totalFound - MAX_RECOMMENDATIONS,
 						);
 
 						// Prepare rules and fixes for enhancement (placeholder - normally from registry)
@@ -203,10 +201,10 @@ export class ReviewCodeService extends Effect.Service<ReviewCodeService>()(
 							{ concurrency: 5 }, // PERFORMANCE: Limit to 5 concurrent operations to avoid resource exhaustion
 						);
 
-						// Take top 3 for free tier
+						// Return the default bounded recommendation set
 						const topEnhancedFindings = allEnhancedFindings.slice(
 							0,
-							MAX_FREE_TIER_RECOMMENDATIONS,
+							MAX_RECOMMENDATIONS,
 						);
 
 						// Build machine summary

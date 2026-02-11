@@ -5,7 +5,7 @@
  * These tests verify that the MCP server correctly communicates with the local API.
  *
  * Architecture: MCP server is a pure transport layer - all authentication
- * and authorization (including tier validation) happens at the HTTP API level.
+ * and authorization happens at the HTTP API level.
  *
  * Prerequisites:
  * - Local API server running on http://localhost:3000

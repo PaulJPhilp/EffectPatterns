@@ -6,7 +6,6 @@
  *
  * Architecture:
  * - HTTP API handles all authentication and authorization
- * - Tier validation (free/paid) happens at HTTP API level
  * - MCP server is pure transport - passes requests through
  */
 

@@ -8,8 +8,7 @@
  * Architecture:
  * - POST /api/review-code
  * - AI-powered code review with architectural recommendations
- * - Free tier: top 3 recommendations
- * - Paid tier: all recommendations (tier validation via HTTP API)
+ * - Returns a bounded set of top recommendations
  * - Requires API key authentication
  * - Uses createRouteHandler for auth/error handling
  */

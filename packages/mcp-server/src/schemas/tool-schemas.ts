@@ -105,7 +105,7 @@ export const ToolSchemas = {
   }).describe("Get full details for a specific skill by slug"),
 
   // ============================================================================
-  // PAID-TIER SCHEMAS (HTTP API only, not exposed as MCP tools):
+  // HTTP API SCHEMAS (not exposed as MCP tools):
   // - analyzeCode    → POST /api/analyze-code
   // - reviewCode     → POST /api/review-code
   // - applyRefactoring → POST /api/apply-refactoring

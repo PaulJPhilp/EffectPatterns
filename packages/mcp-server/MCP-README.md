@@ -62,7 +62,6 @@ A Model Context Protocol (MCP) server that provides Effect-TS patterns, code ana
 | `PATTERN_API_KEY` | Authentication key | Required |
 | `PRODUCTION_API_KEY` | Production API key (for `mcp:production`) | Use `PATTERN_API_KEY` if unset |
 | `DATABASE_URL` | PostgreSQL connection | Auto-configured |
-| `TIER_MODE` | Service tier (`free`/`paid`) | `free` |
 | `NODE_ENV` | Environment mode | `development` |
 
 ### Claude Code Configuration
@@ -88,14 +87,14 @@ Set `PRODUCTION_API_KEY` via your environment or secrets.
 
 ### Available Tools
 
-The MCP server exposes the free-tier tool surface only:
+The MCP server exposes the MCP tool surface only:
 - `search_patterns`
 - `get_pattern`
 - `list_analysis_rules`
 - `analyze_code`
 - `review_code`
 
-Paid-tier features are available via the HTTP API only (not exposed as MCP tools).
+Additional analysis/refactoring endpoints are available via the HTTP API only (not exposed as MCP tools).
 
 #### 🔍 `search_patterns`
 
@@ -339,25 +338,14 @@ Create `.env.local`:
 ```env
 PATTERN_API_KEY=dev-key
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/effect_patterns
-TIER_MODE=free
 NODE_ENV=development
 ```
 
-## 📊 Service Tiers
+## 📊 Capability Model
 
-### Free Tier (Default)
-
-- **Code Review**: Top 3 architectural recommendations
-- **Pattern Search**: Full access to pattern library
-- **Analysis**: Basic rule-based analysis
-- **Rate Limit**: 100 requests per 15 minutes
-
-### Pro Tier (Coming Soon)
-
-- **Code Review**: Unlimited recommendations
-- **Enhanced Analysis**: AI-powered insights
-- **Custom Patterns**: Organization-specific patterns
-- **Priority Support**: Dedicated assistance
+- **MCP tool surface**: Pattern search, pattern retrieval, and analysis-rule catalog.
+- **HTTP API / CLI surface**: Analysis, review, refactoring, and generation endpoints.
+- **Operational limits**: Standard rate limits apply per API key.
 
 ## 🐛 Troubleshooting
 
@@ -387,9 +375,9 @@ curl -H "x-api-key: YOUR_KEY" https://effect-patterns-mcp.vercel.app/api/pattern
 
 #### Performance Issues
 
-- Use free tier within rate limits
+- Use the standard rate limits for your API key
 - Optimize search queries with specific filters
-- Consider Pro tier for higher limits
+- Use direct HTTP API endpoints for non-MCP features
 
 ### Debug Mode
 

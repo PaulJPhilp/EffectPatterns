@@ -184,9 +184,6 @@ DATABASE_URL="postgres://user:password@localhost:5432/test_db"
 # Optional - disables Vercel KV
 KV_REST_API_URL=""
 KV_REST_API_TOKEN=""
-
-# Optional - test tier mode
-TIER_MODE=free  # or 'pro'
 ```
 
 #### MCP Tests (vitest.mcp.config.ts)
