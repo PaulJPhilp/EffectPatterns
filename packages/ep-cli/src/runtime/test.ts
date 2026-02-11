@@ -19,8 +19,11 @@ import { envSchema, type EnvConfig } from "../config/env.js";
 export const createTestEnv = (overrides: Partial<EnvConfig> = {}) =>
 	createSimpleEnv(envSchema as any, {
 		NODE_ENV: "test",
-		LOG_LEVEL: undefined,
-		DEBUG: undefined,
+			LOG_LEVEL: undefined,
+			PATTERN_API_KEY: undefined,
+			EFFECT_PATTERNS_API_URL: undefined,
+			EP_API_TIMEOUT_MS: undefined,
+			DEBUG: undefined,
 		VERBOSE: undefined,
 		NO_COLOR: undefined,
 		CI: undefined,
