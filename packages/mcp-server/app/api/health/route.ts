@@ -11,6 +11,9 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 
+const SERVICE_NAME = "effect-patterns-mcp-server";
+const SERVICE_VERSION = "0.7.7";
+
 export async function GET() {
   try {
     // Generate a trace ID for this request
@@ -19,8 +22,8 @@ export async function GET() {
     // Simple synchronous health check - no external dependencies
     const result = {
       ok: true,
-      version: "0.5.0",
-      service: "effect-patterns-mcp-server",
+      version: SERVICE_VERSION,
+      service: SERVICE_NAME,
       timestamp: new Date().toISOString(),
       traceId,
     };
@@ -40,8 +43,8 @@ export async function GET() {
       {
         ok: false,
         error: String(error),
-        version: "0.5.0",
-        service: "effect-patterns-mcp-server",
+        version: SERVICE_VERSION,
+        service: SERVICE_NAME,
         timestamp: new Date().toISOString(),
         traceId,
       },
