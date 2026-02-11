@@ -1,6 +1,6 @@
 # Effect Patterns MCP Server — End User Guide
 
-Use the **Effect Patterns MCP server** from your IDE (Cursor, Claude Code, Windsurf, or any MCP client) to search 700+ Effect-TS patterns and browse the rule catalog. The MCP server is a **patterns + rule catalog** tool only; it does not analyze, review, or refactor your code.
+Use the **Effect Patterns MCP server** from your IDE (Cursor, Claude Code, Windsurf, or any MCP client) to search 700+ Effect-TS patterns, browse curated skills, and inspect the rule catalog. The MCP server is a **patterns + skills + rule catalog** tool only; it does not analyze, review, or refactor your code.
 
 ---
 
@@ -8,6 +8,7 @@ Use the **Effect Patterns MCP server** from your IDE (Cursor, Claude Code, Winds
 
 - **Pattern search** — Find patterns by keyword, category, or difficulty (beginner / intermediate / advanced).
 - **Pattern details** — Full docs and code examples for any pattern by ID.
+- **Skills catalog** — Search and retrieve curated Effect-TS skills by query/category.
 - **Rule catalog** (read-only) — List all analysis rule metadata (IDs, severity, categories). No code scanning.
 
 Code analysis, review, refactoring, and pattern code generation are **not** available via MCP; they are offered through the [HTTP API](#http-api) and paid CLI only.
@@ -129,7 +130,7 @@ Never commit API keys; use environment variables or your IDE's secret storage.
 
 ## MCP Tools (Free Tier)
 
-The MCP server exposes **exactly three tools** in production and staging. No other tools (including code analysis or review) are available via MCP.
+The MCP server exposes **exactly five tools** in production and staging. No other tools (including code analysis or review) are available via MCP.
 
 ### 1. `search_patterns`
 
@@ -181,6 +182,38 @@ No parameters.
 
 ---
 
+### 4. `list_skills`
+
+Search skills by query and optional category filters.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `q` | string | No | Search query for skill title/content. |
+| `category` | string | No | Optional skills category filter. |
+| `limit` | number | No | Max results to return. |
+
+**Example prompts:**
+
+- "List skills for Effect testing."
+- "Find skills for service architecture."
+
+---
+
+### 5. `get_skill`
+
+Get full details for a specific skill by slug, including full guidance content.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `slug` | string | Yes | Skill slug identifier. |
+
+**Example prompts:**
+
+- "Get the skill for effect-service."
+- "Show skill details for a testing workflow."
+
+---
+
 ## HTTP API
 
 When you use the **hosted** server, the MCP server forwards tool calls to the HTTP API for patterns and rules only. You can also call the API directly (e.g. from scripts or CI) with the same API key. **MCP tools do not call paid endpoints** — analysis, review, refactoring, and generation are available only when using the HTTP API or paid CLI directly.
@@ -217,7 +250,7 @@ Full request/response shapes: see [MCP Server API Reference](../../docs/mcp-serv
 
 ## Service Tiers
 
-- **MCP (free):** Patterns and rule catalog only — `search_patterns`, `get_pattern`, `list_analysis_rules`. Rate limits apply (e.g. 100 requests per 15 minutes per key). MCP cannot call paid endpoints.
+- **MCP (free):** Patterns, skills, and rule catalog — `search_patterns`, `get_pattern`, `list_analysis_rules`, `list_skills`, `get_skill`. Rate limits apply (e.g. 100 requests per 15 minutes per key). MCP cannot call paid endpoints.
 - **Paid (HTTP API / CLI only):** Code analysis, code review, consistency analysis, apply refactoring, generate pattern code, and higher limits. Use the HTTP API or paid CLI; these capabilities are not available via MCP.
 
 ---
