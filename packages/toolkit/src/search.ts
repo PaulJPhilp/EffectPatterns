@@ -289,6 +289,9 @@ export async function getPatternByIdDb(
       return null
     }
 
+    const relatedEffectPatterns = await repo.getRelatedPatterns(p.id)
+    const relatedSlugs = relatedEffectPatterns.map((rp) => rp.slug)
+
     return {
       id: p.slug,
       slug: p.slug,
@@ -299,7 +302,7 @@ export async function getPatternByIdDb(
       tags: Array.isArray(p.tags) ? (p.tags as string[]) : [],
       examples: Array.isArray(p.examples) ? (p.examples as Pattern["examples"]) : [],
       useCases: Array.isArray(p.useCases) ? (p.useCases as string[]) : [],
-      relatedPatterns: undefined,
+      relatedPatterns: relatedSlugs.length > 0 ? relatedSlugs : undefined,
       effectVersion: undefined,
       createdAt: p.createdAt?.toISOString(),
       updatedAt: p.updatedAt?.toISOString(),
