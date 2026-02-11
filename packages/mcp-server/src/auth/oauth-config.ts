@@ -80,7 +80,9 @@ export interface AuthenticatedSession {
     clientId: string;
     userId?: string;
     scopes: string[];
+    issuedAt: number;
     expiresAt: number;
+    refreshTokenExpiresAt?: number;
     accessToken: string;
     refreshToken?: string;
 }
