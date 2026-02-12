@@ -197,6 +197,34 @@ jobs:
           path: packages/mcp-server/.next/
           retention-days: 7
 
+  test-ep-cli:
+    name: Release Gate - ep-cli
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck ep-cli
+        run: bun run --filter @effect-patterns/ep-cli typecheck
+
+      - name: Test ep-cli
+        run: bun run --filter @effect-patterns/ep-cli test -- --reporter=dot
+
+      - name: Build ep-cli
+        run: bun run --filter @effect-patterns/ep-cli build
+
+      - name: Smoke test ep-cli executable
+        run: |
+          bun packages/ep-cli/dist/index.js --help > /dev/null
+
   test-integration:
     name: Integration Tests - MCP Server
     runs-on: ubuntu-latest
@@ -279,6 +307,7 @@ jobs:
         check-narration,
         typecheck,
         test-toolkit,
+        test-ep-cli,
         build-toolkit,
         build-mcp-server,
         test-integration,
