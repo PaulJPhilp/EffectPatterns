@@ -253,14 +253,23 @@ jobs:
           name: toolkit-dist
           path: packages/toolkit/dist/
 
-      - name: Start MCP server in background
+      - name: Run integration tests
+        run: cd packages/mcp-server && bun run test:integration
+        env:
+          PATTERN_API_KEY: test-api-key-for-ci
+          TEST_BASE_URL: http://localhost:3000
+
+      - name: Build MCP stdio for protocol tests
+        run: cd packages/mcp-server && bun run mcp:build
+
+      - name: Start API server for MCP protocol tests
         run: |
           cd packages/mcp-server
           PORT=3000 bun run dev > ../../mcp-server.log 2>&1 &
           echo $! > ../../mcp-server.pid
           sleep 2
           if ! kill -0 "$(cat ../../mcp-server.pid)" 2>/dev/null; then
-            echo "MCP server exited before readiness check"
+            echo "MCP API server exited before readiness check"
             cat ../../mcp-server.log || true
             exit 1
           fi
@@ -269,15 +278,9 @@ jobs:
           OTLP_ENDPOINT: http://localhost:4318/v1/traces
           NODE_ENV: test
 
-      - name: Wait for server to be ready
+      - name: Wait for API server to be ready
         run: |
           timeout 90 bash -c 'until curl -fsS http://localhost:3000/api/health > /dev/null; do sleep 2; done'
-
-      - name: Run integration tests
-        run: cd packages/mcp-server && bun run test:integration
-        env:
-          PATTERN_API_KEY: test-api-key-for-ci
-          TEST_BASE_URL: http://localhost:3000
 
       - name: Run MCP protocol tests (tool surface + structured output)
         run: cd packages/mcp-server && bun run test:mcp:ci
