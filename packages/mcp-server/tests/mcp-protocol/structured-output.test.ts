@@ -232,7 +232,7 @@ describe("Structured Outputs and MIME Types", () => {
       if (!isLocalAvailable) return;
       // Use a known pattern ID (adjust based on your data)
       const result = await client.callTool("get_pattern", {
-        id: "effect-service",
+        id: "transform-effect-values",
       });
 
       // May return error if pattern doesn't exist, or structured content if it does
@@ -263,7 +263,7 @@ describe("Structured Outputs and MIME Types", () => {
     it("should include MIME types in content blocks", async () => {
       if (!isLocalAvailable) return;
       const result = await client.callTool("get_pattern", {
-        id: "effect-service",
+        id: "transform-effect-values",
       });
 
       if (!result.isError && result.content.length > 0) {

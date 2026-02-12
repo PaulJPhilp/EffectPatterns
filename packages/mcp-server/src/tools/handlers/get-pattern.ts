@@ -202,6 +202,7 @@ export async function handleGetPattern(
       apiNames,
       exampleCode,
       exampleLanguage: example?.language || "typescript",
+      headingLevel: 1,
     });
 
     const wantsDetailedStructured =
