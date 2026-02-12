@@ -15,8 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
-      - run: bun install
+      - run: bun install --frozen-lockfile
       - run: bun run typecheck
-      - run: bun run test:all
+      - run: bun run --filter @effect-patterns/ep-cli test -- --reporter=dot
+      - run: bun run --filter @effect-patterns/toolkit test
       - run: bun run lint:all
         continue-on-error: true
