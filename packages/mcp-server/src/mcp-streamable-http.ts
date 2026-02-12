@@ -88,14 +88,6 @@ const OAUTH_CLEANUP_INTERVAL_MS = getPositiveIntEnv(
     "MCP_OAUTH_CLEANUP_INTERVAL_MS",
     60_000,
 );
-const MCP_POST_BODY_MAX_BYTES = getPositiveIntEnv(
-    "MCP_POST_BODY_MAX_BYTES",
-    1_048_576, // 1 MiB
-);
-const MCP_POST_BODY_TIMEOUT_MS = getPositiveIntEnv(
-    "MCP_POST_BODY_TIMEOUT_MS",
-    5_000,
-);
 const EVENT_STORE_MAX_EVENTS = getPositiveIntEnv(
     "MCP_EVENT_STORE_MAX_EVENTS",
     2000,
