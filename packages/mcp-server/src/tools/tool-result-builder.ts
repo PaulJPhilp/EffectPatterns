@@ -9,8 +9,8 @@
 
 import {
   buildFullPatternCard,
-  buildPatternContent,
 } from "@/mcp-content-builders.js";
+import { MARKER_PATTERN_INDEX_V1 } from "@/constants/markers.js";
 import type {
   SearchResultsOutput,
   ToolError,
@@ -43,6 +43,11 @@ export async function buildFullSearchContent(
   content.push({
     type: "text",
     text: `## Effect Pattern Search${queryInfo}\nFound **${data.count}** patterns.\n\n`,
+    annotations: { priority: 1, audience: ["user"] },
+  });
+  content.push({
+    type: "text",
+    text: `\n\n${MARKER_PATTERN_INDEX_V1}\n\n`,
     annotations: { priority: 1, audience: ["user"] },
   });
 
@@ -103,12 +108,7 @@ export async function buildFullSearchContent(
         };
         content.push(...buildCardFromSummary(mergedSummary));
       } else {
-        const fallback = buildPatternContent(
-          summary.title,
-          summary.description,
-          "// No example available for this pattern.",
-        );
-        content.push(...fallback);
+        content.push(...buildCardFromSummary(summary));
       }
     }
 

@@ -17,6 +17,7 @@
  */
 
 import {
+  MARKER_PATTERN_CARD_V1,
   MARKER_PATTERN_INDEX_V1
 } from "@/constants/markers.js";
 import type { TextContent } from "@/schemas/structured-output.js";
@@ -276,6 +277,7 @@ function buildFullPatternCard(params: {
   apiNames: readonly string[];
   exampleCode: string;
   exampleLanguage?: string;
+  headingLevel?: 1 | 2;
 }): TextContent[] {
   const {
     title,
@@ -284,24 +286,27 @@ function buildFullPatternCard(params: {
     apiNames,
     exampleCode,
     exampleLanguage,
+    headingLevel = 2,
   } = params;
 
   const sections: string[] = [];
 
-  sections.push(`## ${title}`);
+  sections.push(`${"#".repeat(headingLevel)} ${title}`);
   sections.push(`**🧭 Summary:** ${summary}`);
   sections.push(`**✅ Use when:** ${useWhen}`);
 
-  if (apiNames.length > 0) {
-    const apiChips = apiNames.map((api) => `\`${api}\``).join(" ");
-    sections.push(`**🧩 API:** ${apiChips}`);
-  }
+  const apiChips = apiNames.map((api) => `\`${api}\``).join(" ");
+  sections.push(
+    apiNames.length > 0
+      ? `**API:** ${apiChips}`
+      : "**API:** (none detected)",
+  );
 
   sections.push(`**💡 Example:**\n\n\`\`\`${exampleLanguage || "typescript"}\n${exampleCode}\n\`\`\``);
 
   const body = sections.join("\n\n");
   return [
-    createTextBlock(`\n\n${body}\n\n`, {
+    createTextBlock(`\n\n${MARKER_PATTERN_CARD_V1}\n\n${body}\n\n`, {
       priority: 1,
       audience: ["user"],
     }),

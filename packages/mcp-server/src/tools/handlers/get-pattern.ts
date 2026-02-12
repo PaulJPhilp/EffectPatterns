@@ -202,6 +202,7 @@ export async function handleGetPattern(
       apiNames,
       exampleCode,
       exampleLanguage: example?.language || "typescript",
+      headingLevel: 1,
     });
 
     const wantsDetailedStructured =
@@ -354,9 +355,7 @@ export async function handleGetPattern(
 
     const toolResult: CallToolResult = {
       content: normalizeContentBlocks(content),
-      ...(format === "markdown"
-        ? {}
-        : { structuredContent: serializableStructuredContent }),
+      structuredContent: serializableStructuredContent,
     };
 
     // Cache result (30 min TTL)
