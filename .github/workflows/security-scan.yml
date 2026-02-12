@@ -15,6 +15,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   dependency-audit:
     name: Dependency Vulnerability Audit
@@ -221,11 +226,8 @@ jobs:
 
       - name: Generate SBOM (CycloneDX format)
         run: |
-          # Install CycloneDX BOM tool using npm (with --force for dependency conflicts)
-          npm install -D --force @cyclonedx/bom
-
-          # Generate SBOM using npx
-          npx @cyclonedx/bom --output sbom.json
+          # Use cdxgen directly so workspace:* dependencies are handled correctly.
+          npx --yes @cyclonedx/cdxgen -t js -o sbom.json
 
           echo "✅ SBOM generated successfully"
 
@@ -249,6 +251,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [dependency-audit, secret-scan, license-check]
     if: always()
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
 
     steps:
       - name: Generate summary
