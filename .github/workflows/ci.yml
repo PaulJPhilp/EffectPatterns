@@ -255,8 +255,15 @@ jobs:
 
       - name: Start MCP server in background
         run: |
-          bun --filter @effect-patterns/mcp-server run dev &
-          echo $! > server.pid
+          cd packages/mcp-server
+          PORT=3000 bun run dev > ../../mcp-server.log 2>&1 &
+          echo $! > ../../mcp-server.pid
+          sleep 2
+          if ! kill -0 "$(cat ../../mcp-server.pid)" 2>/dev/null; then
+            echo "MCP server exited before readiness check"
+            cat ../../mcp-server.log || true
+            exit 1
+          fi
         env:
           PATTERN_API_KEY: test-api-key-for-ci
           OTLP_ENDPOINT: http://localhost:4318/v1/traces
@@ -264,26 +271,34 @@ jobs:
 
       - name: Wait for server to be ready
         run: |
-          timeout 60 bash -c 'until curl -f http://localhost:3000/api/health; do sleep 2; done'
+          timeout 90 bash -c 'until curl -fsS http://localhost:3000/api/health > /dev/null; do sleep 2; done'
 
       - name: Run integration tests
-        run: bun --filter @effect-patterns/mcp-server run test:integration
+        run: cd packages/mcp-server && bun run test:integration
         env:
           PATTERN_API_KEY: test-api-key-for-ci
           TEST_BASE_URL: http://localhost:3000
 
       - name: Run MCP protocol tests (tool surface + structured output)
-        run: bun --filter @effect-patterns/mcp-server run test:mcp:ci
+        run: cd packages/mcp-server && bun run test:mcp:ci
         env:
           PATTERN_API_KEY: test-api-key-for-ci
           MCP_ENV: local
 
+      - name: Dump MCP server logs on failure
+        if: failure()
+        run: |
+          if [ -f mcp-server.log ]; then
+            cat mcp-server.log
+          fi
+
       - name: Stop server
         if: always()
         run: |
-          if [ -f server.pid ]; then
-            kill $(cat server.pid) || true
+          if [ -f mcp-server.pid ]; then
+            kill $(cat mcp-server.pid) || true
           fi
+          rm -f mcp-server.pid mcp-server.log
 
   coverage-report:
     name: Coverage Report
