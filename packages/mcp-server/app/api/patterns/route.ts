@@ -15,8 +15,10 @@ import { randomUUID } from "crypto";
 import {
   validateApiKey,
 } from "../../../src/auth/apiKey";
+import { ValidationError } from "../../../src/errors";
 import { errorHandler, errorToResponse } from "../../../src/server/errorHandler";
 import { runWithRuntime } from "../../../src/server/init";
+import { searchPatternsFallback } from "../../../src/server/pattern-fallback";
 import { TracingService } from "../../../src/tracing/otlpLayer";
 
 /**
@@ -51,9 +53,26 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
   const query = searchParams.get("q") || undefined;
   const category = searchParams.get("category") || undefined;
   const difficulty = searchParams.get("difficulty") || undefined;
-  const limit = searchParams.get("limit")
-    ? Number.parseInt(searchParams.get("limit")!, 10)
-    : undefined;
+  const rawLimit = searchParams.get("limit");
+  const limit = rawLimit !== null ? Number(rawLimit) : undefined;
+
+  if (
+    rawLimit !== null &&
+    (
+      typeof limit !== "number" ||
+      !Number.isInteger(limit) ||
+      limit <= 0 ||
+      limit > 100
+    )
+  ) {
+    return yield* Effect.fail(
+      new ValidationError({
+        field: "limit",
+        message: "limit must be an integer between 1 and 100",
+        value: rawLimit,
+      })
+    );
+  }
 
   // Annotate span with search parameters
   yield* Effect.annotateCurrentSpan({
@@ -74,16 +93,26 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
   // 1-hour TTL for pattern searches (good balance between freshness and performance)
   const dbUrl = process.env.DATABASE_URL_OVERRIDE || process.env.DATABASE_URL;
   const results = yield* Effect.tryPromise({
-    try: () =>
-      searchPatternsDb(
-        {
+    try: async () => {
+      try {
+        return await searchPatternsDb(
+          {
+            query,
+            category,
+            skillLevel,
+            limit,
+          },
+          dbUrl
+        );
+      } catch {
+        return await searchPatternsFallback({
           query,
           category,
-          skillLevel,
+          difficulty,
           limit,
-        },
-        dbUrl
-      ),
+        });
+      }
+    },
     catch: (error) => new Error(`Failed to search patterns: ${String(error)}`),
   });
 

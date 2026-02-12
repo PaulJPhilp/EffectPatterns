@@ -18,6 +18,7 @@ import {
 import { PatternNotFoundError } from "../../../../src/errors";
 import { errorHandler, errorToResponse } from "../../../../src/server/errorHandler";
 import { runWithRuntime } from "../../../../src/server/init";
+import { getPatternByIdFallback } from "../../../../src/server/pattern-fallback";
 import { TracingService } from "../../../../src/tracing/otlpLayer";
 
 // Handler implementation with automatic span creation via Effect.fn
@@ -35,7 +36,13 @@ const handleGetPattern = (request: NextRequest, patternId: string) => Effect.gen
   // Fetch pattern - handle errors gracefully
   const dbUrl = process.env.DATABASE_URL_OVERRIDE || process.env.DATABASE_URL;
   const result = yield* Effect.tryPromise({
-    try: () => getPatternByIdDb(patternId, dbUrl),
+    try: async () => {
+      try {
+        return await getPatternByIdDb(patternId, dbUrl);
+      } catch {
+        return (await getPatternByIdFallback(patternId)) ?? null;
+      }
+    },
     catch: () => undefined,
   });
 
