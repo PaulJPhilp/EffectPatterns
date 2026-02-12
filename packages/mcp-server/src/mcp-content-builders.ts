@@ -295,10 +295,12 @@ function buildFullPatternCard(params: {
   sections.push(`**🧭 Summary:** ${summary}`);
   sections.push(`**✅ Use when:** ${useWhen}`);
 
-  if (apiNames.length > 0) {
-    const apiChips = apiNames.map((api) => `\`${api}\``).join(" ");
-    sections.push(`**🧩 API:** ${apiChips}`);
-  }
+  const apiChips = apiNames.map((api) => `\`${api}\``).join(" ");
+  sections.push(
+    apiNames.length > 0
+      ? `**API:** ${apiChips}`
+      : "**API:** (none detected)",
+  );
 
   sections.push(`**💡 Example:**\n\n\`\`\`${exampleLanguage || "typescript"}\n${exampleCode}\n\`\`\``);
 

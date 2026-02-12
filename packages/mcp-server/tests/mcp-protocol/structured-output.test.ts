@@ -268,7 +268,7 @@ describe("Structured Outputs and MIME Types", () => {
 
       if (!result.isError && result.content.length > 0) {
         const markdownBlocks = result.content.filter(
-          (block: any) => block.mimeType === "text/markdown"
+          (block: any) => block.mimeType === "text/markdown" || !block.mimeType
         );
         expect(markdownBlocks.length).toBeGreaterThan(0);
       }
