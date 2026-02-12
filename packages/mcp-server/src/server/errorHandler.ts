@@ -11,9 +11,6 @@ import {
     isAuthenticationError,
 } from "../auth/apiKey";
 import {
-    isTierAccessError,
-} from "../auth/tierAccess";
-import {
     AuthorizationError,
     PatternLoadError,
     PatternNotFoundError,
@@ -47,8 +44,6 @@ interface ApiErrorResponse {
   error: string;
   traceId?: string;
   status?: string;
-  tier?: string;
-  upgradeMessage?: string;
   maxSize?: number;
   actualSize?: number;
   details?: Record<string, unknown>;
@@ -252,23 +247,6 @@ export function errorToResponse(
     return NextResponse.json(response, {
       status: 401,
       headers: baseHeaders,
-    });
-  }
-
-  // Check for tier access errors (uses custom type guard from auth module)
-  if (isTierAccessError(error)) {
-    const response: ApiErrorResponse = {
-      error: error.message,
-      status: "payment_required",
-      tier: error.tierMode,
-      upgradeMessage: error.upgradeMessage,
-    };
-    return NextResponse.json(response, {
-      status: 402,
-      headers: {
-        ...baseHeaders,
-        "X-Tier-Error": "feature-gated",
-      },
     });
   }
 

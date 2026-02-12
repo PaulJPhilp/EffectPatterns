@@ -6,7 +6,6 @@ export interface MCPConfig {
   readonly apiKey: string;
   readonly nodeEnv: "development" | "production" | "test";
   readonly port: number;
-  readonly tierMode: "free" | "paid";
 
   // Pattern Configuration
   readonly patternsPath: string;

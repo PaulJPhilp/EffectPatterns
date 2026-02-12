@@ -11,15 +11,11 @@ Search, browse, and install Effect-TS patterns directly from your terminal. Buil
 ## Installation
 
 ```bash
-# npm
-npm install -g @effect-patterns/ep-cli
-
 # bun
 bun add -g @effect-patterns/ep-cli
-
-# pnpm
-pnpm add -g @effect-patterns/ep-cli
 ```
+
+Requires Bun runtime.
 
 ## Commands
 
@@ -57,13 +53,6 @@ ep install list --installed
 
 Supported tools: `agents`, `cursor`, `vscode`, `windsurf`
 
-### Pattern Authoring
-
-```bash
-# Scaffold a new pattern (interactive wizard)
-ep pattern new
-```
-
 ### Skills Management
 
 Manage and validate Claude Skills built from patterns.
@@ -82,40 +71,17 @@ ep skills validate
 ep skills stats
 ```
 
-### Release Management
+## Maintainer Commands
 
-```bash
-# Preview next release version and changelog
-ep release preview
-
-# Create a release (version bump, changelog, tag, push)
-ep release create
-```
-
-### Admin / Publishing Pipeline
-
-```bash
-# Lint patterns for Effect-TS best practices
-ep admin lint
-ep admin lint --fix
-
-# Validate pattern files
-ep admin validate -v
-
-# Run example tests
-ep admin test
-
-# Generate documentation
-ep admin generate
-
-# Run the full publishing pipeline (test -> validate -> generate -> ingest)
-ep admin pipeline
-```
+Maintainer workflows (release, pattern authoring, publishing/admin commands) live in `@effect-patterns/ep-admin`.
 
 ## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `PATTERN_API_KEY` | API key for hosted Effect Patterns API (`x-api-key` header) | - |
+| `EFFECT_PATTERNS_API_URL` | Base URL for Effect Patterns API | `https://effect-patterns-mcp.vercel.app` |
+| `EP_API_TIMEOUT_MS` | HTTP timeout for API requests (milliseconds) | `10000` |
 | `LOG_LEVEL` | Set log level (`debug`, `info`, `warn`, `error`) | `info` |
 | `DEBUG` | Enable debug logging | - |
 | `VERBOSE` | Enable verbose logging | - |

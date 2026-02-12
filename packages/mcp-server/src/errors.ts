@@ -29,16 +29,6 @@ export class AuthorizationError extends Data.TaggedError("AuthorizationError")<{
 }> { }
 
 /**
- * Tier access errors
- */
-export class TierAccessError extends Data.TaggedError("TierAccessError")<{
-  readonly endpoint: string;
-  readonly tierMode: "free" | "paid";
-  readonly message: string;
-  readonly upgradeMessage: string;
-}> { }
-
-/**
  * Pattern-related errors
  */
 export class PatternNotFoundError extends Data.TaggedError(

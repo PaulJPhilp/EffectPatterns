@@ -6,7 +6,7 @@
  * Supports the new Streamable HTTP transport for remote connections.
  *
  * This is a PURE TRANSPORT layer - all authentication and authorization
- * (including tier validation) happens at the HTTP API level.
+ * happens at the HTTP API level.
  *
  * Usage:
  *   node dist/mcp-streamable-http.js                    # Local dev (no auth)
@@ -103,6 +103,14 @@ const EVENT_STORE_MAX_EVENTS = getPositiveIntEnv(
 const EVENT_STORE_TTL_MS = getPositiveIntEnv(
     "MCP_EVENT_STORE_TTL_MS",
     15 * 60 * 1000,
+);
+const MCP_POST_BODY_MAX_BYTES = getPositiveIntEnv(
+    "MCP_POST_BODY_MAX_BYTES",
+    1_048_576, // 1 MB
+);
+const MCP_POST_BODY_TIMEOUT_MS = getPositiveIntEnv(
+    "MCP_POST_BODY_TIMEOUT_MS",
+    10_000, // 10 seconds
 );
 
 // OAuth 2.1 Configuration

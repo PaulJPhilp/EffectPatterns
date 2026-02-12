@@ -1,10 +1,10 @@
 # Review Code Service
 
-Free tier code review with architectural recommendations.
+Code review with architectural recommendations.
 
 ## Overview
 
-The `ReviewCodeService` provides high-fidelity architectural recommendations for Effect codebases with confidence scoring, fix plans, and guidance. Limited to top 3 findings in Free tier.
+The `ReviewCodeService` provides high-fidelity architectural recommendations for Effect codebases with confidence scoring, fix plans, and guidance. Results are limited to the top 3 findings in the response.
 
 **Important**: This service only accepts code that is:
 1. Cut and pasted into the prompt (code parameter)
@@ -37,7 +37,7 @@ console.log(result.markdown);
 - **Code source**: Code must be cut and pasted or provided from open editor. Files are NOT read from disk.
 - **File size**: Max 100KB (100,000 bytes)
 - **File type**: Must be .ts or .tsx (if filePath provided)
-- **Free tier limit**: Top 3 recommendations (by severity)
+- **Response limit**: Top 3 recommendations (by severity)
 - **Code limit**: Entire finding base is analyzed
 - **Response type**: Only diagnostic information returned (findings, recommendations, fix plans). No corrected code is included.
 
@@ -102,7 +102,7 @@ interface ReviewCodeResult {
 ```typescript
 {
   totalFound: number;           // All issues found
-  hiddenCount: number;          // Issues beyond free tier limit
+  hiddenCount: number;          // Issues beyond response limit
   upgradeMessage?: string;      // Upgrade prompt
 }
 ```
@@ -144,7 +144,7 @@ const program = Effect.gen(function* () {
   // Display summary
   console.log("CODE REVIEW RESULTS");
   console.log(`Issues found: ${result.meta.totalFound}`);
-  console.log(`Shown (Free tier): ${result.recommendations.length}`);
+  console.log(`Shown: ${result.recommendations.length}`);
   
   if (result.meta.upgradeMessage) {
     console.log(`\n💡 ${result.meta.upgradeMessage}`);
@@ -196,7 +196,7 @@ This service orchestrates multiple services:
 ## Configuration
 
 - `MAX_FILE_SIZE_BYTES` - File size limit (100KB)
-- `MAX_FREE_TIER_RECOMMENDATIONS` - Free tier limit (3)
+- `MAX_RECOMMENDATIONS` - Response limit (3)
 
 ## Testing
 
@@ -209,4 +209,3 @@ bun run test src/services/review-code/__tests__
 
 - [Code Analysis](../../../docs/analysis) - Underlying analysis engine
 - [Configuration](../config) - Service configuration
-- [Tier Service](../tier) - Free/Paid tier limits

@@ -80,5 +80,4 @@ const handleGenerateSnippet = (request: NextRequest) => Effect.gen(function* () 
 
 export const POST = createSimpleHandler(handleGenerateSnippet, {
   requireAuth: true,
-  requirePaidTier: true,
 });

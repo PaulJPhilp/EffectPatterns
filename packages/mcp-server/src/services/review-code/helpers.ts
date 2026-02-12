@@ -7,9 +7,9 @@ import type {
 } from "./types";
 
 /**
- * Maximum number of recommendations to return in Free Tier
+ * Maximum number of recommendations returned by this endpoint
  */
-export const MAX_FREE_TIER_RECOMMENDATIONS = 3;
+export const MAX_RECOMMENDATIONS = 3;
 
 /**
  * Maximum file size in bytes (100KB)

@@ -5,16 +5,11 @@
  */
 
 import { Effect } from "effect";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { TestAppLayer } from "../../../server/init.js";
 import { CircuitBreakerService } from "../index.js";
 
 describe("CircuitBreakerService", () => {
-  beforeEach(() => {
-    // Set TIER_MODE environment variable required by MCPTierService
-    process.env.TIER_MODE = "free";
-  });
-
   /**
    * Test: Circuit starts in CLOSED state
    */

@@ -16,7 +16,6 @@ Complete reference for all environment variables used across different test conf
 | `EFFECT_PATTERNS_API_URL` | ❌ | ❌ | Optional | Optional | Optional | ❌ | ❌ | http://localhost:3000 | API server URL |
 | `KV_REST_API_URL` | ❌ | Optional | ❌ | Optional | Optional | ❌ | ❌ | (disabled) | Vercel KV endpoint |
 | `KV_REST_API_TOKEN` | ❌ | Optional | ❌ | Optional | Optional | ❌ | ❌ | (disabled) | Vercel KV token |
-| `TIER_MODE` | ❌ | Optional | ❌ | Optional | Optional | ❌ | ❌ | "free" | User tier for testing |
 | `MCP_DEBUG` | ❌ | ❌ | Optional | ❌ | ❌ | ❌ | ❌ | false | Enable MCP debug logs |
 | `MCP_ENV` | ❌ | ❌ | Optional | ❌ | ❌ | ❌ | ❌ | "production" | MCP environment |
 | `DEBUG_TESTS` | Optional | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | false | Enable test debugging |
@@ -198,33 +197,6 @@ KV_REST_API_TOKEN=""
 
 ---
 
-### Tier/Feature Configuration
-
-#### `TIER_MODE`
-**Type:** Enum ("free" | "pro")
-**Required for:** None (optional)
-**Default:** "free"
-**Used by:** Routes, Integration, Workflow tests
-**Purpose:** Test different tier-based functionality
-
-**Usage:**
-```bash
-# Test free tier features (default)
-bun run test:routes
-
-# Test pro tier features
-TIER_MODE=pro bun run test:routes
-
-# Test both
-TIER_MODE=free bun run test:routes && TIER_MODE=pro bun run test:routes
-```
-
-**What's tested:**
-- Free tier: Limited to 3 recommendations, search-only
-- Pro tier: Full feature access, code generation
-
----
-
 ### Debug Configuration
 
 #### `MCP_DEBUG`
@@ -321,7 +293,6 @@ Sets up common test environment variables.
 - `DATABASE_URL` - PostgreSQL connection
 - `KV_REST_API_URL` - Vercel KV (disabled if not set)
 - `KV_REST_API_TOKEN` - Vercel KV (disabled if not set)
-- `TIER_MODE` - Default to "free"
 - `PATTERN_API_KEY` - Optional, from environment
 
 **Used by:**

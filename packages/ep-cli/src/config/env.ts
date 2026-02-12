@@ -22,6 +22,11 @@ const envSchema = S.Struct({
     S.Literal("debug", "info", "warn", "error")
   ),
 
+  // API configuration (optional)
+  PATTERN_API_KEY: S.optional(S.String),
+  EFFECT_PATTERNS_API_URL: S.optional(S.String),
+  EP_API_TIMEOUT_MS: S.optional(S.NumberFromString),
+
   // Debug and verbose flags (optional)
   DEBUG: S.optional(S.BooleanFromString),
   VERBOSE: S.optional(S.BooleanFromString),

@@ -8,25 +8,23 @@
 
 import { Command } from "@effect/cli";
 import { Effect, Layer } from "effect";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { CLI } from "./constants.js";
 
 // Commands
-import { adminCommand } from "./commands/admin-commands.js";
 import { installCommand } from "./commands/install-commands.js";
-import { patternCommand } from "./commands/pattern-commands.js";
 import { listCommand, searchCommand, showCommand } from "./commands/pattern-repo-commands.js";
-import { releaseCommand } from "./commands/release-commands.js";
 import { skillsCommand } from "./commands/skills-commands.js";
 
 // Services
-import { NodeFileSystem } from "@effect/platform-node";
+import { NodeContext } from "@effect/platform-node";
 import { Display } from "./services/display/index.js";
 import { LiveTUILoader, TUILoader } from "./services/display/tui-loader.js";
-import { Execution } from "./services/execution/index.js";
 import { Install } from "./services/install/index.js";
-import { Linter } from "./services/linter/index.js";
-import { Logger, LoggerLive, parseLogLevel } from "./services/logger/index.js";
+import { LoggerLive, parseLogLevel } from "./services/logger/index.js";
+import { PatternApi } from "./services/pattern-api/index.js";
 import { Skills } from "./services/skills/index.js";
 
 /**
@@ -75,10 +73,7 @@ export const rootCommand = Command.make("ep").pipe(
     searchCommand,
     listCommand,
     showCommand,
-    patternCommand,
     installCommand,
-    releaseCommand,
-    adminCommand,
     skillsCommand,
   ])
 );
@@ -88,17 +83,16 @@ export const rootCommand = Command.make("ep").pipe(
  * Core runtime layer (Standard CLI)
  */
 const BaseLayer = Layer.mergeAll(
-  NodeFileSystem.layer,
+  NodeContext.layer,
   LoggerLive(globalConfig),
   LiveTUILoader
 );
 
 const ServiceLayer = Layer.mergeAll(
-  Linter.Default,
+  PatternApi.Default,
   Skills.Default,
   Display.Default,
-  Install.Default,
-  Layer.provide(Execution.Default, Logger.Default)
+  Layer.provide(Install.Default, PatternApi.Default)
 ).pipe(
   Layer.provide(BaseLayer)
 );
@@ -127,21 +121,37 @@ const cliRunner = Command.run(rootCommand, {
 export const createProgram = (argv: ReadonlyArray<string> = process.argv) =>
   cliRunner(argv);
 
-// Run the program
-const program = Effect.gen(function* () {
-  yield* createProgram(process.argv);
-});
+export const runCli = (argv: ReadonlyArray<string> = process.argv): Effect.Effect<void, unknown, never> =>
+  Effect.scoped(
+    createProgram(argv).pipe(
+      Effect.provide(runtimeLayer)
+    )
+  ) as Effect.Effect<void, unknown, never>;
 
-const provided = program.pipe(
-  Effect.provide(runtimeLayer),
-  Effect.tapErrorCause((cause) =>
-    Effect.gen(function* () {
-      const logger = yield* Logger;
-      yield* logger.error("Fatal Error", { cause });
-    }).pipe(Effect.provide(runtimeLayer))
-  )
-);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-void Effect.runPromise(provided as Effect.Effect<void, unknown, never>).catch(() => {
-  process.exitCode = 1;
-});
+const isDirectExecution = (() => {
+  const executedFile = process.argv[1];
+  if (!executedFile) return false;
+
+  if (executedFile === __filename) return true;
+  if (executedFile === __dirname + "/index.ts") return true;
+
+  if (executedFile.endsWith("ep") || executedFile.endsWith("ep.js")) {
+    return true;
+  }
+
+  if (executedFile.includes("dist") && executedFile.includes("index.js")) {
+    return true;
+  }
+
+  return false;
+})();
+
+if (isDirectExecution) {
+  void Effect.runPromise(runCli(process.argv)).catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

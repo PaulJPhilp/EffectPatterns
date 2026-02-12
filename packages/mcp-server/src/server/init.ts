@@ -25,7 +25,6 @@ import { MCPLoggerService } from "../services/logger";
 import { PatternGeneratorService } from "../services/pattern-generator";
 import { MCRateLimitService } from "../services/rate-limit";
 import { ReviewCodeService } from "../services/review-code";
-import { MCPTierService } from "../services/tier";
 import { MCPValidationService } from "../services/validation";
 import { TracingLayerLive } from "../tracing/otlpLayer";
 
@@ -154,7 +153,6 @@ export const AppLayer = Layer.mergeAll(
   MCPConfigService.Default,
   MCPLoggerService.Default,
   CircuitBreakerService.Default,
-  MCPTierService.Default,
   MCPValidationService.Default,
   MCRateLimitService.Default,
   MCPCacheService.Default,
@@ -181,7 +179,6 @@ export const TestAppLayer = Layer.mergeAll(
   MCPConfigService.Default,
   MCPLoggerService.Default,
   CircuitBreakerService.Default,
-  MCPTierService.Default,
   MCPValidationService.Default,
   MCRateLimitService.Default,
   MCPCacheService.Default,

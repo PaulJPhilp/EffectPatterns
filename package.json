@@ -108,7 +108,7 @@
     "conventional-recommended-bump": "^11.2.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
-    "effect": "^3.19.15",
+    "effect": "^3.19.16",
     "effect-mdx": "^0.2.2",
     "glob": "^13.0.0",
     "gray-matter": "^4.0.3",
@@ -161,8 +161,8 @@
   "author": "Paul",
   "license": "MIT",
   "resolutions": {
-    "@effect/platform": "^0.94.1",
-    "@effect/platform-node": "^0.104.0",
-    "effect": "^3.19.14"
+    "@effect/platform": "0.94.4",
+    "@effect/platform-node": "0.104.1",
+    "effect": "^3.19.16"
   }
 }

@@ -1,1 +1,0 @@
-export { ConfigurationError } from "../../errors";

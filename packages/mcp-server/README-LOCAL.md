@@ -43,9 +43,6 @@ Edit `.env` with your settings:
 # API Security - Generate a secure key
 PATTERN_API_KEY=your-secret-api-key-here
 
-# Tier Configuration
-TIER_MODE=free  # or "paid" for full features
-
 # Database Connection
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/effect_patterns
 
@@ -105,49 +102,28 @@ The MCP server has two components:
 
 ### 1. HTTP API Server (port 3000)
 
-Test tier validation:
+Test key endpoints:
 
 ```bash
-# Free tier - should return 402 for paid features
+# Generate code from a pattern
 curl -X POST http://localhost:3000/api/generate \
   -H "x-api-key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{"patternId": "use-pipe-for-composition", "name": "myFunction"}'
 
-# Free tier features - should work
+# Pattern search
 curl http://localhost:3000/api/patterns \
   -H "x-api-key: your-api-key"
 ```
 
-## Tier Configuration
-
-### Free Tier (Default)
-- **Available**: Pattern search, pattern retrieval
-- **Blocked**: Code generation, refactoring, advanced analysis
-- **MCP Tools**: `search_patterns`, `get_pattern`, `list_analysis_rules`, `analyze_code`, `review_code`
-
-### Paid Tier
-- **Available**: All features
-- **MCP Tools**: Free-tier surface only (paid tools are HTTP API only)
-
-Switch tiers by setting `TIER_MODE`:
-
-```bash
-# Free tier
-TIER_MODE=free bun run dev
-
-# Paid tier
-TIER_MODE=paid bun run dev
-```
-
 ## API Endpoints
 
-### Free Tier Available
+### Core Endpoints
 - `GET /api/patterns` - List all patterns
 - `GET /api/patterns/[id]` - Get specific pattern
 - `GET /api/health` - Health check
 
-### Paid Tier Only
+### Extended Endpoints
 - `POST /api/generate` - Generate code from pattern
 - `POST /api/generate-pattern` - Generate custom pattern
 - `POST /api/analyze-consistency` - Analyze code consistency
@@ -209,7 +185,6 @@ bun run build
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TIER_MODE` | `free` | Server tier: `free` or `paid` |
 | `PORT` | `3000` | Server port |
 | `NODE_ENV` | `development` | Environment mode |
 | `DATABASE_URL` | - | PostgreSQL connection string |
@@ -221,11 +196,9 @@ bun run build
 1. **Start**: `bun run dev`
 2. **Test**: Use curl or API client to test endpoints
 3. **Debug**: Check server logs and error responses
-4. **Switch Tiers**: Change `TIER_MODE` and restart
 
 ## Next Steps
 
 - Configure your IDE to use the MCP server
-- Test with different tier modes
 - Explore the API documentation
 - Contribute to the project!

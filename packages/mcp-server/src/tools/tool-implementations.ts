@@ -98,7 +98,7 @@ export function registerTools(
   );
 
   // List Analysis Rules Tool (READ-ONLY CATALOG)
-  // Returns rule metadata only - no code scanning. Free tier.
+  // Returns rule metadata only - no code scanning.
   // Note: `as any` is required for MCP SDK compatibility - Zod schemas need conversion
   server.tool(
     "list_analysis_rules",

@@ -3,13 +3,9 @@
  */
 
 import { Args, Command, Options } from "@effect/cli";
-import {
-  EffectPatternRepositoryLive,
-  EffectPatternRepositoryService,
-  type SkillLevel,
-} from "@effect-patterns/toolkit";
 import { Console, Effect, Option } from "effect";
 import { Display } from "../services/display/index.js";
+import { PatternApi } from "../services/pattern-api/index.js";
 
 /**
  * search <query> - Search patterns
@@ -24,24 +20,18 @@ export const searchCommand = Command.make("search", {
   Command.withDescription("Search patterns by keyword"),
   Command.withHandler(({ args }) =>
     Effect.gen(function* () {
-      const repo = yield* EffectPatternRepositoryService;
-      const results = yield* Effect.tryPromise({
-        try: () => repo.search({ query: args.query, limit: 10 }),
-        catch: (e) => new Error(`Search failed: ${e}`),
-      });
+      const patterns = yield* PatternApi;
+      const results = yield* patterns.search({ query: args.query, limit: 10 });
 
       if (results.length === 0) {
         yield* Display.showError(`No patterns found for "${args.query}"`);
       } else {
         yield* Console.log(`\nFound ${results.length} pattern(s):\n`);
         for (const p of results) {
-          yield* Console.log(`  • ${p.title} (${p.slug})`);
+          yield* Console.log(`  • ${p.title} (${p.id})`);
         }
       }
-    }).pipe(
-      Effect.provide(EffectPatternRepositoryLive),
-      Effect.scoped
-    )
+    })
   )
 );
 
@@ -65,23 +55,17 @@ export const listCommand = Command.make("list", {
   Command.withDescription("List all patterns with optional filters"),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
-      const repo = yield* EffectPatternRepositoryService;
-      const results = yield* Effect.tryPromise({
-        try: () => repo.search({
-          skillLevel: Option.getOrUndefined(options.difficulty) as SkillLevel | undefined,
-          category: Option.getOrUndefined(options.category),
-        }),
-        catch: (e) => new Error(`List failed: ${e}`),
+      const patterns = yield* PatternApi;
+      const results = yield* patterns.search({
+        difficulty: Option.getOrUndefined(options.difficulty),
+        category: Option.getOrUndefined(options.category),
       });
 
       yield* Console.log(`\nTotal Patterns: ${results.length}\n`);
       for (const p of results) {
-        yield* Console.log(`  • ${p.title} (${p.slug})`);
+        yield* Console.log(`  • ${p.title} (${p.id})`);
       }
-    }).pipe(
-      Effect.provide(EffectPatternRepositoryLive),
-      Effect.scoped
-    )
+    })
   )
 );
 
@@ -94,21 +78,15 @@ export const showCommand = Command.make("show", {
   Command.withDescription("Show detailed pattern information"),
   Command.withHandler(({ args }) =>
     Effect.gen(function* () {
-      const repo = yield* EffectPatternRepositoryService;
-      const p = yield* Effect.tryPromise({
-        try: () => repo.findBySlug(args.patternId),
-        catch: (e) => new Error(`Show failed: ${e}`),
-      });
+      const patterns = yield* PatternApi;
+      const p = yield* patterns.getById(args.patternId);
 
       if (!p) {
         yield* Display.showError(`Pattern "${args.patternId}" not found`);
         return;
       }
 
-      yield* Display.showPanel(p.summary, p.title);
-    }).pipe(
-      Effect.provide(EffectPatternRepositoryLive),
-      Effect.scoped
-    )
+      yield* Display.showPanel(p.description, p.title);
+    })
   )
 );

@@ -4,10 +4,6 @@ import {
     isAuthenticationError,
     validateApiKey,
 } from "../../../src/auth/apiKey";
-import {
-    isTierAccessError,
-    validateTierAccess
-} from "../../../src/auth/tierAccess";
 import { runWithRuntime } from "../../../src/server/init";
 import { PatternGeneratorService } from "../../../src/services/pattern-generator";
 import {
@@ -21,7 +17,6 @@ const handleGeneratePattern = (request: NextRequest) => Effect.gen(function* () 
 	const generator = yield* PatternGeneratorService;
 
 	yield* validateApiKey(request);
-	yield* validateTierAccess(request);
 
 	const body = yield* Effect.tryPromise({
 		try: () => request.json(),
@@ -56,24 +51,6 @@ export async function POST(request: NextRequest) {
 				if (isAuthenticationError(error)) {
 					return Effect.succeed(
 						NextResponse.json({ error: error.message }, { status: 401 })
-					);
-				}
-
-				if (isTierAccessError(error)) {
-					return Effect.succeed(
-						NextResponse.json(
-							{
-								error: error.message,
-								tier: error.tierMode,
-								upgradeMessage: error.upgradeMessage,
-							},
-							{
-								status: 402,
-								headers: {
-									"X-Tier-Error": "feature-gated",
-								},
-							}
-						)
 					);
 				}
 
