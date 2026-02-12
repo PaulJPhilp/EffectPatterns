@@ -1,1 +1,8 @@
-{"$schema": "https://openapi.vercel.sh/vercel.json", "bunVersion": "1.x", "framework": "nextjs", "buildCommand": "bun run --filter @effect-patterns/mcp-server build", "outputDirectory": "packages/mcp-server/.next", "regions": ["iad1"]}
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "bunVersion": "1.x",
+  "framework": "nextjs",
+  "buildCommand": "if [ -d packages/mcp-server ]; then cd packages/mcp-server && bun run build && rm -rf ../../.next && cp -R .next ../../.next; else bun run build; fi",
+  "outputDirectory": ".next",
+  "regions": ["iad1"]
+}
