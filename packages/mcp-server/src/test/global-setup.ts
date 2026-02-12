@@ -3,7 +3,7 @@ import { ChildProcess, spawn } from 'node:child_process';
 let serverProcess: ChildProcess | undefined;
 
 export async function setup() {
-  console.log('\n🚀 Starting Next.js server for integration tests...');
+  console.error('\n🚀 Starting Next.js server for integration tests...');
   
   const rootDir = process.cwd();
   
@@ -28,7 +28,7 @@ export async function setup() {
     try {
       const response = await fetch('http://localhost:3000/api/health');
       if (response.ok) {
-        console.log('✅ Server is up and running!');
+        console.error('✅ Server is up and running!');
         return;
       }
     } catch (e) {
@@ -36,7 +36,7 @@ export async function setup() {
     }
     
     if (attempt % 5 === 0) {
-      console.log(`⏳ Waiting for server (attempt ${attempt}/${maxAttempts})...`);
+      console.error(`⏳ Waiting for server (attempt ${attempt}/${maxAttempts})...`);
     }
     
     await new Promise(resolve => setTimeout(resolve, delay));
@@ -46,10 +46,10 @@ export async function setup() {
 }
 
 export async function teardown() {
-  console.log('\n🛑 Stopping Next.js server...');
+  console.error('\n🛑 Stopping Next.js server...');
   if (serverProcess) {
     serverProcess.kill();
     await new Promise(resolve => serverProcess?.on('exit', resolve));
-    console.log('✅ Server stopped');
+    console.error('✅ Server stopped');
   }
 }

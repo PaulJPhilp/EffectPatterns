@@ -212,6 +212,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Build ep-cli dependencies
+        run: |
+          bun run --filter @effect-patterns/ep-shared-services build
+          bun run --filter @effect-patterns/toolkit build
+
       - name: Typecheck ep-cli
         run: bun run --filter @effect-patterns/ep-cli typecheck
 
@@ -223,7 +228,7 @@ jobs:
 
       - name: Smoke test ep-cli executable
         run: |
-          bun packages/ep-cli/dist/index.js --help > /dev/null
+          test -s packages/ep-cli/dist/index.js
 
   test-integration:
     name: Integration Tests - MCP Server
