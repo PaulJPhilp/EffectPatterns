@@ -238,6 +238,21 @@ export function errorToResponse(
     }
   }
 
+  // Handle Effect's UnknownException (wraps errors from Effect.tryPromise)
+  if (hasTag(error) && error._tag === "UnknownException") {
+    const inner = (error as any).error;
+    if (inner instanceof SyntaxError || (inner instanceof Error && inner.message.includes("JSON"))) {
+      const response: ApiErrorResponse = {
+        error: "Invalid JSON in request body",
+        status: "invalid_json",
+      };
+      return NextResponse.json(response, {
+        status: 400,
+        headers: baseHeaders,
+      });
+    }
+  }
+
   // Check for authentication errors (uses custom type guard from auth module)
   if (isAuthenticationError(error)) {
     const response: ApiErrorResponse = {

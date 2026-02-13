@@ -2,7 +2,7 @@ import { AnalysisService } from "@effect-patterns/analysis-core";
 import { FileSystem } from "@effect/platform";
 import { Effect, Schema as S } from "effect";
 import { type NextRequest } from "next/server";
-import { createRouteHandler } from "../../../src/server/routeHandler";
+import { createSimpleHandler } from "../../../src/server/routeHandler";
 import {
     ApplyRefactoringRequest,
     ApplyRefactoringResponse,
@@ -60,6 +60,6 @@ const handleApplyRefactoring = (request: NextRequest) => Effect.gen(function* ()
 	} satisfies typeof ApplyRefactoringResponse.Type;
 });
 
-export const POST = createRouteHandler(handleApplyRefactoring, {
+export const POST = createSimpleHandler(handleApplyRefactoring, {
 	requireAuth: true,
 });

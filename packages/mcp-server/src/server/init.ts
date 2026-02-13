@@ -157,6 +157,7 @@ export const AppLayer = Layer.mergeAll(
   MCRateLimitService.Default,
   MCPCacheService.Default,
   DatabaseLayer,
+  PatternsService.Default,
   TracingLayerLive,
   AnalysisServiceLive,
   PatternGeneratorService.Default,

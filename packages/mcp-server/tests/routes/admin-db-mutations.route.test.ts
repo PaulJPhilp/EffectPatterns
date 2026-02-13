@@ -62,8 +62,9 @@ describe("Admin-gated DB mutation routes", () => {
     });
     const response = await resetDbPOST(request);
 
-    // Route is now auth-protected; downstream may still fail without DATABASE_URL.
-    expect([200, 500]).toContain(response.status);
+    // Route is now auth-protected; downstream may still fail without DATABASE_URL (500)
+    // or fail with 400 if the body is empty/unparseable.
+    expect([200, 400, 500]).toContain(response.status);
     expect(response.status).not.toBe(403);
   });
 });

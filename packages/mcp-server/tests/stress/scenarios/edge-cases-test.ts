@@ -44,8 +44,8 @@ describe('Edge Cases Test - Correctness Validation', () => {
 
       // Empty file should be handled gracefully (401 = auth required, 400 = validation, 200 = ok)
       expect([200, 400, 401]).toContain(response.status);
-      // First request may be slow due to server warmup, relax threshold
-      expect(duration).toBeLessThan(thresholds.edgeCases.errorResponseTime * 10);
+      // First request may be slow due to Next.js dev server cold-start + route compilation
+      expect(duration).toBeLessThan(thresholds.edgeCases.errorResponseTime * 50);
 
       metrics.recordRequest({
         duration,
@@ -103,13 +103,13 @@ describe('Edge Cases Test - Correctness Validation', () => {
       });
     });
 
-    it('should reject 100KB+1 byte file with 413 status', async () => {
+    it('should reject file exceeding MAX_FILE_SIZE_BYTES with 413 status', async () => {
       const options = PRESET_CONFIGS.overLimit();
       let code = generateTypeScriptFile(options);
 
-      // Ensure it's over limit
-      while (code.length <= 100000) {
-        code += '// extra comment\n';
+      // Ensure it exceeds the actual limit: MAX_FILE_SIZE_BYTES = 100 * 1024 = 102400
+      while (Buffer.byteLength(code, 'utf8') <= 102400) {
+        code += '// extra padding comment to exceed the real 100KB limit\n';
       }
 
       const startTime = performance.now();
@@ -364,8 +364,8 @@ describe('Edge Cases Test - Correctness Validation', () => {
 
       const duration = performance.now() - startTime;
 
-      // Accept 400 (bad request), 401 (auth), or 500 (server error)
-      expect([400, 401, 500]).toContain(response.status);
+      // Accept 400 (bad request) or 401 (auth required)
+      expect([400, 401]).toContain(response.status);
       expect(duration).toBeLessThan(thresholds.edgeCases.errorResponseTime);
 
       metrics.recordRequest({
