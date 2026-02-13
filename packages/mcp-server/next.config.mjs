@@ -4,6 +4,20 @@ const nextConfig = {
     "@effect-patterns/toolkit",
     "@effect-patterns/analysis-core",
   ],
+  // Mark OpenTelemetry as external to avoid output tracing issues with bun's .bun symlink structure
+  serverExternalPackages: [
+    "@opentelemetry/api",
+    "@opentelemetry/sdk-node",
+    "@opentelemetry/sdk-trace-node",
+    "@opentelemetry/sdk-trace-base",
+    "@opentelemetry/exporter-trace-otlp-http",
+    "@opentelemetry/resources",
+    "@opentelemetry/semantic-conventions",
+  ],
+  // Exclude bun's internal module paths from output tracing
+  outputFileTracingExcludes: {
+    "*": ["node_modules/.bun/**"],
+  },
   turbopack: {}, // Enable turbopack with empty config
   webpack: (config) => {
     config.resolve.alias = {
