@@ -55,7 +55,7 @@ export const validateAdminKey = (
 
       return yield* Effect.fail(
         new AuthorizationError({
-          message: "Admin key not configured on server",
+          message: "Forbidden",
         })
       );
     }
@@ -66,7 +66,7 @@ export const validateAdminKey = (
     if (!providedKey) {
       return yield* Effect.fail(
         new AuthorizationError({
-          message: "Admin key required for this operation",
+          message: "Forbidden",
           requiredRole: "admin",
         })
       );
@@ -76,7 +76,7 @@ export const validateAdminKey = (
     if (!constantTimeEquals(providedKey, adminKey)) {
       return yield* Effect.fail(
         new AuthorizationError({
-          message: "Invalid admin credentials",
+          message: "Forbidden",
           requiredRole: "admin",
         })
       );

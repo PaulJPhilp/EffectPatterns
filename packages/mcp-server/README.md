@@ -650,14 +650,12 @@ bun run mcp:pkce:test
 ### Database Operations
 
 ```bash
-# Check database connectivity
-curl -H "x-api-key: your-key" http://localhost:3001/api/db-check
+# Database migrations are managed via Drizzle ORM
+bun run db:generate    # Generate migrations
+bun run db:push        # Push migrations to database
 
-# Run migrations
-curl -X POST -H "x-api-key: your-key" http://localhost:3001/api/migrate
-
-# Check environment configuration
-curl -H "x-api-key: your-key" http://localhost:3001/api/env-check
+# Check server health
+curl http://localhost:3001/api/health
 ```
 
 ### Monitoring

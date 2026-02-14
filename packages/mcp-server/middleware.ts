@@ -44,14 +44,6 @@ const versionedEndpoints = [
   "/api/apply-refactoring",
   "/api/analyze-consistency",
   "/api/trace-wiring",
-  "/api/db-check",
-  "/api/env-check",
-  "/api/test",
-  "/api/migrate",
-  "/api/reset-db",
-  "/api/simple-reset",
-  "/api/final-reset",
-  "/api/migrate-final",
 ];
 
 /**

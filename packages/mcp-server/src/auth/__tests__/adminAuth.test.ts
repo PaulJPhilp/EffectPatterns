@@ -88,7 +88,7 @@ describe("Admin Authentication", () => {
 				if (result._tag === "Left") {
 					const errorObj = result.left as any;
 					expect(errorObj._tag).toBe("AuthorizationError");
-					expect(errorObj.message).toContain("required");
+					expect(errorObj.message).toBe("Forbidden");
 				}
 			});
 
@@ -124,7 +124,7 @@ describe("Admin Authentication", () => {
 				// Check if it's an AuthorizationError by _tag
 				const errorObj = error as any;
 				expect(errorObj._tag).toBe("AuthorizationError");
-				expect(errorObj.message).toContain("required");
+				expect(errorObj.message).toBe("Forbidden");
 				expect(errorObj.requiredRole).toBe("admin");
 				// Verify isAuthorizationError works (it should, but if not, the direct checks above validate the error)
 				// Note: Effect.either may wrap errors differently, so we check _tag directly
@@ -149,7 +149,7 @@ describe("Admin Authentication", () => {
 				expect(error).toBeDefined();
 				const errorObj = error as any;
 				expect(errorObj._tag).toBe("AuthorizationError");
-				expect(errorObj.message).toContain("Invalid");
+				expect(errorObj.message).toBe("Forbidden");
 				expect(errorObj.requiredRole).toBe("admin");
 			}
 		});
@@ -194,7 +194,7 @@ describe("Admin Authentication", () => {
 				expect(error).toBeDefined();
 				const errorObj = error as any;
 				expect(errorObj._tag).toBe("AuthorizationError");
-				expect(errorObj.message).toContain("not configured");
+				expect(errorObj.message).toBe("Forbidden");
 			}
 
 			// Restore
