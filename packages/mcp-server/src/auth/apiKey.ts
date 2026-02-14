@@ -20,6 +20,9 @@ function extractApiKey(request: NextRequest): string | null {
   const headerKey = request.headers.get("x-api-key");
   if (headerKey) return headerKey;
 
+  const queryKey = request.nextUrl.searchParams.get("key");
+  if (queryKey) return queryKey;
+
   return null;
 }
 
