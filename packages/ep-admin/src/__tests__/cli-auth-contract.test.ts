@@ -109,6 +109,31 @@ describe.sequential("CLI auth and DX contract", () => {
     }
   });
 
+	it("renders contextual help usage with full command paths", async () => {
+		const { tempDir, env } = await createAuthEnv();
+		try {
+			const releasePreviewHelp = runCli(["release", "preview", "--help"], env);
+			expect(releasePreviewHelp.status).toBe(0);
+			expect(releasePreviewHelp.stdout).toContain("$ ep-admin release preview");
+			expect(releasePreviewHelp.stdout).not.toContain("\n$ preview\n");
+
+			const nestedHelp = runCli(
+				["pattern", "skills", "generate-from-db", "--help"],
+				env
+			);
+			expect(nestedHelp.status).toBe(0);
+			expect(nestedHelp.stdout).toContain(
+				"$ ep-admin pattern skills generate-from-db"
+			);
+
+			const dbLeafHelp = runCli(["db", "show", "patterns", "--help"], env);
+			expect(dbLeafHelp.status).toBe(0);
+			expect(dbLeafHelp.stdout).toContain("$ ep-admin db show patterns");
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
   it("allows protected commands after auth init/login", async () => {
     const { tempDir, env } = await createAuthEnv();
     try {
