@@ -59,6 +59,7 @@ describe.sequential("CLI auth and DX contract", () => {
 			const typo = runCli(["opz"], env);
 			expect(typo.status).toBe(1);
 			expect(typo.stderr).toContain("Did you mean: ep-admin ops");
+			expect(typo.stderr).toContain("Run: ep-admin --help");
 			expect(typo.stderr).not.toContain("auth has not been initialized");
 		} finally {
 			await rm(tempDir, { recursive: true, force: true });
@@ -71,6 +72,9 @@ describe.sequential("CLI auth and DX contract", () => {
       const help = runCli(["--help"], env);
       expect(help.status).toBe(0);
       expect(help.stdout).toContain("ep-admin");
+      expect(help.stdout).toContain("Top-level commands:");
+      expect(help.stdout).not.toContain("pattern pattern");
+      expect(help.stdout).not.toContain("data data");
 
       const version = runCli(["--version"], env);
       expect(version.status).toBe(0);

@@ -93,6 +93,9 @@ export const ingestProcessCommand = Command.make("process", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_PROCESSED);
+            if (summary.failed === 0) {
+                yield* Display.showInfo("Next: ep-admin data ingest validate");
+            }
         })
     )
 );
@@ -142,6 +145,7 @@ export const ingestProcessOneCommand = Command.make("process-one", {
             yield* Display.showSuccess(
                 `Pattern ${positional.patternFile} processed! ID: ${result.id}`
             );
+            yield* Display.showInfo("Next: ep-admin data ingest validate");
         })
     )
 );
@@ -202,6 +206,9 @@ export const ingestValidateCommand = Command.make("validate", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_VALIDATION_COMPLETE);
+            if (invalid === 0) {
+                yield* Display.showInfo("Next: ep-admin data ingest test");
+            }
         })
     )
 );
@@ -256,6 +263,7 @@ export const ingestTestCommand = Command.make("test", {
 
             if (failed === 0) {
                 yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_TESTS_PASSED);
+                yield* Display.showInfo("Next: ep-admin data ingest pipeline");
             } else {
                 for (const r of tested.filter((r) => r.valid && !r.testPassed)) {
                     yield* Display.showError(`  - ${r.pattern.id}: test failed`);
@@ -408,6 +416,9 @@ export const ingestPipelineCommand = Command.make("pipeline", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.INGEST_PIPELINE_COMPLETED);
+            if (report.failed === 0) {
+                yield* Display.showInfo("Next: ep-admin publish validate");
+            }
         })
     )
 );
