@@ -262,6 +262,24 @@ const getCommandSuggestion = (argv: ReadonlyArray<string>): string | null => {
 	return null;
 };
 
+const getPreAuthCommandMismatchMessage = (argv: ReadonlyArray<string>): string | null => {
+	const args = normalizeArgsForSuggestion(argv);
+	const first = args[0];
+	if (!first) return null;
+
+	if (!ROOT_COMMANDS.includes(first as (typeof ROOT_COMMANDS)[number])) {
+		return getCommandSuggestion(argv) ?? "Need command help? Run 'ep-admin --help'.";
+	}
+
+	const nested = NESTED_COMMANDS[first];
+	const second = args[1];
+	if (nested && second && !nested.includes(second)) {
+		return getCommandSuggestion(argv) ?? "Need command help? Run 'ep-admin --help'.";
+	}
+
+	return null;
+};
+
 const isAuthExemptArgv = (argv: ReadonlyArray<string>): boolean => {
 	const args = argv.slice(2);
 	if (args.length === 0) return true;
@@ -318,8 +336,77 @@ const normalizeLegacyArgs = (
 	return { argv: args, warnings };
 };
 
+type TaggedAuthError = {
+	readonly _tag: string;
+	readonly message: string;
+	readonly expectedUser?: string;
+	readonly currentUser?: string;
+};
+
+const isTaggedAuthError = (value: unknown): value is TaggedAuthError =>
+	typeof value === "object" &&
+	value !== null &&
+	"_tag" in value &&
+	typeof (value as { _tag?: unknown })._tag === "string" &&
+	"message" in value &&
+	typeof (value as { message?: unknown }).message === "string";
+
+const extractFailureFromCause = (cause: unknown): unknown | undefined => {
+	if (typeof cause !== "object" || cause === null) {
+		return undefined;
+	}
+
+	const taggedCause = cause as {
+		readonly _tag?: string;
+		readonly error?: unknown;
+		readonly defect?: unknown;
+		readonly failure?: unknown;
+		readonly cause?: unknown;
+		readonly left?: unknown;
+		readonly right?: unknown;
+	};
+
+	switch (taggedCause._tag) {
+		case "Fail":
+			return taggedCause.error ?? taggedCause.failure;
+		case "Die":
+			return taggedCause.defect ?? taggedCause.error ?? taggedCause.failure;
+		case "Traced":
+			return extractFailureFromCause(taggedCause.cause);
+		case "Sequential":
+		case "Parallel": {
+			const left = extractFailureFromCause(taggedCause.left);
+			if (left !== undefined) return left;
+			return extractFailureFromCause(taggedCause.right);
+		}
+		default:
+			return undefined;
+	}
+};
+
+const unwrapFiberFailure = (error: unknown): unknown => {
+	if (typeof error !== "object" || error === null) {
+		return error;
+	}
+
+	for (const symbol of Object.getOwnPropertySymbols(error)) {
+		if (!String(symbol).includes("FiberFailure/Cause")) {
+			continue;
+		}
+		const cause = (error as Record<symbol, unknown>)[symbol];
+		const failure = extractFailureFromCause(cause);
+		if (failure !== undefined) {
+			return failure;
+		}
+	}
+
+	return error;
+};
+
 const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): string | null => {
-	if (error instanceof AuthNotInitializedError) {
+	const resolvedError = unwrapFiberFailure(error);
+
+	if (resolvedError instanceof AuthNotInitializedError) {
 		return [
 			"ep-admin authentication is not initialized.",
 			"Run: ep-admin auth init",
@@ -327,7 +414,7 @@ const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): strin
 		].join("\n");
 	}
 
-	if (error instanceof AuthInvalidCredentialsError) {
+	if (resolvedError instanceof AuthInvalidCredentialsError) {
 		return [
 			"ep-admin login required.",
 			"Run: ep-admin auth login",
@@ -335,7 +422,7 @@ const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): strin
 		].join("\n");
 	}
 
-	if (error instanceof AuthSessionExpiredError) {
+	if (resolvedError instanceof AuthSessionExpiredError) {
 		return [
 			"ep-admin session expired.",
 			"Run: ep-admin auth login",
@@ -343,26 +430,58 @@ const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): strin
 		].join("\n");
 	}
 
-	if (error instanceof AuthUnauthorizedUserError) {
+	if (resolvedError instanceof AuthUnauthorizedUserError) {
 		return [
-			`Unauthorized OS user '${error.currentUser}'.`,
-			`Authorized user: '${error.expectedUser}'.`,
+			`Unauthorized OS user '${resolvedError.currentUser}'.`,
+			`Authorized user: '${resolvedError.expectedUser}'.`,
 			`Docs: ${EP_ADMIN_DOCS_URL}`,
 		].join("\n");
 	}
 
-	if (error instanceof AuthServiceTokenError) {
-		return `${error.message}\nDocs: ${EP_ADMIN_DOCS_URL}`;
+	if (resolvedError instanceof AuthServiceTokenError) {
+		return `${resolvedError.message}\nDocs: ${EP_ADMIN_DOCS_URL}`;
 	}
 
-	if (error instanceof AuthConfigurationError) {
-		return `${error.message}\nDocs: ${EP_ADMIN_DOCS_URL}`;
+	if (resolvedError instanceof AuthConfigurationError) {
+		return `${resolvedError.message}\nDocs: ${EP_ADMIN_DOCS_URL}`;
 	}
 
-	if (typeof error === "string") return error;
+	if (isTaggedAuthError(resolvedError)) {
+		switch (resolvedError._tag) {
+			case "AuthNotInitializedError":
+				return [
+					"ep-admin authentication is not initialized.",
+					"Run: ep-admin auth init",
+					`Docs: ${EP_ADMIN_DOCS_URL}`,
+				].join("\n");
+			case "AuthInvalidCredentialsError":
+				return [
+					"ep-admin login required.",
+					"Run: ep-admin auth login",
+					`Docs: ${EP_ADMIN_DOCS_URL}`,
+				].join("\n");
+			case "AuthSessionExpiredError":
+				return [
+					"ep-admin session expired.",
+					"Run: ep-admin auth login",
+					`Docs: ${EP_ADMIN_DOCS_URL}`,
+				].join("\n");
+			case "AuthUnauthorizedUserError":
+				return [
+					`Unauthorized OS user '${resolvedError.currentUser ?? "unknown"}'.`,
+					`Authorized user: '${resolvedError.expectedUser ?? "unknown"}'.`,
+					`Docs: ${EP_ADMIN_DOCS_URL}`,
+				].join("\n");
+			case "AuthServiceTokenError":
+			case "AuthConfigurationError":
+				return `${resolvedError.message}\nDocs: ${EP_ADMIN_DOCS_URL}`;
+		}
+	}
 
-	if (error instanceof Error) {
-		const combined = [error.message, error.stack].filter(Boolean).join("\n");
+	if (typeof resolvedError === "string") return resolvedError;
+
+	if (resolvedError instanceof Error) {
+		const combined = [resolvedError.message, resolvedError.stack].filter(Boolean).join("\n");
 		if (combined.includes("CommandMismatch")) {
 			const suggestion = getCommandSuggestion(argv);
 			return [
@@ -371,12 +490,12 @@ const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): strin
 			].join("\n");
 		}
 
-		if (error.message.trim()) {
-			return `${error.message.trim()}\nDocs: ${EP_ADMIN_DOCS_URL}`;
+		if (resolvedError.message.trim()) {
+			return `${resolvedError.message.trim()}\nDocs: ${EP_ADMIN_DOCS_URL}`;
 		}
 	}
 
-	return String(error);
+	return String(resolvedError);
 };
 
 export const createAdminProgram = (
@@ -396,6 +515,11 @@ export const runCli = (
 		yield* validateEnvironment;
 
 		if (!isAuthExemptArgv(prepared.argv)) {
+			const commandMismatchMessage = getPreAuthCommandMismatchMessage(prepared.argv);
+			if (commandMismatchMessage) {
+				return yield* Effect.fail(new Error(commandMismatchMessage));
+			}
+
 			const auth = yield* Auth;
 			yield* auth.ensureAuthorized(process.env.EP_ADMIN_SERVICE_TOKEN);
 		}

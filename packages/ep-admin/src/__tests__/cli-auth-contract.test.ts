@@ -41,16 +41,29 @@ const createAuthEnv = async () => {
 };
 
 describe.sequential("CLI auth and DX contract", () => {
-  it("fails protected commands with actionable guidance when not logged in", async () => {
-    const { tempDir, env } = await createAuthEnv();
-    try {
-      const result = runCli(["ops", "rotate-api-key", "--json"], env);
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain("ep-admin auth has not been initialized.");
-    } finally {
-      await rm(tempDir, { recursive: true, force: true });
-    }
-  });
+	it("fails protected commands with actionable guidance when not logged in", async () => {
+		const { tempDir, env } = await createAuthEnv();
+		try {
+			const result = runCli(["ops", "rotate-api-key", "--json"], env);
+			expect(result.status).toBe(1);
+			expect(result.stderr).toContain("ep-admin authentication is not initialized.");
+			expect(result.stderr).toContain("Run: ep-admin auth init");
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	it("shows typo suggestion before auth gating for logged-out users", async () => {
+		const { tempDir, env } = await createAuthEnv();
+		try {
+			const typo = runCli(["opz"], env);
+			expect(typo.status).toBe(1);
+			expect(typo.stderr).toContain("Did you mean: ep-admin ops");
+			expect(typo.stderr).not.toContain("auth has not been initialized");
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
 
   it("keeps --help and --version available without login", async () => {
     const { tempDir, env } = await createAuthEnv();
