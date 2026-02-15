@@ -8,25 +8,32 @@ import {
 } from "@effect-patterns/toolkit";
 import { Args, Command } from "@effect/cli";
 import { Console, Effect } from "effect";
+import { emitJson } from "./cli/output.js";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
 
 /**
  * search <query> - Search patterns by keyword
  */
 export const searchCommand = Command.make("search", {
-	options: {},
+	options: {
+		...globalOptions,
+	},
 	args: {
 		query: Args.text({ name: "query" }),
 	},
 })
 	.pipe(Command.withDescription("Search patterns by keyword"))
 	.pipe(
-		Command.withHandler(({ args }) =>
+		Command.withHandler(({ args, options }) =>
 			Effect.scoped(
 				Effect.gen(function* () {
-					yield* Console.log(
-						`\n🔍 Searching for patterns matching "${args.query}"...\n`
-					);
+					yield* configureLoggerFromOptions(options);
+					if (!options.json) {
+						yield* Console.log(
+							`\n🔍 Searching for patterns matching "${args.query}"...\n`
+						);
+					}
 
 					const repo = yield* EffectPatternRepositoryService;
 					const dbPatterns = yield* Effect.tryPromise({
@@ -79,10 +86,22 @@ export const searchCommand = Command.make("search", {
 					});
 
 					if (dbPatterns.length === 0) {
+						if (options.json) {
+							yield* emitJson({ count: 0, patterns: [], query: args.query });
+							return;
+						}
 						yield* Console.log(
 							`❌ No patterns found matching "${args.query}"\n`
 						);
 					} else {
+						if (options.json) {
+							yield* emitJson({
+								count: dbPatterns.length,
+								query: args.query,
+								patterns: dbPatterns,
+							});
+							return;
+						}
 						yield* Console.log(
 							`✓ Found ${dbPatterns.length} pattern(s):\n`
 						);
@@ -101,10 +120,12 @@ export const searchCommand = Command.make("search", {
 						yield* Display.showError(
 							`Database error: ${error instanceof Error ? error.message : String(error)}`
 						);
-						yield* Console.log(
-							"\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL " +
-								"is set correctly.\n"
-						);
+						if (!options.json) {
+							yield* Console.log(
+								"\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL " +
+									"is set correctly.\n"
+							);
+						}
 						return Effect.fail(error);
 					})
 				)

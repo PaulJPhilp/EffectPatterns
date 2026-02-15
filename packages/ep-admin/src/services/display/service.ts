@@ -21,6 +21,8 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 		const logger = yield* Logger;
 		const loggerConfig = yield* logger.getConfig();
 		const tuiService = yield* TUIService;
+		const writeInfo = (message: string) =>
+			loggerConfig.outputFormat === "json" ? Console.error(message) : Console.log(message);
 
 		const showSuccess: DisplayService["showSuccess"] = (message: string) =>
 			Effect.gen(function* () {
@@ -33,7 +35,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 
 				// Fallback to console with color support
 				const icon = colorizeWithConfig("✓", "GREEN", loggerConfig);
-				yield* Console.log(`${icon} ${message}`);
+				yield* writeInfo(`${icon} ${message}`);
 			}).pipe(
 				Effect.mapError((error) => DisplayError.make(`Failed to show success message: ${message}`, error))
 			) as Effect.Effect<void, DisplayServiceError>;
@@ -65,7 +67,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 
 				// Fallback to console with color support
 				const icon = colorizeWithConfig("ℹ", "BLUE", loggerConfig);
-				yield* Console.log(`${icon} ${message}`);
+				yield* writeInfo(`${icon} ${message}`);
 			}).pipe(
 				Effect.mapError((error) => DisplayError.make(`Failed to show info message: ${message}`, error))
 			) as Effect.Effect<void, DisplayServiceError>;
@@ -81,7 +83,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 
 				// Fallback to console with color support
 				const icon = colorizeWithConfig("⚠", "YELLOW", loggerConfig);
-				yield* Console.log(`${icon} ${message}`);
+				yield* writeInfo(`${icon} ${message}`);
 			}).pipe(
 				Effect.mapError((error) => DisplayError.make(`Failed to show warning message: ${message}`, error))
 			) as Effect.Effect<void, DisplayServiceError>;
@@ -103,11 +105,11 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 
 				// Fallback to console
 				const border = "─".repeat(60);
-				yield* Console.log(`\n${border}`);
-				yield* Console.log(title);
-				yield* Console.log(border);
-				yield* Console.log(content);
-				yield* Console.log(`${border}\n`);
+				yield* writeInfo(`\n${border}`);
+				yield* writeInfo(title);
+				yield* writeInfo(border);
+				yield* writeInfo(content);
+				yield* writeInfo(`${border}\n`);
 			}).pipe(
 				Effect.mapError((error) => DisplayError.make(`Failed to show panel: ${title}`, error))
 			) as Effect.Effect<void, DisplayServiceError>;
@@ -151,10 +153,10 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 						.join(" | ")
 				);
 
-				yield* Console.log(headers);
-				yield* Console.log("─".repeat(headers.length));
+				yield* writeInfo(headers);
+				yield* writeInfo("─".repeat(headers.length));
 				for (const row of rows) {
-					yield* Console.log(row);
+					yield* writeInfo(row);
 				}
 			}).pipe(
 				Effect.mapError((error) => DisplayError.make(`Failed to show table`, error))
@@ -170,7 +172,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 				}
 
 				// Fallback to console
-				yield* Console.log(`🔹 ${message}`);
+				yield* writeInfo(`🔹 ${message}`);
 			}).pipe(
 				Effect.mapError((error) => DisplayError.make(`Failed to show highlight: ${message}`, error))
 			) as Effect.Effect<void, DisplayServiceError>;
@@ -178,7 +180,7 @@ export const Display = Effect.Service<DisplayService>()("Display", {
 		const showSeparator: DisplayService["showSeparator"] = () =>
 			Effect.gen(function* () {
 				// Always use console fallback for separators since TUI doesn't have this method
-				yield* Console.log("─".repeat(80));
+				yield* writeInfo("─".repeat(80));
 			}).pipe(
 				Effect.mapError((error) => DisplayError.make(`Failed to show separator`, error))
 			) as Effect.Effect<void, DisplayServiceError>;

@@ -9,9 +9,10 @@
 
 import {
   ApplicationPatternRepositoryService,
+  createSkillRepository,
+  DatabaseService,
   DatabaseLayer,
   EffectPatternRepositoryService,
-  SkillRepositoryService,
 } from "@effect-patterns/toolkit";
 import { Command } from "@effect/cli";
 import { Console, Effect } from "effect";
@@ -59,7 +60,8 @@ const showPatterns = Effect.gen(function* () {
 });
 
 const showSkills = Effect.gen(function* () {
-  const skillRepo = yield* SkillRepositoryService;
+  const dbService = yield* DatabaseService;
+  const skillRepo = createSkillRepository(dbService.db);
 
   const skills = yield* Effect.tryPromise({
     try: () => skillRepo.findAll(),
