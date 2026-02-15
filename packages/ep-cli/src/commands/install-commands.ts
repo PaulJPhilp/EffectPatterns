@@ -2,14 +2,14 @@
  * Install Commands
  */
 
-import { Args, Command, Options, Prompt } from "@effect/cli";
+import { Command, Options, Prompt } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
 import { Console, Effect, Option } from "effect";
 import path from "node:path";
 import { Display } from "../services/display/index.js";
 import { Install, InstalledRule } from "../services/install/index.js";
 import { colorize } from "../utils.js";
-import { DisabledFeatureError, UnsupportedToolError } from "../errors.js";
+import { UnsupportedToolError } from "../errors.js";
 
 /**
  * install:add - Add rules to AI tool configuration
@@ -17,7 +17,7 @@ import { DisabledFeatureError, UnsupportedToolError } from "../errors.js";
 export const installAddCommand = Command.make("add", {
   options: {
     tool: Options.text("tool").pipe(
-      Options.withDescription("The AI tool to add rules for (cursor, agents, etc.)")
+      Options.withDescription("The AI tool to install rules for (cursor, agents, vscode, windsurf)")
     ),
     skillLevel: Options.optional(
       Options.text("skill-level").pipe(
@@ -142,56 +142,6 @@ export const installAddCommand = Command.make("add", {
 
       yield* Display.showSuccess(`Installed ${rulesToInstall.length} rule(s) to ${targetPath}`);
       yield* Display.showInfo(`Next: ep install list --installed`);
-    })
-  )
-);
-
-/**
- * install:remove - Remove installed rules
- */
-export const installRemoveCommand = Command.make("remove", {
-  args: {
-    ruleId: Args.optional(Args.text({ name: "rule-id" }))
-  }
-}).pipe(
-  Command.withDescription("Temporarily disabled until server-backed tool config installation is implemented."),
-  Command.withHandler(({ args }) =>
-    Effect.gen(function* () {
-      yield* Display.showError(
-        "The install remove workflow is disabled for launch because tool-file injection is not implemented yet."
-      );
-      yield* Display.showInfo(
-        "Re-enable 'install remove' after server-backed injection and uninstall support is implemented."
-      );
-      return yield* Effect.fail(new DisabledFeatureError({
-        feature: "install remove",
-        reason: "Tool-file injection is not implemented yet",
-      }));
-    })
-  )
-);
-
-/**
- * install:diff - Compare installed rule with latest
- */
-export const installDiffCommand = Command.make("diff", {
-  args: {
-    ruleId: Args.text({ name: "rule-id" })
-  }
-}).pipe(
-  Command.withDescription("Temporarily disabled until server-backed tool config installation is implemented."),
-  Command.withHandler(({ args }) =>
-    Effect.gen(function* () {
-      yield* Display.showError(
-        "The install diff workflow is disabled for launch because tool-file injection is not implemented yet."
-      );
-      yield* Display.showInfo(
-        "Re-enable 'install diff' after server-backed source of truth and file-level diffing are implemented."
-      );
-      return yield* Effect.fail(new DisabledFeatureError({
-        feature: "install diff",
-        reason: "Server-backed source of truth and file-level diffing are not implemented yet",
-      }));
     })
   )
 );

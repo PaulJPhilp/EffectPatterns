@@ -27,83 +27,83 @@ import type {
  * standalone functions below which explicitly declare Skills as a dependency.
  */
 export interface SkillsService {
-	readonly listAll: Effect.Effect<
-		readonly SkillMetadata[],
-		SkillsDirectoryNotFoundError | PlatformError
-	>;
-	readonly getByCategory: (
-		category: string
-	) => Effect.Effect<SkillContent, SkillNotFoundError | PlatformError>;
-	readonly validate: (
-		category: string
-	) => Effect.Effect<readonly ValidationIssue[], SkillNotFoundError | PlatformError>;
-	readonly validateAll: Effect.Effect<
-		readonly ValidationIssue[],
-		SkillsDirectoryNotFoundError | SkillNotFoundError | PlatformError
-	>;
-	readonly getStats: Effect.Effect<
-		SkillStats,
-		SkillsDirectoryNotFoundError | PlatformError
-	>;
+  readonly listAll: Effect.Effect<
+    readonly SkillMetadata[],
+    SkillsDirectoryNotFoundError | PlatformError
+  >;
+  readonly getByCategory: (
+    category: string
+  ) => Effect.Effect<SkillContent, SkillNotFoundError | PlatformError>;
+  readonly validate: (
+    category: string
+  ) => Effect.Effect<readonly ValidationIssue[], SkillNotFoundError | PlatformError>;
+  readonly validateAll: Effect.Effect<
+    readonly ValidationIssue[],
+    SkillsDirectoryNotFoundError | SkillNotFoundError | PlatformError
+  >;
+  readonly getStats: Effect.Effect<
+    SkillStats,
+    SkillsDirectoryNotFoundError | PlatformError
+  >;
 }
 
 /**
  * List all available skills
  */
 export const listAll = (): Effect.Effect<
-	readonly SkillMetadata[],
-	SkillsDirectoryNotFoundError | PlatformError,
-	Skills
+  readonly SkillMetadata[],
+  SkillsDirectoryNotFoundError | PlatformError,
+  Skills
 > => Effect.gen(function* () {
-	const skills = yield* Skills;
-	return yield* skills.listAll;
+  const skills = yield* Skills;
+  return yield* skills.listAll;
 });
 
 /**
  * Get a skill by category
  */
 export const getByCategory = (
-	category: string
+  category: string
 ): Effect.Effect<SkillContent, SkillNotFoundError | PlatformError, Skills> =>
-	Effect.gen(function* () {
-		const skills = yield* Skills;
-		return yield* skills.getByCategory(category);
-	});
+  Effect.gen(function* () {
+    const skills = yield* Skills;
+    return yield* skills.getByCategory(category);
+  });
 
 /**
  * Validate a single skill
  */
 export const validate = (
-	category: string
+  category: string
 ): Effect.Effect<
-	readonly ValidationIssue[],
-	SkillNotFoundError | PlatformError,
-	Skills
+  readonly ValidationIssue[],
+  SkillNotFoundError | PlatformError,
+  Skills
 > => Effect.gen(function* () {
-	const skills = yield* Skills;
-	return yield* skills.validate(category);
+  const skills = yield* Skills;
+  return yield* skills.validate(category);
 });
 
 /**
  * Validate all skills
  */
 export const validateAll = (): Effect.Effect<
-	readonly ValidationIssue[],
-	SkillsDirectoryNotFoundError | SkillNotFoundError | PlatformError,
-	Skills
+  readonly ValidationIssue[],
+  SkillsDirectoryNotFoundError | SkillNotFoundError | PlatformError,
+  Skills
 > => Effect.gen(function* () {
-	const skills = yield* Skills;
-	return yield* skills.validateAll;
+  const skills = yield* Skills;
+  return yield* skills.validateAll;
 });
 
 /**
  * Get statistics about skills
  */
 export const getStats = (): Effect.Effect<
-	SkillStats,
-	SkillsDirectoryNotFoundError | PlatformError,
-	Skills
+  SkillStats,
+  SkillsDirectoryNotFoundError | PlatformError,
+  Skills
 > => Effect.gen(function* () {
-	const skills = yield* Skills;
-	return yield* skills.getStats;
+  const skills = yield* Skills;
+  return yield* skills.getStats;
 });
