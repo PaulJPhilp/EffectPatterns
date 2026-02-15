@@ -47,7 +47,8 @@ const EP_CLI_DOCS_URL =
  *
  * @returns Logger configuration object with logLevel
  */
-const mapCliLogLevel = (value: string): "debug" | "info" | "warn" | "error" | "silent" | undefined => {
+/** @internal Exported for testing */
+export const mapCliLogLevel = (value: string): "debug" | "info" | "warn" | "error" | "silent" | undefined => {
   const normalized = value.trim().toLowerCase();
   switch (normalized) {
     case "all":
@@ -95,7 +96,8 @@ const shouldUseColors = () => {
   return Boolean(process.stdout.isTTY);
 };
 
-const resolveLoggerConfig = (argv: ReadonlyArray<string> = process.argv) => {
+/** @internal Exported for testing */
+export const resolveLoggerConfig = (argv: ReadonlyArray<string> = process.argv) => {
   const logLevelEnv = process.env.LOG_LEVEL;
   const debugEnv = process.env.DEBUG;
   const verboseEnv = process.env.VERBOSE;
@@ -274,7 +276,8 @@ const NESTED_COMMANDS: Record<string, readonly string[]> = {
 const normalizeArgsForSuggestion = (argv: ReadonlyArray<string>): string[] =>
   argv.slice(2).filter((token) => token.length > 0 && !token.startsWith("-"));
 
-const levenshtein = (a: string, b: string): number => {
+/** @internal Exported for testing */
+export const levenshtein = (a: string, b: string): number => {
   const dp: number[][] = Array.from({ length: a.length + 1 }, () =>
     Array.from({ length: b.length + 1 }, () => 0)
   );
@@ -296,7 +299,8 @@ const levenshtein = (a: string, b: string): number => {
   return dp[a.length]![b.length]!;
 };
 
-const findClosest = (input: string, candidates: readonly string[]): string | null => {
+/** @internal Exported for testing */
+export const findClosest = (input: string, candidates: readonly string[]): string | null => {
   if (candidates.length === 0) return null;
 
   let best: string | null = null;
@@ -314,7 +318,8 @@ const findClosest = (input: string, candidates: readonly string[]): string | nul
   return bestDistance <= Math.max(2, Math.floor(input.length / 2)) ? best : null;
 };
 
-const getCommandSuggestion = (argv: ReadonlyArray<string>): string | null => {
+/** @internal Exported for testing */
+export const getCommandSuggestion = (argv: ReadonlyArray<string>): string | null => {
   const args = normalizeArgsForSuggestion(argv);
   const first = args[0];
   if (!first) return null;
@@ -336,7 +341,8 @@ const getCommandSuggestion = (argv: ReadonlyArray<string>): string | null => {
   return null;
 };
 
-const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): string | null => {
+/** @internal Exported for testing */
+export const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): string | null => {
   if (typeof error === "string") return error;
   if (error instanceof Error) {
     const combined = [error.message, error.stack].filter(Boolean).join("\n");
