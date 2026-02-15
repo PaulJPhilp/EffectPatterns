@@ -12,6 +12,7 @@
 
 import { StateStore } from "@effect-patterns/pipeline-state";
 import { FetchHttpClient } from "@effect/platform";
+import { NodeContext } from "@effect/platform-node";
 import { layer as NodeFileSystemLayer } from "@effect/platform-node/NodeFileSystem";
 import { Effect, Layer, ManagedRuntime } from "effect";
 import { envLayer } from "../config/env.js";
@@ -43,6 +44,7 @@ const AutofixLayer = Layer.provide(
 );
 
 export const ProductionLayer = Layer.mergeAll(
+        NodeContext.layer,
         envLayer,  // Environment configuration (must be early)
         NodeFileSystemLayer,
         Auth.Default,

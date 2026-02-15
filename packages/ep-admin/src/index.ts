@@ -381,7 +381,7 @@ const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): strin
 
 export const createAdminProgram = (
 	argv: ReadonlyArray<string> = process.argv
-) => adminCliRunner(argv);
+) => Effect.scoped(adminCliRunner(argv));
 
 export const runCli = (
 	argv: ReadonlyArray<string> = process.argv
