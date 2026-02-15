@@ -90,11 +90,36 @@ Maintainer workflows (release, pattern authoring, publishing/admin commands) liv
 | `DEBUG` | Enable debug logging | - |
 | `VERBOSE` | Enable verbose logging | - |
 
-For one-off secure key input without shell history, pass `--api-key-stdin` and pipe the key:
+## Authentication
+
+`ep-cli` resolves API credentials in this order:
+
+1. `PATTERN_API_KEY`
+2. `EP_API_KEY_FILE` (file contents)
+3. `EP_CONFIG_FILE` (or default config path) with JSON: `{ "apiKey": "..." }`
+
+For one-off secure key input without shell history, use `--api-key-stdin` and pipe the key:
 
 ```bash
 printf '%s' "$PATTERN_API_KEY" | ep --api-key-stdin search "retry"
 ```
+
+## Paths and XDG Defaults
+
+- Config file default: `~/.config/ep-cli/config.json`
+  - Override with `EP_CONFIG_FILE`
+- Installed-rules state default: `$XDG_STATE_HOME/ep-cli/installed-rules.json`
+  - If `XDG_STATE_HOME` is unset, fallback: `~/.local/state/ep-cli/installed-rules.json`
+  - Override with `EP_INSTALLED_STATE_FILE`
+
+## Skills Directory Resolution
+
+`ep skills ...` resolves the skills directory in this order:
+
+1. `EP_SKILLS_DIR` (absolute or relative to current working directory)
+2. Auto-discovery from current directory up through parent directories:
+   - `.claude-plugin/plugins/effect-patterns/skills`
+3. Final fallback: current working directory + default relative path
 
 ## License
 
