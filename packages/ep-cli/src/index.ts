@@ -149,9 +149,47 @@ const isDirectExecution = (() => {
   return false;
 })();
 
+const extractErrorMessage = (error: unknown): string | null => {
+  if (typeof error === "string") return error;
+  if (error instanceof Error) {
+    const combined = [error.message, error.stack].filter(Boolean).join("\n");
+
+    if (combined.includes("CommandMismatch")) {
+      return null;
+    }
+
+    if (combined.includes("Unable to connect. Is the computer able to access the url?")) {
+      return [
+        "Unable to reach the Effect Patterns API.",
+        "Check network connectivity and EFFECT_PATTERNS_API_URL, then retry.",
+      ].join("\n");
+    }
+
+    if (combined.includes("Pattern API unauthorized (401)")) {
+      return [
+        "Pattern API request was unauthorized (401).",
+        "Set PATTERN_API_KEY to a valid API key and retry.",
+      ].join("\n");
+    }
+
+    if (combined.includes("DisabledFeatureError") || combined.includes("ValidationFailedError")) {
+      return null;
+    }
+
+    if (error.message.trim()) {
+      return error.message.trim();
+    }
+  }
+
+  return String(error);
+};
+
 if (isDirectExecution) {
   void Effect.runPromise(runCli(process.argv)).catch((error) => {
-    console.error(error);
+    const message = extractErrorMessage(error);
+    if (message) {
+      console.error(message);
+    }
     process.exitCode = 1;
   });
 }
