@@ -4,7 +4,7 @@
  * Commands for validating, previewing, and analyzing Claude Skills
  */
 
-import { Args, Command } from "@effect/cli";
+import { Args, Command, Options } from "@effect/cli";
 import { Console, Effect } from "effect";
 import { Display } from "../services/display/index.js";
 import { Logger } from "../services/logger/index.js";
@@ -15,13 +15,28 @@ import { colorize } from "../utils.js";
 /**
  * skills:list - List all available skills
  */
-export const skillsListCommand = Command.make("list").pipe(
+export const skillsListCommand = Command.make("list", {
+  options: {
+    json: Options.boolean("json").pipe(
+      Options.withDescription("Output results as JSON"),
+      Options.withDefault(false)
+    ),
+  },
+}).pipe(
   Command.withDescription("List all available Claude Skills"),
-  Command.withHandler(() =>
+  Command.withHandler(({ options }) =>
     Effect.gen(function* () {
-      yield* Console.log(colorize("\n📚 Claude Skills\n", "BRIGHT"));
-
       const skills = yield* SkillsAPI.listAll();
+
+      if (options.json) {
+        yield* Console.log(JSON.stringify({
+          count: skills.length,
+          skills,
+        }, null, 2));
+        return;
+      }
+
+      yield* Console.log(colorize("\n📚 Claude Skills\n", "BRIGHT"));
 
       if (skills.length === 0) {
         yield* Console.log(colorize("No skills found.\n", "YELLOW"));
@@ -52,11 +67,22 @@ export const skillsPreviewCommand = Command.make("preview", {
       Args.withDescription("Skill category to preview")
     ),
   },
+  options: {
+    json: Options.boolean("json").pipe(
+      Options.withDescription("Output result as JSON"),
+      Options.withDefault(false)
+    ),
+  },
 }).pipe(
   Command.withDescription("Preview a skill's content"),
-  Command.withHandler(({ args }) =>
+  Command.withHandler(({ args, options }) =>
     Effect.gen(function* () {
       const skill = yield* SkillsAPI.getByCategory(args.category);
+
+      if (options.json) {
+        yield* Console.log(JSON.stringify({ skill }, null, 2));
+        return;
+      }
 
       yield* Display.showPanel(
         skill.content,
@@ -70,13 +96,37 @@ export const skillsPreviewCommand = Command.make("preview", {
 /**
  * skills:validate - Validate skills structure
  */
-export const skillsValidateCommand = Command.make("validate").pipe(
+export const skillsValidateCommand = Command.make("validate", {
+  options: {
+    json: Options.boolean("json").pipe(
+      Options.withDescription("Output results as JSON"),
+      Options.withDefault(false)
+    ),
+  },
+}).pipe(
   Command.withDescription("Validate all skills for structural issues"),
-  Command.withHandler(() =>
+  Command.withHandler(({ options }) =>
     Effect.gen(function* () {
-      yield* Console.log(colorize("\n🔍 Validating skills...\n", "BRIGHT"));
-
       const errors = yield* SkillsAPI.validateAll();
+
+      if (options.json) {
+        yield* Console.log(JSON.stringify({
+          valid: errors.length === 0,
+          errorCount: errors.length,
+          errors,
+        }, null, 2));
+
+        if (errors.length > 0) {
+          return yield* Effect.fail(new ValidationFailedError({
+            message: "Validation failed",
+            errorCount: errors.length,
+          }));
+        }
+
+        return;
+      }
+
+      yield* Console.log(colorize("\n🔍 Validating skills...\n", "BRIGHT"));
 
       if (errors.length === 0) {
         yield* Display.showSuccess("✓ All skills are valid!");
@@ -106,14 +156,26 @@ export const skillsValidateCommand = Command.make("validate").pipe(
 /**
  * skills:stats - Show statistics about skills
  */
-export const skillsStatsCommand = Command.make("stats").pipe(
+export const skillsStatsCommand = Command.make("stats", {
+  options: {
+    json: Options.boolean("json").pipe(
+      Options.withDescription("Output results as JSON"),
+      Options.withDefault(false)
+    ),
+  },
+}).pipe(
   Command.withDescription("Show statistics about Claude Skills"),
-  Command.withHandler(() =>
+  Command.withHandler(({ options }) =>
     Effect.gen(function* () {
       const logger = yield* Logger;
       yield* logger.debug("Fetching skills statistics...");
 
       const stats = yield* SkillsAPI.getStats();
+
+      if (options.json) {
+        yield* Console.log(JSON.stringify({ stats }, null, 2));
+        return;
+      }
 
       yield* Console.log(colorize("\n📊 Skills Statistics\n", "BRIGHT"));
       yield* Console.log("═".repeat(60));
