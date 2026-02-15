@@ -1,433 +1,311 @@
 # Effect Patterns MCP Server
 
-A Model Context Protocol (MCP) server that provides Effect-TS patterns, code analysis, and architectural recommendations for developers using Effect in their projects.
+Search 700+ Effect-TS patterns, browse curated skill guides, and explore analysis rules -- all from your IDE via the Model Context Protocol.
 
-## 🚀 Features
+**Production URL:** `https://effect-patterns-mcp.vercel.app`
 
-- **Pattern Library**: 216+ Effect-TS patterns with examples and explanations
-- **Code Review**: AI-powered architectural analysis for Effect codebases
-- **Smart Search**: Find patterns by category, difficulty, or keywords
-- **Type-Safe Recommendations**: Get contextual suggestions based on your code
-- **Production Ready**: Deployed and scalable infrastructure
+---
 
-## 📦 Installation
+## Quick Start
 
-### Claude Code IDE Integration
+The MCP server runs as a local stdio process that forwards requests to the hosted API. You need to clone this repository and have [Bun](https://bun.sh) installed.
 
-1. **Open Claude Code Settings**
-   - Go to Settings → MCP Servers
-   - Click "Add MCP Server"
+```bash
+git clone https://github.com/PaulJPhilp/Effect-Patterns.git
+cd Effect-Patterns
+bun install
+```
 
-2. **Configure the Server**
+Then add the server to your IDE. Replace `/absolute/path/to/Effect-Patterns` with the actual path on your machine, and set your API key.
 
-   ```json
-   {
-     "name": "effect-patterns",
-     "command": "bun",
-     "args": ["run", "mcp:production"],
-     "cwd": "/path/to/your/project",
-     "env": {
-       "PATTERN_API_KEY": "${PRODUCTION_API_KEY}"
-     }
-   }
-   ```
-   Set `PRODUCTION_API_KEY` in your environment or secrets before use.
+### Claude Desktop
 
-3. **Alternative: Local Development**
-
-   ```json
-   {
-     "name": "effect-patterns-local",
-     "command": "bun",
-     "args": ["run", "mcp"],
-     "cwd": "/path/to/effect-patterns/packages/mcp-server",
-     "env": {
-       "PATTERN_API_KEY": "dev-key"
-     }
-   }
-   ```
-
-### Prerequisites
-
-- **Node.js** 18+ or **Bun** latest
-- **Effect-TS** project (recommended)
-- API key (provided above)
-
-## 🔧 Configuration
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PATTERN_API_KEY` | Authentication key | Required |
-| `PRODUCTION_API_KEY` | Production API key (for `mcp:production`) | Use `PATTERN_API_KEY` if unset |
-| `DATABASE_URL` | PostgreSQL connection | Auto-configured |
-| `NODE_ENV` | Environment mode | `development` |
-
-### Claude Code Configuration
-
-Create or update your `.claude_code_config.json`:
+Open **Settings > Developer > Model Context Protocol**, then add:
 
 ```json
 {
   "mcpServers": {
     "effect-patterns": {
       "command": "bun",
-      "args": ["run", "mcp:production"],
+      "args": ["--cwd", "packages/mcp-server", "dist/mcp-stdio.js"],
+      "cwd": "/absolute/path/to/Effect-Patterns",
       "env": {
-        "PATTERN_API_KEY": "${PRODUCTION_API_KEY}"
+        "PATTERN_API_KEY": "your-api-key",
+        "EFFECT_PATTERNS_API_URL": "https://effect-patterns-mcp.vercel.app"
       }
     }
   }
 }
 ```
-Set `PRODUCTION_API_KEY` via your environment or secrets.
 
-## 🎯 Usage
+### Claude Code
 
-### Available Tools
-
-The MCP server exposes the MCP tool surface only:
-- `search_patterns`
-- `get_pattern`
-- `list_analysis_rules`
-- `analyze_code`
-- `review_code`
-
-Additional analysis/refactoring endpoints are available via the HTTP API only (not exposed as MCP tools).
-
-#### 🔍 `search_patterns`
-
-Find Effect patterns by category, difficulty, or keywords.
-
-**Parameters:**
-
-- `query` (string): Search terms
-- `category` (string): Pattern category
-- `difficulty` (string): `beginner` | `intermediate` | `advanced`
-- `limit` (number): Maximum results (default: 10)
-
-**Example:**
-
-```
-Search for error handling patterns for beginners
-```
-
-#### 📋 `list_analysis_rules`
-
-View available code analysis rules for Effect-TS.
-
-**Example:**
-
-```
-Show all available analysis rules
-```
-
-#### 🔧 `analyze_code`
-
-Analyze Effect code for anti-patterns and improvements.
-
-**Parameters:**
-
-- `code` (string): Effect-TS code to analyze
-- `filePath` (string): Optional file path for context
-
-**Example:**
-
-```
-Analyze this Effect code for improvements:
-const program = Effect.gen(function* () {
-  const result = yield* someOperation()
-  return result
-})
-```
-
-#### 📝 `review_code`
-
-Get architectural review and recommendations for Effect code.
-
-**Parameters:**
-
-- `code` (string): Effect-TS code to review
-- `filePath` (string): Optional file path for context
-
-**Returns:**
-
-- **Recommendations**: Actionable improvement suggestions
-- **Enhanced Analysis**: Detailed findings with confidence scores
-- **Summary**: Machine-readable analysis summary
-- **Fix Plans**: Step-by-step improvement guidance
-
-#### 📖 `get_pattern`
-
-Get detailed information about a specific pattern.
-
-**Parameters:**
-
-- `id` (string): Pattern identifier (slug)
-
-**Example:**
-
-```
-Get details for pattern "error-management-match"
-```
-
-### Example Workflows
-
-#### 1. Finding Error Handling Patterns
-
-```
-You: "Show me error handling patterns for intermediate developers"
-
-MCP: Returns patterns like:
-- Pattern Matching on Option and Either
-- Custom Error Strategies  
-- Error Propagation and Chains
-- Accumulating Multiple Errors
-```
-
-#### 2. Code Review Session
-
-```
-You: "Review this Effect code for architectural improvements"
-
-MCP: Analyzes and returns:
-- 3 high-priority recommendations
-- Enhanced findings with evidence
-- Fix plans with step-by-step guidance
-- Confidence scores for each finding
-```
-
-#### 3. Learning Path Guidance
-
-```
-You: "I'm new to Effect, what patterns should I learn first?"
-
-MCP: Suggests beginner patterns:
-- Why Effect? Comparing Effect to Promise
-- Your First Effect Test
-- Write Sequential Code with Effect.gen
-- Wrap Synchronous Computations
-```
-
-## 📚 Pattern Categories
-
-### 🚀 Getting Started
-
-- Introduction to Effect concepts
-- Comparison with Promise/async-await
-- Basic patterns and terminology
-
-### 🏗️ Core Concepts
-
-- Effect composition and chaining
-- Error handling fundamentals
-- Data types (Option, Either, Chunk)
-- Dependency injection
-
-### ⚡ Concurrency
-
-- Parallel operations
-- Fiber management
-- Resource coordination
-- Race conditions and timeouts
-
-### 🌐 Building APIs
-
-- HTTP client/server patterns
-- Request validation
-- Error handling in APIs
-- Authentication and authorization
-
-### 📊 Domain Modeling
-
-- Branded types and validation
-- Schema definitions
-- Business logic patterns
-- Type-safe domain models
-
-### 🧪 Testing
-
-- Test organization strategies
-- Mock-free testing
-- Property-based testing
-- Service testing patterns
-
-### 🔍 Observability
-
-- Structured logging
-- Distributed tracing
-- Metrics and monitoring
-- Debugging techniques
-
-### 🛠️ Platform Integration
-
-- File system operations
-- Environment configuration
-- Terminal interactions
-- External service integration
-
-### 📈 Streams & Pipelines
-
-- Stream processing
-- Data transformation
-- Backpressure handling
-- Resource management
-
-### ⏰ Scheduling
-
-- Retry patterns
-- Interval operations
-- Cron expressions
-- Debouncing and throttling
-
-## 🔒 API Authentication
-
-The MCP server uses API key authentication:
-
-- **Production**: Set `PRODUCTION_API_KEY` or `PATTERN_API_KEY` in your environment. Never commit keys.
-- **Development**: `dev-key` (local only, used when no key is set)
-
-Include the key in your MCP server configuration or request headers.
-
-## 🌐 Production Server
-
-The production MCP server is deployed at:
-
-- **URL**: <https://effect-patterns-mcp.vercel.app>
-- **Status**: Production ready
-- **Database**: 216+ patterns loaded
-- **Uptime**: 99.9% (Vercel infrastructure)
-
-## 🛠️ Local Development
-
-### Setup
+Run from the repo root:
 
 ```bash
-# Clone the repository
-git clone https://github.com/effect-ts/effect-patterns.git
-cd effect-patterns/packages/mcp-server
-
-# Install dependencies
-bun install
-
-# Set up environment
-cp .env.example .env.local
-
-# Start development server
-bun run dev
+claude mcp add effect-patterns \
+  --command "bun" \
+  --args "--cwd" "packages/mcp-server" "dist/mcp-stdio.js" \
+  --env "PATTERN_API_KEY=your-api-key" \
+  --env "EFFECT_PATTERNS_API_URL=https://effect-patterns-mcp.vercel.app"
 ```
 
-### Running MCP Server Locally
+### Cursor
 
-```bash
-# Stdio interface (for Claude Code)
-bun run mcp
+Open **Settings > MCP Servers** and add:
 
-# With debug logging
-bun run mcp:debug
-
-# Production client (HTTP interface)
-bun run mcp:production
+```json
+{
+  "mcpServers": {
+    "effect-patterns": {
+      "command": "bun",
+      "args": ["--cwd", "packages/mcp-server", "dist/mcp-stdio.js"],
+      "cwd": "/absolute/path/to/Effect-Patterns",
+      "env": {
+        "PATTERN_API_KEY": "your-api-key",
+        "EFFECT_PATTERNS_API_URL": "https://effect-patterns-mcp.vercel.app"
+      }
+    }
+  }
+}
 ```
 
-### Environment Setup
+### Windsurf
 
-Create `.env.local`:
+Create or edit `.windsurf/mcp_config.json` in your project:
 
-```env
-PATTERN_API_KEY=dev-key
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/effect_patterns
-NODE_ENV=development
+```json
+{
+  "mcpServers": {
+    "effect-patterns": {
+      "command": "bun",
+      "args": ["--cwd", "packages/mcp-server", "dist/mcp-stdio.js"],
+      "cwd": "/absolute/path/to/Effect-Patterns",
+      "env": {
+        "PATTERN_API_KEY": "your-api-key",
+        "EFFECT_PATTERNS_API_URL": "https://effect-patterns-mcp.vercel.app"
+      },
+      "disabled": false
+    }
+  }
+}
 ```
-
-## 📊 Capability Model
-
-- **MCP tool surface**: Pattern search, pattern retrieval, and analysis-rule catalog.
-- **HTTP API / CLI surface**: Analysis, review, refactoring, and generation endpoints.
-- **Operational limits**: Standard rate limits apply per API key.
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### MCP Server Not Found
-
-```bash
-# Check if server is running
-curl https://effect-patterns-mcp.vercel.app/api/health
-
-# Verify API key
-curl -H "x-api-key: YOUR_KEY" https://effect-patterns-mcp.vercel.app/api/patterns
-```
-
-#### Authentication Errors
-
-- Verify API key is correct
-- Check environment variable spelling
-- Ensure proper header format: `x-api-key`
-
-#### Connection Issues
-
-- Check network connectivity
-- Verify Vercel status (<https://www.vercel-status.com>)
-- Try alternative endpoint or local setup
-
-#### Performance Issues
-
-- Use the standard rate limits for your API key
-- Optimize search queries with specific filters
-- Use direct HTTP API endpoints for non-MCP features
-
-### Debug Mode
-
-Enable debug logging:
-
-```bash
-MCP_DEBUG=true bun run mcp:debug
-```
-
-### Health Check
-
-Monitor server status:
-
-```bash
-curl https://effect-patterns-mcp.vercel.app/api/health
-```
-
-## 🤝 Contributing
-
-### Adding Patterns
-
-1. **Create Pattern File**: `content/published/patterns/[category]/[pattern-name].mdx`
-2. **Follow Template**: Use existing patterns as reference
-3. **Test Locally**: Verify with MCP server
-4. **Submit PR**: Include examples and use cases
-
-### Reporting Issues
-
-- **Bugs**: Open issue with reproduction steps
-- **Feature Requests**: Describe use case and benefits
-- **Documentation**: Report unclear sections or examples
-
-## 📄 License
-
-MIT License - see [LICENSE](../LICENSE) file for details.
-
-## 🔗 Related Resources
-
-- Project docs: this README, [README-END-USER.md](./README-END-USER.md), [MCP_CONFIG.md](../../MCP_CONFIG.md)
-- Effect-TS and MCP protocol: see official documentation
-
-## 📞 Support
-
-- **Documentation**: This README and inline code comments
-- **Issues**: GitHub repository issues
-- **Community**: Effect-TS Discord server
-- **Email**: <support@effect-patterns.com>
 
 ---
 
-**Built with ❤️ by the Effect Patterns Team**
+## MCP Tools
 
-*Last updated: January 2026*
+The server exposes **5 tools** in production. Code analysis, review, refactoring, and generation are available only via the [HTTP API](#http-api-reference).
+
+### search_patterns
+
+Search the pattern library by keyword, category, and difficulty.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `q` | string | No | Search query (e.g. "error handling", "retry"). |
+| `category` | string | No | One of: `validation`, `service`, `error-handling`, `composition`, `concurrency`, `streams`, `resource`, `scheduling`. |
+| `difficulty` | string | No | `beginner`, `intermediate`, or `advanced`. |
+| `limit` | number | No | Max results (1--100). |
+| `format` | string | No | `markdown`, `json`, or `both`. Default: `markdown`. |
+
+**Try asking:** "Search for error handling patterns for intermediate developers."
+
+### get_pattern
+
+Get full documentation and code examples for a single pattern.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Yes | Pattern ID/slug (e.g. `effect-service`, `retry-with-backoff`). |
+| `format` | string | No | `markdown`, `json`, or `both`. Default: `markdown`. |
+
+**Try asking:** "Show me the effect-service pattern."
+
+### list_analysis_rules
+
+List all available code analysis rules (IDs, titles, severity, categories). This is a read-only catalog -- it does not scan your code.
+
+No parameters.
+
+**Try asking:** "What analysis rules are available?"
+
+### list_skills
+
+Search curated Effect-TS skill guides that combine multiple patterns into practical workflows.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `q` | string | No | Search query. |
+| `category` | string | No | Skill category filter. |
+| `limit` | number | No | Max results (1--100). |
+| `format` | string | No | `markdown`, `json`, or `both`. Default: `markdown`. |
+
+**Try asking:** "List skills for service architecture."
+
+### get_skill
+
+Get the full content of a specific skill guide.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `slug` | string | Yes | Skill slug identifier. |
+| `format` | string | No | `markdown`, `json`, or `both`. Default: `markdown`. |
+
+**Try asking:** "Get the skill for error-handling."
+
+---
+
+## Example Conversations
+
+### Finding patterns for a task
+
+> **You:** "How do I handle retries with exponential backoff in Effect?"
+>
+> Claude calls `search_patterns` with `q: "retry backoff"`, then shows matching patterns with descriptions and code examples.
+
+### Learning path for beginners
+
+> **You:** "I'm new to Effect, where should I start?"
+>
+> Claude calls `search_patterns` with `difficulty: "beginner"` and returns foundational patterns like "Your First Effect Test" and "Write Sequential Code with Effect.gen".
+
+### Exploring a skill guide
+
+> **You:** "Show me the error handling skill guide."
+>
+> Claude calls `list_skills` with `q: "error handling"`, finds the matching skill, then calls `get_skill` with its slug to return the full guide.
+
+---
+
+## Authentication
+
+The MCP server passes your API key to the HTTP API, which enforces authentication.
+
+- Set `PATTERN_API_KEY` in your MCP server environment configuration.
+- The key is sent as an `x-api-key` header on HTTP requests.
+- Never commit API keys to version control.
+
+---
+
+## HTTP API Reference
+
+The MCP tools call a subset of the HTTP API. You can also call these endpoints directly (e.g. from scripts or CI).
+
+**Base URLs:**
+
+| Environment | URL |
+|-------------|-----|
+| Production | `https://effect-patterns-mcp.vercel.app` |
+| Staging | `https://effect-patterns-mcp-staging.vercel.app` |
+
+**Authentication:** Include `x-api-key: <your-key>` header on all requests (except `/api/health`).
+
+### Endpoints used by MCP tools
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/api/health` | Health check (no auth required). |
+| GET | `/api/patterns?q=...&category=...&difficulty=...&limit=...` | Search patterns. |
+| GET | `/api/patterns/[id]` | Get pattern by ID. |
+| GET | `/api/skills?q=...&category=...&limit=...` | Search skills. |
+| GET | `/api/skills/[slug]` | Get skill by slug. |
+| POST | `/api/list-rules` | List analysis rules (read-only catalog). |
+
+### Endpoints available via HTTP API only
+
+These are **not** exposed as MCP tools.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/api/analyze-code` | Analyze code for anti-patterns. |
+| POST | `/api/review-code` | Architectural code review. |
+| POST | `/api/list-fixes` | List available refactoring fixes. |
+| POST | `/api/analyze-consistency` | Multi-file consistency analysis. |
+| POST | `/api/apply-refactoring` | Apply automated refactorings. |
+| POST | `/api/generate-pattern` | Generate code from a pattern. |
+| GET | `/api/trace-wiring` | Tracing setup examples. |
+
+---
+
+## Running Locally
+
+For development or contributing:
+
+1. **Clone and install:**
+   ```bash
+   git clone https://github.com/PaulJPhilp/Effect-Patterns.git
+   cd Effect-Patterns
+   bun install
+   ```
+
+2. **Start the API server** (in one terminal):
+   ```bash
+   cd packages/mcp-server
+   bun run dev
+   ```
+   The API runs at `http://localhost:3000`.
+
+3. **Start the MCP server** (stdio, for your IDE):
+   ```bash
+   cd packages/mcp-server
+   PATTERN_API_KEY=dev-key bun run mcp
+   ```
+
+4. **With debug logging:**
+   ```bash
+   MCP_DEBUG=true PATTERN_API_KEY=dev-key bun run mcp:debug
+   ```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PATTERN_API_KEY` | Yes | API key for authentication. |
+| `EFFECT_PATTERNS_API_URL` | No | API base URL. Default: `http://localhost:3000`. Set to production/staging URL for hosted use. |
+| `MCP_DEBUG` | No | Set to `true` for verbose debug logging to stderr. |
+| `MCP_ENV` | No | `local`, `staging`, or `production`. Controls environment-specific behavior. |
+
+---
+
+## Troubleshooting
+
+### Server won't start
+
+- Ensure you're in the correct directory (`packages/mcp-server`) or using the `cwd` config.
+- Run `bun install` from the repo root.
+- Check that Bun is installed: `bun --version`.
+
+### Authentication errors (401/403)
+
+- Verify `PATTERN_API_KEY` is set in the environment your IDE passes to the MCP process.
+- For hosted API, use a valid production or staging key.
+- For local development, the API accepts `dev-key` when running locally.
+
+### Tools return errors
+
+- **Using hosted API:** Confirm `EFFECT_PATTERNS_API_URL` points to `https://effect-patterns-mcp.vercel.app`.
+- **Using local API:** Confirm `bun run dev` is running in `packages/mcp-server`.
+- Run with `MCP_DEBUG=true` to see detailed error output on stderr.
+
+### Health check
+
+```bash
+curl https://effect-patterns-mcp.vercel.app/api/health
+```
+
+### Test API access with your key
+
+```bash
+curl -H "x-api-key: $PATTERN_API_KEY" \
+  "https://effect-patterns-mcp.vercel.app/api/patterns?q=service"
+```
+
+---
+
+## Links
+
+- **Production:** https://effect-patterns-mcp.vercel.app
+- **Health check:** https://effect-patterns-mcp.vercel.app/api/health
+- **GitHub:** https://github.com/PaulJPhilp/Effect-Patterns
+- **Advanced configuration and testing:** [MCP_CONFIG.md](../../MCP_CONFIG.md)
