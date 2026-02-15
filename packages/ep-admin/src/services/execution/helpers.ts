@@ -7,6 +7,33 @@ import { spawn } from "node:child_process";
 import { ExecutionError } from "./errors.js";
 import type { ExecutionOptions } from "./types.js";
 
+type ProgressSignal = {
+	readonly isTTY: boolean;
+	readonly ci?: string;
+	readonly term?: string;
+};
+
+const isTruthyEnvFlag = (value: string | undefined): boolean => {
+	if (!value) return false;
+	const normalized = value.trim().toLowerCase();
+	return normalized !== "0" && normalized !== "false" && normalized !== "no";
+};
+
+export const shouldRenderProgress = (
+	options?: ExecutionOptions,
+	signal: ProgressSignal = {
+		isTTY: Boolean(process.stdout.isTTY),
+		ci: process.env.CI,
+		term: process.env.TERM,
+	}
+): boolean => {
+	if (options?.verbose) return false;
+	if (!signal.isTTY) return false;
+	if (isTruthyEnvFlag(signal.ci)) return false;
+	if (signal.term?.toLowerCase() === "dumb") return false;
+	return true;
+};
+
 /**
  * Convert child process spawn to Effect
  * Returns void on success, Error on failure
@@ -65,8 +92,12 @@ export const spawnEffect = (
 export const withSpinner = <A, E, R>(
 	message: string,
 	effect: Effect.Effect<A, E, R>,
-	_options?: ExecutionOptions
+	options?: ExecutionOptions
 ): Effect.Effect<A, E, R> => {
+	if (!shouldRenderProgress(options)) {
+		return effect;
+	}
+
 	const showStart = Console.log(`⣾ ${message}...`);
 	const showEnd = Console.log(`✓ ${message} completed`);
 

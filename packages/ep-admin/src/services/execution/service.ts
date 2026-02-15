@@ -7,7 +7,7 @@ import { spawn } from "node:child_process";
 import { TUIService } from "../tui/service.js";
 import type { ExecutionService } from "./api.js";
 import { ExecutionError, ScriptExecutionError } from "./errors.js";
-import { spawnEffect, withSpinner } from "./helpers.js";
+import { shouldRenderProgress, spawnEffect, withSpinner } from "./helpers.js";
 import type { ExecutionOptions } from "./types.js";
 
 /**
@@ -25,24 +25,25 @@ export class Execution extends Effect.Service<Execution>()("Execution", {
 		) =>
 			Effect.gen(function* () {
 				const task = spawnEffect(scriptPath, options);
+				const showProgress = shouldRenderProgress(options);
 
-				// Try to use TUI spinner if available
-				// biome-ignore lint/suspicious/noExplicitAny: Dynamic TUI module shape varies at runtime
-				const tui = yield* tuiService.load().pipe(Effect.catchAll(() => Effect.succeed(null))) as Effect.Effect<Record<string, any> | null>;
-				if (tui?.InkService && tui?.spinnerEffect) {
-					const maybeInk = yield* Effect.serviceOption(tui.InkService);
-					if (Opt.isSome(maybeInk) && !options?.verbose) {
-						// Use TUI spinner
-						yield* (tui.spinnerEffect(taskName, task, {
-							type: "dots",
-							color: "cyan",
-						}) as Effect.Effect<void, ExecutionError>);
-						return;
+				if (showProgress) {
+					// Try to use TUI spinner if available
+					// biome-ignore lint/suspicious/noExplicitAny: Dynamic TUI module shape varies at runtime
+					const tui = yield* tuiService.load().pipe(Effect.catchAll(() => Effect.succeed(null))) as Effect.Effect<Record<string, any> | null>;
+					if (tui?.InkService && tui?.spinnerEffect) {
+						const maybeInk = yield* Effect.serviceOption(tui.InkService);
+						if (Opt.isSome(maybeInk)) {
+							// Use TUI spinner
+							yield* (tui.spinnerEffect(taskName, task, {
+								type: "dots",
+								color: "cyan",
+							}) as Effect.Effect<void, ExecutionError>);
+							return;
+						}
 					}
-				}
 
-				// Fallback to console with ora-style output
-				if (!options?.verbose) {
+					// Fallback to console with ora-style output
 					yield* Console.log(`⣾ ${taskName}...`);
 				}
 
@@ -64,7 +65,7 @@ export class Execution extends Effect.Service<Execution>()("Execution", {
 					})
 				);
 
-				if (!options?.verbose) {
+				if (showProgress) {
 					yield* Console.log(`✓ ${taskName} completed`);
 				}
 			});

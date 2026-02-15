@@ -4,7 +4,7 @@
 
 import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
-import { withSpinner } from "../helpers.js";
+import { shouldRenderProgress, withSpinner } from "../helpers.js";
 
 describe("Execution Helpers", () => {
 	describe("withSpinner", () => {
@@ -22,6 +22,61 @@ describe("Execution Helpers", () => {
 					withSpinner("Test task", Effect.fail(new Error("Failed")))
 				)
 			).rejects.toThrow("Failed");
+		});
+	});
+
+	describe("shouldRenderProgress", () => {
+		it("returns true in interactive tty mode", () => {
+			expect(
+				shouldRenderProgress(undefined, {
+					isTTY: true,
+					ci: undefined,
+					term: "xterm-256color",
+				})
+			).toBe(true);
+		});
+
+		it("returns false in non-tty mode", () => {
+			expect(
+				shouldRenderProgress(undefined, {
+					isTTY: false,
+					ci: undefined,
+					term: "xterm-256color",
+				})
+			).toBe(false);
+		});
+
+		it("returns false in CI mode", () => {
+			expect(
+				shouldRenderProgress(undefined, {
+					isTTY: true,
+					ci: "true",
+					term: "xterm-256color",
+				})
+			).toBe(false);
+		});
+
+		it("returns false when terminal is dumb", () => {
+			expect(
+				shouldRenderProgress(undefined, {
+					isTTY: true,
+					ci: undefined,
+					term: "dumb",
+				})
+			).toBe(false);
+		});
+
+		it("returns false in verbose mode", () => {
+			expect(
+				shouldRenderProgress(
+					{ verbose: true },
+					{
+						isTTY: true,
+						ci: undefined,
+						term: "xterm-256color",
+					}
+				)
+			).toBe(false);
 		});
 	});
 
