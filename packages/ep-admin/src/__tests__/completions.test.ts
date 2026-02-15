@@ -35,11 +35,12 @@ describe("Shell Completions", () => {
             expect(EP_ADMIN_COMMANDS.commands.length).toBeGreaterThan(0);
 
             const commandNames = EP_ADMIN_COMMANDS.commands.map(c => c.name);
+            expect(commandNames).toContain("auth");
             expect(commandNames).toContain("publish");
-            expect(commandNames).toContain("ingest");
-            expect(commandNames).toContain("qa");
+            expect(commandNames).toContain("pattern");
+            expect(commandNames).toContain("data");
             expect(commandNames).toContain("db");
-            expect(commandNames).toContain("rules");
+            expect(commandNames).toContain("config");
         });
 
         it("should have subcommands for major commands", () => {
@@ -59,11 +60,14 @@ describe("Shell Completions", () => {
             );
 
             expect(logLevelOpt?.takesValue).toBe(true);
+            expect(logLevelOpt?.values).toContain("all");
+            expect(logLevelOpt?.values).toContain("trace");
             expect(logLevelOpt?.values).toContain("debug");
             expect(logLevelOpt?.values).toContain("info");
-            expect(logLevelOpt?.values).toContain("warn");
+            expect(logLevelOpt?.values).toContain("warning");
             expect(logLevelOpt?.values).toContain("error");
-            expect(logLevelOpt?.values).toContain("silent");
+            expect(logLevelOpt?.values).toContain("fatal");
+            expect(logLevelOpt?.values).toContain("none");
         });
     });
 
@@ -86,7 +90,7 @@ describe("Shell Completions", () => {
 
                 // Should include command names
                 expect(script).toContain("publish");
-                expect(script).toContain("ingest");
+                expect(script).toContain("data");
             });
 
             it("should include global options in bash script", () => {
@@ -137,7 +141,7 @@ describe("Shell Completions", () => {
                 const script = generateCompletion("zsh");
 
                 expect(script).toContain("'publish:Publishing pipeline commands'");
-                expect(script).toContain("'ingest:Content ingestion commands'");
+                expect(script).toContain("'data:Ingestion and quality workflows'");
             });
 
             it("should handle options with values", () => {
@@ -146,7 +150,7 @@ describe("Shell Completions", () => {
                 // log-level should show available values
                 expect(script).toContain("--log-level");
                 expect(script).toContain("debug");
-                expect(script).toContain("silent");
+                expect(script).toContain("none");
             });
         });
 
@@ -192,7 +196,7 @@ describe("Shell Completions", () => {
 
                 // log-level option should have -xa for exclusive args
                 expect(script).toContain("-l log-level");
-                expect(script).toContain("-xa 'debug info warn error silent'");
+                expect(script).toContain("-xa 'all trace debug info warning error fatal none'");
             });
         });
 

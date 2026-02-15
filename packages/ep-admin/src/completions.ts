@@ -99,7 +99,7 @@ export const EP_ADMIN_COMMANDS: CompletionConfig = {
             name: "log-level",
             description: "Set log level",
             takesValue: true,
-            values: ["debug", "info", "warn", "error", "silent"],
+            values: ["all", "trace", "debug", "info", "warning", "error", "fatal", "none"],
         },
         { name: "no-color", description: "Disable colored output" },
         { name: "json", description: "Output in JSON format" },
@@ -109,109 +109,209 @@ export const EP_ADMIN_COMMANDS: CompletionConfig = {
     ],
     commands: [
         {
+            name: "auth",
+            description: "Authentication and local session management",
+            subcommands: [
+                { name: "init", description: "Initialize local admin authentication" },
+                { name: "login", description: "Log in and create a local session" },
+                { name: "logout", description: "Clear local session" },
+                { name: "status", description: "Show auth/session status" },
+            ],
+        },
+        {
             name: "publish",
             description: "Publishing pipeline commands",
             subcommands: [
                 { name: "validate", description: "Validate patterns for publishing" },
                 { name: "test", description: "Run pattern tests" },
-                { name: "publish", description: "Publish validated patterns" },
+                { name: "run", description: "Publish validated patterns" },
                 { name: "generate", description: "Generate pattern documentation" },
                 { name: "lint", description: "Lint pattern content" },
                 { name: "pipeline", description: "Run full publishing pipeline" },
             ],
-            options: [
-                { name: "verbose", alias: "v", description: "Show detailed output" },
-                { name: "fix", description: "Auto-fix issues" },
+        },
+        {
+            name: "pattern",
+            description: "Pattern discovery and authoring",
+            subcommands: [
+                { name: "search", description: "Search patterns" },
+                { name: "new", description: "Create a new pattern" },
+                {
+                    name: "skills",
+                    description: "Generate and manage skills from patterns",
+                    subcommands: [
+                        { name: "generate", description: "Generate all skills" },
+                        { name: "generate-from-db", description: "Generate skills from DB and upsert" },
+                        { name: "skill-generator", description: "Interactive skill generator help" },
+                        { name: "generate-readme", description: "Generate skills README" },
+                    ],
+                },
             ],
         },
         {
-            name: "ingest",
-            description: "Content ingestion commands",
+            name: "data",
+            description: "Ingestion and quality workflows",
             subcommands: [
-                { name: "process", description: "Process content for ingestion" },
-                { name: "process-one", description: "Process a single content item" },
-                { name: "validate", description: "Validate ingestion data" },
-                { name: "test", description: "Test ingestion pipeline" },
-                { name: "populate", description: "Populate database with content" },
-                { name: "status", description: "Show ingestion status" },
-                { name: "pipeline", description: "Run full ingestion pipeline" },
-            ],
-        },
-        {
-            name: "qa",
-            description: "Quality assurance commands",
-            subcommands: [
-                { name: "process", description: "Process QA checks" },
-                { name: "status", description: "Show QA status" },
-                { name: "report", description: "Generate QA report" },
-                { name: "repair", description: "Repair QA issues" },
-                { name: "test-enhanced", description: "Run enhanced QA tests" },
-                { name: "test-single", description: "Test a single item" },
-                { name: "fix-permissions", description: "Fix file permissions" },
+                {
+                    name: "ingest",
+                    description: "Content ingestion pipeline",
+                    subcommands: [
+                        { name: "process", description: "Process content for ingestion" },
+                        { name: "process-one", description: "Process a single content item" },
+                        { name: "validate", description: "Validate ingested content" },
+                        { name: "test", description: "Run ingest tests" },
+                        { name: "populate", description: "Populate expectations" },
+                        { name: "status", description: "Show ingest status" },
+                        { name: "pipeline", description: "Run full ingest pipeline" },
+                    ],
+                },
+                {
+                    name: "discord",
+                    description: "Discord ingestion helpers",
+                    subcommands: [
+                        { name: "ingest", description: "Ingest from Discord export" },
+                        { name: "test", description: "Test Discord ingestion" },
+                        { name: "flatten", description: "Flatten Discord channels export" },
+                    ],
+                },
+                {
+                    name: "qa",
+                    description: "Quality assurance workflows",
+                    subcommands: [
+                        { name: "validate", description: "Validate QA checks" },
+                        { name: "process", description: "Process QA checks" },
+                        { name: "status", description: "Show QA status" },
+                        { name: "report", description: "Generate QA report" },
+                        { name: "repair", description: "Repair QA failures" },
+                        { name: "test-enhanced", description: "Run enhanced QA tests" },
+                        { name: "test-single", description: "Run QA test for one item" },
+                        { name: "fix-permissions", description: "Fix content permissions" },
+                    ],
+                },
             ],
         },
         {
             name: "db",
             description: "Database management commands",
             subcommands: [
+                {
+                    name: "show",
+                    description: "Show database content summaries",
+                    subcommands: [
+                        { name: "all", description: "Show all tracked entities" },
+                        { name: "patterns", description: "Show stored effect patterns" },
+                        { name: "skills", description: "Show stored skills" },
+                    ],
+                },
                 { name: "test", description: "Run database tests" },
                 { name: "test-quick", description: "Run quick database tests" },
                 { name: "verify-migration", description: "Verify database migrations" },
                 { name: "mock", description: "Generate mock data" },
+                { name: "status", description: "Check database status via MCP" },
+                { name: "migrate-remote", description: "Run remote migration via MCP" },
+                {
+                    name: "migrate",
+                    description: "Local migration helpers",
+                    subcommands: [
+                        { name: "state", description: "Show migration state" },
+                        { name: "postgres", description: "Run PostgreSQL migrations" },
+                    ],
+                },
             ],
         },
         {
-            name: "discord",
-            description: "Discord integration commands",
+            name: "dev",
+            description: "Development tooling",
             subcommands: [
-                { name: "ingest", description: "Ingest Discord content" },
-                { name: "test", description: "Test Discord integration" },
-            ],
-        },
-        {
-            name: "skills",
-            description: "Skills management commands",
-            subcommands: [
-                { name: "generate", description: "Generate skills" },
-                { name: "skill-generator", description: "Run skill generator" },
-                { name: "generate-readme", description: "Generate skills README" },
-            ],
-        },
-        {
-            name: "migrate",
-            description: "Migration commands",
-            subcommands: [
-                { name: "state", description: "Show migration state" },
-                { name: "postgres", description: "Run PostgreSQL migrations" },
+                {
+                    name: "test-utils",
+                    description: "Utility test commands",
+                    subcommands: [
+                        { name: "chat-app", description: "Test chat application" },
+                        { name: "harness", description: "Run test harness" },
+                        { name: "harness-cli", description: "Run CLI test harness" },
+                        { name: "llm", description: "Test LLM integration" },
+                        { name: "models", description: "Test model matrix" },
+                        { name: "patterns", description: "Test pattern operations" },
+                        { name: "supermemory", description: "Test Supermemory integration" },
+                    ],
+                },
+                {
+                    name: "autofix",
+                    description: "Autofix and prepublish helpers",
+                    subcommands: [
+                        { name: "prepublish", description: "Run prepublish autofix flow" },
+                    ],
+                },
             ],
         },
         {
             name: "ops",
-            description: "Operations commands",
+            description: "Operations and infrastructure",
             subcommands: [
                 { name: "health-check", description: "Run health checks" },
                 { name: "rotate-api-key", description: "Rotate API keys" },
-                { name: "upgrade-baseline", description: "Upgrade baseline" },
+                { name: "upgrade-baseline", description: "Upgrade baseline snapshots" },
+                {
+                    name: "mcp",
+                    description: "MCP governance commands",
+                    subcommands: [
+                        { name: "list-rules", description: "List MCP rules" },
+                        { name: "list-fixes", description: "List MCP fixes" },
+                    ],
+                },
             ],
         },
         {
-            name: "test-utils",
-            description: "Testing utilities",
+            name: "config",
+            description: "Config, install, and entity management",
             subcommands: [
-                { name: "chat-app", description: "Test chat application" },
-                { name: "harness", description: "Run test harness" },
-                { name: "harness-cli", description: "CLI test harness" },
-                { name: "llm", description: "Test LLM integration" },
-                { name: "models", description: "Test models" },
-                { name: "patterns", description: "Test patterns" },
-                { name: "supermemory", description: "Test Supermemory integration" },
+                {
+                    name: "install",
+                    description: "Install Effect rules/skills into tools",
+                    subcommands: [
+                        { name: "add", description: "Inject rules into target tool config" },
+                        { name: "list", description: "List supported target tools" },
+                        { name: "skills", description: "Generate skills from published patterns" },
+                    ],
+                },
+                {
+                    name: "rules",
+                    description: "Legacy rules command group",
+                    subcommands: [
+                        { name: "generate", description: "Generate legacy rule files" },
+                    ],
+                },
+                {
+                    name: "utils",
+                    description: "Content utility commands",
+                    subcommands: [
+                        { name: "add-seqid", description: "Add sequence IDs to content files" },
+                        { name: "renumber-seqid", description: "Renumber sequence IDs" },
+                    ],
+                },
+                {
+                    name: "entities",
+                    description: "Entity lock/unlock commands",
+                    subcommands: [
+                        { name: "lock", description: "Lock entity by slug or id" },
+                        { name: "unlock", description: "Unlock entity by slug or id" },
+                    ],
+                },
             ],
         },
         {
-            name: "rules",
-            description: "AI rules management",
-            options: [
-                { name: "tool", description: "Target AI tool", takesValue: true },
+            name: "system",
+            description: "System utilities",
+            subcommands: [
+                {
+                    name: "completions",
+                    description: "Generate or install shell completions",
+                    subcommands: [
+                        { name: "generate", description: "Generate completion script" },
+                        { name: "install", description: "Install shell completions" },
+                    ],
+                },
             ],
         },
         {
@@ -220,32 +320,6 @@ export const EP_ADMIN_COMMANDS: CompletionConfig = {
             subcommands: [
                 { name: "preview", description: "Preview upcoming release" },
                 { name: "create", description: "Create a new release" },
-            ],
-            options: [
-                { name: "dry-run", description: "Preview without making changes" },
-            ],
-        },
-        {
-            name: "pipeline-management",
-            description: "Pipeline state management",
-        },
-        {
-            name: "pattern",
-            description: "Pattern management commands",
-            subcommands: [
-                {
-                    name: "new",
-                    description: "Create a new pattern (interactive wizard)",
-                    options: [
-                        { name: "title", description: "Pattern title", takesValue: true },
-                        {
-                            name: "skill-level",
-                            description: "Skill level",
-                            takesValue: true,
-                            values: ["beginner", "intermediate", "advanced"],
-                        },
-                    ],
-                },
             ],
         },
     ],
