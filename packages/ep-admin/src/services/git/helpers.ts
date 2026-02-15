@@ -109,7 +109,7 @@ export const getLatestTag = (tagPrefix: string, initialTag: string): Effect.Effe
 						`  git tag ${initialTag}\n` +
 						`  git push origin ${initialTag}\n\n` +
 						`Or use conventional commits and run:\n` +
-						`  bun run ep release create`
+						`  ep-admin release create`
 					)
 				);
 			}
