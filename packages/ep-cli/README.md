@@ -80,11 +80,21 @@ Maintainer workflows (release, pattern authoring, publishing/admin commands) liv
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PATTERN_API_KEY` | API key for hosted Effect Patterns API (`x-api-key` header) | - |
+| `EP_API_KEY_FILE` | Path to file containing PATTERN_API_KEY value | - |
+| `EP_CONFIG_FILE` | Path to ep-cli config JSON (`{ "apiKey": "..." }`) | `~/.config/ep-cli/config.json` |
 | `EFFECT_PATTERNS_API_URL` | Base URL for Effect Patterns API | `https://effect-patterns-mcp.vercel.app` |
 | `EP_API_TIMEOUT_MS` | HTTP timeout for API requests (milliseconds) | `10000` |
+| `EP_INSTALLED_STATE_FILE` | Override installed-rules state file location | `$XDG_STATE_HOME/ep-cli/installed-rules.json` |
+| `EP_SKILLS_DIR` | Override skills directory path | auto-detect from cwd/parents |
 | `LOG_LEVEL` | Set log level (`debug`, `info`, `warn`, `error`) | `info` |
 | `DEBUG` | Enable debug logging | - |
 | `VERBOSE` | Enable verbose logging | - |
+
+For one-off secure key input without shell history, pass `--api-key-stdin` and pipe the key:
+
+```bash
+printf '%s' "$PATTERN_API_KEY" | ep --api-key-stdin search "retry"
+```
 
 ## License
 

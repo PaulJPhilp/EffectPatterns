@@ -28,9 +28,11 @@ describe("Install Service", () => {
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "ep-cli-install-"));
     process.chdir(tmpDir);
+    process.env.EP_INSTALLED_STATE_FILE = path.join(tmpDir, ".ep-installed.test.json");
   });
 
   afterEach(async () => {
+    delete process.env.EP_INSTALLED_STATE_FILE;
     process.chdir(originalCwd);
     await fs.rm(tmpDir, { recursive: true, force: true });
   });

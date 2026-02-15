@@ -27,6 +27,28 @@ export class Skills extends Effect.Service<Skills>()("Skills", {
 
 		const getSkillsDirectory = Effect.gen(function* () {
 			const cwd = yield* Effect.sync(() => process.cwd());
+			const explicitSkillsDir = process.env.EP_SKILLS_DIR;
+			if (explicitSkillsDir && explicitSkillsDir.trim().length > 0) {
+				return path.isAbsolute(explicitSkillsDir)
+					? explicitSkillsDir
+					: path.resolve(cwd, explicitSkillsDir);
+			}
+
+			let current = cwd;
+			while (true) {
+				const candidate = path.join(current, PATHS.SKILLS_DIR);
+				const exists = yield* fs.exists(candidate);
+				if (exists) {
+					return candidate;
+				}
+
+				const parent = path.dirname(current);
+				if (parent === current) {
+					break;
+				}
+				current = parent;
+			}
+
 			return path.join(cwd, PATHS.SKILLS_DIR);
 		});
 

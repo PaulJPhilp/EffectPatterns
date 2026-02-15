@@ -8,6 +8,7 @@
 
 import { Command } from "@effect/cli";
 import { Effect, Layer } from "effect";
+import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -179,15 +180,69 @@ const cliRunner = Command.run(rootCommand, {
   version: CLI.VERSION,
 });
 
-export const createProgram = (argv: ReadonlyArray<string> = process.argv) =>
-  cliRunner(argv);
+type PreparedArgv = {
+  readonly argv: ReadonlyArray<string>;
+  readonly readApiKeyFromStdin: boolean;
+};
+
+const prepareArgv = (argv: ReadonlyArray<string> = process.argv): PreparedArgv => {
+  let readApiKeyFromStdin = false;
+  const filtered: string[] = [];
+
+  for (const arg of argv) {
+    if (arg === "--api-key-stdin") {
+      readApiKeyFromStdin = true;
+      continue;
+    }
+    filtered.push(arg);
+  }
+
+  return {
+    argv: filtered,
+    readApiKeyFromStdin,
+  };
+};
+
+const loadApiKeyFromStdin = (): void => {
+  const raw = readFileSync(0, "utf8");
+  const apiKey = raw.trim();
+
+  if (!apiKey) {
+    throw new Error(
+      "No API key was provided on stdin. Pipe a PATTERN_API_KEY value when using --api-key-stdin."
+    );
+  }
+
+  process.env.PATTERN_API_KEY = apiKey;
+};
+
+export const createProgram = (argv: ReadonlyArray<string> = process.argv) => {
+  const prepared = prepareArgv(argv);
+  return cliRunner(prepared.argv);
+};
 
 export const runCli = (argv: ReadonlyArray<string> = process.argv): Effect.Effect<void, unknown, never> =>
-  Effect.scoped(
-    createProgram(argv).pipe(
-      Effect.provide(createRuntimeLayer(argv))
-    )
-  ) as Effect.Effect<void, unknown, never>;
+  Effect.gen(function* () {
+    const prepared = prepareArgv(argv);
+
+    if (prepared.readApiKeyFromStdin) {
+      yield* Effect.try({
+        try: () => {
+          loadApiKeyFromStdin();
+        },
+        catch: (error) =>
+          error instanceof Error
+            ? error
+            : new Error("Failed to read API key from stdin"),
+      });
+    }
+
+    return yield* Effect.scoped(
+      cliRunner(prepared.argv).pipe(
+        Effect.provide(createRuntimeLayer(prepared.argv))
+      )
+    );
+  }) as Effect.Effect<void, unknown, never>;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -230,7 +285,7 @@ const extractErrorMessage = (error: unknown): string | null => {
     if (combined.includes("Pattern API unauthorized (401)")) {
       return [
         "Pattern API request was unauthorized (401).",
-        "Set PATTERN_API_KEY to a valid API key and retry.",
+        "Set PATTERN_API_KEY, or use --api-key-stdin, or configure EP_API_KEY_FILE / ~/.config/ep-cli/config.json.",
         `Docs: ${EP_CLI_DOCS_URL}`,
       ].join("\n");
     }
@@ -248,10 +303,6 @@ const extractErrorMessage = (error: unknown): string | null => {
       combined.includes("ValidationFailedError") ||
       combined.includes("UnsupportedToolError")
     ) {
-      return null;
-    }
-
-    if (error.message.trim() === "An error has occurred") {
       return null;
     }
 

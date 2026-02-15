@@ -24,8 +24,12 @@ const envSchema = S.Struct({
 
   // API configuration (optional)
   PATTERN_API_KEY: S.optional(S.String),
+  EP_API_KEY_FILE: S.optional(S.String),
+  EP_CONFIG_FILE: S.optional(S.String),
   EFFECT_PATTERNS_API_URL: S.optional(S.String),
   EP_API_TIMEOUT_MS: S.optional(S.NumberFromString),
+  EP_INSTALLED_STATE_FILE: S.optional(S.String),
+  EP_SKILLS_DIR: S.optional(S.String),
 
   // Debug and verbose flags (optional)
   DEBUG: S.optional(S.BooleanFromString),
