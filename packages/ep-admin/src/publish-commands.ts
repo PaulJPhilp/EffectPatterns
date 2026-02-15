@@ -131,6 +131,7 @@ export const publishValidateCommand = Command.make("validate", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_VALIDATED);
+            yield* Display.showInfo("Next: ep-admin publish test");
         })
     )
 );
@@ -183,6 +184,7 @@ export const publishTestCommand = Command.make("test", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.ALL_EXAMPLES_PASSED);
+            yield* Display.showInfo("Next: ep-admin publish run");
         })
     )
 );
@@ -241,6 +243,7 @@ export const publishRunCommand = Command.make("run", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PATTERNS_PUBLISHED);
+            yield* Display.showInfo("Next: ep-admin publish generate --readme");
         })
     )
 );
@@ -300,6 +303,7 @@ export const publishGenerateCommand = Command.make("generate", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.DOCUMENTATION_GENERATED);
+            yield* Display.showInfo("Next: ep-admin release preview");
         })
     )
 );
@@ -355,6 +359,7 @@ export const publishLintCommand = Command.make("lint", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.LINTING_COMPLETE);
+            yield* Display.showInfo("Next: ep-admin publish pipeline");
         })
     )
 );
@@ -418,6 +423,7 @@ export const publishPipelineCommand = Command.make("pipeline", {
             yield* Display.showInfo(`Duration: ${result.duration}ms`);
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.PIPELINE_COMPLETED);
+            yield* Display.showInfo("Next: ep-admin release preview");
         })
     )
 );

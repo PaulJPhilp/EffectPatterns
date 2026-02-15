@@ -111,11 +111,13 @@ describe.sequential("CLI JSON machine contract", () => {
 			expect(dbFailure.status).toBe(1);
 			expect(dbFailure.stdout.trim()).toBe("");
 			expect(dbFailure.stderr.trim().length).toBeGreaterThan(0);
+			expect(dbFailure.stderr).toContain("Run: ep-admin db --help");
 
 			const ingestFailure = runCli(["data", "ingest", "status", "--json"], automationEnv);
 			expect(ingestFailure.status).toBe(1);
 			expect(ingestFailure.stdout.trim()).toBe("");
 			expect(ingestFailure.stderr.trim().length).toBeGreaterThan(0);
+			expect(ingestFailure.stderr).toContain("Run: ep-admin data --help");
 		} finally {
 			await rm(tempDir, { recursive: true, force: true });
 		}

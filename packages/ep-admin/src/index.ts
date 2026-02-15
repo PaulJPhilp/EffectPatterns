@@ -198,6 +198,63 @@ const NESTED_COMMANDS: Record<string, readonly string[]> = {
 	release: ["preview", "create"],
 };
 
+const ROOT_HELP_COMMANDS: ReadonlyArray<{
+	readonly name: string;
+	readonly description: string;
+}> = [
+	{ name: "auth", description: "Initialize/login/logout and check admin session state" },
+	{ name: "publish", description: "Validate, test, publish, and generate release artifacts" },
+	{ name: "pattern", description: "Search patterns and generate skill assets" },
+	{ name: "data", description: "Run ingest, Discord, and QA workflows" },
+	{ name: "db", description: "Inspect, test, and migrate database state" },
+	{ name: "dev", description: "Run development utilities and autofix tools" },
+	{ name: "ops", description: "Run health checks and maintenance commands" },
+	{ name: "config", description: "Install rules/skills and manage entities" },
+	{ name: "system", description: "Generate/install shell completions" },
+	{ name: "release", description: "Preview and create tagged releases" },
+];
+
+const renderCompactRootHelp = (): string => {
+	const lines = [
+		`${CLI.RUNNER_NAME} ${CLI.VERSION}`,
+		"",
+		CLI.DESCRIPTION,
+		"",
+		"USAGE",
+		"  ep-admin <command> [subcommand] [options]",
+		"",
+		"Top-level commands:",
+		...ROOT_HELP_COMMANDS.map(
+			(command) => `  ${command.name.padEnd(10)} ${command.description}`
+		),
+		"",
+		"Get detailed help:",
+		"  ep-admin <command> --help",
+		"",
+		"Quick start:",
+		"  ep-admin auth init",
+		"  ep-admin auth login",
+		"  ep-admin ops health-check",
+		"  ep-admin publish pipeline",
+		"",
+		`Docs: ${EP_ADMIN_DOCS_URL}`,
+	];
+	return lines.join("\n");
+};
+
+const isRootHelpRequest = (argv: ReadonlyArray<string>): boolean => {
+	const args = argv.slice(2);
+	if (args.length === 0) return true;
+
+	const hasHelpFlag = args.includes("--help") || args.includes("-h");
+	if (!hasHelpFlag) return false;
+
+	const hasPositional = args.some(
+		(token) => token.length > 0 && !token.startsWith("-")
+	);
+	return !hasPositional;
+};
+
 const normalizeArgsForSuggestion = (argv: ReadonlyArray<string>): string[] =>
 	argv.slice(2).filter((token) => token.length > 0 && !token.startsWith("-"));
 
@@ -278,6 +335,34 @@ const getPreAuthCommandMismatchMessage = (argv: ReadonlyArray<string>): string |
 	}
 
 	return null;
+};
+
+const getContextualHelpCommand = (argv: ReadonlyArray<string>): string => {
+	const args = normalizeArgsForSuggestion(argv);
+	const first = args[0];
+	if (first && ROOT_COMMANDS.includes(first as (typeof ROOT_COMMANDS)[number])) {
+		return `ep-admin ${first} --help`;
+	}
+	return "ep-admin --help";
+};
+
+const appendStandardErrorGuidance = (
+	message: string,
+	argv: ReadonlyArray<string>
+): string => {
+	const trimmed = message.trim();
+	const lines = trimmed.length > 0 ? [trimmed] : [];
+	const hasRunLine = /\bRun:\s*ep-admin\b/i.test(trimmed);
+	const hasDocsLine = /\bDocs:\s*https?:\/\//i.test(trimmed);
+
+	if (!hasRunLine) {
+		lines.push(`Run: ${getContextualHelpCommand(argv)}`);
+	}
+	if (!hasDocsLine) {
+		lines.push(`Docs: ${EP_ADMIN_DOCS_URL}`);
+	}
+
+	return lines.join("\n");
 };
 
 const isAuthExemptArgv = (argv: ReadonlyArray<string>): boolean => {
@@ -478,24 +563,26 @@ const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): strin
 		}
 	}
 
-	if (typeof resolvedError === "string") return resolvedError;
+	if (typeof resolvedError === "string") {
+		return appendStandardErrorGuidance(resolvedError, argv);
+	}
 
 	if (resolvedError instanceof Error) {
 		const combined = [resolvedError.message, resolvedError.stack].filter(Boolean).join("\n");
 		if (combined.includes("CommandMismatch")) {
 			const suggestion = getCommandSuggestion(argv);
-			return [
+			return appendStandardErrorGuidance(
 				suggestion ? suggestion : "Need command help? Run 'ep-admin --help'.",
-				`Docs: ${EP_ADMIN_DOCS_URL}`,
-			].join("\n");
+				argv
+			);
 		}
 
 		if (resolvedError.message.trim()) {
-			return `${resolvedError.message.trim()}\nDocs: ${EP_ADMIN_DOCS_URL}`;
+			return appendStandardErrorGuidance(resolvedError.message, argv);
 		}
 	}
 
-	return String(resolvedError);
+	return appendStandardErrorGuidance(String(resolvedError), argv);
 };
 
 export const createAdminProgram = (
@@ -506,6 +593,11 @@ export const runCli = (
 	argv: ReadonlyArray<string> = process.argv
 ): Effect.Effect<void, unknown, never> =>
 	Effect.gen(function* () {
+		if (isRootHelpRequest(argv)) {
+			yield* Console.log(renderCompactRootHelp());
+			return;
+		}
+
 		const prepared = normalizeLegacyArgs(argv);
 		for (const warning of prepared.warnings) {
 			yield* Console.error(`⚠ ${warning}`);
