@@ -165,7 +165,7 @@ const makeRequest = <T>(
           const body = await response.text();
           if (response.status === 401) {
             throw new Error(
-              "Pattern API unauthorized (401). Set PATTERN_API_KEY to a valid API key."
+              "Pattern API unauthorized (401). Set PATTERN_API_KEY, use --api-key-stdin, or configure EP_API_KEY_FILE."
             );
           }
           throw new Error(

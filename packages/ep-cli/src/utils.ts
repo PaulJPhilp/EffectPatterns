@@ -2,24 +2,12 @@
  * Utility functions shared across commands
  */
 
-import { ANSI_COLORS, LOG_LEVEL_COLORS, PATHS } from "./constants.js";
-
-/**
- * Get project root by looking for package.json with "effect-patterns-hub"
- */
-export const getProjectRoot = (): string => {
-  return PATHS.PROJECT_ROOT;
-};
+import { ANSI_COLORS } from "./constants.js";
 
 /**
  * ANSI color codes
  */
 export const colors = ANSI_COLORS;
-
-/**
- * Colors for different log levels
- */
-export const levelColors = LOG_LEVEL_COLORS;
 
 /**
  * Colorize text with ANSI codes.
