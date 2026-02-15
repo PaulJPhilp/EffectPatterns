@@ -11,6 +11,7 @@
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
+import { emitJson } from "./cli/output.js";
 import {
     MESSAGES,
 } from "./constants.js";
@@ -34,6 +35,26 @@ export const opsHealthCheckCommand = Command.make("health-check", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            if (options.json) {
+                const dbResult = yield* runQuickTest();
+                const hasOpenAI = !!process.env.OPENAI_API_KEY;
+                const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
+                const hasGoogle = !!process.env.GOOGLE_API_KEY;
+                yield* emitJson({
+                    ok: dbResult.connected,
+                    database: dbResult,
+                    environment: {
+                        node: process.version,
+                        platform: process.platform,
+                    },
+                    apiKeys: {
+                        openai: hasOpenAI,
+                        anthropic: hasAnthropic,
+                        google: hasGoogle,
+                    },
+                });
+                return;
+            }
             yield* Display.showInfo("Running system health check...");
 
             // Check database
@@ -84,6 +105,19 @@ export const opsRotateApiKeyCommand = Command.make("rotate-api-key", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            if (options.json) {
+                yield* emitJson({
+                    ok: true,
+                    action: "rotate-api-key",
+                    backup: options.backup,
+                    instructions: [
+                        "Generate new key from provider dashboard",
+                        "Update .env file with new key",
+                        "Restart services to pick up new key",
+                    ],
+                });
+                return;
+            }
             yield* Display.showInfo("API Key Rotation");
 
             yield* Display.showInfo(
@@ -120,6 +154,15 @@ export const opsUpgradeBaselineCommand = Command.make("upgrade-baseline", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            if (options.json) {
+                yield* emitJson({
+                    ok: true,
+                    action: "upgrade-baseline",
+                    confirm: options.confirm,
+                    command: "bun run vitest run --update",
+                });
+                return;
+            }
             yield* Display.showInfo("Upgrading test baselines...");
 
             yield* Display.showInfo(
@@ -136,7 +179,7 @@ export const opsUpgradeBaselineCommand = Command.make("upgrade-baseline", {
 /**
  * Compose all operations commands into a single command group
  */
-export const opsCommand = Command.make("ops").pipe(
+export const opsMaintenanceCommand = Command.make("maintenance").pipe(
     Command.withDescription("System operations and maintenance"),
     Command.withSubcommands([
         opsHealthCheckCommand,
@@ -144,3 +187,8 @@ export const opsCommand = Command.make("ops").pipe(
         opsUpgradeBaselineCommand,
     ])
 );
+
+/**
+ * Backward-compatible alias for previous nested command shape.
+ */
+export const opsCommand = opsMaintenanceCommand;

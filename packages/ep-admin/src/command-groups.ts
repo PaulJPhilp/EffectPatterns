@@ -32,7 +32,11 @@ import { installCommand, rulesCommand } from "./install-commands.js";
 import { lockCommand, unlockCommand } from "./lock-commands.js";
 import { mcpCommand } from "./mcp-commands.js";
 import { migrateCommand } from "./migrate-commands.js";
-import { opsCommand } from "./ops-commands.js";
+import {
+	opsHealthCheckCommand,
+	opsRotateApiKeyCommand,
+	opsUpgradeBaselineCommand,
+} from "./ops-commands.js";
 import { publishCommand } from "./publish-commands.js";
 import { qaCommand } from "./qa-commands.js";
 import { patternNewCommand, releaseCommand } from "./release-commands.js";
@@ -98,7 +102,12 @@ export const devGroup = Command.make("dev").pipe(
  */
 export const opsGroup = Command.make("ops").pipe(
 	Command.withDescription("Operations and infrastructure"),
-	Command.withSubcommands([opsCommand, mcpCommand]),
+	Command.withSubcommands([
+		opsHealthCheckCommand,
+		opsRotateApiKeyCommand,
+		opsUpgradeBaselineCommand,
+		mcpCommand,
+	]),
 );
 
 /**
