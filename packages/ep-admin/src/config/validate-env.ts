@@ -17,12 +17,10 @@ import { envSchema } from "./env.js";
  */
 export const validateEnvironment = Effect.gen(function* () {
   const processEnv = process.env;
-  const result = yield* (validate(envSchema as any, processEnv) as any).pipe(
-    Effect.catchAll((error: any) => {
-      console.error("\n❌ Environment Validation Failed:\n");
-      console.error(String(error));
-      process.exit(1);
-      return Effect.void;
-    })
+  yield* (validate(envSchema as any, processEnv) as any).pipe(
+    Effect.mapError(
+      (error: unknown) =>
+        new Error(`Environment validation failed.\n${String(error)}`)
+    )
   );
 });
