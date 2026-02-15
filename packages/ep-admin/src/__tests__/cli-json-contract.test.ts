@@ -29,6 +29,17 @@ const runCli = (args: readonly string[], env: NodeJS.ProcessEnv): CliRun => {
 	};
 };
 
+const expectJsonMachineContract = (result: CliRun) => {
+	if (result.status === 0) {
+		expect(result.stderr.trim()).toBe("");
+		expect(() => JSON.parse(result.stdout)).not.toThrow();
+		return;
+	}
+
+	expect(result.stdout.trim()).toBe("");
+	expect(result.stderr.trim().length).toBeGreaterThan(0);
+};
+
 const createAuthEnv = async () => {
 	const tempDir = await mkdtemp(path.join(tmpdir(), "ep-admin-cli-json-"));
 	const env: NodeJS.ProcessEnv = {

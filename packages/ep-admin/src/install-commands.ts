@@ -366,7 +366,7 @@ export const installListCommand = Command.make("list", {
 			yield* Console.log("═".repeat(60));
 			yield* Console.log(colorize("\n💡 Usage:\n", "BRIGHT"));
 			yield* Console.log(
-				colorize("  bun run ep install add --tool <name>\n", "CYAN")
+				colorize("  ep-admin config install add --tool <name>\n", "CYAN")
 			);
 		})
 	)
@@ -782,7 +782,7 @@ export const rulesGenerateCommand = Command.make("generate", {
 			);
 			yield* Console.log("Recommended alternatives:");
 			yield* Console.log(
-				colorize("  bun run ep install add --tool cursor\n", "CYAN")
+				colorize("  ep-admin config install add --tool cursor\n", "CYAN")
 			);
 		})
 	)

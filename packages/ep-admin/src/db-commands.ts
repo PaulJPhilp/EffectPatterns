@@ -100,6 +100,7 @@ export const dbTestCommand = Command.make("test", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.DATABASE_TESTS_PASSED);
+            yield* Display.showInfo("Next: ep-admin db show all");
         })
     )
 );
@@ -178,6 +179,7 @@ export const dbTestQuickCommand = Command.make("test-quick", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.QUICK_DB_TEST_PASSED);
+            yield* Display.showInfo("Next: ep-admin db verify-migration");
         })
     )
 );
@@ -231,6 +233,7 @@ export const dbVerifyMigrationCommand = Command.make("verify-migration", {
             }
 
             yield* Display.showSuccess(MESSAGES.SUCCESS.MIGRATION_VERIFIED);
+            yield* Display.showInfo("Next: ep-admin db status");
         })
     )
 );
@@ -322,10 +325,6 @@ export const dbStatusCommand = Command.make("status", {
                     }
                     return;
                 } catch {
-                    yield* emitJson({
-                        ok: false,
-                        error: "MCP server connection failed",
-                    });
                     return yield* Effect.fail(new Error("MCP server connection failed"));
                 }
             }
@@ -358,6 +357,7 @@ export const dbStatusCommand = Command.make("status", {
                             `Message: ${result.message}`
                         );
                     }
+                    yield* Display.showInfo("Next: ep-admin db migrate-remote");
                 } else {
                     yield* Display.showError("✗ Database connection failed");
                     if (result.error) {
@@ -421,10 +421,6 @@ export const dbMigrateRemoteCommand = Command.make("migrate-remote", {
                     }
                     return;
                 } catch {
-                    yield* emitJson({
-                        ok: false,
-                        error: "MCP server connection failed",
-                    });
                     return yield* Effect.fail(new Error("MCP server connection failed"));
                 }
             }
@@ -464,6 +460,7 @@ export const dbMigrateRemoteCommand = Command.make("migrate-remote", {
                             `Tables created: ${result.tablesCreated}`
                         );
                     }
+                    yield* Display.showInfo("Next: ep-admin db show all");
                 } else {
                     yield* Display.showError("✗ Migration failed");
                     if (result.error) {

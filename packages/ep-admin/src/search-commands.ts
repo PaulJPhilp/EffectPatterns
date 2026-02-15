@@ -93,6 +93,7 @@ export const searchCommand = Command.make("search", {
 						yield* Console.log(
 							`❌ No patterns found matching "${args.query}"\n`
 						);
+						yield* Console.log("💡 Next: ep-admin pattern search <different-query>\n");
 					} else {
 						if (options.json) {
 							yield* emitJson({
@@ -110,7 +111,7 @@ export const searchCommand = Command.make("search", {
 								`  • ${pattern.title} (${pattern.slug})`
 							);
 						}
-						yield* Console.log("");
+						yield* Console.log("\n💡 Next: ep-admin pattern new\n");
 					}
 				})
 			).pipe(
