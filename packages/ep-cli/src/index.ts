@@ -27,6 +27,9 @@ import { LoggerLive, parseLogLevel } from "./services/logger/index.js";
 import { PatternApi } from "./services/pattern-api/index.js";
 import { Skills } from "./services/skills/index.js";
 
+const EP_CLI_DOCS_URL =
+  "https://github.com/PaulJPhilp/Effect-Patterns/tree/main/packages/ep-cli#readme";
+
 /**
  * Resolve logger configuration from environment variables (synchronous version).
  *
@@ -155,13 +158,14 @@ const extractErrorMessage = (error: unknown): string | null => {
     const combined = [error.message, error.stack].filter(Boolean).join("\n");
 
     if (combined.includes("CommandMismatch")) {
-      return null;
+      return `Need command help? Run 'ep --help'.\nDocs: ${EP_CLI_DOCS_URL}`;
     }
 
     if (combined.includes("Unable to connect. Is the computer able to access the url?")) {
       return [
         "Unable to reach the Effect Patterns API.",
         "Check network connectivity and EFFECT_PATTERNS_API_URL, then retry.",
+        `Docs: ${EP_CLI_DOCS_URL}`,
       ].join("\n");
     }
 
@@ -169,15 +173,32 @@ const extractErrorMessage = (error: unknown): string | null => {
       return [
         "Pattern API request was unauthorized (401).",
         "Set PATTERN_API_KEY to a valid API key and retry.",
+        `Docs: ${EP_CLI_DOCS_URL}`,
       ].join("\n");
     }
 
-    if (combined.includes("DisabledFeatureError") || combined.includes("ValidationFailedError")) {
+    if (combined.includes("SkillsDirectoryNotFoundError")) {
+      return [
+        "Skills directory was not found for this workspace.",
+        "Run this command from a workspace containing .claude-plugin/plugins/effect-patterns/skills, or use pattern commands instead.",
+        `Docs: ${EP_CLI_DOCS_URL}`,
+      ].join("\n");
+    }
+
+    if (
+      combined.includes("DisabledFeatureError") ||
+      combined.includes("ValidationFailedError") ||
+      combined.includes("UnsupportedToolError")
+    ) {
+      return null;
+    }
+
+    if (error.message.trim() === "An error has occurred") {
       return null;
     }
 
     if (error.message.trim()) {
-      return error.message.trim();
+      return `${error.message.trim()}\nDocs: ${EP_CLI_DOCS_URL}`;
     }
   }
 
