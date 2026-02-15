@@ -172,30 +172,129 @@ const LEGACY_COMMAND_MAPPINGS: ReadonlyArray<{
 	{ from: "mcp", to: ["ops", "mcp"] },
 ];
 
-const ROOT_COMMANDS = [
-	"auth",
-	"publish",
-	"pattern",
-	"data",
-	"db",
-	"dev",
-	"ops",
-	"config",
-	"system",
-	"release",
-] as const;
+interface CommandTreeNode {
+	readonly [segment: string]: CommandTreeNode | null;
+}
 
-const NESTED_COMMANDS: Record<string, readonly string[]> = {
-	auth: ["init", "login", "logout", "status"],
-	publish: ["validate", "test", "run", "generate", "lint", "pipeline"],
-	pattern: ["search", "new", "skills"],
-	data: ["ingest", "discord", "qa"],
-	db: ["show", "test", "test-quick", "verify-migration", "mock", "status", "migrate-remote", "migrate"],
-	dev: ["test-utils", "autofix"],
-	ops: ["health-check", "rotate-api-key", "upgrade-baseline", "mcp"],
-	config: ["install", "rules", "utils", "entities"],
-	system: ["completions"],
-	release: ["preview", "create"],
+const COMMAND_TREE: CommandTreeNode = {
+	auth: {
+		init: null,
+		login: null,
+		logout: null,
+		status: null,
+	},
+	publish: {
+		validate: null,
+		test: null,
+		run: null,
+		generate: null,
+		lint: null,
+		pipeline: null,
+	},
+	pattern: {
+		search: null,
+		new: null,
+		skills: {
+			generate: null,
+			"generate-from-db": null,
+			"skill-generator": null,
+			"generate-readme": null,
+		},
+	},
+	data: {
+		ingest: {
+			process: null,
+			"process-one": null,
+			validate: null,
+			test: null,
+			populate: null,
+			status: null,
+			pipeline: null,
+		},
+		discord: {
+			ingest: null,
+			test: null,
+			flatten: null,
+		},
+		qa: {
+			validate: null,
+			process: null,
+			status: null,
+			report: null,
+			repair: null,
+			"test-enhanced": null,
+			"test-single": null,
+			"fix-permissions": null,
+		},
+	},
+	db: {
+		show: {
+			all: null,
+			patterns: null,
+			skills: null,
+		},
+		test: null,
+		"test-quick": null,
+		"verify-migration": null,
+		mock: null,
+		status: null,
+		"migrate-remote": null,
+		migrate: {
+			state: null,
+			postgres: null,
+		},
+	},
+	dev: {
+		"test-utils": {
+			"chat-app": null,
+			harness: null,
+			"harness-cli": null,
+			llm: null,
+			models: null,
+			patterns: null,
+			supermemory: null,
+		},
+		autofix: {
+			prepublish: null,
+		},
+	},
+	ops: {
+		"health-check": null,
+		"rotate-api-key": null,
+		"upgrade-baseline": null,
+		mcp: {
+			"list-rules": null,
+			"list-fixes": null,
+		},
+	},
+	config: {
+		install: {
+			add: null,
+			list: null,
+			skills: null,
+		},
+		rules: {
+			generate: null,
+		},
+		utils: {
+			"add-seqid": null,
+			"renumber-seqid": null,
+		},
+		entities: {
+			lock: null,
+			unlock: null,
+		},
+	},
+	system: {
+		completions: {
+			generate: null,
+			install: null,
+		},
+	},
+	release: {
+		preview: null,
+		create: null,
+	},
 };
 
 const ROOT_HELP_COMMANDS: ReadonlyArray<{
@@ -297,58 +396,84 @@ const findClosest = (input: string, candidates: readonly string[]): string | nul
 	return bestDistance <= Math.max(2, Math.floor(input.length / 2)) ? best : null;
 };
 
-const getCommandSuggestion = (argv: ReadonlyArray<string>): string | null => {
-	const args = normalizeArgsForSuggestion(argv);
-	const first = args[0];
-	if (!first) return null;
+type CommandMismatch = {
+	readonly message: string;
+	readonly scopePath: ReadonlyArray<string>;
+};
 
-	if (!ROOT_COMMANDS.includes(first as (typeof ROOT_COMMANDS)[number])) {
-		const suggested = findClosest(first, ROOT_COMMANDS);
-		return suggested ? `Did you mean: ep-admin ${suggested}` : null;
+const resolveMatchedScope = (tokens: ReadonlyArray<string>): string[] => {
+	let currentNode: CommandTreeNode | null = COMMAND_TREE;
+	const matched: string[] = [];
+
+	for (const token of tokens) {
+		if (currentNode === null) {
+			break;
+		}
+		if (!(token in currentNode)) {
+			break;
+		}
+
+		matched.push(token);
+		currentNode = currentNode[token] ?? null;
 	}
 
-	const nested = NESTED_COMMANDS[first];
-	const second = args[1];
-	if (!nested || !second) return null;
+	return matched;
+};
 
-	if (!nested.includes(second)) {
-		const suggested = findClosest(second, nested);
-		return suggested ? `Did you mean: ep-admin ${first} ${suggested}` : null;
+const detectCommandMismatch = (argv: ReadonlyArray<string>): CommandMismatch | null => {
+	const args = normalizeArgsForSuggestion(argv);
+	if (args.length === 0) {
+		return null;
+	}
+
+	let currentNode: CommandTreeNode | null = COMMAND_TREE;
+	const matchedPath: string[] = [];
+
+	for (const token of args) {
+		if (currentNode === null) {
+			// Leaf command reached; remaining positional tokens are command args.
+			return null;
+		}
+
+			const candidates: string[] = Object.keys(
+				currentNode as Record<string, CommandTreeNode | null>
+			);
+		if (!candidates.includes(token)) {
+			const suggestion = findClosest(token, candidates);
+			const suggestedPath = suggestion
+				? `Did you mean: ep-admin ${[...matchedPath, suggestion].join(" ")}`
+				: "Need command help? Run 'ep-admin --help'.";
+			return {
+				message: suggestedPath,
+				scopePath: matchedPath,
+			};
+		}
+
+		matchedPath.push(token);
+		currentNode = currentNode[token] ?? null;
 	}
 
 	return null;
 };
 
-const getPreAuthCommandMismatchMessage = (argv: ReadonlyArray<string>): string | null => {
-	const args = normalizeArgsForSuggestion(argv);
-	const first = args[0];
-	if (!first) return null;
+const getContextualHelpCommand = (
+	argv: ReadonlyArray<string>,
+	scopeOverride?: ReadonlyArray<string>
+): string => {
+	const scope =
+		scopeOverride !== undefined
+			? [...scopeOverride]
+			: resolveMatchedScope(normalizeArgsForSuggestion(argv));
 
-	if (!ROOT_COMMANDS.includes(first as (typeof ROOT_COMMANDS)[number])) {
-		return getCommandSuggestion(argv) ?? "Need command help? Run 'ep-admin --help'.";
-	}
-
-	const nested = NESTED_COMMANDS[first];
-	const second = args[1];
-	if (nested && second && !nested.includes(second)) {
-		return getCommandSuggestion(argv) ?? "Need command help? Run 'ep-admin --help'.";
-	}
-
-	return null;
-};
-
-const getContextualHelpCommand = (argv: ReadonlyArray<string>): string => {
-	const args = normalizeArgsForSuggestion(argv);
-	const first = args[0];
-	if (first && ROOT_COMMANDS.includes(first as (typeof ROOT_COMMANDS)[number])) {
-		return `ep-admin ${first} --help`;
-	}
-	return "ep-admin --help";
+	return scope.length > 0
+		? `ep-admin ${scope.join(" ")} --help`
+		: "ep-admin --help";
 };
 
 const appendStandardErrorGuidance = (
 	message: string,
-	argv: ReadonlyArray<string>
+	argv: ReadonlyArray<string>,
+	scopeOverride?: ReadonlyArray<string>
 ): string => {
 	const trimmed = message.trim();
 	const lines = trimmed.length > 0 ? [trimmed] : [];
@@ -356,7 +481,7 @@ const appendStandardErrorGuidance = (
 	const hasDocsLine = /\bDocs:\s*https?:\/\//i.test(trimmed);
 
 	if (!hasRunLine) {
-		lines.push(`Run: ${getContextualHelpCommand(argv)}`);
+		lines.push(`Run: ${getContextualHelpCommand(argv, scopeOverride)}`);
 	}
 	if (!hasDocsLine) {
 		lines.push(`Docs: ${EP_ADMIN_DOCS_URL}`);
@@ -488,6 +613,36 @@ const unwrapFiberFailure = (error: unknown): unknown => {
 	return error;
 };
 
+const normalizeUnknownErrorMessage = (error: unknown): string => {
+	if (typeof error === "string") {
+		return error;
+	}
+
+	if (error instanceof Error) {
+		return error.message.trim() ? error.message : error.name;
+	}
+
+	if (typeof error === "object" && error !== null) {
+		const maybeMessage = (error as { readonly message?: unknown }).message;
+		if (typeof maybeMessage === "string" && maybeMessage.trim().length > 0) {
+			return maybeMessage;
+		}
+
+		try {
+			const serialized = JSON.stringify(error);
+			if (serialized && serialized !== "{}") {
+				return serialized;
+			}
+		} catch {
+			// Fall through to generic message.
+		}
+
+		return "Command failed.";
+	}
+
+	return String(error);
+};
+
 const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): string | null => {
 	const resolvedError = unwrapFiberFailure(error);
 
@@ -563,26 +718,22 @@ const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): strin
 		}
 	}
 
+	const mismatch = detectCommandMismatch(argv);
+	if (mismatch) {
+		return appendStandardErrorGuidance(mismatch.message, argv, mismatch.scopePath);
+	}
+
 	if (typeof resolvedError === "string") {
 		return appendStandardErrorGuidance(resolvedError, argv);
 	}
 
 	if (resolvedError instanceof Error) {
-		const combined = [resolvedError.message, resolvedError.stack].filter(Boolean).join("\n");
-		if (combined.includes("CommandMismatch")) {
-			const suggestion = getCommandSuggestion(argv);
-			return appendStandardErrorGuidance(
-				suggestion ? suggestion : "Need command help? Run 'ep-admin --help'.",
-				argv
-			);
-		}
-
 		if (resolvedError.message.trim()) {
 			return appendStandardErrorGuidance(resolvedError.message, argv);
 		}
 	}
 
-	return appendStandardErrorGuidance(String(resolvedError), argv);
+	return appendStandardErrorGuidance(normalizeUnknownErrorMessage(resolvedError), argv);
 };
 
 export const createAdminProgram = (
@@ -603,15 +754,15 @@ export const runCli = (
 			yield* Console.error(`⚠ ${warning}`);
 		}
 
+		const mismatch = detectCommandMismatch(prepared.argv);
+		if (mismatch) {
+			return yield* Effect.fail(new Error(mismatch.message));
+		}
+
 		// Validate env before runtime operations.
 		yield* validateEnvironment;
 
 		if (!isAuthExemptArgv(prepared.argv)) {
-			const commandMismatchMessage = getPreAuthCommandMismatchMessage(prepared.argv);
-			if (commandMismatchMessage) {
-				return yield* Effect.fail(new Error(commandMismatchMessage));
-			}
-
 			const auth = yield* Auth;
 			yield* auth.ensureAuthorized(process.env.EP_ADMIN_SERVICE_TOKEN);
 		}

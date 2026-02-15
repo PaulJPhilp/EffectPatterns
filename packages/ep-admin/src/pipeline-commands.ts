@@ -268,7 +268,7 @@ export const resumeCommand: any = Command.make("resume", {
             }
           }
 
-          yield* Console.log("\nRun 'ep-admin pipeline' to continue.\n");
+          yield* Console.log("\nRun 'ep-admin publish pipeline' to continue.\n");
         }) as any,
     ),
   )

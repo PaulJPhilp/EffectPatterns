@@ -137,7 +137,7 @@ export const releasePreviewCommand = Command.make("preview", {
 			yield* Console.log(
 				colorize("\n💡 To create this release, run:", "DIM")
 			);
-			yield* Console.log(colorize("   bun run ep release create\n", "CYAN"));
+			yield* Console.log(colorize("   ep-admin release create\n", "CYAN"));
 		})
 	)
 );

@@ -66,6 +66,25 @@ describe.sequential("CLI auth and DX contract", () => {
 		}
 	});
 
+	it("shows nested typo suggestions before auth gating with scoped help", async () => {
+		const { tempDir, env } = await createAuthEnv();
+		try {
+			const nestedTypo = runCli(["db", "shwo", "all"], env);
+			expect(nestedTypo.status).toBe(1);
+			expect(nestedTypo.stderr).toContain("Did you mean: ep-admin db show");
+			expect(nestedTypo.stderr).toContain("Run: ep-admin db --help");
+			expect(nestedTypo.stderr).not.toContain("Run: ep-admin auth init");
+
+			const deepTypo = runCli(["ops", "mcp", "list-rulez"], env);
+			expect(deepTypo.status).toBe(1);
+			expect(deepTypo.stderr).toContain("Did you mean: ep-admin ops mcp list-rules");
+			expect(deepTypo.stderr).toContain("Run: ep-admin ops mcp --help");
+			expect(deepTypo.stderr).not.toContain("Run: ep-admin auth init");
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
   it("keeps --help and --version available without login", async () => {
     const { tempDir, env } = await createAuthEnv();
     try {
@@ -171,6 +190,60 @@ describe.sequential("CLI auth and DX contract", () => {
     }
   });
 
+	it("keeps deep typo handling consistent for session and service-token paths", async () => {
+		const { tempDir, env } = await createAuthEnv();
+		try {
+			const init = runCli(
+				[
+					"auth",
+					"init",
+					"--passphrase",
+					"correct-horse-battery",
+					"--confirm-passphrase",
+					"correct-horse-battery",
+					"--service-token",
+					"automation-token-123456",
+					"--json",
+				],
+				env
+			);
+			expect(init.status).toBe(0);
+
+			const login = runCli(
+				[
+					"auth",
+					"login",
+					"--passphrase",
+					"correct-horse-battery",
+					"--json",
+				],
+				env
+			);
+			expect(login.status).toBe(0);
+
+			const withSession = runCli(["ops", "mcp", "list-rulez"], env);
+			expect(withSession.status).toBe(1);
+			expect(withSession.stderr).toContain(
+				"Did you mean: ep-admin ops mcp list-rules"
+			);
+			expect(withSession.stderr).toContain("Run: ep-admin ops mcp --help");
+			expect(withSession.stderr).not.toContain("[object Object]");
+
+			const withTokenBypass = runCli(["ops", "mcp", "list-rulez"], {
+				...env,
+				EP_ADMIN_SERVICE_TOKEN: "automation-token-123456",
+			});
+			expect(withTokenBypass.status).toBe(1);
+			expect(withTokenBypass.stderr).toContain(
+				"Did you mean: ep-admin ops mcp list-rules"
+			);
+			expect(withTokenBypass.stderr).toContain("Run: ep-admin ops mcp --help");
+			expect(withTokenBypass.stderr).not.toContain("[object Object]");
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
   it("supports ops help and legacy alias warning, plus typo suggestion", async () => {
     const { tempDir, env } = await createAuthEnv();
     try {
@@ -208,4 +281,40 @@ describe.sequential("CLI auth and DX contract", () => {
       await rm(tempDir, { recursive: true, force: true });
     }
   });
+
+	it("uses canonical ep-admin release guidance text", async () => {
+		const { tempDir, env } = await createAuthEnv();
+		try {
+			const init = runCli(
+				[
+					"auth",
+					"init",
+					"--passphrase",
+					"correct-horse-battery",
+					"--confirm-passphrase",
+					"correct-horse-battery",
+					"--service-token",
+					"automation-token-123456",
+					"--json",
+				],
+				env
+			);
+			expect(init.status).toBe(0);
+
+			const preview = runCli(["release", "preview"], {
+				...env,
+				EP_ADMIN_SERVICE_TOKEN: "automation-token-123456",
+			});
+			const combinedOutput = `${preview.stdout}\n${preview.stderr}`;
+			expect(combinedOutput).not.toContain("bun run ep release create");
+			if (combinedOutput.includes("To create this release, run:")) {
+				expect(combinedOutput).toContain("ep-admin release create");
+			}
+			if (combinedOutput.includes("No git tags found in this repository.")) {
+				expect(combinedOutput).toContain("ep-admin release create");
+			}
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
 });
