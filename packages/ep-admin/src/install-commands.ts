@@ -155,22 +155,16 @@ export const installAddCommand = Command.make("add", {
 					];
 
 					if (!supportedTools.includes(tool)) {
-						if (options.json) {
-							yield* emitJson({
-								ok: false,
-								error: `Unsupported tool: ${tool}`,
-								supportedTools,
-							});
-							return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
-						}
-						yield* Console.error(
-							colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, "RED")
-						);
-						yield* Console.error(
-							colorize("Currently supported tools:\n", "BRIGHT")
-						);
-						for (const t of supportedTools) {
-							yield* Console.error(`  • ${t}`);
+						if (!options.json) {
+							yield* Console.error(
+								colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, "RED")
+							);
+							yield* Console.error(
+								colorize("Currently supported tools:\n", "BRIGHT")
+							);
+							for (const t of supportedTools) {
+								yield* Console.error(`  • ${t}`);
+							}
 						}
 						return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
 					}
@@ -244,20 +238,14 @@ export const installAddCommand = Command.make("add", {
 					}
 
 					if (rules.length === 0) {
-						if (options.json) {
-							yield* emitJson({
-								ok: false,
-								error: "No rules match the specified filters",
-								ruleCount: 0,
-							});
-							return yield* Effect.fail(
-								new Error("No rules match the specified filters")
+						if (!options.json) {
+							yield* Console.log(
+								colorize("⚠️  No rules match the specified filters\n", "YELLOW")
 							);
 						}
-						yield* Console.log(
-							colorize("⚠️  No rules match the specified filters\n", "YELLOW")
+						return yield* Effect.fail(
+							new Error("No rules match the specified filters")
 						);
-						return;
 					}
 
 					const toolFileMap: Record<string, string> = {
@@ -282,20 +270,14 @@ export const installAddCommand = Command.make("add", {
 					}
 
 					const count = yield* injectRulesIntoFile(targetFile, rules).pipe(
-						Effect.catchAll((error) =>
-							Effect.gen(function* () {
-								if (options.json) {
-									yield* emitJson({
-										ok: false,
-										error: "Failed to inject rules",
-										details: String(error),
-									});
-								} else {
-									yield* Console.log(
-										colorize("❌ Failed to inject rules\n", "RED")
-									);
-									yield* Console.log(`Error: ${error}\n`);
-								}
+							Effect.catchAll((error) =>
+								Effect.gen(function* () {
+									if (!options.json) {
+										yield* Console.log(
+											colorize("❌ Failed to inject rules\n", "RED")
+										);
+										yield* Console.log(`Error: ${error}\n`);
+									}
 								return yield* Effect.fail(
 									new Error("Failed to inject rules")
 								);
@@ -428,32 +410,26 @@ export const installSkillsCommand = Command.make("skills", {
 
 			const formatLower = formatOption.toLowerCase();
 
-			if (formatLower === "both") {
-				generateClaude = true;
-				generateGemini = true;
-				generateOpenAI = true;
-			} else {
+				if (formatLower === "both") {
+					generateClaude = true;
+					generateGemini = true;
+					generateOpenAI = true;
+				} else {
 				const formats = formatLower.split(",").map((f) => f.trim());
 
-				for (const fmt of formats) {
-					if (!validOptions.includes(fmt)) {
-						if (options.json) {
-							yield* emitJson({
-								ok: false,
-								error: `Invalid format: ${fmt}`,
-								validOptions,
-							});
+					for (const fmt of formats) {
+						if (!validOptions.includes(fmt)) {
+							if (!options.json) {
+								yield* Console.error(
+									colorize(
+										`\n❌ Invalid format: ${fmt}\nValid options: ` +
+										`${validOptions.join(", ")}\n`,
+										"RED"
+									)
+								);
+							}
 							return yield* Effect.fail(new Error("Invalid format option"));
 						}
-						yield* Console.error(
-							colorize(
-								`\n❌ Invalid format: ${fmt}\nValid options: ` +
-								`${validOptions.join(", ")}\n`,
-								"RED"
-							)
-						);
-						return yield* Effect.fail(new Error("Invalid format option"));
-					}
 
 					if (fmt === "claude") generateClaude = true;
 					if (fmt === "gemini") generateGemini = true;
@@ -461,16 +437,11 @@ export const installSkillsCommand = Command.make("skills", {
 				}
 			}
 
-				if (!generateClaude && !generateGemini && !generateOpenAI) {
-					if (options.json) {
-						yield* emitJson({
-							ok: false,
-							error: "No format option",
-						});
-					} else {
-						yield* Console.error(
-							colorize(
-								`\n❌ No formats specified. Valid options: ` +
+					if (!generateClaude && !generateGemini && !generateOpenAI) {
+						if (!options.json) {
+							yield* Console.error(
+								colorize(
+									`\n❌ No formats specified. Valid options: ` +
 								`${validOptions.join(", ")}\n`,
 								"RED"
 							)
@@ -532,31 +503,25 @@ export const installSkillsCommand = Command.make("skills", {
 				let geminiCount = 0;
 				let openaiCount = 0;
 
-				if (options.category._tag === "Some") {
+					if (options.category._tag === "Some") {
 					const category = options.category.value
 						.toLowerCase()
 						.replace(/\s+/g, "-");
 					const categoryPatterns = categoryMap.get(category);
 
-					if (!categoryPatterns) {
-						if (options.json) {
-							yield* emitJson({
-								ok: false,
-								error: `Category not found: ${category}`,
-								availableCategories: Array.from(categoryMap.keys()).sort(),
-							});
+						if (!categoryPatterns) {
+							if (!options.json) {
+								yield* Console.error(
+									colorize(`\n❌ Category not found: ${category}\n`, "RED")
+								);
+								yield* Console.log(colorize("Available categories:\n", "BRIGHT"));
+								const sortedCategories = Array.from(categoryMap.keys()).sort();
+								for (const cat of sortedCategories) {
+									yield* Console.log(`  • ${cat}`);
+								}
+							}
 							return yield* Effect.fail(new Error("Category not found"));
 						}
-						yield* Console.error(
-							colorize(`\n❌ Category not found: ${category}\n`, "RED")
-						);
-						yield* Console.log(colorize("Available categories:\n", "BRIGHT"));
-						const sortedCategories = Array.from(categoryMap.keys()).sort();
-						for (const cat of sortedCategories) {
-							yield* Console.log(`  • ${cat}`);
-						}
-						return yield* Effect.fail(new Error("Category not found"));
-					}
 
 					if (generateClaude) {
 						const skillName = `effect-patterns-${category}`;
@@ -648,7 +613,7 @@ export const installSkillsCommand = Command.make("skills", {
 					);
 
 					if (writeResult !== null) {
-						yield* Console.log(
+						yield* log(
 							colorize(
 								`  ✓ ${skillName} (${categoryPatterns.length} patterns)`,
 								"GREEN"
@@ -679,7 +644,7 @@ export const installSkillsCommand = Command.make("skills", {
 					);
 
 					if (writeResult !== null) {
-						yield* Console.log(
+						yield* log(
 							colorize(
 								`  ✓ ${geminiSkill.skillId} (${categoryPatterns.length} ` +
 								`patterns)`,
@@ -712,7 +677,7 @@ export const installSkillsCommand = Command.make("skills", {
 					);
 
 					if (writeResult !== null) {
-						yield* Console.log(
+						yield* log(
 							colorize(
 								`  ✓ ${skillName} (${categoryPatterns.length} patterns)`,
 								"GREEN"
