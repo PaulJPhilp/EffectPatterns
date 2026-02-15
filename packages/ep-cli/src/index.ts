@@ -43,22 +43,74 @@ import { Skills } from "./services/skills/index.js";
  *
  * @returns Logger configuration object with logLevel
  */
-const resolveLoggerConfig = () => {
+const mapCliLogLevel = (value: string): "debug" | "info" | "warn" | "error" | "silent" | undefined => {
+  const normalized = value.trim().toLowerCase();
+  switch (normalized) {
+    case "all":
+    case "trace":
+    case "debug":
+      return "debug";
+    case "info":
+      return "info";
+    case "warning":
+      return "warn";
+    case "error":
+    case "fatal":
+      return "error";
+    case "none":
+      return "silent";
+    default:
+      return undefined;
+  }
+};
+
+const getCliLogLevel = (argv: ReadonlyArray<string>): "debug" | "info" | "warn" | "error" | "silent" | undefined => {
+  for (let i = 0; i < argv.length; i++) {
+    const current = argv[i];
+    if (!current) continue;
+
+    if (current.startsWith("--log-level=")) {
+      return mapCliLogLevel(current.slice("--log-level=".length));
+    }
+
+    if (current === "--log-level") {
+      const next = argv[i + 1];
+      if (next) {
+        return mapCliLogLevel(next);
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const shouldUseColors = () => {
+  if (process.env.NO_COLOR) return false;
+  if (process.env.CI) return false;
+  if (process.env.TERM === "dumb") return false;
+  return Boolean(process.stdout.isTTY);
+};
+
+const resolveLoggerConfig = (argv: ReadonlyArray<string> = process.argv) => {
   const logLevelEnv = process.env.LOG_LEVEL;
   const debugEnv = process.env.DEBUG;
   const verboseEnv = process.env.VERBOSE;
+  const logLevelCli = getCliLogLevel(argv);
 
-  // Priority: explicit LOG_LEVEL > DEBUG > VERBOSE > default
+  // Priority: CLI --log-level > explicit LOG_LEVEL > DEBUG > VERBOSE > default
   const logLevel =
+    logLevelCli ||
     (logLevelEnv && parseLogLevel(logLevelEnv)) ||
     (debugEnv && "debug") ||
     (verboseEnv && "debug") ||
     "info";
 
-  return { logLevel, verbose: logLevel === "debug" };
+  return {
+    logLevel,
+    verbose: logLevel === "debug",
+    useColors: shouldUseColors(),
+  };
 };
-
-const globalConfig = resolveLoggerConfig();
 
 /**
  * Unified Root Command
@@ -82,22 +134,27 @@ export const rootCommand = Command.make("ep").pipe(
 /**
  * Core runtime layer (Standard CLI)
  */
-const BaseLayer = Layer.mergeAll(
-  NodeContext.layer,
-  LoggerLive(globalConfig),
-  LiveTUILoader
-);
+const createRuntimeLayer = (argv: ReadonlyArray<string> = process.argv) => {
+  const loggerConfig = resolveLoggerConfig(argv);
+  const baseLayer = Layer.mergeAll(
+    NodeContext.layer,
+    LoggerLive(loggerConfig),
+    LiveTUILoader
+  );
 
-const ServiceLayer = Layer.mergeAll(
-  PatternApi.Default,
-  Skills.Default,
-  Display.Default,
-  Layer.provide(Install.Default, PatternApi.Default)
-).pipe(
-  Layer.provide(BaseLayer)
-);
+  const serviceLayer = Layer.mergeAll(
+    PatternApi.Default,
+    Skills.Default,
+    Display.Default,
+    Layer.provide(Install.Default, PatternApi.Default)
+  ).pipe(
+    Layer.provide(baseLayer)
+  );
 
-export const runtimeLayer = Layer.merge(BaseLayer, ServiceLayer);
+  return Layer.merge(baseLayer, serviceLayer);
+};
+
+export const runtimeLayer = createRuntimeLayer(process.argv);
 
 /**
  * Runtime layer with TUI support
@@ -105,12 +162,13 @@ export const runtimeLayer = Layer.merge(BaseLayer, ServiceLayer);
 export const runtimeLayerWithTUI = Effect.gen(function* () {
   const tuiLoader = yield* TUILoader;
   const tui = yield* tuiLoader.load();
+  const layer = createRuntimeLayer(process.argv);
 
   if (tui?.runtimeLayer) {
-    return runtimeLayer.pipe(Layer.provide(tui.runtimeLayer as Layer.Layer<never>));
+    return layer.pipe(Layer.provide(tui.runtimeLayer as Layer.Layer<never>));
   }
 
-  return runtimeLayer;
+  return layer;
 });
 
 const cliRunner = Command.run(rootCommand, {
@@ -124,7 +182,7 @@ export const createProgram = (argv: ReadonlyArray<string> = process.argv) =>
 export const runCli = (argv: ReadonlyArray<string> = process.argv): Effect.Effect<void, unknown, never> =>
   Effect.scoped(
     createProgram(argv).pipe(
-      Effect.provide(runtimeLayer)
+      Effect.provide(createRuntimeLayer(argv))
     )
   ) as Effect.Effect<void, unknown, never>;
 
@@ -173,6 +231,10 @@ const extractErrorMessage = (error: unknown): string | null => {
     }
 
     if (combined.includes("DisabledFeatureError") || combined.includes("ValidationFailedError")) {
+      return null;
+    }
+
+    if (error.message.trim() === "An error has occurred") {
       return null;
     }
 

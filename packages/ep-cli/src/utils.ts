@@ -27,5 +27,8 @@ export const levelColors = LOG_LEVEL_COLORS;
  */
 export function colorize(text: string, color: keyof typeof ANSI_COLORS): string {
   if (process.env.NO_COLOR) return text;
+  if (process.env.CI) return text;
+  if (process.env.TERM === "dumb") return text;
+  if (!process.stdout.isTTY) return text;
   return `${ANSI_COLORS[color]}${text}${ANSI_COLORS.RESET}`;
 }
