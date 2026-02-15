@@ -12,6 +12,7 @@
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
+import { emitJson } from "./cli/output.js";
 import {
     MESSAGES,
 } from "./constants.js";
@@ -65,6 +66,17 @@ export const dbTestCommand = Command.make("test", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            if (options.json) {
+                const summary = yield* runFullTestSuite();
+                yield* emitJson({
+                    ok: summary.failed === 0,
+                    summary,
+                });
+                if (summary.failed > 0) {
+                    return yield* Effect.fail(new Error("Database tests failed"));
+                }
+                return;
+            }
             yield* Display.showInfo("Running database tests...");
 
             const summary = yield* runFullTestSuite();
@@ -106,6 +118,17 @@ export const dbTestQuickCommand = Command.make("test-quick", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            if (options.json) {
+                const result = yield* runQuickTest();
+                yield* emitJson({
+                    ok: result.connected && result.searchWorks && result.repositoriesWork,
+                    result,
+                });
+                if (!result.connected) {
+                    return yield* Effect.fail(new Error("Database connection failed"));
+                }
+                return;
+            }
             yield* Display.showInfo("Running quick database test...\n");
 
             const result = yield* runQuickTest();
@@ -177,6 +200,17 @@ export const dbVerifyMigrationCommand = Command.make("verify-migration", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            if (options.json) {
+                const result = yield* verifySchema();
+                yield* emitJson({
+                    ok: result.valid,
+                    result,
+                });
+                if (!result.valid) {
+                    return yield* Effect.fail(new Error("Schema verification failed"));
+                }
+                return;
+            }
             yield* Display.showInfo("Verifying database schema...");
 
             const result = yield* verifySchema();
@@ -219,6 +253,19 @@ export const dbMockCommand = Command.make("mock", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            if (options.json) {
+                yield* emitJson({
+                    ok: true,
+                    action: "mock",
+                    seed: options.seed,
+                    instructions: [
+                        "docker-compose up -d postgres",
+                        "bun run db:push",
+                        "bun run db:seed",
+                    ],
+                });
+                return;
+            }
             yield* Display.showInfo("Creating mock database...");
 
             // Note: Mock database creation typically requires docker-compose
@@ -253,6 +300,35 @@ export const dbStatusCommand = Command.make("status", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            if (options.json) {
+                try {
+                    const response = yield* Effect.tryPromise({
+                        try: () => fetch("http://localhost:3000/api/db-check"),
+                        catch: () => new Error("Failed to fetch")
+                    });
+                    const result = yield* Effect.tryPromise({
+                        try: () => response.json(),
+                        catch: () => new Error("Failed to parse JSON")
+                    });
+                    if (!isMcpDbCheckResponse(result)) {
+                        return yield* Effect.fail(new Error("Invalid MCP response shape"));
+                    }
+                    yield* emitJson({
+                        ok: result.success,
+                        result,
+                    });
+                    if (!result.success) {
+                        return yield* Effect.fail(new Error("MCP db-check failed"));
+                    }
+                    return;
+                } catch {
+                    yield* emitJson({
+                        ok: false,
+                        error: "MCP server connection failed",
+                    });
+                    return yield* Effect.fail(new Error("MCP server connection failed"));
+                }
+            }
             yield* Display.showInfo("Checking database status via MCP server...");
 
             try {
@@ -321,6 +397,37 @@ export const dbMigrateRemoteCommand = Command.make("migrate-remote", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
+            if (options.json) {
+                try {
+                    const response = yield* Effect.tryPromise({
+                        try: () => fetch("http://localhost:3000/api/migrate", {
+                            method: "POST"
+                        }),
+                        catch: () => new Error("Failed to fetch")
+                    });
+                    const result = yield* Effect.tryPromise({
+                        try: () => response.json(),
+                        catch: () => new Error("Failed to parse JSON")
+                    });
+                    if (!isMcpMigrateResponse(result)) {
+                        return yield* Effect.fail(new Error("Invalid MCP response shape"));
+                    }
+                    yield* emitJson({
+                        ok: result.success,
+                        result,
+                    });
+                    if (!result.success) {
+                        return yield* Effect.fail(new Error("MCP migrate failed"));
+                    }
+                    return;
+                } catch {
+                    yield* emitJson({
+                        ok: false,
+                        error: "MCP server connection failed",
+                    });
+                    return yield* Effect.fail(new Error("MCP server connection failed"));
+                }
+            }
             yield* Display.showInfo("Running migration via MCP server...");
 
             try {

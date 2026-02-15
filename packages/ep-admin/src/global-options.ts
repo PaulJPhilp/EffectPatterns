@@ -7,24 +7,7 @@
 
 import { Options } from "@effect/cli";
 import { OUTPUT_FORMATS, type OutputFormat } from "./constants.js";
-import { LOG_LEVEL_VALUES, type LogLevel } from "./services/logger/index.js";
-
-// =============================================================================
-// Log Level Option
-// =============================================================================
-
-/**
- * --log-level option for controlling output verbosity
- *
- * Values: debug, info, warn, error, silent
- * Default: info
- */
-export const logLevelOption = Options.choice("log-level", LOG_LEVEL_VALUES).pipe(
-    Options.withDescription(
-        "Set the log level for output verbosity (debug, info, warn, error, silent)"
-    ),
-    Options.withDefault("info" as LogLevel)
-);
+import { type LogLevel } from "./services/logger/index.js";
 
 // =============================================================================
 // Color Control Option
@@ -117,7 +100,6 @@ export const debugOption = Options.boolean("debug").pipe(
  * Combined global options type
  */
 export interface GlobalOptions {
-    readonly logLevel: LogLevel;
     readonly noColor: boolean;
     readonly json: boolean;
     readonly verbose: boolean;
@@ -139,7 +121,6 @@ export interface GlobalOptions {
  * ```
  */
 export const globalOptions = {
-    logLevel: logLevelOption,
     noColor: noColorOption,
     json: jsonOutputOption,
     verbose: verboseOption,
@@ -151,15 +132,76 @@ export const globalOptions = {
 // Helper Functions
 // =============================================================================
 
+const mapCliLogLevel = (
+    value: string
+): "debug" | "info" | "warn" | "error" | "silent" | undefined => {
+    const normalized = value.trim().toLowerCase();
+    switch (normalized) {
+        case "all":
+        case "trace":
+        case "debug":
+            return "debug";
+        case "info":
+            return "info";
+        case "warning":
+            return "warn";
+        case "error":
+        case "fatal":
+            return "error";
+        case "none":
+            return "silent";
+        default:
+            return undefined;
+    }
+};
+
+const getGlobalCliLogLevel = (
+    argv: ReadonlyArray<string> = process.argv
+): "debug" | "info" | "warn" | "error" | "silent" | undefined => {
+    for (let i = 0; i < argv.length; i++) {
+        const current = argv[i];
+        if (!current) continue;
+
+        if (current.startsWith("--log-level=")) {
+            return mapCliLogLevel(current.slice("--log-level=".length));
+        }
+        if (current === "--log-level") {
+            const next = argv[i + 1];
+            if (next) return mapCliLogLevel(next);
+        }
+    }
+
+    return undefined;
+};
+
 /**
  * Resolve effective log level from options
  *
- * Priority: debug > quiet > logLevel
+ * Priority: debug > quiet > CLI --log-level > LOG_LEVEL env > default
  */
 export const resolveLogLevel = (options: Partial<GlobalOptions>): LogLevel => {
     if (options.debug) return "debug";
     if (options.quiet) return "error";
-    return options.logLevel ?? "info";
+    const cliLevel = getGlobalCliLogLevel(process.argv);
+    if (cliLevel) return cliLevel;
+    const envLevel = process.env.LOG_LEVEL?.trim().toLowerCase();
+    switch (envLevel) {
+        case "debug":
+            return "debug";
+        case "info":
+            return "info";
+        case "warn":
+        case "warning":
+            return "warn";
+        case "error":
+        case "fatal":
+            return "error";
+        case "silent":
+        case "none":
+            return "silent";
+        default:
+            return "info";
+    }
 };
 
 /**

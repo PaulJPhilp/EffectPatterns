@@ -15,6 +15,8 @@ import { Command, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
 import { Console, Effect, Option } from "effect";
 import * as path from "node:path";
+import { emitJson } from "./cli/output.js";
+import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
 import {
 	generateCategorySkill,
@@ -106,6 +108,7 @@ const injectRulesIntoFile = (filePath: string, rules: readonly Rule[]) =>
  */
 export const installAddCommand = Command.make("add", {
 	options: {
+		...globalOptions,
 		tool: Options.text("tool").pipe(
 			Options.withDescription(
 				"The AI tool to add rules for (cursor, agents, etc.)"
@@ -133,6 +136,7 @@ export const installAddCommand = Command.make("add", {
 		({ options }) =>
 			Effect.scoped(
 				Effect.gen(function* () {
+					yield* configureLoggerFromOptions(options);
 					const tool = options.tool;
 					const skillLevelFilter = options.skillLevel;
 					const useCaseFilter = options.useCase;
@@ -151,6 +155,14 @@ export const installAddCommand = Command.make("add", {
 					];
 
 					if (!supportedTools.includes(tool)) {
+						if (options.json) {
+							yield* emitJson({
+								ok: false,
+								error: `Unsupported tool: ${tool}`,
+								supportedTools,
+							});
+							return yield* Effect.fail(new Error(`Unsupported tool: ${tool}`));
+						}
 						yield* Console.error(
 							colorize(`\n❌ Error: Tool "${tool}" is not supported\n`, "RED")
 						);
@@ -192,21 +204,25 @@ export const installAddCommand = Command.make("add", {
 						content: p.content ?? p.summary,
 					}));
 
-					yield* Console.log(
-						`✓ Loaded ${allRules.length} rules from database`
-					);
+					if (!options.json) {
+						yield* Console.log(
+							`✓ Loaded ${allRules.length} rules from database`
+						);
+					}
 
 					let rules = allRules;
 
 					if (Option.isSome(skillLevelFilter)) {
 						const level = skillLevelFilter.value;
-						yield* Console.log(
-							colorize(
-								`📊 Filtered to ${rules.length} rules with skill level: ` +
-								`${level}\n`,
-								"CYAN"
-							)
-						);
+						if (!options.json) {
+							yield* Console.log(
+								colorize(
+									`📊 Filtered to ${rules.length} rules with skill level: ` +
+									`${level}\n`,
+									"CYAN"
+								)
+							);
+						}
 					}
 
 					if (Option.isSome(useCaseFilter)) {
@@ -216,16 +232,28 @@ export const installAddCommand = Command.make("add", {
 								(uc) => uc.toLowerCase() === useCase.toLowerCase()
 							)
 						);
-						yield* Console.log(
-							colorize(
-								`📊 Filtered to ${rules.length} rules with use case: ` +
-								`${useCase}\n`,
-								"CYAN"
-							)
-						);
+						if (!options.json) {
+							yield* Console.log(
+								colorize(
+									`📊 Filtered to ${rules.length} rules with use case: ` +
+									`${useCase}\n`,
+									"CYAN"
+								)
+							);
+						}
 					}
 
 					if (rules.length === 0) {
+						if (options.json) {
+							yield* emitJson({
+								ok: false,
+								error: "No rules match the specified filters",
+								ruleCount: 0,
+							});
+							return yield* Effect.fail(
+								new Error("No rules match the specified filters")
+							);
+						}
 						yield* Console.log(
 							colorize("⚠️  No rules match the specified filters\n", "YELLOW")
 						);
@@ -247,23 +275,43 @@ export const installAddCommand = Command.make("add", {
 
 					const targetFile = toolFileMap[tool] || ".cursor/rules.md";
 
-					yield* Console.log(
-						colorize(`📝 Injecting rules into ${targetFile}...\n`, "CYAN")
-					);
+					if (!options.json) {
+						yield* Console.log(
+							colorize(`📝 Injecting rules into ${targetFile}...\n`, "CYAN")
+						);
+					}
 
 					const count = yield* injectRulesIntoFile(targetFile, rules).pipe(
 						Effect.catchAll((error) =>
 							Effect.gen(function* () {
-								yield* Console.log(
-									colorize("❌ Failed to inject rules\n", "RED")
-								);
-								yield* Console.log(`Error: ${error}\n`);
+								if (options.json) {
+									yield* emitJson({
+										ok: false,
+										error: "Failed to inject rules",
+										details: String(error),
+									});
+								} else {
+									yield* Console.log(
+										colorize("❌ Failed to inject rules\n", "RED")
+									);
+									yield* Console.log(`Error: ${error}\n`);
+								}
 								return yield* Effect.fail(
 									new Error("Failed to inject rules")
 								);
 							})
 						)
 					);
+
+					if (options.json) {
+						yield* emitJson({
+							ok: true,
+							tool,
+							targetFile,
+							ruleCount: count,
+						});
+						return;
+					}
 
 					yield* Display.showPanel(
 						`Successfully added ${count} rules to ${targetFile}
@@ -287,18 +335,17 @@ Your AI tool configuration has been updated with Effect patterns!`,
  * install:list - List all supported AI tools
  */
 export const installListCommand = Command.make("list", {
-	options: {},
+	options: {
+		...globalOptions,
+	},
 	args: {},
 }).pipe(
 	Command.withDescription(
 		"List all supported AI tools and their configuration file paths."
 	),
-	Command.withHandler(() =>
+	Command.withHandler(({ options }) =>
 		Effect.gen(function* () {
-			yield* Console.log(colorize("\n📋 Supported AI Tools\n", "BRIGHT"));
-			yield* Console.log("═".repeat(60));
-			yield* Console.log("");
-
+			yield* configureLoggerFromOptions(options);
 			const tools = [
 				{ name: "cursor", desc: "Cursor IDE", file: ".cursor/rules.md" },
 				{ name: "agents", desc: "AGENTS.md standard", file: "AGENTS.md" },
@@ -315,6 +362,15 @@ export const installListCommand = Command.make("list", {
 				{ name: "trae", desc: "Trae IDE", file: ".trae/rules.md" },
 				{ name: "goose", desc: "Goose AI", file: ".goosehints" },
 			];
+
+			if (options.json) {
+				yield* emitJson({ tools });
+				return;
+			}
+
+			yield* Console.log(colorize("\n📋 Supported AI Tools\n", "BRIGHT"));
+			yield* Console.log("═".repeat(60));
+			yield* Console.log("");
 
 			for (const tool of tools) {
 				yield* Console.log(
@@ -339,6 +395,7 @@ export const installListCommand = Command.make("list", {
  */
 export const installSkillsCommand = Command.make("skills", {
 	options: {
+		...globalOptions,
 		category: Options.text("category").pipe(
 			Options.withDescription("Generate skill for specific category only"),
 			Options.optional
@@ -358,6 +415,7 @@ export const installSkillsCommand = Command.make("skills", {
 	Command.withHandler(({ options }) => {
 		return Effect.scoped(
 			Effect.gen(function* () {
+			yield* configureLoggerFromOptions(options);
 			const formatOption: string = options.format;
 			const validOptions = ["claude", "gemini", "openai", "both"];
 
@@ -376,6 +434,14 @@ export const installSkillsCommand = Command.make("skills", {
 
 				for (const fmt of formats) {
 					if (!validOptions.includes(fmt)) {
+						if (options.json) {
+							yield* emitJson({
+								ok: false,
+								error: `Invalid format: ${fmt}`,
+								validOptions,
+							});
+							return yield* Effect.fail(new Error("Invalid format option"));
+						}
 						yield* Console.error(
 							colorize(
 								`\n❌ Invalid format: ${fmt}\nValid options: ` +
@@ -393,6 +459,12 @@ export const installSkillsCommand = Command.make("skills", {
 			}
 
 			if (!generateClaude && !generateGemini && !generateOpenAI) {
+				if (options.json) {
+					yield* emitJson({
+						ok: false,
+						error: "No format option",
+					});
+				}
 				yield* Console.error(
 					colorize(
 						`\n❌ No formats specified. Valid options: ` +
@@ -403,25 +475,31 @@ export const installSkillsCommand = Command.make("skills", {
 				return yield* Effect.fail(new Error("No format option"));
 			}
 
-			yield* Console.log(
-				colorize("\n🎓 Generating Skills from Effect Patterns\n", "BRIGHT")
-			);
+				if (!options.json) {
+					yield* Console.log(
+						colorize("\n🎓 Generating Skills from Effect Patterns\n", "BRIGHT")
+					);
+				}
 
 			const epRepo = yield* EffectPatternRepositoryService;
 			const apRepo = yield* ApplicationPatternRepositoryService;
 
-			yield* Console.log(
-				colorize("📖 Loading patterns from database...", "CYAN")
-			);
+				if (!options.json) {
+					yield* Console.log(
+						colorize("📖 Loading patterns from database...", "CYAN")
+					);
+				}
 			const dbPatterns = yield* Effect.tryPromise({
 				try: () => epRepo.findAll(),
 				catch: (error) =>
 					new Error(`Failed to load patterns from database: ${error}`),
 			});
 
-			yield* Console.log(
-				colorize(`✓ Found ${dbPatterns.length} patterns\n`, "GREEN")
-			);
+				if (!options.json) {
+					yield* Console.log(
+						colorize(`✓ Found ${dbPatterns.length} patterns\n`, "GREEN")
+					);
+				}
 
 			const applicationPatterns = yield* Effect.tryPromise({
 				try: () => apRepo.findAll(),
@@ -445,32 +523,50 @@ export const installSkillsCommand = Command.make("skills", {
 				}
 			}
 
-			yield* Console.log(
-				colorize(
-					`✓ Processed ${patterns.length} patterns with application ` +
-					`patterns\n`,
-					"GREEN"
-				)
-			);
+				const categoryMap = groupPatternsByCategory(patterns);
 
-			yield* Console.log(
-				colorize("🗂️  Grouping patterns by category...", "CYAN")
-			);
-			const categoryMap = groupPatternsByCategory(patterns);
-			yield* Console.log(
-				colorize(`✓ Found ${categoryMap.size} categories\n`, "GREEN")
-			);
+				if (options.json) {
+					yield* emitJson({
+						ok: true,
+						totalPatterns: patterns.length,
+						format: formatOption,
+						categoryCount: categoryMap.size,
+					});
+					return;
+				}
+
+				yield* Console.log(
+					colorize(
+						`✓ Processed ${patterns.length} patterns with application ` +
+						`patterns\n`,
+						"GREEN"
+					)
+				);
+				yield* Console.log(
+					colorize("🗂️  Grouping patterns by category...", "CYAN")
+				);
+				yield* Console.log(
+					colorize(`✓ Found ${categoryMap.size} categories\n`, "GREEN")
+				);
 
 			if (options.category._tag === "Some") {
-				const category = options.category.value
-					.toLowerCase()
-					.replace(/\s+/g, "-");
-				const categoryPatterns = categoryMap.get(category);
+					const category = options.category.value
+						.toLowerCase()
+						.replace(/\s+/g, "-");
+					const categoryPatterns = categoryMap.get(category);
 
-				if (!categoryPatterns) {
-					yield* Console.error(
-						colorize(`\n❌ Category not found: ${category}\n`, "RED")
-					);
+					if (!categoryPatterns) {
+						if (options.json) {
+							yield* emitJson({
+								ok: false,
+								error: `Category not found: ${category}`,
+								availableCategories: Array.from(categoryMap.keys()).sort(),
+							});
+							return yield* Effect.fail(new Error("Category not found"));
+						}
+						yield* Console.error(
+							colorize(`\n❌ Category not found: ${category}\n`, "RED")
+						);
 					yield* Console.log(colorize("Available categories:\n", "BRIGHT"));
 					const sortedCategories = Array.from(categoryMap.keys()).sort();
 					for (const cat of sortedCategories) {

@@ -12,10 +12,10 @@
 
 import {
     ApplicationPatternRepositoryService,
+    DatabaseService,
     DatabaseLayer,
     EffectPatternRepositoryLive,
     EffectPatternRepositoryService,
-    SkillRepositoryService,
     type SkillLockedError,
     createApplicationPatternRepository,
     createEffectPatternRepository,
@@ -24,6 +24,7 @@ import {
 import { Command, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
 import { Console, Effect, Option } from "effect";
+import { emitJson } from "./cli/output.js";
 import {
     MESSAGES,
 } from "./constants.js";
@@ -246,19 +247,22 @@ export const skillsGenerateFromDbCommand = Command.make("generate-from-db", {
             Effect.gen(function* () {
                 yield* configureLoggerFromOptions(options);
 
-                if (options.dryRun) {
+                if (options.dryRun && !options.json) {
                     yield* Display.showInfo(MESSAGES.INFO.DRY_RUN_MODE);
                 }
 
-                yield* Display.showInfo("Generating skills from database patterns...");
+                if (!options.json) {
+                    yield* Display.showInfo("Generating skills from database patterns...");
+                }
 
-                yield* Effect.scoped(
+                const counts = yield* Effect.scoped(
                     Effect.gen(function* () {
                         const appPatternRepo = yield* ApplicationPatternRepositoryService;
                         const patternRepo = yield* EffectPatternRepositoryService;
-                        const skillRepo = yield* SkillRepositoryService;
+                        const dbService = yield* DatabaseService;
+                        const skillRepo = createSkillRepository(dbService.db);
 
-                        yield* generateSkillsFromDatabase(
+                        return yield* generateSkillsFromDatabase(
                             { appPatternRepo, patternRepo, skillRepo },
                             {
                                 dryRun: options.dryRun,
@@ -267,14 +271,17 @@ export const skillsGenerateFromDbCommand = Command.make("generate-from-db", {
                             }
                         );
                     })
-                ).pipe(
-                    Effect.provide(DatabaseLayer),
-                    Effect.catchAll((error) =>
-                        Display.showError(
-                            `Database error: ${error instanceof Error ? error.message : String(error)}`
-                        )
-                    )
-                );
+                ).pipe(Effect.provide(DatabaseLayer));
+
+                if (options.json) {
+                    yield* emitJson({
+                        ok: counts !== undefined,
+                        dryRun: options.dryRun,
+                        writeFiles: options.writeFiles,
+                        counts,
+                    });
+                    return;
+                }
 
                 yield* Display.showSuccess(MESSAGES.SUCCESS.SKILLS_GENERATED_FROM_DB);
             })
@@ -305,13 +312,17 @@ export const skillsGenerateCommand = Command.make("generate", {
         Command.withHandler(({ options }) =>
             Effect.gen(function* () {
                 yield* configureLoggerFromOptions(options);
-                yield* Display.showInfo("Generating skills from database...");
+                if (!options.json) {
+                    yield* Display.showInfo("Generating skills from database...");
+                }
 
-                yield* Effect.scoped(
+                const summary = yield* Effect.scoped(
                     Effect.gen(function* () {
                         const repo = yield* EffectPatternRepositoryService;
                         const patterns = yield* Effect.promise(() => repo.findAll());
-                        yield* Display.showInfo(`Found ${patterns.length} patterns`);
+                        if (!options.json) {
+                            yield* Display.showInfo(`Found ${patterns.length} patterns`);
+                        }
 
                         // Group by skill level
                         const byLevel = {
@@ -332,15 +343,31 @@ export const skillsGenerateCommand = Command.make("generate", {
                         yield* fs.makeDirectory("content/published/skills", { recursive: true });
                         yield* fs.writeFileString(options.output, JSON.stringify(skills, null, 2));
 
-                        yield* Display.showInfo(`\nSkills by level:`)
-                        yield* Display.showInfo(`  Beginner: ${byLevel.beginner.length}`);
-                        yield* Display.showInfo(`  Intermediate: ${byLevel.intermediate.length}`);
-                        yield* Display.showInfo(`  Advanced: ${byLevel.advanced.length}`);
-                        yield* Display.showInfo(`\nOutput: ${options.output}`);
+                        if (!options.json) {
+                            yield* Display.showInfo(`\nSkills by level:`);
+                            yield* Display.showInfo(`  Beginner: ${byLevel.beginner.length}`);
+                            yield* Display.showInfo(`  Intermediate: ${byLevel.intermediate.length}`);
+                            yield* Display.showInfo(`  Advanced: ${byLevel.advanced.length}`);
+                            yield* Display.showInfo(`\nOutput: ${options.output}`);
+                        }
+
+                        return {
+                            total: patterns.length,
+                            byLevel: {
+                                beginner: byLevel.beginner.length,
+                                intermediate: byLevel.intermediate.length,
+                                advanced: byLevel.advanced.length,
+                            },
+                            output: options.output,
+                            format: options.format,
+                        };
                     })
-                ).pipe(
-                    Effect.provide(EffectPatternRepositoryLive),
-                );
+                ).pipe(Effect.provide(EffectPatternRepositoryLive));
+
+                if (options.json) {
+                    yield* emitJson({ ok: true, summary });
+                    return;
+                }
 
                 yield* Display.showSuccess(MESSAGES.SUCCESS.SKILLS_GENERATED);
             })
@@ -362,6 +389,16 @@ export const skillsSkillGeneratorCommand = Command.make("skill-generator", {
         Command.withHandler(({ options }) =>
             Effect.gen(function* () {
                 yield* configureLoggerFromOptions(options);
+                if (options.json) {
+                    yield* emitJson({
+                        ok: true,
+                        command: "skill-generator",
+                        message:
+                            "Use `ep-admin pattern skills generate` or `ep-admin pattern skills generate-readme`.",
+                    });
+                    return;
+                }
+
                 yield* Display.showInfo("Interactive Skill Generator");
 
                 yield* Display.showInfo(
@@ -401,9 +438,11 @@ export const skillsGenerateReadmeCommand = Command.make("generate-readme", {
         Command.withHandler(({ options }) =>
             Effect.gen(function* () {
                 yield* configureLoggerFromOptions(options);
-                yield* Display.showInfo("Generating README by skill level...");
+                if (!options.json) {
+                    yield* Display.showInfo("Generating README by skill level...");
+                }
 
-                yield* Effect.scoped(
+                const result = yield* Effect.scoped(
                     Effect.gen(function* () {
                         const repo = yield* EffectPatternRepositoryService;
                         let patterns = yield* Effect.promise(() => repo.findAll());
@@ -414,7 +453,9 @@ export const skillsGenerateReadmeCommand = Command.make("generate-readme", {
                              patterns = patterns.filter(
                                  p => p.skillLevel.toLowerCase() === skillLevelFilter.toLowerCase()
                              );
-                             yield* Display.showInfo(`Filtered to ${skillLevelFilter}: ${patterns.length} patterns`);
+                             if (!options.json) {
+                                 yield* Display.showInfo(`Filtered to ${skillLevelFilter}: ${patterns.length} patterns`);
+                             }
                          }
 
                         // Generate README content
@@ -444,12 +485,24 @@ export const skillsGenerateReadmeCommand = Command.make("generate-readme", {
                         yield* fs.makeDirectory("content/published/skills", { recursive: true });
                         yield* fs.writeFileString(output, sections.join("\n"));
 
-                        yield* Display.showInfo(`\nGenerated README with ${patterns.length} patterns`);
-                        yield* Display.showInfo(`Output: ${output}`);
+                        if (!options.json) {
+                            yield* Display.showInfo(`\nGenerated README with ${patterns.length} patterns`);
+                            yield* Display.showInfo(`Output: ${output}`);
+                        }
+
+                        return {
+                            output,
+                            patternCount: patterns.length,
+                            skillLevel: Option.getOrUndefined(options.skillLevel),
+                            useCase: Option.getOrUndefined(options.useCase),
+                        };
                     })
-                ).pipe(
-                    Effect.provide(EffectPatternRepositoryLive),
-                );
+                ).pipe(Effect.provide(EffectPatternRepositoryLive));
+
+                if (options.json) {
+                    yield* emitJson({ ok: true, result });
+                    return;
+                }
 
                 yield* Display.showSuccess(MESSAGES.SUCCESS.README_GENERATED);
             })

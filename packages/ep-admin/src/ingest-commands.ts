@@ -15,6 +15,7 @@
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
+import { emitJson } from "./cli/output.js";
 import {
     CONTENT_DIRS,
     MESSAGES,
@@ -63,11 +64,20 @@ export const ingestProcessCommand = Command.make("process", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo("Processing raw MDX files...");
-
             const config = getIngestConfig();
             const results = yield* processAllPatterns(config);
             const summary = summarizeProcessResults(results);
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: summary.failed === 0,
+                    summary,
+                    results,
+                });
+                return;
+            }
+
+            yield* Display.showInfo("Processing raw MDX files...");
 
             yield* Display.showInfo(
                 `Processed ${summary.processed}/${summary.total} patterns`
@@ -106,10 +116,21 @@ export const ingestProcessOneCommand = Command.make("process-one", {
     Command.withHandler(({ positional, options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo(`Processing ${positional.patternFile}...`);
-
             const config = getIngestConfig();
             const result = yield* processPattern(positional.patternFile, config);
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: result.success,
+                    result,
+                });
+                if (!result.success) {
+                    return yield* Effect.fail(new Error(result.error));
+                }
+                return;
+            }
+
+            yield* Display.showInfo(`Processing ${positional.patternFile}...`);
 
             if (!result.success) {
                 yield* Display.showError(
@@ -143,14 +164,27 @@ export const ingestValidateCommand = Command.make("validate", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo("Validating ingested patterns...");
-
             const config = getIngestConfig();
             const patterns = yield* discoverPatterns(config);
             const results = yield* validatePatterns(patterns, config);
 
             const valid = results.filter((r) => r.valid).length;
             const invalid = results.filter((r) => !r.valid).length;
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: invalid === 0,
+                    summary: {
+                        total: results.length,
+                        valid,
+                        invalid,
+                    },
+                    results,
+                });
+                return;
+            }
+
+            yield* Display.showInfo("Validating ingested patterns...");
 
             yield* Display.showInfo(
                 `Validated ${results.length} patterns: ${valid} valid, ${invalid} invalid`
@@ -190,8 +224,6 @@ export const ingestTestCommand = Command.make("test", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo("Testing ingested patterns...");
-
             const config = getIngestConfig();
             const patterns = yield* discoverPatterns(config);
             const validated = yield* validatePatterns(patterns, config);
@@ -199,6 +231,24 @@ export const ingestTestCommand = Command.make("test", {
 
             const passed = tested.filter((r) => r.testPassed).length;
             const failed = tested.filter((r) => r.valid && !r.testPassed).length;
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: failed === 0,
+                    summary: {
+                        total: tested.length,
+                        passed,
+                        failed,
+                    },
+                    results: tested,
+                });
+                if (failed > 0) {
+                    return yield* Effect.fail(new Error("Some tests failed"));
+                }
+                return;
+            }
+
+            yield* Display.showInfo("Testing ingested patterns...");
 
             yield* Display.showInfo(
                 `Tested ${tested.length} patterns: ${passed} passed, ${failed} failed`
@@ -234,11 +284,19 @@ export const ingestPopulateCommand = Command.make("populate", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo("Populating test expectations...");
-
             // Run the ingest pipeline to get current state
             const config = getIngestConfig();
             const report = yield* runIngestPipeline(config);
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: true,
+                    report,
+                });
+                return;
+            }
+
+            yield* Display.showInfo("Populating test expectations...");
 
             yield* Display.showInfo(
                 `Populated expectations for ${report.totalPatterns} patterns`
@@ -263,8 +321,6 @@ export const ingestStatusCommand = Command.make("status", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo("Checking ingest status...");
-
             const config = getIngestConfig();
             const patterns = yield* discoverPatterns(config);
             const results = yield* validatePatterns(patterns, config);
@@ -272,6 +328,21 @@ export const ingestStatusCommand = Command.make("status", {
             const valid = results.filter((r) => r.valid).length;
             const invalid = results.filter((r) => !r.valid).length;
             const withTs = patterns.filter((p) => p.hasTypeScript).length;
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: true,
+                    summary: {
+                        totalPatterns: patterns.length,
+                        withTypeScript: withTs,
+                        valid,
+                        invalid,
+                    },
+                });
+                return;
+            }
+
+            yield* Display.showInfo("Checking ingest status...");
 
             yield* Display.showInfo(`\nIngest Status:`);
             yield* Display.showInfo(`  Total patterns: ${patterns.length}`);
@@ -306,10 +377,21 @@ export const ingestPipelineCommand = Command.make("pipeline", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo("Running full ingest pipeline...");
-
             const config = getIngestConfig();
             const report = yield* runIngestPipeline(config);
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: report.failed === 0,
+                    report,
+                });
+                if (report.failed > 0) {
+                    return yield* Effect.fail(new Error("Ingest pipeline failed"));
+                }
+                return;
+            }
+
+            yield* Display.showInfo("Running full ingest pipeline...");
 
             yield* Display.showInfo(`\nIngest Pipeline Results:`);
             yield* Display.showInfo(`  Total: ${report.totalPatterns}`);
