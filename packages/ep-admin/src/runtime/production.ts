@@ -15,6 +15,7 @@ import { FetchHttpClient } from "@effect/platform";
 import { layer as NodeFileSystemLayer } from "@effect/platform-node/NodeFileSystem";
 import { Effect, Layer, ManagedRuntime } from "effect";
 import { envLayer } from "../config/env.js";
+import { Auth } from "../services/auth/index.js";
 import { DefaultAutofixService } from "../services/autofix/index.js";
 import { Display } from "../services/display/index.js";
 import { Execution } from "../services/execution/index.js";
@@ -44,6 +45,7 @@ const AutofixLayer = Layer.provide(
 export const ProductionLayer = Layer.mergeAll(
         envLayer,  // Environment configuration (must be early)
         NodeFileSystemLayer,
+        Auth.Default,
         Logger.Default,
         Layer.provide(Display.Default, Logger.Default),
         TUIService.Default,

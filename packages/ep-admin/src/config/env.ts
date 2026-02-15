@@ -29,8 +29,9 @@ const envSchema = S.Struct({
   DISCORD_TOKEN: S.optional(S.String),
 
   // Display configuration (optional)
-  NO_COLOR: S.optional(S.BooleanFromString),
-  CI: S.optional(S.BooleanFromString),
+  // Accept common shell conventions like 1/0 as well as true/false.
+  NO_COLOR: S.optional(S.String),
+  CI: S.optional(S.String),
   TERM: S.optional(S.String),
 
   // Logging configuration (optional)
@@ -75,4 +76,3 @@ export { envSchema };
  * Export EnvService type for use in generators
  */
     export type { EnvService };
-
