@@ -126,7 +126,7 @@ export const searchCommand = Command.make("search", {
 									"is set correctly.\n"
 							);
 						}
-						return Effect.fail(error);
+						return yield* Effect.fail(error);
 					})
 				)
 			)

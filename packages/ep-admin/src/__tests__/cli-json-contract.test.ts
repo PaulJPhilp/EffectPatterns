@@ -118,6 +118,33 @@ describe.sequential("CLI JSON machine contract", () => {
 			expect(ingestFailure.stdout.trim()).toBe("");
 			expect(ingestFailure.stderr.trim().length).toBeGreaterThan(0);
 			expect(ingestFailure.stderr).toContain("Run: ep-admin data --help");
+
+			const invalidToolFailure = runCli(
+				["config", "install", "add", "--tool", "badtool", "--json"],
+				automationEnv
+			);
+			expect(invalidToolFailure.status).toBe(1);
+			expect(invalidToolFailure.stdout.trim()).toBe("");
+			expect(invalidToolFailure.stderr).toContain("Unsupported tool");
+
+			const invalidFormatFailure = runCli(
+				["config", "install", "skills", "--format", "invalid", "--json"],
+				automationEnv
+			);
+			expect(invalidFormatFailure.status).toBe(1);
+			expect(invalidFormatFailure.stdout.trim()).toBe("");
+			expect(invalidFormatFailure.stderr).toContain("Invalid format option");
+
+			const searchFailure = runCli(
+				["pattern", "search", "foo", "--json"],
+				{
+					...automationEnv,
+					DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:1/effect_patterns",
+				}
+			);
+			expect(searchFailure.status).toBe(1);
+			expect(searchFailure.stdout.trim()).toBe("");
+			expect(searchFailure.stderr.trim().length).toBeGreaterThan(0);
 		} finally {
 			await rm(tempDir, { recursive: true, force: true });
 		}
