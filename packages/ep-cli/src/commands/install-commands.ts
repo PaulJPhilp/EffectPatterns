@@ -260,8 +260,6 @@ export const installCommand = Command.make("install").pipe(
   Command.withDescription("Install Effect patterns rules into AI tool configurations"),
   Command.withSubcommands([
     installAddCommand,
-    installListCommand,
-    installRemoveCommand,
-    installDiffCommand
+    installListCommand
   ])
 );
