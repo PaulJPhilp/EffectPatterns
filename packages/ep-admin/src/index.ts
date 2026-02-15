@@ -9,6 +9,7 @@
 import { Args, Command } from "@effect/cli";
 import { Effect } from "effect";
 import { Console } from "effect";
+import { spawnSync } from "node:child_process";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { authCommand } from "./auth-commands.js";
@@ -147,6 +148,7 @@ const adminCliRunner = Command.run(adminRootCommand, {
 
 const EP_ADMIN_DOCS_URL =
 	"https://github.com/PaulJPhilp/EffectPatterns/tree/main/EP-ADMIN-CLI-README.md";
+const HELP_RENDER_BYPASS_ENV = "EP_ADMIN_HELP_RENDER_BYPASS";
 
 type PreparedArgv = {
 	readonly argv: ReadonlyArray<string>;
@@ -356,6 +358,26 @@ const isRootHelpRequest = (argv: ReadonlyArray<string>): boolean => {
 
 const normalizeArgsForSuggestion = (argv: ReadonlyArray<string>): string[] =>
 	argv.slice(2).filter((token) => token.length > 0 && !token.startsWith("-"));
+
+const isNestedHelpRequest = (argv: ReadonlyArray<string>): boolean => {
+	const args = argv.slice(2);
+	const hasHelpFlag = args.includes("--help") || args.includes("-h");
+	if (!hasHelpFlag) return false;
+	return normalizeArgsForSuggestion(argv).length > 0;
+};
+
+const rewriteHelpUsageWithFullPath = (
+	helpOutput: string,
+	argv: ReadonlyArray<string>
+): string => {
+	const pathTokens = normalizeArgsForSuggestion(argv);
+	if (pathTokens.length === 0) {
+		return helpOutput;
+	}
+
+	const fullPath = `ep-admin ${pathTokens.join(" ")}`;
+	return helpOutput.replace(/^\$ \S+/m, `$ ${fullPath}`);
+};
 
 const levenshtein = (a: string, b: string): number => {
 	const dp: number[][] = Array.from({ length: a.length + 1 }, () =>
@@ -757,6 +779,54 @@ export const runCli = (
 		const mismatch = detectCommandMismatch(prepared.argv);
 		if (mismatch) {
 			return yield* Effect.fail(new Error(mismatch.message));
+		}
+
+		if (
+			isNestedHelpRequest(prepared.argv) &&
+			process.env[HELP_RENDER_BYPASS_ENV] !== "1"
+		) {
+			const [runtime, ...childArgs] = prepared.argv;
+			const helpOutput = yield* Effect.try({
+				try: () =>
+					spawnSync(runtime ?? "bun", childArgs, {
+						encoding: "utf8",
+						env: {
+							...process.env,
+							[HELP_RENDER_BYPASS_ENV]: "1",
+						},
+					}),
+				catch: (error) =>
+					new Error(
+						`Failed to render contextual help: ${
+							error instanceof Error ? error.message : String(error)
+						}`
+					),
+			});
+
+			const rewrittenStdout = rewriteHelpUsageWithFullPath(
+				helpOutput.stdout ?? "",
+				prepared.argv
+			);
+
+			yield* Effect.sync(() => {
+				if (rewrittenStdout.length > 0) {
+					process.stdout.write(rewrittenStdout);
+				}
+				if ((helpOutput.stderr ?? "").length > 0) {
+					process.stderr.write(helpOutput.stderr ?? "");
+				}
+			});
+
+			if (helpOutput.status !== 0) {
+				return yield* Effect.fail(
+					new Error(
+						`Contextual help command failed with exit code ${
+							helpOutput.status ?? "unknown"
+						}.`
+					)
+				);
+			}
+			return;
 		}
 
 		// Validate env before runtime operations.
