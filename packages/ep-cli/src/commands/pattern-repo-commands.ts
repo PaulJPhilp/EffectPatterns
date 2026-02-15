@@ -39,12 +39,18 @@ export const searchCommand = Command.make("search", {
 
       if (results.length === 0) {
         yield* Display.showError(`No patterns found for "${args.query}"`);
+        yield* Display.showInfo(`Try: ep list --category core-concepts`);
+        yield* Display.showInfo(`Try: ep list --difficulty beginner`);
         return;
       }
 
       yield* Console.log(`\nFound ${results.length} pattern(s):\n`);
       for (const p of results) {
         yield* Console.log(`  • ${p.title} (${p.id})`);
+      }
+      const first = results[0];
+      if (first) {
+        yield* Display.showInfo(`Next: ep show ${first.id}`);
       }
     })
   )
@@ -92,6 +98,11 @@ export const listCommand = Command.make("list", {
       for (const p of results) {
         yield* Console.log(`  • ${p.title} (${p.id})`);
       }
+      if (results.length > 0) {
+        yield* Display.showInfo(`Next: ep show ${results[0]?.id}`);
+      } else {
+        yield* Display.showInfo(`Try: ep search retry`);
+      }
     })
   )
 );
@@ -123,6 +134,7 @@ export const showCommand = Command.make("show", {
           return;
         }
         yield* Display.showError(`Pattern "${args.patternId}" not found`);
+        yield* Display.showInfo(`Try: ep search "${args.patternId}"`);
         return;
       }
 
@@ -132,6 +144,7 @@ export const showCommand = Command.make("show", {
       }
 
       yield* Display.showPanel(p.description, p.title);
+      yield* Display.showInfo(`Next: ep search "${p.category}"`);
     })
   )
 );

@@ -54,6 +54,10 @@ export const skillsListCommand = Command.make("list", {
       }
 
       yield* Console.log("");
+      const first = skills[0];
+      if (first) {
+        yield* Display.showInfo(`Next: ep skills preview ${first.category}`);
+      }
     })
   )
 );
@@ -89,6 +93,7 @@ export const skillsPreviewCommand = Command.make("preview", {
         `Skill: ${skill.metadata.title}`,
         { type: "info" }
       );
+      yield* Display.showInfo("Next: ep skills validate");
     })
   )
 );
@@ -130,6 +135,7 @@ export const skillsValidateCommand = Command.make("validate", {
 
       if (errors.length === 0) {
         yield* Display.showSuccess("✓ All skills are valid!");
+        yield* Display.showInfo("Next: ep skills stats");
         return;
       }
 
@@ -145,6 +151,7 @@ export const skillsValidateCommand = Command.make("validate", {
       }
 
       yield* Console.error("");
+      yield* Display.showInfo("Fix the listed issues, then run: ep skills validate");
       return yield* Effect.fail(new ValidationFailedError({
         message: "Validation failed",
         errorCount: errors.length,
@@ -218,6 +225,7 @@ export const skillsStatsCommand = Command.make("stats", {
       yield* Console.log("");
       yield* Console.log("═".repeat(60));
       yield* Console.log("");
+      yield* Display.showInfo("Next: ep skills validate");
     })
   )
 );

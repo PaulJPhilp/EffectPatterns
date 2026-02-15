@@ -141,6 +141,7 @@ export const installAddCommand = Command.make("add", {
       yield* saveInstalledRules(merged);
 
       yield* Display.showSuccess(`Installed ${rulesToInstall.length} rule(s) to ${targetPath}`);
+      yield* Display.showInfo(`Next: ep install list --installed`);
     })
   )
 );
@@ -267,8 +268,10 @@ export const installListCommand = Command.make("list", {
       
       if (options.installed) {
         yield* displayInstalledRules(loadInstalledRules);
+        yield* Display.showInfo("Tip: re-run with --json for machine-readable output.");
       } else {
         yield* displaySupportedTools();
+        yield* Display.showInfo("Next: ep install add --tool cursor");
       }
     })
   )
