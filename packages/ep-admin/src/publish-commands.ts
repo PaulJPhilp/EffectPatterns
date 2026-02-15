@@ -13,6 +13,7 @@
 
 import { Command, Options } from "@effect/cli";
 import { Effect } from "effect";
+import { emitJson } from "./cli/output.js";
 import {
     CONTENT_DIRS,
     MESSAGES,
@@ -98,11 +99,23 @@ export const publishValidateCommand = Command.make("validate", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo("Validating patterns...");
-
             const config = getValidatorConfig();
             const results = yield* validateAllPatterns(config);
             const summary = summarizeValidationResults(results);
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: summary.totalErrors === 0,
+                    summary,
+                    results,
+                });
+                if (summary.totalErrors > 0) {
+                    return yield* Effect.fail(new Error("Validation failed"));
+                }
+                return;
+            }
+
+            yield* Display.showInfo("Validating patterns...");
 
             yield* Display.showInfo(
                 `Validated ${summary.total} patterns: ` +
@@ -141,11 +154,23 @@ export const publishTestCommand = Command.make("test", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo("Running TypeScript examples...");
-
             const config = getTesterConfig();
             const results = yield* testAllPatterns(config);
             const summary = summarizeTestResults(results);
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: summary.failed === 0,
+                    summary,
+                    results,
+                });
+                if (summary.failed > 0) {
+                    return yield* Effect.fail(new Error("Tests failed"));
+                }
+                return;
+            }
+
+            yield* Display.showInfo("Running TypeScript examples...");
 
             yield* Display.showInfo(
                 `Tested ${summary.total} files: ` +
@@ -163,9 +188,9 @@ export const publishTestCommand = Command.make("test", {
 );
 
 /**
- * publish:publish - Publish patterns to content/published
+ * publish:run - Publish patterns to content/published
  */
-export const publishPublishCommand = Command.make("publish", {
+export const publishRunCommand = Command.make("run", {
     options: {
         ...globalOptions,
         pattern: Options.optional(
@@ -186,11 +211,23 @@ export const publishPublishCommand = Command.make("publish", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo("Publishing patterns...");
-
             const config = getPublisherConfig();
             const results = yield* publishAllPatterns(config);
             const summary = summarizePublishResults(results);
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: summary.failed === 0,
+                    summary,
+                    results,
+                });
+                if (summary.failed > 0) {
+                    return yield* Effect.fail(new Error("Publishing failed"));
+                }
+                return;
+            }
+
+            yield* Display.showInfo("Publishing patterns...");
 
             yield* Display.showInfo(
                 `Published ${summary.published}/${summary.total} patterns`
@@ -236,6 +273,18 @@ export const publishGenerateCommand = Command.make("generate", {
             const shouldGenerateRules =
                 options.rules || (!options.readme && !options.rules);
 
+            if (options.json) {
+                yield* emitJson({
+                    ok: true,
+                    generated: {
+                        readme: shouldGenerateReadme,
+                        rules: shouldGenerateRules,
+                    },
+                    note: "Rules generation is now handled via database.",
+                });
+                return;
+            }
+
             if (shouldGenerateReadme) {
                 yield* Display.showInfo("Generating README.md...");
                 const config = getGeneratorConfig();
@@ -273,11 +322,23 @@ export const publishLintCommand = Command.make("lint", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo("Linting patterns...");
-
             const config = getLinterConfig();
             const results = yield* lintAllFiles(config);
             const summary = summarizeLintResults(results);
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: summary.totalErrors === 0,
+                    summary,
+                    results,
+                });
+                if (summary.totalErrors > 0) {
+                    return yield* Effect.fail(new Error("Linting failed"));
+                }
+                return;
+            }
+
+            yield* Display.showInfo("Linting patterns...");
 
             yield* Display.showInfo(
                 `Linted ${summary.totalFiles} files: ` +
@@ -320,10 +381,18 @@ export const publishPipelineCommand = Command.make("pipeline", {
     Command.withHandler(({ options }) =>
         Effect.gen(function* () {
             yield* configureLoggerFromOptions(options);
-            yield* Display.showInfo(MESSAGES.INFO.STARTING_PIPELINE);
-
             const config = getPipelineConfig();
             const result = yield* runFullPipeline(config);
+
+            if (options.json) {
+                yield* emitJson({
+                    ok: true,
+                    result,
+                });
+                return;
+            }
+
+            yield* Display.showInfo(MESSAGES.INFO.STARTING_PIPELINE);
 
             // Show results
             yield* Display.showInfo(
@@ -363,7 +432,7 @@ export const publishCommand = Command.make("publish").pipe(
     Command.withSubcommands([
         publishValidateCommand,
         publishTestCommand,
-        publishPublishCommand,
+        publishRunCommand,
         publishGenerateCommand,
         publishLintCommand,
         publishPipelineCommand,
