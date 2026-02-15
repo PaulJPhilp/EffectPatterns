@@ -7,7 +7,8 @@
  */
 
 import { Command } from "@effect/cli";
-import { Console, Effect } from "effect";
+import { Effect } from "effect";
+import { emitJson } from "./cli/output.js";
 import { configureLoggerFromOptions, globalOptions } from "./global-options.js";
 import { Display } from "./services/display/index.js";
 import { McpService } from "./services/mcp/service.js";
@@ -77,7 +78,7 @@ const listRulesCommand = Command.make("list-rules", {
 			const result = yield* mcp.listRules();
 
 			if (options.json) {
-				yield* Console.log(JSON.stringify(result, null, 2));
+				yield* emitJson(result);
 				return;
 			}
 
@@ -98,6 +99,7 @@ const listRulesCommand = Command.make("list-rules", {
 				],
 				bordered: true,
 			});
+			yield* display.showInfo("Next: ep-admin ops mcp list-fixes");
 		})
 	),
 );
@@ -116,7 +118,7 @@ const listFixesCommand = Command.make("list-fixes", {
 			const result = yield* mcp.listFixes();
 
 			if (options.json) {
-				yield* Console.log(JSON.stringify(result, null, 2));
+				yield* emitJson(result);
 				return;
 			}
 
@@ -135,6 +137,7 @@ const listFixesCommand = Command.make("list-fixes", {
 				],
 				bordered: true,
 			});
+			yield* display.showInfo("Next: ep-admin ops health-check");
 		})
 	),
 );

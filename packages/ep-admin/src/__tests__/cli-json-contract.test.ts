@@ -29,6 +29,17 @@ const runCli = (args: readonly string[], env: NodeJS.ProcessEnv): CliRun => {
 	};
 };
 
+const expectJsonMachineContract = (result: CliRun) => {
+	if (result.status === 0) {
+		expect(result.stderr.trim()).toBe("");
+		expect(() => JSON.parse(result.stdout)).not.toThrow();
+		return;
+	}
+
+	expect(result.stdout.trim()).toBe("");
+	expect(result.stderr.trim().length).toBeGreaterThan(0);
+};
+
 const createAuthEnv = async () => {
 	const tempDir = await mkdtemp(path.join(tmpdir(), "ep-admin-cli-json-"));
 	const env: NodeJS.ProcessEnv = {
@@ -118,6 +129,60 @@ describe.sequential("CLI JSON machine contract", () => {
 			expect(ingestFailure.stdout.trim()).toBe("");
 			expect(ingestFailure.stderr.trim().length).toBeGreaterThan(0);
 			expect(ingestFailure.stderr).toContain("Run: ep-admin data --help");
+
+			const searchFailure = runCli(
+				["pattern", "search", "foo", "--json"],
+				{
+					...automationEnv,
+					DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:1/effect_patterns",
+				}
+			);
+			expect(searchFailure.status).toBe(1);
+			expect(searchFailure.stdout.trim()).toBe("");
+			expect(searchFailure.stderr.trim().length).toBeGreaterThan(0);
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	it("preserves machine contract for environment-dependent JSON commands", async () => {
+		const { tempDir, env } = await createAuthEnv();
+		try {
+			const init = runCli(
+				[
+					"auth",
+					"init",
+					"--passphrase",
+					"correct-horse-battery",
+					"--confirm-passphrase",
+					"correct-horse-battery",
+					"--service-token",
+					"automation-token-123456",
+					"--json",
+				],
+				env
+			);
+			expect(init.status).toBe(0);
+
+			const automationEnv = {
+				...env,
+				EP_ADMIN_SERVICE_TOKEN: "automation-token-123456",
+			};
+
+			const dbStatus = runCli(["db", "status", "--json"], automationEnv);
+			expectJsonMachineContract(dbStatus);
+
+			const dbMigrateRemote = runCli(["db", "migrate-remote", "--json"], automationEnv);
+			expectJsonMachineContract(dbMigrateRemote);
+
+			const mcpRules = runCli(
+				["ops", "mcp", "list-rules", "--json"],
+				{
+					...automationEnv,
+					MCP_API_KEY: "",
+				}
+			);
+			expectJsonMachineContract(mcpRules);
 		} finally {
 			await rm(tempDir, { recursive: true, force: true });
 		}

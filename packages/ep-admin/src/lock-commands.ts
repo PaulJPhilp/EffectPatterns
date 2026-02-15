@@ -171,7 +171,7 @@ export const handleEntityOperation = (
 					"\n💡 Tip: Make sure PostgreSQL is running and DATABASE_URL " +
 						"is set correctly.\n"
 				);
-				return Effect.fail(error);
+				return yield* Effect.fail(error);
 			})
 		)
 	);

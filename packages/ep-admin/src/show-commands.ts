@@ -226,6 +226,7 @@ const showPatternsCommand = Command.make("patterns", {
 
 				yield* Display.showInfo("Querying database for patterns...");
 				yield* renderPatternSummary(summary);
+				yield* Display.showInfo("Next: ep-admin pattern search <query>");
 			})
 		)
 	);
@@ -256,6 +257,7 @@ const showSkillsCommand = Command.make("skills", {
 
 				yield* Display.showInfo("Querying database for skills...");
 				yield* renderSkillSummary(summary);
+				yield* Display.showInfo("Next: ep-admin pattern skills generate-from-db --dry-run");
 			})
 		)
 	);
@@ -305,9 +307,10 @@ const showAllCommand = Command.make("all", {
 				yield* renderApplicationPatternSummary(data.applicationPatterns);
 				yield* renderPatternSummary(data.patterns);
 				yield* renderSkillSummary(data.skills);
-				yield* Console.log(
+				yield* Display.showText(
 					`\n  Total: ${data.applicationPatterns.total} application patterns, ${data.patterns.total} effect patterns, ${data.skills.total} skills`
 				);
+				yield* Display.showInfo("Next: ep-admin db test-quick");
 			})
 		)
 	);
