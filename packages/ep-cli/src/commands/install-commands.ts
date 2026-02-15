@@ -236,13 +236,34 @@ export const installListCommand = Command.make("list", {
     installed: Options.boolean("installed").pipe(
       Options.withDescription("List installed rules"),
       Options.withDefault(false)
-    )
+    ),
+    json: Options.boolean("json").pipe(
+      Options.withDescription("Output results as JSON"),
+      Options.withDefault(false)
+    ),
   }
 }).pipe(
   Command.withDescription("List supported AI tools or installed rules."),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
       const { loadInstalledRules } = yield* Install;
+      const supportedTools = ["agents", "cursor", "vscode", "windsurf"] as const;
+
+      if (options.json) {
+        if (options.installed) {
+          const rules = yield* loadInstalledRules();
+          yield* Console.log(JSON.stringify({
+            count: rules.length,
+            rules,
+          }, null, 2));
+          return;
+        }
+
+        yield* Console.log(JSON.stringify({
+          tools: supportedTools,
+        }, null, 2));
+        return;
+      }
       
       if (options.installed) {
         yield* displayInstalledRules(loadInstalledRules);
