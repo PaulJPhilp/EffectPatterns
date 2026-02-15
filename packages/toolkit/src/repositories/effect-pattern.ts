@@ -115,39 +115,28 @@ export function createEffectPatternRepository(db: Database) {
 
     /**
      * Search patterns with filters
-     * 
-     * SIMPLIFIED SEARCH: Simple ILIKE '%keyword%' across title and tags.
+     *
+     * Uses PostgreSQL full-text search (tsvector + websearch_to_tsquery) for
+     * keyword queries with ts_rank relevance ordering. Falls back to ILIKE
+     * if full-text search returns zero results (handles substring edge cases).
      */
     async search(params: SearchPatternsParams): Promise<EffectPattern[]> {
-      const conditions = []
+      // Sanitize query once for reuse
+      const sanitizedQuery = params.query
+        ? params.query.replace(/[^\w\s-]/g, " ").trim()
+        : ""
+      const hasQuery = sanitizedQuery.length > 0
 
-      // Keyword-aware search across title, summary, and tags (AND across keywords)
-      if (params.query) {
-        const keywords = params.query
-          .toLowerCase()
-          .split(/\W+/)
-          .filter((keyword) => keyword.length > 2)
-
-        for (const keyword of keywords) {
-          const searchTerm = `%${keyword}%`
-          conditions.push(
-            or(
-              ilike(effectPatterns.title, searchTerm),
-              ilike(effectPatterns.summary, searchTerm),
-              sql`${effectPatterns.tags}::text ILIKE ${searchTerm}`
-            )
-          )
-        }
-      }
+      // Collect non-query filter conditions (reused by fallback path)
+      const filterConditions = []
 
       // Category filter (case-insensitive, with normalization)
-      // Matches both original category value and normalized version
       if (params.category) {
         const normalizedCategory = normalizeForSearch(params.category)
         const originalCategory = params.category.toLowerCase().trim()
         const categorySearchTermNormalized = `%${normalizedCategory}%`
         const categorySearchTermOriginal = `%${originalCategory}%`
-        conditions.push(
+        filterConditions.push(
           or(
             ilike(effectPatterns.category, categorySearchTermOriginal),
             sql`REPLACE(REPLACE(LOWER(${effectPatterns.category}), '-', ' '), '_', ' ') ILIKE ${categorySearchTermNormalized}`
@@ -157,33 +146,47 @@ export function createEffectPatternRepository(db: Database) {
 
       // Skill level filter
       if (params.skillLevel) {
-        conditions.push(eq(effectPatterns.skillLevel, params.skillLevel))
+        filterConditions.push(eq(effectPatterns.skillLevel, params.skillLevel))
       }
 
       // Application pattern filter
       if (params.applicationPatternId) {
-        conditions.push(
+        filterConditions.push(
           eq(effectPatterns.applicationPatternId, params.applicationPatternId)
         )
       }
 
-      // Build query
+      // --- Primary search: full-text tsvector ---
+      const conditions = [...filterConditions]
+
+      if (hasQuery) {
+        conditions.push(
+          sql`"effect_patterns"."search_vector" @@ websearch_to_tsquery('english', ${sanitizedQuery})`
+        )
+      }
+
       let query = db.select().from(effectPatterns)
 
       if (conditions.length > 0) {
         query = query.where(and(...conditions)) as typeof query
       }
 
-      // Order by
-      const orderColumn =
-        params.orderBy === "createdAt"
-          ? effectPatterns.createdAt
-          : params.orderBy === "lessonOrder"
-            ? effectPatterns.lessonOrder
-            : effectPatterns.title
+      // Order by ts_rank when searching, otherwise use specified column
+      if (hasQuery) {
+        query = query.orderBy(
+          sql`ts_rank("effect_patterns"."search_vector", websearch_to_tsquery('english', ${sanitizedQuery})) DESC`
+        ) as typeof query
+      } else {
+        const orderColumn =
+          params.orderBy === "createdAt"
+            ? effectPatterns.createdAt
+            : params.orderBy === "lessonOrder"
+              ? effectPatterns.lessonOrder
+              : effectPatterns.title
 
-      const orderFn = params.orderDirection === "desc" ? desc : asc
-      query = query.orderBy(orderFn(orderColumn)) as typeof query
+        const orderFn = params.orderDirection === "desc" ? desc : asc
+        query = query.orderBy(orderFn(orderColumn)) as typeof query
+      }
 
       // Pagination
       if (params.limit) {
@@ -193,7 +196,54 @@ export function createEffectPatternRepository(db: Database) {
         query = query.offset(params.offset) as typeof query
       }
 
-      return query
+      const results = await query
+
+      // --- Fallback: ILIKE if full-text returned nothing ---
+      if (results.length === 0 && hasQuery) {
+        const keywords = sanitizedQuery
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((kw) => kw.length > 2)
+
+        if (keywords.length > 0) {
+          const fallbackConditions = [...filterConditions]
+
+          for (const keyword of keywords) {
+            const searchTerm = `%${keyword}%`
+            fallbackConditions.push(
+              or(
+                ilike(effectPatterns.title, searchTerm),
+                ilike(effectPatterns.summary, searchTerm),
+                sql`${effectPatterns.tags}::text ILIKE ${searchTerm}`
+              )
+            )
+          }
+
+          let fallbackQuery = db.select().from(effectPatterns)
+          fallbackQuery = fallbackQuery.where(and(...fallbackConditions)) as typeof fallbackQuery
+
+          const orderColumn =
+            params.orderBy === "createdAt"
+              ? effectPatterns.createdAt
+              : params.orderBy === "lessonOrder"
+                ? effectPatterns.lessonOrder
+                : effectPatterns.title
+
+          const orderFn = params.orderDirection === "desc" ? desc : asc
+          fallbackQuery = fallbackQuery.orderBy(orderFn(orderColumn)) as typeof fallbackQuery
+
+          if (params.limit) {
+            fallbackQuery = fallbackQuery.limit(params.limit) as typeof fallbackQuery
+          }
+          if (params.offset) {
+            fallbackQuery = fallbackQuery.offset(params.offset) as typeof fallbackQuery
+          }
+
+          return fallbackQuery
+        }
+      }
+
+      return results
     },
 
     /**
