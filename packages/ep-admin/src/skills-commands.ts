@@ -24,7 +24,7 @@ import {
 import { Command, Options } from "@effect/cli";
 import { FileSystem } from "@effect/platform";
 import { Console, Effect, Option } from "effect";
-import { emitJson } from "./cli/output.js";
+import { emitError, emitInfo, emitJson } from "./cli/output.js";
 import {
     MESSAGES,
 } from "./constants.js";
@@ -56,6 +56,11 @@ export interface GenerateFromDbCounts {
   skipped: number;
 }
 
+export interface GenerateFromDbReporter {
+  readonly info: (message: string) => Effect.Effect<void>;
+  readonly error: (message: string) => Effect.Effect<void>;
+}
+
 /**
  * Core pipeline: read patterns from DB, generate skills, upsert into skills table.
  *
@@ -68,6 +73,10 @@ export const generateSkillsFromDatabase = (
     readonly skillRepo: ReturnType<typeof createSkillRepository>;
   },
   options: GenerateFromDbOptions,
+  reporter: GenerateFromDbReporter = {
+    info: (message) => Console.log(message),
+    error: (message) => Console.error(message),
+  },
 ): Effect.Effect<GenerateFromDbCounts | undefined, Error, never> =>
   Effect.gen(function* () {
     const { appPatternRepo, patternRepo, skillRepo } = repos;
@@ -83,7 +92,9 @@ export const generateSkillsFromDatabase = (
       catch: (error) => new Error(`Failed to query effect patterns: ${error}`),
     });
 
-    yield* Console.log(`Found ${appPatterns.length} application patterns, ${allPatterns.length} effect patterns`);
+    yield* reporter.info(
+      `Found ${appPatterns.length} application patterns, ${allPatterns.length} effect patterns`
+    );
 
     // 2. Group effect patterns by applicationPatternId
     const patternsByAppId = new Map<string, typeof allPatterns>();
@@ -104,7 +115,7 @@ export const generateSkillsFromDatabase = (
       : appPatterns;
 
     if (categoryFilter && targetAppPatterns.length === 0) {
-      yield* Console.error(`No application pattern found with slug: ${categoryFilter}`);
+      yield* reporter.error(`No application pattern found with slug: ${categoryFilter}`);
       return undefined;
     }
 
@@ -115,7 +126,7 @@ export const generateSkillsFromDatabase = (
     for (const ap of targetAppPatterns) {
       const dbPatterns = patternsByAppId.get(ap.id);
       if (!dbPatterns || dbPatterns.length === 0) {
-        yield* Console.log(`  ${ap.slug}: no patterns, skipping`);
+        yield* reporter.info(`  ${ap.slug}: no patterns, skipping`);
         continue;
       }
 
@@ -136,14 +147,14 @@ export const generateSkillsFromDatabase = (
 
       // Skip if locked (validated)
       if (existingSkill?.validated) {
-        yield* Console.log(`  ${slug}: locked (validated), skipping`);
+        yield* reporter.info(`  ${slug}: locked (validated), skipping`);
         counts.skipped++;
         continue;
       }
 
       // Skip if content unchanged
       if (existingSkill && existingSkill.content === content) {
-        yield* Console.log(`  ${slug}: unchanged`);
+        yield* reporter.info(`  ${slug}: unchanged`);
         counts.unchanged++;
         continue;
       }
@@ -152,7 +163,9 @@ export const generateSkillsFromDatabase = (
       const patternIds = dbPatterns.map(p => p.id);
 
       if (options.dryRun) {
-        yield* Console.log(`  ${slug}: would ${isNew ? "create" : "update"} (${dbPatterns.length} patterns)`);
+        yield* reporter.info(
+          `  ${slug}: would ${isNew ? "create" : "update"} (${dbPatterns.length} patterns)`
+        );
         if (isNew) counts.created++;
         else counts.updated++;
         continue;
@@ -184,10 +197,12 @@ export const generateSkillsFromDatabase = (
       });
 
       if (isNew) {
-        yield* Console.log(`  ${slug}: created (${dbPatterns.length} patterns)`);
+        yield* reporter.info(`  ${slug}: created (${dbPatterns.length} patterns)`);
         counts.created++;
       } else {
-        yield* Console.log(`  ${slug}: updated v${skill.version} (${dbPatterns.length} patterns)`);
+        yield* reporter.info(
+          `  ${slug}: updated v${skill.version} (${dbPatterns.length} patterns)`
+        );
         counts.updated++;
       }
 
@@ -206,8 +221,8 @@ export const generateSkillsFromDatabase = (
     }
 
     // 5. Summary
-    yield* Console.log("");
-    yield* Console.log(
+    yield* reporter.info("");
+    yield* reporter.info(
       `Summary: ${counts.created} created, ${counts.updated} updated, ${counts.unchanged} unchanged, ${counts.skipped} skipped (locked)`
     );
 
@@ -261,6 +276,10 @@ export const skillsGenerateFromDbCommand = Command.make("generate-from-db", {
                         const patternRepo = yield* EffectPatternRepositoryService;
                         const dbService = yield* DatabaseService;
                         const skillRepo = createSkillRepository(dbService.db);
+                        const reporter: GenerateFromDbReporter = {
+                            info: (message) => emitInfo(message, options.json),
+                            error: emitError,
+                        };
 
                         return yield* generateSkillsFromDatabase(
                             { appPatternRepo, patternRepo, skillRepo },
@@ -268,7 +287,8 @@ export const skillsGenerateFromDbCommand = Command.make("generate-from-db", {
                                 dryRun: options.dryRun,
                                 writeFiles: options.writeFiles,
                                 category: options.category,
-                            }
+                            },
+                            reporter
                         );
                     })
                 ).pipe(Effect.provide(DatabaseLayer));

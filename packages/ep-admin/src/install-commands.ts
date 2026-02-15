@@ -415,13 +415,16 @@ export const installSkillsCommand = Command.make("skills", {
 	Command.withHandler(({ options }) => {
 		return Effect.scoped(
 			Effect.gen(function* () {
-			yield* configureLoggerFromOptions(options);
-			const formatOption: string = options.format;
-			const validOptions = ["claude", "gemini", "openai", "both"];
+				yield* configureLoggerFromOptions(options);
+				const formatOption: string = options.format;
+				const validOptions = ["claude", "gemini", "openai", "both"];
+				const log = (message: string) =>
+					options.json ? Effect.void : Console.log(message);
+				const warnings: string[] = [];
 
-			let generateClaude = false;
-			let generateGemini = false;
-			let generateOpenAI = false;
+				let generateClaude = false;
+				let generateGemini = false;
+				let generateOpenAI = false;
 
 			const formatLower = formatOption.toLowerCase();
 
@@ -458,48 +461,39 @@ export const installSkillsCommand = Command.make("skills", {
 				}
 			}
 
-			if (!generateClaude && !generateGemini && !generateOpenAI) {
-				if (options.json) {
-					yield* emitJson({
-						ok: false,
-						error: "No format option",
-					});
+				if (!generateClaude && !generateGemini && !generateOpenAI) {
+					if (options.json) {
+						yield* emitJson({
+							ok: false,
+							error: "No format option",
+						});
+					} else {
+						yield* Console.error(
+							colorize(
+								`\n❌ No formats specified. Valid options: ` +
+								`${validOptions.join(", ")}\n`,
+								"RED"
+							)
+						);
+					}
+					return yield* Effect.fail(new Error("No format option"));
 				}
-				yield* Console.error(
-					colorize(
-						`\n❌ No formats specified. Valid options: ` +
-						`${validOptions.join(", ")}\n`,
-						"RED"
-					)
+
+				yield* log(
+					colorize("\n🎓 Generating Skills from Effect Patterns\n", "BRIGHT")
 				);
-				return yield* Effect.fail(new Error("No format option"));
-			}
 
-				if (!options.json) {
-					yield* Console.log(
-						colorize("\n🎓 Generating Skills from Effect Patterns\n", "BRIGHT")
-					);
-				}
+				const epRepo = yield* EffectPatternRepositoryService;
+				const apRepo = yield* ApplicationPatternRepositoryService;
 
-			const epRepo = yield* EffectPatternRepositoryService;
-			const apRepo = yield* ApplicationPatternRepositoryService;
+				yield* log(colorize("📖 Loading patterns from database...", "CYAN"));
+				const dbPatterns = yield* Effect.tryPromise({
+					try: () => epRepo.findAll(),
+					catch: (error) =>
+						new Error(`Failed to load patterns from database: ${error}`),
+				});
 
-				if (!options.json) {
-					yield* Console.log(
-						colorize("📖 Loading patterns from database...", "CYAN")
-					);
-				}
-			const dbPatterns = yield* Effect.tryPromise({
-				try: () => epRepo.findAll(),
-				catch: (error) =>
-					new Error(`Failed to load patterns from database: ${error}`),
-			});
-
-				if (!options.json) {
-					yield* Console.log(
-						colorize(`✓ Found ${dbPatterns.length} patterns\n`, "GREEN")
-					);
-				}
+				yield* log(colorize(`✓ Found ${dbPatterns.length} patterns\n`, "GREEN"));
 
 			const applicationPatterns = yield* Effect.tryPromise({
 				try: () => apRepo.findAll(),
@@ -512,44 +506,33 @@ export const installSkillsCommand = Command.make("skills", {
 			);
 
 			const patterns: PatternContent[] = [];
-			for (const dbPattern of dbPatterns) {
-				if (dbPattern.applicationPatternId) {
-					const pattern = patternFromDatabase(dbPattern);
+				for (const dbPattern of dbPatterns) {
+					if (dbPattern.applicationPatternId) {
+						const pattern = patternFromDatabase(dbPattern);
 					const apSlug = apIdToSlug.get(dbPattern.applicationPatternId);
 					if (apSlug) {
 						pattern.applicationPatternId = apSlug;
 						patterns.push(pattern);
 					}
+					}
 				}
-			}
 
 				const categoryMap = groupPatternsByCategory(patterns);
 
-				if (options.json) {
-					yield* emitJson({
-						ok: true,
-						totalPatterns: patterns.length,
-						format: formatOption,
-						categoryCount: categoryMap.size,
-					});
-					return;
-				}
-
-				yield* Console.log(
+				yield* log(
 					colorize(
-						`✓ Processed ${patterns.length} patterns with application ` +
-						`patterns\n`,
+						`✓ Processed ${patterns.length} patterns with application patterns\n`,
 						"GREEN"
 					)
 				);
-				yield* Console.log(
-					colorize("🗂️  Grouping patterns by category...", "CYAN")
-				);
-				yield* Console.log(
-					colorize(`✓ Found ${categoryMap.size} categories\n`, "GREEN")
-				);
+				yield* log(colorize("🗂️  Grouping patterns by category...", "CYAN"));
+				yield* log(colorize(`✓ Found ${categoryMap.size} categories\n`, "GREEN"));
 
-			if (options.category._tag === "Some") {
+				let claudeCount = 0;
+				let geminiCount = 0;
+				let openaiCount = 0;
+
+				if (options.category._tag === "Some") {
 					const category = options.category.value
 						.toLowerCase()
 						.replace(/\s+/g, "-");
@@ -567,77 +550,83 @@ export const installSkillsCommand = Command.make("skills", {
 						yield* Console.error(
 							colorize(`\n❌ Category not found: ${category}\n`, "RED")
 						);
-					yield* Console.log(colorize("Available categories:\n", "BRIGHT"));
-					const sortedCategories = Array.from(categoryMap.keys()).sort();
-					for (const cat of sortedCategories) {
-						yield* Console.log(`  • ${cat}`);
+						yield* Console.log(colorize("Available categories:\n", "BRIGHT"));
+						const sortedCategories = Array.from(categoryMap.keys()).sort();
+						for (const cat of sortedCategories) {
+							yield* Console.log(`  • ${cat}`);
+						}
+						return yield* Effect.fail(new Error("Category not found"));
 					}
-					return yield* Effect.fail(new Error("Category not found"));
-				}
 
-				if (generateClaude) {
-					const skillName = `effect-patterns-${category}`;
-					const content = generateCategorySkill(category, categoryPatterns);
+					if (generateClaude) {
+						const skillName = `effect-patterns-${category}`;
+						const content = generateCategorySkill(category, categoryPatterns);
 
 					yield* Effect.tryPromise({
 						try: () => writeSkill(skillName, content, PROJECT_ROOT),
-						catch: (error) =>
-							new Error(`Failed to write Claude skill: ${error}`),
-					});
+							catch: (error) =>
+								new Error(`Failed to write Claude skill: ${error}`),
+						});
+						claudeCount++;
+						yield* log(colorize(`✓ Generated Claude skill: ${skillName}\n`, "GREEN"));
+					}
 
-					yield* Console.log(
-						colorize(`✓ Generated Claude skill: ${skillName}\n`, "GREEN")
-					);
-				}
-
-				if (generateGemini) {
-					const geminiSkill = generateGeminiSkill(category, categoryPatterns);
+					if (generateGemini) {
+						const geminiSkill = generateGeminiSkill(category, categoryPatterns);
 
 					yield* Effect.tryPromise({
 						try: () => writeGeminiSkill(geminiSkill, PROJECT_ROOT),
-						catch: (error) =>
-							new Error(`Failed to write Gemini skill: ${error}`),
-					});
+							catch: (error) =>
+								new Error(`Failed to write Gemini skill: ${error}`),
+						});
+						geminiCount++;
+						yield* log(
+							colorize(`✓ Generated Gemini skill: ${geminiSkill.skillId}\n`, "GREEN")
+						);
+					}
 
-					yield* Console.log(
-						colorize(
-							`✓ Generated Gemini skill: ${geminiSkill.skillId}\n`,
-							"GREEN"
-						)
-					);
-				}
-
-				if (generateOpenAI) {
-					const skillName = `effect-patterns-${category}`;
+					if (generateOpenAI) {
+						const skillName = `effect-patterns-${category}`;
 					const content = generateOpenAISkill(category, categoryPatterns);
 
 					yield* Effect.tryPromise({
 						try: () => writeOpenAISkill(skillName, content, PROJECT_ROOT),
-						catch: (error) =>
-							new Error(`Failed to write OpenAI skill: ${error}`),
-					});
+							catch: (error) =>
+								new Error(`Failed to write OpenAI skill: ${error}`),
+						});
+						openaiCount++;
+						yield* log(colorize(`✓ Generated OpenAI skill: ${skillName}\n`, "GREEN"));
+					}
 
-					yield* Console.log(
-						colorize(`✓ Generated OpenAI skill: ${skillName}\n`, "GREEN")
-					);
+					if (options.json) {
+						yield* emitJson({
+							ok: true,
+							totalPatterns: patterns.length,
+							format: formatOption,
+							categoryCount: categoryMap.size,
+							mode: "single",
+							category,
+							generated: {
+								claude: claudeCount,
+								gemini: geminiCount,
+								openai: openaiCount,
+							},
+							warnings,
+						});
+					}
+
+					return;
 				}
 
-				return;
-			}
+				yield* log(
+					colorize(
+						`📝 Generating ${categoryMap.size} skills for ${formatOption}...\n`,
+						"CYAN"
+					)
+				);
 
-			yield* Console.log(
-				colorize(
-					`📝 Generating ${categoryMap.size} skills for ${formatOption}...\n`,
-					"CYAN"
-				)
-			);
-
-			let claudeCount = 0;
-			let geminiCount = 0;
-			let openaiCount = 0;
-
-			for (const [category, categoryPatterns] of categoryMap.entries()) {
-				if (generateClaude) {
+				for (const [category, categoryPatterns] of categoryMap.entries()) {
+					if (generateClaude) {
 					const skillName = `effect-patterns-${category}`;
 					const content = generateCategorySkill(category, categoryPatterns);
 
@@ -645,13 +634,17 @@ export const installSkillsCommand = Command.make("skills", {
 						try: () => writeSkill(skillName, content, PROJECT_ROOT),
 						catch: (error) =>
 							new Error(`Failed to write ${skillName}: ${error}`),
-					}).pipe(
-						Effect.catchAll((error) =>
-							Effect.gen(function* () {
-								yield* Console.log(colorize(`⚠️  ${error.message}`, "YELLOW"));
-								return null;
-							})
-						)
+						}).pipe(
+							Effect.catchAll((error) =>
+								Effect.gen(function* () {
+									if (options.json) {
+										warnings.push(error.message);
+									} else {
+										yield* Console.log(colorize(`⚠️  ${error.message}`, "YELLOW"));
+									}
+									return null;
+								})
+							)
 					);
 
 					if (writeResult !== null) {
@@ -665,20 +658,24 @@ export const installSkillsCommand = Command.make("skills", {
 					}
 				}
 
-				if (generateGemini) {
-					const geminiSkill = generateGeminiSkill(category, categoryPatterns);
+					if (generateGemini) {
+						const geminiSkill = generateGeminiSkill(category, categoryPatterns);
 
 					const writeResult = yield* Effect.tryPromise({
 						try: () => writeGeminiSkill(geminiSkill, PROJECT_ROOT),
 						catch: (error) =>
 							new Error(`Failed to write Gemini skill: ${error}`),
-					}).pipe(
-						Effect.catchAll((error) =>
-							Effect.gen(function* () {
-								yield* Console.log(colorize(`⚠️  ${error.message}`, "YELLOW"));
-								return null;
-							})
-						)
+						}).pipe(
+							Effect.catchAll((error) =>
+								Effect.gen(function* () {
+									if (options.json) {
+										warnings.push(error.message);
+									} else {
+										yield* Console.log(colorize(`⚠️  ${error.message}`, "YELLOW"));
+									}
+									return null;
+								})
+							)
 					);
 
 					if (writeResult !== null) {
@@ -693,21 +690,25 @@ export const installSkillsCommand = Command.make("skills", {
 					}
 				}
 
-				if (generateOpenAI) {
-					const skillName = `effect-patterns-${category}`;
+					if (generateOpenAI) {
+						const skillName = `effect-patterns-${category}`;
 					const content = generateOpenAISkill(category, categoryPatterns);
 
 					const writeResult = yield* Effect.tryPromise({
 						try: () => writeOpenAISkill(skillName, content, PROJECT_ROOT),
 						catch: (error) =>
 							new Error(`Failed to write OpenAI skill: ${error}`),
-					}).pipe(
-						Effect.catchAll((error) =>
-							Effect.gen(function* () {
-								yield* Console.log(colorize(`⚠️  ${error.message}`, "YELLOW"));
-								return null;
-							})
-						)
+						}).pipe(
+							Effect.catchAll((error) =>
+								Effect.gen(function* () {
+									if (options.json) {
+										warnings.push(error.message);
+									} else {
+										yield* Console.log(colorize(`⚠️  ${error.message}`, "YELLOW"));
+									}
+									return null;
+								})
+							)
 					);
 
 					if (writeResult !== null) {
@@ -744,7 +745,7 @@ export const installSkillsCommand = Command.make("skills", {
 				);
 			}
 
-			if (generateOpenAI && openaiCount > 0) {
+				if (generateOpenAI && openaiCount > 0) {
 				summaryParts.push(
 					`Generated ${openaiCount} OpenAI Skills from ${patterns.length} ` +
 					`Effect patterns.`
@@ -754,17 +755,34 @@ export const installSkillsCommand = Command.make("skills", {
 				);
 			}
 
-			summaryParts.push(
-				`\nEach skill is organized by category and includes:
+				summaryParts.push(
+					`\nEach skill is organized by category and includes:
 - Curated patterns from the published library
 - Code examples (Good & Anti-patterns)
 - Rationale and best practices
 - Skill level guidance (Beginner → Intermediate → Advanced)`
-			);
+				);
 
-			yield* Display.showPanel(
-				summaryParts.join("\n"),
-				"✨ Skills Generation Complete!",
+				if (options.json) {
+					yield* emitJson({
+						ok: true,
+						totalPatterns: patterns.length,
+						format: formatOption,
+						categoryCount: categoryMap.size,
+						mode: "all",
+						generated: {
+							claude: claudeCount,
+							gemini: geminiCount,
+							openai: openaiCount,
+						},
+						warnings,
+					});
+					return;
+				}
+
+				yield* Display.showPanel(
+					summaryParts.join("\n"),
+					"✨ Skills Generation Complete!",
 				{ type: "success" }
 			);
 		})).pipe(
