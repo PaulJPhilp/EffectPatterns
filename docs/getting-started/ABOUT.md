@@ -33,6 +33,8 @@ Each pattern includes:
 
 The `ep` command-line tool provides:
 
+See the master CLI user documentation: **[EP-CLI-README.md](../../EP-CLI-README.md)**.
+
 ```bash
 # Search patterns
 ep search "retry"
@@ -412,6 +414,7 @@ describe("MyService", () => {
 
 ## Documentation
 
+- **[EP-CLI-README.md](../../EP-CLI-README.md)** - Master end-user documentation for the `ep` CLI
 - **[README.md](./README.md)** - Pattern index (auto-generated)
 - **[SETUP.md](./SETUP.md)** - Setup and installation guide
 - **[TESTING.md](./TESTING.md)** - Testing documentation
