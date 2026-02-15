@@ -167,14 +167,17 @@ export const skillsStatsCommand = Command.make("stats", {
   Command.withDescription("Show statistics about Claude Skills"),
   Command.withHandler(({ options }) =>
     Effect.gen(function* () {
-      const logger = yield* Logger;
-      yield* logger.debug("Fetching skills statistics...");
-
       const stats = yield* SkillsAPI.getStats();
 
       if (options.json) {
         yield* Console.log(JSON.stringify({ stats }, null, 2));
         return;
+      }
+
+      const logger = yield* Logger;
+      const shouldDebugLog = yield* logger.shouldLog("debug");
+      if (shouldDebugLog) {
+        yield* Console.error("🔍 Fetching skills statistics...");
       }
 
       yield* Console.log(colorize("\n📊 Skills Statistics\n", "BRIGHT"));

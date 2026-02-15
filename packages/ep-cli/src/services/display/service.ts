@@ -71,7 +71,7 @@ export class Display extends Effect.Service<Display>()("Display", {
 			Effect.gen(function* () {
 				const tui = yield* tuiLoader.load();
 				const icon = colorizeWithConfig("ℹ", "BLUE", loggerConfig);
-				const fallback = Console.log(`${icon} ${message}`);
+				const fallback = Console.warn(`${icon} ${message}`);
 				yield* (tui ? withTUIFallback("displayInfo", [message], fallback)(tui) : fallback);
 			}) as Effect.Effect<void, unknown>;
 
@@ -79,7 +79,7 @@ export class Display extends Effect.Service<Display>()("Display", {
 			Effect.gen(function* () {
 				const tui = yield* tuiLoader.load();
 				const icon = colorizeWithConfig("⚠", "YELLOW", loggerConfig);
-				const fallback = Console.log(`${icon} ${message}`);
+				const fallback = Console.warn(`${icon} ${message}`);
 				yield* (tui ? withTUIFallback("displayWarning", [message], fallback)(tui) : fallback);
 			}) as Effect.Effect<void, unknown>;
 

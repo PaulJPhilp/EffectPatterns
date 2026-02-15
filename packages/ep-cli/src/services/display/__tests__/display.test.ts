@@ -9,18 +9,20 @@ import { TUILoader } from "../tui-loader.js";
 
 class TestConsole extends Context.Tag("TestConsole")<
   TestConsole,
-  { logs: string[]; errors: string[] }
+  { logs: string[]; errors: string[]; warns: string[] }
 >() {}
 
 const LiveTestConsole = Layer.sync(TestConsole, () => {
   const logs: string[] = [];
   const errors: string[] = [];
+  const warns: string[] = [];
   
   vi.spyOn(console, "log").mockImplementation((msg) => { logs.push(String(msg)); });
   vi.spyOn(console, "error").mockImplementation((msg) => { errors.push(String(msg)); });
+  vi.spyOn(console, "warn").mockImplementation((msg) => { warns.push(String(msg)); });
   vi.spyOn(console, "table").mockImplementation((msg) => { logs.push("[TABLE]"); });
 
-  return { logs, errors };
+  return { logs, errors, warns };
 });
 
 const makeMockTUILoader = (tuiModule: any | null) => 
@@ -68,8 +70,8 @@ describe("Display Service", () => {
       );
       expect(tc.logs.some(l => l.includes(ICONS.success))).toBe(true);
       expect(tc.errors.some(e => e.includes(ICONS.error))).toBe(true);
-      expect(tc.logs.some(l => l.includes(ICONS.info))).toBe(true);
-      expect(tc.logs.some(l => l.includes(ICONS.warning))).toBe(true);
+      expect(tc.warns.some(w => w.includes(ICONS.info))).toBe(true);
+      expect(tc.warns.some(w => w.includes(ICONS.warning))).toBe(true);
     });
 
     it("should cover complex methods", async () => {
