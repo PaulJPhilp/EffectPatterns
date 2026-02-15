@@ -210,13 +210,88 @@ const isDirectExecution = (() => {
   return false;
 })();
 
-const extractErrorMessage = (error: unknown): string | null => {
+const ROOT_COMMANDS = ["search", "list", "show", "install", "skills"] as const;
+const NESTED_COMMANDS: Record<string, readonly string[]> = {
+  install: ["add", "list"],
+  skills: ["list", "preview", "validate", "stats"],
+};
+
+const normalizeArgsForSuggestion = (argv: ReadonlyArray<string>): string[] =>
+  argv.slice(2).filter((token) => token.length > 0 && !token.startsWith("-"));
+
+const levenshtein = (a: string, b: string): number => {
+  const dp: number[][] = Array.from({ length: a.length + 1 }, () =>
+    Array.from({ length: b.length + 1 }, () => 0)
+  );
+
+  for (let i = 0; i <= a.length; i++) dp[i]![0] = i;
+  for (let j = 0; j <= b.length; j++) dp[0]![j] = j;
+
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      dp[i]![j] = Math.min(
+        dp[i - 1]![j]! + 1,
+        dp[i]![j - 1]! + 1,
+        dp[i - 1]![j - 1]! + cost
+      );
+    }
+  }
+
+  return dp[a.length]![b.length]!;
+};
+
+const findClosest = (input: string, candidates: readonly string[]): string | null => {
+  if (candidates.length === 0) return null;
+
+  let best: string | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (const candidate of candidates) {
+    const distance = levenshtein(input.toLowerCase(), candidate.toLowerCase());
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = candidate;
+    }
+  }
+
+  if (!best) return null;
+  return bestDistance <= Math.max(2, Math.floor(input.length / 2)) ? best : null;
+};
+
+const getCommandSuggestion = (argv: ReadonlyArray<string>): string | null => {
+  const args = normalizeArgsForSuggestion(argv);
+  const first = args[0];
+  if (!first) return null;
+
+  if (!ROOT_COMMANDS.includes(first as (typeof ROOT_COMMANDS)[number])) {
+    const suggested = findClosest(first, ROOT_COMMANDS);
+    return suggested ? `Did you mean: ep ${suggested}` : null;
+  }
+
+  const nested = NESTED_COMMANDS[first];
+  const second = args[1];
+  if (!nested || !second) return null;
+
+  if (!nested.includes(second)) {
+    const suggested = findClosest(second, nested);
+    return suggested ? `Did you mean: ep ${first} ${suggested}` : null;
+  }
+
+  return null;
+};
+
+const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): string | null => {
   if (typeof error === "string") return error;
   if (error instanceof Error) {
     const combined = [error.message, error.stack].filter(Boolean).join("\n");
 
     if (combined.includes("CommandMismatch")) {
-      return `Need command help? Run 'ep --help'.\nDocs: ${EP_CLI_DOCS_URL}`;
+      const suggestion = getCommandSuggestion(argv);
+      return [
+        suggestion ? `${suggestion}` : "Need command help? Run 'ep --help'.",
+        `Docs: ${EP_CLI_DOCS_URL}`,
+      ].join("\n");
     }
 
     if (combined.includes("Unable to connect. Is the computer able to access the url?")) {
@@ -269,7 +344,7 @@ const extractErrorMessage = (error: unknown): string | null => {
 
 if (isDirectExecution) {
   void Effect.runPromise(runCli(process.argv)).catch((error) => {
-    const message = extractErrorMessage(error);
+    const message = extractErrorMessage(error, process.argv);
     if (message) {
       console.error(message);
     }

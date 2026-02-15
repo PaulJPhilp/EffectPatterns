@@ -20,10 +20,17 @@ const runCli = (args: string[]) =>
   });
 
 describe("ep-cli error UX and nudges", () => {
-  it("adds docs guidance for command mismatches", () => {
+  it("suggests likely root command typos", () => {
     const result = runCli(["serch", "retry"]);
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("Need command help? Run 'ep --help'.");
+    expect(result.stderr).toContain("Did you mean: ep search");
+    expect(result.stderr).toContain(docsUrl);
+  });
+
+  it("suggests likely nested subcommand typos", () => {
+    const result = runCli(["install", "ls"]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Did you mean: ep install list");
     expect(result.stderr).toContain(docsUrl);
   });
 
