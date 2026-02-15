@@ -7,11 +7,21 @@
 
 import { FileSystem } from "@effect/platform";
 import { Effect, Schema } from "effect";
+import { homedir } from "node:os";
+import path from "node:path";
 import { PatternApi } from "../pattern-api/index.js";
 import type { InstalledRule, InstallService, Rule } from "./api.js";
 import { InstalledRuleSchema } from "./api.js";
 
-const INSTALLED_STATE_FILE = ".ep-installed.json";
+const resolveInstalledStateFile = () => {
+  const explicit = process.env.EP_INSTALLED_STATE_FILE;
+  if (explicit && explicit.trim().length > 0) {
+    return explicit;
+  }
+
+  const stateHome = process.env.XDG_STATE_HOME || path.join(homedir(), ".local", "state");
+  return path.join(stateHome, "ep-cli", "installed-rules.json");
+};
 
 /**
  * Map an API pattern record to a local Rule.
@@ -41,25 +51,29 @@ export class Install extends Effect.Service<Install>()("Install", {
     const patternApi = yield* PatternApi;
 
     const InstalledRulesArraySchema = Schema.Array(InstalledRuleSchema);
+    const installedStateFile = resolveInstalledStateFile();
 
     const loadInstalledRules = () =>
       Effect.gen(function* () {
-        const exists = yield* fs.exists(INSTALLED_STATE_FILE);
+        const exists = yield* fs.exists(installedStateFile);
         if (!exists) return [];
 
-        const content = yield* fs.readFileString(INSTALLED_STATE_FILE);
+        const content = yield* fs.readFileString(installedStateFile);
         const parsed = yield* Effect.try({
           try: () => JSON.parse(content) as unknown,
-          catch: (e) => new Error(`Failed to parse ${INSTALLED_STATE_FILE}: ${e}`),
+          catch: (e) => new Error(`Failed to parse ${installedStateFile}: ${e}`),
         });
         const rules = yield* Schema.decodeUnknown(InstalledRulesArraySchema)(parsed).pipe(
-          Effect.mapError((e) => new Error(`Invalid ${INSTALLED_STATE_FILE} schema: ${e}`)),
+          Effect.mapError((e) => new Error(`Invalid ${installedStateFile} schema: ${e}`)),
         );
         return rules as InstalledRule[];
       });
 
     const saveInstalledRules = (rules: InstalledRule[]) =>
-      fs.writeFileString(INSTALLED_STATE_FILE, JSON.stringify(rules, null, 2));
+      Effect.gen(function* () {
+        yield* fs.makeDirectory(path.dirname(installedStateFile), { recursive: true });
+        yield* fs.writeFileString(installedStateFile, JSON.stringify(rules, null, 2));
+      });
 
     const searchRules = (options: {
       query?: string;

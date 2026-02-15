@@ -3,6 +3,9 @@
  */
 
 import { Effect } from "effect";
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import path from "node:path";
 import type {
   PatternApiService,
   PatternDetail,
@@ -12,6 +15,49 @@ import type {
 
 const DEFAULT_API_BASE_URL = "https://effect-patterns-mcp.vercel.app";
 const DEFAULT_TIMEOUT_MS = 10_000;
+
+const resolveConfigPath = () => {
+  const explicit = process.env.EP_CONFIG_FILE;
+  if (explicit && explicit.trim().length > 0) {
+    return explicit;
+  }
+
+  const configHome = process.env.XDG_CONFIG_HOME || path.join(homedir(), ".config");
+  return path.join(configHome, "ep-cli", "config.json");
+};
+
+const readApiKeyFromFile = (filePath: string): string => {
+  const content = readFileSync(filePath, "utf8").trim();
+  if (!content) {
+    throw new Error(`API key file is empty: ${filePath}`);
+  }
+  return content;
+};
+
+const readApiKeyFromConfig = (): string => {
+  const configPath = resolveConfigPath();
+  if (!existsSync(configPath)) {
+    return "";
+  }
+
+  const raw = readFileSync(configPath, "utf8");
+  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  const value = parsed.apiKey;
+
+  return typeof value === "string" ? value.trim() : "";
+};
+
+const resolveApiKey = (): string => {
+  const direct = process.env.PATTERN_API_KEY?.trim();
+  if (direct) return direct;
+
+  const fromFilePath = process.env.EP_API_KEY_FILE?.trim();
+  if (fromFilePath) {
+    return readApiKeyFromFile(fromFilePath);
+  }
+
+  return readApiKeyFromConfig();
+};
 
 const asObject = (value: unknown): Record<string, unknown> | null =>
   typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
@@ -156,7 +202,13 @@ export class PatternApi extends Effect.Service<PatternApi>()("PatternApi", {
     const baseUrl = normalizeBaseUrl(
       process.env.EFFECT_PATTERNS_API_URL || DEFAULT_API_BASE_URL
     );
-    const apiKey = process.env.PATTERN_API_KEY || "";
+    const apiKey = yield* Effect.try({
+      try: () => resolveApiKey(),
+      catch: (error) =>
+        error instanceof Error
+          ? error
+          : new Error("Failed to resolve API key from configuration"),
+    });
 
     const search: PatternApiService["search"] = (params: PatternSearchParams) =>
       Effect.gen(function* () {

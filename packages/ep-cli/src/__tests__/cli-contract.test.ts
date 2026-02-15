@@ -14,11 +14,13 @@ const runCli = (
   options?: {
     cwd?: string;
     env?: NodeJS.ProcessEnv;
+    input?: string;
   }
 ) =>
   spawnSync("bun", [cliEntry, ...args], {
     cwd: options?.cwd ?? packageRoot,
     env: { ...process.env, ...options?.env },
+    input: options?.input,
     encoding: "utf8",
   });
 
@@ -124,5 +126,24 @@ describe("ep-cli stream and machine-mode contracts", () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).not.toMatch(/\x1b\[[0-9;]*m/);
+  });
+
+  it("accepts API key from stdin with --api-key-stdin", () => {
+    const result = runCli(["--api-key-stdin", "install", "list", "--json"], {
+      input: "stdin-api-key\n",
+    });
+
+    expect(result.status).toBe(0);
+    const parsed = JSON.parse(result.stdout);
+    expect(Array.isArray(parsed.tools)).toBe(true);
+  });
+
+  it("fails with actionable error when --api-key-stdin receives empty input", () => {
+    const result = runCli(["--api-key-stdin", "install", "list", "--json"], {
+      input: "\n",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("No API key was provided on stdin");
   });
 });
