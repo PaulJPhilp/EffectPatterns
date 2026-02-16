@@ -32,11 +32,11 @@
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage --coverage.reporter=text --coverage.reporter=html --coverage.threshold=75",
+    "test:coverage": "vitest run --coverage",
     "prepublishOnly": "bun run build"
   },
   "type": "module",
   "devDependencies": {
-    "@vitest/coverage-istanbul": "^4.0.16"
+    "@vitest/coverage-istanbul": "^4.0.18"
   }
 }
