@@ -34,7 +34,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "prepublishOnly": "bun run build"
   },
   "keywords": [
     "effect",
