@@ -21,7 +21,7 @@
     "@effect/cli": "0.73.2",
     "@effect/platform": "0.94.4",
     "@effect/platform-node": "0.104.1",
-    "effect": "^3.19.16",
+    "effect": "3.19.17",
     "effect-cli-tui": "^2.2.0",
     "effect-env": "^0.4.1"
   },

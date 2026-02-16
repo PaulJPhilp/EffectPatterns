@@ -74,7 +74,7 @@
     "@opentelemetry/semantic-conventions": "^1.38.0",
     "@vercel/kv": "^3.0.0",
     "drizzle-orm": "^0.45.1",
-    "effect": "^3.19.16",
+    "effect": "3.19.17",
     "next": "^16.0.10",
     "postgres": "^3.4.8",
     "react": "^19.2.3",
