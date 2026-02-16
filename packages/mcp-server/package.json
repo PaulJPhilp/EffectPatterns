@@ -66,13 +66,13 @@
     "@effect/schema": "^0.75.5",
     "@modelcontextprotocol/sdk": "^1.25.2",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.211.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",
     "@opentelemetry/resources": "^2.2.0",
-    "@opentelemetry/sdk-node": "^0.211.0",
+    "@opentelemetry/sdk-node": "^0.212.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
     "@opentelemetry/sdk-trace-node": "^2.2.0",
     "@opentelemetry/semantic-conventions": "^1.38.0",
-    "@vercel/kv": "^1.0.1",
+    "@vercel/kv": "^3.0.0",
     "drizzle-orm": "^0.45.1",
     "effect": "^3.19.16",
     "next": "^16.0.10",
@@ -80,7 +80,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "vercel": "^50.4.8",
-    "zod": "^3.25.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@ai-sdk/openai": "^3.0.2",
@@ -89,9 +89,9 @@
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.0.15",
     "ai": "^6.0.19",
-    "autocannon": "^7.15.0",
-    "eslint": "^9.39.1",
-    "eslint-config-next": "^16.0.10",
+    "autocannon": "^8.0.0",
+    "eslint": "^10.0.0",
+    "eslint-config-next": "^16.1.6",
     "typescript": "5.9.3",
     "vitest": "^4.0.15"
   },
