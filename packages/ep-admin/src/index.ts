@@ -379,6 +379,32 @@ const rewriteHelpUsageWithFullPath = (
 	return helpOutput.replace(/^\$ \S+/m, `$ ${fullPath}`);
 };
 
+const stripAnsi = (value: string): string =>
+	value.replace(/\u001b\[[0-9;]*m/g, "");
+
+const dedupeOptionalHelpLines = (helpOutput: string): string => {
+	const lines = helpOutput.split("\n");
+	const deduped: string[] = [];
+	let previousNonEmptyWasOptional = false;
+
+	for (const line of lines) {
+		const normalized = stripAnsi(line).trim();
+		const isNonEmpty = normalized.length > 0;
+		const isOptionalLine = normalized === "This setting is optional.";
+
+		if (isNonEmpty && isOptionalLine && previousNonEmptyWasOptional) {
+			continue;
+		}
+
+		deduped.push(line);
+		if (isNonEmpty) {
+			previousNonEmptyWasOptional = isOptionalLine;
+		}
+	}
+
+	return deduped.join("\n");
+};
+
 const levenshtein = (a: string, b: string): number => {
 	const dp: number[][] = Array.from({ length: a.length + 1 }, () =>
 		Array.from({ length: b.length + 1 }, () => 0)
@@ -803,9 +829,8 @@ export const runCli = (
 					),
 			});
 
-			const rewrittenStdout = rewriteHelpUsageWithFullPath(
-				helpOutput.stdout ?? "",
-				prepared.argv
+			const rewrittenStdout = dedupeOptionalHelpLines(
+				rewriteHelpUsageWithFullPath(helpOutput.stdout ?? "", prepared.argv)
 			);
 
 			yield* Effect.sync(() => {
