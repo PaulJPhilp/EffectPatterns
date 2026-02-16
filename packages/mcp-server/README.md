@@ -700,7 +700,9 @@ curl -H "MCP-Protocol-Version: 2025-11-25" http://localhost:3001/mcp/health
    - `OAUTH_CLIENT_ID=effect-patterns-mcp`
    - `OAUTH_CLIENT_SECRET=your-client-secret`
    - `ALLOWED_ORIGINS=https://your-app.com`
-3. Deploy automatically on push to main branch
+3. Trigger deployment manually (automatic git-triggered deploys are disabled by `ignoreCommand`)
+   - from repo root: `vercel --prod`
+   - or from `packages/mcp-server`: `vercel --prod`
 
 #### Docker
 
