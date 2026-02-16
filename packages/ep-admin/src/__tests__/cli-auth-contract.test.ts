@@ -125,6 +125,9 @@ describe.sequential("CLI auth and DX contract", () => {
 			expect(nestedHelp.stdout).toContain(
 				"$ ep-admin pattern skills generate-from-db"
 			);
+			expect(nestedHelp.stdout).not.toMatch(
+				/This setting is optional\.\n\s*\n\s*This setting is optional\./
+			);
 
 			const dbLeafHelp = runCli(["db", "show", "patterns", "--help"], env);
 			expect(dbLeafHelp.status).toBe(0);
