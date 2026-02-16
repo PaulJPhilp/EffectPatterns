@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 echo "========================================="
 echo "MCP Server - Staging Deployment"
@@ -20,8 +20,14 @@ fi
 echo "✓ Vercel CLI found"
 echo ""
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+STAGING_DOMAIN="effect-patterns-mcp-staging.vercel.app"
+
+cd "${ROOT_DIR}"
+
 # Check if project is linked
-if [ ! -d ".vercel" ]; then
+if [ ! -d "${ROOT_DIR}/.vercel" ]; then
     echo "${YELLOW}⚠ Project not linked to Vercel${NC}"
     echo ""
     echo "Please run the following commands manually:"
@@ -47,13 +53,24 @@ echo ""
 echo "🚀 Deploying to staging..."
 echo ""
 
-vercel --env preview
+DEPLOY_OUTPUT="$(vercel --target preview 2>&1 | tee /dev/stderr)"
+DEPLOY_URL="$(printf "%s\n" "${DEPLOY_OUTPUT}" | grep -Eo 'https://[^ ]+\.vercel\.app' | tail -n1 || true)"
+
+if [ -z "${DEPLOY_URL}" ]; then
+    echo "❌ Could not determine deployed preview URL from Vercel output."
+    exit 1
+fi
+
+echo ""
+echo "🔗 Pointing ${STAGING_DOMAIN} to ${DEPLOY_URL}..."
+vercel alias set "${DEPLOY_URL}" "${STAGING_DOMAIN}"
 
 echo ""
 echo "${GREEN}✓ Deployment complete!${NC}"
 echo ""
 echo "Next steps:"
-echo "  1. Check the deployment URL above"
+echo "  1. Check staging health:"
+echo "     ${GREEN}curl https://${STAGING_DOMAIN}/api/health${NC}"
 echo "  2. Run smoke tests:"
-echo "     ${GREEN}bun run smoke-test <DEPLOYMENT_URL> <API_KEY>${NC}"
+echo "     ${GREEN}STAGING_API_KEY=<key> bun run test:mcp:staging${NC}"
 echo ""

@@ -105,7 +105,8 @@ export const sla = {
  */
 export const testData = {
   searchQuery: "retry",
-  patternId: "effect-service",
+  // Must exist in staging/prod fixtures for generation endpoint checks.
+  patternId: "getting-started-effect-vs-promise",
   sampleCode: `
 export const handler = (input: any) => {
   return input * 2;
