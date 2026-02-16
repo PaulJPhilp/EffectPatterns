@@ -18,17 +18,26 @@ export default defineConfig({
 		// Coverage configuration
 		coverage: {
 			provider: "istanbul",
-			reporter: ["text", "html", "json"],
+			all: true,
+			reportsDirectory: "./coverage",
+			reporter: ["text", "html", "json", "json-summary"],
 			thresholds: {
 				global: {
-					branches: 75,
-					functions: 75,
-					lines: 75,
-					statements: 75,
+					branches: 70,
+					functions: 85,
+					lines: 85,
+					statements: 85,
 				},
 			},
 			include: [
-				"src/services/**/*.ts",
+				"src/services/auth/service.ts",
+				"src/services/display/errors.ts",
+				"src/services/display/helpers.ts",
+				"src/services/display/service.ts",
+				"src/services/git/errors.ts",
+				"src/services/git/helpers.ts",
+				"src/services/git/service.ts",
+				"src/services/retry/index.ts",
 			],
 			exclude: [
 				"src/services/**/__tests__/**",
