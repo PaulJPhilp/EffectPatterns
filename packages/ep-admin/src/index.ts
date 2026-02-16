@@ -299,6 +299,9 @@ const COMMAND_TREE: CommandTreeNode = {
 	},
 };
 
+const ROOT_COMMAND_SET = new Set(Object.keys(COMMAND_TREE));
+const OPTIONS_WITH_VALUE = new Set(["--completions", "--log-level"]);
+
 const ROOT_HELP_COMMANDS: ReadonlyArray<{
 	readonly name: string;
 	readonly description: string;
@@ -356,8 +359,45 @@ const isRootHelpRequest = (argv: ReadonlyArray<string>): boolean => {
 	return !hasPositional;
 };
 
-const normalizeArgsForSuggestion = (argv: ReadonlyArray<string>): string[] =>
-	argv.slice(2).filter((token) => token.length > 0 && !token.startsWith("-"));
+const normalizeArgsForSuggestion = (argv: ReadonlyArray<string>): string[] => {
+	const args = argv.slice(2);
+	const positional: string[] = [];
+	let skipNextAsOptionValue = false;
+
+	for (const token of args) {
+		if (skipNextAsOptionValue) {
+			skipNextAsOptionValue = false;
+			continue;
+		}
+
+		if (token === "--") {
+			break;
+		}
+
+		if (token.length === 0) {
+			continue;
+		}
+
+		if (token.startsWith("-")) {
+			if (!token.includes("=") && OPTIONS_WITH_VALUE.has(token)) {
+				skipNextAsOptionValue = true;
+			}
+			continue;
+		}
+
+		positional.push(token);
+	}
+
+	const firstRootCommandIndex = positional.findIndex((token) =>
+		ROOT_COMMAND_SET.has(token)
+	);
+
+	if (firstRootCommandIndex > 0) {
+		return positional.slice(firstRootCommandIndex);
+	}
+
+	return positional;
+};
 
 const isNestedHelpRequest = (argv: ReadonlyArray<string>): boolean => {
 	const args = argv.slice(2);
@@ -691,6 +731,104 @@ const normalizeUnknownErrorMessage = (error: unknown): string => {
 	return String(error);
 };
 
+const extractInvalidValueMessage = (value: unknown): string | null => {
+	if (typeof value !== "object" || value === null) {
+		return null;
+	}
+
+	const tagged = value as { readonly _tag?: string; readonly error?: unknown };
+	if (tagged._tag !== "InvalidValue") {
+		return null;
+	}
+
+	const errorPayload = tagged.error as
+		| {
+				readonly _tag?: string;
+				readonly value?: unknown;
+		  }
+		| undefined;
+	if (!errorPayload || errorPayload._tag !== "Paragraph") {
+		return null;
+	}
+
+	const paragraphValue = errorPayload.value as
+		| {
+				readonly _tag?: string;
+				readonly value?: unknown;
+		  }
+		| undefined;
+	if (!paragraphValue || paragraphValue._tag !== "Text") {
+		return null;
+	}
+
+	return typeof paragraphValue.value === "string"
+		? paragraphValue.value
+		: null;
+};
+
+const hasInvalidValuePayload = (message: string): boolean => {
+	if (message.includes("\"_tag\":\"InvalidValue\"")) {
+		return true;
+	}
+
+	const lines = message.split(/\r?\n/);
+	for (const rawLine of lines) {
+		const trimmed = rawLine.trim();
+		if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+			continue;
+		}
+
+		try {
+			if (extractInvalidValueMessage(JSON.parse(trimmed)) !== null) {
+				return true;
+			}
+		} catch {
+			// Ignore malformed JSON-ish lines.
+		}
+	}
+
+	return false;
+};
+
+const isParserLineAlreadyRendered = (message: string): boolean =>
+	/^Received unknown argument:/m.test(message) ||
+	/^Received invalid argument:/m.test(message) ||
+	/^Received invalid value:/m.test(message);
+
+const normalizeCliParserMessage = (message: string): string => {
+	const lines = message.split(/\r?\n/);
+	const cleaned: string[] = [];
+
+	for (const rawLine of lines) {
+		const trimmed = rawLine.trim();
+		if (trimmed.length === 0) {
+			continue;
+		}
+		if (trimmed === "[object Object]") {
+			continue;
+		}
+
+		let parsedLine: string | null = null;
+		if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+			try {
+				parsedLine = extractInvalidValueMessage(JSON.parse(trimmed));
+			} catch {
+				parsedLine = null;
+			}
+		}
+
+		const candidate = stripAnsi(parsedLine ?? trimmed).trim();
+		if (candidate.length === 0) {
+			continue;
+		}
+		if (!cleaned.includes(candidate)) {
+			cleaned.push(candidate);
+		}
+	}
+
+	return cleaned.join("\n");
+};
+
 const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): string | null => {
 	const resolvedError = unwrapFiberFailure(error);
 
@@ -772,16 +910,45 @@ const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): strin
 	}
 
 	if (typeof resolvedError === "string") {
-		return appendStandardErrorGuidance(resolvedError, argv);
+		const normalized = normalizeCliParserMessage(resolvedError);
+		if (
+			hasInvalidValuePayload(resolvedError) ||
+			isParserLineAlreadyRendered(normalized)
+		) {
+			return appendStandardErrorGuidance("", argv);
+		}
+		return appendStandardErrorGuidance(
+			normalized,
+			argv
+		);
 	}
 
 	if (resolvedError instanceof Error) {
 		if (resolvedError.message.trim()) {
-			return appendStandardErrorGuidance(resolvedError.message, argv);
+			const normalized = normalizeCliParserMessage(resolvedError.message);
+			if (
+				hasInvalidValuePayload(resolvedError.message) ||
+				isParserLineAlreadyRendered(normalized)
+			) {
+				return appendStandardErrorGuidance("", argv);
+			}
+			return appendStandardErrorGuidance(
+				normalized,
+				argv
+			);
 		}
 	}
 
-	return appendStandardErrorGuidance(normalizeUnknownErrorMessage(resolvedError), argv);
+	const unknownMessage = normalizeUnknownErrorMessage(resolvedError);
+	const normalizedUnknownMessage = normalizeCliParserMessage(unknownMessage);
+	if (
+		hasInvalidValuePayload(unknownMessage) ||
+		isParserLineAlreadyRendered(normalizedUnknownMessage)
+	) {
+		return appendStandardErrorGuidance("", argv);
+	}
+
+	return appendStandardErrorGuidance(normalizedUnknownMessage, argv);
 };
 
 export const createAdminProgram = (
