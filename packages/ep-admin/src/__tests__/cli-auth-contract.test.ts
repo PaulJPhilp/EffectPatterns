@@ -272,6 +272,88 @@ describe.sequential("CLI auth and DX contract", () => {
 		}
 	});
 
+	it("supports global value options before command path", async () => {
+		const { tempDir, env } = await createAuthEnv();
+		try {
+			const init = runCli(
+				[
+					"auth",
+					"init",
+					"--passphrase",
+					"correct-horse-battery",
+					"--confirm-passphrase",
+					"correct-horse-battery",
+					"--service-token",
+					"automation-token-123456",
+					"--json",
+				],
+				env
+			);
+			expect(init.status).toBe(0);
+
+			const result = runCli(
+				[
+					"--log-level",
+					"info",
+					"ops",
+					"rotate-api-key",
+					"--json",
+				],
+				{
+					...env,
+					EP_ADMIN_SERVICE_TOKEN: "automation-token-123456",
+				}
+			);
+			expect(result.status).toBe(0);
+			const payload = JSON.parse(result.stdout) as {
+				ok: boolean;
+				action: string;
+			};
+			expect(payload.ok).toBe(true);
+			expect(payload.action).toBe("rotate-api-key");
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	it("normalizes parser errors without structured object leakage", async () => {
+		const { tempDir, env } = await createAuthEnv();
+		try {
+			const init = runCli(
+				[
+					"auth",
+					"init",
+					"--passphrase",
+					"correct-horse-battery",
+					"--confirm-passphrase",
+					"correct-horse-battery",
+					"--service-token",
+					"automation-token-123456",
+					"--json",
+				],
+				env
+			);
+			expect(init.status).toBe(0);
+
+			const invalidArg = runCli(
+				["ops", "mcp", "list-rules", "--bogus"],
+				{
+					...env,
+					EP_ADMIN_SERVICE_TOKEN: "automation-token-123456",
+				}
+			);
+			expect(invalidArg.status).toBe(1);
+			expect(invalidArg.stderr).toContain("Received unknown argument: '--bogus'");
+			expect(invalidArg.stderr).toContain(
+				"Run: ep-admin ops mcp list-rules --help"
+			);
+			expect(invalidArg.stderr).not.toContain("\"_tag\":\"InvalidValue\"");
+			expect(invalidArg.stderr).not.toContain("[object Object]");
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
   it("supports ops help and legacy alias warning, plus typo suggestion", async () => {
     const { tempDir, env } = await createAuthEnv();
     try {
