@@ -45,7 +45,7 @@
   "author": "Effect Patterns Team",
   "license": "MIT",
   "dependencies": {
-    "@effect/platform": "0.94.4",
+    "@effect/platform": "0.94.5",
     "effect": "3.19.17"
   },
   "devDependencies": {
