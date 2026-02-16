@@ -7,7 +7,7 @@
  */
 
 import { Args, Command } from "@effect/cli";
-import { Effect } from "effect";
+import { Effect, FiberRef, Option } from "effect";
 import { Console } from "effect";
 import { spawnSync } from "node:child_process";
 import { dirname } from "node:path";
@@ -959,6 +959,9 @@ export const runCli = (
 	argv: ReadonlyArray<string> = process.argv
 ): Effect.Effect<void, unknown, never> =>
 	Effect.gen(function* () {
+		// Keep machine-mode stdout deterministic even if transitive Effect versions lag.
+		yield* FiberRef.set(FiberRef.versionMismatchErrorLogLevel, Option.none());
+
 		if (isRootHelpRequest(argv)) {
 			yield* Console.log(renderCompactRootHelp());
 			return;
@@ -1066,7 +1069,9 @@ const isDirectExecution = (() => {
 })();
 
 if (isDirectExecution) {
-	const provided = Effect.provide(runCli(process.argv), ProductionLayer) as Effect.Effect<
+	const provided = Effect.provide(runCli(process.argv), ProductionLayer).pipe(
+		Effect.locally(FiberRef.versionMismatchErrorLogLevel, Option.none())
+	) as Effect.Effect<
 		void,
 		unknown,
 		never

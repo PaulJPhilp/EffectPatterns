@@ -46,7 +46,7 @@
   "license": "MIT",
   "dependencies": {
     "@effect/platform": "0.94.4",
-    "effect": "^3.19.16"
+    "effect": "3.19.17"
   },
   "devDependencies": {
     "@effect/schema": "^0.75.5",

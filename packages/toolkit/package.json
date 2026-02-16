@@ -44,13 +44,13 @@
     "@effect/platform": "0.94.5",
     "@effect/platform-node": "0.104.1",
     "@effect/schema": "^0.75.5",
-    "effect": "^3.19.16"
+    "effect": "3.19.17"
   },
   "peerDependencies": {
     "@effect/platform": "0.94.5",
     "@effect/platform-node": "0.104.1",
     "@effect/schema": "^0.75.5",
-    "effect": "^3.19.16"
+    "effect": "3.19.17"
   },
   "devDependencies": {
     "@types/node": "^25.0.6",
