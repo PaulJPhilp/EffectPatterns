@@ -12,6 +12,8 @@ Quick checklist before deploying the MCP server to production.
 - [ ] Check CI passes (optional but recommended - catches env drift)
 - [ ] Verify API key is configured in production environment
 - [ ] Test MCP connection locally: `bun run test:mcp:local`
+- [ ] Confirm deploy trigger mode: git-triggered deploys are disabled via `ignoreCommand`; use manual `vercel --prod`
+- [ ] Optional hardening: run one DB-backed smoke test in release environment with production-like `DATABASE_URL`
 
 ## Deployment
 
@@ -28,6 +30,7 @@ Quick checklist before deploying the MCP server to production.
 - [ ] Test pattern search functionality
 - [ ] Check error rates in monitoring
 - [ ] Verify API key authentication works
+- [ ] Track migration from Next.js `middleware` to `proxy` convention (deprecation warning; non-blocking for this release)
 
 ---
 

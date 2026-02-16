@@ -1,3 +1,8 @@
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: [
@@ -18,7 +23,10 @@ const nextConfig = {
   outputFileTracingExcludes: {
     "*": ["node_modules/.bun/**"],
   },
-  turbopack: {}, // Enable turbopack with empty config
+  // Pin monorepo root explicitly to avoid environment-dependent root inference.
+  turbopack: {
+    root: resolve(__dirname, "../.."),
+  },
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
