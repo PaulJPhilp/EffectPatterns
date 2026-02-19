@@ -6,6 +6,7 @@ A community-driven knowledge base of practical, goal-oriented patterns for build
 
 Effect Patterns Hub is a comprehensive resource for developers learning and mastering Effect-TS. The project provides:
 
+- **[EffectTalk.dev](https://effecttalk.dev/)** - Browse 300+ patterns, take guided tours, and run code in the browser
 - **150+ Curated Patterns** - Goal-oriented, production-ready patterns with TypeScript examples
 - **CLI Tool (`ep`)** - Search, discover, and install patterns from the command line
 - **Effect Patterns Toolkit** - Type-safe library for pattern operations
@@ -448,6 +449,7 @@ See [ROADMAP.md](./ROADMAP.md) for the complete roadmap.
 
 ## Resources
 
+- **[EffectTalk.dev](https://effecttalk.dev/)** - Interactive pattern browser and guided tours
 - **[Effect-TS Documentation](https://effect.website/)** - Official Effect docs
 - **[Effect Discord](https://discord.gg/effect-ts)** - Community support
 - **[GitHub Repository](https://github.com/PaulJPhilp/Effect-Patterns)** - Source code

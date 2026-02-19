@@ -21,6 +21,11 @@ A community-driven knowledge base of practical, goal-oriented patterns for build
 
 This repository is designed to be a living document that helps developers move from core concepts to advanced architectural strategies by focusing on the "why" behind the code.
 
+> **[EffectTalk.dev](https://effecttalk.dev/)** — Browse all 300+ patterns, take guided learning tours, and run code examples in the browser. Built on this repo.
+> - [Start the Guided Tour](https://effecttalk.dev/tour)
+> - [Browse Patterns](https://effecttalk.dev/patterns)
+> - [Welcome Post](https://effecttalk.dev/blog/welcome)
+
 **Looking for machine-readable rules for AI IDEs and coding agents? See the [AI Coding Rules](#ai-coding-rules) section below.**
 
 ## Table of Contents
