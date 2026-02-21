@@ -1,9 +1,9 @@
-description: Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
+description: Understand that an Effect<A, E, R> describes a computation with a success type (A), an error type (E), and a requirements type (R).
 globs: "**/*.ts"
 alwaysApply: true
 
 # Understand the Three Effect Channels (A, E, R)
-**Rule:** Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
+**Rule:** Understand that an Effect<A, E, R> describes a computation with a success type (A), an error type (E), and a requirements type (R).
 
 ### Example
 This function signature is a self-documenting contract. It clearly states that to get a `User`, you must provide a `Database` service, and the operation might fail with a `UserNotFoundError`.

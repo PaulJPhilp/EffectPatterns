@@ -4307,7 +4307,7 @@ defining an `Effect`.
 
 ### Understand the Three Effect Channels (A, E, R)
 
-**Rule:** Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
+**Rule:** Understand that an Effect<A, E, R> describes a computation with a success type (A), an error type (E), and a requirements type (R).
 
 **Use Cases:** core-concepts
 

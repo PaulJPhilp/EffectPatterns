@@ -916,7 +916,7 @@ Defining an `Effect` does not execute any code inside it. Only when you call
 
 ## Understand the Three Effect Channels (A, E, R)
 
-**Rule:** Understand that an Effect&lt;A, E, R&gt; describes a computation with a success type (A), an error type (E), and a requirements type (R).
+**Rule:** Understand that an Effect<A, E, R> describes a computation with a success type (A), an error type (E), and a requirements type (R).
 
 ### Example
 

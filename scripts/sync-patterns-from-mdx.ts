@@ -80,6 +80,17 @@ function extractExamples(content: string): Array<{ language: string; code: strin
   return [];
 }
 
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&#x3C;/g, "<")
+    .replace(/&#x3E;/g, ">")
+    .replace(/&#60;/g, "<")
+    .replace(/&#62;/g, ">")
+}
+
 function extractSummary(content: string): string {
   // Try to get first paragraph after the first heading
   const afterHeading = content.replace(/^#[^\n]*\n+/, "").trim();
@@ -145,16 +156,18 @@ const program = Effect.gen(function* () {
         ? frontmatter.id.trim()
         : path.basename(file, ".mdx");
 
-    const title = frontmatter.title || slug;
+    const title = decodeHtmlEntities(frontmatter.title || slug);
     const skillLevel = frontmatter.skillLevel || "intermediate";
     const topLevelCategory = extractTopLevelCategory(file);
     const category = topLevelCategory;
     const tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [];
-    const summary = frontmatter.summary || extractSummary(content);
+    const summary = decodeHtmlEntities(frontmatter.summary || extractSummary(content));
     const difficulty = frontmatter.difficulty || skillLevel;
     const author = frontmatter.author || "Effect Patterns Team";
     const lessonOrder = typeof frontmatter.lessonOrder === "number" ? frontmatter.lessonOrder : null;
-    const rule = frontmatter.rule || null;
+    const rule = frontmatter.rule
+      ? { ...frontmatter.rule, description: decodeHtmlEntities(frontmatter.rule.description || "") }
+      : null;
     const examples = extractExamples(content);
 
     // Resolve application_pattern_id

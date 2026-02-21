@@ -54,3 +54,4 @@ content/published/skills/openai/
 
 # IDE local config with secrets
 .cursor/mcp.json
+.env*.local
