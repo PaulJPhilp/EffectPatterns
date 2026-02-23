@@ -17,6 +17,7 @@
 import matter from "gray-matter";
 import { globSync } from "glob";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 import { Effect } from "effect";
 import { eq } from "drizzle-orm";
@@ -27,7 +28,8 @@ import {
   patternRelations,
 } from "../packages/toolkit/src/db/schema/index.js";
 
-const ROOT = path.resolve(import.meta.dir, "..");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "..");
 const CONTENT_DIR = path.join(ROOT, "content/published/patterns");
 
 // Parse --release flag

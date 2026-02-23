@@ -13,9 +13,11 @@
 import matter from "gray-matter";
 import { globSync } from "glob";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { readFileSync, writeFileSync } from "node:fs";
 
-const ROOT = path.resolve(import.meta.dir, "..");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "..");
 const CONTENT_DIR = path.join(ROOT, "content/published/patterns");
 const dryRun = process.argv.includes("--dry-run");
 

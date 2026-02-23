@@ -2,58 +2,93 @@
  * Health Check Endpoint
  *
  * GET /api/health
- * Returns service health status and version
+ * Returns service health status, version, and environment.
  *
- * Lightweight health check that doesn't require database or tracing connectivity
+ * GET /api/health?deep=true
+ * Also runs a lightweight DB check and returns database: "ok" | "error";
+ * returns 503 if the database check fails.
+ *
+ * Lightweight health check (no query) does not require database or tracing
  * to avoid crashes during cold starts or connection issues.
  */
 
-import { randomUUID } from "node:crypto";
-import { NextResponse } from "next/server";
+import { createDatabase } from "@effect-patterns/toolkit"
+import { randomUUID } from "node:crypto"
+import { NextResponse } from "next/server"
+import { sql } from "drizzle-orm"
 
-const SERVICE_NAME = "effect-patterns-mcp-server";
-const SERVICE_VERSION = "0.7.7";
+const SERVICE_NAME = "effect-patterns-mcp-server"
+const SERVICE_VERSION = "0.7.7"
 
-export async function GET() {
+function getEnvironment(): string {
+  return (
+    process.env.VERCEL_ENV ??
+    process.env.APP_ENV ??
+    "development"
+  )
+}
+
+export async function GET(request: Request) {
+  const traceId = randomUUID()
+  const url = new URL(request.url)
+  const deep = url.searchParams.get("deep") === "true"
+
   try {
-    // Generate a trace ID for this request
-    const traceId = randomUUID();
-
-    // Simple synchronous health check - no external dependencies
-    const result = {
+    const baseResult = {
       ok: true,
       version: SERVICE_VERSION,
       service: SERVICE_NAME,
+      environment: getEnvironment(),
       timestamp: new Date().toISOString(),
       traceId,
-    };
+    }
+
+    if (!deep) {
+      return NextResponse.json(baseResult, {
+        status: 200,
+        headers: { "x-trace-id": traceId },
+      })
+    }
+
+    let database: "ok" | "error" = "error"
+    try {
+      const { db, close } = createDatabase()
+      try {
+        await db.execute(sql`SELECT 1`)
+        database = "ok"
+      } finally {
+        await close()
+      }
+    } catch (_dbError) {
+      database = "error"
+    }
+
+    const result = {
+      ...baseResult,
+      ok: database === "ok",
+      database,
+    }
+    const status = database === "ok" ? 200 : 503
 
     return NextResponse.json(result, {
-      status: 200,
-      headers: {
-        "x-trace-id": traceId,
-      },
-    });
+      status,
+      headers: { "x-trace-id": traceId },
+    })
   } catch (error) {
-    // Generate a trace ID for error response
-    const traceId = randomUUID();
-
-    // Return error response instead of crashing
     return NextResponse.json(
       {
         ok: false,
         error: String(error),
         version: SERVICE_VERSION,
         service: SERVICE_NAME,
+        environment: getEnvironment(),
         timestamp: new Date().toISOString(),
         traceId,
       },
       {
         status: 500,
-        headers: {
-          "x-trace-id": traceId,
-        },
+        headers: { "x-trace-id": traceId },
       }
-    );
+    )
   }
 }

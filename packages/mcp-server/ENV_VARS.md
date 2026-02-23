@@ -4,6 +4,24 @@ Complete reference for all environment variables used across different test conf
 
 ---
 
+## Staging (Vercel Preview)
+
+For **Vercel Preview** deployments (staging), set these in the Vercel project → Settings → Environment Variables → **Preview**:
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | **Required.** Staging Postgres URL (e.g. Supabase branch or separate staging DB). Must be set for Preview so staging uses a dedicated DB; Production keeps the production URL. |
+| `OTEL_RESOURCE_ATTRIBUTES` | Optional. Set to `environment=staging` so Honeycomb (or other OTLP backends) can filter staging traces. If you use a separate Honeycomb dataset for staging, you can also set `OTEL_EXPORTER_OTLP_ENDPOINT` and related vars for Preview. |
+| `OTEL_EXPORTER_OTLP_*` | Optional. Override OTLP endpoint/headers for Preview if you use a different Honeycomb project or endpoint for staging. |
+| `NEXT_PUBLIC_POSTHOG_KEY` | When PostHog is added: use the staging project key for Preview so analytics are separated. |
+| `NEXT_PUBLIC_POSTHOG_HOST` | When PostHog is added: e.g. `https://app.posthog.com` or staging host. |
+| `WORKOS_CLIENT_ID` | When WorkOS is added: use staging application credentials for Preview. |
+| `WORKOS_API_KEY` or `WORKOS_CLIENT_SECRET` | When WorkOS is added: staging app secret for Preview. Add the staging redirect URI `https://effect-patterns-mcp-staging.vercel.app/callback` in the WorkOS dashboard. |
+
+**Note:** The app reads only `DATABASE_URL`. If your staging DB is Neon, use the **pooler** URL (recommended for serverless) as the value for `DATABASE_URL` in Vercel Preview; Neon’s `POSTGRES_*` names are not read by this app. Set `DATABASE_URL` in Vercel → Environment Variables → **Preview** to your staging Postgres URL.
+
+---
+
 ## Summary Table
 
 | Variable | Unit | Routes | MCP | Integration | Workflows | Deployment | Stress | Default | Purpose |

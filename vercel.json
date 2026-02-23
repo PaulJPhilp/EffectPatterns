@@ -3,7 +3,7 @@
   "framework": "nextjs",
   "ignoreCommand": "echo 'Automatic Vercel git deployments are disabled for this repository.' && exit 0",
   "installCommand": "bun install",
-  "buildCommand": "cd packages/mcp-server && npx next build",
+  "buildCommand": "bash scripts/vercel-build.sh",
   "outputDirectory": "packages/mcp-server/.next",
   "regions": ["iad1"]
 }

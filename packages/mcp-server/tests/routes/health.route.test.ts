@@ -14,31 +14,33 @@
 import { GET as healthGET } from "../../app/api/health/route";
 import { describe, expect, it } from "vitest";
 
+const healthRequest = () => new Request("http://localhost/api/health");
+
 describe("Health Route (/api/health) - REAL ROUTE", () => {
   it("should return 200 status code", async () => {
-    const response = await healthGET();
+    const response = await healthGET(healthRequest());
     expect(response.status).toBe(200);
   });
 
   it("should return JSON response", async () => {
-    const response = await healthGET();
+    const response = await healthGET(healthRequest());
     expect(response.headers.get("content-type")).toContain("application/json");
   });
 
   it("should return ok: true status", async () => {
-    const response = await healthGET();
+    const response = await healthGET(healthRequest());
     const data = await response.json() as Record<string, unknown>;
     expect(data.ok).toBe(true);
   });
 
   it("should return service name", async () => {
-    const response = await healthGET();
+    const response = await healthGET(healthRequest());
     const data = await response.json() as Record<string, unknown>;
     expect(data.service).toMatch(/effect-patterns/i);
   });
 
   it("should return version field", async () => {
-    const response = await healthGET();
+    const response = await healthGET(healthRequest());
     const data = await response.json() as Record<string, unknown>;
     expect(data.version).toBeDefined();
     expect(typeof data.version).toBe("string");
@@ -46,7 +48,7 @@ describe("Health Route (/api/health) - REAL ROUTE", () => {
   });
 
   it("should return ISO timestamp", async () => {
-    const response = await healthGET();
+    const response = await healthGET(healthRequest());
     const data = await response.json() as Record<string, unknown>;
     expect(typeof data.timestamp).toBe("string");
     const timestamp = data.timestamp as string;
@@ -57,7 +59,7 @@ describe("Health Route (/api/health) - REAL ROUTE", () => {
   });
 
   it("should include UUID trace ID in response body", async () => {
-    const response = await healthGET();
+    const response = await healthGET(healthRequest());
     const data = await response.json() as Record<string, unknown>;
     expect(data.traceId).toBeDefined();
     expect(typeof data.traceId).toBe("string");
@@ -66,7 +68,7 @@ describe("Health Route (/api/health) - REAL ROUTE", () => {
   });
 
   it("should include trace ID in x-trace-id response header", async () => {
-    const response = await healthGET();
+    const response = await healthGET(healthRequest());
     const traceIdHeader = response.headers.get("x-trace-id");
     expect(traceIdHeader).toBeDefined();
     expect(typeof traceIdHeader).toBe("string");
@@ -75,7 +77,7 @@ describe("Health Route (/api/health) - REAL ROUTE", () => {
   });
 
   it("should not require authentication", async () => {
-    const response = await healthGET();
+    const response = await healthGET(healthRequest());
     expect(response.status).toBe(200);
     const data = await response.json() as Record<string, unknown>;
     expect(data.error).toBeUndefined();
@@ -83,9 +85,9 @@ describe("Health Route (/api/health) - REAL ROUTE", () => {
 
   it("should handle multiple concurrent requests", async () => {
     const responses = await Promise.all([
-      healthGET(),
-      healthGET(),
-      healthGET(),
+      healthGET(healthRequest()),
+      healthGET(healthRequest()),
+      healthGET(healthRequest()),
     ]);
 
     for (const response of responses) {
@@ -97,10 +99,10 @@ describe("Health Route (/api/health) - REAL ROUTE", () => {
   });
 
   it("should return consistent response structure across multiple calls", async () => {
-    const response1 = await healthGET();
+    const response1 = await healthGET(healthRequest());
     const data1 = await response1.json() as Record<string, unknown>;
 
-    const response2 = await healthGET();
+    const response2 = await healthGET(healthRequest());
     const data2 = await response2.json() as Record<string, unknown>;
 
     // All calls should return same structure
@@ -116,20 +118,43 @@ describe("Health Route (/api/health) - REAL ROUTE", () => {
 
   it("should respond fast (< 50ms)", async () => {
     const start = performance.now();
-    await healthGET();
+    await healthGET(healthRequest());
     const duration = performance.now() - start;
 
     expect(duration).toBeLessThan(50);
   });
 
   it("should contain all required fields in response", async () => {
-    const response = await healthGET();
+    const response = await healthGET(healthRequest());
     const data = await response.json() as Record<string, unknown>;
 
-    const requiredFields = ["ok", "service", "version", "timestamp", "traceId"];
+    const requiredFields = ["ok", "service", "version", "timestamp", "traceId", "environment"];
     for (const field of requiredFields) {
       expect(data).toHaveProperty(field);
       expect(data[field]).toBeDefined();
+    }
+  });
+
+  it("should include environment in response", async () => {
+    const response = await healthGET(healthRequest());
+    const data = await response.json() as Record<string, unknown>;
+    expect(data.environment).toBeDefined();
+    expect(typeof data.environment).toBe("string");
+    expect(["development", "preview", "production"]).toContain(data.environment);
+  });
+
+  it("should support deep=true query and return database field", async () => {
+    const response = await healthGET(new Request("http://localhost/api/health?deep=true"));
+    const data = await response.json() as Record<string, unknown>;
+    expect(data.environment).toBeDefined();
+    expect(data.database).toBeDefined();
+    expect(data.database).toMatch(/^(ok|error)$/);
+    if (data.database === "ok") {
+      expect(response.status).toBe(200);
+      expect(data.ok).toBe(true);
+    } else {
+      expect(response.status).toBe(503);
+      expect(data.ok).toBe(false);
     }
   });
 });

@@ -115,6 +115,7 @@ const oauthConfig: OAuthConfig = {
         "http://localhost:3000/callback",
         "http://localhost:3001/callback",
         "https://effect-patterns.com/callback",
+        "https://effect-patterns-mcp-staging.vercel.app/callback",
     ],
     defaultScopes: ["mcp:access", "patterns:read"],
     supportedScopes: [
