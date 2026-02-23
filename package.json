@@ -109,7 +109,7 @@
     "conventional-recommended-bump": "^11.2.0",
     "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
-    "effect": "3.19.17",
+    "effect": "3.19.19",
     "effect-mdx": "^0.2.2",
     "glob": "^13.0.3",
     "gray-matter": "^4.0.3",
@@ -164,6 +164,6 @@
   "resolutions": {
     "@effect/platform": "0.94.5",
     "@effect/platform-node": "0.104.1",
-    "effect": "3.19.17"
+    "effect": "3.19.19"
   }
 }
