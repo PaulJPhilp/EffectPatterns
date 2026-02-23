@@ -3,6 +3,8 @@
  *
  * Tests the lock and unlock commands with real database operations.
  *
+ * // test-policy-ignore-file: structural mock — uses vi.spyOn on Display static methods for integration test structure validation
+ *
  * Prerequisites:
  * - PostgreSQL running
  * - TEST_DATABASE_URL or DATABASE_URL environment variable set

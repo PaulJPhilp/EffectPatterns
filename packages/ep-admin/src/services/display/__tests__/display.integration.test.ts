@@ -5,19 +5,20 @@
  * panels, tables, and proper error handling.
  */
 
-import { Console, Effect } from "effect";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Effect } from "effect";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { captureConsole } from "../../../test/helpers.js";
 import { Display } from "../index.js";
 
 describe("Display Service - Integration", () => {
-	let consoleSpy: ReturnType<typeof vi.spyOn>;
+	let capture: ReturnType<typeof captureConsole>;
 
 	beforeEach(() => {
-		consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		capture = captureConsole();
 	});
 
 	afterEach(() => {
-		consoleSpy.mockRestore();
+		capture.restore();
 	});
 
 	describe("Basic Message Display", () => {
@@ -27,7 +28,6 @@ describe("Display Service - Integration", () => {
 				return display !== null;
 			});
 
-			// Service should be accessible
 			expect(program).toBeDefined();
 		});
 
@@ -112,7 +112,6 @@ describe("Display Service - Integration", () => {
 				return true;
 			});
 
-			// Program should be well-formed
 			expect(program).toBeDefined();
 		});
 
@@ -549,13 +548,10 @@ describe("Display Service - Integration", () => {
 			const program = Effect.gen(function* () {
 				const display = yield* Display;
 
-				// Show start
 				yield* display.showInfo("Processing...");
 
-				// Do some work
 				const result = yield* Effect.succeed("done");
 
-				// Show result
 				if (result === "done") {
 					yield* display.showSuccess("Processing complete");
 				}

@@ -6,7 +6,8 @@
  */
 
 import { Effect } from "effect";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { captureConsole } from "../../../test/helpers.js";
 import {
 	retry,
 	retryN,
@@ -41,7 +42,6 @@ describe("Retry Service - Integration", () => {
 			expect(result).toBe("success");
 			expect(attempts.length).toBe(3);
 
-			// Verify delays: ~50ms between 1st and 2nd, ~100ms between 2nd and 3rd
 			const delay1 = attempts[1] - attempts[0];
 			const delay2 = attempts[2] - attempts[1];
 
@@ -78,15 +78,13 @@ describe("Retry Service - Integration", () => {
 				delays.push(attempts[1] - attempts[0]);
 			}
 
-			// Jitter should produce different delays (not all identical)
 			const uniqueDelays = new Set(delays);
 			expect(uniqueDelays.size).toBeGreaterThan(1);
 
-			// All delays should be between 0 and 100ms
-			delays.forEach((delay) => {
+			for (const delay of delays) {
 				expect(delay).toBeGreaterThanOrEqual(0);
-				expect(delay).toBeLessThanOrEqual(110); // +10ms tolerance
-			});
+				expect(delay).toBeLessThanOrEqual(110);
+			}
 		});
 
 		it("should cap delay at maxDelayMs", async () => {
@@ -111,9 +109,6 @@ describe("Retry Service - Integration", () => {
 				})
 			);
 
-			// After enough attempts, delay should cap at 500ms
-			// Attempt 2: 100 * 2^2 = 400ms (OK)
-			// Attempt 3: 100 * 2^3 = 800ms → capped to 500ms
 			const delay3 = attempts[4] - attempts[3];
 			expect(delay3).toBeGreaterThanOrEqual(400);
 			expect(delay3).toBeLessThanOrEqual(600);
@@ -141,7 +136,6 @@ describe("Retry Service - Integration", () => {
 				})
 			);
 
-			// With multiplier 3: 100ms, then 100*3=300ms
 			const delay1 = attempts[1] - attempts[0];
 			const delay2 = attempts[2] - attempts[1];
 
@@ -296,7 +290,7 @@ describe("Retry Service - Integration", () => {
 				Effect.runPromise(withRetry(effect, { maxRetries: 3, initialDelayMs: 10 }))
 			).rejects.toThrow();
 
-			expect(attempts).toBe(1); // Should fail immediately, no retries
+			expect(attempts).toBe(1);
 		});
 
 		it("should NOT retry 403 forbidden errors", async () => {
@@ -346,7 +340,6 @@ describe("Retry Service - Integration", () => {
 				if (attempts > 1) {
 					return "should not reach here";
 				}
-				// Create an error with a generic message (not a known network error)
 				return yield* Effect.fail(
 					Object.assign(new Error("Client error"), {
 						status: 404,
@@ -377,7 +370,7 @@ describe("Retry Service - Integration", () => {
 				)
 			).rejects.toThrow("ETIMEDOUT");
 
-			expect(attempts).toBe(4); // 1 initial + 3 retries
+			expect(attempts).toBe(4);
 		});
 
 		it("should propagate final error", async () => {
@@ -429,62 +422,59 @@ describe("Retry Service - Integration", () => {
 
 	describe("Verbose Mode", () => {
 		it("should log retry attempts when verbose=true", async () => {
-			const consoleSpy = vi.spyOn(console, "log");
+			const capture = captureConsole();
 
-			let attempts = 0;
-			const effect = Effect.gen(function* () {
-				attempts++;
-				if (attempts < 3) {
-					return yield* Effect.fail(new Error("ECONNREFUSED"));
-				}
-				return "success";
-			});
+			try {
+				let attempts = 0;
+				const effect = Effect.gen(function* () {
+					attempts++;
+					if (attempts < 3) {
+						return yield* Effect.fail(new Error("ECONNREFUSED"));
+					}
+					return "success";
+				});
 
-			await Effect.runPromise(
-				withRetry(effect, {
-					maxRetries: 3,
-					verbose: true,
-					initialDelayMs: 10,
-				})
-			);
+				await Effect.runPromise(
+					withRetry(effect, {
+						maxRetries: 3,
+						verbose: true,
+						initialDelayMs: 10,
+					})
+				);
 
-			expect(consoleSpy).toHaveBeenCalled();
-			expect(
-				consoleSpy.mock.calls.some((call) =>
-					String(call[0]).includes("Retry attempt")
-				)
-			).toBe(true);
-
-			consoleSpy.mockRestore();
+				const allOutput = capture.logs.join("\n");
+				expect(allOutput).toContain("Retry attempt");
+			} finally {
+				capture.restore();
+			}
 		});
 
 		it("should NOT log when verbose=false (default)", async () => {
-			const consoleSpy = vi.spyOn(console, "log");
+			const capture = captureConsole();
 
-			let attempts = 0;
-			const effect = Effect.gen(function* () {
-				attempts++;
-				if (attempts < 2) {
-					return yield* Effect.fail(new Error("ECONNREFUSED"));
-				}
-				return "success";
-			});
+			try {
+				let attempts = 0;
+				const effect = Effect.gen(function* () {
+					attempts++;
+					if (attempts < 2) {
+						return yield* Effect.fail(new Error("ECONNREFUSED"));
+					}
+					return "success";
+				});
 
-			await Effect.runPromise(
-				withRetry(effect, {
-					maxRetries: 3,
-					verbose: false,
-					initialDelayMs: 10,
-				})
-			);
+				await Effect.runPromise(
+					withRetry(effect, {
+						maxRetries: 3,
+						verbose: false,
+						initialDelayMs: 10,
+					})
+				);
 
-			// Should not have been called with retry message
-			const hasRetryLog = consoleSpy.mock.calls.some((call) =>
-				String(call[0]).includes("Retry attempt")
-			);
-			expect(hasRetryLog).toBe(false);
-
-			consoleSpy.mockRestore();
+				const hasRetryLog = capture.logs.some((line) => line.includes("Retry attempt"));
+				expect(hasRetryLog).toBe(false);
+			} finally {
+				capture.restore();
+			}
 		});
 	});
 
@@ -522,26 +512,25 @@ describe("Retry Service - Integration", () => {
 		});
 
 		it("should support retryVerbose with logging", async () => {
-			const consoleSpy = vi.spyOn(console, "log");
+			const capture = captureConsole();
 
-			let attempts = 0;
-			const effect = Effect.gen(function* () {
-				attempts++;
-				if (attempts < 2) {
-					return yield* Effect.fail(new Error("ECONNREFUSED"));
-				}
-				return "success";
-			});
+			try {
+				let attempts = 0;
+				const effect = Effect.gen(function* () {
+					attempts++;
+					if (attempts < 2) {
+						return yield* Effect.fail(new Error("ECONNREFUSED"));
+					}
+					return "success";
+				});
 
-			await Effect.runPromise(retryVerbose(effect, 3));
+				await Effect.runPromise(retryVerbose(effect, 3));
 
-			expect(
-				consoleSpy.mock.calls.some((call) =>
-					String(call[0]).includes("Retry attempt")
-				)
-			).toBe(true);
-
-			consoleSpy.mockRestore();
+				const hasRetryLog = capture.logs.some((line) => line.includes("Retry attempt"));
+				expect(hasRetryLog).toBe(true);
+			} finally {
+				capture.restore();
+			}
 		});
 	});
 
@@ -559,7 +548,7 @@ describe("Retry Service - Integration", () => {
 				)
 			).rejects.toThrow();
 
-			expect(attempts).toBe(1); // Only initial attempt
+			expect(attempts).toBe(1);
 		});
 
 		it("should handle very large delay values", async () => {
@@ -577,14 +566,13 @@ describe("Retry Service - Integration", () => {
 				withRetry(effect, {
 					maxRetries: 2,
 					initialDelayMs: 100,
-					maxDelayMs: 1000000, // Very large
+					maxDelayMs: 1000000,
 					useJitter: false,
 				})
 			);
 			const duration = Date.now() - start;
 
-			// Should still succeed relatively quickly despite large maxDelayMs
-			expect(duration).toBeLessThan(200); // Should be less than 200ms
+			expect(duration).toBeLessThan(200);
 		});
 
 		it("should handle successive failures with different error types", async () => {

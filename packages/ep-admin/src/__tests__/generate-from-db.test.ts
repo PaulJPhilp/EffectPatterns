@@ -2,6 +2,8 @@
  * Tests for generateSkillsFromDatabase pipeline
  *
  * Tests the core DB→generate→upsert pipeline with mock repositories.
+ *
+ * // test-policy-ignore-file: structural mock — mocks skill generator and DB repos to test pipeline orchestration in isolation
  */
 
 import { Effect, Option } from "effect";

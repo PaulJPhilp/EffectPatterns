@@ -1,137 +1,114 @@
 import { Context, Effect, Layer } from "effect";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { captureConsole } from "../../../test/helpers.js";
 import { Logger } from "../../logger/index.js";
 import { ICONS } from "../helpers.js";
 import { Display } from "../service.js";
 import { TUILoader } from "../tui-loader.js";
 
-// --- Test Utilities ---
-
-class TestConsole extends Context.Tag("TestConsole")<
-  TestConsole,
-  { logs: string[]; errors: string[]; warns: string[] }
->() {}
-
-const LiveTestConsole = Layer.sync(TestConsole, () => {
-  const logs: string[] = [];
-  const errors: string[] = [];
-  const warns: string[] = [];
-  
-  vi.spyOn(console, "log").mockImplementation((msg) => { logs.push(String(msg)); });
-  vi.spyOn(console, "error").mockImplementation((msg) => { errors.push(String(msg)); });
-  vi.spyOn(console, "warn").mockImplementation((msg) => { warns.push(String(msg)); });
-  vi.spyOn(console, "table").mockImplementation((msg) => { logs.push("[TABLE]"); });
-
-  return { logs, errors, warns };
-});
-
-const makeMockTUILoader = (tuiModule: any | null) => 
-  Layer.succeed(TUILoader, TUILoader.of({ load: () => Effect.succeed(tuiModule) }));
-
-const runTest = <A, E>(
-  program: Effect.Effect<A, E, Display | TestConsole | Logger>,
-  tuiModule: any | null
-) => {
-  const displayLayer = Display.Default.pipe(
-    Layer.provide(makeMockTUILoader(tuiModule)),
-    Layer.provide(Logger.Default)
-  );
-  
-  return Effect.gen(function* () {
-    const tc = yield* TestConsole;
-    yield* program;
-    return tc;
-  }).pipe(
-    Effect.provide(displayLayer),
-    Effect.provide(LiveTestConsole),
-    Effect.provide(Logger.Default),
-    Effect.runPromise
-  );
-};
-
-// --- Tests ---
+const makeMockTUILoader = (tuiModule: any | null) =>
+	Layer.succeed(TUILoader, TUILoader.of({ load: () => Effect.succeed(tuiModule) }));
 
 describe("Display Service", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
+	let capture: ReturnType<typeof captureConsole>;
 
-  describe("Console Fallback (No TUI)", () => {
-    it("should cover all basic logging methods", async () => {
-      const tc = await runTest(
-        Effect.gen(function* () {
-          const d = yield* Display;
-          yield* d.showSuccess("s");
-          yield* d.showError("e");
-          yield* d.showInfo("i");
-          yield* d.showWarning("w");
-        }),
-        null
-      );
-      expect(tc.logs.some(l => l.includes(ICONS.success))).toBe(true);
-      expect(tc.errors.some(e => e.includes(ICONS.error))).toBe(true);
-      expect(tc.warns.some(w => w.includes(ICONS.info))).toBe(true);
-      expect(tc.warns.some(w => w.includes(ICONS.warning))).toBe(true);
-    });
+	beforeEach(() => {
+		capture = captureConsole();
+	});
 
-    it("should cover complex methods", async () => {
-      const tc = await runTest(
-        Effect.gen(function* () {
-          const d = yield* Display;
-          yield* d.showPanel("c", "t");
-          yield* d.showTable([{a:1}], { columns: [{key:"a", header:"A"}] });
-          yield* d.showHighlight("h");
-          yield* d.showSeparator();
-        }),
-        null
-      );
-      expect(tc.logs.join("\n")).toContain("t");
-      expect(tc.logs).toContain("[TABLE]");
-      expect(tc.logs.some(l => l.includes(ICONS.highlight))).toBe(true);
-      expect(tc.logs.some(l => l.includes("──"))).toBe(true);
-    });
-  });
+	afterEach(() => {
+		capture.restore();
+	});
 
-  describe("TUI Integration", () => {
-    class MockTag extends Context.Tag("MockTag")<MockTag, {}>() {}
+	const runTest = <A, E>(
+		program: Effect.Effect<A, E, Display | Logger>,
+		tuiModule: any | null
+	) => {
+		const displayLayer = Display.Default.pipe(
+			Layer.provide(makeMockTUILoader(tuiModule)),
+			Layer.provide(Logger.Default)
+		);
 
-    it("should call TUI methods for all operations", async () => {
-      const spies = {
-        displaySuccess: vi.fn().mockReturnValue(Effect.void),
-        displayError: vi.fn().mockReturnValue(Effect.void),
-        displayInfo: vi.fn().mockReturnValue(Effect.void),
-        displayWarning: vi.fn().mockReturnValue(Effect.void),
-        displayPanel: vi.fn().mockReturnValue(Effect.void),
-        displayTable: vi.fn().mockReturnValue(Effect.void),
-        displayHighlight: vi.fn().mockReturnValue(Effect.void),
-      };
+		return program.pipe(
+			Effect.provide(displayLayer),
+			Effect.provide(Logger.Default),
+			Effect.runPromise
+		);
+	};
 
-      const tuiModule = {
-        DisplayService: MockTag,
-        ...spies
-      };
+	describe("Console Fallback (No TUI)", () => {
+		it("should cover all basic logging methods", async () => {
+			await runTest(
+				Effect.gen(function* () {
+					const d = yield* Display;
+					yield* d.showSuccess("s");
+					yield* d.showError("e");
+					yield* d.showInfo("i");
+					yield* d.showWarning("w");
+				}),
+				null
+			);
+			expect(capture.logs.some((l) => l.includes(ICONS.success))).toBe(true);
+			expect(capture.errors.some((e) => e.includes(ICONS.error))).toBe(true);
+			expect(capture.warns.some((w) => w.includes(ICONS.info))).toBe(true);
+			expect(capture.warns.some((w) => w.includes(ICONS.warning))).toBe(true);
+		});
 
-      await runTest(
-        Effect.gen(function* () {
-          const d = yield* Display;
-          yield* d.showSuccess("s");
-          yield* d.showError("e");
-          yield* d.showInfo("i");
-          yield* d.showWarning("w");
-          yield* d.showPanel("c", "t");
-          yield* d.showTable([], { columns: [] });
-          yield* d.showHighlight("h");
-        }).pipe(Effect.provideService(MockTag, {})),
-        tuiModule
-      );
+		it("should cover complex methods", async () => {
+			await runTest(
+				Effect.gen(function* () {
+					const d = yield* Display;
+					yield* d.showPanel("c", "t");
+					yield* d.showTable([{ a: 1 }], { columns: [{ key: "a", header: "A" }] });
+					yield* d.showHighlight("h");
+					yield* d.showSeparator();
+				}),
+				null
+			);
+			expect(capture.logs.join("\n")).toContain("t");
+			expect(capture.logs.some((l) => l.includes(ICONS.highlight))).toBe(true);
+			expect(capture.logs.some((l) => l.includes("──"))).toBe(true);
+		});
+	});
 
-      expect(spies.displaySuccess).toHaveBeenCalled();
-      expect(spies.displayError).toHaveBeenCalled();
-      expect(spies.displayInfo).toHaveBeenCalled();
-      expect(spies.displayWarning).toHaveBeenCalled();
-      expect(spies.displayPanel).toHaveBeenCalled();
-      expect(spies.displayTable).toHaveBeenCalled();
-      expect(spies.displayHighlight).toHaveBeenCalled();
-    });
-  });
+	describe("TUI Integration", () => {
+		class MockTag extends Context.Tag("MockTag")<MockTag, {}>() {}
+
+		it("should call TUI methods for all operations", async () => {
+			const calls: string[] = [];
+
+			const tuiModule = {
+				DisplayService: MockTag,
+				displaySuccess: (msg: string) => { calls.push(`success:${msg}`); return Effect.void; },
+				displayError: (msg: string) => { calls.push(`error:${msg}`); return Effect.void; },
+				displayInfo: (msg: string) => { calls.push(`info:${msg}`); return Effect.void; },
+				displayWarning: (msg: string) => { calls.push(`warning:${msg}`); return Effect.void; },
+				displayPanel: (..._args: unknown[]) => { calls.push("panel"); return Effect.void; },
+				displayTable: (..._args: unknown[]) => { calls.push("table"); return Effect.void; },
+				displayHighlight: (msg: string) => { calls.push(`highlight:${msg}`); return Effect.void; },
+			};
+
+			await runTest(
+				Effect.gen(function* () {
+					const d = yield* Display;
+					yield* d.showSuccess("s");
+					yield* d.showError("e");
+					yield* d.showInfo("i");
+					yield* d.showWarning("w");
+					yield* d.showPanel("c", "t");
+					yield* d.showTable([], { columns: [] });
+					yield* d.showHighlight("h");
+				}).pipe(Effect.provideService(MockTag, {})),
+				tuiModule
+			);
+
+			expect(calls).toContain("success:s");
+			expect(calls).toContain("error:e");
+			expect(calls).toContain("info:i");
+			expect(calls).toContain("warning:w");
+			expect(calls).toContain("panel");
+			expect(calls).toContain("table");
+			expect(calls).toContain("highlight:h");
+		});
+	});
 });

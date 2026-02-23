@@ -1,5 +1,7 @@
 /**
  * Git service helper tests
+ *
+ * // test-policy-ignore-file: structural mock — mocks execSync to test git command wrappers without requiring a git repo
  */
 
 import { Effect } from "effect";

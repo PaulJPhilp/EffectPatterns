@@ -1,128 +1,118 @@
 import { Effect, Layer } from "effect";
 import fs from "node:fs/promises";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { captureConsole } from "../../../test/helpers.js";
 import { Logger } from "../../logger/index.js";
 import { Linter } from "../service.js";
 
-// --- Mocking ---
-
-vi.mock("node:fs/promises", () => ({
-  default: {
-    readFile: vi.fn(),
-    writeFile: vi.fn(),
-  },
-}));
-
 const TestLayer = Linter.Default.pipe(Layer.provide(Logger.Default));
 
-// --- Tests ---
-
 describe("Linter Service", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "ep-cli-linter-"));
   });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  const writeFixture = async (name: string, content: string) => {
+    const filePath = path.join(tmpDir, name);
+    await fs.writeFile(filePath, content, "utf8");
+    return filePath;
+  };
 
   describe("lintFiles", () => {
     it("should identify effect-use-tap-error", async () => {
-      const content = `Effect.catchAll((err) => Console.log("failed"))`;
-      (fs.readFile as any).mockResolvedValue(content);
-      
-      const program = Linter.lintFiles(["test.ts"]).pipe(
-        Effect.provide(TestLayer)
+      const filePath = await writeFixture(
+        "test.ts",
+        `Effect.catchAll((err) => Console.log("failed"))`
       );
-      
+
+      const program = Linter.lintFiles([filePath]).pipe(Effect.provide(TestLayer));
+
       const results = await Effect.runPromise(program);
-      expect(results[0].issues).toContainEqual(expect.objectContaining({
-        rule: "effect-use-tap-error"
-      }));
+      expect(results[0].issues).toContainEqual(
+        expect.objectContaining({ rule: "effect-use-tap-error" })
+      );
     });
 
     it("should identify effect-explicit-concurrency", async () => {
-      const content = `Effect.all([task1, task2])`;
-      (fs.readFile as any).mockResolvedValue(content);
-      
-      const program = Linter.lintFiles(["test.ts"]).pipe(
-        Effect.provide(TestLayer)
-      );
-      
+      const filePath = await writeFixture("test.ts", `Effect.all([task1, task2])`);
+
+      const program = Linter.lintFiles([filePath]).pipe(Effect.provide(TestLayer));
+
       const results = await Effect.runPromise(program);
-      expect(results[0].issues).toContainEqual(expect.objectContaining({
-        rule: "effect-explicit-concurrency"
-      }));
+      expect(results[0].issues).toContainEqual(
+        expect.objectContaining({ rule: "effect-explicit-concurrency" })
+      );
     });
 
     it("should not flag Effect.all with concurrency", async () => {
-      const content = `Effect.all([task1], { concurrency: 2 })`;
-      (fs.readFile as any).mockResolvedValue(content);
-      
-      const program = Linter.lintFiles(["test.ts"]).pipe(
-        Effect.provide(TestLayer)
+      const filePath = await writeFixture(
+        "test.ts",
+        `Effect.all([task1], { concurrency: 2 })`
       );
-      
+
+      const program = Linter.lintFiles([filePath]).pipe(Effect.provide(TestLayer));
+
       const results = await Effect.runPromise(program);
       expect(results[0].issues.length).toBe(0);
     });
 
     it("should identify deprecated APIs", async () => {
-      const content = `Option.zip(a, b)`;
-      (fs.readFile as any).mockResolvedValue(content);
-      
-      const program = Linter.lintFiles(["test.ts"]).pipe(
-        Effect.provide(TestLayer)
-      );
-      
+      const filePath = await writeFixture("test.ts", `Option.zip(a, b)`);
+
+      const program = Linter.lintFiles([filePath]).pipe(Effect.provide(TestLayer));
+
       const results = await Effect.runPromise(program);
-      expect(results[0].issues).toContainEqual(expect.objectContaining({
-        rule: "effect-deprecated-api"
-      }));
+      expect(results[0].issues).toContainEqual(
+        expect.objectContaining({ rule: "effect-deprecated-api" })
+      );
     });
 
     it("should handle file read errors", async () => {
-      (fs.readFile as any).mockRejectedValue(new Error("Disk failure"));
-      
-      const program = Linter.lintFiles(["test.ts"]).pipe(
-        Effect.provide(TestLayer)
-      );
-      
-      await expect(Effect.runPromise(program)).rejects.toThrow("Disk failure");
+      const filePath = path.join(tmpDir, "nonexistent.ts");
+
+      const program = Linter.lintFiles([filePath]).pipe(Effect.provide(TestLayer));
+
+      await expect(Effect.runPromise(program)).rejects.toThrow(/Failed to read file/);
     });
   });
 
   describe("printResults", () => {
     it("should return 1 if there are errors", async () => {
-      vi.spyOn(console, "log").mockImplementation(() => {});
-      const results = [{
-        file: "test.ts",
-        issues: [],
-        errors: 1,
-        warnings: 0,
-        info: 0
-      }];
-      
-      const program = Linter.printResults(results).pipe(
-        Effect.provide(TestLayer)
-      );
-      
-      const exitCode = await Effect.runPromise(program);
-      expect(exitCode).toBe(1);
+      const capture = captureConsole();
+      try {
+        const results = [
+          { file: "test.ts", issues: [], errors: 1, warnings: 0, info: 0 },
+        ];
+
+        const program = Linter.printResults(results).pipe(Effect.provide(TestLayer));
+        const exitCode = await Effect.runPromise(program);
+        expect(exitCode).toBe(1);
+      } finally {
+        capture.restore();
+      }
     });
 
     it("should return 0 if there are no errors", async () => {
-      vi.spyOn(console, "log").mockImplementation(() => {});
-      const results = [{
-        file: "test.ts",
-        issues: [],
-        errors: 0,
-        warnings: 1,
-        info: 0
-      }];
-      
-      const program = Linter.printResults(results).pipe(
-        Effect.provide(TestLayer)
-      );
-      
-      const exitCode = await Effect.runPromise(program);
-      expect(exitCode).toBe(0);
+      const capture = captureConsole();
+      try {
+        const results = [
+          { file: "test.ts", issues: [], errors: 0, warnings: 1, info: 0 },
+        ];
+
+        const program = Linter.printResults(results).pipe(Effect.provide(TestLayer));
+        const exitCode = await Effect.runPromise(program);
+        expect(exitCode).toBe(0);
+      } finally {
+        capture.restore();
+      }
     });
   });
 });

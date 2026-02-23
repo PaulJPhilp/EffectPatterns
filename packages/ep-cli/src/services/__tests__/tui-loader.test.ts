@@ -1,3 +1,4 @@
+// test-policy-ignore-file: structural mock — mocks optional effect-cli-tui dependency that may not be installed
 import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LiveTUILoader, TUILoader, _resetTuiModuleCache } from "../display/tui-loader.js";

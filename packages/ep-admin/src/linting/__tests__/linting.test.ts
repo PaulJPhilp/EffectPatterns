@@ -1,62 +1,78 @@
 /**
- * Linting Module Tests
+ * Linting Module Tests — no behavioral mocks.
+ *
+ * lintFile/lintInParallel accept a readFile callback parameter,
+ * so we pass plain async functions instead of mock functions.
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  checkDeprecatedAPIs,
-  checkErrorModel,
-  checkExplicitConcurrency,
-  checkPreferPipe,
-  checkStreamMemory,
-  checkUseTapError,
+	checkDeprecatedAPIs,
+	checkErrorModel,
+	checkExplicitConcurrency,
+	checkPreferPipe,
+	checkStreamMemory,
+	checkUseTapError,
 } from "../checkers.js";
 import { lintFile, lintInParallel } from "../linter.js";
 import { LINT_RULES } from "../rules.js";
 import type { LintIssue } from "../types.js";
 
+/** Simple readFile that returns a fixed string */
+const fakeReadFile = (content: string) => async (_path: string) => content;
+
+/** Tracking readFile that records which paths were read */
+const trackingReadFile = (content: string) => {
+	const calls: string[] = [];
+	const readFile = async (filePath: string) => {
+		calls.push(filePath);
+		return content;
+	};
+	return { readFile, calls };
+};
+
 describe("Linting Module", () => {
-  describe("Rules Registry", () => {
-    it("should have defined rules", () => {
-      expect(LINT_RULES).toBeDefined();
-      expect(Array.isArray(LINT_RULES)).toBe(true);
-      expect(LINT_RULES.length).toBeGreaterThan(0);
-    });
+	describe("Rules Registry", () => {
+		it("should have defined rules", () => {
+			expect(LINT_RULES).toBeDefined();
+			expect(Array.isArray(LINT_RULES)).toBe(true);
+			expect(LINT_RULES.length).toBeGreaterThan(0);
+		});
 
-    it("should have effect-use-taperror rule", () => {
-      const rule = LINT_RULES.find((r) => r.name === "effect-use-taperror");
-      expect(rule).toBeDefined();
-      expect(rule?.description).toContain("tapError");
-    });
+		it("should have effect-use-taperror rule", () => {
+			const rule = LINT_RULES.find((r) => r.name === "effect-use-taperror");
+			expect(rule).toBeDefined();
+			expect(rule?.description).toContain("tapError");
+		});
 
-    it("should have effect-explicit-concurrency rule", () => {
-      const rule = LINT_RULES.find((r) => r.name === "effect-explicit-concurrency");
-      expect(rule).toBeDefined();
-      expect(rule?.canFix).toBe(true);
-    });
+		it("should have effect-explicit-concurrency rule", () => {
+			const rule = LINT_RULES.find((r) => r.name === "effect-explicit-concurrency");
+			expect(rule).toBeDefined();
+			expect(rule?.canFix).toBe(true);
+		});
 
-    it("should have effect-deprecated-api rule", () => {
-      const rule = LINT_RULES.find((r) => r.name === "effect-deprecated-api");
-      expect(rule).toBeDefined();
-      expect(rule?.defaultSeverity).toBe("error");
-    });
+		it("should have effect-deprecated-api rule", () => {
+			const rule = LINT_RULES.find((r) => r.name === "effect-deprecated-api");
+			expect(rule).toBeDefined();
+			expect(rule?.defaultSeverity).toBe("error");
+		});
 
-    it("all rules should have required properties", () => {
-      LINT_RULES.forEach((rule) => {
-        expect(rule).toHaveProperty("name");
-        expect(rule).toHaveProperty("description");
-        expect(rule).toHaveProperty("defaultSeverity");
-        expect(rule).toHaveProperty("canFix");
-        expect(typeof rule.name).toBe("string");
-        expect(typeof rule.description).toBe("string");
-        expect(typeof rule.canFix).toBe("boolean");
-      });
-    });
-  });
+		it("all rules should have required properties", () => {
+			for (const rule of LINT_RULES) {
+				expect(rule).toHaveProperty("name");
+				expect(rule).toHaveProperty("description");
+				expect(rule).toHaveProperty("defaultSeverity");
+				expect(rule).toHaveProperty("canFix");
+				expect(typeof rule.name).toBe("string");
+				expect(typeof rule.description).toBe("string");
+				expect(typeof rule.canFix).toBe("boolean");
+			}
+		});
+	});
 
-  describe("checkUseTapError", () => {
-    it("should detect catchAll with Effect.gen and logging", () => {
-      const code = `
+	describe("checkUseTapError", () => {
+		it("should detect catchAll with Effect.gen and logging", () => {
+			const code = `
         effect.pipe(
           Effect.catchAll((error) =>
             Effect.gen(function* () {
@@ -65,13 +81,13 @@ describe("Linting Module", () => {
           )
         )
       `;
-      const issues = checkUseTapError(code, "test.ts");
-      expect(issues.length).toBeGreaterThan(0);
-      expect(issues[0].rule).toBe("effect-use-taperror");
-    });
+			const issues = checkUseTapError(code, "test.ts");
+			expect(issues.length).toBeGreaterThan(0);
+			expect(issues[0].rule).toBe("effect-use-taperror");
+		});
 
-    it("should not flag catchAll with return statement", () => {
-      const code = `
+		it("should not flag catchAll with return statement", () => {
+			const code = `
         effect.pipe(
           Effect.catchAll((error) =>
             Effect.gen(function* () {
@@ -80,12 +96,12 @@ describe("Linting Module", () => {
           )
         )
       `;
-      const issues = checkUseTapError(code, "test.ts");
-      expect(issues.length).toBe(0);
-    });
+			const issues = checkUseTapError(code, "test.ts");
+			expect(issues.length).toBe(0);
+		});
 
-    it("should have correct issue properties", () => {
-      const code = `
+		it("should have correct issue properties", () => {
+			const code = `
         effect.pipe(
           Effect.catchAll((error) =>
             Effect.gen(function* () {
@@ -94,298 +110,281 @@ describe("Linting Module", () => {
           )
         )
       `;
-      const issues = checkUseTapError(code, "test.ts");
-      if (issues.length > 0) {
-        expect(issues[0]).toHaveProperty("rule");
-        expect(issues[0]).toHaveProperty("severity");
-        expect(issues[0]).toHaveProperty("message");
-        expect(issues[0]).toHaveProperty("line");
-        expect(issues[0]).toHaveProperty("column");
-        expect(issues[0].severity).toBe("warning");
-      }
-    });
-  });
+			const issues = checkUseTapError(code, "test.ts");
+			if (issues.length > 0) {
+				expect(issues[0]).toHaveProperty("rule");
+				expect(issues[0]).toHaveProperty("severity");
+				expect(issues[0]).toHaveProperty("message");
+				expect(issues[0]).toHaveProperty("line");
+				expect(issues[0]).toHaveProperty("column");
+				expect(issues[0].severity).toBe("warning");
+			}
+		});
+	});
 
-  describe("checkExplicitConcurrency", () => {
-    it("should detect Effect.all without concurrency", () => {
-      const code = "Effect.all([effect1, effect2])";
-      const issues = checkExplicitConcurrency(code, "test.ts");
-      expect(issues.length).toBeGreaterThan(0);
-      expect(issues[0].rule).toBe("effect-explicit-concurrency");
-    });
+	describe("checkExplicitConcurrency", () => {
+		it("should detect Effect.all without concurrency", () => {
+			const code = "Effect.all([effect1, effect2])";
+			const issues = checkExplicitConcurrency(code, "test.ts");
+			expect(issues.length).toBeGreaterThan(0);
+			expect(issues[0].rule).toBe("effect-explicit-concurrency");
+		});
 
-    it("should not flag Effect.all with concurrency option", () => {
-      const code = `
+		it("should not flag Effect.all with concurrency option", () => {
+			const code = `
         Effect.all([effect1, effect2], {
           concurrency: 5
         })
       `;
-      const issues = checkExplicitConcurrency(code, "test.ts");
-      expect(issues.length).toBe(0);
-    });
+			const issues = checkExplicitConcurrency(code, "test.ts");
+			expect(issues.length).toBe(0);
+		});
 
-    it("should not flag files marked as sequential", () => {
-      const code = "Effect.all([effect1, effect2])";
-      const issues = checkExplicitConcurrency(code, "sequential-test.ts");
-      expect(issues.length).toBe(0);
-    });
+		it("should not flag files marked as sequential", () => {
+			const code = "Effect.all([effect1, effect2])";
+			const issues = checkExplicitConcurrency(code, "sequential-test.ts");
+			expect(issues.length).toBe(0);
+		});
 
-    it("should not flag when sequential by design comment exists", () => {
-      const code = `
+		it("should not flag when sequential by design comment exists", () => {
+			const code = `
         // sequential by design
         Effect.all([effect1, effect2])
       `;
-      const issues = checkExplicitConcurrency(code, "test.ts");
-      expect(issues.length).toBe(0);
-    });
+			const issues = checkExplicitConcurrency(code, "test.ts");
+			expect(issues.length).toBe(0);
+		});
 
-    it("should return error severity for parallel files", () => {
-      const code = "Effect.all([effect1, effect2])";
-      const issues = checkExplicitConcurrency(code, "parallel-test.ts");
-      if (issues.length > 0) {
-        expect(issues[0].severity).toBe("error");
-      }
-    });
-  });
+		it("should return error severity for parallel files", () => {
+			const code = "Effect.all([effect1, effect2])";
+			const issues = checkExplicitConcurrency(code, "parallel-test.ts");
+			if (issues.length > 0) {
+				expect(issues[0].severity).toBe("error");
+			}
+		});
+	});
 
-  describe("checkDeprecatedAPIs", () => {
-    it("should detect deprecated Effect APIs", () => {
-      const code = "const result = Effect.fromOption(someOption)";
-      const issues = checkDeprecatedAPIs(code, "test.ts");
-      expect(Array.isArray(issues)).toBe(true);
-    });
+	describe("checkDeprecatedAPIs", () => {
+		it("should detect deprecated Effect APIs", () => {
+			const code = "const result = Effect.fromOption(someOption)";
+			const issues = checkDeprecatedAPIs(code, "test.ts");
+			expect(Array.isArray(issues)).toBe(true);
+		});
 
-    it("should have error severity for deprecated APIs", () => {
-      const code = "Effect.fromOption(opt)";
-      const issues = checkDeprecatedAPIs(code, "test.ts");
-      issues.forEach((issue) => {
-        expect(issue.rule).toBe("effect-deprecated-api");
-      });
-    });
-  });
+		it("should have error severity for deprecated APIs", () => {
+			const code = "Effect.fromOption(opt)";
+			const issues = checkDeprecatedAPIs(code, "test.ts");
+			for (const issue of issues) {
+				expect(issue.rule).toBe("effect-deprecated-api");
+			}
+		});
+	});
 
-  describe("checkPreferPipe", () => {
-    it("should detect long method chains", () => {
-      const code = "effect.flatMap(a => a.map(b => b)).flatMap(c => c)";
-      const issues = checkPreferPipe(code, "test.ts");
-      expect(Array.isArray(issues)).toBe(true);
-    });
+	describe("checkPreferPipe", () => {
+		it("should detect long method chains", () => {
+			const code = "effect.flatMap(a => a.map(b => b)).flatMap(c => c)";
+			const issues = checkPreferPipe(code, "test.ts");
+			expect(Array.isArray(issues)).toBe(true);
+		});
 
-    it("should have info severity", () => {
-      const code = "effect.flatMap(a => a).map(b => b).flatMap(c => c)";
-      const issues = checkPreferPipe(code, "test.ts");
-      issues.forEach((issue) => {
-        expect(issue.severity).toBe("info");
-      });
-    });
-  });
+		it("should have info severity", () => {
+			const code = "effect.flatMap(a => a).map(b => b).flatMap(c => c)";
+			const issues = checkPreferPipe(code, "test.ts");
+			for (const issue of issues) {
+				expect(issue.severity).toBe("info");
+			}
+		});
+	});
 
-  describe("checkStreamMemory", () => {
-    it("should detect non-streaming stream operations", () => {
-      const code = `
+	describe("checkStreamMemory", () => {
+		it("should detect non-streaming stream operations", () => {
+			const code = `
         Stream.fromIterable(largeArray)
           .pipe(Stream.toArray)
       `;
-      const issues = checkStreamMemory(code, "test.ts");
-      expect(Array.isArray(issues)).toBe(true);
-    });
+			const issues = checkStreamMemory(code, "test.ts");
+			expect(Array.isArray(issues)).toBe(true);
+		});
 
-    it("should have error severity", () => {
-      const code = "Stream.toArray(stream)";
-      const issues = checkStreamMemory(code, "test.ts");
-      issues.forEach((issue) => {
-        expect(issue.severity).toBe("error");
-      });
-    });
-  });
+		it("should have error severity", () => {
+			const code = "Stream.toArray(stream)";
+			const issues = checkStreamMemory(code, "test.ts");
+			for (const issue of issues) {
+				expect(issue.severity).toBe("error");
+			}
+		});
+	});
 
-  describe("checkErrorModel", () => {
-    it("should detect generic Error usage", () => {
-      const code = 'throw new Error("Something went wrong")';
-      const issues = checkErrorModel(code, "test.ts");
-      expect(Array.isArray(issues)).toBe(true);
-    });
+	describe("checkErrorModel", () => {
+		it("should detect generic Error usage", () => {
+			const code = 'throw new Error("Something went wrong")';
+			const issues = checkErrorModel(code, "test.ts");
+			expect(Array.isArray(issues)).toBe(true);
+		});
 
-    it("should suggest typed errors", () => {
-      const code = "new Error('message')";
-      const issues = checkErrorModel(code, "test.ts");
-      issues.forEach((issue) => {
-        expect(issue.severity).toBe("info");
-      });
-    });
-  });
+		it("should suggest typed errors", () => {
+			const code = "new Error('message')";
+			const issues = checkErrorModel(code, "test.ts");
+			for (const issue of issues) {
+				expect(issue.severity).toBe("info");
+			}
+		});
+	});
 
-  describe("lintFile", () => {
-    it("should lint a file and return results", async () => {
-      const mockReadFile = vi.fn().mockResolvedValue("const x = 1;");
-      const result = await lintFile("test.ts", mockReadFile);
+	describe("lintFile", () => {
+		it("should lint a file and return results", async () => {
+			const result = await lintFile("test.ts", fakeReadFile("const x = 1;"));
 
-      expect(result).toHaveProperty("file");
-      expect(result).toHaveProperty("issues");
-      expect(result).toHaveProperty("errors");
-      expect(result).toHaveProperty("warnings");
-      expect(result).toHaveProperty("info");
-      expect(Array.isArray(result.issues)).toBe(true);
-    });
+			expect(result).toHaveProperty("file");
+			expect(result).toHaveProperty("issues");
+			expect(result).toHaveProperty("errors");
+			expect(result).toHaveProperty("warnings");
+			expect(result).toHaveProperty("info");
+			expect(Array.isArray(result.issues)).toBe(true);
+		});
 
-    it("should count errors, warnings, and info correctly", async () => {
-      const mockReadFile = vi.fn().mockResolvedValue(
-        `
+		it("should count errors, warnings, and info correctly", async () => {
+			const result = await lintFile(
+				"test.ts",
+				fakeReadFile(`
         Effect.all([a, b])
         new Error("test")
         effect.flatMap(x => x).map(y => y).flatMap(z => z)
-        `
-      );
-      const result = await lintFile("test.ts", mockReadFile);
+        `)
+			);
 
-      expect(typeof result.errors).toBe("number");
-      expect(typeof result.warnings).toBe("number");
-      expect(typeof result.info).toBe("number");
-      expect(result.errors).toBeGreaterThanOrEqual(0);
-    });
+			expect(typeof result.errors).toBe("number");
+			expect(typeof result.warnings).toBe("number");
+			expect(typeof result.info).toBe("number");
+			expect(result.errors).toBeGreaterThanOrEqual(0);
+		});
 
-    it("should sort issues by line number", async () => {
-      const mockReadFile = vi.fn().mockResolvedValue(
-        `
+		it("should sort issues by line number", async () => {
+			const result = await lintFile(
+				"test.ts",
+				fakeReadFile(`
         line 1
         line 2
         Effect.all([a, b])
         line 4
         new Error("test")
-        `
-      );
-      const result = await lintFile("test.ts", mockReadFile);
+        `)
+			);
 
-      for (let i = 1; i < result.issues.length; i++) {
-        expect(result.issues[i].line).toBeGreaterThanOrEqual(
-          result.issues[i - 1].line
-        );
-      }
-    });
+			for (let i = 1; i < result.issues.length; i++) {
+				expect(result.issues[i].line).toBeGreaterThanOrEqual(result.issues[i - 1].line);
+			}
+		});
 
-    it("should extract basename from file path", async () => {
-      const mockReadFile = vi.fn().mockResolvedValue("code");
-      const result = await lintFile("/path/to/myfile.ts", mockReadFile);
+		it("should extract basename from file path", async () => {
+			const result = await lintFile("/path/to/myfile.ts", fakeReadFile("code"));
+			expect(result.file).toBe("myfile.ts");
+		});
 
-      expect(result.file).toBe("myfile.ts");
-    });
+		it("should call readFile with the provided path", async () => {
+			const { readFile, calls } = trackingReadFile("code");
+			await lintFile("test.ts", readFile);
+			expect(calls).toEqual(["test.ts"]);
+		});
+	});
 
-    it("should call readFile with the provided path", async () => {
-      const mockReadFile = vi.fn().mockResolvedValue("code");
-      await lintFile("test.ts", mockReadFile);
+	describe("lintInParallel", () => {
+		it("should lint multiple files", async () => {
+			const files = ["file1.ts", "file2.ts", "file3.ts"];
+			const results = await lintInParallel(files, fakeReadFile("code"));
 
-      expect(mockReadFile).toHaveBeenCalledWith("test.ts");
-    });
-  });
+			expect(Array.isArray(results)).toBe(true);
+			expect(results.length).toBe(files.length);
+		});
 
-  describe("lintInParallel", () => {
-    it("should lint multiple files", async () => {
-      const mockReadFile = vi.fn().mockResolvedValue("code");
-      const files = ["file1.ts", "file2.ts", "file3.ts"];
+		it("should return lint results for each file", async () => {
+			const files = ["file1.ts", "file2.ts"];
+			const results = await lintInParallel(files, fakeReadFile("code"));
 
-      const results = await lintInParallel(files, mockReadFile);
+			for (const result of results) {
+				expect(result).toHaveProperty("file");
+				expect(result).toHaveProperty("issues");
+				expect(result).toHaveProperty("errors");
+			}
+		});
 
-      expect(Array.isArray(results)).toBe(true);
-      expect(results.length).toBe(files.length);
-    });
+		it("should handle empty file list", async () => {
+			const results = await lintInParallel([], fakeReadFile("code"));
+			expect(results).toEqual([]);
+		});
 
-    it("should return lint results for each file", async () => {
-      const mockReadFile = vi.fn().mockResolvedValue("code");
-      const files = ["file1.ts", "file2.ts"];
+		it("should process files concurrently", async () => {
+			let concurrentCount = 0;
+			let maxConcurrent = 0;
 
-      const results = await lintInParallel(files, mockReadFile);
+			const concurrencyReadFile = async (_path: string) => {
+				concurrentCount++;
+				maxConcurrent = Math.max(maxConcurrent, concurrentCount);
+				await new Promise((resolve) => setTimeout(resolve, 10));
+				concurrentCount--;
+				return "code";
+			};
 
-      results.forEach((result) => {
-        expect(result).toHaveProperty("file");
-        expect(result).toHaveProperty("issues");
-        expect(result).toHaveProperty("errors");
-      });
-    });
+			const files = Array.from({ length: 20 }, (_, i) => `file${i}.ts`);
+			await lintInParallel(files, concurrencyReadFile);
 
-    it("should handle empty file list", async () => {
-      const mockReadFile = vi.fn().mockResolvedValue("code");
-      const results = await lintInParallel([], mockReadFile);
+			expect(maxConcurrent).toBeGreaterThan(1);
+			expect(maxConcurrent).toBeLessThanOrEqual(10);
+		});
 
-      expect(results).toEqual([]);
-    });
+		it("should call readFile for each file", async () => {
+			const { readFile, calls } = trackingReadFile("code");
+			const files = ["file1.ts", "file2.ts", "file3.ts"];
 
-    it("should process files concurrently", async () => {
-      const startTime = Date.now();
-      let concurrentCount = 0;
-      let maxConcurrent = 0;
+			await lintInParallel(files, readFile);
 
-      const mockReadFile = vi.fn(async () => {
-        concurrentCount++;
-        maxConcurrent = Math.max(maxConcurrent, concurrentCount);
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        concurrentCount--;
-        return "code";
-      });
+			expect(calls.length).toBe(files.length);
+			for (const file of files) {
+				expect(calls).toContain(file);
+			}
+		});
 
-      const files = Array.from({ length: 20 }, (_, i) => `file${i}.ts`);
-      await lintInParallel(files, mockReadFile);
+		it("should handle file read errors gracefully", async () => {
+			const failingReadFile = async (_path: string): Promise<string> => {
+				throw new Error("Read error");
+			};
 
-      // Should have processed with concurrency (max concurrent should be > 1)
-      expect(maxConcurrent).toBeGreaterThan(1);
-      // But should not exceed concurrency limit of 10
-      expect(maxConcurrent).toBeLessThanOrEqual(10);
-    });
+			const files = ["file1.ts"];
 
-    it("should call readFile for each file", async () => {
-      const mockReadFile = vi.fn().mockResolvedValue("code");
-      const files = ["file1.ts", "file2.ts", "file3.ts"];
+			try {
+				await lintInParallel(files, failingReadFile);
+			} catch (error) {
+				expect(error).toBeDefined();
+			}
+		});
+	});
 
-      await lintInParallel(files, mockReadFile);
-
-      expect(mockReadFile).toHaveBeenCalledTimes(files.length);
-      files.forEach((file) => {
-        expect(mockReadFile).toHaveBeenCalledWith(file);
-      });
-    });
-
-    it("should handle file read errors gracefully", async () => {
-      const mockReadFile = vi
-        .fn()
-        .mockRejectedValueOnce(new Error("Read error"));
-
-      const files = ["file1.ts"];
-
-      try {
-        await lintInParallel(files, mockReadFile);
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-  });
-
-  describe("Integration Tests", () => {
-    it("should identify multiple issue types in a file", async () => {
-      const code = `
+	describe("Integration Tests", () => {
+		it("should identify multiple issue types in a file", async () => {
+			const code = `
         // File with multiple issues
         Effect.all([a, b])
         new Error("test")
         effect.flatMap(x => x).map(y => y)
       `;
 
-      const mockReadFile = vi.fn().mockResolvedValue(code);
-      const result = await lintFile("test.ts", mockReadFile);
+			const result = await lintFile("test.ts", fakeReadFile(code));
 
-      expect(result.issues.length).toBeGreaterThan(0);
-      expect(result.file).toBe("test.ts");
-    });
+			expect(result.issues.length).toBeGreaterThan(0);
+			expect(result.file).toBe("test.ts");
+		});
 
-    it("should lint clean code without issues", async () => {
-      const code = `
+		it("should lint clean code without issues", async () => {
+			const code = `
         import { Effect } from "effect";
         const program = Effect.succeed(42);
       `;
 
-      const mockReadFile = vi.fn().mockResolvedValue(code);
-      const result = await lintFile("clean.ts", mockReadFile);
+			const result = await lintFile("clean.ts", fakeReadFile(code));
 
-      expect(result.file).toBe("clean.ts");
-      expect(typeof result.errors).toBe("number");
-      expect(typeof result.warnings).toBe("number");
-    });
-  });
+			expect(result.file).toBe("clean.ts");
+			expect(typeof result.errors).toBe("number");
+			expect(typeof result.warnings).toBe("number");
+		});
+	});
 });

@@ -87,7 +87,8 @@
     "test:harness-cli": "bun run ep:admin test-utils harness-cli",
     "test:llm": "bun run ep:admin test-utils llm",
     "test:chat-app": "bun run ep:admin test-utils chat-app",
-    "test:supermemory": "bun run ep:admin test-utils supermemory"
+    "test:supermemory": "bun run ep:admin test-utils supermemory",
+    "test:policy": "bun run scripts/check-test-policy.ts"
   },
   "dependencies": {
     "@effect/cli": "0.73.2",

@@ -1,5 +1,7 @@
 /**
  * Git service tests
+ *
+ * // test-policy-ignore-file: structural mock — isolates service layer from shell commands; real git tested in helpers.test.ts
  */
 
 import { Effect, Layer } from "effect";

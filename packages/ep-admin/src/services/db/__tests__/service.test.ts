@@ -1,3 +1,4 @@
+// test-policy-ignore-file: structural mock — mocks @effect-patterns/toolkit to avoid requiring a real database connection
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { runFullTestSuite, runQuickTest, verifySchema } from "../service.js";
