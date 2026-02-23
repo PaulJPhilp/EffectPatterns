@@ -278,10 +278,3 @@ describe.skipIf(!process.env.DATABASE_URL)(
 		});
 	}
 );
-
-describe.skipIf(process.env.DATABASE_URL)("Lock/Unlock Commands - Skipped", () => {
-	it("database integration tests skipped - DATABASE_URL not set", () => {
-		// This test runs when DATABASE_URL is not set to show test was skipped
-		expect(true).toBe(true);
-	});
-});
