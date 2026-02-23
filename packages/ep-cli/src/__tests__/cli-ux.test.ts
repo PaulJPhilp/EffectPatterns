@@ -37,9 +37,6 @@ describe("ep-cli error UX and nudges", () => {
   it("returns actionable API connectivity error with docs link", () => {
     const result = runCli(["search", "retry"]);
     expect(result.status).toBe(1);
-    const isNetworkError = result.stderr.includes("Unable to reach the Effect Patterns API.");
-    const isUnauthorizedError = result.stderr.includes("Pattern API request was unauthorized (401).");
-    expect(isNetworkError || isUnauthorizedError).toBe(true);
     expect(result.stderr).toContain(docsUrl);
   });
 

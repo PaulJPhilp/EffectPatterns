@@ -3,8 +3,6 @@
  *
  * Tests the lock and unlock commands with real database operations.
  *
- * // test-policy-ignore-file: structural mock — uses vi.spyOn on Display static methods for integration test structure validation
- *
  * Prerequisites:
  * - PostgreSQL running
  * - TEST_DATABASE_URL or DATABASE_URL environment variable set
@@ -13,7 +11,7 @@
  * DATABASE_URL="postgresql://..." bun test src/__tests__/integration/lock-unlock.integration.test.ts
  */
 
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { Effect, Layer } from "effect";
 import { Display } from "../../services/display/index.js";
 import { handleEntityOperation } from "../../lock-commands.js";
@@ -52,8 +50,6 @@ describe.skipIf(!process.env.DATABASE_URL)(
 	() => {
 		describe("Lock Command", () => {
 			it("should lock entity by slug", async () => {
-				const displaySpy = vi.spyOn(Display, "showSuccess");
-
 				const args = { identifier: "test-pattern" };
 				const options = { type: "pattern" };
 
@@ -66,14 +62,10 @@ describe.skipIf(!process.env.DATABASE_URL)(
 					// Database might not have test data, but test should structure properly
 				}
 
-				// Verify display was called (if entity was found)
-				// This is a basic structure test - actual behavior depends on DB state
-				expect(displaySpy).toBeDefined();
+				expect(program).toBeDefined();
 			});
 
 			it("should display error for non-existent entity", async () => {
-				const displaySpy = vi.spyOn(Display, "showError");
-
 				const args = { identifier: "non-existent-entity-xyz" };
 				const options = { type: "pattern" };
 
@@ -85,13 +77,10 @@ describe.skipIf(!process.env.DATABASE_URL)(
 					// Expected - entity not found
 				}
 
-				// Should have called showError
-				expect(displaySpy).toBeDefined();
+				expect(program).toBeDefined();
 			});
 
 			it("should handle invalid entity type", async () => {
-				const displaySpy = vi.spyOn(Display, "showError");
-
 				const args = { identifier: "some-id" };
 				const options = { type: "invalid-type" };
 
@@ -103,7 +92,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 					// Expected - invalid type
 				}
 
-				expect(displaySpy).toBeDefined();
+				expect(program).toBeDefined();
 			});
 
 			it("should lock application pattern", async () => {
@@ -285,41 +274,6 @@ describe.skipIf(!process.env.DATABASE_URL)(
 				// Both should be valid programs
 				expect(lockProgram).toBeDefined();
 				expect(unlockProgram).toBeDefined();
-			});
-
-			it("should show appropriate messages for lock", async () => {
-				const displaySpy = vi.spyOn(Display, "showSuccess");
-
-				const args = { identifier: "test" };
-				const options = { type: "pattern" };
-
-				const program = handleEntityOperation(args, options, "lock");
-
-				try {
-					await Effect.runPromise(Effect.provide(program, testDisplayLayer));
-				} catch {
-					// Expected
-				}
-
-				// Display is properly integrated
-				expect(displaySpy).toBeDefined();
-			});
-
-			it("should show appropriate messages for unlock", async () => {
-				const displaySpy = vi.spyOn(Display, "showSuccess");
-
-				const args = { identifier: "test" };
-				const options = { type: "pattern" };
-
-				const program = handleEntityOperation(args, options, "unlock");
-
-				try {
-					await Effect.runPromise(Effect.provide(program, testDisplayLayer));
-				} catch {
-					// Expected
-				}
-
-				expect(displaySpy).toBeDefined();
 			});
 		});
 	}
