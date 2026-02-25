@@ -38,33 +38,6 @@ export function generateSearchCacheKey(args: SearchPatternsArgs): string {
 }
 
 /**
- * Generate a stable cache key for HTTP API requests
- *
- * Combines endpoint, method, and data into a stable cache key.
- * For requests with body data (POST), serializes with sorted keys.
- *
- * @param endpoint - API endpoint (e.g., "/patterns")
- * @param method - HTTP method
- * @param data - Request body data (for POST requests)
- * @returns Cache key (e.g., "GET:/patterns:v1:{...}")
- */
-export function generateRequestCacheKey(
-  endpoint: string,
-  method: "GET" | "POST",
-  data?: unknown,
-): string {
-  if (!data) {
-    return `${method}:${endpoint}:v1`;
-  }
-
-  // Serialize data with sorted keys for consistency
-  const dataStr = JSON.stringify(
-    sortObjectKeys(data as Record<string, unknown>)
-  );
-  return `${method}:${endpoint}:v1:${dataStr}`;
-}
-
-/**
  * Generate a stable cache key for pattern details
  *
  * @param patternId - Pattern identifier
@@ -74,30 +47,3 @@ export function generatePatternCacheKey(patternId: string): string {
   return `pattern:v1:${patternId}`;
 }
 
-/**
- * Recursively sort object keys for stable serialization
- *
- * Ensures that {a: 1, b: 2} and {b: 2, a: 1} serialize identically
- * when passed to JSON.stringify.
- *
- * @param obj - Object to sort
- * @returns New object with sorted keys
- */
-function sortObjectKeys(obj: unknown): unknown {
-  if (obj === null || typeof obj !== "object") {
-    return obj;
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map(sortObjectKeys);
-  }
-
-  const sorted: Record<string, unknown> = {};
-  Object.keys(obj as Record<string, unknown>)
-    .sort()
-    .forEach((key) => {
-      sorted[key] = sortObjectKeys((obj as Record<string, unknown>)[key]);
-    });
-
-  return sorted;
-}

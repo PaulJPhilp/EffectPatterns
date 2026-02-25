@@ -6,16 +6,6 @@
  */
 
 // ============================================
-// IO Operations (Database)
-// ============================================
-
-export {
-    getPatternFromDatabase,
-    loadPatternsFromDatabase,
-    searchPatternsFromDatabase
-} from "./io.js";
-
-// ============================================
 // Search Functions
 // ============================================
 
@@ -146,12 +136,6 @@ export {
     findPatternsByApplicationPattern,
     searchEffectPatterns
 } from "./services/database.js";
-
-// ============================================
-// Utilities
-// ============================================
-
-export { splitSections } from "./splitSections.js";
 
 // ============================================
 // Errors

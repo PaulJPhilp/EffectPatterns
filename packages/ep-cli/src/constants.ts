@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 // File Paths
 // =============================================================================
 
-export const PROJECT_ROOT = path.join(__dirname, "../../../");
+const PROJECT_ROOT = path.join(__dirname, "../../../");
 
 export const PATHS = {
   PROJECT_ROOT,
@@ -68,15 +68,6 @@ export const LINT_RULES = [
     canFix: false,
   },
 ] as const;
-
-// =============================================================================
-// Display Constants
-// =============================================================================
-
-export const DISPLAY = {
-  SEPARATOR_CHAR: "━",
-  SEPARATOR_LENGTH: 60,
-} as const;
 
 // =============================================================================
 // ANSI Color Codes

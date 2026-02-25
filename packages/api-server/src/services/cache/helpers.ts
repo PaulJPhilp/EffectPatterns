@@ -22,13 +22,3 @@ export const isExpired = (entry: CacheEntry<unknown>): boolean => {
   return Date.now() - entry.timestamp > entry.ttl;
 };
 
-/**
- * Legacy cache functions (for backward compatibility)
- */
-export function getCacheKey(...parts: string[]): string {
-  return parts.join(":");
-}
-
-export function createCacheKey(prefix: string, id: string): string {
-  return `${prefix}:${id}`;
-}

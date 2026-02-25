@@ -8,4 +8,4 @@
 export * from "@effect-patterns/ep-shared-services/display";
 
 // Export ep-cli specific TUI loader
-export { LiveTUILoader, TUILoader } from "./tui-loader.js";
+export { TUILoader } from "./tui-loader.js";

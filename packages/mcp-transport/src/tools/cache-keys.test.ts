@@ -10,7 +10,6 @@ import type { SearchPatternsArgs } from "@/schemas/tool-schemas";
 import { describe, expect, it } from "vitest";
 import {
     generatePatternCacheKey,
-    generateRequestCacheKey,
     generateSearchCacheKey,
 } from "./cache-keys";
 
@@ -162,66 +161,6 @@ describe("Cache Key Generation", () => {
       expect(key).toContain("search:v1:");
       expect(typeof key).toBe("string");
       expect(key.length).toBeGreaterThan(20);
-    });
-  });
-
-  describe("generateRequestCacheKey()", () => {
-    it("should generate consistent keys for identical requests", () => {
-      const key1 = generateRequestCacheKey("/patterns", "GET");
-      const key2 = generateRequestCacheKey("/patterns", "GET");
-
-      expect(key1).toBe(key2);
-      expect(key1).toContain("GET:/patterns:v1");
-    });
-
-    it("should distinguish between GET and POST", () => {
-      const key1 = generateRequestCacheKey("/patterns", "GET");
-      const key2 = generateRequestCacheKey("/patterns", "POST");
-
-      expect(key1).not.toBe(key2);
-      expect(key1).toContain("GET:");
-      expect(key2).toContain("POST:");
-    });
-
-    it("should distinguish between different endpoints", () => {
-      const key1 = generateRequestCacheKey("/patterns", "GET");
-      const key2 = generateRequestCacheKey("/patterns/search", "GET");
-
-      expect(key1).not.toBe(key2);
-    });
-
-    it("should serialize request data with sorted keys", () => {
-      const data1 = { a: 1, b: 2, c: 3 };
-      const data2 = { c: 3, a: 1, b: 2 };
-
-      const key1 = generateRequestCacheKey("/analyze", "POST", data1);
-      const key2 = generateRequestCacheKey("/analyze", "POST", data2);
-
-      expect(key1).toBe(key2);
-    });
-
-    it("should handle missing request data", () => {
-      const key1 = generateRequestCacheKey("/patterns", "GET");
-      const key2 = generateRequestCacheKey("/patterns", "GET", undefined);
-
-      expect(key1).toBe(key2);
-    });
-
-    it("should handle nested data structures with sorted keys", () => {
-      const data1 = {
-        outer: { z: 1, a: 2 },
-        first: "value",
-      };
-
-      const data2 = {
-        first: "value",
-        outer: { a: 2, z: 1 },
-      };
-
-      const key1 = generateRequestCacheKey("/test", "POST", data1);
-      const key2 = generateRequestCacheKey("/test", "POST", data2);
-
-      expect(key1).toBe(key2);
     });
   });
 

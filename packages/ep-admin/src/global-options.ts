@@ -6,88 +6,36 @@
  */
 
 import { Options } from "@effect/cli";
-import { OUTPUT_FORMATS, type OutputFormat } from "./constants.js";
+import type { OutputFormat } from "./constants.js";
 import { type LogLevel } from "./services/logger/index.js";
 
 // =============================================================================
 // Color Control Option
 // =============================================================================
 
-/**
- * --no-color flag to disable ANSI color codes
- *
- * Useful for CI environments or piping output to files
- */
-export const noColorOption = Options.boolean("no-color").pipe(
+const noColorOption = Options.boolean("no-color").pipe(
     Options.withDescription("Disable colored output (useful for CI/scripts)"),
     Options.withDefault(false)
 );
 
-// =============================================================================
-// Output Format Option
-// =============================================================================
-
-/**
- * --json flag for JSON output format
- *
- * Useful for programmatic parsing of CLI output
- */
-export const jsonOutputOption = Options.boolean("json").pipe(
+const jsonOutputOption = Options.boolean("json").pipe(
     Options.withDescription("Output results in JSON format for programmatic use"),
     Options.withDefault(false)
 );
 
-/**
- * --format option for explicit format selection
- *
- * Values: text, json
- * Default: text
- */
-export const formatOption = Options.choice("format", OUTPUT_FORMATS).pipe(
-    Options.withDescription("Output format (text or json)"),
-    Options.withDefault("text" as OutputFormat)
-);
-
-// =============================================================================
-// Verbose Option (Enhanced)
-// =============================================================================
-
-/**
- * --verbose / -v flag for detailed output
- *
- * Enables additional diagnostic information
- */
-export const verboseOption = Options.boolean("verbose").pipe(
+const verboseOption = Options.boolean("verbose").pipe(
     Options.withAlias("v"),
     Options.withDescription("Show detailed output and diagnostic information"),
     Options.withDefault(false)
 );
 
-// =============================================================================
-// Quiet Option
-// =============================================================================
-
-/**
- * --quiet / -q flag for minimal output
- *
- * Suppresses all output except errors
- */
-export const quietOption = Options.boolean("quiet").pipe(
+const quietOption = Options.boolean("quiet").pipe(
     Options.withAlias("q"),
     Options.withDescription("Suppress all output except errors"),
     Options.withDefault(false)
 );
 
-// =============================================================================
-// Debug Option
-// =============================================================================
-
-/**
- * --debug flag for maximum verbosity
- *
- * Enables debug-level logging with stack traces
- */
-export const debugOption = Options.boolean("debug").pipe(
+const debugOption = Options.boolean("debug").pipe(
     Options.withDescription("Enable debug mode with maximum verbosity and stack traces"),
     Options.withDefault(false)
 );

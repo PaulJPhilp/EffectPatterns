@@ -1,16 +1,9 @@
 /**
  * Service to load the TUI module dynamically
  */
-import { Context, Effect, Layer } from "effect";
+import { Effect } from "effect";
 
 export type TUIModule = Record<string, unknown>;
-
-export class TUILoader extends Context.Tag("TUILoader")<
-  TUILoader,
-  {
-    readonly load: () => Effect.Effect<TUIModule | null>;
-  }
->() {}
 
 // Internal cache for the loader
 let tuiModuleCache: TUIModule | false | null = null;
@@ -20,10 +13,9 @@ export const _resetTuiModuleCache = () => {
   tuiModuleCache = null;
 };
 
-// Live implementation that does the actual dynamic import
-export const LiveTUILoader = Layer.succeed(
-  TUILoader,
-  TUILoader.of({
+export class TUILoader extends Effect.Service<TUILoader>()("TUILoader", {
+  accessors: true,
+  succeed: {
     load: () =>
       Effect.suspend(() => {
         // Already attempted
@@ -50,5 +42,5 @@ export const LiveTUILoader = Layer.succeed(
           })
         );
       }),
-  })
-);
+  },
+}) {}

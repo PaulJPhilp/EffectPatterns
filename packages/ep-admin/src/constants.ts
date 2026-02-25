@@ -95,20 +95,6 @@ export const TASK_NAMES = {
 } as const;
 
 // =============================================================================
-// Step Names (Error Context)
-// =============================================================================
-
-export const STEP_NAMES = {
-	VALIDATE: "validate",
-	TEST: "test",
-	PUBLISH: "publish",
-	GENERATE_README: "generate-readme",
-	GENERATE_RULES: "generate-rules",
-	LINT: "lint",
-	PIPELINE: "pipeline",
-} as const;
-
-// =============================================================================
 // Success Messages
 // =============================================================================
 
@@ -268,18 +254,3 @@ export const OUTPUT_FORMATS = ["text", "json"] as const;
 
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
 
-// =============================================================================
-// Report Formats
-// =============================================================================
-
-export const REPORT_FORMATS = ["json", "markdown", "html"] as const;
-
-export type ReportFormat = (typeof REPORT_FORMATS)[number];
-
-// =============================================================================
-// Skills Formats
-// =============================================================================
-
-export const SKILLS_FORMATS = ["json", "markdown", "yaml"] as const;
-
-export type SkillsFormat = (typeof SKILLS_FORMATS)[number];

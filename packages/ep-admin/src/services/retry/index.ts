@@ -184,25 +184,3 @@ export const withRetry = <A, E>(
 	});
 };
 
-/**
- * Retry with default options
- */
-export const retry = <A, E>(
-	effect: Effect.Effect<A, E>
-): Effect.Effect<A, E> => withRetry(effect);
-
-/**
- * Retry with custom max retries
- */
-export const retryN = <A, E>(
-	effect: Effect.Effect<A, E>,
-	maxRetries: number
-): Effect.Effect<A, E> => withRetry(effect, { maxRetries });
-
-/**
- * Retry with verbose output
- */
-export const retryVerbose = <A, E>(
-	effect: Effect.Effect<A, E>,
-	maxRetries: number = 3
-): Effect.Effect<A, E> => withRetry(effect, { maxRetries, verbose: true });

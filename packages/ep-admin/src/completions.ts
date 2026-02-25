@@ -20,35 +20,6 @@ import {
     ShellType,
 } from "./constants.js";
 
-// Validation functions using Effect patterns
-const validateShell = (shell: string): Effect.Effect<ShellType, Error> =>
-    Effect.succeed(shell as ShellType).pipe(
-        Effect.filterOrFail(
-            (s): s is ShellType => SHELL_TYPES.includes(s),
-            () => new Error(`Invalid shell: ${shell}. Must be: ${SHELL_TYPES.join(", ")}`)
-        )
-    );
-
-const validateCompletionConfig = (config: CompletionConfig): Effect.Effect<CompletionConfig, Error> =>
-    Effect.succeed(config).pipe(
-        Effect.filterOrFail(
-            (c) => c.name.length > 0,
-            () => new Error("Completion config name cannot be empty")
-        ),
-        Effect.filterOrFail(
-            (c) => c.commands.length > 0,
-            () => new Error("Completion config must have at least one command")
-        )
-    );
-
-const validateFilePath = (filePath: string): Effect.Effect<string, Error> =>
-    Effect.succeed(filePath).pipe(
-        Effect.filterOrFail(
-            (path) => path.length > 0 && !path.includes(".."),
-            () => new Error(`Invalid file path: ${filePath}`)
-        )
-    );
-
 export type Shell = ShellType;
 
 // =============================================================================

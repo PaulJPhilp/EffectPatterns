@@ -9,9 +9,6 @@ import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { captureConsole } from "../../../test/helpers.js";
 import {
-	retry,
-	retryN,
-	retryVerbose,
 	type RetryOptions,
 	withRetry,
 } from "../index.js";
@@ -489,13 +486,13 @@ describe("Retry Service - Integration", () => {
 				return "success";
 			});
 
-			const result = await Effect.runPromise(retry(effect));
+			const result = await Effect.runPromise(withRetry(effect));
 
 			expect(result).toBe("success");
 			expect(attempts).toBe(2);
 		});
 
-		it("should support retryN with custom count", async () => {
+		it("should support withRetry with custom count", async () => {
 			let attempts = 0;
 			const effect = Effect.gen(function* () {
 				attempts++;
@@ -505,13 +502,13 @@ describe("Retry Service - Integration", () => {
 				return "success";
 			});
 
-			const result = await Effect.runPromise(retryN(effect, 5));
+			const result = await Effect.runPromise(withRetry(effect, { maxRetries: 5 }));
 
 			expect(result).toBe("success");
 			expect(attempts).toBe(5);
 		});
 
-		it("should support retryVerbose with logging", async () => {
+		it("should support withRetry verbose with logging", async () => {
 			const capture = captureConsole();
 
 			try {
@@ -524,7 +521,7 @@ describe("Retry Service - Integration", () => {
 					return "success";
 				});
 
-				await Effect.runPromise(retryVerbose(effect, 3));
+				await Effect.runPromise(withRetry(effect, { maxRetries: 3, verbose: true }));
 
 				const hasRetryLog = capture.logs.some((line) => line.includes("Retry attempt"));
 				expect(hasRetryLog).toBe(true);

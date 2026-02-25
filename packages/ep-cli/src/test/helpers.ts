@@ -2,26 +2,6 @@
  * Shared test helpers for ep-cli — no behavioral mocks.
  */
 
-import fs from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
-import { Writable } from "node:stream";
-
-/**
- * Run a callback with a temporary directory that is cleaned up automatically.
- */
-export const withTempDir = async <T>(
-	prefix: string,
-	fn: (dir: string) => Promise<T>
-): Promise<T> => {
-	const dir = await fs.mkdtemp(path.join(os.tmpdir(), `${prefix}-`));
-	try {
-		return await fn(dir);
-	} finally {
-		await fs.rm(dir, { recursive: true, force: true });
-	}
-};
-
 /**
  * Captures console output by temporarily replacing console methods
  * with writers that collect output into arrays.

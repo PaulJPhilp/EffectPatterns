@@ -1,7 +1,7 @@
 // test-policy-ignore-file: structural mock — mocks optional effect-cli-tui dependency that may not be installed
 import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { LiveTUILoader, TUILoader, _resetTuiModuleCache } from "../display/tui-loader.js";
+import { TUILoader, _resetTuiModuleCache } from "../display/tui-loader.js";
 
 // Mock the dynamic import
 vi.mock("effect-cli-tui", () => ({
@@ -19,7 +19,7 @@ describe("TUILoader", () => {
       const loader = yield* TUILoader;
       const mod = yield* loader.load();
       return mod;
-    }).pipe(Effect.provide(LiveTUILoader));
+    }).pipe(Effect.provide(TUILoader.Default));
 
     const result = await Effect.runPromise(program);
     expect(result).not.toBeNull();
@@ -32,7 +32,7 @@ describe("TUILoader", () => {
       const mod1 = yield* loader.load();
       const mod2 = yield* loader.load();
       return { mod1, mod2 };
-    }).pipe(Effect.provide(LiveTUILoader));
+    }).pipe(Effect.provide(TUILoader.Default));
 
     const { mod1, mod2 } = await Effect.runPromise(program);
     expect(mod1).toBe(mod2);

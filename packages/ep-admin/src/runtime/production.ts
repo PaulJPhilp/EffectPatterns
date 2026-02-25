@@ -14,10 +14,10 @@ import { StateStore } from "@effect-patterns/pipeline-state";
 import { FetchHttpClient } from "@effect/platform";
 import { NodeContext } from "@effect/platform-node";
 import { layer as NodeFileSystemLayer } from "@effect/platform-node/NodeFileSystem";
-import { Effect, Layer, ManagedRuntime } from "effect";
+import { Layer } from "effect";
 import { envLayer } from "../config/env.js";
 import { Auth } from "../services/auth/index.js";
-import { DefaultAutofixService } from "../services/autofix/index.js";
+import { AutofixService } from "../services/autofix/index.js";
 import { Display } from "../services/display/index.js";
 import { Execution } from "../services/execution/index.js";
 import { EnhancedFileSystem } from "../services/filesystem/index.js";
@@ -35,7 +35,7 @@ const McpLayer = Layer.provide(
 ) as Layer.Layer<McpService, never, never>;
 
 const AutofixLayer = Layer.provide(
-        DefaultAutofixService,
+        AutofixService.Default,
         Layer.mergeAll(
             NodeFileSystemLayer,
             Layer.provide(Display.Default, Logger.Default),
@@ -60,14 +60,3 @@ export const ProductionLayer = Layer.mergeAll(
         Layer.provide(StateStore.Default, Layer.mergeAll(Logger.Default))
 );
 
-/**
- * Production runtime for CLI execution
- */
-export const productionRuntime = ManagedRuntime.make(ProductionLayer as any);
-
-/**
- * Run an effect with the production runtime
- */
-export const runProduction = <A, E>(
-        effect: Effect.Effect<A, E, Layer.Layer.Success<typeof ProductionLayer>>
-): Promise<A> => productionRuntime.runPromise(effect);

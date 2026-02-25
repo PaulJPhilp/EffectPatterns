@@ -149,32 +149,8 @@ export const configGroup = Command.make("config").pipe(
 // Note: System Utilities Group is created in index.ts with completions command
 
 /**
- * All root-level command groups in hierarchical order
- *
- * This is the organized structure that replaces the flat command list.
- */
-export const allCommandGroups = [
-	publishCommand, // Pattern publishing workflow
-	patternGroup, // Pattern discovery and management
-	dataGroup, // Data ingestion and QA
-	dbGroup, // Database operations
-	devGroup, // Development tools
-	opsGroup, // Operations and infrastructure
-	configGroup, // Configuration and setup
-	// pipelineGroup removed due to TypeScript/WeakMap issues
-] as const;
-
-/**
  * Commands that stay at root level (not grouped further)
  *
  * - releaseCommand: High-level release management (separate from publish)
  */
 export const rootLevelCommands = [releaseCommand] as const;
-
-/**
- * All commands organized hierarchically
- */
-export const allHierarchicalCommands = [
-	...allCommandGroups,
-	...rootLevelCommands,
-] as const;

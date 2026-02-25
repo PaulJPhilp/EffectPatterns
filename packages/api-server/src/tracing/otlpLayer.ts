@@ -16,7 +16,7 @@ import { Effect } from "effect";
 /**
  * Tracing configuration from environment variables
  */
-export interface TracingConfig {
+interface TracingConfig {
   readonly otlpEndpoint: string;
   readonly otlpHeaders: Record<string, string>;
   readonly serviceName: string;

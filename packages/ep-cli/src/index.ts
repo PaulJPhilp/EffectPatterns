@@ -22,7 +22,7 @@ import { skillsCommand } from "./commands/skills-commands.js";
 // Services
 import { NodeContext } from "@effect/platform-node";
 import { Display } from "./services/display/index.js";
-import { LiveTUILoader, TUILoader } from "./services/display/tui-loader.js";
+import { TUILoader } from "./services/display/tui-loader.js";
 import { Install } from "./services/install/index.js";
 import { LoggerLive, parseLogLevel } from "./services/logger/index.js";
 import { PatternApi } from "./services/pattern-api/index.js";
@@ -145,7 +145,7 @@ const createRuntimeLayer = (argv: ReadonlyArray<string> = process.argv) => {
   const baseLayer = Layer.mergeAll(
     NodeContext.layer,
     LoggerLive(loggerConfig),
-    LiveTUILoader
+    TUILoader.Default
   );
 
   const serviceLayer = Layer.mergeAll(
@@ -161,21 +161,6 @@ const createRuntimeLayer = (argv: ReadonlyArray<string> = process.argv) => {
 };
 
 export const runtimeLayer = createRuntimeLayer(process.argv);
-
-/**
- * Runtime layer with TUI support
- */
-export const runtimeLayerWithTUI = Effect.gen(function* () {
-  const tuiLoader = yield* TUILoader;
-  const tui = yield* tuiLoader.load();
-  const layer = createRuntimeLayer(process.argv);
-
-  if (tui?.runtimeLayer) {
-    return layer.pipe(Layer.provide(tui.runtimeLayer as Layer.Layer<never>));
-  }
-
-  return layer;
-});
 
 const cliRunner = Command.run(rootCommand, {
   name: CLI.RUNNER_NAME,
@@ -216,11 +201,6 @@ const loadApiKeyFromStdin = (): void => {
   }
 
   process.env.PATTERN_API_KEY = apiKey;
-};
-
-export const createProgram = (argv: ReadonlyArray<string> = process.argv) => {
-  const prepared = prepareArgv(argv);
-  return cliRunner(prepared.argv);
 };
 
 export const runCli = (argv: ReadonlyArray<string> = process.argv): Effect.Effect<void, unknown, never> =>
