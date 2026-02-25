@@ -11,11 +11,11 @@ This document consolidates architecture context and instructions from the projec
 **Effect Patterns** is a community-driven knowledge base of 700+ practical patterns for building robust applications with Effect-TS. The repository contains:
 
 1. **Pattern Content** (`content/published/patterns/`) - Markdown-based pattern library with examples and explanations
-2. **API Server** (`packages/api-server/`) - REST API for pattern search, code analysis, and generation
-2b. **MCP Transport** (`packages/mcp-transport/`) - MCP protocol transports (stdio + streamable-http)
-3. **Admin CLI** (`packages/ep-admin/`) - Internal tooling for pattern publishing, QA, and migrations
-4. **End-user CLI** (`packages/ep-cli/`) - Public CLI for developers to search and generate code
-5. **Toolkit** (`packages/toolkit/`) - Type-safe Effect library for pattern operations
+2. **API Server** (`packages/api-server/`) - Next.js REST API with Effect services, database access, and Vercel deployment
+3. **MCP Transport** (`packages/mcp-transport/`) - MCP protocol transports (stdio + streamable-http) — pure HTTP clients to the API
+4. **Admin CLI** (`packages/ep-admin/`) - Internal tooling for pattern publishing, QA, and migrations
+5. **End-user CLI** (`packages/ep-cli/`) - Public CLI for developers to search and generate code
+6. **Toolkit** (`packages/toolkit/`) - Type-safe Effect library for pattern operations
 
 ---
 
@@ -41,35 +41,73 @@ Effect Patterns Hub
 
 ---
 
-## MCP Server Architecture
+## API Server + MCP Transport Architecture
 
-### Core Components
+The system is split into two packages with clear ownership:
 
-**HTTP Endpoints** (`packages/api-server/app/api/`)
+- **`api-server`** owns HTTP + database — Next.js routes, Effect services, auth, tracing
+- **`mcp-transport`** owns MCP protocol + tool handlers — standalone Node.js binaries that call the API via `fetch`
+
+The MCP transports have **zero database access** and **zero Next.js imports**. They are pure HTTP clients.
+
+### API Server (`packages/api-server/`)
+
+**HTTP Endpoints** (`app/api/`)
 - 27 REST endpoints for pattern operations
-- Authentication: API key validation + tier-based access control
+- Authentication: API key validation + tier-based access control (Effect-based)
 - Error handling: Centralized via `errorHandler.ts`
 
-**Services** (`packages/api-server/src/services/`)
+**Services** (`src/services/`)
 - **Resilience Layer**: Cache, circuit-breaker, rate-limiter with KV fallback
-- **Code Analysis**: Review-code, analyze-code, pattern-diff-generator, confidence-calculator
-- **Infrastructure**: Config, logger, metrics, validation, tier-management
+- **Code Analysis**: Review-code, analyze-code, confidence-calculator, snippet-extractor, fix-plan-generator
+- **Infrastructure**: Config, logger, metrics, validation, guidance-loader, pattern-generator
 - All services use Effect.Service pattern for dependency injection and composition
 
-**Database** (`packages/toolkit/src/db/`)
+**Auth** (`src/auth/`)
+- `apiKey.ts` — HTTP API key validation (Effect-based)
+- `adminAuth.ts` — Admin endpoint authentication
+- `secureCompare.ts` — Constant-time string comparison
+
+**Dependencies**: `effect`, `next`, `drizzle-orm`, `postgres`, `@effect-patterns/toolkit`
+
+### MCP Transport (`packages/mcp-transport/`)
+
+**Entry Points**
+- `src/mcp-stdio.ts` — stdio transport for IDE integration (Claude Code, Cursor)
+- `src/mcp-streamable-http.ts` — HTTP transport for remote MCP 2.0 connections
+- `src/mcp-production-client.ts` — production HTTP client with pooling/dedup
+
+**Tool Handlers** (`src/tools/`)
+- `tool-implementations.ts` — tool registry with Zod schema validation
+- `handlers/` — search-patterns, get-pattern, simple-handlers
+- `tool-result-builder.ts` — rich MCP response formatting
+- `elicitation-helpers.ts` — interactive tool clarification
+
+**Schemas** (`src/schemas/`)
+- `tool-schemas.ts` — Zod schemas for MCP tool inputs
+- `output-schemas.ts` — Zod schemas for structured tool outputs
+- `structured-output.ts` — MCP 2.0 content types (text, image, structured)
+
+**Auth** (`src/auth/`)
+- `mcpTransportAuth.ts` — transport-level API key validation
+- `oauth-server.ts`, `oauth-config.ts`, `oauth-client.ts` — OAuth2 for MCP 2.0
+- `pkce.ts` — PKCE challenge generation
+
+**Dependencies**: `@modelcontextprotocol/sdk`, `zod` (no `effect`, no `next`, no `drizzle-orm`)
+
+### Database (`packages/toolkit/src/db/`)
 - PostgreSQL with Drizzle ORM
 - Tables: `effect_patterns`, `application_patterns`, `pattern_relations`, `skills`, `skill_patterns`
 - Connection pooling with serverless-aware configuration (Vercel KV fallback)
 
-**MCP Protocol** (`packages/mcp-transport/src/mcp-stdio.ts`)
-- Handles Model Context Protocol via stdio transport
-- Tools: `search_patterns`, `get_pattern`, `list_analysis_rules`
-- HTTP client pooling with in-flight deduplication and LRU cache
-
 ### Dependency Flow
 
 ```
-Next.js Routes (app/api/)
+MCP Clients (Claude Code, Cursor, etc.)
+  ↓
+MCP Transport (stdio or streamable-http)    ← packages/mcp-transport
+  ↓ fetch()
+API Server (Next.js routes)                 ← packages/api-server
   ↓
 Route Handler Factory (applies auth, errors, logging)
   ↓
@@ -102,10 +140,11 @@ PostgreSQL (via Drizzle ORM with connection pooling)
 - Refactoring (`apply_refactoring`)
 - See [MCP_CONFIG.md](../MCP_CONFIG.md) for HTTP API details
 
-### MCP Server Locations
+### Package Locations
 
-- **Source**: `packages/api-server/`
-- **Local Development**: `http://localhost:3000` (run: `bun run mcp:dev`)
+- **API Server**: `packages/api-server/`
+- **MCP Transport**: `packages/mcp-transport/`
+- **Local API**: `http://localhost:3000` (run: `bun run api:dev`)
 - **Staging**: `https://effect-patterns-mcp-staging.vercel.app`
 - **Production**: `https://effect-patterns-mcp.vercel.app`
 
@@ -143,15 +182,25 @@ PostgreSQL (via Drizzle ORM with connection pooling)
 
 ## Important Files and Their Purposes
 
-### MCP Server Core
+### API Server Core
 
 | File | Purpose |
 |------|---------|
 | `packages/api-server/src/server/init.ts` | Effect layer composition, runtime setup |
-| `packages/mcp-transport/src/mcp-stdio.ts` | MCP protocol implementation via stdio |
-| `packages/mcp-transport/src/tools/tool-implementations.ts` | Tool registry and handlers |
 | `packages/api-server/src/server/errorHandler.ts` | Converts Effect errors to HTTP responses |
 | `packages/api-server/src/server/routeHandler.ts` | Factory for authenticated route handlers |
+| `packages/api-server/src/auth/apiKey.ts` | API key authentication (Effect-based) |
+| `packages/api-server/src/tools/schemas.ts` | Effect Schema types shared with API routes |
+
+### MCP Transport Core
+
+| File | Purpose |
+|------|---------|
+| `packages/mcp-transport/src/mcp-stdio.ts` | MCP stdio transport for IDE integration |
+| `packages/mcp-transport/src/mcp-streamable-http.ts` | MCP 2.0 streamable HTTP transport |
+| `packages/mcp-transport/src/tools/tool-implementations.ts` | Tool registry and Zod schema validation |
+| `packages/mcp-transport/src/mcp-content-builders.ts` | Rich MCP response formatting |
+| `packages/mcp-transport/src/config/mcp-environments.ts` | Environment URL selection (local/staging/prod) |
 
 ### Services
 
@@ -177,9 +226,9 @@ PostgreSQL (via Drizzle ORM with connection pooling)
 
 | File | Purpose |
 |------|---------|
-| `packages/api-server/src/services/config/api.ts` | All environment variables, defaults |
+| `packages/api-server/src/services/config/api.ts` | API server environment variables, defaults |
 | `packages/toolkit/src/services/config.ts` | Toolkit-specific config |
-| `packages/mcp-transport/src/config/mcp-environments.ts` | MCP environment selection (local/staging/prod) |
+| `packages/mcp-transport/src/config/mcp-environments.ts` | MCP environment URL selection (local/staging/prod) |
 
 ### Error Handling
 
@@ -244,31 +293,24 @@ const config = {
 Key variables for development and deployment:
 
 ```bash
-# API & Authentication
-PATTERN_API_KEY=your-key                        # MCP authentication
-STAGING_API_KEY=key                             # For staging tests
-PRODUCTION_API_KEY=key                           # For production tests
-
-# Database (Toolkit)
+# API Server
+PATTERN_API_KEY=your-key                        # API authentication
 DATABASE_URL=postgres://user:pass@host/db       # PostgreSQL connection
-
-# Cache (Vercel KV, optional)
-KV_REST_API_URL=https://your-kv.vercel.sh
+KV_REST_API_URL=https://your-kv.vercel.sh       # Cache (Vercel KV, optional)
 KV_REST_API_TOKEN=token
 
-# Observability (OpenTelemetry)
+# Observability (API Server)
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer token
 
-# MCP Configuration
-MCP_ENV=local|staging|production                # Affects available tools
+# MCP Transport
+EFFECT_PATTERNS_API_URL=http://localhost:3000    # API server URL
+MCP_ENV=local|staging|production                # Environment selector
 MCP_DEBUG=true                                  # Enable verbose logging
 
-# Agent configuration (optional)
-AGENT_ENABLED=true
-AGENT_LOG_LEVEL=info
-AGENT_TIMEOUT=30000
-MCP_SERVER_URL=https://effect-patterns-mcp.vercel.app
+# Testing
+STAGING_API_KEY=key                             # For staging deployment tests
+PRODUCTION_API_KEY=key                          # For production deployment tests
 ```
 
 See [packages/api-server/ENV_VARS.md](../packages/api-server/ENV_VARS.md) for complete reference.
@@ -288,8 +330,7 @@ See [packages/api-server/ENV_VARS.md](../packages/api-server/ENV_VARS.md) for co
 ```json
 {
   "dependencies": {
-    "@effect-patterns/toolkit": "workspace:*",
-    "@effect-patterns/api-server": "workspace:*"
+    "@effect-patterns/toolkit": "workspace:*"
   }
 }
 ```
@@ -297,8 +338,9 @@ See [packages/api-server/ENV_VARS.md](../packages/api-server/ENV_VARS.md) for co
 This ensures:
 - Packages resolve via npm workspaces, not tsconfig paths
 - Each package has independent `tsconfig.json`
-- Proper module resolution across environment (Node, browser, serverless)
-- Apps have independent tsconfig configurations
+- Proper module resolution across environments (Node, browser, serverless)
+
+Note: `api-server` depends on `toolkit` and `analysis-core`. `mcp-transport` has no workspace dependencies — it communicates with the API server purely via HTTP.
 
 ---
 
@@ -311,12 +353,13 @@ This ensures:
 - **Purpose**: Analyzes Effect-TS patterns for correctness, best practices, and potential improvements.
 - **Status**: Archived - functionality integrated into CLI tools
 
-**2. MCP (Model Context Protocol) Server**
-- **Location**: `packages/api-server/`
-- **Purpose**: Provides Effect Patterns to Claude Code via MCP protocol.
+**2. API Server + MCP Transport**
+- **API Server** (`packages/api-server/`): REST API with database access, Effect services, authentication, and Vercel deployment.
+- **MCP Transport** (`packages/mcp-transport/`): Standalone MCP protocol transports (stdio + streamable-http) that call the API via fetch.
 - **Features**: Serves patterns to Claude Code IDE; real-time pattern search and retrieval; context-aware suggestions; pattern generation with AI assistance; API key authentication.
-- **Deployment**: Staging and Production (see MCP Server Locations above).
-- **Dependencies**: `@effect-patterns/toolkit` (workspace:*), Next.js, Effect-TS for service composition.
+- **Deployment**: API server deployed to Vercel (staging + production). MCP transports run locally as Node.js binaries.
+- **API Dependencies**: `@effect-patterns/toolkit` (workspace:*), Next.js, Effect-TS, Drizzle ORM.
+- **Transport Dependencies**: `@modelcontextprotocol/sdk`, `zod` (no Effect, no Next.js, no DB).
 
 ### Patterns and Structure
 
@@ -339,10 +382,10 @@ Agents integrate with the `ep-admin` CLI through:
 - Connection pooling and management via platform services
 
 ### API Integration
-- RESTful endpoints for external access
-- MCP protocol for IDE integration
-- Authentication and authorization
-- Workspace-based package resolution
+- RESTful endpoints via `api-server` for external access
+- MCP protocol via `mcp-transport` for IDE integration
+- MCP transports call the API server over HTTP — no shared code or direct imports
+- Authentication at the API layer (API keys), transport-level auth for MCP connections
 
 ---
 
@@ -361,14 +404,23 @@ bun run lint:effect
 bun run lint:all
 ```
 
-### MCP Server Development
+### API Server Development
 
 ```bash
-bun run mcp:dev
-bun run mcp:build
-bun run smoke-test
-bun run deploy:staging
-bun run deploy:production
+bun run api:dev          # Start Next.js dev server on :3000
+bun run api:build        # Build Next.js for production
+bun run api:test         # Run api-server unit tests
+bun run deploy:staging   # Preflight + deploy to Vercel staging
+bun run deploy:production # Preflight + deploy to Vercel production
+```
+
+### MCP Transport Development
+
+```bash
+bun run mcp:stdio        # Build + run stdio transport
+bun run mcp:http         # Build + run streamable-http transport
+bun run mcp:build        # Build transport binaries
+bun run mcp:test         # Run transport unit tests
 ```
 
 ### CLI Development
@@ -382,20 +434,31 @@ bun run ep:smoke-test
 
 **Unit and integration:**
 ```bash
-bun run test
-bun run test:mcp
-bun run test:routes
-bun run test:integration
-bun run test:full
+bun run test             # All workspace tests
+bun run api:test         # API server tests
+bun run mcp:test         # MCP transport tests
+```
+
+**Within api-server:**
+```bash
+bun run --filter @effect-patterns/api-server test:routes
+bun run --filter @effect-patterns/api-server test:integration
+bun run --filter @effect-patterns/api-server test:full
+```
+
+**Within mcp-transport:**
+```bash
+bun run --filter @effect-patterns/mcp-transport test:mcp:ci    # MCP protocol tests
+bun run --filter @effect-patterns/mcp-transport test:mcp:local  # Against local server
 ```
 
 **Deployment testing:**
 ```bash
 export STAGING_API_KEY="your-key"
-bun run mcp:test:deployment
+bun run --filter @effect-patterns/api-server test:deployment:staging
 
 export PRODUCTION_API_KEY="your-key"
-bun run mcp:test:deployment
+bun run --filter @effect-patterns/api-server test:deployment:production
 ```
 
 **Stress testing:**
@@ -410,9 +473,8 @@ bun run test:stress:all
 
 **Other:**
 ```bash
-bun run test:agents
 bun run test:e2e
-cd packages/mcp-server && bun run smoke-test
+cd packages/api-server && bun run smoke-test
 ```
 
 See [packages/api-server/TESTING_GUIDE.md](../packages/api-server/TESTING_GUIDE.md) for detailed testing setup.
@@ -458,11 +520,14 @@ bun run qa:all
 ### Running a Single Test File
 
 ```bash
+# API server unit test
 bunx vitest run packages/api-server/src/services/cache/__tests__/cache.test.ts
 
+# API server route test (needs DB)
 DATABASE_URL=postgres://... bunx vitest run packages/api-server/tests/routes/health.route.test.ts --config vitest.routes.config.ts
 
-bunx vitest run packages/mcp-transport/tests/mcp-protocol/tools/search-patterns.test.ts --config vitest.mcp.config.ts
+# MCP transport tool test
+cd packages/mcp-transport && bunx vitest run src/tools/__tests__/tool-handlers.test.ts
 ```
 
 ### Debugging Services
@@ -508,12 +573,19 @@ See **effect-patterns-services-agents** skill for Effect.Service and folder layo
 
 ## Deployment
 
-### MCP Server
+### API Server
 
 Deployed to Vercel with automatic scaling:
 - Staging environment for testing
 - Production environment for live use
-- Health checks and monitoring
+- Health checks at `/api/health` and `/api/health?deep=true`
+
+### MCP Transport
+
+Runs locally as Node.js binaries:
+- stdio transport for IDE integration (Claude Code, Cursor)
+- Streamable HTTP transport for remote MCP 2.0 connections
+- Connects to API server via `EFFECT_PATTERNS_API_URL` env var
 
 ### Local Development
 
@@ -522,9 +594,12 @@ bun install
 bun run --filter @effect-patterns/toolkit build
 bun run --filter @effect-patterns/pipeline-state build
 bun run --filter @effect-patterns/ep-shared-services build
-cd packages/mcp-server
-bun run dev
-bun run smoke-test
+
+# Start API server
+bun run api:dev
+
+# In another terminal, run MCP transport
+bun run mcp:stdio
 ```
 
 ---
@@ -616,6 +691,13 @@ When contributing to agents:
 ---
 
 ## Recent Changes
+
+### Package Split: mcp-server → api-server + mcp-transport (February 2026)
+- Split `packages/mcp-server/` into two packages with clear ownership
+- `packages/api-server/` — REST API with Effect services, DB access, Vercel deployment (renamed from mcp-server)
+- `packages/mcp-transport/` — MCP protocol transports, tool handlers, Zod schemas (new package)
+- The MCP transports had zero database access and zero Next.js imports — the split codifies this boundary
+- Root scripts updated: `api:dev`, `api:build`, `api:test`, `mcp:stdio`, `mcp:http`, `mcp:build`, `mcp:test`
 
 ### Path Alias Migration (January 2026)
 - Removed TypeScript path aliases from tsconfig.json
