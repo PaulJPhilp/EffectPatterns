@@ -5,7 +5,7 @@
  * highlighting why specific lines are anti-patterns or improvements.
  */
 
-import type { TextContent } from "../../schemas/structured-output.js";
+import type { TextContent } from "@/schemas/structured-output.js";
 
 interface DiffBlock {
   readonly line: number;

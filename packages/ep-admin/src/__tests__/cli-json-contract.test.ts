@@ -118,16 +118,14 @@ describe.sequential("CLI JSON machine contract", () => {
 				EP_ADMIN_SERVICE_TOKEN: "automation-token-123456",
 			};
 
-			const dbResult = runCli(["db", "show", "patterns", "--json"], automationEnv);
-			// When DATABASE_URL is set, the command succeeds; otherwise it fails
-			if (process.env.DATABASE_URL) {
-				expectJsonMachineContract(dbResult);
-			} else {
-				expect(dbResult.status).toBe(1);
-				expect(dbResult.stdout.trim()).toBe("");
-				expect(dbResult.stderr.trim().length).toBeGreaterThan(0);
-				expect(dbResult.stderr).toContain("Run: ep-admin db show patterns --help");
-			}
+			const dbResult = runCli(["db", "show", "patterns", "--json"], {
+				...automationEnv,
+				DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:1/effect_patterns",
+			});
+			expect(dbResult.status).toBe(1);
+			expect(dbResult.stdout.trim()).toBe("");
+			expect(dbResult.stderr.trim().length).toBeGreaterThan(0);
+			expect(dbResult.stderr).toContain("Run: ep-admin db show patterns --help");
 
 			const ingestFailure = runCli(["data", "ingest", "status", "--json"], automationEnv);
 			expect(ingestFailure.status).toBe(1);

@@ -2,6 +2,9 @@
  * Tests for install command handlers
  */
 
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { Effect, Exit } from "effect";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { captureConsole } from "../../test/helpers.js";
@@ -12,13 +15,18 @@ const run = (args: string[]) =>
 
 describe("install commands", () => {
 	let capture: ReturnType<typeof captureConsole>;
+	let tempDir: string;
 
-	beforeEach(() => {
+	beforeEach(async () => {
+		tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "ep-cli-test-"));
+		process.env.EP_INSTALLED_STATE_FILE = path.join(tempDir, "installed-rules.json");
 		capture = captureConsole();
 	});
 
-	afterEach(() => {
+	afterEach(async () => {
 		capture.restore();
+		delete process.env.EP_INSTALLED_STATE_FILE;
+		await fs.rm(tempDir, { recursive: true, force: true });
 	});
 
 	describe("install list", () => {
