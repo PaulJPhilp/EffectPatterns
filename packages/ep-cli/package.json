@@ -8,7 +8,7 @@
     "ep": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/index.js",
     "dev": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -34,6 +34,7 @@
   "files": [
     "dist",
     "!dist/**/__tests__",
+    "!dist/test",
     "README.md",
     "LICENSE"
   ],
