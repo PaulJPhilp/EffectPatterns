@@ -27,7 +27,7 @@ Open **Settings > Developer > Model Context Protocol**, then add:
   "mcpServers": {
     "effect-patterns": {
       "command": "bun",
-      "args": ["--cwd", "packages/mcp-server", "dist/mcp-stdio.js"],
+      "args": ["--cwd", "packages/mcp-transport", "dist/mcp-stdio.js"],
       "cwd": "/absolute/path/to/Effect-Patterns",
       "env": {
         "PATTERN_API_KEY": "your-api-key",
@@ -45,7 +45,7 @@ Run from the repo root:
 ```bash
 claude mcp add effect-patterns \
   --command "bun" \
-  --args "--cwd" "packages/mcp-server" "dist/mcp-stdio.js" \
+  --args "--cwd" "packages/mcp-transport" "dist/mcp-stdio.js" \
   --env "PATTERN_API_KEY=your-api-key" \
   --env "EFFECT_PATTERNS_API_URL=https://effect-patterns-mcp.vercel.app"
 ```
@@ -59,7 +59,7 @@ Open **Settings > MCP Servers** and add:
   "mcpServers": {
     "effect-patterns": {
       "command": "bun",
-      "args": ["--cwd", "packages/mcp-server", "dist/mcp-stdio.js"],
+      "args": ["--cwd", "packages/mcp-transport", "dist/mcp-stdio.js"],
       "cwd": "/absolute/path/to/Effect-Patterns",
       "env": {
         "PATTERN_API_KEY": "your-api-key",
@@ -79,7 +79,7 @@ Create or edit `.windsurf/mcp_config.json` in your project:
   "mcpServers": {
     "effect-patterns": {
       "command": "bun",
-      "args": ["--cwd", "packages/mcp-server", "dist/mcp-stdio.js"],
+      "args": ["--cwd", "packages/mcp-transport", "dist/mcp-stdio.js"],
       "cwd": "/absolute/path/to/Effect-Patterns",
       "env": {
         "PATTERN_API_KEY": "your-api-key",
@@ -241,14 +241,14 @@ For development or contributing:
 
 2. **Start the API server** (in one terminal):
    ```bash
-   cd packages/mcp-server
+   cd packages/mcp-transport
    bun run dev
    ```
    The API runs at `http://localhost:3000`.
 
 3. **Start the MCP server** (stdio, for your IDE):
    ```bash
-   cd packages/mcp-server
+   cd packages/mcp-transport
    PATTERN_API_KEY=dev-key bun run mcp
    ```
 
@@ -272,7 +272,7 @@ For development or contributing:
 
 ### Server won't start
 
-- Ensure you're in the correct directory (`packages/mcp-server`) or using the `cwd` config.
+- Ensure you're in the correct directory (`packages/mcp-transport`) or using the `cwd` config.
 - Run `bun install` from the repo root.
 - Check that Bun is installed: `bun --version`.
 
@@ -285,7 +285,7 @@ For development or contributing:
 ### Tools return errors
 
 - **Using hosted API:** Confirm `EFFECT_PATTERNS_API_URL` points to `https://effect-patterns-mcp.vercel.app`.
-- **Using local API:** Confirm `bun run dev` is running in `packages/mcp-server`.
+- **Using local API:** Confirm `bun run dev` is running in `packages/mcp-transport`.
 - Run with `MCP_DEBUG=true` to see detailed error output on stderr.
 
 ### Health check

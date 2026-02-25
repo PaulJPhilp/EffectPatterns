@@ -296,6 +296,29 @@ These files enumerate columns explicitly in raw SQL INSERT statements. They don'
 
 ---
 
+## Production Environment
+
+- **Provider**: Vercel Postgres (powered by Neon)
+- **Region**: iad1 (Washington, D.C., USA - East)
+- **Connection Pooling**: Enabled via Neon
+- **SSL**: Required for all connections
+
+### Environment Variables (Vercel)
+
+Primary connection URLs are automatically configured in Vercel:
+
+- `DATABASE_URL` — Pooled connection (recommended for serverless)
+- `DATABASE_URL_UNPOOLED` — Direct connection (for migrations)
+
+### Backup and Recovery
+
+- Vercel Postgres (Neon) provides automatic daily backups
+- Point-in-time recovery available (7-day retention)
+- Manual backup: `pg_dump $DATABASE_URL > backup.sql`
+- Restore: `psql $DATABASE_URL < backup.sql`
+
+---
+
 ## Current State
 
 As of v0.12.3 (2026-02-11):

@@ -6,8 +6,8 @@ A community-driven knowledge base of practical, goal-oriented patterns for build
 
 Effect Patterns Hub is a comprehensive resource for developers learning and mastering Effect-TS. The project provides:
 
-- **[EffectTalk.dev](https://effecttalk.dev/)** - Browse 300+ patterns, take guided tours, and run code in the browser
-- **150+ Curated Patterns** - Goal-oriented, production-ready patterns with TypeScript examples
+- **[EffectTalk.dev](https://effecttalk.dev/)** - Browse 700+ patterns, take guided tours, and run code in the browser
+- **700+ Curated Patterns** - Goal-oriented, production-ready patterns with TypeScript examples
 - **CLI Tool (`ep`)** - Search, discover, and install patterns from the command line
 - **Effect Patterns Toolkit** - Type-safe library for pattern operations
 - **AI Coding Rules** - Machine-readable rules for 10+ AI coding tools
@@ -16,7 +16,7 @@ Effect Patterns Hub is a comprehensive resource for developers learning and mast
 
 ### Pattern Library
 
-Browse 150+ patterns organized by:
+Browse 700+ patterns organized by:
 
 - **Skill Level**: Beginner → Intermediate → Advanced
 - **Use Case**: Error Handling, Concurrency, Data Modeling, HTTP APIs, etc.
@@ -34,7 +34,7 @@ Each pattern includes:
 
 The `ep` command-line tool provides:
 
-See the master CLI user documentation: **[EP-CLI-README.md](../../EP-CLI-README.md)**.
+See the CLI documentation: **[packages/ep-cli/README.md](../../packages/ep-cli/README.md)**.
 
 ```bash
 # Search patterns
@@ -415,7 +415,7 @@ describe("MyService", () => {
 
 ## Documentation
 
-- **[EP-CLI-README.md](../../EP-CLI-README.md)** - Master end-user documentation for the `ep` CLI
+- **[packages/ep-cli/README.md](../../packages/ep-cli/README.md)** - End-user CLI documentation
 - **[README.md](./README.md)** - Pattern index (auto-generated)
 - **[SETUP.md](./SETUP.md)** - Setup and installation guide
 - **[TESTING.md](./TESTING.md)** - Testing documentation
@@ -429,7 +429,7 @@ describe("MyService", () => {
 
 ### Current Focus (v0.4.0)
 
-- ✅ 150+ curated patterns
+- ✅ 700+ curated patterns
 - ✅ CLI tool with search and installation
 - ✅ Effect Patterns Toolkit
 - ✅ AI coding rules for 10+ tools

@@ -46,7 +46,7 @@ PATTERN_API_KEY=your-api-key-here
 From the mcp-server directory:
 
 ```bash
-cd packages/mcp-server
+cd packages/mcp-transport
 bun run mcp
 ```
 
@@ -70,7 +70,7 @@ Create or update `.windsurf/mcp_config.json` in your project root:
     "effect-patterns": {
       "command": "bun",
       "args": ["run", "mcp"],
-      "cwd": "packages/mcp-server",
+      "cwd": "packages/mcp-transport",
       "env": {
         "PATTERN_API_KEY": "your-api-key-here",
         "EFFECT_PATTERNS_API_URL": "http://localhost:3000"
@@ -90,7 +90,7 @@ Create or update `.windsurf/mcp_config.json` in your project root:
    - **Name**: Effect Patterns
    - **Command**: `bun`
    - **Arguments**: `["run", "mcp"]`
-   - **Working Directory**: `/path/to/Effect-Patterns/packages/mcp-server`
+   - **Working Directory**: `/path/to/Effect-Patterns/packages/mcp-transport`
    - **Environment Variables**:
      ```
      PATTERN_API_KEY=your-api-key-here
@@ -102,7 +102,7 @@ Create or update `.windsurf/mcp_config.json` in your project root:
 The server can be used with any MCP-compatible client by running:
 
 ```bash
-cd packages/mcp-server
+cd packages/mcp-transport
 PATTERN_API_KEY=your-api-key-here bun run mcp
 ```
 
@@ -207,13 +207,13 @@ bun install
 **Solutions:**
 1. Start the server manually to verify it works:
    ```bash
-   cd packages/mcp-server
+   cd packages/mcp-transport
    PATTERN_API_KEY=your-key bun run mcp:debug
    ```
 
 2. Check the working directory is absolute:
    ```json
-   "cwd": "/full/path/to/Effect-Patterns/packages/mcp-server"
+   "cwd": "/full/path/to/Effect-Patterns/packages/mcp-transport"
    ```
 
 3. Verify environment variables in configuration are spelled correctly
@@ -245,11 +245,11 @@ To develop against a local API server:
 
 ```bash
 # Terminal 1: Start the API server
-cd packages/mcp-server
+cd packages/mcp-transport
 bun run dev  # Starts Next.js API server on port 3000
 
 # Terminal 2: Start the MCP server
-cd packages/mcp-server
+cd packages/mcp-transport
 PATTERN_API_KEY=dev-key bun run mcp
 ```
 
@@ -271,7 +271,7 @@ This will log:
 To create a standalone bundle:
 
 ```bash
-cd packages/mcp-server
+cd packages/mcp-transport
 bun run mcp:build
 ```
 
@@ -334,7 +334,7 @@ Test the MCP server stdio interface against your local development server:
 
 ```bash
 # Prerequisites: Start local server
-cd packages/mcp-server
+cd packages/mcp-transport
 bun run dev  # In one terminal
 
 # Run local MCP tests (in another terminal)

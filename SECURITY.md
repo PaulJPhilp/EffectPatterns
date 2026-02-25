@@ -33,7 +33,7 @@ If you're deploying the MCP Server:
 2. **Rotate Keys Regularly**
 
    - Recommended: Every 90 days
-   - See [API_KEY_ROTATION.md](./services/mcp-server/API_KEY_ROTATION.md)
+   - See the API key rotation section below
 
 3. **Store Secrets Securely**
 
@@ -152,7 +152,7 @@ If you're deploying the MCP Server:
 - 0 moderate vulnerabilities
 - 1 low vulnerability (Vite - dev dependency only)
 
-Last audit: 2025-01-10
+Last audit: 2026-02-25
 
 ### 5. Environment Variables
 
@@ -270,13 +270,11 @@ We appreciate responsible disclosure. Security researchers who report valid vuln
 
 ## Resources
 
-- [API Key Rotation Guide](./services/mcp-server/API_KEY_ROTATION.md)
-- [Security Audit Report](./SECURITY_AUDIT_REPORT.md)
-- [Deployment Security](./services/mcp-server/DEPLOYMENT.md#security-checklist)
+- [OWASP API Security](https://owasp.org/www-project-api-security/)
 - [OWASP API Security](https://owasp.org/www-project-api-security/)
 - [Effect Security](https://effect.website/docs/guides/security)
 
 ---
 
-**Last Updated**: 2025-01-10
-**Next Review**: 2025-04-10 (Quarterly)
+**Last Updated**: 2026-02-25
+**Next Review**: 2026-05-25 (Quarterly)

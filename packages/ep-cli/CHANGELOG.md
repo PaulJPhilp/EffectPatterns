@@ -12,9 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Pattern Discovery**: `search`, `list`, `show` commands for browsing 700+ Effect-TS patterns
 - **Rule Installation**: `install add/list` for installing Effect pattern rules into AI tools (Cursor, VS Code, Windsurf, Agents)
 - **Skills Management**: `skills list/preview/validate/stats` for Claude Skills
-- **Pattern Authoring**: `pattern new` interactive wizard
-- **Release Management**: `release preview/create` for versioning and changelog
-- **Admin Pipeline**: `admin lint/validate/test/generate/pipeline` for publishing workflow
 
 ### Security
 - Strict API key validation for MCP transport
