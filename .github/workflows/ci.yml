@@ -249,6 +249,7 @@ jobs:
         run: |
           bun run --filter @effect-patterns/ep-shared-services build
           bun run --filter @effect-patterns/toolkit build
+          bun run --filter @effect-patterns/pipeline-state build
 
       - name: Typecheck ep-admin
         run: bun run --filter @effect-patterns/ep-admin typecheck
