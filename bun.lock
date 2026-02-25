@@ -23,7 +23,7 @@
         "conventional-recommended-bump": "^11.2.0",
         "dotenv": "^17.3.1",
         "drizzle-orm": "^0.45.1",
-        "effect": "3.19.17",
+        "effect": "3.19.19",
         "effect-mdx": "^0.2.2",
         "glob": "^13.0.3",
         "gray-matter": "^4.0.3",
@@ -39,7 +39,7 @@
       "devDependencies": {
         "@ai-sdk/openai": "^3.0.29",
         "@biomejs/biome": "^2.4.0",
-        "@effect/language-service": "^0.74.0",
+        "@effect/language-service": "^0.75.1",
         "@effect/opentelemetry": "^0.61.0",
         "@effect/schema": "^0.75.5",
         "@modelcontextprotocol/sdk": "^1.26.0",
@@ -64,7 +64,7 @@
         "tsx": "^4.21.0",
         "turbo": "^2.8.9",
         "typescript": "5.9.3",
-        "ultracite": "7.2.2",
+        "ultracite": "7.2.3",
         "vitest": "^4.0.18",
       },
     },
@@ -72,7 +72,7 @@
       "name": "@effect-patterns/analysis-core",
       "version": "0.1.0",
       "dependencies": {
-        "effect": "3.19.17",
+        "effect": "3.19.19",
         "typescript": "^5.5.0",
       },
     },
@@ -95,7 +95,7 @@
         "@opentelemetry/semantic-conventions": "^1.38.0",
         "@vercel/kv": "^3.0.0",
         "drizzle-orm": "^0.45.1",
-        "effect": "3.19.17",
+        "effect": "3.19.19",
         "next": "^16.0.10",
         "postgres": "^3.4.8",
         "react": "^19.2.3",
@@ -132,7 +132,7 @@
         "conventional-commits-parser": "^6.2.1",
         "conventional-recommended-bump": "^11.2.0",
         "dotenv": "^17.2.3",
-        "effect": "3.19.17",
+        "effect": "3.19.19",
         "effect-cli-tui": "^2.2.0",
         "effect-env": "^0.4.1",
         "glob": "^13.0.1",
@@ -159,7 +159,7 @@
         "@effect/cli": "0.73.2",
         "@effect/platform": "0.94.5",
         "@effect/platform-node": "0.104.1",
-        "effect": "3.19.17",
+        "effect": "3.19.19",
         "effect-cli-tui": "^2.2.0",
         "effect-env": "^0.4.1",
       },
@@ -174,7 +174,7 @@
       "dependencies": {
         "@effect/platform": "0.94.5",
         "@effect/platform-node": "0.104.1",
-        "effect": "3.19.17",
+        "effect": "3.19.19",
       },
       "devDependencies": {
         "@biomejs/biome": "^2.3.13",
@@ -205,7 +205,7 @@
       "version": "1.1.1",
       "dependencies": {
         "@effect/platform": "0.94.5",
-        "effect": "3.19.17",
+        "effect": "3.19.19",
       },
       "devDependencies": {
         "@effect/schema": "^0.75.5",
@@ -223,7 +223,7 @@
         "@effect/platform": "0.94.5",
         "@effect/platform-node": "0.104.1",
         "@effect/schema": "^0.75.5",
-        "effect": "3.19.17",
+        "effect": "3.19.19",
       },
       "devDependencies": {
         "@types/node": "^25.0.6",
@@ -235,14 +235,14 @@
         "@effect/platform": "0.94.5",
         "@effect/platform-node": "0.104.1",
         "@effect/schema": "^0.75.5",
-        "effect": "3.19.17",
+        "effect": "3.19.19",
       },
     },
   },
   "overrides": {
     "@effect/platform": "0.94.5",
     "@effect/platform-node": "0.104.1",
-    "effect": "3.19.17",
+    "effect": "3.19.19",
   },
   "packages": {
     "@ai-sdk/gateway": ["@ai-sdk/gateway@3.0.46", "", { "dependencies": { "@ai-sdk/provider": "3.0.8", "@ai-sdk/provider-utils": "4.0.15", "@vercel/oidc": "3.1.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-zH1UbNRjG5woOXXFOrVCZraqZuFTtmPvLardMGcgLkzpxKV0U3tAGoyWKSZ862H+eBJfI/Hf2yj/zzGJcCkycg=="],
@@ -363,7 +363,7 @@
 
     "@effect/experimental": ["@effect/experimental@0.54.6", "", { "dependencies": { "uuid": "^11.0.3" }, "peerDependencies": { "@effect/platform": "^0.90.2", "effect": "^3.17.7", "ioredis": "^5", "lmdb": "^3" }, "optionalPeers": ["ioredis", "lmdb"] }, "sha512-UqHMvCQmrZT6kUVoUC0lqyno4Yad+j9hBGCdUjW84zkLwAq08tPqySiZUKRwY+Ae5B2Ab8rISYJH7nQvct9DMQ=="],
 
-    "@effect/language-service": ["@effect/language-service@0.74.0", "", { "bin": { "effect-language-service": "cli.js" } }, "sha512-ZqOvxCUo70WtnV8Kf4ORcEW6euepPn3Yu9btB0vpDhN5ydf1RC3/kl2M2b22tzB0MOITeJzNn5HK7w7NJhQFaw=="],
+    "@effect/language-service": ["@effect/language-service@0.75.1", "", { "bin": { "effect-language-service": "cli.js" } }, "sha512-g9xD2tAQgRFpYC2YgpZq02VeSL5fBbFJ0B/g1o+14NuNmwtaYJc7SjiLWAA9eyhJHosNrn6h1Ye+Kx6j5mN0AA=="],
 
     "@effect/opentelemetry": ["@effect/opentelemetry@0.61.0", "", { "peerDependencies": { "@effect/platform": "^0.94.2", "@opentelemetry/api": "^1.9", "@opentelemetry/resources": "^2.0.0", "@opentelemetry/sdk-logs": ">=0.203.0 <0.300.0", "@opentelemetry/sdk-metrics": "^2.0.0", "@opentelemetry/sdk-trace-base": "^2.0.0", "@opentelemetry/sdk-trace-node": "^2.0.0", "@opentelemetry/sdk-trace-web": "^2.0.0", "@opentelemetry/semantic-conventions": "^1.33.0", "effect": "^3.19.15" } }, "sha512-aTg4qWzMxGDoUZKSyws/dMZqVNoSCQIvHaPDJnWitUAVuWDAPOXiaiHJDWO39cwDlySBTCSF6rEanm3+nR/2Mg=="],
 
@@ -1251,7 +1251,7 @@
 
     "ee-first": ["ee-first@1.1.1", "", {}, "sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow=="],
 
-    "effect": ["effect@3.19.17", "", { "dependencies": { "@standard-schema/spec": "^1.0.0", "fast-check": "^3.23.1" } }, "sha512-MChgn9z0y3KJ2DJ+VsZt1bdVDJ0bDIZt9zm4s3iPpRLzgcEGDOIP8pwADjAWifaP0S672nlRE5rZPBbyDcjn1g=="],
+    "effect": ["effect@3.19.19", "", { "dependencies": { "@standard-schema/spec": "^1.0.0", "fast-check": "^3.23.1" } }, "sha512-Yc8U/SVXo2dHnaP7zNBlAo83h/nzSJpi7vph6Hzyl4ulgMBIgPmz3UzOjb9sBgpFE00gC0iETR244sfXDNLHRg=="],
 
     "effect-ai-cli": ["effect-ai-cli@0.1.3", "", { "dependencies": { "@effect/ai-anthropic": "^0.15.1", "@effect/ai-google": "^0.4.0", "@effect/ai-openai": "^0.28.2", "@effect/cli": "^0.69.0", "@effect/platform": "^0.90.2", "@effect/platform-node": "^0.90.0", "@opentelemetry/api": "^1.9.0", "cli-table3": "^0.6.5", "dotenv": "^16.6.1", "effect": "^3.17.7", "liquidjs": "^10.21.1" }, "bin": { "effect-ai": "dist/bin/effect-ai-cli.js", "effect-ai-cli": "dist/bin/effect-ai-cli.js" } }, "sha512-dgRA5vN5T5TFF/DhN1asrR0d9JZ5pmdtUdD8dzXGVbN57OBBEUWagE8bbqgv0p42Zq7kK/flM/MkoIp1peGYjA=="],
 
@@ -2487,7 +2487,7 @@
 
     "uid-promise": ["uid-promise@1.0.0", "", {}, "sha512-R8375j0qwXyIu/7R0tjdF06/sElHqbmdmWC9M2qQHpEVbvE4I5+38KJI7LUUmQMp7NVq4tKHiBMkT0NFM453Ig=="],
 
-    "ultracite": ["ultracite@7.2.2", "", { "dependencies": { "@clack/prompts": "^1.0.1", "commander": "^14.0.3", "deepmerge": "^4.3.1", "glob": "^13.0.3", "jsonc-parser": "^3.3.1", "nypm": "^0.6.5" }, "peerDependencies": { "oxlint": "^1.0.0" }, "optionalPeers": ["oxlint"], "bin": { "ultracite": "dist/index.js" } }, "sha512-UiwrJUIi5rzKym6UkpCu1DC1EqSQtqUJj5FGTCXVRWWgB+WkUQEZgBceOB/GT2y7WaaVlx4dFKvEsKym3PZybA=="],
+    "ultracite": ["ultracite@7.2.3", "", { "dependencies": { "@clack/prompts": "^1.0.1", "commander": "^14.0.3", "deepmerge": "^4.3.1", "glob": "^13.0.3", "jsonc-parser": "^3.3.1", "nypm": "^0.6.5" }, "peerDependencies": { "oxlint": "^1.0.0" }, "optionalPeers": ["oxlint"], "bin": { "ultracite": "dist/index.js" } }, "sha512-WKNS2sKAZe4BHu+JGbZebXvy/A1QagDaBnndrK/zwOJAze/mQ8jeHfdG2bPlv3qcJ5fdS3w2Kd7c/eIcH78HvA=="],
 
     "unbox-primitive": ["unbox-primitive@1.1.0", "", { "dependencies": { "call-bound": "^1.0.3", "has-bigints": "^1.0.2", "has-symbols": "^1.1.0", "which-boxed-primitive": "^1.1.1" } }, "sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw=="],
 
