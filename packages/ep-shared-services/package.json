@@ -33,8 +33,8 @@
     "clean": "rm -rf dist",
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "vitest --passWithNoTests",
+    "test:run": "vitest run --passWithNoTests",
     "prepublishOnly": "bun run build"
   },
   "keywords": [
