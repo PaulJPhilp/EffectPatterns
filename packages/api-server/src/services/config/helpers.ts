@@ -74,6 +74,17 @@ export function parseOtlpHeaders(
 export function validateConfig(
   config: MCPConfig,
 ): Effect.Effect<void, ConfigurationError> {
+  // DATABASE_URL validation
+  if (!process.env.DATABASE_URL && config.nodeEnv === "production") {
+    return Effect.fail(
+      new ConfigurationError({
+        key: "DATABASE_URL",
+        expected: "non-empty connection string in production",
+        received: "(not set)",
+      }),
+    );
+  }
+
   // API Key validation
   if (!config.apiKey && config.nodeEnv === "production") {
     return Effect.fail(

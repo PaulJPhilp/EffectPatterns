@@ -2,6 +2,8 @@
 
 This document provides information about Google Gemini integration with the Effect Patterns project.
 
+For **Effect Patterns rules** (shared source for all AI tools), see **[docs/Effect-Patterns-Rules.md](docs/Effect-Patterns-Rules.md)**. You can reference that file for Gemini's context instead of or in addition to injecting rules into this file.
+
 ## AI Model Support
 
 The Effect Patterns project supports Google Gemini for various AI-powered features, pattern analysis, and automated fixes.
@@ -14,7 +16,9 @@ The Effect Patterns project supports Google Gemini for various AI-powered featur
    GOOGLE_API_KEY=your_gemini_api_key_here
    ```
 
-2. **Inject Rules into GEMINI.md**
+2. **Inject Rules into GEMINI.md** (optional)
+
+   Rules are maintained in [docs/Effect-Patterns-Rules.md](docs/Effect-Patterns-Rules.md). You can reference that file for context, or inject into this file:
 
    ```bash
    # Add Effect patterns to this file for Gemini's context

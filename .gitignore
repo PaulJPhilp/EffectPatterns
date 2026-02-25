@@ -40,8 +40,10 @@ node_modules
 app/_backup/
 tools/
 
-!packages/mcp-server/src/tools/
-!packages/mcp-server/src/tools/**
+!packages/api-server/src/tools/
+!packages/api-server/src/tools/**
+!packages/mcp-transport/src/tools/
+!packages/mcp-transport/src/tools/**
 !packages/analysis-core/src/tools/
 !packages/analysis-core/src/tools/**
 

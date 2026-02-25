@@ -1,21 +1,14 @@
 {
-  "name": "@effect-patterns/mcp-server",
+  "name": "@effect-patterns/api-server",
   "version": "0.7.7",
   "private": true,
   "type": "module",
   "packageManager": "bun@1.2.23",
-  "description": "Effect Patterns MCP Server - API endpoints for Claude Code Plugin",
+  "description": "Effect Patterns API Server - REST API endpoints with database access",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "mcp": "bun build --target=node --outdir=dist src/mcp-stdio.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-dev-key} bun dist/mcp-stdio.js",
-    "mcp:debug": "bun build --target=node --outdir=dist src/mcp-stdio.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-dev-key} MCP_DEBUG=true bun dist/mcp-stdio.js",
-    "mcp:http": "bun build --target=node --outdir=dist src/mcp-streamable-http.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-dev-key} bun dist/mcp-streamable-http.js",
-    "mcp:http:debug": "bun build --target=node --outdir=dist src/mcp-streamable-http.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-dev-key} MCP_DEBUG=true bun dist/mcp-streamable-http.js",
-    "mcp:oauth:test": "bun -e 'import { generatePKCE } from \"./src/auth/pkce.js\"; console.log(\"🔐 PKCE Test:\", generatePKCE());'",
-    "mcp:production": "bun build --target=node --outdir=dist src/mcp-production-client.ts && bun dist/mcp-production-client.js",
-    "mcp:build": "bun build --target=node --outdir=dist src/mcp-stdio.ts",
     "test": "bunx vitest run",
     "test:unit": "bunx vitest run",
     "test:integration": "bunx vitest run --config vitest.integration.config.ts",
@@ -33,13 +26,6 @@
     "test:stress:spike": "bunx vitest run --config vitest.stress.config.ts tests/stress/scenarios/spike-test.ts",
     "test:stress:endurance": "bunx vitest run --config vitest.stress.config.ts tests/stress/scenarios/endurance-test.ts",
     "test:stress:all": "bun run test:stress",
-    "test:mcp": "bunx vitest run --config vitest.mcp.config.ts",
-    "test:mcp:watch": "bunx vitest --config vitest.mcp.config.ts",
-    "test:mcp:local": "MCP_ENV=local bunx vitest run --config vitest.mcp.config.ts tests/mcp-protocol/local.test.ts tests/mcp-protocol/structured-output.test.ts tests/mcp-protocol/stdio-discipline.test.ts",
-    "test:mcp:ci": "MCP_ENV=local bunx vitest run --config vitest.mcp.config.ts tests/mcp-protocol/local.test.ts tests/mcp-protocol/structured-output.test.ts tests/mcp-protocol/stdio-discipline.test.ts",
-    "test:mcp:staging": "bash scripts/test-mcp-staging.sh",
-    "test:mcp:production": "bash scripts/test-mcp-production.sh",
-    "test:mcp:all": "bash scripts/test-mcp-all.sh",
     "test:deployment": "bunx vitest run --config vitest.deployment.config.ts",
     "test:deployment:staging": "DEPLOYMENT_ENV=staging bunx vitest run --config vitest.deployment.config.ts tests/deployment/staging.test.ts",
     "test:deployment:production": "DEPLOYMENT_ENV=production bunx vitest run --config vitest.deployment.config.ts tests/deployment/production.test.ts",
@@ -56,7 +42,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "check:narration-leakage": "bash scripts/check-narration-leakage.sh",
-    "preflight": "bun run mcp:build && bun run check:narration-leakage && bun run test:mcp:ci"
+    "preflight": "bun run check:narration-leakage && bun run test"
   },
   "dependencies": {
     "@effect-patterns/analysis-core": "workspace:*",
@@ -65,7 +51,6 @@
     "@effect/platform": "0.94.5",
     "@effect/platform-node": "0.104.1",
     "@effect/schema": "^0.75.5",
-    "@modelcontextprotocol/sdk": "^1.25.2",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",
     "@opentelemetry/resources": "^2.2.0",
@@ -80,8 +65,7 @@
     "postgres": "^3.4.8",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "vercel": "^50.4.8",
-    "zod": "^4.3.6"
+    "vercel": "^50.4.8"
   },
   "devDependencies": {
     "@ai-sdk/openai": "^3.0.2",
@@ -100,7 +84,6 @@
     "effect",
     "effect-ts",
     "patterns",
-    "mcp",
     "api"
   ],
   "author": "Paul",

@@ -6,7 +6,7 @@
       "name": "effect-patterns-hub",
       "dependencies": {
         "@effect/cli": "0.73.2",
-        "@effect/platform": "0.94.4",
+        "@effect/platform": "0.94.5",
         "@effect/platform-node": "0.104.1",
         "@effect/rpc": "^0.73.1",
         "@opentelemetry/api": "^1.9.0",
@@ -76,6 +76,46 @@
         "typescript": "^5.5.0",
       },
     },
+    "packages/api-server": {
+      "name": "@effect-patterns/api-server",
+      "version": "0.7.7",
+      "dependencies": {
+        "@effect-patterns/analysis-core": "workspace:*",
+        "@effect-patterns/toolkit": "workspace:*",
+        "@effect/opentelemetry": "^0.61.0",
+        "@effect/platform": "0.94.5",
+        "@effect/platform-node": "0.104.1",
+        "@effect/schema": "^0.75.5",
+        "@opentelemetry/api": "^1.9.0",
+        "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",
+        "@opentelemetry/resources": "^2.2.0",
+        "@opentelemetry/sdk-node": "^0.212.0",
+        "@opentelemetry/sdk-trace-base": "^2.0.0",
+        "@opentelemetry/sdk-trace-node": "^2.2.0",
+        "@opentelemetry/semantic-conventions": "^1.38.0",
+        "@vercel/kv": "^3.0.0",
+        "drizzle-orm": "^0.45.1",
+        "effect": "3.19.17",
+        "next": "^16.0.10",
+        "postgres": "^3.4.8",
+        "react": "^19.2.3",
+        "react-dom": "^19.2.3",
+        "vercel": "^50.4.8",
+      },
+      "devDependencies": {
+        "@ai-sdk/openai": "^3.0.2",
+        "@types/node": "^25.0.2",
+        "@types/react": "^19.2.7",
+        "@types/react-dom": "^19.2.3",
+        "@vitest/coverage-v8": "^4.0.15",
+        "ai": "^6.0.19",
+        "autocannon": "^8.0.0",
+        "eslint": "^10.0.0",
+        "eslint-config-next": "^16.1.6",
+        "typescript": "5.9.3",
+        "vitest": "^4.0.15",
+      },
+    },
     "packages/ep-admin": {
       "name": "@effect-patterns/ep-admin",
       "version": "0.2.2",
@@ -87,7 +127,7 @@
         "@effect-patterns/pipeline-state": "workspace:*",
         "@effect-patterns/toolkit": "workspace:*",
         "@effect/cli": "0.73.2",
-        "@effect/platform": "0.94.4",
+        "@effect/platform": "0.94.5",
         "@effect/platform-node": "0.104.1",
         "conventional-commits-parser": "^6.2.1",
         "conventional-recommended-bump": "^11.2.0",
@@ -117,7 +157,7 @@
         "@effect-patterns/ep-shared-services": "workspace:*",
         "@effect-patterns/toolkit": "workspace:*",
         "@effect/cli": "0.73.2",
-        "@effect/platform": "0.94.4",
+        "@effect/platform": "0.94.5",
         "@effect/platform-node": "0.104.1",
         "effect": "3.19.17",
         "effect-cli-tui": "^2.2.0",
@@ -132,7 +172,7 @@
       "name": "@effect-patterns/ep-shared-services",
       "version": "1.0.1",
       "dependencies": {
-        "@effect/platform": "0.94.4",
+        "@effect/platform": "0.94.5",
         "@effect/platform-node": "0.104.1",
         "effect": "3.19.17",
       },
@@ -146,44 +186,16 @@
         "effect-cli-tui": "^2.2.0",
       },
     },
-    "packages/mcp-server": {
-      "name": "@effect-patterns/mcp-server",
+    "packages/mcp-transport": {
+      "name": "@effect-patterns/mcp-transport",
       "version": "0.7.7",
       "dependencies": {
-        "@effect-patterns/analysis-core": "workspace:*",
-        "@effect-patterns/toolkit": "workspace:*",
-        "@effect/opentelemetry": "^0.61.0",
-        "@effect/platform": "0.94.4",
-        "@effect/platform-node": "0.104.1",
-        "@effect/schema": "^0.75.5",
         "@modelcontextprotocol/sdk": "^1.25.2",
-        "@opentelemetry/api": "^1.9.0",
-        "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",
-        "@opentelemetry/resources": "^2.2.0",
-        "@opentelemetry/sdk-node": "^0.212.0",
-        "@opentelemetry/sdk-trace-base": "^2.0.0",
-        "@opentelemetry/sdk-trace-node": "^2.2.0",
-        "@opentelemetry/semantic-conventions": "^1.38.0",
-        "@vercel/kv": "^3.0.0",
-        "drizzle-orm": "^0.45.1",
-        "effect": "3.19.17",
-        "next": "^16.0.10",
-        "postgres": "^3.4.8",
-        "react": "^19.2.3",
-        "react-dom": "^19.2.3",
-        "vercel": "^50.4.8",
         "zod": "^4.3.6",
       },
       "devDependencies": {
-        "@ai-sdk/openai": "^3.0.2",
         "@types/node": "^25.0.2",
-        "@types/react": "^19.2.7",
-        "@types/react-dom": "^19.2.3",
         "@vitest/coverage-v8": "^4.0.15",
-        "ai": "^6.0.19",
-        "autocannon": "^8.0.0",
-        "eslint": "^10.0.0",
-        "eslint-config-next": "^16.1.6",
         "typescript": "5.9.3",
         "vitest": "^4.0.15",
       },
@@ -192,7 +204,7 @@
       "name": "@effect-patterns/pipeline-state",
       "version": "1.1.1",
       "dependencies": {
-        "@effect/platform": "0.94.4",
+        "@effect/platform": "0.94.5",
         "effect": "3.19.17",
       },
       "devDependencies": {
@@ -228,7 +240,7 @@
     },
   },
   "overrides": {
-    "@effect/platform": "0.94.4",
+    "@effect/platform": "0.94.5",
     "@effect/platform-node": "0.104.1",
     "effect": "3.19.17",
   },
@@ -323,13 +335,15 @@
 
     "@effect-patterns/analysis-core": ["@effect-patterns/analysis-core@workspace:packages/analysis-core"],
 
+    "@effect-patterns/api-server": ["@effect-patterns/api-server@workspace:packages/api-server"],
+
     "@effect-patterns/ep-admin": ["@effect-patterns/ep-admin@workspace:packages/ep-admin"],
 
     "@effect-patterns/ep-cli": ["@effect-patterns/ep-cli@workspace:packages/ep-cli"],
 
     "@effect-patterns/ep-shared-services": ["@effect-patterns/ep-shared-services@workspace:packages/ep-shared-services"],
 
-    "@effect-patterns/mcp-server": ["@effect-patterns/mcp-server@workspace:packages/mcp-server"],
+    "@effect-patterns/mcp-transport": ["@effect-patterns/mcp-transport@workspace:packages/mcp-transport"],
 
     "@effect-patterns/pipeline-state": ["@effect-patterns/pipeline-state@workspace:packages/pipeline-state"],
 
@@ -353,7 +367,7 @@
 
     "@effect/opentelemetry": ["@effect/opentelemetry@0.61.0", "", { "peerDependencies": { "@effect/platform": "^0.94.2", "@opentelemetry/api": "^1.9", "@opentelemetry/resources": "^2.0.0", "@opentelemetry/sdk-logs": ">=0.203.0 <0.300.0", "@opentelemetry/sdk-metrics": "^2.0.0", "@opentelemetry/sdk-trace-base": "^2.0.0", "@opentelemetry/sdk-trace-node": "^2.0.0", "@opentelemetry/sdk-trace-web": "^2.0.0", "@opentelemetry/semantic-conventions": "^1.33.0", "effect": "^3.19.15" } }, "sha512-aTg4qWzMxGDoUZKSyws/dMZqVNoSCQIvHaPDJnWitUAVuWDAPOXiaiHJDWO39cwDlySBTCSF6rEanm3+nR/2Mg=="],
 
-    "@effect/platform": ["@effect/platform@0.94.4", "", { "dependencies": { "find-my-way-ts": "^0.1.6", "msgpackr": "^1.11.4", "multipasta": "^0.2.7" }, "peerDependencies": { "effect": "^3.19.16" } }, "sha512-mK8pbskFAcBRA5Ooyt02kCBuWltZakyaDcM4ByTY0jXQMFC3NUveNK62JVH7XB+f3XZ8OoBBxUnlLben4plEKQ=="],
+    "@effect/platform": ["@effect/platform@0.94.5", "", { "dependencies": { "find-my-way-ts": "^0.1.6", "msgpackr": "^1.11.4", "multipasta": "^0.2.7" }, "peerDependencies": { "effect": "^3.19.17" } }, "sha512-z05APUiDDPbodhTkH/RJqOLoCU11bU2IZLfcwLFrld03+ob1VeqRnELQlmueLIYm6NZifHAtjl32V+GRt34y4A=="],
 
     "@effect/platform-node": ["@effect/platform-node@0.104.1", "", { "dependencies": { "@effect/platform-node-shared": "^0.57.1", "mime": "^3.0.0", "undici": "^7.10.0", "ws": "^8.18.2" }, "peerDependencies": { "@effect/cluster": "^0.56.1", "@effect/platform": "^0.94.2", "@effect/rpc": "^0.73.0", "@effect/sql": "^0.49.0", "effect": "^3.19.15" } }, "sha512-jT1a/z98niK6fnEU8pWHPPCdJMVDRCIdB65lolcOjse5rsTwVbczMjvKkhVQpF63mNWoOnol7OTRNkw5L54llg=="],
 
@@ -1719,7 +1733,7 @@
 
     "json-stable-stringify-without-jsonify": ["json-stable-stringify-without-jsonify@1.0.1", "", {}, "sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw=="],
 
-    "json5": ["json5@2.2.3", "", { "bin": { "json5": "lib/cli.js" } }, "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg=="],
+    "json5": ["json5@1.0.2", "", { "dependencies": { "minimist": "^1.2.0" }, "bin": { "json5": "lib/cli.js" } }, "sha512-g1MWMLBiz8FKi1e4w0UyVL3w+iJceWAFBAaBnnGKOpNa5f8TLktkbre1+s6oICydWAm+HRUGTmI+//xv2hvXYA=="],
 
     "jsonc-parser": ["jsonc-parser@3.3.1", "", {}, "sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ=="],
 
@@ -2617,6 +2631,8 @@
 
     "@babel/code-frame/picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
+    "@babel/core/json5": ["json5@2.2.3", "", { "bin": { "json5": "lib/cli.js" } }, "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg=="],
+
     "@babel/core/semver": ["semver@6.3.1", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
 
     "@babel/helper-compilation-targets/lru-cache": ["lru-cache@5.1.1", "", { "dependencies": { "yallist": "^3.0.2" } }, "sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w=="],
@@ -2952,8 +2968,6 @@
     "table/strip-ansi": ["strip-ansi@6.0.1", "", { "dependencies": { "ansi-regex": "^5.0.1" } }, "sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A=="],
 
     "trim-repeated/escape-string-regexp": ["escape-string-regexp@1.0.5", "", {}, "sha512-vbRorB5FUQWvla16U8R/qgaFIya2qGzwDrNmCZuYKrbdSUMG6I1ZCGQRefkRVhuOkIGVne7BQ35DSfo1qvJqFg=="],
-
-    "tsconfig-paths/json5": ["json5@1.0.2", "", { "dependencies": { "minimist": "^1.2.0" }, "bin": { "json5": "lib/cli.js" } }, "sha512-g1MWMLBiz8FKi1e4w0UyVL3w+iJceWAFBAaBnnGKOpNa5f8TLktkbre1+s6oICydWAm+HRUGTmI+//xv2hvXYA=="],
 
     "tsx/esbuild": ["esbuild@0.27.2", "", { "optionalDependencies": { "@esbuild/aix-ppc64": "0.27.2", "@esbuild/android-arm": "0.27.2", "@esbuild/android-arm64": "0.27.2", "@esbuild/android-x64": "0.27.2", "@esbuild/darwin-arm64": "0.27.2", "@esbuild/darwin-x64": "0.27.2", "@esbuild/freebsd-arm64": "0.27.2", "@esbuild/freebsd-x64": "0.27.2", "@esbuild/linux-arm": "0.27.2", "@esbuild/linux-arm64": "0.27.2", "@esbuild/linux-ia32": "0.27.2", "@esbuild/linux-loong64": "0.27.2", "@esbuild/linux-mips64el": "0.27.2", "@esbuild/linux-ppc64": "0.27.2", "@esbuild/linux-riscv64": "0.27.2", "@esbuild/linux-s390x": "0.27.2", "@esbuild/linux-x64": "0.27.2", "@esbuild/netbsd-arm64": "0.27.2", "@esbuild/netbsd-x64": "0.27.2", "@esbuild/openbsd-arm64": "0.27.2", "@esbuild/openbsd-x64": "0.27.2", "@esbuild/openharmony-arm64": "0.27.2", "@esbuild/sunos-x64": "0.27.2", "@esbuild/win32-arm64": "0.27.2", "@esbuild/win32-ia32": "0.27.2", "@esbuild/win32-x64": "0.27.2" }, "bin": { "esbuild": "bin/esbuild" } }, "sha512-HyNQImnsOC7X9PMNaCIeAm4ISCQXs5a5YasTXVliKv4uuBo1dKrG0A+uQS8M5eXjVMnLg3WgXaKvprHlFJQffw=="],
 

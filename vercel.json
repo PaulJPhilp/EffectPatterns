@@ -4,6 +4,6 @@
   "ignoreCommand": "echo 'Automatic Vercel git deployments are disabled for this repository.' && exit 0",
   "installCommand": "bun install",
   "buildCommand": "bash scripts/vercel-build.sh",
-  "outputDirectory": "packages/mcp-server/.next",
+  "outputDirectory": "packages/api-server/.next",
   "regions": ["iad1"]
 }

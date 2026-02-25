@@ -34,7 +34,7 @@ echo -e "${YELLOW}Checking local server at ${LOCAL_URL}...${NC}"
 if ! curl -s -f "${LOCAL_URL}/api/health" > /dev/null 2>&1; then
     echo -e "${RED}❌ Local server not available at ${LOCAL_URL}${NC}"
     echo -e "${YELLOW}Start the local server with:${NC}"
-    echo -e "  ${GREEN}cd packages/mcp-server && bun run dev${NC}"
+    echo -e "  ${GREEN}cd packages/api-server && bun run dev${NC}"
     exit 1
 fi
 

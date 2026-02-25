@@ -16,9 +16,10 @@ import { createDatabase } from "@effect-patterns/toolkit"
 import { randomUUID } from "node:crypto"
 import { NextResponse } from "next/server"
 import { sql } from "drizzle-orm"
+import pkg from "../../../package.json" with { type: "json" }
 
 const SERVICE_NAME = "effect-patterns-mcp-server"
-const SERVICE_VERSION = "0.7.7"
+const SERVICE_VERSION = pkg.version
 
 function getEnvironment(): string {
   return (

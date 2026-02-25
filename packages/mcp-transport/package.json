@@ -1,0 +1,48 @@
+{
+  "name": "@effect-patterns/mcp-transport",
+  "version": "0.7.7",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.2.23",
+  "description": "Effect Patterns MCP Transport - stdio and streamable-http transports for the Effect Patterns API",
+  "scripts": {
+    "mcp": "bun build --target=node --outdir=dist src/mcp-stdio.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-dev-key} bun dist/mcp-stdio.js",
+    "mcp:debug": "bun build --target=node --outdir=dist src/mcp-stdio.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-dev-key} MCP_DEBUG=true bun dist/mcp-stdio.js",
+    "mcp:http": "bun build --target=node --outdir=dist src/mcp-streamable-http.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-dev-key} bun dist/mcp-streamable-http.js",
+    "mcp:http:debug": "bun build --target=node --outdir=dist src/mcp-streamable-http.ts && PATTERN_API_KEY=${PATTERN_API_KEY:-dev-key} MCP_DEBUG=true bun dist/mcp-streamable-http.js",
+    "mcp:oauth:test": "bun -e 'import { generatePKCE } from \"./src/auth/pkce.js\"; console.log(\"PKCE Test:\", generatePKCE());'",
+    "mcp:production": "bun build --target=node --outdir=dist src/mcp-production-client.ts && bun dist/mcp-production-client.js",
+    "mcp:build": "bun build --target=node --outdir=dist src/mcp-stdio.ts",
+    "build": "bun build --target=node --outdir=dist src/mcp-stdio.ts src/mcp-streamable-http.ts",
+    "test": "bunx vitest run",
+    "test:watch": "bunx vitest",
+    "test:coverage": "bunx vitest run --coverage",
+    "test:mcp": "bunx vitest run --config vitest.mcp.config.ts",
+    "test:mcp:watch": "bunx vitest --config vitest.mcp.config.ts",
+    "test:mcp:local": "MCP_ENV=local bunx vitest run --config vitest.mcp.config.ts tests/mcp-protocol/local.test.ts tests/mcp-protocol/structured-output.test.ts tests/mcp-protocol/stdio-discipline.test.ts",
+    "test:mcp:ci": "MCP_ENV=local bunx vitest run --config vitest.mcp.config.ts tests/mcp-protocol/local.test.ts tests/mcp-protocol/structured-output.test.ts tests/mcp-protocol/stdio-discipline.test.ts",
+    "test:mcp:staging": "bash scripts/test-mcp-staging.sh",
+    "test:mcp:production": "bash scripts/test-mcp-production.sh",
+    "test:mcp:all": "bash scripts/test-mcp-all.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.2",
+    "@vitest/coverage-v8": "^4.0.15",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.15"
+  },
+  "keywords": [
+    "effect",
+    "effect-ts",
+    "patterns",
+    "mcp",
+    "transport"
+  ],
+  "author": "Paul",
+  "license": "MIT"
+}

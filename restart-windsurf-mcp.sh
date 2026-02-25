@@ -17,7 +17,7 @@ if curl -s http://localhost:3002/api/health > /dev/null 2>&1; then
     echo "✅ MCP server is running on http://localhost:3002"
 else
     echo "❌ MCP server is not running. Starting it..."
-    cd /Users/paul/Projects/Public/Effect-Patterns/packages/mcp-server
+    cd /Users/paul/Projects/Public/Effect-Patterns/packages/api-server
     PORT=3002 bun run dev &
     sleep 5
 fi

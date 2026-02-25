@@ -6,7 +6,7 @@
 echo "🚀 Deploying MCP server to Vercel..."
 
 # Navigate to the mcp-server package directory
-cd "$(dirname "$0")/packages/mcp-server"
+cd "$(dirname "$0")/packages/api-server"
 
 # Remove any existing vercel link
 rm -rf .vercel

@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "preflight": "bun run build && bun run typecheck && bun run test",
+    "smoke-test": "bun run build && node dist/index.js --version",
     "prepublishOnly": "bun run build"
   },
   "dependencies": {

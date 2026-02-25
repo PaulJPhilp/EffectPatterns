@@ -22,6 +22,29 @@ For **Vercel Preview** deployments (staging), set these in the Vercel project �
 
 ---
 
+## Production (Vercel Production)
+
+For **Vercel Production** deployments, set these in the Vercel project → Settings → Environment Variables → **Production**:
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | **Required.** Production Postgres URL (Vercel Postgres / Neon-backed). Auto-set when a Vercel Postgres database is bound to the Production environment. |
+| `PATTERN_API_KEY` | **Required.** Production API key for MCP authentication. Must differ from staging key. |
+| `LOG_LEVEL` | Recommended: `warn`. Reduces log volume in production. |
+| `TRACING_ENABLED` | Recommended: `true`. Enables OpenTelemetry tracing. |
+| `TRACING_SAMPLING_RATE` | Recommended: `0.05` (5%). Lower than staging to reduce trace volume. |
+| `OTEL_RESOURCE_ATTRIBUTES` | Optional. Set to `environment=production` for trace filtering. |
+| `OTEL_EXPORTER_OTLP_*` | Optional. OTLP endpoint/headers for your observability backend. |
+| `KV_REST_API_URL` | Optional. Vercel KV endpoint for distributed rate limiting. |
+| `KV_REST_API_TOKEN` | Optional. Vercel KV token (paired with `KV_REST_API_URL`). |
+
+**Notes:**
+- `VERCEL_ENV` is auto-set to `production` by Vercel — do not set manually.
+- Database migrations run automatically during the Vercel build step (see `scripts/vercel-build.sh`).
+- The config service validates that `DATABASE_URL` is set when `NODE_ENV=production`, providing a clear startup error instead of a cryptic DB connection failure.
+
+---
+
 ## Summary Table
 
 | Variable | Unit | Routes | MCP | Integration | Workflows | Deployment | Stress | Default | Purpose |

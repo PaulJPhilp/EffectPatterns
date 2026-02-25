@@ -1,6 +1,6 @@
-# @effect-patterns/mcp-server
+# @effect-patterns/api-server
 
-> MCP 2.0 Compatible server for Effect Patterns with advanced code analysis and pattern management
+> REST API server for Effect Patterns with database access, code analysis, and pattern management
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue.svg)](https://www.typescriptlang.org/)

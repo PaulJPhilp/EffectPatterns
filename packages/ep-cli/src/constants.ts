@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import pkg from "../package.json" with { type: "json" };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,7 +22,7 @@ export const PATHS = {
 
 export const CLI = {
   NAME: "ep",
-  VERSION: "0.3.0",
+  VERSION: pkg.version,
   DESCRIPTION: "A CLI for Effect Patterns Hub",
   RUNNER_NAME: "EffectPatterns CLI",
 } as const;

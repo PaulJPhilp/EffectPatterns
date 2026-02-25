@@ -1,10 +1,10 @@
 {
   "mcpServers": {
     "effect-patterns": {
-      "command": "/Users/paul/Projects/Public/Effect-Patterns/packages/mcp-server/start-mcp.sh",
+      "command": "/Users/paul/Projects/Public/Effect-Patterns/packages/mcp-transport/start-mcp.sh",
       "env": {
-        "PATTERN_API_KEY": "your-api-key-from-packages/mcp-server/.env",
-        "LOCAL_API_KEY": "your-api-key-from-packages/mcp-server/.env",
+        "PATTERN_API_KEY": "your-api-key-from-packages/mcp-transport/.env",
+        "LOCAL_API_KEY": "your-api-key-from-packages/mcp-transport/.env",
         "EFFECT_PATTERNS_API_URL": "http://localhost:3000",
         "NODE_ENV": "development",
         "MCP_ENV": "local"

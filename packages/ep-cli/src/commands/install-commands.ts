@@ -108,7 +108,14 @@ export const installAddCommand = Command.make("add", {
       if (options.tool === "agents") {
         const startMarker = "<!-- EP_RULES_START -->";
         const endMarker = "<!-- EP_RULES_END -->";
-        const managedSection = `${startMarker}\n${rulesMarkdown}\n${endMarker}\n`;
+        const canonicalPath = path.join(process.cwd(), "docs", "Effect-Patterns-Rules.md");
+        const docsDir = path.dirname(canonicalPath);
+
+        yield* fs.makeDirectory(docsDir, { recursive: true });
+        yield* fs.writeFileString(canonicalPath, rulesMarkdown);
+
+        const pointerLine = "For Effect Patterns rules, see [docs/Effect-Patterns-Rules.md](docs/Effect-Patterns-Rules.md).";
+        const managedSection = `${startMarker}\n\n${pointerLine}\n\n${endMarker}\n`;
 
         const exists = yield* fs.exists(targetPath);
         const current = exists ? yield* fs.readFileString(targetPath) : "";
@@ -140,7 +147,13 @@ export const installAddCommand = Command.make("add", {
       ];
       yield* saveInstalledRules(merged);
 
-      yield* Display.showSuccess(`Installed ${rulesToInstall.length} rule(s) to ${targetPath}`);
+      if (options.tool === "agents") {
+        yield* Display.showSuccess(
+          `Installed ${rulesToInstall.length} rule(s) to docs/Effect-Patterns-Rules.md and updated ${targetPath}`
+        );
+      } else {
+        yield* Display.showSuccess(`Installed ${rulesToInstall.length} rule(s) to ${targetPath}`);
+      }
       yield* Display.showInfo(`Next: ep install list --installed`);
     })
   )
