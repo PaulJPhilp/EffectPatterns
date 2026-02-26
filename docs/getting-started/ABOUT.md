@@ -146,8 +146,8 @@ ep install add --tool cursor
 # Search by keyword
 ep search "error handling"
 
-# Filter by skill level
-ep list --skill-level intermediate
+# Filter by difficulty
+ep list --difficulty intermediate
 
 # Show pattern details
 ep show handle-errors-with-catch
@@ -159,14 +159,14 @@ ep show handle-errors-with-catch
 # Install rules for Cursor
 ep install add --tool cursor
 
-# Install intermediate-level rules
-ep install add --tool claude --skill-level intermediate
+# Install intermediate-level rules for VS Code
+ep install add --tool vscode --skill-level intermediate
 
-# Preview without installing
-ep install add --tool windsurf --dry-run
+# Interactive rule selection for Windsurf
+ep install add --tool windsurf -i
 
 # List supported tools
-ep install list-tools
+ep install list
 ```
 
 ### Create New Patterns

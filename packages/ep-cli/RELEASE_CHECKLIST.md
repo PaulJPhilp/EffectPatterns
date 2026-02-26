@@ -23,11 +23,29 @@
 
 ## Publish
 
-1. Go to GitHub Actions → "Publish to npm" → Run workflow
-2. First run with `dry-run: true` to verify
-3. Then run with `dry-run: false` to publish
+Publish order: toolkit → ep-shared-services → ep-cli
 
-Publish order (handled by workflow): toolkit → ep-shared-services → ep-cli
+1. Build all packages:
+   ```bash
+   bun run build
+   ```
+2. Publish dependencies first (skip if versions haven't changed):
+   ```bash
+   cd packages/toolkit && npm publish --access public
+   cd ../ep-shared-services && npm publish --access public
+   ```
+3. Temporarily pin workspace deps in `packages/ep-cli/package.json`:
+   ```diff
+   - "@effect-patterns/ep-shared-services": "workspace:*",
+   - "@effect-patterns/toolkit": "workspace:*",
+   + "@effect-patterns/ep-shared-services": "<version>",
+   + "@effect-patterns/toolkit": "<version>",
+   ```
+4. Publish ep-cli:
+   ```bash
+   cd packages/ep-cli && npm publish --access public
+   ```
+5. Revert workspace deps back to `workspace:*`
 
 ## Post-Publish Verification
 
@@ -35,8 +53,11 @@ Publish order (handled by workflow): toolkit → ep-shared-services → ep-cli
   ```bash
   npm view @effect-patterns/ep-cli
   ```
-- [ ] Install and test:
+- [ ] Install globally and test:
   ```bash
-  bunx @effect-patterns/ep-cli --version
-  bunx @effect-patterns/ep-cli search "error handling"
+  bun add -g @effect-patterns/ep-cli
+  ep --version
+  ep list
+  ep search "retry"
   ```
+- [ ] Update CHANGELOG.md with new version entry
