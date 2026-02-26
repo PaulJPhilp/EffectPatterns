@@ -24,10 +24,14 @@ Maintainer workflows are intentionally out of scope and live in `ep-admin`.
 
 ## Installation
 
-Requires Bun (package declares `bun >= 1.0.0`).
+Published on npm as `@effect-patterns/ep-cli`:
 
 ```bash
+# Install globally with bun (recommended)
 bun add -g @effect-patterns/ep-cli
+
+# Or with npm
+npm install -g @effect-patterns/ep-cli
 ```
 
 Verify:
@@ -123,7 +127,7 @@ If stdin is empty, command fails with:
 | `PATTERN_API_KEY` | API key sent as `x-api-key` to pattern API | unset |
 | `EP_API_KEY_FILE` | File containing API key text | unset |
 | `EP_CONFIG_FILE` | Path to JSON config (expects `{"apiKey":"..."}`) | `${XDG_CONFIG_HOME:-~/.config}/ep-cli/config.json` |
-| `EFFECT_PATTERNS_API_URL` | Base URL for pattern API | `https://effect-patterns-mcp.vercel.app` |
+| `EFFECT_PATTERNS_API_URL` | Base URL for pattern API | `https://effect-patterns-mcp-server-buddybuilder.vercel.app` |
 | `EP_API_TIMEOUT_MS` | Request timeout in ms | `10000` |
 | `EP_INSTALLED_STATE_FILE` | Installed-rules state file path override | `${XDG_STATE_HOME:-~/.local/state}/ep-cli/installed-rules.json` |
 | `EP_SKILLS_DIR` | Explicit skills directory override | auto-discovered from cwd upward |
@@ -281,7 +285,7 @@ Supported tool values:
 
 Target files:
 
-- `agents` -> `AGENTS.md`
+- `agents` -> rule content is written to `docs/Effect-Patterns-Rules.md`; `AGENTS.md` (in cwd) is updated with a managed block that points to that file.
 - `cursor` -> `.cursor/rules.md`
 - `vscode` -> `.vscode/rules.md`
 - `windsurf` -> `.windsurf/rules.md`
@@ -300,10 +304,7 @@ Notes:
 - `--interactive` opens multi-select prompt.
 - `--skill-level` maps to pattern difficulty filter.
 - `--use-case` filters results client-side by use case tag.
-- For `agents`, managed block markers are used:
-  - `<!-- EP_RULES_START -->`
-  - `<!-- EP_RULES_END -->`
-- Existing managed block in `AGENTS.md` is replaced in place.
+- For `agents`, rule content is written to `docs/Effect-Patterns-Rules.md`; `AGENTS.md` is then updated with a managed block (`<!-- EP_RULES_START -->` / `<!-- EP_RULES_END -->`) that references that file. An existing managed block in `AGENTS.md` is replaced in place.
 - State is recorded in installed-rules state JSON file.
 
 Unsupported tool behavior:
@@ -560,7 +561,8 @@ Defaults:
 
 `agents` tool install target:
 
-- `AGENTS.md` in current working directory
+- Rule content: `docs/Effect-Patterns-Rules.md`
+- `AGENTS.md` in current working directory is updated with a managed block that points to `docs/Effect-Patterns-Rules.md`
 
 Other install targets:
 
@@ -624,7 +626,7 @@ Expected when non-TTY or when `NO_COLOR`, `CI`, or `TERM=dumb` is set.
 This document tracks behavior for:
 
 - CLI name: `ep`
-- Version: `0.3.0`
+- Version: `0.3.1`
 
 When command surface or behavior changes, update this file first, then derivative docs.
 

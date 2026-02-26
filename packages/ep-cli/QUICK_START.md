@@ -3,7 +3,11 @@
 ## Install
 
 ```bash
+# Install globally with bun (recommended)
 bun add -g @effect-patterns/ep-cli
+
+# Or with npm
+npm install -g @effect-patterns/ep-cli
 ```
 
 ## First Commands

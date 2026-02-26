@@ -47,7 +47,7 @@ ep show retry-based-on-specific-errors
 ep install add --tool cursor --skill-level intermediate
 
 # List all patterns
-ep list --skill-level advanced
+ep list --difficulty advanced
 ```
 
 ### Effect Patterns Toolkit
@@ -117,35 +117,25 @@ bun test
 
 ### Using the CLI
 
-#### Option 1: Install CLI Package Globally (Recommended)
+#### Install CLI Globally (Recommended)
 
-The CLI is published as a standalone npm package:
+The `ep` CLI is published on npm as `@effect-patterns/ep-cli`:
 
 ```bash
-# Install globally with bun
-bun install -g @effect-patterns/cli
+# Install globally with bun (recommended)
+bun add -g @effect-patterns/ep-cli
 
 # Or with npm
-npm install -g @effect-patterns/cli
+npm install -g @effect-patterns/ep-cli
 
 # Verify installation
 ep --version
 
 # Use anywhere
 ep search "error handling"
-ep list --skill-level intermediate
+ep list --difficulty intermediate
 ep show handle-errors-with-catch
 ep install add --tool cursor
-```
-
-#### Option 2: Run from Project Directory
-
-If you prefer to run from the development repository:
-
-```bash
-# From the project root
-bun run ep --version
-bun run ep search "error handling"
 ```
 
 ## Usage
