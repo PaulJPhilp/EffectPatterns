@@ -27,6 +27,13 @@ describe("ep-cli error UX and nudges", () => {
     expect(result.stderr).toContain(docsUrl);
   });
 
+  it("suggests login for close typo", () => {
+    const result = runCli(["logn"]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Did you mean: ep login");
+    expect(result.stderr).toContain(docsUrl);
+  });
+
   it("suggests likely nested subcommand typos", () => {
     const result = runCli(["install", "ls"]);
     expect(result.status).toBe(1);

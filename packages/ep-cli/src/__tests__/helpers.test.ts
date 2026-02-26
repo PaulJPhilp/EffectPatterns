@@ -73,6 +73,15 @@ describe("getCommandSuggestion", () => {
     expect(getCommandSuggestion(["node", "ep", "search"])).toBeNull();
   });
 
+  it("returns null for login command", () => {
+    expect(getCommandSuggestion(["node", "ep", "login"])).toBeNull();
+  });
+
+  it("suggests login for close typo", () => {
+    const result = getCommandSuggestion(["node", "ep", "logi"]);
+    expect(result).toContain("login");
+  });
+
   it("suggests close nested command", () => {
     const result = getCommandSuggestion(["node", "ep", "install", "ad"]);
     expect(result).toContain("add");
@@ -112,9 +121,10 @@ describe("extractErrorMessage", () => {
     expect(result).toContain("Effect Patterns API");
   });
 
-  it("handles 401 errors", () => {
+  it("handles 401 errors with ep login suggestion", () => {
     const err = new Error("Pattern API unauthorized (401)");
     const result = extractErrorMessage(err, argv);
+    expect(result).toContain("ep login");
     expect(result).toContain("PATTERN_API_KEY");
   });
 

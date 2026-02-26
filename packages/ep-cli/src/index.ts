@@ -348,7 +348,7 @@ export const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>)
     if (combined.includes("Pattern API unauthorized (401)")) {
       return [
         "Pattern API request was unauthorized (401).",
-        "Set PATTERN_API_KEY, or use --api-key-stdin, or configure EP_API_KEY_FILE / ~/.config/ep-cli/config.json.",
+        "Run `ep login` to authenticate, or set PATTERN_API_KEY, use --api-key-stdin, or configure EP_API_KEY_FILE.",
         `Docs: ${EP_CLI_DOCS_URL}`,
       ].join("\n");
     }

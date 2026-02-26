@@ -22,7 +22,7 @@ describe("ep-cli command surface", () => {
 	});
 
 	it("exposes only public end-user commands", async () => {
-		const expectedCommands = ["search", "list", "show", "install", "skills"];
+		const expectedCommands = ["search", "list", "show", "install", "skills", "login"];
 
 		for (const command of expectedCommands) {
 			const exit = await run(["bun", "ep", command, "--help"]);
