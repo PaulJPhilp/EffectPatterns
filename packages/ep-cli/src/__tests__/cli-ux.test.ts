@@ -35,7 +35,15 @@ describe("ep-cli error UX and nudges", () => {
   });
 
   it("returns actionable API connectivity error with docs link", () => {
-    const result = runCli(["search", "retry"]);
+    const result = spawnSync("bun", [cliEntry, "search", "retry"], {
+      cwd: packageRoot,
+      env: {
+        ...process.env,
+        NO_COLOR: "1",
+        EFFECT_PATTERNS_API_URL: "http://localhost:1",
+      },
+      encoding: "utf8",
+    });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(docsUrl);
   });

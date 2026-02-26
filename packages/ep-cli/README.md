@@ -626,7 +626,7 @@ Expected when non-TTY or when `NO_COLOR`, `CI`, or `TERM=dumb` is set.
 This document tracks behavior for:
 
 - CLI name: `ep`
-- Version: `0.3.1`
+- Version: `0.3.2`
 
 When command surface or behavior changes, update this file first, then derivative docs.
 
