@@ -98,7 +98,8 @@
     "ep:preflight": "bun run --filter @effect-patterns/ep-cli preflight",
     "ep:smoke-test": "bun run --filter @effect-patterns/ep-cli smoke-test",
     "seed:skills": "bun run scripts/seed-skills.ts",
-    "scaffold": "bun run scripts/scaffold-test-project.ts"
+    "scaffold": "bun run scripts/scaffold-test-project.ts",
+    "lifecycle-harness": "bun run scripts/lifecycle-harness/src/index.ts"
   },
   "dependencies": {
     "@effect/cli": "0.73.2",

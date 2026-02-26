@@ -30,6 +30,9 @@ Thumbs.db
 # Coverage
 coverage/
 
+# Lifecycle harness run reports (generated)
+scripts/lifecycle-harness/reports/
+
 # Misc
 *.tgz
 .idea/

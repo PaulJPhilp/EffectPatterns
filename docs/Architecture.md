@@ -430,6 +430,11 @@ bun run ep:preflight
 bun run ep:smoke-test
 ```
 
+### Scripts (scaffold and lifecycle harness)
+
+- **Scaffold** (`bun run scaffold`) creates new projects under `$HOME/Projects/TestRepos` (see [scripts/scaffold-test-project.ts](../scripts/scaffold-test-project.ts) and [docs/development/SCAFFOLD_USER_GUIDE.md](development/SCAFFOLD_USER_GUIDE.md)).
+- **Lifecycle harness** (`bun run lifecycle-harness --seed <n>`) runs seedable E2E over real repos and the `ep` CLI. It depends on the scaffold’s output path: it uses the same root (`defaultScaffoldRootDir()` in `scripts/lifecycle-harness/src/paths.ts`). The harness discovers the monorepo root by walking up from `scripts/lifecycle-harness/src/` and looking for a root `package.json` containing `effect-patterns-hub` or a `"scaffold"` script.
+
 ### Testing
 
 **Unit and integration:**
