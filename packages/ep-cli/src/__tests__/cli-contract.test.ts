@@ -67,6 +67,8 @@ describe("ep-cli stream and machine-mode contracts", () => {
     const parsed = JSON.parse(result.stdout);
     expect(Array.isArray(parsed.tools)).toBe(true);
     expect(parsed.tools).toContain("cursor");
+    expect(parsed.tools).toContain("agent");
+    expect(parsed.tools).toContain("claude");
   });
 
   it("keeps unsupported-tool diagnostics on stderr", () => {

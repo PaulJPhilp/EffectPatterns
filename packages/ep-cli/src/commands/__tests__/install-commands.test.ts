@@ -34,7 +34,8 @@ describe("install commands", () => {
 			const exit = await run(["install", "list"]);
 			expect(Exit.isSuccess(exit)).toBe(true);
 			const output = capture.logs.join("\n");
-			expect(output).toContain("agents");
+			expect(output).toContain("agent");
+			expect(output).toContain("claude");
 			expect(output).toContain("cursor");
 			expect(output).toContain("vscode");
 			expect(output).toContain("windsurf");
@@ -47,7 +48,8 @@ describe("install commands", () => {
 			const parsed = JSON.parse(jsonLines);
 			expect(Array.isArray(parsed.tools)).toBe(true);
 			expect(parsed.tools).toContain("cursor");
-			expect(parsed.tools).toContain("agents");
+			expect(parsed.tools).toContain("agent");
+			expect(parsed.tools).toContain("claude");
 		});
 
 		it("outputs JSON for --installed --json with no rules", async () => {

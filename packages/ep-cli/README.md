@@ -272,20 +272,22 @@ Subcommands:
 
 `install remove` and `install diff` exist in code but are intentionally not exposed in the public command surface at this time.
 
-### `ep install add --tool text [--skill-level text] [--use-case text] [-i|--interactive]`
+### `ep install add [--tool text] [--skill-level text] [--use-case text] [-i|--interactive]`
 
 Installs rule content into local tool configuration files.
 
 Supported tool values:
 
-- `agents`
+- `agent` (default)
+- `claude`
 - `cursor`
 - `vscode`
 - `windsurf`
 
 Target files:
 
-- `agents` -> rule content is written to `docs/Effect-Patterns-Rules.md`; `AGENTS.md` (in cwd) is updated with a managed block that points to that file.
+- `agent` -> `AGENTS.md` (in cwd), managed Effect section is upserted in place
+- `claude` -> `CLAUDE.md` (in cwd), managed Effect section is upserted in place
 - `cursor` -> `.cursor/rules.md`
 - `vscode` -> `.vscode/rules.md`
 - `windsurf` -> `.windsurf/rules.md`
@@ -293,7 +295,9 @@ Target files:
 Examples:
 
 ```bash
-ep install add --tool agents
+ep install add
+ep install add --tool agent
+ep install add --tool claude
 ep install add --tool cursor --skill-level intermediate
 ep install add --tool vscode --use-case building-apis
 ep install add --tool windsurf -i
@@ -304,7 +308,8 @@ Notes:
 - `--interactive` opens multi-select prompt.
 - `--skill-level` maps to pattern difficulty filter.
 - `--use-case` filters results client-side by use case tag.
-- For `agents`, rule content is written to `docs/Effect-Patterns-Rules.md`; `AGENTS.md` is then updated with a managed block (`<!-- EP_RULES_START -->` / `<!-- EP_RULES_END -->`) that references that file. An existing managed block in `AGENTS.md` is replaced in place.
+- `agent` and `claude` use managed sections in `AGENTS.md` / `CLAUDE.md` and update only those sections when rerun.
+- Legacy alias `agents` is accepted and maps to `agent`.
 - State is recorded in installed-rules state JSON file.
 
 Unsupported tool behavior:
@@ -330,7 +335,7 @@ ep install list --installed --json
 JSON shapes:
 
 ```json
-{ "tools": ["agents", "cursor", "vscode", "windsurf"] }
+{ "tools": ["agent", "claude", "cursor", "vscode", "windsurf"] }
 ```
 
 ```json
