@@ -13,7 +13,7 @@ import type {
   PatternSummary,
 } from "./api.js";
 
-const DEFAULT_API_BASE_URL = "https://effect-patterns-mcp.vercel.app";
+const DEFAULT_API_BASE_URL = "https://effect-patterns-mcp-server-buddybuilder.vercel.app";
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 const resolveConfigPath = () => {
