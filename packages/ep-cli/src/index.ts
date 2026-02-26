@@ -16,6 +16,7 @@ import { CLI } from "./constants.js";
 
 // Commands
 import { installCommand } from "./commands/install-commands.js";
+import { loginCommand } from "./commands/login-command.js";
 import { listCommand, searchCommand, showCommand } from "./commands/pattern-repo-commands.js";
 import { skillsCommand } from "./commands/skills-commands.js";
 
@@ -133,6 +134,7 @@ export const rootCommand = Command.make("ep").pipe(
     showCommand,
     installCommand,
     skillsCommand,
+    loginCommand,
   ])
 );
 
@@ -247,7 +249,7 @@ const isDirectExecution = (() => {
   return false;
 })();
 
-const ROOT_COMMANDS = ["search", "list", "show", "install", "skills"] as const;
+const ROOT_COMMANDS = ["search", "list", "show", "install", "skills", "login"] as const;
 const NESTED_COMMANDS: Record<string, readonly string[]> = {
   install: ["add", "list"],
   skills: ["list", "preview", "validate", "stats"],

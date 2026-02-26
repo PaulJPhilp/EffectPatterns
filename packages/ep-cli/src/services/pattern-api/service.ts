@@ -4,27 +4,16 @@
 
 import { Effect } from "effect";
 import { existsSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
-import path from "node:path";
 import type {
   PatternApiService,
   PatternDetail,
   PatternSearchParams,
   PatternSummary,
 } from "./api.js";
+import { resolveConfigPath } from "../config/writer.js";
 
 const DEFAULT_API_BASE_URL = "https://effect-patterns-mcp-server-buddybuilder.vercel.app";
 const DEFAULT_TIMEOUT_MS = 10_000;
-
-const resolveConfigPath = () => {
-  const explicit = process.env.EP_CONFIG_FILE;
-  if (explicit && explicit.trim().length > 0) {
-    return explicit;
-  }
-
-  const configHome = process.env.XDG_CONFIG_HOME || path.join(homedir(), ".config");
-  return path.join(configHome, "ep-cli", "config.json");
-};
 
 const readApiKeyFromFile = (filePath: string): string => {
   const content = readFileSync(filePath, "utf8").trim();
