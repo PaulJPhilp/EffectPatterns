@@ -26,6 +26,13 @@ This repository is designed to be a living document that helps developers move f
 > - [Browse Patterns](https://effecttalk.dev/patterns)
 > - [Welcome Post](https://effecttalk.dev/blog/welcome)
 
+**Install the CLI** to search, browse, and install patterns from your terminal:
+
+```bash
+bun add -g @effect-patterns/ep-cli
+ep search "error handling"
+```
+
 **Looking for machine-readable rules for AI IDEs and coding agents? See the [AI Coding Rules](#ai-coding-rules) section below.**
 
 ## Table of Contents
