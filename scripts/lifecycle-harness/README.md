@@ -64,6 +64,16 @@ This runs up to 10 scenarios (deterministic for seed `123`), creates repos under
 - **Print summary for an existing report:**  
 `bun run lifecycle-harness --analyze scripts/lifecycle-harness/reports/run-20260226-172113-seed-20260226.json`
 
+## Unit tests
+
+The harness has a companion unit test suite under `scripts/__tests__/lifecycle-harness/` (e.g. `code-broken.test.ts`, `report.test.ts`, `scaffold-validate.test.ts`, `output-checks.test.ts`, `list-parse.test.ts`). Run from the monorepo root:
+
+```bash
+bunx vitest run scripts/__tests__/lifecycle-harness/ --config vitest.config.ts
+```
+
+These tests cover outcome classification, output validation, list parsing, scaffold validation, code-broken detection, args, disk helpers, and report summary. They do **not** run the full harness or hit the network.
+
 ## Report summary
 
 At the end of each run the harness prints a **report summary**: coverage matrix (attempted/succeeded per ep surface), soft-fail counts by command type, and template distribution. The same summary can be printed for any saved report with `--analyze <path>`.
@@ -104,6 +114,8 @@ Per-command fields allow copy/paste or reconstructing the exact invocation.
 
 If **expectedToFail** is true, a non-zero exit is treated as **outcome: "success"** for that command. A command with **expectedToFail: true** and **outcome: "success"** thus means the intentional negative test passed (e.g. bogus `ep show` correctly exited non-zero).
 
+**Source layout:** The harness lives under `scripts/lifecycle-harness/`. Entry point is `src/index.ts`. Supporting modules: `args.ts` (CLI flags), `command.ts` (subprocess run with timeout/capture), `report.ts` (outcome classification, JSON shape), `report-summary.ts` (printed summary), `mutations.ts` (random lifecycle steps), `code-broken.ts` (detect broken project state), `output-checks.ts` (stdout validation), `list-parse.ts` (parse pattern IDs from `ep list`), `scaffold-validate.ts` (required files per template), `paths.ts` (monorepo root, scaffold root, reports dir), `disk.ts` (size helpers), `skills.ts` (break/fix SKILL.md), `types.ts` (TEMPLATES, TOOLS, mutation union). See **§ Unit tests** for the test suite.
+
 **Repo root:** The harness discovers the monorepo root by walking up from its script location (`scripts/lifecycle-harness/src/`). It looks for a directory containing `package.json` with either `effect-patterns-hub` or a `"scaffold"` script. If not found, it throws a clear error (where it searched, what it expected). This contract is in `paths.ts`; if the root `package.json` is restructured, that check may need updating.
 
 **Scenario directory names:** Each scenario repo is named `ep-life-YYYYMMDD-<seed>-s<index>-<template>-<shortRand>`. The date prefix (today’s date) is included so runs on different days get distinct directories and do not collide. The same seed still produces the same sequence of actions and the same logical scenario; only the directory path differs across days.
@@ -141,4 +153,4 @@ bun run lifecycle-harness --seed <seed> --scenarios <scenarioIndex + 1>
 
 **Coverage gate:** At the end of a run, if any ep surface was attempted but never succeeded (e.g. `installAdd` always 401), the harness prints "Coverage gap: ..." and exits with code 1. When you use `--only-scenario N`, the coverage gate is **skipped** (and a one-line note is printed), since a single scenario cannot exercise all surfaces.
 
-All randomness (templates after index 3, tools, mutation order, short random suffix) is driven by the seed, so the same seed produces the same sequence of actions. Repo directory names also include the current date (see above), so the exact path varies by run date.
+All randomness (tools, mutation order, short random suffix) is driven by the seed, so the same seed produces the same sequence of actions. Only template assignment is deterministic (round-robin by scenario index). Repo directory names include the current date (see above), so the exact path varies by run date.
