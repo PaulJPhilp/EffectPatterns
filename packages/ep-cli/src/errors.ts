@@ -13,3 +13,7 @@ export class ValidationFailedError extends Data.TaggedError("ValidationFailedErr
   readonly message: string;
   readonly errorCount: number;
 }> {}
+
+export class PatternNotFoundError extends Data.TaggedError("PatternNotFoundError")<{
+  readonly patternId: string;
+}> {}

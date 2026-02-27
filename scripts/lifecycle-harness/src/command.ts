@@ -24,6 +24,8 @@ export interface RunCommandOptions {
   timeoutMs?: number
   verbose?: boolean
   expectFailure?: boolean
+  /** When true, timeout (process killed) is classified as soft-fail (e.g. bun run dev). */
+  expectTimeout?: boolean
   /** Env overrides (only those set by harness) for report reproducibility. */
   envOverrides?: Record<string, string>
 }
@@ -42,6 +44,7 @@ export async function runCommand(
     timeoutMs = 60_000,
     verbose = false,
     expectFailure = false,
+    expectTimeout = false,
     envOverrides = {},
   } = options
   const start = Date.now()
@@ -136,7 +139,11 @@ export async function runCommand(
   const stdout = Buffer.concat(stdoutChunks).toString('utf-8')
   const stderr = Buffer.concat(stderrChunks).toString('utf-8')
 
-  const outcome = classifyOutcome(exitCode, timedOut, stderr, { expectFailure })
+  const outcome = classifyOutcome(exitCode, timedOut, stderr, {
+    expectFailure,
+    expectTimeout,
+    stdout,
+  })
   const record: CommandRecord = {
     resolvedBinary: executable,
     args,

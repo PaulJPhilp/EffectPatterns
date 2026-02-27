@@ -4,6 +4,7 @@
 
 import { Args, Command, Options } from "@effect/cli";
 import { Console, Effect, Option } from "effect";
+import { PatternNotFoundError } from "../errors.js";
 import { Display } from "../services/display/index.js";
 import { PatternApi } from "../services/pattern-api/index.js";
 
@@ -131,11 +132,11 @@ export const showCommand = Command.make("show", {
             pattern: null,
             message: `Pattern "${args.patternId}" not found`,
           }, null, 2));
-          return;
+        } else {
+          yield* Display.showError(`Pattern "${args.patternId}" not found`);
+          yield* Display.showInfo(`Try: ep search "${args.patternId}"`);
         }
-        yield* Display.showError(`Pattern "${args.patternId}" not found`);
-        yield* Display.showInfo(`Try: ep search "${args.patternId}"`);
-        return;
+        return yield* Effect.fail(new PatternNotFoundError({ patternId: args.patternId }));
       }
 
       if (options.json) {

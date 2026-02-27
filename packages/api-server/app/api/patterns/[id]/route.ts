@@ -12,9 +12,6 @@ import { getPatternByIdDb } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import {
-    validateApiKey,
-} from "../../../../src/auth/apiKey";
 import { PatternNotFoundError } from "../../../../src/errors";
 import { errorHandler, errorToResponse } from "../../../../src/server/errorHandler";
 import { runWithRuntime } from "../../../../src/server/init";
@@ -22,11 +19,8 @@ import { getPatternByIdFallback } from "../../../../src/server/pattern-fallback"
 import { TracingService } from "../../../../src/tracing/otlpLayer";
 
 // Handler implementation with automatic span creation via Effect.fn
-const handleGetPattern = (request: NextRequest, patternId: string) => Effect.gen(function* () {
+const handleGetPattern = (_request: NextRequest, patternId: string) => Effect.gen(function* () {
   const tracing = yield* TracingService;
-
-  // Validate API key
-  yield* validateApiKey(request);
 
   // Annotate span with pattern ID
   yield* Effect.annotateCurrentSpan({

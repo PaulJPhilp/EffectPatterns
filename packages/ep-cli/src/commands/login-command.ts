@@ -7,14 +7,17 @@
 
 import { Command } from "@effect/cli";
 import { Console, Duration, Effect } from "effect";
+import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { writeConfig } from "../services/config/writer.js";
 
-const AUTH_BASE_URL = "https://effecttalk.dev/cli/auth";
-const PRIMARY_PORT = 4567;
-const FALLBACK_PORT = 4568;
-const TIMEOUT = Duration.minutes(5);
+/** Override with EP_AUTH_URL if the default auth page is not available (e.g. 404). */
+const AUTH_BASE_URL = process.env.EP_AUTH_URL?.trim() || "https://effecttalk.dev/cli/auth";
+const PRIMARY_PORT = Number(process.env.EP_AUTH_PORT) || 4567;
+const FALLBACK_PORT = PRIMARY_PORT + 1;
+const TIMEOUT_MINUTES = 5;
+const TIMEOUT = Duration.minutes(TIMEOUT_MINUTES);
 
 interface AuthResult {
   readonly apiKey: string;
@@ -25,7 +28,7 @@ interface AuthResult {
  * Try to start an HTTP server on the given port.
  * Returns an Effect that fails if the port is busy.
  */
-const tryListen = (server: Server, port: number): Effect.Effect<number, Error> =>
+export const tryListen = (server: Server, port: number): Effect.Effect<number, Error> =>
   Effect.async<number, Error>((resume) => {
     server.once("error", (err: NodeJS.ErrnoException) => {
       resume(Effect.fail(new Error(`Port ${port} unavailable: ${err.code}`)));
@@ -41,14 +44,13 @@ const tryListen = (server: Server, port: number): Effect.Effect<number, Error> =
 const openBrowser = (url: string): Effect.Effect<void, Error> =>
   Effect.try({
     try: () => {
-      const { exec } = require("node:child_process") as typeof import("node:child_process");
       const cmd =
         process.platform === "darwin"
           ? "open"
           : process.platform === "win32"
             ? "start"
             : "xdg-open";
-      exec(`${cmd} "${url}"`);
+      execFile(cmd, [url]);
     },
     catch: (error) =>
       error instanceof Error ? error : new Error(`Failed to open browser: ${String(error)}`),
@@ -57,18 +59,26 @@ const openBrowser = (url: string): Effect.Effect<void, Error> =>
 /**
  * Wait for the authentication callback on the local server.
  */
-const waitForCallback = (
+export const waitForCallback = (
   server: Server,
   port: number,
   expectedState: string,
 ): Effect.Effect<AuthResult, Error> =>
   Effect.async<AuthResult, Error>((resume) => {
+    let resolved = false;
+
     server.on("request", (req: IncomingMessage, res: ServerResponse) => {
       const url = new URL(req.url ?? "/", `http://127.0.0.1:${port}`);
 
       if (url.pathname !== "/callback") {
         res.writeHead(404, { "Content-Type": "text/plain" });
         res.end("Not Found");
+        return;
+      }
+
+      if (resolved) {
+        res.writeHead(409, { "Content-Type": "text/plain" });
+        res.end("Already processed");
         return;
       }
 
@@ -83,12 +93,14 @@ const waitForCallback = (
       const email = url.searchParams.get("email") ?? "";
 
       if (!apiKey) {
+        resolved = true;
         res.writeHead(400, { "Content-Type": "text/plain" });
         res.end("Missing apiKey parameter");
         resume(Effect.fail(new Error("Callback received without apiKey")));
         return;
       }
 
+      resolved = true;
       res.writeHead(200, { "Content-Type": "text/html" });
       res.end(
         "<html><body style=\"font-family:system-ui;text-align:center;padding:2em\">" +
@@ -103,7 +115,7 @@ const waitForCallback = (
 /**
  * Shut down the HTTP server.
  */
-const closeServer = (server: Server): Effect.Effect<void> =>
+export const closeServer = (server: Server): Effect.Effect<void> =>
   Effect.async<void>((resume) => {
     server.close(() => {
       resume(Effect.succeed(void 0));
@@ -121,28 +133,30 @@ export const loginCommand = Command.make("login").pipe(
       const port = yield* tryListen(server, PRIMARY_PORT).pipe(
         Effect.orElse(() => tryListen(server, FALLBACK_PORT)),
         Effect.mapError(() => new Error(
-          `Could not start local server on port ${PRIMARY_PORT} or ${FALLBACK_PORT}. ` +
-          "Please free one of these ports and try again."
+          `Could not start local server on port ${PRIMARY_PORT} or ${FALLBACK_PORT}.\n` +
+          `Check 'lsof -i :${PRIMARY_PORT}' or set EP_AUTH_PORT to use a different port.`
         )),
       );
 
-      const authUrl = `${AUTH_BASE_URL}?state=${state}&port=${port}`;
+      const authUrl = new URL(AUTH_BASE_URL);
+      authUrl.searchParams.set("state", state);
+      authUrl.searchParams.set("port", String(port));
 
       yield* Console.log("\nAuthenticating with EffectTalk...");
       yield* Console.log("Your browser should open automatically.\n");
       yield* Console.log(`If it doesn't, open this URL manually:`);
-      yield* Console.log(`  ${authUrl}\n`);
-      yield* Console.log("Waiting for authentication... (timeout: 5 minutes)\n");
+      yield* Console.log(`  ${authUrl.toString()}\n`);
+      yield* Console.log(`Waiting for authentication... (timeout: ${TIMEOUT_MINUTES} minutes)\n`);
 
       // Open browser (best-effort — don't fail if it can't open)
-      yield* openBrowser(authUrl).pipe(Effect.catchAll(() => Effect.void));
+      yield* openBrowser(authUrl.toString()).pipe(Effect.catchAll(() => Effect.void));
 
       // Wait for callback with timeout
       const result = yield* waitForCallback(server, port, state).pipe(
         Effect.timeout(TIMEOUT),
         Effect.catchTag("TimeoutException", () =>
           Effect.fail(new Error(
-            "Authentication timed out after 5 minutes.\n" +
+            `Authentication timed out after ${TIMEOUT_MINUTES} minutes.\n` +
             "Run `ep login` again to retry."
           ))
         ),

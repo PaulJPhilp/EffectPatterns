@@ -24,6 +24,8 @@ export interface CommandRecord {
   outcome: CommandOutcome
   /** True when this command was an intentional negative test (e.g. bogus ep show). */
   expectedToFail?: boolean
+  /** When set, the command exited 0 but its stdout failed an output validation check. */
+  outputCheckFailed?: string
   stderrExcerpt?: string
 }
 
@@ -67,6 +69,8 @@ export interface RunReport {
   firstFailingScenario: { scenarioIndex: number; seed: number } | null
   coverageAttempted: CoverageChecklist
   coverageSucceeded: CoverageChecklist
+  /** Soft-fail count per command key (e.g. "skills validate": 33, "git commit": 70). Present in new reports; omitted in legacy JSON. */
+  softFailByCommand?: Record<string, number>
 }
 
 const STDERR_TRUNCATE = 2000
@@ -89,10 +93,19 @@ const SOFT_FAIL_PATTERNS = [
   /TimeoutError/i,
   /request timeout/i,
   /not found|no such pattern|unknown pattern/i,
+  /nothing to commit|working tree clean/i,
+  /Missing required section: Rationale/i,
+  /BAD_IMPORT_PLACEHOLDER/i,
+  /expected 1 to be 2|expect\(1\)\.toBe\(2\)/i,
+  /No test files found/i,
+  // Vitest / test-runner failure output (lifecycle mutations can break tests)
+  /Failed Suites?|FAIL\s+src\//i,
+  /AssertionError|expected .+ to be/i,
+  /ERR_MODULE_NOT_FOUND|Cannot find (module|package)/i,
 ]
 
-function isKnownExternalFailure(stderr: string): boolean {
-  const s = stderr.slice(0, 4000)
+function isKnownExternalFailure(stderr: string, stdout = ''): boolean {
+  const s = (`${stderr}\n${stdout}`).slice(0, 4000)
   return SOFT_FAIL_PATTERNS.some((re) => re.test(s))
 }
 
@@ -102,19 +115,21 @@ function isKnownExternalFailure(stderr: string): boolean {
  * - success: exit 0
  * - soft-fail: non-zero but known external (API 401/403/404/429/5xx, DNS, timeout, not-found)
  * - hard-fail: timeout (killed) or unexpected non-zero
+ * - expectTimeout: when set, timeout (intentional kill) is treated as soft-fail
  */
 export function classifyOutcome(
   exitCode: number,
   timedOut: boolean,
   stderr: string,
-  options: { expectFailure?: boolean }
+  options: { expectFailure?: boolean; expectTimeout?: boolean; stdout?: string }
 ): CommandOutcome {
   if (options.expectFailure) {
     if (exitCode === 0) return 'soft-fail'
     return 'success'
   }
+  if (timedOut && options.expectTimeout) return 'soft-fail'
   if (timedOut) return 'hard-fail'
   if (exitCode === 0) return 'success'
-  if (isKnownExternalFailure(stderr)) return 'soft-fail'
+  if (isKnownExternalFailure(stderr, options.stdout ?? '')) return 'soft-fail'
   return 'hard-fail'
 }

@@ -33,10 +33,10 @@ class ScaffoldError extends Data.TaggedError('ScaffoldError')<{
 // Types & constants
 // ---------------------------------------------------------------------------
 
-export const TEMPLATES = ['basic', 'service', 'cli', 'http-server'] as const;
+export const TEMPLATES = ['basic', 'service', 'cli', 'http-server', 'lib', 'worker'] as const;
 export type Template = (typeof TEMPLATES)[number];
 
-export const TOOLS = ['agents', 'cursor', 'vscode', 'windsurf'] as const;
+export const TOOLS = ['agents', 'claude', 'cursor', 'vscode', 'windsurf'] as const;
 export type Tool = (typeof TOOLS)[number];
 
 const TEST_REPOS_DIR = path.join(
@@ -102,7 +102,7 @@ export const makePackageJson = (name: string, template: Template) => {
     deps['@effect/platform-node'] = 'latest';
     deps['@effect/experimental'] = 'latest';
   }
-  if (template === 'service') {
+  if (template === 'service' || template === 'lib') {
     devDeps.vitest = 'latest';
   }
 
@@ -111,7 +111,7 @@ export const makePackageJson = (name: string, template: Template) => {
     build: 'tsc',
     start: 'node dist/index.js',
   };
-  if (template === 'service') {
+  if (template === 'service' || template === 'lib') {
     scripts.test = 'vitest run';
   }
 
@@ -236,6 +236,48 @@ Layer.launch(HttpLive).pipe(
   Effect.tap(Effect.log("Server listening on http://localhost:3000")),
   NodeRuntime.runMain
 )
+`,
+  },
+
+  lib: {
+    'src/index.ts': `import { Effect } from "effect"
+
+/** Library entry: pure helpers. */
+export const double = (n: number): number => n * 2
+
+export const main = Effect.succeed(42).pipe(
+  Effect.map(double)
+)
+`,
+    'src/index.test.ts': `import { Effect } from "effect"
+import { describe, expect, it } from "vitest"
+import { double, main } from "./index.js"
+
+describe("lib", () => {
+  it("doubles a number", () => {
+    expect(double(2)).toBe(4)
+  })
+  it("main succeeds with 84", async () => {
+    const result = await Effect.runPromise(main)
+    expect(result).toBe(84)
+  })
+})
+`,
+  },
+
+  worker: {
+    'src/index.ts': `import { Console, Effect, Queue } from "effect"
+
+const program = Effect.gen(function* () {
+  const queue = yield* Queue.unbounded<string>()
+  yield* Queue.offer(queue, "task-1")
+  yield* Queue.offer(queue, "task-2")
+  const a = yield* Queue.take(queue)
+  const b = yield* Queue.take(queue)
+  yield* Console.log(\`Processed \${a}, \${b}\`)
+})
+
+Effect.runPromise(program)
 `,
   },
 };

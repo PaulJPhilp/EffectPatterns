@@ -3,6 +3,7 @@
  */
 
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 const HARNESS_DIR = typeof import.meta !== 'undefined' && import.meta.dirname
@@ -11,7 +12,7 @@ const HARNESS_DIR = typeof import.meta !== 'undefined' && import.meta.dirname
 
 /** Default parent directory for scaffold output; must match scripts/scaffold-test-project.ts. */
 export function defaultScaffoldRootDir(): string {
-  return path.join(process.env.HOME ?? '/Users/paul', 'Projects', 'TestRepos')
+  return path.join(os.homedir(), 'Projects', 'TestRepos')
 }
 
 /** Directory containing lifecycle-harness (scripts/lifecycle-harness). */

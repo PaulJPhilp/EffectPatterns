@@ -15,6 +15,8 @@ export interface HarnessArgsRun {
   rootDir: string
   diskBudgetMb: number
   commits: 'minimal' | 'none'
+  /** When set, after each scenario remove oldest repos so only this many remain for inspection. */
+  keepLastN?: number
   verbose: boolean
   dryRun: boolean
   epBin: string
@@ -23,6 +25,7 @@ export interface HarnessArgsRun {
 export type HarnessArgs =
   | { mode: 'help' }
   | { mode: 'version' }
+  | { mode: 'analyze'; reportPath: string }
   | HarnessArgsRun
 
 function getFlagValue(argv: string[], name: string): string | undefined {
@@ -48,6 +51,8 @@ function parseNumber(value: string | undefined, fallback: number): number {
 export function parseArgs(argv: string[] = process.argv): HarnessArgs {
   if (hasFlag(argv, '--help') || hasFlag(argv, '-h')) return { mode: 'help' }
   if (hasFlag(argv, '--version')) return { mode: 'version' }
+  const analyzePath = getFlagValue(argv, '--analyze')
+  if (analyzePath !== undefined && analyzePath !== '') return { mode: 'analyze', reportPath: analyzePath }
   const seedRaw = getFlagValue(argv, '--seed')
   const seed = seedRaw !== undefined ? parseNumber(seedRaw, Date.now()) : Date.now()
   const onlyScenarioRaw = getFlagValue(argv, '--only-scenario')
@@ -65,6 +70,12 @@ export function parseArgs(argv: string[] = process.argv): HarnessArgs {
     rootDir: getFlagValue(argv, '--root-dir') ?? defaultScaffoldRootDir(),
     diskBudgetMb: parseNumber(getFlagValue(argv, '--disk-budget-mb'), 1024),
     commits: getFlagValue(argv, '--commits') === 'none' ? 'none' : 'minimal',
+    keepLastN: (() => {
+      const raw = getFlagValue(argv, '--keep-last-n')
+      if (raw === undefined) return undefined
+      const n = parseNumber(raw, 5)
+      return n > 0 ? n : undefined
+    })(),
     verbose: hasFlag(argv, '--verbose'),
     dryRun: hasFlag(argv, '--dry-run'),
     epBin: getFlagValue(argv, '--ep-bin') ?? 'ep',

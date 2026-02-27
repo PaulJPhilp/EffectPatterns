@@ -14,10 +14,10 @@ This runs up to 10 scenarios (deterministic for seed `123`), creates repos under
 
 **What it tests:**
 
-- Scaffolding (all templates: basic, service, cli, http-server)
+- Scaffolding (all templates: basic, service, cli, http-server, lib, worker)
 - Completions (sh, bash, fish, zsh)
 - Pattern commands: search, list, show
-- Installs for random tools (install list / install add)
+- Installs for random tools (install list / install add), including both skill types: **agent** (AGENTS.md) and **claude** (CLAUDE.md)
 - Skills discovery and validation (list, preview, stats, validate)
 - Lifecycle mutations (break/fix cycles, TS edits, tests, skills, etc.)
 
@@ -33,9 +33,11 @@ This runs up to 10 scenarios (deterministic for seed `123`), creates repos under
 | `--root-dir <path>` | Parent directory for generated repos (**currently must be** `$HOME/Projects/TestRepos` because `scaffold` is hardcoded) | `$HOME/Projects/TestRepos` |
 | `--disk-budget-mb <n>` | Stop if total repo size (excl. node_modules) exceeds this MB | `1024` |
 | `--commits minimal\|none` | Create 2–5 checkpoint git commits per scenario | `minimal` |
+| `--keep-last-n <n>` | Keep only the N most recent scenario repos; delete older ones after each scenario so disk stays bounded and you can inspect the last N | off (keep all) |
 | `--verbose` | Stream subprocess stdout/stderr live | off |
 | `--dry-run` | Print planned actions only; do not execute | off |
 | `--ep-bin <path>` | Path to `ep` CLI (or `ep` on PATH) | `ep` |
+| `--analyze <path>` | Print built-in summary for an existing report JSON (coverage matrix, soft-fail counts, template distribution); no run | — |
 
 **Note:** The scaffold script currently always creates projects under `$HOME/Projects/TestRepos`. The harness `--root-dir` flag exists for future support but must match that path for now.
 
@@ -56,6 +58,16 @@ This runs up to 10 scenarios (deterministic for seed `123`), creates repos under
 - **Re-run only scenario 3 (same seed = same scenario):**  
 `bun run lifecycle-harness --seed 888 --only-scenario 3`
 
+- **Clean up as you go (keep last 5 repos for inspection):**  
+`bun run lifecycle-harness --seed 1 --scenarios 25 --keep-last-n 5`
+
+- **Print summary for an existing report:**  
+`bun run lifecycle-harness --analyze scripts/lifecycle-harness/reports/run-20260226-172113-seed-20260226.json`
+
+## Report summary
+
+At the end of each run the harness prints a **report summary**: coverage matrix (attempted/succeeded per ep surface), soft-fail counts by command type, and template distribution. The same summary can be printed for any saved report with `--analyze <path>`.
+
 ## JSON report
 
 After each run, a report is written to:
@@ -66,12 +78,13 @@ Contents:
 
 - **seed**, **startTime**, **endTime**, **runtimeMs**
 - **scenarios**: per-scenario repo path, template, tools, status (`success` / `soft-fail` / `hard-fail`), and list of **commands** with:
-- **resolvedBinary**, **args**, **cwd**, **envOverrides**, **timeoutMs** (if used), **exitCode**, **durationMs**, **outcome** (`success` | `soft-fail` | `hard-fail`), optional **expectedToFail** (true = intentional negative test, e.g. bogus `ep show`), optional **stderrExcerpt** (truncated)
+- **resolvedBinary**, **args**, **cwd**, **envOverrides**, **timeoutMs** (if used), **exitCode**, **durationMs**, **outcome** (`success` | `soft-fail` | `hard-fail`), optional **expectedToFail** (true = intentional negative test, e.g. bogus `ep show`), optional **outputCheckFailed** (when command exited 0 but stdout failed validation), optional **stderrExcerpt** (truncated)
 - **totalCommandsAttempted**, **totalSuccess**, **totalSoftFail**, **totalHardFail**
 - **diskUsageBytes**, **diskUsageMb** (sum of scenario repo sizes; **node_modules excluded**)
 - **firstFailingScenario**: `{ scenarioIndex, seed }` to reproduce the first hard-fail, or `null`
 - **coverageAttempted**: Each ep surface invoked at least once: `list`, `search`, `show`, `installList`, `installAdd`, `skillsList`, `skillsPreview`, `skillsValidate`, `skillsStats`, `completions`
 - **coverageSucceeded**: Each of those surfaces succeeded at least once. If `coverageAttempted.installAdd` is true and `coverageSucceeded.installAdd` is false, the surface was attempted but e.g. blocked by 401.
+- **softFailByCommand**: JSON object of soft-fail counts by command key (e.g. `"skills validate": 33`, `"git commit": 70`), sorted by count descending. Lets you see which commands accounted for soft-fails without scanning all command records.
 
 Per-command fields allow copy/paste or reconstructing the exact invocation.
 
@@ -79,7 +92,9 @@ Per-command fields allow copy/paste or reconstructing the exact invocation.
 
 **Outcome policy (explicit, consistent):**
 
-- **success**: Command exited 0.
+- **success**: Command exited 0 **and** passed output validation (if applicable).
+- **hard-fail (output check)**: Command exited 0 but stdout failed validation (e.g. `ep list` returned no patterns, `ep search` returned empty output). Recorded as `outputCheckFailed` in the report.
+- **soft-fail (output check)**: Same as above, but when stdout/stderr suggests login required, unauthorized, or “not found” (e.g. after adding `ep login`), the outcome is **soft-fail** instead of hard-fail so the run does not flood with hard-fails; coverage gap still reflects that the surface never succeeded.
 - **soft-fail**: Non-zero exit matching known external/expected conditions:
 - API: 401, 403, 404, 429, 5xx
 - Network: DNS (ENOTFOUND, getaddrinfo), connection refused, timeout
@@ -116,4 +131,14 @@ bun run lifecycle-harness --seed <seed> --scenarios <scenarioIndex + 1>
 5. **Phase D** – Ensure at least one intentional skills break and fix; re-run `ep skills validate`.
 6. **Commits** – If `--commits minimal`, 2–5 git checkpoint commits.
 
-All randomness (templates, tools, mutation order, short random suffix) is driven by the seed, so the same seed produces the same sequence of actions. Repo directory names also include the current date (see above), so the exact path varies by run date.
+**Template distribution:** Templates are assigned in strict round-robin by scenario index: scenario s uses `TEMPLATES[s % 6]` (basic, service, cli, http-server, lib, worker). So with 24 scenarios each template is used exactly 4 times; with 25, one template is used 5 times and the rest 4. This evens out distribution and makes runs reproducible for a given `--scenarios`.
+
+**Output validation:** After successful `ep` commands, the harness validates stdout content (not just exit code). Checked commands: `list` (has pattern slugs), `search` (non-trivial output), `show` (substantial content), `install list` (mentions known tools), and `skills validate` after a fix step (no missing sections). A command that exits 0 but fails validation is reclassified as **hard-fail** with `outputCheckFailed` in the report.
+
+**Multiple pattern IDs for `ep show`:** Phase A parses up to 3 pattern IDs from `ep list` output and runs `ep show <id>` for each, so several different patterns are exercised per scenario (fallback to one known ID if parsing yields none).
+
+**Scaffold output validation:** After the scaffold command succeeds and the repo dir exists, the harness verifies that required files are present (e.g. `package.json`, `src/index.ts`, and template-specific files such as `src/service.ts` for service, `src/commands.ts` for cli, `src/routes.ts` for http-server, `src/index.test.ts` for lib). If any are missing, the scenario is marked hard-fail and the run continues (so you get a clear failure instead of failing later in Phase A).
+
+**Coverage gate:** At the end of a run, if any ep surface was attempted but never succeeded (e.g. `installAdd` always 401), the harness prints "Coverage gap: ..." and exits with code 1. When you use `--only-scenario N`, the coverage gate is **skipped** (and a one-line note is printed), since a single scenario cannot exercise all surfaces.
+
+All randomness (templates after index 3, tools, mutation order, short random suffix) is driven by the seed, so the same seed produces the same sequence of actions. Repo directory names also include the current date (see above), so the exact path varies by run date.

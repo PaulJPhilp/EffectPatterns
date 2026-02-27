@@ -127,6 +127,7 @@ If stdin is empty, command fails with:
 | `PATTERN_API_KEY` | API key sent as `x-api-key` to pattern API | unset |
 | `EP_API_KEY_FILE` | File containing API key text | unset |
 | `EP_CONFIG_FILE` | Path to JSON config (expects `{"apiKey":"..."}`) | `${XDG_CONFIG_HOME:-~/.config}/ep-cli/config.json` |
+| `EP_AUTH_URL` | Base URL for `ep login` browser auth (use if default returns 404) | `https://effecttalk.dev/cli/auth` |
 | `EFFECT_PATTERNS_API_URL` | Base URL for pattern API | `https://effect-patterns-mcp-server-buddybuilder.vercel.app` |
 | `EP_API_TIMEOUT_MS` | Request timeout in ms | `10000` |
 | `EP_INSTALLED_STATE_FILE` | Installed-rules state file path override | `${XDG_STATE_HOME:-~/.local/state}/ep-cli/installed-rules.json` |
@@ -576,6 +577,21 @@ Other install targets:
 - `.windsurf/rules.md`
 
 ## Troubleshooting
+
+### `ep login` opens a page that returns 404
+
+Symptom:
+
+- Browser opens `https://effecttalk.dev/cli/auth` but the page shows "404 Not Found".
+
+The EffectTalk auth page may not be deployed yet. Use manual API key setup instead:
+
+1. Obtain an API key from your Effect Patterns / API provider.
+2. Set `PATTERN_API_KEY` in your environment, or
+3. Put the key in a file and set `EP_API_KEY_FILE` to its path, or
+4. Write `{"apiKey":"your-key"}` to `~/.config/ep-cli/config.json` (or set `EP_CONFIG_FILE` to another path).
+
+Then run `ep list` or `ep search …` as usual.
 
 ### Unauthorized (401)
 

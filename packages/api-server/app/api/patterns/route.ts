@@ -12,9 +12,6 @@ import { searchPatternsDb, type Pattern } from "@effect-patterns/toolkit";
 import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import {
-  validateApiKey,
-} from "../../../src/auth/apiKey";
 import { ValidationError } from "../../../src/errors";
 import { errorHandler, errorToResponse } from "../../../src/server/errorHandler";
 import { runWithRuntime } from "../../../src/server/init";
@@ -45,9 +42,6 @@ const handleSearchPatterns = Effect.fn("search-patterns")(function* (
 ) {
   const tracing = yield* TracingService;
   
-  // Validate API key
-  yield* validateApiKey(request);
-
   // Extract query parameters
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") || undefined;

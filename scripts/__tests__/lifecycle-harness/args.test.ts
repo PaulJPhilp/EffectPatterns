@@ -34,6 +34,7 @@ describe('parseArgs', () => {
       expect(out.verbose).toBe(false)
       expect(out.dryRun).toBe(false)
       expect(out.epBin).toBe('ep')
+      expect(out.keepLastN).toBeUndefined()
     }
   })
 
@@ -80,5 +81,29 @@ describe('parseArgs', () => {
     const out = parseArgs(['node', 'harness', '--seed', '1', '--ep-bin', '/usr/local/bin/ep'])
     expect(out.mode).toBe('run')
     if (out.mode === 'run') expect(out.epBin).toBe('/usr/local/bin/ep')
+  })
+
+  it('parses --keep-last-n', () => {
+    const out = parseArgs(['node', 'harness', '--seed', '1', '--keep-last-n', '5'])
+    expect(out.mode).toBe('run')
+    if (out.mode === 'run') expect(out.keepLastN).toBe(5)
+  })
+
+  it('--keep-last-n with invalid value defaults to 5', () => {
+    const out = parseArgs(['node', 'harness', '--seed', '1', '--keep-last-n', 'x'])
+    expect(out.mode).toBe('run')
+    if (out.mode === 'run') expect(out.keepLastN).toBe(5)
+  })
+
+  it('--keep-last-n 0 yields undefined', () => {
+    const out = parseArgs(['node', 'harness', '--seed', '1', '--keep-last-n', '0'])
+    expect(out.mode).toBe('run')
+    if (out.mode === 'run') expect(out.keepLastN).toBeUndefined()
+  })
+
+  it('returns analyze mode for --analyze with path', () => {
+    const out = parseArgs(['node', 'harness', '--analyze', 'reports/run-1-seed-1.json'])
+    expect(out.mode).toBe('analyze')
+    if (out.mode === 'analyze') expect(out.reportPath).toBe('reports/run-1-seed-1.json')
   })
 })

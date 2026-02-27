@@ -18,8 +18,8 @@ export type RunnableMutation =
   | { kind: 'ep-search'; run(): void }
   | { kind: 'ep-show-bogus'; run(): void }
 
-export const TEMPLATES = ['basic', 'service', 'cli', 'http-server'] as const
+export const TEMPLATES = ['basic', 'service', 'cli', 'http-server', 'lib', 'worker'] as const
 export type Template = (typeof TEMPLATES)[number]
 
-export const TOOLS = ['agents', 'cursor', 'vscode', 'windsurf'] as const
+export const TOOLS = ['agents', 'claude', 'cursor', 'vscode', 'windsurf'] as const
 export type Tool = (typeof TOOLS)[number]

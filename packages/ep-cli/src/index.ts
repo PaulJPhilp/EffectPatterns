@@ -13,6 +13,7 @@ import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { CLI } from "./constants.js";
+import { PatternNotFoundError } from "./errors.js";
 
 // Commands
 import { installCommand } from "./commands/install-commands.js";
@@ -326,6 +327,14 @@ export const getCommandSuggestion = (argv: ReadonlyArray<string>): string | null
 /** @internal Exported for testing */
 export const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>): string | null => {
   if (typeof error === "string") return error;
+  const tagged = error as { _tag?: string; patternId?: string } | null;
+  if (tagged && typeof tagged === "object" && tagged._tag === "PatternNotFoundError" && typeof tagged.patternId === "string") {
+    return [
+      `Pattern "${tagged.patternId}" not found.`,
+      `Try: ep search "${tagged.patternId}"`,
+      `Docs: ${EP_CLI_DOCS_URL}`,
+    ].join("\n");
+  }
   if (error instanceof Error) {
     const combined = [error.message, error.stack].filter(Boolean).join("\n");
 
@@ -361,6 +370,13 @@ export const extractErrorMessage = (error: unknown, argv: ReadonlyArray<string>)
       ].join("\n");
     }
 
+    if (error instanceof PatternNotFoundError) {
+      return [
+        `Pattern "${error.patternId}" not found.`,
+        `Try: ep search "${error.patternId}"`,
+        `Docs: ${EP_CLI_DOCS_URL}`,
+      ].join("\n");
+    }
     if (
       combined.includes("DisabledFeatureError") ||
       combined.includes("ValidationFailedError") ||

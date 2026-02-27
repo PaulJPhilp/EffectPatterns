@@ -13,8 +13,16 @@ import {
   totalSizeBytes,
   totalSizeBytesIncludingNodeModules,
 } from './disk.js'
-import { parseFirstPatternIdFromList } from './list-parse.js'
+import { parsePatternIdsFromList } from './list-parse.js'
 import { pickMutationStep } from './mutations.js'
+import type { OutputCheckResult } from './output-checks.js'
+import {
+  checkInstallListOutput,
+  checkListOutput,
+  checkSearchOutput,
+  checkShowOutput,
+  checkSkillsValidateClean,
+} from './output-checks.js'
 import {
   defaultScaffoldRootDir,
   findMonorepoRoot,
@@ -29,11 +37,15 @@ import type {
   RunReport,
   ScenarioRecord,
 } from './report.js'
+import { getSoftFailByCommand, printReportSummary } from './report-summary.js'
+import { validateScaffoldOutput } from './scaffold-validate.js'
 import * as skills from './skills.js'
+import { isCodeCurrentlyBroken } from './code-broken.js'
 import { TEMPLATES, TOOLS } from './types.js'
 
 const BOGUS_PATTERN_ID = 'nonexistent-pattern-id-xyz'
 const FALLBACK_PATTERN_ID = 'retry-with-backoff'
+const SHOW_IDS_PER_SCENARIO = 3
 
 function emptyCoverage(): CoverageChecklist {
   return {
@@ -145,6 +157,32 @@ function updateCoverageFromRecord(
   }
 }
 
+/** When output check fails, treat as soft-fail if output suggests auth/no-data (e.g. ep login required, not found). */
+function looksLikeAuthOrNoData(stdout: string, stderr: string): boolean {
+  const combined = `${stdout}\n${stderr}`.toLowerCase()
+  return (
+    /login|sign in|unauthorized|not authenticated|not found|no patterns|0 pattern/i.test(combined)
+  )
+}
+
+/** Reclassify a successful command as hard-fail when an output check fails; soft-fail if output suggests auth/no-data. */
+function applyOutputCheck(
+  record: CommandRecord,
+  check: OutputCheckResult,
+  verbose: boolean,
+  options?: { stdout?: string; stderr?: string }
+): void {
+  if (record.outcome !== 'success') return
+  if (!check.passed) {
+    const stdout = options?.stdout ?? ''
+    const stderr = options?.stderr ?? (record.stderrExcerpt ?? '')
+    const treatAsSoftFail = looksLikeAuthOrNoData(stdout, stderr)
+    record.outcome = treatAsSoftFail ? 'soft-fail' : 'hard-fail'
+    record.outputCheckFailed = check.reason
+    if (verbose) console.log(`  [output-check] ${treatAsSoftFail ? 'SOFT-FAIL' : 'FAIL'}: ${check.reason}`)
+  }
+}
+
 function printUsage(): void {
   console.log(`Effect Patterns lifecycle harness: seedable E2E over real repos and ep CLI (no mocks).
 Run from monorepo root: bun run lifecycle-harness --seed <n>
@@ -158,16 +196,19 @@ Flags:
   --root-dir <path>       Parent dir for repos (default: $HOME/Projects/TestRepos; must match scaffold)
   --disk-budget-mb <n>    Stop if repo total exceeds N MB (default: 1024)
   --commits minimal|none  Checkpoint commits (default: minimal)
+  --keep-last-n <n>       Keep only N most recent repos; remove older ones as you go (default: 5 when set)
   --verbose               Stream subprocess output
   --dry-run               Plan only, do not run
   --ep-bin <path>         ep CLI path (default: ep)
+  --analyze <path>        Print summary for an existing report JSON (no run)
   --help, -h              This usage
   --version               Print version and exit
 
 Examples:
   bun run lifecycle-harness --seed 1
   bun run lifecycle-harness --seed 1 --only-scenario 3
-  bun run lifecycle-harness --seed 1 --dry-run`)
+  bun run lifecycle-harness --seed 1 --dry-run
+  bun run lifecycle-harness --analyze scripts/lifecycle-harness/reports/run-20260226-172113-seed-20260226.json`)
 }
 
 function printVersion(): void {
@@ -195,6 +236,17 @@ async function main(): Promise<void> {
   if (parsed.mode === 'version') {
     printVersion()
     process.exit(0)
+  }
+  if (parsed.mode === 'analyze') {
+    const reportPath = path.isAbsolute(parsed.reportPath) ? parsed.reportPath : path.join(process.cwd(), parsed.reportPath)
+    if (!fs.existsSync(reportPath)) {
+      console.error(`Report not found: ${reportPath}`)
+      process.exitCode = 1
+      return
+    }
+    const report: RunReport = JSON.parse(fs.readFileSync(reportPath, 'utf-8'))
+    printReportSummary(report)
+    return
   }
   const args: HarnessArgsRun = parsed
   console.log(`Lifecycle harness seed: ${args.seed}`)
@@ -245,7 +297,7 @@ async function main(): Promise<void> {
     }
 
     const scenarioRng = mulberry32(args.seed + 1000 + s)
-    const template = pick(scenarioRng, [...TEMPLATES])
+    const template = TEMPLATES[s % TEMPLATES.length]
     const numTools = randomIntInclusive(scenarioRng, 0, 4)
     const tools = randomSubset(scenarioRng, [...TOOLS], numTools)
     const short = shortRand(scenarioRng, 6)
@@ -256,6 +308,14 @@ async function main(): Promise<void> {
         dirName = scenarioDirName(args.seed, s, template, shortRand(scenarioRng, 6))
         repoPath = path.join(rootDir, dirName)
         if (!fs.existsSync(repoPath)) break
+      }
+      if (fs.existsSync(repoPath)) {
+        for (let i = 0; i < 50; i++) {
+          const timeRng = mulberry32(Date.now() + i)
+          dirName = scenarioDirName(args.seed, s, template, shortRand(timeRng, 8))
+          repoPath = path.join(rootDir, dirName)
+          if (!fs.existsSync(repoPath)) break
+        }
       }
       if (fs.existsSync(repoPath)) {
         console.warn(`Skipping scenario ${s}: could not get unique dir.`)
@@ -328,6 +388,14 @@ async function main(): Promise<void> {
       allScenarios.push({ repoPath, template, tools, scenarioIndex: s, status: 'hard-fail', commands })
       continue
     }
+    const scaffoldValidationError = validateScaffoldOutput(repoPath, template)
+    if (scaffoldValidationError !== null) {
+      console.warn(`  [warn] ${scaffoldValidationError}`)
+      totalHardFail++
+      if (firstFailingScenario === null) firstFailingScenario = { scenarioIndex: s, seed: args.seed }
+      allScenarios.push({ repoPath, template, tools, scenarioIndex: s, status: 'hard-fail', commands })
+      continue
+    }
     repoPaths.push(repoPath)
 
     // ---------- Phase A: Baseline ep ----------
@@ -349,16 +417,30 @@ async function main(): Promise<void> {
       pushRecord(r.record)
     }
     const listResult = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'list'], { ...epOpts })
+    applyOutputCheck(listResult.record, checkListOutput(listResult.result.stdout), args.verbose, {
+      stdout: listResult.result.stdout,
+      stderr: listResult.result.stderr,
+    })
     pushRecord(listResult.record)
-    const showId =
+    const showIds =
       listResult.record.outcome === 'success'
-        ? parseFirstPatternIdFromList(listResult.result.stdout)
-        : null
-    if (showId === null) scenarioShowIdParseFailed = true
-    const epShowId = showId ?? FALLBACK_PATTERN_ID
-    const showResult = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'show', epShowId], { ...epOpts })
-    pushRecord(showResult.record)
+        ? parsePatternIdsFromList(listResult.result.stdout, SHOW_IDS_PER_SCENARIO)
+        : []
+    if (showIds.length === 0) scenarioShowIdParseFailed = true
+    const idsToShow = showIds.length > 0 ? showIds : [FALLBACK_PATTERN_ID]
+    for (const epShowId of idsToShow) {
+      const showResult = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'show', epShowId], { ...epOpts })
+      applyOutputCheck(showResult.record, checkShowOutput(showResult.result.stdout, epShowId), args.verbose, {
+        stdout: showResult.result.stdout,
+        stderr: showResult.result.stderr,
+      })
+      pushRecord(showResult.record)
+    }
     const searchResult = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'search', 'retry'], { ...epOpts })
+    applyOutputCheck(searchResult.record, checkSearchOutput(searchResult.result.stdout), args.verbose, {
+      stdout: searchResult.result.stdout,
+      stderr: searchResult.result.stderr,
+    })
     pushRecord(searchResult.record)
 
     // ---------- Skills dir + commands ----------
@@ -392,12 +474,20 @@ async function main(): Promise<void> {
           mutation.kind === 'modify-package-scripts' || mutation.kind === 'skills-break-then-fix') {
         if (mutation.kind === 'skills-break-then-fix') didBreak = true
         mutation.run()
-        if (mutation.kind === 'skills-break-then-fix') didFix = true
+        // Do not set didFix here: Phase D will restore any broken skill so validate can pass
       }
 
       if (mutation.kind === 'bun-run-dev') {
-        const r = await runCommand('bun', ['run', 'dev'], { ...epOpts, timeoutMs: 5000 })
-        pushRecord(r.record)
+        // Skip for http-server (dev never exits) or when code is broken (dev would exit non-zero → soft-fail).
+        const skipDev = template === 'http-server' || isCodeCurrentlyBroken(repoPath)
+        if (!skipDev) {
+          const r = await runCommand('bun', ['run', 'dev'], {
+            ...epOpts,
+            timeoutMs: 5000,
+            expectTimeout: true,
+          })
+          pushRecord(r.record)
+        }
       } else if (mutation.kind === 'bun-run-test') {
         const pkgPath = path.join(repoPath, 'package.json')
         let hasTestScript = false
@@ -408,13 +498,22 @@ async function main(): Promise<void> {
           // no package.json or invalid: skip
         }
         if (!hasTestScript) {
-          console.log('  [skip] no "test" script in package.json, skipping bun run test')
+          if (args.verbose) console.log('  [skip] no "test" script in package.json, skipping bun run test')
         } else {
-          const r = await runCommand('bun', ['run', 'test'], { ...epOpts, timeoutMs: 15000 })
+          const expectTestToFail = isCodeCurrentlyBroken(repoPath)
+          const r = await runCommand('bun', ['run', 'test'], {
+            ...epOpts,
+            timeoutMs: 15000,
+            expectFailure: expectTestToFail,
+          })
           pushRecord(r.record)
         }
       } else if (mutation.kind === 'ep-install-list') {
         const r = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'install', 'list'], epOpts)
+        applyOutputCheck(r.record, checkInstallListOutput(r.result.stdout), args.verbose, {
+          stdout: r.result.stdout,
+          stderr: r.result.stderr,
+        })
         pushRecord(r.record)
       } else if (mutation.kind === 'ep-install-add') {
         const tool = pick(scenarioRng, [...TOOLS])
@@ -423,12 +522,42 @@ async function main(): Promise<void> {
         if (scenarioRng() > 0.5) extra.push('--use-case', 'building-apis')
         const r = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'install', 'add', '--tool', tool, ...extra], epOpts)
         pushRecord(r.record)
+        // install add can overwrite skills with versions missing Rationale; restore so validate passes
+        const skillsDir = path.join(repoPath, '.claude-plugin', 'plugins', 'effect-patterns', 'skills')
+        if (fs.existsSync(skillsDir)) {
+          for (const cat of fs.readdirSync(skillsDir)) {
+            const skillPath = path.join(skillsDir, cat, 'SKILL.md')
+            if (!fs.existsSync(skillPath)) continue
+            const content = fs.readFileSync(skillPath, 'utf-8')
+            if (!content.includes('**Rationale**')) skills.fixSkillsRestoreRationale(repoPath, cat)
+          }
+        }
       } else if (mutation.kind === 'ep-skills-validate') {
-        const r = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'skills', 'validate'], epOpts)
+        const skillsDir = path.join(repoPath, '.claude-plugin', 'plugins', 'effect-patterns', 'skills')
+        let expectValidateToFail = false
+        if (fs.existsSync(skillsDir)) {
+          for (const cat of fs.readdirSync(skillsDir)) {
+            const skillPath = path.join(skillsDir, cat, 'SKILL.md')
+            if (!fs.existsSync(skillPath)) continue
+            const content = fs.readFileSync(skillPath, 'utf-8')
+            if (!content.includes('**Rationale**')) {
+              expectValidateToFail = true
+              break
+            }
+          }
+        }
+        const r = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'skills', 'validate'], {
+          ...epOpts,
+          expectFailure: expectValidateToFail,
+        })
         pushRecord(r.record)
       } else if (mutation.kind === 'ep-search') {
         const q = pick(scenarioRng, ['http', 'timeout', 'error handling'])
         const r = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'search', q], epOpts)
+        applyOutputCheck(r.record, checkSearchOutput(r.result.stdout), args.verbose, {
+          stdout: r.result.stdout,
+          stderr: r.result.stderr,
+        })
         pushRecord(r.record)
       } else if (mutation.kind === 'ep-show-bogus') {
         const r = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'show', BOGUS_PATTERN_ID], { ...epOpts, expectFailure: true })
@@ -439,33 +568,54 @@ async function main(): Promise<void> {
     // ---------- Phase C: re-run some ep commands ----------
     for (const cmdArgs of [['list'], ['search', 'retry'], ['install', 'list'], ['skills', 'list']] as const) {
       const r = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, ...cmdArgs], epOpts)
+      const out = { stdout: r.result.stdout, stderr: r.result.stderr }
+      if (cmdArgs[0] === 'list') applyOutputCheck(r.record, checkListOutput(r.result.stdout), args.verbose, out)
+      else if (cmdArgs[0] === 'search') applyOutputCheck(r.record, checkSearchOutput(r.result.stdout), args.verbose, out)
+      else if (cmdArgs[0] === 'install') applyOutputCheck(r.record, checkInstallListOutput(r.result.stdout), args.verbose, out)
       pushRecord(r.record)
     }
 
-    // ---------- Phase D: ensure one break + fix if not yet done ----------
-    if (!didBreak || !didFix) {
-      const skillsDir = path.join(repoPath, '.claude-plugin', 'plugins', 'effect-patterns', 'skills')
-      if (fs.existsSync(skillsDir)) {
-        const cats = fs.readdirSync(skillsDir).filter((c) => fs.existsSync(path.join(skillsDir, c, 'SKILL.md')))
+    // ---------- Phase D: restore any broken skills, then ensure one break + fix if not yet done ----------
+    const skillsDir = path.join(repoPath, '.claude-plugin', 'plugins', 'effect-patterns', 'skills')
+    if (fs.existsSync(skillsDir)) {
+      const cats = fs.readdirSync(skillsDir).filter((c) => fs.existsSync(path.join(skillsDir, c, 'SKILL.md')))
+      for (const cat of cats) {
+        const skillPath = path.join(skillsDir, cat, 'SKILL.md')
+        const content = fs.readFileSync(skillPath, 'utf-8')
+        if (!content.includes('**Rationale**')) skills.fixSkillsRestoreRationale(repoPath, cat)
+      }
+      if (!didBreak || !didFix) {
         if (cats.length > 0) {
           const cat = pick(scenarioRng, cats)
           const skillPath = path.join(skillsDir, cat, 'SKILL.md')
           const content = fs.readFileSync(skillPath, 'utf-8')
-          if (!content.includes('**Rationale**')) {
-            skills.fixSkillsRestoreRationale(repoPath, cat)
-          } else {
+          if (content.includes('**Rationale**')) {
             skills.breakSkillsRemoveRationale(repoPath, cat)
-            const r = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'skills', 'validate'], epOpts)
+            const r = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'skills', 'validate'], {
+              ...epOpts,
+              expectFailure: true,
+            })
             pushRecord(r.record)
             skills.fixSkillsRestoreRationale(repoPath, cat)
             const r2 = await runCommand(epInvocation.executable, [...epInvocation.argsPrefix, 'skills', 'validate'], epOpts)
+            applyOutputCheck(r2.record, checkSkillsValidateClean(r2.result.stdout, r2.result.stderr), args.verbose, {
+              stdout: r2.result.stdout,
+              stderr: r2.result.stderr,
+            })
             pushRecord(r2.record)
+            didFix = true
           }
         }
       }
     }
 
     // ---------- Commits (minimal) ----------
+    const gitEnv = {
+      GIT_AUTHOR_NAME: 'Lifecycle Harness',
+      GIT_AUTHOR_EMAIL: 'harness@effect-patterns.local',
+      GIT_COMMITTER_NAME: 'Lifecycle Harness',
+      GIT_COMMITTER_EMAIL: 'harness@effect-patterns.local',
+    }
     if (args.commits === 'minimal') {
       const numCommits = randomIntInclusive(scenarioRng, 2, 5)
       for (let c = 0; c < numCommits; c++) {
@@ -474,6 +624,7 @@ async function main(): Promise<void> {
         const r = await runCommand('git', ['commit', '-m', `chore: lifecycle step ${c + 1}`], {
           cwd: repoPath,
           timeoutMs: 5000,
+          envOverrides: gitEnv,
         })
         pushRecord(r.record)
       }
@@ -488,6 +639,23 @@ async function main(): Promise<void> {
       commands,
       showIdParseFailed: scenarioShowIdParseFailed,
     })
+
+    // Cleanup: keep only the N most recent repos when --keep-last-n is set
+    const keepLastN = args.keepLastN ?? 0
+    if (keepLastN > 0) {
+      while (repoPaths.length > keepLastN) {
+        const oldPath = repoPaths.shift()
+        if (oldPath === undefined) break
+        try {
+          if (fs.existsSync(oldPath)) {
+            fs.rmSync(oldPath, { recursive: true })
+            if (args.verbose) console.log(`  [cleanup] removed ${path.basename(oldPath)}`)
+          }
+        } catch (err) {
+          console.warn(`  [warn] failed to remove ${oldPath}:`, err instanceof Error ? err.message : err)
+        }
+      }
+    }
 
     const diskSoFar = totalSizeBytes(repoPaths)
     if (diskSoFar > diskBudgetBytes) {
@@ -524,6 +692,7 @@ async function main(): Promise<void> {
     firstFailingScenario,
     coverageAttempted,
     coverageSucceeded,
+    softFailByCommand: getSoftFailByCommand(allScenarios),
   }
 
   if (!args.dryRun) {
@@ -533,11 +702,23 @@ async function main(): Promise<void> {
     console.log(`Commands: ${totalAttempted} attempted, ${totalSuccess} success, ${totalSoftFail} soft-fail, ${totalHardFail} hard-fail`)
     console.log(`Disk (excl. node_modules): ${diskUsageMb.toFixed(2)} MB`)
     console.log(`Report: ${reportPath}`)
+    printReportSummary(report)
     if (firstFailingScenario) {
       console.log(
         `Reproduce first failure: bun run lifecycle-harness --seed ${firstFailingScenario.seed} --only-scenario ${firstFailingScenario.scenarioIndex}`
       )
       process.exitCode = 1
+    }
+    if (args.onlyScenario === undefined) {
+      const missingCoverage = (Object.keys(coverageAttempted) as (keyof typeof coverageAttempted)[]).filter(
+        (k) => coverageAttempted[k] && !coverageSucceeded[k]
+      )
+      if (missingCoverage.length > 0) {
+        console.log(`Coverage gap: these surfaces were attempted but never succeeded: ${missingCoverage.join(', ')}`)
+        process.exitCode = 1
+      }
+    } else {
+      console.log('Coverage gate skipped (single scenario run with --only-scenario).')
     }
   }
 }

@@ -148,4 +148,12 @@ describe("ep-cli stream and machine-mode contracts", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("No API key was provided on stdin");
   });
+
+  it("exits non-zero and prints not found when pattern id does not exist", () => {
+    const result = runCli(["show", "nonexistent-pattern-id-xyz"]);
+
+    expect(result.status).not.toBe(0);
+    const combined = `${result.stdout}\n${result.stderr}`;
+    expect(combined).toMatch(/not found/i);
+  });
 });

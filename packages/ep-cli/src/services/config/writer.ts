@@ -41,7 +41,7 @@ export const writeConfig = (data: {
       const dir = path.dirname(configPath);
 
       if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true });
+        mkdirSync(dir, { recursive: true, mode: 0o700 });
       }
 
       const content = JSON.stringify(

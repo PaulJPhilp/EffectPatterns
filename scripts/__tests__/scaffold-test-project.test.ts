@@ -20,14 +20,21 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('TEMPLATES', () => {
-  it('should contain exactly the four expected templates', () => {
-    expect(TEMPLATES).toEqual(['basic', 'service', 'cli', 'http-server']);
+  it('should contain exactly the six expected templates', () => {
+    expect(TEMPLATES).toEqual([
+      'basic',
+      'service',
+      'cli',
+      'http-server',
+      'lib',
+      'worker',
+    ]);
   });
 });
 
 describe('TOOLS', () => {
-  it('should contain exactly the four expected tools', () => {
-    expect(TOOLS).toEqual(['agents', 'cursor', 'vscode', 'windsurf']);
+  it('should contain exactly the five expected tools (agents, claude, cursor, vscode, windsurf)', () => {
+    expect(TOOLS).toEqual(['agents', 'claude', 'cursor', 'vscode', 'windsurf']);
   });
 });
 
@@ -78,6 +85,22 @@ describe('makePackageJson', () => {
     expect(pkg.dependencies['@effect/cli']).toBeUndefined();
   });
 
+  it('lib: should have vitest in devDeps and test script', () => {
+    const pkg = JSON.parse(makePackageJson('test-lib', 'lib'));
+
+    expect(pkg.dependencies.effect).toBe('latest');
+    expect(pkg.devDependencies.vitest).toBe('latest');
+    expect(pkg.scripts.test).toBe('vitest run');
+  });
+
+  it('worker: should have effect only (no platform)', () => {
+    const pkg = JSON.parse(makePackageJson('test-worker', 'worker'));
+
+    expect(pkg.dependencies.effect).toBe('latest');
+    expect(pkg.dependencies['@effect/platform']).toBeUndefined();
+    expect(pkg.scripts.dev).toBe('tsx src/index.ts');
+  });
+
   it('all templates should have type: module and standard scripts', () => {
     for (const template of TEMPLATES) {
       const pkg = JSON.parse(makePackageJson(`test-${template}`, template));
@@ -124,6 +147,19 @@ describe('templateFiles', () => {
     const files = Object.keys(templateFiles['http-server']);
 
     expect(files).toContain('src/routes.ts');
+  });
+
+  it('lib template should have src/index.ts and src/index.test.ts', () => {
+    const files = Object.keys(templateFiles.lib);
+
+    expect(files).toContain('src/index.ts');
+    expect(files).toContain('src/index.test.ts');
+  });
+
+  it('worker template should only have src/index.ts', () => {
+    const files = Object.keys(templateFiles.worker);
+
+    expect(files).toEqual(['src/index.ts']);
   });
 
   it('basic template should only have src/index.ts', () => {

@@ -43,6 +43,7 @@ Development workflows, testing, and CI/CD.
 - **[PUBLISHING_PIPELINE.md](./development/PUBLISHING_PIPELINE.md)** -
   Content publishing workflow
 - **[TESTING.md](./development/TESTING.md)** - Testing guide
+- **[SCAFFOLD_USER_GUIDE.md](./development/SCAFFOLD_USER_GUIDE.md)** - Scaffold a new Effect test project (templates, tools, next steps)
 
 ### [Jobs To Be Done](./jobs-to-be-done/)
 
