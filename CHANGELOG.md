@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.5.0] - 2026-02-27
+
+### 📦 Version
+- Version bump to 0.5.0
+
 ## [0.12.2] - 2026-02-11
 
 ### 🗄️ Database Population

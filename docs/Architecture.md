@@ -313,7 +313,6 @@ STAGING_API_KEY=key                             # For staging deployment tests
 PRODUCTION_API_KEY=key                          # For production deployment tests
 ```
 
-See [packages/api-server/ENV_VARS.md](../packages/api-server/ENV_VARS.md) for complete reference.
 
 ### Configuration Files
 
@@ -457,7 +456,7 @@ bun run --filter @effect-patterns/mcp-transport test:mcp:ci    # MCP protocol te
 bun run --filter @effect-patterns/mcp-transport test:mcp:local  # Against local server
 ```
 
-**Deployment testing:**
+**Deployment testing:** Set `STAGING_API_KEY` to the same value as Vercel Preview `PATTERN_API_KEY` (and `PRODUCTION_API_KEY` for production).
 ```bash
 export STAGING_API_KEY="your-key"
 bun run --filter @effect-patterns/api-server test:deployment:staging

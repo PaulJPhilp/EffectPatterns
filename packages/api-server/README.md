@@ -597,8 +597,6 @@ This guide includes:
 - CI/CD integration examples
 - Performance optimization tips
 
-Environment variables reference: **[ENV_VARS.md](./ENV_VARS.md)**
-
 Quick test commands:
 
 ```bash
@@ -629,7 +627,6 @@ bun run test:stress:all
 ```
 
 For detailed instructions on each test type, environment setup, and troubleshooting, see [TESTING_GUIDE.md](./TESTING_GUIDE.md).
-For complete environment variable reference, see [ENV_VARS.md](./ENV_VARS.md).
 
 ### MCP 2.0 Development
 
